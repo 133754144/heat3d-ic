@@ -41,7 +41,8 @@ class Heat3DDataset:
             sample = {
                 "u": u,
                 "x": x,
-                "c": c
+                "c": c,
+                "g": None
             }
 
             self.samples.append(sample)
@@ -64,8 +65,9 @@ class Heat3DDataset:
         u = jnp.array(sample["u"])
         x = jnp.array(sample["x"])
         c = jnp.array(sample["c"])
+        g = self.graph_metadata[idx]
 
-        return u,x,c
+        return u,x,c,g
 
 
     def get_batch(self,batch_indices):
@@ -87,3 +89,17 @@ class Heat3DDataset:
         c=jnp.concatenate(c_list,axis=0)
 
         return u,x,c
+    
+    def build_graph_metadata(self, builder):
+
+        self.graph_metadata = []
+
+        for sample in self.samples:
+
+            coords = sample["x"][0,0]
+
+            metadata = builder.build_metadata(coords)
+
+            self.graph_metadata.append(metadata)
+
+        print("Graph metadata built")
