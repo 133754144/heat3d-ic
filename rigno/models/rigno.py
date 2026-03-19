@@ -80,17 +80,22 @@ class RegionInteractionGraphBuilder:
     self.subsample_factor = subsample_factor
 
     # Domain shifts for periodic BC
-    self._domain_shifts = jnp.concatenate([
-      jnp.array([[0., 0.]]),  # C
-      jnp.array([[-2, 0.]]),  # W
-      jnp.array([[-2, +2]]),  # NW
-      jnp.array([[0., +2]]),  # N
-      jnp.array([[+2, +2]]),  # NE
-      jnp.array([[+2, 0.]]),  # E
-      jnp.array([[+2, -2]]),  # SE
-      jnp.array([[0., -2]]),  # S
-      jnp.array([[-2, -2]]),  # SW
-    ], axis=0)
+    # self._domain_shifts = jnp.concatenate([
+    #   jnp.array([[0., 0.]]),  # C
+    #   jnp.array([[-2, 0.]]),  # W
+    #   jnp.array([[-2, +2]]),  # NW
+    #   jnp.array([[0., +2]]),  # N
+    #   jnp.array([[+2, +2]]),  # NE
+    #   jnp.array([[+2, 0.]]),  # E
+    #   jnp.array([[+2, -2]]),  # SE
+    #   jnp.array([[0., -2]]),  # S
+    #   jnp.array([[-2, -2]]),  # SW
+    # ], axis=0)
+    self._domain_shifts = jnp.array([
+      [dx, dy, dz] for dx in [-2, 0, 2]
+                for dy in [-2, 0, 2]
+                for dz in [-2, 0, 2]
+    ])
 
   def _compute_minimum_support_radius(self, x: Array) -> Array:
       """
@@ -100,25 +105,35 @@ class RegionInteractionGraphBuilder:
       """
       # NOTE: This function is not jittable because of the Delaunay triangulation
 
-      if self.periodic:
-        # Repeat the domain in all directions before constructing a triangulation
-        x_extended = (x[None, :, :] + self._domain_shifts[:, None, :]).reshape(-1, 2)
-        tri = Delaunay(points=x_extended)
-      else:
-        tri = Delaunay(points=x)
+      # if self.periodic:
+      #   # Repeat the domain in all directions before constructing a triangulation
+      #   x_extended = (x[None, :, :] + self._domain_shifts[:, None, :]).reshape(-1, 2)
+      #   tri = Delaunay(points=x_extended)
+      # else:
+      #   tri = Delaunay(points=x)
 
-      medians = _compute_triangulation_medians(tri)
-      radii = np.zeros(shape=(x.shape[0],))
-      mask = tri.simplices < x.shape[0] # [N, 3]
-      values = medians[mask]
-      indices = tri.simplices[mask]
-      sorted_idx = np.argsort(indices)
-      sorted_indices = indices[sorted_idx]
-      sorted_values = values[sorted_idx]
-      unique_indices, idx_start = np.unique(sorted_indices, return_index=True)
-      radii[unique_indices] = np.maximum.reduceat(sorted_values, idx_start)
+      # medians = _compute_triangulation_medians(tri)
+      # radii = np.zeros(shape=(x.shape[0],))
+      # mask = tri.simplices < x.shape[0] # [N, 3]
+      # values = medians[mask]
+      # indices = tri.simplices[mask]
+      # sorted_idx = np.argsort(indices)
+      # sorted_indices = indices[sorted_idx]
+      # sorted_values = values[sorted_idx]
+      # unique_indices, idx_start = np.unique(sorted_indices, return_index=True)
+      # radii[unique_indices] = np.maximum.reduceat(sorted_values, idx_start)
 
-      return radii
+      # return radii
+       
+      """3D 版本（您的 UnitCube 是非周期性，用这个最快最稳）"""
+      x = np.asarray(x)
+      from scipy.spatial import KDTree
+      tree = KDTree(x)
+      radii = np.zeros(len(x))
+      for i in range(len(x)):
+        dist, _ = tree.query(x[i], k=5)   # self + 4 近邻
+        radii[i] = np.mean(dist[1:]) * 0.8
+      return jnp.array(radii)
 
   def _get_supported_pnodes_by_rnodes(self,
     centers: Array,
