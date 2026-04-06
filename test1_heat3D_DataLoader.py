@@ -5,6 +5,15 @@ datadir = "/home/xyh/myCode/rigno-main/dataset_3d_heat"
 
 # ====================== 1. 加载数据集 ======================
 dataset = dataset_Heat3D.Heat3DDataset(datadir)
+# 遍历 sample_xxx 文件夹，读取：
+# coords.npy 作为空间坐标
+# temperature.npy 作为目标场 u
+# k.npy 和 source.npy 叠成输入系数场 c
+# 然后整理成：
+
+# u: [1, 1, N, 1]
+# x: [1, 1, N, 3]
+# c: [1, 1, N, 2]
 
 # ====================== 2. 创建并构建图 ======================åå
 builder = Heat3DGraphBuilder()

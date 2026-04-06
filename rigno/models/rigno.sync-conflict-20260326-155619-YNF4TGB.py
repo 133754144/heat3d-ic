@@ -229,29 +229,29 @@ class RegionInteractionGraphBuilder:
   def build_metadata(self, x_inp: Array, x_out: Array, domain: Array, rmesh_correction_dsf: int = 1, key: Union[flax.typing.PRNGKey, None] = None) -> RegionInteractionGraphMetadata:
     """Returns the metadata that is needed for building all RIGNO graphs."""
 
-    # Normalize coordinates in [-1, +1) —— 归一化
+    # Normalize coordinates in [-1, +1)
     x_inp = 2 * (x_inp - domain[0]) / (domain[1] - domain[0]) - 1
     x_out = 2 * (x_out - domain[0]) / (domain[1] - domain[0]) - 1
 
-    # Randomly sub-sample pmesh to get rmesh —— 随机采样
+    # Randomly sub-sample pmesh to get rmesh
     if key is None: key = jax.random.PRNGKey(0)
     x_rnodes = _subsample_pointset(key=key, x=x_inp, factor=self.subsample_factor)
 
-    # Downsample or upsample the rmesh —— 参数rmesh_correction_dsf不为1时微调网格密度
+    # Downsample or upsample the rmesh
     if rmesh_correction_dsf > 1:
       x_rnodes = _subsample_pointset(key=key, x=x_rnodes, factor=rmesh_correction_dsf)
     elif rmesh_correction_dsf < 1:
       x_rnodes = _upsample_pointset(key=key, x=x_rnodes, factor=(1 / rmesh_correction_dsf))
 
-    # Compute minimum support radius of each rmesh node —— 计算每个区域节点的“最小支持半径”
+    # Compute minimum support radius of each rmesh node
     r_rnodes = self._compute_minimum_support_radius(x_rnodes)
 
     # Get edge indices
     p2r_edge_indices = self._get_supported_pnodes_by_rnodes(
-      centers=x_rnodes, # 区域节点坐标
-      points=x_inp,     # 物理节点坐标
-      radii=jnp.clip(self.overlap_factor_p2r * r_rnodes, a_min=0, a_max=r_rnodes.max()), # 每个区域节点的支持半径
-    ) # 返回哪些物理点连到哪些区域点
+      centers=x_rnodes,
+      points=x_inp,
+      radii=jnp.clip(self.overlap_factor_p2r * r_rnodes, a_min=0, a_max=r_rnodes.max()),
+    )
     r2r_edge_indices, r2r_edge_domains = self._get_r2r_edges(x_rnodes)
     r2p_edge_indices = self._get_supported_pnodes_by_rnodes(
       centers=x_rnodes,

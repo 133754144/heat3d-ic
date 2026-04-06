@@ -4,24 +4,39 @@ from rigno.models.rigno import RegionInteractionGraphBuilder
 
 class Heat3DGraphBuilder:
 
-    def __init__(self):
+    def __init__(
+        self,
+        rmesh_levels=3,
+        subsample_factor=4,
+        overlap_factor_p2r=1.5,
+        overlap_factor_r2p=2.0,
+        node_coordinate_freqs=4,
+    ):
+
+        self.config = {
+            "rmesh_levels": rmesh_levels,
+            "subsample_factor": subsample_factor,
+            "overlap_factor_p2r": overlap_factor_p2r,
+            "overlap_factor_r2p": overlap_factor_r2p,
+            "node_coordinate_freqs": node_coordinate_freqs,
+        }
 
         self.builder = RegionInteractionGraphBuilder(
 
             periodic=False,
 
-            rmesh_levels=3,
+            rmesh_levels=rmesh_levels,
 
-            subsample_factor=4,
+            subsample_factor=subsample_factor,
 
-            overlap_factor_p2r=1.5,
-            overlap_factor_r2p=2.0,
+            overlap_factor_p2r=overlap_factor_p2r,
+            overlap_factor_r2p=overlap_factor_r2p,
 
-            node_coordinate_freqs=4,
+            node_coordinate_freqs=node_coordinate_freqs,
         )
 
 
-    def build_metadata(self, coords):
+    def build_metadata(self, coords, key=None):
 
         coords = jnp.array(coords)
 
@@ -33,7 +48,8 @@ class Heat3DGraphBuilder:
         metadata = self.builder.build_metadata(
             x_inp=coords,
             x_out=coords,
-            domain=domain
+            domain=domain,
+            key=key,
         )
 
         return metadata

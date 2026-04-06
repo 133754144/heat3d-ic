@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import jax.numpy as jnp
+import jax.tree_util as tree
 
 
 class Heat3DDataset:
@@ -8,7 +9,8 @@ class Heat3DDataset:
     def __init__(self, datadir):
         self.datadir = datadir
         self.samples = []
-        self.graph_metadata = []          # ← 新增：提前初始化
+        self.graph_metadata = []
+        self.fix_x = True
 
         # 🔥 只保留真正的 sample_xxx 文件夹（过滤 .DS_Store 和其他垃圾）
         all_items = sorted(os.listdir(datadir))
@@ -40,10 +42,13 @@ class Heat3DDataset:
 
         self.n_samples = len(self.samples)
         self.n_nodes = self.samples[0]["x"].shape[2]
+        ref_coords = self.samples[0]["x"]
+        self.fix_x = all(np.array_equal(ref_coords, sample["x"]) for sample in self.samples[1:])
 
         print("✅ Dataset loaded")
         print(f"   样本数量: {self.n_samples}")
         print(f"   每个样本节点数: {self.n_nodes}")
+        print(f"   坐标是否固定: {self.fix_x}")
 
     def __len__(self):
         return self.n_samples
@@ -53,11 +58,16 @@ class Heat3DDataset:
         u = jnp.array(sample["u"])
         x = jnp.array(sample["x"])
         c = jnp.array(sample["c"])
-        g = self.graph_metadata[idx] if self.graph_metadata else None   # ← 防止未构建时报错
+        if not self.graph_metadata:
+            g = None
+        elif self.fix_x:
+            g = self.graph_metadata[0]
+        else:
+            g = self.graph_metadata[idx]
 
         return u, x, c, g
 
-    def get_batch(self, batch_indices):
+    def get_batch(self, batch_indices, return_graphs=False):
         u_list, x_list, c_list = [], [], []
         for idx in batch_indices:
             u, x, c, _ = self[idx]
@@ -68,13 +78,39 @@ class Heat3DDataset:
         u = jnp.concatenate(u_list, axis=0)
         x = jnp.concatenate(x_list, axis=0)
         c = jnp.concatenate(c_list, axis=0)
-        return u, x, c
+        if not return_graphs:
+            return u, x, c
 
-    def build_graph_metadata(self, builder):
+        g = self.get_graph_batch(batch_indices)
+        return u, x, c, g
+
+    def get_graph_batch(self, batch_indices):
+        if not self.graph_metadata:
+            raise ValueError("请先调用 build_graph_metadata(builder)")
+
+        batch_size = len(batch_indices)
+        if self.fix_x:
+            shared_metadata = self.graph_metadata[0]
+            return tree.tree_map(
+                lambda value: jnp.repeat(value, repeats=batch_size, axis=0),
+                shared_metadata,
+            )
+
+        metadata_list = [self.graph_metadata[idx] for idx in batch_indices]
+        return tree.tree_map(
+            lambda *values: jnp.concatenate(values, axis=0),
+            *metadata_list,
+        )
+
+    def build_graph_metadata(self, builder, key=None):
         """必须在读取数据后手动调用一次"""
         self.graph_metadata = []
-        for sample in self.samples:
+        samples = [self.samples[0]] if self.fix_x else self.samples
+        for sample in samples:
             coords = sample["x"][0, 0]                     # (N, 3)
-            metadata = builder.build_metadata(coords)
+            metadata = builder.build_metadata(coords, key=key)
             self.graph_metadata.append(metadata)
-        print(f"✅ Graph metadata 已为 {len(self.graph_metadata)} 个样本构建完成")
+        if self.fix_x:
+            print("✅ Graph metadata 已构建完成（固定坐标，仅共享 1 份）")
+        else:
+            print(f"✅ Graph metadata 已为 {len(self.graph_metadata)} 个样本构建完成")
