@@ -1,0 +1,462 @@
+                              IEEETRANSACTIONSONELECTRONDEVICES,VOL.70,NO.10,OCTOBER2023                                                                       5273
+                  Intelligent Design Method of Thermal Through
+                              Silicon via for Thermal Management of
+                                                      Chiplet-Based System
+                        Xianglong Wang , Yintang Yang , Senior Member, IEEE, Dongdong Chen , Member, IEEE,
+                                                                      andDiLi , Member, IEEE
+                 AbstractÐIn this article, an intelligent design method of                                         I. INTRODUCTION
+               thermalthroughsiliconvia(TTSV)forthermalmanagement
+               of   a Chiplet-based system is proposed based on                                    ITH the development of 3-D integration technol-
+               the finite element method (FEM), back propagation-                         Wogy[1],[2],thenumberofintegration layers are grad-
+               neural network (BP-NN) model, and particle swarm                           ually increased. Due to the benefits of short interconnection
+               optimization (PSO) algorithm. In order to analyze the effect               line, high integrated density, and suitability for heterogeneous
+               of design parameters of TTSV (TTSV pitches, radius of
+               TTSV unit, and thickness of oxide layer) on the thermal                    process, 3-D integration technology has been widely investi-
+               distribution of a Chiplet-based system, the detailed model                 gated and become a very promising technology [3], [4], [5].
+               is simulated by FEM. The mapping relationships between                     A three-dimensional integrated system extends the design
+               the design parameters and thermal distribution indices are                 space by stacking integrated chips in the vertical direction,
+               described by BP-NN models according to the simulation
+               data. In addition, according to the desired performance                    which is different from the conventional 2-D integrated
+               of the Chiplet-based system with TTSV, the multiobjective                  technology [6], [7], [8]. However, the self-heating problem of
+               optimization criterion is formulated, and then the design                  integrated chips has become an important factor affecting the
+               parameters are optimized by the modified PSO algorithm.                    performance of 3-D integrated system [9], [10]. The stacking
+               Based on the obtained design parameters, the FEM                           of chips in 3-D integrated system increases the power density
+               simulation is aimed at validating the effectiveness of the
+               proposed method. The simulated peak temperatures (PTs)                     and thermal resistance of the device to the environment,
+               ofthreelayers(340.81,334.76,and314.85K)wellagreewith                       so the thermal accumulation is exacerbated significantly.
+               the desired ones (340, 335, and 315 K), which implies that                 Chiplet-based system is a kind of complex 3-D integrated sys-
+               the proposed method can effectively optimize the design                    tem, and its thermal management is more difficult. Therefore,
+               parameters of TTSV to control the thermal distribution of                  it is valuable to develop the effective thermal management
+               Chiplet-based system. Therefore, the proposed intelligent
+               designmethodcanachievethethermalmanagementofthe                            method for Chiplet-based system to improve its performance.
+               complexChiplet-based system.                                                  Generally, the thermal management methods include ther-
+                 Index TermsÐChiplet-based system, intelligent design,                    mal through silicon via (TTSV) [11], microchannel [12],
+               particle swarm optimization (PSO) algorithm, thermal                       and enhanced thermal conductivity of bond layer. The heat
+               management,thermalthroughsiliconvia(TTSV).                                 dissipation efficiency of the microchannel is the highest, and
+                                                                                          its heat dissipation capability is affected by the layout and
+                                                                                          velocity of the liquid, etc. However, the fabrication process of
+                Manuscript received 22 April 2023; revised 17 July 2023; accepted         the microchannel is complicated and the cost is expensive.
+               31 July 2023. Date of publication 15 August 2023; date of current          The composite material with high thermal conductivity is
+               version 22 September 2023. This work was supported in part by              an effective way to enhance the thermal conductivity of
+               the Fundamental Research Funds for the Central Universities under
+               Grant QTZX23022, in part by the Innovation Fund of Xidian University       the bond layer, but the manufacturing process is compli-
+               under Grant YJSJ23019, in part by the Youth Talent Fund of Joint           cated. Gracias et al. [13] investigated the thermal properties
+               Fund of the Ministry of Education for Equipment Pre-Research under         of hybrid nanocomposites containing benzocyclobutene and
+               Grant 8091B032138, in part by the National Natural Science Foun-
+               dations of China under Grant 62104177, in part by the Cooperation          diamondnanoparticle mixtures for implementation in 3-D inte-
+               Program of XDU-Chongqing IC Innovation Research Institute under            gration. The decomposition temperature of benzocyclobutene
+               GrantCQIRI-2022CXY-Z01,andinpartbytheEquipmentPre-Research                 is significantly increased from 350 ◦C to 450 ◦C with the
+               Project of China under Grant 80924020307. The review of this arti-
+               cle was arranged by Editor P. Thadesar. (Corresponding authors:            addition of diamond nanoparticles with a mass fraction of 2%.
+               DongdongChen;DiLi.)                                                        In addition, He et al. [14] investigated the effect of ran-
+                The authors are with the School of Microelectronics, Xidian
+               University, Xi’an 710071, China (e-mail: ddchen@xidian.edu.com;            domly distributed fillers (sphere, cylinder, and disk) on the
+               lidi2004@126.com).                                                         thermal conductivity of polymer-matrix composites, which
+                Color versions of one or more figures in this article are available at    can be used to improve the heat dissipation capability of
+               https://doi.org/10.1109/TED.2023.3302828.
+                Digital Object Identifier 10.1109/TED.2023.3302828                        composite materials. Due to the high heat transfer capability,
+                                 0018-9383 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+                                                  Seehttps://www.ieee.org/publications/rights/index.html for more information.
+                          Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 
+             5274                                                         IEEETRANSACTIONSONELECTRONDEVICES,VOL.70,NO.10,OCTOBER2023
+             TTSV can quickly transfer heat from the upper layer to the       equation, which entirely avoids a finite element discretization
+             heat sink and homogenize the temperature of each layer. TTSV     and naturally accounts for uncertainties. The complex opti-
+             is the most popular technology to solve the thermal man-         mization problem can be solved by intelligent optimization
+             agement problem of 3-D integrated system [15]. Goplen and        methods, such as simulated annealing algorithm, particle
+             Sapatnekar [16] placed TTSV into a specific region of a 3-D      swarm optimization (PSO) algorithm, genetic algorithm etc.
+             integrated system, and the effective thermal conductivity are    Ren et al. [35] developed a hierarchical optimization method
+             investigated to reduce the peak temperature (PT). The results    based on the simulated annealing algorithm. The simulation
+             show that the PT can be reduced by 57% compared to the           results show that the PT is reduced by 16 ◦C with 3.5%
+             uniformly placed TTSV. Singh and Tan [17] performed a            increase in wire length. In addition, the PSO algorithm has
+             complete analysis of TTSV. When the TTSV was inserted            been utilized to obtain the optimal design parameters of elec-
+             in the hottest spot, the temperature was reduced by 62 ◦C.       tronic components [36], [38] and the parameters of filtering
+             Hsu et al. [18] proposed a three-stage TSV locating algorithm    algorithms [39], [40]. The PSO algorithm is a simple and
+             in global routing based on the stacked TSV to minimize           effective optimization method. The modified PSO algorithm
+             temperature in 3-D integrated system. The experiment results     has good global and local search ability, and it does not have
+             show that the temperature is reduced by 17% with 3% wiring       the limitation of traditional optimization algorithm. Therefore,
+             overhead. Based on the principle of thermoelectric effect,       the PSO algorithm can be adopted to obtain the optimal design
+             Gagan et al. [19] proposed and fabricated the new TTSV           parameters of Chiplet-based system for high-efficiency thermal
+             structure to absorb heat and transfer electricity at the same    management.
+             time. In addition, Shi et al. [20] developed a hybrid cooling      In this article, an intelligent design method of TTSV for
+             method based on the micro-channel liquid cooling and TTSV.       thermal management of a Chiplet-based system is proposed.
+             The experiment results show that the developed method can        The novelty can be summarized as follows:
+             provide excellent cooling capability. Wang et al. [21] pro-        1) The mapping relationships between design parame-
+             posed a heat-dissipation system based on the redistribution            ters and thermal distribution indexes are described by
+             layer and TTSV array in 3-D integrated system. The simulation          BP-NN models to increase the simulation efficiency.
+             results show that the PT is decreased by 3.8 ◦C. In these          2) The intelligent design method is proposed under the
+             traditional thermal management methods, the equivalent ther-           framework of PSO algorithm to optimize the design
+             mal conductivity models and finite element method (FEM)-               parameters of Chiplet-based system, which can effec-
+             based software are used to obtain the design scheme through            tively and quickly obtain the design parameters.
+             many times iterative computation and comparison. However,          3) The developed intelligent design method can accurately
+             these traditional methods are time-consuming and rely on               control the thermal distribution indexes of the Chiplet-
+             the experts’ experience, and the design parameters cannot be           based system, and the errors between the optimized
+             effectively optimized to achieve the thermal management of             and simulated thermal distribution indexes are all less
+             3-D integrated system. Therefore, the intelligent design               than 1 K.
+             method should be investigated and proposed to improve the          In Section II, the FEM model of the Chiplet-based system
+             design efficiency and accuracy of TTSV for thermal manage-       is presented, then the simulation and analysis are presented.
+             ment of Chiplet-based system.                                    Section III describes the intelligent design method of TTSV
+               Nowadays, artificial intelligence (AI) technology has been     for the thermal management of a Chiplet-based system.
+             widely applied in the education, industry, military, and         In Section IV, the verification of the developed method is
+             medicine fields [22], [23]. AI includes machine learning (ML),   presented, and the effectiveness of the developed method is
+             fuzzy reasoning, intelligent optimization method, etc. Neural    discussed. Finally, Section V makes a conclusion.
+             network [24] is a common ML method, and it can be used
+             to describe the relationship of the complex system. Back           II. FEM SIMULATIONS FOR CHIPLET-BASED SYSTEM
+             propagation-neural network (BP-NN) [25] is a well-known          A. Three-Dimensional FEM Simulations of
+             artificial neural network, and it has been widely used in image  Chiplet-Based System
+             processing [26], [28], model-predicted control [29], [30], data
+             extraction [31], [32], etc. Due to the advantages of simplicity,   Generally, the FEM is an accurate simulation method, and
+             faster learning ability, and less time consumption, the deep     it has been widely used to investigate the thermal management
+             neural network (DNN) has been applied in the large-scale         of 3-D integrated systems. In this research, the finite element
+             integrated system to describe the complex relationship. Based    simulation software is COMSOL Multiphysics. COMSOL is
+             on the variation in the memory access behavior of DNN            a professional multifield coupling simulation tool, which can
+             layers, Pandey and Panda [33] proposed an application-aware      accurately present the thermal distribution of a Chiplet-based
+             efficient task mapping and migration-based dynamic ther-         system. The schematic of the Chiplet-based system is shown
+             mal management policy. The experimental results show that        in Fig. 1, which is composed of TTSV and three chips. The
+             the average execution time and memory energy have been           10 × 10 TTSV array is located in each layer. The pitches
+             reduced 39% and 40%, respectively, compared with the over        of the TTSV array are rdx and rdy in X- and Y-directions,
+             state-of-the-art dynamic thermal management mechanisms.          respectively. The height of TTSV unit is divided into two
+             In addition, Samaniego et al. [34] explored the DNN as an        parts. The first part is the top and bottom oxide isolation
+             option for approximation solution of the partial differential    layers, whose height is h1. The TTSV is mainly composed
+                       Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 
+                WANGetal.:INTELLIGENTDESIGNMETHODOFTTSVFORTHERMALMANAGEMENTOFCHIPLET-BASEDSYSTEM                                                                              5275
+                Fig. 1.  Schematic of Chiplet-based system with TTSV.
+                                                   TABLEI                                          Fig. 2.     Finite element model of Chiplet-based system with TTSV.
+                    MATERIALS AND PARAMETERS USED IN THE FEM SIMULATIONS                           (a) Three chips. (b) Five chips.
+                                                                                                   Fig. 3. Simulation data of Chiplet-based systemwithdesignparameters
+                                                                                                   for three chips. (a) TTSV array pitches. (b) Radius of TTSV unit and
+                                                                                                   thickness of oxide layer.
+                of the second part with height h . t            is the thickness of oxide
+                                                         2   ox                                    representative points from a full-scale test. The PTs of different
+                layer. rs is the metal radius of TTSV unit. The materials                          layers are simulated by COMSOL.
+                and parameters used in the FEM simulation are presented
+                in Table I. Both the length and width of the selected chips are                    B. Simulation Results
+                400 µm, and the height is 30 µm. The height of h1 and h2
+                are 1 and 48 µm, respectively. In the thermal simulation, the                          In this research, the design parameters of the Chiplet-based
+                powers of chips 1 and 3 are 1 W, and the power of chip 2                           system include the TTSV array pitches (rdx and rdy), the
+                is 0.4 W. The function of the chip with 0.4 W power is                             radius of the TTSV unit (rs), and the thickness of the
+                designed to decode the video, and the chip with 1 W power                          oxide layer (t ). The ranges of r , r , r , and t                           are
+                                                                                                                      ox                           dx    dy     s          ox
+                is a graphics processing unit. These chips are designed for                        [25 40], [25 35], [3 10], and [0.1 0.8] µm, respectively.
+                the project requirements, which will be stacked as a Chiplet                       The upper limits of x and y are determined by the require-
+                system. So, the multichips Chiplet-based system with a TTSV                        ments of different designs. Generally, the pitch values of
+                array is chosen as the simulation testbed to investigate the                       x and y are equivalent, but the effects of different TTSV array
+                thermal management. Generally, the row/column number of                            pitches on the thermal distribution indices are investigated
+                TTSV array is determined by the size of system and the size                        in this research. In addition, the ranges of pitch values are
+                of TTSV unit. When the size of the system is fixed, the heat                       decided according to the area of the chip and the number of
+                dissipation capability is determined by the area occupied by                       TTSVs. The thermal distribution indices of the Chiplet-based
+                the TTSV array. The larger the area occupied by the TTSV                           system are PT of three chips and five chips marked as
+                array is, the better the heat dissipation capability is. So, the                   LTi(i = 1, 2, 3, 4, 5), as shown in Fig. 2. In the thermal
+                temperature is influenced by the size of the system and the size                   simulation of five chips, the power of bottom chip is 1 W,
+                of the TTSV array. In order to make the heat flow from top to                      and the power of other chips is 0.4 W. The simulation results
+                bottom, the boundary condition is assumed to be a thermal                          of Chiplet-based system with different design parameters for
+                insulation condition around the integrated system, and the                         three chips are shown in Fig. 3. Fig. 3(a) shows the simulation
+                ambient temperature is 293.15 K. If the ambient temperature                        results of Chiplet-based system with different rdx and rdy, and
+                is changed, the temperature of the integrated system will be                       Fig. 3(b) shows the simulation results of the Chiplet-based
+                changed. The buffer block is located at the bottom to provide                      system with different r and t . The three surfaces represent
+                                                                                                                                 s        ox
+                an efficient heat diffusion. The thermal conductivity of the                       the three thermal distribution indexes of Chiplet-based system.
+                                                                    ∗
+                buffer block is assumed to be 148 W/m K, and the thickness                         Obviously, the PTs of three layers are varied with the design
+                is 100 µm. The buffer block is used to smooth the heat flow                        parameters. With the increase of rs, the PT is decreased
+                from top to bottom, which can act as a heat spreader. The                          according to Fig. 3(b). Although the PT has a little variation
+                value of the buffer block is flexible [41]. In order to decreasing                 with t , the effects of other parameters are complex, and
+                                                                                                            ox
+                the number of simulation experiments, the orthogonal design                        the optimization design of TTSV is a multiparameters and
+                method is utilized to conduct the simulation design based on                       multiindices problem. Thus, the relationship between design
+                the design parameters of Chiplet-based system. The orthogonal                      parameters and thermal distribution indexes is irregular and
+                experiment is a design method to investigate multiple factors                      complex. According to the orthogonal design, the radius of
+                and levels, which is based on orthogonality to select some                         TTSVunit is changed when varying the pitch. When the total
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 
+                5276                                                                          IEEETRANSACTIONSONELECTRONDEVICES,VOL.70,NO.10,OCTOBER2023
+                Fig. 4. Simulation data of Chiplet-based systemwithdesignparameters
+                for five chips. (a) TTSV array pitches. (b) Radius of TTSV unit and
+                thickness of oxide layer.
+                number of TTSVs remain same, the PT might decrease if the
+                pitch is increased and keep diameter same. This is because
+                the metal density distribution becomes more uniform across
+                the die leading to better spreading. However, the diameter of
+                TTSV unit is not fixed in the orthogonal design, so the initial
+                increase is shown in the Fig. 3(a). The ranges of LT1±LT3
+                are [326.46 349.05], [322.59 341.74], and [309.82 317.31] K,
+                respectively. According to the simulation results, it can be
+                noticed that the PT first increases and then decreases with the
+                increase of TTSV array pitches (rdx and rdy), which means that
+                the TTSV array pitches affect the thermal distribution of the                      Fig. 5.   Flowchart of the proposed intelligent design method.
+                Chiplet-based system. Meanwhile, the PT is decreased with
+                increasing the radius of TTSV unit and thickness of oxide                          In this research, the orthogonal data of design parameters
+                layer, and the thermal distribution is not uniform. Moreover,                      and thermal distribution indices are utilized for training
+                the simulation results of a five-chips Chiplet-based system with                   the BP-NN model. The design parameters of Chiplet-based
+                different design parameters are shown in Fig. 4. The ranges of                     system are the inputs, such as r , r , r , and t , while its
+                LT1±LT5 for five layers are [316.27 328.69], [324.56 346.2],                                                                  dx    dy   s         ox
+                                                                                                   outputs are the LT1±LT3. In the trained BP-NN model for the
+                [330.75 359.08], [327.52 367.78], and [334.47 372.34] K,                           five-chips Chiplet-based system, the inputs are the rdx, rdy, rs,
+                respectively. It also can be seen that the relationship between                    and t , and the outputs are LT1±LT5. The simulation data of
+                the design parameters and temperature indexes is irregular and                            ox
+                                                                                                   training BP-NN model are shown in the Fig. 3, which are the
+                complex. Therefore, it is necessary to develop an intelligent                      results of running different FEM simulations with various rdx,
+                design method to achieve thermal management of Chiplet-                            r , r , and t . The number of training data for BP-NN model
+                based system.                                                                        dy   s        ox
+                                                                                                   is 64, and the training time of BP-NN model is about 20 s.
+                                                                                                   The predictive accuracy of BP-NN model is affected by the
+                            III. INTELLIGENT DESIGN METHOD FOR                                     number of neurons in hidden layer. So, the optimal number of
+                                      CHIPLET-BASED SYSTEM                                         neurons in hidden layer can be determined by average absolute
+                   In order to fabricate the Chiplet-based system with                             relative error (AARE) between the simulated and predicted
+                the desired thermal distribution, an intelligent optimization                      values, which can be calculated by the following equation:
+                method is proposed to optimize the design parameters of the                                                                N             
+                                                                                                                                       1 XP −S 
+                TTSV array, as presented in Fig. 5. Under the framework                                                  AARE=                   i      i                    (1)
+                                                                                                                                      N            S     
+                of the proposed method, the simulation data are obtained                                                                  i=1        i
+                by FEM, and the mapping relationships between design                               where N represents the amount of data. S and P are the
+                parameters and thermal distribution indexes are described by                                                                                 i         i
+                BP-NN models. According to the desired performance of a                            simulated and predicted values. The AAREs from the BP-NN
+                Chiplet-based system with a TTSV array, the multiobjective                         model using different numbers of neurons in the hidden
+                optimization criteria are formulated, and then the design                          layer for thermal distribution indices LT1±LT3 are shown in
+                parameters are optimized by the modified PSO algorithm.                            Table II. It can be found that the AAREs for LTi(i = 1,2,3)
+                Finally, the design parameters of the TTSV array are obtained                      are first decreased and then increased with increasing the num-
+                by the proposed method. The specific details of each step are                      ber of neurons in hidden layer. When the number are 12±14,
+                described in follows.                                                              the AAREs for LT1±LT3 are the smallest, which means that
+                                                                                                   the BP-NN model has the highest predictive accuracy.
+                A. BP-NNModelsofThermalDistribution Indexes                                            TheBP-NNmodelconsistsofthreeparts:input, hidden, and
+                                                                                                   output layer. The equations of BP-NN for thermal distribution
+                   Due to the advantages such as adaptivity, simplicity, fault                     indices can be expressed as follows:
+                tolerance, and robustness, the BP-NN model is chosen to                                   h (k) = W (k)·[r           f (k);r    f (k);r f (k);t       f (k)]   (2)
+                describe the mapping relationships between design parameters                                1           1         dx         dy          s         ox
+                                                                                                                             −h1(k)
+                and thermal distribution indexes. The BP-NN model is a                                    h2(k) = 1−e                                                          (3)
+                                                                                                                             −h1(k)
+                prediction model, and it has been developed and utilized in the                                       1+e
+                modeling and optimization of complex engineering problems.                             LTif(k) = W2(k)·h2(k),              (i = 1,2,3,4,5)                     (4)
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 
+                WANGetal.:INTELLIGENTDESIGNMETHODOFTTSVFORTHERMALMANAGEMENTOFCHIPLET-BASEDSYSTEM                                                                              5277
+                                                   TABLEII
+                  AARESFROMBP-NNMODELSUTILIZING DIFFERENT NUMBER OF
+                     NEURONS IN HIDDEN LAYER FOR PTS OF DIFFERENT LAYERS
+                                                                                                   Fig. 6.  Optimization results of proposed method under 20 independent
+                                                                                                   runs. (a) Best fitness. (b) TTSV array pitch in X-and Y-directions.
+                                                                                                   (c) Radius and oxide thickness of TTSV unit. (d) Thermal distribution
+                where W1 and W2 represent the weight matrices. h1 is the                           indices.
+                input of the hidden layer. h2 is the output of the hidden layer.
+                r , r , r , and t          are the TTSV array pitches in X- and
+                 dx    dy    s         ox                                                          TTSV array can be optimized by the proposed method, and
+                Y-directions, the radius of the TTSV unit, and the thickness of                    the parameters are shown in Table III. On the one hand, the
+                the oxide layer, respectively. LTi(i = 1,2,3,4,5) are the PTs.                     desired PT should be determined as low as possible. On the
+                k is the kth iteration.                                                            other hand, the desired PTs are determined based on extensive
+                                                                                                   simulation analysis. According to Fig. 3, it can be seen that
+                B. Multiobjective Optimization Criterion for                                       the ranges of simulated PTs LT1±LT3 for the three-chips
+                Chiplet-Based System With TTSV Array                                               Chiplet-based system are [326.46 349.05], [322.59 341.74],
+                   In this research, the thermal distribution indices for a                        and [309.82 317.31] K, respectively. Thus, the determined
+                Chiplet-based system with a TTSV array are the PT of three                         desired PTs LT1±LT3 for the three-chips Chiplet-based system
+                layers. Therefore, the multiobjective optimization criteria can                    are 340, 335, and 315 K, respectively. The range of particle
+                be expressed as                                                                    position is equal to the range of the design parameters of
+                                            n                                                      TTSV array, and the range of particle velocity is determined
+                                    F =X(1/n)(LTi −LTides)2                                 (5)    by manual debugging and experience. In order to balance
+                                          i=1                                                      the exploration ability and development ability of the PSO
+                where n is the number of chips (n = 3 or n = 5). LTides                            algorithm, the velocity should be set in a suitable range.
+                represent desired temperature values for LTi.                                      When the maximum velocity is large, the PSO algorithm
+                                                                                                   has strong exploration ability, but the particles easily over
+                C. Design Parameters Optimization Method Based on                                  the optimal position. When the maximum velocity is small,
+                PSOAlgorithm                                                                       the PSO algorithm has strong development ability, but the
+                   In this research, the PSO is adopted to obtain the optimal                      convergence speed is slow, and it is easy to fall into the local
+                design parameters of the TTSV array in the Chiplet-based                           optimal solution [42]. Generally, the maximum velocity is set
+                system. The intelligent design method is established under                         to 10%±20% of the particle range. In order to reduce the
+                the framework of a modified PSO algorithm with linear                              randomerrorofPSO-LDIWalgorithm,theproposedmethodis
+                decreasing inertia weight (PSO-LDIW). First, the parameters                        performed 20 independent runs, and the optimization results
+                of the PSO-LDIW algorithm and multiobjective optimization                          are shown in Fig. 6. The 20 runs are independent of each
+                criteria should be initialized. Second, the trained BP-NN                          other and do not make any changes. The best fitness is shown
+                models are used to predict the thermal distribution indices                        in Fig. 6(a). Obviously, the proposed method is reliable and
+                of the Chiplet-based system based on the design parameters                         effective because the best fitness values of 20 runs are almost
+                of the TTSV array. Third, the multiobjective optimization                          the same. If the best fitness values of 20 independent runs
+                criteria can be determined by the predicted and desired thermal                    are different, which implies that the developed method is
+                distribution indices. Fourth, the design parameters of the TTSV                    instability. Thus, the best fitness is utilized to quantify the
+                array can be determined by the PSO-LDIW algorithm. Finally,                        reliability and effectiveness of developed method.
+                                                                                                       Because the design parameters (r , r , r , and t ) under
+                the optimal design parameters of the TTSV array can be                                                                            dx    dy   s         ox
+                obtained.                                                                          20 independent runs are almost the same, and they are 32.83,
+                                                                                                   30.53, 4.63, and 0.15 µm, respectively, so the obtained param-
+                D. Implementation of the Proposed Method                                           eters are optimal, as shown in Fig. 6(b) and (c). The thermal
+                                                                                                   distribution indices of the three-chips Chiplet-based system
+                   In order to achieve the desired thermal distribution indices                    obtained at the optimized parameters are shown in Fig. 6(d),
+                of the Chiplet-based system, the design parameters of the                          which can be seen that the temperature values of LT1±LT3
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 
+               5278                                                                      IEEETRANSACTIONSONELECTRONDEVICES,VOL.70,NO.10,OCTOBER2023
+                                                                                        TABLEIII
+                                                     PARAMETERS OF THE PROPOSED METHOD FOR CHIPLET-BASED SYSTEM
+                                                                                                                               TABLEIV
+                                                                                                     PERFORMANCE OF DESIRED, OPTIMIZED AND SIMULATED
+               Fig. 7.   Simulated results of Chiplet-based system. (a) Three chips.
+               (b) Five chips.
+                                                                                              as shown in Fig. 8(a). The three planes are formed by planes
+                                                                                               Z = 150, Z = 230, and Z = 310 µm. Obviously, the internal
+                                                                                              temperature of the TTSV array varied with the height, this
+                                                                                              is because the temperature change is a gradual process. The
+                                                                                              LT1±LT3 obtained by FEM simulation is 340.81, 334.76, and
+                                                                                              314.85 K, which agree well with the desired ones (340, 335,
+                                                                                              and 315 K). In order to better evaluate the effectiveness of
+               Fig. 8.  Temperature curve. (a) Three chips. (b) Five chips.                   the developed method, the number of Chips is added to five,
+                                                                                              and the desired PT is shown in Table III. The temperature
+                                                                                              curve [point (0, 0, 0) to point (400, 400, 500)] of five chips
+               are 340.44, 334.50, and 314.92 K, respectively. Thus, the                      is shown in Fig. 8(b). The optimized rdx, rdy, rs, and tox are
+               thermal distribution indexes LT1±LT3 well agree with the                       25.17, 25, 10, and 0.41 µm, respectively, and the simulation
+               desired ones. Therefore, the proposed method can efficiently                   result is presented in Fig. 7(b). In the thermal simulation
+               optimize the design parameters of TTSV array to achieve                        of a five-chips Chiplet-based system, the LT1±LT5 obtained
+               thermal management.                                                            by FEM simulation are 319.28, 329.44, 336.55, 341.38, and
+                                                                                              344.2 K, which agree well with the desired ones (320, 330,
+                             IV. VERIFICATION AND DISCUSSION                                  335, 340, and 345 K). Therefore, the proposed method can
+                  In order to verify the effectiveness of the proposed method,                efficiently optimize the parameters of TTSV array to achieve
+               the FEM simulation experiment is conducted. In addition,                       relatively low and uniform thermal distribution, and it can be
+               the thermal management effect of a Chiplet-based system is                     utilized to design the high reliability Chiplet-based system.
+               discussed.
+                                                                                              B. Comparison and Discussion
+               A. Verification by FEM Simulation                                                 The desired, optimized, and simulated thermal distribution
+                  In order to verify the effectiveness of the proposed method,                indices of the Chiplet-based system are shown in Table IV.
+               the COMSOL software is used to simulate the Chiplet-based                      The LT1 of simulated and optimized are slightly larger than
+               system with a TTSV array according to the optimized param-                     the desired ones, while the LT2 and LT3 are slightly smaller
+               eters, and the simulation results are shown in Fig. 7. Based                   than the desired ones. The errors between the optimized and
+               on the simulation data, the intelligent design method is                       simulated thermal distribution indices are all less than 0.01%.
+               developed to obtain the optimal design parameters of TTSV                      This is because the accuracy of BP-NN model is very high.
+               array for Chiplet-based integrated system. Three XY planes                     In addition, the simulated and optimized thermal distribution
+               located inside the Chiplet-based system are selected and the                   indices well consent to the desired ones. This is because the
+               temperature data from bottom to top surfaces are extracted,                    design parameters can be effectively optimized by proposed
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 
+             WANGetal.:INTELLIGENTDESIGNMETHODOFTTSVFORTHERMALMANAGEMENTOFCHIPLET-BASEDSYSTEM                                             5279
+             method to achieve the desired performance indices. The            complex multitier cases. If the parameters have been changed,
+             optimal design parameters can be obtained based on the            the optimal design solution can be automatically and intelli-
+             proposed method for the desired thermal distribution indexes.     gently obtained according to the developed method. In the
+             From Fig. 8, it can be found that the temperature differences     future, the thermal management technology of large-scale
+             of three surfaces are all less than 3.7 K, which indicates        Chiplet-based system, including power management chips,
+             that the relatively low and uniform thermal distribution of       computing chips, memory chips, large-scale TTSV arrays, etc.,
+             Chiplet-based system can be obtained by the proposed method.      will be investigated, and the large database for Chiplet-based
+               In the proposed intelligent design method, the orthog-          system will be established. The thermal management problem
+             onal design is utilized to conduct the FEM simulation             of large-scale Chiplet-based system is more complex, and the
+             design for decreasing the number of simulation experiments.       DNNwillbeadopttoconducttheseinvestigations. In addition,
+                                                                   1       1
+             In this research, the CPU of the computer is Intel       Xeon     the thermal management technology considering the tempera-
+             Gold 6242R. The random access memory is 128 GB. In the            ture uniformity, nonuniform power maps, different material
+             traditional design method, the FEM software is used to obtain     properties, multiphysics coupling design, and the keep-out
+             the design scheme through the iterative computation and com-      zone will also be investigated. When the characteristic size of
+             parison. The traditional design methods rely on the experts’      the system is a few nanometers, the dominant factor of heat
+             experience, and the design parameters cannot be effectively       transfer along the nanostructured material may be the Kapitza
+             optimized to achieve the thermal management of Chiplet-based      resistance rather than the thermal conductivity of the material.
+             system. The run time of BP-NN model is 0.55 s, while the run      If the composite materials with high thermal conductivity are
+             time of FEM software for three-chips Chiplet-based system         used in the TTSV unit, the thermal dissipation capability of
+             with TTSV array is 653 s. If the parameter is changed, the        TTSVunitwillbebetter. Thus, the composite materials will be
+             BP-NN model need to be retrained. Because the number of           adopted to fill the TTSV structure to investigate the interfacial
+             five-chips Chiplet-based system is changed, so the BP-NN          thermal resistance effect between the various components.
+             modelneedtoberetrained. However, the purpose of this inves-
+             tigation is to propose a system design method to improve the                            V. CONCLUSION
+             design efficiency of a Chiplet-based system. In the developed        In this research, an intelligent design method of TTSV array
+             method, the BP-NN is faster than FEM. In addition, the pro-       for thermal management of Chiplet-based system is proposed
+             posed design method is an automatic and intelligent method,       based on BP-NN models and PSO algorithm. The proposed
+             which does not rely on the experts’ experience. If the acquired   method can achieve a relatively low thermal distribution of a
+             database is large enough to cover large amount of design cases    Chiplet-based system. The main conclusions of this research
+             of Chiplet-based system, there is no need to retrain the BP-NN    can be summarized as follows:
+             model. Obviously, the FEM software is time-consuming and             1) The detailed FEM model for Chiplet-based system
+             low efficient, which can increase the develop cycle and cost.           model with the TTSV array is established. The rela-
+             Thus, the intelligent design method of TTSV for thermal                 tionship between the design parameters and thermal
+             management of Chiplet-based system is proposed based on                 distribution indices is analyzed, and it is irregular and
+             the BP-NN models and PSO algorithm, which does not require              complex.
+             the manual iteration. The run time of the proposed intelligent       2) The mapping relationships between design parameters
+             design method depends on the population size and the max-               and thermal distribution indices are described by BP-NN
+             imum generation. Generally, the design cycle of traditional             models, and the AAREs of three PTs are all less than
+             design method is several days to month for different designers          0.000045%.
+             and requirements, but the run time of the developed intelligent      3) The intelligent design method is proposed to achieve the
+             design method for one independent run is 310 s. So, the design          thermal management of Chiplet-based system based on
+             cycle is increased by the developed intelligent design method.          the PSO algorithm. The obtained thermal distribution
+             The robustness of traditional design method is poor. Due to             indices for three chips (340.81, 334.76, and 314.85 K)
+             the good global and local searchability and good robustness,            well agree with the desired ones (340, 335, and 315 K).
+             the modified PSO algorithm is used to obtain the optimized
+             design parameters of TTSV array for thermal management of
+             Chiplet-based system, which can improve the design efficiency                               REFERENCES
+             and do not rely on experts’ experience. In this research, a sys-   [1] J. A. Burns et al., ªA wafer-scale 3-D circuit integration technol-
+             tematic design method of TTSV for thermal management of                ogy,º IEEE Trans. Electron Devices, vol. 53, no. 10, pp. 2507±2516,
+             Chiplet-based system is proposed based on BP-NN model and              Oct. 2006, doi: 10.1109/TED.2006.882043.
+             PSO algorithm, which is an automatic and intelligent design        [2] M. M. Shulaker et al., ªThree-dimensional integration of nanotechnolo-
+                                                                                    gies for computing and data storage on a single chip,º Nature, vol. 547,
+             method. The proposed method is more effective than the tradi-          no. 7661, pp. 74±78, Jul. 2017, doi: 10.1038/nature22994.
+             tional design method which relies on the experts’ experience.      [3] B. W. Ku, K. Chang, and S. K. Lim, ªCompact-2D: A physi-
+             The three-tiers multichip system is only used to verify the            cal design methodology to build two-tier gate-level 3-D ICs,º IEEE
+             feasibility and effectiveness of the developed intelligent design      Trans. Comput.-Aided Design Integr. Circuits Syst., vol. 39, no. 6,
+                                                                                    pp. 1151±1164, Jun. 2020, doi: 10.1109/TCAD.2019.2952542.
+             method, and the developed method can also be applied in more       [4] X. Zhang, P. K. Jo, M. Zia, G. S. May, and M. S. Bakir, ªHeterogeneous
+                                                                                    interconnect stitching technology with compressible microinterconnects
+                                                                                    for dense multi-die integration,º IEEE Electron Device Lett., vol. 38,
+               1Registered trademark.                                               no. 2, pp. 255±257, Feb. 2017, doi: 10.1109/LED.2016.2643502.
+                       Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 
+                5280                                                                        IEEETRANSACTIONSONELECTRONDEVICES,VOL.70,NO.10,OCTOBER2023
+                 [5] L. Qian, Y. Xia, X. He, K. Qian, and J. Wang, ªElectrical modeling          [24] J. E. Dayhoff and J. M. DeLeo, ªArtificial neural networks,º
+                     and characterization of silicon-core coaxial through-silicon vias in 3-D          Cancer,    vol.  91,   pp. 1615±1635,     Apr.   2001,   doi:   10.1002/
+                     integration,º IEEE Trans. Compon., Packag., Manuf., Technol., vol. 8,             1097-0142(20010415)91:8+<1615::AID-CNCR1175>3.0.CO;2-L.
+                     no. 8, pp. 1336±1343, Aug. 2018, doi: 10.1109/TCPMT.2018.2854829.           [25] D. E. Rumelhart, G. E. Hinton, and R. J. Williams, ªLearning rep-
+                 [6] E. Song, K. Koo, J. S. Pak, and J. Kim, ªThrough-silicon-via-based                resentations by back-propagating errors,º Nature, vol. 323, no. 6088,
+                     decoupling capacitor stacked chip in 3-D-ICs,º IEEE Trans. Compon.,               pp. 533±536, Oct. 1986, doi: 10.1038/323533a0.
+                     Packag., Manuf., Technol., vol. 3, no. 9, pp. 1467±1480, Sep. 2013, doi:    [26] M. A. Abuzneid and A. Mahmood, ªEnhanced human face recogni-
+                     10.1109/TCPMT.2013.2257928.                                                       tion using LBPH descriptor, multi-KNN, and back-propagation neu-
+                 [7] S.-R. Kim, J. H. Lee, and S. S. Lee, ªNovel sidewall interconnection              ral network,º IEEE Access, vol. 6, pp. 20641±20651, 2018, doi:
+                     using a perpendicular circuit die for 3-D chip stacking,º IEEE Trans.             10.1109/ACCESS.2018.2825310.
+                     Compon., Packag., Manuf., Technol., vol. 5, no. 9, pp. 1265±1272,           [27] J. Wei, ªApplication of hybrid back propagation neural network in image
+                     Sep. 2015, doi: 10.1109/TCPMT.2015.2457419.                                       compression,º in Proc. 8th Int. Conf. Intell. Comput. Technol. Automat.
+                 [8] Y.-C. Hu et al., ªA novel flexible 3-D heterogeneous integration scheme           (ICICTA), pp. 209±212, Jun. 2015, doi: 10.1109/ICICTA.2015.60.
+                     using electroless plating on chips with advanced technology node,º IEEE     [28] L. Xu, Z. Zhang, Y. Yao, and Z. Yu, ªImproved particle swarm
+                     Trans. Electron Devices, vol. 62, no. 12, pp. 4148±4153, Dec. 2015, doi:          optimization-based BP neural networks for aero-optical imaging devi-
+                     10.1109/TED.2015.2487041.                                                         ation prediction,º IEEE Access, vol. 10, pp. 26769±26777, 2022, doi:
+                 [9] Y. Yan, H. Yan, S. Yin, L. Zhang, and L. Li, ªSingle/multi-objective              10.1109/ACCESS.2021.3102669.
+                     optimizations on hydraulic and thermal management in micro-channel          [29] Y. C. Lin, D.-D. Chen, M.-S. Chen, X.-M. Chen, and J. Li, ªA
+                     heat sink with bionic Y-shaped fractal network by genetic algorithm               precise BP neural network-based online model predictive control strat-
+                     coupled with numerical simulation,º Int. J. Heat Mass Transf., vol. 129,          egy for die forging hydraulic press machine,º Neural Comput. Appl.,
+                     pp. 468±479, Feb. 2019, doi: 10.1016/j.ijheatmasstransfer.2018.09.120.            vol. 29, no. 9, pp. 585±596, May 2018, doi: 10.1007/s00521-016-
+                [10] Y. Shin, S. E. Kim, and S. Kim, ªThermal assessment of copper through             2556-5.
+                     silicon via in 3D IC,º Microelectron. Eng., vol. 156, pp. 2±5, Apr. 2016,   [30] D.-D. Chen, Y. C. Lin, and F. Wu, ªA design framework for
+                     doi: 10.1016/j.mee.2016.03.018.                                                   optimizing forming processing parameters based on matrix cellular
+                [11] T.-Y. Chiang, K. Banerjee, and K. C. Saraswat, ªEffect of via sep-                automaton and neural network-based model predictive control meth-
+                     aration and low-k dielectric materials on the thermal characteristics             ods,º Appl. Math. Model., vol. 76, pp. 918±937, Dec. 2019, doi:
+                     of Cu interconnects,º in IEDM Tech. Dig., 2000, pp. 261±264, doi:                 10.1016/j.apm.2019.07.023.
+                     10.1109/IEDM.2000.904306.                                                   [31] M. Han, L. Cheng, and H. Meng, ªApplication of four-layer neural
+                [12] D. Song, G. Dong, Y. Yao, Z. Zhu, and Y. Yang, ªOptimization and                  network on information extraction,º Neural Netw., vol. 16, nos. 5±6,
+                     analysis of microchannels under complex power distribution in 3-D                 pp. 547±553, Jun. 2003, doi: 10.1016/S0893-6080(03)00120-5.
+                     ICs,º IEEE Trans. Compon., Packag., Manuf., Technol., vol. 12, no. 3,       [32] W. Wang, W. Liu, and H. Chen, ªInformation granules-based BP
+                     pp. 537±543, Mar. 2022, doi: 10.1109/TCPMT.2022.3155148.                          neural network for long-term prediction of time series,º IEEE
+                [13] A. Gracias, N. Tokranova, B. C. M. Thelen, and J. Castracane, ªInfluence          Trans. Fuzzy Syst., vol. 29, no. 10, pp. 2975±2987, Oct. 2021, doi:
+                     of diamond nanoparticles on the thermal properties of benzocyclobutene            10.1109/TFUZZ.2020.3009764.
+                     (BCB),º Physica Status Solidi A, Appl. Mater. Sci., vol. 208, no. 3,        [33] S. Pandey and P. R. Panda, ªNeuroMap: Efficient task mapping
+                     pp. 684±690, Mar. 2011, doi: 10.1002/pssa.201026601.                              of deep neural networks for dynamic thermal management in high-
+                [14] B. He, B. Mortazavi, X. Zhuang, and T. Rabczuk, ªModeling Kapitza                 bandwidth memory,º IEEE Trans. Comput.-Aided Design Integr.
+                     resistance of two-phase composite material,º Compos. Struct., vol. 152,           Circuits Syst., vol. 41, no. 11, pp. 3602±3613, Nov. 2022, doi:
+                     pp. 939±946, Sep. 2016, doi: 10.1016/j.compstruct.2016.06.025.                    10.1109/TCAD.2022.3197698.
+                [15] A. Todri, S. Kundu, P. Girard, A. Bosio, L. Dilillo, and A. Virazel,        [34] E. Samaniego et al., ªAn energy approach to the solution of par-
+                     ªA study of tapered 3-D TSVs for power and thermal integrity,º IEEE               tial differential equations in computational mechanics via machine
+                     Trans. Very Large Scale Integr. (VLSI) Syst., vol. 21, no. 2, pp. 306±319,        learning: Concepts, implementation and applications,º Comput. Meth-
+                     Feb. 2013, doi: 10.1109/TVLSI.2012.2187081.                                       ods Appl. Mech. Eng., vol. 362, Apr. 2020, Art. no. 112790, doi:
+                [16] B. Goplen and S. S. Sapatnekar, ªPlacement of thermal vias in 3-D ICs             10.1016/j.cma.2019.112790.
+                     using various thermal objectives,º IEEE Trans. Comput.-Aided Design         [35] Z. Ren, A. Alqahtani, N. Bagherzadeh, and J. Lee, ªThermal TSV
+                     Integr. Circuits Syst., vol. 25, no. 4, pp. 692±709, Apr. 2006, doi:              optimization and hierarchical floorplanning for 3-D integrated circuits,º
+                     10.1109/TCAD.2006.870069.                                                         IEEE Trans. Compon., Packag., Manuf., Technol., vol. 10, no. 4,
+                [17] S. Govind Singh and C. Seng Tan, ªThermal mitigation using thermal                pp. 599±610, Apr. 2020, doi: 10.1109/TCPMT.2020.2970382.
+                     through silicon via (TTSV) in 3-D ICs,º in Proc. 4th Int. Microsyst.,       [36] T. H. Nguyen, H. Morishita, Y. Koyanagi, K. Izui, and S. Nishiwaki,
+                     Packag., Assem. Circuits Technol. Conf., Oct. 2009, pp. 182±185, doi:             ªA multi-level optimization method using PSO for the optimal
+                     10.1109/IMPACT.2009.5382145.                                                      design of an L-shaped folded monopole antenna array,º IEEE Trans.
+                [18] P.-Y. Hsu, H.-T. Chen, and T. Hwang, ªStacking signal TSV for thermal             Antennas Propag., vol. 62, no. 1, pp. 206±215, Jan. 2014, doi:
+                     dissipation in global routing for 3-D IC,º IEEE Trans. Comput.-Aided              10.1109/TAP.2013.2288785.
+                     Design Integr. Circuits Syst., vol. 33, no. 7, pp. 1031±1042, Jul. 2014,    [37] D.-D. Chen, Y.-C. Lin, and X.-M. Chen, ªA strategy to control
+                     doi: 10.1109/TCAD.2014.2307488.                                                   microstructures of a Ni-based superalloy during hot forging based on
+                [19] G. C. Gagan, S. G. Singh, and A. Dutta, ªOptimized ttsv structure for             particle swarm optimization algorithm,º Adv. Manuf., vol. 7, no. 2,
+                     heat mitigation and energy harvesting,º in Proc. 12th IEEE Int. Conf.             pp. 238±247, Jun. 2019, doi: 10.1007/s40436-019-00259-0.
+                     Solid-State Integr. Circuit Technol. (ICSICT), Oct. 2014, pp. 1±3, doi:     [38] D. Chen et al., ªParticle swarm optimization algorithm-based design
+                     10.1109/ICSICT.2014.7021616.                                                      method for ultrasonic transducers,º Micromachines, vol. 11, no. 8,
+                [20] B. Shi, A. Srivastava, and A. Bar-Cohen, ªHybrid 3D-IC cooling                    p. 715, Jul. 2020, doi: 10.3390/mi11080715.
+                     system using micro-fluidic cooling and thermal TSVs,º in Proc.              [39] D. Li, X. Wang, D. Chen, Q. Zhang, and Y. Yang, ªA precise ultra-
+                     IEEE Comput. Soc. Annu. Symp. (VLSI), Aug. 2012, pp. 33±38, doi:                  wideband ranging method using pre-corrected strategy and particle
+                     10.1109/ISVLSI.2012.29.                                                           swarm optimization algorithm,º Measurement, vol. 194, May 2022,
+                [21] F. Wang, Y. Li, and N. Yu, ªA highly efficient heat-dissipation system            Art. no. 110966, doi: 10.1016/j.measurement.2022.110966.
+                     using RDL and TTSV array in 3D IC,º in Proc. IEEE Int. Conf.                [40] Y. Yang, X. Wang, D. Li, D. Chen, and Q. Zhang, ªAn improved indoor
+                     Electron Devices Solid-State Circuits (EDSSC), Jun. 2019, pp. 1±3, doi:           3-D ultrawideband positioning method by particle swarm optimization
+                     10.1109/EDSSC.2019.8754260.                                                       algorithm,º IEEE Trans. Instrum. Meas., vol. 71, pp. 1±11, Aug. 2022,
+                [22] P.  Mach and Z. Becvar, ªMobile edge computing: A survey                          doi: 10.1109/TIM.2022.3192252.
+                     on architecture and computation offloading,º IEEE Commun. Sur-              [41] H.-C. Chien et al., ªEstimation for equivalent thermal conductivity of
+                     veys Tuts., vol. 19, no. 3, pp. 1628±1656, 3rd Quart., 2017, doi:                 silicon-through vias TSVs used for 3D IC integration,º in Proc. 6th Int.
+                     10.1109/COMST.2017.2682318.                                                       Microsyst., Packaging, Assem. Circuits Technol. Conf. (IMPACT), 2011,
+                [23] W. Zhang, Z. Zhang, S. Zeadally, H.-C. Chao, and V. C. M. Leung,                  pp. 153±156, doi: 10.1109/IMPACT.2011.6117240.
+                     ªMASM:Amultiple-algorithmservicemodelforenergy-delayoptimiza-               [42] H.-P. Dai, D.-D. Chen, and Z.-S. Zheng, ªEffects of random values for
+                     tion in edge artificial intelligence,º IEEE Trans. Ind. Informat., vol. 15,       particle swarm optimization algorithm,º Algorithms, vol. 11, no. 2, p. 23,
+                     no. 7, pp. 4216±4224, Jul. 2019, doi: 10.1109/TII.2019.2897001.                   2018, doi: 10.3390/a11020023.
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:35:11 UTC from IEEE Xplore.  Restrictions apply. 

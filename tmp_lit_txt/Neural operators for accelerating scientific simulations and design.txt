@@ -1,0 +1,614 @@
+            nature reviews physics                                                                               https://doi.org/10.1038/s42254-024-00712-5
+            Perspective                                                                                                                        Check for updates
+            Neural operators for accelerating 
+            scientific simulations and design
+                                          1                     1            2                           2                  1                              2
+            Kamyar Azizzadenesheli, Nikola Kovachki, Zongyi Li , Miguel Liu-Schiaffini , Jean Kossaifi  & Anima Anandkumar      
+            Abstract                                                                                                          Sections
+            Scientific discovery and engineering design are currently limited by                                              Introduction
+            the time and cost of physical experiments. Numerical simulations are                                              Neural networks and neural 
+            an alternative approach but are usually intractable for complex real-                                             operators
+            world problems. Artificial intelligence promises a solution through fast                                          Formulation
+            data-driven surrogate models. In particular, neural operators present                                             Architectures
+            a principled framework for learning mappings between functions                                                    Applications
+            defined on continuous domains, such as spatiotemporal processes  
+            and partial differential equations. Neural operators can extrapolate and                                          Software implementation and 
+                                                                                                                              benchmarks
+            predict solutions at new locations unseen during training. They can be                                            Outlook
+            integrated with physics and other domain constraints enforced at finer 
+            resolutions to obtain high-fidelity solutions and good generalization. 
+            Neural operators are differentiable, so they can directly optimize 
+            parameters for inverse design and other inverse problems. Neural 
+            operators can therefore augment, or even replace, existing numerical 
+            simulators in many applications, such as computational fluid dynamics, 
+            weather forecasting and material modelling, providing speedups of 
+            four to five orders of magnitude.
+            1                             2
+            NVIDIA, Santa Clara, CA, USA.  Caltech, Pasadena, CA, USA.     e-mail: anima@caltech.edu
+            Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                           320
+            Perspective
+            Introduction                                                                   learn directly from observational data and do not suffer from model-
+            The scientific method consists of a set of hypotheses formed through           ling errors present in numerical methods that, for many applications, 
+            inductive reasoning based on observations, which are first systemati-          rely solely on simplified equations. Third, neural operators are deep 
+            cally tested before being iteratively updated. However, testing hypoth-        learning models implemented using deep learning packages, so they 
+            eses in many scientific domains involves slow and expensive real-world         are differentiable by design and can be used directly for inverse prob-
+            experiments, which limits scientists to a small set of hypotheses that         lems such as optimized design generation. In contrast, traditional 
+            are driven by prior knowledge and intuition. If expensive experiments          solvers are usually not differentiable and require many iterations using 
+            could be replaced with faithful computational simulations, that would          methods such as Markov chain Monte Carlo. Fourth, neural operators 
+            vastly expand the hypothesis space for further exploration.                    are democratizing science as running the trained neural operators does 
+                 In principle, it is possible to create such simulations when the          not require the deep domain expertise needed to set up and run many 
+            (approximate) governing laws of many physical, chemical and engi-              traditional solvers. Moreover, many applications, such as weather fore-
+            neering processes are known. The physical world around us is often             casting, that previously required large central processing unit clusters 
+            modelled by governing partial differential equations (PDEs) derived            can now be carried out using consumer desktop graphics processing 
+                                                                                                                                                                14,17,18
+            from first principles, such as the laws of thermodynamics, chemical            units and open-source models, enabling widespread accessibility           .
+                                           1
+            interactions and mechanics . For example, the aerodynamics of cars                  In this Perspective, we introduce neural operators, discuss their for-
+            and planes can be modelled using the Navier–Stokes PDE defined on              mulation and applications, and argue that they will have a  transformative 
+                                            2
+            the geometry of the surface . However, it is currently infeasible to           impact in many applications.
+            run numerical simulations at the scale and fidelity needed to entirely 
+            replace physical experimentation. This is because existing numerical           Neural networks and neural operators
+            methods used in simulations require a fine computational grid to               AI models such as transformers and convolutional neural networks have 
+                                                                                                                                                                    19
+            guarantee convergence of the iterations and the cost of computing              shown impressive performance in domains such as text and images . 
+            increases at least quadratically with the resolution of the grid.              However, in our opinion, standard neural networks have fundamental 
+                 In climate modelling, for example, PDEs are used to simulate the          limitations that make them unsuitable for scientific modelling. First, 
+            future of Earth’s climate, which is critical for policy-making and devel-      they have limited generalization beyond conditions seen during train-
+            oping strategies for climate-change mitigation. In this case, physical         ing. In particular, they are limited to learning and making predictions 
+            experimentation is impossible, so simulations are the only option.             at the resolution of the training data. This is a considerable limitation 
+            However, current numerical methods require massive computing                   because many scientific phenomena occur on continuous domains (for 
+            power to resolve the physics at finer scales where the effects of storms       example fluid flows, wave propagation and material deformation) even 
+            and cloud turbulence can be faithfully reproduced, and even the world’s        though only discretized observations are available for training. A simple 
+                                                              3
+            most powerful supercomputers do not suffice . Moreover, numerical              solution to the above issue that enables pretrained neural networks 
+            methods have other shortcomings pertinent to applications involving            to predict at any resolution is to use standard interpolation methods, 
+            observational data where the governing laws are only partially speci-          such as bilinear interpolation on the predictions made at locations on 
+            fied or inaccurate. Current numerical methods cannot directly exploit          the training grid. However, such approaches perform poorly on many 
+            observational data for such cases, as they are not explicitly data-driven.     processes (for example fluid flows) as they fail to capture finer scales 
+                                                                                                                                           20
+            Additionally, numerical methods are not generally differentiable, thus         accurately (see the discussion of Fig. 1 below) . This is because simple 
+                                                                                      4
+            making inverse problems and design optimization expensive and slow .           interpolation schemes cannot capture scales that are not present in 
+                 Artificial intelligence (AI) is now transforming the ability to create    limited-resolution training data.
+                                                                                    5–7
+            fast, high-fidelity simulations of many complex multiscale processes .              Second, in many applications, the availability of high-resolution data 
+                                                                      8
+            Previous developments such as sparse representation , recurrent neu-           may be limited, and combining it with larger amounts of low-resolution  
+                          9                        10
+            ral networks , reservoir computing  and others have already shown              data during training is not feasible in standard neural networks, which 
+            promise in modelling dynamical systems. The latest advances in AI,             only support fixed-resolution inputs and outputs. Even if modifica-
+                                       11,12
+            termed neural operators       , can model such phenomena and capture           tions are made to incorporate multiple resolutions, such as for climate 
+                                                                                                               21                     22
+            finer scales, leading to high-fidelity solutions. Neural operators are a       modelling datasets , at inputs or outputs , these modifications are not 
+            generalization of neural networks that can learn operators: mappings           principled and have no guarantees for capturing finer scales.
+            between two functions defined on continuous domains. They have                      More generally, neural networks only learn mappings between 
+            several advantages. First, they can serve as fast and accurate surro-          inputs and outputs of fixed dimensions (Fig. 2a); they do not have the 
+            gates for numerical methods and overcome the high computational                expressive power to capture mappings between functions on continu-
+            requirements of numerical methods. Unlike conventional numerical               ous domains, known as operators. In contrast, neural operators can 
+            methods, neural operators can learn an efficient feature representa-           predict the solution at any location in the output domain and are not 
+                                                                                                                              12,23
+            tion, or basis, that does not require a fine grid. Further, once the neural    limited to the grid of training data    (Fig. 2b). They accomplish this by 
+            operator model is trained, the inference is typically a single forward         approximating the underlying operator, which is the mapping between 
+            pass, as opposed to a large number of iterations required in numerical         the input and output function spaces, each of which can be infinite-
+            methods. In addition, because neural operators are AI models, they             dimensional (Fig. 2c). In other words, neural operators approximate 
+            can build on the latest hardware and software advances of accelerated          the continuum mapping even when trained only on discrete data, and 
+                         13
+            computing  to obtain the best possible speedups with the learned               thus they can capture the finer scales more faithfully.
+            representations. This has resulted in 45,000× speedup in the weather                To illustrate the above, Fig. 1 shows the prediction of a neural 
+                     14                                        15                                                                                              11
+            forecast , 26,000× in the automotive industry  and 700,000× in the             operator, the Fourier neural operator (FNO), for fluid dynamics , and 
+                                                                  16
+            prediction of carbon dioxide geological storage , along with many              of UNet, a popular neural network trained at a fixed resolution and then 
+            other scientific computing domains. Second, neural operators can               augmented with trilinear interpolation. Figure 1 depicts the long-term 
+            Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                321
+              Perspective
+                a   Spectrum of Kolmogorov lows                                                    b   Discretization convergence
+                    1010                                           NN + interpolation
+                                                                   N ata
+                    109                                             N ata + ­E
+                                                                   roun trut
+                                                                                                        0.03
+                    108
+                  gy
+                    107                                                                               or
+                  Ener                                                                                  0.02
+                                                                                                      st err
+                                                                                                      e
+                      6                                                                               T
+                    10
+                                                                                                                                                                                Net
+                    105                                                                                                                                                         N
+                                                                                                         0.01                                                                   N
+                                                                                                                                                                                Net parameter
+                                                                                                                                                                                inrease
+                    104
+                              10    20     30     40    50     60     70     80                                 85      141        211                             421
+                                            Wavenumber                                                                                         Resolution
+              Fig. 1 | Spectral overall analysis. a, The x-axis is the Fourier wavenumber and               operators are discretization-convergent, meaning that the model converges to 
+              y-axis is the energy per spectrum. In the isotropic Navier–Stokes equation                    the target continuum operator as the discretization is refined. This is illustrated 
+              (Kolmogorov flows), the cornerstone of microscale turbulent flow, Fourier                     using the Darcy equation which describes a fluid flow in a porous medium. Each 
+              neural operators (FNOs) can extrapolate to unseen frequencies using only                      architecture — UNet, FNO and graph neural operator (GNO) — was trained at 
+              limited-resolution training data98. The low frequencies to the left of the vertical           a given resolution and tested at that same resolution12 (no superresolution). 
+              dashed line are the training frequency resolution, and the models extrapolate                 FNO and GNO have consistent errors as resolution increases, but UNet has 
+              to higher frequencies on the right of the dashed line. A physics-informed                     increasing errors because the size of its receptive field changes with resolution, 
+              neural operator (PINO) uses both training data and the partial differential                   and it does not enjoy the guarantees of discretization convergence. UNet is only 
+              equation (PDE) for the loss function, and can perfectly recover the ground-truth              able to maintain the same test error as the resolution increases if the number of 
+              spectrum. A trained UNet (a popular neural network) with trilinear interpolation              parameters increases. In this case, the convolutional filter size was increased for 
+              (NN + interpolation) has severe distortions at higher frequencies, beyond the                 resolutions 85, 141, 211 and 421, corresponding to about 2.2M, 6.0M, 11.8M and 
+              resolution of training data. b, Resolution invariance. The x-axis is the resolution           19.3M parameters, respectively.
+              of the test data, and the y-axis is the test error at that given resolution. Neural 
+              statistics of interest, that is, the spectrum of the fluid, representing                      Formulation
+              the per frequency characteristics of the chaotic system, emulated                             Neural operators learn operators and thus can predict at any point in 
+              using the trained models for the benchmark Kolmogorov chaotic flow.                           the continuous domain. In the supervised learning setting, the input 
+              FNO follows the trend of ground-truth energy decay in the frequency                           and output functions are discretized to obtain the training data. For 
+              domain, even beyond the training frequencies, whereas UNet with                               instance, in the case of weather forecasting, the input consists of vari-
+              interpolation fails to predict the finer scales. The behaviour seen in                        ables such as temperature and wind speed on the Earth’s surface and 
+              Fig. 1b demonstrates that empirically, FNOs and other neural operators                        in the atmosphere, whereas the output represents the values of the 
+              can do zero-shot superresolution and extrapolate to unseen higher                             same variables at a later time. Although the variables are defined on 
+              frequencies, demonstrated on the benchmark stationary Darcy flow                              the continuous space-time domain, the training data are available 
+                                                                       24
+              equation. In contrast, as discussed elsewhere , band-limited operators                        only at a certain discretization — for example, in the ERA-5 reanalysis 
+                                                                      25                                                                                     27
+              and representation-equivalent operators , such as spectral neural                             dataset, it is 25 km and hourly intervals . The goal of neural operators 
+                           26
+              operators , cannot generate new (higher) frequencies because their                            is to make predictions on continuous domains, despite the available 
+              representation space is fixed. Therefore, they introduce an irreducible                       training data being discrete.
+              approximation error based on the size of the predefined representation 
+              space. As the goal of operator learning is to find the underlying solution                    Design of a neural operator
+              operator in the continuum, we believe that discretization convergence                         Standard neural networks consist of a series of blocks that perform 
+              is a more useful strategy. However, the error cannot be expected to be                        linear functions, such as fully connected or convolutional layers, fol-
+              (nearly) zero, as the model, during training, cannot access informa-                          lowed by nonlinear activations such as rectified linear units. Neural 
+                                                                                                                         12
+              tion at the finer scales owing to the limited resolution of the samples.                      operators  follow the same philosophy, that is, linear blocks followed 
+              In scientific modelling, one usually has access to physics constraints                        by nonlinear transformations, the difference being that linear blocks 
+              such as PDEs that fully constrain the system or conservation laws and                         in neural operators are realized by integral operators instead of lin-
+              symmetries that partially specify the system. The physics-informed                            ear functions in fixed dimensions. Similar to the neural network class 
+                                             24
+              neural operator (PINO)  incorporates both data and physics losses,                            that subsumes general linear models as their single-layer special case, 
+              leads to even better extrapolation to higher frequencies and almost                           the neural operator class subsumes linear integral operators, such as 
+              perfectly matches the ground-truth spectrum in Fig. 1a.                                       solution operators to linear PDEs, commonly realized using Green’s 
+              Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                                           322
+             Perspective
+              a                                                     b                                                      c
+                s                                                     s                                                     s
+                alue                                                  alue                                                  alue
+                V                                                     V                                                     V
+                                                                                                     Input points                                       Irregular-grid input
+                                                                                                     Output points                                      Superresolution output
+                                                  Input points                                       Input function                                     Input function
+                                                  Output points                                      Output function                                    Output function
+                                    Domain                                                Domain                                                Domain
+             Fig. 2 | Comparison of neural networks with neural operators. a, A neural           when training data are on a fixed grid. c, Because a neural operator maps between 
+             network learns a mapping between input and output points on a fixed, discrete       functions, it accepts inputs outside the training grid and can do superresolution. 
+             grid. b, A neural operator maps between functions on continuous domains, even       Figure courtesy of Benedikt Jenik.
+             function integration, as their single-layered special case. The linear             Zero-shot superresolution and evaluation
+             integral operator is given by                                                      Two properties follow directly from the discretization convergence 
+                                                   N                                            property: first, zero-shot superresolution, where a trained neural opera-
+                                                                                            )   tor can receive an input sample at a given resolution and output a pre-
+                               ∫κx(,yv)(yy)d ≈(κx,)yv()yyΔ,                               (1
+                                                  ∑        iii                                  diction at a higher resolution than what was provided during training; 
+                                                   i
+                                                                                                second, zero-shot superevaluation, where a trained neural operator 
+             where v( ⋅ ) is the input function to the operator block, and κ(x,y)               can be evaluated on a new, finer discretization than what was used 
+             denotes a learnable kernel between any two points x and y in the                   during training and produce a solution on that new resolution, thus 
+             output and input domains, respectively. A neural operator consists                 potentially resolving higher-frequency details.
+             of linear integral operator blocks given by equation (1), followed by 
+             pointwise nonlinear activations, for example Gaussian error linear                 Parameterization of the kernel
+                           23
+             units (GeLU) . Rectified linear units (ReLU) are usually avoided because           Although there are several choices to parameterize equation (1),  
+                                    28
+             of non-smoothness . The expressiveness and capacity of the model                   as outlined below, the choice of nonlinear activation is standard — for 
+             are determined by the number of layers and the expressivity of the                 example, Gaussian error linear units. In addition, neural operators 
+             mentioned submodels, for which domain experts’ knowledge is advised                include pointwise lifting and projection operations. The lifting opera-
+             for proper designs, proper fit and avoiding overfitting. See Fig. 3 for            tor encodes the input function values to a very high dimension, greatly 
+             the detailed architecture of layers of integral operators.                         increasing the model expressivity and allowing integration operation 
+                  Note that the query point x in the output domain in equation (1)              in a very high dimension. The projection operator decodes the high-
+             need not be limited to the discrete grid of the training data and can be           dimensional representation to the function dimension and projects the 
+             any point in the continuous domain. Similarly, the input discretiza-               feature representation to the native output dimension. This is especially 
+             tion, that is, grid points y, can be chosen arbitrarily on which the input         important when the input and output functions are scalar-valued or 
+                                         i
+             function a( ⋅ ) is specified, and as the discretization becomes finer              have a low-dimensional range space. If the kernel is learned in such 
+             (N in the Riemannian sum (1) grows larger), this approximation becomes             low dimensions, it has limited expressivity, and the lifting operation 
+             more accurate. Neural operators can thus take input functions at any               expands it into arbitrary channels, enriching the model capacity and 
+                                                                                                               29
+             discretization and be queried for predicting solutions at any point in             expressivity . The lifting and projection operations are pointwise 
+             the domain, even if the query point is outside the training grid. Neural           and can be linear or nonlinear; however, nonlinear operations are, in 
+                                                                                                                              30
+             operators possess a property known as discretization convergence,                  general, more expressive . Given an architecture and training data, 
+             meaning that they converge to a unique operator in the limit of mesh               neural operators can be trained end-to-end using standard algorithms 
+                           12                                                                                            31
+             refinement . This is a crucial characteristic that is required of any              such as SGD or Adam , similar to neural networks.
+             sound approach to scientific computing and is possessed by daily used 
+             integral approximation methods such as Riemannian sum. Intuitively,                Architectures
+             this characteristic follows from the integral approximation method,                Many architectures have been proposed to parameterize the linear 
+             such as Riemannian sum, Galerkin or Fourier spectral, used in neural               integral operation in equation (1), some drawing inspiration directly 
+             operators. Neural networks do not have such guarantees, even when                  from existing numerical methods: for example, the kernel κ(x,y) in equa-
+             augmented with interpolation methods such as bilinear interpolation.               tion (1) is constrained to be separable in x and y, yielding the DeepONet 
+             Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                        323
+              Perspective
+              model32. Although the original DeepONet model is constrained to be                            extended to nonlinear integral transforms, such as κ(x,y,a), where 
+                                                                                   33,34
+              on a fixed input grid, later extensions of DeepONet                        remove this        the kernel can vary with the input function a( ⋅ ). One such example 
+                                                                                                                                                        19
+              limitation, which preserves discretization convergence, and thus is a                         is the transformer architecture . For the special case of a fixed  
+              special case of neural operators.                                                             grid with shared input and output domain, the kernel has the form 
+                                                             23                                                                     QK
+                    Graph neural operators (GNO)  are architectures that are oper-                                                                            , where m is the inner dimension 
+                                                                                                            κx(,ya,):=exp⟨Wa()xW,(ay)⟩/ m
+              ator extensions of graph neural networks35 and support the kernel                             of the self-attention layer, and the integration is defined as
+              integration on a fixed-radius ball. When the ground-truth operator is 
+                                                                                                                                                             QK
+                                                                                                                                                                                
+                                                                                                                                                    exp⟨        (),()⟩
+              non-local, GNO has limited expressivity when the radius is small, as it                                            V                        WaxWay V
+                                                                                                                ((,,))              ()d=                                          Wa()yy
+                                                                                                            ∫∫SSκxyaWayy                                                                     d(2)
+              cannot capture the global effects, owing to a limited receptive field.                                                                             m              
+                                                                                                                                                                                
+              Using GNO becomes computationally expensive if the receptive field is  
+                                                                                                                     S                                        Q    K         V
+              increased and the radius for the neighbourhood becomes large. To                              where   is the softmax function and W , W  and W  are the query, key 
+                                                                                                                                                                          51
+              overcome this problem and to fit a non-local operator, hierarchical or                        and value matrices of transformer architectures . Whereas the stand-
+                                                                     36
+              multilevel extensions have been proposed , inspired by the multipole                          ard transformer in equation (2) is limited to a fixed grid, various 
+                                                                                           37,38
+              decomposition of the kernel and multigrid iterative solvers                      .            attempts have been made to turn it into an operator and allow predic-
+                          11
+                    FNO  is an alternative approach to obtaining a global operator. In                      tion on irregular grids, for example the operator transformer (OFor-
+                                                                                                                  52                                                            53
+              FNO, the kernel integration in equation (1) is solved through element-                        mer) , the mesh-independent neural operator (MINO)  and the general 
+                                                                                                                                                             54
+              wise multiplication in the Fourier domain with learned coefficients                           neural operator transformer (GNOT) . However, these approaches 
+              and inverse Fourier transform back to the original domain. The FNO                            become computationally intractable because the attention mechanism 
+                                                                                39
+              approach is inspired by the pseudospectral solvers  (Fig. 3) for which                        scales quadratically with the input resolution. To alleviate this problem, 
+                                                                                                                                         55,56
+              the Fourier basis is used, and operations are iteratively carried, as                         in vision transformers           , patches are used to reduce dimensionality, 
+              shown in Fig. 3. Although inspired by this approach, FNO has nonlin-                          but the choice of fixed-size patches limits the model to a fixed resolu-
+              ear components to enhance its expressivity. FNO emulates the pseu-                            tion and does not yield an operator. It remains an open problem how 
+                                                     40
+              dospectral solvers efficiently . Moreover, Fourier domain learning                            to develop scalable and expressive transformer architectures for 
+              is a good inductive bias in many domains, such as fluid dynamics. For                         operator learning.
+              example, it is well known that in the Navier–Stokes equation the energy 
+              cascades from low-frequency modes to the high frequencies owing to                            Implicit neural representation
+              the advection, which is subsequently killed off by dissipation41. Similar,                    The idea of using neural networks to represent continuous functions, 
+                                                                                                                                                                               57
+              yet more complicated, dynamics are exhibited in the Navier–Stokes and                         known as implicit neural networks, has a rich history . One example is 
+                                    42
+              Euler’s equations . By learning directly in Fourier space, the FNO allows                     when the solution function of a single instance of PDE is represented 
+              us to capture such dynamics efficiently. Extensive theoretical analyses                       through a neural network, known as the physics-informed neural net-
+                                                                     29,40                                                   58–61
+              have been developed for neural operators                    . It has been shown that          work (PINN)          . Similarly, in computer vision and graphics, neural 
+              neural operators, in particular FNOs, are universal approximators of 
+                                          12,40                                         43
+              continuous operators            , generalizing the classical results  to modern                                          Pseudospectral solver
+              deep learning.
+                    FNO is computationally efficient for capturing global dependen-                                                  FT           ℛ          IFT
+              cies when the input is limited to a regular grid, as the fast Fourier trans-
+              form can be computed with quasilinear complexity. For irregular grids,                                                   Fourier neural operator
+              however, computing the Fourier transform has quadratic complexity, 
+              which scales poorly for large problems. Such a Fourier transform on                                             FT           ℛ           IFT
+                                                                                                      44
+              an irregular grid is proposed in the Vandermonde neural operator                                 Lifting                                        Activation                 Projection
+              that carries the non-uniform discrete Fourier transform approxima-
+              tion, uses the low mode property of FNO and promotes the matrix                                                             Neural operator
+              form of Fourier transform approximation as opposed to fast Fourier                                                               
+                                                                                                                                        k(x, y)v(y)dy
+              transform to gain computation advances. To enhance computational                                                       Kernel integration       Activation
+              efficiency, more recent methods instead propose deformation45 or                                 Lifting                                                                   Projection
+                                 15                                                                         Fig. 3 | Diagram comparing a pseudospectral solver, a Fourier neural 
+              graph kernels  to transform the irregular physical grid to a regular 
+              latent grid on which fast Fourier transform is applied. Further devel-                        operator and the general neural operator architecture. In general, lifting and 
+                                                                                                                                    P Q
+              opments include decomposing the kernel integration in the spatial                             projection operators  ,   can be nonlinear. Pseudospectral solvers are popular 
+              domain, where the grid is often irregular, while keeping a regular grid                       numerical solvers for fluid dynamics where the Fourier basis is used, and 
+              in the temporal domain, for example for seismic monitoring46 and                              operations are iteratively carried out, as illustrated. In spectral methods, the 
+                                                                   47                                       integration is carried in the Fourier domain as a mean of multiplication following 
+              for incorporating symmetries in physics . Such methods apply GNOs                             the Fourier theorem, for which the kernel is also represented in the Fourier 
+              on the spatial domain and FNOs on the temporal domain, resulting in                           domain using a design matrix R. The Fourier neural operator (FNO) is inspired  
+                                           46
+              efficient architectures . Other developments include tensorized Fou-                          by the pseudospectral solver, but has a nonlinear representation that is learned, 
+                                         48                                           49
+              rier neural operators  and the U-shaped neural operator  to efficiently                       and the design matrix R is also made trainable. FNO is a special case of the neural 
+              parameterize the Fourier domain.                                                              operator framework, shown on the last row, where the kernel integration is 
+                    Other works have proposed convolutional neural operators for                            carried out through different methods, such as direct discretization or the 
+                                                                       50
+              convolutions directly in the spatial domain  and thus extend convo-                           Fourier transform. κ refers to the kernel that parameterizes the integral operator 
+              lutional neural networks to operator learning. It was further sug-                            and ν is the input function to the first integral layer (equation (1)). FT and IFT refer 
+                        12
+              gested  that the linear integral transform κ in equation (1) can be                           to Fourier and Inverse Fourier Transforms.
+              Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                                            324
+                                  Perspective
+                                                                                 62–64
+                                  radiance fields                                             have been used to represent 3D scenes. Note that                                                                                                                    learning probabilistic mappings on function spaces. These are either 
+                                  in both these cases, the implicit neural network is used to represent                                                                                                                                                           based on generative adversarial networks81, diffusion models82, or 
+                                  a single function, for example a single velocity field or a 3D scene.                                                                                                                                                           variational autoencoders83 that are extended to function spaces. In 
+                                  In contrast, neural operators can generate the output functions for                                                                                                                                                             particular, the diffusion neural operator learns a score operator that 
+                                  arbitrary input functions. Thus, fundamentally, neural operators are a                                                                                                                                                          takes a Gaussian random field as input and can generate samples at any 
+                                  strict generalization of implicit neural networks: from representing                                                                                                                                                            resolution specified. This has been applied to scientific problems where 
+                                  a single function to learning operators. In other words, neural opera-                                                                                                                                                          many samples of possible real-world phenomena outcomes are of inter-
+                                                                                                                                                                                                                                                                                                                                                                                                                                       81,84
+                                  tors can be viewed as conditional neural fields, conditioned on differ-                                                                                                                                                         est. Among these are volcanic and seismic activities                                                                                                                           ,  statistics of  
+                                  ent input functions. From this perspective, there have been several                                                                                                                                                             Navier–Stokes equations and resolution-free visual sensors82.
+                                  other attempts to extend implicit neural networks to handle multiple 
+                                  instances by additionally learning a parameterization over the space of                                                                                                                                                         Applications
+                                                                                  65
+                                  input functions . However, in general, this mapping is not well posed,                                                                                                                                                          Neural operators have yielded impressive speedups over traditional 
+                                  because one function can be potentially mapped to multiple network                                                                                                                                                              numerical solvers in a wide range of domains. They can help achieve 
+                                  parameterizations. To overcome this problem, recent works use a                                                                                                                                                                 medium-range weather forecasting tens of thousands of times faster 
+                                  reduced-order model that maps each input function to a small  number                                                                                                                                                            than with current numerical weather models and were the first data-
+                                  of latent parameters (codes) and then feeds it as input to a neural field,                                                                                                                                                      driven approach that resulted in accurate high-resolution (0.25 
+                                                                                                                                                    66,67                                                                                                                                                                                                      14,85
+                                  similar to an encoder–decoder model                                                                                         . In contrast, a neural operator                                                                    degrees) weather forecasting                                                                          . This speedup enables accurate risk 
+                                  is a more direct way to handle multiple instances of input and output                                                                                                                                                           assessment of extreme weather events such as hurricanes and heat 
+                                  functions through operator learning.                                                                                                                                                                                            waves that requires many forward runs of weather models for uncer-
+                                                                                                                                                                                                                                                                  tainty qualification, for example ensemble methods. An improved 
+                                  Physics-informed neural operator                                                                                                                                                                                                neural operator version based on the spherical FNO17 is now running 
+                                                                                          68                                                                                                                                                69–72
+                                  PINNs and variants  have been effective in solving steady-state PDEs                                                                                                                                                 .          on an experimental basis alongside traditional forecasting systems at 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                     86
+                                  However, the optimization landscape of PINNs becomes challenging                                                                                                                                                                the European Centre for Medium-Range Weather Forecasts . Similarly, 
+                                  for problems such as time-varying PDEs, and the solution cannot be                                                                                                                                                              for the application of carbon capture and storage for climate-change 
+                                                                                                                                                                                                       73
+                                  easily found using standard gradient-based methods . This issue can                                                                                                                                                             mitigation, the nested FNO model is hundreds of thousands of times 
+                                  be alleviated by extending PINN to a physics-informed neural operator                                                                                                                                                           faster, enabling large-scale assessment of reservoirs for geological CO  
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       2
+                                                       24,74,75                                                                                                                                                                                                                            16
+                                  (PINO)                              , which incorporates training data in addition to PDE infor-                                                                                                                                storage . The speedup enables a rigorous probabilistic assessment 
+                                  mation, making the optimization landscape more tractable and enables                                                                                                                                                            for maximum pressure buildup and carbon dioxide plume footprint, 
+                                  the learning of the solution operator of complex time-varying PDEs.                                                                                                                                                             with a runtime of only 2.8 seconds which would otherwise have taken 
+                                                Moreover, PINO has superior generalization and extrapolation                                                                                                                                                      nearly 2 years with numerical simulators. Other applications include 
+                                                                                                                                                                                                                                                                                                                                                                    87–89
+                                  capabilities, and reduced training data requirements, when compared                                                                                                                                                             simulations of fluid dynamics                                                                                 , 3D industrial-scale automotive 
+                                                                                                                                                                                                                                                                                                                15                                                                                                              90
+                                  with purely data-driven neural operators. It is possible to further                                                                                                                                                             aerodynamics , 3D dynamic urban microclimate , material defor-
+                                                                                                                                                                                                                                                                                          45,91,92                                                                                                    93,94                                                            95
+                                  improve the test-time accuracy of PINO, by fine-tuning the model to                                                                                                                                                             mation                                  , computational lithography                                                                           , photoacoustics  and 
+                                                                                                                                                                                                                                                                                                                                          96,97
+                                  minimize the PDE loss function, on the given PDE instance at test time.                                                                                                                                                         electromagnetic fields                                                            . Further, neural operators have been used 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                       98,99
+                                  This fine-tuning step is identical to the PINN optimization process but                                                                                                                                                         for learning long-term statistical properties such as attractors                                                                                                                                                 in 
+                                  uses the initialization from a pretrained PINO model and fine-tunes it                                                                                                                                                          chaotic systems and detecting tipping points in non-stationary sys-
+                                                                                                                                                                                                                                                                                  100                                                                                                                                                                                                81
+                                  further, instead of optimization from a random initialization carried                                                                                                                                                           tems . Neural operators based on generative adversarial networks  
+                                                                                                                                                                                                                                                                                                                                82
+                                  out in PINN. Thus, it can overcome the optimization difficulties in PINN.                                                                                                                                                       or diffusion models  in function spaces can be used in the modelling 
+                                                                         24                                                                                                                                                                                                                                                                                                                                                101
+                                                In PINO , one can combine low-resolution training data with                                                                                                                                                       of stochastic natural phenomena (such as volcanic  and climate activi-
+                                                                                                                                                                                                                                                                              102                                                                                                                          103
+                                  high-resolution physics constraints to learn a good approximation                                                                                                                                                               ties              ) and stochastic differential equations                                                                                       . Researchers have also 
+                                  of the underlying operator and carry out accurate zero-shot super-                                                                                                                                                              explored building hybrid solvers by using neural operators combined 
+                                                                                                                                                                                                                                                                                                                                         104
+                                  resolution. Figure 1 shows results after training with the FNO back-                                                                                                                                                            with numerical solvers                                                        .
+                                  bone on low-resolution data (64 × 64) and further fine-tuned using                                                                                                                                                                             Neural operators are also effective for inverse problems, where 
+                                  PDE loss at higher resolution (PINO) and tested on high-resolution                                                                                                                                                              the aim is to find a parameter from noisy observations, and in many 
+                                  data (256 × 256). We believe that having such multiresolution losses                                                                                                                                                            cases, the forward model is non-invertible or has a poorly conditioned 
+                                  is crucial to obtaining high-fidelity learned solvers that can resolve                                                                                                                                                          inverse. Examples include inverse design, optimization, control105 and 
+                                  fine-scale features.                                                                                                                                                                                                            risk assessment.
+                                                An alternative set of techniques is motivated by the Monte Carlo                                                                                                                                                                 Because neural operator models offer fast inference and can be effi-
+                                  methods, where one can leverage the probabilistic representation of                                                                                                                                                             ciently differentiated, they can be used either for sampling the Bayesian 
+                                  PDEs to obtain suitable objectives for deep learning. Specifically, refor-                                                                                                                                                      solution to an inverse problem through Markov chain Monte Carlo  
+                                                                                                                                                                                                                                                                                               106
+                                  mulations of PDEs based on the Feynman–Kac formula and backward                                                                                                                                                                 methods  or for obtaining a point estimate by optimizing a regular-
+                                                                                                                                                                                                                                                                                                                    107                                                                                                                                              108
+                                  stochastic differential equations have been successfully used to tackle                                                                                                                                                         ized functional . An invertible neural operator framework                                                                                                                                                  has 
+                                                                                                                                                                                     70,76–79
+                                  high-dimensional parabolic and elliptic PDEs                                                                                                                        . Recently, such                                            been introduced for such problems. In inverse design, the goal is to 
+                                  ideas have been combined with neural operators, promising efficient,                                                                                                                                                            optimize over a given set of parameters, given a forward model, and 
+                                                                                                                                                    80
+                                  derivative-free alternatives to PINOs .                                                                                                                                                                                         provide guidance for iterative design improvements or generate opti-
+                                                                                                                                                                                                                                                                  mized designs from scratch. For example, by using a neural opera-
+                                  Generative neural operators                                                                                                                                                                                                     tor model it was possible to produce an optimized design for a new 
+                                  We have so far discussed neural operators for approximating determin-                                                                                                                                                           medical catheter that reduces bacterial contamination by two orders 
+                                                                                                                                                                                                                                                                                                            109
+                                  istic mappings between function spaces. There are also extensions to                                                                                                                                                            of magnitude . The neural operator model could accurately simulate 
+                                  Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                                                                                                                                                                                                                                                                                                    325
+                        Perspective
+                        the bacterial density in fluid flow and help to optimize design shapes                                                                                       Code availability
+                        within the catheter to prevent bacteria from swimming upstream into                                                                                          A reference implementation for various neural operators including 
+                        the human body. Neural operators are also effective for other inverse                                                                                        and examples on how to get started can be found at: Neural Operator 
+                        problems, for example in seismology, where, given the seismic waves                                                                                          Library, https://github.com/neuraloperator/.
+                        and earthquakes observed in the subsurface of the Earth, one needs 
+                        to infer the structure of the subsurface causing the specific seismic                                                                                        Published online: 8 April 2024
+                                                   110–113
+                        observation                          .                                                                                                                       References
+                                                                                                                                                                                     1.      Evans, L. C. Partial Differential Equations Vol. 19 (American Mathematical Society,  
+                        Software implementation and benchmarks                                                                                                                               2022).
+                        Efficient software and hardware implementation are crucial to suc-                                                                                           2.      Batchelor, G. K. An Introduction to Fluid Dynamics (Cambridge Univ. Press, 1967).
+                        cessfully applying neural operators to practical problems. A reference                                                                                       3.      Schneider, T. et al. Climate goals and computing the future of clouds. Nat. Clim. Change 
+                                                                                                                                                                                             7, 3–5 (2017).
+                        implementation for various neural operators in PyTorch is available (see                                                                                     4.      Tarantola, A. Inverse Problem Theory and Methods for Model Parameter Estimation 
+                        Code availability). In addition to libraries, standardized benchmarks                                                                                                (Society for Industrial and Applied Mathematics, 2004).
+                        are crucial for further development. However, benchmarking has been                                                                                          5.      Brunton, S. L., Noack, B. R. & Koumoutsakos, P. Machine learning for fluid mechanics. 
+                                                                                                                                                                                             Annu. Rev. Fluid Mech. 52, 477–508 (2020).
+                        a challenge due to the disparate nature of different systems across                                                                                          6.      Kochkov, D. et al. Machine learning–accelerated computational fluid dynamics.  
+                        scientific fields. For instance, the choice of PDE parameters (forcing                                                                                               Proc. Natl Acad. Sci. USA 118, e2101784118 (2021).
+                        functions, domain size, resolution of training data) can affect the emu-                                                                                     7.      Vinuesa, R. & Brunton, S. L. Enhancing computational fluid dynamics with machine 
+                                                                                                                                                                                             learning. Nat. Comput. Sci. 2, 358–366 (2022).
+                        lated dynamics of the functions. There are two main categories of PDE                                                                                        8.      Brunton, S. L., Proctor, J. L. & Kutz, J. N. Discovering governing equations from data  
+                        benchmarks: first, broad, unified benchmarks for machine learning                                                                                                    by sparse identification of nonlinear dynamical systems. Proc. Natl Acad. Sci. USA 113, 
+                        in physical systems114–117 and second, task-specific or domain-specific                                                                                              3932–3937 (2016).
+                                                                                                                                                                                     9.      Vlachas, P. R., Byeon, W., Wan, Z. Y., Sapsis, T. P. & Koumoutsakos, P. Data-driven 
+                                                    118–123                                                                                                                                  forecasting of high-dimensional chaotic systems with long short-term memory networks. 
+                        benchmarks                            .
+                                  To aid the further development of neural operators, it is critical to                                                                                      Proc. R. Soc. A 474, 20170844 (2018).
+                        construct more universal benchmarks that can correctly assess oper-                                                                                          10.     Pathak, J. et al. Hybrid forecasting of chaotic processes: using machine learning  
+                                                                                                                                                                                             in conjunction with a knowledge-based model. Chaos 28, 041101 (2018).
+                        ator-learning capabilities. In our opinion, many current benchmarks                                                                                          11.     Li, Z. et al. Fourier neural operator for parametric partial differential equations.  
+                        do not meet these requirements, and many are limited to training and                                                                                                 In Proc. 9th International Conference on Learning Representations (ICLR, 2021).
+                                                                                           116                                                                                       12.     Kovachki, N. B. et al. Neural operator: learning maps between function spaces with 
+                        evaluation to a single resolution  or do not provide well-resolved train-                                                                                            applications to PDEs. J. Mach. Learn. Res. 24, 1–97 (2023).
+                        ing data for operator learning to be effective in the purely data-driven                                                                                     13.     Dally, W. J., Keckler, S. W. & Kirk, D. B. Evolution of the graphics processing unit (GPU). 
+                                        116                                                                                                                                                  IEEE Micro 41, 42–51 (2021).
+                        setting . In addition to learning metrics, the benchmarks also need                                                                                          14.     Pathak, J. et al. FourCastNet: a global data-driven high-resolution weather model using 
+                        to incorporate hardware performance metrics that are typically used                                                                                                  adaptive Fourier neural operators. In Proc. Platform for Advanced Scientific Computing 
+                        in high-performance computing studies124 and explore the benefits of                                                                                                 Conference (PASC) (ACM, 2023).
+                                                                         125                                                                                                         15.     Li, Z. et al. Geometry-informed neural operator for large-scale 3D PDEs. In Advances in 
+                        low-precision learning .                                                                                                                                             Neural Information Processing Systems 36 (NeurIPS, 2023).
+                                                                                                                                                                                     16.     Wen, G. et al. Real-time high-resolution CO  geological storage prediction using nested 
+                                                                                                                                                                                                                                                                  2
+                        Outlook                                                                                                                                                              Fourier neural operators. Energy Environ. Sci. 16, 1732–1741 (2023).
+                        We have shown that neural operators are a principled AI approach for                                                                                         17.     Bonev, B. et al. Spherical Fourier neural operators: learning stable dynamics on the 
+                                                                                                                                                                                             sphere. In Proc. 40th International Conference on Machine Learning Vol. 202, 2806–2823 
+                        modelling multiscale processes in various scientific domains, such                                                                                                   (PMLR, 2023).
+                        as fluid dynamics, wave propagation and material properties. Multi-                                                                                          18.     Pathak J. et al. Open-Source FourCastNet v2 Weather Model Hosted on ECMWF (Github, 
+                        scale processes, where microscopic interactions affect the macro-                                                                                                    2023); https://github.com/ecmwf-lab/ai-models-fourcastnetv2.
+                                                                                                                                                                                     19.     Vaswani, A. et al. Attention is all you need. In Advances in Neural Information Processing 
+                        scopic behaviour, span many scales of interactions. Current numerical                                                                                                Systems Vol. 30 6000–6010 (eds Guyon, I. et al.) (Curran Associates, 2017).
+                        methods are too expensive to simulate such processes faithfully, as                                                                                          20.  Esmaeilzadeh, S. et al. MeshfreeFlowNet: a physics-constrained deep continuous space-
+                        they require iterating on a fine grid. Neural operators achieve nota-                                                                                                time super-resolution framework. In SC’20: Proc. International Conference for High 
+                                                                                                                                                                                             Performance Computing, Networking, Storage and Analysis 1–15 (IEEE, 2020).
+                        ble speedups over current methods by learning nonlinear feature                                                                                              21.     Haarsma, R. J. et al. High Resolution Model Intercomparison Project (HighResMIP v1. 0) 
+                        transformations and overcoming the need for a fine grid. In addition,                                                                                                for CMIP6. Geosci. Model Dev. 9, 4185–4208 (2016).
+                        they are naturally suited for inverse problems as they are differenti-                                                                                       22.     Yuan, Y. et al. HRFormer: high-resolution vision transformer for dense predict. Adv. Neural 
+                                                                                                                                                                                             Inf. Process. Syst. 34, 7281–7293 (2021).
+                        able, and one can directly invert the trained forward model through                                                                                          23.  Li, Z. et al. Neural operator: graph kernel network for partial differential equations.  
+                        gradient-based optimization. In contrast, traditional simulations are                                                                                                J. Mach. Learn. Res. 24, 1–97 (2023).
+                        non-differentiable and require expensive Markov chain Monte Carlo                                                                                            24.  Li, Z. et al. Physics-informed neural operator for learning partial differential equations. 
+                                                                                                                                                                                             ACM J. Data Sci. https://doi.org/10.1145/3648506 (2024).
+                        methods for inverse problems. Neural operators can be queried at                                                                                             25.     Bartolucci, F. et al. Representation equivalent neural operators: a framework for alias-free 
+                        any discretization and not just limited to the training resolution. How-                                                                                             operator learning. In Advances in Neural Information Processing Systems 36 (NeurIPS 
+                        ever, as a modern deep learning model, neural operators are suscep-                                                                                                  2023).
+                                                                                                                                                                                     26.  Fanaskov, V. & Oseledets, I. Spectral neural operators. Dokl. Math. https://doi.org/10.1134/
+                        tible to overfitting if parameterized ineffectively. In minimal data                                                                                                 S1064562423701107 (2024).
+                        settings, they may overfit the training data, and in very low-resolution                                                                                     27.     Hersbach, H. et al. The ERA5 global reanalysis. Q. J. R. Meteorol. Soc. 146, 1999–2049 
+                        scenarios, they may overfit the lack of resolution. In such cases, they                                                                                              (2020).
+                                                                                                                                                                                     28.  Nair, V. & Hinton, G. E. Rectified linear units improve restricted Boltzmann machines. 
+                        may lack generalization to very different out-of-distribution data                                                                                                   In Proc. 27th International Conference on Machine Learning (ICML-10) 807–814 (ICML, 
+                        settings. Although these issues can be addressed through domain                                                                                                      2010).
+                        knowledge integration design, more data, higher fidelity data and                                                                                            29.     Lanthaler, S., Li, Z. & Stuart, A. M. The nonlocal neural operator: universal approximation. 
+                                                                                                                                                                                             Preprint at https://doi.org/10.48550/arXiv.2304.13221 (2023).
+                        physics  equations, one should be mindful of them.                                                                                                           30.  Lanthaler, S., Molinaro, R., Hadorn, P. & Mishra, S. Nonlinear reconstruction for operator 
+                                  We believe that neural operators present a transformative                                                                                                  learning of PDEs with discontinuities. In 11th International Conference on Learning 
+                        approach to simulation and design, enabling rapid research and                                                                                                       Representations https://openreview.net/forum?id=CrfhZAsJDsZ (ICLR, 2023).
+                                                                                                                                                                                     31.     Kingma, D. P. & Ba, J. Adam: A method for stochastic optimization. In Proc. 3rd 
+                        development.                                                                                                                                                         International Conference on Learning Representations (ICLR 2015).
+                        Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                                                                                                                                                                     326
+                Perspective
+                32.  Lu, L., Jin, P., Pang, G., Zhang, Z. & Karniadakis, G. E. Learning nonlinear operators via           68.  Fang, Z., Wang, S. & Perdikaris, P. Learning only on boundaries: a physics-informed neural 
+                      DeepONet based on the universal approximation theorem of operators. Nat. Mach. Intell.                    operator for solving parametric partial differential equations in complex geometries. 
+                      3, 218–229 (2021).                                                                                        Neural Comput. 36, 475–498 (2024).
+                33.  Lanthaler, S., Mishra, S. & Karniadakis, G. E. Error estimates for DeepONets: a deep                 69.  Raissi, M., Perdikaris, P. & Karniadakis, G. E. Physics-informed neural networks: a deep 
+                      learning framework in infinite dimensions. Trans. Math. Appl. 6, tnac001 (2022).                          learning framework for solving forward and inverse problems involving nonlinear partial 
+                34.  Lu, L. et al. A comprehensive and fair comparison of two neural operators (with practical                  differential equations. J. Comput. Phys. 378, 686–707 (2019).
+                      extensions) based on fair data. Comput. Methods Appl. Mech. Eng. 393, 114778 (2022).                70.  Han, J., Jentzen, A. & E, W. Solving high-dimensional partial differential equations using 
+                35.  Battaglia, P. et al. Interaction networks for learning about objects, relations and physics.               deep learning. Proc. Natl Acad. Sci. USA 115, 8505–8510 (2018).
+                      In 30th Conference on Neural Information Processing Systems (NIPS 2016).                            71.   Smith, J. D., Azizzadenesheli, K. & Ross, Z. E. EikoNet: solving the Eikonal equation  
+                36.  Li, Z. et al. Multipole graph neural operator for parametric partial differential equations.               with deep neural networks. IEEE Trans. Geosci. Remote Sens. 59, 10685–10696  
+                      Adv. Neural Inf. Process. Syst. 33, 6755–6766 (2020).                                                     (2020).
+                37.   Kress, R., Maz’ya, V. & Kozlov, V. Linear Integral Equations Vol. 82 (Springer, 1989).              72.   Gao, H., Sun, L. & Wang, J.-X. PhyGeoNet: physics-informed geometry-adaptive 
+                38.  Greengard, L. & Rokhlin, V. A new version of the fast multipole method for the Laplace                     convolutional neural networks for solving parameterized steady-state PDEs on irregular 
+                      equation in three dimensions. Acta Numer. 6, 229–269 (1997).                                              domain. J. Comput. Phys. 428, 110079 (2021).
+                39.  Trefethen, L. Spectral Methods in MATLAB. Software, Environments, and Tools (Society for             73.   Krishnapriyan, A., Gholami, A., Zhe, S., Kirby, R. & Mahoney, M. W. Characterizing possible 
+                      Industrial and Applied Mathematics, 2000).                                                                failure modes in physics-informed neural networks. Adv. Neural Inf. Process. Syst. 34, 
+                40.  Kovachki, N., Lanthaler, S. & Mishra, S. On universal approximation and error bounds for                   26548–26560 (2021).
+                      Fourier neural operators. J. Mach. Learn. Res. 22, 1–76 (2021).                                     74.   Wang, S., Wang, H. & Perdikaris, P. Learning the solution operator of parametric partial 
+                41.   Leonard, A. in Turbulent Diffusion in Environmental Pollution. Advances in Geophysics                     differential equations with physics-informed DeepONets. Sci. Adv. 7, eabi8605 (2021).
+                      Vol. 18, 237–248 (Elsevier, 1975).                                                                  75.   Goswami, S., Bora, A., Yu, Y. & Karniadakis, G. E. Physics-Informed Deep Neural Operator 
+                42.  Temam, R. Navier–Stokes Equations: Theory and Numerical Analysis (Elsevier, 2016).                         Networks (Springer,2023); https://doi.org/10.1007/978-3-031-36644-4_6 (2023).
+                43.  Chen, T. & Chen, H. Universal approximation to nonlinear operators by neural networks                76.   Berner, J., Dablander, M. & Grohs, P. Numerically solving parametric families of high-
+                      with arbitrary activation functions and its application to dynamical systems. EEE Trans.                  dimensional Kolmogorov partial differential equations via deep learning. Adv. Neural Inf. 
+                      Neural Netw. 6, 911–917 (1995).                                                                           Process. Syst. 33, 16615–16627 (2020).
+                44.  Lingsch, L., Michelis, M., Perera, S. M., Katzschmann, R. K. & Mishra, S. A Structured               77.   Han, J., Nica, M. & Stinchcombe, A. R. A derivative-free method for solving elliptic partial 
+                      matrix method for nonequispaced neural operators. Preprint at https://doi.org/                            differential equations with deep neural networks. J. Comput. Phys. 419, 109672 (2020).
+                      10.48550/arXiv.2305.19663 (2023).                                                                   78.   Beck, C., Becker, S., Grohs, P., Jaafari, N. & Jentzen, A. Solving the Kolmogorov PDE by 
+                45.  Li, Z., Huang, D. Z., Liu, B. & Anandkumar, A. Fourier neural operator with learned                        means of deep learning. J. Sci. Comput. 88, 1–28 (2021).
+                      deformations for PDEs on general geometries. J. Mach. Learn. Res. 388, 1−26 (2023).                 79.   Richter, L. & Berner, J. Robust SDE-based variational formulations for solving linear PDEs 
+                46.  Sun, H., Ross, Z. E., Zhu, W. & Azizzadenesheli, K. Next-generation seismic monitoring                     via deep learning. In International Conference on Machine Learning, 18649–18666 (PMLR, 
+                      with neural operators. Preprint at https://doi.org/10.48550/arXiv.2305.03269 (2023).                      2022).
+                47.   Zou, C., Azizzadenesheli, K., Ross, Z. E. & Clayton, R. W. Deep neural Helmholtz operators          80.  Zhang, R. et al. Monte Carlo neural operator for learning PDEs via probabilistic 
+                      for 3D elastic wave propagation and inversion. Preprint at https://doi.org/10.48550/                      representation. Preprint at https://doi.org/10.48550/arXiv.2302.05104 (2023).
+                      arXiv.2311.09608 (2023).                                                                            81.   Rahman, M. A., Florez, M. A., Anandkumar, A., Ross, Z. E. & Azizzadenesheli, K. Generative 
+                48.  Kossaifi, J., Kovachki, N. B., Azizzadenesheli, K. & Anandkumar, A. Multi-grid tensorized                  adversarial neural operators. Preprint at https://arxiv.org/abs/2205.03017 (2022).
+                      Fourier neural operator for high resolution PDEs. Preprint at https://doi.org/10.48550/             82.  Lim, J. H. et al. Score-based diffusion models in function space. Preprint at https://doi.org/ 
+                      arXiv.2310.00120 (2022).                                                                                  10.48550/arXiv.2302.07400 (2023).
+                49.  Rahman, M. A., Ross, Z. E. & Azizzadenesheli, K. U-no: U-shaped neural operators.                    83.  Seidman, J. H., Kissas, G., Pappas, G. J. & Perdikaris, P. Variational autoencoding 
+                      Preprint at https://arxiv.org/abs/2204.11127 (2023).                                                      neural operators. Proc. 40th International Conference on Machine Learning Vol. 202, 
+                50.  Raonić, B., Molinaro, R., Rohner, T., Mishra, S. & de Bezenac, E. Convolutional neural                     30491–30522 (PMLR, 2023).
+                      operators. Advances in Neural Information Processing Systems 36 (NeurIPS) (2023).                   84.  Shi, Y., Lavrentiadis, G., Asimaki, D., Ross, Z. E. & Azizzadenesheli, K. Broadband ground 
+                51.   Cao, S. Choose a transformer: Fourier or Galerkin. Adv. Neural Inf. Process. Syst. 34,                    motion synthesis via generative adversarial neural operators: development and 
+                      24924–24940 (2021).                                                                                       validation. Preprint at https://doi.org/10.48550/arXiv.2309.03447 (2023).
+                52.  Li, Z., Meidani, K. & Farimani, A. B. Transformer for partial differential equations’ operator       85.  Lam, R. et al. Learning skillful medium-range global weather forecasting. Science 382, 
+                      learning. Preprint at https://arxiv.org/abs/2205.13671 (2023).                                            1416–1421 (2023).
+                53.  Lee, S. Mesh-independent operator learning for partial differential equations. In ICML               86.  How AI models are transforming weather forecasting: a showcase of data-driven 
+                      2022 2nd AI for Science Workshop. https://openreview.net/pdf?id=JUtZG8-2vGp                               systems. ECMWF www.ecmwf.int/en/about/media-centre/news/2023/how-ai-models-
+                      (ICML, 2022).                                                                                             are-transforming-weather-forecasting-showcase-data (6 September 2023).
+                54.  Hao, Z. et al. GNOT: A general neural operator transformer for operator learning. In Proc.           87.   Grady, T. J. et al. Model-parallel Fourier neural operators as learned surrogates for large-
+                      40th International Conference on Machine Learning Vol. 202, 12556–12569, (PMLR, 2023).                    scale parametric PDEs. Comput. Geosci. 178, 105402 (2023).
+                55.  Dosovitskiy, A. et al. An image is worth 16×16 words: transformers for image recognition             88.  Renn, P. I. et al. Forecasting subcritical cylinder wakes with Fourier neural operators. 
+                      at scale. In Proc. 9th International Conference on Learning Representations (ICLR, 2021).                 Preprint at https://doi.org/10.48550/arXiv.2301.08290 (2023).
+                56.  Guibas, J. et al. Adaptive Fourier neural operators: efficient token mixers for transformers.        89.  Li, Z., Peng, W., Yuan, Z. & Wang, J. Fourier neural operator approach to large eddy 
+                      In Proc. 10th International Conference on Learning Representations (ICLR, 2022).                          simulation of three-dimensional turbulence. Theor. Appl. Mech. Lett. 12, 100389  
+                57.   Lagaris, I. E., Likas, A. & Fotiadis, D. I. Artificial neural networks for solving ordinary and           (2022).
+                      partial differential equations. IEEE Trans. Neural Netw. 9, 987–1000 (1998).                        90.  Peng, W. et al. Fourier neural operator for real-time simulation of 3D dynamic urban 
+                58.  Karniadakis, G. E. et al. Physics-informed machine learning. Nat. Rev. Phys. 3, 422–440                    microclimate. Preprint at https://doi.org/10.48550/arXiv.2308.03985 (2023).
+                      (2021).                                                                                             91.   Liu, B. et al. A learning-based multiscale method and its application to inelastic impact 
+                59.  Sirignano, J. & Spiliopoulos, K. Dgm: A deep learning algorithm for solving partial                        problems. J. Mech. Phys. Solids. 158, 104668 (2022).
+                      differential equations. J. Comput. Phys. 375, 1339–1364 (2018).                                     92.  Rashid, M. M., Pittie, T., Chakraborty, S. & Krishnan, N. A. Learning the stress-strain fields 
+                60.  Yu, B. et al. The deep ritz method: a deep learning-based numerical algorithm for solving                  in digital composites using Fourier neural operator. iScience 25 105452 (2022).
+                      variational problems. Commun. Math. Stat. 6, 1–12 (2018).                                           93.  Liu, M. et al. An adversarial active sampling-based data augmentation framework for 
+                61.   Du, Y. & Zaki, T. A. Evolutional deep neural network. Phys. Rev. E 104, 045303 (2021).                    manufacturable chip design. In 36th Conference on Neural Information Processing 
+                62.  Mildenhall, B. et al. Nerf: representing scenes as neural radiance fields for view synthesis.              Systems (NeurIPS 2022); https://doi.org/10.48550/arXiv.2210.15765.
+                      Commun. ACM 65, 99–106 (2021).                                                                      94.  Yang, H. et al. Generic lithography modeling with dual-band optics-inspired neural 
+                63.  Sitzmann, V., Martel, J., Bergman, A., Lindell, D. & Wetzstein, G. Implicit neural                         networks. In Proc. 59th ACM/IEEE Design Automation Conference 973–978 (IEEE, 2022).
+                      representations with periodic activation functions. Adv. Neural Inf. Process. Syst. 33,             95.  Guan, S., Hsu, K.-T. & Chitnis, P. V. Fourier neural operator networks: a fast and general 
+                      7462–7473 (2020).                                                                                         solver for the photoacoustic wave equation. Algorithms 16, 124 (2023).
+                64.  Jeong, Y. et al. PeRFception: perception using radiance fields. Adv. Neural Inf. Process.            96.  Gu, J. et al. Neurolight: a physics-agnostic neural operator enabling parametric photonic 
+                      Syst. 35, 26105–26121 (2022).                                                                             device simulation. Adv. Neural Inf. Process. Syst. 35, 14623–14636 (2022).
+                65.  Srinivasan, P. P. et al. NeRV: neural reflectance and visibility fields for relighting and view      97.   Gopakumar, V. et al. Fourier neural operator for plasma modelling. Nuclear Fission 
+                      synthesis. In Proc. IEEE/CVF Conference on Computer Vision and Pattern Recognition,                       https://doi.org/10.1088/1741-4326/ad313a (2024).
+                      7495–7504 (IEEE, 2021).                                                                             98.  Li, Z. et al. Learning chaotic dynamics in dissipative systems. Adv. Neural Inf. Process. 
+                66.  Chen, P. Y. et al. CROM: continuous reduced-order modeling of PDEs using                                   Syst. 35, 16768–16781 (2022).
+                      implicit neural representations. In Proc. 11th International Conference on Learning                 99.  Lippe, P., Veeling, B. S., Perdikaris, P., Turner, R. E. & Brandstetter, J. PDE-refiner: achieving 
+                      Representations (ICLR, 2023).                                                                             accurate long rollouts with neural PDE solvers. In 37th Conference on Neural Information 
+                67.   Serrano, L. et al. Operator learning with neural fields: tackling PDEs on general                         Processing Systems (NeurIPS 2023).
+                      geometries. In 37th Conference on Neural Information Processing Systems (NeurIPS                    100. Liu-Schiaffini, M. et al. Tipping point forecasting in non-stationary dynamics on function 
+                      2023).                                                                                                    spaces. Preprint at https://doi.org/10.48550/arXiv.2308.08794 (2023).
+                Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                                                                   327
+                     Perspective
+                     101.  Rosen, P. A., Gurrola, E., Sacco, G. F. & Zebker, H. The InSAR scientific computing                                                120.  Wang, Z., Bovik, A. C., Sheikh, H. R. & Simoncelli, E. P. Image quality assessment: from 
+                            environment. In EUSAR 2012; 9th European Conference on Synthetic Aperture Radar                                                           error visibility to structural similarity. IEEE Trans. Image Process. 13, 600–612 (2004).
+                            730–733 (VDE, 2012).                                                                                                              121.  Hassan, S. M. S. et al. BubbleML: a multi-physics dataset and benchmarks for machine 
+                     102.  Palmer, T. Stochastic weather and climate models. Nat. Rev. Phys. 1, 463–471 (2019).                                                       learning. Preprint at https://doi.org/10.48550/arXiv.2307.14623 (2023).
+                     103.  Salvi, C., Lemercier, M. & Gerasimovics, A. Neural stochastic pdes: Resolution-invariant                                           122.  Dulny, A., Hotho, A. & Krause, A. Dynabench: A Benchmark Dataset for Learning Dynamical 
+                            learning of continuous spatiotemporal dynamics. Adv. Neural Inf. Process. Syst. 35,                                                       Systems From Low-Resolution Data Vol. 14169 (Springer, 2023); https://doi.org/10.1007/ 
+                            1333–1344 (2022).                                                                                                                         978-3-031-43412-9_26.
+                     104.  Ngom, M. & Marin, O. Fourier neural networks as function approximators and differential                                            123.  Thiyagalingam, J., Shankar, M., Fox, G. & Hey, T. Scientific machine learning benchmarks. 
+                            equation solvers. Statist. Anal. Data Mining 14, 647–661 (2021).                                                                          Nat. Rev. Phys. 4, 413–420 (2022).
+                     105.  Shi, Y. et al. Machine learning accelerated PDE backstepping observers. In 2022 IEEE 61st                                          124.  Kurth, T. et al. FourCastNet: accelerating global high-resolution weather forecasting 
+                            Conference on Decision and Control (CDC) 5423–5428 (IEEE, 2022).                                                                          using adaptive Fourier neural operators. In PASC ’23: Proc. Platform for Advanced 
+                     106.  Cotter, S., Roberts, G., Stuart, A. & White, D. MCMC methods for functions: modifying old                                                  Scientific Computing Conference https://doi.org/10.1145/3592979.3593412 (ACM, 2023).
+                            algorithms to make them faster. Statist. Sci. 28, 424–446 (2012).                                                                 125.  White, C. et al. Speeding up Fourier neural operators via mixed precision. Preprint at 
+                     107.  Hinze, M., Pinnau, R., Ulbrich, M. & Ulbrich, S. Optimization with PDE Constraints.                                                        https://doi.org/10.48550/arXiv.2307.15034 (2023).
+                            Mathematical Modelling: Theory and Applications (Springer, 2008).
+                     108.  Kaltenbach, S., Perdikaris, P. & Koutsourelakis, P.-S. Semi-supervised invertible neural                                           Acknowledgements
+                            operators for Bayesian inverse problems. Computational Mechanics 1–20 (2023).                                                     A.A. is supported by a Bren named professor chair at Caltech and AI 2050 senior fellowship 
+                     109.  Zhou, T. et al. AI-aided geometric design of anti-infection catheters. Sci. Adv. 10, adj1741                                       by Schmidt Sciences. Z.L. is supported by an NVIDIA fellowship. M.L.-S. is supported by the 
+                            (2024).                                                                                                                           Mellon Mays undergraduate fellowship. We thank B. Jenik for creating Fig. 2 and for general 
+                     110.  Yang, Y. et al. Seismic wave propagation and inversion with neural operators. Seism. Rec.                                          discussions.
+                            1, 126–134 (2021).
+                     111.   Sun, H., Yang, Y., Azizzadenesheli, K., Clayton, R. W. & Ross, Z. E. Accelerating time-                                           Author contributions
+                            reversal imaging with neural operators for real-time earthquake locations. Preprint at                                            The authors contributed equally to all aspects of the article.
+                            https://doi.org/10.48550/arXiv.2210.06636 (2022).
+                     112.  Yang, Y., Gao, A. F., Azizzadenesheli, K., Clayton, R. W. & Ross, Z. E. Rapid seismic                                              Competing interests
+                            waveform modeling and inversion with neural operators. IEEE Trans. Geosci. Remote                                                 The authors declare no competing interests.
+                            Sens. https://doi.org/10.1109/TGRS.2023.3264210 (2023).
+                     113.  Yin, Z., Orozco, R., Louboutin, M. & Herrmann, F. J. Solving multiphysics-based inverse                                            Additional information
+                            problems with learned surrogates and constraints. Adv. Model. Simul. Eng. Sci. 10, 14                                             Peer review information Nature Reviews Physics thanks Cristopher Salvi and the other, 
+                            (2023).                                                                                                                           anonymous, reviewer(s) for their contribution to the peer review of this work.
+                     114.  Otness, K. et al. An extensible benchmark suite for learning to simulate physical systems. 
+                            In 35th Conference on Neural Information Processing Systems (NeurIPS 2021).                                                       Publisher’s note Springer Nature remains neutral with regard to jurisdictional claims in 
+                     115.  Takamoto, M. et al. PDEbench: an extensive benchmark for scientific machine learning.                                              published maps and institutional affiliations.
+                            Adv. Neural Inf. Process. Syst. 35, 1596–1611 (2022).
+                     116.  Gupta, J. K. & Brandstetter, J. Towards multi-spatiotemporal-scale generalized PDE                                                 Springer Nature or its licensor (e.g. a society or other partner) holds exclusive rights to this 
+                            modeling. Preprint at https://doi.org/10.48550/arXiv.2209.15616 (2022).                                                           article under a publishing agreement with the author(s) or other rightsholder(s); author self-
+                     117.   Hao, Z. et al. Pinnacle: a comprehensive benchmark of physics-informed neural networks                                            archiving of the accepted manuscript version of this article is solely governed by the terms  
+                            for solving PDEs. Preprint at https://doi.org/10.48550/arXiv.2306.08827 (2023).                                                   of such publishing agreement and applicable law.
+                     118.  Huang, Z. et al. A Large-Scale Benchmark for the Incompressible Navier–Stokes Equations 
+                            (SSRN, 2022); https://doi.org/10.2139/ssrn.4030476.                                                                               © Springer Nature Limited 2024
+                     119.  Ren, P. et al. Superbench: a super-resolution benchmark dataset for scientific machine 
+                            learning. Preprint at https://doi.org/10.48550/arXiv.2306.14070 (2023).
+                     Nature Reviews Physics | Volume 6 | May 2024 | 320–328                                                                                                                                                                                                               328

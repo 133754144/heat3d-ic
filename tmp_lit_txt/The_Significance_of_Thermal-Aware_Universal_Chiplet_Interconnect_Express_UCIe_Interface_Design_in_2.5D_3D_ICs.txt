@@ -1,0 +1,162 @@
+                                    The Significance of Thermal-Aware   
+                       Universal Chiplet Interconnect Express (UCIe) 
+                                         Interface Design in 2.5D/3D ICs 
+               Keeyoung Son, Keunwoo Kim, Seonguk Choi, Jiwon Yoon, Jihun Kim, Jonghyun Hong, Hyunwoo Kim, Junghyun Lee and Joungho Kim 
+                      Korea Advanced Institute of Science and Technology (KAIST), School of Electrical Engineering, Daejeon, Republic of Korea 
+                                                                       keeyoung@kaist.ac.kr 
+                                                
+             Abstract‚Äî  In this paper, signal integrity analysis of universal 
+             chiplet interconnect express-advanced (UCIe-A) interface in terms 
+             of crosstalk and thermal effects was carried out. As the demands 
+             of chiplet systems increase, the need for strong interconnectivity 
+             with each chiplet intensifies. UCIe-A is the chiplet-to-chiplet 
+             interconnect on advanced package which supports high datarate 
+             of 32 Gb/s within small PHY dimension. Therefore, the crosstalk 
+             of UCIe-A channel is the dominant signal integrity design issue.                                                                       
+             Furthermore, as the power consumption of chiplet increases,                                            (a) 
+             thermal management of chiplet system becomes more challenging, 
+             leading to an increase in temperature along the interconnect. 
+             Thermal issue is particularly severe in 2.5D/3D ICs, where the 
+             elevated temperatures can significantly degrade signal integrity. 
+             Hence, this research focused on the thermal effects on signal 
+             integrity of the UCIe-A interface, in terms of channel 
+             characteristics, voltage transfer function, and eye-diagrams. The 
+             results show that the thermal effect on UCIe-A interface surpasses 
+             the crosstalk effect at 80‚ÑÉ. This research validates the significance 
+             of thermal-aware UCIe-A interface design for chiplet systems. 
+                Keywords‚ÄîAdvanced package; Chiplet;  Crosstalk;  Thermal-
+             aware; Universal chiplet interconnect express (UCIe);                                                                                      
+                                    I.  INTRODUCTION                                                                (b) 
+                                                                                    Fig.  1.  (a) Concept of UCIe-S and UCIe-A for chiplet system. (b) Signal 
+                For tackling the reticle limitations and yield issues, the          integrity issues on UCIe-A interface caused by crosstalk and temperature. 
+             chiplet-based heterogeneous integrated system has  emerged.            management of thermal aspects within the chiplet system 
+             The chiplet is a compact ICs that comprise a delineated set of         becomes more challenging, resulting in elevated temperatures 
+             functions, and it is integrated on PKG or interposer to unify with     along the interconnect. Especially, this phenomenon is severe in 
+             other chiplets. Also, the universal chiplet interconnect express       2.5D ICs, and the high temperature degrades the channel 
+             (UCIe) emerges to interconnect between each chiplet. UCIe is           characteristics and driver strength [3],  [4]. Therefore, the 
+             the chiplet-to-chiplet interconnect and serial bus between             thermal effects on UCIe-A interface need to be analyzed to 
+            chiplets as shown in Fig. 1. (a). It has two types, UCIe-standard       ensure guaranteed SI at high datarate. 
+            (UCIe-S) for standard packages and UCIe-advanced (UCIe-A) 
+            for advanced packages, respectively. UCIe-A is in the UCIe                  In this paper, SI analysis of UCIe-A interface with crosstalk 
+            interface for advanced package such as silicon interposer and it        and thermal effects was carried out. To analyze the thermal-
+            supports high datarate of 32 Gb/s [1]. Additionally, the silicon        aware SI of UCIe-A interface, first, we designed the stripline 
+            interposer channels have higher losses than standard package            channel on silicon interposer considering UCIe-A routability. 
+            channels [2]. Therefore, to support high datarate, the UCIe-A           Then, we analyzed the SI of channel considering thermal effects 
+            interface design considering signal integrity (SI) is required.         in terms of insertion loss and crosstalk. Also, we conducted 
+                Fig. 1. (b) shows the SI issues on UCIe-A interface. The            sensitive analysis of thermal-aware eye-diagram simulation with 
+            UCIe-A is implemented within a compact PHY dimension, with              crosstalk, thermal effects on channel, and thermal effects on 
+            128 channels per 388.8 um. Therefore, the crosstalk of each             input/output (I/O) driver. The results showed that the crosstalk 
+     2023 IEEE Electrical Design of Advanced Packaging and Systems (EDAPS) | 979-8-3503-8376-8/23/$31.00 ¬©2023 IEEE | DOI: 10.1109/EDAPS58880.2023.10468234UCIe-A channel is the dominant SI design issue due to its dense is the dominant SI design issue, but also the thermal effects on 
+            routing. Furthermore, the UCIe-A has a length limitation of less        UCIe-A interface is important; the thermal effects on UCIe-A 
+            than 2 mm, necessitating the close placement of each chiplet on         interface is larger than crosstalk effect at 80‚ÑÉ. This research 
+            the silicon interposer, which in turn increases thermal coupling.       validated the significance of thermal-aware UCIe-A interface 
+            With the increase in power consumption of chiplets, the                 design for chiplet systems. 
+            979-8-3503-8376-8/23/$31.00 ¬©2023 IEEE 
+                        Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 07:07:16 UTC from IEEE Xplore.  Restrictions apply. 
+                               Fig. 2. Stack-up and physical dimensions of silicon interposer for UCIe-A.                                                                                               
+                                         II.  D                                                                                                                                                                                                                                                                                                                                                  
+                                                        ESIGN AND THERMAL-AWARE SIGNAL INTEGRITY                                                                                                                                                                   (b)                                    (b) 
+                                                                         ANALYSIS OF UCIE-A CHANNEL                                                                                                                  Fig. 3. Simulated temperature-dependent (a) insertion loss and (b) PSFEXT of 
+                                         Fig. 2. shows the designed silicon interposer stack-up with                                                                                                                 UCIe-A channels consisting of 1 victim and 8 aggressor channels.   
+                               physical dimensions for channel characteristic analysis. The 
+                               channel was composed of 2 layers and width/space was set as 2 
+                               um/2 um considering the routability of UCIe-A interface. Also, 
+                               the channel was designed by stripline topology for reducing the 
+                               crosstalk effect to secure SI. The thickness of each layer of 
+                               redistribution layer (RDL) was set as 1.5 um. The designed 
+                               silicon interposer consisted of silicon, nitride, oxide, and copper. 
+                               The  temperature-dependent  material  properties,  resistivity 
+                               œÅ and relative permittivity  Ì†µÌºÄÌ†µÌºÄ  of each constituent were utilized 
+                               based on [4].                                                                Ì†µÌ±üÌ†µÌ±ü
+                                         Fig. 3. shows the simulated insertion loss and power sum                                                                                                                                                                                                                                                                                                
+                               far-end crosstalk (PSFEXT) of UCIe-A channels. We simulated                                                                                                                                                                         (a)                                    (b) 
+                               the channel with 20‚ÑÉ, 50‚ÑÉ, and 80‚ÑÉ  conditions to analyze                                                                                                                             Fig. 4. Simulated (a) VTF loss and (b) VTF crosstalk of UCIe-A interface 
+                               the  thermal  effects  on  channel  characteristics.  In  terms  of                                                                                                                   considering thermal effects on channel and driver.   
+                               insertion loss, as temperature increases, the insertion loss is                                                                                                                        respectively [1]. To analyze the thermal-aware SI, temperature-
+                               degraded  along  overall  frequency  range.  At  low  frequency                                                                                                                        dependent I/O driver is required. The resistance of Tx driver is 
+                               range, the increased temperature increases the DC resistance of                                                                                                                        affected by temperature as follows [5]:                                                                             2.3
+                               channel.  Therefore,  it  degrades  the  insertion  loss.  At  high                                                                                                                                                              ( )                          (                  )            Ì†µÌ±áÌ†µÌ±á                                                    (1) 
+                                                                                                                                                                                                                                                      Ì†µÌ±ÖÌ†µÌ±Ö         Ì†µÌ±áÌ†µÌ±á     =Ì†µÌ±ÖÌ†µÌ±Ö               Ì†µÌ±áÌ†µÌ±á                ÔøΩ                  ÔøΩ          
+                               frequency range, AC resistance and channel self-capacitance                                                                                                                                                                Tx                           Tx          Ì†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±ü    Ì†µÌ±áÌ†µÌ±á
+                               are increased with increasing temperature.                                                                                                                                                                                                                                                 Ì†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±ü
+                                                                                                                                                                                                                      where  Ì†µÌ±ÖÌ†µÌ±Ö                     is the resistance of Tx driver,  Ì†µÌ±áÌ†µÌ±á                                                                    is the room 
+                                         Furthermore, we also analyzed the PSFEXT for analysis of                                                                                                                                             Tx                                                                                                Ì†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±üÌ†µÌ±ü
+                                                                                                                                                                                                                      temperature, and the T is the temperature parameter in kelvin. 
+                               the crosstalk effect that came from nearby aggressor channels.                                                                                                                         In contrast, the capacitances of Tx and Rx drivers are identical 
+                               The  simulation  was  implemented  in  9  coupled  channels, 1                                                                                                                         with various temperature conditions [6].   
+                               victim and 8 aggressors. The PSFEXT also degraded with high                                                                                                                                     Fig. 4. shows the simulated voltage transfer function (VTF)-
+                               temperature due to increased relative permittivity increases the                                                                                                                       based loss and crosstalk of UCIe-A interface considering 
+                               mutual capacitance. However, the values at Nyquist frequency,                                                                                                                          thermal effect.  As temperature increases, the VTF loss is 
+                               16  GHz,  are  similar  in  all  temperature  conditions.  This  is                                                                                                                    degraded along the overall frequency range. It has same trend 
+                               because  the  quarter  wave  resonance  is  shifted  by  changed                                                                                                                       with insertion loss. Additionally, due to the increased resistance 
+                               temperature. Since the quarter wave resonance frequency is                                                                                                                             of Tx driver, the loss degradation is severe. Furthermore, the 
+                               inversely proportional to relative permittivity, the quarter wave                                                                                                                      capacitance termination causes shift of quarter wave resonance 
+                               resonance frequency is shift to low frequency as temperature                                                                                                                           frequency to higher frequency. This is because the phase 
+                               increases. The quarter wave resonance frequency is around 20                                                                                                                           changes by up to 90 degrees by capacitance termination. Hence, 
+                               GHz  which  is  close  to  the  Nyquist  frequency.  Hence,  the                                                                                                                       there is a noticeable difference in VTF values at Nyquist 
+                               PSFEXT values at Nyquist frequency of each temperature are                                                                                                                             frequency. In terms of VTF crosstalk, it has opposite trends 
+                               similar due to both shifted quarter wave resonance frequency                                                                                                                           with PSFEXT at Nyquist frequency. This is because the VTF 
+                               and thermal effects on relative permittivity.                                                                                                                                          considers not only channel,  but also driver. The drivers of 
+                                                         III.  THERMAL-AWARE SIGNAL INTEGRITY                                                                                                                         UCIe-A interface are capacitance termination, while  the 
+                                                                            NALYSIS OF UCIE-A INTERFACE                                                                                                               standard package consists resistance termination. 
+                                                                       A
+                                  For SI analysis of UCIe-A interface, it requires channel                                                                                                                                     Fig.  5.  shows  the  temperature-dependent  eye-diagram  at 
+                               characteristics, but also the I/O driver. The Tx driver is set as                                                                                                                      various temperature conditions with and without crosstalk. The 
+                               25  ohm  and  0.25  pF,  and  the  Rx  driver  is  set  as  0.2  pF,                                                                                                                   eye-diagram simulation was conducted at a datarate of 32 Gb/s 
+                                
+                                                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 07:07:16 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                                                                                                              (a)                                             
+                                        (a)                                (b) 
+                                                                                                                                                              (b)                                             
+                                     (c)                              (d)                                         Fig.  6.  (a) Normalized EH and EW of UCIe-A interface for thermal and 
+                 Fig. 5. Eye-diagrams of UCIe-A interface with gray-colored eye-mask (40 mV,                      crosstalk sensitive analysis. (b) Normalized EH and EW of UCIe-A interface 
+                 0.65 UI) on various conditions. (a) 20‚ÑÉ  and without crosstalk, (b) 20‚ÑÉ  and                     for thermal sensitive analysis in channel and driver. 
+                 with crosstalk, (c) 80‚ÑÉ  and without crosstalk, and (d) 80‚ÑÉ  and with crosstalk.                 and even eye-diagrams are analyzed. The results show that the 
+                 with 0.4 V swing. Fig. 5(a) and (b) show the crosstalk effect of                                 thermal effect on UCIe-A interface surpasses the crosstalk effect 
+                 UCIe-A. The results show that the crosstalk effect is severe in                                  at 80‚ÑÉ. This research validated the significance of thermal-
+                 UCIe-A due to its dense routing. In terms of thermal effects on                                  aware UCIe-A interface design for chiplet system. Later, the 
+                 SI of UCIe-A without crosstalk is illustrated in Fig 5(c). It shows                              power consumption of chiplet system will increases, and 
+                 the thermal effects on eye-diagram at 80‚ÑÉ. The thermal effect                                    temperature will increases, too. For securing SI, the thermal-
+                 is larger than crosstalk effect compared with Fig. 5(b). Also, the                               aware SI design of UCIe-A interface is essential. In addition, it 
+                 eye-diagram considering both crosstalk and thermal effect is                                     is obvious that close placement between chiplets degrades SI 
+                 worst among the other conditions as shown in Fig. 5(d).                                          due to thermal effect. Nevertheless, the interconnect length will 
+                      For a detailed analysis of crosstalk and thermal effects on                                 be smaller because it have a significant benefit in terms of SI. In 
+                 UCIe-A  interface,  we  conducted  sensitive  analysis  about                                    conclusion, it shows that the electrical-thermal co-optimize for 
+                 crosstalk and thermal effects on channel and it on driver. Fig. 6                                chiplet placement is required. 
+                 (a) shows the normalized eye-height (EH) and eye-width (EW)                                                                     A
+                 of UCIe-A interface for thermal and crosstalk sensitive analysis.                                                                  CKNOWLEDGMENT  
+                 The thermal effect is more critical than crosstalk on EH and EW,                                      We would like to acknowledge the technical support from 
+                 at 50‚ÑÉ  and 80‚ÑÉ, respectively. The thermal effects on EH are                                     ANSYS Korea.  
+                 stronger than the effect on EW. Also, the signal degradation due 
+                 to the crosstalk worsens as temperature increases.                                                                                      EFERENCES 
+                                                                                                                                                      R
+                      Fig.  6(b)  shows  the  normalized  EH and EW for thermal                                   [1]  D. Das Sharma, G. Pasdast, Z. Qian and K. Aygun, "Universal Chiplet 
+                 sensitive analysis. The thermal effects on channel degrade the                                          Interconnect Express (UCIe): An Open Industry Standard for Innovations 
+                 EH, but its effect on EW is quite small. However, the thermal                                           With Chiplets at Package Level," in IEEE Transactions on Components, 
+                 effects  on  driver  degrades  EH,  but  also  EW.  Increased                                           Packaging and Manufacturing Technology, vol. 12, no. 9, pp. 1423-1431, 
+                                                                                                                         Sept. 2022, doi: 10.1109/TCPMT.2022.3207195. 
+                 temperature increases the resistance of Tx driver and it degrades                                [2]  K. Cho et al., "Signal Integrity Design and Analysis of Silicon Interposer 
+                 the driver strength. Therefore, it critically affects the jitter. Also,                                 for GPU-Memory Channels in High-Bandwidth Memory Interface," in 
+                 the thermal effect on driver is more critical than its effect on                                        IEEE Transactions on Components, Packaging and Manufacturing 
+                 channel at both EH and EW. The thermal effect on both channel                                           Technology, vol. 8, no. 9, pp. 1658-1671, Sept. 2018, doi: 
+                 and driver becomes worse than the summation of each effect,                                             10.1109/TCPMT.2017.2779838. 
+                 separately. Although the crosstalk is an important factor in SI,                                 [3]    K. Son et al., "Design and Analysis of Thermal Transmission Line based 
+                 the thermal effect is more dominant compared to the crosstalk.                                          Embedded Cooling Structures for High Bandwidth Memory Module and 
+                                                                                                                         2.5D/3D ICs," 2020 IEEE Electrical Design of Advanced Packaging and 
+                 Furthermore, it was also proved that high temperature induces                                           Systems (EDAPS),  Shenzhen, China, 2020, pp. 1-3, doi: 
+                 more severe crosstalk. Therefore, this result shows that the                                            10.1109/EDAPS50281.2020.9312897. 
+                 thermal-aware SI design of the UCIe-A interface is inevitable.                                   [4]    K. Son et al., "Signal Integrity Analysis of High Speed Channel 
+                                                                                                                         considering Thermal Distribution," 2021 IEEE 30th Conference on 
+                                     IV.   DISCUSSION & CONCLUSION                                                       Electrical Performance of Electronic Packaging and Systems (EPEPS), 
+                                                                                                                         Austin, TX, USA, 2021, pp. 1-3, doi: 
+                      In this paper, SI analysis of UCIe-A interface in terms of                                         10.1109/EPEPS51341.2021.9609215. 
+                 crosstalk and thermal effects was carried out. The crosstalk of                                  [5]  Jose, Jitty, Ajith Ravindran, and Keerthi K. Nair. "Study of temperature 
+                 UCIe-A channel is the dominant SI design issue. Furthermore,                                            dependency on MOSFET parameter using MATLAB." International 
+                 as the power consumption of chiplet increases, thermal effects                                          Research Journal of Engineering and Technology (IRJET) 3.07 (2016). 
+                 on SI needs to be  considered  due to the high temperature                                       [6]    K. Son et al., "Thermal and Signal Integrity Co-Design and Verification 
+                 degrades the SI. Hence, this research analyzed not only crosstalk,                                      of Embedded Cooling Structure With Thermal Transmission Line for 
+                 but also thermal effect on SI of the UCIe-A interface. Especially,                                      High Bandwidth Memory Module," in IEEE Transactions on 
+                                                                                                                         Components, Packaging and Manufacturing Technology, vol. 12, no. 9, 
+                 channel characteristics such as insertion loss and PSFEXT, VTF,                                         pp. 1542-1556, Sept. 2022, doi: 10.1109/TCPMT.2022.3201673.
+                  
+                                 Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 07:07:16 UTC from IEEE Xplore.  Restrictions apply. 

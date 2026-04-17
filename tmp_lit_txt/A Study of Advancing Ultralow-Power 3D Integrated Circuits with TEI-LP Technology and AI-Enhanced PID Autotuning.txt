@@ -1,0 +1,800 @@
+                         mathematics
+            Article
+            AStudyofAdvancingUltralow-Power3DIntegratedCircuits
+            withTEI-LPTechnologyandAI-EnhancedPIDAutotuning
+             SangminJeon,HyunseokKwak                             andWoojooLee*
+                                                        DepartmentofIntelligent Semiconductor Engineering, Chung-Ang University, 84, Heukseok-ro, Dongjak-gu,
+                                                        Seoul 06974, Republic of Korea; jademin96@cau.ac.kr (S.J.); goaxhf11@cau.ac.kr (H.K.)
+                                                        * Correspondence: space@cau.ac.kr
+                                                        Abstract: The 3D integrated circuit (3D-IC) is garnering significant attention from academia and
+                                                        industry as a key technology leading the post-Moore era, offering new levels of efficiency, power, per-
+                                                        formance,andform-factoradvantagestothesemiconductorindustry.However,thermalmanagement
+                                                        in 3D-ICs presents a critical challenge that must be overcome to ensure prosperity for this technology.
+                                                        Unlike traditional thermal management solutions that perceive heat generation in 3D-ICs negatively
+                                                        andaimtoeliminateit,thispaperproposes,forthefirsttime,athermalmanagementmethodthat
+                                                        positively utilizes heat to achieve low-power operation in 3D-ICs. This approach is based on a novel
+                                                        discovery that circuits can reduce power consumption at higher temperatures by leveraging the
+                                                        temperature effect inversion (TEI) phenomenon in ultralow-voltage (ULV) operating circuits, a char-
+                                                        acteristic of low-power techniques (TEI-LP techniques). Along with a detailed explanation of this
+             Citation: Jeon, S.; Kwak, H.; Lee, W. A    discovery, this paper introduces new thermal management technologies for practical application in
+             StudyofAdvancingUltralow-Power             3D-ICs. Furthermore, to achieve optimal energy efficiency with the proposed technology, we develop
+             3DIntegratedCircuits with TEI-LP           a temperature controller essential for this purpose. The developed controller is a deep learning-based
+            TechnologyandAI-EnhancedPID                 PIDautotuner. This paper proves the theoretical validity of the AI control algorithm designed for
+            Autotuning. Mathematics 2024, 12, 543.      this purpose and demonstrates the functional correctness and power-saving effectiveness of the
+             https://doi.org/10.3390/                   developedcontroller through intensively conducted simulations.
+             math12040543
+             AcademicEditors:HeuiSeokLim,               Keywords: thermal management; 3D-IC; deep learning-based control algorithm; autotuning;
+             SanghyukLee,YeongwookYangand               PIDcontrol; temperature effect inversion (TEI) phenomenon; ultralow voltage (ULV)
+             Imatitikua Aiyanyo
+                                                        MSC:93B51;93C95;94C60
+             Received: 8 January 2024
+             Revised: 6 February 2024
+            Accepted: 8 February 2024
+             Published: 9 February 2024                 1. Introduction
+             Correction Statement: This article                 Moore’s Law has been a driving force in the downsizing of semiconductors over
+             has been republished with a minor          recent decades, facilitating the integration of more transistors onto a chip. However, de-
+             change. The change does not affect         vice scaling has now reached the quantum mechanical limits, especially in sub-nanometer
+             the scientific content of the article and  processes, leading to significantly lower yields and astronomically high chip development
+             further details are available within the   costs. Chiplet technology, which divides a chip into multiple smaller chiplets instead of
+             backmatter of the website version of       creating a monolithic die, and the associated 3D integrated circuit (3D-IC) technology
+             this article.                              that allows vertical stacking of these chiplets not only overcome the limitations of device
+                                                        scaling but also offer benefits such as reduced wire delay, high interconnect bandwidth,
+                                                        andimprovedenergyefficiency. These technologies are thus considered pivotal in leading
+             Copyright: © 2024 by the authors.          the post-Moore era [1±3]. Despite the many advantages of 3D-ICs, the increased pack-
+             Licensee MDPI, Basel, Switzerland.         aging density achieved by stacking multiple dies in a 3D structure presents a critical
+            This article is an open access article      challengeÐheat management[4,5]. The core of 3D-ICs relies almost exclusively on ther-
+             distributed under the terms and            mal conduction through-silicon vias (TSVs), making thermal management even more
+             conditions of the Creative Commons         challenging. To address this, various cooling techniques [6,7] and thermal-aware floor-
+            Attribution (CC BY) license (https://       planning methods[8,9] have been explored.
+             creativecommons.org/licenses/by/                   This paper begins by questioning whether heat should only be seen as a challenge to
+             4.0/).                                     beovercomein3D-ICs.Thisinquiryismotivatedbyourrecentdiscoverythatheatisno
+             Mathematics 2024, 12, 543. https://doi.org/10.3390/math12040543                                                         https://www.mdpi.com/journal/mathematics
+     Mathematics 2024, 12, 543                                      2of19
+                     longer a negative aspect in ultralow-voltage (ULV) operating chips. ULV circuit technology
+                     hasbeenafundamentalapproachtoachievinglow-powerchipssincetheearly2000s.It
+                     hasbeenextensivelyresearchedtoovercomethemajorhurdleofULVcircuits,namelytheir
+                     vulnerability to process, voltage, and temperature (PVT) variations [10±12]. As a result
+                     of these efforts, ULV-operating chips have been realized. Unfortunately, the inevitable
+                     performancesacrifice for low power in these ULV-operating chips has historically limited
+                     the range of applications that could operate effectively on these chips, thus significantly
+                     constraining the practicality and application of ULV circuit technology. However, recent
+                     developmentshavesignaledashifttothistrend. Withtheadventoftheartificialintelligence
+                     (AI) era, and the shift in hardware computing power from relying on a high-performance
+                     single processing unit to multiple low-performance processing units inherently capable of
+                     the parallel processing of AI applications [13,14], the value of ULV circuit technology has
+                     significantly increased. As a consequence, recently, various ULV chips have been actively
+                     developedandhaveemerged[15±17].
+                        Overthepastdecade,wehaveconductedin-depthresearchonULVcircuits,focusing
+                     on the unique phenomenon where circuit speed increases with rising temperature [18],
+                     termedthetemperatureeffectinversion(TEI)phenomenon[19].Wehavededicatedour
+                     efforts to developing TEI-aware low-power(TEI-LP)techniques,whicharenowinamature
+                     state [20±27]. Furthermore, we have recently developed a processor chip using the 28nm
+                     FDSOIprocess, incorporating the TEI-LP technology. During our experiments with this
+                     chip, we obtained a fascinating result: as the temperature rises, the power consumption
+                     decreases. This finding is contrary to the conventional wisdom that higher temperatures
+                     lead to increased power consumption in semiconductor chips. Our discovery highlights
+                     the remarkable impact of TEI-LP technology in producing such an unexpected outcome. In
+                     this paper, we present this discovery for the first time and provide a detailed analysis of its
+                     implications and underlying mechanisms.
+                        Ournewfindingsuggeststhatheatmaynolongerneedtobeviewednegativelyin
+                     3D-ICs. Instead of unconditionally reducing chip temperature through traditional thermal
+                     managementtechniques,maintainingheatatacertainlevelcouldimprovethechip’sen-
+                     ergyefficiency. However,existingcontrolsystemsdevelopedforallprevious3D-ICthermal
+                     managementtechnologiesarenotsuitableforourproposednewthermalmanagementap-
+                     proach, necessitating the development of a dedicated controller, which we have addressed
+                     in this paper.
+                        To maximize the power reduction effect in 3D-ICs utilizing our proposed TEI-LP
+                     technology, we developed a cooling system controller that precisely maintains the optimal
+                     temperaturewithoutovershooting.Thedesignofthiscontrollerencounteredchallenges
+                     due to the heterogeneous configuration of the 3D-IC dies and the variety of interface
+                     materials used in packaging [4]. To overcome these challenges, we engineered a deep
+                     learning-based proportional±integral±derivative (PID) autotuning controller, capable of
+                     adaptively adjusting gain values for variable thermal models. Specifically, we enhanced
+                     a conventional autotuning PID controller [28] with a neural network, integrating a rein-
+                     forcementlearning-basedsecondaryautotuningprocess.Thisneuralnetwork,designed
+                     withanerror-drivenalgorithm,enabledthecontrollertoovercomeinaccuraciesin3D-IC
+                     thermalmodels.Notably,thenetworkwastrainedtominimizeovershootingduringthe
+                     control process, thereby maximizing the power-saving benefits of the TEI-LP technology
+                     for enhanced energy efficiency.
+                        To validate the efficacy of our developed controller, we first implemented an auto-
+                     tuning PID controller using the first-order plus dead-time (FOPDT) control model. Then,
+                     wederivedasimplified3Dthermalmodeltodesigntheneuralnetworkandconducteda
+                     hyperparameteroptimization.Subsequently, we tested the performance of our proposed
+                     controller not only on the derived thermal model but also on a more realistic 3D-IC struc-
+                     ture using HotSpot [29] simulations. Through these simulations, we confirmed that our
+                     proposedcontroller adaptively learned across various thermal models and robustly per-
+         Mathematics 2024, 12, 543                                                                                                3of19
+                                         formed PID control with minimal overshooting. As a result, we demonstrated that the
+                                         utilization of our TEI-LP technology can achieve up to 22.1% energy savings in 3D-ICs.
+                                              Theremainderofthispaperisorganizedasfollows.Section2introducestheTEI-LP
+                                         technology and our pioneering discovery of the positive relationship between tempera-
+                                         ture and power consumption. It also explains the impact of controller overshooting on
+                                         energy efficiency in relation to voltage scaling performance in the 3D-IC cooling system. In
+                                         Section 3, we introduce a deep learning-based autotuning PID controller for applying the
+                                         TEIphenomenonin3D-ICsandevaluatetheperformanceoftheproposedcontrollerunder
+                                         a simplified thermal model. Section 4 presents the results of a control simulation of the
+                                         proposedcontrollerusingamorerealistic3D-ICmodel.Finally,Section5offersconclusions.
+                                         2. Application of TEI-Aware Low-Power Techniques in 3D-IC: Embracing Higher
+                                         TemperaturesforEfficiency
+                                         2.1. TEI-Aware Voltage Scaling Technique
+                                              TheoccurrenceofincreasedspeedwithrisingtemperatureinULVcircuitscontrasts
+                                         withthetraditional temperature±speed relationship seen in standard circuits, marking a
+                                         significant shift in understanding. This characteristic can be analyzed by examining the
+                                         variations in the on current strength I   of semiconductor transistors in relation to the oper-
+                                                                                on
+                                         ating temperature T. In more detail, I    is a function of T, and its impact varies depending
+                                                                                on
+                                         onthe circuit’s operating regime. In ULV circuits where the gate±source voltage V           (or
+                                                                                                                                  gs
+                                         simply considered as the supply voltage V ) is close to or nearly equal to the threshold
+                                                                                       dd
+                                         voltage V , the effect of T on I    is different compared to superthreshold voltage (STV)
+                                                   th                     on
+                                         operating circuits, or nominal supply voltage operations, where V      ≤V .Mathematically,
+                                                                                                              gs    th
+                                         this can be expressed as [18]:
+                                                                                (V −V (T))γ
+                                                                      µ(T)·e gs       th       for STV regime
+                                                              I   ∝              V −V (T)                         ,                  (1)
+                                                               on                gs th
+                                                                         µ(T) · e  S(T)        for ULVregime
+                                         where γ is the velocity saturation effect factor, µ is the carrier mobility, and S is the sub-
+                                         threshold swing. From the equation, for an STV circuit, as T increases, µ(T) decreases
+                                         significantly compared to the effect of V (T) on I , resulting in a decrease in I . On the
+                                                                                   th         on                             on
+                                         other hand, in the NTV circuit operating with ULV, as T increases, it has an exponential
+                                         effect on I  onV (T)andS(T),soevenifµ(T)decreases, I              increases.
+                                                   on      th                                            on
+                                              Subsequently, the delay of the transistor τ can be formulated as a function of I        in
+                                                                                           D                                       on
+                                         the following manner [12]:
+                                                                                        C V
+                                                                                 τ =        dd ,                                     (2)
+                                                                                  D    I    2
+                                                                                        on
+                                         where C is the transistor capacitance. From (1) and (2), we can deduce that as the tem-
+                                         perature rises, in the STV regime, the circuit delay increases (i.e., the speed of the circuit
+                                         decreases), while in the ULV regime, the circuit delay decreases (i.e., the speed of the circuit
+                                         increases). Furthermore, when actual semiconductor transistor characteristic parameters
+                                         are applied, the extent of the speed/delay variation with temperature in the STV and ULV
+                                         regimes is markedly different, with the difference in the ULV circuit being significantly
+                                         greater than that in the STV. We previously named this phenomenon temperature effect
+                                         inversion (TEI) in our prior research [19].
+                                              TheTEIphenomenonhascatalyzedaparadigmshiftinthelow-powerdesignfield,as
+                                         it implies that increasing temperatures can generate a delay margin, which can be advanta-
+                                         geousforlow-powertechnologies.Morespecifically,circuits have a defined operational
+                                         temperature range (T        ≤ T ≤ T      ) to ensure normal functioning, and the circuit’s
+                                                                min            max
+                                         operational speed is determined by the slowest speed within this temperature range. In
+                                         other words, the circuit’s clock speed (or target clock frequency, ftarget) is decided based on
+                                         the worst-case corner delay within the temperature range (i.e., ftarget = 1 ).
+                                                                                                                     τ
+                                                                                                                      D
+                                              Thus, in ULV circuits, f      is determined by the delay τ        at T   . As T increases,
+                                                                       target                             target    min
+                                         the difference in delay, resulting from τ       , becomes more significant, and this delay
+                                                                                     target
+        Mathematics 2024, 12, 543                                                                                      4of19
+                                     margin, as shown in Figure 1, is defined as the TEI benefit. We have confirmed through
+                                     previous studies that this TEI benefit is evident across the entire operating temperature
+                                     rangeofthechip(typicallyfrom −25°Cto125°C)invarioussemiconductortechnology
+                                     processes [19,27].
+                                                          (a)                                        (b)
+                                     Figure 1. Temperature±delay characteristics of semiconductor circuit when operating in the (a) STV
+                                     regimeand(b)ULVregime.
+                                          TEI-LPtechniquesexploit the TEI benefit through various approaches, such as TEI-
+                                     awarevoltagescaling(VS)[22,24,27,30], frequency scaling (FS [21], body biasing (BB) [26],
+                                     or dynamic power management (DPM) [25]. Among these, the best-known technique
+                                     is TEI-aware VS (TEI-VS), which converts the TEI benefit into power savings through
+                                     voltage downscaling.ThisisbecauseV iscloselyrelatedtothecircuitdelayτ andpower
+                                                                          dd                                    D
+                                     consumption P. First, the relationship between V  andτ canbederivedasfollowsfrom
+                                                                                     dd      D
+                                     (1) and (2):
+                                                                              C    V
+                                                                        τ =         dd    ,                               (3)
+                                                                         D        V /nV
+                                                                              2βe dd   th
+                                     where β and n are the strength of transistor and the subthreshold factor, respectively. Next,
+                                     P is the sum of dynamic power P           and static power P     , each expressible as a
+                                                                        dynamic                   static
+                                     function of V :
+                                                  dd                         2
+                                                           P       =α·C·V ·f,        P     =V ·I       ,                  (4)
+                                                            dynamic          dd       Static   dd  of f
+                                     whereαand I      are the activity factor and off current, respectively. Therefore, by (3), we
+                                                   of f
+                                     canreduceV bytheamountofTEIbenefit,whichtranslatesintopowersavingsasper(4).
+                                                  dd
+                                     2.2. TEI-VS-Based Thermal Management for 3D-IC: Utilizing the New Finding of a Positive
+                                     Relationship between Temperature and Power Savings
+                                          In our recent research, we designed an ultralow-power (ULP) system-on-chip (SoC)
+                                     based on ULV circuitry and fabricated it using a 28 nm FDSOI process [27]. We demon-
+                                     strated the significant effectiveness of TEI-VS with this chip, and Figure 2 reports the results
+                                     of applying TEI-VS at 10 ◦C intervals. Our developed chip supported an ftarget of 50 MHz
+                                     and 100 MHz, with the worst-case corner minimum V         for these speeds being 0.54 V
+                                                                                            dd
+                                     and0.61V,respectively, at the lowest operating temperature of −40 ◦C. For reference, the
+                                     nominalV forthe28nmFDSOIprocessweusedis0.7V.Asshowninthefigure,thevalue
+                                               dd
+                                     of V      , which is the result of applying TEI-VS, decreases with increasing temperature.
+                                         TEI-VS
+                                     This clearly confirms the following equation:
+                                                         V       (T ) ≥ V        (T ) for T   ≤T ≤T.                      (5)
+                                                          TEI−VS   1      TEI−VS   2       min    1    2
+                                          Applying TEI-VS results in reduced power consumption. The power consumption
+                                     corresponding to the TEI-VS results in Figure 2 is presented in Figure 3, with results for
+                                     an ftarget of (a) 50 MHz and (b) 100 MHz. In both figures, the black line represents the
+       Mathematics 2024, 12, 543                                                                       5of19
+                                powerconsumptionwithoutapplyingTEI-VS,atV =(a)0.54V,(b)0.61V.Here,asper
+                                                                            dd
+                                commonsense,powerconsumptionincreaseswithtemperature.Incontrast,theblueline
+                                showstheresults with TEI-VS applied, where, surprisingly, power consumption decreases
+                                withincreasing temperature. This is because the reduction in power consumption through
+                                voltage scaling down with TEI-VS is greater than the increase induced by rising tempera-
+                                tures. In addition, this phenomenon is observed across the entire operating temperature
+                                range, with the change being more pronounced at lower temperatures. More specifically, as
+                                the temperature increases, as shown in the figure, the rate of decrease tends to diminish,
+                                becomingnegligiblearound80°C.Consequently,byapplyingTEI-VSintherangefrom
+                                −40°Cto80°C,temperatureistransformedfromanegativetoapositivefactorintermsof
+                                powerconsumption.
+                                Figure 2. MinimumV derivedbyapplyingTEI-VSaccordingtothegiventemperature,measured
+                                                 dd
+                                fromourULVchipfabricatedwith28nmFDSOItechnologyintroducedin[27].
+                                                  (a)                                  (b)
+                                Figure 3. Power consumption results with and without TEI-VS application across temperature
+                                changes, when ftarget is (a) 50 Mhz and (b) 100 Mhz.
+                                    This discovery has the potential to intelligently liberate 3D-ICs, which traditionally
+                                suffer from heat treatment issues. In other words, the heat that is generated can be utilized
+                                to reduce the power consumption of dies operating at ULV by applying TEI-VS.
+                                    However,toactualize this idea, we need to devise several practical solutions. Firstly, a
+                                specific plan for the resolution of voltage scaling control must be established. This is due
+                                to the limited resolution of the DC-DC converter responsible for voltage scaling within
+                                the circuit, as typically, DC-DC converters can adjust voltage levels discretely in tens to
+              Mathematics 2024, 12, 543                                                                                                                                                                   6of19
+                                                               hundredsofmillivolts. In other words, temperature-based voltage scaling like that shown
+                                                               in Figure 2 is challenging to implement in reality, and instead, temperatures must be set
+                                                               according to the voltage levels provided by the DC-DC converter. To elaborate on our
+                                                               proposed method, if we define the set of effective output voltage levels of the DC-DC
+                                                               converter as V = V |1 ≤ i ≤ M, we can derive T                                           corresponding to each V                      through
+                                                                                       s         s,i                                               th,i                                          s,i
+                                                               the following equation:
+                                                                                                                        V =V                   (T      ).                                                      (6)
+                                                                                                                           s,i       TEI-VS        th,i
+                                                                       Thus,wecanestablishasetofcontrollablepoints,S,composedoffeasibletemperature
+                                                               values and corresponding voltage levels for TEI-VS application, as follows:
+                                                                                                             S = {(T           , V )|T           ≤i≤T }                                                        (7)
+                                                                                                                           th,i    s,i     min               max
+                                                                       Finally, for a given die temperature T                           , V            is determined by finding min(k) in S
+                                                                                                                                    die     TEI-VS
+                                                               satisfying T            −T ≥0,andthepairedV becomesthetargetV                                                         (T ).
+                                                                                  s,k        die                                     s,k                                   TEI-VS        die
+                                                                       Next, for the practical application of TEI-VS in 3D-ICs, designing a cooling controller
+                                                               with minimal overshooting is crucial. As previously discussed, when finding k and setting
+                                                               the die temperature to T                      for a given T              using a cooling controller, any overshooting
+                                                                                                         s,k                       die
+                                                               T              during control means the die’s V                            must be V                  (T       −T                ) instead of
+                                                                 overshoot                                                            dd                   TEI-VS        die        overshoot
+                                                               V .This is because maintaining V                               =V wouldpreventthecircuitfrommeetingthe
+                                                                  s,k                                                     dd         s,k
+                                                               target frequency, leading to potentially critical chip errors. Furthermore, it is crucial to
+                                                               note that since we cannot predict T                                   at runtime, we typically cannot perform voltage
+                                                                                                                        overshoot
+                                                               scaling until the system has stably converged to the set temperature (i.e., T ). As a result,
+                                                                                                                                                                                          s,k
+                                                               excessive T                     in the cooling controller makes voltage downscaling infeasible until
+                                                                                  overshoot
+                                                               stabilization, significantly diminishing the benefits of power reduction and energy savings.
+                                                               Therefore, to fully exploit the power/energy-saving potential of TEI-VS in 3D-ICs, it is
+                                                               necessary to develop a cooling controller that quickly converges to the set temperature
+                                                               while causing minimal overshooting.
+                                                               3. Deep Learning-Based Autotuning PIDController for the 3D-IC Cooling System
+                                                                       PIDcontrolisamethodthatmaintainstheoutputofacontrolledobjectatadesired
+                                                               target value using three operations: proportional, integral, and differential. PID control has
+                                                               the advantages of being simple and easy to understand, having excellent stability and ro-
+                                                               bustness, and being applicable to a wide range of systems [31±33]. However, inappropriate
+                                                               setting of PID gains may lead to excessive overshooting [34]. Overshooting, a phenomenon
+                                                               where the output exceeds the target value, occurs when the proportional gain Kp is too
+                                                               high or the integration time T is too short. As discussed earlier, excessive overshooting
+                                                                                                                 i
+                                                               in the cooling system controller of 3D-ICs necessitates providing a larger voltage margin.
+                                                               This requirement means that to meet the target speed of the chip, a higher voltage than
+                                                               the lowest level resulting from TEI-VS must be supplied. Given the difficulty in predicting
+                                                               the extent of overshooting at runtime, the most stable operation choice inevitably becomes
+                                                               using the nominal voltage instead of the result from TEI-VS. Consequently, this leads to an
+                                                               unavoidable decrease in energy efficiency. To tackle this issue, the crux of our controller
+                                                               designis to set appropriate proportional, integral, derivative, and antiwindup gains, Kp,
+                                                               Ki, Kd, and Kaw, respectively, so as to minimize the overshooting.
+                                                                       In our situation, characterized by the heterogeneous configuration of 3D-IC dies and
+                                                               the diverse interface materials used in packaging, obtaining comprehensive information
+                                                               aboutthecontrolled object is challenging. This complexity makes it difficult to determine
+                                                               the ideal values of the four key parameters: Kp, Ki, Kd, and Kaw. While various autotun-
+                                                               ing methods, such as the Ziegler±Nichols method [35], damped oscillation method [36],
+                                                               andCohen±Coonmethod[37],existforautomatically calculating PID parameters, their
+                                                               effectiveness can significantly diminish in scenarios where the plant characteristics fre-
+                                                               quently change or external noise is present. The controller proposed in this paper leverages
+        Mathematics 2024, 12, 543                                                                                       7of19
+                                      deeplearningtosurmountthelimitationsoftheseexistingautotuningtechniques,thereby
+                                      enabling robust control across various plants in 3D-IC.
+                                      3.1. Control Model
+                                          This section is dedicated to explaining traditional PID control through the adoption
+                                      of the FOPDTmodel[28,38].TheFOPDTmodel,commonlyusedincoolingandheating
+                                      systems, is represented by its transfer function, which can be expressed as follows:
+                                                                        G(s) =    Kp e−θs ,                                (8)
+                                                                                τs+1
+                                      whereτandθarethetimeconstantanddelay,respectively.Then,thestandardformofPID
+                                      control can be expressed as follows:
+                                                              u = Kpe(t)+ KpZ te(t)dt+KpT de(t) ,                          (9)
+                                                                            T 0               d  dt
+                                                                             i
+                                      whereuisthecontrollerinputand T, T ,and e(t) are the integration time, differentiation
+                                                                          i  d
+                                      time, and difference between the temperature set point and the actual temperature in
+                                      heating and cooling systems (error), respectively. Using T and T , we can derive k = kp
+                                                                                               i      d                 i   T
+                                      andk =k ×T .                                                                           i
+                                           d    p    d
+                                          ApplyingantiwinduptoreduceovershootinginthestandardformofthePIDcontrol
+                                      in (9) allows the formula to be expressed as follows:
+                                                   u = Kpe(t)+Z t Kpe(τ)+Kaw(usat(τ)−u(τ))dτ+kpT de(t),                   (10)
+                                                                 0  T                                     d dt
+                                                                     i
+                                      whereusat can be expressed as:
+                                                                          u for u      <u<u
+                                                              u   =                 min        max                       (11)
+                                                               sat   umax for u>umax
+                                                                        umin  for  u < umin
+                                          In (11), umax and umin are the maximum and minimum values of the control
+                                      input, respectively.
+                                          Meanwhile,inourPIDcontrol,weemployedadigitalfirst-orderlow-passfilter(LPF)
+                                      to filter out high-frequency noise and to reduce the impact of unnecessary sudden changes
+                                      in the signal. Accordingly, the final control model is as follows:
+                                                  u = Kpe(t)+Z t Kpe(τ)+Kaw(usat(τ)−u(τ))dτ+kpT def(t),                   (12)
+                                                                 0 T                                     d  dt
+                                                                     i
+                                      whereef(t) is e(t) filtered.
+                                      3.2. Proposed Deep Learning-Based Autotuning Method
+                                          Weproposeadeeplearning-basedautotuningprocessforprecisetemperaturecon-
+                                      trol while minimizing overshooting. Our designed process is composed of a two-phase
+                                      approach: the first phase involves a coarse-grain autotuning using conventional methods,
+                                      andthesecondphaseisafine-grain autotuning process that sets the PID gain based on
+                                      deeplearning.
+                                          In the first coarse-grain autotuning phase, as shown in Figure 4a, the user sets the set
+                                      point, which is the desired temperature and the maximum and minimum margins around
+                                      this set temperature. Then, as depicted in Figure 4b, the output of the cooler (or heater) is
+                                      set to on (100%) or off (0%), and the response of the target die within the 3D-IC is observed.
+              Mathematics 2024, 12, 543                                                                                                                                                                8of19
+                                                              Basedontheresultsofthisobservation, the PID gain determined by the initial autotuning
+                                                              canbesetasfollows:
+                                                                                  K =0.35              4     ,   T =0.5T , T =0.125T , K                                 = √ 1            ,               (13)
+                                                                                     p            πy               i            osc      d                osc       aw          T · T
+                                                                                                       dif f                                                                      i     d
+                                                                                                                                      (T     +T )
+                                                              wherey             andT meansy                       −y         and       osc1     osc2 , respectively; y               andy          are the
+                                                                           dif f          osc                max        min                  2                                 max             min
+                                                              maximumandminimumvaluesofthecontrolresponse,respectively; T                                                               represents the
+                                                                                                                                                                                   osc
+                                                              period of oscillation, as also illustrated in Figure 4a; and Kaw can be derived from [39].
+                                                                                                (a)                                                                     (b)
+                                                              Figure 4. The first coarse-grain autotuning process. (a) Time-domain response of controller according
+                                                              to set point, and (b) status of cooler. The cooler operates on/off without duty ratio during the
+                                                              first autotuning.
+                                                                      Followingthefirst autotuning phase, the second step of fine-grain autotuning is ex-
+                                                              ecuted based on the PID gains that were set. This second tuning phase employs deep
+                                                              learning. For the learning process, PID control is carried out with variations in the set
+                                                              point (i.e., the target temperature), relying on the PID gains established by the first auto-
+                                                              tuning and the output from the neural network. The employed learning algorithm is a
+                                                              reinforcement learning model, based on an error-driven approach. This involves using the
+                                                              temperature difference between the plant’s response under PID control and the set point
+                                                              temperature (i.e., the error) as the input for the neural network. As previously mentioned,
+                                                              minimizingovershootingwhenthetargettemperatureislowerthanthecurrenttempera-
+                                                              ture is critical. Hence, the set point is systematically lowered from a higher temperature at
+                                                              regular intervals, enabling the neural network to adequately learn about and respond to
+                                                              overshooting scenarios. The learning process and its components are depicted in a block
+                                                              diagraminFigure5.
+                                                              Figure 5. Block diagram of the proposed fine-grain tuning process based on neural network.
+                                                                      The detailed structure of the neural network is depicted in the block diagram in
+                                                              Figure 6. The neural network consists of fully connected layers with a configuration of
+           Mathematics 2024, 12, 543                                                                                                                      9of19
+                                                8×200×400×400×3,anditsoutputsare T , T, and Kaw. Since the neural network’s
+                                                                                                           d   i
+                                                outputisdirectly utilized as the input for the PID controller, a negative parameter value
+                                                could lead to divergence in the controller’s output. It is crucial to recognize that the neural
+                                                network includes a switching layer, which ensures that the outputs, T , T, and Kaw, do
+                                                                                                                                          d    i
+                                                not becomenegative. The switching layer is a recursive layer where the output is fed back
+                                                as input. If the output of the nth input in the switching layer is negative, then the output
+                                                of the (n −1)th input is used as the nth output again. The output at the switching layer is
+                                                determinedindependentlyforeachparameter.
+                                                Figure 6. Detailed structure of the neural network.
+                                                      Tofacilitate the training of the neural network in a direction that reduces overshooting
+                                                in the PID controller, we incorporated an overshooting term into the loss function for
+                                                weightupdates.Wedefinedthelossfunctionoftheneuralnetworkasfollows:
+                                                                                L = 1(y −y              )2 +(overshooting),                                 (14)
+                                                                                      2   sp     output
+                                                                        overshooting =                     0   for    youtput > ysp ,                      (15)
+                                                                                               e(youtput−ysp)   for    youtput < ysp
+                                                whereysp andyoutput are the set point (i.e., target temperature) and the actual output inside
+                                                the plant through the plant’s control input, respectively.
+                                                      In addition, we adopted the Adam (adaptive moment estimation) algorithm [40] as
+                                                theoptimizerforitswidelyrecognizedperformancebenefits.Adamcombinesthestrengths
+                                                of momentumandRMSpropoptimizationmethodsandisknownforitscomputational
+                                                efficiency and robustness, becoming a popular choice for deep learning applications. To
+                                                minimizetimeoverheadinthesecond-phasetuningprocess,wesetthelearningrateto1,
+                                                leveraging Adam’s ability to adaptively adjust learning rates based on the magnitude
+                                                of gradients.
+                                                3.3. Validation of the Proposed Method with a Basic 3D-IC Thermal Modeling
+                                                      Weplannedatwo-stepexperimentalprocessÐsimulationsinabasicthermalmodel
+                                                andsimulationsinacomplex3D-ICmodelÐtoverifytheproperfunctioningofthepro-
+                                                posedautotuningcontroller and assess its improvement over traditional methods. First,
+                                                this section describes the initial simulations in the basic thermal model. In the basic model,
+                                                the heat source is located at the center of the unit volume modeling the 3D-IC, with the
+                                                surroundingdiesactingasthereceiversofheat.Additionally,weomittheinterfacematerial
+                                                betweeneachdie,assumingauniformthermalconductivityforalldies.Asillustratedin
+                                                                                                                                  ˙
+                                                Figure 7, the heat energy flowing into the system per unit time, E , and the heat energy
+                                                                                                                                   in
+         Mathematics 2024, 12, 543                                                                                       10of19
+                                                                               ˙
+                                      released from the system per unit time, E   , are each defined within a three-dimensional
+                                                                                out
+                                      Cartesian coordinate system as follows:
+                                                                          ˙
+                                                                          E =qx+qy+qz,                                      (16)
+                                                                           in
+                                                                     ˙
+                                                                    E    =q      +q      +q      ,                          (17)
+                                                                      out   x+dx     y+dy    z+dz
+                                      whereqx+dx, qy+dy, and qz+dz are defined, respectively, as follows:
+                                                       q     =q +∂qx, q         =q +∂qy, q         =q +∂qz.                 (18)
+                                                        x+dx    x    ∂x    x+dy     y   ∂x     x+dz    z   ∂z
+                                      Figure 7. Heat energy flow diagram for the definition of a basic thermal model.
+                                           Usingthedefinition provided in (17) and (18) can be expressed as follows:
+                                                         ˙            ∂qx             ∂qy             ∂qz
+                                                         E   =(q +        dx)+(q +        dy)+(q +       dz).               (19)
+                                                          out     x    ∂x         y   ∂y          z   ∂z
+                                                                                                          ˙
+                                           Regardingtheenergygeneratedinunitvolumeperunittime, Eg,itcanbeexpressed
+                                      as follows:
+                                                                            ˙     ˙
+                                                                            Eg = qdxdydz.                                   (20)
+                                                                                                                             ˙
+                                           Moreover, in the time-dependent system, the energy difference within the volume, E ,
+                                                                                                                              st
+                                      canbeexpressedas:
+                                                                         ˙        ∂T
+                                                                         E =ρc       dxdydz,                                (21)
+                                                                          st     p ∂t
+                                      whereρandcp arethedensityandspecificheatsatconstantpressure,respectively.
+                                           Applying(16)±(21) to the law of conservation of energy, it can be expressed as follows:
+                                                                         ˙    ˙      ˙     ˙
+                                                                        E −E +E =E ,                                        (22)
+                                                                         in    out    g     st
+                                                      ∂qx          ∂qy          ∂qz       ˙             ∂T
+                                                   (− ∂x dx)+(− ∂y dy)+(− ∂z dz)+qdxdydz = ρcp ∂t dxdydz                    (23)
+                                           Meanwhile,byapplyingFourier’slawofheatconduction,theterms qx, qy,and qz can
+                                      bearticulated as follows:
+                                                     q =−k(dydz)dT, q =−k(dzdx)dT, q = −k(dxdy)dT ,                         (24)
+                                                      x             dx    y             dy    z              dz
+                                      where k is the thermal conductivity. Substituting (24) into (23), we can derive the
+                                      following result:
+                                                            ∂    ∂T     ∂   ∂T      ∂   ∂T      ˙      ∂T
+                                                            ∂x(k∂x)+ ∂x(k∂x)+ ∂x(k∂x)+q = ρcp ∂t .                          (25)
+                                           Assuming that the thermal conductivity of each die in the 3D-IC is the same, and
+                                      since the heat conduction equation is being obtained at the specific coordinates of the
+        Mathematics 2024, 12, 543                                                                                    11of19
+                                     die that does not generate heat, (25) can be reformulated as follows, by disregarding the
+                                     boundarycondition:
+                                                                        k∇2T = ρc ∂T.                                  (26)
+                                                                                   p ∂t
+                                         Differentiating both sides of (26) with time and assuming that this is the heat conduc-
+                                     tion equation at specific coordinates, the equation can be expressed as follows:
+                                                               dT(x0,y0,z0,t)    d2T(x0,y0,z0,t)
+                                                              α       dt      =        dt2       ,                     (27)
+                                     where α (α = k ) is the heat capacity. Based on differential Equation (27), if there is no
+                                                   ρcp
+                                     output from the cooler and only heat generation by the core is assumed, the temperature at
+                                     a specific coordinate of the die will exhibit an exponential change over time.
+                                         Wevalidatedthefunctionalityofthecontroller using the derived thermal model. In
+                                     the FOPDTmodeltransferfunction(8),thevaluesofeachparameterusedinthesimulation
+                                     weresetaskp = −10,τ = 0.5,andθ = 0.1.Thesimulationscenariowasasfollows:thecore
+                                     temperature wasinitially set to 50 ◦C, and the temperature at a specific coordinate of the
+                                     diewasalsoassumedtobeinasteadystateconvergingto50◦C.Forthesecondautotuning,
+                                     the set point was reduced by 10 ◦C. It was assumed that after the second-phase (deep
+                                     learning-based) autotuning was completed and the PID gain was set, the core thermally
+                                     ran away, causing both the core and die temperatures to increase to 130 ◦C. Subsequently,
+                                     wesimulatedascenariowherethesetpointwasloweredto80◦CusingthesetPIDgain.
+                                         Thesimulationresults are shown in Figure 8: Figure 8a displays the outcome of imple-
+                                     mentingonlythecoarse-grainautotuning,whileFigure8billustratestheresultsafterapply-
+                                     ing our proposed two-phase autotuning, which includes both coarse-grain autotuning fol-
+                                     lowedbydeeplearning-basedfine-grainautotuning.Thecontrolparametersforeachcase
+                                     arereportedinTable1.Asdepicted,inbothcases,thetemperatureconvergestothesetpoint
+                                     of 80 ◦C under the control of the proposed autotuning controller. However, in Figure 8a,
+                                     an overshooting by up to 11 ◦C occurs relative to the set point, whereas in Figure 8b
+                                     where the second tuning is applied, the overshooting is significantly reduced to within
+                                     1 ◦C. Furthermore, the time taken to stabilize at the set 80 ◦C is substantially shorter in the
+                                     latter case.
+                                                         (a)                                        (b)
+                                     Figure 8. The simulation results of the different autotuning controllers using the developed basic
+                                     thermal modelwith(a)conventionalautotuningand(b)proposedautotuningmethodapplied.
+       Mathematics 2024, 12, 543                                                                      12of19
+                                Table 1. Control parameters for the conventional autotuning and the proposed autotuning used
+                                in Figure 8.
+                                                      Kp             T              T             Kaw
+                                                                      i              d
+                                      Conv.         −0.0181         0.3244         1.2975         1.5414
+                                    Proposed        −0.0181         0.0451         0.0098         0.0261
+                                    Meanwhile,todemonstratethatPIDautotuningshowssuperiorperformancecom-
+                                paredtotraditional static PID control, we designed a static PID controller and conducted
+                                experiments in the same environment as the previous ones. The results are presented
+                                in Figure 9.
+                                                  (a)                                  (b)
+                                Figure 9. The simulation results of the static PID controllers using arbitrarily set control parameters.
+                                Kp, T , T , Kaw were set to (a) −0.8, 0.1, 2.5, 2 and (b) −0.5, 2.0, 0.2, 0.05, respectively.
+                                    d  i
+                                    Since the static PID controller does not have autotuning, users must manually input
+                                the control parameters. Therefore, we arbitrarily set the parameters and performed simula-
+                                tions as shown in Figure 9a,b. While the static PID controller does not require the setup
+                                time demandedbyautotuning,andappropriateuser-selectedparameterscanyieldgood
+                                results as shown in Figure 9a, inputting suboptimal parameters can lead to a significant
+                                overshooting and increased stabilization time, as illustrated in Figure 9b.
+                                    Finally, based on the results of the simulation, it is evident that our proposed method
+                                is the most energy-efficient, maximizing the TEI-VS effect. In the case of applying TEI-VS,
+                                for the former scenario, TEI-VS cannot be applied for a significant duration (about 415 s)
+                                until the plant’s temperature stabilizes at 80 ◦C, thus requiring the supply of the nominal
+                                supply voltage without any voltage scaling down. In contrast, for the latter scenario, as
+                                the system stabilizes quickly within 140 s, TEI-VS can be immediately applied thereafter to
+                                reducepowerconsumption. BasedonthefactestablishedinSectionIIthatULVcircuits
+                                with TEI-VS exhibit more energy-efficient characteristics at higher temperatures, these
+                                results validate our proposed two-phase autotuning solution as a technology capable of
+                                maximizingenergyefficiency.
+                                4. Experimental Result
+                                    In this section, we report the temperature control performance of the proposed con-
+                                troller on a realistic 3D-IC and the energy efficiency improvements achieved through the
+         Mathematics 2024, 12, 543                                                                                           13of19
+                                       application of the TEI-VS technique. The simulations conducted for evaluation were a
+                                       cosimulationofthethermalsimulationofthe3D-ICandtheproposedcontrollersimulation.
+                                       Wemodeleda3D-ICandextractedtemperaturedataaccordingtotheRPMvaluesofthe
+                                       fan using the HotSpot tool. Subsequently, heat control simulations were performed using
+                                       the obtained heat trace data.
+                                            Figure 10a displays the 3D-IC model used in the simulations. It includes crucial
+                                       components like a heatsink and heat spreader, along with detailed information on the
+                                       TSVsandthermalinterfacematerial(TIM).Inthisstructure,basedonourdiscoverythat
+                                       the core die operating under ULV conditions becomes more energy-efficient at higher
+                                       temperatures due to the effects of TEI-VS, we positioned the target die in the center of the
+                                       3Dstructure where it experienced relatively higher temperatures. The target die comprised
+                                       the Alpha 21264/EV6 microprocessor core [41] provided by the HotSpot simulator [29],
+                                       andthethermalmapofthisdieobtainedfromthesimulationisdepictedinFigure10b.
+                                                             (a)                                           (b)
+                                       Figure 10. (a) The structural diagram of the 3D-IC model used in the simulation and (b) the thermal
+                                       mapofthetargetULVoperatingdie.
+                                            For the verification of the functional validity and effectiveness of the proposed AI-
+                                       based PID autotuning controller, we performed a cosimulation combining the thermal
+                                       simulation of the 3D-IC and the proposed controller. Initially, we conducted a steady-state
+                                       simulation of the 3D-IC using key parameters outlined in Table 2. The heat capacity and
+                                       conductanceofvariousmaterials,includingsilicon,andthespecificationsforheatsinksand
+                                       heat spreaders, were adopted from the default values provided by HotSpot. In the context
+                                       of TEI-VS, due to the power/area overhead of the multiple on-chip DC-DC converters, in
+                                       general, one DC-DC converter is equipped per die, so that voltage scaling is only feasible
+                                       at the level of each die. Therefore, the reference temperature of T    shouldbethelowest
+                                                                                                           die
+                                       temperatureforeachdie,asTEI-VSperformsalowervoltagescalingathighertemperatures.
+                                       Accordingly, we performed a thermal transient simulation for 100 s based on the lowest
+                                       temperature block within the die, as shown in Figure 10b. The transient simulation results
+                                       for each RPMvalueofthefanaredisplayedinFigure11.At100s,thetemperatureofthe
+                                       target block reached 92.9 ◦C and 74.1 ◦C at fan speeds of 1 RPM and 1000 RPM, respectively.
+                                       Basedontheseresults, wemappedtheminimumandmaximumoutputsoftheproposed
+                                       controller to the effective RPM range of the fan.
+       Mathematics 2024, 12, 543                                                                 14of19
+                               Figure 11. Thermal transient simulation results for the target block at various RPM settings.
+                               Table2. List of parameters applied to 3D-IC’s thermal simulation.
+                                    Parameter         Value(◦C)         Parameter        Value (m)
+                                   Initial temp.        80.0           Fanradius            0.02
+                                  Ambienttemp.          40.0           Motorradius          0.01
+                                 Thermalthreshold       120.0
+                                   Subsequently, we performed a control simulation using the heat trace data of the
+                               target block. The control simulation using the new thermal model was conducted in
+                               the same manner as in Section 3.3 to ensure a fair evaluation. Additionally, all target
+                               temperatures used in both the learning phase of the neural network and the control phase
+                               weresetidentically.
+                                   Figure 12 displays the results of the control simulation using a realistic 3D-IC ther-
+                               mal model: Figure 12a shows the results for the conventional coarse autotuning, while
+                               Figure 12b presents the outcomes of the proposed two-phase autotuning, which includes
+                               coarse-grain autotuning followed by deep learning-based fine-grain autotuning. The con-
+                               trol parameters for each are reported in Table 3. Compared to the results in Figure 8, the
+                               tendency for overshooting was different with conventional autotuning. Although it ap-
+                               peared as a slight improvement, the control simulation was conducted fairly with only the
+                               thermal modeldiffering, suggesting a high dependence of the conventional controller on
+                               the thermal model, indicating a limitation. In contrast, the proposed controller adaptively
+                               learned from different thermal models via the neural network, showing simulation results
+                               with minimal overshooting, similar to previous simulations. These results validate the
+                               robust control capability of the proposed controller in varying thermal models of 3D-ICs.
+                               Table 3. Control parameters for the conventional autotuning and the proposed autotuning used
+                               in Figure 12.
+                                                   Kp             T             T            Kaw
+                                                                   i             d
+                                    Conv.        −0.0743        43.8125       10.9525        0.0457
+                                  Proposed       −0.0743        0.0288        0.0063         0.0217
+       Mathematics 2024, 12, 543                                                                      15of19
+                                                  (a)                                  (b)
+                                Figure 12. The simulation results of the different autotuning controllers using heat trace from the
+                                HotSpotthermalmodelsimulationatasettemperatureof80°Cwith(a)conventionalautotuningand
+                                (b) proposed autotuning method applied.
+                                    Finally, we discuss the energy savings achievable by applying TEI-VS to 3D-ICs using
+                                the proposed autotuning technique instead of conventional methods. In the simulation,
+                                powervalueswerederivedfrommeasurementsobtainedfromourchipdevelopedusing
+                                a 28 nm process (refer to Figure 3), and the maximum operating temperature was set to
+                                80 ◦C. As depicted in Figure 12, the time taken to stabilize at the set temperature point of
+                                80 ◦C, tsettling, was 556.86 s for conventional autotuning and 190.36 s for our proposed
+                                method. Considering that TEI-VS could not be applied during tsettling, the faster stabi-
+                                lization of the proposed method led to more energy-efficient results. In other words, the
+                                conventional method could not utilize TEI-VS during the tsettling of 556.86 s, requiring a
+                                0.54 V supply at the 50 MHz operating frequency and a 0.61 V supply at the 100 MHz
+                                operating frequency, whereas the proposed method can operate at 80 ◦C TEI-VS results of
+                                0.44 V supply at 50 MHz operating frequency and 0.49 V supply at 100 MHz operating
+                                frequency after 190.36 s. Table 4 reports the energy consumption results based on these
+                                differences. The proposed controller achieved 20.7% and 22.1% energy savings at 50 MHz
+                                and100MHz,respectively,comparedtotheconventionalcontroller.
+                                Table 4. Energy saving results based on the settling time of the conventional method, when the target
+                                temperature was set to 80 ◦C.
+                                                            ClockFrequency:50MHz     ClockFrequency:100MHz
+                                          E   (J)                   1.430                    3.151
+                                           Conv.
+                                         EProposed (J)              1.134                    2.455
+                                      Energysaving(%)               20.70                    22.09
+                                    Additionally, to demonstrate that our proposed controller still performs well and
+                                achieves excellent power consumption reduction at different set points, we also conducted
+                                simulations with the set temperature point at 60 ◦C. The results are depicted in Figure 13,
+                                witheachfigurerepresenting (a) the conventional method, and (b) our proposed method.
+       Mathematics 2024, 12, 543                                                                      16of19
+                                The control parameter values for the conventional method were the same as in Table 3,
+                                while for our proposed method, Kp = −0.0743, T = 0.0302, T = 0.0002, and Kaw = 0.0108.
+                                                                         i         d
+                                Comparedtothe results in Figure 12, while the tsettling increased to achieve a lower set
+                                temperature, our proposed method’s tsettling of 255 s was still significantly faster than the
+                                638 s of the conventional method. The energy savings from this experiment are reported in
+                                Table 5. The proposed controller showed remarkable savings, achieving 17.8% and 16.3%
+                                reductions in energy consumption at 50 MHz and 100 MHz, respectively, when compared
+                                to the conventional controller.
+                                                  (a)                                  (b)
+                                Figure 13. The simulation results of the different autotuning controllers using heat trace from the
+                                HotSpotthermalmodelsimulationatasettemperatureof60°Cwith(a)conventionalautotuningand
+                                (b) proposed autotuning method applied.
+                                Table 5. Energy saving results based on the settling time of the conventional method, when the target
+                                temperature is set to 60 ◦C.
+                                                            ClockFrequency:50MHz     ClockFrequency:100MHz
+                                          E   (J)                   1.571                    3.491
+                                           Conv.
+                                         EProposed (J)              1.334                    2.921
+                                      Energysaving(%)               17.77                    16.33
+                                5. Conclusions
+                                    The 3D-IC is garnering significant attention from academia and industry as a key
+                                technology leading the post-Moore era, offering new levels of efficiency, power, perfor-
+                                mance,andform-factoradvantagestothesemiconductorindustry.Wehavesuccessfully
+                                challenged the traditional approach to thermal management in 3D-ICs, which typically
+                                views heat generation negatively and focuses on its elimination. Instead, our novel ap-
+                                proach utilizes this heat positively to achieve low-power operation in 3D-ICs. Central
+                                to our method is the innovative use of the TEI phenomenon in ULV operating circuits,
+                                a key feature of the TEI-VS technique. This approach allows for a reduction in power
+                                consumption as temperatures rise, overturning conventional understandings of ther-
+           Mathematics 2024, 12, 543                                                                                                                           17of19
+                                                  mal effects in 3D-ICs that includes plants with ULV operation. We not only introduced
+                                                  newthermalmanagementtechnologiessuitable for practical implementation in 3D-ICs
+                                                  but also developed a critical component for achieving optimal energy efficiency: a deep
+                                                  learning-based PID autotuning temperature controller. The effectiveness and theoreti-
+                                                  cal soundness of this AI control algorithm were thoroughly validated through exten-
+                                                  sive simulations, demonstrating both its functional accuracy and its ability to enhance
+                                                  powerefficiency.
+                                                        Ourworkrepresentsasignificantstride towards more efficient and sustainable semi-
+                                                  conductor technologies. By embracing and utilizing the inherent thermal properties of
+                                                  3D-ICs, we pave the way for more innovative and energy-efficient solutions in semiconduc-
+                                                  tor design andoperation.Moreover,oursolutionconcretelydemonstratesthatoptimization
+                                                  canbeachievedthroughAI-basedalgorithmsandcontrol,clearlyshowingthatsemicon-
+                                                  ductor design and operation can be a prime application area for the improvement of AI
+                                                  algorithms and systems.
+                                                  AuthorContributions:S.J., H.K. and W.L. were the main researchers who initiated and organized the
+                                                  research reported in this paper, and all authors were responsible for analyzing the simulation results
+                                                  andwritingthepaper.S.J.andH.K.haveequallycontributedtothispaperandareco-firstauthors.
+                                                  All authors have read and agreed to the published version of the manuscript.
+                                                  Funding:ThispaperwassupportedinpartbyKoreaInstituteforAdvancementofTechnology(KIAT)
+                                                  grant fundedbytheKoreaGovernment(MOTIE)(P0017011,HRDProgramforIndustrialInnovation)
+                                                  andinpartbytheChung-AngUniversityGraduateResearchScholarshipGrantsin2022.
+                                                  Data Availability Statement: The data presented in this study are available on request from the
+                                                  correspondingauthor. The data are not publicly available due to strategic reasons for the future work.
+                                                  Conflicts of Interest: The authors declare no conflicts of interest.
+           References
+           1.     Lau, J.H. Recent advances and trends in advanced packaging. IEEE Trans. Components Packag. Manuf. Technol. 2022, 12, 228±252.
+                  [CrossRef]
+           2.     Gomes,W.;Khushu,S.;Ingerly,D.B.;Stover, P.N.; Chowdhury, N.I.; O’Mahony, F.; Balankutty, A.; Dolev, N.; Dixon, M.G.; Jiang,
+                  L.; et al. 8.1 Lakefield and Mobility Compute: A 3D Stacked 10 nm and 22FFL Hybrid Processor System in 12 × 12 mm2, 1 mm
+                  Package-on-Package. In Proceedings of the 2020 IEEE International Solid-State Circuits Conference-(ISSCC), San Francisco, CA,
+                  USA,16±20February2020;pp.144±146.
+           3.     Hu,C.;Chen,M.;Chiou,W.;Doug,C. 3Dmulti-chipintegrationwithsystemonintegratedchips(SoIC™). InProceedingsofthe
+                  2019 SymposiumonVLSITechnology,Kyoto,Japan,9±14June 2019;pp.T20±T21.
+           4.     Salvi, S.S.; Jain, A. A review of recent research on heat transfer in three-dimensional integrated circuits (3-D ICs). IEEE Trans.
+                 ComponentsPackag. Manuf. Technol. 2021, 11, 802±821. [CrossRef]
+           5.     Ding, B.; Zhang, Z.H.; Gong, L.; Xu, M.H.; Huang, Z.Q. A novel thermal management scheme for 3D-IC chips with multi-cores
+                  andhighpowerdensity. Appl.Therm.Eng.2020,168,114832.[CrossRef]
+           6.     Wang,C.;Huang,X.J.;Vafai,K. Analysisofhotspotsandcoolingstrategyformultilayerthree-dimensionalintegratedcircuits.
+                 Appl. Therm. Eng. 2021, 186, 116336. [CrossRef]
+           7.     Wang, S.; Yin, Y.; Hu, C.; Rezai, P. 3D integrated circuit cooling with microfluidics. Micromachines 2018, 9, 287. [CrossRef]
+                  [PubMed]
+           8.     Ren, Z.; Alqahtani, A.; Bagherzadeh, N.; Lee, J. Thermal TSV optimization and hierarchical floorplanning for 3-D integrated
+                  circuits. IEEE Trans. Components Packag. Manuf. Technol. 2020, 10, 599±610. [CrossRef]
+           9.     Lin,J.M.;Chang,W.Y.;Hsieh,H.Y.;Shyu,Y.T.;Chang,Y.J.;Lu,J.M. Thermal-awarefloorplanningandTSV-planningformixed-type
+                  modulesinafixed-outline3-DIC. IEEETrans.VeryLargeScaleIntegr. Syst. 2021, 29, 1652±1664. [CrossRef]
+           10.    Hanson,S.; Zhai, B.; Seok, M.; Cline, B.; Zhou, K.; Singhal, M.; Minuth, M.; Olson, J.; Nazhandali, L.; Austin, T.; et al. Exploring
+                 Variability and Performance in a Sub-200-mV Processor. IEEE J. Solid State Circuits 2008, 43, 881±891. [CrossRef]
+           11.    Zhai, B.; Pant, S.; Nazhandali, L.; Hanson, S.; Olson, J.; Reeves, A.; Minuth, M.; Helfand, R.; Austin, T.; Sylvester, D.; et al.
+                  Energy-Efficient Subthreshold Processor Design. IEEE Trans. Very Large Scale Integr. Syst. 2009, 17, 1127±1137. [CrossRef]
+           12.    Alioto, M. Ultra-low power VLSI circuit design demystified and explained: A tutorial. IEEE Trans. Circuits Syst. I Regul. Pap. 2012,
+                  59, 3±29. [CrossRef]
+           13.    Wang,S.;Pathania, A.; Mitra, T. Neural network inference on mobile SoCs. IEEE Des. Test 2020, 37, 50±57. [CrossRef]
+          Mathematics 2024, 12, 543                                                                                                             18of19
+          14.   Hartmann, J.; Cappelletti, P.; Chawla, N.; Arnaud, F.; Cathelin, A. Artificial Intelligence: Why moving it to the Edge? In
+                Proceedings of the ESSDERC 2021-IEEE 51st European Solid-State Device Research Conference (ESSDERC), Grenoble, France,
+                13±22September2021;pp.1±6.
+          15.   Conti, F.; Rossi, D.; Paulin, G.; Garofalo, A.; Di Mauro, A.; Rutishauer, G.; Ottavi, G.M.; Eggimann, M.; Okuhara, H.; Huard,
+                V.; et al. 22.1 A 12.4 TOPS/W@ 136GOPS AI-IoT system-on-chip with 16 RISC-V, 2-to-8b precision-scalable DNN acceleration
+                and30%-boostadaptivebodybiasing. InProceedingsofthe2023IEEEInternationalSolid-StateCircuitsConference(ISSCC),
+                SanFrancisco, CA, USA, 19±23 February 2023; pp. 21±23.
+          16.   Rossi, D.; Conti, F.; Eggiman, M.; Di Mauro, A.; Tagliavini, G.; Mach, S.; Guermandi, M.; Pullini, A.; Loi, I.; Chen, J.; et al. Vega: A
+                ten-core SoC for IoT endnodes with DNN acceleration and cognitive wake-up from MRAM-based state-retentive sleep mode.
+                IEEEJ. Solid State Circuits 2021, 57, 127±139. [CrossRef]
+          17.   Rubino, A.; Livanelioglu, C.; Qiao, N.; Payvand, M.; Indiveri, G. Ultra-low-power FDSOI neural circuits for extreme-edge
+                neuromorphicintelligence. IEEE Trans. Circuits Syst. I Regul. Pap. 2020, 68, 45±56. [CrossRef]
+          18.   Pu, Y.; Zhang, X.; Huang, J.; Muramatsu, A.; Nomura, M.; Hirairi, K.; Takata, H.; Sakurabayashi, T.; Miyano, S.; Takamiya, M.;
+                et al. Misleading energy and performance claims in sub/near threshold digital systems. In Proceedings of the 2010 IEEE/ACM
+                International Conference on Computer-Aided Design (ICCAD), San Jose, CA, USA, 7±11 November 2010; pp. 625±631.
+          19.   Lee, W.; Wang, Y.; Cui, T.; Nazarian, S.; Pedram, M. Dynamic thermal management for FinFET-based circuits exploiting the
+                temperature effect inversion phenomenon. In Proceedings of the 2014 International Symposium on Low Power Electronics and
+                Design, La Jolla, CA, USA, 11±13 August 2014; pp. 105±110.
+          20.   Rossi, D.; Pullini, A.; Gautschi, M.; Loi, I.; Gurkaynak, F.K.; Flatresse, P.; Benini, L. A- 1.8 V to 0.9 V body bias, 60 GOPS/W 4-core
+                cluster in low-power 28nm UTBB FD-SOItechnology. In Proceedings of the 2015 IEEE SOI-3D-Subthreshold Microelectronics
+                TechnologyUnifiedConference(S3S),RohnertPark,CA,USA,5±8October2015;pp.1±3.
+          21.   Cai, E.; Marculescu, D. TEI-Turbo: Temperature effect inversion-aware turbo boost for finfet-based multi-core systems. In
+                Proceedings of the 2015 IEEE/ACM International Conference on Computer-Aided Design (ICCAD), Austin, TX, USA, 2±6
+                November2015;pp.500±507.
+          22.   Zu,Y.;Huang,W.;Paul,I.;Reddi,V.J. Ti-states: Processor powermanagementinthetemperatureinversionregion. InProceedings
+                of the 2016 49th Annual IEEE/ACMInternational SymposiumonMicroarchitecture(MICRO),Taipei,Taiwan,15±19October
+                2016; pp. 1±13.
+          23.   Lee, W.; Han, K.; Wang, Y.; Cui, T.; Nazarian, S.; Pedram, M. TEI-power: Temperature Effect InversionÐAware Dynamic Thermal
+                Management. ACMTrans.Des.Autom.Electron.Syst.2017,22,1±25.[CrossRef]
+          24.   Park, J.; Cha, H. Aggressive voltage and temperature control for power saving in mobile application processors. IEEE Trans. Mob.
+                Comput.2017,17,1233±1246.[CrossRef]
+          25.   Han, K.; Lee, J.J.; Lee, J.; Lee, W.; Pedram, M. TE-NoC: Optimizing ultralow power NoCs exploiting the temperature effect
+                inversion. IEEE Trans. Comput. Aided Des. Integr. Circuits Syst. 2017, 37, 458±471. [CrossRef]
+          26.   Lee, W.; Kang, T.; Lee, J.J.; Han, K.; Kim, J.; Pedram, M. TEI-ULP: Exploiting body biasing to improve the TEI-Aware ultralow
+                powermethods. IEEETrans.Comput.AidedDes.Integr.Circuits Syst. 2018, 38, 1758±1770. [CrossRef]
+          27.   Han,K.;Lee,S.;Oh,K.I.; Bae, Y.; Jang, H.; Lee, J.J.; Lee, W.; Pedram, M. Developing TEI-Aware Ultralow-Power SoC Platforms
+                for IoT End Nodes. IEEE Internet Things J. 2021, 8, 4642±4656. [CrossRef]
+          28.   Pandey,S.K.; Veeranna, K.; Kumar, B.; Deshmukh, K. A robust auto-tuning scheme for PID controllers. In Proceedings of the
+                IECON2020The46thAnnualConferenceoftheIEEEIndustrialElectronicsSociety,Singapore,18±21October2020;pp.47±52.
+          29.   Zhang,R.;Stan,M.R.;Skadron,K.Hotspot6.0:Validation, Acceleration and Extension; University of Virginia: Charlottesville, VA,
+                USA,2015.
+          30.   Park, J.; Cha, H. T-DVS: Temperature-aware DVS based on temperature inversion phenomenon. In Proceedings of the 2016
+                International Symposium on Low PowerElectronics and Design, San Francisco, CA, USA, 8±10 August 2016; pp. 248±253.
+          31.   Mahmoodabadi,M.J.;Maafi,R.A.; Taherkhorsandi, M. An optimal adaptive robust PID controller subject to fuzzy rules and
+                sliding modes for MIMOuncertain chaotic systems. Appl. Soft Comput. 2017, 52, 1191±1199. [CrossRef]
+          32.   Kumar,N.;Aryan,P.;Raja,G.L.;Muduli,U.R. RobustFrequency-ShiftingBasedControlAmidFalseDataInjectionAttacksfor
+                Interconnected Power Systems with Communication Delay. IEEE Trans. Ind. Appl. 2024, 1±14. [CrossRef]
+          33.   Qiao, J.; Zhao, M.; Wang, D.; Li, M. Action-Dependent Heuristic Dynamic Programming With Experience Replay for Wastewater
+                Treatment Processes. IEEE Trans. Ind. Inform. 2024, 1±9. [CrossRef]
+          34.   Sukede, A.K.; Arora, J. Auto tuning of PID controller. In Proceedings of the 2015 International Conference on Industrial
+                Instrumentation and Control (ICIC), Pune, India, 28±30 May 2015; pp. 1459±1462.
+          35.   Ziegler, J.G.; Nichols, N.B. Optimum settings for automatic controllers. Trans. Am. Soc. Mech. Eng. 1942, 64, 759±765. [CrossRef]
+          36.   Ibrahim, O.; Yahaya, N.Z.; Saad, N. Comparative studies of PID controller tuning methods on a DC±DC boost converter. In
+                Proceedings of the 2016 6th International Conference on Intelligent and Advanced Systems (ICIAS), Kuala Lumpur, Malaysia,
+                15±17August2016;pp.1±5.
+          37.   Cohen,G.;Coon,G. Theoreticalconsideration of retarded control. Trans. Am. Soc. Mech. Eng. 1953, 75, 827±834. [CrossRef]
+          38.   John, G.S.; Vijayan, A.T. Anti-windup PI controller for speed control of brushless DC motor. In Proceedings of the 2017 IEEE
+                International Conference on Power, Control, Signals and Instrumentation Engineering (ICPCSI), Chennai, India, 21±22 September
+                2017; pp. 1068±1073.
+          Mathematics 2024, 12, 543                                                                                                             19of19
+          39.   Åström,K.;Hägglund,T. PIDControllers:Theory,Design,andTuning;ISAÐTheInstrumentation,SystemsandAutomationSociety:
+                Pittsburgh, PA, USA, 1995.
+          40.   Kingma,D.P.;Ba,J. Adam:Amethodforstochasticoptimization. arXiv2014,arXiv:1412.6980.
+          41.   Kessler, R.E. The alpha 21264 microprocessor. IEEE Micro 1999, 19, 24±36. [CrossRef]
+          Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+          author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+          people or property resulting from any ideas, methods, instructions or products referred to in the content.

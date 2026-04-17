@@ -1,0 +1,552 @@
+                                                                             Minimizing Temperature
+                                                                  1          Nonuniformity by Optimal
+                                Srikanth Rangarajan                                                                                                                                                    Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                              Department of Mechanical Engineering,          Arrangement of Hotspots in
+                            State University of New York Binghamton,
+                                             Binghamton, NY 13905
+                                   e-mail: srangar@binghamton.edu            Vertically Stacked Three-
+                                              Yaser Hadad                    Dimensional Integrated Circuits
+                              Department of Mechanical Engineering,
+                            State University of New York Binghamton,
+                                             Binghamton, NY 13905            The semiconductor packaging technologies have seen its growth from multichip module
+                                  e-mail: yhadad1@binghamton.edu             (MCM), system in package (SiP), system on chip (SoC) to the heterogeneous integration
+                                        Leila Choobineh                      of the MCM. Thermal management of multichip vertically integrated systems poses
+                                                                             additional constraints and limitations beyond those for single chip modules. Three-
+                                                       Mem.ASME              dimensional-integrated circuits (3D ICs) technology is a potential approach for next-
+                                            Engineering Department,          generation semiconductor packaging technologies. A 3D IC is formed by vertical
+                                         SUNYPolytechnic Institute,          interconnection of multiple substrates containing active devices which offer reduced die
+                                                100 Seymour Road,            footprint and interconnect length. This paper discusses the optimal arrangement of two
+                                                    Utica, NY 13502          hotspots on each layer of a two-die stacked 3D IC. An analytical heat transfer model for
+                                      e-mail: choobil@sunypoly.edu           prediction of three-dimensional temperature ﬁeld of a 3D IC based on the solution of
+                                     Bahgat Sammakia                         governing energy equations has been developed and used for this study. The model is
+                                                                             subject to adiabatic boundary conditions at the walls except for the bottom wall which is
+                                                       Mem.ASME              subject to convective boundary condition. A feed-forward back propagation artiﬁcial
+                              Department of Mechanical Engineering,          neural network (ANN) is employed for obtaining the functional relationship between the
+                            State University of New York Binghamton,         location of the hotspots and the objectives. Genetic algorithm is employed for solving two
+                                             Binghamton, NY 13905            nonconﬂicting objective functions subject to set of constraints. The ﬁrst objective aims to
+                                    e-mail: bahgat@binghamton.edu            minimize the maximum temperature on both layers, and the second objective aims to
+                                                                             achieve temperature uniformity in the layers. The results of the optimization study are
+                                                                             expected to provide recommendations on the design guidelines for arranging hotspots on
+                                                                             vertically stacked substrates. [DOI: 10.1115/1.4047471]
+                     Introduction                                                                         thermal conductivity on self-heating metal-oxide semiconductor
+                        Three-dimensional integrated circuits (3D ICs) possess the                        ﬁeld effect transistors (MOSFETs) numerically and experimen-
+                     potential to upgrade chip performance, functionality, and packag-                    tally. Sienski et al. [3] studied the impact of multichip module
+                     ing density if they can be thermally managed. A 3D-IC is typi-                       (MCM) substrates direct and lateral thermal conductivities on
+                     cally envisioned as a stack of tiers of active chips connected down                  thermal performance of 3D-ICs. They compared air-cooling tech-
+                     to package substrates using through-silicon-via (TSVs). By                           nique with spray-cooling technique in sophisticated electronics. A
+                     replacing the two-dimensional system-on-chips (2D SoCs) with                         detailed thermal performance analysis of 3D-ICs under different
+                     three-dimensional system-on-chips (3D SoCs), a drastic decrease                      integration schemes was presented by Souri and Saraswat [4].
+                     in interconnect length is achieved which directly results in higher                  They studied the effect of TSVs and power consumption on the
+                     system speed [1]. Pangracious et al. [1] shows that by replacing a                   thermal performance considering active devices and interconnect
+                     2D SoC with surface area of A and thickness of l by a 3D SoC                         resistance. A mathematical model was developed by Geer et al.
+                                                                                   v                      [5] to solve the steady-state conduction heat transfer in multiple
+                     with n tiers and same total surface area, one can reduce the                         rectangular domains. The developed model is general and
+                     maximum Manhattan wire length (Manhattan wiring is often
+                                                                                             pﬃﬃﬃ         involves the effect of interface resistance and spatially varying
+                     used to represent a programable logic array) from 2 A to                             heat generation rate. The models have been applied to a 3D
+                      qﬃﬃﬃ
+                         A    ðÞ                                                                          stacked system with a speciﬁed internal volumetric heat genera-
+                     2   n þ nþ1 lv. Higher power efﬁciency, increased bandwidth,                         tion. Goplen and Sapatnekar [6] studied the effect of thermal vias
+                     reduced latency, lower area, and weight are the advantages of 3D                     position and density on the thermal performance of 3D-ICs. The
+                     SoCs compared to 2D SoCs, resulted from shorter interconnec-                         authors calculated the thermal vias position resulting in lower
+                     tions. Also in comparison to 2D systems, 3D system is more                           module maximum temperature and minimum thermal gradients
+                     power efﬁcient. By increasing the power density, the temperature                     by employing a ﬁnite element analysis. Choobineh and Jain [7]
+                     of the substrates closer to the package increases and results in                     calculated the three-dimensional temperature proﬁle in a 3D-IC
+                     degraded performance and higher temperature gradient that expe-                      with equal and unequal sized dies analytically. The authors used
+                     dite wear out mechanisms.                                                            their model to compare the thermal behavior of unequally sized
+                        Thermal performance of vertical integrated circuits (VICs)                        die stacks with uniformly sized die stacks. In a separate study,
+                     were explored in detail by the researchers. Kleiner et al. [2] stud-                 Choobineh and Jain [8] offered a noniterative analytical approach
+                     ied the effect of polyimide and silicon layer thicknesses and                        to investigate the three-dimensional temperature ﬁeld in a 3D-IC
+                                                                                                          with large number of dies. They predicted the effect of interdie
+                        1
+                         Corresponding author.                                                            contact resistance on the temperature distribution and thermal per-
+                        Contributed by the Electronic and Photonic Packaging Division of ASME for         formance of the 3D-IC.
+                     publication in the JOURNAL OF ELECTRONIC PACKAGING. Manuscript received December        In addition, Choobineh et al. [9–13] investigated interdie ther-
+                     18, 2019; ﬁnal manuscript received June 2, 2020; published online June 29, 2020.
+                     Assoc. Editor: Sreekant Narumanchi.                                                  mal resistance in two die stack 3D ICs both, numerically and
+                                                                                                    C
+                     JournalofElectronicPackaging                                   CopyrightV2020byASME                            DECEMBER2020,Vol.142 / 041109-1
+                 experimentally. Li et al. [14] performed a novel thermal optimiza-    ANNandgeneticalgorithmwasusedtoﬁndtheoptimumposition
+                 tion using incremental ﬂoor planning. The authors highlighted the     of hotspots on the substrates. The optimization was done for mini-
+                 nonoverlapping constraint and using additional binary variables to    mizing system temperature gradient and maximum temperature at
+                 indicate overlap. Jain et al. [15] solved conﬂicting thermal and      ﬁxed thermal boundary conditions. A convective boundary condi-
+                 electrical objectives for ﬂoor planning in 3D ICs using the simu-     tion was used in the model to simulate the heat removed by the
+                 lated annealing. The authors did not employ a mathematical            heat sink.                                                                  Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                 model for the electrical and thermal objectives, rather minimized
+                 the cost function that reduced the effective wire length and tem-
+                 perature of the die.                                                  Heat Transfer Problem Description
+                    Hagan and Henhaj [16] showed how to incorporate backpropa-
+                 gation algorithm to train artiﬁcial neural networks (ANNs). The         The schematic of the geometry under study and the governing
+                 Marquardt algorithm was also discussed and compared with the          energy equations are shown in Fig. 1. The dimensions of the chip
+                 conjugate gradient algorithm and with variable learning rate. It      and substrate are tabulated in Table 1. The governing equations
+                 was found that the Marquardt algorithm was very efﬁcient when         along with the boundary conditions are solved analytically as
+                 training networks to a few hundred neuron interconnection             mentioned in Choobineh and Jain [8]. The convective heat trans-
+                                                                                                                                2
+                 weights. Srikanth et al. [17,18] reported the results of a numerical  fer coefﬁcient h value is set as 5000W/m K at the bottom wall of
+                 optimization and experimental investigation of phase-change           layer 1. Each hot spot generates Q¼5 W heat. The material prop-
+                 material-based composite pin ﬁn matrix heat sink. Nondominated        erties of the substrate are taken as the value of pure silicon. The
+                 sorting genetic algorithm II multi-objective optimization approach    top surface and side walls are adiabatic. The die stack consists of
+                 wasusedtooptimize the heat sink dimensions.                           two dies, each of size ab. Thickness of the ith die is ci. The
+                    Srikanth and Balaji [19] developed heat transfer correlation for   maximumvalue for i in this paper is two. The orientation of the x
+                 thermal performance of the heat sink as a function of heat source     and y axis are common to each die. For brevity, xi and yi coordi-
+                 location and power level. Tapano et al. [20] studied the optimal      nates on each die are referred to as x and y, respectively. A heat
+                 arrangement of discrete heat sources in mixed convection. An          sink is attached to the lowest die [9]. Heat transfer from the
+                 empirical correlation is developed for the nondimensional maxi-       bottom-most die to the air, which typically transfers through a
+                 mum temperature excess (h) in terms of a unique geometrical           thermal interface material, heat spreader, heat sink, and forced air
+                 parameter, by taking into account the effect of surface radiation.    cooling, is lumped together and modeled using a combined con-
+                 Gosselin et al. [21] reviewed the utilization of genetic algorithms   vective boundary condition, represented as h [9]. Temperature
+                 in three main families of heat transfer problems, namely, thermal     uniformity on this surface is highly preferred for the best heat sink
+                 system design, inverse heat transfer, and heat transfer data reduc-   thermal resistance. For low-power applications where no heat sink
+                 tion for heat transfer correlations. Maddadi and Balaji [22] per-     is provided, the convective boundary condition quantiﬁes the heat
+                 formed an optimization of the location of multiple discrete heat      dissipated through the electrical package. Topmost die and side
+                                                                                       surfaces are assumed to be adiabatic. Q (x,y) is the heat genera-
+                 sources in a ventilated cavity using artiﬁcial neural networks and                                             i
+                 microgenetic algorithm. Osmolovskyi et al. [23] optimally             tion in the device plane at the top of the ith die [9]. This analysis
+                 arranged the heat sources for an interposer-based 3D ICs. To opti-    is simpliﬁed by deriving the temperature ﬁeld assuming that
+                                                                                       instead of all n heat sources, only the i*th heat source Q *(x,y)is
+                 mally arrange the placement, the authors moved all dies together                                                              i
+                 as one “virtual die,” minimizing the terminal connections and per-    active which makes the governing energy equations linear. The
+                 formed the technique outlined above for each die, in multiple iter-   temperature ﬁeld due to each active heat layer may be computed
+                 ations, until no further improvement is achieved. Kumar et al.        separately and then added linearly to provide the temperature ﬁeld
+                                                                                       due to all n heat sources [9]. T ,i*(x,y,z ) is the steady-state tem-
+                 [24] performed optimal ﬂoor planning on VLSI using particle                                          i         i
+                 swarm optimization. The authors imposed the nonoverlapping            perature rise in the ith die due to heat generation Qi (x,y) in the
+                 constraint to the optimization algorithm and derived optimal loca-    i*th die. For brevity of nomenclature, the subscript i* is omitted
+                 tion of heats sources satisfying the constraint. Ni et al. [25] dem-  henceforth, and the temperature ﬁeld in this case is represented as
+                                                                                       T x,y,z). Governing energy equations along with the boundary
+                 onstrated ﬂoor planning in 3D ICs and highlight the greedy             i(    i
+                 placement strategy. The heaters with high heat ﬂux are recom-         conditions are programed and solved separately for each die.
+                 mendedtobeplacedcloserto the convective surface.
+                    Generally, heat sinks are designed assuming that a uniform heat
+                 ﬂux is produced at the top surface of a microprocessors (convec-
+                 tive surface) and the performance of the heat sink is evaluated in
+                 terms of the thermal resistance (one-dimensional) or maximum
+                 temperature rise. For efﬁcient thermal management of microchips
+                 with multiple heat sources, uniform temperature distribution is
+                 preferred on the heat sink surface.
+                    It is evident from the literature that one of the major challenges
+                 in designing an efﬁcient heat sink is to minimize the temperature
+                 nonuniformity on a microprocessor surface caused by heterogene-
+                 ous diverse power distribution. This work in this paper is not
+                 motivated by the necessity to develop thermal solutions which can
+                 maintain uniform temperature distribution at the heat sink’s sur-
+                 face, rather to ﬁnd optimal arrangement of the heat sources which
+                 provide a uniform temperature distribution in a double-layered
+                 3D-IC system. Furthermore, the ﬂoor planning technique for 3D
+                 ICs available in literature lacks a mathematical model or a regres-
+                 sion equation to characterize the location of the heat sources.
+                 Also, the nonoverlapping constraint is not imposed so efﬁciently
+                 in the optimization problem available in literature. This work
+                 aims to efﬁciently impose and characterize the nonoverlapping
+                 constraint in the optimization problem by deﬁning a unique geo-
+                 metrical parameter and obtain solutions using a stochastic optimi-
+                 zation algorithm. An analytical–numerical model coupled with                  Fig. 1  Heattransferdescriptionoftheproblem
+                 041109-2 / Vol.142,DECEMBER2020                                                                           TransactionsoftheASME
+                  Table 1 Dimensions of the heat source and the substrate
+                  showninFig.1
+                  SI no                     Dimension                      Value (mm)
+                  1                             a                              10
+                  2                             b                              10                                                                                       Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                  3                            C1                              0.5
+                  4                            C2                              0.5
+                  5                             D                               1
+                  q(x,y) is the heat ﬂux [9] entering the ith die at z ¼c . k is the
+                   i                                                   i   i   i
+                  thermal conductivity of the ith die. T i(x,y) is the temperature pro-
+                                                       0
+                  ﬁle at the intersecting plane between die i and i1.
+                    Assuming constant thermal conductivity, each T(x,y,z) satis-
+                                                                       i      i
+                  ﬁes the following governing steady-state energy equation and adi-      Fig. 2   Schematic representation of calculation of geometric
+                  abatic boundary conditions [9]:                                        parameters in any layer for two heat sources (j51 and 2) (Eqs.
+                                                                                         (7) and (8))
+                                        @2T    @2T    @2T
+                                             þ      þ      ¼0                      (1)
+                                           2      2      2
+                                        @x     @x      @z                                ith layer; X   and Y   denote the centroid of the substrate layer 1
+                                                                                                     1c       1c
+                    Boundary conditions in x and y directions are as follows:            as shown in Fig. 2.
+                                                                                            The physical signiﬁcance of such a deﬁnition of k’s (Lambdas)
+                                        @T                                               would help in optimization of the heat sources for any aspect ratio
+                                            ¼0;     atx ¼ 0; a                     (2)   of the heat sources and substrate. For the problem under consider-
+                                        @x                                               ation square heat sources and square substrates are chosen for
+                                        @T                                               demonstration. Figure 3 depicts the possible combinations of heat
+                                            ¼0;     aty ¼ 0; b                     (3)   sources and the substrate shapes for which the geometric parame-
+                                        @y                                               ter k can represent the position of the heat sources. This paper
+                    Boundary conditions in z-direction is as follows:                    demonstrates the optimization for the conﬁguration shown in
+                                                                                         Fig. 3(d).
+                                       @T                                                   Thedepiction of the calculation of centroid of each heat source,
+                                     k    2 ¼ q   x;y    atz ¼ c2                  (4)   substrate and arrangement is shown in Fig. 4.
+                                        @z     2 ðÞ                                         Furthermore, to understand the signiﬁcance of k, the limiting
+                              @T                   @T                                    (extreme) values are examined:
+                                 1                   2                             (5)
+                                  ðÞðÞ
+                            k      atz ¼ c1 ¼ k         atz ¼ 0 þq x;y
+                                                                     1ðÞ                     (i) k   k ! 0: The heat sources are placed closer to each
+                              @z                   @z1                                            1,  3
+                                                                                                 other (shown in Fig. 5).
+                                    @T               h                                      (ii) k  k !1:Theheatsourcesarecrowdedtowardthecor-
+                                       1 ðÞðÞ (6)                                                 1,  3
+                                     @z atz ¼ 0 ¼ k T1 atz ¼ 0                                   ner of the substrate and away from each other.
+                                                                                            (iii) k  k ! 0: The heat sources are having symmetrical
+                                                                                                  2,  4
+                  Adetailed procedure on the analytical solution is well explained               arrangement.
+                  in Ref. [9].                                                              (iv) k  k !1Theheatsources are moving toward the cor-
+                                                                                                  2,  4
+                    The analytical code was validated by a detailed computational                ner of the substrates and closer to each other (shown in
+                  ﬂuid dynamics model using commercially available tool ANSYS                    Fig. 6). Furthermore, there is a relationship between the
+                  FLUENT [8] and the maximum error between the code and computa-                 maximum possible k1 for each value of k2 as depicted in
+                  tional ﬂuid dynamics was found to be less than 8% (for uniform-                Fig. 7.
+                  ity) and less than 2% for maximum temperature.
+                  UniqueGeometricParameterkDefinition
+                    A unique parameter k is deﬁned which takes into account the
+                  closeness of the heat sources to center on any layer and the close-
+                  ness of the heat sources to each other on any layer.
+                    Thedeﬁnition of k’s is as follows:
+                    k and k deﬁnes the distance between the centroid of the heat
+                     1       3
+                  source to the centroid of the arrangement in layers 1 and 2,
+                  respectively,
+                                   k ¼ X X 2þ Y Y 2                              (7)
+                                         ðÞðÞ
+                                     1      ij    ia       ij    ia
+                    k and k deﬁnes the distance between the centroid of the sub-
+                      2      4
+                  strate to the centroid of the arrangement in layers 1 and 2,
+                  respectively,
+                                                    2              2
+                                    k ¼ ðÞX X        þðÞY Y                      (8)
+                                     2      i     ia       i    ia
+                                                                                         Fig. 3  Schematicof the possible shapes of the substrates and
+                    X , Y denotes the centroid of each heat sources and X          Y
+                      ij  ij                                                    ia  ia   chip: (a) rectangularchips on rectangularsubstrates, (b) square
+                  denotes the mean of the centroids of two heat sources (arrange-        chips on rectangular substrates, (c) rectangular chips on
+                  ment) in a layer; Xi and Yi denotes the centroid of the substrate of   squaresubstrates,and(d)squarechipsonsquaresubstrates
+                  JournalofElectronicPackaging                                                                 DECEMBER2020,Vol.142 / 041109-3
+                                                                               Latin Hypercube Sampling
+                                                                                 In order to generate a reasonable number of samples of differ-
+                                                                               ent positions of the heat sources uniquely across the two layers,
+                                                                               Latin hypercube sampling (LHS) was employed with the spatial
+                                                                               constraints. The sampling algorithm was self-adaptive and self-
+                                                                               learning with three stages. The variables were nondimensionalised     Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                                                                               to eliminate the effects of substrate and chip geometry. The usage
+                                                                               of LHS over other random sampling or orthogonal sampling tech-
+                                                                               niques is justiﬁed by careful assessment [10] and other techniques
+                                                                               used for selecting initial designs. Sampling a function of 16 varia-
+                                                                               bles, the range of each variable is divided into T equally probable
+                                                                               intervals. T sample points are later placed to strictly meet the
+                Fig. 4 Schematic of the centroids of the arrangement of        Latin hypercube requirements. This constraint forces the number
+                heaters                                                        of divisions, T, to be equal for each input variable. The LHS
+                                                                               scheme does not require more samples for more dimensions (vari-
+                                                                               ables). Srikanth and Balaji [17], used LHS to generate a plausible
+                                                                               collection of parameters to train the artiﬁcial neural network for
+                                                                               optimization of phase-change material-based matrix type compos-
+                                                                               ite heat sink.
+                                                                                 In this study, three stages of the self-learning sampling algo-
+                                                                               rithm is depicted in Fig. 8. The learning in each stage was
+                                                                               achieved by Brute–Force (exhaustive search method).
+                                                                                 The stage 1 sampling algorithm learned that the k and k ¼0
+                                                                                                                                1      3
+                                                                               are highly undesirable and such cases were eliminated for the
+                                                                               stage 2 sampling. The stage 2 sampling algorithm learned that the
+                                                                               k and k ¼1are highly undesirable and such cases were elimi-
+                                                                                2      4
+                                                                               nated for the stage 3 sampling.
+                                                                                 For the given adiabatic boundary condition on the four walls
+                Fig. 5 Schematicoftheheaterarrangementforverylowvalues         and constant heat transfer coefﬁcient boundary condition on the
+                                                                               top wall, k and k ¼0 turns out to be the most optimal conﬁgura-
+                of k andk                                                                2     4
+                   1     3                                                     tion. It can be inferred from close observation of deﬁnition of k
+                                                                               that a symmetrical arrangement of heat sources about substrate
+                                                                               centroid is only possible when k and k becomes equal to zero. A
+                                                                                                            2      4
+                                                                               small deviation from this value would lead to nonsymmetrical
+                                                                               arrangement of heat sources. But it is highly impossible to deter-
+                                                                               mine the value of k for such conﬁguration and to ﬁnd the exact
+                                                                                                 1
+                                                                               location of the chip. Henceforth for the stage 3 optimization, deﬁ-
+                                                                               nition of R and h is deﬁned and a functional relationship with the
+                Fig. 6  Schematic of the heater arrangement for very high
+                valuesofk2andk4
+                                                                                    Fig. 8 Stagesoftheself-learningsamplingalgorithm
+                    Fig. 7 Plot showingtherelationshipbetweenk andk                     Fig. 9 SchematicrepresentationofRandH
+                                                                 1     2
+                041109-4 / Vol.142,DECEMBER2020                                                                 TransactionsoftheASME
+                 response parameters (T     and r) is desired to be established. The
+                                        max
+                 depiction of R and h is shown in Fig. 9 (h1¼0 in this paper). Each
+                 value of R and h can deﬁne an arrangement when k and k ¼0.
+                                                                    2      4
+                    TheRandhwerecalculatedusingtheequations
+                                                  ﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+                                               q 2       2                                                                                                         Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                                          R¼ X þY                               (9)
+                                                   d     d
+                                                    
+                                                      Y
+                                          h ¼ tan1    d                       (10)
+                                                      X
+                                                       d
+                              sﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+                                
+                                  b   chiplength 2       a    chipwidth 2
+                     R     ¼                        þ                        (11)
+                       max        2        2             2        2
+                                              Rmin ¼ 0                         (12)
+                                                 RR                                                Fig. 10  Parity plot for the regression
+                                                      min
+                                         R ¼ R       R                        (13)
+                                                max     min
+                                           hmax ¼ 90deg                        (14)
+                                            hmin ¼ 0deg                        (15)
+                                                 h h
+                                                      min
+                                         h ¼ h       h                        (16)
+                                                max     min
+                 Regression
+                    The regression was carried out using the state of the art
+                 Levenberg–Marquadt algorithm for the nonlinear least square
+                 regression. A higher-order polynomial functional form was cho-
+                 sen. The ﬁnal functional form for the maximum temperature and
+                 temperature uniformity on the convective surface as a function of
+                 chip location is as follows:
+                                                            2         3
+                      T    ¼250ð0:831:43R þ2:06R 0:73R
+                        max                                                    (17)
+                                             2
+                              0:6h þ0:6h Þ                                            Fig. 11  Variation of regression coefﬁcient with the number of
+                                                                                       hiddenneurons
+                            r ¼ 65:13 65þ28:6 5:3 þ 0:4  9:4
+                                          R     2      3     4     5
+                                                R      R      R      R
+                                                 2         3
+                                35:8h þ35:6h þ0:31h                           (18)    network in such a way that the error of the training data is in mini-
+                 The value of coefﬁcient of regression is 0.94 and the parity plot     mized. The validation is employed for dataset that was not a part
+                 for the regression is shown in Fig. 10.                               of the network training to ensure robustness of the network’s
+                    The objective functions for optimization are also derived from     interpolation. Testing calculates the error in the ﬁnal network gen-
+                 ANN, speciﬁcally in this case from the output of a feed-forward       erated and conﬁrms the predictive power of the network. The
+                 back propagation ANN. ANN is a nonlinear regression tool              back propagation algorithm is implemented, to adjust the weights
+                 inspired by the structure of biological neural networks. ANNs         to minimize the error between the neural network predicted output
+                 consist of three types of layers—input, hidden, and output [10].      and desired output. Parity plot for each stage of ANN is as shown
+                 The input layer consists of nodes, with each node corresponding       in Fig. 12. The coefﬁcient of regression value is so close to one
+                 to an input variable. The number of neurons in the hidden layer is    which conﬁrm the high quality of the regression (note that the
+                                                                                       coefﬁcient of regression is denoted as “R2” and this has no relation
+                 variable and results in different models. The results of the neuron-  with R that is deﬁned as the heater location).
+                 independent study is shown in Fig. 11. The task of the artiﬁcial
+                 neural network is to calculate the response parameters for a given
+                 set of input variables. The artiﬁcial neural network must accu-       Optimization
+                 rately calculate the output as we are using a supervised learning
+                 technique. Generally, the sigmoid activation function and the           Any optimization problem is driven by constraints more than
+                 number of hidden neurons/layers are assumed, and the weights for      the objective function. A better understanding of the constraints
+                 the network are calculated in such a way that the error of predic-    lead to better optimal solutions. The constraints are derived from
+                 tion is minimized.                                                    the results of stages 1 and 2 of the sampling algorithm. The two
+                    Someofthe training algorithms used are the feed-forward back       main objective of the optimization are to minimize the tempera-
+                 propagation algorithm and the Levenberg–Marquardt algorithm.          ture gradient, (r) and minimize the maximum temperature of the
+                 There are three steps involved in these algorithms, namely, train-    heat source. The optimization problem can be mathematically
+                 ing, validation, and testing. Training calculates the weights of the  stated as
+                 JournalofElectronicPackaging                                                               DECEMBER2020,Vol.142 / 041109-5
+                                                                                                                                                                     Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                                                                 Fig. 12  Parity plot from neural network
+                             F1: minimize r ¼ fðR; h;k ;k ;k ;k Þ             (19)    shown in Fig. 13 were validated again by ANSYS FLUENT and the
+                                                             1  2   3  4                maximum discrepancy was found to be less than 8.3% (overlap-
+                           F2: minimize T       ¼ f ðR; h;k ;k ;k ;k Þ        (20)    ping cases) for uniformity and 2% for maximum temperature. The
+                                           max                1   2  3   4              average discrepancy between the analytical solutions and ANSYS
+                 Subject to                                                             FLUENT was less than 3.2%. From Fig. 14, it is evident that the
+                                                                                        objectives are not conﬂicting much (throughout the variable
+                                               k ¼ 0                            (21)
+                                                2
+                                               k ¼ 0                            (22)
+                                                4
+                                            0  R1                            (23)
+                                            0  H1                            (24)
+                 One more constraint is that the heat sources are at least 1mm
+                 apart from each other on both the layers. From the heat transfer
+                 physics, it is also quite intuitive that the interaction effect between
+                 the two layers also plays an important role in the response param-
+                 eters. No two heaters from each layer should be exactly on top of
+                 each other. Violating this constraint produces high temperature
+                 and low uniformity. This was conﬁrmed with the numerical simu-
+                 lations for the cases shown in Fig. 13 and the corresponding
+                 results are shown in Table 2.
+                    In the early stage of optimization process the conﬂicting nature    Fig.  13 Preliminary cases evaluated to decide on the
+                 of the objectives were evaluated. Additionally, the initial cases      constraints
+                 041109-6 / Vol.142,DECEMBER2020                                                                            TransactionsoftheASME
+                  Table 2 Response parameters for the cases considered in
+                  Fig. 2
+                  Case ID                           r                          Tmax (C)
+                  A                                26                             258
+                  B                                15                             171                                                                                        Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                  C                                7.4                            126
+                  D                                9.4                            133
+                  E                                15                             171
+                  F                               12.5                            142
+                  G                                8.5                            132
+                                                                                                             Fig. 15   Optimizationapproach
+                                                                                            chosen to be two. This decides the binary string length of the vari-
+                                                                                            ables. Initial population is generated randomly with a size of 30.
+                                                                                            Once the initial population is generated the corresponding ﬁtness
+                                                                                            value is evaluated and ranking is done. Subsequently operators
+                                                                                            like selection, crossover, and mutation are applied to the popula-
+                                                                                            tion till the optima is obtained. In this study, the new individuals
+                                                                                            are generated using two parent two point crossover. Roulette
+                                                                                            wheel random selection method is used to identify the two possi-
+                                                                                            ble mating strings to produce the next generation. These mating
+                                                                                            strings would undergo crossover only if a random number is
+                                                                                            greater than or equal to the probability of crossover. A two point
+                                                                                            crossover is utilized, the two positions of the binary strings at
+                                                                                            which the crossover exchange between these mating strings occur,
+                  Fig. 14   Nonconﬂicting nature of the objectives obtained from            also depends on the random number generated. Mutation is
+                  the analytical solution                                                   applied to all the individuals provided the random number gener-
+                                                                                            ated is greater than or equal to the probability of mutation. The
+                                                                                            newly generated binary strings are converted to integers and then
+                                                                                            to corresponding real number. The population number (N), gener-
+                  search space generated from LHS). Therefore, a multi-objective            ation/iteration count (G), probability of crossover (P_c), and prob-
+                  optimization would not be thoroughly applicable, rather optimiz-          ability of mutation (P_m) have been arrived at after an extensive
+                  ing any one of the objectives, optimizes the other. The ANN               study. Finally, the parameters N¼40, G¼200, P_c¼0.6,
+                  model and a polynomial regression model is coupled with genetic           P_m¼0.4isarrivedafter an extensive sensitivity study.
+                  algorithm to obtain the optimal value. The ﬂowchart for optimiza-
+                  tion is as depicted in Fig. 15.
+                                                                                            Results and Discussion
+                  Genetic Algorithm                                                           The discussion pertains to minimizing the temperature gradient
+                     Genetic algorithms (GAs) are numerical optimization algo-              which is deﬁned as the coefﬁcient of variation of the temperature
+                  rithms inspired from evolutionary phenomena like the natural              on the top convective surface (r).
+                  selection. Genetic algorithms are commonly used to determine the            Standard deviation can be obtained as
+                  global optimum in the feasible domain. The ANN trained is used                                         vﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃﬃ
+                                                                                                                         uN
+                  to serve as the ﬁtness function for the genetic algorithm-based                                        uP            2
+                                                                                                                         u ðÞ
+                                                                                                                                T T
+                  optimization procedure to obtain the optimum location of the heat                                      t        i
+                  sources. GA is one among a large class of evolutionary-based                                       s ¼    i¼1                               (25)
+                  algorithms. Each candidate solution has unique properties, which                                             N1
+                  can be altered by mating to yield better candidate solution and are       N denotes the number of grid points at which the temperature
+                  represented in binary as strings of 0s and 1s.                            measurement was recorded. N¼121 in this study. Ti represents
+                     The evolution is an iterative process starting with selection of a     the value of temperature at each point of the grid
+                  random population and the population in each iteration is called a
+                  generation. For every generation, the ﬁtness of every individual in                                           N
+                  the population is evaluated. The ﬁtness is the value of the objec-                                           PTi
+                  tive function for the optimization problem. GAs always try to                                               i¼1
+                  improve the ﬁtness with each generation. From the current genera-                                       T ¼ N                               (26)
+                  tion, the ﬁttest individuals are selected and their genetics are                                          r¼ s                              (27)
+                  modiﬁed to generate next generation. These individuals move to                                                 
+                                                                                                                                T
+                  the next generation of the algorithm. This process continues until
+                  either the maximum number of generations is reached or a satis-
+                  factory ﬁtness level is attained. The strong ability of the genetic         Minimize r. The genetic algorithm was coupled with the ANN
+                  algorithms to tackle the search spaces containing many local              to derive the objective function to minimize r as a function of the
+                  optima is one of its attractive features for engineers. In contrary to    heat source location. The optimal conﬁguration that was obtained
+                  the conventional search methods and calculus, genetic algorithms          is as shown in Fig. 16. It is evident from the Fig. 16 that the heat
+                  initiates the search at multiple number of points in the search           sources are arranged symmetrically in both the layers and they are
+                  space. The desired accuracy in the value of “R*” and “h*” is              at an optimal (distance beyond or below which the temperature
+                  JournalofElectronicPackaging                                                                     DECEMBER2020,Vol.142 / 041109-7
+                                                                                             for this conﬁguration was found to be 4.12 (evident from Fig. 18)
+                                                                                             and the maximum die temperature corresponds to a T            of 110.
+                                                                                                                                                       max
+                                                                                                Figure 17 shows the temperature contours on the top layer for
+                                                                                             the optimal conﬁguration. It is evident that the spreading is more
+                                                                                             uniform which results in minimum hot spot temperature too. Iso-
+                                                                                             thermal conditions are preferred to have an accurate estimate of                   Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                                                                                             the heat sink thermal resistance based on a single temperature.
+                                                                                             The optimal case thus derived in this study has a near isothermal
+                          Fig. 16  Isometric viewof the optimal arrangement                  surface as seen from Fig. 18 the discrepancy between the average
+                                                                                             and the maximum temperature is minimum. Calculation of ther-
+                                                                                             mal resistance using the average or the maximum temperature do
+                              Table3 Optimalvaluesoftheparameters                            not show signiﬁcant difference.
+                                                                                                Furthermore, the optimal arrangement of the heat sources could
+                       Parameter                                       Optimal value         also ensure uniform temperature at the convective surface and
+                                                                                             thereby maintaining the chip temperature within limits for a 3D
+                       R                                                    3.53             ICs.
+                       h                                                   0.785
+                       k1                                                    5               Conclusions
+                       k2                                                    0                  A robust multi-objective constrained optimization was per-
+                       k3                                                    5               formed for a two layer two hotspot case by using artiﬁcial neural
+                       k4                                                    0               network coupled with genetic algorithm in a vertically stacked
+                                                                                             two layer 3D-ICs. The shape of the substrate and the chip were
+                                                                                             considered to be squares. A polynomial function and a feed-
+                                                                                             forward back propagation neural network was developed that
+                                                                                             represents the function relationship between the position of the
+                                                                                             heaters and the temperature uniformity. Two objectives, namely,
+                                                                                             minimizing the temperature gradient (r) and the maximum tem-
+                                                                                             perature at convective surface was considered with a set of con-
+                                                                                             straints. The nonconﬂicting nature of the objectives reduced the
+                                                                                             multi-objective problem to single objective. The results of the
+                                                                                             optimization revealed that the most uniform temperature distribu-
+                                                                                             tion is achieved by having the heat source locations corresponding
+                                                                                             to k , k ¼0 on both the layers.
+                                                                                                 2   4
+                                                                                                Themajorconclusions from this study are as follows:
+                                                                                                 (i) Optimizing for the maximum surface temperature eventu-
+                  Fig. 17   Temperature contours in layers 1 and 2 of the optimal                    ally optimized the temperature uniformity.
+                  arrangement                                                                    (ii) A self-learning sampling algorithm was designed to under-
+                                                                                                     stand the physics of the problem in each stage of learning.
+                                                                                                (iii) There exist an optimal location (R¼3.53 and h¼0.785)
+                                                                                                     of the heaters that minimized the discrepancy between the
+                                                                                                     maximum and average temperature on the convective sur-
+                                                                                                     face, thereby increasing uniformity.
+                                                                                             Nomenclature
+                                                                                                  G¼numberofgenerations
+                                                                                                  N¼sizeoftheinitial population
+                                                                                                P_c¼ probability of crossover
+                                                                                               P_m¼probabilityofmutation
+                                                                                                   2 ¼ regression coefﬁcient
+                                                                                                  R
+                                                                                             R*, h* ¼ nondimensional position of the heater
+                                                                                                   T¼temperature, C
+                  Fig. 18    Comparison of heat sink base temperature for cases                    X¼centroidofheatsource/substrate/arrangement in
+                                                                                                        Xdirection, mm
+                  explainedinFig.2                                                              X, Y ¼ centroid
+                                                                                                   Y¼centroidofheatsource/substrate/arrangement in
+                                                                                                        Ydirection, mm
+                                                                                                                                                             2
+                  nonuniformity increases) distance from the walls and from the                    k¼geometricparameter of heat source location, mm
+                  center.                                                                          r¼nondimensionaltemperature gradient
+                     Theoptimal value of the parameters for the problem under con-
+                  sideration is listed in Table 3. From heat transfer physics, it is also    Subscripts
+                  quite intuitive that a symmetrical arrangement of heat sources are               a¼arrangement
+                  desired for better spreading of the heat from both the layers.                    i ¼ layer/substrate
+                  When the k , k is increased, the heat sources move closer to the
+                               1   3                                                                j ¼ heat source
+                  adiabatic walls and the maximum temperature on the substrate
+                  increases. Furthermore, if the k , k are reduced, the heat sources
+                                                    1   3                                    References
+                  move closer to each other and the heat sources interaction effect           [1] Pangracious, V., Marrakchi, Z., and Mehrez, H., 2015, Three-Dimensional
+                  increases, allowing the chip temperature to rise. The optimal value             Design Methodologies for Tree-Based FPGA Architecture, Springer Interna-
+                  of R and h deﬁnes the optimal location of the chip. The value of r              tional Publishing, Basel, Switzerland.
+                  041109-8 / Vol.142,DECEMBER2020                                                                                   TransactionsoftheASME
+                      [2] Kleiner, M. B., Kuhn, S. A., Ramm, P., and Weber, W., 1995, “Thermal Analy-    [14] Li, X. Y., Ma, X., and Hong, 2009, “A Novel Thermal Optimization Flow
+                          sis of Vertically Integrated Circuits,” Proceedings of International Electron       Using Incremental Floorplanning for 3D ICs,” Asia and South Paciﬁc Design
+                          Devices Meeting, Washington, DC, Dec. 10–13, pp. 487–490.                           Automation Conference, IEEE, Yokohama, Japan, Jan. 19–22, pp. 347–352.
+                      [3] Sienski, K., Eden, R., and Schaefer, D., 1996, “3D Electronic Interconnect     [15] Jain, A., Alam, S. M., Pozder, S., and Jones, R. E., 2011, “Thermal–Electrical
+                          Packaging,” Proceedings on IEEE Aerospace Applications Conference, Vol. 1,          Co-Optimisation of Floorplanning of Three-Dimensional Integrated Circuits
+                          Aspen, CO, Feb. 10, pp. 363–373.                                                    Under Manufacturing and Physical Design Constraints,” IET Comput. Digital
+                      [4] Souri, S. J., and Saraswat, K. C., 2001, “Thermal Analysis of Heterogeneous         Tech., 5(3), pp. 169–178.
+                          3D ICs With Various Integration Scenarios,” International Electron Devices     [16] Hagan, M. T., and Menhaj, M. B., 1994, “Training Feedforward Networks With              Downloaded from http://asmedigitalcollection.asme.org/electronicpackaging/article-pdf/142/4/041109/6546439/ep_142_04_041109.pdf by Peking University user on 13 April 2026
+                          Meeting. Technical Digest (Cat. No. 01CH37224), Washington, DC, Dec. 2–5,           the Marquardt Algorithm,” IEEE Trans. Neural Networks, 5(6), pp. 989–993.
+                          pp. 31.2.1–31.2.4.                                                             [17] Srikanth, R., and Balaji, C., 2017, “Experimental Investigation on the Heat
+                      [5] Geer, J., Desai, A., and Sammakia, B., 2007, “Heat Conduction in                    Transfer Performance of a PCM Based Pin Fin Heat Sink With Discrete
+                          Multilayered Rectangular Domains,” ASME J. Electron. Packag., 129(4), pp.           Heating,” Int. J. Therm. Sci., 111, pp. 188–203.
+                          440–451.                                                                       [18] Srikanth, R., Nemani, P., and Balaji, C., 2015, “Multi-Objective Geometric
+                      [6] Goplen, B., and Sapatnekar, S., 2005, “Thermal Via Placement in 3D ICs,”            Optimization of a PCM Based Matrix Type Composite Heat Sink,” Appl.
+                          Proceedings of the International Symposium on Physical Design, ACM, San             Energy, 156, pp. 703–714.
+                          Francisco, CA, Apr. 3–6, pp. 167–174.                                          [19] Srikanth, R., and Balaji, C., 2017, “Heat Transfer Correlations for a Composite
+                      [7] Choobineh, L., and Jain, A., 2013, “Determination of Temperature Distribution       PCM Based 72 Pin Fin Heat Sink With Discrete Heating at the Base,” INAE
+                          in Three-Dimensional Integrated Circuits (3D ICs) With Unequally-Sized Die,”        Lett., 2(3), pp. 65–71.
+                          Appl. Therm. Eng., 56(1–2), pp. 176–184.                                       [20] Hotta, T. K., Balaji, C., and Venkateshan, S. P., 2014, “Optimal Distribution of
+                      [8] Choobineh, L., and Jain, A., 2015, “An Explicit Analytical Model for Rapid          Discrete Heat Sources Under Mixed Convection—A Heuristic Approach,”
+                          Computation of Temperature Field in a Three-Dimensional Integrated Circuit          ASMEJ.HeatTransfer,136(10), p. 104503.
+                          (3DIC),” Int. J. Therm. Sci., 87, pp. 103–109.                                 [21] Gosselin, L., Tye-Gingras, M., and Mathieu-Potvin, F., 2009, “Review of Utili-
+                      [9] Choobineh, L., and Jain, A., 2012, “Analytical Solution for Steady-State and        zation of Genetic Algorithms in Heat Transfer Problems,” Int. J. Heat Mass
+                          Transient Temperature Fields in Vertically Stacked 3D Integrated Circuits,”         Transfer, 52(9–10), pp. 2169–2188.
+                          IEEETrans. Compon., Packaging Manuf. Technol., 2(12), pp. 2031–2039.           [22] Madadi,R.R.,andBalaji,C., 2008,“Optimizationofthe Locationof MultipleDis-
+                     [10] Choobineh, L., Vo, N., Uehling, T., and Jain, A., 2013, “Experimental Measure-      crete Heat Sources in a Ventilated Cavity Using Artiﬁcial Neural Networks and
+                          ment of the Thermal Performance of a Two-Die 3D Integrated Circuit (3D              MicroGeneticAlgorithm,” Int. J. Heat Mass Transfer, 51(9–10), pp. 2299–2312.
+                          IC),” ASMEPaper No. IPACK2013-73167.                                           [23] Osmolovskyi, S. J., Knechtel, I. L., Markov, and Lienig, J., 2018, “Optimal Die
+                     [11] Jha, C. M., Choobineh, L., and Jain, A., 2015, “Microelectronics Thermal Sens-      Placement for Interposer-Based 3D ICs,” 23rd Asia and South Paciﬁc Design
+                          ing: Future Trends,” Thermal Sensors, C. Jha, ed., Springer, New York.              AutomationConference (ASP-DAC), Jeju, SouthKorea, Jan.22–25,pp.513–520.
+                     [12] Choobineh, L., Jones, J., and Jain, A., 2017, “Experimental and Numerical      [24] Kumar, S. V., Rao, P. V., and Singh, M. K., 2019, “Optimal Floor Planning in
+                          Investigation of Interdie Thermal Resistance in Three-Dimensional Integrated        VLSI Using Improved Adaptive Particle Swarm Optimization,” Evol. Intell.,
+                          Circuits,” ASME J. Electron. Packag., 139(2), p. 020908.                            12, pp. 1–14.
+                     [13] Choobineh, L., 2014, “Analytical and Experimental Investigation of Thermal     [25] Ni, T., Chang, H., Zhu, S., Lu, L., Li, X., Xu, Q., Liang, H., and Huang, Z.,
+                          Transport in Three-Dimensional Integrated Circuits (3D ICs),” Ph.D. disserta-       2019, “Temperature-Aware Floorplanning for Fixed-Outline 3D ICs,” IEEE
+                          tion, The University of Texas at Arlington, Arlington, TX.                          Access, 7, pp. 139787–139794.
+                     JournalofElectronicPackaging                                                                                  DECEMBER2020,Vol.142 / 041109-9

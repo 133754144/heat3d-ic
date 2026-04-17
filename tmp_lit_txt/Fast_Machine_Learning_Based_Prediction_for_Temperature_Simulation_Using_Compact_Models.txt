@@ -1,0 +1,114 @@
+                                                       2025 Design, Automation & Test in Europe Conference (DATE 2025) 
+                               Fast Machine Learning Based Prediction for
+                        Temperature Simulation Using Compact Models
+                                                                                                                  ∗                         †                               ∗
+                                                      Mohammadamin Hajikhodaverdian , Sherief Reda , Ayse K. Coskun
+                                                                          ∗ Boston University - (aminhaji, acoskun)@bu.edu
+                                                                             † Brown University - sherief reda@brown.edu
+                  AbstractÐAs transistor densities increase, managing thermal                                       datasets and retraining. Furthermore, we introduce a window-
+              challenges in 3D IC designs becomes more complex. Traditional                                         based scalability technique to handle large grid sizes efficiently,
+              methods like finite element methods and compact thermal models                                        preserving accuracy while reducing computational overhead.
+              (CTMs) are computationally expensive, while existing machine                                          This method is robust to changes in floorplans and architectures,
+              learning (ML) models require large datasets and a long training                                       requiring only a few additional samples for adaptation. Our
+              time. To address these challenges with the ML models, we
+              introduce a novel ML framework that integrates with CTMs to                                           contributions are summarized below:
+              accelerate steady-state thermal simulations without needing large                                         • A linear regression model that aligns directly with the
+              datasets. Our approach achieves up to 70× speedup over state-                                                steady-state thermal conduction problem, eliminating the
+              of-the-art simulators, enabling real-time, high-resolution thermal
+              simulations for 2D and 3D IC designs. 1                                                                      need for complex architectures or extensive training data.
+                  Index TermsÐThermal simulation, Compact thermal models                                                • Amethodfor splitting large grids into smaller overlapping
+              (CTM), Machine learning, 3D IC                                                                               windows, ensuring efficient computation and accurate pre-
+                                                                                                                           dictions for high-resolution simulations.
+                                                I. INTRODUCTION                                                     Weachieve up to 70× speedup over state-of-the-art simulators
+                  Thermal simulation is critical in integrated circuit (IC)                                         like PACT [3] while maintaining accuracy across diverse IC
+              design, particularly with the shift toward 3D architectures.                                          designs, including challenging 3D architectures. By combining
+              As transistor densities increase, heat dissipation becomes a                                          the efficiency of CTMs with the adaptability of ML, this
+              significant challenge, leading to hot spots and thermal gradients                                     framework offers a practical solution for fast, accurate thermal
+              that can degrade chip performance, reliability, and lifespan.                                         simulation, making real-time analysis in advanced IC designs.
+              Therefore, thermal analysis during chip design is an essential                                                                        II. RELATED WORK
+              task [1]. Traditional methods for thermal analysis, such as
+              finite element methods (FEM), offer high accuracy. However,                                               Machine learning (ML)-based methods have emerged as
+              these computational methods require substantial memory, time,                                         promising alternatives for thermal simulation. Some studies
+              designs, and fine-granularity simulation of 3D architectures.                                         have used infrared (IR) imaging for thermal predictions, but
+              Compact Thermal Models (CTMs) provide a more efficient                                                these are limited to post-silicon stages and require costly
+              alternative. While CTMs significantly reduce computational                                            equipment [4]. Simulation-based ML approaches, such as con-
+              requirements, they rely on numerical solvers. This makes CTMs                                         volutional neural networks (CNNs) and graph neural networks
+              computationally expensive for applications with dynamic work-                                         (GNNs), enable pre-silicon analysis by predicting temperature
+              loads or frequently changing designs.                                                                 distributions directly from power maps. However, these meth-
+                  Recent advancements in machine learning (ML) have intro-                                          ods demand large datasets and retraining for new designs,
+              duced alternative methods for thermal simulation. ML models                                           increasing complexity and computational overhead [2], [5].
+              can predict temperature distributions directly, offering sig-                                             Our work bridges the gap between CTMs and ML-based
+              nificant speedups compared to numerical solvers. However,                                             methods by introducing a lightweight, physically-informed ML
+              existing ML approaches suffer from critical limitations. These                                        framework. Unlike prior approaches, our method leverages the
+              models require large datasets for training, rely on complex                                           inherent linearity of the thermal conduction problem, requiring
+              architectures like convolutional neural networks (CNNs) or                                            minimal training samples and avoiding retraining. Furthermore,
+              graph neural networks (GNNs), and often lack adaptability to                                          our window-based scalability technique ensures efficiency for
+              new floorplans or power distributions without retraining [2].                                         large-scale simulations without sacrificing accuracy.
+                  This work addresses these limitations by designing a                                                  III. STEADY-STATE TEMPERATURE PREDICTION USING
+              lightweight ML framework that integrates with CTMs. Our                                                                    MACHINE LEARNING AND CTMS
+              approach leverages the linear nature of the heat conduction
+              equation to develop a simple, physically informed model using                                             In this work, we address the computational limitations of
+              linear regression. By embedding the problem’s physics directly                                        traditional thermal solvers and rethink the need for complex
+              into the ML framework, we minimize the need for large                                                 MLmodelsbyfocusing on the steady-state thermal conduction
+                                                                                                                    problem’s inherent linearity. The relation between power (P)
+                  1This research was partially funded by the NSF CCF 2131127 grant                                  and temperature (T) in CTM, which is based on the duality
+                                                                                                                                             978-3-9826741-0-0/DATE25/© 2025 EDAA 
+                               Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:50:12 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                                                  Fig. 2. Comparing the speedup of our method over all different simulations,
+                                                                                                  we consistently improve the simulation time.
+            Fig. 1.  Framework of the designed method: The machine learning model is
+            trained using power traces and temperature maps from the compact thermal
+            simulator. Once trained, the model begins bypassing the simulator, directly
+            predicting temperature.
+            of thermal and electric characteristics, is governed by a linear
+            equation, GT = P, where G is the thermal conductance matrix.
+            Instead of using a numerical solver to solve the linear equation
+            for every new P, as traditional compact thermal simulators
+                                                            −1                                    Fig. 3. Mean squared error (MSE) and mean absolute error (MAE) error for 3-
+            (CTS) do, we suggest estimating G                    with machine learning            layer 3D architecture with a grid size of 128×128 over 140 different samples
+                                             −1                   −1
+            models. Since T = G                 P, having G            makes it easy to
+            calculate the temperature for any P. A simple idea would be to                        Intel i7 6950× processor block level floorplan, our method
+            compute the inverse of G directly, but as the grid size grows,                        achieved a speed-up of up to 29.79× for a 64 × 64 grid. The
+            the number of elements in the G matrix exponentially increases,                       window-based approach maintained 3.75× speed-up for larger
+            makingtheexplicit matrix inversion computationally expensive.                         grids of 512 × 512, respectively. Similarly, for 3D designs, a
+                In our workflow (Fig. 1), input data includes configuration                       monolithic 3D architecture with one computation layer and
+            files, floorplans, and power traces. The process has two phases:                      one to two memory layers, our framework achieved up to
+            training and inference. During training, CTS solves the thermal                       73.36× speed-up for a 3-layer architecture with a 64×64 grid,
+            conduction equation from randomly selected power maps to                              showcasing its efficiency in handling complex 3D scenarios.
+            generate accurate temperature maps and train the ML model as                          B. Accuracy
+            the G matrix remains consistent within the same architecture.
+            Once the model meets a predefined error threshold (e.g., mean                             Fig. 3 shows the accuracy of our approach for a 3D 3-layer
+            squared error), it transitions to inference, bypassing CTS’s                          design. The gray area in the figure corresponds to the training
+            numerical solver. The main advantage of the ML model is                               phase, with only 6 samples used for training. The method keeps
+            the capability to predict temperatures quickly and without                            the error low for a 3D architecture. It maintains mean absolute
+                                                                                                                                                                ◦
+            numerical simulations.                                                                error (MAE) on inference not higher than 1 C, showing it
+                While the solution using linear regression is straightforward,                    effectively generalizes with a small number of training samples
+            with a large grid size (e.g., 512 × 512), the number of model                         while keeping the prediction quality and robustness of our
+            parameters would increase exponentially, leading to memory                            model even under steep temperature gradients.
+            issues and increased computation. As a scalable solution for                                                           REFERENCES
+            handling larger grid sizes, we design a windowing technique
+            that splits the grid into smaller windows (e.g., 64 × 64). This                       [1] Y. Sun, C. Zhan, J. Guo, Y. Fu, G. Li, and J. Xia, ªLocalized thermal
+            technique remains effective since the conductance matrix is                                effect of sub-16nm finfet technologies and its impact on circuit reliabil-
+                                                                                                       ity designs and methodologies,º in 2015 IEEE International Reliability
+            often uniform across a design. Using the windowed method,                                  Physics Symposium, 2015, pp. 3D.2.1±3D.2.6.
+            we can achieve high accuracy and fast training and inference                          [2] L. Chen, W. Jin, and S. X.-D. Tan, ªFast thermal analysis for chiplet design
+            even for fine-resolution simulations.                                                      based on graph convolution networks,º in 2022 27th Asia and South Pacific
+                                                                                                       Design Automation Conference (ASP-DAC), 2022, pp. 485±492.
+                                                                                                  [3] Z. Yuan, P. Shukla, S. Chetoui, S. Nemtzow, S. Reda, and A. K. Coskun,
+                                          IV. EVALUATION                                               ªPact: An extensible parallel thermal simulator for emerging integration
+                                                                                                       and cooling technologies,º IEEE Transactions on Computer-Aided Design
+                Our method was evaluated on 2D and 3D IC designs with                                  of Integrated Circuits and Systems, vol. 41, no. 4, pp. 1048±1061, 2021.
+            varying grid sizes and architectural complexities, demonstrating                      [4] J. Lu, J. Zhang, and S. X.-D. Tan, ªReal-time thermal map estimation for
+            its scalability, accuracy, and efficiency compared to the state-                           amd multi-core cpus using transformer,º in 2023 IEEE/ACM International
+                                                                                                       Conference on Computer Aided Design (ICCAD), 2023, pp. 1±7.
+            of-the-art PACT simulator. The total power of 2D designs and                          [5] R. Ranade, H. He, J. Pathak, N. Chang, A. Kumar, and J. Wen, ªA thermal
+            each active layer in 3D designs does not exceed 140W, and                                  machine learning solver for chip simulation,º in Proceedings of the 2022
+            the footprint of all designs is 16.8mm × 14.64mm.                                          ACM/IEEE Workshop on Machine Learning for CAD, ser. MLCAD ’22.
+                                                                                                       New York, NY, USA: Association for Computing Machinery, 2022, p.
+                                                                                                       111±117. [Online]. Available: https://doi.org/10.1145/3551901.3556484
+            A. Performance Speed-up
+                Fig. 2 illustrates the speed-up achieved by our ML framework
+            over PACT across different configurations. For 2D designs,
+                           Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:50:12 UTC from IEEE Xplore.  Restrictions apply. 

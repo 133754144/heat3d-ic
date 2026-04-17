@@ -1,0 +1,289 @@
+                                              2022 9th International Forum on Electrical Engineering and Automation (IFEEA)
+                        Optimization Design of Silicon Carbide Power 
+                                         Module Based on Neural Network 
+                                                                                          
+                                                        1                                                                            1,
+                                         Jianing Wang                                                                    Fuchen Wu * 
+                       1School of Electric Engineering and Automation,                                 1School of Electric Engineering and Automation,  
+                               Hefei University of Technology,                                                  Hefei University of Technology,  
+                                 Hefei, Anhui province, China                                                    Hefei, Anhui province, China 
+                                   jianingwang@hfut.edu.cn                                               *Corresponding author: wfchen1997@qq.com 
+                                                                                                                                  
+                                                        1                                                                              1
+                                       Yaodong Huang                                                                     Renhai Yang  
+                       1School of Electric Engineering and Automation,                                 1School of Electric Engineering and Automation,  
+                               Hefei University of Technology,                                                  Hefei University of Technology,  
+                                 Hefei, Anhui province, China                                                    Hefei, Anhui province, China 
+                                      hyd.1999@qq.com                                                                2389954931@qq.com
+              
+                 Abstract—Compared with Silicon materials, Silicon Carbide                 field of electric vehicle because of its advantages of high speed 
+             (SiC) devices are widely used due to their advantages of higher               and high temperature [1]. However, the chemical properties of 
+             voltage    resistance,   higher  temperature  resistance,  faster             Si are different from those of SiC, so the traditional modular 
+             switching speed and bottom loss. Due to the low current carrying              design of Si materials cannot be applied to SiC materials, so it 
+             capacity  of  a  single  SiC  chip,  it  is  often  necessary  to  apply      needs to be restudied. A single SiC chip has a limited load 
+             multiple  chips  in  parallel  to  improve  the  power  level  of  the        current, so it is necessary to use multiple chips in parallel in 
+             module. For the multi-chip parallel module, the size of Direct                high power applications. The structure of multi-chip parallel 
+             Bonded Copper (DBC) and the layout of  the  chip  have  great                 modules is more complex, and the problem of layout is more 
+             influence on the parasitic inductance and thermal performance of              important. Unreasonable layout will lead to the inconsistency 
+             the  module,  so  it  is  necessary  to  optimize  the  electro-thermal       of parasitic parameters of each parallel branch, and then affect 
+             performance of the module. At present, multi-chip SiC power                   the balanced distribution of current among chips. The parasitic 
+             module  can  be  characterized  by  the  finite  element  simulation          inductors  mainly  come  from  the  power  supply  terminal  of 
+             software of multi-physical field, and then the multi-chip power               power module, copper conductor on DBC and chip bonding 
+             package  design.  However,  the  optimization  design  of  module             wire. In addition, the temperature distribution is affected by the 
+             package  by  finite  element  simulation  software  needs  a  lot  of         position relationship between chips, and the unreasonable chip 
+             parametric  simulation,  which  costs  much  simulation  time  and            spacing will lead to serious thermal coupling effect between 
+             reduces  the  design  efficiency.  Therefore,  an  automatic  design          chips, thus reducing the reliability of power modules [2]. As 
+             method is urgently needed to accelerate the design cycle of the 
+             SiC  power  module,  reduce  the  inductance,  improve  the  heat             the  size  of  power  module  becomes  smaller  and  the  power 
+             dissipation efficiency and give full play to the performance of the           density  increases  gradually,  the  thermal  coupling  effect 
+             SiC  device.  Firstly,  taking  a  multi-chip  parallel  SiC  Power           between chips in the module becomes stronger, so the layout 
+             Module as an example, the parasitic inductance and temperature                design  of  power  module  becomes  more  important  [3].  The 
+             distribution of the module were simulated and analyzed based on               DBC size  and  chip  layout  in  power  module  will  affect  the 
+             ANSYS Q3D and COMSOL. Secondly, Artificial Neural Network                     parasitic inductance and thermal distribution, so it is necessary 
+             (ANN)  is  trained  with  DBC  size  and  chip  spacing  as  input            to  carry  out  electro-thermal  optimization  design  of  power 
+             variables,    parasitic    inductance     and    maximum  junction            module. The optimal layout is based on a large number of finite 
+             temperature as output data, and the relationship between input                element simulations, which are time-consuming and difficult to 
+             and  output  is  obtained.  That  is,  the  inductance  and  junction         build  parameterized  simulation  models,  it  is  difficult  to 
+             temperature of the module can be quickly obtained by directly                 optimize  multi-chip  power  modules  efficiently  by  manual 
+             inputting variables such as size. Finally, the root mean square               experience  and  manual  design  method  because  of  the 
+             error is less than 2 when comparing the finite element simulation             unfriendly  software  interface  between  electrical  and  thermal 
+             results with the ANN training results under the same variables,               simulation. Artificial Neural Network (ANN) can be regarded 
+             which verifies the validity of the method.                                    as a general function approximator, that is, it can set arbitrary 
+                 Keywords-      ANN,  SiC  Power  Module,  electro-thermal                 precision  to  approximate  the  relationship  between  input  and 
+             optimization design                                                           output data [4]. ANN is an emerging algorithm that, like the 
+                                                                                           biological brain, uses a set of signal-processing units (artificial 
+      2022 9th International Forum on Electrical Engineering and Automation (IFEEA) | 978-1-6654-6421-5/22/$31.00 ©2022 IEEE | DOI: 10.1109/IFEEA57288.2022.10037834I.  INTRODUCTION neurons)  to  receive,  process,  and  transmit  information  from 
+                 Power modules are widely used in electric vehicles, and the               neurons, the weights of the connections between neurons are 
+             uncertain operating conditions of electric vehicles require high              obtained by training parameters, and the ANN is trained by the 
+             reliability of power modules. SiC has been widely used in the                 provided  data  sets  to  approximate  the  relationship  between 
+                                                                                           input and output data [5]. In the design of power module, if we 
+              978-1-6654-6421-5/22/$31.00 ©2022 IEEE                                  1091
+                          Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:31:29 UTC from IEEE Xplore.  Restrictions apply. 
+            get several sets of design parameters and performance indexes         shown in figure 1. The output of one neuron in one layer needs 
+            and train ANN to get the relationship between parameters, we          to be multiplied by the weight w of the output of all neurons in 
+            can get the simulation results of different data at the fastest       the previous layer, plus biasing b, to be the input of the next 
+            speed.                                                                layer [11]. The flow is shown in figure 2. 
+                In  reference  [6],  genetic  algorithm  is  used  to  design  the 
+            layout of power modules with two chips and three terminals, 
+            but genetic algorithm needs a large number of population and 
+            takes up a lot of computing resources, and it is not suitable for 
+            multi-chip power module. The paper [7] improves the paper [6] 
+            by  using  the  nesting  method  of  genetic  algorithm  and 
+            enumeration, which reduces the number of population and the 
+            computational  difficulty,  but  only  considers  the  parasitic 
+            parameters  of  the  module,  and  the  efficiency  of  genetic 
+            algorithm is still limited. A multi-objective optimization tool, 
+            PowerSynth,  was  created  in  reference  [8]  to  calculate  the 
+            electro-thermal  coupling  of  layout  through  a  reduced-order                                                                 
+            model, the optimal trajectory layout and die placement path can                     Figure 1. Structure of artificial neural network 
+            be  achieved  more  quickly  than  traditional  finite  element        
+            analysis (FEA), but the number of layout options is still limited.                                      
+            Literature  [9]  presents  a  VLSI-based  placement  and  routing 
+            method, which provides a more diverse starting point layout for 
+            PowerSynth optimization through a synthetic circuit network 
+            table.  In  the  layout  optimization  of  SIC  multi-chip  power 
+            modules, it is necessary to reduce the parasitic inductance and 
+            the  highest  junction  temperature,  is  to  focus  on  the  need  to 
+            solve the problem. With the increase of power density, multi-
+            chip becomes the trend. However, based on the layout design 
+            method  in  the  previous  literature,  due  to  the  complexity  of 
+            integrated  electrical  and  thermal  performance,  the  parasitic 
+            parameters, maximum junction temperature, DBC size and chip 
+            coordinates  are  not  simple  linear  relations,  and  the  finite 
+            element  simulation  modeling  is  difficult,  simulation  time-
+            consuming, difficult to be used in complex multi-chip power 
+            modules. In this paper, an electro-thermal co-design method for 
+            SiC multi-chip power modules is proposed. By training ANN, 
+            the mapping between input and output parameters is obtained. 
+                In the second section, the basic principle of neural network 
+            is  introduced,  and  in  the  third  section,  a  half-bridge  power                                                              
+            module is taken as an example to analyze its electrothermal                          Figure 2. Neural network training flow chart 
+            performance.  In  the  fourth  section,  the  ANN  is  trained  by 
+            parameterized  simulation,  and  the  corresponding  simulation           1) In order to prevent the data out of the training set from 
+            value is output directly by input specified data, and verified by     being  misquoted,  all  the  data  are  normalized.  The  data  is 
+            finite  element  simulation.  Finally,  the  electro-thermal          divided into training set and test set, and the partition ratio can 
+            cooperative    design   of   multi-chip    Power  Modules  is         be arbitrary. Usually, the ratio is 80% training set and 20% test 
+            summarized.                                                           set, and the test set is used to test the accuracy of ANN; 
+                      II. THE BASIC PRINCIPLE OF NEURAL NETWORK                       2) The training set is further divided into training subset and 
+                Various  types  of  artificial  neural  networks  have  been      verification  subset,  and  the  split  proportion  can  be  arbitrary. 
+            proposed  in  literature  [10].  The  particular  network  choice     The proportion of this paper is 80% training subset and 20% 
+            depends largely on the nature of the relationship between input       verification subset; 
+            and output in the data. In this paper, the relationship between           3)  Setting  the  weight  and  bias  parameters  of  the  neural 
+            chip size and electro-thermal performance is static. Therefore,       network. The weight w and the bias parameter b of the neural 
+            we choose the forward neural network as the case study.               network  are  selected  randomly  first,  and  are  updated  and 
+                The artificial  neural network is composed of input layer,        modified according to the returned error in the course of the 
+            hidden layer and output layer. The input layer can be input data      later iteration; 
+            or multiple layers, and the hidden layer can be multiple layers,          4) The training condition is evaluated by training subset and 
+            each layer composed of neurons, the number of neurons can be          validation subset, and the error between the data and the output 
+            arbitrarily set, used to process the data of the previous layer, as 
+                                                                              1092
+                        Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:31:29 UTC from IEEE Xplore.  Restrictions apply. 
+               of neural network is calculated by error function, which usually                     A.Power Module Parasitic Inductance Extraction 
+               chooses root mean square function;                                                       The parasitic inductance of the package module is extracted 
+                   5)  Comparing  the  error  of  training  subset  and  verifying                  in ANSYS Q3D. In order to get the parasitic inductance value 
+               subset  to  judge  whether  ANN  has  entered  the  state  of                        of  the  whole  module,  it  is  necessary  to  set  the  positive  and 
+               overfitting;                                                                         negative  DC  input  terminals  in  a  network,  so  the  chip  and 
+                   6) After the ANN training is finished, the data from the test                    support  are  all  set  to  copper.  The  material  settings  and 
+               set is input to the trained ANN, the output data is compared                         parameters of each part of the half bridge module are shown in 
+               with the actual data, and the accuracy of ANN is evaluated by                        table 1. Set the DC positive input side to source and the DC 
+               error function;                                                                      negative input side to sink. The overall parasitic inductance of 
+                                                                                                    the module is calculated to be about 7.54nH. 
+                   7) If the accuracy of the assessment is poor, then adjust the 
+               number of hidden layers and the number of neurons in ANN,                                                    TABLE I. MATERIAL SETTINGS 
+               and repeat the above steps.                                                                        Components                             Materials 
+                   Over-fitting is a phenomenon that artificial neural network                           DBC top and bottom, drive pin                     Copper 
+               is  over-fitting  to  training  subset  samples,  which  results  in                          DBC middle layer, TC                          Al2O3 
+               unfavorable prediction to other samples. After a certain number                                    Solder layer                             Solder 
+               of iterations, the artificial neural network is trying to adapt to                                     Chip                                   Si 
+               the  sampling error in the training data, so it is necessary to                                      Support                                 Mo. 
+               check  the  over-fitting  phenomenon  by  a  subset  and  stop                       B.Thermal Simulation of Power Module 
+               training the iterated neural network.                                                    The thermal simulation analysis of the half-bridge module 
+                                                                                                    is  carried out by using COMSOL software. Material settings 
+                  III.MULTIPHYSICAL FIELD SIMULATION OF POWER MODULE                                and properties are shown in table 1. Set the chip as heat source, 
+                   In  this  section,  taking  a  half-bridge  power  module  as  an                and the heat source power consumption as a rectangular wave 
+               example, through Q3D simulation and COMSOL simulation,                               of  which  peak  value  is  100W,  as  shown  in  figure  4(1).  To 
+               the parasitic inductance and maximum junction temperature are                        simulate the transient thermal, set the simulation time for 24s, 
+               obtained. The power module is shown in figure 3(2). The half-                        and the calculation step size is 1. The simulation results show 
+               bridge module consists of 6 chips, which are divided into 3 top-                     that the maximum junction temperature of the module is 218°C 
+               bridge-arm  chips  and  3  bottom-bridge-arm  chips.  The  DC                        at 16s, as shown in figure 4(2), which is close to the normal 
+               positive input is connected to the top bridge arm chip by the top                    critical temperature of SiC power module. 
+               DBC, and then connected to the bottom DBC and AC outputs 
+               by the gasket, and the DC negative input is connected to the 
+               bottom bridge arm chip by the bottom DBC, connect to the top 
+               DBC and AC outputs via the support. Because of the close 
+               distance between the positive and negative ends of DC, the TC 
+               plate is established for isolation. Balance stress DBC and four 
+               corner support were added in both top and bottom DBC. DC 
+               input DC voltage, AC output AC half-wave voltage. The circuit                        Figure 4. (1) rectangle wave of heat source power (2) temperature distribution 
+               is as shown in the figure 3(1). The DBCs of module structure is                                                         of module 
+               shown in the figure 3 (3) and (4). 
+                                                                                                            IV.MULTI-CHIP POWER MODULE ELECTROTHERMAL 
+                                                                                                                    COOPERATIVE DESIGN BASED ON ANN 
+                                                                                                        Ansys Q3D can extract parasitic inductance and COMSOL 
+                                                                                                    can simulate the highest junction temperature of the module. 
+                                                                                                    Both  of  them  are  finite  element  analysis  software,  so  the 
+                                                                                                    accuracy is high, but the finite element analysis takes a long 
+                                                                                                    time.  In  order  to  get  more  data,  the  time  of  finite  element 
+                                                                                                    analysis  is  too  long,  which  has  a  great  influence  on  the 
+                                                                                                    efficiency of power module layout design. In order to get more 
+                                                                                                    accurate relationship between DBC size, chip spacing, parasitic 
+                                                                                                    inductance and maximum junction temperature, the step size of 
+                                                                                                    parametric simulation should be as small as possible, which 
+                                                                                                    will lead to low simulation efficiency. Therefore, the method of 
+                                                                                                    training artificial neural network is used that will get the target 
+                                                                                                    value quickly. 
+                                                                                                        For parasitic inductors of power modules, the relationship 
+                 Figure 3. (1) circuit diagram of half-bridge module (2) half-bridge power          between  DBC  size  and  parasitic  inductance  is  studied  in 
+                              module (3) top DBC (4) bottom DBC and chips                           literature  [13],  that  is,  the  larger  the  width  of  DBC  in  the 
+                                                                                              1093
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:31:29 UTC from IEEE Xplore.  Restrictions apply. 
+            direction of current inflow, the smaller the value of parasitic     The  modified  model  was  verified  by  Q3D  simulation.  The 
+            inductance will be. However, for multi-chip power modules,          overall parasitic inductance of the modified model was about 
+            the  DBC  layout  is  relatively  complex,  and  there  are  more   6.71nH, and the training error of ANN1 was about 0.0074nH, 
+            current paths in DBC. For the highest junction temperature, the     and the error percentage was 0.11%. The parasitic inductance 
+            smaller the chip spacing is, the stronger the thermal coupling      of  the  module  decreased  by  0.84nH,  and  the  loss  is  about 
+            between  the  chips  is,  the  higher  the  maximum  junction       11.14%. The loss chart is shown in figure 6(2). 
+            temperature of the chip will be, and the larger the temperature 
+            difference  between  the  chip  and  other  locations  will  be, 
+            resulting in uneven stress distribution in the module, therefore, 
+            the aging of the module is accelerated and the service life of the 
+            module is greatly reduced. However, the complexity of multi-
+            chip parallel modules means that the relationship between chip 
+            spacing  and  maximum  junction  temperature  is  not  a  simple 
+            linear  relationship.  Therefore,  for  parasitic  inductors  and 
+            maximum junction temperature, we can use the training ANN 
+            method, directly input the DBC size and spacing value, output 
+            the  corresponding  parasitic  inductor  value  and  maximum                                                                        
+            junction temperature value.                                              Figure 6. (1) structure of ANN1 (2) ANN1 training times and error 
+            A.Design of Power Module for Reducing Parasitic Inductance          B.Design of Power Module Based on ANN to Reduce the 
+               Based on ANN                                                        Maximum Junction Temperature 
+               Ansys Q3D software is used to parameterize the width of 6           The chip spacing of the half-bridge module is simulated by 
+            top  DBC  arms  and  2  bottom  DBC  arms  in  the  half-bridge     COMSOL software. The material setting is the same as Ansys 
+            module. A total of 27 = 128 sets of data can be obtained. The       Q3D inductor simulation. Because of the complex structure of 
+            specific data size s are shown in table 2.                          the module, it is very difficult to carry out parametric modeling 
+                           TABLE II. Q3D PARAMETERIZED VALUES                   in COMSOL. This simplifies the model by replacing the inner 
+                                                                                DBC with a large  rectangle,  removing  the  shim  that  is  not 
+                        Parameter                 Change value(mm)              connected to the chip, and retaining the square shim, as shown 
+                   6 top DBC arms width                  1, 3                   in  figure  7.  In  the  parameterized  setting,  the  chip  1-y 
+                    bottom DBC width                   7.9, 8.8                 coordinates,  the  chip  3-y  coordinates,  the  chip  power 
+                                                                                consumption and thermal convection coefficient four variable 
+                                                                                parameters, the other four chips according to the chip 1,3 chip 
+                                                                                position changes. As shown in table 3, a total of 3 * 3 * 5 * 3 = 
+                                                                                135  data  sets  can  be  obtained.  In  order  to  simplify  the 
+                                                                                simulation,  the  steady-state  solution  is  adopted  in  the 
+                                                                                parameterized simulation. 
+                                                                                 
+            Figure 5. The corresponding parameters in the top and bottom DBC of model 
+               According  to  the  parameterized  simulation,  ANN1  is 
+            defined and its structure is determined. The 7 inputs are the 
+            width of the top DBC6 bridge arms, the width of the bottom 
+            DBC,  and  the  output  is  the  value  of  the  whole  parasitic                                                                     
+            inductance of the module, the network parameters of ANN1 
+            determined  by  adjusting  parameters  are:,  13  neurons  in  1                Figure 7. (1) bottom DBC and chips (2) top DBC 
+            hidden layer, 7 in input layers, 1 in output layer, as shown in 
+            figure 6(1). 
+               According to the simulation data, it can be seen that the                    TABLE III. COMSOL PARAMETERIZED VALUES  
+            width of the top DBC arm is negatively correlated with the                          Parameter                       Values 
+            parasitic inductance of the whole module, and the width of the                Chip 1-y coordinates (mm)              5,7,9 
+            bottom  DBC  is  negatively  correlated  with  the  parasitic                 Chip 3-y coordinates (mm)          34.6,32.6,30.6 
+            inductance  of  the  whole  module,  the  two  width  values  are            Chip power consumption (W)         60,70,80,90,100 
+            required to be as large as possible, while the other dimensions             Thermal convection coefficient      4,000,5,000,6,000 
+            in  the  module  are  fixed,  in  order  not  to  affect  the  normal  According to the parameterized simulation of COMSOL, 
+            operation of other parts, and not to affect other performance       ANN2 is defined and its structure is determined. Four inputs 
+            such as stress, according to these conclusions and constraints,     are chip 1-y, chip 3-y coordinates, chip power consumption, 
+            specify the top and bottom DBC arm widths of 3mm and 8.8            thermal convection coefficient, and one output is the highest 
+            mm, respectively. Enter ANN1 and the output is 6.7073784nH.         junction temperature of the module, the network parameters of 
+                                                                           1094
+                       Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:31:29 UTC from IEEE Xplore.  Restrictions apply. 
+              ANN2 determined by adjusting parameters are: 13 neurons in                          power modules, this paper proposes a training ANN to predict 
+              one hidden layer, 4 in input layer, 1 in output layer, as shown in                  the  simulation  results  under  different  size  parameters,  thus 
+              figure 8(1). And the training and test loss is shown in figure                      greatly reducing the simulation time, simplify the layout design 
+              8(2).                                                                               of  power  modules.  Through  a  concrete  half-bridge  power 
+                                                                                                  module, this paper analyzes how to use simulation data to train 
+                                                                                                  ANN to complete the electrothermal cooperative design of the 
+                                                                                                  module. The simulation results show that the parasitic inductor 
+                                                                                                  and the maximum junction temperature can be reduced, and the 
+                                                                                                  difficulty of modeling and time-consuming simulation is solved. 
+                                                                                                                                 REFERENCES 
+                                                                                                  [1]Z. Wang, Y. Wu, M. H. Mahmud, Z. Yuan, Y. Zhao, and H. A. Mantooth, 
+                                                                                                       “Busbar design and optimization for voltage overshoot mitigation of a 
+                                                                                                       silicon  carbide  high-power  three-phase  T-type  inverter,”  IEEE  Trans. 
+                                                                                                       Power Electron., vol. 36, no. 1, pp. 204–214, Jan. 2021. 
+                                                                                                  [2]Shao Weihua, ran Li, Zeng Zheng. Dynamic current sharing of multi-chip 
+                                                                                                       SIC  module  based  on  optimized  symmetrical  layout  [  J  ]  .  Chinese 
+                                                                                                       Journal of Electrical Engineering. 2018. Vol. 38 No. 6:1826-1836. 
+                                                                                                  [3]Puqi  Ning,  Huakang  Li,  Yunhao  Huang.  Review  of  Power  Module 
+                                                                                                       Automatic  Layout  Optimization  Methods  in  Electric  Vehicle 
+                     Figure 8. (1) structure of ANN2 (2) ANN2 training times and error                 Applications[J]. Chinese Journal of Electrical Engineering. 2020. Vol.6, 
+                                                                                                       No.3:8-24. 
+                   According to the simulation results, the 1-y coordinates and                   [4]T.  Dragičević,  P.  Wheeler  ,  F.  Blaabjerg.  Artificial  Intelligence  Aided 
+              3-y  coordinates  of  the  chips  are  6mm  and  35.5  mm,                               Automated Design for Reliability of Power Electronic Systems[J]. IEEE 
+              respectively.  The  power  consumption  of  each  chip  is  the                          Transactions on Power Electronics,2019,34(8)：7161-7171． 
+              rectangle  wave  in  figure  4(1),  and  the  thermal  convection                   [5]T. Guillod,P. Papamanolis,J. W. Kolar. Artificial Neural Network (ANN) 
+              coefficient  is  5000.  The  simulation  results  are  returned  to                      Based Fast and Accurate Inductor Modeling and Design[J]. IEEE Open 
+              COMSOL for verification, the maximum junction temperature                                Journal of Power Electronics, 2020, 1: 284-299． 
+              is 169°C, which is 49°C lower than before, as shown in figure                       [6]Ning P, Wang F, Ngo K D T. Automatic layout design for power module[J]. 
+              9.                                                                                       IEEE Transactions on Power Electronics, 2013, 28(1): 481-487. 
+                                                                                                  [7]Hobson. Research on automatic low-inductance layout design of multi-chip 
+                                                                                                       SIC modules [ D ] . Tianjin University, 2018. 
+                                                                                                  [8]H. Alan Mantooth, Tristan M. Evans, Quang Le. PowerSynth: A Power 
+                                                                                                       Module  Layout  Generation  Tool  [J].  IEEE  Transactions  on  Power 
+                                                                                                       Electronics, 2019. 
+                                                                                                  [9]H. Alan Mantooth, Tristan M. Evans, Yarui Peng. Placement and Routing 
+                                                                                                       for  Power  Module  Layout[J].  2021  IEEE  Design  Methodologies 
+                                                                                                       Conference (DMC). 2021. 
+                                                                                                  [10]J. Schmidhuber, “Deep learning in neural networks: An overview,” Neural 
+                                                                                                       Netw., vol. 61, pp. 85–117, 2015. 
+                                                                                                  [11]Peng Qiang, Yang Renhai, Xie Luwei. A modeling method of common-
+                                                                                                       mode noise in ANPC inverter system based on Ann. The 16th Annual 
+                                                                                                       Conference of China Electrotechnical Society. 2021. 
+                Figure 9. Maximum junction temperature simulation results of the optimized        [12]Kaiwen  Li,  Tao  Zhang,  Rui  Wang.  Deep  Reinforcement  Learning  for 
+                                                  module                                               Multiobjective Optimization. IEEE Transactions on Cybernetics, vol. 51, 
+                                              V. Conclusions                                           no. 6, June 2021. 
+                                                                                                  [13]Dai N, Lee F C. Characterization and analysis of parasitic parameters and 
+                   In order to solve the problems of modeling and simulation                           their effects in power electronics circuit[C]. Proceedings of the Power 
+              time-consuming in the layout optimization of SiC multi-chip                              Electronics   Specialists  Conference.  Baveno:  Power  Electronics 
+                                                                                                       Specialists Conference, 2002, 2: 1370-1375. 
+                                                                                                
+                                                                                            1095
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:31:29 UTC from IEEE Xplore.  Restrictions apply. 

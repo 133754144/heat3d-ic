@@ -1,0 +1,627 @@
+                                                      Case Studies in Thermal Engineering 57 (2024) 104331
+                                                            Contents lists available at ScienceDirect
+                                               Case Studies in Thermal Engineering
+                                                     journal homepage: www.elsevier.com/locate/csite
+            Multimodal machine learning for predicting heat transfer
+            characteristics in micro-pin fin heat sinks
+            Haeun Leea, Geonhee Leea, Kiwan Kima, Daeyoung Kongb, Hyoungsoon Leea,c,1,*
+            a DepartmentofIntelligentEnergyandIndustry,Chung-AngUniversity,Seoul,06974,SouthKorea
+            b DepartmentofMechanicalEngineering,StanfordUniversity,Stanford,CA,94305,USA
+            c School of MechanicalEngineering,Chung-AngUniversity,Seoul,06974,SouthKorea
+            ARTICLE INFO                                   ABSTRACT
+            Handling Editor: Huihe Qiu                     As three-dimensional integrated circuit (3D-IC) chip technology advances, thermal management
+            Keywords:                                      has becomeincreasingly important because of increasing heat flux from thermal stacking. Micro-
+            Multimodal                                     pinfin-embeddedcoolinghasemergedasapromisingsolutionfor3D-ICs,offeringbetterthermal
+            Deep learning                                  andhydraulicperformancethanconventionalmicrochannelheatsinks.Itisalsoeasytointegrate
+            Thermal management                             into existing 3D-IC structures, such as through-silicon vias between stacks. The utilization of two-
+            Boiling                                        phase flow in micro-pin fins further enhances temperature uniformity and improves the heat
+            Two-phase flow                                 transfer coefficient by leveraging latent heat. Nevertheless, predicting thermal performance in
+            Micro-pin fin heat sink                        micro-pin fin heat sinks under boiling conditions remains challenging owing to intricate geomet-
+                                                           ric shapes and diverse operating conditions. The present lack of correlation or theoretical models
+                                                           poses a significant obstacle. To address this problem, our study employed a Multimodal machine-
+                                                           learning (ML) approach, combining image data capturing boiling patterns of two-phase flow and
+                                                           informationaboutgeometricshapeandoperatingconditions,topredictheattransfercharacteris-
+                                                           tics in micro-pin fin heat sinks. We utilized experimental data comprising 155 types of boiling
+                                                           heat transfer data with the dielectric fluid FC-72 in two micro-fin shapes directly etched on Si.
+                                                           Four ML algorithms (XGBoost, LightGBM, Multilayer perceptron (MLP), and Multimodal ML)
+                                                           wereemployedtopredictthermalperformance.Thecorrelationcoefficientanalysisbeforelearn-
+                                                           ing revealed the influence of each type of measurement data on the heater surface temperature
+                                                           during two-phase flow. Prediction accuracy was measured using mean absolute percent error
+                                                           (MAPE), and the results were compared in terms of maximum and average temperature depend-
+                                                           ing on the characteristics of each ML algorithm. Overall, the Multimodal approach demonstrated
+                                                           superior capability in predicting temperature distributions with spatial details, surpassing con-
+                                                           ventional decision-tree algorithms and MLP in performance. When trained with boiling images,
+                                                           the Multimodal MLmodelachievedremarkableprecision,evidencedbyaMAPEof1.81%forthe
+                                                           maximumtemperatureand0.84%fortheaveragetemperature,highlightingitsexceptionalaccu-
+                                                           racy in mapping the heated surface temperature profile. By contrast, the traditional MLP model,
+                                                           whichlackedtrainingonboilingimages,showeddiminishedaccuracy,withaMAPEof2.54%for
+                                                           the maximum temperature and 1.77% for the average temperature, indicating a comparative
+                                                           shortfall against the Multimodal model results.
+               * Corresponding author. School of Mechanical Engineering, Chung-Ang University, Seoul, 06974, South Korea.
+               E-mail address: leeh@cau.ac.kr (H. Lee).
+               1 Website:http://atsla.cau.ac.kr
+            https://doi.org/10.1016/j.csite.2024.104331
+            Received 5 August 2023; Received in revised form 17 March 2024; Accepted 30 March 2024
+            Available online 31 March 2024
+            2214-157X/© 2024 The Authors.          Published by Elsevier Ltd.      This is an open access article under the CC BY-NC license
+            (http://creativecommons.org/licenses/by-nc/4.0/).
+           H. Lee et al.                                                                             Case Studies in Thermal Engineering 57 (2024) 104331
+              Nomenclature
+                                2
+              A          area [m ]
+              Cp         specific heat [J/kg·K]
+              Df         pin fin diameter [mm]
+              h          enthalpy [J]                   2
+              hconv      heat transfer coefficient [W/(m ·K)]
+           Fig. 1. Experimental setup and test section. (a) Photograph of the assembled test module, (b) Cross-sectional side view of the test module, (c) Schematic configuration
+           of the flow loop, and (d) Photo of the equipment in the flow loop.
+           Table 1
+           Summaryofageometrical parameter value of the test sample and operating condition range in experiments.
+             Geometrical parameters and operating conditions                    Case1: ST = 200 [μm]            Case2: ST = 300 [μm]
+             Df [μm]                                                            38.1                            38.1
+             Hf [μm]                                                            90.0                            90.0
+             SL [μm]                                                            301                             302
+             St [μm]                                                            301                             198
+             Arrangement                                                        Staggered                       Staggered
+             Shape                                                              Circular                        Circular
+             Nrow                                                               34                              50
+             Ncolumn                                                            34                              34
+             Mass flow rate [kg/s]                                              21.2–100.3                      19.9–101.9
+                           2
+             Heat flux [W/cm ]                                                  15.50–111.10                    23.26–100.40
+             Inlet temperature [°C]                                             19.66–23.32                     20.51–22.22
+             Pressure drop [kPa]                                                2.37–28.03                      4.27–28.18
+             Heated surface temperature [°C]                                    63.5–121.5                      74.6–138.0
+                                                                             2
+           H. Lee et al.                                                                               Case Studies in Thermal Engineering 57 (2024) 104331
+           Fig. 2. Sequential high-speed images acquired during thermal tests. Specific test conditions of ST = 200 μm sample under a mass flow rate 20 g/min and heat flux of
+                   2
+           25 W/cm : each image captured at 100 fps (interval: 100/5000 s).
+               H         pin fin height [mm]
+               kfin      thermal conductivity [W/m·K]
+               ṁ         mass flow rate [kg/s]
+               Nu        Nusselt number [−]
+               ΔP        pressure drop [kPa]
+               Pr        Prandtl number [−]
+               q         heat transfer rate [W]
+                                         2
+               q"        heat flux [W/m ]              2
+               R″        total thermal resistance [K·cm /W]
+               Re        Reynolds number [−]
+               SL        longitudinal pin fin spacing [m]
+               ST        transversal pin fin spacing [m]
+               Tf        fluid temperature [K]
+               Th        heated surface temperature [K]
+               u         fluid velocity [m/s]
+               V         voltage [V]
+               Greek symbols
+               ρ         density
+               μ         viscosity
+               σ         surface tension
+               Subscripts
+               avg       average
+               CFD       computational fluidic dynamics
+               exp       experiment
+               f         fluid
+               h         heater
+               in        inlet
+               min       minimum
+               max       maximum
+               pred      prediction
+               tot       total
+           1. Introduction
+               Withtheevolutionofsemiconductorprocess technology to meet market demands for improved performance, device miniaturiza-
+           tion, and integration, the heat flux in electronic devices has continued to rise. Consequently, the maximum operating temperature has
+           increased, leading to mechanical damage to connecting wires and solder due to differing thermal expansion coefficients [1]. Addi-
+           tionally, higher temperatures cause increased resistance, resulting in greater electrical losses and circuit performance deterioration,
+           triggering severe electronic reliability issues and thermal failures [2]. Researchers have explored various thermal management tech-
+           niques to address the challenge of high heat generation in electronic devices. These techniques include cooling methods using mi-
+                                                                              3
+       H. Lee et al.                                         Case Studies in Thermal Engineering 57 (2024) 104331
+       Fig. 3. Thermal and hydraulic performance of micro-pin fin heat sinks. (a) Experimental total thermal resistance as a function of effective heat flux. (b) Experimental
+       pressure drop as a function of effective heat flux with mass flow rate.
+       crochannels [3], micro-pin fins [4], manifold microchannel structures [5], pool boiling [6], electrostatic spray [7], and jet impinge-
+       ment [8].
+         Three-dimensional integrated circuits (3D-ICs) are designed for high integration, minimizing electronic leakage due to device
+       miniaturization. Although through-silicon via (TSV) reduces chip connection length, enhancing processing speed and power effi-
+       ciency, it increases chip temperature owing to thermal superposition among stacked chips. Micro-pin fins offer an effective solution to
+       this thermal problem, as they can be integrated into existing TSVs of 3D-ICs. Therefore, researchers have explored an embedded cool-
+       ing technique for high-heat-flux 3D-ICs to manage heat generation effectively by fabricating micro-pin fins around TSVs between
+       stacked chips [9,10]. Micro-pin fins offer a significant advantage in embedded cooling over conventional microchannels, as they pro-
+       vide an increased heat-transfer area with reduced pressure loss. Unlike microchannels, which require a larger channel height to miti-
+       gate high-pressure loss and result in electrical signal delay, micro-pin fins address this issue by offering decreased pressure loss. For
+       these reasons, there have been many studies on the thermal and hydraulic performance of micro-pin fin heat sinks. Initially, the focus
+       wasonsingle-phaseregionperformanceusingwaterornonconductiverefrigerantsowingtotheireaseofexperimentation[11].Sub-
+       sequently, multiphase research aimed to improve temperature uniformity in electronic devices while maintaining high heat-transfer
+       performanceatlowflowrates[12].However,experimentalthermalperformancemeasurementsfortwo-phaseflowinmicro-pinfins
+       are challenging and time-consuming, prompting thermal engineers to develop thermal performance correlations instead. Koşar and
+                                                                                   2
+       Peles [13] conducted an experiment in the multiphase region in the mass flux and heat flux ranges of 976–2349 kg/m s and
+       19–312W/cm2,respectively, using R-123 as the working fluid in the pinned fin structure. On the basis of experimental data, an em-
+       pirical correlation with a mean absolute error (MAE) accuracy of 5% was developed to predict the Nusselt number of the exponential
+       relationship to the Reynolds number (Re). Reeser et al. [14] conducted experiments in the mass flux and heat flux ranges of 200–1300
+          2           2
+       kg/m s and 1–118 W/cm , respectively, using water and HFE-7200 as working fluids. An MAE of 10.18% was recorded by a created
+       correlation to predict the heat transfer coefficient using the exit quality and pressure drop from the experimental data. Krishnamurthy
+       and Peles [15] compared the correlation equations for calculating various heat transfer coefficients using experimental data in the
+                                    2            2
+       massfluxandheatfluxrangesof346–794kg/m sand20–350W/cm ,respectively,usingwaterastheworkingfluid.Thecorrelation
+       equation of Kawahara et al. [16], which introduced the Prandtl number and friction multiplier, matched the experimental and pre-
+       dicted values most accurately within the range of 20%. Qu and Siu-ho [17] implemented square-shaped fin fins arranged in a stag-
+                                                                 2
+       gered arrangement using water as the working fluid for mass flow rates of 183–420 kg/m s and heat fluxes in the range of
+       23.7–248.5 W/cm2atinlettemperaturesof30°C,60°C,and90°C.Onthebasisoftheheattransfercoefficientmeasuredinthehigh-
+       exit-quality region of the working fluid approaching the saturation temperature, a correction coefficient considering the reinforcing
+       effect of subcooling was added to calculate the heat transfer coefficient in the multiphase region, and MAE accuracy of 7.6% was
+       shown.
+         Theadvancementofcomputingdevicesandmachine-learning(ML)techniqueshasledtoanincreasingfocusonusingMLforpre-
+       dicting thermal and hydraulic performance. The key advantage of ML lies in its ability to achieve high-accuracy predictions by ana-
+       lyzing data, particularly in systems where clear correlations are challenging to identify [18]. Consequently, active research is ongoing
+       to apply ML in complex systems where parameter tendencies are difficult to determine by traditional experiments or computational
+       fluid dynamics(CFD)methods.Qiuetal.[19]predictedthepressuredropintwo-phaseflowusinganartificialneuralnetwork(ANN),
+       XGBoost, LightGBM, and K-nearest neighbor algorithms in microchannels. All algorithms showed better prediction accuracies than
+       conventional correlations, with the most accurate MAE of 9.58% in the ANN model. Yang et al. [20] derived five optimized features
+       using single-phase flow CFD analysis data for 300 arbitrary spline-pin fin shapes using the pix2pix network and a genetic algorithm
+       (GA). Lee et al. [21] performed learning of feature and operating condition data from 22 published papers on MLP ML models to pre-
+       dict universal friction factors applicable to micro-pin fin geometries, recording an accuracy of up to 14.49% MAE, more than 4.72
+                                               4
+       H. Lee et al.                                     Case Studies in Thermal Engineering 57 (2024) 104331
+       Fig. 4. Detailed dataset distribution for ML analysis. (a) Dataset in terms of maximum temperature versus Reynolds number. Dataset distribution with respect to (b)
+       Reynolds number, (c) Heat flux, (d) Max temperature, (e) Pressure drop, and (f) Transverse spacing.
+       times higher than the existing power sum-based correlation [22]. Kim et al. [23] recorded a maximum MAE accuracy of 10.9% by
+       learning the shape and operating condition data from 15 papers published in MLP, XGBoost, and LightGBM modelsfortheuniversally
+       applicable Nusselt number in the micro-pin fin. This was 2.17 times more accurate than the correlation formula created on the basis
+       of the data. Suh et al. [24] automatically recognized bubbles generated during full boiling using convolution neural network (CNN)-
+       based algorithms and then constructed a model to predict heat flux through bubble images using hierarchical and physical data to
+       record a 6% meanabsolutepercenterror(MAPE)accuracy.Nieetal.[25]madeapredictionwith97.56%accuracybyconstructinga
+                                           5
+       H. Lee et al.                                     Case Studies in Thermal Engineering 57 (2024) 104331
+                      Fig. 5. Architecture of Algorithm. (a) Multilayer perceptron neural network, (b) Multimodal ML.
+       CNN-basedalgorithm to distinguish five flow patterns: tubular flow, bubble flow, stirring flow, slug flow, and hierarchical flow with
+       105,642flowimagesunder696conditionsfromhorizontalcirculartubesflowingmethaneandtetrafluoromethane.Zhangetal.[26]
+       classified flow patterns in real time with 93% accuracy by performing learning of velocity information such as ultrasound doppler ve-
+       locimetry, maximumspeed,andmaximumspeeddifferenceratioinhorizontalpipesinsupportvectormachine,K-nearestneighbors,
+       decision tree, long short-term memory, and CNN models.
+        As such, empirical correlations for predicting the performance of cooling systems in two-phase flow have limitations in terms of
+       versatility due to the increased number of variables, compared to single-phase flow. Consequently, the accuracy of thermal perfor-
+       mancepredictionsissignificantly reduced. Specifically, compared to single-phase flow—which can be predicted solely on the basis of
+       thegeometricshapeofcoolingfins—flowboilinginvolvesalargernumberofvariablesandnecessitatestheuseoftime-varyingimage
+       data to accurately predict the influence of flow patterns. In this research, we present a novel multimodal ML algorithm for predicting
+       thermal performance in two-phase flow, utilizing both image and numerical data obtained from experimental micro-pin fin studies.
+       WeconductacomparativeanalysisoftheperformanceofouralgorithmagainstotherMLapproachesthatsolelyutilizenumericalpa-
+       rameters. The proposed approach enables the accurate prediction of the thermal performance of heat sinks in two-phase flow, consid-
+       ering the influence of flow patterns and various parameters. The proposed modeling approach can provide contour-based tempera-
+       ture insights, identifying hot spots and their distributions within the chip. These capabilities offer a valuable resource for designs that
+       integrate hot spot data, leading to enhanced operational efficiency and chip reliability by more accurate temperature predictions.
+                                           6
+       H. Lee et al.                                     Case Studies in Thermal Engineering 57 (2024) 104331
+       Fig. 6. Kendall rank coefficient heatmap for all variable scales between −1 to 1. All parameters exhibit a correlation coefficient with an absolute value of 0.1 or higher.
+       2. Methods
+       2.1. Experimental method
+       2.1.1. Experimental setup and measurement
+        WeutilizedFC-72astheworkingfluidforconductingtwo-phaseforcedconvectionexperimentsonmicro-pinfinsamples.Thede-
+       tailed test vehicle fabrication process and loop configuration were identical to those in the previous study [27]. The micro-pin fin ar-
+       rays were fabricated on a silicon wafer via a series of steps. Initially, a staggered micro-pin fin array (Circle, D = 40 μm, ST = 200,
+       300μm,andSL=300μm)withpressureportsandaninletorificewasetchedontothesiliconwaferusingadeepreactiveionetching
+       process. Subsequently, a 500-nm-thick silicon dioxide (SiO2) layer was deposited on the opposite side of the silicon substrate, fol-
+       lowedbytheapplicationofa200-nm-thickgoldthin-filmresistiveheater.Toenclosethefluidchannelandenableopticalflowvisual-
+       ization, the top side of the micro-pin fin array was covered with a Pyrex plate. Anodic bonding was employed to join the Pyrex cover
+       andthesiliconwaferbyapplyingsequentialvoltagesof200and600Vatatemperatureof400°C.Fig.1(a)and(b)displaytheassem-
+       bly and cross-sectional view of the test module, respectively. The test module, which comprised polycarbonate (Lexan) and polyether
+       ether ketone slabs, facilitated the easy connection of fittings and electrical wiring while providing sufficient compression strength to
+       prevent bursting during high-pressure tests. Fluid inlets and outlets were served by two 1/4″ Swagelok fittings, while temperature
+       andpressure measurement ports were accommodated by two 1/16″ and two 1/8″ fittings, respectively. Fig. 1(c) and (d) respectively
+       depict a schematic diagram and photograph of the actual equipment used in the experimental flow loop for thermal and hydraulic
+       measurements. The flow circulation was achieved using a gear pump (Micropump GA-T23), and a flow meter (KIF510) was subse-
+                                           7
+             H. Lee et al.                                                                                              Case Studies in Thermal Engineering 57 (2024) 104331
+             Table 2
+             SummaryofanMLalgorithmbased on data modality, data size, and predicted temperature type.
+               Algorithm                  Trained data modality               O/X       The number of Data                   Predicted temperature type
+               XGBoost                    Physical scalar                     O         155                                  Scalar
+                                          Image                               X         –
+               LightGBM                   Physical scalar                     O         155                                  Scalar
+                                          Image                               X         –
+               MLP                        Physical scalar                     O         155 (for scalar& array)              Scalar and Contour
+                                          Image                               X         –
+               Multimodal ML              Physical scalar                     O         155 (for scalar)                     Scalar and Contour
+                                          Image                               O         3100 (for contour)
+             quently installed to measure the flow rate. The temperature of the heated area was captured by an infrared camera (FLIR E75) with a
+             resolution of 320 × 240 pixels. The temperature change of the working fluid was monitored using K-type thermocouples at the inlet
+             and outlet plenums of the sample, and pressure measurements were acquired using an absolute pressure measurement sensor
+             (TRAFAGEPI8287)andadifferential pressure transducer (Omega PX409) at the same locations. A titanium/gold (10/200 nm) thin-
+             film resistive heater powered by a DC power supply (Keysight 6030A) was employed to provide heat to the heated surface. The power
+             input to the heater was measured by a voltage divider comprising two resistors of 47 kΩ ± 0.1% and 3 kΩ ± 0.1% and a shunt resis-
+             tor of 0.05 Ω ± 0.5%. Flow rate, inlet/outlet fluid pressure and temperature, and the power applied to the heater were recorded us-
+             ing NI Compact DAQ and LabVIEW.
+                 Eachmeasurementwastakenovera60-speriodafterthepressure,temperature,andheatedsurfacetemperatureoftheinlet/out-
+             let fluid stabilized within ±0.3 °C. Following this, the flow rate was increased incrementally by 10 g/min, and the supply power was
+             adjusted upwards by 3 or 5 W for different experimental runs, a process that was systematically repeated. The surface temperature of
+             the heater was measured using an infrared (IR) camera with an accuracy of ±2%, while a K-type thermocouple provided a fluid tem-
+             peraturemeasurementwithanaccuracyof±0.4%.Thepressuremeasurementsatthetestsitewereaccuratetowithin±0.5%.Power
+             to the heater, supplied by a DC power source, was controlled with an accuracy of ±0.3 W. The overall uncertainty in thermal resis-
+             tance, which ranged from 0.02% to 0.1%, was calculated by applying error propagation techniques [28] to consider the uncertainties
+             in the temperature of the heater measured by the IR camera, the temperature of the fluid measured by the thermocouple, and the heat
+             flux measured by the power supply.
+             2.1.2. Compiling datasets from the experiment
+                 Weutilized two designs of samples to conduct experiments at various heat fluxes and mass flow rates. The experimental data in-
+             cluded scalar-type measurements acquired from sensors and three-dimensional data from boiling images captured using a high-speed
+             camera. In total, we conducted 155 experimental cases. These datasets were employed in our ML approach. The geometric shape val-
+             ues of the detailed samples and the ranges of the measured data are listed in Table 1.                                   −1
+                 Parametersfromall155casesinthemultiphaseexperimentwererecordedatasamplingrateof5s                                       for a duration of 60 s, repre-
+                                                                                                                                               −1
+             senting average values over time. Boiling images were captured using high-speed cameras at 5000 fps for 0.5 s                        . The continuous im-
+             agesareshowninFig.2.Althoughthehigh-speedboilingimagesandmeasuredphysicalvalueswerenotsynchronizedintime,weex-
+             panded the data by considering sets of 20 boiling images taken at 100-fps intervals as a group of image data in one case.
+                 Themeasuredphysicaldataobtainedfromscalar-typemeasurementswereconsideredconstantasitwasassumedtobeinasteady
+             state. This resulted in the multiplication of 155 cases of data into 3100 data points, which were used in ML algorithms for both non-
+             proliferated and proliferated datasets. The scalar-type data measured in each experimental case included heat flux (q"), mass flow rate
+             ( m˙ ), inlet/outlet fluid temperature ( Tin, Tout), pressure loss (Pin, Pout), Reynolds number (Re), the pitch of row pins, number of row
+             pins, superfast images of changes in boiling patterns captured at 5000 fps, and temperature distribution (40 × 40 resolution) of
+             heaters measured by the IR camera. The two samples had distinct geometric differences, specifically the pitch of the row direction
+             pins (SL) and the number of row direction pins (NL). These two geometrical factors were utilized in the ML learning process to account
+             for the geometrical differences between the samples. The definition of the Reynolds number and the total heat resistance of the cooler
+             is as follows:
+                            ������u   D
+                      Re =     max f                                                                                                                                  (1)
+                                ������
+                                    (     D )
+                      A    =HW 1− f                                                                                                                                   (2)
+                       min      f         S
+                                            T
+                     u     = m                                                                                                                                       (3)
+                       max    ������A
+                                 min
+                            T       −T
+                      R′′ =   heater    f ,in                                                                                                                         (4)
+                                   ′′
+                                  q
+             In Eq. (1), ρ and μ represent the density and viscosity of the working fluid, respectively. The average values of these properties were
+             employedattheinletandoutlettemperaturesoftheliquid.Forumax,thevalueoftheflowrategeneratedintheminimumarea(Amin)
+                                                                                           8
+       H. Lee et al.                                     Case Studies in Thermal Engineering 57 (2024) 104331
+       Table 3
+       Optimal hyperparameters based on Bayesian optimization.
+       Algorithms       Hyperparameter           Value
+       MLP              Layer                    3
+                        Node                     448-512-512
+                        Activation function      LReLU – LReLU- LReLU
+                        Learning rate            0.076
+       XGBoost          Colsample bytree         0.5727
+                        Colsample bylevel        0.0
+                        Colsample bynode         0.5566
+                        gamma                    0.0
+                        Learning rate            0.2574
+                        Maxdepth                 364
+                        Min child weight         0
+                        N_estimators             8034
+                        Reg alpha                39
+                        Reg lambda               753
+                        Scale pos weight         0.1202
+                        Subsample                1.0
+       LightGBM         Bagging fraction         0.9289
+                        Colsample bytree         0.5176
+                        Feature fraction         0.2415
+                        Lambda_L1                0.3678
+                        Lambda_L2                0.3994
+                        Learning rate            0.3196
+                        Min child samples        3.8923
+                        Min child weight         4.2288
+                        Maxdepth                 366
+                        Nestimators              1010
+                        Numleaves                782
+       between the pins was used. Df represents the diameter value of the pin, considering the shape of the circular pin as the hydraulic di-
+       ameter. Theater in Eq. (4) corresponds to the temperature of the thin-film heater; in this study, the maximum value of the heater was
+       utilized to represent thermal resistance. The value of q" was calculated by dividing the measured power by the area of the heater,
+       which had a size of 10 mm × 10 mm.
+        Fig. 3 presents the data distribution in the consolidated database used for the ML model. Fig. 3(a) illustrates the total thermal re-
+       sistance relative to the heat flux under two geometric conditions and across four flow rates. The total thermal resistance, calculated
+       using Eq. (4), gradually decreases with increasing heat flux at all flow rates. This trend continues until the onset of nucleate boiling
+       (ONB) point is reached, at which point multiphase flow initiates, significantly enhancing cooling performance. An increase in the
+       flow rate reduces the heater temperature for a given heat flux, leading to enhanced convective heat transfer and a reduction in total
+       thermal resistance. Fig. 3(b) depicts the pressure drop as a function of heat flux, showing that higher mass flow rates result in larger
+       pressure drops. It is also evident that an increase in heat input reduces the pressure drop in the single-phase region, while beyond
+       the ONBpoint,thereis a significant and sharp increase in pressure drop. Moreover, Fig. 3(a) indicates that under the same mass flow
+       rates and heat flux, the difference in resistance for two micro-pin fin spacings of 200 and 300 μm is minimal, at approximately 5%.
+       However, the pressure drop data presented in Fig. 3(b) reveal up to a 20% variation in performance according to the spacing, attrib-
+       uted to the acceleration and friction pressure drops in two-phase flow, which intensify with increased spacing density. Fig. 3(a) and
+       (b) illustrate the data distribution in the ML model database, with all points corresponding to cases in the multiphase region immedi-
+       ately following the onset of boiling.
+        Fig. 4(a) displays the distribution of the maximum surface temperature with respect to the Reynolds number, obtained from Eq.
+       (1). Fig. 4(b–f) present the data point distribution for the Reynolds number, heat flux, maximum surface temperature, pressure drop,
+       and two distinct fin spacings. Furthermore, Table 1 provides the operating conditions and measurement ranges for all experimental
+       parameters. Out of the total 155 data points, 10% were selected as test data, with the remaining 90% divided into training and vali-
+       dation sets in a 70%:30% ratio, respectively. This partitioning facilitated K-fold validation (5-fold) to mitigate dataset bias. The test
+       data were intentionally chosen from diverse operating conditions to ensure a fair evaluation of the prediction performance.
+       2.2. Proposed ML model
+        Wecarefully selected all relevant factors related to the geometric shape and operational conditions as parameters for correlation
+       analysis. Subsequently, we compared the accuracy of heated surface temperature prediction using the Multimodal ML approach, in-
+       corporating image data with flow patterns, with two different forms (scalars and contours) and four distinct ML algorithms. Fig. 5 il-
+       lustrates a schematic diagram depicting the input layer, hidden layer, and output layer for MLP and Multimodal.
+       2.2.1. Selection of parameters
+        Weperformed Kendall-tau analysis to select the parameters for temperature prediction according to the experimental data fea-
+       tures [29]. Fig. 6 presents the Kendall rank coefficient heatmap for the maximum heated surface temperature in each experimental
+                                           9
+        H. Lee et al.                                                   Case Studies in Thermal Engineering 57 (2024) 104331
+        Fig. 7. Comparison of experimental and predicted scalar-form heated surface temperature. Predictive results using two specific ML algorithms: (a) XGBoost, (b) Light-
+        GBM.
+        case, indicating the extent of influence of each parameter on the maximum temperature. Kendall rank correlation is an effective non-
+        parametric method for analyzing small datasets owing to its focus on relative order rather than specific values. Eq. (5) shows the
+        Kendall rank correlation between variables x and y, where τ represents the Kendall rank coefficient ranging from −1 to +1. A value
+        closer to +1 indicates a positive correlation with the variable, while a value closer to −1 indicates a stronger negative correlation. Uti-
+        lizing this method, we analyzed the correlation coefficients of different parameters with the maximum heated surface temperature. In
+        this analysis, the thermophysical properties of the parameters were extracted as per the average temperature of the fluid. Heat flux
+        and pressure drop exhibited very high correlation coefficients with values of 0.75 and 0.65, respectively, with respect to the maxi-
+        mumsurfacetemperature. By contrast, parameters related to fluid properties (Pr, μ, k, Cp, h, and σ) showed relatively lower correla-
+        tion coefficients, with absolute values ranging from 0.12 to 0.18. However, all parameters exhibited a correlation coefficient with an
+        absolutevalueof0.1orhigher,indicatingtheirrelevancetothemaximumheatedtemperature.Thus,allparameterswereselectedfor
+        MLanalysis to ensure high-accuracy predictions.
+                  2   ∑ (      )   (    )
+             ������ =       sgn xi −xj sgn yi −yj                                                       (5)
+                n n−1
+                 (   ) i<j
+        2.2.2. XGBoost and LightGBM
+           XGBoost [30] and LightGBM [31] are gradient-boosting decision tree-based algorithms, which are ensemble-learning techniques
+        that combine consecutive decision trees to create a highly accurate model. XGBoost uses classification and regression trees for learn-
+        ing [32], and it incorporates a regularization term in the objective function to prevent overfitting and improve speed by parallel pro-
+        cessing. However,onedrawbackofXGBoostisitstime-consuminglearningprocessbecauseitscansalldatatoobtainfeatureinforma-
+        tion. To address this issue, LightGBM was introduced, which enhances learning speed and accuracy by implementing gradient-based
+        one-side sampling techniques. These techniques only use large gradient data for information gain, excluding data with small gradi-
+                                                      10
+             H. Lee et al.                                                                                           Case Studies in Thermal Engineering 57 (2024) 104331
+             Fig. 8. Comparison of experimental and predictive results for scalar-form heated surface temperature. Predictions using two ML algorithms: (a) MLP, (b) Multimodal
+             ML.
+             ents. Additionally, LightGBM employs exclusive feature bundling techniques to focus solely on important data features during learn-
+             ing [31]. In our study, we utilized the Multioutput regressor algorithm to predict the maximum and minimum values of temperature
+             distributions in each experimental case. For the learning process, we used XGBoost's XGBRegressor (version 1.4.2) and LightGBM's
+             LGBMRegressor (version 3.2.1).
+             2.2.3. MLP
+                 MLPisaneuralnetworktechniquethatconnectslayers of perceptrons with weights and biases to form a multilayer structure, in-
+             cluding an input layer, a hidden layer, and an output layer. Learning is achieved by updating the output value for each node using the
+             activation function. In this study, a model was constructed using Python (version 3.9.9) and TensorFlow (version 2.4.0) for learning.
+             Leakyrectified linear unit (LReLU) (alpha = 0.2) and hyperbolic tangent function were chosen as activation functions for comparing
+             predicted values. The equations for each activation function are given by Eqs. (6) and (7). LReLU returns the same value if the input is
+             positive and a value 0.2 times the input for negative values. The hyperbolic tangent function is advantageous for predicting nonlinear
+             relationships, as it maps the input value to a value between −1 and 1 by an exponential relationship in the equation. The initial
+             weights were initialized using the He method, and a fixed seed number was used to ensure the reproducibility of random selection
+             values during learning. The output, which represents the predicted value, was updated using the Adam optimizer [33], which com-
+             bines AdaGrad [34] and RMSprop [35].
+                             {
+                                x       x ≥ 0
+                     f (x) =         for                                                                                                                           (6)
+                                0.2x    x < 0
+                                                                                        11
+        H. Lee et al.                                                      Case Studies in Thermal Engineering 57 (2024) 104331
+        Fig. 9. Comparative summary of scalar temperature prediction accuracy achieved by each ML algorithm. MLP demonstrated the highest accuracy in predicting scalar
+        temperature.
+                      x  −x
+             tanh(x) = e −e                                                                            (7)
+                      x  −x
+                     e +e
+        2.2.4. Multimodal ML
+           In the context of ML, modality refers to the various ways or dimensions by which data is experienced or obtained [36]. Similar to
+        how living organisms make judgments by processing comprehensive information obtained from different sensory organs, such as
+        hearing, sight, and touch when detecting something, multimodal ML techniques utilize data from diverse sources or modalities for
+        prediction. Multimodal ML can be categorized into three approaches:
+         1. Integrating data from different characteristic dimensions to make predictions.
+         2. Combining prediction values from different models with weights after learning with each model.
+         3. Using separate artificial neural networks to learn data from each modality, extracting embedded scalars, and then integrating
+           these scalars for the final learning [37].
+           In our study, we adopted the third approach, integrating the previously optimized MLPNN and CNN models as a base. We con-
+        structed a MultimodalMLalgorithmcapableofoutputtingpredictivevaluesindesiredformats,suchasscalarsandcontours,bylever-
+        aging data from multiple modalities. (See details in Table 2).
+        2.3. Bayesian hyperparameter optimization
+           Weperformedhyperparameter optimization using Bayesian optimization to find the optimal hyperparameters that minimize the
+        MAPEforeachalgorithm.Bayesianoptimizationwasfoundtobethemostefficientmethodintermsoftimeandcostsavingsforiden-
+        tifying the optimal values compared to other hyperparameter optimization techniques [38]. This approach recommends candidate
+        hyperparameter values based on stochastic estimation using the acquisition function value at the confidence boundary, considering
+        previously learned hyperparameters during the optimization process, and seeking the maximum value of the objective function.
+           Each MLP, XGBoost, and LightGBM was fine-tuned using Bayesian optimization for hyperparameter optimization; the resulting
+        optimal hyperparameters are presented in Table 3. For the MLP model, we combined it with a CNN layer to predict temperature val-
+        ues in scalar form, leveraging both image and scalar data through a Multimodal ML algorithm. To select the CNN layer hyperparame-
+        ters, we used Grid Search, exploring various configurations for the number of filters (ranging from 2 to 16), filter size (ranging from
+        3×3to5×5),andlayerthickness(rangingfrom1to3)tofindthebestcombinationsofhyperparametervalues.TheCNNlayerex-
+        hibited the best accuracy with four filters, a filter size of (3 × 3), and a layer thickness of 1. A thinner layer resulted in fewer parame-
+        ters to be learned, ultimately improving the prediction accuracy. In summary, the Multimodal learning approach combined the MLP
+        withhyperparametersselectedbyBayesianoptimizationandtheCNNwithhyperparametersdeterminedusingGridSearchoptimiza-
+        tion within a limited range [39].
+        3. Results and discussion
+        3.1. ML temperature scalar prediction result
+           Fig. 7 shows the scalar-form predictions of the heated surface temperature using XGBoost and LightGBM. These predictions were
+        obtained from two decision tree-based models; the plot shows the largest MAPE value and average MAPE in the upper left corner,
+        with the outlier having the largest MAPE highlighted by a red circle. As described in section 2.3.1, the LightGBM model, being the
+                                                        12
+          H. Lee et al.                                                                    Case Studies in Thermal Engineering 57 (2024) 104331
+          Fig. 10. Schematic of temperature distribution for contour-based heated surface temperature prediction. (a) Schematic of a gold thin-film-coated (200 nm) resistive
+          heater, (b) Temperature distribution of the total section by flow direction, and (c) Temperature distribution of the heated section.
+          same decision tree-based prediction model as XGBoost, has shown improved accuracy in predicting both maximum and average
+          temperature values in scalar form. The results for XGBoost and LightGBM indicated predictive accuracies of 3.69% and 3.15%, re-
+          spectively, for maximum temperature, with an average MAPE, MAPE   , for the overall test data. The maximum MAPE, MAPE ,
+                                                                         avg                                                  max
+          for XGBoost and LightGBM was 7.98% and 8.32%, respectively. Similarly, for the average temperature value, the average MAPE
+                                                                                                                               avg
+          was 4.17% for XGBoost and 3.43% for LightGBM, while the maximum MAPE      was 9.44% for XGBoost and 7.75% for LightGBM.
+                                                                                max
+          Notably, both models showed higher MAPE values in areas with low temperatures. Out of the 155 data cases, only 14 data points
+          fell within the relatively low-temperature region (60°C-80 °C), which accounted for less than 10% of the total dataset. Conse-
+          quently, both models may have been slightly biased toward learning data from the relatively high-temperature region, and this was
+          reflected in the results. Moreover, the characteristics of MAPE, which can yield high values even for minor differences in errors in
+          small values, may explain why relatively large MAPE values appeared in the low-temperature region.
+             Fig. 8 shows the results of heated surface temperature prediction in scalar form using two approaches: MLP and Multimodal ML.
+          Weconductedacomparativeanalysis of the predictive accuracy for heated surface temperature between the MLP model, which was
+          exclusively trained on scalar data, and the Multimodal ML model, which incorporated both scalar data and image data representing
+          boiling characteristics [36]. The MLP model was utilized to learn and evaluate data solely in the same scalar form as the previous
+          XGBoostandLightGBMmodels.ThepredictedresultsexhibitedMAPE         of 3.59% and MAPE    of 1.58% at the maximum tempera-
+                                                                         max                  avg
+          ture, as well as MAPE    of 4.09% and MAPE     of 1.64% at the average temperature. By contrast, the Multimodal ML model
+                               max                    avg
+          demonstrated lower accuracy compared to MLP, which exhibited the highest accuracy. The prediction of the Multimodal ML model
+          revealed a MAPE    of 5.07% and MAPE    of 2.42% at the maximum temperature, as well as a MAPE  of 6.65% and MAPE    of
+                          max                  avg                                                     max                  avg
+          2.50% at the average temperature. The difference in accuracy is likely due to the insignificance of the spatial information tempera-
+          ture in Multimodal ML when predicting the maximum and average temperatures in scalar form. Furthermore, among the four ML
+          models used, only Multimodal ML exhibited high MAPE in the intermediate temperature range, while the other three models had
+          high MAPE values in the low-temperature range. Additionally, when learning embedded scalars from data with varying characteris-
+          tic dimensions using separate ANNs, it was determined that the increased learning features led to overfitting of the training data, re-
+          sulting in lower accuracy than that of the MLP model. Fig. 9 presents a summary of temperature prediction MAPE in scalar form for
+          the four previous ML algorithms. Remarkably, MLP exhibited superior performance compared to XGBoost, LightGBM, and Multi-
+          modal across all result forms. Consequently, temperature prediction in the contour form was conducted to incorporate spatial infor-
+          mation on temperature and overcome the associated side effects.
+          3.2. ML temperature contour prediction result
+             Fig. 10 illustrates the temperature distribution schematic when predicting the heated surface temperature in contour form using
+          different ML models. Fig. 10(a) shows the schematic of a gold thin-film-coated heater, which is of a serpentine type and operates
+          via Joule heating. The periphery experiences the lowest temperature due to heat conduction and environmental heat loss to the
+          surroundings. The central area forms a hot spot, attaining the maximum temperature owing to increased heat dissipation in this re-
+          gion. Because the heater operates at a constant voltage, the resistance at locations with higher temperatures increases, leading to
+          additional heat dissipation. This phenomenon mirrors the occurrence of hot spots around the gate in actual semiconductor compo-
+          nents, aligning with the phenomena observed when localized hot spots occur in real devices. Additionally, in the multiphase re-
+          gion, the highest temperature is observed near the ONB point, as the heated surface temperature decreases along the flow direction
+          because of the pressure drop and corresponding decrease in saturation temperature. Fig. 10(b) and (c) present the results of the
+          heater temperature distribution, reflecting these heater characteristics and multiphase flow characteristics.
+             Here,wesolelyutilizedexperimentalcasescontainingthemultiphaseregioninthedataforthelearningprocess,whichallowedus
+          to observe the same characteristics as the heated surface temperature distribution in the two-phase flow scenario. The temperature
+          distribution of the 155 cases was represented as a 40 × 40 pixel contour, corresponding to the maximum resolution of the IR camera.
+          Learning was conducted by utilizing this contour representation as the heated surface temperature label for each experimental case.
+          The fundamental model used for learning was identical to the one employed for predicting the scalar form; however, the number of
+          output nodes increased from 2 (used for predicting scalars) to 1600 (used for predicting contours). The performance was then com-
+          pared by modifying the nodes just before the output layer.
+                                                                     13
+           H. Lee et al.                                                                            Case Studies in Thermal Engineering 57 (2024) 104331
+           Fig. 11. Comparative analysis of heated surface temperature contour using ML predictive models. (a) MLP Prediction, (b) Multimodal ML prediction, and (c) Three ex-
+           ample cases of the Multimodal ML-predicted contour compared to the true contour.
+               Weperformed heated surface temperature contour prediction using the MLP and Multimodal ML algorithms, excluding XGBoost
+           andLightGBM,astheyarebasedondecisiontrees and cannot predict the temperature distribution in contour form. For the MLP ap-
+           proach, we conducted learning with 155 experimental cases without utilizing continuous image data. However, Multimodal ML em-
+           ployed3100datasetsthatduplicatedthesamescalardatainexperimentalcasesalongwith20consecutiveimages.InthecaseofMul-
+           timodalML,thesametemperaturelabelwasusedfor20consecutivedatasetspercase.Thepredictionaccuracyofthelearningresults
+           is illustrated in Fig. 11. The maximum and average values were extracted from the predicted temperature contour and compared. In-
+           terestingly, MLP showed lower accuracy in predicting the temperature distribution of the contour type compared to predicting the
+           temperature in scalar form, with MAPE        4.99% and MAPE       2.52% for the maximum temperature and MAPE            4.95% and
+                                                    max                   avg                                                  max
+           MAPE     1.77% for the average temperature.
+                 avg
+               Subsequently, whenpredicting the temperature distribution, the Multimodal ML approach demonstrated an accuracy of MAPE
+                                                                                                                                           max
+           4.77%andMAPE         1.81%forthemaximumtemperaturealongwithMAPE                4.72%andMAPE         0.84%for the average tempera-
+                             avg                                                      max                  avg
+           ture. Notably, these results displayed the lowest mean MAPE   comparedtotheearlierpredictionsinscalarform,despitethenumber
+                                                                      avg
+           of values predicted being 800 times higher than in the scalar case.
+                                                                           14
+          H. Lee et al.                                                                     Case Studies in Thermal Engineering 57 (2024) 104331
+          Fig. 12. Comparative summary of the contour temperature prediction accuracy of ML algorithms. The Multimodal ML model, incorporating image data, demon-
+          strated superior accuracy compared to the traditional MLP model for average and maximum temperature predictions.
+             Furthermore, when predicting the heated surface temperature in the form of a contour, both ML models demonstrated higher ac-
+          curacy in predicting the average temperature of the heater as opposed to predicting the maximum temperature. It was presumed that
+          eachMLmodelwastrainedwiththeobjectiveofenhancingtheoveralltemperaturepredictionaccuracyfortheentirecontour,rather
+          than solely focusing on improving the accuracy of the specific pixel representing the maximum temperature.
+             Nevertheless, as evident from the 3D plot shown in Fig. 11(c), even in cases with a MAPE of 4.43% for the maximum temperature,
+          the models were still capable of predicting the temperature distribution with remarkable accuracy. The performance comparison of
+          MLmodelsforthecontour form is summarized in Fig. 12. Notably, in the case of the contour form prediction, where temperature is
+          predicted according to location, the Multimodal ML model, which incorporates image data, exhibited superior accuracy compared to
+          the traditional MLP model for both average temperature and maximum temperature predictions.
+          4. Conclusions
+             This study aimed to evaluate and compare the thermal prediction performance of multiphase flow in micro-pin fin arrays using
+          various ML algorithms. All 155 data points collected under different operating conditions were utilized for learning, and two fabri-
+          cated samples were selected for analysis. To examine the impact of each data modality, the values to be predicted were categorized
+          into scalar and contour types, enabling a comprehensive accuracy comparison. Four ML algorithms, namely, XGBoost, LightGBM,
+          MLP, and Multimodal ML, were employed for the prediction task, and their respective predictive accuracies were evaluated using
+          MAPE.Thekeyfindings of the study are summarized below:
+           1. The accuracy of maximum heated surface temperature prediction in scalar form was 3.69%, 3.15%, 1.58%, and 2.47% in
+             MAPE     for XGBoost, LightGBM, MLP, and Multimodal ML, respectively. As for predicting the average heated surface
+                   avg
+             temperature, MAPE     was 4.17%, 3.43%, 1.64%, and 2.5% for XGBoost, LightGBM, MLP, and Multimodal ML, respectively.
+                               avg
+             These results indicate that all models predicted the maximum temperature more accurately than the average temperature.
+           2. On the basis of the results, the MLP model showed the best accuracy in scalar temperature prediction. However, the accuracy of
+             the Multimodal model was lower, which was likely due to the inclusion of spatial information from images. This inclusion
+             introduced insignificant information for scalar-type prediction, despite the positive influence of flow patterns on temperature
+             prediction.
+           3. The accuracy of maximum heated surface temperature prediction in contour form was 2.54% and 1.81% in MAPE   for MLP
+                                                                                                                       avg
+             and Multimodal ML. In addition, the MAPE      of average heated surface temperature prediction was 1.77% and 0.84%,
+                                                        avg
+             respectively, and all models predicted the average temperature more accurately than the maximum temperature.
+           4. The Multimodal method excels at predicting temperatures with spatial information, outperforming traditional decision tree-
+             based algorithms and MLP. This feature is particularly important for designing embedded cooling solutions in electronic
+             components susceptible to hot spots. Our methodology allows the prediction of temperature contours within micro-pin fin
+             arrays during two-phase flow, aiding in the strategic placement of pin fins near hot spots and the design of heat sinks to reduce
+             pressure loss. By enabling the estimation of temperature distributions without experimental data, our approach significantly
+             aids in devising optimal cooling system designs for realizing efficient cooling systems.
+          CRediT authorship contribution statement
+             Haeun Lee: Data curation, Formal analysis, Investigation, Writing – original draft. Geonhee Lee: Data curation, Formal
+          analysis, Writing – original draft. Kiwan Kim: Data curation, Methodology. Daeyoung Kong: Methodology, Writing – review &
+          editing. Hyoungsoon Lee: Funding acquisition, Project administration, Supervision, Writing – review & editing.
+                                                                     15
+       H. Lee et al.                                     Case Studies in Thermal Engineering 57 (2024) 104331
+       Declaration of competing interest
+        Theauthors declare that they have no known competing financial interests or personal relationships that could have appeared to
+       influence the work reported in this paper.
+       Data availability
+        Data will be made available on request.
+       Acknowledgments
+        This research was supported by the Challengeable Future Defense Technology Research and Development Program through the
+       Agency for Defense Development (ADD) funded by the Defense Acquisition Program Administration (DAPA) in 2021
+       (No.915028201).
+       References
+       [1] M. Ciappa, Selected failure mechanisms of modern power modules, Microelectron. Reliab. 42 (4–5) (2002) 653–667.
+       [2] A. Vassighi, M. Sachdev, Thermal runaway in integrated circuits, IEEE Trans. Device Mater. Reliab. 6 (2) (2006) 300–305.
+       [3] W. Qu, I. Mudawar, Experimental and numerical study of pressure drop and heat transfer in a single-phase micro-channel heat sink, Int. J. Heat Mass Tran. 45
+         (12) (2002) 2549–2565.
+       [4] A. Koşar, Y. Peles, Thermal-hydraulic performance of MEMS-based pin fin heat sink, J. Heat Tran. 128 (2) (2006) 121–131.
+       [5] D. Kong, et al., A holistic approach to thermal-hydraulic design of 3D manifold microchannel heat sinks for energy-efficient cooling, Case Stud. Therm. Eng. 28
+         (2021) 101583.
+       [6] D. Kong, et al., Hierarchically structured laser-induced graphene for enhanced boiling on flexible substrates, ACS Appl. Mater. Interfaces 12 (33) (2020)
+         37784–37792.
+       [7] Y. Kim, et al., Heat transfer performance of water-based electrospray cooling, Int. Commun. Heat Mass Tran. 118 (2020) 104861.
+       [8] T.W. Wei, et al., Experimental and numerical investigation of direct liquid jet impinging cooling using 3D printed manifolds on lidded and lidless packages for
+         2.5D integrated systems, Appl. Therm. Eng. 164 (2020) 114535.
+       [9] T.E. Sarvey, et al., Embedded cooling technologies for densely integrated electronic systems, in: 2015 IEEE Custom Integrated Circuits Conference (CICC), IEEE,
+         San Jose, CA, USA, 2015, pp. 1–8.
+       [10] C.H. Amon, et al., MEMS-enabled thermal management of high-heat-ux devices EDIFICE: embedded droplet impingement for integrated cooling of electronics,
+         Exp. Therm. Fluid Sci. (2001) 12.
+       [11] D. Kong, et al., Single-phase thermal and hydraulic performance of embedded silicon micro-pin fin heat sinks using R245fa, Int. J. Heat Mass Tran. 141 (2019)
+         145–155.
+       [12] S. Krishnamurthy, Y. Peles, Flow boiling of water in a circular staggered micro-pin fin heat sink, Int. J. Heat Mass Tran. 51 (5–6) (2008) 1349–1364.
+       [13] A. Kosar, B. Schneider, Y. Peles, Two-phase flow across a bank of hydrofoil micro pin fins, in: 9th AIAA/ASME Joint Thermophysics and Heat Transfer
+         Conference, American Institute of Aeronautics and Astronautics, San Francisco, California, 2006.
+       [14] A. Reeser, A. Bar-Cohen, G. Hetsroni, High quality flow boiling heat transfer and pressure drop in microgap pin fin arrays, Int. J. Heat Mass Tran. 78 (2014)
+         974–985.
+       [15] S. Krishnamurthy, Y. Peles, Flow boiling of water in a circular staggered micro-pin fin heat sink, Int. J. Heat Mass Tran. 51 (5–6) (2008) 1349–1364.
+       [16] A. Kawahara, P.M.-Y. Chung, M. Kawaji, Investigation of two-phase flow pattern, void fraction and pressure drop in a microchannel, Int. J. Multiphas. Flow 28
+         (9) (2002) 1411–1435.
+       [17] W. Qu, A. Siu-Ho, Experimental study of saturated flow boiling heat transfer in an array of staggered micro-pin-fins, Int. J. Heat Mass Tran. 52 (7–8) (2009)
+         1853–1863.
+       [18] J. Thibault, B.P.A. Grandjean, A neural network methodology for heat transfer data analysis, Int. J. Heat Mass Tran. 34 (1991) 2063–2070.
+       [19] Y. Qiu, et al., Machine learning algorithms to predict flow boiling pressure drop in mini/micro-channels based on universal consolidated data, Int. J. Heat Mass
+         Tran. 178 (2021) 121607.
+       [20] L. Yang, Q. Wang, Y. Rao, Searching for irregular pin-fin shapes for high temperature applications using deep learning methods, Int. J. Therm. Sci. 161 (2021)
+         106746.
+       [21] H. Lee, et al., An artificial neural network model for predicting frictional pressure drop in micro-pin fin heat sink, Appl. Therm. Eng. 194 (2021) 117012.
+       [22] C.R. Kharangate, et al., Experimental investigation of embedded micro pin-fins for single-phase heat transfer and pressure drop, J. Electron. Packag. 140 (2)
+         (2018) 021001.
+       [23] K. Kim, et al., A machine learning approach for predicting heat transfer characteristics in micro-pin fin heat sink, Int. J. Heat Mass Tran. (2022) (accepted).
+       [24] Y. Suh, R. Bostanabad, Y. Won, Deep learning predicts boiling heat transfer, Sci. Rep. 11 (1) (2021) 5622.
+       [25] F. Nie, et al., Image identification for two-phase flow patterns based on CNN algorithms, Int. J. Multiphas. Flow 152 (2022) 104067.
+       [26] Y. Zhang, et al., Two-phase flow regime identification based on the liquid-phase velocity information and machine learning, Exp. Fluid 61 (10) (2020) 212.
+       [27] D. Jung, et al., Thermal design and management of micro-pin fin heat sinks for energy-efficient three-dimensional stacked integrated circuits, Int. J. Heat Mass
+         Tran. 175 (2021) 121192.
+       [28] C. Rubio-González, et al., Error propagation analysis for file systems, SIGPLAN NOTICES 44 (6) (2009) 270–280.
+       [29] H. Abdi, The Kendall rank correlation coefficient, Encyclopedia of Measurement and Statistics, Thousand Oaks, CA (2007) 508–510.
+       [30] T. Chen, C. Guestrin, "XGBoost: a scalable tree boosting system, in: Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and
+         Data Mining, vol. 785, KDD’16), San Francisco, CA, 2016, p. 794.
+       [31] G. Ke, et al., LightGBM: a highly efficient gradient boosting decision tree, Adv. Neural Inf. Process. Syst. 30 (2017).
+       [32] J. Zhou, et al., Estimation of the TBM advance rate under hard rock conditions using XGBoost and Bayesian optimization, Undergr. Space 6 (5) (2021) 506–515.
+       [33] D.P. Kingma, J. Ba, Adam: A Method for Stochastic Optimization, 2017.
+       [34] J.C. Duchi, P.L. Bartlett, M.J. Wainwright, Randomized smoothing for (parallel) stochastic optimization, in: 2012 IEEE 51st IEEE Conference on Decision and
+         Control (CDC), IEEE, 2012, pp. 5442–5444 Maui, HI, USA.
+       [35] T. Tieleman, G. Hinton, Lecture 6.5 - RMSProp, COURSERA: neural networks for machine learning. Lecture 9c: Using Noise as a Regularizer, 2012 Technical
+         Reports.
+       [36] L. Ma, et al., Multimodal convolutional neural networks for matching image and sentence, in: 2015 IEEE International Conference on Computer Vision (ICCV),
+         IEEE, Santiago, Chile, 2015, pp. 2623–2631.
+       [37] T. Baltrušaitis, C. Ahuja, L. Morency, Multimodal machine learning: a survey and taxonomy, IEEE Trans. Pattern Anal. Mach. Intell. 41 (2) (2019) 423–443,
+         https://doi.org/10.1109/TPAMI.2018.2798607.
+       [38] P. Liashchynskyi, Grid search, random search, genetic algorithm: a big comparison for NAS, ArXiv Prepr. ArXiv1912.06059 (2019).
+       [39] S. Albawi, T.A. Mohammed, S. Al-Zawi, Understanding of a convolutional neural network, in: 2017 International Conference on Engineering and Technology,
+         IEEE, 2017, pp. 1–6.
+                                           16

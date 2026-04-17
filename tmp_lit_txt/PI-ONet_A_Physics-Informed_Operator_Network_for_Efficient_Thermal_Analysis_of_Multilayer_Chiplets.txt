@@ -1,0 +1,778 @@
+               IEEE TRANSACTIONS ON COMPONENTS, PACKAGING AND MANUFACTURING TECHNOLOGY, VOL. 16, NO. 3, MARCH 2026                                                    493
+               PI-ONet: A Physics-Informed Operator Network for
+                   Eﬃcient Thermal Analysis of Multilayer Chiplets
+                                              Yanliang Sha , Chengxin Zhang, and Quan Chen , Member, IEEE
+                  Abstract—With the continued advancement of integrated cir-                  and shorter device lifespan [4], [5]. Consequently, there is
+               cuit technology, chiplet design is becoming increasingly important             a growing need for accurate and eﬃcient thermal simulation
+               within the semiconductor industry. Concurrently, as the number                 tools capable of predicting temperature distributions and iden-
+               of small chiplets and their integration densities increase, the                tifying potential hotspots within chiplet systems.
+               complexity of thermal design and management escalates. Tra-                       Traditional simulation techniques, such as the ﬁnite element
+               ditional thermal simulation methods, such as the ﬁnite element
+               method (FEM), struggle to meet the demands for rapid design                    method (FEM), have long been the gold standard for thermal
+               and optimization due to their high computational complexity                    simulation [6]. FEM is highly accurate, but it is also known
+               and time consumption. This study introduces a novel operator                   to be time-consuming, particularly when applied to complex,
+               neural network model, the physics-informed operator network                    high-density chiplet designs. Adding to the complexity is the
+               (PI-ONet), which is designed to overcome these challenges. By                  trend toward heterogeneous integration, where chiplets with
+               incorporating fundamental physics into the training process,
+               PI-ONet not only enhances the accuracy of predictions but                      varied functions and materials are combined into a single
+               also bolsters reliability. PI-ONet comprises two components: the               package. This integration necessitates simulations of diverse
+               chiplets temperature prediction model, which learns the mapping                thermal properties in diﬀerent materials and components,
+               from power distribution to temperature distribution, and the                   further complicating the thermal modeling.
+               thermal conductivity equivalent model, which simulates the                        Recognizing these challenges, Nie et al. [7] developed
+               thermal conductivity of the bump layer and the insertion layer.
+               Experimental results demonstrate that PI-ONet substantially                    an improved ﬁnite diﬀerence method (FDM) for chip inte-
+               increases the eﬃciency of thermal simulations, achieving an                    gration thermal simulation, which signiﬁcantly improves
+               acceleration of up to 35000 times compared to the traditional                  computational eﬃciency and ﬂexibility. However, this method
+               FEM tool Icepak. This remarkable enhancement in eﬃciency                       still demands substantial computational resources, making it
+               highlights the potential of PI-ONet in the thermal design and                  unsuitable for designs requiring rapid iterations. Similarly,
+               management of complex structures and multi-chiplet systems,
+               suggesting promising application prospects in advancing eﬃcient                Chen et al. [8] introduced a rapid thermal analysis tech-
+               chiplet system design.                                                         nique utilizing a graph convolutional network, which notably
+                  Index Terms—Chiplet, deep operator network (DeepONet),                      increases the analysis speed. However, this method inher-
+               equivalent thermal conductivity, thermal simulation.                           its limitations from traditional neural networks, such as the
+                                                                                              need for extensive training data, which may limit its broader
+                                         I. INTRODUCTION                                      applicability.
+                      HIPLET is an emerging technology that enables the                          Since Lu et al. [9] introduced the deep operator network
+               Cseamlessintegration of various types of processing units,                     (DeepONet), this technique has garnered attention owing to its
+               memory, and other components in one single package, as                         capability to approximate complex operators using deep learn-
+               illustrated in Fig. 1. The chiplet technique not only improves                 ing. DeepOnet belongs to the category of physics-informed
+               system performance but also reduces manufacturing costs                        neural networks (PINNs) but is more eﬀective in handling
+               and oﬀers greater ﬂexibility in system design [1], [2], [3].                   partial diﬀerential equations (PDEs) commonly encountered
+               However, as the complexity and integration density of chiplets                 in physical systems. It has been successfully applied to solve
+               continue to increase, thermal management issues have become                    2-D planar thermal problems [10] given input power maps.
+               more severe. Eﬀective thermal management is crucial to main-                   Subsequently, Liu et al. [11] proposed DeepOHeat, a variation
+               tain the reliability and performance of chiplets, as excessive                 of DeepOnet, for 3DIC chip thermal simulations, mapping a
+               heat can lead to performance degradation, component failure,                   given power distribution to the steady-state thermal distribu-
+                                                                                              tion in a 3-D structure.
+                  Received 7 June 2025; revised 11 September 2025; accepted 27 September         However, there are still some aspects that can be further
+               2025. Date of publication 13 October 2025; date of current version 12 March    improved. First, both [10] and [11] deal with a single layer of
+               2026. This work was supported in part by the National Natural Science
+               Foundation of China (NSFC) under Grant 62474085 and in part by the             material with uniform thermal properties. In reality, a chiplet
+               Shenzhen Science and Technology Innovation Commission under Grant              is a complex multilayer structure of very diﬀerent materials.
+               JCYJ20241202125325034. Recommended for publication by Associate Editor         In addition, there are via and bump layers with complicated
+               P. Dutta upon evaluation of reviewers’ comments. (Corresponding author:
+               Quan Chen.)                                                                    microstructures that render thermal properties challenging to
+                  Yanliang Sha and Quan Chen are with the School of Microelectronics,         determine. Second, these previous works are based on pure
+               Southern University of Science and Technology, Shenzhen 518055, China          PINNs, which may limit their capabilities in handling complex
+               (e-mail: chenq3@sustech.edu.cn).
+                  Chengxin Zhang is with the Peng Cheng Laboratory, Shenzhen 518055,          and heterogeneous conﬁgurations.
+               China, and also with the School of Microelectronics, Southern University of       To address these challenges, in this article, we develop a
+               Science and Technology, Shenzhen 518055, China.                                physics-informed operator network (PI-ONet) for fast steady-
+                  Digital Object Identiﬁer 10.1109/TCPMT.2025.3621061
+                             2156-3950 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artiﬁcial intelligence and
+                                        similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+                                                      See https://www.ieee.org/publications/rights/index.html for more information.
+                           Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+             494                         IEEE TRANSACTIONS ON COMPONENTS, PACKAGING AND MANUFACTURING TECHNOLOGY, VOL. 16, NO. 3, MARCH 2026
+             state thermal prediction of chiplets. PI-ONet is tailor-made for          where (∂T/∂n) represents the temperature gradient nor-
+             chiplet thermal problems, in the sense that a series of special           mal to the boundary and q is the speciﬁed heat ﬂux.
+                                                                                                                   n
+             treatments and techniques are developed to address the require-       3) Robin Boundary Condition (Convective Heat Transfer):
+             ments imposed by chiplets. Speciﬁcally, our contributions are             The Robin boundary condition combines aspects of both
+             given as follows.                                                         Dirichlet and Neumann conditions, given by
+                1) To the best of our knowledge, PI-ONet is the ﬁrst                                         ∂T
+                   operator learning-based framework speciﬁcally crafted                                  −k∂n =h(T −T∞)                      (4)
+                   for thermal modeling of chiplets. Unlike previous works,
+                   PI-ONet accepts a true 3-D stackup of chiplets, which               where h is the convective heat transfer coeﬃcient and
+                   includes multiple layers with diﬀerent thicknesses and              T∞ is the ambient temperature.
+                   material properties. In addition, to avoid prohibitive ﬁne-
+                   grained modeling of the through-silicon via (TSV) and
+                   bump arrays, we develop a thermal extraction module           B. Deep Operator Networks
+                   to extract the equivalent thermal conductivities of these       The deep operator network is an advanced neural network
+                   layers based on their geometric parameters.                   architecture designed to learn complex mappings between
+                2) To handle the numerical challenges resulting from             inputs and outputs, specializing in function-to-function map-
+                   the enhanced geometric complexity, PI-ONet equips             pings. Rooted in operator theory, DeepONet is particularly
+                   itself with a physics-informed and data-driven hybrid         eﬀective for applications involving PDEs and other sophisti-
+                   approach. The core operator learning network is physics-      cated mathematical models.
+                   based, with speciﬁcally designed loss terms to account          The architecture of DeepONet consists of two parallel
+                   for the boundary and interface conditions pertinent to        neural networks: the branch network and the trunk network.
+                   chiplets. The physics-based loss is then augmented            Thebranchnetworkhandlesinputfunctions, which could be in
+                   with the data loss term from a small amount of high-          the form of time series, spatial distributions, or other functional
+                   ﬁdelity simulation data. Such a hybrid approach leads         data. Its primary role is to transform these complex input
+                   to enhanced accuracy and faster convergence.                  functions into a high-dimensional feature space, eﬃciently
+                3) PI-ONet achieves a 35000× speedup compared to the             capturing their key characteristics. Concurrently, the trunk net-
+                   traditional FEM simulator while maintaining a satisfac-       work focuses on relevant coordinates or query points essential
+                   tory accuracy and robustness.                                 for evaluating the target function. It projects these coordinates
+                This article is structured as follows. Section II provides       into a separate feature space, enabling precise interpretation
+             an overview of the current state of thermal simulation tech-        of the inputs’ spatial or temporal context.
+             niques and their limitations. Section III introduces the PI-ONet      In the ﬁnal stage, the outputs from both the branch and trunk
+             approach and its theoretical foundation. Section IV presents        networks are combined using the Hadamard product followed
+             the experimental setup and results, demonstrating the eﬀective-     by summation. This method eﬀectively merges the learned
+             ness of PI-ONet in thermal simulation. Section V concludes          representations from both networks to produce the ultimate
+             this article and discusses future research directions.              output function. Consequently, DeepONet can accurately sim-
+                                   II. BACKGROUND                                ulate and predict the system’s behavior based on the input
+                                                                                 functions. Its dual-network structure signiﬁcantly enhances
+             A. Physics-Based Thermal Simulation for Chiplets                    its ability to learn intricate mappings and improves its per-
+                The fundamental model to determine the steady-state tem-         formance in various applications, including physics-informed
+             perature distribution in chiplets is the 3-D heat conduction        machine learning and real-time dynamic system simulations.
+             equation given in the following:                                    Leveraging the operator theory principles, DeepONet stands
+                              2        2       2                               out as a powerful tool for predictive analytics in complex
+                           k   ∂ T + ∂ T + ∂ T       +Q =0                (1)    scenarios, such as temperature prediction in chiplets.
+                                  2       2      2        v
+                               ∂x      ∂y      ∂z                                  In the context of chiplets, the governing equations include
+             where T is the temperature, k is the thermal conductivity, and      the heat conduction equations and various boundary con-
+             Qv is the internal heat generation per unit volume.                 ditions, which deﬁne the mathematical framework of the
+                Solving this equation requires appropriate boundary condi-       problem. The input space comprises a set of PDEs that
+             tions. The three types of commonly used boundary conditions         describe the heat conduction process comprehensively, while
+             are given as follows.                                               the output space is the temperature ﬁeld T, representing
+                1) Dirichlet Boundary Condition (Fixed Temperature): This        the spatial and temporal temperature distribution within the
+                   condition speciﬁes a ﬁxed temperature at the boundary,        domain of interest. By extracting speciﬁc condition inputs
+                   expressed as                                                  from the input space, the model computes the corresponding
+                                         T = Tboundary.                   (2)    temperature distribution
+                2) Neumann Boundary Condition (Heat Flux): This condi-                            G : (u ,u ,u ,...,u ) → T                   (5)
+                   tion deﬁnes the heat ﬂux across the boundary surface                             θ    1   2  3       k
+                                          −k∂T =q                         (3)    where Gθ represents the learned operator and θ denotes all the
+                                              ∂n     n                           parameters in the network, including weights and biases.
+                        Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+             SHA et al.: PI-ONet: A PHYSICS-INFORMED OPERATOR NETWORK FOR EFFICIENT THERMAL ANALYSIS                                            495
+                              III. PI-ONET FRAMEWORK
+                The PI-ONet proposed in this work is a deep learning
+             framework that combines PINN and data-driven approaches to
+             predict the temperature distribution in chiplets. To maximize
+             practicability, the chiplets are allowed to have the following
+             characteristics: 1) a multilayer structure with varying thickness
+             and materials; 2) TSV and bump layers that contain TSV
+             and bump arrays of diﬀerent sizes and densities; and 3) input
+             power maps that allow spatial distribution to mimic various
+             working conditions in reality. The special techniques and
+             treatments that we devise to enable these modeling capabilities
+             are detailed in Sections III-A–III-F.
+                                                                                  Fig. 1. Structure of chiplets.
+             A. Interface Conditions
+                To deal with chiplets with multilayer structures, one needs         1) Overall Strategy: The equivalent thermal extraction
+             to specify the interface conditions between two material layers.     begins with modeling the smallest building block, a single
+             In this work, we adopt the perfect thermal contact condition         TSVor a bump, and extracting its equivalent thermal conduc-
+             [12], which assumes perfect continuity for the temperature and       tivity with a few diﬀerent geometric conﬁgurations using FEM
+             its gradient at the interface, i.e., for an interface at z = z       simulators. The simulation data are then used to train a neural
+                                                                         0
+                                         ˇ       ˇ                                network to predict the equivalent thermal conductivity of each
+                                       Tˇz − = Tˇz +                       (6)    building block based on its geometric parameters. Next, a TSV
+                                         ˇ 0      0  ˇ                            or bump layer is viewed as an array of these building blocks
+                                     ∂Tˇ          ∂Tˇ
+                                   k     ˇ   =k      ˇ                     (7)
+                                    1 ∂z ˇ      2 ∂z ˇ                            concatenated along the horizontal x − y plane, from which an
+                                         z −          z +
+                                          0            0                          equivalent thermal circuit can be constructed, and the thermal
+             where k and k are the thermal conductivities of the two              resistance can be calculated. Finally, the TSV and bump
+                      1       2                  ˇ                ˇ               layers are treated as homogeneous materials with the extracted
+                                                 ˇ                ˇ
+             adjoining materials, and (∂T/∂z) z − and (∂T/∂z) z − are the
+                                                  0                 0             equivalent thermal conductivities in subsequent simulation and
+             temperature gradients at the interface for each material, respec-
+             tively.                                                              analysis. This simpliﬁcation signiﬁcantly reduces the amount
+                To ensure numerical continuity, once a mesh grid is gener-        of ﬁne-grained geometric details that need to be processed.
+             ated, (6) and (7) are evaluated at the two grid points slightly        2) Single Building Block: A single building block is a
+             below and above the interface, i.e., z −dz and z +dz , where         rectangular box, consisting of a TSV or a bump as the core
+                                                   0     1      0     2           part, and the surrounding material part (the gray region), as
+             dz and dz represent the distance between the grid points and
+                1       2                                                         shown on the left-hand side of Figs. 2 and 3. To avoid dealing
+             the interface in the z-direction. This is to avoid interpolation
+             errors outside the grid. Consequently, the interface conditions      with multiple materials, we adopt a simpliﬁcation that converts
+             (6) and (7) implemented in PI-ONet become                            the original TSV or bump building block to its bounding box
+                                      ˇ          ˇ                                ﬁlled uniformly with an equivalent artiﬁcial material, as shown
+                                    Tˇz −dz = Tˇz +dz                      (8)    on the right-hand side of Figs. 2 and 3. The dimensions of the
+                                      ˇ 0  1      0  ˇ 2                          new building blocks for a TSV are
+                                  ∂Tˇ            ∂Tˇ
+                                k     ˇ     =k       ˇ     .               (9)
+                                 1 ∂z ˇ         2 ∂z ˇ                                                 l  =w =2(r +t)                         (10)
+                                       z −dz          z +dz                                            tsv    tsv      tsv
+                                       0   1          0   2
+                                                                                  and for a bump are
+             B. Equivalent Thermal Extraction for TSV and Bump Layers                            l     =w       =2r      >=h       .          (11)
+                The TSV and bump layers constitute one of the most                                bump     bump     bump       bump
+             signiﬁcant challenges facing thermal, as well as other phys-
+             ical, modeling of chiplets. The arrays of thousands of vias            The FEM thermal simulator is used to extract the thermal
+             and bump balls result in substantial mesh degradation from           conductivities of a given building block. Since the heat con-
+             curved surfaces and computational burden due to the massive          duction characteristics are diﬀerent along the horizontal and
+             meshing. In addition, the ultrathin insulating layers in TSVs        vertical directions, we need to have diﬀerent simulation setups
+             introduce multiscale complexities. To address these challenges,      to extract the two thermal conductivities for each building
+             previous studies [13], [14], [15] have proposed simplifying          block. The simulation setups for TSVs are shown in Fig. 4
+             the structures into equivalent rectangular regions with deﬁned       and described as follows.
+             thermal conductivities. Motivated by this idea, PI-ONet adopts         1) Vertical Thermal Conductivity: The temperatures of the
+             a homogenization strategy that treats the TSV and bump                     top and the bottom surfaces are ﬁxed to t and t , respec-
+                                                                                                                                  2      1
+             layers as homogeneous materials with equivalent thermal con-               tively, while the remaining faces are thermally insulated.
+             ductivities. The process for extracting the equivalent thermal             The simulator computes the heat ﬂux Qz through the
+             conductivity is described in the following.                                top and the bottom faces. Then, according to the law of
+                        Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+               496                               IEEE TRANSACTIONS ON COMPONENTS, PACKAGING AND MANUFACTURING TECHNOLOGY, VOL. 16, NO. 3, MARCH 2026
+               Fig. 2. Single TSV (left) and its corresponding equivalent model (right).       Fig. 4. Model and boundary setup for extracting equivalent thermal conduc-
+                                                                                               tivities for a TSV. (a) Vertical thermal conductivity. (b) Horizontal thermal
+                                                                                               conductivity.
+               Fig. 3. Single bump (left) and its corresponding equivalent model (right).
+                       heat conduction, the vertical thermal conductivity can be
+                       calculated as
+                                             k         = Qz∆z                          (12)
+                                              z,eq,TSV    A |t −t |                            Fig. 5.  Prediction results for equivalent thermal conductivity. (a) Equivalent
+                                                            z 2     1                          vertical thermal conductivity of the TSV. (b) Equivalent horizontal thermal
+                       where ∆z is the distance between the top and bottom                     conductivity of the TSV. (c) Equivalent vertical thermal conductivity of the
+                       faces, and Az is the cross-sectional area perpendicular                 bump. (d) Equivalent horizontal thermal conductivity of the bump.
+                       to the direction of Qz, i.e., the shaded area in Fig. 4.
+                  2) Horizontal Thermal Conductivity: The two faces along                         With the simulation data and observation obtained above,
+                       the x-axis are set at temperatures t and t , respectively,              we develop a thermal extraction module, which is a fully
+                                                                 2        1                    connected ANN with three hidden layers, each containing
+                       with the remaining four faces insulated. The simulator
+                       performs a simulation to calculate the heat ﬂux Qx                      256 neurons, to learn the relation between the geometric
+                       through the faces along the x-axis. The horizontal con-                 parameters of a building block and its equivalent thermal
+                       ductivity is then derived as                                            conductivities. The inputs to the neural network have two
+                                                             Q ∆x                              parts.
+                                            k          =       x                       (13)       1) Structure Type Identiﬁer: A ﬂag that distinguishes
+                                             xy,eq,TSV     A |t −t |
+                                                            x 2     1                                  between a TSV (1) and a bump (2).
+                       where ∆x is the distance between the faces along the                       2) Structure Ratio: For TSVs, it is the ratio of the radius
+                       x-axis and Ax is the cross-sectional area perpendicular                         of the metal via to the thickness of the insulating layer
+                       to the direction of Qx.                                                         (r  /t); for bumps, it is the ratio of the height of the
+                                                                                                         tsv
+                                                                                                       bump to its diameter (h           /(2 · r     )).
+               Note that Qz and Qx are simulated using the original TSV                                                             bump        bump
+               structures [see Fig. 2 (left)], while the calculated k                          The module outputs two equivalent thermal conductivities
+                                                                                    z,eq,TSV
+               and kxy,eq,TSV represent the equivalent vertical and horizontal                 along the horizontal (x − y) plane (kxy,eq) and the vertical (z)
+               thermal conductivities, respectively, of the rectangular block                  direction (k      ).
+                                                                                                             z,eq
+               ﬁlled with homogeneous material [see Fig. 2 (right)]. The                          We perform a quick test to examine the accuracy of our
+               simulation setups for bump structures are similar.                              thermal extraction module. ANSYS Icepak [16] is used as the
+                  An interesting observation is that the equivalent thermal                    FEM thermal simulator. We generate 500 TSVs with r /t
+                                                                                                                                                                       tsv
+               conductivities of TSVs with various radii and insulating layer                  uniformly ranging from 0.5% to 30%. For bump structures,
+               thicknesses depend mostly on the ratio of these two param-                      we also generate 500 samples with h                  /(2 · r     ) ranging
+                                                                                                                                               bump        bump
+               eters. Similarly, the equivalent thermal conductivities of the                  from 1% to 99%. The training and testing sets follow an 8:2
+               bumps usually depend on the ratio of the height of the bump                     division. The material properties used in the extraction are
+               to its diameter (h         /(2 · r     )).                                      listed in Table I. Fig. 5 conﬁrms the accuracy of our thermal
+                                     bump        bump
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+                SHA et al.: PI-ONet: A PHYSICS-INFORMED OPERATOR NETWORK FOR EFFICIENT THERMAL ANALYSIS                                                                    497
+                                                  TABLE I                                        be identical. The corresponding thermal network is illustrated
+                MATERIALS USED IN THE TEST OF EQUIVALENT THERMAL EXTRACTION                      in Fig. 6(b). Here, Rk (where k = 0,1,...,N) represents the
+                                                                                                 thermal resistances of the substrate-only regions
+                                                                                                                    R =       W , k=0,1,...,N                            (16)
+                                                                                                                      k    k l    H
+                                                                                                                            s sub
+                                                                                                                                 k
+                                                                                                 where ks denotes the thermal conductivity of the substrate
+                                                                                                 material, l        denotes the length of the kth substrate-only
+                                                                                                              subk
+                                                                                                 region along the y-axis, and l           H denotes the corresponding
+                                                                                                                                      sub
+                                                                                                                                         k
+                                                                                                 cross-sectional area perpendicular to the direction of heat ﬂow.
+                                                                                                    For a mixed branch of TSV and substrate, let r (where
+                                                                                                                                                                    i
+                                                                                                 i = 0,1,..., M) denote the thermal resistances of the substrate
+                                                                                                 segments within that branch, and r denotes the horizontal
+                                                                                                 thermal resistance of each TSV; then,
+                                                                                                                              w
+                                                                                                                     r =        i   ,   i = 0,1,..., M                   (17)
+                                                                                                                      i    k l   H
+                                                                                                                            s tsv
+                                                                                                                                w
+                                                                                                                      r =         tsv                                    (18)
+                                                                                                                           k        l   H
+                                                                                                                            xy,eq,tsv tsv
+                                                                                                 where w denotes the width of the ith substrate sections, w
+                                                                                                            i                                                               tsv
+                                                                                                 denotes the width of the equivalent model of a TSV, and l                  H
+                                                                                                                                                                         tsv
+                                                                                                 denotes the cross-sectional area perpendicular to the direction
+                Fig. 6.  Equivalent thermal resistance simpliﬁcation process for the TSV         of heat ﬂow.
+                array. (a) Applying a single equivalent model to the array. (b) Total thermal       A further simpliﬁcation is motivated by the fact that in
+                resistance network in the x-direction. (c) Simpliﬁed representation of the       the thermal circuit network of Fig. 6(b); the parallel ther-
+                thermal resistance network. (d) Final equivalent model.                          mal resistors can be readily rearranged and merged without
+                                                                                                 changing the total thermal resistance between the left and right
+                extraction module in predicting the thermal conductivities of                    end points. Speciﬁcally, the N + 1 substrate-only resistors in
+                single building blocks.                                                          parallel can be combined into one single resistor
+                   3) Equivalent Thermal Conductivity for Arrays: After                                          R //R //···//R =                  W          .          (19)
+                extracting the equivalent thermal conductivities of a single                                       0     1            N    k (L − Nl      )H
+                building block, we can extract the equivalent thermal conduc-                                                                s         tsv
+                tivity for an array formed by the horizontal concatenation of                       For the N branches with TSV and substrate, we ﬁrst sum up
+                multiple building blocks. The key idea is to treat each building                 the thermal resistors corresponding to the substrate and TSV
+                                                                                                 along one branch and then calculate the total resistance of the
+                block as a thermal resistor (with diﬀerent resistances along                     N parallel branches as (1/N)Mr + (1/N)PM r , where
+                vertical and horizontal directions), and then, the array can be                                                                         i=0 i
+                viewed as a thermal resistor network, the resistance of which                                              1               Mw
+                                                                                                                              Mr=               tsv                      (20)
+                can be computed analytically by circuit analysis techniques.                                               N          k        Nl H
+                   Speciﬁcally, the thermal resistance of a single building block                                                      xy,eq,tsv  tsv
+                                                                                                                            M
+                                                                                                                        1 X           W−Mw
+                is                                                                                                              r =              tsv .                   (21)
+                                                        h                                                               N        i     k Nl H
+                                                  R=                                    (14)                                i=0          s   tsv
+                                                       kA                                        The simpliﬁed thermal network is depicted in Fig. 6(c).
+                where k is the equivalent thermal conductivity, A is the cross-                     This simpliﬁed thermal network actually corresponds to a
+                sectional area perpendicular to the heat ﬂow, and h is the length                simpliﬁed layout, as shown in Fig. 6(d), in which multiple
+                of the heat ﬂow. When two resistors are connected in series                      TSVsin the array are grouped to form a large equivalent TSV,
+                or parallel, the total thermal resistance is                                     with a size of Mw        ×Nl .Withasimilarderivation, one can
+                                                                                                                       tsv       tsv
+                                   R       =R +R                                        (15)     use the same simpliﬁed layout to calculate the total vertical
+                                     series     1      2
+                                  R        =R //R =              1        .                      thermal resistance of the TSV array. Finally, if we treat the
+                                    parallel    1    2    1/R +1/R                               whole layer as one piece of homogeneous material with the
+                                                               1         2                       size of W × L, the equivalent thermal conductivity of the layer
+                   Suppose that we have a TSV layer with a horizontal                            can be determined using the following expressions:
+                dimension of W × L, a thickness of H, and an M × N array                                           L−Nl
+                of TSVs, as shown in Fig. 6(a), and we want to compute                              k          =           tsv k
+                the equivalent thermal conductivity along the direction of                            x,eq,array       L s                                        
+                                                                                                                      W               k        k NL
+                W. We ﬁrst partition the array, along the L direction, into                                       +                    xy,eq,tsv s    tsv
+                2N +1 parallel branches, within which the N + 1 branches                                              L     k Mw +k                (W − Mw )
+                                                                                                                             s     tsv     xy,eq,tsv           tsv
+                are substrate only, and another N branches contain both TSV                                       W−Mw
+                                                                                                    k          =             tsv k
+                and substrate. Note that the sizes of all TSVs are assumed to                         y,eq,array        W         s
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+                 498                                   IEEE TRANSACTIONS ON COMPONENTS, PACKAGING AND MANUFACTURING TECHNOLOGY, VOL. 16, NO. 3, MARCH 2026
+                                         L            k         k Mw                
+                                    +                    xy,eq,tsv s     tsv                               Algorithm 1 Generate 2-D Power Maps for Chiplet Array
+                                        W kNl +k                      (L−Nl )
+                                                s    tsv      xy,eq,tsv         tsv                              Require: Power law exponent α, chiplet array dimensions
+                                     k       MNl w +k(WL−MNl w )                                                 nx,ny, normalize ﬂag
+                     k           = z,eq,tsv         tsv  tsv      s                tsv   tsv     (22)
+                       z,eq,array                             WL                                                 Ensure: 2D Gaussian random ﬁeld G representing the
+                 where k              ,  k          ,  and k              represent the equiv-                   power map of the chiplet array
+                             x,eq,array   y,eq,array           z,eq,array                                    1 Create fourier coordinates kx and ky:
+                 alent thermal conductivity along X-, Y-, and Z-axes of the                                  2        kx,ky ← numpy.mgrid[0 : ny,0 : nx]
+                 homogeneous layer. In addition to conventional mesh topol-                                  3 Shift zero frequency to the center:
+                 ogy arrangements, hexagonal topology represents another                                     4        kx ← numpy.ﬀt.ﬀtshift(kx − (ny + 1)//2)
+                 signiﬁcant conﬁguration pattern, particularly suitable for high-                            5        ky ← numpy.ﬀt.ﬀtshift(ky − (nx + 1)//2)
+                 density interconnects and thermal distribution optimization                                 6 Calculate amplitude for each (i, j):
+                 scenarios [17]. By introducing speciﬁc displacements to the                                                 p 2            2
+                 even-numbered rows of TSVs in Fig. 6(a), a hexagonal                                        7        K= kx +ky
+                 structure can be achieved. Under the design constraint where                                8 if K[i, j] == 0 then
+                 the TSV pitch should be twice the TSV diameter [18], and                                    9       amplitude[i, j] ← 0
+                 based on both this arrangement pattern and our previous                                    10 else
+                                                                                                                                                           (α/2.0)
+                 derivations, the equivalent thermal conductivities in the X-                               11       amplitude[i, j] ← 1/|K[i, j]|
+                 and Z-directions remain unchanged. However, the equivalent                                 12 end if
+                 thermal conductivity in the Y-direction can be expressed as                                13 Generate complex Gaussian noise
+                                        L             k k            Mw                                    14 for each (i, j) do
+                        k           =                    s xy,eq,TSV       TSV                              15       noise[i, j] ← randn(0,1) + i · randn(0,1)
+                         y,eq,array    W k N l            +k             (L−N l          )                  16 end for
+                                               s  1 TSV        xy,eq,TSV          1 TSV
+                                                     k k            Mw                                      17 G ←real(inverse FFT(noise⊙amplitude))
+                                       +               s xy,eq,TSV       TSV
+                                           k N l       +k              (L−N l          )                    18 if ﬂag normalize then
+                                            s   2 TSV       xy,eq,TSV           2 TSV
+                                           k (W −2Mw             )                                         19       G←G−mean(G)
+                                       + s                  TSV     ,   N = N +N                 (23)       20       G←G/std(G)
+                                                     L                           1       2
+                                                                                                            21 end if
+                 where N and N denote the quantities of the two distinct TSV                                22 return G
+                             1         2
+                 rows in this hexagonal arrangement. As the analysis relies on
+                 identical building blocks after homogenization, the equivalent
+                 thermal conductivity of bump layers can be obtained using the                             and the root net, which process diﬀerent types of input and
+                 same analytical framework.                                                                integrate the information.
+                                                                                                              1) Branch Net: The branch net is designed to process the
+                 C. Power Source Conﬁguration                                                              input power map. It uses a single fully connected layer to
+                     Thechips in a chiplet system generate diﬀerent power under                            extract features from the power distribution. Speciﬁcally, the
+                                                                                                           input is a vector of (c ,c ,...,c ), where c                 is the input power
+                 diﬀerent operational conditions. Input power maps that can                                                            1    2         m              m
+                                                                                                           of the mth chiplet. The output is a feature vector (b ,b ,...,b )
+                 capture this nonuniform nature are essential for a comprehen-                                                                                                 1   2         q
+                 sive coverage of all potential operational states and precise                             that encodes the input power map, where q is the number of
+                 hotspot detection. In PI-ONet, we utilize a 2-D correlated and                            neurons in the output layer of the branch net.
+                 scale-invariant Gaussian random ﬁeld (GRF2D) [19] to sim-                                    2) Trunk Net: The trunk net is typically implemented as
+                 ulate the random power distributions across the chiplet array.                            a feedforward neural network that processes the coordinates
+                 The GRF2D methodology generates diverse yet representative                                of the computational grid. To eﬀectively capture the high-
+                 power distribution patterns that span the complete space of                               frequency details in the coordinate data, the trunk net utilizes
+                 plausible operational scenarios. This diversity is fundamental                            Fourier feature mapping [20] that projects the 3-D coordinates
+                 to the model’s generalization capability, particularly for Deep-                          onto a high-dimensional space. The output is a feature vector
+                                                                                                           (t , t , . . . , t ) that encodes the input coordinates with q > 3.
+                 ONets designed to handle continuous input function spaces.                                  1  2         q
+                 When trained on limited data variations (e.g., using only a                                  3) Root Net: The Root Net [21] constitutes an enhanced
+                 few ﬁxed power maps), models may demonstrate satisfactory                                 architecture that extends beyond conventional DeepONet
+                 performance on those speciﬁc cases but fail to generalize to                              frameworks. This module processes outputs from both branch
+                 other physically realistic yet unseen power distributions. The                            and trunk networks, implementing a sophisticated informa-
+                 process has the following steps.                                                          tion fusion mechanism that surpasses the simple Hadamard
+                                                                                                           product. Speciﬁcally, the Root Net employs an additional
+                 D. Temperature Prediction Module                                                          fully connected layer to simultaneously process three distinct
+                                                                                                           combinatorial operations: 1) the Hadamard product (b ∗ t)
+                     This module predicts the steady-state temperature distribu-                           representing the standard DeepONet operation; 2) elementwise
+                 tion in a chiplet system based on the input power map and                                 summation (b + t); and 3) elementwise subtraction (b − t).
+                 a set of meshing coordinates. It is built upon the DeepONet                               Through this multioperation fusion strategy, the Root Net
+                 architecture but with some enhancements speciﬁc to chiplets.                              eﬀectively captures high-order nonlinear interactions between
+                 It comprises three main parts: the branch net, the trunk net,                             the input function features (power map characteristics from the
+                               Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+                 SHA et al.: PI-ONet: A PHYSICS-INFORMED OPERATOR NETWORK FOR EFFICIENT THERMAL ANALYSIS                                                                                        499
+                 branch net) and spatial coordinates (geometrical features from                                 Therefore, the total loss is
+                 the trunk net), ultimately generating more accurate temperature                               L      +λ(L          +L +L +L +L +L ). (32)
+                 predictions through weighted aggregation of these transformed                                   data          PDE       Dir       Neu        Rob       cont1       cont2
+                 representations                                                                                When calculating the loss terms, we apply the following
+                                               q                                                             scaling scheme to the PDE and the boundary/interface condi-
+                                             X  ∗                         ∗                                 tions to balance the magnitudes of the physical variables:
+                                       T =          W (b ∗t )+B
+                                                       k   k     k        k                                                                            
+                                              k=1                                                                              2 ˆ       2 ˆ        2 ˆ          2
+                                                                                                                             ∂ T        ∂ T       ∂ T          ω ωQ
+                                                   q                                                                                                             l       ˆ
+                                                 X                                                                     k        2 +       2 +        2    +            Qv = 0                (33)
+                                                           +                   +                                             ∂xˆ        ∂yˆ        ∂zˆ           ωT
+                                             +          W (b +t )+B
+                                                           k    k     k        k                                             ˆ                ˆ              ˆ
+                                                 k=1                                                                    k∂T =0,          k∂T =0, k∂T = 0                                      (34)
+                                                   q                                                                      ∂xˆ               ∂yˆ            ∂zˆ
+                                                 X  −                         −
+                                             +          W (b −t )+B                                (24)
+                                                           k   k     k        k                                              ˆ
+                                                                                                                          ∂T             ˆ     ˆ
+                                                 k=1                                                                    k ∂zˆ − ωlh(T − T∞) = 0                                               (35)
+                               ∗    ∗        + +                   −     −                                                    ˆ ˇ             ˆ ˇ
+                 where (W ,B ), (W ,B ), and (W ,B ) correspond to sum-                                                    ∂Tˇ              ∂Tˇ                   ˇ          ˇ
+                               k    k        k     k               k     k                                                      ˇ               ˇ                ˆˇ        ˆˇ
+                                                                                                                        k            −k               =0,       T       −T         =0         (36)
+                 mation weights and biases associated with each input of the                                              1     ˇ         2     ˇ                  z −        z +
+                                                                                                                            ∂zˆ  z          ∂zˆ  z                  0          0
+                                                                                                                                  0−               +
+                 root net. q represents the number of neurons in the output                                                                       0
+                 layer of both the trunk and the branch net.                                                 where the scaling parameters are deﬁned as ωl = x/xˆ = y/yˆ =
+                                                                                                                               −3                ˆ                            ˆ               9
+                                                                                                             z/zˆ = 1 × 10        , ω = T/T = 1, and ω = Q/Q = 1 × 10 .
+                                                                                                                                       T                           Q
+                 E. Hybrid Loss                                                                              F. Overall PI-ONet Framework
+                     Pure PINN-based approaches have shown their limitations                                    Finally, the general framework of PI-ONet that integrates
+                 in modeling complex structures such as chips with multiple                                  all the ingredients presented above is illustrated in Fig. 7. The
+                 regions and boundary conditions, where convergence can be                                   upper part is the thermal extraction module for the TSV/bump
+                 challenging. To enhance modeling capability, PI-ONet adopts a                               layers, which takes in the TSV/bump conﬁgurations and
+                 hybrid loss function that merges data-driven loss with physics-                             extracts the required equivalent thermal conductivities for sub-
+                 informed PDE loss. Speciﬁcally, we combine the following                                    sequent data generation and loss calculation. It is a relatively
+                 loss terms to calculate the total loss.                                                     independent module that does not participate in subsequent
+                     1) Data Loss:                                                                           training. The central part is the temperature prediction module,
+                                                 L       = T −T∗                                   (25)
+                                                   Data     k          k                                     where the branch net processes the input power map, the trunk
+                 where T and T∗ denote the predicted and measured tempera-                                   net handles the grid coordinates, and the root net predicts the
+                 ture data, respectively.                                                                    temperature distribution. The data and the PDE loss terms
+                     2) PDE Loss:                                                                            are merged in the green region to produce the total loss for
+                                             2              2          2                                 training.
+                                                 ∂ T       ∂ T        ∂ T             
+                                L       =k              +         +            +Q                (26)
+                                  PDE                2         2          2          v
+                                                  ∂x         ∂y        ∂z                                                                  IV. EXPERIMENT
+                 which is the residual of the heat conduction equation (1).                                     This section details the test structure, data generation, and
+                     3) Boundary Condition Loss:                                                             test process designed to assess the eﬀectiveness of PI-ONet
+                                                                                                           for chiplet thermal analysis.
+                                                                      
+                                          L     = T −T                                             (27)
+                                            Dir              boundary
+                                                                  
+                                                    ∂T            
+                                                                                                           A. Test Structure
+                                         L      = k          +q                                    (28)
+                                           Neu      ∂n           n
+                                                                                                              The test case is an industrial chiplet design consisting of
+                                                    ∂T                       
+                                                                                                           multiple layers, as illustrated in Fig. 8. Those layers, from
+                                         L      = k          +h(T −T )                             (29)
+                                           Rob      ∂n                    ∞                                top to bottom, are heatsink, thermal interface material (TIM),
+                 where n is the outward normal vector to the boundary. The                                   chiplets, u-bump, interposer, C4-bump, and substrate, respec-
+                 terms L        , L     , and L        represent the losses of the Dirichlet                 tively. For methodological clarity in demonstrating the core
+                            Dir    Neu            Rob
+                 boundary condition, the Neumann boundary condition, and the                                 capabilities of PI-ONet, we intentionally simpliﬁed the thermal
+                 Robin boundary condition, respectively.                                                     modeling by omitting the RDL layer and implementing a
+                     4) Interface Condition Loss:                                                            reduced-order heatsink representation. An array of 8 × 8
+                                                           ˇ               ˇ                               chiplets is placed in the chiplet layer, which can also be
+                                                   ∂Tˇ                 ∂Tˇ 
+                                       L       =k          ˇ    −k         ˇ                     (30)      adjusted to 5 × 5. The dimensions and thermal conductivities
+                                         cont1     1       ˇ         2     ˇ    
+                                                       ∂z z −          ∂z z −                              of these layers are provided in Table II. Speciﬁcally, the
+                                                   ˇ         0  ˇ           0
+                                       L       =Tˇ −Tˇ .                                         (31)      geometric information of the TSV and bump layers is given
+                                         cont2     z0−           z +
+                                                                   0                                         in Table III.
+                 These interface condition loss terms are applied to all relevant                               In thermal simulation, the following boundary and interface
+                 material interfaces within the model. For the test structure                                conditions are enforced.
+                 detailed in Section IV-A, this corresponds to the six distinct                                 1) Top       Surface:        Convective        heat      transfer      boundary
+                 interfaces connecting the seven material layers.                                                    condition.
+                                Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+                500                                IEEE TRANSACTIONS ON COMPONENTS, PACKAGING AND MANUFACTURING TECHNOLOGY, VOL. 16, NO. 3, MARCH 2026
+                Fig. 7. Proposed PI-ONet framework consists of two key components: the thermal conductivity equivalent model, which simulates the thermal conductivity
+                of both the bump and interposer layers, and the chiplet temperature prediction model, which learns the mapping from power distribution to temperature
+                distribution.
+                                                                                                   using Python scripts based on PyAEDT, and each simulation
+                                                                                                   took approximately 90 s to complete. In this experiment, we
+                                                                                                   conduct a total of N          =250simulations, where each simula-
+                                                                                                                            train
+                                                                                                   tion generates P = 11529 temperature sampling points across
+                                                                                                   the entire 3-D chiplet structure. The number of simulations
+                                                                                                   waschosen to strike a balance between providing a suﬃciently
+                                                                                                   diverse dataset for robust model training and the practi-
+                                                                                                   cal constraints of simulation time, as each FEM simulation
+                                                                                                   required approximately 90 s to complete. The discretization
+                                                                                                   yields a total of P = 11529 grid points. This resolution was
+                Fig. 8. Side view of the chiplets system structure utilized in this experiment.    carefully selected as a tradeoﬀ between capturing suﬃcient
+                   2) Bottom Surface: Constant temperature boundary condi-                         spatial resolution for the operator network to learn the physical
+                        tion.                                                                      mapping and maintaining a manageable data size for eﬃcient
+                   3) Six Interfaces Between Seven Layers (Heatsink, TIM,                          model training. While a traditional mesh independence study
+                        Chiplets, u-Bump, Interposer, C4-Bump, and Substrate):                     is standard for single FEM simulations, our focus is on the
+                        Perfect contact assumed, with equal heat ﬂux across                        network’s ability to generalize from this discrete data to a
+                        vertical contact interfaces.                                               continuous physical operator. A signiﬁcantly denser discretiza-
+                   4) Side Faces of Each Layer: Adiabatic boundary condi-                          tion would exponentially increase the computational cost of
+                        tions.                                                                     training to the learned operator’s generalization performance.
+                   5) TIM Layer Not in Contact with Chiplets: Adiabatic                            Ourfuture work will explore the use of nonuniform mesh grids
+                        boundary conditions.                                                       to further optimize this balance.
+                   6) Interposer Layer Not in Contact with u-Bump: Adiabatic                          The following mesh speciﬁcation is applied to discretize
+                        boundary conditions.                                                       the test structure for PI-ONet. The meshing intervals (dx,dy)
+                                                                                                   along the directions x and y are both 0.5 mm. The vertical
+                                                                                                   mesh intervals dz are diﬀerent in diﬀerent layers. Speciﬁcally,
+                B. Data Generation and Preprocessing                                               weuseddz = 0.2 mmintheheatsink and substrate layers; dz =
+                   The FEM thermal simulation data were generated using                            0.05 mm in the interposer, chiplet, and TIM layers; and dz =
+                the ANSYS Electronics Desktop (AEDT) on a workstation                              0.025 mm in the ubump and C4-bump layers. The meshing
+                equipped with an Intel 11700 CPU. The ﬂow was automated                            results in a total number of grid points of P = 11529.
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+                          SHA et al.: PI-ONet: A PHYSICS-INFORMED OPERATOR NETWORK FOR EFFICIENT THERMAL ANALYSIS                                                                                                                                                                             501
+                                                                                                                                                                                     i  Ntrain
+                                                                                  TABLE II                                                                        where {u }                       denotes the ith power maps for the chiplet
+                                                                                                                                                                                        i=1
+                             DIMENSIONS AND THERMAL CONDUCTIVITIES OF DIFFERENT LAYERS                                                                            array and each individual chiplet is indexed by c ,c ,...,c .
+                                                                                                                                                                                                                                                                          1     2              m
+                                                                                                                                                                  The coordinates of the P grid points are represented as
+                                                                                                                                                                      i     i     i   P
+                                                                                                                                                                  {xj,yj,zj}j=1, and the corresponding temperatures are given by
+                                                                                                                                                                  {Ti}P . Therefore, each power map will generate P rows in
+                                                                                                                                                                       j  j=1
+                                                                                                                                                                  the dataset.
+                                                                                                                                                                       We adopt a batch size of 8 for training, which means that
+                                                                                                                                                                  in each training epoch, we randomly select 8 ∗ P data points
+                                                                                                                                                                  from the dataset. These points, however, can come from more
+                                                                                                                                                                  or fewer than 8 power maps. Thus, the input dimensions for
+                                                                                 TABLE III                                                                        the trunk net are (8 ∗ P,3), corresponding to the 3-D spatial
+                                         CONFIGURATIONS FOR LAYERS COMPOSED OF BUMP OR                                                                            coordinates, and the input dimensions for the branch network
+                                                                          TSVSTRUCTURES                                                                           are (8∗P,64), corresponding to the features of the power map.
+                                                                                                                                                                  C. Training and Testing Methods
+                                                                                                                                                                       The experimental platform for this study consists of an
+                                                                                                                                                                  Intel Xeon Gold 6258R CPU coupled with an NVIDIA
+                                                                                                                                                                  A5000GPU,implementedwithintheJAX-GPUcomputational
+                                                                                                                                                                  framework with 20000 training epochs. The Adam optimizer
+                                                                                                                                                                  is used with an initial learning rate of 1 × 10−3, which is
+                                                                                                                                                                  reduced by 0.9× every 2000 epochs. JAX’s Just-In-Time (JIT)
+                                                                                                                                                                  compilation is used to accelerate the evaluation of derivatives
+                                                                                                                                                                  involved in physical losses. The total training time is about
+                                                                                                                                                                  70 mins. The network structures of the temperature prediction
+                                                                                                                                                                  module in the experiment are given as follows.
+                                                                                                                                                                       1) The branch net consists of nine fully connected layers,
+                                                                                                                                                                              with each fully connected layer containing 256 neurons.
+                                                                                                                                                                       2) The ﬁrst layer for the trunk net is a Fourier feature
+                                                                                                                                                                              mapping, with its coeﬃcients sampled from a (0,0.01∗
+                          Fig. 9.        Top–down view and power distribution of an 8 × 8 chiplet array.                                                                      2π) normal distribution. This is followed by 6 fully
+                          (a) Spatial arrangement of the chiplets in the array. (b) Corresponding power                                                                       connected layers, each with 128 neurons.
+                          distribution generated by the GRF2D model.                                                                                                   3) The root net comprises a fully connected network with
+                                                                                                                                                                              2 hidden layers, each containing 128 neurons.
+                               For input power maps, we utilize the aforementioned                                                                                All neurons in the network utilize the swish activation func-
+                          GRF2D with α = 4 to ensure a smooth distribution of heat                                                                                tion, deﬁned as
+                          sources. Fig. 9 illustrates a sample of the generated power map,                                                                                                                     swish(x) = x · σ(x)                                                         (37)
+                          which is an 8 × 8 matrix that represents the power distribution                                                                         where σ(x) is a sigmoid function.
+                          across the chiplet array. Note that the power map resolution                                                                                 In the testing, 50 diﬀerent power maps were generated
+                          can be diﬀerent from the chiplet array size, e.g., a 4 × 4                                                                              with the same α. The model accuracy is evaluated using the
+                          chiplet array can also have an 8 × 8 power map provided that                                                                            following two error metrics.
+                          each chiplet is modeled by 2 × 2 pixels.                                                                                                     1) Relative Error (RE): The relative root mean square error
+                               We generate N                               = 250 power maps, and the Icepak
+                                                                train                                                                                                         between the predicted temperatures T and the simulated
+                          simulation of each power map calculates 11529 temperatures                                                                                                                                                                        i
+                                                                                                                                                                              temperatures T∗ is
+                          distributed across the entire 3-D chiplet structure. To ensure                                                                                                                      i              pP
+                          that training data are distributed evenly and comprehensively,                                                                                                                                               n                   ∗ 2
+                                                                                                                                                                                                              RE=                 pi=1(Ti −Ti ) .                                          (38)
+                          covering various power map patterns, we merge all datasets                                                                                                                                                  P
+                                                                                                                                                                                                                                            n         ∗ 2
+                          into a large dataset with a size of 250 × 11529. The training                                                                                                                                                     i=1(Ti )
+                          data are represented in the form of a triplet [u,(x,y,z),T] with                                                                             2) Mean Absolute Error (MAE): The average of the abso-
+                          the following structure:                                                                                                                            lute diﬀerences between Ti and T∗ is
+                                    22                                                      3 2                          3 2 33                                                                                                                      i
+                                                                                                                                                                                                                                        n
+                                                                   .                                           .                      .                                                                                           1 Xˇ                       ∗ˇ
+                                                                   .                                           .                      .                                                                         MAE=                          ˇT −T ˇ.                                     (39)
+                                    66                             .                        7 6                .         7 6 . 77                                                                                                 n                i         i
+                                    66 i                    i                     i         7 6 i i i 7 6Ti77                                                                                                                         i+1
+                                            u(c ),u (c ),...,u (c )                                     x ,y ,z
+                                    66              1            2                      m 7 6 1 1 17 6 177
+                                    66 i                    i                     i         7 6 i i i 7 6 i77
+                                            u(c ),u (c ),...,u (c )                                     x ,y ,z                     T
+                                    66              1            2                      m 7 6 2 2 27 6 277
+                                    66                             .                        7,6                .         7,6 . 77                                                                 V. RESULT AND DISCUSSION
+                                    66                             .                        7 6                .         7 6 . 77
+                                    66                             .                        7 6                .         7 6 . 77                                      In this section, we analyze and discuss the performance of
+                                    66 i                    i                     i         7 6 i               i      i 7 6 i77
+                                            u(c ),u (c ),...,u (c )                                    x ,y ,z                      T
+                                    44              1            2                      m 5 4 P P P5 4 P55                                                        PI-ONet, focusing on its accuracy, computational eﬃciency,
+                                                                   .                                           .                      .
+                                                                   .                                           .                      .                           and adaptability to handle complex chiplet conﬁgurations.
+                                                                   .                                           .                      .
+                                               Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+               502                              IEEE TRANSACTIONS ON COMPONENTS, PACKAGING AND MANUFACTURING TECHNOLOGY, VOL. 16, NO. 3, MARCH 2026
+                                                                                                                             TABLE V
+                                                                                                   MAE(◦C)ANDREOFTHEEIGHTTESTCASESFORPI-ONET
+                                                                                                We also examine the computational advantages of the
+                                                                                             equivalent TSV/bump layer models. As detailed in Table IV,
+                                                                                             the original model with ﬁne-grained TSV and bump details
+                                                                                             requires 5131919 mesh elements and 1139.6 s for simula-
+               Fig. 10. Side view of the validation model. (a) Real model. (b) Equivalent    tion, while the equivalent model only consumes 95580 mesh
+               model.                                                                        elements and 41.2 s for simulation. This represents a 98.14%
+                                                                                             reduction in the mesh elements and a signiﬁcant speedup of
+                                                                                             27.6× in the simulation time.
+                                                                                             B. Performance of PI-ONet
+                                                                                                In this section, we ﬁrst verify the accuracy of PI-ONet and
+                                                                                             then compare its computational eﬃciency to Icepak’s FEM
+                                                                                             simulator. Finally, we compare PI-ONet using the hybrid loss
+                                                                                             function against existing pure physics-driven and pure data-
+                                                                                             driven approaches.
+                                                                                                1) Accuracy of PI-ONet: To test the precision and general-
+                                                                                             izability of PI-ONet, we randomly select eight power maps
+                                                                                             from the 50 (unseen) testing cases, labeled p , p ,..., p ,
+                                                                                                                                                        1   2        8
+                                                                                             and plot the 3-D temperature distribution in Fig. 12. The
+               Fig. 11.  Results for the validation model. (a) Real model. (b) Equivalent    top row shows the diﬀerent input power maps, the second
+               model.                                                                        and third rows visualize the temperature distributions from
+                                               TABLE IV                                      Icepak and our PI-ONet, respectively, and the last row shows
+                 COMPARISONS OF ORIGINAL AND EQUIVALENT TSV/BUMP MODELS                      their diﬀerences. The corresponding MAE and RE values
+                                                                                             are reported in Table V. The MAE ranges from 0.585 ◦C
+                                                                                             to 0.700 ◦C, and the RE lies between 0.0156 and 0.0187.
+                                                                                             These results demonstrate the decent accuracy and predictive
+                                                                                             capability of PI-ONet on unseen power maps.
+                                                                                                2) Performance Comparison Between PI-ONet and FEM
+                                                                                             Solvers: Next, we conduct a rigorous computational eﬃciency
+               A. Veriﬁcation of Equivalent Thermal Model for TSV and                        comparison between PI-ONet and conventional FEM solvers
+               Bump Layers                                                                   (Icepak) for thermal modeling of varying chiplet array sizes,
+                                                                                             as summarized in Table VI. For the 8 × 8 conﬁguration,
+                  First, we verify the accuracy of the equivalent thermal con-               Icepak generates 68998 mesh elements in its coarsest setting,
+               ductivity extraction module for TSV/bump layers in chiplets.                  requiring 57 s to compute the temperature ﬁeld at our speci-
+               To this end, we design a specialized test structure. It is similar            ﬁed 11529 observation points. In striking contrast, PI-ONet
+               to the 8 × 8 chiplet structure described above but includes only              achieves equivalent predictive capability at these identical
+               a single chiplet for fast evaluation. All other settings are the              points in merely 0.00164 s—roughly a 35000× speedup.
+               same. The side view of the simpliﬁed structure is shown in                    The 5 × 5 array exhibits similar trends: Icepak produces
+               Fig. 10. The left structure contains the original ﬁne-grained                 59372 elements (40 s computation) for 3753 observation
+               TSV/bump layers, which are replaced by equivalent material                    points versus PI-ONet’s 0.00148 s (approximately 27000×
+               layers in the right structure. The input power of the single chip             speedup). It should be emphasized that PI-ONet’s performance
+               is set to 0.20 W.                                                             reﬂects a fundamental tradeoﬀ: the operator network requires
+                  Fig. 11 compares the temperature distribution obtained by                  approximately 70 min of initial training (a one-time cost
+               Icepak using the two structures. The simulated temperatures                   that can be parallelized on GPUs) to learn the function-
+               in the center of the chip are 43.676 ◦C and 43.309 ◦C for                     to-function mappings and the underlying thermal physics.
+               the original model and the equivalent model, respectively.                    Once trained, the model enables instantaneous predictions for
+               The average error across all grid points is 0.224 ◦C, with a                  unlimited subsequent simulations. This paradigm shift moves
+               maximum error of 0.501 ◦C. These results demonstrate the                      computational burden from repetitive FEM solves to a single
+               accuracy of the equivalent modeling and extraction for the                    training phase, making it particularly advantageous for design
+               TSV/bump layers.                                                              space exploration where rapid iterative analysis is crucial. One
+                           Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+             SHA et al.: PI-ONet: A PHYSICS-INFORMED OPERATOR NETWORK FOR EFFICIENT THERMAL ANALYSIS                                           503
+             Fig. 12. Predicted temperature for diﬀerent power maps in an 8 × 8 chiplets array.
+                                         TABLE VI                                pure-data and hybrid models predict results similar to those of
+                      PERFORMANCE COMPARISON OF FEM AND PI-ONET                  the Icepak reference. The purely physics-driven models, how-
+                                                                                 ever, deliver poor accuracy, where the predicted temperatures
+                                                                                 tend to be uniformly distributed on the plane. Table VII pro-
+                                                                                 vides a detailed comparison of MAE for diﬀerent approaches,
+                                                                                 using varying numbers of data samples (power maps). The
+                                                                                 hybrid strategy with no data (0 samples) corresponds to a
+                                         TABLE VII                               purely physics-based method, which yields the highest error of
+             COMPARISONSOFMAE(◦C)FORPUREPHYSICS-INFORMED,PUREDATA-               12.832 ◦C. When augmented with 50 simulation data points,
+                          DRIVEN, AND HYBRID TRAINING (PI-ONET)                  the hybrid approach signiﬁcantly lowers the MAE to 1.193 ◦C.
+                                                                                 This error is further reduced to 0.639 ◦C when all 250 data
+                                                                                 samples are incorporated.
+                                                                                    For a deeper analysis, Fig. 14 illustrates the training and
+                                                                                 testing losses of both the pure physics-based and hybrid
+                                                                                 learning strategies. The pure-physics model exhibits a substan-
+             can see that, owing to the JIT compilation, the number of           tial gap between training and testing losses, indicating poor
+             points has only a slight impact on the inference time of PI-        generalization and potential overﬁtting. In contrast, the hybrid
+             ONet, rendering it highly scalable for thermal modeling of          approach demonstrates consistent losses in both training and
+             large-scale chiplet designs.                                        testing, reﬂecting better generalization and robustness.
+                3) Physics-Only Unsupervised Learning Versus Hybrid                 These results suggest that, while pure-physics models may
+             Training: Finally, we examine the eﬃcacy of the hybrid              perform well in simpler scenarios (e.g., single-layer structures
+             training strategy adopted in PI-ONet, in comparison to the          with uniform materials, as reported in prior studies), they
+             pure-physics and pure-data approaches. The purely physics-          struggle with more complex cases involving higher structural
+             based unsupervised learning strategy is adopted by most             and material diversity. Speciﬁcally, the limited generalizability
+             existing PINN models, such as DeepOHeat and PI-DeepONet             of pure-physics models is evident from the pronounced gap
+             [10], [11], in which the loss functions are purely physical         between training and testing losses. In contrast, hybrid train-
+             constraints, and no additional data are used. The pure data         ing strategies, even when augmented with a relatively small
+             approach, on the contrary, uses only labeled data for training.     amount of data, can signiﬁcantly enhance prediction accuracy,
+             PI-ONet adopts a hybrid training strategy that combines the         particularly for more complex systems such as chiplets.
+             physical and data loss terms as in (32). All other network             Comparisons between hybrid and pure data approaches are
+             structures and experiment settings are kept the same as spec-       also presented in Table VII. The hybrid approach achieves
+             iﬁed in Section IV.                                                 a reduction in MAE exceeding 20% compared to the pure
+                Fig. 13 shows the temperatures (under two test power             data method that uses the same number of data samples. On
+             maps) obtained from diﬀerent approaches. Overall, the               the other hand, the pure-data approach requires approximately
+                        Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+                504                                 IEEE TRANSACTIONS ON COMPONENTS, PACKAGING AND MANUFACTURING TECHNOLOGY, VOL. 16, NO. 3, MARCH 2026
+                                                                                                     underscores the importance of integrating physical constraints
+                                                                                                     into the learning process, as it signiﬁcantly reduces the
+                                                                                                     demand for high-ﬁdelity simulation data. Considering that
+                                                                                                     the generation of simulation data for industry-scale prob-
+                                                                                                     lems is often computationally expensive, the hybrid strategy
+                                                                                                     oﬀers a more eﬃcient and scalable solution for real-world
+                                                                                                     applications.
+                                                                                                                                  VI. CONCLUSION
+                                                                                                         This study introduces a PI-ONet designed for eﬃcient
+                                                                                                     steady-state thermal modeling of multilayer chiplets. By
+                                                                                                     integrating physical constraints into the learning process,
+                                                                                                     PI-ONet eﬀectively maps power distribution to temperature
+                                                                                                     distribution within chiplet structures with limited training
+                                                                                                     data. In contrast to existing neural network models for
+                                                                                                     thermal modeling, PI-ONet incorporates two key works: a
+                                                                                                     thermal extraction module that simpliﬁes the modeling of
+                                                                                                     TSV and bump layers, and an enhanced DeepONet architec-
+                                                                                                     ture that blends physics-based and data-driven loss functions.
+                                                                                                     These enhancements enable PI-ONet to handle chiplets with
+                                                                                                     industrial-grade complexity. Experimental results demonstrate
+                                                                                                     that PI-ONet not only achieves higher accuracy and robust-
+                                                                                                     ness compared to existing PINNs but also operates several
+                                                                                                     orders of magnitude faster than traditional FEM simula-
+                                                                                                     tions. Future research will focus on extending PI-ONet from
+                                                                                                     steady-state to transient thermal analysis, allowing the model
+                                                                                                     to track and predict real-time temperature variations under
+                                                                                                     dynamic power ﬂuctuations. This extension will support more
+                                                                                                     advanced thermal management strategies for chiplets, particu-
+                                                                                                     larly in scenarios involving rapid power changes. In addition,
+                                                                                                     future work will explore nonuniform discretization strategies
+                                                                                                     to better balance spatial resolution against computational
+                                                                                                     eﬃciency.
+                                                                                                                                     REFERENCES
+                                                                                                     [1]   S. Moore, “Intel’s view of the chiplet revolution,” IEEE Spectrum, 2019.
+                                                                                                           [Online]. Available: https://spectrum.ieee.org/intels-view-of-the-chiplet-
+                                                                                                           revolution
+                                                                                                     [2]   S. Naﬀziger, K. Lepak, M. Paraschou, and M. Subramony, “2.2 AMD
+                                                                                                           chiplet architecture for high-performance server and desktop products,”
+                                                                                                           in IEEE Int. Solid-State Circuits Conf. (ISSCC) Dig. Tech. Papers,
+                Fig. 13. 3-D visualization of temperature distribution in chiplets from diﬀerent           Feb. 2020, pp. 44–45.
+                models.                                                                              [3]   H.-J. Lee, R. Mahajan, F. Sheikh, R. Nagisetty, and M. Deo, “Multi-
+                                                                                                           die integration using advanced packaging technologies,” in Proc. IEEE
+                                                                                                           Custom Integr. Circuits Conf. (CICC), Mar. 2020, pp. 1–7.
+                                                                                                     [4]   J.  Park et al., “Thermal modeling and management challenges
+                                                                                                           in heterogenous integration: 2.5D chiplet platforms and beyond,”
+                                                                                                           in   Proc.   IEEE 42nd VLSI Test Symp. (VTS), Apr. 2024,
+                                                                                                           pp. 1–4.
+                                                                                                     [5]   T. Takagi et al., “High thermal conductivity AlN ﬁlms for advanced 3D
+                                                                                                           chiplets,” in Proc. IEEE Symp. VLSI Technol. Circuits (VLSI Technol.
+                                                                                                           Circuits), Jun. 2024, pp. 1–2.
+                                                                                                     [6]   R. W. Lewis, P. Nithiarasu, and K. N. Seetharamu, Fundamentals of the
+                                                                                                           Finite Element Method for Heat and Fluid Flow. Hoboken, NJ, USA:
+                                                                                                           Wiley, 2004.
+                                                                                                     [7]   C. Nie, Q. Xu, C. Wang, H. Cao, J. Liu, and Z. Li, “Eﬃcient transient
+                                                                                                           thermal analysis of chiplet heterogeneous integration,” Appl. Thermal
+                Fig. 14.   Comparison of training and testing losses (log scale) across two                Eng., vol. 229, Jul. 2023, Art. no. 120609.
+                training strategies. (a) Purely physics-based unsupervised learning. (b) Hybrid      [8]   L. Chen, W. Jin, and S. X.-D. Tan, “Fast thermal analysis for
+                training strategy.                                                                         chiplet design based on graph convolution networks,” in Proc. 27th
+                                                                                                           Asia South Paciﬁc Design Autom. Conf. (ASP-DAC), Jan. 2022,
+                                                                                                           pp. 485–492.
+                150 data samples to reach a level of accuracy comparable                             [9]   L. Lu, X. Meng, Z. Mao, and G. E. Karniadakis, “DeepXDE: A deep
+                                                                                                           learning library for solving diﬀerential equations,” SIAM Rev., vol. 63,
+                to that of the hybrid approach with only 50 samples. This                                  no. 1, pp. 208–228, Jan. 2021.
+                              Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 
+                SHA et al.: PI-ONet: A PHYSICS-INFORMED OPERATOR NETWORK FOR EFFICIENT THERMAL ANALYSIS                                                                          505
+                [10] Z. Lu, Y. Zhou, Y. Zhang, X. Hu, Q. Zhao, and X. Hu, “A fast                   [16] S. J. Yaseen, Z. K. Radhi, R. L. Natoosh, R. Al-Sabur, R. Z. Homod,
+                      general thermal simulation model based on multi-branch physics-                     and H. I. Mohammed, “A computational search for the optimal micro-
+                      informed deep operator neural network,” Phys. Fluids, vol. 36, no. 3,               electronic heat sink using ANSYS icepak,” Int. J. Thermoﬂuids, vol. 23,
+                      Mar. 2024, doi: 10.1063/5.0194245.                                                  Aug. 2024, Art. no. 100759.
+                [11] Z. Liu et al., “DeepOHeat: Operator learning-based ultra-fast thermal          [17] B. Vaisband and E. G. Friedman, “Hexagonal TSV bundle topology
+                      simulation in 3D-IC design,” in Proc. 60th ACM/IEEE Design Autom.                   for 3-D ICs,” IEEE Trans. Circuits Syst. II, Exp. Briefs, vol. 64, no. 1,
+                      Conf. (DAC), Jul. 2023, pp. 1–6.                                                    pp. 11–15, Jan. 2017.
+                [12] V. I. Kushch, “Potential ﬁelds of interacting spherical inclusions,” in        [18] M.     A.    Ahmed,      S.    Mohapatra,     and     M.    Chrzanowska-
+                      Micromechanics of Composites. Boston, MA, USA: Butterworth, 2013,                   Jeske,   “TSV-    and    delay-aware    3D-IC     ﬂoorplanning,”    Anal.
+                      ch. 2, pp. 20–50.                                                                   Integr.  Circuits   Signal   Process.,   vol. 87,   no. 2,  pp. 235–248,
+                [13] C. Ge, M. Tang, and J. Mao, “Equivalent thermal conductivity modeling                May 2016.
+                      of through-silicon via (TSV) structures,” in Proc. IEEE Int. Conf. Integr.    [19] S. Bruno. (2017). Generator of 2D Gaussian Random Fields. [Online].
+                      Circuits, Technol. Appl. (ICTA), Nov. 2018, pp. 164–165.                            Available: https://github.com/bsciolla/gaussian-random-ﬁelds
+                [14] C. Nie, Q. Xu, and L. Chen, “Equivalent thermal model of through               [20] M. Tancik et al., “Fourier features let networks learn high frequency
+                      silicon via and bump for advanced packaging of integrated circuits,”                functions in low dimensional domains,” in Proc. Adv. Neural Inf.
+                      Microelectron. Rel., vol. 137, Oct. 2022, Art. no. 114790.                          Process. Syst., 2020, pp. 7537–7547.
+                [15] H. Ma, D. Yu, and J. Wang, “The development of eﬀective model for              [21] L. Tan and L. Chen, “Enhanced DeepONet for modeling partial
+                      thermal conduction analysis for 2.5D packaging using TSV interposer,”               diﬀerential operators considering multiple input functions,” 2022,
+                      Microelectron. Rel., vol. 54, no. 2, pp. 425–434, Feb. 2014.                        arXiv:2202.08942.
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:59:18 UTC from IEEE Xplore.  Restrictions apply. 

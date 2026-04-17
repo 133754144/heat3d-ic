@@ -1,0 +1,385 @@
+                              Fast Stress Analysis for Runtime Reliability
+                         Enhancement of 3D IC Using Artiﬁcial Neural
+                                                                                       Network
+                                                               Lang Zhang∗, Hai Wang∗, and Sheldon X.-D. Tan†
+                                                               ∗School of Microelectronics & Solid-State Electronics,
+                                       University of Electronic Science & Technology of China, Chengdu, Sichuan, 610054 China
+                                       †Department of Electrical Engineering, University of California, Riverside, CA 92521 USA
+                    Abstract—Heat dissipation and the related thermal-mechanical
+                 stress problems are the major obstacles in the development and
+                 commercializing process of 3D ICs. Dynamic thermal manage-
+                 ment (DTM) techniques can be used to alleviate such problems
+                 and enhance the reliability of 3D ICs. However, the time varying
+                 stress information is hard to obtain at runtime which limites the
+                 effectiveness of DTM. In this paper, we propose a fast stress
+                 analysis method for runtime usage. The new method builds
+                 artiﬁcial neural network (ANN) model by training ofﬂine using
+                 thermal and stress data. Next, the ANN model is used to generate
+                 important stress information, such as maximum stress around                                              (a) Side view showing the two die layers
+                 each TSV, for DTM methods at runtime. In order to improve                                                connected with 144 TSVs.
+                 the stress estimation accuracy and speed, specially designed input
+                 selection plans are proposed and implemented for ANN model
+                 generation. Experiments with different conﬁgurations of ANN
+                 models show that the new method is able to estimate important
+                 stress information at extremely fast speed with good accuracy
+                 for runtime 3D IC reliability enhancement usage.
+                                             I. INTRODUCTION
+                    Three dimensional stacked IC (3D IC) is a promising
+                 technique to overcome the scaling problems encountered in
+                 traditional 2D IC. It provides beneﬁts in enabling heteroge-
+                 neous integration, alleviating interconnect barrier problem, and
+                 improving power performance, etc. The beneﬁts are provided
+                 by integrating IC dies vertically, and connecting different
+                 die layers by through-silicon vias (TSV) [1]. With so many
+                 advantages against traditional 2D IC, the 3D IC suffers from
+                 severe thermal induced reliability problems, due to its poor                                             (b) Bottom view of chip showing the 16-
+                 heat removing ability in the vertical dimension [2], [3]. The                                            core architecture for each layer.
+                 TSV structure makes the thermal induced reliability even
+                 worse: caused by different materials used in TSV and die,                                              Fig. 1.   A3DICmodel built in COMSOL.
+                 thermal variations in both space and time lead to stress
+                 variations around TSV, which shortens the lifetime of 3D IC
+                 [4].                                                                                  minimizing temperature variation across different parts of the
+                    Dynamic thermal management (DTM) techniques [5], [6],                              3D IC body, due to the lack of information on the reliability
+                 [7] can be applied to 3D IC in order to enhance the thermal                           side. Although the thermal induced stress value is highly
+                 induced reliability. However, most of the existing DTM meth-                          dependent on the temperature value, a higher temperature at
+                 ods aim at lowering the average temperature of the chip and                           one position does not indicate a larger stress value there as
+                   This work is supported in part by National Natural Science Foundation               will be shown in this paper. The major reason is that the stress
+                 of China, under grant No. 61404024, in part by the Scientiﬁc Research                 value is not only effected by temperature but also signiﬁcantly
+                 Foundation for the Returned Overseas Chinese Scholars, State Education                effected by its distance to the nearby TSV structures.
+                 Ministry, in part by the Open Foundation of State Key Laboratory of                      The TSV stress can be simulated by ﬁnite element methods
+                 Electronic Thin Films and Integrated Devices, under grant No. KFJJ201409.
+                 Corresponding author: Hai Wang (wanghai@uestc.edu.cn).                                (FEM)[8], [9]. However, being relatively accurate, FEM based
+                 978-1-5090-1213-8/16/$31.00 ©2016 IEEE                             173                  17th Int'l Symposium on Quality Electronic Design
+
+                              Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:15:09 UTC from IEEE Xplore.  Restrictions apply. 
+                                                      Cu
+                                          Si                     SiO2
+                                                    r       r
+                                                     o       i
+                                            (a) Cross-section view.                                 Fig. 3.    Temperature (K) distribution of the bottom surface of the 3D IC
+                                                                                                    model in COMSOL.
+                                                                       9O
+                                         9O5 2OTKX
+                                            
+                                                       X
+                                                        U
+                                                               X
+                                                                O
+                                                       :9<
+                                                                     )[
+                                                                                                                                               2
+                                         (b) Longitudinal-section view.                             Fig. 4.   Von Mises thermal stress (N=m ) distribution of the bottom surface
+                                                                                                    of the 3D IC model in COMSOL.
+                               Fig. 2.  TSV ﬁlled with Cu with a SiO2 liner.
+                                                                                                     II. STRESS ANALYSIS FOR 3D IC WITH TSV STRUCTURES
+                                                                                                                         USING FEM BASED METHOD
+                                                                                                        In this section, we introduce some preliminaries for stress
+                                                                                                    modeling in 3D IC with the appearance of TSVs.
+                methods cannot be used for DTM due to their large computing                             TSVs are introduced in 3D IC as the vertical commu-
+                costs. The analytical stress models have also been developed                        nication devices to solve the interconnect scaling problem.
+                [8], [4], [10] to analyze thermal stress behaviors around TSV                       As a necessary structure in 3D IC, TSVs, however, lead to
+                structures. However, these methods assume simple TSV struc-                         thermal induced stress problem, which harms the reliability
+                tures in order to simplify the mathematical equation derivation                     of the chip. There are two major reasons for the problem.
+                steps, and generates model with relatively large error.                             For the ﬁrst reason, TSV usually has a much higher thermal
+                                                                                                    conductivity than silicon wafers because of the materials it
+                   In this work, a new fast stress analysis method is developed                     used. As a result, large temperature gradient may appear in the
+                for runtime reliability enhancement of 3D IC. A 3D IC model                         area close to TSV, which usually leads to larger thermal stress.
+                with TSVs is built ﬁrst in COMSOL. The TSV structure is                             For the second reason, mismatch in coefﬁcient of thermal
+                copper ﬁlled, with silicon dioxide liner between the copper                         expansion (CTE) also brings signiﬁcant stress increase. The
+                                                                                                                                           −6 −1
+                and silicon. Then, stress and thermal data are obtained by                          CTE of silicon is 4:15 × 10               K , while copper’s CTE is
+                                                                                                              −6 −1
+                simulating the 3D IC model with different power distributions.                      17×10 K ,whichisnearlyfour times bigger than silicon.
+                An artiﬁcial neural network (ANN) with backpropagation                              When temperature increases with the same degree, copper
+                (BP) algorithm is trained with the temperature distribution                         expansion will be much more signiﬁcant than silicon, resulting
+                data around each TSV as model input and important stress                            in considerable stress.
+                information (such as maximum stress) around each TSV as                                 A two-layer 3D IC chip structure with TSVs is shown in
+                model output. The input temperature data is carefully selected                      Fig. 1. This is a chip with multi-core architecture, with TSVs
+                in order to remove the redundancy and avoid the rotational                          uniformly distributed across the chip. A popularly used TSV
+                symmetry problem. The trained ANN model is used for each                            structure [8] with full copper ﬁlling and a silicon dioxide liner
+                TSVasthe maximum stress detector and can be in cooperated                           between copper and silicon applied is shown in Fig. 2.
+                with DTM methods for reliability enhancement of 3D IC.                                  The stress in solid in cartesian coordinate can be expressed
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:15:09 UTC from IEEE Xplore.  Restrictions apply. 
+                 as [9]:
+                                                             Eα        ∂T
+                                      
+                                      −f =k −                        ·
+                                       x             x
+                                                           1−2ν ∂x
+                                      
+                                      
+                                      −fy =ky− Eα ·∂T                                         (1)
+                                                           1−2ν ∂y
+                                      
+                                      
+                                      
+                                                             Eα        ∂T
+                                      
+                                      −fz =kz− 1−2ν · ∂z                                                                   Fig. 5.   The function of one neuron.
+                 where
+                              ∂2u     ∂2u      ∂2u                 ∂2u       ∂2v       ∂2w                          III. FAST STRESS ANALYSIS FOR 3D IC
+                  
+                  kx=µ(            +        +       ) +(µ+λ)(            +         +         );
+                                 2        2       2                   2
+                              ∂x      ∂y       ∂z                  ∂x       ∂y∂x      ∂z∂x
+                  
+                                                                                                         In the previous section, we have shown that stress distri-
+                  
+                               2        2        2                   2         2        2
+                              ∂ v     ∂ v      ∂ v                 ∂ u       ∂ v      ∂ w
+                  
+                  k =µ(            +        +       ) +(µ+λ)(             +        +        );        bution in 3D IC does not only relates to the temperature
+                   y
+                                 2       2        2                             2
+                              ∂x      ∂y       ∂z                  ∂x∂y      ∂y       ∂z∂y
+                  
+                                                                                                      distribution, but also relates to the TSV distribution. As a
+                  kz =µ(∂2w + ∂2w + ∂2w)+(µ+λ)( ∂2u + ∂2v + ∂2w);                                     result, it is important to take the stress information directly
+                                  2        2        2                                        2
+                              ∂x       ∂y       ∂z                  ∂x∂z       ∂y∂z      ∂z
+                  
+                  
+                                                                                                      into account in DTM methods. Unfortunately, the FEM based
+                               E
+                  
+                  
+                   µ=                ;
+                                                                                                      stress analysis method is too expensive to be used for DTM,
+                           2(1+ν)
+                  
+                  
+                  
+                                                                                                      which requires stress information to be updated at runtime.
+                                  Eν
+                  
+                   λ= (1+ν)(1−2ν):                                                                    In order to solve this problem, we propose an ANN based
+                  The terms (f ;f ;f ) are forces in x, y, and z directions,                           method providing a viable way for runtime enhancement of
+                                    x    y   z                                                         the reliability of 3D IC.
+                 (u;v;w) are displacements in the three directions, E is the                              The new method aims at calculating the maximum stress
+                 elastic modulus, ν is the Poisson ratio, α is the thermal                             around each TSV on chip rapidly by taking the temperature
+                 expansion coefﬁcient, T is the temperature, µ and λ are                               distribution around the TSV as input. The maximum stress
+                             ´
+                 the Lame coefﬁcients. From (1), it can be observed that                               around a TSV is chosen to save the computing cost of the
+                 (fx;fy;fz) changes with temperature T.                                                ANN model as it is the most important factor to affect the
+                    Asapowerfulmethodfortheanalysisofthermo-mechanical                                 reliability. Please note that other output other than maximum
+                 stress in a complex structure where experimental investigation                        stress or even more outputs can also be chosen if necessary.
+                 is quit difﬁcult, FEM method can be used to build the 3D                                 In machine learning and cognitive science, ANNs are a
+                 IC model with TSV structures based on (1). We have built a                            family of statistical learning models inspired by biological
+                 two-layer 3D IC model with 12×12 TSVs uniformly placed                                neural networks (the central nervous systems of animals, in
+                 in the whole chip using the FEM based software COMSOL.                                particular the brain) and are used to estimate or approximate
+                 The size of whole chip is 1cm × 1cm × 300µm, and it is                                functions that can depend on a large number of inputs.
+                 divided into 4 × 4 same sized blocks to represent 16 cores,                           ANNs are generally presented as systems of interconnected
+                 both of the two layers are 1cm×1cm×100µm as shown in                                  “neurons”, which send messages to each other. For neurons
+                 Fig. 1. For the TSV structure, we set the values of r and r
+                                                                                        i         o    shown in Fig. 5, they have the same function:
+                 in Fig. 2 as 20µm and 24µm, respectively. We also couple
+                                                                                                                                                n
+                 the solid heat conduction ﬁeld and the solid mechanical ﬁeld.                                                        out = XIiwi;                                    (2)
+                 All surfaces of chip are ﬁxed and other boundary conditions
+                 can be adjusted. The structure is assumed to be stress free at                                                                i=1
+                 the room temperature 300K. Power is applied to the bottom                             where the terms Ii, i = 1;2;:::;n are inputs. (2) means
+                 layer. Using the FEM model, temperature and Von Mises stress                          the output of a neuron depends on the weighted sum of all
+                 information can be extracted with different power distributions                       its inputs. The connections have weights that can be tuned
+                 as model input.                                                                       based on experience, making neural nets adaptive to inputs
+                    Take the bottom layer as an example. From [10], it is                              and capable of learning. A large variety of ANNs have been
+                 known that the stress in the Z direction is 0, and as a result,                       developed and widely used in many ﬁelds, such as function
+                 we only need to analyze the stress in the 2-D plane. Fig. 3                           approximation, classiﬁcation, and data processing. Consider-
+                 and Fig. 4 show the temperature and Von Mises stress of                               ing the generalization ability, we select backpropagation (BP)
+                 bottom surface with a given power distribution, respectively.                         network as our neural network model.
+                 By observation and comparison of these two ﬁgures, it is easy                            Backpropagation is a common method of training ANNs
+                 to ﬁnd out that stress depends not only on temperature, but also                      used in conjunction with an optimization method such as
+                 on TSV positions: there are many places which have higher                             gradient descent. It calculates the gradient of a loss function
+                 temperatures but turns out to have smaller stresses than that                         with respect to all the weights in the network. The gradient
+                 of some lower temperature places, because the previous places                         is fed to the optimization method which in turn uses it
+                 are much further away from TSVs than the latter ones. This                            to update the weights, in an attempt to minimize the loss
+                 is an important observation which means that taking only the                          function. This ANN can be simply explained in Fig. 6 which
+                 temperature as the optimization consideration is insufﬁcient                          has a hidden layer. The network usually has one or several
+                 for DTM methods.                                                                      hidden layers, with the corresponding nodes in such layers
+                              Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:15:09 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                                                                                                    360K
+                                                                                                                                            352k
+                                                     Hidden layer Output layer
+                                         Input layer
+                                                                                                                                                   348K
+                     Fig. 6.   ABPnet with one hidden layer (n inputs and one output).
+                                                                                                                                       TSV
+                 called hidden neurons. With one or more hidden layers, the
+                 network is able to model higher-order statistical properties.
+                 Initially, before training, the weights will be set randomly.                         Fig. 7.  New circular shaped common grid to optimize input selection. Only
+                 Then the neurons learn from training samples. Each sample,                            temperatures of the grid elements close enough to the center are selected into
+                                                                                                       the ANN training process.
+                 taken from the system to be modeled, is an input-output set
+                 {x ;x ;:::;x ;t}, where {x ;x ;:::;x } are the inputs and
+                    1    2         n                    1    2         n
+                 t is the corresponding output of the system to be modeled.
+                 Since the ANN is not exactly the same as the system to                                                                                   Theta
+                 be modeled, given the sample inputs {x ;x ;:::;x } to the
+                                                                       1    2          n
+                 ANN will generate an output y which may differ from t
+                 (especially when the weights are initially random). During the                                                                          T(j)
+                                                                                                                                                          i
+                 training process, the weights will be tuned automatically to
+                 make y close to t.                                                                                                                 Ti(2)
+                                                                                                                                              T(1)
+                    In our BP neural network model, the temperatures and                                                             TSV       i
+                 maximum thermal stress around TSV are set as input and
+                 output. So in Fig. 6, x ;x ;:::;x                 are spatially distributed           Fig. 8.    Method to solve the rotational symmetry problem. Total temper-
+                                                1    2          n
+                 temperature values around one certain TSV and y represents                            atures are calculated for each piece along the radial lines by summing up
+                 the maximum stress around that TSV. For the k-th TSV, we                              Ti(1);Ti(2);:::;Ti(j) for the i-th piece for example.
+                 will have one temperature vector X = {x ;x ;:::;x                               },
+                                                                 k         k1    k2          kn
+                 and one maximum stress scalar yk. We call such data Sk =                              of redundant data at the far away positions from the center.
+                 (Xk;yk) a sample. Considering the large scale of samples                              In addition, it is quite obvious that having a round structure,
+                 and the resilient backpropagation’s (RPROP) advantage in                              the TSV and the areas around it have a rotational symmetry
+                 nonlinear mapping, processing efﬁciency and less resources                            property: two different thermal/stress maps can be the exactly
+                 occupying [11], we select RPROP as the learning algorithm.                            the same after a certain amount of rotation, which simply
+                 Since the irregularly shaped ﬁnite element grid in COMSOL                             means redundancy there if we take them as different samples.
+                 prevents us from taking sample xi from the same location                              With the two observations, we can improve the original simple
+                 (relative location to the TSV center) for different TSVs, we                          input selection method, and propose the ﬁrst input selection
+                 ﬁrst formulate a common square shaped grid for all TSVs.                              plan A by utilizing the ﬁrst observation and the second input
+                 Then, we do interpolation according to the common grid to                             selection plan B by employing both observations.
+                 generate p uniﬁed samples: S ;S ;:::;S .
+                                                        1    2          p                                 1) Input selection plan A: In order to save training time
+                                                                                                       and enhance the ANN model accuracy, we need to reduce the
+                 A. Input selection in ANN                                                             input number for each sample.
+                    By far, we have the basic framework established for ANN                               Asdiscussed in Section II, TSV usually has a higher thermal
+                 modeling. But the input selection has huge impact on the                              conductivity than silicon wafers. As a result, large temperature
+                 performance and efﬁciency of ANN: how to select temperature                           gradient may appear in the area close to TSV, resulting in
+                 elements and form the input vector Xk for the k-th sample?                            large stress. In addition, the stress also tends to appear at the
+                 At the beginning, we put temperatures of all the square shaped                        positions where different materials attach, that is, near TSV.
+                 grid elements around the TSV into Xk as a input vector and                            Because of the reasons above, the ﬁrst observation veriﬁes
+                 build a BP neural network which has two hidden layers. When                           that the largest stress always appears not far away from the
+                 training this network, we ﬁnd it consumes a lot of time in                            TSV center, thus taking all temperature data around one TSV
+                 training because of the big number of inputs. In addition,                            as inputs introduces a lot of redundancy data, and can harm
+                 validation process shows the mean squared error (MSE) of                              the ANN training/validation speed as well as accuracy. As a
+                 the resulted model is quit large.                                                     result, input selection plan A is proposed by ﬁrst generating
+                    With a lot of experiments and veriﬁcations, it is observed                         common grids in a circular shaped way as shown in Fig. 7,
+                 that the maximum stress always appears within a certain                               instead of the previous square shaped way. Then, we simply
+                 distance from the TSV center. As a result, there are a lot                            ignore the temperature information for the grid elements which
+                              Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:15:09 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                  6                                                         Test performance
+                                                              x 10
+                                                            3                                                                                                                                                
+                                                                                                                                                                                        COMSOL result
+                                                         )                                                                                                                              Neural networks result
+                                                        2 2.5
+                                                            2
+                                                          1.5
+                                                         Maximum stress (N/m1
+                                                          0.5 
+                                                             0             5             10            15             20            25            30            35            40             45            50
+                                                                                                                                 Sample
+                                         (a) Accuracy result of the ANN model with input selection Plan A. The ANN model has two hidden layers, with 60 neurons in
+                                         the ﬁrst layer and 15 neurons in the second layer.
+                                                                  6                                                          Test performance
+                                                              x 10
+                                                            3                                                                                                                                                
+                                                                                                                                                                                        COMSOL result
+                                                         )                                                                                                                              Neural networks result
+                                                         2
+                                                          2.5
+                                                            2
+                                                          1.5
+                                                            1
+                                                         Maximum stress (N/m
+                                                          0.5 
+                                                             0             5             10            15             20            25            30            35            40             45            50
+                                                                                                                                 Sample
+                                         (b) Accuracy result of the ANN model with input selection Plan B. The ANN model has two hidden layers, with 55 neurons in
+                                         the ﬁrst layer and 15 neurons in the second layer.
+                                      Fig. 9.      Accuracy results of the ANN models with input selection plan A and plan B, respectively, showing 50 validation samples.
+                     are further than the threshold distance. It results in signiﬁcant                                              thermal and stress data. The ANN based fast stress analysis
+                     redundancy reduction.                                                                                          method is implemented in MATLAB R2010a.
+                         2) Input selection plan B: According to the second observa-                                                    First, we have performed 19 simulations using the 3D
+                     tion, the input selection plan A does not solve all the problems:                                              IC model in COMSOL for 19 different power distributions
+                     since the cross section of TSV is a circle, the temperatures                                                   covering a large variety of the 3D IC operating conditions.
+                     around the TSV can be rotational symmetry. Two or more                                                         Because there are 144 TSVs on the chip, by running the 19
+                     samples, which are actually the same with respect to a rotation                                                simulations, we have obtained around 2700 samples in total.
+                     angle, are taken into consideration as different in the training                                               The samples are divided into two parts, 2400 samples are
+                     process, resulting in less accurate ANN model.                                                                 used for training and building the ANN models, and the rest
+                         In order to solve this problem in an extremely fast way,                                                   300 samples are used for validating the accuracy of the ANN
+                     input selection plan B is proposed with an improved method as                                                  models. k and j in the input selection method are chosen to
+                     demonstrated in Fig. 8. We start from the input selection plan                                                 be 16 and 20, respectively. In the ANN training routine, the
+                     A: assume the plane around the TSV are divided into k pieces                                                   maximum iteration number is set as 1000. For both of the
+                     (each piece with an angle θ = 2π=k in the ﬁgure) around the                                                    input selection plan A and plan B, the ANN models are set to
+                     full circle by the radial lines, and j rings divided by the circles,                                           having two hidden layers.
+                     makingatotal of k×j sections. Then we can calculate the total                                                      First, we test the accuracy of ANN models generated by the
+                     temperature value of all sections in each piece, for example,                                                  twoinput selection plans as shown in Fig. 9. For plan A, where
+                     there is Mi = Ti(1) + Ti(2) + ··· + Ti(j) for the i-th piece.                                                  the common circular shaped grid is used, the maximum stress
+                     Then, we ﬁnd the largest total temperature value, and record                                                   from COMSOL data and from the ANN model matches with
+                     the corresponding piece’s angle, with a respect to a reference                                                 each other well in most validation samples as can be seem in
+                     line. Finally, we are able to rotate the largest total temperature                                             Fig. 9 (a). However, there are still occasions when relatively
+                     piece back to the reference line for all samples, and solve the                                                large errors appear, such as for the validation sample 2, 16,
+                     rotational symmetry problem.                                                                                   and 26, etc. Through analyzing the results with input selection
+                                               IV. EXPERIMENTAL RESULTS                                                             plan A, we have deleted such large errors are caused by the
+                                                                                                                                    rotational symmetry property of the TSV model. The result
+                         The experiments are performed on a Linux server with two                                                   of the rotational symmetry enhanced input selection plan B is
+                     2.90GHz 8-core 16-thread CPUs and 64GB memory. A 3D IC                                                         shown in Fig. 9 (b). With even a smaller ANN model (only 55
+                     model with 144 TSVs is built in COMSOL 5.0 to obtain the                                                       neurons in the ﬁrst hidden layer are used in plan B comparing
+                                      Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:15:09 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                                             TABLE I
+                                                         ACCURACYANDCOMPUTINGTIMERESULTSOFINPUTSELECTIONPLANA.
+                      # nodes    t1   t2   0<err<0.01 0.01<err<0.05 0.05<err<0.1 0.1<err<0.2 0.2<err<0.3 0.3<err<0.4 0.4<err<0.5 0.5<err maximum mean
+                    in 2 layers (s)   (s)   n      p      n        p       n       p       n      p       n      p      n       p      n      p      n    p       err       err
+                      40, 10    60 0.051 13      4.3%    60     20.0%     55    18.3%     82    27.3%    52   17.4%     20    6.7%    10    3.3%     8 2.7%      0.742    0.1521
+                      50, 15    62 0.058 17      5.7%    57     19.0%     60    20.0%     90    30.0%    48   16.0%     17    5.7%     4    1.3%     7 2.3%      0.722    0.1502
+                      55, 15    65 0.060 16      5.3%    64     21.3%     58    19.3%     80    26.7%    44   14.7%     26    8.7%     6    2.0%     6 2.0%      0.693    0.1413
+                      60, 15    67 0.059 18      6.0%    63     21.0%     63    21.0%     74    24.7%    46   15.3%     27    9.0%     5    1.7%     4 1.3%      0.792    0.1385
+                      70, 20    68 0.061 15      5.0%    59     19.7%     62    20.6%     88    29.3%    38   12.7%     24    8.0%     8    2.7%     6 2.0%      0.745    0.1445
+                                                                                             TABLE II
+                                                         ACCURACYANDCOMPUTINGTIMERESULTSOFINPUTSELECTIONPLANB.
+                      # nodes    t1   t2   0<err<0.01 0.01<err<0.05 0.05<err<0.1 0.1<err<0.2 0.2<err<0.3 0.3<err<0.4 0.4<err<0.5 0.5<err maximum mean
+                    in 2 layers (s)   (s)   n      p       n       p       n       p       n      p       n      p      n      p      n       p      n    p       err       err
+                      40, 10    57 0.041 30     10.0%     96     32.0%    73    23.7%     74    24.8%    21    7.0%     4    1.3%     2     0.6%     2 0.6%      0.759    0.0938
+                      50, 15    58 0.045 31     10.4% 104        34.7%    65    21.7%     73    24.3%    19    6.4%     2    0.6%     1     0.3%     2 0.6%      0.704    0.0832
+                      55, 15    60 0.056 41     13.7% 105        35.0%    83    27.7%     53    17.7%    13    4.3%     3    1.0%     0      0%      2 0.6%      0.693    0.0779
+                      60, 15    63 0.054 30     10.0% 106        35.3%    83    27.7%     62    20.7%    13    4.4%     3    1.0%     1     0.3%     2 0.6%      0.792    0.0799
+                      70, 20    65 0.055 31     10.4%     99     33.0%    78    26.0%     66    22.0%    18    6.0%     4    1.4%     2     0.6%     2 0.6%      0.745    0.0802
+                with 60 neurons used in plan A), it is very clear that the new                      important stress information, such as maximum stress around
+                input selection plan resolved the rotational symmetry problem                       each TSV, for DTM methods at runtime. In order to improve
+                and drastically improved the accuracy from the previous ANN                         the stress estimation accuracy and speed, specially designed
+                model showing no validation sample with large error at all.                         input selection plans are proposed and implemented for ANN
+                   Wehave also changed the number of neuron nodes in each                           model generation. Experiments with different conﬁgurations
+                hidden layer and record all results in Table I and Table II,                        of ANN models show that the new method is able to estimate
+                where “n” in the tables means number of nodes, and “p”                              important stress information at extremely fast speed with good
+                represents percentage. It is noted that the accuracy does not                       accuracy for runtime 3D IC reliability enhancement usage.
+                always improve as we increase the ANN model size due to
+                overﬁtting problems, and the best accuracy result appears for                                                      REFERENCES
+                around 55 to 60 nodes in the ﬁrst layer and 15 nodes in the                          [1] R. S. Patti, “Three-dimensional integrated circuits and the future of
+                second layer. For all cases, ANN model built by input selection                           system-on-chip designs,” Proc. of the IEEE, vol. 94, no. 6, pp. 1214–
+                                                                                                          1224, June 2006.
+                plan B outperforms the one built by plan A.                                          [2] F. Li et al., “Design and management of 3D chip multiprocessors using
+                   The major purpose to build such ANN model is for runtime                               network-in-memory,” in Proc. Int. Symp. on Computer Architecture
+                usage in cooperating with a dynamic thermal/power manage-                                 (ISCA), 2006, pp. 130–141.
+                                                                                                     [3] A. Sridhar et al., “3D-ICE: Fast compact transient thermal modeling for
+                ment method. As a result, the speed of stress analysis using                              3D ICs with inter-tier liquid cooling,” in Proc. Int. Conf. on Computer
+                the ANN based model is very important. In order to test the                               Aided Design (ICCAD), 2010, pp. 463–470.
+                speed accurately, we have disabled the parallel computing                            [4] M. Jung et al., “TSV stress-aware full-chip mechanical reliability
+                                                                                                          analysis and optimization for 3D IC,” Communications of the ACM,
+                ability of MATLAB, and use only single thread to do the                                   vol. 57, no. 1, pp. 107–115, January 2014.
+                model training and stress analysis using the ANN model. In                           [5] J. Donald and M. Martonosi, “Techniques for multicore thermal man-
+                Table I and Table II, we have recorded the training time (t                               agement: Classiﬁcation and new exploration,” in Proc. Int. Symp. on
+                                                                                               1          Computer Architecture (ISCA), June 2006, pp. 78–88.
+                in both tables) and stress analysis time (t2 in both tables).                        [6] J. H. Lau and T. G. Yue, “Thermal management of 3D IC integration
+                Please note that the stress analysis time is the total time of                            with TSV (through silicon via),” in Proc. Electronic Components and
+                all the 300 TSV structures. The training process usually takes                            Technology Conference (ECTC), 2009, pp. 635–640.
+                                                                                                     [7] Q. Zou et al., “Thermomechanical stress-aware management for 3D IC
+                around one minute to ﬁnish. But it is still considered to be                              designs,” in Proc. European Design and Test Conf. (DATE), 2013, pp.
+                really fast because it only needs to be done once ofﬂine, and                             1255–1258.
+                its computing time will not be counted in the runtime part. The                      [8] K. H. Lu et al., “Thermo-mechanical reliability of 3-D ICs containing
+                                                                                                          through silicon vias,” in Proc. Electronic Components and Technology
+                only runtime part comes from the stress analysis, and it is very                          Conference (ECTC), 2009, pp. 630–634.
+                clear that such time is really small: only around 0:06 seconds                       [9] T. Chen, D. M. Liao, and J. X. Zhou, “Numerical simulation of casting
+                for 300 TSV structures. The runtime overhead can be further                               thermal stress and deformation based on ﬁnite difference method,”
+                                                                                                          Materials Science Forum (MSF), vol. 762, pp. 224–229, 2013.
+                reduced by using parallel computing techniques, because the                         [10] S. K. Marella and S. S. Sapatnekar, “A holistic analysis of circuit
+                stress around each TSV can be analyzed independently.                                     performance variations in 3-D ICs with thermal and TSV-induced stress
+                                                                                                          considerations,” IEEE Trans. on Very Large Scale Integration (VLSI)
+                                             V. CONCLUSION                                                Systems, vol. 23, pp. 1308–1321, July 2014.
+                                                                                                    [11] Z. Xiong et al., “Two-phases parallel neural network algorithm based
+                   In this paper, we have proposed a fast stress analysis                                 on RPROP,” in Proc. IEEE TENCON, 2005, pp. 1–6.
+                method for runtime usage. The new method builds artiﬁcial
+                neural network (ANN) model by training ofﬂine using thermal
+                and stress data. Next, the ANN model is used to generate
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:15:09 UTC from IEEE Xplore.  Restrictions apply. 

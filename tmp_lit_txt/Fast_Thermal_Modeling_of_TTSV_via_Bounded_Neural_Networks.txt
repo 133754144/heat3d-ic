@@ -1,0 +1,676 @@
+                      Fast Thermal Modeling of TTSV via Bounded
+                                                              Neural Networks
+                           Daihang Liu                                        GangDong*                                           ChangleZhi
+                   Faculty of Integrated Circuit                      Faculty of Integrated Circuit                       Faculty of Integrated Circuit
+                         Xidian University                                  Xidian University                                  Xidian University
+                           Xi’an, China                                       Xi’an, China                                        Xi’an, China
+                      daihang_liu@163.com                                 gdong@xidian.edu.cn                                zhichangle@163.com
+                 Abstract—Effective thermal management in chiplet-based
+                                                                                        suboptimal thermal management strategies. Conventional
+             architectures necessitates accurate prediction of Thermal
+                                                                                        finite element method (FEM) simulations are capable of
+             Through-Silicon Via (TTSV) anisotropic equivalent thermal
+                                                                                        accurately   capturing     these   effects;  however, they are
+             conductivity. This paper introduces a novel physics-informed
+                                                                                        computationally intensive, which hinders their application in
+             hybrid model to efficiently determine both vertical and
+                                                                                        rapid parametric studies or integration into iterative design
+             particularly the challenging horizontal thermal conductivity
+                                                                                        optimization loops.
+             components. The approach integrates an analytical Series-
+                                                                                            To address the critical need for an accurate and efficient
+             Parallel Thermal Conductivity model, which calculates vertical
+             conductivity    and defines rigorous physical bounds for
+                                                                                        method to determine the anisotropic k                  of   TTSVs,
+                                                                                                                                           eq
+             horizontal conductivity, with a Back-Propagation Neural
+                                                                                        particularly their horizontal component, this paper proposes a
+             Network. This network, featuring a bounded output layer
+                                                                                        novel physics-informed hybrid modeling approach. The
+             constrained by these physical limits, accurately predicts
+                                                                                        methodology underpinning the present study combines the
+             horizontal thermal conductivity, achieving a mean absolute
+                                                                                        strengths    of    an    analytical    Series-Parallel     Thermal
+             percentage error of 0.35 percent or less compared to finite
+                                                                                        Conductivity (SPTC) model with a Back-Propagation Neural
+             element     method      benchmarks.       The    proposed      model
+                                                                                        Network (BPNB). The SPTC model is used to directly
+             demonstrates significantly improved accuracy over traditional
+                                                                                        calculate the vertical k        and, importantly, to establish
+                                                                                                                     eq
+             methods and faster training convergence, offering a robust tool
+                                                                                        rigorous physical upper and lower bounds for the horizontal
+             for advanced packaging thermal simulations.
+                                                                                        k . Informed by these bounds, the BPNB model, featuring a
+                                                                                         eq
+                                                                                        tailored architecture with a parametric sigmoid activation
+                 Keywords—Thermal through-silicon via, Equivalent thermal
+                                                                                        function in the hidden layer and a physically constrained
+             conductivity, Neural Network, Thermal Management
+                                                                                        sigmoid activation function in the output layer, is trained to
+                                                                                        precisely predict the horizontal k        within these physically
+                                                                                                                               eq
+                                     I.  INTRODUCTION
+                                                                                        meaningful limits.
+                 Chiplet-based      architectures    are   key    to   enhancing
+             microelectronic      system performance and functionality,
+                                                                                            This paper is organized as follows: Section Ⅱ details the
+             overcoming       monolithic     integration     limitations    [1-3].
+                                                                                        formulation of the SPTC model and the derivation of
+             Assembling multiple specialized chiplets on a common
+                                                                                        physical bounds for horizontal thermal conductivity. In
+             platform provides these systems with significant advantages
+                                                                                        addition, this section describes the architecture, training, and
+             in design flexibility, yield, and heterogeneous integration.
+                                                                                        innovative bounded-output mechanism of the BPNB model.
+             However, this dense integration concurrently exacerbates
+                                                                                        Section Ⅲ presents the experimental validation of the
+             thermal management challenges, with high power densities
+                                                                                        proposed hybrid approach, demonstrating its accuracy.
+             and complex heat dissipation pathways potentially leading to
+                                                                                        Section Ⅳ concludes the paper.
+             performance degradation and reliability concerns [4-6].
+                                                                                       II.  HYBRIDMODELINGAPPROACHFORTTSVEQUIVALENT
+             Thermal Through-Silicon Vias (TTSVs) have become
+                                                                                                    THERMALCONDUCTIVITYPREDICTION
+             indispensable components in advanced packaging, creating
+             crucial vertical pathways for efficient heat removal from
+                                                                                            To accurately and efficiently determine the anisotropic
+             active chiplets [7-9].
+                                                                                        k    of TTSVs, this study employs a hybrid modeling
+                                                                                         eq
+                                                                                        approach. The present methodology is predicated on a
+                 A critical factor underpinning the effective thermal
+                                                                                        synergistic combination of the SPTC model and the BPNB
+             design and simulation of chiplet systems incorporating
+                                                                                        model. The SPTC model is employed to directly compute the
+             TTSVs is the accurate determination of their anisotropic
+                                                                                        vertical equivalent thermal conductivity (k ) and to establish
+                                                                                                                                        z
+             equivalent thermal conductivity (k ). Although the vertical
+                                                     eq
+                                                                                        rigorous, physical bounds for the horizontal equivalent
+             k    can often be reasonably estimated using established
+               eq
+                                                                                        thermal conductivity (k ). Subsequently, the BPNB model,
+                                                                                                                   x
+             thermal    resistance    models [10-11], the prediction of
+                                                                                        informed by these bounds, is employed to precisely predict k .
+                                                                                                                                                            x
+             horizontal    k     presents   a more formidable challenge.
+                            eq
+             Horizontal heat flow is characterized by intricate interactions
+                                                                                        A. Series-Parallel Equivalent Thermal Conductivity Model
+             amongthehighly conductive via material, the dielectric liner,
+                                                                                            The SPTC model analyzes a representative cylindrical
+             and the surrounding substrate. Consequently, the horizontal
+                                                                                        TTSV unit, as depicted schematically in Fig. 1. This
+             k     is   frequently    neglected     [12-13]    or   significantly
+               eq
+                                                                                        composite structure typically comprises a central core of
+             oversimplified using rudimentary approximations [14-16].
+                                                                                        highly conductive material (Cu), enveloped by a thin
+     2025 26th International Conference on Electronic Packaging Technology (ICEPT) | 978-1-6654-6580-9/25/$31.00 ©2025 IEEE | DOI: 10.1109/ICEPT67137.2025.11157316Theseinaccuraciescanpropagatethroughthermal
+                                                                                        dielectric insulating layer (SiO ), all embedded within a
+                                                                                                                             2
+             simulations, leading to unreliable temperature predictions,
+                                                                                        substrate material (Si). The key geometrical parameters
+             erroneous      hotspot     identification,    and     consequently,
+                                                                                        influencing its k   include the metal core radius, the dielectric
+                                                                                                          eq
+                                                                                        layer thickness, the overall height of the TTSV, and the pitch
+                 This work was supported by the National Nature Science Foundation
+                                                                                        or side length of the square unit cell. For analytical
+             of China under Grant U23A20291. The authors are with the Faculty of
+             Integrated Circuit, Xidian University, Xi’an 710071, China (e-mail:
+                                                                                        tractability, the TTSV unit is conceptually divided along its
+             gdong@xidian.edu.cn).
+             202526thInternational Conference on Electronic Packaging Technology (ICEPT)
+                        Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:50:51 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                                                             part B is determined using a similar method based on the
+                                                                                                             volume fraction of its constituent materials. The overall
+                                                                                                             vertical equivalent thermal conductivity k of the entire
+                                                                                                                                                                             z
+                                                                                                             TTSV unit is then determined by treating Parts A and B as
+                                                                                                             thermal resistances in series:
+                                                                                                                                             h                    h
+                                                                                                                                   1                   1                     1
+                                                                                                                                              a                     b
+                                                                                                                                                                                                  
+                                                                                                                                                                      
+                                                                                                                                  k       h h k               h h k
+                                                                                                                                    z      a      b    z _A      a     b     z _B
+                 Fig. 1. Schematic diagram of cylindrical TTSV.
+                                                                                                                  The determination of horizontal equivalent thermal
+                                                                                                             conductivities k and k is more intricate due to the two-
+                                                                                                                                    x          y
+                                                                                                             dimensional heat flow paths that involve both series and
+                                                                                                             parallel resistances. Given the cylindrical symmetry of the
+                                                                                                             TTSV within a square unit cell, the horizontal thermal
+                                                                                                             conductivity is isotropic k = k . The SPTC model provides a
+                                                                                                                                                  x     y
+                                                                                                             robust estimation of the range for k                            by establishing
+                                                                                                                                                                         x
+                                                                                                             theoretical lower and upper bounds. This is achieved by
+                                                                                                             considering         extreme        cases      of     series-parallel        thermal
+                                                                                                             resistance arrangements for heat flow in the lateral direction
+                                                                                                             within Part A, as illustrated by the equivalent network
+                                                                                                             modelsinFig. 2.
+                                                                                                                  1) The series-parallel (s-p) model corresponds to the
+                                                                                                             maximum lateral thermal resistance case. It is assumed that
+                                (a)Extremely large horizontal thermal resistance
+                                                                                                             the heat flow passes preferentially in series through the
+                                                                                                             interfaces of the different materials and then in parallel as a
+                                                                                                             whole. The resulting lower limit of the horizontal equivalent
+                                                                                                             thermal conductivity k               , is calculated as follows:
+                                                                                                                                             A_s-p
+                                                                                                                                           r
+                                                                                                                                                                 dx
+                                                                                                                                           TSV
+                                                                                                                          
+                                                                                                                            k        2
+                                                                                                                              A_sp
+                                                                                                                                         
+                                                                                                                          
+                                                                                                                                          0
+                                                                                                                                                         2l     2l         L2l
+                                                                                                                                               2l
+                                                                                                                                                           SiO      TSV            SiO
+                                                                                                                                                 TSV
+                                                                                                                                                              2                       2
+                                                                                                                          
+                                                                                                                                                                        
+                                                                                                                                                k            k                 k
+                                                                                                                          
+                                                                                                                                                 Cu            SiO2              Si
+                                                                                                                          
+                                                                                                                                                                        k    L2r
+                                                                                                                                          r
+                                                                                                                                                                                       
+                                                                                                                                                        dx
+                                                                                                                          
+                                                                                                                                           SiO
+                                                                                                                                                                         Si         SiO
+                                                                                                                                             2
+                                                                                                                                                                                       2
+                                                                                                                                                                                                  
+                                                                                                                                    2                               
+                                                                                                                          
+                                                                                                                                         
+                                                                                                                                          r
+                                                                                                                                               2l        L2l
+                                                                                                                                          TSV
+                                                                                                                                                                                L
+                                                                                                                                                 SiO            SiO
+                                                                                                                                                    2              2
+                                                                                                                          
+                                                                                                                                                      
+                                                                                                                          
+                                                                                                                                               k             k
+                                                                                                                                                 SiO2         Si
+                                                                                                                          
+                                                                                                                                       2       2             2       2
+                                                                                                                          
+                                                                                                                            l     r       x ,l        r        x
+                                                                                                                             TSV       TSV        SiO        SiO
+                                (b)Extremely Small horizontal thermal resistance
+                                                                                                                                                     2          2
+                                                                                                                          
+                 Fig. 2. Thermal resistance network model for Part A of TTSV unit
+                                                                                                                          
+                 height into two distinct segments: Part A represents the main
+                                                                                                                  2) The parallel-series (p-s) model corresponds to the
+                 TTSV structure with height h , and Part B is typically a
+                                                             a
+                                                                                                             minimum lateral thermal resistance case. It is assumed that
+                 thinner section, an oxide isolation layer with height h . The
+                                                                                              b
+                                                                                                             the heat flow passes preferentially in parallel through each
+                 thermal       conductivities         of     these      parts     are     analyzed
+                                                                                                             material layer and then in series as a whole. This results in an
+                 individually before being combined.
+                                                                                                             upper limit of the horizontal equivalent thermal conductivity
+                      Thevertical k         (k ) of the TTSV unit is computed using a
+                                         eq    z
+                                                                                                             k      , calculated as follows:
+                                                                                                               A_p-s
+                 parallel thermal resistance model, where the contribution of
+                 each material is weighted by its respective volume fraction.
+                                                                                                                                     r
+                                                                                                                         1                                         dy
+                                                                                                                                     TSV
+                                                                                                                    
+                                                                                                                               2
+                 For Part A of the TTSV unit, its vertical equivalent thermal
+                                                                                                                                   
+                                                                                                                    
+                                                                                                                                    0
+                                                                                                                      k
+                                                                                                                                         2k l       2k       l     l      k L2l
+                                                                                                                                                                                           
+                                                                                                                        A_ ps
+                                                                                                                                            Cu TSV       SiO2  SiO    TSV      Si         SiO
+                                                                                                                                                                  2                          2
+                 conductivity k          can be calculated as follows:
+                                                                                                                    
+                                     z_A
+                                                                                                                    
+                                                                                                                                                                             L2r
+                                                                                                                                     r
+                                                                                                                                                       dy
+                                                                                                                                     SiO
+                                                                                                                    
+                                                                                                                                                                                    SiO
+                                                                                                                                       2
+                                                                                                                                                                                       2
+                                                                                                                               2                                                                
+                                                                                                                    
+                                                                                                                                   
+                                                                                                                                    r
+                                   k      k v           k      v         k v
+                                 
+                                                                                                                                     TSV
+                                                                                                                                                                                Lk
+                                                                                                                                         2k     l    k L2l
+                                    z _ A     Cu Cu_A        SiO   SiO _A      Si  Si _ A
+                                                                                                                                                                       
+                                                                2     2
+                                                                                                                                                                                   Si
+                                                                                                                    
+                                                                                                                                            SiO2 SiO     Si         SiO
+                                                                                                                                                    2                  2
+                                 
+                                                                                                                    
+                                                                          2          2
+                                                  2
+                                                                                                                                 2       2             2       2
+                                                                      r      r
+                                              r
+                                 
+                                                                         SiO        TTSV
+                                                                                                                      l     r        y ,l       r        y
+                                                                                                                    
+                                                 TTSV
+                                                                            2
+                                                                                                                      TSV       TSV         SiO        SiO
+                                                                                                                                               2         2
+                                                                                                      
+                                   v                  ,v         
+                                 
+                                    Cu_A                  SiO _A
+                                                   2                           2
+                                                                                                                    
+                                                             2
+                                                                                                                    
+                                                 L                            L
+                                 
+                                   v      1v              v
+                                 
+                                    Si _ A         TTSV _ A     SiO _A
+                                                                   2
+                                 
+                                                                                                                  Therefore, the actual horizontal equivalent thermal
+                                                                                                             conductivity of Part A k               must lie within the interval [k                ,
+                                                                                                                                               x_A                                           A_s-p
+                 where k , k            and k are the thermal conductivities of Cu,
+                                                                                                             k      ]. Similarly, applying these assumptions to Part B yields
+                            Cu    SiO2         Si
+                                                                                                               A_p-s
+                 SiO andSirespectively, r                  and r         are the radii of TTSV
+                                                                                                             bounds for its horizontal equivalent thermal conductivity
+                      2                               SiO2         TTSV
+                 oxide and TTSV metal respectively, v                         , v          and v
+                                                                                                             kx_B. It must lie within the interval [k                    , k      ]. Assuming
+                                                                         Cu_A     SiO2_A           Si_A
+                                                                                                                                                                    B_s-p    B_p-s
+                 are the volume fractions of Cu, SiO2 and Si in Part A
+                                                                                                             Parts A and B are connected in parallel horizontally, the
+                 respectively, and L is the side length of the square TTSV unit.
+                                                                                                             overall bounds [k , k ] for the horizontal equivalent
+                                                                                                                                         s-p    p-s
+                 Similarly, the vertical equivalent thermal conductivity k                          of
+                                                                                                             thermal conductivity k of the entire TTSV unit are derived
+                                                                                                z_B
+                                                                                                                                             x
+                 202526thInternational Conference on Electronic Packaging Technology (ICEPT)
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:50:51 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                                                   where y is the input of the activation f on the ith channel,
+                                                                                                             i
+                                                                                                   with learnable parameters a, b, c, and d controlling the
+                                                                                                                                        i    i   i          i
+                                                                                                   shape and properties of the sigmoid curve. This allows the
+                                                                                                   PSigmoid function to adapt its shape dynamically during
+                                                                                                   training, offering significantly greater non-linear expressive
+                                                                                                   capacity compared to a standard sigmoid function where
+                                                                                                   these parameters are fixed.
+                                                                                                      In regression problems, a linear activation function is
+                                                                                                   commonly used for the output layer. Combine or rephrase:
+                                                                                                   However, the horizontal equivalent thermal conductivity k
+                                                                                                                                                                                x
+                                                                                                   of the TTSV unit must be physically regular and fall within
+                                                                                                   the specific range derived from the SPTC model. In this
+                                                                                                   study, the PSigmoid function is innovatively adopted as the
+                                                                                                   activation function of the output layer, with the physical
+                                                                                                   boundary being directly embedded in it. Its specific form is
+               Fig. 3. Architecture of the BPNB model with bounded output
+                                                                                                   given by:
+               bycombiningtherespective bounds of Parts A and B:
+                                                                                                                                         k    k
+                                                                                                                                          ps     sp
+                                                                                                                         ˆ
+                                                                                                                                                                                
+                                                                                                                         k  g(y)                    k
+                                                                                                                          x                               s p
+                                                                                                                                              a(yb)
+                                             h                   h
+                               
+                                                                                                                                        1e
+                                              a                   b
+                                 k                k                  k
+                                   sp               A_sp               B_sp
+                               
+                                          h h                h h
+                               
+                                           a     b              a    b
+                                                                                            
+                               
+                                                                                                   The physical constraints are embedded by setting the
+                                             h                   h
+                                              a                   b
+                               
+                                 k                k                  k                           PSigmoid parameters c and d as fixed constants derived from
+                                   ps               A_ps               A_ps
+                               
+                                          h h                h h
+                                           a     b              a    b
+                               
+                                                                                                   the SPTC model: the lower bound c = k                       and the range
+                                                                                                                                                           s-p
+                                                                                                   width d = k          - k . These fixed values mathematically
+                                                                                                                    p-s      s-p
+                                                                                                   constrain the output within the physical boundaries [k , k ].
+                                                                                                                                                                       s-p   p-s
+                    Thus, the SPTC model provides a direct calculation for k
+                                                                                            z
+                                                                                                   Concurrently, parameters a and b remain learnable, allowing
+               and establishes the strict physical bounds                  for k . These
+                                                                                  x
+                                                                                                   the network to adjust the Sigmoid shape during training to
+               bounds are crucial as they inform and constrain the
+                                                                                                   accurately model the input k                relationship within these
+                                                                                                                                            x
+               subsequent BPNB model, ensuring physically plausible
+                                                                                                   bounds.
+               predictions and enhancing the learning efficiency of the
+               neural network.
+                                                                                                        Overall, the BPNB model, by operating within the
+                                                                                                   physical boundaries established by the SPTC model and
+               B. Back-Propagation Neural Network Model with Bounded
+                                                                                                   leveraging      adaptive      activation      functions,     provides      an
+                    Output
+                                                                                                   accurate and robust method for predicting the horizontal
+                    The architecture of the BPNB model is illustrated in Fig.
+                                                                                                   equivalent thermal conductivity k . When combined with the
+                                                                                                                                              x
+               3. The structure of the network is as follows: the input layer
+                                                                                                   directly calculated vertical component k from the SPTC
+                                                                                                                                                         z
+               contains five nodes corresponding to the key structural
+                                                                                                   model, this hybrid approach yields the comprehensive
+               parameters of the TTSV cells that significantly affect k . The
+                                                                                      x
+                                                                                                   anisotropic thermal properties essential for detailed and
+               number of nodes in the hidden layer is based on
+                                                                                                   reliable thermal modeling of TTSV structures in advanced
+               Kolmogorov's theorem, which suggests approximately 2n+1
+                                                                                                   electronic packaging.
+               hidden nodes for n inputs. The output layer comprises a
+               single node that predicts the horizontal equivalent thermal
+                                                                                                    III. EXPERIMENTAL VALIDATION AND RESULT ANALYSIS
+               conductivity       k .Training      data    for    the    BPNB model,
+                                   x
+                                                                                                        To rigorously evaluate the proposed hybrid modeling
+               comprising sets of TTSV structural parameters and their
+                                                                                                   approach, this section focuses on validating the BPNB
+               corresponding        k    values,     were generated using FEM
+                                     x
+                                                                                                   model's performance in predicting the horizontal equivalent
+               simulations. The mathematical formulation of the BPNB
+                                                                                                   thermal conductivity of TTSVs. Benchmark data, comprising
+               modelcanbeexpressedas:
+                                                                                                   TTSV structural parameters and corresponding FEM-
+                                                                                                   simulated k        values, were generated by systematically
+                                                                                                                   x
+                                      ˆ
+                                                                                            
+                                      k  g(w  f (w xb )b )
+                                       x         2       1      1      2
+                                                                                                   varying the metal core radius, SiO dielectric layer thickness,
+                                                                                                                                               2
+                                                                                                   and unit cell pitch. The predictive capabilities of the BPNB
+               where x is the input vector of TTSV structural parameters, w                        model were compared against the SPTC model's theoretical
+                                                                                            1
+                                                                                                   lower (k ) and upper (k ) bounds, their arithmetic average
+               and w are the weight matrices for the hidden and output
+                                                                                                              s-p                 p-s
+                       2
+                                                                                                    k
+                                                                                                   (   ) [17], a calibrated analytical model from literature [18],
+               layers, respectively, and b and b            are the corresponding bias
+                                                                                                     avg
+                                                1        2
+                                                                                                   and a traditional back-propagation neural network (BPNN)
+               terms. f(x) represents the activation function of the hidden
+                                                                                                   with standard sigmoid and linear activation functions.
+               layer, and g(x) is the activation function of the output layer.
+                                                                                                        The results demonstrate the superior accuracy of the
+                    Apivotal innovation of the BPNB model is the selection
+                                                                                                   BPNB model. As summarized in Table I, the BPNB model
+               and parametrization of its activation functions. The hidden
+                                                                                                   achieved a remarkably low MAPE, typically between
+               layer activation function employs a parametric Sigmoid
+                                                                                                   0.310% and 0.350% across various parameter sweeps,
+               (PSigmoid) function, which is defined as follows:
+                                                                                                   significantly outperforming the standalone SPTC bounds and
+                                                                                                        k
+                                                                                                   the      approximation. For instance, when varying the metal
+                                                                                                         avg
+                                                         d
+                                                           i
+                                                                                            
+                                         f (y )                  c
+                                             i                        i                            radius, the BPNB model yielded a MAPE of 0.310% and a
+                                                        a (y b )
+                                                          i  i  i
+                                                   1e
+                                                                                                                                                                k
+                                                                                                   maximumpercentageerrorof0.357%,whereas                           resulted
+                                                                                                                                                                 avg
+               202526thInternational Conference on Electronic Packaging Technology (ICEPT)
+                           Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:50:51 UTC from IEEE Xplore.  Restrictions apply. 
+                                                                                                        TABLEI.          COMPARISONOFTTSVK PREDICTIONMETHODS
+                                                                                                                                                   X
+                                                                                                                                              Performancemetrics
+                                                                                                                   Parameter
+                                                                                                      Method
+                                                                                                                                    MAPE
+                                                                                                                                                           Max         Max
+                                                                                                                      Varied
+                                                                                                                                               RMSE
+                                                                                                                                                          Error
+                                                                                                                                     (%)
+                                                                                                                                                                     Error (%)
+                                                                                                                      Metal
+                                                                                                                                    0.310      0.397      0.453        0.357
+                                                                                                                      radius
+                                                                                                     Proposed
+                                                                                                                       SiO
+                                                                                                                           2
+                                                                                                                                    0.334      0.457      0.662        0.527
+                                                                                                       (k    )
+                                                                                                         BPNB
+                                                                                                                     thickness
+                                                                                                                       Pitch        0.350      0.501      1.224        1.131
+                                  (a)                                   (b)
+                                                                                                                      Metal
+                                                                                                                                    5.825      7.397      8.660        6.972
+                                                                                                       Series-
+                                                                                                                      radius
+                                                                                                      Parallel
+                                                                                                                       SiO
+                                                                                                                           2
+                                                                                                                                    5.767      7.380      8.956        7.124
+                                                                                                       Bound
+                                                                                                                     thickness
+                                                                                                        (k )
+                                                                                                          s-p
+                                                                                                                       Pitch        7.067      9.382      16.593      15.328
+                                                                                                                      Metal
+                                                                                                                                    6.020      8.036      12.090       9.733
+                                                                                                      Parallel-
+                                                                                                                      radius
+                                                                                                       Series
+                                                                                                                       SiO
+                                                                                                                           2
+                                                                                                                                    5.803      7.338      7.814        6.215
+                                                                                                       Bound
+                                                                                                                     thickness
+                                                                                                         k
+                                                                                                        (   )
+                                                                                                          p-s
+                                                                                                                       Pitch       10.183      16.225     41.281      38.133
+                                                                                                                      Metal
+                                                     (c)
+                                                                                                                                    0.530      0.772      1.270        0.992
+                                                                                                                      radius
+                                                                                                       Bound
+               Fig. 4. Comparison of BPNB predicted         values against FEM simulations
+                                                         k
+                                                          x
+                                                                                                                       SiO
+                                                                                                                           2
+                                                                                                      average
+                                                                                                                                    0.436      0.653      1.133        0.901
+               for varying (a) metal radius, (b) insulator thickness, and (c) TTSV pitch.
+                                                                                                                     thickness
+                                                                                                     [17](k   )
+                                                                                                            avg
+                                                                                                                       Pitch        0.960      1.794      5.401        4.989
+                                                                                                     Calibrated
+                                                                                                     analytical      Overall         N/A        N/A        N/A           3
+                                                                                                        [18]
+                                                                                                        In summary, the experimental validation confirms that
+                                                                                                   the proposed physics-informed BPNB model provides a
+                                                                                                   highly accurate and efficient method for predicting the
+                                                                                                   horizontal equivalent thermal conductivity of TTSVs. Its
+                                                                                                   ability to integrate physical bounds with a data-driven
+                                                                                                   approach results in superior performance compared to purely
+                                                                                                   analytical models, empirical approximations, and traditional
+                                                                                                   neural network architectures, making it a valuable tool for
+               Fig. 5. Comparison of convergence speed between the proposed BPNB
+                                                                                                   reliable thermal simulations in advanced packaging.
+               modelandatraditional BPNN.
+                                                                                                                              IV. CONCLUSION
+               in a MAPEof 0.530% and the analytical model [18] reported
+                                                                                                        This paper presented a novel physics-informed hybrid
+               errors around 3%. Fig. 4 further illustrates the excellent
+                                                                                                   model to accurately and efficiently predict the anisotropic
+               agreement between BPNB predicted k values and FEM
+                                                                    x
+                                                                                                   equivalent thermal conductivity (k ) of TTSVs, with a
+                                                                                                                                                  eq
+               benchmarks across variations in key geometrical parameters,
+                                                                                                   particular focus on its challenging horizontal component (k ).
+                                                                                                                                                                              x
+               highlighting      its   ability   to    capture complex non-linear
+                                                                                                   The proposed approach integrates an analytical SPTC model
+               dependencies.
+                                                                                                   with BPNB in a synergistic manner. The SPTC model
+                    Toevaluate the advantages of the proposed BPNB model,
+                                                                                                   directly calculates the vertical k                 (k )  and establishes
+                                                                                                                                                 eq     z
+               its training process and final accuracy were compared with
+                                                                                                   rigorous physical bounds for k . The BPNB, featuring
+                                                                                                                                               x
+               those of a conventional BPNN. Both networks share the
+                                                                                                   parametric sigmoid activation functions and an output layer
+               same architecture and were trained on the same FEM
+                                                                                                   explicitly constrained by these SPTC derived physical limits,
+               generated dataset using identical optimization algorithms and
+                                                                                                   demonstrated superior accuracy in predicting k , achieving a
+                                                                                                                                                                x
+               hyperparameters. Unlike the BPNB model, the conventional
+                                                                                                   MAPE of 0.35% or less against FEM benchmarks.
+               BPNNemploysastandard sigmoid activation function in the
+                                                                                                   Furthermore, the BPNB model exhibited significantly faster
+               hidden layer and a linear activation function in the output
+                                                                                                   convergence and lower training error compared to traditional
+               layer, and thus includes no physically based boundary
+                                                                                                   neural network architectures. This work provides a robust
+               constraints..
+                                                                                                   and computationally efficient methodology for enhancing the
+                                                                                                   fidelity of thermal simulations in advanced packaging,
+                    Fig. 5 plots the RMSE loss versus the number of training
+                                                                                                   contributing to more reliable thermal management strategies
+               epochs for both networks. The BPNB model demonstrates a
+                                                                                                   for chiplet-based systems.
+               faster convergence rate and achieves a substantially lower
+               final RMSE. reached within 1% of the final converged
+                                                                                                                                  REFERENCES
+               RMSE loss value of 0.34 in a mere tens of epochs.
+                                                                                                   [1]   Y. Li, K. Wang, H. Zheng, A. Louri and A. Karanth, "Ascend: A
+               Conversely, the conventional BPNN requires hundreds of
+                                                                                                         Scalable and Energy-Efficient Deep Neural Network Accelerator
+               epochs to reach a comparatively high RMSE value of 1.52.
+                                                                                                         With Photonic Interconnects," in IEEE Transactions on Circuits and
+               Consequently, the final converged RMSE of the BPNB
+                                                                                                         Systems I: Regular Papers, vol. 69, no. 7, pp. 2730-2741, July 2022,
+               model is more than four times lower than that of the
+                                                                                                         doi: 10.1109/TCSI.2022.3169953.
+               traditional BPNN.
+               202526thInternational Conference on Electronic Packaging Technology (ICEPT)
+                           Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:50:51 UTC from IEEE Xplore.  Restrictions apply. 
+               [2]   M.-S. Lin et al., "A 7-nm 4-GHz Arm¹-Core-Based CoWoS¹ Chiplet               [11] S. Swarup, S. X. . -D. Tan and Z. Liu, "Thermal characterization of
+                     Design for High-Performance Computing," in IEEE Journal of Solid-                  TSV based 3D stacked ICs," 2012 IEEE 21st Conference on
+                     State Circuits, vol. 55, no. 4, pp. 956-966, April 2020, doi:                      Electrical Performance of Electronic Packaging and Systems, Tempe,
+                     10.1109/JSSC.2019.2960207.                                                         AZ,USA,2012,pp.335-338,doi:10.1109/EPEPS.2012.6457910.
+               [3]   S. Naffziger, K. Lepak, M. Paraschou and M. Subramony, "2.2 AMD              [12] A. Jain, R. E. Jones, R. Chatterjee and S. Pozder, "Analytical and
+                     Chiplet Architecture for High-Performance Server and Desktop                       Numerical Modeling of the Thermal Performance of Three-
+                     Products," 2020 IEEE International Solid-State Circuits Conference -               Dimensional     Integrated   Circuits,"  in   IEEE Transactions       on
+                     (ISSCC),   San Francisco, CA, USA, 2020, pp. 44-45, doi:                           Components and Packaging Technologies, vol. 33, no. 1, pp. 56-63,
+                     10.1109/ISSCC19947.2020.9063103.                                                   March2010,doi:10.1109/TCAPT.2009.2020916.
+               [4]   J. Jiang, K. Parto, W. Cao and K. Banerjee, "Ultimate Monolithic-3D          [13] A. Ziabari and A. Shakouri, "Fast thermal simulations of vertically
+                     Integration With 2D Materials: Rationale, Prospects, and Challenges,"              integrated circuits (3D ICs) including thermal vias," 13th InterSociety
+                     in IEEE Journal of the Electron Devices Society, vol. 7, pp. 878-887,              Conference on Thermal and Thermomechanical Phenomena in
+                     2019, doi: 10.1109/JEDS.2019.2925150.                                              Electronic Systems, San Diego, CA, USA, 2012, pp. 588-596, doi:
+               [5]   C. Okoro, J. W. Lau, F. Golshany, K. Hummler and Y. S. Obeng, "A                   10.1109/ITHERM.2012.6231482.
+                     Detailed Failure Analysis Examination of the Effect of Thermal               [14] C. Ge, M. Tang and J. Mao, "Equivalent Thermal Conductivity
+                     Cycling on Cu TSV Reliability," in IEEE Transactions on Electron                   Modeling of Through-Silicon Via (TSV) Structures," 2018 IEEE
+                     Devices,   vol.   61,    no.   1,   pp.   15-22,    Jan.   2014,    doi:           International Conference on Integrated Circuits, Technologies and
+                     10.1109/TED.2013.2291297.                                                          Applications (ICTA), Beijing, China, 2018, pp. 164-165, doi:
+               [6]   A. Pizzagalli, T. Buisson and R. Beica, "3D technology applications                10.1109/CICTA.2018.8705722.
+                     market trends & key challenges," 25th Annual SEMI Advanced                   [15] Z. Liu, S. Swarup, S. X. . -D. Tan, H. -B. Chen and H. Wang,
+                     Semiconductor Manufacturing Conference (ASMC 2014), Saratoga                       "Compact Lateral Thermal Resistance Model of TSVs for Fast Finite-
+                     Springs,      NY,       USA,       2014,       pp.     78-81,       doi:           Difference Based Thermal Analysis of 3-D Stacked ICs," in IEEE
+                     10.1109/ASMC.2014.6846981.                                                         Transactions on Computer-Aided Design of Integrated Circuits and
+               [7]   B. Dang et al., "Three-Dimensional Chip Stack With Integrated                      Systems,   vol.  33,   no.  10,   pp.  1490-1502, Oct. 2014, doi:
+                     Decoupling Capacitors and Thru-Si Via Interconnects," in IEEE                      10.1109/TCAD.2014.2334321.
+                     Electron Device Letters, vol. 31, no. 12, pp. 1461-1463, Dec. 2010,          [16] W. Tian and H. Cui, "A simplification method of TSV interposer for
+                     doi: 10.1109/LED.2010.2084068.                                                     thermal   analysis   in  3D packages," 2016 17th International
+               [8]   F. Che, H. Y. Li, X. Zhang, S. Gao and K. H. Teo, "Development of                  Conference on Electronic Packaging Technology (ICEPT), Wuhan,
+                     Wafer-Level Warpage and Stress Modeling Methodology and Its                        China, 2016, pp. 820-823, doi: 10.1109/ICEPT.2016.7583256.
+                     Application in Process Optimization for TSV Wafers," in IEEE                 [17] Zhaohui Chen, X. Luo and S. Liu, "Thermal analysis of 3D packaging
+                     Transactions    on Components, Packaging and Manufacturing                         with a simplified thermal resistance network model and finite element
+                     Technology,    vol.  2,  no.   6,  pp.   944-955,   June    2012,   doi:           simulation," 2010 11th International Conference on Electronic
+                     10.1109/TCPMT.2012.2192732.                                                        Packaging Technology & High Density Packaging, Xi'an, China,
+               [9]   Q. Xu, S. Chen, X. Xu and B. Yu, "Clustered Fault Tolerance TSV                    2010, pp. 737-741, doi: 10.1109/ICEPT.2010.5582840.
+                     Planning for 3-D Integrated Circuits," in IEEE Transactions on               [18] Z. Liu, S. Swarup, S. X. . -D. Tan, H. -B. Chen and H. Wang,
+                     Computer-Aided Design of Integrated Circuits and Systems, vol. 36,                 "Compact Lateral Thermal Resistance Model of TSVs for Fast Finite-
+                     no. 8, pp. 1287-1300, Aug. 2017, doi: 10.1109/TCAD.2017.2681080.                   Difference Based Thermal Analysis of 3-D Stacked ICs," in IEEE
+               [10] H. Ding, Wei Wang, Zhiliang Qian, C. -Y. Tsui and L. Lai, "Thermal                  Transactions on Computer-Aided Design of Integrated Circuits and
+                     modeling of three-dimensional integrated circuits considering the                  Systems,   vol.  33,   no.  10,   pp.  1490-1502, Oct. 2014, doi:
+                     thermal removal capability of different TSVs," 2011 3rd Asia                       10.1109/TCAD.2014.2334321.
+                     Symposium on Quality Electronic Design (ASQED), Kuala Lumpur,
+                     Malaysia, 2011, pp. 1-7, doi: 10.1109/ASQED.2011.6111693.
+               202526thInternational Conference on Electronic Packaging Technology (ICEPT)
+                           Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:50:51 UTC from IEEE Xplore.  Restrictions apply. 

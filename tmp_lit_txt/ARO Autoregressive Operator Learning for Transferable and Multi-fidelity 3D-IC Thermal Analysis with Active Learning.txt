@@ -1,0 +1,537 @@
+                     ARO:AutoregressiveOperatorLearningforTransferableand
+                        Multi-fidelity 3D-IC Thermal Analysis with Active Learning
+                                                       1,2,#                              1,2,#                          1                     3                               4
+                             MingyueWang                    , Yuanqing Cheng                   , Weiheng Zeng , Zhenjie Lu , Vasilis F. Pavlidis ,
+                                                                                           WeiW.Xing5‚àó
+                                         1 School of Integrated Circuit Science and Engineering, Beihang University, Beijing, China
+                                                2National Key Laboratory of Spintronics, Beihang University, Hangzhou, China
+                                   3School of Mechanical, Electrical and Control Engineering, Shenzhen University, Shenzhen, China
+                     4 ECE Department, Aristotle University of Thessaloniki, Thessaloniki, Greece. 5 SoMas, The University of Sheffield, U.K.
+                     {Mia_wang,yuanqing,Harryzeng}@buaa.edu.cn,luzhenjie2020@szu.edu.cn,vpavlid@ece.auth.gr,w.xing@sheffield.ac.uk
+                 ABSTRACT                                                                                  simulation and analysis tools, especially for optimization-related
+                 As 3D integrated circuits (ICs) have emerged as a promising di-                           applications, such as thermal-aware floorplan and placement [2].
+                 rection in the semiconductor industry, thermal issues in 3D-ICs                              Thethermal behavior of a chip can be well characterized by a
+                 have become increasingly prominent. In this work, we develop a                            3Dheat conduction partial differential equation (PDE), which is
+                 novel machine learning (ML) thermal analysis framework, namely                            typically solved using Finite Element Analysis (FEA) [3] for chal-
+                 Autoregressive Operator (ARO), to address the pressing need for                           lenging problems with complex geometries. FEA solvers are widely
+                 rapidyethighlyaccuratethermalpredictionsduringthechipdesign                               employed in commercial tools like COMSOL and ANSYS, while
+                 process. Unlike traditional ML-based methods that can only deal                           Finite Difference Method(FDM)iscommonlyimplementedinopen-
+                 with scenarios of well-defined input-output domains, ARO learns                           sourcesolvers[4].Althoughthesesimulatorsyieldaccuratetemper-
+                 the thermal diffusion operator such that it can generalize to any un-                     ature estimations, they demand substantial computing resources,
+                 seencircuits and mapthepowertracestothesteady-state/transient                             whichcanbeprohibitive where optimization is also involved.
+                 thermal spatial-temporal distributions. To further reduce the com-                           Withtherapid development of machine learning (ML) methods
+                 putational demand of data preparation, we equip ARO with multi-                           across various fields showcasing exceptional modeling capabilities,
+                 fidelity fusion to exploit the advantage of computationally cheap                         researchershavemadeimportantstridesinintegratingMLwiththe
+                 low-fidelity simulations and expensive high-fidelity simulations                          3D-IC design process to replace or accelerate traditional thermal
+                 andactive learning to guide the preparation of training data. Our                         solvers [5≈õ8]. For instance, [5] proposed a fast full-chip thermal
+                 results show that, for the unseen testing cases, a well-trained ARO                       numerical analysis method using the enhanced Physical Informa-
+                 can produce accurate results with about 1000√ó speedup compared                            tion Neural Network (PINN) framework, called Thermal-PINN to
+                 to MTA. Moreover, equipped with active learning, ARO achieves at                          emulate the mapping from initial temperature, thermal conduc-
+                 least 25% data reduction compared to pseudo-random strategies.                            tivity, to thermal distribution. However, this work does not delve
+                 KEYWORDS                                                                                  into the influence of power distribution or extend beyond 2D-ICs.
+                                                                                                           Thermal-GANleveragesGenerative Adversarial Networks (GAN)
+                 3D-IC, Thermal Analysis, Fourier Neural Operator, Multi-fidelity                          to achieve real-time prediction of chip thermal distribution using
+                 1 INTRODUCTION                                                                            performancemetricsfrommonitors[6].Thisapproachhasbeenex-
+                                                                                                           panded by integrating an attention mechanism to further improve
+                 Theever-expanding growth of modern IC technology has driven                               accuracy [7]. However, these studies solely focus on real-time chip
+                 functionality and performance improvements in IC design, primar-                          temperature prediction with a well-defined input space, hindering
+                 ily through increasing packaging density and clock frequency. This                        their practical application where the input space cannot be easily
+                 trend of high-density integration on-chip has intensified thermal                         pre-defined.
+                 dissipation challenges, particularly in the context of 3D chip stack-                        To resolve this problem, DeepOHeat [8] integrated operator
+                 ing, which has emerged as a promising solution for addressing the                         learning (OL) and PINN, focusing on learning the mapping from
+                 limitationsofconventional2Dand2.5DICs.However,3Dchipsgen-                                 powermap,heattransfer coefficient to thermal distribution in 3D-
+                 erally suffer from high temperatures and hot spot issues, which can                       ICs. Despite its success in predictions with a varying input space,
+                 undermine the reliability of both interconnects and transistors [1].                      it only considers a simple steady-state problem (maximum 21-by-
+                 Moreover, thermal gradients across the chip can precipitate func-                         21 resolution fields vs. 151-by-151 in our work). Thus, it cannot
+                 tional or timing failures. Thus, thermal analysis is a critical step in                   generalize well to a wider spectrum of high-resolution applications
+                 the IC design flow to ensure reliability, necessitating rapid thermal                     to denote a detailed thermal field. Moreover, it requires a large
+                                                                                                           amountofpre-computedhigh-fidelity data, which is expensive to
+                 ‚àó# Authors contributed equally to this work.                                              generate using general thermal simulation tools.
+                 ‚àó Corresponding author.                                                                      Inspired by the fact that thermal simulations can be run at low-
+                 This work is supported in part by Beijing Municipal Natural Science Foundation No.        fidelity to provide training data at reduced computational cost, GAR
+                 Z230004, National Natural Science Foundation of China under Grant No. 92373205,
+                 ShenzhenScienceandTechnologyProgramunderGrantNo.SGDX20230116093303006                     [9] proposed a universal framework based on Gaussian Processes
+                 and KJZD20231023100201003, the Strategic Priority Research Program of Chinese             (GP) for multi-fidelity fusion of high-dimensional fields. However,
+                 AcademyofSciencesunderGrantNo.XDB44000000andtheFundamentalResearch                        its reliance on GP makes it difficult to deal with a function input
+                 Funds for the Central Universities.
+                 Permission to make digital or hard copies of all or part of this work for personal
+                 or classroom use is granted without fee provided that copies are not made or
+                 distributed for profit or commercial advantage and that copies bear this notice
+                 and the full citation on the first page. Copyrights for components of this work
+                 owned by others than the author(s) must be honored. Abstracting with credit is
+                 permitted. To copy otherwise, or republish, to post on servers or to redistribute
+                 to lists, requires prior specific permission and/or a fee. Request permissions
+                 from Permissions@acm.org.
+                 ICCAD '24, October 27‚Äì31, 2024, New York, NY, USA
+                 ¬© 2024 Copyright is held by the owner/author(s). Publication rights licensed to
+                 ACM.
+                 ACM 979-8-4007-1077-3/24/10‚Ä¶
+                 https://doi.org/10.1145/3676536.3676713
+                                                                                                                                                                              1,2,#                           1,2,#                       1                  3                          4
+                                                                                                                                                        MingyueWang                 , Yuanqing Cheng               , Weiheng Zeng , Zhenjie Lu , Vasilis F. Pavlidis ,
+                                                                                                                                                                                                                                                                       WeiW.Xing5
+                            space, and it may not be well-suited for thermal distribution pre-
+                            diction in 3D-ICs. A multi-fidelity deep learning approach that
+                            leverages low-fidelity data to enhance high-fidelity models has
+                            been proposed [10]. Lyu et al. [11] introduced Fourier Neural Oper-
+                            ator (FNO) with multi-fidelity fusion, harnessing FNO‚Äôs inherent
+                            resolution-invariant capability to easily adapt to different resolu-
+                            tion scenarios for the inputs. Due to the deterministic nature of
+                            deep learning models, most of these methods still require extensive
+                            trainingdata,whichishardtoobtainforour3D-ICthermalanalysis.
+                            Recent work by Li et al. [12] introduced MRA-FNO, which incor-
+                            porated active learning to guide the selection of valuable samples                                                                            Figure 1: The workflow of 3D-IC thermal analysis.
+                            for multi-fidelity models, significantly reducing the computational
+                            cost of data preparation. However, MRA-FNO is designed for 2D or                                                                     whereÌ†µÌ±ê(r),Ì†µÌºÖ(r) are the heat capacity and the thermal conductivity
+                            3Dproblemsandscalespoorlyto4D(threespacedimensions and                                                                               at the point r respectively.Ì†µÌ±á(r,Ì†µÌ±°),Ì†µÌ±ù(r,Ì†µÌ±°) are the temperature and
+                            time dimension) transient thermal analysis.                                                                                          power density at the point r and time Ì†µÌ±° respectively. Assume a
+                                 For 3D-IC thermal analysis, the existing ML-based methods are                                                                   homogeneousinitial condition atÌ†µÌ±° = 0 for the IC, i.e.,
+                            limited in their ability to generalize to unseen circuits and require a                                                                                                                Ì†µÌ±á (r, 0) = Ì†µÌ±á ,                                                   (2)
+                            large amount of high-fidelity data. To this end, we propose Autore-                                                                                                                                      0
+                                                                                                                                                                 Theboundarycondition is defined as:
+                            gressiveOperatorlearning(ARO),anovelframeworkthatcombines                                                                                                          Ì†µÌºïÌ†µÌ±á (r, Ì†µÌ±° )      (Ì†µÌ±ù0(r,Ì†µÌ±°)                      Ì†µÌ±úÌ†µÌ±õ   (Ì†µÌºïÌ†µÌ∞∏)1
+                            the latest advancements in AI for physical field emulation, i.e., FNO                                                                                      Ì†µÌºÖ (r)       Ì†µÌºïn       =                                                    ,                  (3)
+                                                                                                                                                                                                                    Ì†µÌºÇ (Ì†µÌ±á   ‚àíÌ†µÌ±á(r,Ì†µÌ±°))           Ì†µÌ±úÌ†µÌ±õ   (Ì†µÌºïÌ†µÌ∞∏)
+                            and Generalized Autoregressive model (GAR), to learn the thermal                                                                                                                              0                                      2
+                            diffusion operator with multi-fidelity simulation results. Moreover,                                                                 where Ì†µÌºïÌ†µÌ±á(r,Ì†µÌ±°) is the derivative of temperature along the normal
+                                                                                                                                                                                  Ì†µÌºïn
+                           we equip ARO with active learning to guide the preparation of                                                                         vector of the chip surface. Ì†µÌ±ù0(r,Ì†µÌ±°) represents the power density,
+                            training data, which significantly reduces the computational cost                                                                    andÌ†µÌºÇ represents the thermal transmissivity. Boundaries around the
+                            of data preparation. The novelty of this work includes:                                                                              chip are represented as (Ì†µÌºïÌ†µÌ∞∏)1, while the top and bottom surfaces
+                                     ‚Ä¢ Anovelautoregression operator learning framework, ARO,                                                                    are denoted as (Ì†µÌºïÌ†µÌ∞∏)2. The thermal analysis utilizes FEA to solve Eq.
+                                          is proposed to learn the implicit thermal diffusion operator                                                           (1) and obtain the temperature distributionÌ†µÌ±á(r,Ì†µÌ±°).
+                                          with multi-fidelity simulation data, demonstrating a data                                                              2.2          ProblemDefinition
+                                          reduction of at least 23% compared to traditional FNOs                                                                 AsisshowninFig.1,withthechipstructureandlayoutinformation
+                                          while providing similar prediction accuracy.                                                                           predetermined, we consider Ì†µÌ±ù(r,Ì†µÌ±°) as the input of thermal analysis,
+                                     ‚Ä¢ AROisequippedwithactivelearning to guide the prepa-                                                                       aiming to derive the outputÌ†µÌ±á(r,Ì†µÌ±°) in Eq. (1).
+                                          ration of training data, further improves the RMSE perfor-                                                                  Operator learning provides a new perspective for thermal anal-
+                                          mancewithaminimum25%datareductioncomparedto                                                                            ysis distinguished from traditional numerical methods like FEA,
+                                          randomchoosingstrategies.                                                                                              as it does not directly solve Eq. (1) but seeks the internal connec-
+                                     ‚Ä¢ Comparedtoconventional simulation-based thermal anal-                                                                     tion between inputs and outputs through massive observations. In
+                                          ysis, ARO achieves high accuracy (a coefficient of determi-                                                            operator learning, we focus on the non-linear mapping:
+                                          nation over 0.98) with a 1000√ó speedup.                                                                                                                      Ì†µÌ∞∫‚àó : P(Ì†µÌ∞∑;R) ‚Üí T(Ì†µÌ∞∑;R),
+                            Therest of the paper is organized as follows: Section 2 introduces                                                                                                                                                                                        (4)
+                            the background of ARO. Section 3 delineates proposed approaches                                                                                                                                 Ì†µÌ±ù ‚Ü¶‚Üí Ì†µÌ±á,
+                                                                                                                                                                 whereÌ†µÌ∞∑ = Ì†µÌ∞∏√ó[0,Ì†µÌ±°                       ], P(Ì†µÌ∞∑;R) isafunctionspace,whoseelement
+                            to enabling ARO. Section 4 describes the experiment results and                                                                                                       Ì†µÌ±öÌ†µÌ±éÌ†µÌ±•
+                            Section 5 draws our conclusion.                                                                                                      Ì†µÌ±ù is a function mapping (r,Ì†µÌ±°) ‚àà Ì†µÌ∞∑ to power density Ì†µÌ±ù(r,Ì†µÌ±°) ‚àà R;
+                                                                                                                                                                 T(Ì†µÌ∞∑;R) is also a function space, whose element Ì†µÌ±á is a function
+                            2 BACKGROUND                                                                                                                         mapping (r,Ì†µÌ±°) ‚àà Ì†µÌ∞∑ to temperatureÌ†µÌ±á(r,Ì†µÌ±°) ‚àà R.
+                                                                                                                                                                      Ourgoalis to approximateÌ†µÌ∞∫‚àó in Eq. (4) by using datasets of ob-
+                            2.1         ThermalModelingof3DIntegratedCircuits                                                                                    servations D = {Ì†µÌ±ùÌ†µÌ±ó(r,Ì†µÌ±°),Ì†µÌ±áÌ†µÌ±ó (r,Ì†µÌ±°)}Ì†µÌ∞æ                          , whereÌ†µÌ∞æ is the size of dataset.
+                                                                                                                                                                                                                              Ì†µÌ±ó =1
+                            3D-IC thermal analysis focuses on simulating the heat transfer                                                                       Amongmethodsofoperatorlearning, Fourier neural operator per-
+                            process in 3D integrated circuits. Utilizing thermal analysis tools,                                                                 fectlyfitswithourproblem,foritisfasttoevaluatethroughtraining,
+                            the temperature fluctuations are determined at each location on                                                                      andit is resolution-invariant, compensating for the speed-accuracy
+                            the chip over time, given the power traces of each component and                                                                     trade-off found in traditional numerical methods.
+                            other key physical information of the system, e.g., chip layout and                                                                  2.3          Fourier Neural Operator
+                            stacking geometry. Fig. 1 illustrates the workflow of 3D-IC thermal                                                                  Mainstream neural network research has traditionally focused on
+                            analysis.
+                                 Defining Ì†µÌ∞∏ ‚äÇ R3 as the IC domain, and r ‚àà Ì†µÌ∞∏ as the location of a                                                              the challenge of learning the mappings within finite-dimensional
+                            point on the chip, the governing equation in IC thermal analysis,                                                                    Euclidean spaces. Recent research has broadened the scope to in-
+                            serving as thermal diffusion equation, can be expressed as follows:                                                                  clude the exploration of neural operators capable of learning map-
+                                                           Ì†µÌºïÌ†µÌ±á (r, Ì†µÌ±° )                                                                                         pings within function spaces. A notable advancement in this field
+                                                   Ì†µÌ±ê (r)       Ì†µÌºïÌ†µÌ±°      =Ì†µÌ±ù(r,Ì†µÌ±°) + ‚àá ¬∑ (Ì†µÌºÖ(r)‚àáÌ†µÌ±á (r,Ì†µÌ±°)),                                     (1)             was pioneered by [13], which introduced a novel class of neural
+                             ARO:Autoregressive Operator Learning for Transferable and Multi-fidelity 3D-IC Thermal Analysis with Active Learning
+                                       p(r,t)           Q             Fourier                           Fourier             Q             T(r,t)                       alongside limited, expensive high-fidelity data. In thermal analy-
+                                                          1           Layer 1                          Layer T                 2                                       sis, low-fidelity data is acquired through sparse meshing, while
+                                                                                                                                                                       high-fidelity data is obtained via fine meshing of the spatial domain.
+                                                                                                                                                                       Wedenotethelow-fidelity data as D = {X ,Y } and high-fidelity
+                                                               Ì†µÌ≥ï                                             !"                                                                                                                              Ì†µÌ±ô          Ì†µÌ±ô    Ì†µÌ±ô
+                                                                                       R                    Ì†µÌ≥ï                                                         data as D = {X ,Y }. Here, x ‚àà X , x ‚àà X refers to the input
+                                                                                                                                                                                          ‚Ñé            ‚Ñé      ‚Ñé                    Ì†µÌ±ô        Ì†µÌ±ô     ‚Ñé          ‚Ñé
+                                                                                                                                      œÉ                                functionÌ†µÌ±ù(r,Ì†µÌ±°) while y ‚àà Y , y                               ‚àà Y referstotheoutputfunction
+                                             v(r,t)                                                                    +                                                                                           Ì†µÌ±ô       Ì†µÌ±ô    ‚Ñé          ‚Ñé
+                                                                                      W                                                                                Ì†µÌ±á (r, Ì†µÌ±°). Inspired by the latest work in multi-fidelity learning with
+                                                                                                                   Fourier  Layer                                      tractable likelihood [9], we adopt an autoregressive structure:
+                                                                                                                                                                                                              Ì†µÌ∞π‚Ñé(x ) = Ì†µÌ∞πÌ†µÌ±ô (x ) + Ì†µÌ∞πÌ†µÌ±ü (x ),                                                   (6)
+                               Figure 2: The architecture of the Fourier neural operator.                                                                                                                              ‚Ñé                ‚Ñé                ‚Ñé
+                                                                                                                                                                       whereÌ†µÌ∞π‚Ñé represents the target high-fidelity function. Ì†µÌ∞πÌ†µÌ±ô is the low-
+                                                                                                             l                                                         fidelity function and Ì†µÌ∞πÌ†µÌ±ü is the residual function, both of which is ap-
+                                                                                                           F
+                                                    X                     Fourier                  Fourier                                 Y                           proximated by two separate FNO models. We name the framework
+                                                      l       Fourier                  Fourier                                               l
+                                                               Layer       Layer        Layer       Layer                                                              for determining Ì†µÌ∞π‚Ñé as Autoregressive Operator Learning (ARO).
+                                                                                                                                                                            Fig. 3 shows the general framework of ARO, we first train Ì†µÌ∞πÌ†µÌ±ô
+                                                                                                             l                                                                                                  Ì†µÌ±ü
+                                                                                                           F(X )                                   Y
+                                                                                                                 h                                    h                with D , then train Ì†µÌ∞π                       with the differences Y , which is obtained
+                                                                                                                                                                                     Ì†µÌ±ô                                                                       Ì†µÌ±ü
+                                                                                                            r                                                          bysubtracting Y and the prediction Ì†µÌ∞πÌ†µÌ±ô(X ) from trained Ì†µÌ∞πÌ†µÌ±ô with
+                                                                                                          F                                                                                            ‚Ñé                                                ‚Ñé
+                                                    X                                                                                                                                                                             Ì†µÌ±ô
+                                                      h       Fourier     Fourier      Fourier     Fourier                                                             X . Remember that Y and Ì†µÌ∞π (X ) are collections of functions
+                                                                                                    Layer                                   Y                             ‚Ñé                                       ‚Ñé                      ‚Ñé
+                                                               Layer       Layer        Layer                                                 r                        defined in the same space due to the resolution-invariance of FNO,
+                                                                                                                                                                       so the subtraction is always feasible. For inference, the unseen
+                                                                                                                    Training            Predicting                     high-fidelity data X is input into the trained Ì†µÌ∞πÌ†µÌ±ô and Ì†µÌ∞πÌ†µÌ±ü models
+                                                                                                                                                                                                              ‚Ñé                                ÀÜ
+                             Figure 3: The general framework of ARO employing multi-                                                                                   simultaneously while the predictive Y is obtained by adding the
+                                                                                                                                                                       outputs of the two models together.                                       ‚Ñé
+                             fidelity fusion.                                                                                                                          3.2          Uncertainty Quantification For ARO
+                             operators known as the Fourier neural operator (FNO). The opera-                                                                          In the domain of thermal analysis, grasping the range of temper-
+                             tor framework is designed to excel in the task of mapping initial                                                                         ature variations alongside their associated uncertainties proves
+                             conditions to solutions for PDEs.                                                                                                         immenselybeneficial, especially in rectifying potential problems in
+                                  Specifically, FNO is constructed by stacking Fourier layers, as
+                             showninFig.2.Assuming{Ì†µÌ±£Ì†µÌ±õ}Ì†µÌ±Å                                     beaseriesoffunctionsmapping                                             chip design, which enables more precise and error-resilient design
+                                                                                       Ì†µÌ±õ=0                                                                            adjustments in thermal management systems for chips. In order
+                                         Ì†µÌ±ë
+                             Ì†µÌ∞∑ to R , the workflow of FNO can be mainly considered as an itera-                                                                       to introduce uncertainty quantification in ARO, we employ the
+                             tive scheme {Ì†µÌ±£Ì†µÌ±õ ‚Ü¶‚Üí Ì†µÌ±£Ì†µÌ±õ+1}Ì†µÌ±Å‚àí1. During this process, the input Ì†µÌ±ù(r,Ì†µÌ±°)
+                                                                            Ì†µÌ±õ=0                                                                                       MonteCarlodropout(MC-dropout) framework for our low- and
+                             is first transformed to Ì†µÌ±£0(r,Ì†µÌ±°) = Ì†µÌ±Ñ1(Ì†µÌ±ù(r,Ì†µÌ±°)) by a fully-connected                                                                    high-fidelity FNO models.
+                                                                  Ì†µÌ±ë
+                             layer Ì†µÌ±Ñ1 : R ‚Üí R (Ì†µÌ±ë > 1). The Ì†µÌ±£0(r,Ì†µÌ±°) goes through several                                                                                 MC-dropoutwasfirst put forward by [15], which demonstrated
+                             iterations by                                                                                                                             that the use of dropout (and its variants) in neural networks can
+                                                  Ì†µÌ±£      (r,Ì†µÌ±° ) = Ì†µÌºé (Ì†µÌ±ä Ì†µÌ±£       (r,Ì†µÌ±° ) + F‚àí1(Ì†µÌ±Ö ¬∑ FÌ†µÌ±£ )(r,Ì†µÌ±°)),                                   (5)
+                                                   Ì†µÌ±õ+1                           Ì†µÌ±õ                                  Ì†µÌ±õ                                               be interpreted as a Bayesian approximation of the well-known
+                                                             Ì†µÌ±ë     Ì†µÌ±ë                                                                Ì†µÌ±ë
+                             whereÌ†µÌ±ä ‚àà L(R ;R ) is a linear transformation on R . F is the                                                                             probabilistic model, Gaussian Process (GP). Furthermore, it has
+                             Fourier transform of a function and F‚àí1 is its inverse transform. Ì†µÌ±Ö                                                                      given a complete theoretical treatment of the link between GP and
+                                                                                                                                                  Ì†µÌ±ë
+                             is the Fourier transform onthelowerFouriermodes,whileÌ†µÌºé:R ‚Üí                                                                               dropout and examined uncertainty obtained by MC-dropout on the
+                                Ì†µÌ±ë
+                             R represents a non-linear activation function. After K iterations,                                                                        task of regression and classification.
+                                                                                                                                              Ì†µÌ±ë                            For implementation, we maintain the original architecture of
+                             Ì†µÌ±£Ì†µÌ±õ (r, Ì†µÌ±°) is transferred to the outputÌ†µÌ±á (r,Ì†µÌ±°) by a layer Ì†µÌ±Ñ2 : R                                               ‚ÜíR                    the ARO unchanged, randomly dropping ten percent of the con-
+                             andÌ†µÌ±á(r,Ì†µÌ±°) = Ì†µÌ±Ñ2(Ì†µÌ±£Ì†µÌ±õ(r,Ì†µÌ±°)). The fundamental feature of FNO is its                                                                      nections after each neural network layer. A dropout rate of 10%
+                             utilization of the Fourier layer, which can accommodate functions
+                             discretized in any manner. This is enabled by learning parameters                                                                         implies that, during the forward propagation process of the model,
+                             directly in Fourier space, implying that analyzing a function in                                                                          each connection of every neuron has a 10% chance of being ran-
+                             physical space is akin to projecting it onto a defined wave function                                                                      domly deactivated. Dropout is applied during both the training
+                             across space. Such a property renders FNO resolution-invariant                                                                            andinference stages. Once the model is trained, running the model
+                             and capable of adjusting to diverse input and output resolutions                                                                          under the dropout mode is equivalent to making predictions us-
+                             seamlessly, without necessitating alterations to the model.                                                                               ing samples from the posterior distribution for the weight in the
+                             3 PROPOSEDAPPROACH                                                                                                                        deep learning model, enabling us to quantify the confidence of the
+                             3.1          Multi-fidelity Enabled FNO - ARO                                                                                             modelprediction. Additionally, it enables the application of active
+                                                                                                                                                                       learning strategies, which rely on accurate quantification of the
+                            While neural operator frameworks excel at modeling intricate phe-                                                                          model‚Äôs weak regions, i.e., the areas where predictions are made
+                             nomena, they typically demand substantial volumes of data for                                                                             with large uncertainty or large deviations.
+                             effective training, which is frequently unavailable or prohibitively                                                                      3.3          Active learning
+                             expensive.Thischallengecanbemitigatedthroughtheimplementa-                                                                                Themulti-fidelity approach proves effective in lowering the compu-
+                             tion of multi-fidelity operator learning [14], a strategy that involves                                                                   tational expense involved in data preparation within ARO. Never-
+                             training the model using abundant, cost-effective low-fidelity data                                                                       theless, it requires a substantial amount of labeled data for training
+                                                                                                            1,2,#              1,2,#             1          3                 4
+                                                                                              MingyueWang      , Yuanqing Cheng    , Weiheng Zeng , Zhenjie Lu , Vasilis F. Pavlidis ,
+                                                                                                                                                                   WeiW.Xing5
+                 and is thus computationally expensive. To further reduce the data                  of low- to high-fidelity ratios. This is crucial, as adhering to training
+                 preparation cost, we introduce active learning (AL) to guide the                   modelsatauniformratiomaysometimeslimitmodelperformance.
+                 data preparation process and enables the model to be refined sys-                     Wedetail the specific active learning strategy in Algorithm 1.
+                 tematically with minimal labeled data. AL aims to optimize the                     Initially, we randomly select Ì†µÌ±ò samples of each fidelity from the
+                 data sampling process and expedite the training phase by learning                  data that are not used in training to construct the candidate pool P.
+                 an efficient scheme for data selection. Its primary objective is to                Subsequently, we utilize the trained ARO model to get the predic-
+                 strategically identify the most informative data points, thereby en-               tions of samples in P. Then, we apply I(¬∑) to compute the mutual
+                 hancing the learning process and minimizing the labeled data for                   information values (referred as Ì†µÌ±ÄÌ†µÌ∞º). We arrange the samples in de-
+                 model training. Li et al.[12] introduced a multi-fidelity active learn-            scending order based on their Ì†µÌ±ÄÌ†µÌ∞º and select the top samples within
+                 ingmethodnamedmulti-resolutionactivelearning(MRA)basedon                           cost budget Ì†µÌ∞∂, along with their corresponding labels to join the
+                 mutual information. MRA efficiently computes mutual information                    subsequent training. Specifically, a balancing factor Ì†µÌºÜ is introduced
+                 byexploitingthecovariancematrixstructureandemployingmatrix                         whencomputetheÌ†µÌ±ÄÌ†µÌ∞º of high-fidelity samples. That is because the
+                 determinant lemma, which addresses concerns regarding computa-                     difference in Ì†µÌ±ÄÌ†µÌ∞º of different fidelity samples in the early stages is
+                 tional overhead. Inspirited by [12], we use the following equation                 minimal. If directly dividing the Ì†µÌ±ÄÌ†µÌ∞º by corresponding time cost of
+                 as an acquisition function to evaluate the mutual information of                   each fidelity to reflect the cost difference, it may result in excessive
+                 twopredictions, y and y :                                                          penalization of high-fidelity samples. Ì†µÌºÜ is set to gradually adjust to
+                                      1       2
+                          I(y ,y |D) = H(y |D) +H(y |D) ‚àíH(y ,y |D).                                the real-time cost ratio (the time taken to generate y relative to
+                              1  2             1            2            1   2           (7)        the time taken to generate y ) during training.              Ì†µÌ±ô
+                 H(¬∑) is the closed form of mutual information calculation func-                                                    ‚Ñé
+                 tion. Assuming multi-fidelity dataset D consists of low-fidelity                   Algorithm1ActiveLearningforARO
+                 dataset denoted as D = {X ,Y }, and high-fidelity dataset as
+                                           Ì†µÌ±ô       Ì†µÌ±ô  Ì†µÌ±ô
+                 D ={X ,Y }.RepresentingthepredictionofAROforlow-fidelity                           Input: Original multi-fidelity training dataset D, trained ARO, active
+                    ‚Ñé       ‚Ñé   ‚Ñé
+                     ÀÜ                                    ÀÜ                ÀÜ   [ ÀÜ   ÀÜ ]                learning timesÌ†µÌ±á, cost budgetÌ†µÌ∞∂, candicate size Ì†µÌ±ò
+                 byy ,prediction of high-fidelity by y , together as y = y ;y           , we
+                      Ì†µÌ±ô                                   ‚Ñé                      Ì†µÌ±ô ‚Ñé              Output: Optimized ARO
+                 first consider to calculate the last term of Eq. (7):
+                                    ÀÜ     1                 ÀÜ                            (8)         1: for Ì†µÌ±° = 1 toÌ†µÌ±á do
+                                 H(y) = 2log(det[Cov(y|D)]) +const.                                  2:     RandomlyselectÌ†µÌ±ò untrained samples of each fidelity as P
+                 ByemployingaMonte-Carloapproximationandmatrixdetermi-                               3:     Get predictions Y‚Ä≤ for samples in P using ARO
+                 nant lemma, we can get the following calculation,                                   4:     for y in Y‚Ä≤ do
+                                                                                                     5:        Ì†µÌ±ÄÌ†µÌ∞º (y) = I(y,Y‚Ä≤|P)
+                                     ÀÜ                          T
+                       log(det[Cov(y|D)]) = log(det[Œõ+BB ])                               (9)        6:     endfor
+                                              =log(det[Œõ]) +log(det[I+BTŒõ‚àí1B]).                      7:     Sort samples in P by Ì†µÌ±ÄÌ†µÌ∞º in descending order
+                 Amongthem,Iistheidentitymatrix. AssumingÌ†µÌ±Ä is the times of                          8:     X‚Üêtopsamplesfromsorted P withoutexceedingÌ†µÌ∞∂
+                 repeating prediction, then we can obtain an ensemble of the point                   9:     D‚ÜêD‚à™X
+                                                             ‚àó      ‚àó 	                            10:     Retrain ARO on D
+                 estimates of the model parameters, Ì†µÌºÉ1,...,Ì†µÌºÉÌ†µÌ±Ä . Œõ is a diagonal                  11: end for
+                 matrix expressed as:
+                                            Ì†µÌ±Ä                  Ì†µÌ±Ä
+                             Œõ=diag( 1 ‚àëÔ∏ÅÌ†µÌºé2‚àó(x ) ¬∑ I, 1 ‚àëÔ∏Å Ì†µÌºé2‚àó(x ) ¬∑ I),
+                                        Ì†µÌ±Ä      Ì†µÌºÉ   Ì†µÌ±ô    Ì†µÌ±Ä       Ì†µÌºÉ   ‚Ñé                          4 EXPERIMENTALRESULTS
+                                           Ì†µÌ±ö=1   Ì†µÌ±ó          Ì†µÌ±ö=1    Ì†µÌ±ó                 (10)
+                                      1             ÀÜ                  ÀÜ                          4.1    ExperimentSetup
+                             B= ‚àö           Ì†µÌΩÜ1 ‚àí E(y|D),...,Ì†µÌΩÜÌ†µÌ±Ä ‚àí E(y|D) ,
+                                 ÀÜ Ì†µÌ±Ä ‚àí 1                                                           Wechosethreedifferent 3D-ICs for thermal evaluations, their sizes
+                 Especially, E(y|D) is calculated by                                                are detailed in Table 1. Chip1 is a quad-core architecture imple-
+                                                           Ì†µÌ±Ä
+                                              ÀÜ        1 ‚àëÔ∏Å                                         mented by three device layers. The core used is alpha 21264 ev6
+                                           E(y|D) = Ì†µÌ±Ä Ì†µÌ±ö=1Ì†µÌΩÜÌ†µÌ≤é,                         (11)       microprocessor [16], which is located on the upper layer close to
+                 whereÌ†µÌΩÜ     = Ì†µÌºá ‚àó (x );Ì†µÌºá ‚àó (x ).Additionally,itisstraightforward               heatsink. L2 cache is located on the other two device layers. The
+                          Ì†µÌ±ö      Ì†µÌºÉÌ†µÌ±ö  Ì†µÌ±ô   Ì†µÌºÉÌ†µÌ±ö ‚Ñé                                                 address and data bus between L2 cache and processor core are con-
+                 to use a similar method to compute H(y |D) and H(y |D).
+                                                               1               2                    nected by TSVs [17]. The detailed 3D stacking structure is shown
+                    Byemployingacquisition function I(¬∑), we can get the mutual                     in Fig. 4. Chip2 is a single core alpha 21264 ev6 microprocessor
+                 information of each x and x . Mutual information becomes partic-
+                                         Ì†µÌ±ô      ‚Ñé                                                  with 2 layers. It has similar 3D structure as Chip1. One layer has
+                 ularly crucial when we‚Äôve depleted our limited dataset to train ARO                the processor core and L1 cache, and the other layer is L2 cache.
+                 but seek to generate additional data to further refine its accuracy.               Chip3 is an eight-core microprocessor with the similar architec-
+                 Typically, we can efficiently generate various power maps x and
+                                                                                      Ì†µÌ±ô            ture as Chip2 with 2 stacking device layers. One layer has four L2
+                 x , but obtaining the corresponding thermal distributions y and
+                   ‚Ñé                                                                  Ì†µÌ±ô            cachebanks,andtheotherlayerhaseightcoresandL1cache.MTA
+                 y is very time-consuming, often taking more than hundred times
+                   ‚Ñé                                                                                simulator [18] was used in thermal simulations to generate the
+                 longer. Hence, employing strategies such as mutual information to                  training data because of its fast running speed and high accuracy
+                 assess the values of x and x for training, followed by promptly
+                                          Ì†µÌ±ô      ‚Ñé                                                 comparedtovendortools(e.g.,COMSOL).Thedatagenerationwas
+                 obtainingthecorrespondingy andy ,wouldgreatlybenefitmodel
+                                                   Ì†µÌ±ô     ‚Ñé                                         run on a server with Intel Xeon CPU with 128GB memory. Our
+                 training. Additionally, employing this strategy can guide the fusion               training model was constructed with PyTorch framework and ran
+                                                                                                    onaNVIDIAA100formodeltraining.
+                ARO:Autoregressive Operator Learning for Transferable and Multi-fidelity 3D-IC Thermal Analysis with Active Learning
+                Table 1: The geometric structures (mm) of three 3D ICs used                 Table 2: Resolution and runtime cost ratio for each 3D-IC
+                as our test cases.                                                          undermulti-fidelity grids.
+                                                                                                                                                          *
+                                         Chip1           Chip2          Chip3                     Dataset      Resolution   TimeCostRatio         Runtime on
+                    Device Layer    12.4√ó12.76√ó0.15    16√ó16√ó0.15    10√ó10√ó0.052                                                              High-fidelity Grid (s)
+                     TIMLayer       12.4√ó12.76√ó0.02    16√ó16√ó0.02    10√ó10√ó0.02                Chip1-Steady      85√ó 85,        1: 4.805             479.1
+                        TSV                    diameter: 0.01; pitch: 0.01                    Chip1-Transient   151√ó 151        1: 4.958            1002.5
+                    Heat Spreader                     30√ó30√ó1.0                                Chip2-Steady      55√ó 55,        1: 4.465             236.2
+                      Heat Sink                       60√ó60√ó6.9                               Chip2-Transient    87√ó 87         1: 4.518             461.3
+                                                                                               Chip3-Steady      39√ó 39,        1: 3.818             136.6
+                                                                                              Chip3-Transient    63√ó 63         1: 3.910             227.5
+                                                                                              * Runtimeisaveragedbymultiplethermalsimulationstoeliminatetimefluctuations.
+                                                                                            64. However, for smaller-scale datasets such as Chip2-Steady and
+                                                                                            Chip3-Steady, we set the mode to [12, 12, 2] with a width of 32. As
+                                                                                            transient datasets include an additional time dimension, the mode
+                                                                                            for Chip1-Transient was [24, 24, 2, 2], while for Chip2-Transient
+                                                                                            and Chip3-Transient, it was [12, 12, 2, 2]. All FNOs referred in the
+                                                                                            experiments were composed of four Fourier layers.
+                                                                                               TrainingandTesting. WetrainedAROby800epochswithabatch
+                                                                                            size of 20 to guarantee convergence. Meanwhile, we set Adam op-
+                Figure 4: Structure and Floorplan of Chip1. (a) The stacking                timizer with a learning rate of 10‚àí3 and weight decay of 10‚àí4.
+                structure of Chip1 with four processing cores. (b) Detailed                 Learning rate decay was scheduled every 100 epochs with a re-
+                layout of one core.                                                         duction factor of 0.5. L2 norm loss was utilized for optimization.
+                                                                                            Thetesting samples used in experiments were untrained samples
+                   Generating power maps as input. We obtained the power trace              reserved from the overall samples, sizes of which were kept as 500.
+                of each functional block using Synopsys Power Compiler. Based                  Indicators. To assess the performance of ARO, we considered
+                onthese traces, we generated more power profiles as our training            Root MeanSquareError(RMSE)duetoitsgeneralapplication in
+                data. In order to makereasonablepowerdistributions,wegenerated              regression problems. We also introduced the R-squared (R2) metric,
+                powertraceofeachfunctionalblockwithinthesamerangeasthose                    whichranges from 0 to 1, with higher values indicating a superior
+                obtained by Power Compiler. As for transient analysis, the power            ability to explain the variance of observed data. Besides, we consid-
+                trace was collected for 9Ì†µÌ±öÌ†µÌ±† with a fixed time step ŒîÌ†µÌ±° = 1Ì†µÌ±öÌ†µÌ±†.           ered the average temperature error (Avg.Terr) and maximum tem-
+                   Obtaining temperature maps as output. We utilized MTA to ob-             perature error (Max.Terr) as indicators to assess our models. Mean
+                tain temperature distributions. In our experiments, each dataset            absolute percentage errors (MAPEs) and Peak absolute percentage
+                consisted of power and temperature distributions of the 3D-IC with          errors (PAPEs) were also included in experiments. These metrics
+                both low-fidelity and high-fidelity grids. The simulation time ratios       together provided a comprehensive assessment of the model‚Äôs per-
+                of low-fidelity and high-fidelity grids are shown in Table 2, which         formance.
+                presents the runtime ratios of both steady and transient thermal            4.2     ComparisonstoSingle-fidelity Approaches
+                simulations. The runtime corresponding to high-fidelity simulation          To demonstrate the effectiveness of the multi-fidelity fusion ap-
+                is listed in the last column in this table. We considered the entire        proach and the rationality of the ARO architecture, we compared
+                coreofChip3asasinglefunctionalblocktosavethermalsimulation                  AROwiththesingle-fidelity FNO models under the same time cost.
+                time, while each component of the core in Chip1 and Chip2 was               AsmentionedinSection 4.1, we considered the ratio of time spent
+                considered as individual functional blocks. Therefore Chip3 has a           in generating low- to high-fidelity data as 1:4. In other words, the
+                lower grid resolution compared to Chip1 and Chip2. Additionally,            time required to generate one high-fidelity sample can generate
+                wetookthetimerequiredtogeneratealow-fidelitytrainingdataset                 four low-fidelity samples.
+                as one unit of the runtime cost , and for convenience, we uniformly            Experiments were conducted on six datasets, and the outcomes
+                consider the low- to high-fidelity data time cost ratio to be 1:4 in        areillustrated in Fig. 5. In this context, FNO_low refers to the model
+                the following experimental results.
+                   AROSettings. In the FNO, the mode parameter determines the               trained exclusively on low-fidelity data, while FNO_high denotes
+                frequencyspaceutilizedduringtheFouriertransformofthespecific                the model trained solely on high-fidelity data. ARO represents
+                dimension. Setting the mode number lower implies that it captures           the model trained using multi-fidelity fusion data. To discern the
+                lower frequency modes while truncating higher frequency modes.              influence of various levels of fidelity fusion, we established three
+                For steady-state analysis and transient thermal analysis, which in-         fidelity fusion schemes with ratios of 2:1, 3:1, and 4:1, denoting the
+                volve three-dimensional and four-dimensional spaces respectively,           ratio of low- to high-fidelity data samples. The experimental results
+                the corresponding number of modes is three and four, respectively.          indicatethatfusionschemeswiththesethreeratiosaresignificantly
+                Specifically, in our experiment, for steady-state datasets like Chip1-      moreeffective than the single-fidelity trained model. In fact, if we
+                Steady, the mode of each FNO was set to [24, 24, 2] with a width of         continue to increase the amounts of data in each experiment of
+                                                                                                                                                                           1,2,#                          1,2,#                      1                  3                          4
+                                                                                                                                                     MingyueWang                , Yuanqing Cheng               , Weiheng Zeng , Zhenjie Lu , Vasilis F. Pavlidis ,
+                                                                                                                                                                                                                                                                  WeiW.Xing5
+                                                             Figure 5: RMSE performance comparisons of single-fidelity FNO and ARO on three 3D-ICs.
+                                                                                          Table 3: The detailed performances of AROs on three 3D-ICs.
+                                                  Design           TimeCost                #Low-#High                                         RMSE                 R2           Mean.Terr(K)                 Time(s)           Improvement(%)*
+                                                   Chip1                 4000                 1333-666                    Steady              0.6125            0.9846                0.3760                  14137                         6.9
+                                                                                                                       Transient              0.4823            0.9824                0.2374                  12580                        50.9
+                                                   Chip2                 2000                  666-333                    Steady              0.1352            0.9994                0.0643                   4917                         7.2
+                                                                                                                       Transient             0.09370            0.9973                0.0451                   5476                        51.1
+                                                   Chip3                 1000                  332-166                    Steady              0.5407            0.9962                0.0643                   2441                         3.4
+                                                                                                                       Transient              0.1929            0.9963                0.1444                   2667                        20.0
+                                                   *  Theimprovementrefers to RMSE improvement compared to high-fidelity FNOs.
+                           Fig. 5, AROs and single-fidelity FNOs will demonstrate improved
+                           performance. Additionally, RMSE trend reveals that different ratios
+                           mayachievesuperior performance at different data costs.
+                                For detailed presentation, Table 3 provides the specific perfor-
+                           manceofAROsundertrainingconfiguration corresponding to last
+                           point of each experiment in Fig. 5. The differences in training sam-
+                           ple settings among the three designs stems from the varying grid
+                           sizes (Chip1 having the most complex grid, while Chip3 possesses
+                           the simplest grid), thereby the data requirements and predicting
+                           performance with each model differs. Moreover, we continued the
+                           experiment on the three steady-state datasets in Fig. 5, observing
+                           that when the training cost increased to 5400, 2600, and 1400 re-
+                           spectively, the FNO_high model achieved accuracy comparable to
+                           AROwithatrainingcostof4000, 2000, and 1000. So ARO can save
+                           thermal simulation time by 25%, 23%, and 28% respectively. In the
+                           correspondingtransientexperiments,asdepictedintheTable3,the
+                           enhancementsofAROsweremorepronounced,leadingtoagreater
+                           reduction in time cost. Besides, we present the prediction outcomes
+                           of AROonChip2inFig.6andFig.7toillustrate the effectiveness
+                           of our proposed approach.
+                                                                                                                                                              Figure 6: Comparisons between AROpredictionsandMTA-
+                                                                                                                                                              generated thermal distributions on Chip2-Steady.
+                ARO:Autoregressive Operator Learning for Transferable and Multi-fidelity 3D-IC Thermal Analysis with Active Learning
+                            h
+                            t
+                            u
+                            r
+                            T
+                             
+                            d
+                            n
+                            u
+                            o
+                            Gr
+                            t
+                            ic
+                            d
+                            e
+                            r
+                            P
+                           Figure 7: ARO predictions and MTA-generated thermal distributions with time steps on Chip2-Transient.
+                4.3    ComparisonstoSOTAML-Baselines                                         Table 4: Comparisons of ARO and SOTAonChip2-Steady.
+                                                                                                   w-#High             Terr(K) Avg.Terr(K) MAPE(%) PAPE(%)
+                In recent years, the application of machine learning methods to                #Lo                Max.
+                thermal analysis has seen a surge, leading to the emergence of var-              400-100    GAR       7.656       0.1848     0.1238    1.9834
+                ious approaches such as Thermal-PINN and Thermal-GAN. These                                 ARO      2.2524      0.0795      0.0233    0.6166
+                methods offer distinct methodologies and perspectives aimed at                   800-200    GAR      5.7168       0.0755     0.1000    1.5101
+                addressing the complexities of thermal analysis challenges. As dis-                         ARO      1.8533      0.0660      0.0194    0.5044
+                cussed in the introduction, due to the disparate problem definitions        samples (considering 21x21 resolution used in DeepOHeat exper-
+                inherent in these mainstream models, direct comparison cannot               iments). From Table 4, it‚Äôs evident that ARO outperforms GAR
+                be made in this work. However, the model that aligns most closely           significantly in terms of both average temperature differences and
+                with our problem definition is DeepOHeat, as demonstrated in [8],           maximumtemperaturedifferences.
+                wherepowerdistribution and other constraints serve as inputs to
+                train DeepONet operators. In order to assess the progress made              4.4    ComparisonstoThermalSimulationTools
+                by our proposed ARO model, we considered DeepOHeat as one of                Toevaluate the efficiency of ARO for thermal simulation, we com-
+                the baselines. This comparison aims to highlight the effectiveness          pared the speed and accuracy of ARO with thermal simulation
+                of our multi-fidelity fusion method. Additionally, we compared              tools like MTA [18], COMSOL [19], and Hotspot [20] on Chip2.
+                our approach with GAR, a state-of-the-art framework that utilizes           Specifically, We further generated 50 sets of power maps for both
+                multi-fidelity fusion techniques. By comparing with GAR, we in-             steady-state and transient experiments respectively following the
+                tend to emphasize the inherent advantages and potential of FNO              methodoutlined in Section 4.1. To obtain the simulation results of
+                within the domain of multi-fidelity fusion.                                 thementionedtools,weconfiguredMTAwiththefinestgrid,result-
+                   All comparative experiments were performed on the Chip2-                 ing in a number of degree of freedom (DOF) of 589,311. Similarly,
+                Steadydataset,asbothbaselinemodelslackthecapabilitytohandle                 wesetthegridinCOMSOLtothefinestresolutiontoensurethe
+                four-dimensional data, thus precluding a comparison with tran-              mostaccurate results. For Hotspot, we used a 64√ó64 grid on each
+                sient datasets. Since the DeepOHeat model was not open source               layer, while ARO utilized an 85√ó85 grid on each layer, consistent
+                yet, we replicated the DeepONet-based DeepOHeat according to                with the highest resolution used during training.
+                the method description provided in [8]. As described in [8], we em-            Weobtainedthemaximumsurfacetemperaturesofeachdevice
+                ployed a 9-layer branch net with 256 neurons per layer combined             layer in 50 sets of steady-state and transient thermal simulations
+                with a 6-layer trunk net with 128 neurons per layer. Given that             using various tools. The distributions are illustrated in Fig. 8. It
+                DeepOHeatisnotamulti-fidelity model, we utilized high-fidelity              can be observed that the distributions of ARO‚Äôs predictions of the
+                samples of 200, 400 respectively, while ensuring that the time cost         maximum temperatures closely resemble that of COMSOL and
+                remained consistent (GAR and ARO both utilized 400 high-fidelity            MTA. For a more detailed presentation, we provide the specific
+                and 100 low-fidelity samples, and 800 high-fidelity and 200 low-            values of the maximum and minimum temperatures of five steady-
+                fidelity samples, respectively, as they are multi-fidelity models).         state samples (referred to as Ì†µÌ±ù1, Ì†µÌ±ù2, Ì†µÌ±ù3, Ì†µÌ±ù4, Ì†µÌ±ù5) in Table 5. Compared
+                However,theactual predictive performance obtained using DeepO-              to COMSOL, ARO estimates the maximum temperature within
+                Heat were not satisfactory. The average temperature error of the            0.3K in both steady-state and transient analysis, demonstrating its
+                resulting temperature distribution exceeded 2K, which significantly         accuracy in thermal simulations.
+                deviated from the predictive capabilities of the other two models.             Since Hotspot and MTA are simulation tools known for their
+                Hence, we mainly present the predictive performance of ARO and              faster performancecomparedtoCOMSOL,herewemainlycompare
+                GARinTable4.Theineffectiveness of DeepOHeat may stem from                   the speedup ratio of ARO with Hotspot and MTA as displayed in
+                its inability to effectively learn from small-size, higher-resolution       Table 6. The time values represent the average time taken by ARO,
+                                                                                                            1,2,#              1,2,#             1          3                 4
+                                                                                              MingyueWang      , Yuanqing Cheng    , Weiheng Zeng , Zhenjie Lu , Vasilis F. Pavlidis ,
+                                                                                                                                                                   WeiW.Xing5
+                 MTA,andHotspottocomplete50setsofsteady-stateandtransient                              Tovalidatetheefficacyoftheproposedactivelearningalgorithm,
+                 thermal simulations. ARO achieved an impressive 999√ó speedup                       weconductedablation studies on Chip2-Steady and Chip3-Steady.
+                 compared to MTA and a 473√ó speedup compared to Hotspot for                         Weoptednottoconductexperimentsonthetransientdatasetdueto
+                 steady-state analysis. Additionally, for transient analysis, ARO                   its numeroustimesteps(upto9),whichcomplicatesthecalculation
+                 achieved 1213√ó speedup and 296√ó speedup respectively.                              of mutual information. In each experiment, we initially trained
+                                                                                                    anAROmodelwithlow-tohigh-fidelitydatanumberbeing400-
+                                                                                                    100. Next, we assessed the impact of augmenting the training data
+                                                                                                    in various ways: randomly selecting high-fidelity data, adjusting
+                                                                                                    the low-fidelity to high-fidelity ratio to 4:1, 3:1, 2:1 (also chosen
+                                                                                                    randomly), and employing active learning to select multi-fidelity
+                                                                                                    data for training. Throughout these experiments, we maintained
+                                                                                                    consistent data cost, with a cost budget of 100 added each time. We
+                                                                                                    set Ì†µÌ±ò to 200 and Ì†µÌºÜ to the difference in average mutual information
+                                                                                                    values between high-fidelity and low-fidelity samples. The specific
+                                                                                                    experimental results are depicted in Fig. 9. It is evident from the
+                                                                                                    experimental results that, in comparison with manually setting the
+                                                                                                    training ratios and simply augmenting with high-fidelity data, the
+                 Figure 8: Temperature comparisons amongCOMSOL,MTA,                                 incorporationofvaluablelow-fidelityandhigh-fidelitydataselected
+                 HotspotandAROonChip2.                                                              byactivelearningstrategycanmoreeffectivelyenhancetheoverall
+                                                                                                    prediction performance of ARO. Additionally, for Chip2-Steady,
+                 Table 5: Maximumandminimumtemperaturecomparisons                                   achieving the accuracy of ARO with a 1200 time cost requires 1600
+                 amongCOMSOL,MTA,HotspotandAROonfivesteady-state                                    time cost for randomly selected high-fidelity training. Similarly,
+                 samples.                                                                           for Chip3-Steady, attaining the accuracy of ARO with a 1000 time
+                                     COMSOL        MTA      Hotspot      ARO       Error*           cost demands more than 1600 time cost for randomly selected high-
+                          Max(K)      389.730     389.583    398.950    389.689    -0.041           fidelity training. This analysis suggests that active learning can
+                     Ì†µÌ±ù1   Min(K)     328.073     328.115    334.950    328.060   +0.017            streamline data preparation efforts, resulting in a reduction of data
+                          Max(K)      398.464     398.351    400.380    398.457    -0.007           preparation time cost by approximately 25% and 27.5%, respectively.
+                     Ì†µÌ±ù2   Min(K)     328.043     328.085    334.920    327.767    -0.276
+                          Max(K)      368.420     368.513    382.040    368.479   +0.059
+                     Ì†µÌ±ù3   Min(K)     328.155     328.197    335.170    328.146    -0.009
+                          Max(K)      364.546     364.525    374.290    364.592   +0.046
+                     Ì†µÌ±ù4   Min(K)     328.133     328.175    335.150    328.140   +0.007
+                          Max(K)      371.083     371.087    379.370    371.070    -0.013
+                     Ì†µÌ±ù5   Min(K)     328.045     328.087    334.910    328.038    -0.007
+                     * Error refers to the difference between ARO and COMSOL.
+                 Table 6: Comparisons of runtime among ARO, MTA and
+                 Hotspot.                                                                           Figure 9: RMSE performance of active learning and other
+                        Analysis            -          ARO        MTA        Hotspot                training data selection strategies on ARO. (a) Performance
+                         Steady        Runtime(s)      0.23      229.86       108.96                onChip2-Steady,(b)PerformanceonChip3-Steady.
+                                        Speedup         1√ó        999√ó         473√ó                 5 CONCLUSION
+                       Transient       Runtime(s)      0.38      461.10       112.84
+                                        Speedup*        1√ó       1213√ó         296√ó                 WeproposeanovelML-basedapproach,ARO,forpredictingthe
+                       * Speedup refers to the ratio of the simulation tool‚Äôs runtime versus ARO‚Äôs  thermal behavior of 3D integrated circuits by combining SOTA
+                        runtime.                                                                    ML methods√êoperator learning and multi-fidelity fusion. ARO
+                 4.5     Validation of Active Learning                                              consistently outperforms the baseline with significantly lower com-
+                                                                                                    putational costs. In scenarios with limited samples, the average
+                 AsshowninFig.5,astheperformanceofAROimproves,continuing                            prediction error for steady-state thermal analysis is less than 0.4K.
+                 to train the model with a fixed ratio could restrict its capabilities. At          Besides, ARO can simultaneously predict transient temperature
+                 this point, active learning strategies become essential to guide us in             changes at nine different time points, with an average error less
+                 data preparation and determining the ratio of low- to high-fidelity.               than 0.3K. Additionally, the ARO configuration, incorporating the
+                 Byinputting multiple multi-fidelity samples into the trained ARO                   proposed active learning algorithm, achieves a minimum of 25%
+                 andemployinganacquisitionfunction,wecancalculatethemutual                          training data reduction. Our future work will focus on the applica-
+                 information of each sample. This enables us to determine which x                   tion of ARO to other thermal analysis tasks, such as thermal-aware
+                                                                                           Ì†µÌ±ô
+                 and x samples to add to the training set in the next stage, as well                placement and routing, and the development of a more efficient
+                        ‚Ñé
+                 as how many data samples of each-fidelity to choose.                               active learning algorithm for transient thermal analysis.
+                   ARO:Autoregressive Operator Learning for Transferable and Multi-fidelity 3D-IC Thermal Analysis with Active Learning
+                   REFERENCES                                                                                 [10] Yunyang Zhang, Zhiqiang Gong, Weien Zhou, Xiaoyu Zhao, Xiaohu Zheng, and
+                    [1] Peng Li, Lawrence T Pileggi, Mehdi Asheghi, and Rajit Chandra. Efficient full-              WenYao. Multi-fidelity surrogate modeling for temperature field prediction
+                         chip thermal modeling and analysis. In IEEE/ACM International Conference on                using deep convolution neural network. Engineering Applications of Artificial
+                         Computer Aided Design, 2004. ICCAD-2004., pages 319≈õ326. IEEE, 2004.                       Intelligence, 123:106354, 2023.
+                    [2] Jai-Ming Lin, Wei-Yi Chang, Hao-Yuan Hsieh, Ya-Ting Shyu, Yeong-Jar Chang,            [11] Yanfang Lyu, Xiaoyu Zhao, Zhiqiang Gong, Xiao Kang, and Wen Yao. Multi-
+                         and Juin-Ming Lu. Thermal-aware floorplanning and tsv-planning for mixed-                  fidelity prediction of fluid flow and temperature field based on transfer learning
+                         type modules in a fixed-outline 3-d ic. IEEE Transactions on Very Large Scale              using fourier neural operator. arXiv preprint arXiv:2304.06972, 2023.
+                         Integration (VLSI) Systems, 29(9):1652≈õ1664, 2021.                                   [12] Shibo Li, Xin Yu, Wei Xing, Robert Kirby, Akil Narayan, and Shandian Zhe.
+                    [3] HameedahSultan,AnjaliChauhan,andSmrutiRSarangi. Asurveyofchip-level                         Multi-resolution active learning of fourier neural operators. In International
+                         thermal simulators. ACM Computing Surveys (CSUR), 52(2):1≈õ35, 2019.                        Conference on Artificial Intelligence and Statistics, pages 2440≈õ2448. PMLR, 2024.
+                    [4] Arvind Sridhar, Alessandro Vincenzi, Martino Ruggiero, Thomas Brunschwiler,           [13] Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, Burigede Liu, Kaushik
+                         andDavidAtienza. 3d-ice: Fast compact transient thermal modeling for 3d ics                Bhattacharya, Andrew Stuart, and Anima Anandkumar. Fourier neural operator
+                         with inter-tier liquid cooling. In 2010 IEEE/ACM International Conference on               for parametric partial differential equations. arXiv preprint arXiv:2010.08895,
+                         Computer-Aided Design (ICCAD), pages 463≈õ470, 2010.                                        2020.
+                    [5] Liang Chen, Jincong Lu, Wentian Jin, and Sheldon X.-D. Tan. Fast full-chip para-      [14] Akshay Thakur, Tapas Tripura, and Souvik Chakraborty. Multi-fidelity wavelet
+                         metric thermal analysis based on enhanced physics enforced neural networks.                neural operator with application to uncertainty quantification, 2023.
+                         In 2023 IEEE/ACM International Conference on Computer Aided Design (ICCAD),          [15] Yarin Gal and Zoubin Ghahramani. Dropout as a bayesian approximation:
+                         pages 1≈õ8, 2023.                                                                           Representing model uncertainty in deep learning. In international conference on
+                    [6] Wentian Jin, Sheriff Sadiqbatcha, Jinwei Zhang, and Sheldon X.-D. Tan. Full-                machine learning, pages 1050≈õ1059. PMLR, 2016.
+                         chip thermal map estimation for commercial multi-core cpus with generative           [16] Richard E Kessler. The alpha 21264 microprocessor. IEEE micro, 19(2):24≈õ36,
+                         adversarial learning. In 2020 IEEE/ACM International Conference On Computer                1999.
+                         Aided Design (ICCAD), pages 1≈õ9, 2020.                                               [17] Zongqing Ren, Ayed Alqahtani, Nader Bagherzadeh, and Jaeho Lee. Thermal
+                    [7] JincongLu,JinweiZhang,andSheldonX.-D.Tan. Real-timethermalmapestima-                        analysis of 3d ics with tsvs placement optimization. In International Electronic
+                         tion for amd multi-core cpus using transformer. In 2023 IEEE/ACM International             PackagingTechnicalConferenceandExhibition,volume59322,pageV001T01A006.
+                         Conference on Computer Aided Design (ICCAD), pages 1≈õ7, 2023.                              AmericanSociety of Mechanical Engineers, 2019.
+                    [8] Ziyue Liu, Yixing Li, Jing Hu, Xinling Yu, Shinyu Shiau, Xin Ai, Zhiyu Zeng, and      [18] Scott Ladenheim, Yi-Chung Chen, Milan Mihajloviƒá, and Vasilis F. Pavlidis. The
+                         ZhengZhang. Deepoheat:Operatorlearning-basedultra-fastthermalsimulation                    mta: An advanced and versatile thermal simulator for integrated systems. IEEE
+                         in 3d-ic design. In 2023 60th ACM/IEEE Design Automation Conference (DAC),                 TCAD,37(12):3123≈õ3136, 2018.
+                         pages 1≈õ6, 2023.                                                                     [19] Multiphysics C. Introduction to comsol multiphysics. COMSOL Multiphysics,
+                    [9] Yuxin Wang, Zheng Xing, and Wei W. Xing. Gar: generalized autoregression                    Burlington, MA, accessed Feb, 9(2018):32, 1998.
+                         for multi-fidelity fusion. In Proceedings of the 36th International Conference on    [20] Wei Huang, Shougata Ghosh, Sivakumar Velusamy, Karthik Sankaranarayanan,
+                         Neural Information Processing Systems, NIPS ‚Äô22. Curran Associates Inc., 2024.             Kevin Skadron, and Mircea R Stan. Hotspot: A compact thermal modeling
+                                                                                                                    methodology for early-stage vlsi design. IEEE Transactions on very large scale
+                                                                                                                    integration (VLSI) systems, 14(5):501≈õ513, 2006.

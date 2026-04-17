@@ -1,0 +1,949 @@
+               1882                                      IEEE TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS, VOL. 31, NO. 12, DECEMBER 2023
+                                    Thermal-Aware Fixed-Outline 3-D IC
+                                               Floorplanning: An End-to-End
+                                                     Learning-Based Approach
+                                Wenbo Guan , Xiaoyan Tang , Member, IEEE, Hongliang Lu , Senior Member, IEEE,
+                                   Yuming Zhang , Senior Member, IEEE, and Yimen Zhang , Senior Member, IEEE
+                  AbstractÐHigh temperature and temperature nonuniformity                       Three-dimensional IC technology offers numerous advan-
+               pose significant challenges in 3-D integrated circuits (3-D ICs).             tages, yet it also presents notable challenges, particularly in
+               Numerous studies have explored thermal issues in 3-D IC                       thermal management. The vertical stacking of device layers
+               floorplanning. However, most existing handcrafted heuristic algo-             leads to increased power density, exacerbating thermal issues.
+               rithms suffer from long iteration cycles, resulting in inefficient            Moreover, the thermal conductivity of the dielectric insulation
+               thermal management and no guarantee of optimal performance.
+               In addition, with the increasing complexity of modern integrated              layers between the devices is significantly lower than that of
+               circuit design, current floorplanning techniques encounter the                silicon and metal [1]. Therefore, the thermal constraint is a
+               ªcurse of dimensionalityº and struggle to optimize large-scale                considerable obstacle that must be addressed in the design of
+               cases. To address these challenges, this article proposes a novel             3-D ICs.
+               end-to-end learning-based approach for thermal-aware fixed-
+               outline 3-D IC floorplanning. In the tier assignment stage,
+               we utilize a deep k-means clustering algorithm to allocate                    A. Previous Works
+               modules to different tiers, aiming to achieve an improved
+               cross-tier power distribution. In the global distribution (GD)                   Extensive research has been conducted on thermal issues
+               stage, we formulate the floorplanning problem as a Markov                     in 3-D IC floorplanning, leading to the proposal of diverse
+               decision process (MDP). By combining graph convolutional                      models and algorithms aimed at temperature optimization.
+               networks (GCNs) with a multiagent deep reinforcement learning                 Cong et al. [1] introduced a unique representation for 3-D
+               (MADRL) algorithm, we optimize the positions of modules and
+               through-silicon vias (TSVs), while incorporating an attention                 floorplans, combining a transitive closure graph with a bucket
+               mechanism in the centralized critic to enhance cooperation                    structure and utilizing a resistive thermal model to measure
+               among agents. Finally, in the TSV assignment (TA) stage,                      temperature. Zhou et al. [2] presented a scalable 3-D floor-
+               werefine the TSV positions using the MADRL algorithm, further                 planning algorithm that considers temperature and leakage,
+               reducing wirelength and temperature in 3-D ICs. Experimental                  incorporating force-directed techniques and power-thermal
+               results demonstrate that our proposed approach outperforms
+               state-of-the-art heuristic-based 3-D IC floorplanner in terms of              analysis to address the leakage-thermal feedback loop. Wong
+               wirelength and temperature optimization.                                      and Lim [3] employed an array of sequence pairs to represent
+                  Index TermsÐ3-D integrated circuits (3-D ICs), deep k-means                module positions and utilized a random walk-based thermal
+               clustering, floorplanning, graph convolutional network (GCN),                 analysis procedure for temperature measurement. Xiao et al.
+               multiagent deep reinforcement learning (MADRL).                               [4] proposed a two-phase simulated annealing (SA) method
+                                                                                             to handle the fixed-outline constraint in thermal-aware fixed-
+                                         I. INTRODUCTION                                     outline 3-D floorplanning, employing an approximate thermal
+                     HREE-DIMENSIONAL integrated circuits (3-D ICs)                          model. Xu and Chen [5] used the partitioned sequence pair
+               Tprovide a promising solution to sustain the progress                         to represent multilayer 3-D floorplans, estimating chip tem-
+               projected by Moore’s law in 2-D scaling. By utilizing stacked                 perature during floorplanning through bilinear interpolation
+               layers, 3-D ICs effectively reduce chip area and wirelength,                  based on block locations and their thermal profiles. Ni et al.
+               leading to benefits such as decreased interconnect power,                     [6] proposed a temperature-aware floorplanning approach for
+               increased bandwidth, and reduced routing congestion, ulti-                    fixed-outline designs, assigning tiers based on module power
+               mately improving overall circuit performance.                                 density and strategically placing thermal modules near the
+                 Manuscript received 21 June 2023; revised 15 August 2023 and 6 September    heat sink. The floorplan of each tier was represented using
+                                                                                                 ∗
+               2023; accepted 29 September 2023. Date of publication 10 October 2023;        a B -tree, and the SA algorithm was employed for efficient
+               date of current version 28 November 2023. This work was supported             floorplanning.
+               by the National Defense Science and Technology Foundation Strengthen-            Due to high thermal conductivity, Knechtel et al. [7] used
+               ing Program under Grant 2019-XXXX-XX-236-00. (Corresponding author:           the corner block list [8] to represent the floorplan and applied
+               Hongliang Lu.)                                                                the guided-SA algorithm for floorplanning. To handle the
+                 The authors are with the School of Microelectronics, Xidian University,
+               Xi’an 710071, China (e-mail: hllv@mail.xidian.edu.cn).                        simultaneous placement of through-silicon vias (TSVs) and
+                 Color versions of one or more figures in this article are available at      modules, they clustered the TSVs into TSV islands and
+               https://doi.org/10.1109/TVLSI.2023.3321532.
+                 Digital Object Identifier 10.1109/TVLSI.2023.3321532                        estimated temperature using the power blurring method [9].
+                                     1063-8210 © 2023 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.
+                                                      See https://www.ieee.org/publications/rights/index.html for more information.
+                           Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+             GUANet al.: THERMAL-AWARE FIXED-OUTLINE 3-D IC FLOORPLANNING                                                                1883
+             Addressing the heat concern, Chen et al. [10] proposed           C. Our Contribution
+             a temperature-aware architecture utilizing TSV islands to          This article presents an efficient end-to-end learning-based
+             enhance heat conductivity across the entire 3-D chip. However,   approach for solving thermal-aware fixed-outline 3-D IC floor-
+             the adoption of TSV islands may introduce drawbacks such         planning with mixed-type modules. In the tier assignment
+             as increased delays and signal integrity issues due to TSV       stage, we use a power density-aware deep k-means clustering
+             coupling when compared to single TSVs. Another prevalent         method to group modules based on their power density. These
+             approach in thermal-aware planning for fixed-outline 3-D         clusters are then assigned to tiers, with higher power density
+             ICs is the insertion of thermal TSVs (TTSVs) [3], [11].          modules placed closer to the heat sink. This is an unsupervised
+             Ren et al. [12] introduced a hierarchical method based on the    machine learning (ML) algorithm that can successfully cluster
+             normalized Polish expression to optimize the floorplan of a      high-dimensional sample data. In the GD stage, a graph
+             3-D multicore processor following the Nehalem architecture.      convolutional network (GCN) is employed as an encoder in a
+             This method focused on arranging TTSVs, which facilitate         multiagent system to optimize module and TSV placements.
+             heat transfer between tiers without carrying signals. Since the  GCN transfers knowledge across different netlist topolo-
+             use of TTSVs increases the distance between modules and          gies using low-dimensional vectors. Treating each tier as an
+             induces longer wirelength, they optimize the placement of        agent and utilizing a multiagent deep reinforcement learning
+             TTSVs while lowering temperature.                                (MADRL) algorithm, we decompose the floorplanning prob-
+               Unlike the above-mentioned approaches, Lin et al. [13]         lem, reducing dimensionality. In 3-D ICs, inter-tier interactions
+             proposed an advanced three-stage approach for thermal-           affect wirelength and temperature, requiring agents to adapt
+             aware fixed-outline floorplanning that handles mixed-type        strategies based on teammates’ approaches. To address this,
+             modules.   They    optimize   power    distribution  using   a   we introduce attention multiagent deep deterministic policy
+             hyperparameter-optimized      Fiduccia    Mattheyses     (FM)    gradient (ATT-MADDPG) [24], an attention mechanism in
+             algorithm in tier assignment. In the global distribution         the centralized critic, enhancing collaboration and achieving
+             (GD) stage, modules and TSVs are distributed across tiers        further optimization in wirelength and temperature reduction.
+             to minimize wirelength and chip temperature. The TSV             In the TA stage, we refine the locations of the TSVs, thereby
+             assignment (TA) stage refines TSV positions tier by tier using   further reducing the wirelength and temperature in the 3-D IC.
+             the minimum cost maximum flow (MCMF) algorithm. This               Distinguishing itself from previous methods, we present an
+             comprehensive approach effectively considers thermal aspects     innovative end-to-end learning-based approach for thermal-
+             in floorplanning.                                                aware 3-D IC floorplanning. The key technical contributions
+             B. Motivation                                                    of this work are listed as follows.
+               Numerous studies have proposed thermal-aware algorithms          1) Weemploythedeepk-meansclustering method to effec-
+             for 3-D IC floorplanning, primarily relying on meta-heuristics.        tively cluster modules and achieve improved cross-tier
+             However, these approaches present two major challenges.                power distribution.
+             First, the development of manually crafted heuristics based        2) To address the 3-D IC floorplanning problem, we for-
+             on expert knowledge is laborious and nonoptimal, requiring             mulate it as an RL problem and utilize the MADRL
+             substantial domain expertise and trial-and-error. Second, scal-        algorithm. We integrate GCN as an encoding layer
+             ability becomes an obstacle due to the increasing complexity           within a multiagent system, enabling effective netlist
+             of modern IC designs, making it difficult to represent state           graph embedding. In addition, we introduce an atten-
+             spaces for larger problems. Consequently, existing 3-D IC              tion mechanism in the centralized critic to model and
+             floorplanning algorithms struggle to effectively optimize large-       leverage teammate policies.
+             scale cases, encountering the curse of dimensionality [14].        3) We also formulate the TA problem as an RL problem
+             Therefore, the development of new methodologies for 3-D IC             and continue to use the MADRL algorithm to optimize
+             floorplanning is necessary. To address these challenges, rein-         the TSVs positions.
+             forcement learning (RL) has emerged as a potential solution,       4) Experimental results demonstrate the superior per-
+             enabling agents to learn from interactions with the environ-           formance of our proposed method compared to the
+             ment and explore the design space effectively [15]. By training        state-of-the-art heuristic-based thermal-aware 3-D IC
+             an RL agent on a single circuit, it can be directly applied            floorplanning approach.
+             to circuits of various sizes, reducing simulation costs and        The remainder of this article is organized as follows.
+             eliminating the need for redesigning from scratch. Although      Section II presents the preliminary information. Section III
+             RL techniques have been successfully applied to various          presents the problem formulation. The stages of our method-
+             aspects of circuit design, including tier partitioning [16],     ology are described in Sections IV±VI, respectively. Experi-
+             2-D floorplanning [17], [18], [19], logic synthesis [20], chip   mental results are shown in Section VII. Finally, Section VIII
+             placement [17], [19], [21], global routing [22], and detailed    concludes our work.
+             routing [23], their application in 3-D IC floorplanning for                           II. PRELIMINARIES
+             wirelength and temperature optimization remains unexplored.
+             Thus, investigating the utilization of RL in 3-D IC floorplan-     This section provides an overview of the background of
+             ning represents a promising avenue to advance the field and      RL and the power blurring-based temperature calculation
+             achieve improved optimization results.                           method.
+                       Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                                     1884                                                                                                     IEEE TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS, VOL. 31, NO. 12, DECEMBER 2023
+                                                                                                                                                                                                                                         stability and data efficiency. The updated equations for the
+                                                                                                                                                                                                                                         critic and actor can be summarized as follows:
+                                                                                                                                                                                                                                                                                                                  ′         ′          − 
+                                                                                                                                                                                                                                                                       δ = r +γQ(s ,a ;w ) ′                                                                         ′   −Q(s,a;w)                                        (2)
+                                                                                                                                                                                                                                                                                                                                                a =µ −(s )
+                                                                                                                                                                                                                                                                                                                                                          θ
+                                                                                                                                                                                                                                                          L(w) = E                                       ′              (δ)2                                                                                               (3)
+                                                                                                                                                                                                                                                                                         (s,a,r,s )∼D                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                   ∇ J(θ) = E                                          ∇ µ (s)∇ Q(s,a;w)                                                                                                   (4)
+                                                                                                                                                                                                                                                         θ                               s∼D                θ        θ                a                                     a=µ (s)
+                                                                                                                                                                                                                                                                                                                                                                                      θ
+                                     Fig. 1.               Typical framework of an MDP.                                                                                                                                                  where the replay buffer D stores recent experience tuples
+                                                                                                                                                                                                                                         (s,a,r,s′). The target networks, Q(s,a;w−) and µθ−(s),
+                                     A. Reinforcement Learning                                                                                                                                                                           utilize parameters w− and θ−, respectively, which are peri-
+                                            RL is a learning process aimed at maximizing a numerical                                                                                                                                     odically updated by copying the parameters w and θ.
+                                     reward through the mapping of states to actions or action
+                                     distributions [15]. This process is commonly formulated as                                                                                                                                          B. Power Blurring Method
+                                     a Markov decision process (MDP) comprising four essential
+                                     components.                                                                                                                                                                                                This section introduces the power blurring method [9],
+                                            1) A set of possible environment states S.                                                                                                                                                   a highly efficient and effective approach for temperature
+                                            2) A set of actions A that can be taken by the agent.                                                                                                                                        calculation. By utilizing a thermal mask constructed from the
+                                            3) A state transition model, Pa , representing the probabil-                                                                                                                                 impulse response of a chip or layer to a point source of
+                                                                                                                                        ss′                                               ′                                              power, the method ensures accurate temperature estimation.
+                                                       ity of transitioning from state s ∈ S to s ∈ S when                                                                                                                               The detailed procedure for constructing the thermal mask is
+                                                       action a ∈ A is executed.                                                                                                                                                         described in [13]. To further enhance temperature estimation
+                                            4) A reward function, Ra, providing numerical feedback as
+                                                                                                                       s                                                                                                                 accuracy, the method applies the image method, an error
+                                                       a reward when an action a ∈ A is performed in a state                                                                                                                             correction step. Initially, a power distribution map is generated
+                                                       s ∈ S.                                                                                                                                                                            by dividing each tier of the 3-D IC into regular slots and
+                                            The MDP framework is based on the Markov assumption,                                                                                                                                         estimating power consumption in each slot. Each slot within
+                                     assuming that future state probabilities depend solely on the                                                                                                                                       the power distribution map is treated as an individual power
+                                     current state, rendering the past state sequence irrelevant to                                                                                                                                      source. By convolving the power distribution map with the
+                                     the environment. Fig. 1 illustrates the typical flow of an MDP,                                                                                                                                     thermal mask, a temperature map is obtained.
+                                     wheretheagent begins at state s executes action a , transitions
+                                                                                                                                    t                                                      t
+                                     to state s                          , and receives reward r . The agent’s trajectory is
+                                                                t+1                                                                             t                                                                                                                                           III. PROBLEM DEFINITION
+                                     characterized by successive episodes consisting of state-action-
+                                     reward sequences.                                                                                                                                                                                          In this study, we consider a set M = {mi|i ∈ Z+,1 ≤ i ≤ n}
+                                            Theprimary goal of an MDP is to determine an optimal pol-                                                                                                                                    of n modules, each defined by a triplet (w ,h ,α ) representing
+                                     icy π, which maps states from the state space to actions from                                                                                                                                                                                                                                                                  i         i         i
+                                     the action space π : S → A, with the objective of maximizing                                                                                                                                        width, height, and aspect ratio. These modules can be classi-
+                                                                                                                               P                                                                                                         fied into two types: hard modules with fixed aspect ratios and
+                                     the cumulative rewards Gt =                                                                       ∞γtrt. The discount factor γ
+                                                                                                                                       t                                                                                                 soft modules allowing for variable aspect ratios. The position
+                                     is used to account for the influence of delayed future rewards,                                                                                                                                     of the module mi in a 2-D plane is indicated by the lower-left
+                                     and t denotes a specific time step. In practical scenarios, the Q                                                                                                                                   coordinate (x , y ), while its tier in a 3-D IC is represented by
+                                     value function Qπ(s,a) is commonly utilized, and it is defined                                                                                                                                                                              i         i
+                                     as follows:                                                                                                                                                                                         zi, satisfying 1 ≤ zi ≤ K, where K signifies the total number
+                                                                                                                                                                                                                                         of tiers in the 3-D IC.
+                                                                              Qπ(s,a) = E [G|S = s, A = a]                                                                                                             (1)                      Our objective is to perform floorplanning on a 3-D IC,
+                                                                                                                        π                                                                                                                taking into account a predefined number of tiers and a given
+                                     then the optimal policy is derived by π∗ = argmax Qπ(s,a).                                                                                                                                          netlist. We aim to optimize the position and tier assignment
+                                                                                                                                                                                              π
+                                            Policy gradient methods [25] are used to directly learn the                                                                                                                                  for each module and TSV, ensuring adherence to the fixed
+                                     parameterized policy πθ = π(a|s;θ) as an approximation for                                                                                                                                          outline. Avoiding overlaps between modules, modules and
+                                     any given policy π. This is achieved by employing a deep                                                                                                                                            TSVs, as well as TSVs themselves, is a critical requirement.
+                                     neural network (DNN) Q(s,a;w) to approximate Qπ(s,a),                                                                                                                                               In addition, we consider both wirelength and temperature for
+                                     allowing the utilization of actor-critic algorithms [26]. During                                                                                                                                    the 3-D IC. To guide our study, we establish the following
+                                     training, both the parameterized actor π = π(a|s;θ) and                                                                                                                                             assumptions: 1) we adopt the face-to-back (F2B) bonding
+                                     the critic Q(s,a;w) are utilized, while only the actor π =                                                                                                                                          style; 2) I/O bumps are located below tier 1; and 3) only one
+                                     π(a|s;θ) is required during execution. This advantage is                                                                                                                                            TSV is inserted between two consecutive tiers in a 3-D net.
+                                     leveraged to train decentralized policies in our approach.
+                                            The deterministic policy gradient (DPG) [27] algorithm                                                                                                                                            IV. POWER DENSITY-AWARE TIER ASSIGNMENT STAGE
+                                     is an actor-critic approach in which the actor employs a
+                                     deterministic policy µθ. Deep DPG (DDPG) [28] extends                                                                                                                                                      In this section, we present a power density-aware deep
+                                     this algorithm by utilizing DNNs to approximate µ (s) and                                                                                                                                           k-means clustering algorithm designed to mitigate the temper-
+                                                                                                                                                                                                      θ
+                                      Q(s,a;w). DDPG is an off-policy method that incorporates                                                                                                                                           ature of the 3-D IC by intelligently allocating modules across
+                                     a target network and experience replays to enhance training                                                                                                                                         multiple tiers.
+                                                                   Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                 GUANet al.: THERMAL-AWARE FIXED-OUTLINE 3-D IC FLOORPLANNING                                                                                                        1885
+                                                                                                       mapping g(f(x ;W);Z) represents the nonlinear transfor-
+                                                                                                                            i
+                                                                                                       mation of f(x ;W) through the backward network, with Z
+                                                                                                                          i
+                                                                                                       denoting the associated parameter set. The loss function ℓ(·)
+                                                                                                       measures the reconstruction error. To ensure a meaningful
+                                                                                                       alignment between g(f(x ;W);Z) and x under specific met-
+                                                                                                                                        i                     i
+                                                                                                                                                                                    2
+                                                                                                       rics, we employ the least-squares loss ℓ(x,y) = ∥x − y∥ as
+                                                                                                                                                                                    2
+                                                                                                       a preventive measure against trivial solutions. Introducing the
+                 Fig. 2.  Structure of the proposed deep clustering network (DCN).                     regularization parameter λ ≥ 0 allows us to strike a balance
+                                                                                                       between the reconstruction error and the exploration of k-
+                 A. DCN Structure and Problem Formulation                                              means-friendly latent representations.
+                    Thepowerdistribution across tiers plays a crucial role in the
+                 temperature management of 3-D ICs. To optimize the power                              B. Optimization Procedure
+                 distribution and clustering of modules, we utilize the deep
+                 k-means algorithm [29]. Fig. 2 presents the structure of our                             1) Initialize Network Parameters: To tackle the challenging
+                 DCN.Ourapproachinvolvesconsidering a 6-D vector, encom-                               nonconvex optimization problem mentioned earlier, proper
+                 passing the power density of each module i, as a sample. The                          initialization plays a crucial role. We address this by adopting
+                 centroid of each tier is determined based on the target power                         a layer-wise pretraining approach to train the autoencoders
+                 density. Encoding layers are employed to transform the raw                            and initialize the network parameters (W,Z) [31]. Initially,
+                 data into a lower-dimensional space, and the decoding layers                          a single-layer autoencoder trains the first layer of the encoding
+                 reconstruct the data from this latent space. By minimizing                            network and the last layer of the decoding network. The output
+                 the reconstruction error between the encoding and decoding                            of the trained forward layer then serves as the input for training
+                 layers, we train the mapping function to obtain high-quality                          subsequent pairs of encoding and decoding layers, following
+                 feature representations. The k-means clustering takes place at                        a similar process. This layer-wise pretraining procedure con-
+                 the bottleneck layers. Our approach simultaneously optimizes                          tinues iteratively until completion. After achieving successful
+                 the forward network, decoding network, and k-means cost.                              pretraining, we utilize k-means clustering on the bottleneck
+                                                                                                       layer outputs to determine the initial values of D and {s }.
+                 In our experiments, the decoding network mirrors the encoding                                                                                                    i
+                 network, and rectified linear units (ReLUs) [30] are used                                2) Alternating Stochastic Optimization: The discrete set
+                                                                                                       constraint of the block variable {s } prevents direct applica-
+                 as activation functions for both networks. Referring to the                                                                          i
+                 network structure illustrated in Fig. 2 as the DCN, we leverage                       tion of the widely used stochastic gradient descent (SGD)
+                                                                                                       algorithm for joint optimization of W, Z, D, and {s }.
+                 the concept of stacked autoencoders (SAEs) to successfully                                                                                                           i
+                 cluster high-dimensional sample data in the bottleneck layers                         To overcome this challenge, we employ a combination of
+                 using the k-means algorithm.                                                          alternating optimization and SGD, enabling the optimization of
+                    The DCN takes a 6-D vector [w , h , A , p , pd , cn ]                              one parameter set while keeping the other two fixed. Initially,
+                                                                   i    i     i    i      i      i     we focus on updating the network parameters (W,Z) given
+                 as input, denoted as x . Here, [w , h , A , p ] represent
+                                                 i                i    i     i     i                   D and {s }. To facilitate SGD updates, we transform (5) into
+                 the width, height area, and power of module i, respectively.                                      i
+                 pd = p /A represents the power density of module i, while                             a sub-problem expressed as follows:
+                    i       i    i
+                 cn represents the number of modules connected to module i.
+                    i                                                                                                     i                            λ                    2
+                                                                                                                                                         ∥                ∥
+                                                                                                                 min L =ℓ(g(f(x )),x )+                    f(x ) − Ds        .        (6)
+                 Let R = {r1,...,rk} be the power distribution among the tiers                                  W,Z                      i      i      2       i         i  2
+                 in the 3-D IC, where rk represents the ratio of the power of
+                                                                  PK                                   For     brevity,     we simplify the notation f(x ;W) and
+                 tier k to the total module power, and                k=1rk = 1. The power                                                                                i
+                                                                                                       g(f(x ;W);Z) to f(x ) and g(f(x )), respectively. The gradi-
+                 density of each tier is denoted as d = r p                     /A       , where              i                     i                i
+                                                                 k       k  total   fixed              ent of the aforementioned function with respect to the network
+                 ptotal and Afixed represent the total power consumption and the
+                 area of the fixed-outline in 3-D IC, respectively.                                    parameters is computed as follows:
+                    Based on the previous discussion, we establish the optimiza-                                          ∂ℓ(g(f(x )),x )             ∂f(x )
+                                                                                                              ∇ Li =                  i      i  +λ          i  (f(x ) − Ds )          (7)
+                 tion objective as follows:                                                                     X                 ∂X                    ∂X          i         i
+                                              N 
+                     P1:         min        Xℓ(g(f(x;W);Z),x)                                          where X = (W,Z) represents the set of network parameters,
+                                                             i               i                         and the gradients (∂ℓ/∂X) and (∂f(x )/∂X) can be efficiently
+                                       { }                                                                                                              i
+                              W,Z,D, s
+                                        i    i=1                                                       obtained through back propagation (BP) [32]. Subsequently,
+                                                           λ                         2                the update of network parameters can be expressed as follows:
+                                                              ∥                     ∥
+                                                        +      f(x ;W)−Ds
+                                                           2        i              i 2
+                                                             T                                                                     X ←X−κ∇ Li                                         (8)
+                                              {      }                                                                                                X
+                                 s.t. s    ∈ 0, 1 ,         1 s =1 ∀i, j.                      (5)
+                                        j,i                     i
+                 Here, s      represents the assignment vector for data point                          where κ is a predefined learning rate.
+                           i                                                                              When network parameters X = (W,Z) and D are fixed,
+                 i, where it has a single nonzero element. sj,i corresponds
+                                                                                                       we can update the indicator vector s of the current sample
+                 to the jth element of s , while d                    denotes the centroid                                                                i
+                                                    i              k                                   online
+                 of the kth cluster, represented by the kth column of D.                                                 
+                 The mapping f(x ;W) signifies the nonlinear transformation
+                                        i                                                                                                                  ∥              ∥
+                                                                                                                           1,    if j = arg       min         f(x ) − d
+                 of x through the forward network, with W representing                                                                         k={1,...,K}        i       k 2
+                       i                                                                                       sj,i ←                                                                 (9)
+                 the parameter set characterizing this mapping. Similarly, the                                           
+                                                                                                                           0,    otherwise.
+                              Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+              1886                                 IEEE TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS, VOL. 31, NO. 12, DECEMBER 2023
+              Algorithm 1 Deep k-Means Clustering Algorithm
+                                                                                    Fig. 3. Floorplan implied by SP (⟨4 3 1 6 5 2⟩, ⟨6 3 5 4 1 2⟩), where
+                                                                                                                  i
+                                                                                    1 ≤ i ≤ K. The sizes for the six modules are: 1(4 × 6), 2(3 × 7), 3(3 × 3),
+                                                                                    4(2 × 3), 5(4 × 3), and 6(6 × 4), respectively.
+                                                                                    where fp represents a feasible floorplan solution and β is
+                                                                                    a coefficient. To calculate the temperature, we employ the
+                                                                                    power blurring method (see Section II-B), while the widely
+                                                                                    used half-perimeter wirelength (HPWL) model is utilized for
+                                                                                    wirelength approximation [34]. Recognizing the disparity in
+                                                                                    magnitudes between the wirelength and temperature objec-
+                Likewise, when X = (W,Z) and s are fixed, we utilize                tives, we apply a normalization technique to both objectives
+                                                        i
+              the method proposed in [33] to update dk. To facilitate this          to address this issue.
+              process, we introduce ci, representing the number of times a            In this study, we utilize the widely researched multilayer
+                                       k
+              sample has been assigned to cluster k before processing the           sequence pair (SP , SP ,...,SP ) as the floorplan represen-
+              incoming sample x . d is then updated using a simple gradient                            1     2         K
+                                  i  k                                              tation in 3-D IC [35].
+              step as follows:                                                        Definition 1 (Sequence Pair): An SP (Ŵ ,Ŵ ) consists of
+                                                                                                                               i   1    2
+                                           i                                      two sequences of n elements, representing a list of n mod-
+                            d ←d − 1 c (d −f(x))s                           (10)
+                             k      k         k   k       i   k,i                   ules in tier i. It establishes the geometric relations between
+              where the gradient step size 1/ci controls the learning rate.         nonoverlapping modules as follows:
+                                                 k
+                To update (5), we employ an iterative minimization                           (⟨...,b ,...,b ,...⟩,⟨...,b ,...,b ,...⟩)
+              technique, outlined in Algorithm 1. Initially, the network                             i       j              i        j
+              parameters X = (W,Z) are initialized using the pretraining                       ⇒b is left to b
+                                                                                                    i             j
+              outcomes of D and {s } (line 1). Subsequently, modules are
+                                      i                                                      (⟨...,b ,...,b ,...⟩,⟨...,b ,...,b ,...⟩)
+              assigned to centroids based on the smallest loss function,                             j       i              i        j
+                                                                                               ⇒b is below to b .
+              derived from pretraining, leading to the determination of                             i                j
+              clusters {C1,...,Ck} (line 3). The parameters in the minimum            The construction of horizontal- and vertical-constraint
+              loss function are then updated using the alternating SGD              graphs is applied to the given SP          [36]. By calculating
+              algorithm (lines 4±6). The clustering process is complete when                                                 i
+              the assignments no longer change.                                     the longest path length, the resulting floorplan is obtained.
+                                                                                    Notably, when there are n modules, the number of possible
+                                                                                                                     2
+                                                                                    floorplan configurations is (n!) . The original paper proposing
+              V. 3-D THERMAL-AWARE GLOBAL DISTRIBUTION STAGE                        SP introduces an O(n2) algorithm for transforming SP
+                                                                                       i                                                              i
+                This section illustrates a thermal-aware GD approach. After         into a floorplan. To speed up this process, Tang et al. [37]
+              modules and TSVs have been assigned to different tiers,               proposed an O(nloglogn) evaluation algorithm that computes
+              we simultaneously distribute modules and TSVs to placement            weighted longest common subsequences. For example, Fig. 3
+                                                                                    shows the corresponding floorplan for the SP (⟨4 3 1 6 5 2⟩,
+              regions in all tiers while optimizing the total wirelength                                                             i
+              and temperature. We begin by discussing the floorplanning             ⟨6 3 5 4 1 2⟩).
+              problem and subsequently formulate it as an MDP. The fol-
+              lowing section outlines the proposed learning-based network           B. Problem Formulation
+              architecture, while also defining network inputs that guide
+              the decision-making process of the multiagent. To generate              In this stage, we address the floorplanning problem, which
+              feature embeddings of the netlist, we introduce a GCN.                aims to optimize the positions of blocks and TSVs to minimize
+              Finally, we integrate the MADRL algorithm with an attention           wirelength and temperature. Traditionally, local search heuris-
+              mechanism to learn optimal policies.                                  tics have been employed for generating these assignments.
+                                                                                    However, we propose a novel approach by exploring the
+              A. Floorplanning Definition                                           possibility of learning these heuristics through accumulated
+                                                                                    search experiences. Our main objective is to develop a local
+                In this section, our objective is to optimize the positions of      search algorithm from scratch, free from too much prior
+              modules and TSVs in each tier while minimizing wirelength             human knowledge, for exploring floorplans. This approach
+              and temperature. Based on wirelength function W(·) and tem-           aims to attain high-quality solutions by effectively leveraging
+              perature function T(·), the optimization objective is defined as      efficient local search heuristics.
+              follows:                                                                To explore improved floorplan strategies through local
+                                  min W(f )+βT(f )                          (11)    search, we consider each tier as an agent and define a
+                                   f         p          p                           corresponding MDP for each agent.
+                                    p
+                        Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                GUANet al.: THERMAL-AWARE FIXED-OUTLINE 3-D IC FLOORPLANNING                                                                                                    1887
+                   1) State Space: In the floorplanning problem, the state S
+                        represents a complete solution comprising an entire SP
+                                                                                                i
+                        and the orientation of each module.
+                   2) Action Space: We define six types of perturbations
+                        for each agent, enabling the generation of neighboring
+                        floorplan solutions.
+                           a) Swap a random pair of modules in Ŵ .
+                                                                                1
+                          b) Swap a random pair of modules in Ŵ .
+                                                                                2
+                           c) Swap a random pair of modules in both Ŵ1 and Ŵ2.
+                          d) Shift a randomly selected module to a new position
+                               in both Ŵ and Ŵ .                                                    Fig. 4.    Search space for TSV positions in the GD stage. The whitespace
+                                           1          2
+                                                                                      ◦             between modules within each tier is divided into E × F regular slots.
+                           e) Rotate a randomly selected module by 90 .
+                           f) Shift a randomly selected TSV to a new position                       Black dots indicate the initial TSV positions, while gray areas represent the
+                               within the range of 1 ≤ r ≤ 3, excluding the last                    modules. The yellow, orange, and pink slots indicate the available locations
+                               tier. Fig. 4 illustrates the search space for TSV                    for perturbing TSVs corresponding to r = 1, r = 2, and r = 3, respectively.
+                               positions in the GD stage.
+                        Following the sampling of a neighboring floorplan, the
+                        RL agent determines whether to accept or reject the
+                        move, resulting in an action space size of 2.
+                   3) State Transition: Given a floorplan solution (state),
+                        applying any of the mentioned perturbation methods
+                        causes the agent to transition to a different state.
+                        This simplifies the probabilistic aspect of our MDP
+                        formulation.                                                                Fig. 5.    Schematic of the floorplan framework in the GD stage. A GCN
+                   4) Reward: The goal of the floorplanning problem is                              encodes information about the netlist graph. In the multiagent system, the
+                                                                                                    policy networks and value networks of each agent output probability distri-
+                        to minimize both wirelength and temperature. As the                         butions for actions in each tier and the expected returns for the current tier’s
+                        agents strive to maximize their total reward, the action                    floorplan.
+                        of maximizing cumulative rewards should be consistent
+                        with the goal of the floorplanning problem.                                 graph neural network (GNN) as an encoder in our architecture
+                   In this stage, we employ a reward system based on the                            to encode information associated with unseen netlists. In 3-D
+                reduction in objective cost to drive the local search. Rewards                      IC floorplanning, the interactions between chip tiers and the
+                are assigned when a superior solution is found, while no                            vertical stacking of TSVs affect wirelength and temperature.
+                reward is given for inferior solutions. To ensure consistency,                      Thus, each agent (representing a tier) needs to adapt its
+                the rewards are normalized to a range of [0, 1] by dividing                         strategies based on its teammates. To tackle this challenge,
+                the cost of the initial solution                                                    we employ the ATT-MADDPG algorithm, which incorporates
+                                                                   ′                               an attention mechanism to model and exploit teammate strate-
+                                    
+                              R = 0,                  ′     if f (s ) ≥ f (s)              (12)     gies (see Section V-F). Our proposed thermal-aware floorplan
+                                    f(s)− f(s ), if f(s′) < f(s)                                   framework, as depicted in Fig. 5, efficiently optimizes the
+                                          baseline                                                  positions of modules and TSVs.
+                where f(·) is the objective function shown in (11). s denotes                           First, we propose a novel GNN for extracting information
+                the current solution (state), while s′ denotes the neighboring                      from netlists. The GNN consists of three graph convolu-
+                solution of s. By maximizing the total reward, we effectively                       tional layers with dimensions of 14, 14, and 6, respectively
+                minimize the objective cost, as indicated in (12). Based on                         (Section V-E provides detailed descriptions of the graph
+                these principles, we formulate the floorplanning local search                       convolution operations). To obtain the overall netlist graph
+                problem.                                                                            embedding, we employ a reduced mean function in the final
+                   Problem 1: Given the MDP model described above, the RL                           layer. By integrating this GNN as an encoder into our network
+                agents aim to find their optimal policies π∗ = {π∗,...,π∗}                          architecture, we effectively encode information from unseen
+                                                                                  1          K      netlists into meaningful signals during inference. In addition,
+                to minimize the wirelength and temperature of the floorplan.
+                                                                                                    weincorporate other state features, such as cost-related statisti-
+                C. Algorithm Framework in GD Stage                                                  cal information and search step details outlined in Section V-D,
+                                                                                                    into the 1-D vector by concatenating them. This vector is
+                   RL agents aim to learn an optimal policy that maps the                           then passed as input to the multiagent system, with a ReLU
+                state space to the action space, but storing the best action for                    activation function applied after each layer except the last.
+                each state is infeasible due to the large number of possible                            Next, after embedding the graph node information, we con-
+                states, especially in floorplanning scenarios with n modules.                       sider each chip tier as an independent agent and employ
+                To address this, we propose utilizing a neural network to                           a MADRL algorithm to optimize the positions of modules
+                approximate the optimal policy. However, training such a                            and TSVs for minimizing wirelength and temperature in 3-D
+                network is challenging due to the vast state space and diverse                      ICs (see Section V-F). The critic network of each agent
+                properties of netlists. To handle these variations, we integrate a                  incorporates observations and actions from all agents to guide
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                1888                                         IEEE TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS, VOL. 31, NO. 12, DECEMBER 2023
+                updates in their respective actor networks. However, each
+                agent’s actor-network only relies on its own observations
+                for decision-making. To enhance cooperative behavior among
+                agents, we introduce an attention mechanism into the cen-
+                tralized critic (see Section V-G). This attention mechanism
+                dynamically captures the joint policy of teammates and adapts
+                as policies evolve, facilitating quick policy adjustments for
+                efficient cooperation. Ultimately, the RL agents aim to dis-
+                cover their optimal policies π∗ = {π∗,...,π∗} to minimize                          Fig. 6.    (a) Input netlist. (b) Graph representation. Each pink, green, and
+                                                                 1          K                      blue node v    ∈V represents a circuit module on a different tier of the chip,
+                wirelength and temperature in the floorplan.                                                    m
+                                                                                                   while each gray node vT ∈ V represents a TSV. Each edge e ∈ E represents
+                                                                                                   a connection between two nodes.
+                D. Input Features
+                   Tooptimize floorplan solutions, the agent’s decision-making                     E. Graph Feature Embedding
+                process involves selecting actions based on environmental                              Graph-based learning is a promising and versatile approach
+                information obtained after each perturbation. In this stage,                       in ML with diverse applications [39]. It involves obtaining
+                several decision-making features are introduced to facilitate                      node or graph representations, known as embedding, which are
+                this process. These features include:                                              essential for performing specific tasks and can be effectively
+                   1) The objective cost of the current state;                                     utilized by downstream models. For the floorplanning problem,
+                   2) The lowest and average objective costs observed so far;                      a netlist can be represented as an undirected graph, as shown in
+                   3) The objective cost of a sampled neighboring state;                           Fig. 6. To extract features from the netlist graph, we employ
+                   4) The area of the perturbed modules and the number of                          GCN. The GCN is integrated into our proposed end-to-end
+                        other affected modules;                                                    network architecture as an encoder, as depicted in Fig. 5.
+                   5) A scalar value indicating the current step; and                              This integration enables the network to encode pertinent
+                   6) The netlist graph, which consists of the graph adjacency                     information from previously unseen netlists into meaningful
+                        matrix and node features.                                                  signals during the inference phase.
+                   By considering these decision-making features, the agent                            Each graph node is initially characterized by a compact
+                can generate action distributions and estimate the expected                        7-D vector [A, w, h, pd, z, x, y]. Here, [A, w, h, pd, z,
+                reward for the current floorplan solution, thereby helping to                      x, y] corresponds to the area, width, height, power density,
+                optimize the solution.                                                             number of tiers, and x- and y-coordinates of the associated
+                   First, the primary objective of the floorplan search is cost                    module or TSV, respectively. Notably, the TSVs possess a
+                minimization. The agent evaluates whether to accept a sampled                      width and height of 3 µm, along with a power density of 0.
+                neighbor based on the defined cost function (11), utilizing                        To enable further processing, the node embeddings undergo
+                cost-related statistical information from the first three state                    three consecutive graph convolution layers.
+                features to enhance decision-making.                                                   In this stage, we employ a GCN to generate node embed-
+                   Second, each perturbation method leads to a transition                          dings. The process consists of two key steps: aggregation and
+                to a new state. To quantify the impact of this transition,                         encoding, expressed as follows:
+                we incorporate the area of perturbed modules and the number                                 l                               l−1                   	
+                                                                                                          h       ←AGGREGATE h                      ∀u ∈ N(v)               (13a)
+                                                                                                            N(v)                         l     u            
+                of affected modules. An affected module indicates that its                                      l            l                  l−1    l
+                                                                                                              h ←σ W ·CONCAT h ,h                                           (13b)
+                coordinates are influenced by the perturbed module.                                             v                               v      N(v)
+                   Third, search progress is included as a feature. Despite the                    where AGGREGATE in(13a)denotestheaggregator function
+                                                                                                                               l
+                agent having an early stop mechanism, it remains unaware of                        in layer l, applied to the neighboring nodes of each node
+                the progress since it is considered irrelevant to local search.                    v. After aggregating the neighboring feature vector, we first
+                   Finally, the floorplanning task involves a netlist graph as                                                                                         l−1
+                                                                                                   concatenate the current representation of node v, h                     , with
+                input. Fig. 6(a) illustrates an input netlist with seven nets, η =                                                                     l               v
+                                                                                           1       the aggregated neighborhood vector h                      . Next, the con-
+                {A, D, F}, η = {B, D, E}, η = {C, E}, η = {D, F, G},                                                                                   N(v)
+                                 2                      3                  4                       catenated vector undergoes an encoding operation involving
+                η ={E, G, J}, η = {F, H, I}, η = {G, I, J}. Each net                               an embedding projection and a nonlinear activation function
+                  5                      6                      7
+                forms a k-clique, where k denotes the net’s size, and the edges                    σ(·), as shown in (13b). The weight matrix Wl represents
+                within the clique are weighted by 2/k [38]. Fig. 6(b) depicts the                  the weights of layer l. The results are then passed on to the
+                corresponding undirected clique-based graph model G(V,E).                          subsequent graph convolutional layer.
+                To process the netlist input, we employ a GCN to generate                              An example illustrating a 2-layer GCN for generating the
+                feature embeddings (see Section V-E). This enables the agent                       embedding for node 1 is depicted in Fig. 7, with encoding
+                to learn patterns that generalize to unseen netlists.                              dimensions in layer l           and l      are d     and d , respectively.
+                                                                                                                                 1         2         1          2
+                   Notably, all features are normalized to facilitate training.                    In the initial graph convolutional layer l1, each node’s hidden
+                To achieve this, the initial state’s objective cost is denoted                     representation is obtained by aggregating its own features
+                as e , and all cost-related entries are normalized using the                       along with those of its neighboring nodes. For example,
+                      0
+                formula min(1, f/e −1). Furthermore, these aforementioned                          in node 1, the aggregator function combines the features of
+                                         0
+                features are concatenated into a single vector representation,                     node 1 itself and its neighboring nodes 2±4. After aggregating
+                which is subsequently passed to the downstream network.                            the features, a nonlinear transformation is applied to each
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                GUANet al.: THERMAL-AWARE FIXED-OUTLINE 3-D IC FLOORPLANNING                                                                                                      1889
+                                                                                                     Algorithm 2 ATT-MADDPG for GD Stage
+                Fig. 7.   Example of computing the embedding for a node with two layers.
+                (a) Netlist graph. (b) Process of embedding computation for node 1.
+                node, resulting in a new feature vector of dimension d . These
+                                                                                       1
+                same aggregation and encoding operations are then performed
+                in layer l2. As a result, the final hidden representation of node
+                1 incorporates information from a broader neighborhood.
+                    When the mean function is chosen as the aggregator func-
+                tion, the aggregation and encoding processes in layer l can be
+                expressed as follows:
+                                      l+1         ˜ −1/2 ˜ ˜ −1/2    l   l
+                                   H =σ(D AD HW).                                           (14)
+                          ˜
+                Here, A = A + IN represents the adjacency matrix of the
+                undirected graph G, which includes self-connections. The
+                                                                     ˜
+                identity matrix IN and diagonal matrix D are used, with each
+                 ˜        P ˜            l
+                D =             A . H represents the node embeddings for the
+                   ii         j   i j
+                entire graph. Ultimately, the embedding for the entire graph
+                is computed as the mean of all node embeddings at the final
+                graph convolutional layer.
+                F. ATT-MADDPG for Floorplanning
+                    After embedding graph node information, we adopt a
+                MADRLalgorithm to optimize modules and TSVs placement
+                in 3-D ICs, aiming to reduce wirelength and temperature.                                 Our approach incorporates several techniques, including
+                However, in 3-D ICs, nets often span multiple chip tiers,                            the attention mechanism, replay buffer, experience replay
+                and the wirelength and temperature of the chip are influenced                        mechanism, and neural network update method, to achieve
+                by the mutual interactions between tiers resulting from the                          our objectives. The replay buffer efficiently stores the state,
+                vertical stacking of TSVs. Consequently, agents representing                         action, and reward information of all agents at each time step.
+                individual chip tiers need to adapt their strategies based on                        As shown in Fig. 5, we treat the tiers as individual agents
+                their teammates’ actions, fostering effective cooperation to                         in the system. The centralized critic Qi, representing the Q
+                minimize chip temperature and wirelength.                                            value function for agent i, has access to observations and
+                    To capture and utilize teammates’ policies in cooperative                        actions from all agents, while the independent actor π can
+                                                                                                                                                                                i
+                multiagent systems, we employ the ATT-MADDPG algorithm                               only access its own observation o . Our method follows the
+                                                                                                                                                   i
+                proposed by [24], as illustrated in Fig. 5. ATT-MADDPG                               following procedure during the training process.
+                is specifically designed to adaptively model the dynamic                                 Step 1: The actors π use their individual observations o to
+                                                                                                                                   i                                              i
+                joint policy of teammates, focusing on training decentral-                           generate actions a and interact with the environment.
+                                                                                                                             i
+                ized policies for large-scale distributed tasks with continuous                          Step 2: The centralized critics estimate the Q-values Qi
+                action spaces. Access to teammates’ observations and actions                         by considering the observations and actions of all agents.
+                is crucial for effective agent modeling, and ATT-MADDPG                              To effectively model teammates’ policies using the gathered
+                addresses this by utilizing a centralized critic to gather the                       information, we enhance the centralized critic with an attention
+                required information. To efficiently process this information                        mechanism (see Section V-G).
+                and model teammates’ policies, an attention mechanism is                                 Step 3: After receiving reward feedback from the environ-
+                integrated into the centralized critic (see Section V-G). This                       ment, the actors and critics undergo joint training using BP,
+                attention mechanism introduces a specialized structure that                          as described in (17)±(19).
+                dynamically and adaptively captures the joint policy of team-                            Algorithm       2 gives a high-level description of the
+                mates. As teammates adjust their policies, the associated                            ATT-MADDPGalgorithmtosolvetheflooplanproblem.Inthe
+                                                                                                                                                                 ′   ′    ′    ′    −
+                attention weights adapt accordingly, enabling the agent to                           initialization stage, the target networks Q(⟨o ,o⃗ ⟩,a ,a⃗ ;w )
+                quickly adapt its own policy. This leads to efficient cooperation                    and µθ−(o′) are initialized with weights w− and θ−, respec-
+                and collaboration among all agents.                                                  tively, along with the initialization of the replay buffer D
+                              Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                     1890                                                       IEEE TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS, VOL. 31, NO. 12, DECEMBER 2023
+                     (lines 1±2). The training process comprises M episodes, each
+                     consisting of T training steps. Subsequently, at the start of
+                     each episode, the noise process N and the initial state s are
+                                                                                                                      1
+                     randomlygenerated (lines 4±5). At each time step t, each agent
+                     i selects an action based on its current policy and exploration
+                     noise, leading to a reward and a transition to a new state. The
+                     transition (st,at,a⃗t,rt,st+1) is stored in the replay buffer D
+                     (lines 7±10). Then, S samples are randomly sampled by each
+                     agent i from the replay buffer D (line 12). The critic of each
+                     agent updates by minimizing the mean square error between                                                     Fig. 8.       Schematic of the attention mechanism. We illustrate the detailed
+                     the real Q value and the target Q value, while the actor adjusts                                              generation of Q1 using a three-agent example with a discrete action space
+                     its policy parameters θ based on the real Q value received                                                    {u, v}. Each agent has a preference for taking a specific action: u, v, and u,
+                                                                                                                                   respectively. Notably, in this scenario, the second action conditional Q value
+                     from the critic. In addition, the critic employs the same error                                               Q2 holds greater significance in computing the contextual Q value Qc,
+                                                                                                                                      1                                                                                                   1
+                     to update the state value weights w (lines 13±15). Finally,                                                   as depicted by the thicker red links. It is important to distinguish between
+                                                                                                                                   Qi (real Q value), Qc (contextual Q value), and Qk (action conditional Q
+                     a soft update is employed to update the parameters w− and                                                                           c       1 k                                        1
+                       −                                                                                                           value). While Q1 and Q1 are multidimensional vectors, Qi represents the real
+                     θ     of the target networks (lines 17±19).                                                                   scalar Q value employed in (17)±(19).
+                     G. Attention Mechanism                                                                                        Qi, using a fully connected layer with a single output neuron,
+                         In order to facilitate effective collaboration and optimize                                               as depicted at the top of Fig. 8. The ReLU activation function
+                     the reduction of chip temperature and wirelength, it is crucial                                               is applied to the neural network. The critic network incorpo-
+                     for the agent to comprehend and adapt to teammates’ poli-                                                     rates observations and actions from all agents, resulting in the
+                                                                                                                                   real Q value Q , expressed as Q ⟨⟨o ,o⃗                               ⟩,a ,a⃗        ;w⟩. Thus,
+                     cies. To address this challenge, we propose the integration                                                                             i                            i     i     −i       i     −i       i
+                     of an attention mechanism into the centralized critic. This                                                   we extend (2)±(4) into multiagent formulations as follows:
+                                                                                                                                                                                                               
+                                                                                                                                                                        D         ′   E          ′          
+                     enhancement enables the adaptive modeling of dynamic joint                                                                δ =r +γQ                    o′,o⃗        ,a′,a⃗       ;w− 
+                                                                                                                                                 i       i            i       i    −i       i     −i       i    ′            ′
+                     policies among teammates, ensuring that the agent can accu-                                                                                                                                 aj=µ −(oj)
+                                                                                                                                                                   
+                                                  θj
+                     rately capture the cooperative behaviors essential for achieving                                                                    −Q o,o⃗ ,a,a⃗ ;w                                                            (17)
+                     better results. By incorporating this attention mechanism, our                                                                             i     i     −i       i    −i       i 2
+                                                                                                                                        L(w ) = E                                ′  ′        [(δ ) ]                                 (18)
+                                                                                                                                               i          (o ,o⃗   ,a ,a⃗   ,r ,o ,o⃗  )∼D        i
+                     approach enhances the agent’s ability to collaborate effectively                                                                        i  −i   i   −i   i  i  −i
+                     and improve overall performance in the task.                                                                                                                                     
+                                
+                                                                                                                                    ∇ J(θ ) = E                            ∇ µ (o )∇ Q o ,o⃗                         ,a ,a⃗        ;w
+                                                                                                                                       θ       i          (o ,o⃗   )∼D        θ    θ     i     a     i     i     −i      i     −i       i
+                         From the perspective of agent i, the outcome of action                                                         i                    i  −i             i    i          i               
+                                                                                                                                                                                        
+                     a in state s is influenced by the joint actions of team-                                                                                                       × aj = µθj(oj)                                   (19)
+                       i                                                                                                           where, a′ represents the local action of agent i in the next state
+                     mates a⃗−i. Our objective is to determine the optimal policy                                                                i             ′
+                                                    π |π⃗   .
+                     π∗ = argmax Q i −i (s,a ) by approximating the Q value                                                        after s, while a⃗−i represents the joint action of teammates
+                                             π                       i
+                       i                       i    i                                                                                                                                                                      ′            ′
+                                          π |π⃗
+                                           i   −i                                                                                  of agent i in the next state after s. Similarly, o and o⃗
+                     function, Q                  (s,a ), associated with the joint policy of                                                                                                                              i            −i
+                                          i               i                                                                                                         ′     ′        ′     ′       −
+                                                                                                                                   are denoted. Qi(⟨o ,o⃗ ⟩,a ,a⃗                           ;w ) denotes the target Q
+                     teammates. To achieve this approximation, we propose an                                                                                        i     −i       i     −i      i
+                     attention mechanism, as depicted in Fig. 8, which consists of                                                 value function of the target critic network. Then, the target
+                                                                                                                      ⃗            network parameters for the actor and critic networks are
+                     an attention module and a K-head module, with K = |A−i|.                                                      updated periodically using a soft update algorithm.
+                     The K-head module generates K action conditional Q-values,
+                     denoted as Qk(s,a |a⃗                    ;w), where w is the parameters of                                        In addition, the deterministic nature of the actions generated
+                                             i        i    −i      i                    i           k                              by the policy lacks exploration of the environment. To address
+                     the critic network of agent i. Specifically, Q (s,a |a⃗                                          ;w)
+                                                                                                    i         i   −i       i       this limitation, we introduce an exploration policy, denoted
+                     is generated based on a and all observations ⟨o ,o⃗ ⟩ =
+                                                                 i                                            i    −i                      ′
+                     o⃗ ≜ s with a⃗−i obtained from an additional hidden vector                                                    as µ. By incorporating noise sampled from a noise process
+                     h (w ). The K-head module facilitates grouping of similar                                                     N into our actor policy, we encourage exploration of the
+                       i     i                                                                                                     environment. This is represented by the following equation:
+                     a⃗−i actions. Within the attention module, the attention weight
+                     vector W (w ) is generated by comparing h (w ) with all                                                                                        ′
+                                     i     i                                                         i     i                                                     µ(o )=µ (o )+N                                                      (20)
+                                                                                                                                                                         i,t          θ      i,t
+                     action conditional Q-values, Qk(s,a |a⃗                                ;w):                                                                                       i,t
+                                                                          i        i    −i       i
+                                                                                                                                 where µ (o ) denotes the deterministic policy of agent i
+                                                                                                                                                  θ      i,t
+                                                                              k                                                                   i,t
+                                                       exp h (w )Q (s,a a⃗ ;w )
+                               Wk(w)=                             i     i     i         i   −i       i          .      (15)        at time step t. The selection of N can be tailored to fit the
+                                   i     i        PK                                k                        
+                                                                                                                                  specific environment. In our study, we utilize a Gaussian noise
+                                                             exp h (w )Q (s,a a⃗ ;w )
+                                                       k=1             i     i      i        i    −i       i                       process to facilitate exploration [40].
+                                                                        π |π⃗
+                         Finally, we approximate Q i −i(s,a ) using the following
+                                                                        i               i
+                     formula [24]:                                                                                                         VI. THERMAL-AWARE TSV ASSIGNMENT STAGE
+                                                                   K
+                                 c                              X k                    k                                              In order to further minimize wirelength and tempera-
+                             Q s,a ,a⃗ ;w =                             W (w)Q (s,a |a⃗ ;w ). (16)
+                                 i        i     −i      i                  i      i     i        i    −i       i                   ture, this section focuses on refining the locations of TSVs.
+                                                                 k=1                                                               We begin by providing a description of the TA problem and
+                         Once we obtain the contextual Q value Qc(s,a ,a⃗                                            ;w),          subsequently formulate it as an MDP. To solve this problem,
+                                                                                 c                 i        i    −i       i
+                     weconvert the multidimensional Qi into a scalar real Q value                                                  we employ the ATT-MADDPG algorithm once again. It is
+                                      Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                 GUANet al.: THERMAL-AWARE FIXED-OUTLINE 3-D IC FLOORPLANNING                                                                                                        1891
+                                                                                                          In the TA stage, we use the same objective function as
+                                                                                                       in (11) based on the wirelength and temperature functions.
+                                                                                                       For brevity, we omit further elaboration on this topic. It is
+                                                                                                       important to note that fp represents a feasible TA solution at
+                                                                                                       this stage.
+                                                                                                       B. Problem Formulation and Solution
+                                                                                                          Fig. 9(a) illustrates a four-chip tiers network structure,
+                                                                                                       serving as an example to describe the TA problem. The figure
+                                                                                                       showcases two nets: η = q ,t and η = q ,t . Each net’s
+                 Fig. 9.  (a) Two-net slot structure in four-chip die. (b) The search space for                                       1       1  1          2       2   2
+                 TSV positions in the TA stage. Black dots indicate the initial TSV positions,         signal path starts at a source pin, traverses the corresponding
+                 while gray areas represent the modules. The yellow, orange, and pink slots            slots in each tier, and connects to the sink pin through TSVs,
+                 indicate the available locations for perturbing TSVs corresponding to r = 1,          facilitating signal transmission. Specifically, net η                  traverses
+                 r = 2, and r = 3, respectively.                                                                                                                           1
+                                                                                                       from b to b , while net η traverses from b to b . As a
+                                                                                                                 1       3                   2                        1        4
+                                                                                                       result, η     requires two TSVs, while η requires three TSVs
+                 important to note that, unlike the GD stage, the agents in TA                                    1                                        2
+                 stage are represented by the TSV tiers.                                               to establish vertical connections across the tiers of the entire
+                                                                                                       net. Our objective is to optimize the TA positions for all
+                 A. TSV Assignment Problem Definition                                                  nets, effectively minimizing wirelength and temperature on the
+                    The task of TA in the 3-D IC involves determining suitable                         chip. To explore improved TA strategies through local search,
+                 locations for TSVs to establish connections between chip dies.                        we treat each TSV tier as an agent and define a corresponding
+                 The input for TA can be summarized as follows.                                        MDPfor each agent.
+                                                                                                          To generate an adjacent TSV solution, we first define the
+                    1) A 3-D IC comprises K chip tiers denoted as B =                                  action space of the TA problem. Fig. 9(b) illustrates the
+                         {b ,b ,...,b }, with K − 1 corresponding TSV tiers
+                           1    2          K                                                           initial layout obtained after floorplanning, where the black
+                         denoted as C = {c ,c ,...,c                      }.  Each TSV tier
+                                                      1   2          K−1                               dots represent the initial TSV positions. The search space for
+                         represents a chip tier containing TSVs.                                       TSV positions is defined by r = 1, r = 2, and r = 3. Four
+                    2) The whitespace between modules within each tier is                              perturbation methods were employed: 1) Swap a random pair
+                         divided into E × F regular slots. Each slot, referred to                      of TSVs in r = 1; 2) swap a random pair of TSVs in r =
+                         as g, represents a potential position for TSV placement.                      2; 3) swap a random pair of TSVs in r = 3; and 4) shift
+                    3) The 3-D netlist contains m nets that define inter-                              a randomly selected TSV to a new position in the range of
+                         connections between modules. Each net is a two-pin                            1 ≤ r ≤ 3. The state space S represents a complete solution,
+                         configuration, η = q ,t , where q represents the source
+                                              i      i  i                                              including the TSV placement strategy of an agent (TSV tier).
+                         pin transferred from the top tier using a minimum                             Applying any of the aforementioned perturbation methods to a
+                         spanning tree (MST), and t denotes the sink pin [41].                         TAsolution (state) causes the agent to transition to a different
+                    4) Each slot g is associated with a position relative to                           state. Furthermore, we adopt the reward system expressed in
+                         the left bottom corner of the chip, denoted as pg =                           (12) to maximize the total reward in this stage. We formulate
+                         (xg, yg,zg), where zg indicates the chip die number                           the local search problem for TA.
+                         of g. Similarly, each pin is assigned a position p                     =
+                                                                                              q           Problem 2: Given the above MDP model, the RL agents
+                         (x , y ,z ) or p = (x , y ,z ). Here, z               and z indicate                                                   ∗        ∗           ∗
+                           q    q    q        t        t   t   t             q         t               are to find their best policies π          ={π ,...,π             } so that the
+                         the chip die numbers of the source and sink pins,                                                                               1           K−1
+                                                                                                       wirelength and the temperature of the TA are minimized.
+                         respectively, with the constraint 1 ≤ zq < zt ≤ K.                               In this stage, we employ the ATT-MADDPGA algorithm to
+                    We define the cost function for net η consisting of wire-                          solve the TA problem. Unlike in the GD stage, each agent in
+                                                                       i
+                 length and temperature                                                                this stage corresponds to a TSV tier.
+                                     ψ =ς×W +(1−ς)×T                                          (21)
+                                        i             i                    i                                                VII. EXPERIMENTS RESULTS
+                 where ς denotes a user-specified parameter. W and T are
+                                                                                  i         i          A. Simulation Setup
+                 the costs of wirelength and temperature, respectively. The                               The proposed framework is implemented in Python with
+                 temperature cost function is outlined as follows:                                     the Pytorch library [42] and validated on the 2.5 GHz Intel
+                                               K−1
+                                        T = X Tk −Tk                                         (22)     XeonCPUundertheLinuxworkstationwith180GBmemory.
+                                          i             max       g(u,v)                               We took GSRC benchmarks [43] and IBM-HB+ benchmarks
+                                                k=1                                                    [44] to test our algorithm, including three GSRC circuits
+                 where Tk       denotes the maximum temperature and Tk                        rep-     (n100, n200, n300) and three IBM-HB+ circuits (ibm01,
+                           max                                                        g(u,v)
+                 resents the temperature at g(u,v) in b . Higher temperatures                          ibm03, ibm07). The chip’s aspect ratio is set to 1:1, with a 15%
+                                                                     k
+                 at g(u,v) result in lower costs, increasing the probability of                        whitespace and an elementary unit of 1 µm. In all test cases,
+                 placing a TSV at that location. Tk                     is calculated by the           the TSV size is fixed at 3 µm × 3 µm. Temperature results
+                                                                g(u,v)
+                 power blurring method (see Section II-B). The wirelength                              are obtained using HotSpot [45], with an ambient temperature
+                 calculation method is also derived from HPWL.                                         of 293 K.
+                              Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+              1892                                  IEEE TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS, VOL. 31, NO. 12, DECEMBER 2023
+                                                                               TABLE I
+                                                       COMPARISON WITH DIFFERENT TIER ASSIGNMENT METHODS
+                The training process involves 200 episodes, with a                   We employ the deep k-means clustering technique to achieve
+              maximum of 2000 training steps per episode. Multiple                   improved module clustering and temperature reduction.
+              training instances are executed within each episode. The               We compare our method with the power density-aware tier
+              DCN’s forward network consists of five layers (see Fig. 2),            assignment algorithm based on FM proposed by Lin et al. [13],
+              while   the   reconstruction    network     follows    a  mirrored     as it represents the state-of-the-art thermal-aware tier assign-
+              structure. To balance the reconstruction error and clustering          ment approach. Furthermore, a comparison is made with
+              regularization, we set λ = 0.1. To prevent overfitting,                the power density-aware tier assignment algorithm using the
+              we implement an early stopping mechanism that terminates               k-means clustering technique, which lacks a DNN for dimen-
+              the process if no improvement is observed within the last              sionality reduction of input module features as employed in
+              50 steps, indicating policy convergence. The critics utilize           the deep k-means approach. Notably, the experiment follows
+              4-head attention networks as the default configuration, and            our methodology, with the exception of the tier assignment
+              the actors employ feed-forward networks with two hidden                method.
+              layers, each comprising 32 neurons. Recent experiences are                The experimental results, presented in Table I, display
+              stored in a replay memory of size 100000, from which a                 power distribution outcomes achieved through FM and
+              batch of 128 experiences is sampled during training. The               k-means clustering in columns 3±8 and 9±14, respectively,
+              actor’s learning rate is set to 0.001, the critic’s learning rate to   while column 15±20 showcases our own results. Observing the
+              0.01, the target network’s learning rate to τ = 0.001, and the         table, it becomes evident that the FM-based approach achieves
+              discount factor to γ = 0.95. To ensure training stability, the         a 2% reduction in wirelength compared to ours. However,
+              target network remains fixed, and the trained policy network           it registers a 13% higher TSV count and an 8% higher
+              is synchronized with it every ten episodes. The network                maximum temperature. Furthermore, the temperature range of
+              models were trained using the adaptive moment estimation               the FM method is 1.27 times larger than that of our proposed
+              (Adam) optimizer [46], with exponential decay rates for the            approach. These results underline our method’s capability to
+              moment estimates set to 0.9 and 0.999, respectively.                   optimize power distribution and effectively mitigate tempera-
+                                                                                     ture fluctuations. This is because the deep k-means clustering
+              B. Dataset Generation                                                  algorithm used in this study is an unsupervised ML method
+                To assess the impact of the training dataset on our frame-           that outperforms the traditional FM algorithm utilized in the
+              work’s performance, we generate random netlists as training            baseline. Deep k-means capture subtle and complex features,
+              samples. We create three datasets and train corresponding              while FM relies on a predefined graph structure and iterative
+              network models for each dataset. The small models are trained          moves, limiting its adaptability and leading to suboptimal tem-
+              using netlists consisting of 100 modules with widths and               perature reduction. In addition, although the wirelength and
+              heights ranging from 10 to 100, along with assigned power              TSV count achieved by the k-means clustering method is 3%
+              consumption values. Each module has three pins at its center,          and 4% lower than the deep k-means clustering method, the
+              and we form 100 signals (nets) by randomly connecting three            maximum temperature obtained through k-means clustering is
+              pins. For the medium model, we utilize netlists comprising             10% higher. The experimental results demonstrate that deep
+              300 modules, each with six pins, and 300 nets. The remaining           k-means clustering with the DCN architecture can effectively
+              settings remain consistent with the small model case. In addi-         reduce the dimensionality of input module features, leading to
+              tion, we constructed a larger dataset containing 600 modules,          better clustering results compared to k-means clustering. As a
+              ten pins, and 2000 nets. Despite the longer training time              result, cross-tier power distribution is improved, resulting in
+              associated with the larger dataset, we chose it for training           a notable temperature reduction in 3-D ICs. In addition, our
+              the network model due to its superior performance and the              method is highly efficient, with a maximum runtime of only
+              one-time training effort, as discussed in Section VII-E. Finally,      5.27 s (as shown in column 10).
+              we evaluate the model using both GSRC and IBM-HB+                         Second, we assess the impact of the GCN and the attention
+              benchmarks.                                                            mechanism in our approach on performance. Table II provides
+                                                                                     a summary of their contributions. We perform 100 complete
+              C. Ablation Study                                                      runs of our algorithm for each benchmark and record the
+                                                                                     average statistical results. Columns 3±7 present the framework
+                In this section, we first examine the impact of power                without GCN, where the input to the multiagent system
+              density-aware tier assignment on the temperature of 3-D ICs.           lacks graph feature embeddings. Columns 8±12 display the
+                         Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+               GUANet al.: THERMAL-AWARE FIXED-OUTLINE 3-D IC FLOORPLANNING                                                                                            1893
+                                                                                        TABLE II
+                                                          EVALUATION OF GCN AND ATTENTION MECHANISM PERFORMANCE
+                                                                                               the n100 benchmark in a 3-D IC with four tiers in relation to
+                                                                                               the hyperparameter K, respectively. The histogram reveals a
+                                                                                               pattern where increasing K leads to a gradual saturation fol-
+                                                                                               lowed by a subsequent increase in wirelength and temperature.
+                                                                                               Therefore, setting K = 4, as depicted in Fig. 8, is justified.
+                                                                                               In addition, we conducted similar ablation experiments to
+                                                                                               determine the optimal network size and number of layers for
+               Fig. 10.    Wirelength and temperature comparisons among different layer        both the policy network and the value network within the
+               numbers of (a) DCN, (b) GCN, and (c) GCN (n100 benchmark in a 3-D IC            multiagent system.
+               with four tiers).
+               results using MADDPG without the attention mechanism.                           D. Comparison With Baseline
+               Columns 13±17 illustrate the results obtained with our com-                        In this section, we present a comparative analysis of our 3-D
+               plete technique. From the table, we observe that while the                      IC floorplanning methodology with the approach in [13], using
+               network architecture without GCN takes 5% less time than                        GSRC and IBM-HB+ benchmarks. We specifically compare
+               our proposed method with GCN, the wirelength and maximum                        our approach with this baseline, as it is the only state-of-the-art
+               temperature are 10% and 9% higher, respectively. The results                    three-stage 3-D IC floorplanner that can simultaneously place
+               demonstrate that our proposed network architecture with GCN                     TSVs and mixed-typed modules. All programs were evalu-
+               outperforms the framework without GCN, indicating that                          ated using identical benchmarks and power profile settings.
+               GCN extracts more efficient feature representations than the                    Wegenerated 100 test cases for each benchmark by randomly
+               original state features. Consequently, the multiagent system                    assigning the locations of the I/O bumps. Therefore, the results
+               can generalize to new, unseen netlists.                                         are the average values of 100 runs of each benchmark.
+                  In addition, we note from the table that the method                             Table III provides a comprehensive comparison between
+               without an attention mechanism achieves shorter execution                       the two methods using the GSRC benchmarks. Columns 3±8
+               times. However, compared to our attention-based approach,                       present the results of the baseline method, while columns 9±14
+               it yields higher wirelength and maximum temperature values                      display our results. Notably, column 14 presents the runtime
+               by 4% and 5%, respectively. The results indicate that our                       of our method during each of the three stages. Our approach
+               proposed attention-based algorithm surpasses the MADDPG                         achieves remarkable improvements, including a 22% reduction
+               algorithm without the attention mechanism, highlighting the                     in wirelength, a 13% reduction in the number of TSVs, a
+               effectiveness of our attention mechanism in modeling team-                      24% decrease in maximum temperature, a 72% decrease in
+               mate strategies and facilitating effective cooperation among                    temperature range, and a 48% reduction in running time
+               agents, thereby effectively reducing chip temperature and                       compared to the baseline. Moving on to Table IV, it presents
+               wirelength.                                                                     a detailed comparison using the IBM-HB+ benchmarks. Our
+                  In the final ablation experiment, we investigate the impact                  approach outperforms the baseline method by achieving a
+               of the number of layers in the DCN and GCN networks,                            significant 52% reduction in maximum temperature, a 61%
+               as well as the hyperparameter K, on the performance of our                      reduction in wirelength, a 44% reduction in the number of
+               framework. Fig. 10 illustrates the changes in wirelength and                    TSVs, and a remarkable 3.65 times faster running time.
+               temperature on the n100 benchmark for different numbers of                         To visually demonstrate the effectiveness of our method-
+               layers in the DCN and GCN. Importantly, when analyzing the                      ology, Fig. 12 displays the floorplans and temperature maps
+               influence of layer numbers in one network on performance,                       of n100 with three tiers. The left and right sides of the
+               the layer numbers in the other network remain constant. The                     figure depict the results of the baseline and our approach,
+               histogram in Fig. 10 demonstrates that as the depth increases,                  respectively. Notably, our approach achieves more uniform
+               the wirelength and maximum temperature of the chip initially                    temperature distributions and lower maximum temperatures
+               reach a saturation point and then gradually increase. This can                  compared to the baseline.
+               be attributed to the observed degradation problem in neural                        Our method achieves superior performance due to sev-
+               networks [47]. Therefore, it is appropriate to set the layer                    eral key factors. First, we utilize a deep k-means clustering
+               numbers of the DCN and the GCN to 5 and 3. Fig. 11(a)                           algorithm during the tier assignment stage, which allows for
+               and (b) present the changes in wirelength and temperature on                    better cross-tier power distribution. Section VII-C highlights
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                1894                                        IEEE TRANSACTIONS ON VERY LARGE SCALE INTEGRATION (VLSI) SYSTEMS, VOL. 31, NO. 12, DECEMBER 2023
+                                                                                          TABLE III
+                                                      COMPARISON OUR METHODOLOGY WITH BASELINE IN GSRC BENCHMARKS
+                                                                                          TABLE IV
+                                                    COMPARISON OUR METHODOLOGY WITH BASELINE IN IBM-HB+BENCHMARKS
+                Fig. 11.   Changes in (a) wirelength and (b) temperature on the n100 ben-
+                chmark in a 3-D IC with four tiers with respect to the hyperparameter K.
+                the significant impact of tier assignment on 3-D IC tem-
+                perature. Second, in the GD and TA stages, our approach
+                combines GCN with the MADRL algorithm, forming an
+                end-to-end learning framework. Compared to traditional ana-
+                lytical methods within a multilevel framework, our approach
+                significantly reduces algorithmic complexity. By effectively
+                capturing complex patterns and dependencies in chip lay-
+                outs, GCN empowers agents to make informed decisions.                            Fig. 12.   Resulting floorplans and the associated temperature maps of n100
+                Moreover, our incorporation of an attention mechanism in                         with three tiers, where the left and right columns, respectively, show the results
+                the centralized critic facilitates efficient cooperation among                   of [13] and our methodology.
+                agents, resulting in better floorplanning outcomes with reduced
+                wirelength and temperature in 3-D ICs. Furthermore, unlike
+                their method, which employs a sequential TA approach within
+                the MCMF-based algorithm where assigned TSVs become
+                fixed and irreplaceable, our approach avoids reliance on the
+                net order, mitigating potential detrimental outcomes.
+                E. Effect of Training Dataset on Performance
+                   In this section, we investigate the influence of the training                 Fig. 13.   Impact of training dataset on (a) wirelength and (b) temperature.
+                dataset on the learning capability of our method. We train
+                the framework using three distinct datasets, as described in                     and 29 h, respectively. Despite the longer training time for the
+                Section VII-B, and evaluate the models using representative                      larger dataset, we selected it for both GSRC and IBM-HB+
+                examples such as n100, n200, and n300 circuits. Fig. 13                          benchmarks due to its enhanced performance and the one-time
+                displays two bar graphs that illustrate the impact of the training               training effort required to calibrate our model.
+                datasets on wirelength and temperature. Notably, our method
+                achieves superior results with the increasing size of the training                                         VIII. CONCLUSION
+                data. This finding suggests that utilizing larger and more
+                diverse chip netlists for training mitigates overfitting tenden-                    This article proposes an end-to-end, learning-based thermal-
+                cies and improves generalization to unseen designs. Moreover,                    aware fixed-outline floorplanning approach for 3-D ICs.
+                the training time for the three datasets is approximately 6, 17,                 We begin by employing a power density-aware deep k-means
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 
+                GUANet al.: THERMAL-AWARE FIXED-OUTLINE 3-D IC FLOORPLANNING                                                                                              1895
+                clustering algorithm to allocate modules to suitable tiers.                      [20] K. Zhu, M. Liu, H. Chen, Z. Zhao, and D. Z. Pan, ªExploring logic
+                Then, we combine GCN with the ATT-MADDPG algorithm                                    optimizations with reinforcement learning and graph convolutional net-
+                to optimize the positions for modules and TSVs while min-                             work,º in Proc. ACM/IEEE 2nd Workshop Mach. Learn. CAD (MLCAD),
+                imizing wirelength and temperature. Finally, we utilize the                           Nov. 2020, pp. 145±150.
+                                                                                                 [21] A. Goldie and A. Mirhoseini, ªPlacement optimization with deep rein-
+                ATT-MADDPG algorithm again to refine the TSV posi-                                    forcement learning,º in Proc. ACM Int. Symp. Phys. Design, Mar. 2020,
+                tions, further reducing the wirelength and temperature of the                         pp. 3±7.
+                chip. Experimental results demonstrated that compared with                       [22] H. Liao, W. Zhang, X. Dong, B. Poczos, K. Shimada, and L. B. Kara,
+                                                                                                      ªA deep reinforcement learning approach for global routing,º J. Mech.
+                the state-of-the-art heuristic-based method, our approach can                         Des., vol. 142, no. 6, pp. 1±16, Jun. 2020.
+                obtain better results.                                                           [23] H. Liao et al., ªAttention routing: Track-assignment detailed routing
+                   Our work has overlooked power/ground TSVs (P/G TSVs)                               using attention-based reinforcement learning,º 2020, arXiv:2004.09473.
+                and TTSVs. In future work, we will extend our methodology                        [24] H. Mao, Z. Zhang, Z. Xiao, and Z. Gong, ªModelling the dynamic
+                                                                                                      joint policy of teammates with attention multi-agent DDPG,º 2018,
+                to encompass a comprehensive thermal analysis that takes into                         arXiv:1811.07029.
+                account signal TSVs, P/G TSVs, and TTSVs simultaneously,                         [25] R. S. Sutton, D. A. McAllester, S. P. Singh, and Y. Mansour, ªPolicy gra-
+                aiming to enhance the efficient dissipation of heat in 3-D ICs.                       dient methods for reinforcement learning with function approximation,º
+                                                                                                      in Proc. Adv. Neural Inf. Process. Syst., 2000, pp. 1057±1063.
+                                                                                                 [26] I. Grondman, L. Busoniu, G. A. D. Lopes, and R. Babuska, ªA survey
+                                              REFERENCES                                              of actor-critic reinforcement learning: Standard and natural policy gra-
+                                                                                                      dients,º IEEE Trans. Syst., Man, Cybern. C, Appl. Rev., vol. 42, no. 6,
+                 [1] J. Cong, J. Wei, and Y. Zhang, ªA thermal-driven floorplanning algorithm         pp. 1291±1307, Nov. 2012.
+                     for 3D ICs,º in Proc. ICCAD, Nov. 2004, pp. 306±313.                        [27] D. Silver, G. Lever, N. Heess, T. Degris, D. Wierstra, and M. Riedmiller,
+                 [2] P. Zhou et al., ª3D-STAF: Scalable temperature and leakage aware                 ªDeterministic policy gradient algorithms,º in Proc. PMLR, 2014,
+                     floorplanning for three-dimensional integrated circuits,º in Proc. ICCAD,        pp. 387±395.
+                     Nov. 2007, pp. 590±597.                                                     [28] T. P. Lillicrap et al., ªContinuous control with deep reinforcement
+                 [3] E. Wong and S. K. Lim, ª3D floorplanning with thermal vias,º in Proc.            learning,º 2015, arXiv:1509.02971.
+                     DATE, Mar. 2006, pp. 6±10.                                                  [29] B. Yang, X. Fu, N. D. Sidiropoulos, and M. Hong, ªTowards K-means-
+                 [4] L. Xiao, S. Sinha, J. Xu, and E. F. Y. Young, ªFixed-outline thermal-            friendly spaces: Simultaneous deep learning and clustering,º in Proc.
+                     aware 3D floorplanning,º in Proc. ASP-DAC, Jan. 2010, pp. 561±567.               34th Int. Conf. Mach. Learn., 2016, pp. 3861±3870.
+                 [5] Q. Xu and S. Chen, ªFast thermal analysis for fixed-outline 3D floor-       [30] V. Nair and G. E. Hinton, ªRectified linear units improve restricted
+                     planning,º Integration, vol. 59, pp. 157±167, Sep. 2017.                         Boltzmann machines,º in Proc. ICML, 2010, pp. 807±814.
+                 [6] T. Ni et al., ªTemperature-aware floorplanning for fixed-outline 3D ICs,º   [31] Y. Bengio, P. L. Lamblin, D. Popovici, and H. Larochelle, ªGreedy layer-
+                     IEEE Access, vol. 7, pp. 139787±139794, 2019.                                    wise training of deep networks,º in Proc. NIPS, Dec. 2007, pp. 1±8.
+                 [7] J. Knechtel, E. F. Y. Young, and J. Lienig, ªPlanning massive intercon-     [32] D. E. Rumelhart, G. E. Hinton, and R. J. Williams, ªLearning rep-
+                     nects in 3-D chips,º IEEE Trans. Comput.-Aided Design Integr. Circuits           resentations by back-propagating errors,º Nature, vol. 323, no. 6088,
+                     Syst., vol. 34, no. 11, pp. 1808±1821, Nov. 2015.                                pp. 533±536, Oct. 1986.
+                 [8] X. Hong et al., ªCorner block list: An effective and efficient topological  [33] D. Sculley, ªWeb-scale k-means clustering,º in Proc. WWW, Apr. 2010,
+                     representation of non-slicing floorplan,º in Proc. ICCAD, Nov. 2000,             pp. 1177±1178.
+                     pp. 8±12.                                                                   [34] X. He, S. Dong, Y. Ma, and X. Hong, ªSimultaneous buffer and
+                 [9] A. Ziabari, J.-H. Park, E. K. Ardestani, J. Renau, S.-M. Kang, and               interlayer via planning for 3D floorplanning,º in Proc. 10th Int. Symp.
+                     A. Shakouri, ªPower blurring: Fast static and transient thermal analysis         Quality Electron. Design, Mar. 2009, pp. 740±745.
+                     methodforpackagedintegrated circuits and power devices,º IEEE Trans.        [35] P. H. Shiu, R. Ravichandran, S. Easwar, and S. K. Lim, ªMulti-
+                     Very Large Scale Integr. (VLSI) Syst., vol. 22, no. 11, pp. 2366±2379,           layer floorplanning for reliable system-on-package,º in Proc. ISCAS,
+                     Nov. 2014.                                                                       Vancouver, BC, Canada, 2004, p. V.
+                [10] Y. Chen, E. Kursun, D. Motschman, C. Johnson, and Y. Xie, ªThrough          [36] H. Murata, K. Fujiyoshi, S. Nakatake, and Y. Kajitani, ªVLSI module
+                     silicon via aware design planning for thermally efficient 3-D integrated         placement based on rectangle-packing by the sequence-pair,º IEEE
+                     circuits,º IEEE Trans. Comput.-Aided Design Integr. Circuits Syst.,              Trans. Comput.-Aided Design Integr. Circuits Syst., vol. 15, no. 12,
+                     vol. 32, no. 9, pp. 1335±1346, Sep. 2013.                                        pp. 1518±1524, Dec. 1996.
+                [11] D. Oh, C. C. P. Chen, and Y. H. Hu, ªEfficient thermal simulation for       [37] X. Tang, R. Tian, and D. F. Wong, ªFast evaluation of sequence pair in
+                     3-D IC with thermal through-silicon vias,º IEEE Trans. Comput.-Aided             block placement by longest common subsequence computation,º IEEE
+                     Design Integr. Circuits Syst., vol. 31, no. 11, pp. 1767±1771, Nov. 2012.        Trans. Comput.-Aided Design Integr. Circuits Syst., vol. 20, no. 12,
+                [12] Z. Ren, A. Alqahtani, N. Bagherzadeh, and J. Lee, ªThermal TSV                   pp. 1406±1413, Dec. 2001.
+                     optimization and hierarchical floorplanning for 3-D integrated circuits,º   [38] S. K. Lim, Practical Problems in VLSI Physical Design Automation.
+                     IEEE Trans. Compon., Packag., Manuf. Technol., vol. 10, no. 4,                   Dordrecht, The Netherlands: Springer, 2008.
+                     pp. 599±610, Apr. 2020.                                                     [39] J. Zhou et al., ªGraph neural networks: A review of methods and
+                [13] J.-M. Lin, W.-Y. Chang, H.-Y. Hsieh, Y.-T. Shyu, Y.-J. Chang, and                applications,º 2018, arXiv:1812.08434.
+                     J.-M. Lu, ªThermal-aware floorplanning and TSV-planning for mixed-          [40] S. Fujimoto, H. Hoof, and D. Meger, ªAddressing function approxima-
+                     type modules in a fixed-outline 3-D IC,º IEEE Trans. Very Large Scale            tion error in actor-critic methods,º in PMLR, Jul. 2018, pp. 1587±1596.
+                     Integr. (VLSI) Syst., vol. 29, no. 9, pp. 1652±1664, Sep. 2021.             [41] X. Liu, G. Yeap, J. Tao, and X. Zeng, ªIntegrated algorithm for 3-D IC
+                [14] D. Vashisht et al., ªPlacement in integrated circuits using cyclic rein-         through-silicon via assignment,º IEEE Trans. Very Large Scale Integr.
+                     forcement learning and simulated annealing,º 2020, arXiv:2011.07577.             (VLSI) Syst., vol. 22, no. 3, pp. 655±666, Mar. 2014.
+                [15] R. S. Sutton and A. G. Barto, Reinforcement Learning: An Introduction.      [42] A. Paszke et al., ªAutomatic differentiation in PyTorch,º in Proc. NIPS
+                     Cambridge, MA, USA: MIT Press, 2018.                                             Workshop, 2017, pp. 1±4.
+                [16] Y.-C. Lu, S. Pentapati, L. Zhu, G. Murali, K. Samadi, and S. K. Lim,        [43] W. Dai, L. Wu, and S. Zhang. (2000). GSRC Benchmarks. [Online].
+                     ªA machine learning-powered tier partitioning methodology for mono-              Available: http://vlsicad.eecs.umich.edu/BK/GSRCbench
+                     lithic 3-D ICs,º IEEE Trans. Comput.-Aided Design Integr. Circuits Syst.,   [44] A.    N.    Ng,    R.    Aggralwal,    V.    Ramachandran,      and    I.
+                     vol. 41, no. 11, pp. 4575±4586, Nov. 2022.                                       Markov.     (2006).   IBM-HB+ Benchmarks.          [Online].  Available:
+                [17] A. Mirhoseini et al., ªA graph placement methodology for fast chip               http://vlsicad.eecs.umich.edu/BK/ISPD06bench/
+                     design,º Nature, vol. 594, no. 7862, pp. 207±212, Jun. 2021.                [45] R. Zhang, M. R. Stan, and K. Skadron. (2015). HotSpot 6.0 Temperature
+                [18] Q. Xu et al., ªGoodFloorplan: Graph convolutional network and rein-              Modeling Tool. [Online]. Available: http://lava.cs.virginia.edu/HotSpot/
+                     forcement learning-based floorplanning,º IEEE Trans. Comput.-Aided          [46] D. P. Kingma and J. Ba, ªAdam: A method for stochastic optimization,º
+                     Design Integr. Circuits Syst., vol. 41, no. 10, pp. 3492±3502, Oct. 2022.        2014, arXiv:1412.6980.
+                [19] Z. He et al., ªLearn to floorplan through acquisition of effective local    [47] K. He, X. Zhang, S. Ren, and J. Sun, ªDeep residual learning for image
+                     search heuristics,º in Proc. ICCD, Oct. 2020, pp. 324±331.                       recognition,º in Proc. CVPR, Jun. 2016, pp. 770±778.
+                            Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:38:02 UTC from IEEE Xplore.  Restrictions apply. 

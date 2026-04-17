@@ -1,0 +1,1143 @@
+          Review
+          Physics-InformedNeuralNetworksforAdvancedThermal
+          ManagementinElectronicsandBatterySystems: AReviewof
+          RecentDevelopmentsandFutureProspects
+                        1, ,²                    2,²
+          ZichenDu * andRenhaoLu
+                                              1   Ansys,Inc., Austin, TX 78758, USA
+                                              2   NancyE.andPeterC.MeinigSchoolofBiomedicalEngineering,CornellUniversity,Ithaca,NY14853,USA;
+                                                  rl839@cornell.edu
+                                              *   Correspondence: joey.du@ansys.com
+                                              ²   Theseauthorscontributedequallytothiswork.
+                                              Abstract: The growing complexities, power densities, and cooling demands of modern
+                                              electronic systems and batteriesÐsuch as three-dimensional integrated circuit chip packag-
+                                              ing, printed circuit board assemblies, and electronics enclosuresÐhave pushed the urgency
+                                              for efficient and dynamic thermal management strategies. Traditional numerical meth-
+                                              ods like computational fluid dynamics (CFD) and the finite element method (FEM) are
+                                              computationally impractical for large-scale or real-time thermal analysis, especially when
+                                              dealing with complex geometries, temperature-dependent material properties, and rapidly
+                                              changing boundary conditions. These approaches typically require extensive meshing
+                                              and repeated simulations for each new scenario, making them inefficient for design ex-
+                                              ploration or optimization tasks. Physics-informed neural networks (PINNs) emerge as
+                                              a powerful alternative approach that incorporates physical principles such as mass and
+                                              energyconservation equations into deep learning models. This approach delivers rapid
+                                              and adaptable resolutions to the partial differential equations that govern heat transfer
+                                              and fluid dynamics. This review examines the basic principle of PINN and its role in
+                                              thermal managementforelectronics and batteries, from the small unit scale to the system
+                                              scale. We highlight recent advancements in PINNs, particularly their superior performance
+          AcademicEditor: BenbenJiang         comparedtotraditionalCFDmethods. Forexample,studieshaveshownthatPINNscan
+          Received: 26April2025               beupto300,000timesfasterthanconventionalCFDsolvers,withtemperatureprediction
+          Revised: 16May2025                  differences of less than 0.1 K in chip thermal models. Beyond speed, we explore the po-
+          Accepted: 20May2025                 tential of PINNs in enabling efficient design space exploration and predicting outcomes
+          Published: 22May2025                for previously unseen scenarios. However, challenges such as training convergence in
+          Citation: Du,Z.;Lu,R.               fine-grained or large-scale applications remain. Notably, research combining PINNs with
+          Physics-InformedNeuralNetworks      LSTMnetworksfor battery thermal management at a 2.0 C charging rate has achieved
+          forAdvancedThermalManagement                                       2                                                                ◦
+                                              impressive resultsÐan R of 0.9863, a mean absolute error (MAE) of 0.2875 C, and a
+          inElectronicsandBatterySystems: A   root mean square error (RMSE) of 0.3306 ◦CÐdemonstrating high predictive accuracy.
+          ReviewofRecentDevelopmentsand       Finally, we propose future research directions that emphasize the integration of PINNs with
+          FutureProspects. Batteries2025,11,
+          204. https://doi.org/10.3390/       advanced hardware and hybrid modeling techniques to advance thermal management
+          batteries11060204                   solutions for next-generation electronics and battery systems.
+          Copyright: ©2025bytheauthors.       Keywords: physics-informed neural networks; thermal management; partial differen-
+          LicenseeMDPI,Basel,Switzerland.
+          Thisarticleisanopenaccessarticle    tial equation (PDE); electronics; battery; energy system; heat transfer; fluid dynamics;
+          distributedunderthetermsand         computational fluid dynamics (CFD)
+          conditionsoftheCreativeCommons
+          Attribution(CCBY)license
+          (https://creativecommons.org/
+          licenses/by/4.0/).
+          Batteries 2025, 11, 204                                                                               https://doi.org/10.3390/batteries11060204
+     Batteries 2025, 11, 204                                            2of26
+                       1. Introduction
+                         Electronics and battery systems, which stand out as the two primary contributors
+                       to power consumption and heat generation in modern devices, drive the need for ad-
+                       vanced thermal management solutions [1,2]. Effective thermal management is essential
+                       for maintaining the long-term performance and reliability of electronics and battery sys-
+                       tems, particularly as modern devices continue to shrink in size while increasing in power,
+                       presenting significant challenges. Consequently, evaluating the thermal performance of
+                       these systems during the early design phase is critical, as pre-screening design parameters
+                       andmanufacturingprocessescandemandsubstantialresources[3]. Achievingrapidand
+                       precisethermalpredictionsforvariousdesignparametercombinationsisthusakeypriority.
+                       Historically, the finite element method (FEM) and computational fluid dynamics (CFD)
+                       havebeenemployed,leveragingcomputationalresourcestoconductnumericalanalysesof
+                       temperatureprofiles and fluid flow based on the fundamental equations governing mass,
+                       momentum,andenergyconservation[4±7]. Thefinite volume methodorfinite element
+                       method,whicharecommonnumericaltechniques,addresspartialdifferentialequations
+                       (PDEs)bydividingthedomainintodiscretecontrolvolumesorelementsandintegrating
+                       the governing equations across them [8]. This process requires a deep understanding of
+                       the underlying physics and the creation of control volumes or meshes, which is critical
+                       for obtaining accurate results while managing computational resource demands. How-
+                       ever, this approach is often slow and inefficient, particularly considering the evolution
+                       of electronic systems from individual chips to packages and full systems and from single
+                       battery cells to battery packs and large-scale battery systems featuring billions of transistors
+                       and high thermal design power. The next-generation power density system can reach
+                                2
+                       over 100 W/cm [9±11]; thus, CFD is becoming increasingly impractical for addressing the
+                       thermal simulation needs of today’s advanced and rapidly evolving technologies.
+                         As machine learning becomes more popular, benefiting from advancements in al-
+                       gorithms and GPU-basedparallel solvers, its integration with thermal management has
+                       emergedasagrowingtrend[12,13]. Typically, machine learning has found widespread
+                       application in areas like generative AI [14,15], image processing [16±19], and content
+                       creation [20±22]. However, traditional ML and DL methods face several important limi-
+                       tations in scientific and engineering contexts. First, they typically require large volumes
+                       of labeled data to train accurate modelsÐa resource that can be expensive or impracti-
+                       cal to obtain, especially for training intricate physical systems. Often, generating these
+                       datasets relies on extensive, resource-intensive simulations such as CFD, further limiting
+                       scalability [23,24]. Second, conventional ML models are highly sensitive to imperfect data,
+                       suchasnoise,sparsity, or bias in training datasets, which can significantly degrade their
+                       predictive performance and robustness. This issue is especially problematic in real-world
+                       engineering applications, where experimental or simulation data may be limited or of vari-
+                       able quality [25]. Third, most ML models generally function as ªblack boxesº, producing
+                       outputs without offering a clear physical interpretation of the internal parameters [26,27].
+                       This lack of transparency makes it difficult to ensure that model predictions are physically
+                       realistic or to trust their extrapolation to unseen scenarios. As a result, purely data-driven
+                       modelsmayfailtogeneralizewhenfacedwithnewboundaryconditions,rareevents,or
+                       out-of-distribution cases that are common in thermal management.
+                         Physics-informed neural networks (PINNs), on the other hand, overcome this limita-
+                       tion by embeddinggoverningphysicalprinciples, typically in the form of PDEs, directly
+                       into the training process [28]. The physics-informed technique can participate in stages
+                       of initialization, loss function calculation, and architecture design or be hybridized with
+                       conventional DL models. This approach enables PINNs to deliver accurate predictions
+                       evenwithlimiteddata,makingthemwell-suitedforthermalmanagementtasksgoverned
+      Batteries 2025, 11, 204                                                         3of26
+                           byestablishedphysicallaws,suchasFourier’slawofheatconductionortheNavier±Stokes
+                           equations for fluid dynamics [29±32]. Unlike conventional neural networks, PINNs are
+                           trained not only on observational data but also on the underlying physics, which serves
+                           as a regularization mechanism, narrowing the range of possible solutions and improving
+                           their ability to generalize. This makes PINNs particularly advantageous in situations in
+                           whichtraditional numerical methods are too slow or computationally demanding, such as
+                           real-time thermal regulation or solving inverse problems like parameter estimation.
+                              Recent research has demonstrated the versatility of PINNs across various thermal
+                           managementdomains. Forinstance,inbuildingthermalmodeling,PINNshavebeenused
+                           to develop control-oriented models that combine the interpretability of physical laws with
+                           the expressive power of neural networks, as seen in studies like Gokhale et al.’s work on
+                           control-oriented thermal models for buildings [33]. Similarly, Wang et al.’s research on
+                           heat transfer in porous media using PINNs demonstrated their ability to accurately predict
+                           temperature and heat flux fields without labeled data, achieving computation accelerations
+                           five orders of magnitude greater than those of numerical methods [34]. More examples
+                           are discussed in Sections 2 and 3. These efforts suggest that PINNs could revolutionize
+                           thermal managementinelectronics, although the field is still emerging, with fewer direct
+                           studies compared to other areas.
+                              In this review paper, we will discuss the applications of PINNs in electronics and
+                           battery systems. We will begin by explaining the foundational working principles of
+                           the PINN and its variants in Section 2. In Section 3, we will explore PINN research
+                           conductedinelectronics thermal managementatdifferent scales, from chips to board to
+                           systems. In Section 4, following the same scale category, we describe the PINN research
+                           conducted in battery thermal management, from single cells to battery packs to battery
+                           systems. Within these sections, based on this understanding of the challenges related to
+                           different-scale thermal management in electronics and batteries, we will then evaluate the
+                           integration of PINNs with other machine learning techniques and explore variations of the
+                           PINNframework. Lastly,wewilloutlinepotentialfutureopportunitiesandprospectsfor
+                           leveraging PINNs in these domains.
+                           2. PINNsandVariations
+                              PINNsrepresentasignificantparadigmshiftinscientific machine learning, particu-
+                           larly in solving PDEs governing heat transfer, fluid dynamics, and multiphysics problems.
+                           Unlikeconventionaldeeplearningmodels,whichrequireextensivelabeleddatasets,PINNs
+                           embedphysicallawsÐsuchasenergyconservationandmaterialpropertiesÐdirectlyinto
+                           the training process. This hybrid approach enables PINNs to generate accurate, physically
+                           consistentsolutions, evenwithlimitedexperimentalorsimulateddata,makingthemhighly
+                           valuable for thermal modeling in electronics and battery systems.
+                           2.1. Mathematical Formulation of PINNs
+                              PINNs approximate the solutions of PDEs, which can be generally expressed
+                           as follows:
+                                               N[u(x,t)] = 0, x ∈ Ω, t ∈ [0, T]         (1)
+                           where N represents a differential operator that encodes the governing physics; Ω is the
+                           computational domain; and u(x,t) is the solution of the PDE, with x as the coordinate and
+                           t as the time of the physical field.
+                              Heattransfer in electronics and battery systems is primarily governed by conduction
+                           andconvection, with radiation typically being negligible due to small surface areas, moder-
+                           ate temperatures, and low-emissivity materials [35]. In heat conduction simulation, N is
+                           defined according to Fourier’s law as follows [36]:
+       Batteries 2025, 11, 204                                                              4of26
+                                                                  .    ∂T
+                                                     N =∇·(k∇T)+q−ρc∂t                         (2)
+                             whereTisthetemperature,kisthethermalconductivity, ρ isthedensity, c is the specific
+                                           .
+                             heat capacity, and q is the energy generated per unit volume.
+                                 In convection simulation, 3D incompressible flow dynamics are usually considered,
+                             whereN consistoftwocomponentsbasedonNavier±Stokesequations,asfollows[29]:
+                                                 N = ∂u +(u·∇)u+∇p− 1 ∇2u
+                                                   1  ∂t               Re                      (3)
+                                                           N2 = ∇u
+                             where u, t, and p are the fluid velocity, time, and pressure, respectively, and Re is the
+                             Reynoldsnumber.
+                                 Basedonthisequation,aforceconvectionproblem,whichisacommonheatmanage-
+                             mentscenario,canbeachievedbycouplingtheheatconductionandthefluiddynamics.
+                             Hence,thePDEswillbedefinedasfollows[37]:
+                                                   N = ∂T +(u·∇)T− 1 ∇2T
+                                                     1   ∂t          Pe
+                                               N = ∂u +(u·∇)u+∇p− 1 ∇2u+RiT                    (4)
+                                                2   ∂t              Re
+                                                           N3 = ∇u
+                             where Pe and Ri denote the Peclet and Richardson numbers, respectively.
+                                 Meanwhile,PDEproblemsusuallyincludeboundaryandinitialconditions,asfollows:
+                                                       u(x,0) = h(x), x ∈ Ω                    (5)
+                                                  u(x, t) = g(x,t),x ∈ ∂Ω, t ∈ [0,T]
+                             where Ω and ∂Ω are the computational domain and boundary, respectively, h(x) is the
+                             initial condition, and g(x,t) represents the boundary conditions. The backbone of the PINN
+                             is usually a deep neural network (DNN), which takes x and t as inputs and outputs the
+                             approximatedsolutionofthePDE.
+                                 Tocalculate the solution, the PINN minimizes the non-negative residual error associ-
+                             ated with Equations (1) and (5).
+                                                   LN =R[0,T]×Ω(N[u(x,t)])2dtdx
+                                                    LI = RΩ(u(x,0)−h(x))2dx                    (6)
+                                                LB = R[0,T]×∂Ω (u(x, t) −g(x,t))2dtdx
+                                 PINNsleverage automatic differentiation (AD) from deep learning frameworks to
+                             computethederivativesrequiredfortheresidualcalculation. Unlike finite difference or
+                             finite element methods, AD avoids numerical discretization errors. Since evaluating the
+                             full integral in residual loss can be computationally expensive, PINNs often employ Monte
+                             Carlosampling[38]. Asubsetofpoints xi,tiisrandomlysampledfromthecomputational
+                             domain, and the mini-batch training algorithm is used to iteratively update the neural
+                             networkparameters[39].
+                                                    LN = 1 ∑ Nu xi,ti2
+                                                          N
+                                                           N
+                                                    LI = 1 ∑ u xi,0−h xi2                   (7)
+                                                        NI
+                                                  LB = 1 ∑ u xi,ti−g xi,ti2
+                                                       N
+                                                         B
+               Batteries 2025, 11, 204                                                                                                                                                                               5of26
+                                                                           If some ground truth data are available in the computational domain, an additional
+                                                                  data-based loss term can also be included.
+                                                                                                                                1                 i   i                   i    i   2
+                                                                                                            LData = N                 ∑(u(x ,t )−uData(x ,t ))                                                            (8)
+                                                                                                                               Data
+                                                                           Hence,thelossfunctionofthePINNcanbedefinedasthecombinationofthefollow-
+                                                                  ing residuals:
+                                                                                                                         L=LN+LI+LB+LData                                                                                 (9)
+                                                                           This approach allows PINNs to generalize beyond the training data and maintain con-
+                                                                  sistency with underlying physics, making them particularly effective for thermal manage-
+                                                                  mentproblemswithlimitedexperimentaldataorunknownboundaryconditions[29,37].
+                                                                  For a comprehensive overview of PINN methodologiesÐincluding neural network ar-
+                                                                  chitectures, strategies for integrating physical laws, and applications across fields such
+                                                                  as fluid dynamics, materials science, energy, and medicineÐsee the recent review by
+                                                                  Farea et al. [40].
+                                                                  2.2. PINN Variants
+                                                                           WhilethestandardPINNframeworkoffersapowerfultoolforsolvingPDE-governed
+                                                                  problems with limited data, it still faces notable challenges when applied to complex
+                                                                  real-world scenariosÐsuch as those encountered in electronics and battery thermal man-
+                                                                  agement. These challenges include (1) difficulty in accurately enforcing boundary con-
+                                                                  ditions, which can degrade solution fidelity; (2) computational inefficiency when scaling
+                                                                  to high-dimensional or multiscale problems; (3) poor convergence and susceptibility to
+                                                                  local minima, particularly in stiff systems or extrapolation tasks; and (4) limited ability to
+                                                                  capture complex physical phenomena like turbulence or multiphysics interactions [41]. To
+                                                                  address these challenges, several variants of PINNs have been developed, each focusing on
+                                                                  different limitations, which are reviewed in detail in the following subsections.
+                                                                  2.2.1. Balancing Residual and Boundary Losses
+                                                                           Oneofthemostcritical challenges in training PINNs is the imbalance between the
+                                                                  PDEresiduallossandtheboundaryconditionloss,whichcansignificantlyhinderconver-
+                                                                  gence and accuracy. This issue often arises because the residual loss, which stems from
+                                                                  the PDEconstraints across the entire domain, can dominate the boundary loss by several
+                                                                  orders of magnitude, leading to the poor satisfaction of boundary conditions. Wang et al.
+                                                                  analyzed this phenomenon as a gradient pathology, showing that conventional training
+                                                                  dynamicsresultinvanishingboundarylossgradients,therebybiasingthemodeltoward
+                                                                  interior solutions that violate boundary constraints. To address this issue, they proposed
+                                                                  a learning rate annealing algorithm and a novel PINN architecture to rebalance gradi-
+                                                                  ent flows during training, which led to 50±100× improvements in predictive accuracy
+                                                                  across various benchmark problems [42]. Building on this, Yao et al. introduced Multi-
+                                                                  Adam,ascale-invariant optimizer that adaptively rescales gradients using parameter-wise
+                                                                  second-moment statistics. Unlike manual or static reweighting, MultiAdam automati-
+                                                                  cally harmonizes the contributions of loss terms at different scales, maintaining consistent
+                                                                  convergenceacrosscomplexPDEdomains. Thismethodimprovedsolutionaccuracyby
+                                                                  1±2 orders of magnitude across diverse physics scenarios, demonstrating robust perfor-
+                                                                  manceinmultiscalePINNtraining[43]. Together, these approaches mark a significant step
+                                                                  forwardindevelopingreliableandphysicallyconsistentPINNs,particularlyforthermal
+                                                                  managementtasksthatdemandprecisionatboundaryinterfaces.
+     Batteries 2025, 11, 204                                        6of26
+                     2.2.2. Adaptive Sampling Strategies
+                        Sampling strategies play a pivotal role in the training dynamics and accuracy of
+                     PINNs, as the locations of residual collocation directly influence how well the solution
+                     captures the complex features of the PDE. Uniform sampling, while simple and widely
+                     adopted, often results in poor performance in regions with steep gradients or localized
+                     phenomena. To address this issue, several adaptive sampling strategies have been pro-
+                     posed. Nabian et al. introduced an importance sampling approach that selects collocation
+                     points proportional to the loss value, effectively focusing training on regions with greater
+                     residuals and accelerating convergence without additional hyperparameters [39]. Wu et al.
+                     conducted a comprehensive study and proposed RAD and RAR-D, which dynamically
+                     adjust point distributions based on residual magnitudes and outperform traditional strate-
+                     gies with fewer collocation points [44]. Tang et al. advanced this solution further with
+                     the DAS-PINN, a generative model-based method that learns the residual distribution,
+                     yielding strong results for high-dimensional or irregular PDEs [45]. More recently, Yu et al.
+                     proposedMCMC-PINNs,whichuseamodifiedMarkovChainMonteCarlomethodtosam-
+                     ple collocation points according to a canonical distribution based on PDE residuals. This
+                     methodadaptstheproposaldistributiontodomaingeometryandensuresmorethorough
+                     explorationofcomplexsolutionlandscapeswhilemaintainingconvergenceguarantees[46].
+                     Together, these innovations in adaptive sampling significantly enhance both the efficiency
+                     andprecision of PINNs, particularly in multiscale or unbounded domain problems.
+                     2.2.3. Variational Formulations in PINNs
+                        Whiletraditional PINNs enforce PDEs through their strong formÐminimizing residu-
+                     als at discrete collocation points (Equations (6) and (7))Ðthis approach often suffers from
+                     instability, especially when high-order derivatives are involved or when the solution lacks
+                     smoothness. Variational formulations offer a powerful alternative by expressing the PDE in
+                     its weak form, where the equation is satisfied in an integrated sense against test functions.
+                     This allows for smoother losses, reduced differentiation order (via integration by parts),
+                     andimprovedstability, especially in complex or high-dimensional settings. The evolution
+                     of variational PINNs reflects growing recognition of these benefits. The earliest prominent
+                     exampleistheDeepRitzMethodbyEandYu,whichrecaststhePDEsolutionasthemini-
+                     mizerofavariational energy functional. This method constructs the trial solution using a
+                     deepneuralnetworkandoptimizesanintegralformofthePDE’senergywithoutenforc-
+                     ing pointwise residuals, thus avoiding high-order derivative computations and enabling
+                     efficient training, even in high dimensions [47]. Following this, the VPINN framework by
+                     Kharazmietal. generalizedtheapproachbyembeddingPINNsinaPetrov-Galerkinsetting.
+                     In VPINNs,thetrial space consists of neural networks, while the test space is constructed
+                     using classical polynomial bases (e.g., Legendre polynomials). This variational residual
+                     reduces differential order via integration by parts and replaces dense collocation with
+                     sparse quadrature, leading to improved numerical stability and efficiency [48]. Building
+                     onVPINNs,thehp-VPINNsintroducedadaptivedomaindecompositionandhierarchical
+                     polynomialrefinement, enabling localized learning and better handling of sharp gradients
+                     or singularities in the solution [49]. Around the same time, VarNet proposed a variational
+                     training strategy that is fully discretization-free and operates over space±time volumes
+                     rather than isolated points. By training on integral residuals and using adaptive sampling
+                     driven by residual feedback, VarNet enables smoother, more sample-efficient learning
+                     andisparticularly well-suited for parametric and control applications [50]. Collectively,
+                     variational approaches provide a powerful and more physically grounded alternative to
+                     classic PINNs, making them especially well-suited for problems with irregular domains,
+                     lowersolution regularity, or high computational complexity.
+     Batteries 2025, 11, 204                                        7of26
+                     2.2.4. Domain Decomposition PINNs
+                        AsPINNsareextendedtolarge-scaleormultiphysicssystems,theyoftensufferfrom
+                     highcomputationalcostsandpoorconvergence,especiallywhentryingtocapturecom-
+                     plex or discontinuous physical phenomena [41]. To address these limitations, domain
+                     decompositiontechniqueshavebeenincorporatedintothePINNframework,givingriseto
+                     variations such as Conservative PINNs (cPINNs) [51] and eXtended PINNs (XPINNs) [52].
+                     These architectures divide the computational domain into smaller subdomains, within
+                     whichlocalized PINNsaretrained. This strategy not only enhances scalability and paral-
+                     lelizability but also enables tailored network architectures for different subregions of the
+                     problemdomain.
+                        The cPINN framework focuses on conservation laws, enforcing continuity in both
+                     the solution and flux across the boundaries of decomposed subdomains. Each subdomain
+                     employs a separate neural network, with interface conditions ensuring physical consis-
+                     tency by stitching local solutions together [51]. This includes enforcing average solution
+                     continuity and flux conservation at shared interfaces, which is a critical step for solving
+                     hyperbolic PDEs like the Euler equations (Figure 1). Based on this approach, XPINNs fur-
+                     ther generalize the domain decomposition concept beyond conservation laws, supporting
+                     arbitrary space±time decompositions for any type of PDEs. This includes both convex
+                     and non-convex geometries, time-dependent or time-independent problems, and even
+                     cases with moving interfaces [52]. Each subdomain is governed by its own neural network
+                     andoptimizedindependently. XPINNsintroducedinterfaceconditionssuchasresidual
+                     continuity and average solution enforcement, allowing seamless stitching across irregular
+                     domains. InordertofullyleveragetheadvantagesofthecPINNandXPINN,aparallelized
+                     implementationhasalsobeenproposedbasedonahybridMPI+Xprogrammingmodel
+                     (whereXcanbeCPUsorGPUs). ThisenablestheefficienttrainingofPINNsondistributed
+                     hardware. Theparallel framework supports both weak and strong scaling and significantly
+                     reduces training time by exploiting localized computation within subdomains.
+                        Thephysics-informedneuralnetwork(PINN)hasemergedasapowerfulmodeling
+                     frameworkforelectronics thermal management(ETM),offeringacompellingalternative
+                     to conventional numerical solvers. By embedding physical lawsÐsuch as Fourier’s law
+                     andtheNavier±Stokes equations (Equations (2)±(4))Ðdirectly into the training process,
+                     PINNseliminatetheneedforlargedatasetsanddeliverfast,accuratesolutionstopartial
+                     differential equations, even in data-sparse or complex settings. As summarized in Table 1,
+                     the adaptability of PINNs is further strengthened by a rich ecosystem of variants designed
+                     to overcome key training and scalability challenges. For instance, advanced optimizers
+                     like MultiAdamandreweightingstrategiesmitigatetheimbalancebetweenPDEresidual
+                     andboundarylosses, improving solution fidelity. Adaptive sampling methods, such as
+                     importancesampling,DAS-PINNs,andMCMC-PINNs,dynamicallyallocatecollocation
+                     points where they are most needed, boosting convergence and efficiency in multiscale
+                     andsharp-gradientregions. Variational formulationsÐincluding the Deep Ritz Method,
+                     VPINNs,andVarNetÐreformulatePINNsinaweakform,reducingtheorderofderivatives
+                     andenhancingstability for irregular geometries. Domain decomposition approaches like
+                     cPINNsandXPINNsenableparallelizationandlocalizedlearning,makingPINNsscalable
+                     to large or heterogeneous ETM problems. Among these variants, domain decomposition
+                     methods(suchascPINNsandXPINNs)areparticularlypromisingforelectronicsthermal
+                     management,wheremodelinglarge-scale,multi-materialsystemsandcapturinglocalized
+                     hot spots are critical. Their main advantage lies in improved scalability and parallelizabil-
+                     ity; however, their practical implementation can be complex, especially when managing
+                     interface conditions between subdomains. Loss balancing strategies are also valuable for
+                     bothelectronics and battery applications, as they improve the accuracy of boundary and
+        Batteries 2025, 11, 204                                                                            8of26
+                                 interface temperature predictions, which is essential for device reliability and safety. The
+                                 mainchallengewiththeseapproachesisthatoptimalweightingcanbeproblem-dependent
+                                 andmayrequireextensivehyperparametertuning. Inbatterysystems,adaptivesampling
+                                 approaches showstrongpotential, as they can efficiently target regions with rapid thermal
+                                 changesorsparsedata,whicharecommonissuesinbatterypacksandlarge-formatcells.
+                                 Ultimately, the choice of variant depends on the complexity and scale of the system being
+                                 modeled,theavailabledata, and computational resources.
+                                 Figure 1. Schematics of PINN and its variations. (a) Schematic of the conservative physics-informed
+                                 neural network (cPINN) architecture [51]. The addition of interface loss distinguishes cPINNs
+                                 fromtraditional PINNs, enabling improved performance on conservation laws and problems with
+                                 sharp gradients. (b) The residual-based physics-informed transfer learning (RePIT) strategy as a
+                                 representative hybrid PINN approach [53]. The workflow alternates between conventional CFD
+                                 computationandneuralnetwork-basedpredictions. Thefigurehasbeenrepublishedwithpermission
+                                 fromeachindicatedreference(ref. [51] for (a), ref. [53] for (b)).
+                                 Table1. SummaryofmajorPINNvariantsandtheircoreinnovations.
+                 Category                       KeyMethods                              Highlights
+              LossBalancing         MultiAdam[43],GradientReweight[42]         Adaptiveoptimizer, rebalancing
+                                                                                        loss terms
+            SamplingStrategies        Importancesampling[39],RAD[42],            Adaptiveandprobabilistic
+                                      DAS-PINNs[45],MCMC-PINNs[46]                    point selection
+             Variational Form      DeepRitz[47],VPINNs[48,49],VarNet[50]       Weakformenforcement,lower
+                                                                                      derivative order
+          DomainDecomposition             cPINNs[51],XPINNs[52]               Local networks, interface stitching
+                                      While many machine learning approaches are fundamentally limited by the size
+                                 and quality of available datasets, a key advantage of PINNs is their ability to leverage
+     Batteries 2025, 11, 204                                        9of26
+                     governing physical laws, thereby reducing reliance on large experimental or simulated
+                     datasets. In PINN frameworks, the physical equations themselves guide model learning,
+                     enabling accurate solutions even when data are sparse or partially missing. However, the
+                     effectiveness of PINNs can still be influenced by data-related factors such as measurement
+                     noise, limited boundary condition data, or incomplete coverage of operating regimes.
+                     Thus, while PINNs are more robust to data scarcity than purely data-driven methods,
+                     careful attention to the available dataÐhowever limitedÐremains important, particularly
+                     in complex or ill-posed real-world scenarios.
+                     3. Applications of PINNs in Electronics Thermal Management
+                        For general heat transfer physics, there are three modes of heat transferÐconduction,
+                     convection, and radiationÐdepending on the heat transfer medium [54]. Conduction heat
+                     transfer is governed by Fourier’s Law, which states that heat flux is linearly dependent on
+                     the temperature gradient when thermal conductivity is constant in a steady-state scenario,
+                     or on density and heat capacity. Temperature-dependent thermal conductivity, density, or
+                     heat capacity will introduce non-linear physical characteristics into this scenario [55,56].
+                     ConvectionisgovernedbyNewton’sLaw,andtheheattransfercoefficientdependsonfluid
+                     properties, such as temperature, fluid velocity, or flow regime (laminar or turbulent) [57].
+                     Radiation is governed by the Stefan±Boltzman Law and is non-linear due to the fourth-
+                     powerdependenceontemperature[58]. Withpowerdensitieswithvaryingintensitiesand
+                     different cooling requirement scales, thermal management systems employed in electronics
+                     cangenerally be categorized into passive cooling and active cooling [59]. Passive cooling
+                     refers to the method that dissipates heat without any active energy inputs; techniques in
+                     this category include heat sink, thermal pads/interfaces, heat pipes, and vapor chambers,
+                     whereasactive cooling requires additional power input, such as a fan, liquid cooling, or
+                     jet impingement cooling. Besides these traditional cooling mechanisms, two-phase liquid
+                     coolingisincreasinglystandardindatacenters,whileimmersioncoolingisgainingtraction
+                     for its efficiency [60±62].
+                        Theadvancementofcutting-edgeinformationanddigitaltechnologiesÐincluding5G,
+                     artificial intelligence, cloud computing, autonomousvehicles, anddatacentersÐhasgreatly
+                     increased the need for functional electronics, driving demand in their power densities and
+                     reliabilities [63,64]. Maintaining a safe operating temperature is essential for the proper
+                     functioning of each unit, making thermal management systems very critical. Depending on
+                     thephysicalsizeofthesystem,thermalmanagementcanbeclassifiedintothreelevels: chip,
+                     board, and system [35]. The thermal management challenges vary across the three levels.
+                     AsdepictedinFigure2,atthechiplevel(Figure2a),denselypackedpowertilesrepresent
+                     eachfunctional unit, with conduction as the dominant heat transfer mode and boundary
+                     conditions set by the heat transfer coefficient. Material properties may be isotropic and
+                     temperature-dependent,varyingbasedondesignaccuracyrequirements. Attheboardlevel
+                     (Figure2b),whenitinvolvesalotofcomponents,suchaselectroniccontrolmodule,cooling
+                     solutions, PCB, etc., heat transfer becomes more complex as various mediumsÐsuch as air
+                     ordielectric liquidsÐcomeintoplay. Inaddition,multiplecomponentswithvaryingpower
+                     inputs are present, which can include factors like direct current internal resistance losses or
+                     electromagneticpowerlossesinvolvingmultiphysicsconsiderations. Despitethisincreased
+                     complexity and the larger number of design parameters, board-level challenges are not
+                     necessarily greater than those at the chip level, largely because most passive electrical and
+                     heat-generating components exhibit isotropic characteristics. Finally, at the system level
+                     (Figure 2c), the intricate geometry of components not only increases the volume of data but
+                     also lengthens both the training and forecasting periods.
+     Batteries 2025, 11, 204                                        10of26
+                     Figure 2. Electronics thermal management challenges on (a) Chip, (b) Board, and (c) System. Image
+                     sources: (b) [65], (c) [66], Figure (b) was reproduced from [65] with permission under the terms
+                     of the Creative Commons. Figure (c) has been republished with permission from each indicated
+                     reference [66].
+                        Following this scaling methodology, this section will analyze selective PINN applica-
+                     tions at the chip, board, and system levels of electronics thermal management and aims to
+                     bridge the connections between different scales.
+                     3.1. Chip Thermal Management
+                        Forchipthermalmanagement,heatisgeneratedatthenanoscalewithintensiveden-
+                     sity and is mainly conducted through the die before it reaches the chip surface, is cooled
+                     through external multilayer package and thermal interface materials, and is eventually
+                     dissipated through external conduction or convection [35]. Therefore, conduction is the
+                     dominantheattransfer modeatthechiplevel,whileexternalconductionorconvectioncan
+                     besimplified and simulated with heat transfer coefficient boundary condition settings. Ra-
+                     diation is negligible due to the small surface area and low emissivity (polished surface) [35].
+                     AccordingtoFourier’sLaw,conductionheattransferislinearwhenthermalconductivity
+                     is constant. There are two main challenges associated with chip thermal management,
+                     namely, temperature-dependent material properties (thermal conductivity, density, and
+                     heat capacity) and high-dimensional power densities due to the hierarchical structure or
+                     advanced3DICstructure[67].
+                        Chiptechnologyhasbecomeverydensewithpowertiles,requiringaveryfineresolu-
+                     tion for each power tile to be captured correctly, which is not possible with the current finite
+                     element analysis (FEA) approach, as the discretization of the full chip level is extremely
+                     time-consumingandresource-intensive. The high-dimensional and nonlinear PDEs have
+                     also been designed to accelerate using machine learning approaches. Traditional machine
+                     learning approaches to chip thermal management require large data inputs. For example,
+                     Sadiqbatcha et al. built the long short-term memory (LSTM) model to train experimental
+                     infrared thermal image results to estimate representative spatial features of 2D heatmaps
+                     withsimilar accuracy and high efficiency [68]. Chen et al. [69] adopted graph convolution
+                     networks(GCN)withglobalfeatures,skipconnections,edge-basedattention,andprinci-
+                     ple neighborhood aggregation to efficiently estimate thermal maps of 2.5D chiplet-based
+                     systemswhiledemonstratingstronggeneralizationtounseendatasets.
+                        On the other hand, PINN demonstrates good potential for overcoming the data-
+                     intensive limitations of traditional machine learning. Liu et al. applied the physics-aware
+       Batteries 2025, 11, 204                                                                        11of26
+                                operator learning method (DeepONet) to a 21 × 21 × 11 mesh grid-based single-cuboid
+                                geometry with a 2D power map with constant HTC boundary conditions [70]. In the
+                                study, firstly, two families of design configurations, namely, boundary conditions for each
+                                individual surface and the locations and intensity of external or internal heat sources, were
+                                encodedasinputfunctionsfordifferent ªbranch netsº to be fed into the framework. While
+                                all the sampled coordinates were fed into another sub-network, namely, ªtrunk netº, the
+                                kbranchnets,andonetrunknetwerecombinedviaaHadamard(elementwise)product
+                                andsummedtorepresentthepredictedtemperaturefield. Theframeworkwasthentrained
+                                using multi-input DeepONet (Figure 3) [71]. The total loss was minimized using gradient
+                                descent based on an automatic differentiation algorithm. The result was 300,000 times
+                                faster than the commercial Celsius 3D solver, with a max/min temperature difference of
+                                less than 0.1 K. However, this method reveals limitations in scalability and generalization,
+                                as it does not include orthotropic or temperature-dependent material properties.
+                                Figure 3. DeepOHeat framework. Figure has been republished from [71] with permission under the
+                                termsoftheCreativeCommons.
+                                    Another study conducted by Chen et al. involved an enhanced PINN approach
+                                designedforarapidandaccuratefull-chipthermalanalysisofVeryLarge-ScaleIntegration
+                                (VLSI) chips, namely, ThermPINN [72]. Standard PINNs, while innovative, suffer from
+                                slowtraining convergence. In Chen’s work, the temperature distribution equation can be
+                                expressed with the separation of variables into two variables along the x and y directions
+                                to form two cosine vectors with the coefficient Cpq. The authors also considered that both
+                                thermal conductivity and leakage power vary with temperature and used appropriate
+                                models to depict their relationship to temperature across a specific temperature range.
+                                Firstly, spatial variables are separated into cosine vectors, forming a Q × P matrix whose
+                                innerproductwiththeC  matrixyieldsthetemperaturevaluewithadiscretecosineneural
+                                                    pq
+                                network. Second, the effective convection coefficient, m, and the ambient temperature,
+                                T0, are parameterized to connect with Cpq with multi-layer perception (MLP). A back-
+                                propagation algorithm is used to learn the MLP parameters. The thermal equation is then
+                                coupled with a loss function, and an unsupervised learning method is used to train the
+                                networks. The author also applied a plain PINN as a benchmark, where the position, the
+                                effective convection coefficient, and the ambient temperature are directly parametrized to
+                                train the MLP.
+                                    The findings indicate that the ThermPINN’s accuracy was slightly below that of
+                                the plain PINN, but in the same order of significance. However, it demonstrated strong
+                                potentialforfastertraining,makingitmorepracticalforEDAapplications,withbothPINNs
+                                outperformingtraditional FEM solutions in terms of speed. The model parameterizes key
+                                variablesÐthe ambient temperature and effective convection coefficientÐenabling efficient
+                                design space exploration and uncertainty quantification (UQ).
+     Batteries 2025, 11, 204                                        12of26
+                     3.2. Board Thermal Management
+                        In board thermal management, the electrical components hosted on a printed circuit
+                     boardÐsuch as resistors, capacitors, memory cards, integrated circuits (ICs), heatsinks,
+                     and solder jointsÐvary widely by application and industry, with some being passive
+                     and others producing high-density, dynamic thermal power under different operating
+                     conditions [73]. Thermal management poses a significant challenge, although techniques
+                     like air cooling, cold plates, jet impingement, and immersion cooling are well-established,
+                     addressing the diverse safe temperature limits, space constraints, and power demands
+                     across components and product generations, which complicates redesign and simulation
+                     efforts. Simplified simulations of board thermal management using black box reduced-
+                     order models (e.g., linear time invariant [74], linear parameter varying [75], and singular
+                     value decomposition [76]) are possible but often lack field-specific accuracy or require
+                     extensive training data, whereas PINNs offer a promising approach for prescreening and
+                     estimating untested scenarios.
+                        Ontheboard,therecanbepowerchipswithdifferentlayerssolderingwithbaseplates
+                     or printed circuit boards (PCBs). In a study conducted by Yang et al., four SiC MOSFET
+                     chips are mounted on DBC AIN substrates with integrated deionized water pin-fin cooling
+                     channelsontop. Fiveparameters,includinginitialtemperature,heatflux,chiptotalpowers,
+                     baseplate thickness, and pin-fin heights, are explored in terms of design space [77]. For
+                     the SiC power module, due to the presence of layers with different material properties,
+                     representing separate physical domains, the authors applied a total of nine Fourier neural
+                     networkswithsoftcouplingconstraints in PINNs for rapid design exploration. This ap-
+                     proachoutperformstraditionalFEMsolversforfasterthermalprofileprediction. Theseven
+                     Fouriernetworksrepresentandfitthethermalequationsforeachphysicaldomain,whereas
+                     twoFouriernetworksaddressfluidflowandconvectiveheattransferPDEs,resultingina
+                     total of nine Fourier NNs as training inputs. Random sampling points are then generated
+                     uniformly across the domain and boundaries to evaluate a loss function, which integrates
+                     PDEresiduals,boundaryconditionerrors,andinterfacecontinuitypenalties, whicharebal-
+                     ancedusingadaptiveweights. Themodelundergoesiterativetrainingviabackpropagation
+                     withtheAdamoptimizerandanexponentialdecaylearningrate,minimizingthelossbelow
+                     a threshold (10−5) for synchronized convergence across networks. Once trained, the PINN
+                     modelenablestherapidinferenceofthermalfieldsforanyinputparametercombination
+                     withoutretraining, offering an efficient alternative to traditional numerical methods. The
+                     author suggests that in terms of scalability, PINNs delivered performance similar to that of
+                     COMSOLfor100simulations. However,whenexpandingtoasignificantlylargersetof
+                     simulationsÐsuchas10,000casesÐthePINN-basedapproachdemonstratedsubstantially
+                     higher simulation efficiency, particularly for exploring expansive design spaces. However,
+                     PINNsweretrainedonGPUswhilebenchmarkCOMSOLsimulationsarebasedonCPUs,
+                     whichisnotafaircomparisonduetotheparallelcomputationcapabilitiesofGPUs. Asthe
+                     authors introduced geometrical parameters, mesh-dependent accuracy can be a potential
+                     risk when scaling.
+                        Anotherapplicationinvolvesacoolingcomponentontheboard,thethermoelectric
+                     cooler (TEC), which consists of a series of N-type and P-type semiconductor materials [78].
+                     Whenanelectriccurrentpasses through these materials, heat is absorbed from one side
+                     (the cold side) and released on the opposite side (the hot side), which is also called the
+                     Peltier effect. Simulating and designing TECs can be challenging due to their complex
+                     physics and computational demands: (1) TECs operate based on intertwined thermal and
+                     electrical phenomena, governed by nonlinear PDEs and highly influenced by temperature-
+                     dependentmaterialproperties, including thermal conductivity, the Seeback coefficient, and
+                     electrical conductivity; (2) 3D FEA simulation that requires fine spatial discretization results
+     Batteries 2025, 11, 204                                        13of26
+                     in large systems of equations and high demand for computer resources; and (3) identify-
+                     ing optimized parameters escalates the complexity. The study conducted by Chen et.al
+                     introduced a surrogate model that reduces 3D TEC geometry to a 1D problem that incor-
+                     porates key parameters like current density and thermal boundary conditions [79]. The
+                     implicit physics-constrained neural network (IPCNN) framework proposed by the authors
+                     employsatwo-stagetrainingprocess. Firstly, temperature-dependent material properties
+                     are approximated using an extreme learning machine (ELM), followed by a PINN enforc-
+                     ing TEC-specific PDEs in the second stage. This method achieves an 8.5× speed increase
+                     overtraditional COMSOLsimulationsandenhancesstabilitycomparedtoconventional
+                     PINNs. Additionally, a hybrid finite element neural network (FENN) methodintegratesthe
+                     surrogate model into COMSOL,yieldinga5.1× speedupand5.4×memoryreductionfor
+                     VLSIchipthermalanalysis. TheauthordemonstratedthatthisIPCNNapproachshowed
+                     muchbetter convergence to a loss of 10−6 versus 10−1 for traditional PINNs in smaller
+                     length ranges. It avoids the slow convergence and large errors of one-step PINN training
+                     byseparating the modeling of material properties and PDE solutions, thereby reducing the
+                     optimization search space. However, a decrease in accuracy was observed as the parameter
+                     ranges widened (e.g., length from 0.05 to 1.2 mm), suggesting scalability limitations, in
+                     addition to the increased complexity of implementing a two-stage process compared to a
+                     single-step PINN. The scalability of broader parameter ranges based on this study can po-
+                     tentially be achieved by employing multiple neural networks for subregions, as suggested
+                     in the text. Further refinement could also involve adaptive learning rates or advanced
+                     network architectures to maintain accuracy across diverse conditions. Integrating more
+                     physics constraints or exploring alternative approximators beyond ELM could also boost
+                     performance. Overall, this study underscores IPCNN’s potential as a transformative tool in
+                     TECmodeling,balancingefficiencyandprecisionwhileidentifyingpathwaysforfuture
+                     enhancementsinboardthermalmanagement.
+                        Another study conducted by Farrag et al. involved the soldering reflow process
+                     (SRP) [80], which occurs during the PCB manufacturing process. In SRP, solder paste is
+                     meltedandthensolidifiedtoconnectelectronic components to PCBs. Precise temperature
+                     control is critical to ensure the PCB’s quality. Due to the escalating complexity of the PCB
+                     andagreaternumberofdifferentelectricalcomponents,monitoringandaccommodating
+                     the SRP process is extremely difficult. The SRP-PINN model proposed by Farrag et al.
+                     leverages PINNstopredicttemperaturedistributionacrossPCBs,ensuringsolderjoints
+                     meetmanufacturer-specified thermal profiles for quality assurance. Unlike traditional CFD
+                     approaches, which are computationally intensive, the SRP-PINN integrates PDEs into a
+                     DNNtoachieveaccurate predictions with limited experimental data. The study uses a
+                     1DheattransfermodelalongthePCBlength,trainsthePINNwithsparsedatafromone
+                     recipe, and demonstrates its generalizability across different PCB designs and soldering
+                     recipes. The experimental results, which were conducted using a Heller 1707 W reflow
+                     ovenandSAC305solderpaste,showthemodel’seffectiveness,achieving98%accuracy
+                     compared to 97% for a hybrid physics±ML benchmark, with potential applications in
+                     real-time manufacturing optimization.
+                     3.3. System Thermal Management
+                        Whenitcomestosystemscale,inadditiontotheabove-mentionedchip-andboard-
+                     level challenges, intricate geometrical configurations can pose a challenge due to the
+                     complexities of CAD geometries, such as in electronics enclosures and large-scale cooling
+                     components[81±84]. Toprecisely capture the fluid flow and temperature profile, setting
+                     non-conformal mesh at different regions to balance calculation accuracy and computer
+                     resources requires a significant amount of human instruction and experience, let alone the
+     Batteries 2025, 11, 204                                        14of26
+                     time to start a simulation [85,86]. A PINN can be very useful in resolving repetitive work
+                     andsaverunningtimewhenonlyseveralparametersneedtobemodifiedforanewdesign.
+                        In the data center field, energy consumption is long-term and intensive, and heat
+                     generation is significant due to the computing requirement. The primary cooling source is
+                     the heating, ventilation, and air conditioning (HVAC) system, while the heat is generated
+                     from racks, power supplies, and power generators. Chen et al. demonstrated notable
+                     performanceinasix-monthcasestudyondatacenterthermalmodelingusinganadaptive
+                     physically consistent neural network (A-PCNN) (Figure 4) [66]. The approach leveraged an
+                     NNwithSoftplusactivationfunctions,replacingtraditional preset and fixed coefficients
+                     to reduce trial-and-error costs and increase flexibility. Specifically, it reduced the mean
+                     absolute error by 17.3% for a 15 min forecast and by 79.2% over a 7-day period.
+                     Figure4. Adaptivephysicallyconsistentneuralnetworkframework. Thefigurehasbeenrepublished
+                     withpermissionfrom[66].
+                        Tanakaetal. developedanalternativemodelingapproachforsystem-levelthermal
+                     systemsbyemployingdatacompressionthroughproperorthogonaldecompositioncom-
+                     bined with physics-informed machine learning (PIML). To evaluate the effective PIML
+                     technique, two distinct thermal mathematical frameworks were developed to explore how
+                     the training dataset size and model complexity influenced prediction precision. Further-
+                     more,thestudycontrastedthepredictionaccuracyandcomputationaltrainingexpenses
+                     between traditional data-driven machine learning and the PIML approach. The results
+                     demonstratedthatthismethodaccuratelyforecastedthetemperatureacrossbothmodels
+                     in diverse heat input scenarios while also reducing the overall training cost by 26% to
+                     81%relative to data-driven machine learning techniques, showcasing the advantages of
+                     the physics-informed strategies [87].
+                        Zhang et al. investigated the application of PINNs in simulating fluid flow and
+                     heat transfer in manifold microchannel (MMC) heat sinks designed for cooling high-
+                     powerInsulatedGateBipolarTransistors(IGBTs), which are critical components in power
+                     electronics [88]. The study developed a PINN model with two sub-networksÐone for
+                     flow dynamics and another for thermal behaviorÐeach employing a DNN with a sine
+                     activation function to capture high-order derivatives and mitigate vanishing gradient
+       Batteries 2025, 11, 204                                                                  15of26
+                              issues. Compared to traditional CFD simulations, PINNs show similar trends, such as
+                              increased pressure drops and decreased temperatures with higher inlet velocities, although
+                              discrepancies occur in regions with rapid flow changes and maximum temperature pre-
+                              dictions. The mesh-free nature of PINNs and their ability to embed physical laws into
+                              the loss function enable the efficient simulation of complex geometries with fewer data
+                              than purely data-driven approaches. Additionally, the paper explores PINNs’ potential
+                              in solving inverse problems, like estimating kinematic viscosity and thermal diffusivity,
+                              highlighting their versatility. Despite computational expense and sensitivity to geometry
+                              andhyperparameters,PINNsemergeasapromisingalternativeforthermalmanagement
+                              in engineering applications.
+                                  All the system thermal management benefits mentioned above stem from the imple-
+                              mentation of the PINN framework. With emerging technologies and fast turn-around
+                              requests in high-tech consumer electronics, data centers, and electric vehicles, PINNs have
+                              morepotential whencomputationalrequestsescalate.
+                                  Thekeymethodsforelectronicsthermalmanagementatdifferentscales,alongwith
+                              highlights for each scale, are summarized Table 2 below:
+                              Table2. SummaryofapplicationsofPINNsinelectronicsthermalmanagement.
+              Scale                      KeyMethods                             Highlights
+              Chip               DeeOHeat[71],ThermPINN[72]           Temperature-dependentproperties,
+                                                                       DeepONet,variablesseparation
+              Board         PINNwithSiCdesignexploration[77],IPCNN  Designspaceexploration, Multiphysics
+                                      [78], SRP-PINN [80]
+             System        A-PCNN[66],PIML[87],PINNwithMMCand            CADcomplexities,datasize
+                                          IGBTs[88]
+                              4. Applications of PINNs in Battery Thermal Management
+                                  Battery systems involve multiple physical phenomena, such as electrochemical reac-
+                              tions, heat transfer, and mechanical stress, making simulation and analysis complex [89,90].
+                              UsesforPINNsincludestateestimation[91],degradation[92,93],andagingestimation[93],
+                              thus proving the interest and potential of PINNs in battery systems. Finegan et al. out-
+                              lined a perspective, discussed the challenges related to scarce data for analysis, and thus
+                              recommendedphysics-basedlearningforpredictingbatteryfailuremoreaccuratelyandreli-
+                              ably[94]. Physicsintegrationcanincludephysics-baseddatasets,physics-informedtraining
+                              constraints, and physics-guided algorithm structures, which are a hybrid approaches that
+                              mergedata-drivenandphysics-basedmethods.
+                                  Thermal management in batteries is critical, as thermal runaway (TR) is one of the
+                              primary safety concerns in batteries [95,96]. It occurs when an increase in temperature
+                              accelerates internal chemical reactions, generating more heat and potentially causing an
+                              uncontrollable chain reaction that may result in a fire or explosion. TR in a single LIB
+                              canrapidlypropagatefromtherootcelltoalladjacentcells, thus resulting in catastrophic
+                              accidents in large-scale battery packs and systems. Therefore, efficient battery thermal
+                              managementsystemsatdifferent scales are critical for ensuring the safe temperature of
+                              eachcell and mitigating the TR phenomenon overall.
+                                  Batterythermalmanagementsimulationpresentsarangeofchallengesacrossdifferent
+                              levelsÐfrom the cell to the pack to the system (Figure 5). At the cell level, the need to
+                              capture non-linear thermal behavior and electrochemical±thermal multiphysics interac-
+                              tions make modeling complex, especially for the accurate real-time prediction of thermal
+                              runawayevents. Movingtothepacklevel,cell-to-cell variability, non-uniform temperature
+     Batteries 2025, 11, 204                                        16of26
+                     distribution, and the impact of cell arrangement and manufacturing deviations complicate
+                     the prediction of thermal behavior and require detailed spatial resolution. At the system
+                     level, the challenges expand to modeling under wide operational conditions, ensuring
+                     effective heat dissipation coordination across components and maintaining a high level
+                     of model sophistication to balance accuracy and computational efficiency. The challenges
+                     are not confined to a single scale; instead, they can play a role across different scales. In
+                     addition, unlike electronics thermal management, the heat source includes power loss from
+                     electrical components, traces, or frequency-varying processes. The heat source in batteries
+                     is mainly introduced through multiple endothermic and exothermic electrochemical pro-
+                     cesses and dynamically changes according to the charging state, which makes capturing
+                     the exact source term and modeling battery thermal behavior even more challenging.
+                     Figure 5. Battery thermal management challenges. Figure (a) was reproduced from [97] with
+                     permission under the terms of the Creative Commons. Figures (b±d) have been republished with
+                     permission from each indicated reference (ref. [98] for (b), ref. [99] for (c), ref. [100] for (d)).
+                        Theinterconnections amongthechallengesrelatedtobatterythermalmanagement
+                     simulation across the cell, pack, and system levels are deeply intertwined, as issues at
+                     onescale directly influence the others, creating a complex multiphysics problem. The com-
+                     plexity of precise cell thermal management propagates to the pack level, where cell-to-cell
+                     variability and non-uniform temperature distribution, which are driven by manufacturing
+                     deviations and cell arrangement, lead to uneven heat generation and dissipation, further
+                     complicating thermal predictions. At the system level, these challenges culminate in the
+                     needtomodeltheentirebatterypackunderdiverseoperatingconditions,wherethecu-
+                     mulative effects of cell- and pack-level thermal inconsistencies must be addressed through
+                     coordinated heat dissipation strategies, all while balancing computational efficiency with
+                     modelaccuracy. Unlike electronics thermal management, where heat sources are primarily
+                     powerlossesfromelectricalcomponents,BTMSmustaccountforthedynamicelectrochem-
+                     ical heat sources, making the accurate capture of source terms a cross-scale challenge that
+                     links the cell, pack, and system levels in a unified modeling framework. Therefore, this
+                     section will divide the PINN research into battery cells, battery packs, and battery systems,
+                     following the same escalating order as Section 3.
+     Batteries 2025, 11, 204                                        17of26
+                     4.1. Battery Cell Thermal Management
+                        Forbattery thermal profile prediction, the source term is generally simplified with a
+                     uniformheatgenerationsource, or thermal resistance network [101,102]. Many researchers
+                     have simplified PDEs to create lumped parameter models. Research can, however, be
+                     conductedbyconsideringtherealistic3Dbatterythermalmodelatdifferentchargingstates.
+                        Dengetal. applied a PINN to integrate the electric±thermal mechanism of the battery
+                     and data information through a weight adaptive function [103]. This was achieved by
+                     integrating transient thermal equations, with heat generation uniformly calculated from
+                     the relationship between current and voltage. The thermal equation is relatively easy to
+                     train due to the constant material property, and the battery heat generation rate is simply
+                     determinedbyjouleheatingwithoutconsideringthevariousreactionsandtheirexothermic
+                     rates in the formula. Wang et al. proposed a battery informed neural network (BINN)
+                     that selects features (voltage, current, experiment time, etc.) to obtain the cell surface
+                     temperature, open circuit voltage, and internal resistance, which reflect aging [98].
+                        Kimetal. applied a multiphysics-informed neural network (MPINN) in thermal run-
+                     awayanalysisusingasimplecylindricallithium-ion cell, without any charge or discharge
+                     processes[97]. TheMPINNaddressesthisbyembeddingphysicallawsÐsuchastheenergy
+                     balance equation and the Arrhenius lawÐinto the neural network, enabling it to estimate
+                     time- and space-dependent temperature and concentration profiles more effectively than
+                     purely data-driven models like standard artificial neural networks (ANNs). The study
+                     achieves significant advancements by demonstrating that the MPINN outperforms ANNs
+                     in accuracy across various data availability scenarios (Figure 6). With fully labeled data, the
+                     MPINNreducesthemeanabsoluteerror(MAE)andtherootmeansquarederror(RMSE)
+                     comparedtoANNs(e.g.,MAEof0.46vs. 1.17fortemperature). Insemi-supervisedsettings
+                     withlimitedlabeleddata,theMPINN’serrorsremainlow(MAEof0.08vs. 47.46forANN),
+                     and it can even predict TR without labeled data for positive electrode decomposition,
+                     leveraging its physics-informed framework. This capability positions the MPINN as a
+                     promising surrogate model for real-time TR prediction and battery safety optimization,
+                     whichisvalidatedthroughcomparisonswithhigh-fidelityCOMSOLsimulations. Looking
+                     forward, the paper suggests promising improvements, including expanding the MPINN to
+                     modeladditionalTRmechanismslikenegativeelectrodeandsolidelectrolyteinterphase
+                     (SEI) layer decomposition for a more comprehensive representation. Reducing the compu-
+                     tational cost of training, currently a bottleneck, would enhance its practicality. Additionally,
+                     applyingtheMPINNtocomplexbatterygeometriesormulti-cellsystemscouldbroaden
+                     its real-world applicability, thereby advancing battery management systems and safety
+                     designs. These enhancements could solidify the MPINN’s role in improving LIB reliability
+                     andsafety.
+                     4.2. Battery Pack Thermal Management
+                        Choetal. explores the use of a PINN to tackle significant challenges associated with
+                     managinglithium-ionbatterypacks,particularly the accurate prediction of temperature
+                     distributions [104]. The PINN approachaddressestheseissuesbyintegratingphysicallaws,
+                     such as energy balance equations, directly into the neural network’s loss function. This
+                     hybrid methodcombinesthestrengthsofphysics-basedanddata-drivenmodels,reducing
+                     the need for large datasets and extensive parameter tuning while maintaining accuracy,
+                     especially in scenarios with limited data or unknown initial conditions. The paper demon-
+                     strates notable success in applying the PINN method to improve temperature prediction
+                     accuracy within lithium-ion battery packs (Figure 7). By embedding physical constraints
+                     into the neural network, the PINN achieves a root mean square error (RMSE) of 0.57 ◦C for
+                     the Direct Current Fast Charge (DCFC) test profile and 0.52 ◦C for the Grade Load (GL)
+     Batteries 2025, 11, 204                                        18of26
+                     100 test profile. These results mark a significant improvement over traditional methods,
+                     offering a more efficient and reliable way to monitor battery temperatures. Enhanced
+                     accuracy is particularly valuable for preventing thermal runaway and extending battery
+                     life, which are key concerns in battery management systems. The study also refines the
+                     PINN’s performance by incorporating additional inputs, such as chamber temperature,
+                     andoptimizing the neural network architecture. This hybrid approach not only outper-
+                     formsconventional models in terms of precision but also reduces computational overhead,
+                     makingitapracticalsolution for real-time temperature monitoring in battery packs.
+                     Figure 6. Multiphysics-informed neural network framework. The figure has been republished
+                     from[97]withpermissionunderthetermsoftheCreativeCommons.
+                     Figure7. LSTM-PINNhybridframework. Thefigurehasbeenrepublishedfrom[104]withpermission
+                     underthetermsoftheCreativeCommons.
+                        Looking ahead, the paper suggests several avenues to further enhance the PINN
+                     approachforbatterypackapplications. One promising improvement is the integration of
+                     morecomprehensivephysicalmodelsintotheneuralnetwork,suchasthoseaccounting
+                     for varying thermal properties or complex heat transfer mechanisms within the battery
+     Batteries 2025, 11, 204                                        19of26
+                     pack. This could lead to even greater prediction accuracy by capturing a broader range of
+                     physicalphenomena. Anotherpotentialadvancementliesinoptimizingtheneuralnetwork
+                     architecture, possibly by exploring hybrid models or alternative network types to better
+                     handlethenonlineardynamicsofbatterysystems. Additionally, expanding the dataset to
+                     encompassawidervarietyofoperatingconditionsandbatterytypescouldimprovethe
+                     model’sgeneralizability, making it adaptable to diverse real-world scenarios and battery
+                     configurations. These enhancements could solidify PINN’s role as a cornerstone in battery
+                     managementsystems,drivingfurtherimprovementsinsafety,efficiency, and performance
+                     for lithium-ion battery applications.
+                     4.3. Battery System Thermal Management
+                        Whenbatterypacksareembeddedinlargesystems,suchaselectronicsandelectric
+                     vehicles, simulation becomes more challenging.
+                        Shenetal. applied PINNs to address the challenge of accurately estimating tempera-
+                     ture distributions in large-format lithium-ion blade batteries, which is a critical aspect of
+                     thermal managementinelectricvehicle battery packs [105]. Effective temperature control
+                     is vital because it directly impacts battery performance, safety, and lifespan, with excessive
+                     heat potentially leading to thermal runaway. Traditional physics-based models, while
+                     detailed, are computationally demanding and require extensive manual parameter tuning,
+                     making them impractical for real-time use. Conversely, data-driven models depend on
+                     large datasets, which may not always be available, especially under diverse operating
+                     conditions. The paper introduces a PINN model that integrates a simplified multi-node
+                     thermal model into an LSTM neural network, combining physical laws with machine
+                     learning (Figure 8). This hybrid approach reduces the need for extensive data and cali-
+                     bration by embeddingheattransfer equations into the network’s loss function, enabling
+                     real-time temperature predictions with improved accuracy and interpretability, particularly
+                     for large-format batteries with non-uniform heat generation.
+                     Figure 8. PINN-based real-time battery temperature estimation framework. The figure has been
+                     republished with permission from [105].
+                        In this study, experimental data were gathered using a test bench equipped with a
+                     NebulaChargingandDischargingtestingsystem,aGDBELLhigh-andlow-temperature
+       Batteries 2025, 11, 204                                                                     20of26
+                               test chamber, three K-type thermocouples, and an upper computer. A series of battery
+                               thermal characteristic experiments, including discharging, cooling, charging, resting, and
+                               discharging, were performed under varying current rate and environmental conditions
+                               to capture the real-time temperature profiles of the blade battery. To develop the frame-
+                               work,a1Dthermalmodelwasestablishedalongthelengthdirectionofthelarge-format
+                               blade battery, as heat transfer in the width and thickness directions was negligible. The
+                               modelincorporatesthermalresistance between nodes, heat generation, Joule heating, and
+                               convective heat transfer, and is simplified as follows:
+                                                 dT       T −T     T −T     T   −T 
+                                             f =   2 − Q+ 1     2 + 3    2 + amb   2  /M c           (10)
+                                                 dt         Rx12     Rx23      R         2
+                                                                                h2
+                                   Here, Tx denotes the temperature at different nodes, while Rh and Rx represent the
+                               thermal resistance between nodes, including convective heat transfer resistance (Rh) and
+                               equivalent internal resistance (Rx). The Rh values were determined using experimentally
+                               measured data via the recursive least squares (RLS) method, whereas R values were
+                                                                                            x
+                               derived from open circuit voltage (OCV) testing combined with the Joule heating formula.
+                               Thetransient temperature data, equivalent resistance curves, experimental data, and ther-
+                               malmodelwereintegratedintothePINNmodel,whichincludesanLSTMlayertohandle
+                               long-sequence time-series data, thereby preserving and updating critical temperature infor-
+                               mation. The modelistrainedbyminimizingthelossfunction,ultimatelyoutputtingthe
+                               transient central temperature of the battery as a temperature curve.
+                                   The paper demonstrates significant achievements through the development and
+                               testing of the PINN model for battery temperature estimation. By incorporating a one-
+                               dimensionalthermalmodelwiththreenodesÐaccountingforheatgeneration,transfer,and
+                               dissipationÐthe PINNleveragesLSTMtocapturethetime-seriesnatureoftemperature
+                               changes. Tested under various charging conditions (0.5 C, 1.0 C, and 2.0 C), the model
+                               outperformstraditional approaches like backpropagation neural networks (BP-NN) and
+                                                                                             2
+                               standalone LSTMs. For instance, at a 2.0 C charging rate, it achieves an R of 0.9863, a
+                               meanabsoluteerror(MAE)of0.2875◦C,andarootmeansquareerror(RMSE)of0.3306◦C,
+                               showcasinghighpredictiveaccuracy. A notable advantage is its ability to learn parameters,
+                               suchasequivalentinternal resistance, automatically via neural network training, thereby
+                               eliminating manual calibration. These results, validated through a realistic experimental
+                               setup with a battery test bench, highlight the PINN’s effectiveness in providing precise,
+                               real-time temperature estimates and enhancing battery management systems’ ability to
+                               prevent thermal issues. The paper outlines several promising directions for enhancing the
+                               PINNmodel’scapabilities. One key improvementisextendingtemperatureestimationto
+                               the battery module level, predicting the overall temperature field across multiple cells in a
+                               pack. This would offer a more comprehensive thermal profile for practical applications but
+                               wouldrequireaddressingincreasedcomplexityinmodelinginter-cellinteractions. Another
+                               avenue is refining the thermal model by incorporating additional physical phenomena,
+                               such as detailed heat transfer mechanisms or variable thermal properties, to further im-
+                               proveaccuracy. Expandingthedatasettoincludeabroaderrangeofoperatingconditions
+                               (e.g., different charge rates, ambient temperatures, and battery aging states) could enhance
+                               the model’s generalizability and robustness. Additionally, optimizing the neural network
+                               architectureÐpotentially by exploring advanced hybrid designsÐcould improve its ability
+                               to handle complex, nonlinear thermal dynamics. These advancements would strengthen
+                               the PINN’s role in real-time thermal management, supporting safer and more efficient
+                               battery pack operations in electric vehicles.
+                                   Theapplications of PINNs in battery thermal management discussed in this section
+                               are summarizedinTable3. However,thisareaisnotwellunderstoodduetothecomplexity
+        Batteries 2025, 11, 204                                                                           21of26
+                                 of electrochemical±thermal multiphysics, which makes it difficult to identify the thermal
+                                 source and corresponding PDEs, especially with different SOC. Data-driven experimental
+                                 identification is the current approach being used, which deviates from the intention of
+                                 PINNsbecausetheyarenotdata-driven.
+                                 Table3. SummaryofapplicationsofPINNsinbatterythermalmanagement.
+               Scale                      KeyMethods                                 Highlights
+                Cell                PINNwithelectric±thermal             Electrochemical±thermal multiphysics,
+                              mechanism[103],BINN[98],MPINN[97]                 real-time TR prediction
+                Pack                    LSTM-PINN[104]                   Datasize, temperature uniformity, cell
+                                                                                    arrangement
+               System                   PINN-LSTM[105]                   Largeformat,wideoperationalrange,
+                                                                                  1Dsimplification
+                                 5. Conclusions
+                                      In this review paper, we first discussed the working principles of PINNs and their
+                                 variants, as well as their general applications in the physics simulation world in Section 2.
+                                 Based on this understanding, we then discussed the challenges associated with both
+                                 electronics and battery thermal managementatthreescalelevelsandhowPINNscantackle
+                                 these challenges accordingly. Subseqently, we reviewed study that has been conducted at
+                                 the chip level, board level and system level of electronics thermal management in Section 3.
+                                 PINNsarebeingusedtosolvedifferentanalysischallengesatdifferent scales. In Section 4,
+                                 wethenreviewedresearchconductedonbatterythermalmanagementwiththesamescale
+                                 categorizing standards, from the battery level to the pack level to large-format systems.
+                                 Asthetwomostheat-intensivecomponentsinthehigh-tech,automobile,andindustrial
+                                 fields, the thermal management of electronics and batteries should be considered together.
+                                 Gaps clearly exist in the connections between these two components. In the current
+                                 research, PINNs have solved the challenges of data scarcity and prediction efficiency, and
+                                 the critical idea is to figure out the correct PDEs to use and adjust the training algorithms
+                                 to various operating conditions. Despite the promising advantages that PINNs offer over
+                                 traditional machinelearning,aswellastheirflexibilitytocombinewithdifferenttechniques
+                                 to enhance performance, the application of PINNs is not without challenges. They can
+                                 becomputationallyintensive, sensitive to the correct formulation of governing equations
+                                 andneural network architecture, and may face convergence issues or require extensive
+                                 hyperparametertuningwhendealingwithstifforhighlynonlinearsystems,makingtheir
+                                 deployment in real-time or large-scale industrial settings more challenging. Therefore,
+                                 this review points out both the pros and cons of applying PINNs, which will benefit
+                                 frominspiration in using advanced machine learning approaches to address system-level
+                                 electronics and battery system thermal management.
+                                 Author Contributions: Z.D.: Conceptualization, investigation, formal analysis, methodology,
+                                 project administration, resources, supervision, validation, visualization, WritingÐoriginal draft,
+                                 WritingÐreview & editing. R.L.: Investigation, literature review, formal analysis, methodology,
+                                 visualization, WritingÐoriginal draft, validation, resources, WritingÐreview & editing. All authors
+                                 havereadandagreedtothepublishedversionofthemanuscript.
+                                 Funding: This research received no external funding.
+                                 DataAvailability Statement: No new data were created or analyzed in this study.
+           Batteries 2025, 11, 204                                                                                                                             22of26
+                                                  Conflicts of Interest: Author Zichen Du is employed by the Ansys, Inc. The remaining authors
+                                                  declare that the research was conducted in the absence of any commercial or financial relationships
+                                                  that could be construed as a potential conflict of interest.
+           References
+           1.     Pistoia, G. Battery Operated Devices and Systems; Elsevier: Amsterdam, The Netherlands, 2009; ISBN 978-0-444-53214-5.
+           2.     Wang, Q.; Ping, P.; Zhao, X.; Chu, G.; Sun, J.; Chen, C. Thermal Runaway Caused Fire and Explosion of Lithium Ion Battery.
+                  J. Power Sources 2012, 208, 210±224. [CrossRef]
+           3.     DeBock,H.P.;Huitink,D.;Shamberger,P.;Lundh,J.S.;Choi,S.; Niedbalski, N.; Boteler, L. A System to Package Perspective on
+                 Transient Thermal ManagementofElectronics. J. Electron. Packag. 2020, 142, 041111. [CrossRef]
+           4.     Falcone, M.; Palka Bayard De Volo, E.; Hellany, A.; Rossi, C.; Pulvirenti, B. Lithium-Ion Battery Thermal Management Systems:
+                 ASurveyandNewCFDResults. Batteries2021,7,86. [CrossRef]
+           5.     Li, X.; He, F.; Ma, L. Thermal Management of Cylindrical Batteries Investigated Using Wind Tunnel Testing and Computational
+                  Fluid DynamicsSimulation. J. Power Sources 2013, 238, 395±402. [CrossRef]
+           6.     Kim,G.-H.;Pesaran,A.BatteryThermalManagementDesignModeling. WorldElectr. Veh. J.2007,1,126±133. [CrossRef]
+           7.     Chen, W.; Hou, S.; Shi, J.; Han, P.; Liu, B.; Wu, B.; Lin, X. Numerical Analysis of Novel Air-Based Li-Ion Battery Thermal
+                  Management. Batteries 2022, 8, 128. [CrossRef]
+           8.     Eymard, R.; Gallouët, T.; Herbin, R. Finite Volume Methods. In Handbook of Numerical Analysis; Elsevier: Amsterdam,
+                 TheNetherlands,2000;Volume7;pp. 713±1018;ISBN978-0-444-50350-3.
+           9.     Birbarah, P.; Gebrael, T.; Foulkes, T.; Stillwell, A.; Moore, A.; Pilawa-Podgurski, R.; Miljkovic, N. Water Immersion Cooling of
+                  HighPowerDensityElectronics. Int. J. Heat Mass Transf. 2020, 147, 118918. [CrossRef]
+           10.    AmericanSocietyofMechanicalEngineers(Ed.) Proceedings of the ASME International Technical Conference and Exhibition on Packag-
+                  ing and Integration of Electronic and Photonic Microsystems-2018: Heterogeneous Integration: Microsystems with Diverse Functionality:
+                 Servers of the Future, IoT, and Edge to Cloud: Structural and Physical Health Monitoring: Power Electronics, Energy Conversion, and
+                 Storage: Autonomous, Hybrid, and Electric Vehicles: Presented at ASME 2018 International Technical Conference and Exhibition on
+                 Packaging and Integration of Electronic and Photonic Microsystems, 27±30 August 2018, San Francisco, CA, USA; The American Society
+                  of Mechanical Engineers: New York, NY, USA, 2019; ISBN 978-0-7918-5192-0.
+           11.    Shuai, S.; Du, Z.; Ma, B.; Shan, L.; Dogruoz, B.; Agonafer, D. Numerical Investigation of Shape Effect on Microdroplet Evapo-
+                  ration. In Proceedings of the ASME 2018 International Technical Conference and Exhibition on Packaging and Integration of
+                  Electronic and Photonic Microsystems, San Francisco, CA, USA, 27±30 August 2018; American Society of Mechanical Engineers:
+                  SanFrancisco, CA, USA, 2018; p. V001T04A010.
+           12.    AlMiaari,A.;Ali,H.M.BatteriesTemperaturePredictionandThermalManagementUsingMachineLearning: AnOverview.
+                 Energy Rep. 2023, 10, 2277±2305. [CrossRef]
+           13.    Abhijith, M.S.; Soman, K.P. Machine Learning Methods for Modeling Nanofluid Flows: A Comprehensive Review with Emphasis
+                  onCompactHeatTransferDevicesforElectronicDeviceCooling. J.Therm. Anal. Calorim. 2024, 149, 5843±5869. [CrossRef]
+           14.    Floridi, L.; Chiriatti, M. GPT-3: Its Nature, Scope, Limits, and Consequences. Minds Mach. 2020, 30, 681±694. [CrossRef]
+           15.    OpenAI;Achiam,J.;Adler,S.;Agarwal,S.;Ahmad,L.;Akkaya,I.;Aleman,F.L.;Almeida,D.;Altenschmidt,J.;Altman,S.;etal.
+                  GPT-4TechnicalReport. arXiv 2023, arXiv:2303.08774.
+           16.    Decencière, E.; Cazuguel, G.; Zhang, X.; Thibault, G.; Klein, J.-C.; Meyer, F.; Marcotegui, B.; Quellec, G.; Lamard, M.; Danno, R.;
+                  et al. TeleOphta: Machine Learning and Image Processing Methods for Teleophthalmology. IRBM 2013, 34, 196±203. [CrossRef]
+           17.    Munawar,H.S.;Hammad,A.W.A.;Waller,S.T.AReviewonFloodManagementTechnologiesRelatedtoImageProcessingand
+                  MachineLearning. Autom. Constr. 2021, 132, 103916. [CrossRef]
+           18.    Lu, R. Complex Wavelet Mutual Information Loss: A Multi-Scale Loss Function for Semantic Segmentation. arXiv 2025,
+                  arXiv:250200563.
+           19.    Lu,R.SteerablePyramidWeightedLoss: Multi-ScaleAdaptiveWeightingforSemanticSegmentation. arXiv2025,arXiv:250306604.
+           20.    Summerville, A.; Snodgrass, S.; Guzdial, M.; Holmgard, C.; Hoover, A.K.; Isaksen, A.; Nealen, A.; Togelius, J. Procedural Content
+                  Generation via Machine Learning (PCGML). IEEE Trans. Games 2018, 10, 257±270. [CrossRef]
+           21.    Justesen, N.; Bontrager, P.; Togelius, J.; Risi, S. Deep Learning for Video Game Playing. IEEE Trans. Games 2020, 12, 1±20.
+                  [CrossRef]
+           22.    Xu, M.; Maddage, N.C.; Xu, C.; Kankanhalli, M.; Tian, Q. Creating Audio Keywords for Event Detection in Soccer Video. In
+                  Proceedingsofthe2003InternationalConferenceonMultimediaandExpo. ICME03. Proceedings(Cat. No.03TH8698),Baltimore,
+                  MD,USA,6±9July2003;IEEE:Piscataway,NJ,USA;p. II±281.
+           23.    Huang,B.;Wang,J.ApplicationsofPhysics-InformedNeuralNetworksinPowerSystemsÐAReview. IEEETrans. PowerSyst.
+                  2023, 38, 572±588. [CrossRef]
+          Batteries 2025, 11, 204                                                                                                               23of26
+          24.   Li, A.; Yuen, A.C.Y.; Wang, W.; Chen, T.B.Y.; Lai, C.S.; Yang, W.; Wu, W.; Chan, Q.N.; Kook, S.; Yeoh, G.H. Integration of
+                ComputationalFluidDynamicsandArtificialNeuralNetworkforOptimizationDesignofBatteryThermalManagementSystem.
+                Batteries 2022, 8, 69. [CrossRef]
+          25.   Karniadakis, G.E.; Kevrekidis, I.G.; Lu, L.; Perdikaris, P.; Wang, S.; Yang, L. Physics-Informed Machine Learning. Nat. Rev. Phys.
+                2021, 3, 422±440. [CrossRef]
+          26.   Li, J.; Lopez, S.A. A Look Inside the Black Box of Machine Learning Photodynamics Simulations. Acc. Chem. Res. 2022, 55,
+                1972±1984. [CrossRef] [PubMed]
+          27.   Liu, H.-H.; Zhang, J.; Liang, F.; Temizel, C.; Basri, M.A.; Mesdour, R. Incorporation of Physics into Machine Learning for
+                Production Prediction from Unconventional Reservoirs: A Brief Review of the Gray-Box Approach. SPE Reserv. Eval. Eng. 2021,
+                24, 847±858. [CrossRef]
+          28.   Raissi, M.; Perdikaris, P.; Karniadakis, G.E. Physics Informed Deep Learning (Part I): Data-Driven Solutions of Nonlinear Partial
+                Differential Equations. arXiv 2017, arXiv:1711.10561.
+          29.   Cai, S.; Mao, Z.; Wang, Z.; Yin, M.; Karniadakis, G.E. Physics-Informed Neural Networks (PINNs) for Fluid Mechanics: A Review.
+                Acta Mech. Sin. 2021, 37, 1727±1738. [CrossRef]
+          30.   Wang, H.; Cao, Y.; Huang, Z.; Liu, Y.; Hu, P.; Luo, X.; Song, Z.; Zhao, W.; Liu, J.; Sun, J.; et al. Recent Advances on Machine
+                Learning for Computational Fluid Dynamics: A Survey. arXiv 2024, arXiv:2408.12171.
+          31.   Arzani, A.; Wang, J.-X.; D’Souza, R.M. Uncovering Near-Wall Blood Flow from Sparse Data with Physics-Informed Neural
+                Networks. Phys. Fluids 2021, 33, 071905. [CrossRef]
+          32.   Zhou,W.;Miwa,S.;Okamoto,K.AdvancingFluidDynamicsSimulations: AComprehensiveApproachtoOptimizingPhysics-
+                InformedNeuralNetworks. Phys. Fluids 2024, 36, 013615. [CrossRef]
+          33.   Gokhale, G.; Claessens, B.; Develder, C. Physics Informed Neural Networks for Control Oriented Thermal Modeling of Buildings.
+                Appl. Energy 2022, 314, 118852. [CrossRef]
+          34.   Xu,J.; Wei, H.; Bao, H. Physics-Informed Neural Networks for Studying Heat Transfer in Porous Media. Int. J. Heat Mass Transf.
+                2023, 217, 124671. [CrossRef]
+          35.   Li, Z.; Luo, H.; Jiang, Y.; Liu, H.; Xu, L.; Cao, K.; Wu, H.; Gao, P.; Liu, H. Comprehensive Review and Future Prospects on
+                Chip-Scale Thermal Management: Core of Data Center’s Thermal Management. Appl. Therm. Eng. 2024, 251, 123612. [CrossRef]
+          36.   Xia, Y.; Meng, Y. Physics-Informed Neural Network (PINN) for Solving Frictional Contact Temperature and Inversely Evaluating
+                Relevant Input Parameters. Lubricants 2024, 12, 62. [CrossRef]
+          37.   Cai, S.; Wang, Z.; Wang, S.; Perdikaris, P.; Karniadakis, G.E. Physics-Informed Neural Networks for Heat Transfer Problems.
+                J. Heat Transf. 2021, 143, 060801. [CrossRef]
+          38.   Daw,A.; Bu, J.; Wang, S.; Perdikaris, P.; Karpatne, A. Mitigating Propagation Failures in Physics-Informed Neural Networks
+                UsingRetain-Resample-Release(R3)Sampling. arXiv 2022, arXiv:2207.02338.
+          39.   Nabian,M.A.;Gladstone,R.J.; Meidani, H. Efficient Training of Physics-informed Neural Networks via Importance Sampling.
+                Comput. Civ. Infrastruct. Eng. 2021, 36, 962±977. [CrossRef]
+          40.   Farea, A.; Yli-Harja, O.; Emmert-Streib, F. Understanding Physics-Informed Neural Networks: Techniques, Applications, Trends,
+                andChallenges. AI 2024, 5, 1534±1557. [CrossRef]
+          41.   Cuomo,S.;DiCola,V.S.;Giampaolo,F.;Rozza,G.;Raissi, M.; Piccialli, F. Scientific Machine Learning Through Physics±Informed
+                NeuralNetworks: WhereWeAreandWhat’sNext. J.Sci. Comput. 2022,92,88. [CrossRef]
+          42.   Wang,S.;Teng,Y.;Perdikaris, P. Understanding and Mitigating Gradient Flow Pathologies in Physics-Informed Neural Networks.
+                SIAMJ.Sci. Comput. 2021, 43, A3055±A3081. [CrossRef]
+          43.   Yao, J.; Su, C.; Hao, Z.; Liu, S.; Su, H.; Zhu, J. Multiadam: Parameter-Wise Scale-Invariant Optimizer for Multiscale Training of
+                Physics-Informed Neural Networks. In Proceedings of the International Conference on Machine Learning, PMLR, Honolulu, HI,
+                USA,23±29July2023;pp. 39702±39721.
+          44.   Wu,C.;Zhu,M.;Tan,Q.;Kartha,Y.;Lu,L.AComprehensiveStudyofNon-AdaptiveandResidual-BasedAdaptiveSamplingfor
+                Physics-Informed Neural Networks. Comput. Methods Appl. Mech. Eng. 2023, 403, 115671. [CrossRef]
+          45.   Tang, K.; Wan, X.; Yang, C. DAS-PINNs: A Deep Adaptive Sampling Method for Solving High-Dimensional Partial Differential
+                Equations. J. Comput. Phys. 2023, 476, 111868. [CrossRef]
+          46.   Yu, T.; Yong, H.; Liu, L.; Wang, H.; Chen, H. MCMC-PINNs: A Modified Markov Chain Monte-Carlo Method for Sampling
+                Collocation Points of PINNs Adaptively. Authorea Preprint 2023. [CrossRef]
+          47.   Yu, B.; E, W. The Deep Ritz Method: A Deep Learning-Based Numerical Algorithm for Solving Variational Problems. Commun.
+                Math. Stat. 2018, 6, 1±12.
+          48.   Kharazmi, E.; Zhang, Z.; Karniadakis, G.E. Variational Physics-Informed Neural Networks for Solving Partial Differential
+                Equations. arXiv 2019, arXiv:191200873.
+          49.   Kharazmi,E.; Zhang, Z.; Karniadakis, G.E. Hp-VPINNs: Variational Physics-Informed Neural Networks with Domain Decompo-
+                sition. Comput. Methods Appl. Mech. Eng. 2021, 374, 113547. [CrossRef]
+          Batteries 2025, 11, 204                                                                                                               24of26
+          50.   Khodayi-Mehr, R.; Zavlanos, M. VarNet: Variational Neural Networks for the Solution of Partial Differential Equations. In
+                Proceedings of the Learning for Dynamics and Control, PMLR, Berkeley, CA, USA, 10±11 June 2020; pp. 298±307.
+          51.   Jagtap, A.D.; Kharazmi, E.; Karniadakis, G.E. Conservative Physics-Informed Neural Networks on Discrete Domains for
+                Conservation Laws: Applications to Forward and Inverse Problems. Comput. Methods Appl. Mech. Eng. 2020, 365, 113028.
+                [CrossRef]
+          52.   Jagtap, A.D.; Karniadakis, G.E. Extended Physics-Informed Neural Networks (XPINNs): A Generalized Space-Time Domain
+                DecompositionBasedDeepLearningFrameworkforNonlinearPartialDifferentialEquations. Commun. Comput. Phys. 2020,28,
+                2002±2041. [CrossRef]
+          53.   Jeon, J.; Lee, J.; Vinuesa, R.; Kim, S.J. Residual-Based Physics-Informed Transfer Learning: A Hybrid Method for Accelerating
+                Long-TermCFDSimulationsviaDeepLearning. Int. J.HeatMassTransf. 2024,220,124900. [CrossRef]
+          54.   Incropera, F.P.; DeWitt, D.P.; Bergman, T.L.; Lavine, A.S. (Eds.) Fundamentals of Heat and Mass Transfer, 6th ed.; Wiley: Hoboken,
+                NJ, USA, 2007; ISBN 978-0-471-45728-2.
+          55.   Liaw, S.P.; Yeh, R.H. Fins with Temperature Dependent Surface Heat FluxÐI. Single Heat Transfer Mode. Int. J. Heat Mass Transf.
+                1994, 37, 1509±1515. [CrossRef]
+          56.   Das, S.K.; Putra, N.; Thiesen, P.; Roetzel, W. Temperature Dependence of Thermal Conductivity Enhancement for Nanofluids.
+                J. Heat Transf. 2003, 125, 567±574. [CrossRef]
+          57.   Bejan, A. Convection Heat Transfer, 4th ed.; Wiley: Hoboken, NJ, USA, 2013; ISBN 978-0-470-90037-6.
+          58.   Kaviany, M. Heat Transfer Physics, 2nd ed.; Cambridge University Press: Cambridge, UK, 2014; ISBN 978-1-107-04178-3.
+          59.   Bernardo, C.; Johann, W.K. Energietechnische Gesellschaft, Ed.; Proceedings/CIPS 2012, 7th International Conference on Integrated
+                PowerElectronics Systems: 6±8 March 2012, Nuremberg, Germany; Incl. CD-ROM; ETG-Fachbericht; VDE-Verl: Berlin, Germany,
+                2012; ISBN 978-3-8007-3414-6.
+          60.   Ohadi, M.M.; Dessiatoun, S.V.; Choo, K.; Pecht, M.; Lawler, J.V. A Comparison Analysis of Air, Liquid, and Two-Phase Cooling of
+                DataCenters. In Proceedings of the 2012 28th Annual IEEE Semiconductor Thermal Measurement and Management Symposium
+                (SEMI-THERM),SanJose,CA,USA,18±22March2012;IEEE:Piscataway,NJ,USA;pp. 58±63.
+          61.   Gong,Y.; Zhou, F.; Ma, G.; Liu, S. Advancements on Mechanically Driven Two-Phase Cooling Loop Systems for Data Center Free
+                Cooling. Int. J. Refrig. 2022, 138, 84±96. [CrossRef]
+          62.   Yuan,X.; Zhou, X.; Pan, Y.; Kosonen, R.; Cai, H.; Gao, Y.; Wang, Y. Phase Change Cooling in Data Centers: A Review. Energy Build.
+                2021, 236, 110764. [CrossRef]
+          63.   Abro, G.E.M.; Zulkifli, S.A.B.M.; Kumar, K.; El Ouanjli, N.; Asirvadam, V.S.; Mossa, M.A. Comprehensive Review of Recent
+                AdvancementsinBatteryTechnology,Propulsion,PowerInterfaces,andVehicleNetworkSystemsforIntelligentAutonomous
+                andConnectedElectricVehicles. Energies 2023, 16, 2925. [CrossRef]
+          64.   Zhang, Y.; Udrea, F.; Wang, H. Multidimensional Device Architectures for Efficient Power Electronics. Nat. Electron. 2022, 5,
+                723±734. [CrossRef]
+          65.   Shan, L.; Bu, C.; Su, Y.; Wu, J.; Wang, Y.; Shen, L.; Xie, J. Towards Feasible Thermal Management Design of Electronic Control
+                ModuleforVariableFrequencyAirConditionerFunctioninExtremelyHighAmbientTemperatures. Electronics2025,14,1595.
+                [CrossRef]
+          66.   Chen,D.;Chui,C.-K.;Lee,P.S. Adaptive Physically Consistent Neural Networks for Data Center Thermal Dynamics Modeling.
+                Appl. Energy 2025, 377, 124637. [CrossRef]
+          67.   Ding, B.; Zhang, Z.-H.; Gong, L.; Xu, M.-H.; Huang, Z.-Q. A Novel Thermal Management Scheme for 3D-IC Chips with
+                Multi-Cores and High Power Density. Appl. Therm. Eng. 2020, 168, 114832. [CrossRef]
+          68.   Sadiqbatcha, S.I.; Zhang, J.; Amrouch, H.; Tan, S.X.-D. Real-Time Full-Chip Thermal Tracking: A Post-Silicon, Machine Learning
+                Perspective. IEEE Trans. Comput. 2021, 71, 1411±1424. [CrossRef]
+          69.   Chen,L.; Jin, W.; Tan, S.X.-D. Fast Thermal Analysis for Chiplet Design Based on Graph Convolution Networks. In Proceedings
+                of the 2022 27th Asia and South Pacific Design Automation Conference (ASP-DAC), Taipei, Taiwan, 17 January 2022; IEEE:
+                Piscataway, NJ, USA; pp. 485±492.
+          70.   Liu, Z.; Li, Y.; Hu, J.; Yu, X.; Shiau, S.; Ai, X.; Zeng, Z.; Zhang, Z. DeepOHeat: Operator Learning-Based Ultra-Fast Thermal
+                Simulation in 3D-IC Design. In Proceedings of the 2023 60th ACM/IEEE Design Automation Conference (DAC), San Francisco,
+                CA,USA,9July2023;IEEE:Piscataway,NJ,USA;pp. 1±6.
+          71.   Jin, P.; Meng, S.; Lu, L. MIONet: Learning Multiple-Input Operators via Tensor Product. SIAM J. Sci. Comput. 2022, 44,
+                A3490±A3514. [CrossRef]
+          72.   Chen,L.;Lu,J.; Jin, W.; Tan, S.X.-D. Fast Full-Chip Parametric Thermal Analysis Based on Enhanced Physics Enforced Neural
+                Networks. In Proceedings of the 2023 IEEE/ACM International Conference on Computer Aided Design (ICCAD), San Francisco,
+                CA,USA,28October2023;IEEE:Piscataway,NJ,USA;pp. 1±8.
+          73.   Garimella, S.V.; Persoons, T.; Weibel, J.A.; Gektin, V. Electronics Thermal Management in Information and Communications
+                Technologies: Challenges and Future Directions. IEEE Trans. Compon. Packag. Manuf. Technol. 2017, 7, 1191±1205. [CrossRef]
+          Batteries 2025, 11, 204                                                                                                               25of26
+          74.   Asgari, S.; Hu, X.; Tsuk, M.; Kaushik, S. Application of POD plus LTI ROM to Battery Thermal Modeling: SISO Case. SAE Int. J.
+                Commer. Veh. 2014, 7, 278±285. [CrossRef]
+          75.   Hu,X.;Asgari,S.; Lin, S.; Stanton, S.; Lian, W. A Linear Parameter-Varying Model for HEV/EV Battery Thermal Modeling. In
+                Proceedings of the 2012 IEEE Energy Conversion Congress and Exposition (ECCE), Raleigh, NC, USA, 15±20 September 2012;
+                IEEE: Piscataway, NJ, USA; pp. 1643±1649.
+          76.   Hu,X.;Asgari,S.; Yavuz, I.; Stanton, S.; Hsu, C.-C.; Shi, Z.; Wang, B.; Chu, H.-K. A Transient Reduced Order Model for Battery
+                ThermalManagementBasedonSingularValueDecomposition. InProceedingsofthe2014IEEEEnergyConversionCongress
+                andExposition(ECCE),Pittsburgh,PA,USA,14±18September2014;IEEE:Piscataway,NJ,USA;pp. 3971±3976.
+          77.   Yang, Y.; Wang, Z.; Liao, Y.; Kong, W.; Shi, X.; Hu, R.; Yao, Y. A Parameterized Thermal Simulation Method Based on Physics-
+                InformedNeuralNetworksforFastPowerModuleThermalDesign. IEEETrans. PowerElectron. 2025,40,9200±9210. [CrossRef]
+          78.   HamidElsheikh,M.;Shnawah,D.A.;Sabri,M.F.M.;Said,S.B.M.;HajiHassan,M.;AliBashir,M.B.;Mohamad,M.AReviewon
+                Thermoelectric Renewable Energy: Principle Parameters That Affect Their Performance. Renew. Sustain. Energy Rev. 2014, 30,
+                337±355. [CrossRef]
+          79.   Chen,L.;Jin, W.; Zhang, J.; Tan, S.X.-D. Thermoelectric Cooler Modeling and Optimization via Surrogate Modeling Using Implicit
+                Physics-Constrained Neural Networks. IEEE Trans. Comput. Aided Des. Integr. Circuits Syst. 2023, 42, 4090±4101. [CrossRef]
+          80.   Farrag, A.; Kataoka, J.; Yoon, S.W.; Won, D.; Jin, Y. SRP-PINN: A Physics-Informed Neural Network Model for Simulating
+                ThermalProfile of Soldering Reflow Process. IEEE Trans. Compon. Packag. Manuf. Technol. 2024, 14, 1098±1105. [CrossRef]
+          81.   Liu, H.; Wen, M.; Yang, H.; Yue, Z.; Yao, M. A Review of Thermal Management System and Control Strategy for Automotive
+                Engines. J. Energy Eng. 2021, 147, 03121001. [CrossRef]
+          82.   Du,D.;Darkwa,J.;Kokogiannakis,G.ThermalManagementSystemsforPhotovoltaics(PV)Installations: ACriticalReview. Sol.
+                Energy 2013, 97, 238±254. [CrossRef]
+          83.   Nadjahi, C.; Louahlia, H.; Lemasson, S. A Review of Thermal Management and Innovative Cooling Strategies for Data Center.
+                Sustain. Comput. Inform. Syst. 2018, 19, 14±28. [CrossRef]
+          84.   Zhang, K.; Zhang, Y.; Liu, J.; Niu, X. Recent Advancements on Thermal Management and Evaluation for Data Centers. Appl.
+                Therm. Eng. 2018, 142, 215±231. [CrossRef]
+          85.   Pogorelskiy, S.; Kocsis, I. BIM and Computational Fluid Dynamics Analysis for Thermal Management Improvement in Data
+                Centres. Buildings 2023, 13, 2636. [CrossRef]
+          86.   Schmidt, R.R.; Cruz, E.E.; Iyengar, M. Challenges of Data Center Thermal Management. IBM J. Res. Dev. 2005, 49, 709±723.
+                [CrossRef]
+          87.   Tanaka, H.; Nagai, H. Thermal Surrogate Model for Spacecraft Systems Using Physics-Informed Machine Learning with POD
+                DataReduction. Int. J. Heat Mass Transf. 2023, 213, 124336. [CrossRef]
+          88.   Zhang,X.;Tu,C.;Yan,Y.Physics-InformedNeuralNetworkSimulationofConjugateHeatTransferinManifoldMicrochannel
+                HeatSinksforHigh-PowerIGBTCooling. Int. Commun. HeatMassTransf. 2024,159,108036. [CrossRef]
+          89.   Jordan, S.M.; Schreiber, C.O.; Parhizi, M.; Shah, K. A New Multiphysics Modeling Framework to Simulate Coupled
+                Electrochemical-Thermal-Electrical Phenomena in Li-Ion Battery Packs. Appl. Energy 2024, 360, 122746. [CrossRef]
+          90.   Grazioli, D.; Magri, M.; Salvadori, A. Computational Modeling of Li-Ion Batteries. Comput. Mech. 2016, 58, 889±909. [CrossRef]
+          91.   Wang, F.; Zhai, Z.; Zhao, Z.; Di, Y.; Chen, X. Physics-Informed Neural Network for Lithium-Ion Battery Degradation Stable
+                ModelingandPrognosis. Nat. Commun. 2024,15,4332. [CrossRef]
+          92.   Wen,P.; Ye, Z.-S.; Li, Y.; Chen, S.; Xie, P.; Zhao, S. Physics-Informed Neural Networks for Prognostics and Health Management of
+                Lithium-Ion Batteries. IEEE Trans. Intell. Veh. 2024, 9, 2276±2289. [CrossRef]
+          93.   Navidi, S.; Thelen, A.; Li, T.; Hu, C. Physics-Informed Machine Learning for Battery Degradation Diagnostics: A Comparison of
+                State-of-the-Art Methods. Energy Storage Mater. 2024, 68, 103343. [CrossRef]
+          94.   Finegan, D.P.; Zhu, J.; Feng, X.; Keyser, M.; Ulmefors, M.; Li, W.; Bazant, M.Z.; Cooper, S.J. The Application of Data-Driven
+                MethodsandPhysics-BasedLearningforImprovingBatterySafety. Joule2021,5,316±329. [CrossRef]
+          95.   Feng, X.; Ouyang, M.; Liu, X.; Lu, L.; Xia, Y.; He, X. Thermal Runaway Mechanism of Lithium Ion Battery for Electric Vehicles:
+                AReview. EnergyStorageMater. 2018, 10, 246±267. [CrossRef]
+          96.   Xu,B.; Lee, J.; Kwon, D.; Kong, L.; Pecht, M. Mitigation Strategies for Li-Ion Battery Thermal Runaway: A Review. Renew. Sustain.
+                Energy Rev. 2021, 150, 111437. [CrossRef]
+          97.   Kim, S.W.; Kwak, E.; Kim, J.-H.; Oh, K.-Y.; Lee, S. Modeling and Prediction of Lithium-Ion Battery Thermal Runaway via
+                Multiphysics-Informed Neural Network. J. Energy Storage 2023, 60, 106654. [CrossRef]
+          98.   Wang,Y.;Xiong,C.;Wang,Y.;Xu,P.;Ju,C.;Shi,J.; Yang, G.; Chu, J. Temperature State Prediction for Lithium-Ion Batteries Based
+                onImprovedPhysicsInformedNeuralNetworks. J.EnergyStorage2023,73,108863. [CrossRef]
+          99.   Chen,K.;Song,M.;Wei,W.;Wang,S.DesignoftheStructureofBatteryPackinParallelAir-CooledBatteryThermalManagement
+                SystemforCoolingEfficiencyImprovement. Int. J. Heat Mass Transf. 2019, 132, 309±321. [CrossRef]
+          Batteries 2025, 11, 204                                                                                                                   26of26
+          100. Liu, H.; Wei, Z.; He, W.; Zhao, J. Thermal Issues about Li-Ion Batteries and Recent Progress in Battery Thermal Management
+                Systems: A Review. Energy Convers. Manag. 2017, 150, 304±330. [CrossRef]
+          101. Gümüssu,Ë    E.; Ekici, Ö.; Köksal, M. 3-D CFD Modeling and Experimental Testing of Thermal Behavior of a Li-Ion Battery. Appl.
+                Therm. Eng. 2017, 120, 484±495. [CrossRef]
+          102. Esmaeili, J.; Jannesari, H. Developing Heat Source Term Including Heat Generation at Rest Condition for Lithium-Ion Battery
+                PackbyupScalingInformationfromCellScale. EnergyConvers. Manag. 2017,139,194±205. [CrossRef]
+          103. Deng,H.-P.;He,Y.-B.;Wang,B.-C.;Li,H.-X.Physics-DominatedNeuralNetworkforSpatiotemporalModelingofBatteryThermal
+                Process. IEEE Trans. Ind. Inform. 2024, 20, 452±460. [CrossRef]
+          104. Cho, G.; Zhu, D.; Campbell, J.J.; Wang, M. An LSTM-PINN Hybrid Method to Estimate Lithium-Ion Battery Pack Temperature.
+                IEEEAccess2022,10,100594±100604. [CrossRef]
+          105. Shen, K.; Xu, W.; Lai, X.; Li, D.; Meng, X.; Zheng, Y.; Feng, X. Physics-Informed Machine Learning Estimation of the Temperature
+                of Large-Format Lithium-Ion Batteries under Various Operating Conditions. Appl. Therm. Eng. 2025, 269, 126200. [CrossRef]
+          Disclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual
+          author(s) and contributor(s) and not of MDPI and/or the editor(s). MDPI and/or the editor(s) disclaim responsibility for any injury to
+          people or property resulting from any ideas, methods, instructions or products referred to in the content.

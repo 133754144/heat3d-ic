@@ -1,0 +1,66 @@
+                                                         2024 International Symposium of Electronics Design Automation
+                                        Learning Peak Temperature in 3DICs
+                                                    by Deep Differentiable Forest
+                                              Yingshi Chen, Min Zhu, Xueyin Zhang, Yusheng Zhai, Chunyang Feng
+                                                                          Giga Design Automation Co., Ltd
+                                                                                 Shenzhen 518055, China
+                                                       {yschen,  mzhu,  xyzhang02,  yszhai,  cyfeng}@giga-da.com
+                   AbstractÐMachine learning is a very attractive idea for thermal                   The interposer size is 2.5 × 5 mm, and the die size are 1.5 ×
+                problems from 3D integrated circuit. This paper study the peak                       1.5 mm, 1.5×1 mm respectively. Both die and interposer are
+                temperature problem under various power configurations. We                           constructed of multi-layer structures, including metal and via
+                give the detailed model and algorithm of deep differentiable forest.                 layers, device layer, substrate layers. All dies are flipped so
+                A complex 3DIC device with hybrid bonding and heterogeneous                          that the substrate layers are on the top.
+                technology nodes integration is used to test this model. Commercial
+                finite element tool needs million grids to get high accuracy solution.                                            II. EXPERIMENT
+                Compare to FEM tool, our model is hundreds of times faster and
+                the relative error is less than 1%. We also compare its performance                     To get experiments datasets, we generate 20,000 random
+                with GBDT and random forest model. The experimental results                          power maps by some rules. For each power map, peak
+                show differentiable forest is a model with higher accuracy in                        temperature is from the simulation result of a commercial
+                predicting peak temperature.                                                         FEM tool. Each case needs 219 seconds (on 8-threads Intel
+                   Index TermsÐ3D ICs, Peak temperature, Thermal simulation,                         Xeon Platinum 8356H 32C/64T@3.9GHz).
+                Machine learning, Differentiable forest                                                 We compare differentiable forest model with two other
+                                            I. INTRODUCTION                                          classic decision tree models: random forest and gradient-
+                                                                                                     boosted decision trees(XGBoost).
+                   Athermal simulation of 3D IC system may involve multiple                             We measure the accuracy of prediction value by relative
+                components with different technology nodes. In this paper, we                        error:
+                build a 3DIC model involves three dies and an interposer as                                                                          ˆ
+                shown in the following Figure 1:                                                                               err = abs(Γ−T)/Γ                                   (1)
+                                                                                                                                                                            ˆ
+                                                                                                     where Γ is result of commercial FEM software and T is the
+                                                                                                     prediction of learned model. As table I shows, the relative
+                                                                                                     error of differentiable forest is only 0.11%. It’s lower than the
+                                                                                                     relative error of XGBoost(0.28%) and random forest(0.4%).
+                                                                                                     This is also confirmed by Figure 2, which shows the peak
+                                                                                                     temperature distribution of each model.
+                Fig. 1: Detailed structure of 3DIC model involves three dies
+                and an interposer
+                                                                                                       Fig. 2: The peak temperature distribution of three models
+                   DIE1 and DIE2 have 14nm equivalent technology while
+                DIE3 and interposer have 16nm equivalent technology. DIE1                               Table I list the training time of each model. So our model is
+                and DIE2 are connected by hybrid bonding with face-to-back                           much faster than random forest and nearly same as XGBoost.
+                style. DIE2 and DIE3 are separately connected to interposer by                                     TABLE I: Comparison of three models
+                micro bump with side-by-side style. The model in this paper
+                contains several key characteristics of state-of-the-art chiplet                            Model                    Relative error(%)     Training time(sec)
+                designs including:                                                                          Differentiable forest    0.11%                 116.3
+                   • Direct die to die connection by hybrid bonding                                         XGBoost                  0.28%                 109.1
+                   • Heterogeneous technology nodes integration                                             Random forest            0.4%                  1891.7
+      2024 2nd International Symposium of Electronics Design Automation (ISEDA) | 979-8-3503-5203-0/24/$31.00 ©2024 IEEE | DOI: 10.1109/ISEDA62518.2024.10617838
+                979-8-3503-5203-0/24/$31.00 ©2024 IEEE                                           761
+                             Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:40:13 UTC from IEEE Xplore.  Restrictions apply. 
+           Differentiable forest model needs less than 1 second to
+         predict peak temperature from each power map. Compare to
+         219 seconds by commercial FEM tool, the speedup of this
+         model exceeds 200x!
+                           REFERENCES
+          [1] Stephen H Pan, Norman Chang, and Ji Zheng. Ic-package thermal co-
+             analysis in 3d ic environment. In International Electronic Packaging
+             Technical Conference and Exhibition, volume 44625, pages 335±341,
+             2011.
+          [2] Yingshi Chen. Attention augmented differentiable forest for tabular data.
+             arXiv preprint arXiv:2010.02921, 2020.
+          [3] Naixing Feng, Yingshi Chen, Yuxian Zhang, Mei Song Tong, Qingsheng
+             Zeng, and Guo Ping Wang. An expedient ddf-based implementation of
+             perfectly matched monolayer. IEEE Microwave and Wireless Components
+             Letters, 31(6):541±544, 2021.
+                                                      762
+                 Authorized licensed use limited to: Peking University. Downloaded on April 13,2026 at 06:40:13 UTC from IEEE Xplore.  Restrictions apply. 
