@@ -10,6 +10,7 @@ import jax.numpy as jnp
 
 from rigno import dataset_Heat3D
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
+from rigno.heat3d_paths import CANONICAL_DATA_SUBDIR, resolve_heat3d_data_dir
 
 
 def edge_count(typed_graph):
@@ -19,12 +20,17 @@ def edge_count(typed_graph):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Smoke-test batched Heat3D graph metadata and graph building.")
-    parser.add_argument("--data-dir", type=Path, default=(REPO_DIR / "dataset_3d_heat"))
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=None,
+        help=f"Directory containing sample_xxx folders. Defaults to {CANONICAL_DATA_SUBDIR}, with legacy fallback.",
+    )
     return parser.parse_args()
 
 
 args = parse_args()
-datadir = args.data_dir
+datadir = resolve_heat3d_data_dir(args.data_dir, REPO_DIR)
 
 batch_indices = [0, 1, 2]
 

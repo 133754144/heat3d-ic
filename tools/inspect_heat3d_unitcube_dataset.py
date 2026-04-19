@@ -1,14 +1,21 @@
 import os
+from pathlib import Path
+import sys
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+REPO_DIR = Path(__file__).resolve().parents[1]
+if str(REPO_DIR) not in sys.path:
+    sys.path.insert(0, str(REPO_DIR))
+
+from rigno.heat3d_paths import resolve_heat3d_data_dir
 
 # ===============================
 # 1️⃣ 基本加载
 # ===============================
-sample_dir = "dataset_3d_heat/sample_000"
+sample_dir = resolve_heat3d_data_dir(repo_dir=REPO_DIR) / "sample_000"
 
 required_files = [
     "coords.npy",

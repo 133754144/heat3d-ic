@@ -1,0 +1,12 @@
+# Optional dependencies for dataset construction and inspection tools.
+# The main Heat3D training/evaluation workflow does not require these.
+
+# Used by tools/generate_heat3d_unitcube_dataset.py for progress reporting.
+tqdm
+
+# Used by tools/inspect_heat3d_unitcube_dataset.py for diagnostic plots.
+matplotlib
+
+# tools/generate_heat3d_unitcube_dataset.py also requires FEniCS/DOLFIN
+# (imported as `dolfin`). Install it through an environment manager such as
+# conda, Docker, or system packages appropriate for your platform.

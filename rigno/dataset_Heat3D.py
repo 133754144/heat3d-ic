@@ -3,23 +3,31 @@ import numpy as np
 import jax.numpy as jnp
 import jax.tree_util as tree
 
+from rigno.heat3d_paths import CANONICAL_DATA_SUBDIR, LEGACY_DATA_SUBDIR, resolve_heat3d_data_dir
+
 
 class Heat3DDataset:
 
     def __init__(self, datadir):
-        self.datadir = datadir
+        self.datadir = str(resolve_heat3d_data_dir(datadir))
         self.samples = []
         self.graph_metadata = []
         self.fix_x = True
 
         # 🔥 只保留真正的 sample_xxx 文件夹（过滤 .DS_Store 和其他垃圾）
-        all_items = sorted(os.listdir(datadir))
+        all_items = sorted(os.listdir(self.datadir))
         sample_dirs = [d for d in all_items if d.startswith("sample_")]
+        if not sample_dirs:
+            raise FileNotFoundError(
+                "No sample_xxx directories found in "
+                f"{self.datadir}. Expected the local dataset under "
+                f"{CANONICAL_DATA_SUBDIR} or legacy {LEGACY_DATA_SUBDIR}."
+            )
 
         print(f"找到 {len(sample_dirs)} 个有效样本文件夹（已过滤 .DS_Store）")
 
         for s in sample_dirs:
-            path = os.path.join(datadir, s)
+            path = os.path.join(self.datadir, s)
 
             coords = np.load(os.path.join(path, "coords.npy"))
             temperature = np.load(os.path.join(path, "temperature.npy"))

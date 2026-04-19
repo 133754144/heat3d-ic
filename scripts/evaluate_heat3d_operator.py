@@ -39,6 +39,7 @@ import numpy as np
 
 from rigno.dataset_Heat3D import Heat3DDataset
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
+from rigno.heat3d_paths import CANONICAL_DATA_SUBDIR, resolve_heat3d_data_dir
 from rigno.heat3d_pipeline import (
   HeatSteadyOutputStepper,
   get_batch_inputs,
@@ -62,7 +63,14 @@ def parse_args() -> argparse.Namespace:
     type=Path,
     default=(REPO_DIR / "output" / "heat3d_ic" / "heat3d_operator_best.pkl"),
   )
-  parser.add_argument("--data-dir", "--datadir", dest="data_dir", type=Path, default=(REPO_DIR / "dataset_3d_heat"))
+  parser.add_argument(
+    "--data-dir",
+    "--datadir",
+    dest="data_dir",
+    type=Path,
+    default=None,
+    help=f"Directory containing sample_xxx folders. Defaults to {CANONICAL_DATA_SUBDIR}, with legacy fallback.",
+  )
   parser.add_argument("--batch-size", type=int, default=4)
   parser.add_argument("--output-dir", type=Path, default=None)
   parser.add_argument("--preview-samples", type=int, default=3)
@@ -78,11 +86,12 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
   args = parse_args()
   payload = load_checkpoint(args.checkpoint)
+  data_dir = resolve_heat3d_data_dir(args.data_dir, REPO_DIR)
 
   output_dir = args.output_dir if (args.output_dir is not None) else args.checkpoint.parent
   output_dir.mkdir(parents=True, exist_ok=True)
 
-  dataset = Heat3DDataset(str(args.data_dir))
+  dataset = Heat3DDataset(str(data_dir))
   builder = Heat3DGraphBuilder(**payload["builder_config"])
   dataset.build_graph_metadata(builder)
 

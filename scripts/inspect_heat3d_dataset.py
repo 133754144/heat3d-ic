@@ -8,16 +8,22 @@ if str(REPO_DIR) not in sys.path:
 
 from rigno import dataset_Heat3D
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder   # 您的 graph builder
+from rigno.heat3d_paths import CANONICAL_DATA_SUBDIR, resolve_heat3d_data_dir
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Smoke-test Heat3D data loading and graph construction.")
-    parser.add_argument("--data-dir", type=Path, default=(REPO_DIR / "dataset_3d_heat"))
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=None,
+        help=f"Directory containing sample_xxx folders. Defaults to {CANONICAL_DATA_SUBDIR}, with legacy fallback.",
+    )
     return parser.parse_args()
 
 
 args = parse_args()
-datadir = args.data_dir
+datadir = resolve_heat3d_data_dir(args.data_dir, REPO_DIR)
 
 # ====================== 1. 加载数据集 ======================
 dataset = dataset_Heat3D.Heat3DDataset(str(datadir))

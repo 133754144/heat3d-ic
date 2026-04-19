@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 from dolfin import *
@@ -6,7 +7,8 @@ from dolfin import *
 # ========= 全局参数 =========
 NUM_SAMPLES = 200
 MESH_RES = 16
-SAVE_DIR = "dataset_3d_heat"
+REPO_DIR = Path(__file__).resolve().parents[1]
+SAVE_DIR = REPO_DIR / "data" / "heat3d-thermal-simulation" / "subsets" / "v0_unitcube_demo" / "samples"
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 

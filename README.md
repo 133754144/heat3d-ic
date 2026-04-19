@@ -97,25 +97,49 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-`requirements.txt` currently requests `jax[cuda12]`. For CPU or a different
-accelerator stack, adjust the JAX package according to the official JAX
-installation instructions for your platform.
+`requirements.txt` uses the platform-neutral `jax` package so the default
+install works on CPU-oriented environments. For CUDA or another accelerator
+stack, install the JAX build that matches your platform according to the
+official JAX installation instructions. For example, on a compatible CUDA 12
+system, install the matching CUDA-enabled JAX package separately:
+
+```bash
+pip install -U "jax[cuda12]"
+```
+
+Check your local CUDA, driver, and Python compatibility before using the
+accelerated install path.
+
+Optional dataset-construction and inspection tools use a separate dependency
+file:
+
+```bash
+pip install -r requirements-optional.txt
+```
+
+The UnitCube data generator also requires FEniCS/DOLFIN, which is not listed as
+a regular pip dependency. Install it separately only if you need to regenerate
+the prototype dataset.
 
 ## Dataset
 
-`dataset_3d_heat/` is intentionally not tracked by Git. It should be downloaded
-or generated separately and placed at the repository root:
+Local dataset directories are intentionally not tracked by Git. The recommended
+local layout mirrors the Hugging Face dataset structure:
 
 ```text
-dataset_3d_heat/
-  sample_000/
-    coords.npy
-    temperature.npy
-    k.npy
-    source.npy
-    edge_index.npy
-  sample_001/
-    ...
+data/
+  heat3d-thermal-simulation/
+    subsets/
+      v0_unitcube_demo/
+        samples/
+          sample_000/
+            coords.npy
+            temperature.npy
+            k.npy
+            source.npy
+            edge_index.npy
+          sample_001/
+            ...
 ```
 
 The public dataset entry point is:
@@ -132,7 +156,12 @@ final full 3D IC task setting.
 
 To run the current scripts, download the files under
 `subsets/v0_unitcube_demo/samples/` and place the `sample_xxx/` directories under
-`./dataset_3d_heat/`.
+`./data/heat3d-thermal-simulation/subsets/v0_unitcube_demo/samples/`.
+
+For compatibility with earlier local checkouts, the scripts also fall back to
+the legacy root-level `./dataset_3d_heat/` directory when the recommended path
+is not present. The `--data-dir` option can still point directly to any
+directory that contains `sample_xxx/` folders.
 
 The current loader uses:
 
@@ -143,6 +172,24 @@ The current loader uses:
 
 `edge_index.npy` may be present from data generation, but the current graph
 operator path builds its own regional graph metadata from the 3D coordinates.
+
+## Dataset Generation Tools
+
+The repository keeps the prototype scripts used to generate and inspect the
+current public UnitCube subset:
+
+- `tools/generate_heat3d_unitcube_dataset.py`: generates the prototype
+  UnitCube steady heat-conduction samples that correspond to
+  `subsets/v0_unitcube_demo/` in the Hugging Face dataset.
+- `tools/inspect_heat3d_unitcube_dataset.py`: checks one generated sample and
+  writes simple diagnostic plots for the local UnitCube sample directory.
+
+These scripts are dataset-construction and analysis tools. They are not part of
+the main training/evaluation entry path. The generation script depends on
+optional FEM tooling, including FEniCS/DOLFIN, and the inspection script depends
+on plotting packages. Install `requirements-optional.txt` and the required
+FEniCS/DOLFIN environment only if you need to regenerate or inspect the UnitCube
+prototype data locally.
 
 ## Minimal Run Commands
 
@@ -176,7 +223,8 @@ not a model-quality experiment.
 
 ## Training
 
-Default training reads `./dataset_3d_heat/` and writes to
+Default training reads
+`./data/heat3d-thermal-simulation/subsets/v0_unitcube_demo/samples/` and writes to
 `./output/heat3d_ic/`:
 
 ```bash
@@ -187,7 +235,7 @@ Common options:
 
 ```bash
 python3 scripts/train_heat3d_operator.py \
-  --data-dir dataset_3d_heat \
+  --data-dir data/heat3d-thermal-simulation/subsets/v0_unitcube_demo/samples \
   --output-dir output/heat3d_ic \
   --checkpoint-name heat3d_operator_best.pkl \
   --epochs 30 \
@@ -214,7 +262,7 @@ python3 scripts/evaluate_heat3d_operator.py \
 A small reference checkpoint is retained at
 `output/heat3d_ic/heat3d_operator_best.pkl`. It is provided to exercise the
 load/evaluate path. Evaluation still requires the matching local
-`dataset_3d_heat/` directory.
+UnitCube sample directory.
 
 The evaluator reports aggregate regression metrics and median relative L1 error
 for operator-learning comparison.

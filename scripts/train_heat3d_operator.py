@@ -44,6 +44,7 @@ import optax
 
 from rigno.dataset_Heat3D import Heat3DDataset
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
+from rigno.heat3d_paths import CANONICAL_DATA_SUBDIR, resolve_heat3d_data_dir
 from rigno.heat3d_pipeline import (
   HeatSteadyOutputStepper,
   compute_heat3d_stats,
@@ -63,7 +64,14 @@ def parse_args() -> argparse.Namespace:
   parser = argparse.ArgumentParser(
     description="Train a steady 3D heat graph neural operator and save the best checkpoint.",
   )
-  parser.add_argument("--data-dir", "--datadir", dest="data_dir", type=Path, default=(REPO_DIR / "dataset_3d_heat"))
+  parser.add_argument(
+    "--data-dir",
+    "--datadir",
+    dest="data_dir",
+    type=Path,
+    default=None,
+    help=f"Directory containing sample_xxx folders. Defaults to {CANONICAL_DATA_SUBDIR}, with legacy fallback.",
+  )
   parser.add_argument("--output-dir", type=Path, default=(REPO_DIR / "output" / "heat3d_ic"))
   parser.add_argument("--checkpoint-name", type=str, default="heat3d_operator_best.pkl")
   parser.add_argument("--seed", type=int, default=0)
@@ -110,8 +118,9 @@ def make_model_config(args: argparse.Namespace, num_outputs: int) -> dict:
 
 def main() -> None:
   args = parse_args()
+  data_dir = resolve_heat3d_data_dir(args.data_dir, REPO_DIR)
 
-  dataset = Heat3DDataset(str(args.data_dir))
+  dataset = Heat3DDataset(str(data_dir))
   splits = split_dataset_indices(
     num_samples=len(dataset),
     n_train=args.n_train,
