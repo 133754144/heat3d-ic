@@ -118,16 +118,21 @@ dataset_3d_heat/
     ...
 ```
 
-The first public dataset is planned as:
+The public dataset entry point is:
 
-- Hugging Face repo: `133754144X/heat3d-unitcube-demo`
-- Dataset title: `Heat3D-UnitCube Demo: Synthetic 3D Steady Heat-Conduction Samples`
+- Hugging Face repo: `133754144X/heat3d-thermal-simulation`
+- Dataset title: `Heat3D Thermal Simulation Dataset: Synthetic 3D Heat-Conduction Data for Operator Learning`
+- Current public subset: `subsets/v0_unitcube_demo/`
 
-This dataset is a prototype synthetic feasibility dataset. It uses a fixed
-UnitCube grid with heterogeneous thermal conductivity fields and localized heat
-source fields, and stores the resulting 3D steady temperature field. It is
-intended to validate the algorithm workflow, not to represent the final full 3D
-IC task setting.
+The current public subset is a prototype synthetic feasibility dataset. It uses
+a fixed UnitCube grid with heterogeneous thermal conductivity fields and
+localized heat source fields, and stores the resulting 3D steady temperature
+field. It is intended to validate the algorithm workflow, not to represent the
+final full 3D IC task setting.
+
+To run the current scripts, download the files under
+`subsets/v0_unitcube_demo/samples/` and place the `sample_xxx/` directories under
+`./dataset_3d_heat/`.
 
 The current loader uses:
 
