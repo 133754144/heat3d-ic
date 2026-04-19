@@ -1,102 +1,233 @@
-<h1 align="center"> Region Interaction Graph Neural Operator </h1>
-<p align="center"> <img src="assets/camlab-logo.png" width="100"/> </p>
-<h3 align="center"> <a href="https://arxiv.org/abs/2501.19205"> "RIGNO: A Graph-based framework for robust and accurate operator learning for PDEs on arbitrary domains" </a>  </h3>
+# Heat3D-IC: Steady Thermal Field Prediction with Graph Neural Operators
 
-<h5 align="center">  Sepehr Mousavi, Shizheng Wen, Levi Lingsch, </h5>
-<h5 align="center">  Maximilian Herde, Bogdan Raonic, Siddhartha Mishra</h5>
+Heat3D-IC is a research codebase for steady 3D thermal field prediction from
+heterogeneous conductivity and localized heat sources using graph neural
+operators.
 
+The current public version provides a minimal runnable workflow for a simplified
+3D steady heat-conduction setting. It is designed as a foundation for continued
+research, not as a complete industrial 3D IC, chiplet, TSV, or package thermal
+simulation platform.
 
+## Project Overview
 
-<h4 align="center">  Abstract </h4>
+The current workflow learns the operator
 
-<p align="center">  Learning the solution operators of PDEs on arbitrary domains is challenging due to the diversity of possible domain shapes, in addition to the often intricate underlying physics. We propose an end-to-end graph neural network (GNN) based neural operator to learn PDE solution operators from data on point clouds in arbitrary domains. Our multi-scale model maps data between input/output point clouds by passing it through a downsampled regional mesh. Many novel elements are also incorporated to ensure resolution invariance and temporal continuity. Our model, termed RIGNO, is tested on a challenging suite of benchmarks, composed of various time-dependent and steady PDEs defined on a diverse set of domains. We demonstrate that RIGNO is significantly more accurate than neural operator baselines and robustly generalizes to unseen grid resolutions and time instances. </p>
-
-<hr>
-
-<!-- ## Architecture -->
-
-<p align="center"> <img src="assets/architecture.png" alt="architecture" width="900"/> </p>
-
-The above figure shows a general schematic of the RIGNO architecture for an idealized two-dimensional domain. The inputs are first independently projected to a latent space by feed-forward blocks. The information on the original discretization (*physical nodes*) is then locally aggregated to a coarser discretization (*regional nodes*). Regional nodes are connected to each other with edges of multiple length scales. Several message passing steps are then applied on the regional nodes which constitute the processor. The processed features are then mapped back to the original discretization by using similar edges as in the encoder, before being independently projected back to the desired output dimension via a feed-forward block without normalization layers.
-
-The following animations illustrate the estimates produced by a RIGNO with 1.9 million parameters trained on 1024 solution trajectories (without fancy pairing strategies) of the incompressible Navier-Stokes equations in a two-dimensional square domain with periodic boundary conditions. All figures corresponds to unstructured versions (random point clouds) of the datasets. The model is trained with snapshots up to time 0.7s; the estimates after this time are considered as extrapolation in time.
-
-<p align="center"> <img src="assets/samples/ns-combined-2.gif"  width="1000" /> </p>
-
-## Datasets
-
-Follow the instructions in [this Zenodo repository](https://zenodo.org/doi/10.5281/zenodo.14765453) for downloading the datasets, and put them in a data directory with the following structure:
-```
-.../data/
-    |__ poseidon/
-        |__ ACE.nc
-        |__ ...
-    |__ unstructured/
-        |__ ACE.nc
-        |__ AF.nc
-        |__ ...
+```text
+[thermal conductivity k(x), heat source q(x)] -> steady temperature T(x)
 ```
 
+on a fixed 3D point cloud. The main project work is the task adaptation around a
+graph neural operator core:
 
-## Minimal example
+1. synthetic 3D heat data generation,
+2. local Heat3D data loading,
+3. 3D graph construction for the point cloud,
+4. coefficient-field to temperature-field training,
+5. checkpointed evaluation with reproducible splits and metrics.
 
-The `example.ipynb` notebook provides a minimal example on how to use the codes. After setting up the environment, you can run it yourself or experiment with RIGNO by changing the parameters.
+For a longer technical summary, see [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md).
+For upstream inheritance and citation requirements, see
+[`ATTRIBUTION.md`](ATTRIBUTION.md).
 
-## Usage
+## What Is Kept From The Upstream Core
 
-Create and activate a fresh virtual environment:
+This repository retains a minimal upstream graph-operator core needed by the
+Heat3D workflow:
+
+- region interaction graph operator and graph builder logic,
+- graph network components,
+- typed graph data structures,
+- operator input structures,
+- shared model utilities.
+
+The generic upstream benchmark data interface, training CLI, testing CLI,
+plotting utilities, and broad PDE experiment workflow are not part of the
+current public entry path.
+
+## What Is Newly Added For Heat3D-IC
+
+Heat3D-specific components:
+
+- Heat3D dataset adapter: loads Heat3D samples and exposes model-compatible
+  temperature, coordinate, coefficient, and graph metadata fields.
+- Heat3D graph builder wrapper: builds non-periodic 3D graph metadata for the
+  Heat3D point cloud.
+- Heat3D training/evaluation pipeline: provides deterministic splits,
+  Heat3D-specific normalization, steady-output prediction, checkpoint IO, and
+  evaluation metrics.
+- `scripts/inspect_heat3d_dataset.py`: checks dataset loading and single-sample
+  graph construction.
+- `scripts/check_heat3d_batch_graphs.py`: checks batched graph metadata and
+  graph construction.
+- `scripts/train_heat3d_operator.py`: trains and saves a Heat3D graph neural
+  operator checkpoint.
+- `scripts/evaluate_heat3d_operator.py`: loads a checkpoint and evaluates the
+  stored test split.
+
+## Current Scope And Limitations
+
+Current scope:
+
+- steady-state 3D heat field prediction,
+- synthetic fixed-grid 3D samples,
+- heterogeneous thermal conductivity and localized heat sources,
+- supervised coefficient-to-temperature operator learning,
+- minimal reproducible train/evaluate workflow.
+
+Current limitations:
+
+- The first public dataset is a prototype feasibility dataset, not a complete
+  real 3D IC thermal dataset.
+- TSVs, micro-bumps, BEOL interconnects, package layers, anisotropic materials,
+  and detailed boundary heat transfer are not explicitly modeled.
+- The current model is not physics-informed: it does not include PDE residual,
+  interface heat-flux continuity, or boundary-condition losses.
+- The current task is steady-state only, with no heat capacity term, time
+  sequence, or autoregressive rollout.
+- No deployment-level or industrial-accuracy claim is made.
+
+## Installation
+
+Create a fresh environment and install dependencies:
+
 ```bash
-python -m venv venv-rigno
-source venv-rigno/bin/activate
-```
-
-Install the necessary packages:
-```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
-> In order to use JAX with GPUs/TPUs, a proper option should be given in `requirements.txt`. Please check [JAX compatibility](https://jax.readthedocs.io/en/latest/installation.html) in order to find the relative option for your hardware. For NVIDIA GPUs, the `[cuda12]` option can be given.
 
-Provided that the dataset is downloaded and placed in `./<dir>/<path>.nc`, you can train a RIGNO on it with the following command:
-```bash
-python -m rigno.train --datadir '<dir>' --datapath '<path>' --epochs 100 --n_train 512 --n_valid 64
+`requirements.txt` currently requests `jax[cuda12]`. For CPU or a different
+accelerator stack, adjust the JAX package according to the official JAX
+installation instructions for your platform.
+
+## Dataset
+
+`dataset_3d_heat/` is intentionally not tracked by Git. It should be downloaded
+or generated separately and placed at the repository root:
+
+```text
+dataset_3d_heat/
+  sample_000/
+    coords.npy
+    temperature.npy
+    k.npy
+    source.npy
+    edge_index.npy
+  sample_001/
+    ...
 ```
 
-For time-independent datasets (`AF` and `Elasticity`), make sure to always pass the `--stepper out` and the `--tau_max 0` flags:
+The first public dataset is planned as:
+
+- Hugging Face repo: `133754144X/heat3d-unitcube-demo`
+- Dataset title: `Heat3D-UnitCube Demo: Synthetic 3D Steady Heat-Conduction Samples`
+
+This dataset is a prototype synthetic feasibility dataset. It uses a fixed
+UnitCube grid with heterogeneous conductivity and localized heat sources, and
+stores the resulting 3D steady temperature field. It is intended to validate the
+algorithm workflow, not to represent the final full 3D IC task setting.
+
+The current loader uses:
+
+- `coords.npy`: 3D node coordinates,
+- `temperature.npy`: target steady temperature field,
+- `k.npy`: thermal conductivity field,
+- `source.npy`: heat source field.
+
+`edge_index.npy` may be present from data generation, but the current graph
+operator path builds its own regional graph metadata from the 3D coordinates.
+
+## Minimal Run Commands
+
+Run from the repository root:
+
 ```bash
-python -m rigno.train --datadir '<dir>' --datapath 'unstructured/AF' --stepper out --tau_max 0 --epochs 100 --n_train 512 --n_valid 64
+python3 scripts/inspect_heat3d_dataset.py
+python3 scripts/check_heat3d_batch_graphs.py
 ```
 
-You can run the following command to see the full list of the command-line arguments of the training module and their default values:
+Minimal train/eval smoke loop that writes only to `/tmp`:
+
 ```bash
-python -m rigno.train --help
+python3 scripts/train_heat3d_operator.py \
+  --epochs 1 \
+  --batch-size 1 \
+  --n-train 1 \
+  --n-valid 1 \
+  --n-test 1 \
+  --output-dir /tmp/heat3d_smoke \
+  --checkpoint-name smoke.pkl
+
+python3 scripts/evaluate_heat3d_operator.py \
+  --checkpoint /tmp/heat3d_smoke/smoke.pkl \
+  --output-dir /tmp/heat3d_smoke_eval \
+  --batch-size 1
 ```
 
-When a training is launched, the checkpoints, results, and model configurations will be stored in a specific folder in `./rigno/experiments/`. The path of this folder (`<exp>`) will be printed by the training module. You can check the exact values of the metrics, as well as optimization plots within this folder. It is also possible to provide the training module with an old experiment. Provided that the same configurations of RIGNO are being used, the parameters of the old experiment will be used as initialization of the new training.
+These commands verify the execution path only. A one-epoch, one-sample run is
+not a model-quality experiment.
 
-Once a training is finished, you can run the test module to assess the performance of a trained model on the test samples:
+## Training
+
+Default training reads `./dataset_3d_heat/` and writes to
+`./output/heat3d_ic/`:
+
 ```bash
-python -m rigno.test --exp '<exp>' --datadir '<dir>'
+python3 scripts/train_heat3d_operator.py
 ```
 
-The test module infers the model directly (single-step inference with different lead times and input times) and autoregressively (with multiple time marching strategies) and plots the predictions for a few test samples. The most important results will be printed out. Plots and full results can be be found in `./rigno/experiments/<exp>/tests/`. The test module also supports more advanced tests and functionalities which can be enabled via the command-line arguments:
-1. testing invariance of the model to different resolutions;
-2. testing invariance of the model to different discretizations of the same resolution;
-3. testing robustness against noisy inputs; and
-4. plotting the statistics of ensemble of estimates with different random seeds.
+Common options:
 
-You can run the following command to see the full list of the command-line arguments of the testing module and their default values:
 ```bash
-python -m rigno.test --help
+python3 scripts/train_heat3d_operator.py \
+  --data-dir dataset_3d_heat \
+  --output-dir output/heat3d_ic \
+  --checkpoint-name heat3d_operator_best.pkl \
+  --epochs 30 \
+  --batch-size 4 \
+  --n-train 160 \
+  --n-valid 20 \
+  --n-test 20
 ```
 
-## Citation
+The checkpoint stores model parameters, normalization statistics, split indices,
+model configuration, graph builder configuration, and training arguments.
+
+## Evaluation
+
+Evaluate a checkpoint:
+
+```bash
+python3 scripts/evaluate_heat3d_operator.py \
+  --checkpoint output/heat3d_ic/heat3d_operator_best.pkl \
+  --output-dir output/heat3d_ic_eval \
+  --batch-size 4
+```
+
+A small reference checkpoint is retained at
+`output/heat3d_ic/heat3d_operator_best.pkl`. It is provided to exercise the
+load/evaluate path. Evaluation still requires the matching local
+`dataset_3d_heat/` directory.
+
+The evaluator reports aggregate regression metrics and median relative L1 error
+for operator-learning comparison.
+
+## Citation / Attribution
+
+This project is derived from a minimal subset of RIGNO:
+
+- Upstream repository: <https://github.com/camlab-ethz/rigno>
+- Paper: <https://arxiv.org/abs/2501.19205>
+
+Please cite RIGNO when using the retained upstream model core:
 
 ```bibtex
 @inproceedings{mousavi2025rigno,
   title         = {RIGNO: A Graph-based framework for robust and accurate operator learning for PDEs on arbitrary domains},
-  author        = {Sepehr Mousavi and Shizheng Wen and Levi Lingsch and Maximilian Herde and Bogdan Raonić and Siddhartha Mishra},
+  author        = {Sepehr Mousavi and Shizheng Wen and Levi Lingsch and Maximilian Herde and Bogdan Raonic and Siddhartha Mishra},
   booktitle     = {Advances in Neural Information Processing Systems},
   volume        = {38},
-  year          = {2025},
+  year          = {2025}
 }
 ```

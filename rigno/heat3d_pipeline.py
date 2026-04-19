@@ -213,7 +213,7 @@ def per_sample_relative_l1_error(
   """
   Returns the author-style per-sample Relative L1 error.
 
-  In `example.py`, the paper computes:
+  In the upstream reference example, the paper computes:
     rel_lp_error_mean(gtr, prd, p=1)
 
   For the steady 3D heat task here, each sample has shape
