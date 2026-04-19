@@ -17,7 +17,7 @@ where:
 
 - `k(x)` is the thermal conductivity field,
 - `q(x)` is the localized heat source field,
-- `T(x)` is the steady-state temperature field,
+- `T(x)` is the steady temperature field,
 - `x` is a 3D coordinate on a fixed UnitCube point cloud.
 
 The first public dataset is prototype synthetic data. It is suitable for
@@ -46,8 +46,9 @@ and license obligations are documented separately in `ATTRIBUTION.md`.
 
 The current contribution is the Heat3D task adaptation and runnable workflow:
 
-- a data representation for 3D heat samples using coordinates, conductivity,
-  heat source, and temperature arrays,
+- a data representation for 3D heat samples using coordinates, thermal
+  conductivity field, localized heat source field, and steady temperature field
+  arrays,
 - a 3D graph-construction wrapper for non-periodic point-cloud heat data,
 - graph metadata reuse for fixed-coordinate samples,
 - coefficient-field normalization for inputs and temperature-field

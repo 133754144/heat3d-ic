@@ -1,8 +1,8 @@
 # Heat3D-IC: Steady Thermal Field Prediction with Graph Neural Operators
 
 Heat3D-IC is a research codebase for steady 3D thermal field prediction from
-heterogeneous conductivity and localized heat sources using graph neural
-operators.
+heterogeneous thermal conductivity fields and localized heat source fields using
+graph neural operators.
 
 The current public version provides a minimal runnable workflow for a simplified
 3D steady heat-conduction setting. It is designed as a foundation for continued
@@ -14,7 +14,7 @@ simulation platform.
 The current workflow learns the operator
 
 ```text
-[thermal conductivity k(x), heat source q(x)] -> steady temperature T(x)
+[thermal conductivity field k(x), localized heat source field q(x)] -> steady temperature field T(x)
 ```
 
 on a fixed 3D point cloud. The main project work is the task adaptation around a
@@ -71,7 +71,7 @@ Current scope:
 
 - steady-state 3D heat field prediction,
 - synthetic fixed-grid 3D samples,
-- heterogeneous thermal conductivity and localized heat sources,
+- heterogeneous thermal conductivity fields and localized heat source fields,
 - supervised coefficient-to-temperature operator learning,
 - minimal reproducible train/evaluate workflow.
 
@@ -124,9 +124,10 @@ The first public dataset is planned as:
 - Dataset title: `Heat3D-UnitCube Demo: Synthetic 3D Steady Heat-Conduction Samples`
 
 This dataset is a prototype synthetic feasibility dataset. It uses a fixed
-UnitCube grid with heterogeneous conductivity and localized heat sources, and
-stores the resulting 3D steady temperature field. It is intended to validate the
-algorithm workflow, not to represent the final full 3D IC task setting.
+UnitCube grid with heterogeneous thermal conductivity fields and localized heat
+source fields, and stores the resulting 3D steady temperature field. It is
+intended to validate the algorithm workflow, not to represent the final full 3D
+IC task setting.
 
 The current loader uses:
 

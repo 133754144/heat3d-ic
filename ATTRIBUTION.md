@@ -29,7 +29,7 @@ The Heat3D changes adapt the retained RIGNO core to a simplified steady heat
 operator:
 
 ```text
-[thermal conductivity k(x), heat source q(x)] -> temperature T(x)
+[thermal conductivity field k(x), localized heat source field q(x)] -> steady temperature field T(x)
 ```
 
 ## License
