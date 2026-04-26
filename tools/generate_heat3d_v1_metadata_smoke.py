@@ -7,8 +7,10 @@ It does not run a solver and intentionally does not create temperature.npy.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 from pathlib import Path
+import shutil
 import sys
 from typing import Any
 
@@ -20,6 +22,7 @@ if str(REPO_DIR) not in sys.path:
     sys.path.insert(0, str(REPO_DIR))
 
 from rigno.heat3d_v1_schema import SCHEMA_VERSION, SUBSET_NAME, default_v1_samples_dir
+from rigno.heat3d_v1_manifest_resolver import load_manifest, resolve_manifest
 
 
 FOOTPRINT_M = (0.010, 0.010)
@@ -43,7 +46,131 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional list of sample ids to generate. Defaults to the full configured set.",
     )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=None,
+        help=(
+            "Optional supervised-small manifest for dry-run or explicit "
+            "metadata-only writing."
+        ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Resolve a manifest generation plan without writing data.",
+    )
+    parser.add_argument(
+        "--write-metadata",
+        action="store_true",
+        help="Write manifest-driven metadata-only samples. Must be used with --manifest.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Allow overwriting an existing manifest target subset.",
+    )
     return parser.parse_args()
+
+
+def _manifest_output_subset_dir(dataset_name: str) -> Path:
+    return REPO_DIR / "data" / "heat3d-thermal-simulation" / "subsets" / dataset_name
+
+
+def _print_manifest_dry_run(manifest_path: Path) -> int:
+    manifest = load_manifest(manifest_path)
+    dataset_name = str(manifest.get("dataset_name"))
+    samples = manifest.get("samples", [])
+    if not isinstance(samples, list):
+        raise ValueError("manifest.samples must be a list")
+
+    resolved = resolve_manifest(manifest)
+    resolved_samples = resolved["resolved_samples"]
+    errors = resolved["errors"]
+    sample_lookup = {
+        sample.get("sample_id"): sample
+        for sample in samples
+        if isinstance(sample, dict)
+    }
+    split_counts = dict(Counter(sample.get("split") for sample in samples))
+    target_subset_dir = _manifest_output_subset_dir(dataset_name)
+    protected_subset_collision = dataset_name in {
+        "v1_multilayer_bc_eq_demo",
+        "v1_multilayer_bc_eq_supervised_smoke",
+    }
+    under_ignored_data_dir_expected = "data" in target_subset_dir.relative_to(REPO_DIR).parts
+
+    print("Heat3D v1 metadata manifest dry-run")
+    print(f"manifest_path: {manifest_path.resolve()}")
+    print(f"dataset_name: {dataset_name}")
+    print(f"sample_count: {len(samples)}")
+    print(f"resolved_sample_count: {len(resolved_samples)}")
+    print(f"split_counts: {split_counts}")
+    print(f"target_output_subset_path: {target_subset_dir}")
+    print(f"no_data_written: True")
+    print(f"no_temperature_written: True")
+    print(f"protected_subset_collision: {protected_subset_collision}")
+    print(f"output_under_ignored_data_dir_expected: {under_ignored_data_dir_expected}")
+    print()
+
+    if errors:
+        print("resolver_errors")
+        for error in errors:
+            print(f"  {error}")
+        print("dry_run_pass: False")
+        return 1
+
+    print("resolved generation plan")
+    for resolved_sample in resolved_samples:
+        sample_id = resolved_sample["sample_id"]
+        original = sample_lookup.get(sample_id, {})
+        stack = resolved_sample["stack_template"]
+        source = resolved_sample["heat_source_pattern"]
+        q_scale = resolved_sample["q_scale"]
+        top_h = resolved_sample["top_h"]
+        bc = resolved_sample["bc_baseline"]
+
+        print(f"- sample_id: {sample_id}")
+        print(f"  split: {resolved_sample['split']}")
+        print(
+            "  stack_template: "
+            f"{stack['template_name']} / resolved_stack_variant={stack['variant']}"
+        )
+        print(f"  k_field_shape: {resolved_sample['k_field_shape']}")
+        print(f"  anisotropy_type: {resolved_sample['anisotropy_type']}")
+        print(
+            "  heat_source_pattern: "
+            f"{source['pattern_name']} / source_blocks={source['source_blocks']}"
+        )
+        print(
+            "  q_scale: "
+            f"{q_scale['category']} / multiplier={q_scale['multiplier_to_current_smoke_nominal']} "
+            f"/ resolved_q_value_W_m3={q_scale['resolved_value_W_m3']} "
+            f"/ source={q_scale['resolved_value_source']}"
+        )
+        print(
+            "  bc_baseline: "
+            f"{bc['category']} / bottom_T_fixed={bc['bottom_fixed_temperature_K']} "
+            f"/ top_T_inf={bc['top_ambient_temperature_K']}"
+        )
+        print(
+            "  top_h: "
+            f"{top_h['category']} / multiplier={top_h['multiplier_to_current_smoke_nominal']} "
+            f"/ resolved_h_value_W_m2K={top_h['resolved_value_W_m2K']} "
+            f"/ source={top_h['resolved_value_source']}"
+        )
+        print(f"  expected_purpose: {original.get('expected_purpose')}")
+        print(f"  parameter_status: {resolved_sample['parameter_status']}")
+        print(f"  ood_role: {resolved_sample['ood_role']}")
+    print()
+
+    safe_no_write_plan = under_ignored_data_dir_expected and not protected_subset_collision
+    print(f"dry_run_pass: {safe_no_write_plan}")
+    return 0 if safe_no_write_plan else 1
+
+
+def _manifest_samples_dir(dataset_name: str) -> Path:
+    return _manifest_output_subset_dir(dataset_name) / "samples"
 
 
 def _stack_templates() -> dict[str, list[dict[str, Any]]]:
@@ -70,6 +197,12 @@ def _stack_templates() -> dict[str, list[dict[str, Any]]]:
             {"id": 1, "name": "interposer_equiv", "thickness_m": 0.00035, "base_k": 35.0},
             {"id": 2, "name": "active_die_0", "thickness_m": 0.00020, "base_k": 110.0},
             {"id": 3, "name": "heatsink_equiv", "thickness_m": 0.0015, "base_k": 170.0},
+        ],
+        "interposer_like_4_layer": [
+            {"id": 0, "name": "substrate_equiv", "thickness_m": 0.0010, "base_k": 12.0},
+            {"id": 1, "name": "interposer_equiv", "thickness_m": 0.00030, "base_k": 40.0},
+            {"id": 2, "name": "active_die_0", "thickness_m": 0.00020, "base_k": 112.0},
+            {"id": 3, "name": "heatsink_equiv", "thickness_m": 0.0015, "base_k": 172.0},
         ],
     }
 
@@ -260,6 +393,49 @@ def _q_field(
     return q
 
 
+def _q_field_from_source_blocks(
+    coords: np.ndarray,
+    layer_ids: np.ndarray,
+    layers: list[dict[str, Any]],
+    source_blocks: list[dict[str, Any]],
+    q_value: float,
+) -> tuple[np.ndarray, list[str]]:
+    q = np.zeros((coords.shape[0], 1), dtype=np.float64)
+    layer_name_to_id = {layer["name"]: layer["id"] for layer in layers}
+    heat_layers = []
+
+    for block in source_blocks:
+        layer_name = block["layer"]
+        if layer_name not in layer_name_to_id:
+            raise ValueError(f"source block references missing layer {layer_name!r}")
+        heat_layers.append(layer_name)
+        center_x, center_y = block["center_xy_fraction"]
+        size_x, size_y = block["size_xy_fraction"]
+        x0 = max(0.0, (center_x - size_x * 0.5) * FOOTPRINT_M[0])
+        x1 = min(FOOTPRINT_M[0], (center_x + size_x * 0.5) * FOOTPRINT_M[0])
+        y0 = max(0.0, (center_y - size_y * 0.5) * FOOTPRINT_M[1])
+        y1 = min(FOOTPRINT_M[1], (center_y + size_y * 0.5) * FOOTPRINT_M[1])
+
+        source_mask = (
+            (layer_ids == layer_name_to_id[layer_name])
+            & (coords[:, 0] >= x0)
+            & (coords[:, 0] <= x1)
+            & (coords[:, 1] >= y0)
+            & (coords[:, 1] <= y1)
+        )
+        if not np.any(source_mask):
+            target_layer_mask = layer_ids == layer_name_to_id[layer_name]
+            target_indices = np.flatnonzero(target_layer_mask)
+            if target_indices.size == 0:
+                raise ValueError(f"source block layer {layer_name!r} has no points")
+            center_xy = np.asarray([center_x * FOOTPRINT_M[0], center_y * FOOTPRINT_M[1]])
+            distances = np.sum((coords[target_indices, :2] - center_xy) ** 2, axis=1)
+            source_mask[target_indices[np.argmin(distances)]] = True
+        q[source_mask, 0] = np.maximum(q[source_mask, 0], q_value)
+
+    return q, sorted(set(heat_layers))
+
+
 def _boundary_indices(coords: np.ndarray) -> dict[str, list[int]]:
     tol = 1.0e-12
     x_min, x_max = float(coords[:, 0].min()), float(coords[:, 0].max())
@@ -310,7 +486,7 @@ def _meta(
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "subset_name": SUBSET_NAME,
+        "subset_name": config.get("subset_name", SUBSET_NAME),
         "sample_id": config["sample_id"],
         "stage": "metadata_only",
         "split": config["split"],
@@ -322,6 +498,8 @@ def _meta(
             "height_m": float(coords[:, 2].max() - coords[:, 2].min()),
             "point_representation": "sampled_nodes",
             "stack_template": config["template"],
+            "resolved_stack_variant": config.get("resolved_stack_variant"),
+            "stack_role": config.get("stack_role"),
         },
         "layers": layer_meta,
         "regions": regions,
@@ -350,12 +528,12 @@ def _meta(
         },
         "boundary_params": {
             "top": {
-                "h_W_m2K": 2000.0,
-                "ambient_temperature_K": 300.0,
+                "h_W_m2K": float(config.get("top_h_W_m2K", 2000.0)),
+                "ambient_temperature_K": float(config.get("top_ambient_temperature_K", 300.0)),
                 "source_tag": "provisional_engineering_assumption",
             },
             "bottom": {
-                "fixed_temperature_K": 300.0,
+                "fixed_temperature_K": float(config.get("bottom_fixed_temperature_K", 300.0)),
                 "source_tag": "provisional_engineering_assumption",
             },
             "sides": {
@@ -371,9 +549,33 @@ def _meta(
             "q_field_unit": "volumetric_heat_generation_W_m3",
             "q_field_conversion": "none; provisional volumetric values written directly",
             "heat_layers": config["heat_layers"],
+            "source_manifest": config.get("source_manifest"),
+            "manifest_version": config.get("manifest_version"),
+            "scaffold_base_commit": config.get("scaffold_base_commit"),
+            "manifest_dataset_name": config.get("manifest_dataset_name"),
             "default_input_mode": "pure_physics",
             "optional_auxiliary_features": ["layer_id", "region_id", "material_id"],
-            "k_field_shape": "(N,3)" if config.get("k_field_mode") == "diag3_diagnostic" else "(N,1)",
+            "k_field_shape": config.get(
+                "k_field_shape",
+                "(N,3)" if config.get("k_field_mode") == "diag3_diagnostic" else "(N,1)",
+            ),
+            "anisotropy_type": config.get("anisotropy_type"),
+            "heat_source_pattern": config.get("heat_source_pattern"),
+            "resolved_source_blocks": config.get("resolved_source_blocks"),
+            "q_scale_category": config.get("q_scale_category"),
+            "q_multiplier": config.get("q_multiplier"),
+            "resolved_q_value_W_m3": config.get("resolved_q_value_W_m3"),
+            "resolved_q_value_source": config.get("resolved_q_value_source"),
+            "bc_baseline_category": config.get("bc_baseline_category"),
+            "top_h_category": config.get("top_h_category"),
+            "top_h_multiplier": config.get("top_h_multiplier"),
+            "resolved_h_value_W_m2K": config.get("resolved_h_value_W_m2K"),
+            "resolved_h_value_source": config.get("resolved_h_value_source"),
+            "parameter_status": config.get("parameter_status"),
+            "ood_role": config.get("ood_role"),
+            "expected_purpose": config.get("expected_purpose"),
+            "non_claims": config.get("non_claims"),
+            "sample_scope": config.get("sample_scope"),
             "reserved_future_k_shapes": ["(N,3)", "(N,6)"],
             "reserved_ood_bc": "held_out_top_robin_htc_range",
             "diagnostic_only": bool(config.get("diagnostic_only", False)),
@@ -449,8 +651,165 @@ def write_sample(output_dir: Path, config: dict[str, Any]) -> Path:
     return sample_dir
 
 
+def _manifest_config(
+    manifest_path: Path,
+    manifest: dict[str, Any],
+    resolved_sample: dict[str, Any],
+    original_sample: dict[str, Any],
+) -> dict[str, Any]:
+    stack = resolved_sample["stack_template"]
+    source = resolved_sample["heat_source_pattern"]
+    q_scale = resolved_sample["q_scale"]
+    top_h = resolved_sample["top_h"]
+    bc = resolved_sample["bc_baseline"]
+    k_field_shape = resolved_sample["k_field_shape"]
+    anisotropy_type = str(resolved_sample["anisotropy_type"])
+    return {
+        "sample_id": resolved_sample["sample_id"],
+        "split": resolved_sample["split"],
+        "template": stack["template_name"],
+        "heat_layers": sorted({block["layer"] for block in source["source_blocks"]}),
+        "blockwise_k": "blockwise" in anisotropy_type or k_field_shape == "(N,3)",
+        "k_field_mode": "diag3_diagnostic" if k_field_shape == "(N,3)" else "iso1",
+        "diagnostic_only": k_field_shape == "(N,3)",
+        "description": (
+            f"{original_sample.get('expected_purpose', 'manifest-driven metadata-only sample')}. "
+            "Manifest-driven metadata-only smoke sample; no temperature.npy is generated."
+        ),
+        "subset_name": manifest["dataset_name"],
+        "source_manifest": str(manifest_path),
+        "manifest_version": manifest.get("manifest_version"),
+        "scaffold_base_commit": manifest.get("scaffold_base_commit"),
+        "manifest_dataset_name": manifest.get("dataset_name"),
+        "resolved_stack_variant": stack["variant"],
+        "stack_role": stack["role"],
+        "k_field_shape": k_field_shape,
+        "anisotropy_type": anisotropy_type,
+        "heat_source_pattern": source["pattern_name"],
+        "resolved_source_blocks": source["source_blocks"],
+        "q_scale_category": q_scale["category"],
+        "q_multiplier": q_scale["multiplier_to_current_smoke_nominal"],
+        "resolved_q_value_W_m3": q_scale["resolved_value_W_m3"],
+        "resolved_q_value_source": q_scale["resolved_value_source"],
+        "bc_baseline_category": bc["category"],
+        "bottom_fixed_temperature_K": bc["bottom_fixed_temperature_K"],
+        "top_ambient_temperature_K": bc["top_ambient_temperature_K"],
+        "top_h_category": top_h["category"],
+        "top_h_multiplier": top_h["multiplier_to_current_smoke_nominal"],
+        "top_h_W_m2K": top_h["resolved_value_W_m2K"],
+        "resolved_h_value_W_m2K": top_h["resolved_value_W_m2K"],
+        "resolved_h_value_source": top_h["resolved_value_source"],
+        "parameter_status": resolved_sample["parameter_status"],
+        "ood_role": resolved_sample["ood_role"],
+        "expected_purpose": original_sample.get("expected_purpose"),
+        "non_claims": manifest.get("non_claims", []),
+        "sample_scope": "small_supervised_metadata_only_smoke",
+    }
+
+
+def write_manifest_sample(
+    output_dir: Path,
+    manifest_path: Path,
+    manifest: dict[str, Any],
+    resolved_sample: dict[str, Any],
+    original_sample: dict[str, Any],
+) -> Path:
+    config = _manifest_config(manifest_path, manifest, resolved_sample, original_sample)
+    layers = _stack_templates()[config["template"]]
+    coords, layer_ids, z_ranges = _points_for_layers(layers)
+    region_id, material_id, k_field, regions, materials = _region_and_material_fields(
+        coords,
+        layer_ids,
+        layers,
+        config["blockwise_k"],
+        config.get("k_field_mode", "iso1"),
+    )
+    q_field, heat_layers = _q_field_from_source_blocks(
+        coords,
+        layer_ids,
+        layers,
+        config["resolved_source_blocks"],
+        float(config["resolved_q_value_W_m3"]),
+    )
+    config["heat_layers"] = heat_layers
+    meta = _meta(config, layers, z_ranges, regions, materials, coords)
+
+    sample_dir = output_dir / str(config["sample_id"])
+    sample_dir.mkdir(parents=True, exist_ok=False)
+    np.save(sample_dir / "coords.npy", coords)
+    np.save(sample_dir / "layer_id.npy", layer_ids)
+    np.save(sample_dir / "region_id.npy", region_id)
+    np.save(sample_dir / "material_id.npy", material_id)
+    np.save(sample_dir / "k_field.npy", k_field)
+    np.save(sample_dir / "q_field.npy", q_field)
+    with (sample_dir / "sample_meta.json").open("w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2)
+        f.write("\n")
+    return sample_dir
+
+
+def write_manifest_metadata(manifest_path: Path, overwrite: bool = False) -> list[Path]:
+    manifest = load_manifest(manifest_path)
+    dataset_name = str(manifest.get("dataset_name"))
+    if dataset_name in {"v1_multilayer_bc_eq_demo", "v1_multilayer_bc_eq_supervised_smoke"}:
+        raise ValueError(f"Refusing to write protected subset {dataset_name!r}")
+
+    resolved = resolve_manifest(manifest)
+    if resolved["errors"]:
+        raise ValueError(f"Manifest resolver errors: {resolved['errors']}")
+
+    subset_dir = _manifest_output_subset_dir(dataset_name)
+    samples_dir = subset_dir / "samples"
+    if subset_dir.exists():
+        if not overwrite:
+            raise FileExistsError(
+                f"Target subset already exists: {subset_dir}. Use --overwrite to replace it."
+            )
+        shutil.rmtree(subset_dir)
+    samples_dir.mkdir(parents=True, exist_ok=False)
+
+    sample_lookup = {
+        sample.get("sample_id"): sample
+        for sample in manifest.get("samples", [])
+        if isinstance(sample, dict)
+    }
+    written = []
+    for resolved_sample in resolved["resolved_samples"]:
+        sample_id = resolved_sample["sample_id"]
+        written.append(
+            write_manifest_sample(
+                samples_dir,
+                manifest_path,
+                manifest,
+                resolved_sample,
+                sample_lookup.get(sample_id, {}),
+            )
+        )
+    return written
+
+
 def main() -> int:
     args = parse_args()
+
+    if args.manifest is not None:
+        if args.dry_run and args.write_metadata:
+            raise ValueError("--dry-run and --write-metadata are mutually exclusive")
+        if args.dry_run:
+            return _print_manifest_dry_run(args.manifest)
+        if not args.write_metadata:
+            raise ValueError("--manifest requires either --dry-run or --write-metadata")
+        written = write_manifest_metadata(args.manifest, overwrite=args.overwrite)
+        print(f"Wrote {len(written)} manifest metadata-only sample(s)")
+        for sample_dir in written:
+            print(f"  {sample_dir}")
+        print("temperature.npy written: False")
+        return 0
+
+    if args.dry_run:
+        raise ValueError("--dry-run currently requires --manifest")
+    if args.write_metadata:
+        raise ValueError("--write-metadata requires --manifest")
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     configs = _sample_configs()

@@ -41,8 +41,14 @@ def parse_args() -> argparse.Namespace:
         "path",
         nargs="?",
         type=Path,
-        default=default_v1_supervised_samples_dir(REPO_DIR),
+        default=None,
         help="Supervised smoke samples directory.",
+    )
+    parser.add_argument(
+        "--sample-ids",
+        nargs="*",
+        default=None,
+        help="Optional sample ids to batch. Defaults to the legacy two-sample smoke for the default path, or all samples for an explicit path.",
     )
     return parser.parse_args()
 
@@ -71,18 +77,15 @@ def _build_batch_metadata(builder: Heat3DGraphBuilder, coords_list: list[np.ndar
     return tree.tree_map(lambda *values: jnp.concatenate(values, axis=0), *metadata_list), False
 
 
-def main() -> int:
-    args = parse_args()
-    dataset = Heat3DV1SupervisedDataset(args.path, k_encoding_mode="diag3")
-    builder = Heat3DGraphBuilder()
-    model = GraphNeuralOperator(**MODEL_CONFIG)
+def _metadata_shape_signature(metadata) -> tuple[tuple[int, ...], ...]:
+    return tuple(
+        tuple(value.shape)
+        for value in tree.tree_leaves(metadata)
+        if hasattr(value, "shape")
+    )
 
-    sample_index_by_id = {sample["sample_id"]: idx for idx, sample in enumerate(dataset.samples)}
-    missing = [sample_id for sample_id in TARGET_SAMPLE_IDS if sample_id not in sample_index_by_id]
-    if missing:
-        raise ValueError(f"Required supervised smoke samples are missing: {missing}")
 
-    indices = [sample_index_by_id[sample_id] for sample_id in TARGET_SAMPLE_IDS]
+def _run_batch_group(dataset, builder, model, indices: list[int], group_name: str) -> dict:
     samples = [dataset.samples[idx] for idx in indices]
     examples = [dataset.get_supervised_example(idx) for idx in indices]
 
@@ -91,7 +94,7 @@ def main() -> int:
         for example in examples[1:]
     )
     if not feature_contract_ok:
-        raise ValueError("Feature-name contract mismatch across supervised smoke samples")
+        raise ValueError(f"Feature-name contract mismatch in group {group_name}")
 
     batched_inputs = Inputs(
         u=jnp.concatenate([example.inputs.u for example in examples], axis=0),
@@ -115,7 +118,7 @@ def main() -> int:
     output = model.apply({"params": params}, inputs=batched_inputs, graphs=graphs)
     mse = float(jnp.mean(jnp.square(output - batched_target)))
 
-    print("samples")
+    print(f"\n{group_name}")
     for sample, example in zip(samples, examples):
         print(
             f"  {sample['sample_id']}: split={sample['meta']['split']}, "
@@ -123,10 +126,7 @@ def main() -> int:
             f"target={tuple(example.target_temperature.shape)}"
         )
 
-    print("\nbatch")
-    print(f"  sample_ids: {TARGET_SAMPLE_IDS}")
-    print(f"  pure_physics default: {dataset.input_mode == 'pure_physics'}")
-    print(f"  k_encoding_mode: {dataset.k_encoding_mode}")
+    print(f"  sample_ids: {[sample['sample_id'] for sample in samples]}")
     print(f"  feature_names: {examples[0].full_feature_names}")
     print(f"  feature contract ok: {feature_contract_ok}")
     print(f"  graph metadata shared repeat: {uses_shared_metadata}")
@@ -144,6 +144,59 @@ def main() -> int:
     print(f"  batched output shape: {tuple(output.shape)}")
     print(f"  batch loss-input smoke ok: True")
     print(f"  mse smoke: {mse}")
+    return {
+        "sample_count": len(samples),
+        "mse": mse,
+        "output_shape": tuple(output.shape),
+    }
+
+
+def main() -> int:
+    args = parse_args()
+    explicit_path = args.path is not None
+    sample_path = args.path if explicit_path else default_v1_supervised_samples_dir(REPO_DIR)
+    dataset = Heat3DV1SupervisedDataset(sample_path, k_encoding_mode="diag3")
+    builder = Heat3DGraphBuilder()
+    model = GraphNeuralOperator(**MODEL_CONFIG)
+
+    sample_index_by_id = {sample["sample_id"]: idx for idx, sample in enumerate(dataset.samples)}
+    target_sample_ids = (
+        tuple(args.sample_ids)
+        if args.sample_ids is not None and len(args.sample_ids) > 0
+        else tuple(sample_index_by_id) if explicit_path else TARGET_SAMPLE_IDS
+    )
+    missing = [sample_id for sample_id in target_sample_ids if sample_id not in sample_index_by_id]
+    if missing:
+        raise ValueError(f"Required supervised smoke samples are missing: {missing}")
+
+    groups: dict[tuple[int, tuple[str, ...], tuple[tuple[int, ...], ...]], list[int]] = {}
+    for sample_id in target_sample_ids:
+        idx = sample_index_by_id[sample_id]
+        sample = dataset.samples[idx]
+        metadata_signature = _metadata_shape_signature(builder.build_metadata(sample["coords"]))
+        key = (
+            sample["coords"].shape[0],
+            sample["physics_input"].feature_names,
+            metadata_signature,
+        )
+        groups.setdefault(key, []).append(idx)
+
+    print("batch smoke")
+    print(f"  requested sample ids: {target_sample_ids}")
+    print(f"  pure_physics default: {dataset.input_mode == 'pure_physics'}")
+    print(f"  k_encoding_mode: {dataset.k_encoding_mode}")
+    print(f"  compatible batch groups: {len(groups)}")
+
+    summaries = []
+    for group_index, ((n_points, feature_names, _metadata_signature), indices) in enumerate(groups.items(), start=1):
+        group_name = f"group_{group_index}_N{n_points}_F{len(feature_names)}"
+        summaries.append(_run_batch_group(dataset, builder, model, indices, group_name))
+
+    print("\nsummary")
+    print(f"  selected samples: {len(target_sample_ids)}")
+    print(f"  groups checked: {len(summaries)}")
+    print(f"  total grouped samples: {sum(item['sample_count'] for item in summaries)}")
+    print("  batch loss-input smoke ok: True")
 
     return 0
 

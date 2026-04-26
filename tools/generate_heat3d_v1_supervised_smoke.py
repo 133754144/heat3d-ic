@@ -22,10 +22,22 @@ if str(REPO_DIR) not in sys.path:
 
 from rigno.heat3d_v1_reference_solver import solve_reference_temperature
 from rigno.heat3d_v1_supervised import SUPERVISED_SUBSET_NAME, default_v1_supervised_samples_dir
+from rigno.heat3d_v1_manifest_resolver import load_manifest
 
 
 SOURCE_SUBSET_NAME = "v1_multilayer_bc_eq_demo"
 TARGET_SAMPLE_IDS = ("sample_000", "sample_005")
+SMALL_SUPERVISED_SUBSET_NAME = "v1_multilayer_bc_eq_supervised_small"
+PROTECTED_SUBSET_NAMES = {
+    "v1_multilayer_bc_eq_demo",
+    "v1_multilayer_bc_eq_supervised_smoke",
+}
+REQUIRED_METADATA_FILES = (
+    "coords.npy",
+    "k_field.npy",
+    "q_field.npy",
+    "sample_meta.json",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,6 +57,28 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=default_v1_supervised_samples_dir(REPO_DIR),
         help="Output supervised smoke sample directory.",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=None,
+        help="Optional supervised-small manifest. Requires --subset and --write-temperature.",
+    )
+    parser.add_argument(
+        "--subset",
+        type=Path,
+        default=None,
+        help="Existing metadata-only subset root or samples directory for manifest-driven label writing.",
+    )
+    parser.add_argument(
+        "--write-temperature",
+        action="store_true",
+        help="Explicitly write temperature.npy labels into an existing manifest subset.",
+    )
+    parser.add_argument(
+        "--overwrite-temperature",
+        action="store_true",
+        help="Allow replacing existing temperature.npy files in manifest-driven mode.",
     )
     return parser.parse_args()
 
@@ -76,6 +110,141 @@ def _update_meta(meta: dict, sample_id: str) -> dict:
     return meta
 
 
+def _sample_root(path: Path) -> Path:
+    path = path.resolve()
+    if path.name == "samples":
+        return path
+    samples = path / "samples"
+    if samples.is_dir():
+        return samples
+    return path
+
+
+def _manifest_sample_ids(manifest: dict) -> list[str]:
+    samples = manifest.get("samples", [])
+    if not isinstance(samples, list):
+        raise ValueError("manifest.samples must be a list")
+    return [str(sample.get("sample_id")) for sample in samples]
+
+
+def _sample_dirs_from_manifest(subset: Path, manifest: dict) -> list[Path]:
+    root = _sample_root(subset)
+    return [root / sample_id for sample_id in _manifest_sample_ids(manifest)]
+
+
+def _boundary_names(meta: dict) -> set[str]:
+    return {str(region.get("name")) for region in meta.get("boundary_regions", []) if isinstance(region, dict)}
+
+
+def _validate_manifest_label_eligibility(
+    manifest_path: Path,
+    subset: Path,
+    overwrite_temperature: bool,
+) -> tuple[dict, list[Path]]:
+    manifest = load_manifest(manifest_path)
+    dataset_name = str(manifest.get("dataset_name"))
+    if dataset_name != SMALL_SUPERVISED_SUBSET_NAME:
+        raise ValueError(
+            f"Manifest dataset_name must be {SMALL_SUPERVISED_SUBSET_NAME!r}, found {dataset_name!r}"
+        )
+
+    subset_root = subset.resolve()
+    if subset_root.name == "samples":
+        subset_name = subset_root.parent.name
+    else:
+        subset_name = subset_root.name
+    if subset_name in PROTECTED_SUBSET_NAMES:
+        raise ValueError(f"Refusing to write temperature labels into protected subset {subset_name!r}")
+
+    sample_dirs = _sample_dirs_from_manifest(subset, manifest)
+    expected_ids = [f"sample_{idx:03d}" for idx in range(16)]
+    observed_ids = [sample_dir.name for sample_dir in sample_dirs]
+    if observed_ids != expected_ids:
+        raise ValueError(f"Expected sample ids {expected_ids}, found {observed_ids}")
+    if len(sample_dirs) != 16:
+        raise ValueError(f"Expected 16 samples, found {len(sample_dirs)}")
+
+    manifest_by_id = {sample["sample_id"]: sample for sample in manifest.get("samples", [])}
+    for sample_dir in sample_dirs:
+        sample_id = sample_dir.name
+        if not sample_dir.is_dir():
+            raise FileNotFoundError(f"Missing sample directory: {sample_dir}")
+
+        for name in REQUIRED_METADATA_FILES:
+            if not (sample_dir / name).is_file():
+                raise FileNotFoundError(f"{sample_id} missing required file: {name}")
+
+        temperature_path = sample_dir / "temperature.npy"
+        if temperature_path.exists() and not overwrite_temperature:
+            raise FileExistsError(
+                f"{sample_id} already has temperature.npy; use --overwrite-temperature to replace it"
+            )
+
+        coords = np.load(sample_dir / "coords.npy")
+        k_field = np.load(sample_dir / "k_field.npy")
+        q_field = np.load(sample_dir / "q_field.npy")
+        meta = json.loads((sample_dir / "sample_meta.json").read_text())
+
+        if coords.ndim != 2 or coords.shape[1] != 3:
+            raise ValueError(f"{sample_id} coords.npy must have shape (N,3), found {coords.shape}")
+        if k_field.ndim != 2 or k_field.shape[1] not in (1, 3):
+            raise ValueError(f"{sample_id} k_field.npy must have shape (N,1) or (N,3), found {k_field.shape}")
+        if q_field.ndim != 2 or q_field.shape[1] != 1:
+            raise ValueError(f"{sample_id} q_field.npy must have shape (N,1), found {q_field.shape}")
+        if coords.shape[0] != k_field.shape[0] or coords.shape[0] != q_field.shape[0]:
+            raise ValueError(f"{sample_id} coords/k_field/q_field N mismatch")
+        if not np.all(np.isfinite(coords)) or not np.all(np.isfinite(k_field)) or not np.all(np.isfinite(q_field)):
+            raise ValueError(f"{sample_id} coords/k_field/q_field must be finite")
+
+        if meta.get("boundary_types") != {"top": "Robin", "bottom": "Dirichlet", "sides": "adiabatic"}:
+            raise ValueError(f"{sample_id} unsupported boundary_types: {meta.get('boundary_types')}")
+        if _boundary_names(meta) != {"top", "bottom", "sides"}:
+            raise ValueError(f"{sample_id} must define top/bottom/sides boundary regions")
+        if any(interface.get("type") != "perfect_contact" for interface in meta.get("interfaces", [])):
+            raise ValueError(f"{sample_id} contains non-perfect_contact interface")
+
+        manifest_sample = manifest_by_id.get(sample_id, {})
+        if manifest_sample.get("bc_baseline_category") == "shifted_350K":
+            bottom_t = float(meta["boundary_params"]["bottom"]["fixed_temperature_K"])
+            top_t = float(meta["boundary_params"]["top"]["ambient_temperature_K"])
+            if bottom_t != 350.0 or top_t != 350.0:
+                raise ValueError(
+                    f"{sample_id} shifted_350K requires bottom/top 350 K, found {bottom_t}/{top_t}"
+                )
+
+    return manifest, sample_dirs
+
+
+def _update_manifest_label_meta(meta: dict, manifest: dict, manifest_path: Path) -> dict:
+    meta = dict(meta)
+    meta["stage"] = "supervised_smoke"
+    meta["description"] = (
+        f"{meta.get('description', '').strip()} "
+        "temperature.npy was generated by the minimal reference steady solver for "
+        "small supervised smoke validation only."
+    ).strip()
+    generation_config = dict(meta.get("generation_config", {}))
+    generation_config.update({
+        "source_manifest": str(manifest_path),
+        "manifest_version": manifest.get("manifest_version"),
+        "scaffold_base_commit": manifest.get("scaffold_base_commit"),
+        "reference_solver": "rigno/heat3d_v1_reference_solver.py",
+        "reference_solver_role": "minimal_reference_steady_solver_for_smoke_only",
+        "temperature_role": "supervised_target",
+        "dataset_role": "small_supervised_smoke",
+        "sample_scope": "small_supervised_interface_smoke_only",
+        "not_formal_benchmark": True,
+        "not_model_performance_evidence": True,
+        "not_ood_generalization_evidence": True,
+    })
+    meta["generation_config"] = generation_config
+    validation = dict(meta.get("validation", {}))
+    validation["expected_stage"] = "supervised_smoke"
+    validation["temperature_required"] = True
+    meta["validation"] = validation
+    return meta
+
+
 def write_supervised_sample(source_sample_dir: Path, target_sample_dir: Path) -> None:
     if target_sample_dir.exists():
         shutil.rmtree(target_sample_dir)
@@ -90,8 +259,56 @@ def write_supervised_sample(source_sample_dir: Path, target_sample_dir: Path) ->
     np.save(target_sample_dir / "temperature.npy", temperature)
 
 
+def write_manifest_temperature_labels(
+    manifest_path: Path,
+    subset: Path,
+    overwrite_temperature: bool = False,
+) -> list[Path]:
+    manifest, sample_dirs = _validate_manifest_label_eligibility(
+        manifest_path=manifest_path,
+        subset=subset,
+        overwrite_temperature=overwrite_temperature,
+    )
+    written: list[Path] = []
+    for sample_dir in sample_dirs:
+        temperature = solve_reference_temperature(sample_dir)
+        if temperature.ndim != 2 or temperature.shape[1] != 1:
+            raise ValueError(
+                f"{sample_dir.name} reference solver returned invalid shape {temperature.shape}"
+            )
+        if not np.all(np.isfinite(temperature)):
+            raise ValueError(f"{sample_dir.name} reference solver returned non-finite temperature")
+        np.save(sample_dir / "temperature.npy", temperature)
+
+        meta_path = sample_dir / "sample_meta.json"
+        meta = json.loads(meta_path.read_text())
+        meta = _update_manifest_label_meta(meta, manifest, manifest_path)
+        meta_path.write_text(json.dumps(meta, indent=2) + "\n")
+        written.append(sample_dir)
+    return written
+
+
 def main() -> int:
     args = parse_args()
+
+    if args.manifest is not None:
+        if args.subset is None:
+            raise ValueError("--manifest requires --subset")
+        if not args.write_temperature:
+            raise ValueError("--manifest requires explicit --write-temperature")
+        written = write_manifest_temperature_labels(
+            manifest_path=args.manifest,
+            subset=args.subset,
+            overwrite_temperature=args.overwrite_temperature,
+        )
+        print(f"Wrote temperature.npy for {len(written)} manifest sample(s)")
+        for sample_dir in written:
+            print(f"  {sample_dir}")
+        return 0
+
+    if args.write_temperature or args.overwrite_temperature or args.subset is not None:
+        raise ValueError("--write-temperature, --overwrite-temperature, and --subset require --manifest")
+
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     written = []

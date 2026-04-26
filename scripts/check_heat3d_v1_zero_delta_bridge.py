@@ -49,8 +49,14 @@ def parse_args() -> argparse.Namespace:
         "path",
         nargs="?",
         type=Path,
-        default=default_v1_supervised_samples_dir(REPO_DIR),
+        default=None,
         help="Supervised smoke samples directory.",
+    )
+    parser.add_argument(
+        "--sample-ids",
+        nargs="*",
+        default=None,
+        help="Optional sample ids to check. Defaults to the legacy two-sample smoke for the default path, or all samples for an explicit path.",
     )
     return parser.parse_args()
 
@@ -103,6 +109,13 @@ def _sample_by_id(dataset: Heat3DV1NativeSupervisedDataset, sample_id: str):
     if sample_id not in index_by_id:
         raise ValueError(f"Missing sample {sample_id!r}")
     return dataset[index_by_id[sample_id]]
+
+
+def _sample_root(path: Path) -> Path:
+    samples = path / "samples"
+    if samples.is_dir():
+        return samples
+    return path
 
 
 def _target_excluded(feature_names: tuple[str, ...]) -> bool:
@@ -202,10 +215,10 @@ def _print_sample_smoke(sample_id: str, example, builder, model, params):
     return params, sample_ok
 
 
-def _check_shifted_input_invariance(sample_root: Path) -> bool:
+def _check_shifted_input_invariance(sample_root: Path, sample_ids: tuple[str, ...]) -> bool:
     with tempfile.TemporaryDirectory(prefix="heat3d_v1_zero_delta_shift_") as temp_name:
         temp_root = Path(temp_name)
-        for sample_id in TARGET_SAMPLE_IDS:
+        for sample_id in sample_ids:
             _copy_metadata_shifted_sample(sample_root / sample_id, temp_root)
 
         base_dataset = Heat3DV1NativeSupervisedDataset(sample_root, k_encoding_mode="diag3")
@@ -215,7 +228,7 @@ def _check_shifted_input_invariance(sample_root: Path) -> bool:
         print("\nbaseline-shift model-facing input check")
         print("  shifted case changes bottom fixed temperature and top ambient temperature: 300K -> 350K")
         print("  shifted temperature targets are not used; this check compares model-facing inputs only")
-        for sample_id in TARGET_SAMPLE_IDS:
+        for sample_id in sample_ids:
             base_bridge = _bridge_for(_sample_by_id(base_dataset, sample_id))
             shifted_bridge = _bridge_for(_sample_by_id(shifted_dataset, sample_id))
             u_diff = float(
@@ -245,8 +258,16 @@ def _check_shifted_input_invariance(sample_root: Path) -> bool:
 
 def main() -> int:
     args = parse_args()
-    sample_root = args.path
-    missing = [sample_id for sample_id in TARGET_SAMPLE_IDS if not (sample_root / sample_id).is_dir()]
+    explicit_path = args.path is not None
+    sample_root = _sample_root(args.path) if explicit_path else default_v1_supervised_samples_dir(REPO_DIR)
+    sample_ids = (
+        tuple(args.sample_ids)
+        if args.sample_ids is not None and len(args.sample_ids) > 0
+        else tuple(sorted(path.name for path in sample_root.glob("sample_*") if path.is_dir()))
+        if explicit_path
+        else TARGET_SAMPLE_IDS
+    )
+    missing = [sample_id for sample_id in sample_ids if not (sample_root / sample_id).is_dir()]
     if missing:
         raise FileNotFoundError(f"Missing supervised smoke samples: {missing}")
 
@@ -264,17 +285,17 @@ def main() -> int:
     print("  recovery: T_pred = T_ref + DeltaT_pred")
     print("  this is forward/loss smoke only: no training, optimizer, or update")
 
-    for sample_id in TARGET_SAMPLE_IDS:
+    for sample_id in sample_ids:
         example = _sample_by_id(dataset, sample_id)
         params, sample_ok = _print_sample_smoke(sample_id, example, builder, model, params)
         status[sample_id] = sample_ok
 
-    shift_ok = _check_shifted_input_invariance(sample_root)
-    all_ok = all(status.get(sample_id, False) for sample_id in TARGET_SAMPLE_IDS) and shift_ok
+    shift_ok = _check_shifted_input_invariance(sample_root, sample_ids)
+    all_ok = all(status.get(sample_id, False) for sample_id in sample_ids) and shift_ok
 
     print("\nsummary")
-    print(f"  sample_000 zero-delta bridge smoke: {status.get('sample_000', False)}")
-    print(f"  sample_005 zero-delta bridge smoke: {status.get('sample_005', False)}")
+    print(f"  checked sample count: {len(sample_ids)}")
+    print(f"  all selected zero-delta bridge smoke: {all(status.get(sample_id, False) for sample_id in sample_ids)}")
     print(f"  baseline-shift model-facing input invariance: {shift_ok}")
     print("  raw absolute BC temperatures enter model-facing inputs: False")
     print("  T_ref enters model-facing inputs: False")

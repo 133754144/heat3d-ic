@@ -1,0 +1,423 @@
+{
+  "dataset_name": "v1_multilayer_bc_eq_supervised_small",
+  "manifest_version": "smoke_plan_v0",
+  "scaffold_base_commit": "1e00a15",
+  "description": "Small supervised smoke dataset manifest for Heat3D v1 train/valid development.",
+  "non_claims": [
+    "not_a_formal_benchmark",
+    "not_model_performance_evidence",
+    "not_ood_generalization_evidence",
+    "not_high_fidelity_solver_dataset",
+    "not_industrial_3dic_simulator_dataset"
+  ],
+  "default_route": {
+    "external_task": "coords + condition_features -> target_temperature",
+    "condition_feature_view": "relative_bc",
+    "bridge": "zero_delta_u_bridge",
+    "target": "DeltaT = T - T_ref",
+    "recovery": "T_pred = T_ref + DeltaT_pred",
+    "loss": "normalized_DeltaT_MSE"
+  },
+  "generation_policy": {
+    "generated_data_committed_to_git": false,
+    "output_under_ignored_data_dir": true,
+    "generator_must_be_manifest_driven": true,
+    "deterministic_seeds_required": true,
+    "smoke_only_reference_solver": true
+  },
+  "reference_solver_scope": {
+    "supported": [
+      "regular_layered_rectangular_stacks_only",
+      "top_Robin",
+      "bottom_Dirichlet",
+      "side_adiabatic",
+      "perfect_contact",
+      "k_field_(N,1)",
+      "k_field_(N,3)"
+    ],
+    "unsupported": [
+      "k_field_(N,6)",
+      "irregular_geometry",
+      "explicit_TSV_BEOL_bump_microstructure",
+      "contact_resistance",
+      "transient_simulation",
+      "high_fidelity_solver_claims",
+      "industrial_solver_claims"
+    ],
+    "role": "minimal reference steady solver for smoke label generation only"
+  },
+  "parameter_categories": [
+    "literature_backed",
+    "provisional_engineering_assumption",
+    "requires_user_confirmation"
+  ],
+  "parameter_maps": {
+    "bc_baseline": {
+      "baseline_300K": {
+        "bottom_fixed_temperature_K": 300.0,
+        "top_ambient_temperature_K": 300.0,
+        "status": "provisional_engineering_assumption",
+        "role": "baseline diagnostic category"
+      },
+      "shifted_350K": {
+        "bottom_fixed_temperature_K": 350.0,
+        "top_ambient_temperature_K": 350.0,
+        "status": "provisional_engineering_assumption",
+        "role": "baseline-shift diagnostic category"
+      }
+    },
+    "q_scale_category": {
+      "low": {
+        "relative_to_current_smoke_nominal": "below_nominal",
+        "volumetric_heat_generation_W_m3": null,
+        "status": "requires_user_confirmation"
+      },
+      "nominal": {
+        "relative_to_current_smoke_nominal": "current_nominal",
+        "volumetric_heat_generation_W_m3": null,
+        "status": "requires_user_confirmation"
+      },
+      "high": {
+        "relative_to_current_smoke_nominal": "above_nominal",
+        "volumetric_heat_generation_W_m3": null,
+        "status": "requires_user_confirmation"
+      }
+    },
+    "top_h_category": {
+      "low": {
+        "relative_to_current_smoke_nominal": "below_nominal",
+        "h_W_m2K": null,
+        "status": "requires_user_confirmation"
+      },
+      "nominal": {
+        "relative_to_current_smoke_nominal": "current_nominal",
+        "h_W_m2K": null,
+        "status": "requires_user_confirmation"
+      },
+      "high": {
+        "relative_to_current_smoke_nominal": "above_nominal",
+        "h_W_m2K": null,
+        "status": "requires_user_confirmation"
+      },
+      "held_out_top_h": {
+        "relative_to_current_smoke_nominal": "held_out_range",
+        "h_W_m2K": null,
+        "status": "requires_user_confirmation",
+        "role": "test_ood_bc smoke candidate only"
+      }
+    },
+    "k_field_mode": {
+      "isotropic_equivalent": {
+        "k_field_shape": "(N,1)",
+        "status": "provisional_engineering_assumption"
+      },
+      "blockwise_equivalent": {
+        "k_field_shape": "(N,1)",
+        "status": "provisional_engineering_assumption"
+      },
+      "diagonal_anisotropic_diagnostic": {
+        "k_field_shape": "(N,3)",
+        "component_order": [
+          "k_x",
+          "k_y",
+          "k_z"
+        ],
+        "status": "provisional_engineering_assumption"
+      }
+    },
+    "stack_template": {
+      "baseline_4_layer": {
+        "role": "main same-family smoke stack",
+        "status": "provisional_engineering_assumption"
+      },
+      "compact_3_layer": {
+        "role": "simplified 3-layer smoke stack",
+        "status": "provisional_engineering_assumption"
+      },
+      "dual_active_4_layer": {
+        "role": "multi-active-layer smoke stack",
+        "status": "provisional_engineering_assumption"
+      },
+      "interposer_like_4_layer": {
+        "role": "train-side interposer-like equivalent stack variation",
+        "status": "provisional_engineering_assumption"
+      },
+      "heldout_interposer_4_layer": {
+        "role": "held-out stack smoke candidate",
+        "status": "requires_user_confirmation"
+      }
+    },
+    "resolution": {
+      "first_small_supervised_smoke": {
+        "policy": "keep_current_coarse_rectilinear_resolution",
+        "status": "provisional_engineering_assumption",
+        "notes": "No resolution variation in the first 16-sample plan."
+      }
+    },
+    "excluded_first_step_features": [
+      "irregular_footprint",
+      "explicit_TSV_BEOL_bump_microstructure",
+      "transient_simulation",
+      "k_field_(N,6)",
+      "resolution_variation"
+    ]
+  },
+  "samples": [
+    {
+      "sample_id": "sample_000",
+      "split": "train",
+      "seed": 41000,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "single_centered_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "baseline train anchor",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "Main same-family supervised smoke sample."
+    },
+    {
+      "sample_id": "sample_001",
+      "split": "train",
+      "seed": 41001,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "single_left_shifted_active_die_0",
+      "q_scale_category": "low",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "heat-source position variation",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "Low source-scale category remains uncalibrated until user confirmation."
+    },
+    {
+      "sample_id": "sample_002",
+      "split": "train",
+      "seed": 41002,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "blockwise_equivalent",
+      "heat_source_pattern": "single_right_shifted_active_die_0",
+      "q_scale_category": "high",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "q-scale and blockwise-k variation",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "Blockwise equivalent conductivity remains a smoke-level abstraction."
+    },
+    {
+      "sample_id": "sample_003",
+      "split": "train",
+      "seed": 41003,
+      "stack_template": "compact_3_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "single_centered_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "simplified stack training smoke",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "Regular 3-layer cuboid stack only."
+    },
+    {
+      "sample_id": "sample_004",
+      "split": "train",
+      "seed": 41004,
+      "stack_template": "compact_3_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "blockwise_equivalent",
+      "heat_source_pattern": "single_offset_active_die_0",
+      "q_scale_category": "low",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "low",
+      "expected_purpose": "HTC and source variation",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "Low top_h category needs user-confirmed numerical value."
+    },
+    {
+      "sample_id": "sample_005",
+      "split": "train",
+      "seed": 41005,
+      "stack_template": "dual_active_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "dual_active_layers",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "multi-layer heat-source smoke",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "Uses multiple active layers without explicit chiplet/package detail."
+    },
+    {
+      "sample_id": "sample_006",
+      "split": "train",
+      "seed": 41006,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "blockwise_equivalent",
+      "heat_source_pattern": "two_spots_active_die_0",
+      "q_scale_category": "high",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "high",
+      "expected_purpose": "multi-hotspot smoke",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "High q and high top_h categories need user-confirmed numerical values."
+    },
+    {
+      "sample_id": "sample_007",
+      "split": "train",
+      "seed": 41007,
+      "stack_template": "interposer_like_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "single_centered_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "interposer-like train variation",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_train",
+      "notes": "Equivalent-layer abstraction only; no explicit interposer microstructure."
+    },
+    {
+      "sample_id": "sample_008",
+      "split": "train",
+      "seed": 41008,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,3)",
+      "anisotropy_type": "diagonal_anisotropic_diagnostic",
+      "heat_source_pattern": "single_centered_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "anisotropic training-contract diagnostic",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "diagnostic_train",
+      "notes": "Real diagonal anisotropic k_field; no cross terms and no (N,6)."
+    },
+    {
+      "sample_id": "sample_009",
+      "split": "train",
+      "seed": 41009,
+      "stack_template": "dual_active_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "blockwise_equivalent",
+      "heat_source_pattern": "dual_active_layers",
+      "q_scale_category": "high",
+      "bc_baseline_category": "shifted_350K",
+      "top_h_category": "nominal",
+      "expected_purpose": "shifted-baseline train smoke",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "baseline_shift_train_diagnostic",
+      "notes": "Used to exercise relative BC feature behavior under a 350 K baseline."
+    },
+    {
+      "sample_id": "sample_010",
+      "split": "valid",
+      "seed": 41010,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "blockwise_equivalent",
+      "heat_source_pattern": "single_offset_active_die_0",
+      "q_scale_category": "low",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "same-family validation smoke",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "in_distribution_valid",
+      "notes": "Validation interface sample, not a performance benchmark."
+    },
+    {
+      "sample_id": "sample_011",
+      "split": "valid",
+      "seed": 41011,
+      "stack_template": "compact_3_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "single_centered_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "shifted_350K",
+      "top_h_category": "nominal",
+      "expected_purpose": "shifted-baseline validation smoke",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "baseline_shift_valid_diagnostic",
+      "notes": "Checks relative BC feature behavior in validation smoke."
+    },
+    {
+      "sample_id": "sample_012",
+      "split": "valid",
+      "seed": 41012,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,3)",
+      "anisotropy_type": "diagonal_anisotropic_diagnostic",
+      "heat_source_pattern": "single_offset_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "high",
+      "expected_purpose": "anisotropic validation-contract diagnostic",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "diagnostic_valid",
+      "notes": "Second real (N,3) sample for validation-contract checks."
+    },
+    {
+      "sample_id": "sample_013",
+      "split": "test_smoke",
+      "seed": 41013,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "blockwise_equivalent",
+      "heat_source_pattern": "heldout_source_location",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "held-out source-pattern smoke",
+      "parameter_status": "provisional_engineering_assumption",
+      "ood_role": "test_smoke_only",
+      "notes": "Held-out source location smoke, not OOD evidence."
+    },
+    {
+      "sample_id": "sample_014",
+      "split": "test_ood_bc",
+      "seed": 41014,
+      "stack_template": "baseline_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "single_centered_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "held_out_top_h",
+      "expected_purpose": "held-out top HTC smoke candidate",
+      "parameter_status": "requires_user_confirmation",
+      "ood_role": "test_ood_bc_smoke_candidate",
+      "notes": "Held-out HTC category must be confirmed before benchmark use."
+    },
+    {
+      "sample_id": "sample_015",
+      "split": "test_ood_stack",
+      "seed": 41015,
+      "stack_template": "heldout_interposer_4_layer",
+      "k_field_shape": "(N,1)",
+      "anisotropy_type": "isotropic_equivalent",
+      "heat_source_pattern": "single_centered_active_die_0",
+      "q_scale_category": "nominal",
+      "bc_baseline_category": "baseline_300K",
+      "top_h_category": "nominal",
+      "expected_purpose": "held-out stack smoke candidate",
+      "parameter_status": "requires_user_confirmation",
+      "ood_role": "test_ood_stack_smoke_candidate",
+      "notes": "Held-out interposer-like stack remains smoke-only until confirmed."
+    }
+  ]
+}

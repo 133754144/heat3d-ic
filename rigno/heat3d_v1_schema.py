@@ -14,6 +14,7 @@ SUBSET_NAME = "v1_multilayer_bc_eq_demo"
 VALID_SUBSET_NAMES = {
   "v1_multilayer_bc_eq_demo",
   "v1_multilayer_bc_eq_supervised_smoke",
+  "v1_multilayer_bc_eq_supervised_small",
 }
 
 VALID_STAGES = {"metadata_only", "solver_smoke", "supervised_smoke"}
@@ -21,6 +22,7 @@ VALID_SPLITS = {
   "train",
   "valid",
   "test_id",
+  "test_smoke",
   "test_ood_stack",
   "test_ood_bc",
   "test_ood_material",

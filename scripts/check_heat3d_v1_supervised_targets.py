@@ -26,8 +26,14 @@ def parse_args() -> argparse.Namespace:
         "path",
         nargs="?",
         type=Path,
-        default=default_v1_supervised_samples_dir(REPO_DIR),
+        default=None,
         help="Supervised smoke samples directory.",
+    )
+    parser.add_argument(
+        "--sample-ids",
+        nargs="*",
+        default=None,
+        help="Optional sample ids to check. Defaults to the legacy two-sample smoke for the default path, or all samples for an explicit path.",
     )
     return parser.parse_args()
 
@@ -63,16 +69,23 @@ def _mean_kz_for_layers(sample: dict, layer_names: list[str]) -> float | None:
 
 def main() -> int:
     args = parse_args()
-    dataset = Heat3DV1SupervisedDataset(args.path, k_encoding_mode="diag3")
+    explicit_path = args.path is not None
+    sample_path = args.path if explicit_path else default_v1_supervised_samples_dir(REPO_DIR)
+    dataset = Heat3DV1SupervisedDataset(sample_path, k_encoding_mode="diag3")
     sample_index_by_id = {sample["sample_id"]: idx for idx, sample in enumerate(dataset.samples)}
-    missing = [sample_id for sample_id in TARGET_SAMPLE_IDS if sample_id not in sample_index_by_id]
+    target_sample_ids = (
+        tuple(args.sample_ids)
+        if args.sample_ids is not None and len(args.sample_ids) > 0
+        else tuple(sample_index_by_id) if explicit_path else TARGET_SAMPLE_IDS
+    )
+    missing = [sample_id for sample_id in target_sample_ids if sample_id not in sample_index_by_id]
     if missing:
         raise ValueError(f"Required supervised smoke samples are missing: {missing}")
 
     failed = False
     summaries = {}
 
-    for sample_id in TARGET_SAMPLE_IDS:
+    for sample_id in target_sample_ids:
         sample = dataset.samples[sample_index_by_id[sample_id]]
         meta = sample["meta"]
         temperature = sample["temperature"]
@@ -133,28 +146,30 @@ def main() -> int:
         print(f"  solver rerun max abs diff repeat: {rerun_repeat:.6e}")
         print(f"  sanity status: {not sample_failed}")
 
-    sample_000 = summaries["sample_000"]
-    sample_005 = summaries["sample_005"]
     direction_ok = True
-    direction_note = (
-        "sample_005 uses lower effective through-plane conductivity on the heated path "
-        "(active_die_0/tim_equiv) than sample_000, so higher peak/mean temperature is expected."
-    )
-    if (
-        sample_000["mean_hot_path_kz"] is not None
-        and sample_005["mean_hot_path_kz"] is not None
-        and sample_005["mean_hot_path_kz"] < sample_000["mean_hot_path_kz"]
-    ):
-        direction_ok = (
-            sample_005["t_max"] > sample_000["t_max"]
-            and sample_005["t_mean"] > sample_000["t_mean"]
+    direction_note = "cross-sample direction check skipped; sample_000/sample_005 not both selected"
+    if "sample_000" in summaries and "sample_005" in summaries:
+        sample_000 = summaries["sample_000"]
+        sample_005 = summaries["sample_005"]
+        direction_note = (
+            "sample_005 uses lower effective through-plane conductivity on the heated path "
+            "(active_die_0/tim_equiv) than sample_000, so higher peak/mean temperature is expected."
         )
-    if not direction_ok:
-        failed = True
+        if (
+            sample_000["mean_hot_path_kz"] is not None
+            and sample_005["mean_hot_path_kz"] is not None
+            and sample_005["mean_hot_path_kz"] < sample_000["mean_hot_path_kz"]
+        ):
+            direction_ok = (
+                sample_005["t_max"] > sample_000["t_max"]
+                and sample_005["t_mean"] > sample_000["t_mean"]
+            )
+        if not direction_ok:
+            failed = True
 
     print("\nsummary")
-    print(f"  sample_000 sanity ok: {sample_000['status']}")
-    print(f"  sample_005 sanity ok: {sample_005['status']}")
+    print(f"  checked sample count: {len(target_sample_ids)}")
+    print(f"  all selected sample sanity ok: {all(item['status'] for item in summaries.values())}")
     print(f"  cross-sample direction note: {direction_note}")
     print(f"  cross-sample direction ok: {direction_ok}")
 
