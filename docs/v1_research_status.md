@@ -147,3 +147,25 @@ Do not claim:
 
 The current state proves only that the v1 scaffold, data contracts, graph
 construction, bridge contracts, and tiny smoke paths are internally runnable.
+
+## Physics-Label Pipeline Stage
+
+The `research/v1-validation-metrics-smoke` stage has been closed out. It
+established a validation metrics smoke loop over the 16-sample
+`v1_multilayer_bc_eq_supervised_small` dataset and documented that all current
+results are smoke diagnostics only.
+
+The new `research/v1-physics-label-pipeline` stage shifts focus from "model
+interfaces and metrics can run" to "temperature-label generation and dataset
+construction should become more physically auditable and reproducible."
+
+The priority is now:
+
+- physics-label pipeline planning
+- parameter registry design
+- reference solver v2 planning
+- label diagnostics planning
+
+This stage should not expand training, tune the model, or claim model
+performance. It should not present the current smoke labels as high-fidelity
+physics labels.
