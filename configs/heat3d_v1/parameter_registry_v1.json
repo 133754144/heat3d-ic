@@ -1,0 +1,395 @@
+{
+  "registry_version": "v1_parameter_registry_smoke_0",
+  "description": "Minimal parameter registry for Heat3D v1 physics-label pipeline planning and smoke diagnostics.",
+  "non_claims": [
+    "not_a_formal_benchmark",
+    "not_model_performance_evidence",
+    "not_ood_generalization_evidence",
+    "not_high_fidelity_solver_dataset",
+    "not_industrial_3dic_simulator_dataset"
+  ],
+  "allowed_source_categories": [
+    "literature_backed",
+    "provisional_engineering_assumption",
+    "requires_user_confirmation"
+  ],
+  "allowed_uses": [
+    "smoke",
+    "diagnostic",
+    "benchmark_candidate",
+    "deprecated"
+  ],
+  "parameter_groups": {
+    "thermal_conductivity": {
+      "description": "Equivalent material conductivity categories used by the current v1 smoke stack templates.",
+      "entries": [
+        {
+          "key": "active_die_equiv",
+          "value": null,
+          "unit": "W/m/K",
+          "unresolved": true,
+          "unresolved_reason": "Needs user-confirmed or literature-backed equivalent die conductivity range.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Current generated smoke values should not be treated as literature-backed."
+        },
+        {
+          "key": "tim_equiv",
+          "value": null,
+          "unit": "W/m/K",
+          "unresolved": true,
+          "unresolved_reason": "Needs confirmed effective TIM conductivity or target package assumption.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Equivalent layer only; not explicit TIM microstructure."
+        },
+        {
+          "key": "interposer_equiv",
+          "value": null,
+          "unit": "W/m/K",
+          "unresolved": true,
+          "unresolved_reason": "Needs confirmed equivalent interposer material model.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "diagnostic",
+          "notes": "Used for interposer-like smoke templates, not an explicit TSV model."
+        },
+        {
+          "key": "substrate_equiv",
+          "value": null,
+          "unit": "W/m/K",
+          "unresolved": true,
+          "unresolved_reason": "Needs confirmed substrate-equivalent conductivity.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Current small dataset uses this as equivalent block-wise conductivity."
+        }
+      ]
+    },
+    "anisotropy_ratios": {
+      "description": "Diagnostic diagonal anisotropy settings for (N,3) k_field samples.",
+      "entries": [
+        {
+          "key": "diag_anisotropic_smoke_ratio",
+          "value": {
+            "kx_to_nominal": 1.0,
+            "ky_to_nominal": 0.65,
+            "kz_to_nominal": 1.35
+          },
+          "unit": "dimensionless",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "diagnostic",
+          "notes": "Diagnostic ratio for loader and solver-smoke support only; not a validated material model."
+        }
+      ]
+    },
+    "q_scales": {
+      "description": "Relative volumetric heat-generation categories for smoke source blocks.",
+      "entries": [
+        {
+          "key": "low",
+          "value": {
+            "multiplier_to_nominal": 0.5,
+            "nominal_value": null
+          },
+          "unit": "relative_to_nominal_W/m^3",
+          "unresolved": true,
+          "unresolved_reason": "Nominal absolute volumetric heat-generation value requires user confirmation.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Relative multiplier is provisional; absolute value is unresolved."
+        },
+        {
+          "key": "nominal",
+          "value": {
+            "multiplier_to_nominal": 1.0,
+            "nominal_value": null
+          },
+          "unit": "relative_to_nominal_W/m^3",
+          "unresolved": true,
+          "unresolved_reason": "Nominal absolute volumetric heat-generation value requires user confirmation.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Do not treat as literature-backed until a physical scenario is selected."
+        },
+        {
+          "key": "high",
+          "value": {
+            "multiplier_to_nominal": 1.5,
+            "nominal_value": null
+          },
+          "unit": "relative_to_nominal_W/m^3",
+          "unresolved": true,
+          "unresolved_reason": "Nominal absolute volumetric heat-generation value requires user confirmation.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Relative multiplier is provisional and smoke-only."
+        }
+      ]
+    },
+    "top_robin_htc": {
+      "description": "Top Robin heat-transfer coefficient categories.",
+      "entries": [
+        {
+          "key": "low",
+          "value": {
+            "multiplier_to_nominal": 0.5,
+            "nominal_value": null
+          },
+          "unit": "relative_to_nominal_W/m^2/K",
+          "unresolved": true,
+          "unresolved_reason": "Nominal top HTC requires user confirmation or literature-backed scenario.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Relative smoke category only."
+        },
+        {
+          "key": "nominal",
+          "value": {
+            "multiplier_to_nominal": 1.0,
+            "nominal_value": null
+          },
+          "unit": "relative_to_nominal_W/m^2/K",
+          "unresolved": true,
+          "unresolved_reason": "Nominal top HTC requires user confirmation or literature-backed scenario.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Current smoke labels should not imply a validated cooling setup."
+        },
+        {
+          "key": "high",
+          "value": {
+            "multiplier_to_nominal": 1.5,
+            "nominal_value": null
+          },
+          "unit": "relative_to_nominal_W/m^2/K",
+          "unresolved": true,
+          "unresolved_reason": "Nominal top HTC requires user confirmation or literature-backed scenario.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Relative smoke category only."
+        },
+        {
+          "key": "held_out_top_h",
+          "value": {
+            "multiplier_to_nominal": 2.0,
+            "nominal_value": null
+          },
+          "unit": "relative_to_nominal_W/m^2/K",
+          "unresolved": true,
+          "unresolved_reason": "Held-out HTC category requires benchmark protocol and physical range confirmation.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "diagnostic",
+          "notes": "Smoke candidate only; not OOD generalization evidence."
+        }
+      ]
+    },
+    "bc_baseline_temperatures": {
+      "description": "Boundary baseline temperatures used for T_ref and baseline-shift diagnostics.",
+      "entries": [
+        {
+          "key": "baseline_300K",
+          "value": 300.0,
+          "unit": "K",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "diagnostic",
+          "notes": "Diagnostic baseline for smoke data; not a validated operating condition."
+        },
+        {
+          "key": "shifted_350K",
+          "value": 350.0,
+          "unit": "K",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "diagnostic",
+          "notes": "Baseline-shift diagnostic for relative BC features."
+        }
+      ]
+    },
+    "layer_thicknesses": {
+      "description": "Layer thickness placeholders for stack templates.",
+      "entries": [
+        {
+          "key": "current_smoke_layer_thicknesses",
+          "value": null,
+          "unit": "m",
+          "unresolved": true,
+          "unresolved_reason": "Needs explicit physical thickness table before benchmark use.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Current generator uses smoke-scale rectilinear layers; values should be registry-driven in a future step."
+        }
+      ]
+    },
+    "footprint_sizes": {
+      "description": "Footprint and point-grid scale placeholders.",
+      "entries": [
+        {
+          "key": "current_smoke_footprint",
+          "value": null,
+          "unit": "m",
+          "unresolved": true,
+          "unresolved_reason": "Needs target footprint and grid-resolution policy.",
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "smoke",
+          "notes": "Regular rectangular footprint only; no irregular footprint or unequal die overhang in this stage."
+        }
+      ]
+    },
+    "stack_templates": {
+      "description": "Named regular layered rectangular stack templates.",
+      "entries": [
+        {
+          "key": "baseline_4_layer",
+          "value": {
+            "geometry_family": "regular_layered_rectangular_stack",
+            "role": "train_valid_smoke"
+          },
+          "unit": "metadata_template",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "smoke",
+          "notes": "Baseline smoke stack; exact layer dimensions still require confirmation."
+        },
+        {
+          "key": "compact_3_layer",
+          "value": {
+            "geometry_family": "regular_layered_rectangular_stack",
+            "role": "train_valid_smoke"
+          },
+          "unit": "metadata_template",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "smoke",
+          "notes": "Simplified smoke stack."
+        },
+        {
+          "key": "dual_active_4_layer",
+          "value": {
+            "geometry_family": "regular_layered_rectangular_stack",
+            "role": "multi_layer_source_smoke"
+          },
+          "unit": "metadata_template",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "diagnostic",
+          "notes": "Used to exercise multi-layer source metadata and labels."
+        },
+        {
+          "key": "interposer_like_4_layer",
+          "value": {
+            "geometry_family": "regular_layered_rectangular_stack",
+            "role": "train_side_interposer_like_variation"
+          },
+          "unit": "metadata_template",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "diagnostic",
+          "notes": "Equivalent interposer-like layer, not explicit TSV / BEOL / bump geometry."
+        },
+        {
+          "key": "heldout_interposer_4_layer",
+          "value": {
+            "geometry_family": "regular_layered_rectangular_stack",
+            "role": "heldout_stack_smoke_candidate"
+          },
+          "unit": "metadata_template",
+          "unresolved": false,
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "diagnostic",
+          "notes": "Held-out stack smoke candidate only; not OOD generalization evidence."
+        }
+      ]
+    },
+    "equivalent_layer_simplifications": {
+      "description": "Simplifications used instead of explicit fine-structure geometry.",
+      "entries": [
+        {
+          "key": "tsv_bump_beol_as_equivalent_layers",
+          "value": {
+            "explicit_microstructure": false,
+            "representation": "layerwise_or_blockwise_equivalent_conductivity"
+          },
+          "unit": "modeling_assumption",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "diagnostic",
+          "notes": "Useful for first-stage smoke design; needs literature or user confirmation before benchmark use."
+        }
+      ]
+    },
+    "split_purpose_tags": {
+      "description": "Allowed split and purpose tags for the current small supervised smoke family.",
+      "entries": [
+        {
+          "key": "train",
+          "value": "train_smoke",
+          "unit": "split_tag",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "smoke",
+          "notes": "Used for train-smoke samples only."
+        },
+        {
+          "key": "valid",
+          "value": "valid_smoke",
+          "unit": "split_tag",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "smoke",
+          "notes": "Used for validation-loop smoke only."
+        },
+        {
+          "key": "test_smoke",
+          "value": "test_smoke_diagnostic",
+          "unit": "split_tag",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "diagnostic",
+          "notes": "Held-out smoke only, not benchmark evidence."
+        },
+        {
+          "key": "test_ood_bc",
+          "value": "heldout_top_htc_smoke_candidate",
+          "unit": "split_tag",
+          "unresolved": false,
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "diagnostic",
+          "notes": "Candidate only; does not prove OOD generalization."
+        },
+        {
+          "key": "test_ood_stack",
+          "value": "heldout_stack_smoke_candidate",
+          "unit": "split_tag",
+          "unresolved": false,
+          "source_category": "requires_user_confirmation",
+          "allowed_use": "diagnostic",
+          "notes": "Candidate only; does not prove OOD generalization."
+        }
+      ]
+    },
+    "reproducibility_fields": {
+      "description": "Metadata fields required for reproducible generated samples and labels.",
+      "entries": [
+        {
+          "key": "required_reproducibility_metadata",
+          "value": [
+            "sample_id",
+            "manifest_version",
+            "generator_commit",
+            "parameter_registry_version",
+            "label_solver_version",
+            "seed",
+            "source_manifest"
+          ],
+          "unit": "metadata_field_list",
+          "unresolved": false,
+          "source_category": "provisional_engineering_assumption",
+          "allowed_use": "smoke",
+          "notes": "Defines required metadata fields for future registry-driven generation."
+        }
+      ]
+    }
+  }
+}
