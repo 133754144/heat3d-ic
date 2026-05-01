@@ -84,6 +84,22 @@ Finite volume is a strong fit because:
 A conservative finite-difference implementation may also be acceptable if it
 uses flux-form discretization and exposes equivalent residual / flux checks.
 
+## Minimal Implementation Stage
+
+The first minimal implementation is tracked as:
+
+```text
+rigno/heat3d_v1_reference_solver_v2.py
+scripts/check_heat3d_v1_reference_solver_v2.py
+```
+
+This implementation is a small dense linear-system path for verification smoke.
+It uses conservative finite-difference / finite-volume style conductances,
+harmonic mean at neighboring conductivity jumps, and emits solver metadata.
+
+It is still a research reference path. It is not a high-fidelity solver and
+should not be used as a formal benchmark label generator.
+
 ## Conductivity Treatment
 
 The solver v2 design should support:
