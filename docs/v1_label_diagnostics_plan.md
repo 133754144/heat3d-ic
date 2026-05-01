@@ -146,6 +146,19 @@ They may be reported as planned diagnostics or smoke-level placeholders only.
    label generation.
 5. Run label diagnostics before train / valid or validation metrics smoke.
 
+## Implemented Smoke
+
+The initial label diagnostics smoke is implemented as:
+
+```text
+rigno/heat3d_v1_label_diagnostics.py
+scripts/check_heat3d_v1_label_diagnostics.py
+```
+
+It covers array sanity, temperature sanity, peak-temperature reporting, and a
+simple bottom Dirichlet consistency check. Flux, residual, interface, and global
+energy checks remain `requires_numerical_operator` or `not_computed`.
+
 ## Non-Claims
 
 Label diagnostics are not model metrics. They should not be used to claim model
