@@ -21,6 +21,14 @@ SUPPORTED_K_WIDTHS = {1, 3}
 UNSUPPORTED_K_WIDTHS = {6}
 BOTTOM_PASS_TOL_K = 1e-6
 BOTTOM_WARNING_TOL_K = 1e-3
+LABEL_META_REQUIRED_FIELDS = (
+    "solver_name",
+    "solver_version",
+    "convergence_flag",
+    "residual_norm",
+    "bottom_dirichlet_error",
+    "warnings",
+)
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -88,6 +96,73 @@ def _load_required(sample_dir: Path) -> tuple[dict[str, np.ndarray], dict[str, A
                 errors.append(f"failed to load {name}: {exc}")
 
     return arrays, meta, errors
+
+
+def _label_meta_checks(sample_dir: Path) -> tuple[dict[str, Any], list[str], list[str]]:
+    """Read optional solver label metadata and validate core smoke fields."""
+
+    path = sample_dir / "label_meta.json"
+    if not path.exists():
+        return {"present": False, "status": "not_present"}, [], []
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    try:
+        label_meta = load_json(path)
+    except Exception as exc:  # pragma: no cover - defensive diagnostics
+        return {
+            "present": True,
+            "status": "fail",
+            "path": str(path),
+        }, [f"failed to load label_meta.json: {exc}"], []
+
+    missing = [field for field in LABEL_META_REQUIRED_FIELDS if field not in label_meta]
+    if missing:
+        errors.append(f"label_meta.json missing required fields: {missing}")
+
+    residual_norm = label_meta.get("residual_norm")
+    if residual_norm is not None:
+        try:
+            residual_norm = float(residual_norm)
+            if not np.isfinite(residual_norm):
+                errors.append("label_meta.residual_norm must be finite")
+        except (TypeError, ValueError):
+            errors.append("label_meta.residual_norm must be numeric")
+
+    bottom_error = label_meta.get("bottom_dirichlet_error")
+    if bottom_error is not None:
+        try:
+            bottom_error = float(bottom_error)
+            if not np.isfinite(bottom_error):
+                errors.append("label_meta.bottom_dirichlet_error must be finite")
+        except (TypeError, ValueError):
+            errors.append("label_meta.bottom_dirichlet_error must be numeric")
+
+    convergence_flag = label_meta.get("convergence_flag")
+    if convergence_flag is not None and not isinstance(convergence_flag, bool):
+        errors.append("label_meta.convergence_flag must be boolean")
+    elif convergence_flag is False:
+        errors.append("label_meta.convergence_flag is false")
+
+    solver_warnings = label_meta.get("warnings", [])
+    if solver_warnings is not None and not isinstance(solver_warnings, list):
+        errors.append("label_meta.warnings must be a list")
+        solver_warnings = []
+
+    status = "fail" if errors else "pass"
+    summary = {
+        "present": True,
+        "status": status,
+        "path": str(path),
+        "solver_name": label_meta.get("solver_name"),
+        "solver_version": label_meta.get("solver_version"),
+        "convergence_flag": convergence_flag,
+        "residual_norm": residual_norm,
+        "bottom_dirichlet_error": bottom_error,
+        "warning_count": len(solver_warnings),
+        "warnings": solver_warnings,
+    }
+    return summary, errors, warnings
 
 
 def _boundary_params(meta: dict[str, Any], boundary: str) -> dict[str, Any]:
@@ -291,9 +366,16 @@ def diagnose_sample(sample_dir: str | Path) -> dict[str, Any]:
     report["t_ref"] = t_ref
     report["temperature"] = _temperature_stats(coords, temperature, float(t_ref["value"]))
     report["bottom_dirichlet"] = _bottom_dirichlet_check(coords, temperature, meta)
+    label_meta, label_meta_errors, label_meta_warnings = _label_meta_checks(sample_path)
+    report["label_meta"] = label_meta
+    report["errors"].extend(label_meta_errors)
+    report["warnings"].extend(label_meta_warnings)
     report["not_computed"] = _not_computed_diagnostics()
 
-    computed_status = _combine_status(report["bottom_dirichlet"]["status"])
+    computed_status = _combine_status(
+        report["bottom_dirichlet"]["status"],
+        label_meta.get("status", "pass") if label_meta.get("present") else "pass",
+    )
     if report["errors"]:
         report["overall_status"] = "fail"
     elif report["warnings"] or computed_status == "warning":

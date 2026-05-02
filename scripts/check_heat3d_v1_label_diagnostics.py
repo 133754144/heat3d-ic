@@ -36,6 +36,12 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_SUBSET,
         help="Sample, samples, or subset path to diagnose.",
     )
+    parser.add_argument(
+        "--subset",
+        type=Path,
+        default=None,
+        help="Optional subset path. Preserves the positional path for older smoke commands.",
+    )
     return parser.parse_args()
 
 
@@ -91,6 +97,21 @@ def _print_sample(report: dict) -> None:
             f"status={bottom.get('status')} max_abs_error_K={bottom.get('max_abs_error_K')}"
         )
 
+    label_meta = report.get("label_meta", {})
+    if label_meta.get("present"):
+        print(
+            "  label_meta: "
+            f"status={label_meta.get('status')} "
+            f"solver={label_meta.get('solver_name')}@{label_meta.get('solver_version')} "
+            f"converged={label_meta.get('convergence_flag')} "
+            f"residual_norm={label_meta.get('residual_norm')} "
+            f"bottom_error={label_meta.get('bottom_dirichlet_error')} "
+            f"solver_warning_count={label_meta.get('warning_count')}"
+        )
+        solver_warnings = label_meta.get("warnings") or []
+        if solver_warnings:
+            print(f"  label_meta solver warnings: {solver_warnings}")
+
     not_computed = report.get("not_computed", {})
     if not_computed:
         keys = ", ".join(
@@ -101,9 +122,10 @@ def _print_sample(report: dict) -> None:
 
 def main() -> int:
     args = parse_args()
-    sample_dirs = find_sample_dirs(args.path)
+    target_path = args.subset if args.subset is not None else args.path
+    sample_dirs = find_sample_dirs(target_path)
     if not sample_dirs:
-        print(f"ERROR: no sample_* directories found under {args.path}")
+        print(f"ERROR: no sample_* directories found under {target_path}")
         print("No data were generated. Run the relevant generator explicitly if needed.")
         return 1
 
@@ -116,6 +138,8 @@ def main() -> int:
     split_status_counts: defaultdict[str, Counter] = defaultdict(Counter)
     warning_samples: list[str] = []
     fail_samples: list[str] = []
+    label_meta_present_count = 0
+    label_meta_missing_count = 0
 
     for report in reports:
         split = report.get("split") or "<missing>"
@@ -127,6 +151,11 @@ def main() -> int:
             warning_samples.append(sample_id)
         if status == "fail":
             fail_samples.append(sample_id)
+        label_meta = report.get("label_meta", {})
+        if label_meta.get("present"):
+            label_meta_present_count += 1
+        else:
+            label_meta_missing_count += 1
 
     print("\nsummary")
     print(f"  diagnosed_sample_count: {len(reports)}")
@@ -138,6 +167,8 @@ def main() -> int:
     )
     print(f"  warning_samples: {warning_samples}")
     print(f"  fail_samples: {fail_samples}")
+    print(f"  label_meta_present_count: {label_meta_present_count}")
+    print(f"  label_meta_missing_count: {label_meta_missing_count}")
     print("  diagnostics_scope: smoke diagnostics only; not physics validation")
 
     return 1 if fail_samples else 0
