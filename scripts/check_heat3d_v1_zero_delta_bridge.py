@@ -53,6 +53,12 @@ def parse_args() -> argparse.Namespace:
         help="Supervised smoke samples directory.",
     )
     parser.add_argument(
+        "--subset",
+        type=Path,
+        default=None,
+        help="Optional supervised subset root or samples directory. Preserves positional path compatibility.",
+    )
+    parser.add_argument(
         "--sample-ids",
         nargs="*",
         default=None,
@@ -258,8 +264,9 @@ def _check_shifted_input_invariance(sample_root: Path, sample_ids: tuple[str, ..
 
 def main() -> int:
     args = parse_args()
-    explicit_path = args.path is not None
-    sample_root = _sample_root(args.path) if explicit_path else default_v1_supervised_samples_dir(REPO_DIR)
+    target_path = args.subset if args.subset is not None else args.path
+    explicit_path = target_path is not None
+    sample_root = _sample_root(target_path) if explicit_path else default_v1_supervised_samples_dir(REPO_DIR)
     sample_ids = (
         tuple(args.sample_ids)
         if args.sample_ids is not None and len(args.sample_ids) > 0

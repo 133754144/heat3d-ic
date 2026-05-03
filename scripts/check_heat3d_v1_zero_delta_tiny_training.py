@@ -9,9 +9,17 @@ import numpy as np
 
 
 REPO_DIR = Path(__file__).resolve().parents[1]
-if str(REPO_DIR) not in sys.path:
-    sys.path.insert(0, str(REPO_DIR))
+SCRIPTS_DIR = Path(__file__).resolve().parent
+for path in (REPO_DIR, SCRIPTS_DIR):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
+from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
+    _make_groups as _make_shape_groups,
+    _metrics as _group_metrics,
+    _train_only_stats as _group_train_only_stats,
+    _weighted_loss as _group_weighted_loss,
+)
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset
 from rigno.heat3d_v1_supervised import default_v1_supervised_samples_dir
@@ -49,6 +57,18 @@ def parse_args() -> argparse.Namespace:
         default=default_v1_supervised_samples_dir(REPO_DIR),
         help="Supervised smoke samples directory.",
     )
+    parser.add_argument(
+        "--subset",
+        type=Path,
+        default=None,
+        help="Optional supervised subset root or samples directory. Preserves positional path compatibility.",
+    )
+    parser.add_argument(
+        "--sample-ids",
+        nargs="*",
+        default=None,
+        help="Optional sample ids. Defaults to the legacy two-sample tiny-training smoke.",
+    )
     parser.add_argument("--steps", type=int, default=3)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--seed", type=int, default=0)
@@ -65,9 +85,16 @@ def _sample_by_id(dataset: Heat3DV1NativeSupervisedDataset, sample_id: str):
     return dataset[index_by_id[sample_id]]
 
 
-def _select_examples(path: Path):
+def _sample_root(path: Path) -> Path:
+    samples = path / "samples"
+    if samples.is_dir():
+        return samples
+    return path
+
+
+def _select_examples(path: Path, sample_ids: tuple[str, ...]):
     dataset = Heat3DV1NativeSupervisedDataset(path, k_encoding_mode="diag3")
-    return [_sample_by_id(dataset, sample_id) for sample_id in TARGET_SAMPLE_IDS]
+    return [_sample_by_id(dataset, sample_id) for sample_id in sample_ids]
 
 
 def _build_batch_metadata(builder: Heat3DGraphBuilder, coords_list: list[np.ndarray]):
@@ -164,23 +191,20 @@ def _global_norm(tree_value) -> float:
     return float(np.sqrt(total))
 
 
-def _run_once(path: Path, steps: int, lr: float, seed: int) -> dict:
-    examples = _select_examples(path)
-    inputs, target_normalized, stats = _make_contract(examples)
-
+def _run_once(path: Path, sample_ids: tuple[str, ...], steps: int, lr: float, seed: int) -> dict:
+    examples = _select_examples(path, sample_ids)
     builder = Heat3DGraphBuilder()
-    batch_metadata, shared_metadata = _build_batch_metadata(
-        builder=builder,
-        coords_list=[example.condition.coords for example in examples],
-    )
-    graphs = builder.build_graphs(batch_metadata)
-
+    stats = _group_train_only_stats(examples)
+    groups = _make_shape_groups(examples, stats, builder)
     model = GraphNeuralOperator(**MODEL_CONFIG)
-    params = model.init(jax.random.PRNGKey(seed), inputs=inputs, graphs=graphs)["params"]
+    params = model.init(
+        jax.random.PRNGKey(seed),
+        inputs=groups[0]["inputs"],
+        graphs=groups[0]["graphs"],
+    )["params"]
 
     def loss_fn(current_params):
-        pred_normalized = model.apply({"params": current_params}, inputs=inputs, graphs=graphs)
-        return jnp.mean(jnp.square(pred_normalized - target_normalized))
+        return _group_weighted_loss(model, current_params, groups)
 
     losses = [float(loss_fn(params))]
     grad_norms = []
@@ -190,31 +214,25 @@ def _run_once(path: Path, steps: int, lr: float, seed: int) -> dict:
         params = tree.tree_map(lambda param, grad: param - lr * grad, params, grads)
         losses.append(float(loss_fn(params)))
 
-    pred_normalized = model.apply({"params": params}, inputs=inputs, graphs=graphs)
-    pred_delta_raw = (
-        pred_normalized * stats["target_delta_safe_std"] + stats["target_delta_mean"]
-    )
-    recovered_temperature = stats["t_ref"] + pred_delta_raw
-    raw_delta_mse = float(jnp.mean(jnp.square(pred_delta_raw - stats["target_delta"])))
-    recovered_temperature_mse = float(
-        jnp.mean(jnp.square(recovered_temperature - stats["target_temperature"]))
-    )
+    metrics = _group_metrics(model, params, groups, stats)
+    raw_delta_mse = metrics["raw_delta_mse"]
+    recovered_temperature_mse = metrics["recovered_temperature_mse"]
 
     finite_ok = bool(
         jnp.all(jnp.isfinite(jnp.asarray(losses)))
         and jnp.all(jnp.isfinite(jnp.asarray(grad_norms)))
-        and jnp.all(jnp.isfinite(pred_normalized))
+        and metrics["finite_ok"]
         and jnp.isfinite(raw_delta_mse)
         and jnp.isfinite(recovered_temperature_mse)
     )
-    shape_ok = (
-        inputs.u.shape == (len(TARGET_SAMPLE_IDS), 1, inputs.u.shape[2], 1)
-        and inputs.c.shape[-1] == len(stats["feature_names"])
-        and pred_normalized.shape == target_normalized.shape
+    shape_ok = metrics["shape_ok"] and all(
+        group["inputs"].u.shape[0] == len(group["sample_ids"])
+        and group["inputs"].c.shape[-1] == len(stats["feature_names"])
+        for group in groups
     )
     target_excluded = _target_excluded(stats["feature_names"])
     raw_bc_excluded = _raw_bc_excluded(stats["feature_names"])
-    zero_u_ok = bool(jnp.max(jnp.abs(inputs.u)) <= EPS)
+    zero_u_ok = all(bool(jnp.max(jnp.abs(group["inputs"].u)) <= EPS) for group in groups)
     loss_stable = finite_ok and max(losses) < 1e6
     status_ok = (
         finite_ok
@@ -227,10 +245,8 @@ def _run_once(path: Path, steps: int, lr: float, seed: int) -> dict:
 
     return {
         "examples": examples,
-        "inputs": inputs,
-        "target_normalized": target_normalized,
+        "groups": groups,
         "stats": stats,
-        "shared_metadata": shared_metadata,
         "losses": np.asarray(losses, dtype=np.float64),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
         "raw_delta_mse": raw_delta_mse,
@@ -250,14 +266,19 @@ def _max_abs_delta(values: list[np.ndarray | float]) -> float:
     return max(float(np.max(np.abs(value - base))) for value in values[1:]) if len(values) > 1 else 0.0
 
 
-def _print_stats(result: dict, steps: int, lr: float, seed: int) -> None:
+def _print_stats(result: dict, sample_ids: tuple[str, ...], steps: int, lr: float, seed: int) -> None:
     stats = result["stats"]
-    inputs = result["inputs"]
-    target_normalized = result["target_normalized"]
-    c_mean = np.asarray(stats["c_mean"]).reshape(-1)
-    c_std = np.asarray(stats["c_std"]).reshape(-1)
-    target_delta = np.asarray(stats["target_delta"])
-    normalized_target = np.asarray(stats["normalized_target_delta"])
+    groups = result["groups"]
+    c_mean = np.asarray(stats["condition_mean"]).reshape(-1)
+    c_std = np.asarray(stats["condition_std"]).reshape(-1)
+    target_delta = np.concatenate(
+        [np.asarray(group["target_delta_raw"]).reshape(-1, 1) for group in groups],
+        axis=0,
+    )
+    normalized_target = np.concatenate(
+        [np.asarray(group["target_normalized"]).reshape(-1, 1) for group in groups],
+        axis=0,
+    )
     target_delta_mean = float(np.asarray(stats["target_delta_mean"]).reshape(-1)[0])
     target_delta_std = float(np.asarray(stats["target_delta_std"]).reshape(-1)[0])
     normalized_target_mean = float(np.mean(normalized_target))
@@ -265,7 +286,7 @@ def _print_stats(result: dict, steps: int, lr: float, seed: int) -> None:
 
     print("v1 zero-delta relative-BC tiny training smoke")
     print("  purpose: forward/backward/optimizer/loss/recovery smoke only, not a real experiment")
-    print(f"  sample_ids: {TARGET_SAMPLE_IDS}")
+    print(f"  sample_ids: {sample_ids}")
     print("  k_encoding_mode: diag3")
     print("  bridge: zero_delta_u_bridge")
     print("  target: DeltaT = target_temperature - T_ref")
@@ -277,11 +298,10 @@ def _print_stats(result: dict, steps: int, lr: float, seed: int) -> None:
 
     print("\ncontract")
     print(f"  feature_names: {stats['feature_names']}")
-    print(f"  u shape: {tuple(inputs.u.shape)}")
-    print(f"  c shape: {tuple(inputs.c.shape)}")
-    print(f"  x shape: {tuple(inputs.x_inp.shape)}")
-    print(f"  normalized target shape: {tuple(target_normalized.shape)}")
-    print(f"  graph metadata shared repeat: {result['shared_metadata']}")
+    print(
+        "  graph-shape groups: "
+        f"{[(group['name'], group['sample_ids'], tuple(group['inputs'].u.shape), tuple(group['target_normalized'].shape)) for group in groups]}"
+    )
     print(f"  target excluded from inputs: {result['target_excluded']}")
     print(f"  raw absolute BC temperatures excluded: {result['raw_bc_excluded']}")
     print(f"  legacy_inputs.u is zero_delta_field: {result['zero_u_ok']}")
@@ -363,8 +383,17 @@ def main() -> int:
     if args.runs < 1:
         raise ValueError("--runs must be >= 1")
 
-    results = [_run_once(args.path, args.steps, args.lr, args.seed) for _ in range(args.runs)]
-    _print_stats(results[0], steps=args.steps, lr=args.lr, seed=args.seed)
+    target_path = _sample_root(args.subset if args.subset is not None else args.path)
+    sample_ids = (
+        tuple(args.sample_ids)
+        if args.sample_ids is not None and len(args.sample_ids) > 0
+        else TARGET_SAMPLE_IDS
+    )
+    results = [
+        _run_once(target_path, sample_ids, args.steps, args.lr, args.seed)
+        for _ in range(args.runs)
+    ]
+    _print_stats(results[0], sample_ids=sample_ids, steps=args.steps, lr=args.lr, seed=args.seed)
 
     repeatability_ok = True
     if args.runs >= 2:

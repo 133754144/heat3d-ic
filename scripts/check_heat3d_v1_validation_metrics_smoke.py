@@ -114,6 +114,10 @@ def _fit_once(train_groups: list[dict], valid_groups: list[dict], stats: dict, s
     }
 
 
+def _label_meta_count(sample_root: Path, sample_ids: list[str]) -> int:
+    return sum(1 for sample_id in sample_ids if (sample_root / sample_id / "label_meta.json").is_file())
+
+
 def _allclose_sequence(results: list[dict], key: str, atol: float, rtol: float) -> bool:
     return all(np.allclose(results[0][key], result[key], atol=atol, rtol=rtol) for result in results[1:])
 
@@ -287,6 +291,7 @@ def main() -> int:
         eval_ids += test_ids
 
     sample_root = _sample_root(args.subset)
+    label_meta_count = _label_meta_count(sample_root, eval_ids)
     dataset = Heat3DV1NativeSupervisedDataset(sample_root, k_encoding_mode="diag3")
     index_by_id = dataset.sample_index_by_id()
     examples = [dataset[index_by_id[sample_id]] for sample_id in eval_ids]
@@ -325,6 +330,11 @@ def main() -> int:
     print("  diagnostic only: not a formal benchmark, not model performance evidence")
     print(f"  subset path: {sample_root}")
     print(f"  manifest path: {args.manifest}")
+    print(f"  label_meta files in evaluated samples: {label_meta_count}/{len(eval_ids)}")
+    print(
+        "  label source mode: "
+        f"{'v2-label smoke diagnostics only' if label_meta_count else 'legacy supervised smoke labels'}"
+    )
     print(f"  evaluated splits: {'train+valid+diagnostic_tests' if args.include_diagnostic_tests else 'train+valid'}")
     print(f"  train sample ids: {train_ids}")
     print(f"  valid sample ids: {valid_ids}")
