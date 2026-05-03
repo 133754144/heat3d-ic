@@ -6,16 +6,17 @@
 
 This subset is a research reference / smoke diagnostic artifact. It is not a formal benchmark, not model-performance evidence, not OOD generalization evidence, and not an industrial 3D IC thermal simulation dataset.
 
-## Initial Scope
+## Current Scope
 
-The first v2 subset contains four representative samples copied from the existing ignored supervised-small subset:
+The current v2 subset covers the full 16-sample supervised-small manifest:
 
-- `sample_000`
-- `sample_005`
-- `sample_014`
-- `sample_015`
+- train: 10 samples
+- valid: 3 samples
+- test_smoke: 1 sample
+- test_ood_bc: 1 smoke candidate
+- test_ood_stack: 1 smoke candidate
 
-The source subset remains unchanged. The v2 subset is written under ignored `data/` paths and must not be committed to Git.
+The `test_ood_bc` and `test_ood_stack` entries remain diagnostic smoke candidates only. They are not OOD-generalization evidence. The source subset remains unchanged. The v2 subset is written under ignored `data/` paths and must not be committed to Git.
 
 ## Label Generation
 
@@ -94,4 +95,4 @@ PDE residual, top Robin flux violation, side adiabatic flux violation, interface
 
 ## Next Step
 
-After this smoke path is stable, the next planned step is to expand the v2 label path toward the full 16-sample supervised-small manifest and then reuse the existing zero-delta, normalized DeltaT, train-valid, and validation-metrics smoke checks with the v2 labels.
+After this full-manifest smoke path is stable, the next planned step is to reuse the existing zero-delta, normalized DeltaT, train-valid, and validation-metrics smoke checks with the v2 labels.

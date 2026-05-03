@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
+from collections import Counter
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from rigno.heat3d_v1_label_diagnostics import diagnose_sample, find_sample_dirs  # noqa: E402
+from rigno.heat3d_v1_manifest_resolver import load_manifest  # noqa: E402
 
 
 DEFAULT_SUBSET = (
@@ -22,7 +24,7 @@ DEFAULT_SUBSET = (
     / "subsets"
     / "v1_multilayer_bc_eq_physics_label_small_v2"
 )
-EXPECTED_SAMPLE_IDS = ("sample_000", "sample_005", "sample_014", "sample_015")
+DEFAULT_MANIFEST = REPO_ROOT / "configs" / "heat3d_v1_supervised_small_manifest.json"
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,6 +36,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=DEFAULT_SUBSET,
         help="Physics-label v2 subset root or samples directory.",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=DEFAULT_MANIFEST,
+        help="Manifest whose full sample list must be present in the v2 subset.",
     )
     return parser.parse_args()
 
@@ -63,6 +71,21 @@ def _print_report(report: dict) -> None:
 
 def main() -> int:
     args = parse_args()
+    manifest = load_manifest(args.manifest)
+    manifest_samples = manifest.get("samples", [])
+    if not isinstance(manifest_samples, list):
+        print("ERROR: manifest.samples must be a list")
+        return 1
+    expected_sample_ids = [
+        str(sample.get("sample_id"))
+        for sample in manifest_samples
+        if isinstance(sample, dict)
+    ]
+    manifest_split_by_id = {
+        str(sample.get("sample_id")): sample.get("split")
+        for sample in manifest_samples
+        if isinstance(sample, dict)
+    }
     sample_dirs = find_sample_dirs(args.subset)
     if not sample_dirs:
         print(f"ERROR: no sample_* directories found under {args.subset}")
@@ -71,8 +94,8 @@ def main() -> int:
 
     observed_ids = [sample_dir.name for sample_dir in sample_dirs]
     errors: list[str] = []
-    if observed_ids != list(EXPECTED_SAMPLE_IDS):
-        errors.append(f"expected sample ids {list(EXPECTED_SAMPLE_IDS)}, found {observed_ids}")
+    if observed_ids != expected_sample_ids:
+        errors.append(f"expected sample ids {expected_sample_ids}, found {observed_ids}")
 
     for sample_dir in sample_dirs:
         if not (sample_dir / "temperature.npy").is_file():
@@ -88,15 +111,21 @@ def main() -> int:
     reports = [diagnose_sample(sample_dir) for sample_dir in sample_dirs]
     print("Heat3D v1 physics-label small v2 checker")
     print(f"subset: {args.subset}")
+    print(f"manifest: {args.manifest}")
+    print(f"expected_sample_count: {len(expected_sample_ids)}")
     print("scope: research reference / physics-label smoke; not a formal benchmark")
     for report in reports:
         _print_report(report)
 
     fail_samples = [report["sample_id"] for report in reports if report["overall_status"] == "fail"]
     label_meta_count = sum(1 for report in reports if report.get("label_meta", {}).get("present"))
+    observed_split_counts = Counter(report.get("split") for report in reports)
+    expected_split_counts = Counter(manifest_split_by_id.get(sample_id) for sample_id in expected_sample_ids)
     print("summary")
     print(f"  sample_count: {len(reports)}")
     print(f"  label_meta_count: {label_meta_count}")
+    print(f"  expected_split_counts: {dict(expected_split_counts)}")
+    print(f"  observed_split_counts: {dict(observed_split_counts)}")
     print(f"  fail_samples: {fail_samples}")
     print("  diagnostics_scope: smoke diagnostics only; not physics validation")
     return 1 if fail_samples else 0

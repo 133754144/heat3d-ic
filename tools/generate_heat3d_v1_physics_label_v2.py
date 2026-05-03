@@ -29,7 +29,6 @@ from rigno.heat3d_v1_reference_solver_v2 import solve_reference_temperature_v2  
 
 SOURCE_SUBSET_NAME = "v1_multilayer_bc_eq_supervised_small"
 PHYSICS_LABEL_SUBSET_NAME = "v1_multilayer_bc_eq_physics_label_small_v2"
-DEFAULT_SAMPLE_IDS = ("sample_000", "sample_005", "sample_014", "sample_015")
 PROTECTED_OUTPUT_SUBSET_NAMES = {
     "v1_multilayer_bc_eq_demo",
     "v1_multilayer_bc_eq_supervised_smoke",
@@ -83,8 +82,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sample-ids",
         nargs="*",
-        default=list(DEFAULT_SAMPLE_IDS),
-        help="Sample ids to generate. Defaults to representative v2 smoke samples.",
+        default=None,
+        help=(
+            "Optional sample ids to generate. Defaults to every sample listed "
+            "in the manifest."
+        ),
     )
     parser.add_argument(
         "--write",
@@ -128,6 +130,13 @@ def _manifest_by_id(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
             raise ValueError("every manifest sample must be an object with sample_id")
         result[str(sample["sample_id"])] = sample
     return result
+
+
+def _manifest_sample_ids(manifest: dict[str, Any]) -> list[str]:
+    samples = manifest.get("samples", [])
+    if not isinstance(samples, list):
+        raise ValueError("manifest.samples must be a list")
+    return [str(sample["sample_id"]) for sample in samples if isinstance(sample, dict)]
 
 
 def _validate_generation_request(
@@ -332,9 +341,15 @@ def main() -> int:
     manifest_path = args.manifest.resolve()
     source_subset = args.source_subset.resolve()
     output_subset = args.output_subset.resolve()
-    sample_ids = [str(sample_id) for sample_id in args.sample_ids]
 
     manifest = load_manifest(manifest_path)
+    sample_ids = (
+        [str(sample_id) for sample_id in args.sample_ids]
+        if args.sample_ids is not None
+        else _manifest_sample_ids(manifest)
+    )
+    if not sample_ids:
+        raise ValueError("no sample ids selected for v2 physics-label generation")
     source_samples, output_subset, manifest_samples = _validate_generation_request(
         manifest=manifest,
         manifest_path=manifest_path,
