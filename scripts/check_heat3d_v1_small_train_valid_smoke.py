@@ -53,6 +53,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
     parser.add_argument("--steps", type=int, default=3)
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help=(
+            "Optional full-batch grouped smoke epochs. When set, this overrides "
+            "--steps and runs one optimizer update per epoch."
+        ),
+    )
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--runs", "--repeat-runs", dest="runs", type=int, default=2)
@@ -403,6 +412,8 @@ def main() -> int:
     args = parse_args()
     if args.steps < 1:
         raise ValueError("--steps must be >= 1")
+    if args.epochs is not None and args.epochs < 1:
+        raise ValueError("--epochs must be >= 1")
     if args.runs < 1:
         raise ValueError("--runs must be >= 1")
     if args.report_every < 1:
@@ -438,8 +449,9 @@ def main() -> int:
     stats = _train_only_stats(train_examples)
     train_groups = _make_groups(train_examples, stats, builder)
     valid_groups = _make_groups(valid_examples, stats, builder)
+    training_steps = args.epochs if args.epochs is not None else args.steps
 
-    results = [_run_once(train_groups, valid_groups, stats, args.steps, args.lr, args.seed) for _ in range(args.runs)]
+    results = [_run_once(train_groups, valid_groups, stats, training_steps, args.lr, args.seed) for _ in range(args.runs)]
     repeatability = _repeatability(results, args.atol, args.rtol) if args.runs >= 2 else {"ok": True}
     first = results[0]
 
@@ -456,7 +468,8 @@ def main() -> int:
     print(f"  feature names: {stats['feature_names']}")
     print("  target name: DeltaT")
     print("  route: relative BC features + zero_delta_u_bridge + normalized DeltaT target")
-    print(f"  steps: {args.steps}")
+    print(f"  steps: {training_steps}")
+    print(f"  epochs: {args.epochs if args.epochs is not None else 'not_set'}")
     print(f"  lr: {args.lr}")
     print(f"  seed: {args.seed}")
     print(f"  repeat runs: {args.runs}")
