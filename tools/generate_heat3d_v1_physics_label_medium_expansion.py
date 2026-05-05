@@ -196,13 +196,29 @@ def _sample_meta(
     source_summary: dict[str, Any],
 ) -> dict[str, Any]:
     bc = BC_CATEGORY_MAP[sample["bc_category"]]
+    subset_name = str(manifest.get("output_subset_name", "v1_multilayer_bc_eq_physics_label_medium_expansion_v2"))
+    sample_stage = str(manifest.get("sample_stage", "physics_label_medium_expansion_smoke"))
+    description = str(
+        manifest.get(
+            "sample_description",
+            "24-sample medium expansion smoke with region-first volume-fraction source assignment.",
+        )
+    )
+    non_claim_flags = dict(manifest.get("non_claim_flags", {}))
+    if not non_claim_flags:
+        non_claim_flags = {
+            "not_formal_benchmark": True,
+            "not_high_fidelity_solver": True,
+            "not_model_performance_evidence": True,
+            "not_ood_generalization_evidence": True,
+        }
     return {
-        "schema_version": "physics_label_medium_expansion_v2",
-        "subset_name": "v1_multilayer_bc_eq_physics_label_medium_expansion_v2",
+        "schema_version": str(manifest.get("schema_version", "physics_label_medium_expansion_v2")),
+        "subset_name": subset_name,
         "sample_id": sample["sample_id"],
         "split": sample["split"],
-        "stage": "physics_label_medium_expansion_smoke",
-        "description": "24-sample medium expansion smoke with region-first volume-fraction source assignment.",
+        "stage": sample_stage,
+        "description": description,
         "boundary_types": {"top": "Robin", "bottom": "Dirichlet", "sides": "adiabatic"},
         "boundary_params": {
             "top": {"h_W_m2K": bc["h_W_m2K"], "ambient_temperature_K": bc["top_K"]},
@@ -236,11 +252,7 @@ def _sample_meta(
             "source_assignment": "volume_fraction",
             "q_policy": "fixed_density",
             "reference_solver": "heat3d_v1_reference_solver_v2",
-            "not_formal_benchmark": True,
-            "not_high_fidelity_solver": True,
-            "not_model_performance_evidence": True,
-            "not_ood_generalization_evidence": True,
-            "not_64_sample_dataset": True,
+            **non_claim_flags,
         },
         "source_diagnostics": source_summary,
         "validation": {
@@ -310,16 +322,22 @@ def _write_sample(
 
     temperature, label_meta = solve_reference_temperature_v2(sample_dir)
     label_meta = dict(label_meta)
+    label_role = str(manifest.get("label_role", "physics_label_medium_expansion_smoke"))
+    non_claim_flags = dict(manifest.get("non_claim_flags", {}))
+    if not non_claim_flags:
+        non_claim_flags = {
+            "not_formal_benchmark": True,
+            "not_high_fidelity_solver": True,
+            "not_model_performance_evidence": True,
+            "not_ood_generalization_evidence": True,
+        }
     label_meta.update({
         "sample_id": sample_id,
-        "label_role": "physics_label_medium_expansion_smoke",
+        "label_role": label_role,
         "source_assignment": "volume_fraction",
         "q_policy": "fixed_density",
         "source_diagnostics": source_summary,
-        "not_formal_benchmark": True,
-        "not_high_fidelity_solver": True,
-        "not_model_performance_evidence": True,
-        "not_ood_generalization_evidence": True,
+        **non_claim_flags,
     })
     np.save(sample_dir / "temperature.npy", temperature)
     _write_json(sample_dir / "label_meta.json", label_meta)
