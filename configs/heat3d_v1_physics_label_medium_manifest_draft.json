@@ -1,0 +1,337 @@
+{
+  "dataset_name": "v1_multilayer_bc_eq_physics_label_medium",
+  "manifest_version": "draft_plan_v0",
+  "description": "Draft medium-small physics-label dataset manifest for Heat3D v1. This draft is not generator-ready and does not drive data generation.",
+  "status": "planning_only",
+  "non_claims": [
+    "not_a_formal_benchmark",
+    "not_high_fidelity_solver_evidence",
+    "not_model_performance_evidence",
+    "not_ood_generalization_evidence",
+    "not_generator_ready"
+  ],
+  "default_route": {
+    "external_task": "coords + condition_features -> target_temperature",
+    "condition_feature_view": "relative_bc",
+    "bridge": "zero_delta_u_bridge",
+    "target": "DeltaT = T - T_ref",
+    "recovery": "T_pred = T_ref + DeltaT_pred",
+    "loss": "normalized_DeltaT_MSE"
+  },
+  "generation_policy": {
+    "region_first": true,
+    "rectilinear_grid_sampling": true,
+    "source_assignment": "volume_fraction",
+    "center_in_box_role": "diagnostic_baseline_only",
+    "q_policy": "fixed_density",
+    "generated_data_committed_to_git": false,
+    "output_under_ignored_data_dir": true,
+    "reference_solver": "heat3d_v1_reference_solver_v2",
+    "requires_source_power_consistency_check": true,
+    "requires_label_meta": true,
+    "requires_label_diagnostics": true
+  },
+  "planned_split_64": {
+    "train": 48,
+    "valid": 8,
+    "test_id": 4,
+    "test_ood_bc_candidate": 2,
+    "test_ood_stack_candidate": 2
+  },
+  "pilot_split_8": {
+    "train": 5,
+    "valid": 1,
+    "test_ood_bc_candidate": 1,
+    "test_ood_stack_candidate": 1
+  },
+  "parameter_status_policy": {
+    "allowed_source_categories": [
+      "literature_backed",
+      "provisional_engineering_assumption",
+      "requires_user_confirmation"
+    ],
+    "current_default": "provisional_engineering_assumption",
+    "notes": "Pilot values remain provisional until backed by a parameter registry entry with references or user confirmation."
+  },
+  "required_source_diagnostics": [
+    "source_region_volume_target",
+    "active_source_volume_discrete",
+    "integrated_q_power",
+    "active_source_cell_count",
+    "source_volume_relative_error",
+    "integrated_q_power_relative_error",
+    "source_missed"
+  ],
+  "required_label_checks": [
+    "label_meta_exists",
+    "convergence_flag_true",
+    "residual_norm_within_tolerance",
+    "bottom_dirichlet_error_within_tolerance",
+    "label_diagnostics_pass",
+    "no_unsupported_k_field_shape"
+  ],
+  "unsupported_current_scope": [
+    "irregular_footprint",
+    "explicit_TSV_BEOL_bump",
+    "contact_resistance",
+    "transient_simulation",
+    "multiphysics",
+    "k_field_(N,6)",
+    "formal_benchmark_claims",
+    "formal_ood_generalization_claims"
+  ],
+  "pilot_samples": [
+    {
+      "sample_id": "pilot_000",
+      "split": "train",
+      "stack_template": "baseline_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0_center",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.5,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.22,
+            0.22
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        }
+      ],
+      "k_region_mode": "isotropic_equivalent",
+      "bc_category": "baseline_300K_nominal_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "baseline_single_hotspot",
+      "parameter_status": "provisional_engineering_assumption"
+    },
+    {
+      "sample_id": "pilot_001",
+      "split": "train",
+      "stack_template": "baseline_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0_shifted",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.35,
+            0.62
+          ],
+          "size_xy_fraction": [
+            0.22,
+            0.22
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        }
+      ],
+      "k_region_mode": "isotropic_equivalent",
+      "bc_category": "baseline_300K_nominal_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "shifted_hotspot",
+      "parameter_status": "provisional_engineering_assumption"
+    },
+    {
+      "sample_id": "pilot_002",
+      "split": "train",
+      "stack_template": "baseline_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0_left",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.35,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.18,
+            0.18
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        },
+        {
+          "region_id": "src_active_die_0_right",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.65,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.18,
+            0.18
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        }
+      ],
+      "k_region_mode": "isotropic_equivalent",
+      "bc_category": "baseline_300K_nominal_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "two_hotspots",
+      "parameter_status": "provisional_engineering_assumption"
+    },
+    {
+      "sample_id": "pilot_003",
+      "split": "train",
+      "stack_template": "dual_active_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.4,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.2,
+            0.2
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        },
+        {
+          "region_id": "src_active_die_1",
+          "layer": "active_die_1",
+          "center_xy_fraction": [
+            0.6,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.2,
+            0.2
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "low"
+        }
+      ],
+      "k_region_mode": "isotropic_equivalent",
+      "bc_category": "baseline_300K_nominal_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "dual_active_layers",
+      "parameter_status": "provisional_engineering_assumption"
+    },
+    {
+      "sample_id": "pilot_004",
+      "split": "train",
+      "stack_template": "baseline_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0_center_block_k",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.5,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.22,
+            0.22
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "high"
+        }
+      ],
+      "k_region_mode": "blockwise_equivalent",
+      "bc_category": "baseline_300K_nominal_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "blockwise_k",
+      "parameter_status": "provisional_engineering_assumption"
+    },
+    {
+      "sample_id": "pilot_005",
+      "split": "valid",
+      "stack_template": "baseline_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0_diag3",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.5,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.22,
+            0.22
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        }
+      ],
+      "k_region_mode": "diagonal_anisotropic_diagnostic",
+      "bc_category": "baseline_300K_nominal_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "diagonal_anisotropy_diagnostic",
+      "parameter_status": "provisional_engineering_assumption"
+    },
+    {
+      "sample_id": "pilot_006",
+      "split": "test_ood_bc_candidate",
+      "stack_template": "baseline_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0_heldout_htc",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.5,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.22,
+            0.22
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        }
+      ],
+      "k_region_mode": "isotropic_equivalent",
+      "bc_category": "baseline_300K_held_out_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "held_out_top_htc_candidate",
+      "parameter_status": "requires_user_confirmation"
+    },
+    {
+      "sample_id": "pilot_007",
+      "split": "test_ood_stack_candidate",
+      "stack_template": "heldout_interposer_4_layer",
+      "source_regions": [
+        {
+          "region_id": "src_active_die_0_heldout_stack",
+          "layer": "active_die_0",
+          "center_xy_fraction": [
+            0.5,
+            0.5
+          ],
+          "size_xy_fraction": [
+            0.22,
+            0.22
+          ],
+          "z_span_policy": "active_layer_fractional_thickness",
+          "q_scale_category": "nominal"
+        }
+      ],
+      "k_region_mode": "isotropic_equivalent",
+      "bc_category": "baseline_300K_nominal_top_h",
+      "resolution_category": "pilot_mid",
+      "source_assignment": "volume_fraction",
+      "q_policy": "fixed_density",
+      "purpose_tag": "held_out_stack_candidate",
+      "parameter_status": "requires_user_confirmation"
+    }
+  ]
+}
