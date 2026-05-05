@@ -16,6 +16,7 @@ if str(REPO_DIR) not in sys.path:
 
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset
+from rigno.heat3d_v1_schema import find_sample_dirs
 from rigno.heat3d_v1_supervised import default_v1_supervised_samples_dir
 from rigno.models.rigno import RIGNO as GraphNeuralOperator
 
@@ -270,7 +271,7 @@ def main() -> int:
     sample_ids = (
         tuple(args.sample_ids)
         if args.sample_ids is not None and len(args.sample_ids) > 0
-        else tuple(sorted(path.name for path in sample_root.glob("sample_*") if path.is_dir()))
+        else tuple(path.name for path in find_sample_dirs(sample_root))
         if explicit_path
         else TARGET_SAMPLE_IDS
     )

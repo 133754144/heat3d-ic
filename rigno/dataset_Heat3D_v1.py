@@ -111,7 +111,7 @@ class Heat3DV1MetadataDataset:
     )
     self.sample_dirs = find_sample_dirs(self.datadir)
     if not self.sample_dirs:
-      raise FileNotFoundError(f"No sample_xxx directories found under {self.datadir}")
+      raise FileNotFoundError(f"No v1 sample directories found under {self.datadir}")
 
     self.input_mode = input_mode
     self.k_encoding_mode = k_encoding_mode

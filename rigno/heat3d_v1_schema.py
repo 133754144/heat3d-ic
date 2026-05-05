@@ -83,7 +83,7 @@ def find_sample_dirs(path: str | Path) -> list[Path]:
   """Returns sample directories below a sample or subset path."""
 
   root = Path(path)
-  if root.name.startswith("sample_") and root.is_dir():
+  if root.is_dir() and (root / "sample_meta.json").is_file():
     return [root]
 
   if (root / "samples").is_dir():
@@ -94,7 +94,7 @@ def find_sample_dirs(path: str | Path) -> list[Path]:
 
   return sorted(
     child for child in root.iterdir()
-    if child.is_dir() and child.name.startswith("sample_")
+    if child.is_dir() and (child / "sample_meta.json").is_file()
   )
 
 

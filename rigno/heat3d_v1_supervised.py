@@ -47,7 +47,12 @@ class Heat3DV1SupervisedDataset(Heat3DV1MetadataDataset):
       repo_dir=repo_dir,
       input_mode=input_mode,
       k_encoding_mode=k_encoding_mode,
-      allowed_stages=("supervised_smoke", "solver_smoke"),
+      allowed_stages=(
+        "supervised_smoke",
+        "solver_smoke",
+        "physics_label_medium_pilot_smoke",
+        "physics_label_medium_expansion_smoke",
+      ),
     )
 
   def _load_sample(self, sample_dir: Path) -> dict[str, Any]:

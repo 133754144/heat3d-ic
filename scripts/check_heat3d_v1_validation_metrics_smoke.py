@@ -24,6 +24,7 @@ from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     _make_groups,
     _manifest_split_ids,
     _metrics,
+    _resolve_split_ids,
     _sample_root,
     _train_only_stats,
     _weighted_loss,
@@ -277,7 +278,8 @@ def main() -> int:
         raise ValueError("--repeat/--runs must be >= 1")
 
     manifest = _load_manifest(args.manifest)
-    split_ids = _manifest_split_ids(manifest)
+    sample_root = _sample_root(args.subset)
+    split_ids, split_source = _resolve_split_ids(manifest, sample_root)
     train_ids = split_ids.get("train", [])
     valid_ids = split_ids.get("valid", [])
     test_ids = sorted(
@@ -290,7 +292,6 @@ def main() -> int:
     if args.include_diagnostic_tests:
         eval_ids += test_ids
 
-    sample_root = _sample_root(args.subset)
     label_meta_count = _label_meta_count(sample_root, eval_ids)
     dataset = Heat3DV1NativeSupervisedDataset(sample_root, k_encoding_mode="diag3")
     index_by_id = dataset.sample_index_by_id()
@@ -330,6 +331,7 @@ def main() -> int:
     print("  diagnostic only: not a formal benchmark, not model performance evidence")
     print(f"  subset path: {sample_root}")
     print(f"  manifest path: {args.manifest}")
+    print(f"  split source: {split_source}")
     print(f"  label_meta files in evaluated samples: {label_meta_count}/{len(eval_ids)}")
     print(
         "  label source mode: "

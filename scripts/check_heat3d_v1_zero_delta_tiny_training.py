@@ -22,6 +22,7 @@ from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
 )
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset
+from rigno.heat3d_v1_schema import find_sample_dirs
 from rigno.heat3d_v1_supervised import default_v1_supervised_samples_dir
 from rigno.models.operator import Inputs
 from rigno.models.rigno import RIGNO as GraphNeuralOperator
@@ -383,10 +384,15 @@ def main() -> int:
     if args.runs < 1:
         raise ValueError("--runs must be >= 1")
 
-    target_path = _sample_root(args.subset if args.subset is not None else args.path)
+    default_path = default_v1_supervised_samples_dir(REPO_DIR)
+    raw_path = args.subset if args.subset is not None else args.path
+    target_path = _sample_root(raw_path)
+    explicit_path = args.subset is not None or target_path.resolve() != default_path.resolve()
     sample_ids = (
         tuple(args.sample_ids)
         if args.sample_ids is not None and len(args.sample_ids) > 0
+        else tuple(path.name for path in find_sample_dirs(target_path))
+        if explicit_path
         else TARGET_SAMPLE_IDS
     )
     results = [

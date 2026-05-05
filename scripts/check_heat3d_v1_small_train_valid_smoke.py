@@ -1,6 +1,5 @@
 import argparse
 import json
-from collections import Counter
 from pathlib import Path
 import sys
 
@@ -15,6 +14,7 @@ if str(REPO_DIR) not in sys.path:
     sys.path.insert(0, str(REPO_DIR))
 
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
+from rigno.heat3d_v1_schema import find_sample_dirs, load_sample_meta
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset
 from rigno.models.operator import Inputs
 from rigno.models.rigno import RIGNO as GraphNeuralOperator
@@ -79,6 +79,29 @@ def _manifest_split_ids(manifest: dict) -> dict[str, list[str]]:
     for sample in manifest.get("samples", []):
         split_ids.setdefault(str(sample.get("split")), []).append(str(sample.get("sample_id")))
     return {split: sorted(ids) for split, ids in split_ids.items()}
+
+
+def _subset_split_ids(sample_root: Path) -> dict[str, list[str]]:
+    split_ids: dict[str, list[str]] = {}
+    for sample_dir in find_sample_dirs(sample_root):
+        meta = load_sample_meta(sample_dir)
+        split_ids.setdefault(str(meta.get("split")), []).append(str(meta.get("sample_id")))
+    return {split: sorted(ids) for split, ids in split_ids.items()}
+
+
+def _resolve_split_ids(manifest: dict, sample_root: Path) -> tuple[dict[str, list[str]], str]:
+    manifest_ids = _manifest_split_ids(manifest)
+    manifest_sample_ids = {
+        sample_id
+        for ids in manifest_ids.values()
+        for sample_id in ids
+    }
+    if manifest_sample_ids and all((sample_root / sample_id).is_dir() for sample_id in manifest_sample_ids):
+        return manifest_ids, "manifest"
+    subset_ids = _subset_split_ids(sample_root)
+    if subset_ids:
+        return subset_ids, "subset_sample_meta"
+    return manifest_ids, "manifest"
 
 
 def _metadata_shape_signature(metadata) -> tuple[tuple[int, ...], ...]:
@@ -386,7 +409,8 @@ def main() -> int:
         raise ValueError("--report-every must be >= 1")
 
     manifest = _load_manifest(args.manifest)
-    split_ids = _manifest_split_ids(manifest)
+    sample_root = _sample_root(args.subset)
+    split_ids, split_source = _resolve_split_ids(manifest, sample_root)
     train_ids = split_ids.get("train", [])
     valid_ids = split_ids.get("valid", [])
     ignored_ids = sorted(
@@ -395,10 +419,9 @@ def main() -> int:
         if split not in {"train", "valid"}
         for sample_id in ids
     )
-    if len(train_ids) != 10 or len(valid_ids) != 3:
-        raise ValueError(f"Expected 10 train and 3 valid samples, found {len(train_ids)}/{len(valid_ids)}")
+    if not train_ids or not valid_ids:
+        raise ValueError(f"Expected non-empty train and valid splits, found {len(train_ids)}/{len(valid_ids)}")
 
-    sample_root = _sample_root(args.subset)
     missing_temperature = [
         sample_id
         for sample_id in train_ids + valid_ids
@@ -424,7 +447,9 @@ def main() -> int:
     print("  this is smoke only, not model performance")
     print(f"  subset path: {sample_root}")
     print(f"  manifest path: {args.manifest}")
-    print(f"  split counts: {dict(Counter(sample.get('split') for sample in manifest.get('samples', [])))}")
+    print(f"  split source: {split_source}")
+    split_counts = {split: len(ids) for split, ids in split_ids.items()}
+    print(f"  split counts: {split_counts}")
     print(f"  train sample ids: {train_ids}")
     print(f"  valid sample ids: {valid_ids}")
     print(f"  ignored test sample ids: {ignored_ids}")
