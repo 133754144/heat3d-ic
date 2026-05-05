@@ -43,7 +43,7 @@ def find_sample_dirs(path: str | Path) -> list[Path]:
     """Return sample directories from a sample, samples, or subset path."""
 
     root = Path(path)
-    sample_prefixes = ("sample_", "pilot_")
+    sample_prefixes = ("sample_", "pilot_", "medium_")
     if root.name.startswith(sample_prefixes) and root.is_dir():
         return [root]
     if (root / "samples").is_dir():
