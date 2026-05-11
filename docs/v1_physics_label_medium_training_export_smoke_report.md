@@ -21,6 +21,7 @@ python3 scripts/run_heat3d_v1_medium_controlled_training_export.py \
   --epochs 5 \
   --lr 1e-5 \
   --seed 0 \
+  --report-every 1 \
   --output-dir output/heat3d_v1_medium_runs/export_smoke_seed0 \
   --save-predictions
 ```
@@ -33,6 +34,7 @@ Supported arguments:
 - `--seed`
 - `--output-dir`
 - `--save-predictions`
+- `--report-every`
 
 The output directory must be under ignored `output/`.
 
@@ -43,6 +45,29 @@ Generated ignored artifacts:
 - `predictions.npz`
 
 No checkpoint is saved.
+
+## Training Progress Logging
+
+The V1 medium training export runner now prints training progress during the
+run. At startup it reports the subset path, split counts, epochs, learning
+rate, seed, output directory, prediction export setting, and the feature/target
+route.
+
+`--report-every` controls the epoch interval for progress rows. The runner
+always reports epoch 1 and the final epoch, and also reports epochs divisible
+by `--report-every`.
+
+Each progress row includes:
+
+- `train_loss`: train normalized DeltaT loss after the epoch update
+- `valid_loss`: valid normalized DeltaT loss after the epoch update
+- `train_raw_deltaT_mse` / `valid_raw_deltaT_mse`: raw DeltaT MSE diagnostics
+- `train_recovered_T_mse` / `valid_recovered_T_mse`: recovered temperature MSE diagnostics
+
+These values are training-process diagnostics for the export smoke only. They
+are not formal benchmark results, not model-performance claims, and not OOD
+evidence. The same report epochs are also written to `loss_summary.json` under
+`epoch_history`.
 
 ## Training Contract
 

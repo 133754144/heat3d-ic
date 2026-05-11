@@ -87,7 +87,48 @@ def _require_medium_splits(split_ids: dict[str, list[str]]) -> None:
         )
 
 
-def _fit_once(train_groups: list[dict], valid_groups: list[dict], stats: dict, epochs: int, lr: float, seed: int) -> dict:
+def _should_report_epoch(epoch: int, epochs: int, report_every: int) -> bool:
+    return epoch == 1 or epoch == epochs or epoch % report_every == 0
+
+
+def _epoch_history_record(
+    epoch: int,
+    train_loss: float,
+    valid_metrics: dict[str, Any],
+    train_metrics: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "epoch": int(epoch),
+        "train_loss": float(train_loss),
+        "valid_loss": float(valid_metrics["normalized_loss"]),
+        "train_raw_deltaT_mse": float(train_metrics["raw_delta_mse"]),
+        "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
+        "train_recovered_T_mse": float(train_metrics["recovered_temperature_mse"]),
+        "valid_recovered_T_mse": float(valid_metrics["recovered_temperature_mse"]),
+    }
+
+
+def _print_epoch_progress(record: dict[str, Any], epochs: int) -> None:
+    print(
+        f"epoch {record['epoch']:03d}/{epochs:03d} "
+        f"train_loss={record['train_loss']:.8e} "
+        f"valid_loss={record['valid_loss']:.8e} "
+        f"train_raw_deltaT_mse={record['train_raw_deltaT_mse']:.8e} "
+        f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.8e} "
+        f"train_recovered_T_mse={record['train_recovered_T_mse']:.8e} "
+        f"valid_recovered_T_mse={record['valid_recovered_T_mse']:.8e}"
+    )
+
+
+def _fit_once(
+    train_groups: list[dict],
+    valid_groups: list[dict],
+    stats: dict,
+    epochs: int,
+    lr: float,
+    seed: int,
+    report_every: int,
+) -> dict:
     model = GraphNeuralOperator(**MODEL_CONFIG)
     params = model.init(
         jax.random.PRNGKey(seed),
@@ -102,14 +143,22 @@ def _fit_once(train_groups: list[dict], valid_groups: list[dict], stats: dict, e
     valid_losses = [_metrics(model, params, valid_groups, stats)["normalized_loss"]]
     grad_norms = []
     grad_finite = True
-    for _ in range(epochs):
+    epoch_history = []
+    for epoch in range(1, epochs + 1):
         _, grads = jax.value_and_grad(loss_fn)(params)
         grad_norm = _global_norm(grads)
         grad_norms.append(grad_norm)
         grad_finite = grad_finite and bool(np.isfinite(grad_norm))
         params = tree.tree_map(lambda param, grad: param - lr * grad, params, grads)
-        train_losses.append(float(loss_fn(params)))
-        valid_losses.append(_metrics(model, params, valid_groups, stats)["normalized_loss"])
+        train_loss = float(loss_fn(params))
+        valid_metrics = _metrics(model, params, valid_groups, stats)
+        train_losses.append(train_loss)
+        valid_losses.append(valid_metrics["normalized_loss"])
+        if _should_report_epoch(epoch, epochs, report_every):
+            train_metrics = _metrics(model, params, train_groups, stats)
+            record = _epoch_history_record(epoch, train_loss, valid_metrics, train_metrics)
+            epoch_history.append(record)
+            _print_epoch_progress(record, epochs)
 
     train_metrics = _metrics(model, params, train_groups, stats)
     valid_metrics = _metrics(model, params, valid_groups, stats)
@@ -130,6 +179,7 @@ def _fit_once(train_groups: list[dict], valid_groups: list[dict], stats: dict, e
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
         "train_metrics": train_metrics,
         "valid_metrics": valid_metrics,
+        "epoch_history": epoch_history,
         "grad_finite": grad_finite,
         "status_ok": status_ok,
     }
@@ -205,7 +255,22 @@ def main() -> int:
     valid_groups = _make_groups(valid_examples, stats, builder)
     all_groups = _make_groups(all_examples, stats, builder)
 
-    result = _fit_once(train_groups, valid_groups, stats, args.epochs, args.lr, args.seed)
+    split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
+
+    print("Heat3D v1 medium controlled training export smoke")
+    print("  scope: research reference diagnostics only; not formal model performance")
+    print(f"  subset: {sample_root}")
+    print(f"  split counts: {split_counts}")
+    print(f"  epochs: {args.epochs}")
+    print(f"  lr: {args.lr}")
+    print(f"  seed: {args.seed}")
+    print(f"  output_dir: {output_dir}")
+    print(f"  save_predictions: {bool(args.save_predictions)}")
+    print(f"  report every: {args.report_every}")
+    print(f"  feature mode: relative BC features, diag3 k encoding, zero_delta_u_bridge")
+    print("  target mode: normalized DeltaT target; recovered temperature predictions exported")
+
+    result = _fit_once(train_groups, valid_groups, stats, args.epochs, args.lr, args.seed, args.report_every)
     predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
 
     run_config = {
@@ -218,7 +283,7 @@ def main() -> int:
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
         "checkpoint_saved": False,
-        "split_counts": {split: len(ids) for split, ids in sorted(split_ids.items())},
+        "split_counts": split_counts,
         "train_ids": train_ids,
         "valid_ids": valid_ids,
         "ignored_candidate_ids": sorted(
@@ -238,6 +303,7 @@ def main() -> int:
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
         "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
+        "epoch_history": result["epoch_history"],
         "train_only_normalization": _stats_payload(stats),
     }
     _write_json(output_dir / "loss_summary.json", loss_summary)
@@ -246,14 +312,8 @@ def main() -> int:
     if args.save_predictions:
         np.savez_compressed(predictions_path, **predictions)
 
-    print("Heat3D v1 medium controlled training export smoke")
-    print("  scope: research reference diagnostics only; not formal model performance")
-    print(f"  subset: {sample_root}")
-    print(f"  output_dir: {output_dir}")
-    print(f"  epochs: {args.epochs}")
-    print(f"  lr: {args.lr}")
-    print(f"  seed: {args.seed}")
-    print(f"  split counts: {run_config['split_counts']}")
+    print("")
+    print("summary")
     print(f"  train loss initial/final: {result['train_losses'][0]:.8e} -> {result['train_losses'][-1]:.8e}")
     print(f"  valid loss initial/final: {result['valid_losses'][0]:.8e} -> {result['valid_losses'][-1]:.8e}")
     print(f"  final train raw DeltaT MSE: {result['train_metrics']['raw_delta_mse']:.8e}")
