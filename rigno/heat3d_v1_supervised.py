@@ -53,6 +53,7 @@ class Heat3DV1SupervisedDataset(Heat3DV1MetadataDataset):
         "physics_label_medium_pilot_smoke",
         "physics_label_medium_expansion_smoke",
         "physics_label_medium_smoke",
+        "physics_label_medium256_benchmark_candidate_preparation",
       ),
     )
 

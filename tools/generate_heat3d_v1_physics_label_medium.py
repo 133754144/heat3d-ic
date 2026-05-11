@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the Heat3D v1 64-sample physics-label medium smoke subset."""
+"""Generate Heat3D v1 physics-label medium-style subsets."""
 
 from __future__ import annotations
 
@@ -31,6 +31,13 @@ DEFAULT_OUTPUT_SUBSET = (
     / "subsets"
     / "v1_multilayer_bc_eq_physics_label_medium_v2"
 )
+DEFAULT_MEDIUM256_OUTPUT_SUBSET = (
+    REPO_ROOT
+    / "data"
+    / "heat3d-thermal-simulation"
+    / "subsets"
+    / "v1_multilayer_bc_eq_physics_label_medium256_v2"
+)
 PROTECTED_SUBSET_NAMES = {
     "v1_multilayer_bc_eq_demo",
     "v1_multilayer_bc_eq_supervised_smoke",
@@ -43,11 +50,20 @@ PROTECTED_SUBSET_NAMES = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate the 64-sample Heat3D v1 physics-label medium smoke subset."
+        description="Generate Heat3D v1 physics-label medium-style subsets."
     )
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--output-subset", type=Path, default=DEFAULT_OUTPUT_SUBSET)
+    parser.add_argument(
+        "--output-subset",
+        type=Path,
+        default=None,
+        help=(
+            "Output subset path. Defaults to medium_v2 for the original manifest "
+            "and medium256_v2 for the medium256 manifest."
+        ),
+    )
     parser.add_argument("--sample-ids", nargs="*", default=None)
+    parser.add_argument("--sample-limit", "--max-samples", dest="sample_limit", type=int, default=None)
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
@@ -66,19 +82,37 @@ def _validate_output_path(path: Path, overwrite: bool) -> Path:
     return output_subset
 
 
+def _default_output_subset_for_manifest(manifest_path: Path) -> Path:
+    if manifest_path.name == "heat3d_v1_physics_label_medium256_manifest.json":
+        return DEFAULT_MEDIUM256_OUTPUT_SUBSET
+    return DEFAULT_OUTPUT_SUBSET
+
+
+def _apply_sample_limit(samples: list[dict], sample_limit: int | None) -> list[dict]:
+    if sample_limit is None:
+        return samples
+    if sample_limit < 1:
+        raise ValueError("--sample-limit must be >= 1")
+    return samples[:sample_limit]
+
+
 def main() -> int:
     args = parse_args()
     manifest_path = args.manifest.resolve()
     manifest = _read_json(manifest_path)
-    samples = _select_samples(manifest, args.sample_ids)
-    output_subset = _validate_output_path(args.output_subset, overwrite=args.overwrite)
+    samples = _apply_sample_limit(_select_samples(manifest, args.sample_ids), args.sample_limit)
+    output_subset_arg = args.output_subset or _default_output_subset_for_manifest(manifest_path)
+    output_subset = _validate_output_path(output_subset_arg, overwrite=args.overwrite)
 
     print("Heat3D v1 physics-label medium generator")
     print(f"manifest: {manifest_path}")
     print(f"output_subset: {output_subset}")
     print(f"selected_sample_count: {len(samples)}")
     print(f"split_counts: {dict(Counter(sample['split'] for sample in samples))}")
-    print("scope: 64-sample medium generation smoke / research reference labels / benchmark candidate only")
+    print(
+        "scope: medium-style generation smoke / research reference labels / "
+        "benchmark-candidate dataset preparation only"
+    )
     print("source_assignment: volume_fraction")
     print("q_policy: fixed_density")
     if not args.write:

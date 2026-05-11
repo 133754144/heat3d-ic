@@ -77,12 +77,12 @@ def _ensure_ignored_output_dir(path: Path) -> Path:
     return resolved
 
 
-def _require_medium_splits(split_ids: dict[str, list[str]]) -> None:
+def _require_train_valid_splits(split_ids: dict[str, list[str]]) -> None:
     train_ids = split_ids.get("train", [])
     valid_ids = split_ids.get("valid", [])
-    if len(train_ids) != 48 or len(valid_ids) != 8:
+    if not train_ids or not valid_ids:
         raise ValueError(
-            "Expected medium_v2 split counts train=48 and valid=8, "
+            "Expected non-empty train and valid splits for controlled training export, "
             f"found train={len(train_ids)} valid={len(valid_ids)}"
         )
 
@@ -230,7 +230,7 @@ def main() -> int:
     output_dir = _ensure_ignored_output_dir(args.output_dir)
     sample_root = _sample_root(args.subset)
     split_ids = _subset_split_ids(sample_root)
-    _require_medium_splits(split_ids)
+    _require_train_valid_splits(split_ids)
 
     all_ids = sorted(sample_id for ids in split_ids.values() for sample_id in ids)
     train_ids = split_ids["train"]
