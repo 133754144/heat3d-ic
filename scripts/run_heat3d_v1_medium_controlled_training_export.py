@@ -34,7 +34,6 @@ from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     _selected_steps,
     _subset_split_ids,
     _train_only_stats,
-    _weighted_loss,
 )
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
@@ -65,6 +64,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
     parser.add_argument("--report-every", type=int, default=1)
+    parser.add_argument("--loss-mode", choices=("mse", "background_hotspot"), default="mse")
+    parser.add_argument("--background-quantile", type=float, default=0.50)
+    parser.add_argument("--hotspot-quantile", type=float, default=0.90)
+    parser.add_argument("--background-weight", type=float, default=0.5)
+    parser.add_argument("--hotspot-weight", type=float, default=1.0)
     return parser.parse_args()
 
 
@@ -91,16 +95,98 @@ def _should_report_epoch(epoch: int, epochs: int, report_every: int) -> bool:
     return epoch == 1 or epoch == epochs or epoch % report_every == 0
 
 
+def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "loss_mode": args.loss_mode,
+        "background_quantile": float(args.background_quantile),
+        "hotspot_quantile": float(args.hotspot_quantile),
+        "background_weight": float(args.background_weight),
+        "hotspot_weight": float(args.hotspot_weight),
+        "loss_space": (
+            "normalized_deltaT; background raw DeltaT=0 is converted to "
+            "normalized_deltaT before penalty"
+        ),
+    }
+
+
+def _validate_loss_config(config: dict[str, Any]) -> None:
+    background_quantile = float(config["background_quantile"])
+    hotspot_quantile = float(config["hotspot_quantile"])
+    if not 0.0 <= background_quantile <= 1.0:
+        raise ValueError("--background-quantile must be in [0, 1]")
+    if not 0.0 <= hotspot_quantile <= 1.0:
+        raise ValueError("--hotspot-quantile must be in [0, 1]")
+    if background_quantile > hotspot_quantile:
+        raise ValueError("--background-quantile must be <= --hotspot-quantile")
+    if float(config["background_weight"]) < 0.0:
+        raise ValueError("--background-weight must be >= 0")
+    if float(config["hotspot_weight"]) < 0.0:
+        raise ValueError("--hotspot-weight must be >= 0")
+
+
+def _masked_mean(values, mask):
+    mask = mask.astype(values.dtype)
+    return jnp.sum(values * mask) / jnp.maximum(jnp.sum(mask), 1.0)
+
+
+def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
+    weighted = {
+        "base_mse": 0.0,
+        "background_penalty": 0.0,
+        "hotspot_retention_loss": 0.0,
+        "total_loss": 0.0,
+    }
+    count = 0
+    zero_delta_normalized = (0.0 - stats["target_delta_mean"]) / stats["target_delta_std"]
+    for group in groups:
+        pred = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
+        target = group["target_normalized"]
+        base_mse = jnp.mean(jnp.square(pred - target))
+        background_penalty = jnp.asarray(0.0, dtype=base_mse.dtype)
+        hotspot_retention_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
+        if loss_config["loss_mode"] == "background_hotspot":
+            background_threshold = jnp.quantile(target, loss_config["background_quantile"])
+            hotspot_threshold = jnp.quantile(target, loss_config["hotspot_quantile"])
+            background_mask = target <= background_threshold
+            hotspot_mask = target >= hotspot_threshold
+            background_penalty = _masked_mean(jnp.square(pred - zero_delta_normalized), background_mask)
+            hotspot_retention_loss = _masked_mean(jnp.square(pred - target), hotspot_mask)
+        total_loss = (
+            base_mse
+            + loss_config["background_weight"] * background_penalty
+            + loss_config["hotspot_weight"] * hotspot_retention_loss
+        )
+        n = target.shape[0]
+        weighted["base_mse"] = weighted["base_mse"] + base_mse * n
+        weighted["background_penalty"] = weighted["background_penalty"] + background_penalty * n
+        weighted["hotspot_retention_loss"] = weighted["hotspot_retention_loss"] + hotspot_retention_loss * n
+        weighted["total_loss"] = weighted["total_loss"] + total_loss * n
+        count += int(n)
+    divisor = max(count, 1)
+    return {key: value / divisor for key, value in weighted.items()}
+
+
+def _loss_components_payload(components: dict[str, Any]) -> dict[str, float]:
+    return {key: float(value) for key, value in components.items()}
+
+
 def _epoch_history_record(
     epoch: int,
-    train_loss: float,
+    train_components: dict[str, Any],
+    valid_components: dict[str, Any],
     valid_metrics: dict[str, Any],
     train_metrics: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "epoch": int(epoch),
-        "train_loss": float(train_loss),
-        "valid_loss": float(valid_metrics["normalized_loss"]),
+        "train_loss": float(train_components["total_loss"]),
+        "valid_loss": float(valid_components["total_loss"]),
+        "train_base_mse": float(train_components["base_mse"]),
+        "valid_base_mse": float(valid_components["base_mse"]),
+        "train_background_penalty": float(train_components["background_penalty"]),
+        "valid_background_penalty": float(valid_components["background_penalty"]),
+        "train_hotspot_retention_loss": float(train_components["hotspot_retention_loss"]),
+        "valid_hotspot_retention_loss": float(valid_components["hotspot_retention_loss"]),
         "train_raw_deltaT_mse": float(train_metrics["raw_delta_mse"]),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
         "train_recovered_T_mse": float(train_metrics["recovered_temperature_mse"]),
@@ -113,6 +199,9 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int) -> None:
         f"epoch {record['epoch']:03d}/{epochs:03d} "
         f"train_loss={record['train_loss']:.8e} "
         f"valid_loss={record['valid_loss']:.8e} "
+        f"train_base_mse={record['train_base_mse']:.8e} "
+        f"train_background_penalty={record['train_background_penalty']:.8e} "
+        f"train_hotspot_retention_loss={record['train_hotspot_retention_loss']:.8e} "
         f"train_raw_deltaT_mse={record['train_raw_deltaT_mse']:.8e} "
         f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.8e} "
         f"train_recovered_T_mse={record['train_recovered_T_mse']:.8e} "
@@ -128,6 +217,7 @@ def _fit_once(
     lr: float,
     seed: int,
     report_every: int,
+    loss_config: dict[str, Any],
 ) -> dict:
     model = GraphNeuralOperator(**MODEL_CONFIG)
     params = model.init(
@@ -137,10 +227,12 @@ def _fit_once(
     )["params"]
 
     def loss_fn(current_params):
-        return _weighted_loss(model, current_params, train_groups)
+        return _loss_components(model, current_params, train_groups, stats, loss_config)["total_loss"]
 
-    train_losses = [float(loss_fn(params))]
-    valid_losses = [_metrics(model, params, valid_groups, stats)["normalized_loss"]]
+    train_initial_components = _loss_components(model, params, train_groups, stats, loss_config)
+    valid_initial_components = _loss_components(model, params, valid_groups, stats, loss_config)
+    train_losses = [float(train_initial_components["total_loss"])]
+    valid_losses = [float(valid_initial_components["total_loss"])]
     grad_norms = []
     grad_finite = True
     epoch_history = []
@@ -150,18 +242,21 @@ def _fit_once(
         grad_norms.append(grad_norm)
         grad_finite = grad_finite and bool(np.isfinite(grad_norm))
         params = tree.tree_map(lambda param, grad: param - lr * grad, params, grads)
-        train_loss = float(loss_fn(params))
+        train_components = _loss_components(model, params, train_groups, stats, loss_config)
+        valid_components = _loss_components(model, params, valid_groups, stats, loss_config)
         valid_metrics = _metrics(model, params, valid_groups, stats)
-        train_losses.append(train_loss)
-        valid_losses.append(valid_metrics["normalized_loss"])
+        train_losses.append(float(train_components["total_loss"]))
+        valid_losses.append(float(valid_components["total_loss"]))
         if _should_report_epoch(epoch, epochs, report_every):
             train_metrics = _metrics(model, params, train_groups, stats)
-            record = _epoch_history_record(epoch, train_loss, valid_metrics, train_metrics)
+            record = _epoch_history_record(epoch, train_components, valid_components, valid_metrics, train_metrics)
             epoch_history.append(record)
             _print_epoch_progress(record, epochs)
 
     train_metrics = _metrics(model, params, train_groups, stats)
     valid_metrics = _metrics(model, params, valid_groups, stats)
+    final_train_components = _loss_components(model, params, train_groups, stats, loss_config)
+    final_valid_components = _loss_components(model, params, valid_groups, stats, loss_config)
     status_ok = (
         grad_finite
         and train_metrics["finite_ok"]
@@ -180,6 +275,8 @@ def _fit_once(
         "train_metrics": train_metrics,
         "valid_metrics": valid_metrics,
         "epoch_history": epoch_history,
+        "final_train_loss_components": _loss_components_payload(final_train_components),
+        "final_valid_loss_components": _loss_components_payload(final_valid_components),
         "grad_finite": grad_finite,
         "status_ok": status_ok,
     }
@@ -226,6 +323,8 @@ def main() -> int:
         raise ValueError("--epochs must be >= 1")
     if args.report_every < 1:
         raise ValueError("--report-every must be >= 1")
+    loss_config = _loss_config_from_args(args)
+    _validate_loss_config(loss_config)
 
     output_dir = _ensure_ignored_output_dir(args.output_dir)
     sample_root = _sample_root(args.subset)
@@ -267,10 +366,27 @@ def main() -> int:
     print(f"  output_dir: {output_dir}")
     print(f"  save_predictions: {bool(args.save_predictions)}")
     print(f"  report every: {args.report_every}")
+    print(f"  loss mode: {loss_config['loss_mode']}")
+    print(
+        "  loss params: "
+        f"background_quantile={loss_config['background_quantile']} "
+        f"hotspot_quantile={loss_config['hotspot_quantile']} "
+        f"background_weight={loss_config['background_weight']} "
+        f"hotspot_weight={loss_config['hotspot_weight']}"
+    )
     print(f"  feature mode: relative BC features, diag3 k encoding, zero_delta_u_bridge")
     print("  target mode: normalized DeltaT target; recovered temperature predictions exported")
 
-    result = _fit_once(train_groups, valid_groups, stats, args.epochs, args.lr, args.seed, args.report_every)
+    result = _fit_once(
+        train_groups,
+        valid_groups,
+        stats,
+        args.epochs,
+        args.lr,
+        args.seed,
+        args.report_every,
+        loss_config,
+    )
     predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
 
     run_config = {
@@ -283,6 +399,12 @@ def main() -> int:
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
         "checkpoint_saved": False,
+        "loss_mode": loss_config["loss_mode"],
+        "background_quantile": loss_config["background_quantile"],
+        "hotspot_quantile": loss_config["hotspot_quantile"],
+        "background_weight": loss_config["background_weight"],
+        "hotspot_weight": loss_config["hotspot_weight"],
+        "loss": loss_config,
         "split_counts": split_counts,
         "train_ids": train_ids,
         "valid_ids": valid_ids,
@@ -300,10 +422,18 @@ def main() -> int:
         "grad_norms": [float(value) for value in result["grad_norms"]],
         "train_metrics": _metrics_payload(result["train_metrics"]),
         "valid_metrics": _metrics_payload(result["valid_metrics"]),
+        "loss_mode": loss_config["loss_mode"],
+        "background_quantile": loss_config["background_quantile"],
+        "hotspot_quantile": loss_config["hotspot_quantile"],
+        "background_weight": loss_config["background_weight"],
+        "hotspot_weight": loss_config["hotspot_weight"],
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
         "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
         "epoch_history": result["epoch_history"],
+        "loss": loss_config,
+        "final_train_loss_components": result["final_train_loss_components"],
+        "final_valid_loss_components": result["final_valid_loss_components"],
         "train_only_normalization": _stats_payload(stats),
     }
     _write_json(output_dir / "loss_summary.json", loss_summary)
@@ -314,8 +444,15 @@ def main() -> int:
 
     print("")
     print("summary")
+    print(f"  loss mode: {loss_config['loss_mode']}")
     print(f"  train loss initial/final: {result['train_losses'][0]:.8e} -> {result['train_losses'][-1]:.8e}")
     print(f"  valid loss initial/final: {result['valid_losses'][0]:.8e} -> {result['valid_losses'][-1]:.8e}")
+    print(f"  final train base MSE: {result['final_train_loss_components']['base_mse']:.8e}")
+    print(f"  final valid base MSE: {result['final_valid_loss_components']['base_mse']:.8e}")
+    print(f"  final train background penalty: {result['final_train_loss_components']['background_penalty']:.8e}")
+    print(f"  final valid background penalty: {result['final_valid_loss_components']['background_penalty']:.8e}")
+    print(f"  final train hotspot retention loss: {result['final_train_loss_components']['hotspot_retention_loss']:.8e}")
+    print(f"  final valid hotspot retention loss: {result['final_valid_loss_components']['hotspot_retention_loss']:.8e}")
     print(f"  final train raw DeltaT MSE: {result['train_metrics']['raw_delta_mse']:.8e}")
     print(f"  final valid raw DeltaT MSE: {result['valid_metrics']['raw_delta_mse']:.8e}")
     print(f"  final train recovered temperature MSE: {result['train_metrics']['recovered_temperature_mse']:.8e}")
