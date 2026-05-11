@@ -67,8 +67,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--loss-mode", choices=("mse", "background_hotspot"), default="mse")
     parser.add_argument("--background-quantile", type=float, default=0.50)
     parser.add_argument("--hotspot-quantile", type=float, default=0.90)
-    parser.add_argument("--background-weight", type=float, default=0.5)
-    parser.add_argument("--hotspot-weight", type=float, default=1.0)
+    parser.add_argument("--background-weight", type=float, default=1.0)
+    parser.add_argument("--hotspot-weight", type=float, default=0.1)
     return parser.parse_args()
 
 
@@ -102,10 +102,13 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "hotspot_quantile": float(args.hotspot_quantile),
         "background_weight": float(args.background_weight),
         "hotspot_weight": float(args.hotspot_weight),
-        "loss_space": (
-            "normalized_deltaT; background raw DeltaT=0 is converted to "
-            "normalized_deltaT before penalty"
-        ),
+        "loss_space": "base and hotspot terms use normalized_deltaT; background penalty uses raw_deltaT_K",
+        "base_loss_space": "normalized_deltaT",
+        "background_mask_space": "raw_deltaT_K quantile",
+        "background_penalty_space": "raw_deltaT_K_squared; penalizes pred_raw_deltaT toward 0",
+        "hotspot_mask_space": "raw_deltaT_K quantile",
+        "hotspot_retention_loss_space": "normalized_deltaT",
+        "target_normalization": "normalized_deltaT = (raw_deltaT - train_target_delta_mean) / train_target_delta_std",
     }
 
 
@@ -129,38 +132,56 @@ def _masked_mean(values, mask):
     return jnp.sum(values * mask) / jnp.maximum(jnp.sum(mask), 1.0)
 
 
+def _normalized_delta_to_raw(pred_normalized, stats: dict):
+    return pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
+
+
 def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
     weighted = {
         "base_mse": 0.0,
         "background_penalty": 0.0,
         "hotspot_retention_loss": 0.0,
         "total_loss": 0.0,
+        "bg_pred_raw_mean": 0.0,
+        "bg_signed_bias": 0.0,
+        "bg_abs_mean": 0.0,
+        "hotspot_raw_mae": 0.0,
     }
     count = 0
-    zero_delta_normalized = (0.0 - stats["target_delta_mean"]) / stats["target_delta_std"]
     for group in groups:
         pred = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
         target = group["target_normalized"]
+        target_raw = group["target_delta_raw"]
+        pred_raw_delta = _normalized_delta_to_raw(pred, stats)
         base_mse = jnp.mean(jnp.square(pred - target))
+        background_threshold = jnp.quantile(target_raw, loss_config["background_quantile"])
+        hotspot_threshold = jnp.quantile(target_raw, loss_config["hotspot_quantile"])
+        background_mask = target_raw <= background_threshold
+        hotspot_mask = target_raw >= hotspot_threshold
         background_penalty = jnp.asarray(0.0, dtype=base_mse.dtype)
         hotspot_retention_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
         if loss_config["loss_mode"] == "background_hotspot":
-            background_threshold = jnp.quantile(target, loss_config["background_quantile"])
-            hotspot_threshold = jnp.quantile(target, loss_config["hotspot_quantile"])
-            background_mask = target <= background_threshold
-            hotspot_mask = target >= hotspot_threshold
-            background_penalty = _masked_mean(jnp.square(pred - zero_delta_normalized), background_mask)
+            background_penalty = _masked_mean(jnp.square(pred_raw_delta), background_mask)
             hotspot_retention_loss = _masked_mean(jnp.square(pred - target), hotspot_mask)
         total_loss = (
             base_mse
             + loss_config["background_weight"] * background_penalty
             + loss_config["hotspot_weight"] * hotspot_retention_loss
         )
+        raw_error = pred_raw_delta - target_raw
+        bg_pred_raw_mean = _masked_mean(pred_raw_delta, background_mask)
+        bg_signed_bias = _masked_mean(raw_error, background_mask)
+        bg_abs_mean = _masked_mean(jnp.abs(raw_error), background_mask)
+        hotspot_raw_mae = _masked_mean(jnp.abs(raw_error), hotspot_mask)
         n = target.shape[0]
         weighted["base_mse"] = weighted["base_mse"] + base_mse * n
         weighted["background_penalty"] = weighted["background_penalty"] + background_penalty * n
         weighted["hotspot_retention_loss"] = weighted["hotspot_retention_loss"] + hotspot_retention_loss * n
         weighted["total_loss"] = weighted["total_loss"] + total_loss * n
+        weighted["bg_pred_raw_mean"] = weighted["bg_pred_raw_mean"] + bg_pred_raw_mean * n
+        weighted["bg_signed_bias"] = weighted["bg_signed_bias"] + bg_signed_bias * n
+        weighted["bg_abs_mean"] = weighted["bg_abs_mean"] + bg_abs_mean * n
+        weighted["hotspot_raw_mae"] = weighted["hotspot_raw_mae"] + hotspot_raw_mae * n
         count += int(n)
     divisor = max(count, 1)
     return {key: value / divisor for key, value in weighted.items()}
@@ -187,6 +208,14 @@ def _epoch_history_record(
         "valid_background_penalty": float(valid_components["background_penalty"]),
         "train_hotspot_retention_loss": float(train_components["hotspot_retention_loss"]),
         "valid_hotspot_retention_loss": float(valid_components["hotspot_retention_loss"]),
+        "train_bg_pred_raw_mean": float(train_components["bg_pred_raw_mean"]),
+        "valid_bg_pred_raw_mean": float(valid_components["bg_pred_raw_mean"]),
+        "train_bg_signed_bias": float(train_components["bg_signed_bias"]),
+        "valid_bg_signed_bias": float(valid_components["bg_signed_bias"]),
+        "train_bg_abs_mean": float(train_components["bg_abs_mean"]),
+        "valid_bg_abs_mean": float(valid_components["bg_abs_mean"]),
+        "train_hotspot_raw_mae": float(train_components["hotspot_raw_mae"]),
+        "valid_hotspot_raw_mae": float(valid_components["hotspot_raw_mae"]),
         "train_raw_deltaT_mse": float(train_metrics["raw_delta_mse"]),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
         "train_recovered_T_mse": float(train_metrics["recovered_temperature_mse"]),
@@ -200,8 +229,19 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int) -> None:
         f"train_loss={record['train_loss']:.8e} "
         f"valid_loss={record['valid_loss']:.8e} "
         f"train_base_mse={record['train_base_mse']:.8e} "
+        f"valid_base_mse={record['valid_base_mse']:.8e} "
         f"train_background_penalty={record['train_background_penalty']:.8e} "
+        f"valid_background_penalty={record['valid_background_penalty']:.8e} "
         f"train_hotspot_retention_loss={record['train_hotspot_retention_loss']:.8e} "
+        f"valid_hotspot_retention_loss={record['valid_hotspot_retention_loss']:.8e} "
+        f"train_bg_pred_raw_mean={record['train_bg_pred_raw_mean']:.8e} "
+        f"valid_bg_pred_raw_mean={record['valid_bg_pred_raw_mean']:.8e} "
+        f"train_bg_signed_bias={record['train_bg_signed_bias']:.8e} "
+        f"valid_bg_signed_bias={record['valid_bg_signed_bias']:.8e} "
+        f"train_bg_abs_mean={record['train_bg_abs_mean']:.8e} "
+        f"valid_bg_abs_mean={record['valid_bg_abs_mean']:.8e} "
+        f"train_hotspot_raw_mae={record['train_hotspot_raw_mae']:.8e} "
+        f"valid_hotspot_raw_mae={record['valid_hotspot_raw_mae']:.8e} "
         f"train_raw_deltaT_mse={record['train_raw_deltaT_mse']:.8e} "
         f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.8e} "
         f"train_recovered_T_mse={record['train_recovered_T_mse']:.8e} "
@@ -367,6 +407,7 @@ def main() -> int:
     print(f"  save_predictions: {bool(args.save_predictions)}")
     print(f"  report every: {args.report_every}")
     print(f"  loss mode: {loss_config['loss_mode']}")
+    print(f"  loss space: {loss_config['loss_space']}")
     print(
         "  loss params: "
         f"background_quantile={loss_config['background_quantile']} "
@@ -375,7 +416,10 @@ def main() -> int:
         f"hotspot_weight={loss_config['hotspot_weight']}"
     )
     print(f"  feature mode: relative BC features, diag3 k encoding, zero_delta_u_bridge")
-    print("  target mode: normalized DeltaT target; recovered temperature predictions exported")
+    print(
+        "  target mode: normalized DeltaT target; normalized 0 is train mean raw DeltaT, "
+        "not raw DeltaT=0"
+    )
 
     result = _fit_once(
         train_groups,
@@ -453,6 +497,14 @@ def main() -> int:
     print(f"  final valid background penalty: {result['final_valid_loss_components']['background_penalty']:.8e}")
     print(f"  final train hotspot retention loss: {result['final_train_loss_components']['hotspot_retention_loss']:.8e}")
     print(f"  final valid hotspot retention loss: {result['final_valid_loss_components']['hotspot_retention_loss']:.8e}")
+    print(f"  final train bg pred raw mean: {result['final_train_loss_components']['bg_pred_raw_mean']:.8e}")
+    print(f"  final valid bg pred raw mean: {result['final_valid_loss_components']['bg_pred_raw_mean']:.8e}")
+    print(f"  final train bg signed bias: {result['final_train_loss_components']['bg_signed_bias']:.8e}")
+    print(f"  final valid bg signed bias: {result['final_valid_loss_components']['bg_signed_bias']:.8e}")
+    print(f"  final train bg abs mean: {result['final_train_loss_components']['bg_abs_mean']:.8e}")
+    print(f"  final valid bg abs mean: {result['final_valid_loss_components']['bg_abs_mean']:.8e}")
+    print(f"  final train hotspot raw MAE: {result['final_train_loss_components']['hotspot_raw_mae']:.8e}")
+    print(f"  final valid hotspot raw MAE: {result['final_valid_loss_components']['hotspot_raw_mae']:.8e}")
     print(f"  final train raw DeltaT MSE: {result['train_metrics']['raw_delta_mse']:.8e}")
     print(f"  final valid raw DeltaT MSE: {result['valid_metrics']['raw_delta_mse']:.8e}")
     print(f"  final train recovered temperature MSE: {result['train_metrics']['recovered_temperature_mse']:.8e}")
