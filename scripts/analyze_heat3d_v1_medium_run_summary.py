@@ -150,6 +150,10 @@ def _sequence_summary(values: list[Any]) -> dict[str, float | int | None]:
     }
 
 
+def _history_field_summary(rows: list[dict[str, Any]], field: str) -> dict[str, float | int | None]:
+    return _sequence_summary([row.get(field) for row in rows if isinstance(row, dict)])
+
+
 def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
     train_losses = loss_summary.get("train_losses") or []
     valid_losses = loss_summary.get("valid_losses") or []
@@ -166,6 +170,7 @@ def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
 
     history_trend: dict[str, Any] = {
         "present": bool(epoch_history),
+        "record_count": len(epoch_history) if isinstance(epoch_history, list) else 0,
         "report_count": len(epoch_history) if isinstance(epoch_history, list) else 0,
     }
     if isinstance(epoch_history, list) and epoch_history:
@@ -181,6 +186,14 @@ def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
         )
 
     lr_history = loss_summary.get("lr_history") if isinstance(loss_summary.get("lr_history"), list) else []
+    loss_weight_history = (
+        loss_summary.get("loss_weight_history") if isinstance(loss_summary.get("loss_weight_history"), list) else []
+    )
+    if not loss_weight_history and isinstance(epoch_history, list):
+        loss_weight_history = epoch_history
+    stored_weight_summary = loss_summary.get("loss_weight_history_summary")
+    if not isinstance(stored_weight_summary, dict):
+        stored_weight_summary = {}
 
     return {
         "train_loss": _loss_change(train_initial, train_final),
@@ -193,8 +206,18 @@ def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
         "status_ok": loss_summary.get("status_ok"),
         "loss_mode": loss_summary.get("loss_mode"),
         "lr_schedule": loss_summary.get("lr_schedule"),
+        "loss_weight_schedule": loss_summary.get("loss_weight_schedule"),
         "lr_history": lr_history,
         "lr_history_summary": _sequence_summary(lr_history),
+        "loss_weight_history": loss_weight_history,
+        "relative_weight_summary": stored_weight_summary.get(
+            "current_background_relative_weight",
+            _history_field_summary(loss_weight_history, "current_background_relative_weight"),
+        ),
+        "hotspot_weight_summary": stored_weight_summary.get(
+            "current_hotspot_weight",
+            _history_field_summary(loss_weight_history, "current_hotspot_weight"),
+        ),
         "final_train_background_relative_abs": _as_float(final_train_components.get("background_relative_abs")),
         "final_valid_background_relative_abs": _as_float(final_valid_components.get("background_relative_abs")),
         "epoch_history": epoch_history if isinstance(epoch_history, list) else [],
@@ -505,6 +528,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- trained_comparison_status: `{baseline.get('trained_comparison_status')}`",
         f"- loss_mode: `{loss.get('loss_mode')}`",
         f"- lr_schedule: `{loss.get('lr_schedule')}`",
+        f"- loss_weight_schedule: `{loss.get('loss_weight_schedule')}`",
         f"- likely_hotspot_learning_with_background_bias: `{overall_status['likely_hotspot_learning_with_background_bias']}`",
         "",
         "## Loss Trend",
@@ -528,7 +552,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"- final train background relative abs: `{_fmt_float(loss.get('final_train_background_relative_abs'))}`",
             f"- final valid background relative abs: `{_fmt_float(loss.get('final_valid_background_relative_abs'))}`",
             f"- lr history summary: `{loss.get('lr_history_summary')}`",
-            f"- epoch_history report count: `{loss.get('epoch_history_trend', {}).get('report_count')}`",
+            f"- relative weight summary: `{loss.get('relative_weight_summary')}`",
+            f"- hotspot weight summary: `{loss.get('hotspot_weight_summary')}`",
+            f"- epoch_history record count: `{loss.get('epoch_history_trend', {}).get('record_count')}`",
             "",
             "## Overall Trained vs Zero-Delta Table",
             "",
