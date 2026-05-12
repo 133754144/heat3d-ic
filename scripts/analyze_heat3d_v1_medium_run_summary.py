@@ -137,12 +137,27 @@ def _loss_change(first: float | None, last: float | None) -> dict[str, float | N
     }
 
 
+def _sequence_summary(values: list[Any]) -> dict[str, float | int | None]:
+    floats = [value for value in (_as_float(item) for item in values) if value is not None]
+    if not floats:
+        return {"count": 0, "first": None, "last": None, "min": None, "max": None}
+    return {
+        "count": len(floats),
+        "first": floats[0],
+        "last": floats[-1],
+        "min": min(floats),
+        "max": max(floats),
+    }
+
+
 def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
     train_losses = loss_summary.get("train_losses") or []
     valid_losses = loss_summary.get("valid_losses") or []
     train_metrics = loss_summary.get("train_metrics") or {}
     valid_metrics = loss_summary.get("valid_metrics") or {}
     epoch_history = loss_summary.get("epoch_history") or []
+    final_train_components = loss_summary.get("final_train_loss_components") or {}
+    final_valid_components = loss_summary.get("final_valid_loss_components") or {}
 
     train_initial = _as_float(train_losses[0]) if train_losses else None
     train_final = _as_float(train_losses[-1]) if train_losses else None
@@ -165,6 +180,8 @@ def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
+    lr_history = loss_summary.get("lr_history") if isinstance(loss_summary.get("lr_history"), list) else []
+
     return {
         "train_loss": _loss_change(train_initial, train_final),
         "valid_loss": _loss_change(valid_initial, valid_final),
@@ -174,6 +191,12 @@ def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
         "final_valid_recovered_T_mse": _as_float(valid_metrics.get("recovered_temperature_mse")),
         "grad_finite": loss_summary.get("grad_finite"),
         "status_ok": loss_summary.get("status_ok"),
+        "loss_mode": loss_summary.get("loss_mode"),
+        "lr_schedule": loss_summary.get("lr_schedule"),
+        "lr_history": lr_history,
+        "lr_history_summary": _sequence_summary(lr_history),
+        "final_train_background_relative_abs": _as_float(final_train_components.get("background_relative_abs")),
+        "final_valid_background_relative_abs": _as_float(final_valid_components.get("background_relative_abs")),
         "epoch_history": epoch_history if isinstance(epoch_history, list) else [],
         "epoch_history_trend": history_trend,
     }
@@ -480,6 +503,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- loss_summary: `{payload['inputs']['loss_summary']}`",
         f"- baseline_comparison: `{payload['inputs']['baseline_comparison']}`",
         f"- trained_comparison_status: `{baseline.get('trained_comparison_status')}`",
+        f"- loss_mode: `{loss.get('loss_mode')}`",
+        f"- lr_schedule: `{loss.get('lr_schedule')}`",
         f"- likely_hotspot_learning_with_background_bias: `{overall_status['likely_hotspot_learning_with_background_bias']}`",
         "",
         "## Loss Trend",
@@ -500,6 +525,9 @@ def render_markdown(payload: dict[str, Any]) -> str:
             f"- final valid raw DeltaT MSE: `{_fmt_float(loss.get('final_valid_raw_deltaT_mse'))}`",
             f"- final train recovered T MSE: `{_fmt_float(loss.get('final_train_recovered_T_mse'))}`",
             f"- final valid recovered T MSE: `{_fmt_float(loss.get('final_valid_recovered_T_mse'))}`",
+            f"- final train background relative abs: `{_fmt_float(loss.get('final_train_background_relative_abs'))}`",
+            f"- final valid background relative abs: `{_fmt_float(loss.get('final_valid_background_relative_abs'))}`",
+            f"- lr history summary: `{loss.get('lr_history_summary')}`",
             f"- epoch_history report count: `{loss.get('epoch_history_trend', {}).get('report_count')}`",
             "",
             "## Overall Trained vs Zero-Delta Table",

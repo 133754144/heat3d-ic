@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 from typing import Any
@@ -60,11 +61,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--lr-schedule", choices=("constant", "warmup_cosine", "two_stage"), default="constant")
+    parser.add_argument("--warmup-epochs", type=int, default=0)
+    parser.add_argument("--min-lr", type=float, default=1e-5)
+    parser.add_argument("--second-stage-epoch", type=int, default=0)
+    parser.add_argument("--second-stage-lr", type=float, default=1e-4)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
     parser.add_argument("--report-every", type=int, default=1)
-    parser.add_argument("--loss-mode", choices=("mse", "background_hotspot", "background_l1_bias"), default="mse")
+    parser.add_argument(
+        "--loss-mode",
+        choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative"),
+        default="mse",
+    )
     parser.add_argument("--background-quantile", type=float, default=0.50)
     parser.add_argument("--hotspot-quantile", type=float, default=0.90)
     parser.add_argument("--background-weight", type=float, default=1.0)
@@ -72,6 +82,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--background-l1-weight", type=float, default=1.0)
     parser.add_argument("--background-bias-weight", type=float, default=1.0)
     parser.add_argument("--background-over-weight", type=float, default=1.0)
+    parser.add_argument("--background-relative-weight", type=float, default=0.0)
+    parser.add_argument("--relative-floor", type=float, default=0.02)
+    parser.add_argument("--relative-floor-mode", choices=("fixed", "p50", "p75"), default="fixed")
     return parser.parse_args()
 
 
@@ -108,8 +121,11 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "background_l1_weight": float(args.background_l1_weight),
         "background_bias_weight": float(args.background_bias_weight),
         "background_over_weight": float(args.background_over_weight),
+        "background_relative_weight": float(args.background_relative_weight),
+        "relative_floor": float(args.relative_floor),
+        "relative_floor_mode": args.relative_floor_mode,
         "loss_space": (
-            "base and hotspot terms use normalized_deltaT; background MSE/L1/bias/overprediction "
+            "base and hotspot terms use normalized_deltaT; background MSE/L1/bias/overprediction/relative "
             "terms use raw_deltaT_K"
         ),
         "base_loss_space": "normalized_deltaT",
@@ -118,9 +134,25 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "background_l1_space": "raw_deltaT_K_abs; penalizes abs(pred_raw_deltaT) in background",
         "background_signed_bias_loss_space": "raw_deltaT_K_abs_bias; penalizes abs(mean(pred_raw_deltaT - true_raw_deltaT))",
         "background_overprediction_loss_space": "raw_deltaT_K_positive_error; penalizes mean(relu(pred_raw_deltaT - true_raw_deltaT))",
+        "background_relative_abs_space": "safe raw_deltaT_K relative absolute error in background",
+        "background_relative_abs_denominator": (
+            "max(abs(true_raw_deltaT), floor), where floor is fixed relative_floor or "
+            "max(relative_floor, batch/group abs true raw DeltaT p50/p75)"
+        ),
         "hotspot_mask_space": "raw_deltaT_K quantile",
         "hotspot_retention_loss_space": "normalized_deltaT",
         "target_normalization": "normalized_deltaT = (raw_deltaT - train_target_delta_mean) / train_target_delta_std",
+    }
+
+
+def _lr_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "lr": float(args.lr),
+        "lr_schedule": args.lr_schedule,
+        "warmup_epochs": int(args.warmup_epochs),
+        "min_lr": float(args.min_lr),
+        "second_stage_epoch": int(args.second_stage_epoch),
+        "second_stage_lr": float(args.second_stage_lr),
     }
 
 
@@ -143,6 +175,50 @@ def _validate_loss_config(config: dict[str, Any]) -> None:
         raise ValueError("--background-bias-weight must be >= 0")
     if float(config["background_over_weight"]) < 0.0:
         raise ValueError("--background-over-weight must be >= 0")
+    if float(config["background_relative_weight"]) < 0.0:
+        raise ValueError("--background-relative-weight must be >= 0")
+    if float(config["relative_floor"]) <= 0.0:
+        raise ValueError("--relative-floor must be > 0")
+
+
+def _validate_lr_config(config: dict[str, Any]) -> None:
+    if float(config["lr"]) < 0.0:
+        raise ValueError("--lr must be >= 0")
+    if int(config["warmup_epochs"]) < 0:
+        raise ValueError("--warmup-epochs must be >= 0")
+    if float(config["min_lr"]) < 0.0:
+        raise ValueError("--min-lr must be >= 0")
+    if int(config["second_stage_epoch"]) < 0:
+        raise ValueError("--second-stage-epoch must be >= 0")
+    if float(config["second_stage_lr"]) < 0.0:
+        raise ValueError("--second-stage-lr must be >= 0")
+
+
+def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
+    base_lr = float(config["lr"])
+    schedule = config["lr_schedule"]
+    if schedule == "constant":
+        return base_lr
+    if schedule == "two_stage":
+        second_stage_epoch = int(config["second_stage_epoch"])
+        if second_stage_epoch <= 0 or epoch <= second_stage_epoch:
+            return base_lr
+        return float(config["second_stage_lr"])
+    if schedule == "warmup_cosine":
+        warmup_epochs = int(config["warmup_epochs"])
+        min_lr = float(config["min_lr"])
+        if warmup_epochs > 0 and epoch <= warmup_epochs:
+            progress = epoch / warmup_epochs
+            return min_lr + progress * (base_lr - min_lr)
+        if warmup_epochs > 0:
+            decay_epochs = max(epochs - warmup_epochs, 1)
+            progress = min(max((epoch - warmup_epochs) / decay_epochs, 0.0), 1.0)
+        else:
+            decay_epochs = max(epochs - 1, 1)
+            progress = min(max((epoch - 1) / decay_epochs, 0.0), 1.0)
+        cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
+        return min_lr + cosine * (base_lr - min_lr)
+    raise ValueError(f"Unsupported lr schedule: {schedule}")
 
 
 def _masked_mean(values, mask):
@@ -154,6 +230,21 @@ def _normalized_delta_to_raw(pred_normalized, stats: dict):
     return pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
 
 
+def _safe_relative_denominator(target_raw, loss_config: dict[str, Any]):
+    abs_target = jnp.abs(target_raw)
+    mode = loss_config["relative_floor_mode"]
+    floor = jnp.asarray(loss_config["relative_floor"], dtype=target_raw.dtype)
+    if mode == "fixed":
+        safe_floor = floor
+    elif mode == "p50":
+        safe_floor = jnp.maximum(jnp.quantile(abs_target, 0.50), floor)
+    elif mode == "p75":
+        safe_floor = jnp.maximum(jnp.quantile(abs_target, 0.75), floor)
+    else:
+        raise ValueError(f"Unsupported relative floor mode: {mode}")
+    return jnp.maximum(abs_target, safe_floor)
+
+
 def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
     weighted = {
         "base_mse": 0.0,
@@ -161,6 +252,7 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         "background_l1": 0.0,
         "background_signed_bias_loss": 0.0,
         "background_overprediction_loss": 0.0,
+        "background_relative_abs": 0.0,
         "hotspot_retention_loss": 0.0,
         "total_loss": 0.0,
         "bg_pred_raw_mean": 0.0,
@@ -183,6 +275,7 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         background_l1 = jnp.asarray(0.0, dtype=base_mse.dtype)
         background_signed_bias_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
         background_overprediction_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
+        background_relative_abs = jnp.asarray(0.0, dtype=base_mse.dtype)
         hotspot_retention_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
         raw_error = pred_raw_delta - target_raw
         if loss_config["loss_mode"] == "background_hotspot":
@@ -193,16 +286,20 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
                 + loss_config["background_weight"] * background_penalty
                 + loss_config["hotspot_weight"] * hotspot_retention_loss
             )
-        elif loss_config["loss_mode"] == "background_l1_bias":
+        elif loss_config["loss_mode"] in {"background_l1_bias", "background_l1_relative"}:
             background_l1 = _masked_mean(jnp.abs(pred_raw_delta), background_mask)
             background_signed_bias_loss = jnp.abs(_masked_mean(raw_error, background_mask))
             background_overprediction_loss = _masked_mean(jnp.maximum(raw_error, 0.0), background_mask)
             hotspot_retention_loss = _masked_mean(jnp.square(pred - target), hotspot_mask)
+            if loss_config["loss_mode"] == "background_l1_relative":
+                denom = _safe_relative_denominator(target_raw, loss_config)
+                background_relative_abs = _masked_mean(jnp.abs(raw_error) / denom, background_mask)
             total_loss = (
                 base_mse
                 + loss_config["background_l1_weight"] * background_l1
                 + loss_config["background_bias_weight"] * background_signed_bias_loss
                 + loss_config["background_over_weight"] * background_overprediction_loss
+                + loss_config["background_relative_weight"] * background_relative_abs
                 + loss_config["hotspot_weight"] * hotspot_retention_loss
             )
         else:
@@ -221,6 +318,7 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         weighted["background_overprediction_loss"] = (
             weighted["background_overprediction_loss"] + background_overprediction_loss * n
         )
+        weighted["background_relative_abs"] = weighted["background_relative_abs"] + background_relative_abs * n
         weighted["hotspot_retention_loss"] = weighted["hotspot_retention_loss"] + hotspot_retention_loss * n
         weighted["total_loss"] = weighted["total_loss"] + total_loss * n
         weighted["bg_pred_raw_mean"] = weighted["bg_pred_raw_mean"] + bg_pred_raw_mean * n
@@ -238,6 +336,7 @@ def _loss_components_payload(components: dict[str, Any]) -> dict[str, float]:
 
 def _epoch_history_record(
     epoch: int,
+    lr_epoch: float,
     train_components: dict[str, Any],
     valid_components: dict[str, Any],
     valid_metrics: dict[str, Any],
@@ -245,6 +344,7 @@ def _epoch_history_record(
 ) -> dict[str, Any]:
     return {
         "epoch": int(epoch),
+        "lr": float(lr_epoch),
         "train_loss": float(train_components["total_loss"]),
         "valid_loss": float(valid_components["total_loss"]),
         "train_base_mse": float(train_components["base_mse"]),
@@ -257,6 +357,8 @@ def _epoch_history_record(
         "valid_background_signed_bias_loss": float(valid_components["background_signed_bias_loss"]),
         "train_background_overprediction_loss": float(train_components["background_overprediction_loss"]),
         "valid_background_overprediction_loss": float(valid_components["background_overprediction_loss"]),
+        "train_background_relative_abs": float(train_components["background_relative_abs"]),
+        "valid_background_relative_abs": float(valid_components["background_relative_abs"]),
         "train_hotspot_retention_loss": float(train_components["hotspot_retention_loss"]),
         "valid_hotspot_retention_loss": float(valid_components["hotspot_retention_loss"]),
         "train_bg_pred_raw_mean": float(train_components["bg_pred_raw_mean"]),
@@ -277,6 +379,7 @@ def _epoch_history_record(
 def _print_epoch_progress(record: dict[str, Any], epochs: int) -> None:
     print(
         f"epoch {record['epoch']:03d}/{epochs:03d} "
+        f"lr={record['lr']:.8e} "
         f"train_loss={record['train_loss']:.8e} "
         f"valid_loss={record['valid_loss']:.8e} "
         f"train_base_mse={record['train_base_mse']:.8e} "
@@ -289,6 +392,8 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int) -> None:
         f"valid_background_signed_bias_loss={record['valid_background_signed_bias_loss']:.8e} "
         f"train_background_overprediction_loss={record['train_background_overprediction_loss']:.8e} "
         f"valid_background_overprediction_loss={record['valid_background_overprediction_loss']:.8e} "
+        f"train_background_relative_abs={record['train_background_relative_abs']:.8e} "
+        f"valid_background_relative_abs={record['valid_background_relative_abs']:.8e} "
         f"train_hotspot_retention_loss={record['train_hotspot_retention_loss']:.8e} "
         f"valid_hotspot_retention_loss={record['valid_hotspot_retention_loss']:.8e} "
         f"train_bg_pred_raw_mean={record['train_bg_pred_raw_mean']:.8e} "
@@ -311,7 +416,7 @@ def _fit_once(
     valid_groups: list[dict],
     stats: dict,
     epochs: int,
-    lr: float,
+    lr_config: dict[str, Any],
     seed: int,
     report_every: int,
     loss_config: dict[str, Any],
@@ -331,14 +436,17 @@ def _fit_once(
     train_losses = [float(train_initial_components["total_loss"])]
     valid_losses = [float(valid_initial_components["total_loss"])]
     grad_norms = []
+    lr_history = []
     grad_finite = True
     epoch_history = []
     for epoch in range(1, epochs + 1):
+        lr_epoch = _lr_for_epoch(epoch, epochs, lr_config)
+        lr_history.append(lr_epoch)
         _, grads = jax.value_and_grad(loss_fn)(params)
         grad_norm = _global_norm(grads)
         grad_norms.append(grad_norm)
         grad_finite = grad_finite and bool(np.isfinite(grad_norm))
-        params = tree.tree_map(lambda param, grad: param - lr * grad, params, grads)
+        params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
         train_components = _loss_components(model, params, train_groups, stats, loss_config)
         valid_components = _loss_components(model, params, valid_groups, stats, loss_config)
         valid_metrics = _metrics(model, params, valid_groups, stats)
@@ -346,7 +454,14 @@ def _fit_once(
         valid_losses.append(float(valid_components["total_loss"]))
         if _should_report_epoch(epoch, epochs, report_every):
             train_metrics = _metrics(model, params, train_groups, stats)
-            record = _epoch_history_record(epoch, train_components, valid_components, valid_metrics, train_metrics)
+            record = _epoch_history_record(
+                epoch,
+                lr_epoch,
+                train_components,
+                valid_components,
+                valid_metrics,
+                train_metrics,
+            )
             epoch_history.append(record)
             _print_epoch_progress(record, epochs)
 
@@ -369,6 +484,7 @@ def _fit_once(
         "train_losses": np.asarray(train_losses, dtype=np.float64),
         "valid_losses": np.asarray(valid_losses, dtype=np.float64),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
+        "lr_history": np.asarray(lr_history, dtype=np.float64),
         "train_metrics": train_metrics,
         "valid_metrics": valid_metrics,
         "epoch_history": epoch_history,
@@ -421,7 +537,9 @@ def main() -> int:
     if args.report_every < 1:
         raise ValueError("--report-every must be >= 1")
     loss_config = _loss_config_from_args(args)
+    lr_config = _lr_config_from_args(args)
     _validate_loss_config(loss_config)
+    _validate_lr_config(lr_config)
 
     output_dir = _ensure_ignored_output_dir(args.output_dir)
     sample_root = _sample_root(args.subset)
@@ -459,6 +577,12 @@ def main() -> int:
     print(f"  split counts: {split_counts}")
     print(f"  epochs: {args.epochs}")
     print(f"  lr: {args.lr}")
+    print(
+        "  lr schedule: "
+        f"{lr_config['lr_schedule']} warmup_epochs={lr_config['warmup_epochs']} "
+        f"min_lr={lr_config['min_lr']} second_stage_epoch={lr_config['second_stage_epoch']} "
+        f"second_stage_lr={lr_config['second_stage_lr']}"
+    )
     print(f"  seed: {args.seed}")
     print(f"  output_dir: {output_dir}")
     print(f"  save_predictions: {bool(args.save_predictions)}")
@@ -473,7 +597,10 @@ def main() -> int:
         f"hotspot_weight={loss_config['hotspot_weight']} "
         f"background_l1_weight={loss_config['background_l1_weight']} "
         f"background_bias_weight={loss_config['background_bias_weight']} "
-        f"background_over_weight={loss_config['background_over_weight']}"
+        f"background_over_weight={loss_config['background_over_weight']} "
+        f"background_relative_weight={loss_config['background_relative_weight']} "
+        f"relative_floor={loss_config['relative_floor']} "
+        f"relative_floor_mode={loss_config['relative_floor_mode']}"
     )
     print(f"  feature mode: relative BC features, diag3 k encoding, zero_delta_u_bridge")
     print(
@@ -486,7 +613,7 @@ def main() -> int:
         valid_groups,
         stats,
         args.epochs,
-        args.lr,
+        lr_config,
         args.seed,
         args.report_every,
         loss_config,
@@ -498,6 +625,12 @@ def main() -> int:
         "subset": str(sample_root),
         "epochs": args.epochs,
         "lr": args.lr,
+        "lr_schedule": lr_config["lr_schedule"],
+        "warmup_epochs": lr_config["warmup_epochs"],
+        "min_lr": lr_config["min_lr"],
+        "second_stage_epoch": lr_config["second_stage_epoch"],
+        "second_stage_lr": lr_config["second_stage_lr"],
+        "optimizer": "manual_full_batch_gradient_descent",
         "seed": args.seed,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
@@ -511,7 +644,11 @@ def main() -> int:
         "background_l1_weight": loss_config["background_l1_weight"],
         "background_bias_weight": loss_config["background_bias_weight"],
         "background_over_weight": loss_config["background_over_weight"],
+        "background_relative_weight": loss_config["background_relative_weight"],
+        "relative_floor": loss_config["relative_floor"],
+        "relative_floor_mode": loss_config["relative_floor_mode"],
         "loss": loss_config,
+        "lr_config": lr_config,
         "split_counts": split_counts,
         "train_ids": train_ids,
         "valid_ids": valid_ids,
@@ -527,6 +664,7 @@ def main() -> int:
         "train_losses": [float(value) for value in result["train_losses"]],
         "valid_losses": [float(value) for value in result["valid_losses"]],
         "grad_norms": [float(value) for value in result["grad_norms"]],
+        "lr_history": [float(value) for value in result["lr_history"]],
         "train_metrics": _metrics_payload(result["train_metrics"]),
         "valid_metrics": _metrics_payload(result["valid_metrics"]),
         "loss_mode": loss_config["loss_mode"],
@@ -537,9 +675,19 @@ def main() -> int:
         "background_l1_weight": loss_config["background_l1_weight"],
         "background_bias_weight": loss_config["background_bias_weight"],
         "background_over_weight": loss_config["background_over_weight"],
+        "background_relative_weight": loss_config["background_relative_weight"],
+        "relative_floor": loss_config["relative_floor"],
+        "relative_floor_mode": loss_config["relative_floor_mode"],
+        "lr": lr_config["lr"],
+        "lr_schedule": lr_config["lr_schedule"],
+        "warmup_epochs": lr_config["warmup_epochs"],
+        "min_lr": lr_config["min_lr"],
+        "second_stage_epoch": lr_config["second_stage_epoch"],
+        "second_stage_lr": lr_config["second_stage_lr"],
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
         "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
+        "lr_config": lr_config,
         "epoch_history": result["epoch_history"],
         "loss": loss_config,
         "final_train_loss_components": result["final_train_loss_components"],
@@ -555,6 +703,8 @@ def main() -> int:
     print("")
     print("summary")
     print(f"  loss mode: {loss_config['loss_mode']}")
+    print(f"  lr schedule: {lr_config['lr_schedule']}")
+    print(f"  lr history: {[float(value) for value in result['lr_history']]}")
     print(f"  train loss initial/final: {result['train_losses'][0]:.8e} -> {result['train_losses'][-1]:.8e}")
     print(f"  valid loss initial/final: {result['valid_losses'][0]:.8e} -> {result['valid_losses'][-1]:.8e}")
     print(f"  final train base MSE: {result['final_train_loss_components']['base_mse']:.8e}")
@@ -578,6 +728,14 @@ def main() -> int:
     print(
         "  final valid background overprediction loss: "
         f"{result['final_valid_loss_components']['background_overprediction_loss']:.8e}"
+    )
+    print(
+        "  final train background relative abs: "
+        f"{result['final_train_loss_components']['background_relative_abs']:.8e}"
+    )
+    print(
+        "  final valid background relative abs: "
+        f"{result['final_valid_loss_components']['background_relative_abs']:.8e}"
     )
     print(f"  final train hotspot retention loss: {result['final_train_loss_components']['hotspot_retention_loss']:.8e}")
     print(f"  final valid hotspot retention loss: {result['final_valid_loss_components']['hotspot_retention_loss']:.8e}")
