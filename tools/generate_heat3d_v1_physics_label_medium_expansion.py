@@ -39,12 +39,21 @@ PROTECTED_SUBSET_NAMES = {
 }
 DOMAIN_BOUNDS = {"x": (0.0, 0.01), "y": (0.0, 0.01), "z": (0.0, 0.002)}
 RESOLUTION_MAP = {"medium_expansion_mid": (8, 8, 6)}
-Q_DENSITY_MAP = {"low": 0.5e8, "nominal": 1.0e8, "high": 1.5e8}
+Q_DENSITY_MAP = {
+    "trace": 0.06e8,
+    "very_low": 0.12e8,
+    "low": 0.5e8,
+    "nominal": 1.0e8,
+    "high": 1.5e8,
+    "very_high": 2.0e8,
+}
 BC_CATEGORY_MAP = {
+    "very_low_top_h_candidate": {"bottom_K": 300.0, "top_K": 300.0, "h_W_m2K": 250.0},
     "nominal_top_h": {"bottom_K": 300.0, "top_K": 300.0, "h_W_m2K": 1000.0},
     "low_top_h": {"bottom_K": 300.0, "top_K": 300.0, "h_W_m2K": 500.0},
     "high_top_h": {"bottom_K": 300.0, "top_K": 300.0, "h_W_m2K": 1500.0},
     "held_out_top_h_candidate": {"bottom_K": 300.0, "top_K": 300.0, "h_W_m2K": 2000.0},
+    "very_high_top_h_candidate": {"bottom_K": 300.0, "top_K": 300.0, "h_W_m2K": 3000.0},
 }
 STACK_TEMPLATES = {
     "baseline_4_layer": [
@@ -129,6 +138,29 @@ def _layer_arrays(coords: np.ndarray, layers: list[dict[str, Any]]) -> tuple[np.
     return layer_id, region_id, material_id, [str(layer["name"]) for layer in layers]
 
 
+def _gap_a_k_iso(base: float, layer_name: str, point: np.ndarray, region_mode: str) -> float:
+    value = base
+    if region_mode == "high_contrast_interface_k":
+        if "heat_spreader" in layer_name:
+            value *= 1.40
+        elif "substrate" in layer_name:
+            value *= 1.20
+        elif "tim" in layer_name:
+            value *= 0.45
+        elif "interposer" in layer_name:
+            value *= 0.65
+        elif "active_die" in layer_name:
+            value *= 0.75 if point[0] < 0.005 else 1.25
+    elif region_mode == "low_k_barrier_or_TIM_variation":
+        if "tim" in layer_name:
+            value *= 0.35
+        elif "interposer" in layer_name:
+            value *= 0.55
+        elif "active_die" in layer_name and point[1] > 0.006:
+            value *= 0.85
+    return value
+
+
 def _k_field(coords: np.ndarray, layers: list[dict[str, Any]], sample: dict[str, Any]) -> np.ndarray:
     k_mode = sample["k_field_mode"]
     region_mode = sample["k_region_mode"]
@@ -136,7 +168,7 @@ def _k_field(coords: np.ndarray, layers: list[dict[str, Any]], sample: dict[str,
         k = np.empty((coords.shape[0], 3), dtype=np.float64)
         for idx, point in enumerate(coords):
             _, layer = _layer_for_z(layers, float(point[2]))
-            base = float(layer["k_iso"])
+            base = _gap_a_k_iso(float(layer["k_iso"]), str(layer["name"]), point, region_mode)
             k[idx] = [base * 1.20, base * 0.90, base * 0.55]
         return k
     if k_mode != "iso1":
@@ -149,6 +181,8 @@ def _k_field(coords: np.ndarray, layers: list[dict[str, Any]], sample: dict[str,
             value *= 0.75 if point[0] < 0.005 else 1.25
         elif region_mode == "interposer_equivalent_k" and "interposer" in layer["name"]:
             value *= 1.10
+        elif region_mode in {"high_contrast_interface_k", "low_k_barrier_or_TIM_variation"}:
+            value = _gap_a_k_iso(value, str(layer["name"]), point, region_mode)
         k[idx, 0] = value
     return k
 
@@ -182,6 +216,7 @@ def _resolved_sources(sample: dict[str, Any], layers: list[dict[str, Any]]) -> l
             "source_box_m": _source_box(region, layers),
             "q_density_W_m3": Q_DENSITY_MAP[q_category],
             "q_scale_category": q_category,
+            "power_scale_category": region.get("power_scale_category", sample.get("power_scale_category")),
         })
     return sources
 
@@ -217,6 +252,13 @@ def _sample_meta(
         "subset_name": subset_name,
         "sample_id": sample["sample_id"],
         "split": sample["split"],
+        "source_pattern_tag": sample.get("source_pattern_tag"),
+        "power_scale_category": sample.get("power_scale_category"),
+        "k_region_mode": sample.get("k_region_mode"),
+        "k_contrast_category": sample.get("k_contrast_category"),
+        "barrier_k_category": sample.get("barrier_k_category"),
+        "k_field_mode": sample.get("k_field_mode"),
+        "bc_category": sample.get("bc_category"),
         "stage": sample_stage,
         "description": description,
         "boundary_types": {"top": "Robin", "bottom": "Dirichlet", "sides": "adiabatic"},

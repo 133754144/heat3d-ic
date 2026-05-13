@@ -204,6 +204,14 @@ language. It should still be called a planned research benchmark candidate
 until the full dataset exists, label diagnostics pass, and the evaluation
 protocol is frozen.
 
+The immediate implementation path is `medium1024_gapA`: a generation-ready
+candidate that keeps the roadmap manifest intact while adding only low-risk
+generator modes for low-power background cases, high-dynamic-range source
+cases, high-contrast / low-k interface variants, and very-low / very-high
+top-Robin candidates. This lets the project run 16/32-sample smokes and
+64/128-sample pilots before deciding whether full 1024 generation is justified.
+Medium256 remains the debug and ablation set throughout this process.
+
 ## 6. How To Optimize Toward A Publishable Version
 
 ### A. Experimental Protocol

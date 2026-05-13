@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Check the planned Heat3D v1 medium1024 manifest.
+"""Check the planned or Gap-A Heat3D v1 medium1024 manifest.
 
 This checker validates manifest structure only. It does not require generated
-samples and does not write data. The medium1024 manifest is a planned research
-benchmark-candidate design, not a completed benchmark.
+samples and does not write data. The medium1024 manifests are research
+benchmark-candidate designs, not completed benchmarks.
 """
 
 from __future__ import annotations
@@ -98,6 +98,9 @@ def _implemented_values(manifest: dict[str, Any], section: str) -> set[str]:
 def validate_manifest(manifest: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
     errors: list[str] = []
     warnings: list[str] = []
+    dataset_name = str(manifest.get("dataset_name", ""))
+    manifest_kind = str(manifest.get("manifest_kind", ""))
+    is_gap_a = dataset_name.endswith("_medium1024_gapA") or manifest_kind == "generation_ready_candidate_manifest"
     split_counts = manifest.get("split_counts", {})
     if not isinstance(split_counts, dict):
         errors.append("split_counts must be an object")
@@ -203,17 +206,36 @@ def validate_manifest(manifest: dict[str, Any]) -> tuple[list[str], dict[str, An
     for section in ("source_pattern_tag", "k_region_mode", "stack_template", "bc_category"):
         planned_only = _planned_only_values(manifest, section)
         implemented = _implemented_values(manifest, section)
+        targets = _target_values(manifest, section)
         overlap = planned_only & implemented
         if overlap:
             errors.append(f"implementation status overlap in {section}: {sorted(overlap)}")
+        if is_gap_a and planned_only:
+            errors.append(f"Gap-A manifest must not contain planned-only values in {section}: {sorted(planned_only)}")
+        if is_gap_a:
+            not_implemented = targets - implemented
+            if not_implemented:
+                errors.append(f"Gap-A coverage targets not marked implemented in {section}: {sorted(not_implemented)}")
         if planned_only:
             warnings.append(f"{section} planned-only values are not yet generator-consumed: {sorted(planned_only)}")
 
     samples = manifest.get("samples", [])
-    if samples:
+    if samples and not is_gap_a:
         warnings.append("medium1024 manifest includes samples; checker treats this as a plan-only manifest")
-    if manifest.get("full_generation_ready") is True:
+    if not is_gap_a and manifest.get("full_generation_ready") is True:
         errors.append("medium1024 manifest must not mark full_generation_ready=true in this planning stage")
+    if is_gap_a:
+        if manifest.get("full_generation_ready") is not True:
+            errors.append("Gap-A manifest must mark full_generation_ready=true")
+        generation_plan = manifest.get("sample_generation_plan", {})
+        if not isinstance(generation_plan, dict):
+            errors.append("Gap-A manifest must include sample_generation_plan")
+        elif generation_plan.get("strategy") != "gapA_deterministic_balanced_cycle":
+            errors.append(
+                "Gap-A sample_generation_plan.strategy must be gapA_deterministic_balanced_cycle"
+            )
+        if samples:
+            warnings.append("Gap-A manifest includes explicit samples; deterministic plan is preferred")
 
     summary = {
         "split_total": split_total,
@@ -222,6 +244,7 @@ def validate_manifest(manifest: dict[str, Any]) -> tuple[list[str], dict[str, An
         "diag3_fraction": diag3_fraction,
         "held_out_bc_count": held_out_bc_count,
         "held_out_stack_count": held_out_stack_count,
+        "is_gap_a": is_gap_a,
         "warnings": warnings,
     }
     return errors, summary
@@ -232,7 +255,7 @@ def main() -> int:
     manifest = _read_json(args.manifest)
     errors, summary = validate_manifest(manifest)
 
-    print("Heat3D v1 medium1024 planned manifest checker")
+    print("Heat3D v1 medium1024 manifest checker")
     print(f"manifest: {args.manifest}")
     print("scope: manifest dry-run only; no data generation; not a formal benchmark")
     print(f"dataset_name: {manifest.get('dataset_name')}")
@@ -247,6 +270,8 @@ def main() -> int:
     print(f"warnings: {summary['warnings']}")
     print(f"errors: {errors}")
     print("medium1024_manifest_ok:", not errors)
+    if summary["is_gap_a"]:
+        print("medium1024_gapA_manifest_ok:", not errors)
     return 1 if errors else 0
 
 

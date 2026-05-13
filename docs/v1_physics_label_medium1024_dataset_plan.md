@@ -216,3 +216,32 @@ implemented and generated:
 The immediate next step should be manifest review and generator gap assessment,
 then a partial 32/64-sample dry-run after generator support is added. Full 1024
 generation should wait until those checks pass.
+
+## Gap-A Generation-Ready Candidate
+
+The planned manifest remains the roadmap-level design. The next concrete step
+is `medium1024_gapA`, a generation-ready research diagnostic candidate that
+implements only low-risk extensions:
+
+- `low_power_near_zero_background_cases`;
+- `high_dynamic_range_power_cases`;
+- `high_contrast_interface_k`;
+- `low_k_barrier_or_TIM_variation`;
+- `very_low_top_h_candidate`;
+- `very_high_top_h_candidate`.
+
+`medium1024_gapA` deliberately excludes the larger planned-only modes such as
+random sparse maps, elongated strip maps, ring/checkerboard maps, mixed
+blockwise anisotropic k, randomized k blocks, new deep/bridge/five-layer stacks,
+and bottom-temperature variants.
+
+The intended progression is:
+
+1. 16/32-sample local smoke under ignored `data/`;
+2. 64/128-sample pilot after inspecting label diagnostics;
+3. full 1024 generation only after the Gap-A manifest and generator behavior
+   are reviewed.
+
+Medium256 remains the ablation/debug set. The planned medium1024 manifest
+remains the longer roadmap. `medium1024_gapA` is the immediate generation-ready
+candidate, not a completed benchmark.
