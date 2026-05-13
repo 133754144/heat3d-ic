@@ -167,7 +167,44 @@ A stronger paper-facing dataset should include:
 
 Medium256 should remain as an ablation/debug set even after expansion.
 
-## 5. How To Optimize Toward A Publishable Version
+## 5. Medium1024 Dataset Planning
+
+Medium1024 should be designed before it is generated. The purpose is not to
+hide or average away medium256 weaknesses, but to create a better controlled
+setting for testing the weaknesses already identified:
+
+- seed stability under fixed loss and learning-rate settings;
+- low-DeltaT background bias, especially `bin_0`;
+- high-DeltaT underprediction in `bin_3` and `bin_4`;
+- OOD BC candidate mean-field robustness;
+- OOD stack candidate mean-field robustness;
+- interaction between held-out BC and held-out stack in a separate combined
+  candidate split.
+
+Medium256 should remain the fast ablation/debug set. Medium1024 should become a
+larger benchmark-candidate preparation set only after its manifest, generator
+support, checker, and partial-smoke protocol are reviewed.
+
+The planned medium1024 protocol should include:
+
+- a fixed 1024-sample manifest with explicit split counts;
+- clear separation of `test_id`, `test_ood_bc_candidate`,
+  `test_ood_stack_candidate`, and `test_ood_combined_candidate`;
+- broader source/q patterns, including sparse, strip-like, low-background, and
+  high-dynamic-range cases;
+- broader k-field/material modes, including more diagonal anisotropic and
+  blockwise-equivalent regions where supported;
+- more stack templates and at least two held-out stack families;
+- explicit marking of planned-only modes that are not yet consumed by the
+  generator.
+
+Publication-oriented use of medium1024 requires a fixed manifest, fixed split,
+multi-seed reporting, condition-wise evaluation, and conservative scope
+language. It should still be called a planned research benchmark candidate
+until the full dataset exists, label diagnostics pass, and the evaluation
+protocol is frozen.
+
+## 6. How To Optimize Toward A Publishable Version
 
 ### A. Experimental Protocol
 
@@ -218,7 +255,7 @@ The current version is not yet publication-ready. It is a promising
 research-stage framework with a clear diagnostic pipeline and identified
 technical bottlenecks.
 
-## 6. Concrete Next Steps
+## 7. Concrete Next Steps
 
 ### Priority 1
 
@@ -250,7 +287,7 @@ Prepare paper-style figures and tables:
 - error-bin diagnostics;
 - seed sensitivity table.
 
-## 7. Reporting Boundary
+## 8. Reporting Boundary
 
 Use conservative wording:
 
