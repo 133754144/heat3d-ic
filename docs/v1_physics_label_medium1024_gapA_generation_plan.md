@@ -92,6 +92,38 @@ explicit 1024-entry sample list. The generator materializes sample plans from
 split counts and coverage counts, while keeping the first 16 samples as smoke
 probes that cover the new source, k, and BC modes.
 
+## Pilot Coverage And Checker Fixes
+
+The first SSH-side 128-sample Gap-A pilot showed that generation and labels can
+run, with label diagnostics passing, but it exposed tooling issues:
+
+- `sample-limit=128` selected the first materialized samples, so after the first
+  16 probe samples the pilot was dominated by train/base conditions;
+- downstream coverage scripts expected `metadata.json`, but the generator only
+  wrote `sample_meta.json` and `label_meta.json`;
+- the medium256 checker could not be reused because it assumes a fixed
+  256-sample manifest with explicit `samples` entries.
+
+The fix is tooling-only:
+
+- every generated sample now writes `metadata.json` with direct coverage fields
+  such as `split`, `source_pattern_tag`, `k_region_mode`, `k_field_mode`,
+  `stack_template`, `bc_category`, `power_scale_category`, and solver/source
+  diagnostics;
+- Gap-A `--sample-limit` uses balanced deterministic selection when no explicit
+  `--sample-ids` are requested;
+- `sample-limit=16` still returns the probe set covering all six Gap-A modes;
+- `sample-limit=128` now targets the manifest split ratio:
+  `train=96`, `valid=16`, `test_id=8`, `test_ood_bc_candidate=3`,
+  `test_ood_stack_candidate=3`, `test_ood_combined_candidate=2`;
+- `scripts/check_heat3d_v1_physics_label_medium1024_gapA_subset.py` checks
+  generated subsets directly and does not depend on `manifest.samples`.
+
+The next recommended step is to rerun the 128-sample pilot with the fixed
+selection and subset checker. Full 1024 generation should still wait until the
+fixed 128 pilot is reviewed; a 256-sample pilot is a reasonable intermediate
+step if the 128-sample coverage looks clean.
+
 ## Risks
 
 - Low-power samples change label scale and can make relative errors dominate

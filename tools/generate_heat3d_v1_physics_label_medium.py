@@ -89,11 +89,26 @@ def _default_output_subset_for_manifest(manifest_path: Path) -> Path:
     return DEFAULT_OUTPUT_SUBSET
 
 
-def _apply_sample_limit(samples: list[dict], sample_limit: int | None) -> list[dict]:
+def _is_gap_a_manifest(manifest: dict[str, Any]) -> bool:
+    plan = manifest.get("sample_generation_plan", {})
+    return isinstance(plan, dict) and plan.get("strategy") == "gapA_deterministic_balanced_cycle"
+
+
+def _apply_sample_limit(
+    samples: list[dict],
+    sample_limit: int | None,
+    manifest: dict[str, Any],
+    *,
+    balanced: bool,
+) -> list[dict]:
     if sample_limit is None:
         return samples
     if sample_limit < 1:
         raise ValueError("--sample-limit must be >= 1")
+    if sample_limit > len(samples):
+        raise ValueError(f"--sample-limit must be <= {len(samples)}")
+    if balanced and _is_gap_a_manifest(manifest):
+        return _balanced_gap_a_sample_limit(samples, sample_limit, manifest)
     return samples[:sample_limit]
 
 
@@ -405,6 +420,112 @@ def _build_gap_a_samples(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     return samples
 
 
+def _largest_remainder_counts(total: int, split_counts: dict[str, Any]) -> dict[str, int]:
+    manifest_total = sum(int(value) for value in split_counts.values())
+    floors: dict[str, int] = {}
+    remainders: list[tuple[float, str]] = []
+    for split, count in split_counts.items():
+        exact = total * int(count) / manifest_total
+        floor = int(exact)
+        floors[str(split)] = floor
+        remainders.append((exact - floor, str(split)))
+    remaining = total - sum(floors.values())
+    for _, split in sorted(remainders, key=lambda item: (-item[0], item[1]))[:remaining]:
+        floors[split] += 1
+    return floors
+
+
+def _target_split_counts(
+    sample_limit: int,
+    split_counts: dict[str, Any],
+    mandatory: list[dict[str, Any]],
+) -> dict[str, int]:
+    target = _largest_remainder_counts(sample_limit, split_counts)
+    mandatory_counts = Counter(sample["split"] for sample in mandatory)
+    for split, count in mandatory_counts.items():
+        target[split] = max(target.get(split, 0), int(count))
+    extra = sum(target.values()) - sample_limit
+    while extra > 0:
+        candidates = [
+            split
+            for split in target
+            if target[split] > mandatory_counts.get(split, 0)
+        ]
+        if not candidates:
+            raise ValueError("mandatory Gap-A probes exceed requested sample limit")
+        split = max(candidates, key=lambda item: (target[item], int(split_counts.get(item, 0)), item))
+        target[split] -= 1
+        extra -= 1
+    return target
+
+
+def _diverse_condition_select(samples: list[dict[str, Any]], count: int) -> list[dict[str, Any]]:
+    if count < 0:
+        raise ValueError("cannot select a negative sample count")
+    if count > len(samples):
+        raise ValueError(f"requested {count} samples from bucket with {len(samples)}")
+    remaining = list(samples)
+    selected: list[dict[str, Any]] = []
+    condition_counts = {
+        "source_pattern_tag": Counter(),
+        "k_region_mode": Counter(),
+        "k_field_mode": Counter(),
+        "stack_template": Counter(),
+        "bc_category": Counter(),
+        "power_scale_category": Counter(),
+    }
+    while len(selected) < count:
+        best_idx = min(
+            range(len(remaining)),
+            key=lambda idx: (
+                condition_counts["source_pattern_tag"][remaining[idx].get("source_pattern_tag")],
+                condition_counts["k_region_mode"][remaining[idx].get("k_region_mode")],
+                condition_counts["stack_template"][remaining[idx].get("stack_template")],
+                condition_counts["bc_category"][remaining[idx].get("bc_category")],
+                condition_counts["k_field_mode"][remaining[idx].get("k_field_mode")],
+                condition_counts["power_scale_category"][remaining[idx].get("power_scale_category")],
+                idx,
+            ),
+        )
+        sample = remaining.pop(best_idx)
+        selected.append(sample)
+        for key, counts in condition_counts.items():
+            counts[sample.get(key)] += 1
+    return selected
+
+
+def _balanced_gap_a_sample_limit(
+    samples: list[dict[str, Any]],
+    sample_limit: int,
+    manifest: dict[str, Any],
+) -> list[dict[str, Any]]:
+    smoke_probe_count = int(
+        manifest.get("sample_generation_plan", {}).get("smoke_probe_sample_count", 16)
+    )
+    if sample_limit <= smoke_probe_count:
+        return samples[:sample_limit]
+
+    mandatory = samples[:smoke_probe_count]
+    target_counts = _target_split_counts(sample_limit, manifest.get("split_counts", {}), mandatory)
+    selected = list(mandatory)
+    selected_ids = {sample["sample_id"] for sample in selected}
+    buckets: dict[str, list[dict[str, Any]]] = {split: [] for split in target_counts}
+    for sample in samples:
+        if sample["sample_id"] in selected_ids:
+            continue
+        buckets.setdefault(sample["split"], []).append(sample)
+
+    for split in manifest.get("split_counts", {}):
+        need = target_counts.get(split, 0) - sum(1 for sample in selected if sample["split"] == split)
+        if need <= 0:
+            continue
+        selected.extend(_diverse_condition_select(buckets.get(split, []), need))
+
+    if len(selected) != sample_limit:
+        raise ValueError(f"balanced selection expected {sample_limit}, found {len(selected)}")
+    return selected
+
+
 def _materialized_samples(manifest: dict[str, Any], sample_ids: list[str] | None) -> list[dict[str, Any]]:
     samples = manifest.get("samples", [])
     if isinstance(samples, list) and samples:
@@ -427,7 +548,12 @@ def main() -> int:
     args = parse_args()
     manifest_path = args.manifest.resolve()
     manifest = _read_json(manifest_path)
-    samples = _apply_sample_limit(_materialized_samples(manifest, args.sample_ids), args.sample_limit)
+    samples = _apply_sample_limit(
+        _materialized_samples(manifest, args.sample_ids),
+        args.sample_limit,
+        manifest,
+        balanced=args.sample_ids is None,
+    )
     output_subset_arg = args.output_subset or _default_output_subset_for_manifest(manifest_path)
     output_subset = _validate_output_path(output_subset_arg, overwrite=args.overwrite)
 

@@ -307,6 +307,51 @@ def _sample_meta(
     }
 
 
+def _metadata_json(
+    manifest: dict[str, Any],
+    manifest_path: Path,
+    sample: dict[str, Any],
+    source_summary: dict[str, Any],
+    label_meta: dict[str, Any],
+    temperature: np.ndarray,
+) -> dict[str, Any]:
+    bc = BC_CATEGORY_MAP[sample["bc_category"]]
+    return {
+        "metadata_schema_version": "heat3d_v1_medium_sample_metadata_v1",
+        "sample_id": sample["sample_id"],
+        "split": sample["split"],
+        "source_pattern_tag": sample.get("source_pattern_tag"),
+        "k_region_mode": sample.get("k_region_mode"),
+        "k_field_mode": sample.get("k_field_mode"),
+        "stack_template": sample.get("stack_template"),
+        "bc_category": sample.get("bc_category"),
+        "power_scale_category": sample.get("power_scale_category"),
+        "k_contrast_category": sample.get("k_contrast_category"),
+        "barrier_k_category": sample.get("barrier_k_category"),
+        "top_h_W_m2K": float(bc["h_W_m2K"]),
+        "top_ambient_temperature_K": float(bc["top_K"]),
+        "bottom_T_fixed_K": float(bc["bottom_K"]),
+        "source_missed": bool(source_summary.get("source_missed")),
+        "integrated_power_W": float(source_summary.get("integrated_q_power", 0.0)),
+        "integrated_q_power_relative_error": float(
+            source_summary.get("integrated_q_power_relative_error", 0.0)
+        ),
+        "active_source_volume_discrete_m3": float(
+            source_summary.get("active_source_volume_discrete", 0.0)
+        ),
+        "convergence_flag": bool(label_meta.get("convergence_flag")),
+        "residual_norm": float(label_meta.get("residual_norm", float("nan"))),
+        "bottom_dirichlet_error": float(label_meta.get("bottom_dirichlet_error", float("nan"))),
+        "temperature_min_K": float(np.min(temperature)),
+        "temperature_max_K": float(np.max(temperature)),
+        "manifest_path": str(manifest_path),
+        "manifest_version": manifest.get("manifest_version"),
+        "dataset_name": manifest.get("dataset_name"),
+        "sample_plan": sample,
+        "diagnostics_scope": "generation metadata for coverage and smoke checks; not formal benchmark evidence",
+    }
+
+
 def _validate_output_path(path: Path, overwrite: bool) -> Path:
     output_subset = path.resolve()
     if output_subset.name in PROTECTED_SUBSET_NAMES:
@@ -383,6 +428,9 @@ def _write_sample(
     })
     np.save(sample_dir / "temperature.npy", temperature)
     _write_json(sample_dir / "label_meta.json", label_meta)
+    _write_json(sample_dir / "metadata.json", _metadata_json(
+        manifest, manifest_path, sample, source_summary, label_meta, temperature
+    ))
     return {
         "sample_id": sample_id,
         "split": sample["split"],
