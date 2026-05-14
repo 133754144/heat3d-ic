@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import hashlib
 from pathlib import Path
 import shutil
 import sys
@@ -47,6 +48,7 @@ PROTECTED_SUBSET_NAMES = {
     "v1_multilayer_bc_eq_physics_label_medium_pilot_v2",
     "v1_multilayer_bc_eq_physics_label_medium_expansion_v2",
 }
+GAP_A_VARIANT_VERSION = "medium1024_gapA_diversity_v2"
 
 
 def parse_args() -> argparse.Namespace:
@@ -133,7 +135,30 @@ def _active_layer_for_stack(stack_template: str, secondary: bool = False) -> str
     return "active_die_0"
 
 
-def _source_regions_for_pattern(source_pattern: str, stack_template: str, index: int) -> list[dict[str, Any]]:
+def _unit_interval(seed: int, key: str) -> float:
+    digest = hashlib.sha256(f"{seed}:{key}".encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") / float(2**64 - 1)
+
+
+def _range_value(seed: int, key: str, low: float, high: float) -> float:
+    return low + (high - low) * _unit_interval(seed, key)
+
+
+def _signed_value(seed: int, key: str, amplitude: float) -> float:
+    return (2.0 * _unit_interval(seed, key) - 1.0) * amplitude
+
+
+def _clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+
+def _pattern_seed(sample_id: str, index: int, split: str, source: str, k_region: str, k_field: str, stack: str, bc: str) -> int:
+    key = f"{GAP_A_VARIANT_VERSION}:{sample_id}:{index}:{split}:{source}:{k_region}:{k_field}:{stack}:{bc}"
+    digest = hashlib.sha256(key.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big")
+
+
+def _base_source_regions_for_pattern(source_pattern: str, stack_template: str, index: int) -> list[dict[str, Any]]:
     active0 = _active_layer_for_stack(stack_template)
     active1 = _active_layer_for_stack(stack_template, secondary=True)
     jitter = (index % 5) * 0.025
@@ -264,6 +289,121 @@ def _source_regions_for_pattern(source_pattern: str, stack_template: str, index:
     raise ValueError(f"unsupported source_pattern_tag for generated samples: {source_pattern}")
 
 
+def _source_scale_range(source_pattern: str, q_category: str) -> tuple[float, float]:
+    if source_pattern == "low_power_near_zero_background_cases":
+        return (0.70, 1.45)
+    if source_pattern == "high_dynamic_range_power_cases":
+        if q_category == "very_high":
+            return (0.85, 1.30)
+        return (0.55, 1.65)
+    if q_category == "trace":
+        return (0.75, 1.35)
+    if q_category == "very_low":
+        return (0.75, 1.40)
+    if q_category == "high":
+        return (0.85, 1.22)
+    return (0.85, 1.15)
+
+
+def _apply_gap_a_source_variation(
+    regions: list[dict[str, Any]],
+    source_pattern: str,
+    pattern_seed: int,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    varied: list[dict[str, Any]] = []
+    global_dx = _signed_value(pattern_seed, "global_dx", 0.035)
+    global_dy = _signed_value(pattern_seed, "global_dy", 0.035)
+    base_sx = _range_value(pattern_seed, "global_sx", 0.88, 1.18)
+    base_sy = _range_value(pattern_seed, "global_sy", 0.88, 1.18)
+    q_scales: list[float] = []
+
+    for region_index, region in enumerate(regions):
+        item = dict(region)
+        cx, cy = item["center_xy_fraction"]
+        sx, sy = item["size_xy_fraction"]
+        local_dx = _signed_value(pattern_seed, f"region_{region_index}_dx", 0.028)
+        local_dy = _signed_value(pattern_seed, f"region_{region_index}_dy", 0.028)
+        local_sx = base_sx * _range_value(pattern_seed, f"region_{region_index}_sx", 0.92, 1.12)
+        local_sy = base_sy * _range_value(pattern_seed, f"region_{region_index}_sy", 0.92, 1.12)
+        new_sx = _clamp(float(sx) * local_sx, 0.145, 0.56)
+        new_sy = _clamp(float(sy) * local_sy, 0.145, 0.56)
+        item["center_xy_fraction"] = [
+            _clamp(float(cx) + global_dx + local_dx, 0.14, 0.86),
+            _clamp(float(cy) + global_dy + local_dy, 0.14, 0.86),
+        ]
+        item["size_xy_fraction"] = [new_sx, new_sy]
+        z_shrink = _range_value(pattern_seed, f"region_{region_index}_z_span", 0.82, 1.0)
+        z_center = _clamp(0.50 + _signed_value(pattern_seed, f"region_{region_index}_z_center", 0.08), 0.35, 0.65)
+        item["z_center_fraction"] = z_center
+        item["z_span_fraction"] = z_shrink
+        scale_low, scale_high = _source_scale_range(source_pattern, str(item["q_scale_category"]))
+        q_scale = _range_value(pattern_seed, f"region_{region_index}_q_scale", scale_low, scale_high)
+        item["q_density_scale"] = q_scale
+        item["geometry_variant_id"] = int(pattern_seed % 1_000_000) + region_index
+        q_scales.append(q_scale)
+        varied.append(item)
+
+    if source_pattern == "broad_block_power" and _unit_interval(pattern_seed, "broad_aux") > 0.45:
+        aux = dict(varied[0])
+        aux["region_id"] = "src_broad_aux"
+        aux["center_xy_fraction"] = [
+            _clamp(0.28 + _signed_value(pattern_seed, "broad_aux_dx", 0.09), 0.14, 0.86),
+            _clamp(0.70 + _signed_value(pattern_seed, "broad_aux_dy", 0.09), 0.14, 0.86),
+        ]
+        aux["size_xy_fraction"] = [
+            _range_value(pattern_seed, "broad_aux_sx", 0.16, 0.24),
+            _range_value(pattern_seed, "broad_aux_sy", 0.16, 0.24),
+        ]
+        aux["q_scale_category"] = "trace"
+        aux["q_density_scale"] = _range_value(pattern_seed, "broad_aux_q", 0.60, 1.30)
+        aux["geometry_variant_id"] = int(pattern_seed % 1_000_000) + 99
+        q_scales.append(float(aux["q_density_scale"]))
+        varied.append(aux)
+
+    if source_pattern == "multi_block_power" and _unit_interval(pattern_seed, "multi_aux") > 0.35:
+        active_layer = varied[0]["layer"]
+        aux = {
+            "region_id": "src_multi_d",
+            "layer": active_layer,
+            "center_xy_fraction": [
+                _range_value(pattern_seed, "multi_aux_cx", 0.18, 0.82),
+                _range_value(pattern_seed, "multi_aux_cy", 0.18, 0.82),
+            ],
+            "size_xy_fraction": [
+                _range_value(pattern_seed, "multi_aux_sx", 0.145, 0.22),
+                _range_value(pattern_seed, "multi_aux_sy", 0.145, 0.22),
+            ],
+            "q_scale_category": "low",
+            "q_density_scale": _range_value(pattern_seed, "multi_aux_q", 0.75, 1.25),
+            "geometry_variant_id": int(pattern_seed % 1_000_000) + 199,
+            "z_center_fraction": _range_value(pattern_seed, "multi_aux_zc", 0.42, 0.58),
+            "z_span_fraction": _range_value(pattern_seed, "multi_aux_zs", 0.82, 1.0),
+        }
+        q_scales.append(float(aux["q_density_scale"]))
+        varied.append(aux)
+
+    metadata = {
+        "source_center_shift": [global_dx, global_dy],
+        "source_size_scale": [base_sx, base_sy],
+        "q_scale_factor": float(sum(q_scales) / max(len(q_scales), 1)),
+        "q_geometry_variant": int(pattern_seed % 1_000_000),
+        "source_region_variant_count": len(varied),
+    }
+    return varied, metadata
+
+
+def _source_regions_for_pattern(
+    source_pattern: str,
+    stack_template: str,
+    index: int,
+    pattern_seed: int | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    regions = _base_source_regions_for_pattern(source_pattern, stack_template, index)
+    if pattern_seed is None:
+        return regions, {}
+    return _apply_gap_a_source_variation(regions, source_pattern, pattern_seed)
+
+
 def _power_scale_category(source_pattern: str) -> str:
     if source_pattern == "low_power_near_zero_background_cases":
         return "low_power"
@@ -272,13 +412,66 @@ def _power_scale_category(source_pattern: str) -> str:
     return "nominal"
 
 
+def _top_h_value_for_category(bc: str, pattern_seed: int) -> float:
+    ranges = {
+        "nominal_top_h": (900.0, 1100.0),
+        "low_top_h": (420.0, 640.0),
+        "high_top_h": (1320.0, 1720.0),
+        "held_out_top_h_candidate": (1820.0, 2300.0),
+        "very_low_top_h_candidate": (180.0, 320.0),
+        "very_high_top_h_candidate": (2600.0, 3400.0),
+    }
+    low, high = ranges.get(bc, (900.0, 1100.0))
+    return _range_value(pattern_seed, "top_h", low, high)
+
+
+def _k_variation(k_region: str, pattern_seed: int) -> dict[str, Any]:
+    layer_names = (
+        "substrate",
+        "active_die_0",
+        "active_die_1",
+        "tim_equivalent",
+        "interposer_equivalent",
+        "interposer_like_equivalent",
+        "heat_spreader_equivalent",
+    )
+    layer_scales = {
+        name: _range_value(pattern_seed, f"k_layer_{name}", 0.88, 1.16)
+        for name in layer_names
+    }
+    variation = {
+        "layer_scale_factors": layer_scales,
+        "block_x_threshold": _range_value(pattern_seed, "block_x_threshold", 0.0043, 0.0057),
+        "block_y_threshold": _range_value(pattern_seed, "block_y_threshold", 0.0043, 0.0064),
+        "block_low_scale": _range_value(pattern_seed, "block_low_scale", 0.64, 0.88),
+        "block_high_scale": _range_value(pattern_seed, "block_high_scale", 1.08, 1.36),
+        "interposer_scale": _range_value(pattern_seed, "interposer_scale", 0.86, 1.24),
+        "diag_ratios": [
+            _range_value(pattern_seed, "diag_x", 1.05, 1.35),
+            _range_value(pattern_seed, "diag_y", 0.78, 1.05),
+            _range_value(pattern_seed, "diag_z", 0.45, 0.72),
+        ],
+        "high_contrast_scale": _range_value(pattern_seed, "high_contrast_scale", 0.85, 1.22),
+        "barrier_scale": _range_value(pattern_seed, "barrier_scale", 0.72, 1.18),
+    }
+    if k_region == "high_contrast_interface_k":
+        variation["k_contrast_category"] = "high_contrast"
+    if k_region == "low_k_barrier_or_TIM_variation":
+        variation["barrier_k_category"] = "low_k"
+    return variation
+
+
 def _sample_from_conditions(index: int, split: str, source: str, k_region: str, k_field: str, stack: str, bc: str) -> dict[str, Any]:
     sample_id = f"medium_gapA_{index:04d}"
+    pattern_seed = _pattern_seed(sample_id, index, split, source, k_region, k_field, stack, bc)
+    source_regions, source_variant = _source_regions_for_pattern(source, stack, index, pattern_seed)
+    k_variation = _k_variation(k_region, pattern_seed)
+    top_h_value = _top_h_value_for_category(bc, pattern_seed)
     sample = {
         "sample_id": sample_id,
         "split": split,
         "stack_template": stack,
-        "source_regions": _source_regions_for_pattern(source, stack, index),
+        "source_regions": source_regions,
         "source_pattern_tag": source,
         "power_scale_category": _power_scale_category(source),
         "q_policy": "fixed_density",
@@ -286,6 +479,15 @@ def _sample_from_conditions(index: int, split: str, source: str, k_region: str, 
         "k_region_mode": k_region,
         "k_field_mode": k_field,
         "bc_category": bc,
+        "top_h_value": top_h_value,
+        "bc_value_variant": {"top_h_W_m2K": top_h_value},
+        "variant_id": f"gapA_v2_{index:04d}",
+        "pattern_seed": pattern_seed,
+        "generation_variant_version": GAP_A_VARIANT_VERSION,
+        "k_scale_factor": float(sum(k_variation["layer_scale_factors"].values()) / len(k_variation["layer_scale_factors"])),
+        "k_variant_id": int((pattern_seed >> 16) % 1_000_000),
+        "k_variation": k_variation,
+        **source_variant,
         "resolution_category": "medium_expansion_mid",
         "purpose_tag": f"{split} {source} / {k_region} / {stack} / {bc}",
     }

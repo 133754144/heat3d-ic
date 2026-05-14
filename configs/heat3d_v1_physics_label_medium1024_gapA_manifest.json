@@ -4,11 +4,11 @@
   "schema_version": "physics_label_medium1024_gapA_v0",
   "sample_stage": "physics_label_medium1024_gapA_generation_candidate",
   "label_role": "physics_label_medium1024_gapA_generation_smoke",
-  "manifest_version": "medium1024_gapA_v0_seed20260513",
+  "manifest_version": "medium1024_gapA_v2_seed20260513",
   "deterministic_generation_seed": 20260513,
   "status": "generation_ready_candidate_not_full_generated",
   "description": "Generation-ready candidate manifest for Heat3D v1 medium1024 Gap-A. This is a research diagnostic candidate, not a formal benchmark.",
-  "sample_description": "medium1024 Gap-A candidate with medium256-supported modes plus low-risk source, k-interface, and top-h extensions.",
+  "sample_description": "medium1024 Gap-A candidate with medium256-supported modes plus low-risk source, k-interface, top-h extensions, and deterministic continuous per-sample q/k/BC variation.",
   "manifest_kind": "generation_ready_candidate_manifest",
   "manifest_has_full_sample_list": false,
   "full_generation_ready": true,
@@ -42,6 +42,18 @@
     "output_under_ignored_data_dir": true,
     "generated_data_committed_to_git": false,
     "sample_combination_strategy": "gapA_deterministic_balanced_cycle",
+    "deterministic_continuous_variation": true,
+    "generation_variant_version": "medium1024_gapA_diversity_v2",
+    "variation_seed_inputs": [
+      "sample_index",
+      "sample_id",
+      "split",
+      "source_pattern_tag",
+      "k_region_mode",
+      "k_field_mode",
+      "stack_template",
+      "bc_category"
+    ],
     "sample_limit_partial_smoke_required_before_full_generation": true
   },
   "split_counts": {

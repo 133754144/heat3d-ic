@@ -156,6 +156,53 @@ intentionally stricter and should not be treated as evidence of publication-read
 data without additional review of the fixed manifest, split protocol,
 condition-wise coverage, and multi-seed evaluation.
 
+## Full1024 v1 Diversity Gap And v2 Fix
+
+The first full1024 Gap-A dataset (`medium1024_gapA_full1024_v1`) passed
+generated-subset checks, label diagnostics, metadata coverage, and a short
+2-epoch training smoke. It also produced a readable `predictions.npz` with 1024
+keys for downstream comparison tooling. However, the diversity diagnostics showed
+that this was not enough for training-candidate use:
+
+- coarse condition combinations repeated heavily;
+- true `q_field` hashes repeated;
+- true `k_field` hashes repeated;
+- true `temperature` hashes repeated;
+- `diversity_ready_for_formal_benchmark` remained false.
+
+This was a generator-diversity issue, not a file-structure issue. The v1
+materializer cycled coarse source/k/stack/BC categories, but many continuous
+physics parameters were still fixed: hotspot positions and sizes were mostly
+deterministic from a small integer jitter, q amplitudes were category constants,
+k multipliers were fixed by mode, and `top_h` used one value per BC category.
+The sample index and `sample_id` did not drive enough physical variation inside
+the same coarse combo.
+
+The `medium1024_gapA_diversity_v2` generator path adds deterministic continuous
+variation for Gap-A generated samples:
+
+- source centers, sizes, z-span, optional auxiliary blocks, and q density scales
+  vary by deterministic `pattern_seed`;
+- low-power samples use nonzero continuous low-power scaling rather than one
+  fixed value;
+- high-dynamic-range samples vary both the strong hotspot and weak background;
+- layerwise, blockwise, interposer, diagonal, high-contrast, and low-k barrier
+  k modes receive bounded continuous scale variants;
+- `top_h` varies continuously inside each BC category range while preserving
+  the same BC type: top Robin, bottom Dirichlet, sides adiabatic;
+- metadata records `variant_id`, `pattern_seed`, `q_scale_factor`,
+  `q_geometry_variant`, `source_center_shift`, `source_size_scale`,
+  `k_scale_factor`, `k_variant_id`, `top_h_value`, `bc_value_variant`, and
+  `generation_variant_version`.
+
+Stack variation remains deferred in this round. The existing supported stack
+templates are reused without adding new deep, bridge, or five-layer stacks.
+
+`medium1024_gapA_full1024_v2` should be treated as the next generated-data
+candidate after local/SSH partial smoke and diversity diagnostics pass. It is
+still a research diagnostic candidate, not a formal benchmark or publication-
+ready dataset.
+
 ## Risks
 
 - Low-power samples change label scale and can make relative errors dominate

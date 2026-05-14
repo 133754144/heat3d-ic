@@ -138,51 +138,78 @@ def _layer_arrays(coords: np.ndarray, layers: list[dict[str, Any]]) -> tuple[np.
     return layer_id, region_id, material_id, [str(layer["name"]) for layer in layers]
 
 
-def _gap_a_k_iso(base: float, layer_name: str, point: np.ndarray, region_mode: str) -> float:
+def _bc_params(sample: dict[str, Any]) -> dict[str, float]:
+    bc = dict(BC_CATEGORY_MAP[sample["bc_category"]])
+    if "top_h_value" in sample:
+        bc["h_W_m2K"] = float(sample["top_h_value"])
+    return bc
+
+
+def _layer_scale(sample: dict[str, Any], layer_name: str) -> float:
+    variation = sample.get("k_variation", {})
+    layer_scales = variation.get("layer_scale_factors", {}) if isinstance(variation, dict) else {}
+    return float(layer_scales.get(layer_name, 1.0))
+
+
+def _gap_a_k_iso(base: float, layer_name: str, point: np.ndarray, region_mode: str, sample: dict[str, Any] | None = None) -> float:
     value = base
+    variation = sample.get("k_variation", {}) if isinstance(sample, dict) else {}
+    high_contrast_scale = float(variation.get("high_contrast_scale", 1.0)) if isinstance(variation, dict) else 1.0
+    barrier_scale = float(variation.get("barrier_scale", 1.0)) if isinstance(variation, dict) else 1.0
     if region_mode == "high_contrast_interface_k":
         if "heat_spreader" in layer_name:
-            value *= 1.40
+            value *= 1.25 + 0.15 * high_contrast_scale
         elif "substrate" in layer_name:
-            value *= 1.20
+            value *= 1.08 + 0.12 * high_contrast_scale
         elif "tim" in layer_name:
-            value *= 0.45
+            value *= max(0.35, 0.55 - 0.10 * high_contrast_scale)
         elif "interposer" in layer_name:
-            value *= 0.65
+            value *= max(0.45, 0.78 - 0.13 * high_contrast_scale)
         elif "active_die" in layer_name:
-            value *= 0.75 if point[0] < 0.005 else 1.25
+            threshold = float(variation.get("block_x_threshold", 0.005)) if isinstance(variation, dict) else 0.005
+            value *= 0.70 if point[0] < threshold else 1.18 + 0.08 * high_contrast_scale
     elif region_mode == "low_k_barrier_or_TIM_variation":
         if "tim" in layer_name:
-            value *= 0.35
+            value *= max(0.22, 0.42 * barrier_scale)
         elif "interposer" in layer_name:
-            value *= 0.55
+            value *= max(0.35, 0.60 * barrier_scale)
         elif "active_die" in layer_name and point[1] > 0.006:
-            value *= 0.85
+            threshold = float(variation.get("block_y_threshold", 0.006)) if isinstance(variation, dict) else 0.006
+            value *= 0.78 + 0.10 * barrier_scale if point[1] > threshold else 1.0
     return value
 
 
 def _k_field(coords: np.ndarray, layers: list[dict[str, Any]], sample: dict[str, Any]) -> np.ndarray:
     k_mode = sample["k_field_mode"]
     region_mode = sample["k_region_mode"]
+    variation = sample.get("k_variation", {})
+    variation = variation if isinstance(variation, dict) else {}
     if k_mode == "diag3":
         k = np.empty((coords.shape[0], 3), dtype=np.float64)
+        diag_ratios = variation.get("diag_ratios", [1.20, 0.90, 0.55])
         for idx, point in enumerate(coords):
             _, layer = _layer_for_z(layers, float(point[2]))
-            base = _gap_a_k_iso(float(layer["k_iso"]), str(layer["name"]), point, region_mode)
-            k[idx] = [base * 1.20, base * 0.90, base * 0.55]
+            layer_name = str(layer["name"])
+            base = float(layer["k_iso"]) * _layer_scale(sample, layer_name)
+            base = _gap_a_k_iso(base, layer_name, point, region_mode, sample)
+            k[idx] = [base * float(diag_ratios[0]), base * float(diag_ratios[1]), base * float(diag_ratios[2])]
         return k
     if k_mode != "iso1":
         raise ValueError(f"unsupported k_field_mode: {k_mode}")
     k = np.empty((coords.shape[0], 1), dtype=np.float64)
     for idx, point in enumerate(coords):
         _, layer = _layer_for_z(layers, float(point[2]))
-        value = float(layer["k_iso"])
+        layer_name = str(layer["name"])
+        value = float(layer["k_iso"]) * _layer_scale(sample, layer_name)
         if region_mode == "blockwise_isotropic_k" and "active_die" in layer["name"]:
-            value *= 0.75 if point[0] < 0.005 else 1.25
+            threshold = float(variation.get("block_x_threshold", 0.005))
+            low_scale = float(variation.get("block_low_scale", 0.75))
+            high_scale = float(variation.get("block_high_scale", 1.25))
+            value *= low_scale if point[0] < threshold else high_scale
         elif region_mode == "interposer_equivalent_k" and "interposer" in layer["name"]:
-            value *= 1.10
+            value *= float(variation.get("interposer_scale", 1.10))
         elif region_mode in {"high_contrast_interface_k", "low_k_barrier_or_TIM_variation"}:
-            value = _gap_a_k_iso(value, str(layer["name"]), point, region_mode)
+            value = _gap_a_k_iso(value, layer_name, point, region_mode, sample)
         k[idx, 0] = value
     return k
 
@@ -199,10 +226,14 @@ def _source_box(region: dict[str, Any], layers: list[dict[str, Any]]) -> dict[st
     sy = float(region["size_xy_fraction"][1]) * (y1 - y0)
     z0, z1 = layer["z"]
     z_span = z1 - z0
+    z_center_fraction = float(region.get("z_center_fraction", 0.50))
+    z_span_fraction = float(region.get("z_span_fraction", 1.0))
+    z_half_span = 0.30 * z_span * z_span_fraction
+    z_center = z0 + z_center_fraction * z_span
     return {
         "x": (max(x0, cx - 0.5 * sx), min(x1, cx + 0.5 * sx)),
         "y": (max(y0, cy - 0.5 * sy), min(y1, cy + 0.5 * sy)),
-        "z": (z0 + 0.20 * z_span, z0 + 0.80 * z_span),
+        "z": (max(z0, z_center - z_half_span), min(z1, z_center + z_half_span)),
     }
 
 
@@ -214,8 +245,10 @@ def _resolved_sources(sample: dict[str, Any], layers: list[dict[str, Any]]) -> l
             "region_id": region["region_id"],
             "layer": region["layer"],
             "source_box_m": _source_box(region, layers),
-            "q_density_W_m3": Q_DENSITY_MAP[q_category],
+            "q_density_W_m3": Q_DENSITY_MAP[q_category] * float(region.get("q_density_scale", 1.0)),
             "q_scale_category": q_category,
+            "q_density_scale": float(region.get("q_density_scale", 1.0)),
+            "geometry_variant_id": region.get("geometry_variant_id"),
             "power_scale_category": region.get("power_scale_category", sample.get("power_scale_category")),
         })
     return sources
@@ -230,7 +263,7 @@ def _sample_meta(
     layer_names: list[str],
     source_summary: dict[str, Any],
 ) -> dict[str, Any]:
-    bc = BC_CATEGORY_MAP[sample["bc_category"]]
+    bc = _bc_params(sample)
     subset_name = str(manifest.get("output_subset_name", "v1_multilayer_bc_eq_physics_label_medium_expansion_v2"))
     sample_stage = str(manifest.get("sample_stage", "physics_label_medium_expansion_smoke"))
     description = str(
@@ -315,7 +348,7 @@ def _metadata_json(
     label_meta: dict[str, Any],
     temperature: np.ndarray,
 ) -> dict[str, Any]:
-    bc = BC_CATEGORY_MAP[sample["bc_category"]]
+    bc = _bc_params(sample)
     return {
         "metadata_schema_version": "heat3d_v1_medium_sample_metadata_v1",
         "sample_id": sample["sample_id"],
@@ -328,6 +361,17 @@ def _metadata_json(
         "power_scale_category": sample.get("power_scale_category"),
         "k_contrast_category": sample.get("k_contrast_category"),
         "barrier_k_category": sample.get("barrier_k_category"),
+        "variant_id": sample.get("variant_id"),
+        "pattern_seed": sample.get("pattern_seed"),
+        "q_scale_factor": sample.get("q_scale_factor"),
+        "q_geometry_variant": sample.get("q_geometry_variant"),
+        "source_center_shift": sample.get("source_center_shift"),
+        "source_size_scale": sample.get("source_size_scale"),
+        "k_scale_factor": sample.get("k_scale_factor"),
+        "k_variant_id": sample.get("k_variant_id"),
+        "top_h_value": sample.get("top_h_value"),
+        "bc_value_variant": sample.get("bc_value_variant"),
+        "generation_variant_version": sample.get("generation_variant_version"),
         "top_h_W_m2K": float(bc["h_W_m2K"]),
         "top_ambient_temperature_K": float(bc["top_K"]),
         "bottom_T_fixed_K": float(bc["bottom_K"]),

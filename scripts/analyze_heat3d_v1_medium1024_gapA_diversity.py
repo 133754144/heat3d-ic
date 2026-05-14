@@ -204,8 +204,18 @@ def analyze_subset(subset: Path, top_n: int = 30) -> dict[str, Any]:
         )
     per_combo.sort(key=lambda item: (-item["sample_count"], item["combo_label"]))
 
+    sample_count = len(sample_dirs)
     max_combo_count = max(combo_counter.values(), default=0)
     combo_gt_20_count = sum(1 for count in combo_counter.values() if count > 20)
+    max_q_hash_repeat = max(q_hash_counter.values(), default=0)
+    max_k_hash_repeat = max(k_hash_counter.values(), default=0)
+    max_temperature_hash_repeat = max(temperature_hash_counter.values(), default=0)
+    unique_q_hash_fraction = len(q_hash_counter) / sample_count if sample_count else 0.0
+    unique_k_hash_fraction = len(k_hash_counter) / sample_count if sample_count else 0.0
+    unique_temperature_hash_fraction = len(temperature_hash_counter) / sample_count if sample_count else 0.0
+    per_combo_min_unique_q = min((item["unique_q_hash_count"] for item in per_combo), default=0)
+    per_combo_min_unique_k = min((item["unique_k_hash_count"] for item in per_combo), default=0)
+    per_combo_min_unique_temperature = min((item["unique_temperature_hash_count"] for item in per_combo), default=0)
     likely_coarse_combo_repetition = combo_gt_20_count > 0 or max_combo_count > max(20, len(sample_dirs) // 8)
     likely_true_q_duplicates = any(count > 1 for count in q_hash_counter.values())
     likely_true_k_duplicates = any(count > 1 for count in k_hash_counter.values())
@@ -220,19 +230,32 @@ def analyze_subset(subset: Path, top_n: int = 30) -> dict[str, Any]:
         and metadata_counters["bc_category"]["very_high_top_h_candidate"] > 0
     )
     training_smoke_ready = bool(sample_dirs) and no_file_errors and gap_a_covered
-    formal_benchmark_ready = (
-        len(sample_dirs) >= 1024
+    e50_probe_ready = (
+        sample_count >= 32
         and no_file_errors
         and gap_a_covered
+        and unique_q_hash_fraction >= 0.75
+        and unique_temperature_hash_fraction >= 0.75
+        and unique_k_hash_fraction >= 0.25
+        and max_q_hash_repeat <= max(4, int(0.10 * sample_count))
+        and max_temperature_hash_repeat <= max(4, int(0.10 * sample_count))
+    )
+    formal_benchmark_ready = (
+        sample_count >= 1024
+        and no_file_errors
+        and gap_a_covered
+        and unique_q_hash_fraction >= 0.95
+        and unique_temperature_hash_fraction >= 0.95
+        and unique_k_hash_fraction >= 0.50
+        and max_q_hash_repeat <= max(8, int(0.025 * sample_count))
+        and max_temperature_hash_repeat <= max(8, int(0.025 * sample_count))
         and not likely_coarse_combo_repetition
-        and not likely_true_q_duplicates
-        and not likely_true_temperature_duplicates
     )
 
     return {
         "scope": "diagnostic only; not a formal benchmark",
         "subset": str(subset),
-        "sample_count": len(sample_dirs),
+        "sample_count": sample_count,
         "missing_metadata_count": missing_metadata_count,
         "missing_required_file_count": missing_required_file_count,
         "nonfinite_array_count": nonfinite_array_count,
@@ -247,6 +270,15 @@ def analyze_subset(subset: Path, top_n: int = 30) -> dict[str, Any]:
         "unique_q_hash_count": len(q_hash_counter),
         "unique_k_hash_count": len(k_hash_counter),
         "unique_temperature_hash_count": len(temperature_hash_counter),
+        "unique_q_hash_fraction": float(unique_q_hash_fraction),
+        "unique_k_hash_fraction": float(unique_k_hash_fraction),
+        "unique_temperature_hash_fraction": float(unique_temperature_hash_fraction),
+        "max_q_hash_repeat": int(max_q_hash_repeat),
+        "max_k_hash_repeat": int(max_k_hash_repeat),
+        "max_temperature_hash_repeat": int(max_temperature_hash_repeat),
+        "per_combo_min_unique_q": int(per_combo_min_unique_q),
+        "per_combo_min_unique_k": int(per_combo_min_unique_k),
+        "per_combo_min_unique_T": int(per_combo_min_unique_temperature),
         "top_repeated_q_hashes": _top_counts(q_hash_counter, top_n),
         "top_repeated_k_hashes": _top_counts(k_hash_counter, top_n),
         "top_repeated_temperature_hashes": _top_counts(temperature_hash_counter, top_n),
@@ -257,6 +289,7 @@ def analyze_subset(subset: Path, top_n: int = 30) -> dict[str, Any]:
             "likely_true_k_duplicates": bool(likely_true_k_duplicates),
             "likely_true_temperature_duplicates": bool(likely_true_temperature_duplicates),
             "diversity_ready_for_training_smoke": bool(training_smoke_ready),
+            "diversity_ready_for_e50_probe": bool(e50_probe_ready),
             "diversity_ready_for_formal_benchmark": bool(formal_benchmark_ready),
         },
         "sample_errors": sample_errors,
@@ -285,6 +318,15 @@ def write_markdown(path: Path, result: dict[str, Any]) -> None:
         f"- combo_count: {result['combo_count']}",
         f"- max_combo_count: {result['max_combo_count']}",
         f"- combo_gt_20_count: {result['combo_gt_20_count']}",
+        f"- unique_q_hash_fraction: {_fmt(result['unique_q_hash_fraction'])}",
+        f"- unique_k_hash_fraction: {_fmt(result['unique_k_hash_fraction'])}",
+        f"- unique_temperature_hash_fraction: {_fmt(result['unique_temperature_hash_fraction'])}",
+        f"- max_q_hash_repeat: {result['max_q_hash_repeat']}",
+        f"- max_k_hash_repeat: {result['max_k_hash_repeat']}",
+        f"- max_temperature_hash_repeat: {result['max_temperature_hash_repeat']}",
+        f"- per_combo_min_unique_q: {result['per_combo_min_unique_q']}",
+        f"- per_combo_min_unique_k: {result['per_combo_min_unique_k']}",
+        f"- per_combo_min_unique_T: {result['per_combo_min_unique_T']}",
         "",
         "## Diagnostic Flags",
         "",
@@ -309,6 +351,9 @@ def write_markdown(path: Path, result: dict[str, Any]) -> None:
             f"- unique_q_hash_count: {result['unique_q_hash_count']}",
             f"- unique_k_hash_count: {result['unique_k_hash_count']}",
             f"- unique_temperature_hash_count: {result['unique_temperature_hash_count']}",
+            f"- max_q_hash_repeat: {result['max_q_hash_repeat']}",
+            f"- max_k_hash_repeat: {result['max_k_hash_repeat']}",
+            f"- max_temperature_hash_repeat: {result['max_temperature_hash_repeat']}",
             "",
             "## Top Repeated Combos",
             "",
@@ -363,6 +408,12 @@ def main() -> int:
     print(f"unique_q_hash_count: {result['unique_q_hash_count']}")
     print(f"unique_k_hash_count: {result['unique_k_hash_count']}")
     print(f"unique_temperature_hash_count: {result['unique_temperature_hash_count']}")
+    print(f"unique_q_hash_fraction: {result['unique_q_hash_fraction']:.6f}")
+    print(f"unique_k_hash_fraction: {result['unique_k_hash_fraction']:.6f}")
+    print(f"unique_temperature_hash_fraction: {result['unique_temperature_hash_fraction']:.6f}")
+    print(f"max_q_hash_repeat: {result['max_q_hash_repeat']}")
+    print(f"max_k_hash_repeat: {result['max_k_hash_repeat']}")
+    print(f"max_temperature_hash_repeat: {result['max_temperature_hash_repeat']}")
     print(f"diagnostic_flags: {result['diagnostic_flags']}")
     print(f"output_json: {args.output_json}")
     print(f"output_md: {args.output_md}")
