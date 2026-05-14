@@ -31,6 +31,8 @@ def main() -> int:
     quiet_args = _parse(["--log-mode", "quiet"])
     disabled_args = _parse(["--no-progress-log"])
     enabled_args = _parse(["--progress-log", "--log-mode", "compact"])
+    verbose_args = _parse(["--progress-detail", "verbose"])
+    off_args = _parse(["--progress-detail", "off"])
 
     buffer = io.StringIO()
     with contextlib.redirect_stdout(buffer):
@@ -60,6 +62,10 @@ def main() -> int:
         "quiet_progress_disabled": not runner._progress_enabled(quiet_args),
         "explicit_progress_disabled": not runner._progress_enabled(disabled_args),
         "explicit_progress_enabled": runner._progress_enabled(enabled_args),
+        "default_progress_detail_basic": default_args.progress_detail == "basic",
+        "verbose_progress_detail_enabled": runner._verbose_progress_enabled(verbose_args),
+        "progress_detail_off_disabled": not runner._progress_detail_enabled(off_args),
+        "progress_checkpoints_full1024": runner._progress_checkpoints(1024) == {256, 512, 768, 1024},
         "startup_line_printed": "[startup] loading dataset from fake_subset ..." in output,
         "elapsed_printed": "elapsed=" in output,
         "disabled_line_suppressed": "this should not print" not in output,

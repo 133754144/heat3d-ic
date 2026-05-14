@@ -27,6 +27,12 @@ stage markers before the first epoch report when progress logging is enabled:
 - `[startup] computing train-only target normalization ...`
 - `[startup] target normalization done ...`
 - `[startup] building grouped JAX arrays and graphs ...`
+- `[startup] group build train: start samples=...`
+- `[startup] group build train: sample scan grouped=...`
+- `[startup] group build train: group ... arrays+graph start ...`
+- `[startup] group build train: group ... arrays+graph built ...`
+- `[startup] group build valid: ...`
+- `[startup] group build all: ...`
 - `[startup] groups built ...`
 - `[startup] initializing model parameters ...`
 - `[startup] model parameters initialized`
@@ -43,6 +49,25 @@ The existing `--log-mode compact`, `--log-mode full`, and `--log-mode quiet`
 behavior remains. Progress logging is enabled by default for compact/full and is
 suppressed in quiet mode. It can also be disabled explicitly with
 `--no-progress-log`.
+
+`--progress-detail` controls the grouped JAX array/graph startup logs:
+
+- `off`: only the outer `building grouped...` and `groups built...` messages.
+- `basic`: default; prints train/valid/all group-build starts, sample-scan
+  completion, and per-group arrays+graph start/done messages.
+- `verbose`: additionally prints sample-scan checkpoints such as
+  `256/1024`, `512/1024`, `768/1024`, and `1024/1024` for full1024 runs.
+
+The long full1024 startup stage mainly calls the small-train helper logic that
+groups examples by shape/signature, builds metadata signatures from coordinates,
+stacks condition/target arrays into grouped JAX arrays, and constructs graph
+topology for each group. The new logging wraps that path without changing the
+arrays, graph construction, loss, optimizer, normalization, or predictions
+schema.
+
+The runner also emits a final startup timing line similar to:
+
+`[startup-summary] dataset_load=... normalization=... group_build=... model_init=... initial_loss=...`
 
 All runner output goes through a small flushed print wrapper, so progress lines
 should appear promptly when the command is run through `tee`. For SSH runs,

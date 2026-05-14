@@ -29,8 +29,10 @@ for path in (REPO_DIR, SCRIPTS_DIR):
 
 from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     MODEL_CONFIG,
+    _bridge_for,
     _global_norm,
-    _make_groups,
+    _make_batch_group,
+    _metadata_shape_signature,
     _metrics,
     _sample_root,
     _selected_steps,
@@ -74,6 +76,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log-mode", choices=("compact", "full", "quiet"), default="compact")
     parser.add_argument("--progress-log", dest="progress_log", action="store_true", default=True)
     parser.add_argument("--no-progress-log", dest="progress_log", action="store_false")
+    parser.add_argument("--progress-detail", choices=("off", "basic", "verbose"), default="basic")
     parser.add_argument(
         "--loss-mode",
         choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative"),
@@ -122,6 +125,51 @@ def _format_elapsed(start_time: float | None) -> str:
 def _progress(enabled: bool, stage: str, message: str, start_time: float | None = None) -> None:
     if enabled:
         _emit(f"[{stage}] {message}{_format_elapsed(start_time)}")
+
+
+def _progress_detail_enabled(args: argparse.Namespace) -> bool:
+    return _progress_enabled(args) and args.progress_detail != "off"
+
+
+def _verbose_progress_enabled(args: argparse.Namespace) -> bool:
+    return _progress_enabled(args) and args.progress_detail == "verbose"
+
+
+def _progress_checkpoints(total: int) -> set[int]:
+    if total <= 0:
+        return set()
+    if total >= 768:
+        step = 256
+    elif total >= 256:
+        step = 128
+    elif total >= 64:
+        step = 64
+    else:
+        step = total
+    checkpoints = set(range(step, total + 1, step))
+    checkpoints.add(total)
+    return checkpoints
+
+
+def _record_timing(timings: dict[str, float], key: str, start_time: float) -> float:
+    elapsed = time.perf_counter() - start_time
+    timings[key] = elapsed
+    return elapsed
+
+
+def _timing_summary(timings: dict[str, float]) -> str:
+    keys = (
+        "dataset_load",
+        "normalization",
+        "group_build",
+        "model_init",
+        "initial_loss",
+        "epoch_loop",
+        "prediction_export",
+        "summary_write",
+        "prediction_save",
+    )
+    return " ".join(f"{key}={timings[key]:.2f}s" for key in keys if key in timings)
 
 
 def _ensure_ignored_output_dir(path: Path) -> Path:
@@ -600,7 +648,9 @@ def _fit_once(
     loss_config: dict[str, Any],
     log_mode: str,
     progress_enabled: bool,
+    timings: dict[str, float] | None = None,
 ) -> dict:
+    timings = timings if timings is not None else {}
     init_start = time.perf_counter()
     _progress(progress_enabled, "startup", "initializing model parameters ...")
     model = GraphNeuralOperator(**MODEL_CONFIG)
@@ -609,6 +659,7 @@ def _fit_once(
         inputs=train_groups[0]["inputs"],
         graphs=train_groups[0]["graphs"],
     )["params"]
+    _record_timing(timings, "model_init", init_start)
     _progress(progress_enabled, "startup", "model parameters initialized", init_start)
 
     initial_start = time.perf_counter()
@@ -616,6 +667,7 @@ def _fit_once(
     initial_loss_config = _loss_config_for_epoch(loss_config, 1)
     train_initial_components = _loss_components(model, params, train_groups, stats, initial_loss_config)
     valid_initial_components = _loss_components(model, params, valid_groups, stats, initial_loss_config)
+    _record_timing(timings, "initial_loss", initial_start)
     _progress(progress_enabled, "startup", "initial train/valid losses computed", initial_start)
     train_losses = [float(train_initial_components["total_loss"])]
     valid_losses = [float(valid_initial_components["total_loss"])]
@@ -625,6 +677,7 @@ def _fit_once(
     grad_finite = True
     epoch_history = []
     _progress(progress_enabled, "train", f"epoch loop start epochs={epochs} report_every={report_every}")
+    epoch_loop_start = time.perf_counter()
     for epoch in range(1, epochs + 1):
         lr_epoch = _lr_for_epoch(epoch, epochs, lr_config)
         current_loss_config = _loss_config_for_epoch(loss_config, epoch)
@@ -662,6 +715,7 @@ def _fit_once(
         if should_report:
             _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} metrics computed", epoch_start)
             _print_epoch_progress(record, epochs, log_mode)
+    _record_timing(timings, "epoch_loop", epoch_loop_start)
 
     _progress(progress_enabled, "train", "computing final train/valid metrics ...")
     final_metrics_start = time.perf_counter()
@@ -733,6 +787,69 @@ def _metrics_payload(metrics: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _make_groups_with_progress(
+    examples,
+    stats: dict,
+    builder: Heat3DGraphBuilder,
+    label: str,
+    progress_enabled: bool,
+    verbose_progress_enabled: bool,
+) -> list[dict]:
+    start = time.perf_counter()
+    sample_count = len(examples)
+    _progress(progress_enabled, "startup", f"group build {label}: start samples={sample_count} ...")
+
+    grouped: dict[tuple[int, tuple[str, ...], tuple[tuple[int, ...], ...]], list] = {}
+    checkpoints = _progress_checkpoints(sample_count)
+    scan_start = time.perf_counter()
+    for index, example in enumerate(examples, start=1):
+        bridge = _bridge_for(example)
+        signature = _metadata_shape_signature(builder.build_metadata(example.condition.coords))
+        key = (
+            example.condition.coords.shape[0],
+            bridge.condition_feature_names,
+            signature,
+        )
+        grouped.setdefault(key, []).append(example)
+        if verbose_progress_enabled and index in checkpoints:
+            _progress(
+                True,
+                "startup",
+                f"group build {label}: {index}/{sample_count} samples scanned groups={len(grouped)}",
+                scan_start,
+            )
+
+    _progress(
+        progress_enabled,
+        "startup",
+        f"group build {label}: sample scan grouped={len(grouped)}",
+        scan_start,
+    )
+
+    result = []
+    for group_index, ((n_points, feature_names, _signature), group_examples) in enumerate(grouped.items(), start=1):
+        group_name = f"group_{group_index}_N{n_points}_F{len(feature_names)}"
+        batch_start = time.perf_counter()
+        _progress(
+            progress_enabled,
+            "startup",
+            (
+                f"group build {label}: group {group_index}/{len(grouped)} "
+                f"{group_name} arrays+graph start samples={len(group_examples)} ..."
+            ),
+        )
+        result.append(_make_batch_group(group_name, group_examples, stats, builder))
+        _progress(
+            progress_enabled,
+            "startup",
+            f"group build {label}: group {group_index}/{len(grouped)} arrays+graph built",
+            batch_start,
+        )
+
+    _progress(progress_enabled, "startup", f"group build {label}: done groups={len(result)}", start)
+    return result
+
+
 def main() -> int:
     args = parse_args()
     if args.epochs < 1:
@@ -740,6 +857,9 @@ def main() -> int:
     if args.report_every < 1:
         raise ValueError("--report-every must be >= 1")
     progress_enabled = _progress_enabled(args)
+    progress_detail_enabled = _progress_detail_enabled(args)
+    verbose_progress_enabled = _verbose_progress_enabled(args)
+    timings: dict[str, float] = {}
     script_start = time.perf_counter()
     _progress(
         progress_enabled,
@@ -787,6 +907,7 @@ def main() -> int:
         f"dataset loaded: sample_count={len(dataset)} split_counts={split_counts}",
         dataset_start,
     )
+    _record_timing(timings, "dataset_load", dataset_start)
 
     builder = Heat3DGraphBuilder()
     norm_start = time.perf_counter()
@@ -802,11 +923,34 @@ def main() -> int:
         ),
         norm_start,
     )
+    _record_timing(timings, "normalization", norm_start)
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
-    train_groups = _make_groups(train_examples, stats, builder)
-    valid_groups = _make_groups(valid_examples, stats, builder)
-    all_groups = _make_groups(all_examples, stats, builder)
+    train_groups = _make_groups_with_progress(
+        train_examples,
+        stats,
+        builder,
+        "train",
+        progress_detail_enabled,
+        verbose_progress_enabled,
+    )
+    valid_groups = _make_groups_with_progress(
+        valid_examples,
+        stats,
+        builder,
+        "valid",
+        progress_detail_enabled,
+        verbose_progress_enabled,
+    )
+    all_groups = _make_groups_with_progress(
+        all_examples,
+        stats,
+        builder,
+        "all",
+        progress_detail_enabled,
+        verbose_progress_enabled,
+    )
+    _record_timing(timings, "group_build", group_start)
     _progress(
         progress_enabled,
         "startup",
@@ -835,6 +979,7 @@ def main() -> int:
     _emit(f"  report every: {args.report_every}")
     _emit(f"  log mode: {args.log_mode}")
     _emit(f"  progress log: {bool(args.progress_log)}")
+    _emit(f"  progress detail: {args.progress_detail}")
     _emit(f"  loss mode: {loss_config['loss_mode']}")
     _emit(f"  loss space: {loss_config['loss_space']}")
     _emit(
@@ -868,10 +1013,12 @@ def main() -> int:
         loss_config,
         args.log_mode,
         progress_enabled,
+        timings,
     )
     prediction_start = time.perf_counter()
     _progress(progress_enabled, "export", "building recovered predictions ...")
     predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
+    _record_timing(timings, "prediction_export", prediction_start)
     _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
 
     run_config = {
@@ -891,6 +1038,7 @@ def main() -> int:
         "save_predictions": bool(args.save_predictions),
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
+        "progress_detail": args.progress_detail,
         "checkpoint_saved": False,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
@@ -907,6 +1055,7 @@ def main() -> int:
         "loss": loss_config,
         "lr_config": lr_config,
         "split_counts": split_counts,
+        "timing_diagnostics": dict(timings),
         "train_ids": train_ids,
         "valid_ids": valid_ids,
         "ignored_candidate_ids": sorted(
@@ -915,7 +1064,6 @@ def main() -> int:
     }
     summary_write_start = time.perf_counter()
     _progress(progress_enabled, "export", "writing run_config.json and loss_summary.json ...")
-    _write_json(output_dir / "run_config.json", run_config)
 
     loss_summary = {
         "status_ok": bool(result["status_ok"]),
@@ -945,6 +1093,7 @@ def main() -> int:
         "valid_metrics": _metrics_payload(result["valid_metrics"]),
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
+        "progress_detail": args.progress_detail,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
@@ -973,7 +1122,11 @@ def main() -> int:
         "final_valid_loss_components": result["final_valid_loss_components"],
         "train_only_normalization": _stats_payload(stats),
     }
+    loss_summary["timing_diagnostics"] = dict(timings)
+    run_config["timing_diagnostics"] = dict(timings)
+    _write_json(output_dir / "run_config.json", run_config)
     _write_json(output_dir / "loss_summary.json", loss_summary)
+    _record_timing(timings, "summary_write", summary_write_start)
     _progress(progress_enabled, "export", "run summary files written", summary_write_start)
 
     predictions_path = output_dir / "predictions.npz"
@@ -981,8 +1134,10 @@ def main() -> int:
     if args.save_predictions:
         _progress(progress_enabled, "export", f"saving predictions to {predictions_path} ...")
         np.savez_compressed(predictions_path, **predictions)
+        _record_timing(timings, "prediction_save", save_start)
         _progress(progress_enabled, "export", f"predictions saved: key_count={len(predictions)} path={predictions_path}", save_start)
     else:
+        _record_timing(timings, "prediction_save", save_start)
         _progress(progress_enabled, "export", f"prediction save skipped: key_count={len(predictions)}", save_start)
 
     lr_history_summary = _sequence_summary(result["lr_history"])
@@ -1056,6 +1211,7 @@ def main() -> int:
     _emit(f"  prediction sample count: {len(predictions)}")
     _emit("  checkpoint saved: False")
     _emit(f"  export smoke ok: {result['status_ok']}")
+    _progress(progress_enabled, "startup-summary", _timing_summary(timings))
     _progress(progress_enabled, "done", "script complete", script_start)
     return 0 if result["status_ok"] else 1
 
