@@ -12,6 +12,7 @@ import json
 import math
 from pathlib import Path
 import sys
+import time
 from typing import Any
 
 import jax
@@ -71,6 +72,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-predictions", action="store_true")
     parser.add_argument("--report-every", type=int, default=1)
     parser.add_argument("--log-mode", choices=("compact", "full", "quiet"), default="compact")
+    parser.add_argument("--progress-log", dest="progress_log", action="store_true", default=True)
+    parser.add_argument("--no-progress-log", dest="progress_log", action="store_false")
     parser.add_argument(
         "--loss-mode",
         choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative"),
@@ -99,6 +102,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--background-over-weight-start", type=float, default=None)
     parser.add_argument("--background-over-weight-end", type=float, default=None)
     return parser.parse_args()
+
+
+def _emit(*args, **kwargs) -> None:
+    kwargs.setdefault("flush", True)
+    print(*args, **kwargs)
+
+
+def _progress_enabled(args: argparse.Namespace) -> bool:
+    return bool(args.progress_log) and args.log_mode != "quiet"
+
+
+def _format_elapsed(start_time: float | None) -> str:
+    if start_time is None:
+        return ""
+    return f" elapsed={time.perf_counter() - start_time:.2f}s"
+
+
+def _progress(enabled: bool, stage: str, message: str, start_time: float | None = None) -> None:
+    if enabled:
+        _emit(f"[{stage}] {message}{_format_elapsed(start_time)}")
 
 
 def _ensure_ignored_output_dir(path: Path) -> Path:
@@ -513,7 +536,7 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
     if log_mode == "quiet":
         return
     if log_mode == "compact":
-        print(
+        _emit(
             f"epoch {record['epoch']:03d}/{epochs:03d} "
             f"lr={record['lr']:.3e} "
             f"train_loss={record['train_loss']:.6e} "
@@ -527,7 +550,7 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             f"hot_w={record['current_hotspot_weight']:.3e}"
         )
         return
-    print(
+    _emit(
         f"epoch {record['epoch']:03d}/{epochs:03d} "
         f"lr={record['lr']:.8e} "
         f"train_loss={record['train_loss']:.8e} "
@@ -576,17 +599,24 @@ def _fit_once(
     report_every: int,
     loss_config: dict[str, Any],
     log_mode: str,
+    progress_enabled: bool,
 ) -> dict:
+    init_start = time.perf_counter()
+    _progress(progress_enabled, "startup", "initializing model parameters ...")
     model = GraphNeuralOperator(**MODEL_CONFIG)
     params = model.init(
         jax.random.PRNGKey(seed),
         inputs=train_groups[0]["inputs"],
         graphs=train_groups[0]["graphs"],
     )["params"]
+    _progress(progress_enabled, "startup", "model parameters initialized", init_start)
 
+    initial_start = time.perf_counter()
+    _progress(progress_enabled, "startup", "computing initial train/valid losses ...")
     initial_loss_config = _loss_config_for_epoch(loss_config, 1)
     train_initial_components = _loss_components(model, params, train_groups, stats, initial_loss_config)
     valid_initial_components = _loss_components(model, params, valid_groups, stats, initial_loss_config)
+    _progress(progress_enabled, "startup", "initial train/valid losses computed", initial_start)
     train_losses = [float(train_initial_components["total_loss"])]
     valid_losses = [float(valid_initial_components["total_loss"])]
     grad_norms = []
@@ -594,11 +624,16 @@ def _fit_once(
     loss_weight_history = []
     grad_finite = True
     epoch_history = []
+    _progress(progress_enabled, "train", f"epoch loop start epochs={epochs} report_every={report_every}")
     for epoch in range(1, epochs + 1):
         lr_epoch = _lr_for_epoch(epoch, epochs, lr_config)
         current_loss_config = _loss_config_for_epoch(loss_config, epoch)
         loss_weight_history.append({"epoch": int(epoch), **_current_weight_payload(current_loss_config)})
         lr_history.append(lr_epoch)
+        should_report = _should_report_epoch(epoch, epochs, report_every)
+        epoch_start = time.perf_counter()
+        if should_report or epoch <= 3:
+            _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e}")
 
         def loss_fn(current_params):
             return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
@@ -624,14 +659,18 @@ def _fit_once(
             train_metrics,
         )
         epoch_history.append(record)
-        if _should_report_epoch(epoch, epochs, report_every):
+        if should_report:
+            _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} metrics computed", epoch_start)
             _print_epoch_progress(record, epochs, log_mode)
 
+    _progress(progress_enabled, "train", "computing final train/valid metrics ...")
+    final_metrics_start = time.perf_counter()
     train_metrics = _metrics(model, params, train_groups, stats)
     valid_metrics = _metrics(model, params, valid_groups, stats)
     final_loss_config = _loss_config_for_epoch(loss_config, epochs)
     final_train_components = _loss_components(model, params, train_groups, stats, final_loss_config)
     final_valid_components = _loss_components(model, params, valid_groups, stats, final_loss_config)
+    _progress(progress_enabled, "train", "final train/valid metrics computed", final_metrics_start)
     status_ok = (
         grad_finite
         and train_metrics["finite_ok"]
@@ -700,19 +739,35 @@ def main() -> int:
         raise ValueError("--epochs must be >= 1")
     if args.report_every < 1:
         raise ValueError("--report-every must be >= 1")
+    progress_enabled = _progress_enabled(args)
+    script_start = time.perf_counter()
+    _progress(
+        progress_enabled,
+        "startup",
+        (
+            f"script start subset={args.subset} epochs={args.epochs} lr={args.lr} "
+            f"log_mode={args.log_mode} save_predictions={bool(args.save_predictions)}"
+        ),
+    )
     loss_config = _loss_config_from_args(args)
     lr_config = _lr_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
 
+    output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
+    _progress(progress_enabled, "startup", f"output dir ready: {output_dir}", output_start)
+
+    dataset_start = time.perf_counter()
     sample_root = _sample_root(args.subset)
+    _progress(progress_enabled, "startup", f"loading dataset from {sample_root} ...")
     split_ids = _subset_split_ids(sample_root)
     _require_train_valid_splits(split_ids)
 
     all_ids = sorted(sample_id for ids in split_ids.values() for sample_id in ids)
     train_ids = split_ids["train"]
     valid_ids = split_ids["valid"]
+    split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
     for sample_id in all_ids:
         if not (sample_root / sample_id / "temperature.npy").is_file():
             raise FileNotFoundError(f"Missing temperature.npy for {sample_id}")
@@ -726,35 +781,63 @@ def main() -> int:
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
     all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
+    _progress(
+        progress_enabled,
+        "startup",
+        f"dataset loaded: sample_count={len(dataset)} split_counts={split_counts}",
+        dataset_start,
+    )
 
     builder = Heat3DGraphBuilder()
+    norm_start = time.perf_counter()
+    _progress(progress_enabled, "startup", "computing train-only target normalization ...")
     stats = _train_only_stats(train_examples)
+    _progress(
+        progress_enabled,
+        "startup",
+        (
+            "target normalization done: "
+            f"delta_mean={float(stats['target_delta_mean'].reshape(-1)[0]):.6e} "
+            f"delta_std={float(stats['target_delta_std'].reshape(-1)[0]):.6e}"
+        ),
+        norm_start,
+    )
+    group_start = time.perf_counter()
+    _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
     train_groups = _make_groups(train_examples, stats, builder)
     valid_groups = _make_groups(valid_examples, stats, builder)
     all_groups = _make_groups(all_examples, stats, builder)
+    _progress(
+        progress_enabled,
+        "startup",
+        (
+            "groups built: "
+            f"train_groups={len(train_groups)} valid_groups={len(valid_groups)} all_groups={len(all_groups)}"
+        ),
+        group_start,
+    )
 
-    split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
-
-    print("Heat3D v1 medium controlled training export smoke")
-    print("  scope: research reference diagnostics only; not formal model performance")
-    print(f"  subset: {sample_root}")
-    print(f"  split counts: {split_counts}")
-    print(f"  epochs: {args.epochs}")
-    print(f"  lr: {args.lr}")
-    print(
+    _emit("Heat3D v1 medium controlled training export smoke")
+    _emit("  scope: research reference diagnostics only; not formal model performance")
+    _emit(f"  subset: {sample_root}")
+    _emit(f"  split counts: {split_counts}")
+    _emit(f"  epochs: {args.epochs}")
+    _emit(f"  lr: {args.lr}")
+    _emit(
         "  lr schedule: "
         f"{lr_config['lr_schedule']} warmup_epochs={lr_config['warmup_epochs']} "
         f"min_lr={lr_config['min_lr']} second_stage_epoch={lr_config['second_stage_epoch']} "
         f"second_stage_lr={lr_config['second_stage_lr']}"
     )
-    print(f"  seed: {args.seed}")
-    print(f"  output_dir: {output_dir}")
-    print(f"  save_predictions: {bool(args.save_predictions)}")
-    print(f"  report every: {args.report_every}")
-    print(f"  log mode: {args.log_mode}")
-    print(f"  loss mode: {loss_config['loss_mode']}")
-    print(f"  loss space: {loss_config['loss_space']}")
-    print(
+    _emit(f"  seed: {args.seed}")
+    _emit(f"  output_dir: {output_dir}")
+    _emit(f"  save_predictions: {bool(args.save_predictions)}")
+    _emit(f"  report every: {args.report_every}")
+    _emit(f"  log mode: {args.log_mode}")
+    _emit(f"  progress log: {bool(args.progress_log)}")
+    _emit(f"  loss mode: {loss_config['loss_mode']}")
+    _emit(f"  loss space: {loss_config['loss_space']}")
+    _emit(
         "  loss params: "
         f"background_quantile={loss_config['background_quantile']} "
         f"hotspot_quantile={loss_config['hotspot_quantile']} "
@@ -767,9 +850,9 @@ def main() -> int:
         f"relative_floor={loss_config['relative_floor']} "
         f"relative_floor_mode={loss_config['relative_floor_mode']}"
     )
-    print(f"  loss weight schedule: {_loss_weight_schedule_payload(loss_config)}")
-    print(f"  feature mode: relative BC features, diag3 k encoding, zero_delta_u_bridge")
-    print(
+    _emit(f"  loss weight schedule: {_loss_weight_schedule_payload(loss_config)}")
+    _emit(f"  feature mode: relative BC features, diag3 k encoding, zero_delta_u_bridge")
+    _emit(
         "  target mode: normalized DeltaT target; normalized 0 is train mean raw DeltaT, "
         "not raw DeltaT=0"
     )
@@ -784,8 +867,12 @@ def main() -> int:
         args.report_every,
         loss_config,
         args.log_mode,
+        progress_enabled,
     )
+    prediction_start = time.perf_counter()
+    _progress(progress_enabled, "export", "building recovered predictions ...")
     predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
+    _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
 
     run_config = {
         "diagnostic_scope": "controlled training export smoke; not formal model performance",
@@ -803,6 +890,7 @@ def main() -> int:
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
         "log_mode": args.log_mode,
+        "progress_log": bool(args.progress_log),
         "checkpoint_saved": False,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
@@ -825,6 +913,8 @@ def main() -> int:
             sample_id for split, ids in split_ids.items() if split not in {"train", "valid"} for sample_id in ids
         ),
     }
+    summary_write_start = time.perf_counter()
+    _progress(progress_enabled, "export", "writing run_config.json and loss_summary.json ...")
     _write_json(output_dir / "run_config.json", run_config)
 
     loss_summary = {
@@ -854,6 +944,7 @@ def main() -> int:
         "train_metrics": _metrics_payload(result["train_metrics"]),
         "valid_metrics": _metrics_payload(result["valid_metrics"]),
         "log_mode": args.log_mode,
+        "progress_log": bool(args.progress_log),
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
@@ -883,10 +974,16 @@ def main() -> int:
         "train_only_normalization": _stats_payload(stats),
     }
     _write_json(output_dir / "loss_summary.json", loss_summary)
+    _progress(progress_enabled, "export", "run summary files written", summary_write_start)
 
     predictions_path = output_dir / "predictions.npz"
+    save_start = time.perf_counter()
     if args.save_predictions:
+        _progress(progress_enabled, "export", f"saving predictions to {predictions_path} ...")
         np.savez_compressed(predictions_path, **predictions)
+        _progress(progress_enabled, "export", f"predictions saved: key_count={len(predictions)} path={predictions_path}", save_start)
+    else:
+        _progress(progress_enabled, "export", f"prediction save skipped: key_count={len(predictions)}", save_start)
 
     lr_history_summary = _sequence_summary(result["lr_history"])
     relative_weight_summary = _history_field_summary(
@@ -894,71 +991,72 @@ def main() -> int:
     )
     hotspot_weight_summary = _history_field_summary(result["loss_weight_history"], "current_hotspot_weight")
 
-    print("")
-    print("summary")
-    print("  loss/optimization")
-    print(f"    loss mode: {loss_config['loss_mode']}")
-    print(f"    loss weight schedule: {loss_config['loss_weight_schedule']}")
-    print(f"    relative weight summary: {relative_weight_summary}")
-    print(f"    hotspot weight summary: {hotspot_weight_summary}")
-    print(f"    lr schedule: {lr_config['lr_schedule']}")
-    print(f"    lr history summary: {lr_history_summary}")
-    print("  loss initial/final")
-    print(f"  train loss initial/final: {result['train_losses'][0]:.8e} -> {result['train_losses'][-1]:.8e}")
-    print(f"  valid loss initial/final: {result['valid_losses'][0]:.8e} -> {result['valid_losses'][-1]:.8e}")
-    print("  final base/raw/recovered metrics")
-    print(f"    final train base MSE: {result['final_train_loss_components']['base_mse']:.8e}")
-    print(f"    final valid base MSE: {result['final_valid_loss_components']['base_mse']:.8e}")
-    print(f"    final train raw DeltaT MSE: {result['train_metrics']['raw_delta_mse']:.8e}")
-    print(f"    final valid raw DeltaT MSE: {result['valid_metrics']['raw_delta_mse']:.8e}")
-    print(f"    final train recovered temperature MSE: {result['train_metrics']['recovered_temperature_mse']:.8e}")
-    print(f"    final valid recovered temperature MSE: {result['valid_metrics']['recovered_temperature_mse']:.8e}")
-    print("  final background metrics")
-    print(f"    final train background penalty: {result['final_train_loss_components']['background_penalty']:.8e}")
-    print(f"    final valid background penalty: {result['final_valid_loss_components']['background_penalty']:.8e}")
-    print(f"    final train background L1: {result['final_train_loss_components']['background_l1']:.8e}")
-    print(f"    final valid background L1: {result['final_valid_loss_components']['background_l1']:.8e}")
-    print(
+    _emit("")
+    _emit("summary")
+    _emit("  loss/optimization")
+    _emit(f"    loss mode: {loss_config['loss_mode']}")
+    _emit(f"    loss weight schedule: {loss_config['loss_weight_schedule']}")
+    _emit(f"    relative weight summary: {relative_weight_summary}")
+    _emit(f"    hotspot weight summary: {hotspot_weight_summary}")
+    _emit(f"    lr schedule: {lr_config['lr_schedule']}")
+    _emit(f"    lr history summary: {lr_history_summary}")
+    _emit("  loss initial/final")
+    _emit(f"  train loss initial/final: {result['train_losses'][0]:.8e} -> {result['train_losses'][-1]:.8e}")
+    _emit(f"  valid loss initial/final: {result['valid_losses'][0]:.8e} -> {result['valid_losses'][-1]:.8e}")
+    _emit("  final base/raw/recovered metrics")
+    _emit(f"    final train base MSE: {result['final_train_loss_components']['base_mse']:.8e}")
+    _emit(f"    final valid base MSE: {result['final_valid_loss_components']['base_mse']:.8e}")
+    _emit(f"    final train raw DeltaT MSE: {result['train_metrics']['raw_delta_mse']:.8e}")
+    _emit(f"    final valid raw DeltaT MSE: {result['valid_metrics']['raw_delta_mse']:.8e}")
+    _emit(f"    final train recovered temperature MSE: {result['train_metrics']['recovered_temperature_mse']:.8e}")
+    _emit(f"    final valid recovered temperature MSE: {result['valid_metrics']['recovered_temperature_mse']:.8e}")
+    _emit("  final background metrics")
+    _emit(f"    final train background penalty: {result['final_train_loss_components']['background_penalty']:.8e}")
+    _emit(f"    final valid background penalty: {result['final_valid_loss_components']['background_penalty']:.8e}")
+    _emit(f"    final train background L1: {result['final_train_loss_components']['background_l1']:.8e}")
+    _emit(f"    final valid background L1: {result['final_valid_loss_components']['background_l1']:.8e}")
+    _emit(
         "    final train background signed bias loss: "
         f"{result['final_train_loss_components']['background_signed_bias_loss']:.8e}"
     )
-    print(
+    _emit(
         "    final valid background signed bias loss: "
         f"{result['final_valid_loss_components']['background_signed_bias_loss']:.8e}"
     )
-    print(
+    _emit(
         "    final train background overprediction loss: "
         f"{result['final_train_loss_components']['background_overprediction_loss']:.8e}"
     )
-    print(
+    _emit(
         "    final valid background overprediction loss: "
         f"{result['final_valid_loss_components']['background_overprediction_loss']:.8e}"
     )
-    print(
+    _emit(
         "    final train background relative abs: "
         f"{result['final_train_loss_components']['background_relative_abs']:.8e}"
     )
-    print(
+    _emit(
         "    final valid background relative abs: "
         f"{result['final_valid_loss_components']['background_relative_abs']:.8e}"
     )
-    print(f"    final train bg pred raw mean: {result['final_train_loss_components']['bg_pred_raw_mean']:.8e}")
-    print(f"    final valid bg pred raw mean: {result['final_valid_loss_components']['bg_pred_raw_mean']:.8e}")
-    print(f"    final train bg signed bias: {result['final_train_loss_components']['bg_signed_bias']:.8e}")
-    print(f"    final valid bg signed bias: {result['final_valid_loss_components']['bg_signed_bias']:.8e}")
-    print(f"    final train bg abs mean: {result['final_train_loss_components']['bg_abs_mean']:.8e}")
-    print(f"    final valid bg abs mean: {result['final_valid_loss_components']['bg_abs_mean']:.8e}")
-    print("  final hotspot metrics")
-    print(f"    final train hotspot retention loss: {result['final_train_loss_components']['hotspot_retention_loss']:.8e}")
-    print(f"    final valid hotspot retention loss: {result['final_valid_loss_components']['hotspot_retention_loss']:.8e}")
-    print(f"    final train hotspot raw MAE: {result['final_train_loss_components']['hotspot_raw_mae']:.8e}")
-    print(f"    final valid hotspot raw MAE: {result['final_valid_loss_components']['hotspot_raw_mae']:.8e}")
-    print(f"  gradient finite check: {result['grad_finite']}")
-    print(f"  predictions saved: {bool(args.save_predictions)}")
-    print(f"  predictions path: {predictions_path if args.save_predictions else 'not_written'}")
-    print(f"  prediction sample count: {len(predictions)}")
-    print("  checkpoint saved: False")
-    print(f"  export smoke ok: {result['status_ok']}")
+    _emit(f"    final train bg pred raw mean: {result['final_train_loss_components']['bg_pred_raw_mean']:.8e}")
+    _emit(f"    final valid bg pred raw mean: {result['final_valid_loss_components']['bg_pred_raw_mean']:.8e}")
+    _emit(f"    final train bg signed bias: {result['final_train_loss_components']['bg_signed_bias']:.8e}")
+    _emit(f"    final valid bg signed bias: {result['final_valid_loss_components']['bg_signed_bias']:.8e}")
+    _emit(f"    final train bg abs mean: {result['final_train_loss_components']['bg_abs_mean']:.8e}")
+    _emit(f"    final valid bg abs mean: {result['final_valid_loss_components']['bg_abs_mean']:.8e}")
+    _emit("  final hotspot metrics")
+    _emit(f"    final train hotspot retention loss: {result['final_train_loss_components']['hotspot_retention_loss']:.8e}")
+    _emit(f"    final valid hotspot retention loss: {result['final_valid_loss_components']['hotspot_retention_loss']:.8e}")
+    _emit(f"    final train hotspot raw MAE: {result['final_train_loss_components']['hotspot_raw_mae']:.8e}")
+    _emit(f"    final valid hotspot raw MAE: {result['final_valid_loss_components']['hotspot_raw_mae']:.8e}")
+    _emit(f"  gradient finite check: {result['grad_finite']}")
+    _emit(f"  predictions saved: {bool(args.save_predictions)}")
+    _emit(f"  predictions path: {predictions_path if args.save_predictions else 'not_written'}")
+    _emit(f"  prediction sample count: {len(predictions)}")
+    _emit("  checkpoint saved: False")
+    _emit(f"  export smoke ok: {result['status_ok']}")
+    _progress(progress_enabled, "done", "script complete", script_start)
     return 0 if result["status_ok"] else 1
 
 
