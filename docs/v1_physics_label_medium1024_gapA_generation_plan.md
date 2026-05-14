@@ -124,6 +124,38 @@ selection and subset checker. Full 1024 generation should still wait until the
 fixed 128 pilot is reviewed; a 256-sample pilot is a reasonable intermediate
 step if the 128-sample coverage looks clean.
 
+## Full1024 Loader And Diversity Follow-Up
+
+The subsequent SSH-side `medium1024_gapA` full1024 generation, generated-subset
+checker, and label diagnostics passed. That result only validates the generation
+and label file chain; it is still diagnostic and not a formal benchmark.
+
+A short training smoke then exposed a loader compatibility gap:
+`Heat3DV1MetadataDataset` rejected
+`physics_label_medium1024_gapA_generation_candidate` because the supervised V1
+stage allowlist had not been updated for Gap-A. The fix is to add this exact
+stage to the V1 supervised/native supervised loader path without allowing
+arbitrary stages.
+
+The full1024 pilot also motivates a separate diversity diagnostic. Passing label
+diagnostics does not prove that the dataset has enough condition diversity:
+coarse combinations can repeat, generated arrays can duplicate, and repeated
+`q_field`, `k_field`, or `temperature` hashes can hide behind valid metadata.
+`scripts/analyze_heat3d_v1_medium1024_gapA_diversity.py` therefore reports:
+
+- metadata counters for split/source/k/stack/BC categories;
+- coarse condition-combo repetition;
+- array-hash diversity for `q_field`, `k_field`, and `temperature`;
+- per-combo unique hash counts and `T_max` / `q_max` ranges;
+- conservative diagnostic flags for training-smoke readiness and formal
+  benchmark readiness.
+
+`diversity_ready_for_training_smoke` only means the generated subset is coherent
+enough for short pipeline checks. `diversity_ready_for_formal_benchmark` is
+intentionally stricter and should not be treated as evidence of publication-ready
+data without additional review of the fixed manifest, split protocol,
+condition-wise coverage, and multi-seed evaluation.
+
 ## Risks
 
 - Low-power samples change label scale and can make relative errors dominate

@@ -14,6 +14,15 @@ from rigno.models.operator import Inputs
 
 
 SUPERVISED_SUBSET_NAME = "v1_multilayer_bc_eq_supervised_smoke"
+PHYSICS_LABEL_SUPERVISED_STAGES = (
+  "supervised_smoke",
+  "solver_smoke",
+  "physics_label_medium_pilot_smoke",
+  "physics_label_medium_expansion_smoke",
+  "physics_label_medium_smoke",
+  "physics_label_medium256_benchmark_candidate_preparation",
+  "physics_label_medium1024_gapA_generation_candidate",
+)
 
 
 def default_v1_supervised_samples_dir(repo_dir: str | Path | None = None) -> Path:
@@ -47,14 +56,7 @@ class Heat3DV1SupervisedDataset(Heat3DV1MetadataDataset):
       repo_dir=repo_dir,
       input_mode=input_mode,
       k_encoding_mode=k_encoding_mode,
-      allowed_stages=(
-        "supervised_smoke",
-        "solver_smoke",
-        "physics_label_medium_pilot_smoke",
-        "physics_label_medium_expansion_smoke",
-        "physics_label_medium_smoke",
-        "physics_label_medium256_benchmark_candidate_preparation",
-      ),
+      allowed_stages=PHYSICS_LABEL_SUPERVISED_STAGES,
     )
 
   def _load_sample(self, sample_dir: Path) -> dict[str, Any]:
