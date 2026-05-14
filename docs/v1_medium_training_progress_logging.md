@@ -81,3 +81,49 @@ The `medium1024_gapA` diversity diagnostics currently show substantial true
 training is not the next priority. The next research-stage task should improve
 generator diversity before treating full1024 training results as meaningful
 controlled experiments.
+
+## Best-Valid Selection
+
+The first `medium1024_gapA_full1024_v2` e50 seed0 probe showed that the final
+epoch is not necessarily the best diagnostic checkpoint: train loss can continue
+falling while valid loss reaches a minimum around the middle of the run and then
+rises. The runner now tracks a best-valid epoch during training without changing
+the optimizer, loss, normalization, model, or final prediction export.
+
+Selection is controlled by:
+
+- `--selection-metric valid_loss`
+- `--selection-metric valid_raw_deltaT_mse`
+- `--selection-metric valid_base_mse`
+
+The default is `valid_loss`. `predictions.npz` remains the final-epoch recovered
+temperature export for backward compatibility. If `--save-best-predictions` is
+set, the runner additionally writes `best_predictions.npz` by default, or the
+filename configured by `--best-predictions-name`. Both `run_config.json` and
+`loss_summary.json` record the selection metric, best epoch, best validation
+metrics, final epoch, final validation loss, and the optional best prediction
+path.
+
+This is best-valid diagnostic export, not checkpointing infrastructure and not a
+formal model selection protocol.
+
+## Compact Stdout
+
+Training and analysis stdout is intentionally concise by default. Full tables
+and detailed diagnostics should be read from JSON/Markdown files rather than
+copied from the terminal.
+
+Training uses `--log-mode`:
+
+- `compact`: startup summary, group-build progress, report epoch summaries,
+  final/best-valid summary, and prediction paths.
+- `full`: detailed per-report metrics and full final diagnostics.
+- `quiet`: minimal final summary and errors.
+
+Analysis scripts use `--stdout-mode`:
+
+- `compact`: SSH-friendly core metrics and output paths.
+- `full`: verbose terminal diagnostics for debugging.
+- `quiet`: only completion status and output paths.
+
+JSON and Markdown outputs are not reduced by compact or quiet stdout.

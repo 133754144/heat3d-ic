@@ -33,6 +33,15 @@ def main() -> int:
     enabled_args = _parse(["--progress-log", "--log-mode", "compact"])
     verbose_args = _parse(["--progress-detail", "verbose"])
     off_args = _parse(["--progress-detail", "off"])
+    best_args = _parse(
+        [
+            "--selection-metric",
+            "valid_raw_deltaT_mse",
+            "--save-best-predictions",
+            "--best-predictions-name",
+            "best_predictions_smoke.npz",
+        ]
+    )
 
     buffer = io.StringIO()
     with contextlib.redirect_stdout(buffer):
@@ -56,6 +65,24 @@ def main() -> int:
             log_mode="compact",
         )
 
+    best_payload = runner._best_selection_payload(
+        {
+            "selection_metric": "valid_raw_deltaT_mse",
+            "best_record": {
+                "epoch": 2,
+                "valid_loss": 1.5,
+                "valid_raw_deltaT_mse": 1.25,
+                "valid_base_mse": 1.1,
+            },
+            "final_epoch": 3,
+            "final_valid_loss": 2.0,
+            "valid_metrics": {"raw_delta_mse": 1.9},
+            "final_valid_loss_components": {"base_mse": 1.8},
+        },
+        best_predictions_path=Path("best_predictions_smoke.npz"),
+        best_predictions_saved=True,
+    )
+
     output = buffer.getvalue()
     checks = {
         "default_progress_enabled": runner._progress_enabled(default_args),
@@ -66,6 +93,11 @@ def main() -> int:
         "verbose_progress_detail_enabled": runner._verbose_progress_enabled(verbose_args),
         "progress_detail_off_disabled": not runner._progress_detail_enabled(off_args),
         "progress_checkpoints_full1024": runner._progress_checkpoints(1024) == {256, 512, 768, 1024},
+        "selection_metric_parsed": best_args.selection_metric == "valid_raw_deltaT_mse",
+        "save_best_predictions_parsed": best_args.save_best_predictions,
+        "best_predictions_name_parsed": best_args.best_predictions_name == "best_predictions_smoke.npz",
+        "best_payload_epoch": best_payload["best_epoch"] == 2,
+        "best_payload_saved": best_payload["best_predictions_saved"],
         "startup_line_printed": "[startup] loading dataset from fake_subset ..." in output,
         "elapsed_printed": "elapsed=" in output,
         "disabled_line_suppressed": "this should not print" not in output,

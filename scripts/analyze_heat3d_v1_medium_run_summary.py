@@ -55,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--baseline-comparison", type=Path, default=None)
     parser.add_argument("--output-json", type=Path, default=None)
     parser.add_argument("--output-md", type=Path, default=None)
+    parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
     parser.add_argument(
         "--metric-set",
         nargs="*",
@@ -207,6 +208,15 @@ def analyze_loss_summary(loss_summary: dict[str, Any]) -> dict[str, Any]:
         "loss_mode": loss_summary.get("loss_mode"),
         "lr_schedule": loss_summary.get("lr_schedule"),
         "loss_weight_schedule": loss_summary.get("loss_weight_schedule"),
+        "selection_metric": loss_summary.get("selection_metric"),
+        "best_epoch": loss_summary.get("best_epoch"),
+        "best_valid_loss": _as_float(loss_summary.get("best_valid_loss")),
+        "best_valid_raw_deltaT_mse": _as_float(loss_summary.get("best_valid_raw_deltaT_mse")),
+        "best_valid_base_mse": _as_float(loss_summary.get("best_valid_base_mse")),
+        "final_epoch": loss_summary.get("final_epoch"),
+        "final_valid_loss": _as_float(loss_summary.get("final_valid_loss")),
+        "best_predictions_saved": loss_summary.get("best_predictions_saved"),
+        "best_predictions_path": loss_summary.get("best_predictions_path"),
         "lr_history": lr_history,
         "lr_history_summary": _sequence_summary(lr_history),
         "loss_weight_history": loss_weight_history,
@@ -529,6 +539,10 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- loss_mode: `{loss.get('loss_mode')}`",
         f"- lr_schedule: `{loss.get('lr_schedule')}`",
         f"- loss_weight_schedule: `{loss.get('loss_weight_schedule')}`",
+        f"- selection_metric: `{loss.get('selection_metric')}`",
+        f"- best_epoch: `{loss.get('best_epoch')}`",
+        f"- best_valid_loss: `{_fmt_float(loss.get('best_valid_loss'))}`",
+        f"- best_predictions_saved: `{loss.get('best_predictions_saved')}`",
         f"- likely_hotspot_learning_with_background_bias: `{overall_status['likely_hotspot_learning_with_background_bias']}`",
         "",
         "## Loss Trend",
@@ -615,12 +629,53 @@ def render_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _emit(message: str = "") -> None:
+    print(message, flush=True)
+
+
+def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
+    loss = payload["loss_summary"]
+    outputs = payload["outputs"]
+    if stdout_mode == "quiet":
+        _emit(f"run_analysis_written: json={outputs['json']} markdown={outputs['markdown']}")
+        return
+
+    _emit("Heat3D v1 medium run analysis tooling")
+    _emit("  scope: diagnostics only; not formal benchmark or model-performance conclusion")
+    _emit(f"  run_dir: {payload['run_dir']}")
+    _emit(
+        "  loss: "
+        f"mode={loss.get('loss_mode')} lr_schedule={loss.get('lr_schedule')} "
+        f"loss_weight_schedule={loss.get('loss_weight_schedule')}"
+    )
+    _emit(
+        "  final: "
+        f"train_loss={_fmt_float(loss.get('train_loss', {}).get('final'))} "
+        f"valid_loss={_fmt_float(loss.get('valid_loss', {}).get('final'))}"
+    )
+    _emit(
+        "  best-valid: "
+        f"metric={loss.get('selection_metric')} epoch={loss.get('best_epoch')} "
+        f"best_valid_loss={_fmt_float(loss.get('best_valid_loss'))} "
+        f"best_predictions_saved={loss.get('best_predictions_saved')}"
+    )
+    if stdout_mode == "full":
+        _emit(f"  final_valid_raw_deltaT_mse: {_fmt_float(loss.get('final_valid_raw_deltaT_mse'))}")
+        _emit(f"  final_valid_background_relative_abs: {_fmt_float(loss.get('final_valid_background_relative_abs'))}")
+        _emit(f"  lr_history_summary: {loss.get('lr_history_summary')}")
+        _emit(f"  relative_weight_summary: {loss.get('relative_weight_summary')}")
+        _emit(f"  hotspot_weight_summary: {loss.get('hotspot_weight_summary')}")
+    _emit(f"  output_json: {outputs['json']}")
+    _emit(f"  output_md: {outputs['markdown']}")
+    _emit("  analysis_written: True")
+
+
 def main() -> int:
     args = parse_args()
     run_dir = args.run_dir
     output_json = args.output_json or run_dir / "run_analysis.json"
     output_md = args.output_md or run_dir / "run_analysis.md"
-    analyze_run(
+    payload = analyze_run(
         run_dir=run_dir,
         loss_summary_path=args.loss_summary,
         baseline_comparison_path=args.baseline_comparison,
@@ -628,12 +683,7 @@ def main() -> int:
         output_md_path=output_md,
         metric_set=_metric_set(args.metric_set),
     )
-    print("Heat3D v1 medium run analysis tooling")
-    print("  scope: diagnostics only; not formal benchmark or model-performance conclusion")
-    print(f"  run_dir: {run_dir}")
-    print(f"  output_json: {output_json}")
-    print(f"  output_md: {output_md}")
-    print("  analysis_written: True")
+    _print_stdout_summary(payload, args.stdout_mode)
     return 0
 
 

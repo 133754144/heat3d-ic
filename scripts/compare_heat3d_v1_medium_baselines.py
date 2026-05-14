@@ -93,6 +93,7 @@ def parse_args() -> argparse.Namespace:
         help="Optional JSON output path. Prefer ignored output/ paths.",
     )
     parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
     return parser.parse_args()
 
 
@@ -344,11 +345,15 @@ def _build_report(rows: list[dict[str, Any]], trained_enabled: bool) -> dict[str
     return report
 
 
+def _emit(message: str = "") -> None:
+    print(message, flush=True)
+
+
 def _print_table(title: str, rows: list[dict[str, Any]], group_keys: tuple[str, ...]) -> None:
-    print(title)
+    _emit(title)
     header = [*group_keys, "predictor", "n", "mean_T_rmse", "mean_T_mae", "mean_DeltaT_rmse",
               "mean_max_abs", "mean_p95_abs", "mean_peak_T_err", "mean_hotspot_dist"]
-    print(" ".join(header))
+    _emit(" ".join(header))
     for row in rows:
         values = [str(row.get(key, "")) for key in group_keys]
         values.extend(
@@ -364,30 +369,77 @@ def _print_table(title: str, rows: list[dict[str, Any]], group_keys: tuple[str, 
                 f"{row['mean_hotspot_coord_error']:.8e}",
             ]
         )
-        print(" ".join(values))
+        _emit(" ".join(values))
 
 
-def _print_report(report: dict[str, Any], subset: Path, output_json: Path | None) -> None:
-    print("Heat3D v1 medium baseline comparison diagnostics")
-    print("  scope: diagnostic draft only; not a formal benchmark")
-    print(f"  subset: {subset}")
-    print(f"  trained comparison status: {report['trained_comparison_status']}")
-    print(f"  per-sample rows: {len(report['per_sample'])}")
-    print()
+def _row_by_predictor(rows: list[dict[str, Any]], predictor: str) -> dict[str, Any] | None:
+    return next((row for row in rows if row.get("predictor") == predictor), None)
+
+
+def _fmt_metric(row: dict[str, Any] | None, field: str) -> str:
+    if not row or row.get(field) is None:
+        return "n/a"
+    return f"{float(row[field]):.6e}"
+
+
+def _print_compact_report(report: dict[str, Any], subset: Path, output_json: Path | None) -> None:
+    overall_zero = _row_by_predictor(report["overall"], "zero_delta")
+    overall_trained = _row_by_predictor(report["overall"], "trained_prediction")
+    sample_count = overall_zero.get("sample_count") if overall_zero else "unknown"
+    _emit("Heat3D v1 medium baseline comparison diagnostics")
+    _emit("  scope: diagnostic draft only; not a formal benchmark")
+    _emit(f"  subset: {subset}")
+    _emit(f"  trained_status: {report['trained_comparison_status']} sample_count={sample_count}")
+    _emit(
+        "  overall: "
+        f"zero_rmse={_fmt_metric(overall_zero, 'mean_recovered_T_rmse')} "
+        f"zero_mae={_fmt_metric(overall_zero, 'mean_recovered_T_mae')} "
+        f"trained_rmse={_fmt_metric(overall_trained, 'mean_recovered_T_rmse')} "
+        f"trained_mae={_fmt_metric(overall_trained, 'mean_recovered_T_mae')}"
+    )
+    split_rows: dict[str, dict[str, dict[str, Any]]] = {}
+    for row in report["split_summary"]:
+        split_rows.setdefault(str(row.get("split", "unknown")), {})[str(row.get("predictor"))] = row
+    _emit("  split summary: split zero_rmse zero_mae trained_rmse trained_mae")
+    for split, rows in sorted(split_rows.items()):
+        zero = rows.get("zero_delta")
+        trained = rows.get("trained_prediction")
+        _emit(
+            "    "
+            f"{split} {_fmt_metric(zero, 'mean_recovered_T_rmse')} {_fmt_metric(zero, 'mean_recovered_T_mae')} "
+            f"{_fmt_metric(trained, 'mean_recovered_T_rmse')} {_fmt_metric(trained, 'mean_recovered_T_mae')}"
+        )
+    _emit(f"  output_json: {output_json if output_json is not None else 'not_written'}")
+
+
+def _print_report(report: dict[str, Any], subset: Path, output_json: Path | None, stdout_mode: str) -> None:
+    if stdout_mode == "quiet":
+        _emit(f"baseline_comparison_written: {output_json if output_json is not None else 'not_written'}")
+        return
+    if stdout_mode == "compact":
+        _print_compact_report(report, subset, output_json)
+        return
+
+    _emit("Heat3D v1 medium baseline comparison diagnostics")
+    _emit("  scope: diagnostic draft only; not a formal benchmark")
+    _emit(f"  subset: {subset}")
+    _emit(f"  trained comparison status: {report['trained_comparison_status']}")
+    _emit(f"  per-sample rows: {len(report['per_sample'])}")
+    _emit()
 
     _print_table("overall summary", report["overall"], ())
-    print()
+    _emit()
     _print_table("split-wise summary", report["split_summary"], ("split",))
-    print()
+    _emit()
     for key, rows in report["condition_summary"].items():
         _print_table(f"{key}-wise summary", rows, (key,))
-        print()
+        _emit()
 
     if output_json is not None:
-        print(f"  JSON written: {output_json}")
+        _emit(f"  JSON written: {output_json}")
     else:
-        print("  JSON written: False")
-    print("  trained predictions were not fabricated from recorded scalar metrics")
+        _emit("  JSON written: False")
+    _emit("  trained predictions were not fabricated from recorded scalar metrics")
 
 
 def _write_json(path: Path, report: dict[str, Any]) -> None:
@@ -416,7 +468,7 @@ def main() -> int:
     report = _build_report(rows, trained_enabled=trained_loader is not None)
     if args.output_json is not None:
         _write_json(args.output_json, report)
-    _print_report(report, args.subset, args.output_json)
+    _print_report(report, args.subset, args.output_json, args.stdout_mode)
     return 0
 
 

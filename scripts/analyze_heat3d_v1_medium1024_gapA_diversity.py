@@ -46,6 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
     parser.add_argument("--top-n", type=int, default=30)
+    parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
     return parser.parse_args()
 
 
@@ -390,6 +391,41 @@ def write_markdown(path: Path, result: dict[str, Any]) -> None:
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def _emit(message: str = "") -> None:
+    print(message, flush=True)
+
+
+def _print_stdout_summary(args: argparse.Namespace, result: dict[str, Any]) -> None:
+    if args.stdout_mode == "quiet":
+        _emit(f"diversity_analysis_written: json={args.output_json} markdown={args.output_md}")
+        return
+
+    _emit("Heat3D v1 Medium1024 Gap-A Diversity Diagnostics")
+    _emit("scope: diagnostic only; not a formal benchmark")
+    _emit(f"subset: {args.subset}")
+    _emit(f"sample_count: {result['sample_count']}")
+    _emit(
+        "hash_fraction: "
+        f"q={result['unique_q_hash_fraction']:.6f} "
+        f"k={result['unique_k_hash_fraction']:.6f} "
+        f"T={result['unique_temperature_hash_fraction']:.6f}"
+    )
+    _emit(
+        "max_hash_repeat: "
+        f"q={result['max_q_hash_repeat']} k={result['max_k_hash_repeat']} "
+        f"T={result['max_temperature_hash_repeat']}"
+    )
+    _emit(f"diagnostic_flags: {result['diagnostic_flags']}")
+    if args.stdout_mode == "full":
+        _emit(f"combo_count: {result['combo_count']}")
+        _emit(f"max_combo_count: {result['max_combo_count']}")
+        _emit(f"unique_q_hash_count: {result['unique_q_hash_count']}")
+        _emit(f"unique_k_hash_count: {result['unique_k_hash_count']}")
+        _emit(f"unique_temperature_hash_count: {result['unique_temperature_hash_count']}")
+    _emit(f"output_json: {args.output_json}")
+    _emit(f"output_md: {args.output_md}")
+
+
 def main() -> int:
     args = parse_args()
     if args.top_n < 1:
@@ -398,25 +434,7 @@ def main() -> int:
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     write_markdown(args.output_md, result)
-
-    print("Heat3D v1 Medium1024 Gap-A Diversity Diagnostics")
-    print("scope: diagnostic only; not a formal benchmark")
-    print(f"subset: {args.subset}")
-    print(f"sample_count: {result['sample_count']}")
-    print(f"combo_count: {result['combo_count']}")
-    print(f"max_combo_count: {result['max_combo_count']}")
-    print(f"unique_q_hash_count: {result['unique_q_hash_count']}")
-    print(f"unique_k_hash_count: {result['unique_k_hash_count']}")
-    print(f"unique_temperature_hash_count: {result['unique_temperature_hash_count']}")
-    print(f"unique_q_hash_fraction: {result['unique_q_hash_fraction']:.6f}")
-    print(f"unique_k_hash_fraction: {result['unique_k_hash_fraction']:.6f}")
-    print(f"unique_temperature_hash_fraction: {result['unique_temperature_hash_fraction']:.6f}")
-    print(f"max_q_hash_repeat: {result['max_q_hash_repeat']}")
-    print(f"max_k_hash_repeat: {result['max_k_hash_repeat']}")
-    print(f"max_temperature_hash_repeat: {result['max_temperature_hash_repeat']}")
-    print(f"diagnostic_flags: {result['diagnostic_flags']}")
-    print(f"output_json: {args.output_json}")
-    print(f"output_md: {args.output_md}")
+    _print_stdout_summary(args, result)
     return 0
 
 

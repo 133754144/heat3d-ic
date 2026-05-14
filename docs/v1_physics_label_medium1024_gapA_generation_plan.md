@@ -203,6 +203,25 @@ candidate after local/SSH partial smoke and diversity diagnostics pass. It is
 still a research diagnostic candidate, not a formal benchmark or publication-
 ready dataset.
 
+## Full1024 v2 Training Probe Status
+
+`medium1024_gapA_full1024_v2` has progressed beyond file-chain validation: data
+quality checks, an SSH 2-epoch training smoke, comparison, run summary, and
+error-binning tooling have run successfully. An e50 seed0 diagnostic probe also
+completed and showed that the dataset is trainable. The probe remains a
+controlled training diagnostic only.
+
+The e50 run showed a practical training-run issue: validation loss can reach its
+lowest value before the final epoch while train loss continues to decrease.
+Therefore the training/export runner now records best-valid epoch metadata and
+can optionally export `best_predictions.npz` in addition to final-epoch
+`predictions.npz`. This is intended for diagnostic comparison of final-vs-best
+exports, not for claiming formal benchmark performance.
+
+Terminal output is also now compact by default. Detailed comparison, run
+analysis, error-bin, and diversity information remains in JSON/Markdown files;
+stdout is only a short SSH progress and completion surface.
+
 ## Risks
 
 - Low-power samples change label scale and can make relative errors dominate

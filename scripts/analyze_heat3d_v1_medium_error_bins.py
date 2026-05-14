@@ -46,6 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-md", type=Path, default=None)
     parser.add_argument("--bins", type=str, default=DEFAULT_BINS)
     parser.add_argument("--group-by", nargs="*", default=None)
+    parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
     return parser.parse_args()
 
 
@@ -596,6 +597,54 @@ def render_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _emit(message: str = "") -> None:
+    print(message, flush=True)
+
+
+def _bin_by_name(payload: dict[str, Any], name: str) -> dict[str, Any] | None:
+    return next((item for item in payload.get("overall", {}).get("bins", []) if item.get("bin_name") == name), None)
+
+
+def _compact_bin_line(item: dict[str, Any] | None, fields: tuple[str, ...]) -> str:
+    if item is None:
+        return "missing"
+    parts = [str(item.get("bin_name"))]
+    for field in fields:
+        value = item.get(field)
+        parts.append(f"{field}={_fmt_float(value) if 'change' not in field else _fmt_pct(value)}")
+    return " ".join(parts)
+
+
+def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
+    outputs = payload["outputs"]
+    interpretation = payload["interpretation"]
+    if stdout_mode == "quiet":
+        _emit(f"error_bins_written: json={outputs['json']} markdown={outputs['markdown']}")
+        return
+
+    _emit("Heat3D v1 medium error-binning / background-bias diagnostics tooling")
+    _emit("  scope: diagnostics only; not formal benchmark or model-performance conclusion")
+    _emit(f"  subset: {payload['inputs']['subset']}")
+    _emit(f"  trained_predictions: {payload['inputs']['trained_predictions']}")
+    for name in ("bin_0", "bin_1", "bin_2", "bin_3", "bin_4"):
+        item = _bin_by_name(payload, name)
+        if name == "bin_0":
+            fields = ("relative_rmse_change", "relative_mae_change", "trained_signed_bias", "trained_overprediction_ratio")
+        else:
+            fields = ("relative_rmse_change", "trained_signed_bias")
+        _emit(f"  {name}: {_compact_bin_line(item, fields)}")
+    _emit(f"  likely_background_overprediction: {interpretation['likely_background_overprediction']}")
+    _emit(f"  likely_hotspot_region_improvement: {interpretation['likely_hotspot_region_improvement']}")
+    _emit(f"  likely_hotspot_learning_with_background_bias: {interpretation['likely_hotspot_learning_with_background_bias']}")
+    if stdout_mode == "full":
+        _emit(f"  sample_count: {payload['sample_count']} point_count: {payload['point_count']}")
+        _emit(f"  low bins: {interpretation.get('low_bin_names')}")
+        _emit(f"  high bins: {interpretation.get('high_bin_names')}")
+    _emit(f"  output_json: {outputs['json']}")
+    _emit(f"  output_md: {outputs['markdown']}")
+    _emit("  analysis_written: True")
+
+
 def main() -> int:
     args = parse_args()
     output_json = args.output_json or args.trained_predictions.parent / "error_bins.json"
@@ -608,16 +657,7 @@ def main() -> int:
         bins=args.bins,
         group_by=args.group_by,
     )
-    print("Heat3D v1 medium error-binning / background-bias diagnostics tooling")
-    print("  scope: diagnostics only; not formal benchmark or model-performance conclusion")
-    print(f"  subset: {args.subset}")
-    print(f"  trained_predictions: {args.trained_predictions}")
-    print(f"  output_json: {output_json}")
-    print(f"  output_md: {output_md}")
-    print(f"  likely_background_overprediction: {payload['interpretation']['likely_background_overprediction']}")
-    print(f"  likely_hotspot_region_improvement: {payload['interpretation']['likely_hotspot_region_improvement']}")
-    print(f"  likely_hotspot_learning_with_background_bias: {payload['interpretation']['likely_hotspot_learning_with_background_bias']}")
-    print("  analysis_written: True")
+    _print_stdout_summary(payload, args.stdout_mode)
     return 0
 
 
