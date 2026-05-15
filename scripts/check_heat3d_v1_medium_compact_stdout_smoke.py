@@ -93,6 +93,35 @@ def _fake_loss_summary() -> dict:
     }
 
 
+def _fake_error_bins() -> dict:
+    return {
+        "sample_count": 2,
+        "point_count": 8,
+        "overall": {
+            "bins": [
+                {
+                    "bin_name": f"bin_{index}",
+                    "point_count": 2,
+                    "sample_count": 2,
+                    "trained_rmse": 0.1 + 0.01 * index,
+                    "trained_mae": 0.08 + 0.01 * index,
+                    "trained_signed_bias": 0.02,
+                    "trained_overprediction_ratio": 0.75,
+                    "trained_underprediction_ratio": 0.25,
+                    "relative_rmse_change": -0.1,
+                    "relative_mae_change": -0.05,
+                }
+                for index in range(5)
+            ]
+        },
+        "interpretation": {
+            "likely_background_overprediction": True,
+            "likely_hotspot_region_improvement": True,
+            "likely_hotspot_learning_with_background_bias": True,
+        },
+    }
+
+
 def _write_fake_diversity_subset(root: Path) -> None:
     samples = root / "samples"
     for index in range(2):
@@ -135,6 +164,7 @@ def main() -> int:
         run_dir.mkdir()
         _write_json(run_dir / "loss_summary.json", _fake_loss_summary())
         _write_json(run_dir / "baseline_comparison.json", _fake_baseline())
+        _write_json(run_dir / "error_bins_final.json", _fake_error_bins())
 
         for mode in ("compact", "full", "quiet"):
             run_summary = _run(
@@ -143,6 +173,12 @@ def main() -> int:
                     "scripts/analyze_heat3d_v1_medium_run_summary.py",
                     "--run-dir",
                     str(run_dir),
+                    "--baseline-comparison-json",
+                    str(run_dir / "baseline_comparison.json"),
+                    "--error-bins-json",
+                    str(run_dir / "error_bins_final.json"),
+                    "--prediction-label",
+                    f"smoke_{mode}",
                     "--stdout-mode",
                     mode,
                 ]

@@ -53,6 +53,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--loss-summary", type=Path, default=None)
     parser.add_argument("--baseline-comparison", type=Path, default=None)
+    parser.add_argument("--baseline-comparison-json", dest="baseline_comparison_json", type=Path, default=None)
+    parser.add_argument("--error-bins-json", type=Path, default=None)
+    parser.add_argument("--prediction-label", type=str, default="trained_prediction")
     parser.add_argument("--output-json", type=Path, default=None)
     parser.add_argument("--output-md", type=Path, default=None)
     parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
@@ -430,13 +433,52 @@ def analyze_baseline_comparison(baseline: dict[str, Any], metrics: list[str]) ->
     }
 
 
+def _bin_by_name(error_bins: dict[str, Any], name: str) -> dict[str, Any] | None:
+    bins = error_bins.get("overall", {}).get("bins", [])
+    if not isinstance(bins, list):
+        return None
+    return next((item for item in bins if isinstance(item, dict) and item.get("bin_name") == name), None)
+
+
+def analyze_error_bins_summary(error_bins: dict[str, Any] | None) -> dict[str, Any]:
+    if not error_bins:
+        return {"present": False}
+    summary: dict[str, Any] = {
+        "present": True,
+        "sample_count": error_bins.get("sample_count"),
+        "point_count": error_bins.get("point_count"),
+        "interpretation": error_bins.get("interpretation", {}),
+        "bin_summary": {},
+    }
+    for name in ("bin_0", "bin_1", "bin_2", "bin_3", "bin_4"):
+        item = _bin_by_name(error_bins, name)
+        if item is None:
+            summary["bin_summary"][name] = {"present": False}
+            continue
+        summary["bin_summary"][name] = {
+            "present": True,
+            "point_count": item.get("point_count"),
+            "sample_count": item.get("sample_count"),
+            "trained_rmse": _as_float(item.get("trained_rmse")),
+            "trained_mae": _as_float(item.get("trained_mae")),
+            "trained_signed_bias": _as_float(item.get("trained_signed_bias")),
+            "trained_overprediction_ratio": _as_float(item.get("trained_overprediction_ratio")),
+            "trained_underprediction_ratio": _as_float(item.get("trained_underprediction_ratio")),
+            "relative_rmse_change": _as_float(item.get("relative_rmse_change")),
+            "relative_mae_change": _as_float(item.get("relative_mae_change")),
+        }
+    return summary
+
+
 def analyze_run(
     run_dir: Path,
     loss_summary_path: Path | None = None,
     baseline_comparison_path: Path | None = None,
+    error_bins_path: Path | None = None,
     output_json_path: Path | None = None,
     output_md_path: Path | None = None,
     metric_set: list[str] | None = None,
+    prediction_label: str = "trained_prediction",
 ) -> dict[str, Any]:
     run_dir = run_dir.resolve()
     loss_summary_path = loss_summary_path or run_dir / "loss_summary.json"
@@ -447,12 +489,15 @@ def analyze_run(
 
     loss_summary = analyze_loss_summary(_read_json(loss_summary_path))
     baseline_analysis = analyze_baseline_comparison(_read_json(baseline_comparison_path), metrics)
+    error_bins_analysis = analyze_error_bins_summary(_read_json(error_bins_path) if error_bins_path is not None else None)
     payload = {
         "diagnostic_scope": "run analysis tooling; not formal benchmark or model-performance conclusion",
         "run_dir": str(run_dir),
+        "prediction_label": prediction_label,
         "inputs": {
             "loss_summary": str(loss_summary_path),
             "baseline_comparison": str(baseline_comparison_path),
+            "error_bins": str(error_bins_path) if error_bins_path is not None else None,
         },
         "outputs": {
             "json": str(output_json_path),
@@ -461,8 +506,10 @@ def analyze_run(
         "metric_set": metrics,
         "loss_summary": loss_summary,
         "baseline_comparison": baseline_analysis,
+        "error_bins": error_bins_analysis,
         "recommended_next_experiments": [
             "error-binning / background-bias analysis",
+            "condition-wise low-DeltaT background-bias diagnostics",
             "optional e100/e200 comparison",
             "weighted loss / background penalty / residual learning",
         ],
@@ -524,6 +571,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
     metrics = payload["metric_set"]
     loss = payload["loss_summary"]
     baseline = payload["baseline_comparison"]
+    error_bins = payload.get("error_bins", {})
     overall_status = baseline["overall_status"]
     lines: list[str] = [
         "# Heat3D v1 Medium Run Analysis",
@@ -533,8 +581,10 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "## Run Summary",
         "",
         f"- run_dir: `{payload['run_dir']}`",
+        f"- prediction_label: `{payload.get('prediction_label')}`",
         f"- loss_summary: `{payload['inputs']['loss_summary']}`",
         f"- baseline_comparison: `{payload['inputs']['baseline_comparison']}`",
+        f"- error_bins: `{payload['inputs'].get('error_bins')}`",
         f"- trained_comparison_status: `{baseline.get('trained_comparison_status')}`",
         f"- loss_mode: `{loss.get('loss_mode')}`",
         f"- lr_schedule: `{loss.get('lr_schedule')}`",
@@ -589,6 +639,33 @@ def render_markdown(payload: dict[str, Any]) -> str:
         ]
     )
     lines.extend(_comparison_table(baseline["split_summary"], metrics, "split"))
+    if error_bins.get("present"):
+        bin0 = error_bins.get("bin_summary", {}).get("bin_0", {})
+        lines.extend(
+            [
+                "",
+                "## Error-Bin Summary",
+                "",
+                f"- likely_background_overprediction: `{error_bins.get('interpretation', {}).get('likely_background_overprediction')}`",
+                f"- likely_hotspot_region_improvement: `{error_bins.get('interpretation', {}).get('likely_hotspot_region_improvement')}`",
+                f"- bin_0 trained signed bias: `{_fmt_float(bin0.get('trained_signed_bias'))}`",
+                f"- bin_0 overprediction ratio: `{_fmt_float(bin0.get('trained_overprediction_ratio'))}`",
+                f"- bin_0 relative RMSE change: `{_fmt_pct(bin0.get('relative_rmse_change'))}`",
+                f"- bin_0 relative MAE change: `{_fmt_pct(bin0.get('relative_mae_change'))}`",
+                "",
+                "| bin | RMSE rel change | MAE rel change | bias | over ratio | under ratio |",
+                "|---|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for name, item in error_bins.get("bin_summary", {}).items():
+            if not item.get("present"):
+                continue
+            lines.append(
+                f"| {name} | {_fmt_pct(item.get('relative_rmse_change'))} | "
+                f"{_fmt_pct(item.get('relative_mae_change'))} | {_fmt_float(item.get('trained_signed_bias'))} | "
+                f"{_fmt_float(item.get('trained_overprediction_ratio'))} | "
+                f"{_fmt_float(item.get('trained_underprediction_ratio'))} |"
+            )
     lines.extend(["", "## Top Improved Condition Groups", ""])
     for metric, rows in baseline["top_improved_groups"].items():
         lines.extend(_top_table(f"Top improved by {metric}", rows))
@@ -643,6 +720,7 @@ def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
     _emit("Heat3D v1 medium run analysis tooling")
     _emit("  scope: diagnostics only; not formal benchmark or model-performance conclusion")
     _emit(f"  run_dir: {payload['run_dir']}")
+    _emit(f"  prediction_label: {payload.get('prediction_label')}")
     _emit(
         "  loss: "
         f"mode={loss.get('loss_mode')} lr_schedule={loss.get('lr_schedule')} "
@@ -659,6 +737,15 @@ def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
         f"best_valid_loss={_fmt_float(loss.get('best_valid_loss'))} "
         f"best_predictions_saved={loss.get('best_predictions_saved')}"
     )
+    if payload.get("error_bins", {}).get("present"):
+        bin0 = payload["error_bins"].get("bin_summary", {}).get("bin_0", {})
+        _emit(
+            "  bin_0: "
+            f"bias={_fmt_float(bin0.get('trained_signed_bias'))} "
+            f"over_ratio={_fmt_float(bin0.get('trained_overprediction_ratio'))} "
+            f"rmse_rel={_fmt_pct(bin0.get('relative_rmse_change'))} "
+            f"mae_rel={_fmt_pct(bin0.get('relative_mae_change'))}"
+        )
     if stdout_mode == "full":
         _emit(f"  final_valid_raw_deltaT_mse: {_fmt_float(loss.get('final_valid_raw_deltaT_mse'))}")
         _emit(f"  final_valid_background_relative_abs: {_fmt_float(loss.get('final_valid_background_relative_abs'))}")
@@ -675,13 +762,16 @@ def main() -> int:
     run_dir = args.run_dir
     output_json = args.output_json or run_dir / "run_analysis.json"
     output_md = args.output_md or run_dir / "run_analysis.md"
+    baseline_comparison_path = args.baseline_comparison_json or args.baseline_comparison
     payload = analyze_run(
         run_dir=run_dir,
         loss_summary_path=args.loss_summary,
-        baseline_comparison_path=args.baseline_comparison,
+        baseline_comparison_path=baseline_comparison_path,
+        error_bins_path=args.error_bins_json,
         output_json_path=output_json,
         output_md_path=output_md,
         metric_set=_metric_set(args.metric_set),
+        prediction_label=args.prediction_label,
     )
     _print_stdout_summary(payload, args.stdout_mode)
     return 0

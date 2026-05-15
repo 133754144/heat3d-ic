@@ -127,3 +127,16 @@ Analysis scripts use `--stdout-mode`:
 - `quiet`: only completion status and output paths.
 
 JSON and Markdown outputs are not reduced by compact or quiet stdout.
+
+## Final/Best Diagnostic Analysis
+
+The run-summary script accepts explicit final or best diagnostic inputs:
+
+- `--baseline-comparison-json`
+- `--error-bins-json`
+- `--prediction-label`
+
+This allows a single training directory to hold separate final-epoch and
+best-valid reports without relying on hard-coded filenames. The condition-wise
+diagnostics script should be used alongside these reports when low-DeltaT
+`bin_0` background overprediction remains the main issue.
