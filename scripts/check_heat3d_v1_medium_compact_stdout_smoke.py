@@ -166,7 +166,7 @@ def main() -> int:
         _write_json(run_dir / "baseline_comparison.json", _fake_baseline())
         _write_json(run_dir / "error_bins_final.json", _fake_error_bins())
 
-        for mode in ("compact", "full", "quiet"):
+        for label, mode in (("final", "compact"), ("best", "full"), ("trained_prediction", "quiet")):
             run_summary = _run(
                 [
                     sys.executable,
@@ -178,7 +178,7 @@ def main() -> int:
                     "--error-bins-json",
                     str(run_dir / "error_bins_final.json"),
                     "--prediction-label",
-                    f"smoke_{mode}",
+                    label,
                     "--stdout-mode",
                     mode,
                 ]
@@ -243,8 +243,12 @@ def main() -> int:
         ]
 
         checks = {
-            "run_analysis_json": (run_dir / "run_analysis.json").is_file(),
-            "run_analysis_md": (run_dir / "run_analysis.md").is_file(),
+            "run_analysis_final_json": (run_dir / "run_analysis_final.json").is_file(),
+            "run_analysis_final_md": (run_dir / "run_analysis_final.md").is_file(),
+            "run_analysis_best_json": (run_dir / "run_analysis_best.json").is_file(),
+            "run_analysis_best_md": (run_dir / "run_analysis_best.md").is_file(),
+            "legacy_run_analysis_json_for_default_label": (run_dir / "run_analysis.json").is_file(),
+            "final_best_do_not_overlap": (run_dir / "run_analysis_final.json").read_text() != (run_dir / "run_analysis_best.json").read_text(),
             "diversity_json": (tmpdir / "diversity_compact.json").is_file(),
             "diversity_md": (tmpdir / "diversity_compact.md").is_file(),
             "compare_compact": "overall:" in compare_outputs[0],

@@ -91,6 +91,25 @@ def _write_text(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def _label_suffix(prediction_label: str) -> str | None:
+    label = prediction_label.strip().lower()
+    if label in {"final", "best"}:
+        return label
+    return None
+
+
+def _default_output_paths(
+    run_dir: Path,
+    prediction_label: str,
+    output_json: Path | None,
+    output_md: Path | None,
+) -> tuple[Path, Path]:
+    suffix = _label_suffix(prediction_label)
+    default_json = run_dir / (f"run_analysis_{suffix}.json" if suffix else "run_analysis.json")
+    default_md = run_dir / (f"run_analysis_{suffix}.md" if suffix else "run_analysis.md")
+    return output_json or default_json, output_md or default_md
+
+
 def _metric_set(tokens: list[str] | None) -> list[str]:
     if not tokens:
         return list(DEFAULT_METRIC_SET)
@@ -497,7 +516,9 @@ def analyze_run(
         "inputs": {
             "loss_summary": str(loss_summary_path),
             "baseline_comparison": str(baseline_comparison_path),
+            "baseline_comparison_json": str(baseline_comparison_path),
             "error_bins": str(error_bins_path) if error_bins_path is not None else None,
+            "error_bins_json": str(error_bins_path) if error_bins_path is not None else None,
         },
         "outputs": {
             "json": str(output_json_path),
@@ -531,6 +552,13 @@ def _fmt_pct(value: Any) -> str:
     if value is None:
         return "n/a"
     return f"{value * 100.0:+.2f}%"
+
+
+def _overall_metric_payload(payload: dict[str, Any], metric: str) -> dict[str, Any]:
+    rows = payload.get("baseline_comparison", {}).get("overall", [])
+    if not rows:
+        return {}
+    return rows[0].get("metrics", {}).get(metric, {})
 
 
 def _comparison_table(comparisons: list[dict[str, Any]], metrics: list[str], group_label: str) -> list[str]:
@@ -583,8 +611,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- run_dir: `{payload['run_dir']}`",
         f"- prediction_label: `{payload.get('prediction_label')}`",
         f"- loss_summary: `{payload['inputs']['loss_summary']}`",
-        f"- baseline_comparison: `{payload['inputs']['baseline_comparison']}`",
-        f"- error_bins: `{payload['inputs'].get('error_bins')}`",
+        f"- baseline_comparison_json: `{payload['inputs']['baseline_comparison_json']}`",
+        f"- error_bins_json: `{payload['inputs'].get('error_bins_json')}`",
         f"- trained_comparison_status: `{baseline.get('trained_comparison_status')}`",
         f"- loss_mode: `{loss.get('loss_mode')}`",
         f"- lr_schedule: `{loss.get('lr_schedule')}`",
@@ -595,7 +623,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- best_predictions_saved: `{loss.get('best_predictions_saved')}`",
         f"- likely_hotspot_learning_with_background_bias: `{overall_status['likely_hotspot_learning_with_background_bias']}`",
         "",
-        "## Loss Trend",
+        "## Training Summary",
         "",
         "| item | initial | final | abs change | relative change |",
         "|---|---:|---:|---:|---:|",
@@ -713,6 +741,8 @@ def _emit(message: str = "") -> None:
 def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
     loss = payload["loss_summary"]
     outputs = payload["outputs"]
+    overall_rmse = _overall_metric_payload(payload, "mean_T_rmse")
+    overall_mae = _overall_metric_payload(payload, "mean_T_mae")
     if stdout_mode == "quiet":
         _emit(f"run_analysis_written: json={outputs['json']} markdown={outputs['markdown']}")
         return
@@ -722,12 +752,12 @@ def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
     _emit(f"  run_dir: {payload['run_dir']}")
     _emit(f"  prediction_label: {payload.get('prediction_label')}")
     _emit(
-        "  loss: "
+        "  training config: "
         f"mode={loss.get('loss_mode')} lr_schedule={loss.get('lr_schedule')} "
         f"loss_weight_schedule={loss.get('loss_weight_schedule')}"
     )
     _emit(
-        "  final: "
+        "  training summary: "
         f"train_loss={_fmt_float(loss.get('train_loss', {}).get('final'))} "
         f"valid_loss={_fmt_float(loss.get('valid_loss', {}).get('final'))}"
     )
@@ -736,6 +766,13 @@ def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
         f"metric={loss.get('selection_metric')} epoch={loss.get('best_epoch')} "
         f"best_valid_loss={_fmt_float(loss.get('best_valid_loss'))} "
         f"best_predictions_saved={loss.get('best_predictions_saved')}"
+    )
+    _emit(
+        "  prediction overall: "
+        f"rmse={_fmt_float(overall_rmse.get('trained_prediction'))} "
+        f"mae={_fmt_float(overall_mae.get('trained_prediction'))} "
+        f"rmse_rel={_fmt_pct(overall_rmse.get('relative_change'))} "
+        f"mae_rel={_fmt_pct(overall_mae.get('relative_change'))}"
     )
     if payload.get("error_bins", {}).get("present"):
         bin0 = payload["error_bins"].get("bin_summary", {}).get("bin_0", {})
@@ -760,8 +797,7 @@ def _print_stdout_summary(payload: dict[str, Any], stdout_mode: str) -> None:
 def main() -> int:
     args = parse_args()
     run_dir = args.run_dir
-    output_json = args.output_json or run_dir / "run_analysis.json"
-    output_md = args.output_md or run_dir / "run_analysis.md"
+    output_json, output_md = _default_output_paths(run_dir, args.prediction_label, args.output_json, args.output_md)
     baseline_comparison_path = args.baseline_comparison_json or args.baseline_comparison
     payload = analyze_run(
         run_dir=run_dir,
