@@ -87,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--progress-detail", choices=("off", "basic", "verbose"), default="basic")
     parser.add_argument(
         "--loss-mode",
-        choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative"),
+        choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative", "background_pseudo_negative"),
         default="mse",
     )
     parser.add_argument("--background-quantile", type=float, default=0.50)
@@ -100,6 +100,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--background-relative-weight", type=float, default=0.0)
     parser.add_argument("--relative-floor", type=float, default=0.02)
     parser.add_argument("--relative-floor-mode", choices=("fixed", "p50", "p75"), default="fixed")
+    parser.add_argument("--pseudo-negative-quantile", type=float, default=0.25)
+    parser.add_argument("--pseudo-negative-delta-threshold", type=float, default=None)
+    parser.add_argument("--pseudo-negative-weight", type=float, default=0.1)
+    parser.add_argument("--pseudo-negative-over-margin", type=float, default=0.0)
+    parser.add_argument("--pseudo-negative-min-count", type=int, default=1)
     parser.add_argument("--loss-weight-schedule", choices=("constant", "two_phase", "linear_anneal"), default="constant")
     parser.add_argument("--loss-transition-epoch", type=int, default=0)
     parser.add_argument("--background-relative-weight-start", type=float, default=None)
@@ -227,6 +232,13 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "background_relative_weight": float(args.background_relative_weight),
         "relative_floor": float(args.relative_floor),
         "relative_floor_mode": args.relative_floor_mode,
+        "pseudo_negative_quantile": float(args.pseudo_negative_quantile),
+        "pseudo_negative_delta_threshold": (
+            None if args.pseudo_negative_delta_threshold is None else float(args.pseudo_negative_delta_threshold)
+        ),
+        "pseudo_negative_weight": float(args.pseudo_negative_weight),
+        "pseudo_negative_over_margin": float(args.pseudo_negative_over_margin),
+        "pseudo_negative_min_count": int(args.pseudo_negative_min_count),
         "loss_weight_schedule": args.loss_weight_schedule,
         "loss_transition_epoch": int(args.loss_transition_epoch),
         "background_relative_weight_start": args.background_relative_weight_start,
@@ -254,6 +266,8 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "max(abs(true_raw_deltaT), floor), where floor is fixed relative_floor or "
             "max(relative_floor, batch/group abs true raw DeltaT p50/p75)"
         ),
+        "pseudo_negative_mask_space": "raw_deltaT_K high-confidence near-zero quantile and optional raw threshold",
+        "pseudo_negative_over_loss_space": "raw_deltaT_K overprediction-only squared hinge",
         "hotspot_mask_space": "raw_deltaT_K quantile",
         "hotspot_retention_loss_space": "normalized_deltaT",
         "target_normalization": "normalized_deltaT = (raw_deltaT - train_target_delta_mean) / train_target_delta_std",
@@ -294,6 +308,15 @@ def _validate_loss_config(config: dict[str, Any]) -> None:
         raise ValueError("--background-relative-weight must be >= 0")
     if float(config["relative_floor"]) <= 0.0:
         raise ValueError("--relative-floor must be > 0")
+    pseudo_negative_quantile = float(config["pseudo_negative_quantile"])
+    if not 0.0 <= pseudo_negative_quantile <= 1.0:
+        raise ValueError("--pseudo-negative-quantile must be in [0, 1]")
+    if float(config["pseudo_negative_weight"]) < 0.0:
+        raise ValueError("--pseudo-negative-weight must be >= 0")
+    if float(config["pseudo_negative_over_margin"]) < 0.0:
+        raise ValueError("--pseudo-negative-over-margin must be >= 0")
+    if int(config["pseudo_negative_min_count"]) < 0:
+        raise ValueError("--pseudo-negative-min-count must be >= 0")
     if int(config["loss_transition_epoch"]) < 0:
         raise ValueError("--loss-transition-epoch must be >= 0")
     for key in (
@@ -465,6 +488,15 @@ def _safe_relative_denominator(target_raw, loss_config: dict[str, Any]):
     return jnp.maximum(abs_target, safe_floor)
 
 
+def _pseudo_negative_mask(target_raw, loss_config: dict[str, Any]):
+    threshold = jnp.quantile(target_raw, loss_config["pseudo_negative_quantile"])
+    mask = target_raw <= threshold
+    delta_threshold = loss_config.get("pseudo_negative_delta_threshold")
+    if delta_threshold is not None:
+        mask = jnp.logical_and(mask, target_raw <= float(delta_threshold))
+    return mask
+
+
 def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
     weighted = {
         "base_mse": 0.0,
@@ -473,6 +505,9 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         "background_signed_bias_loss": 0.0,
         "background_overprediction_loss": 0.0,
         "background_relative_abs": 0.0,
+        "pseudo_negative_over_loss": 0.0,
+        "pseudo_negative_bias": 0.0,
+        "pseudo_negative_over_ratio": 0.0,
         "hotspot_retention_loss": 0.0,
         "total_loss": 0.0,
         "bg_pred_raw_mean": 0.0,
@@ -481,6 +516,7 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         "hotspot_raw_mae": 0.0,
     }
     count = 0
+    pseudo_negative_count = jnp.asarray(0.0)
     for group in groups:
         pred = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
         target = group["target_normalized"]
@@ -496,6 +532,9 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         background_signed_bias_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
         background_overprediction_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
         background_relative_abs = jnp.asarray(0.0, dtype=base_mse.dtype)
+        pseudo_negative_over_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
+        pseudo_negative_bias = jnp.asarray(0.0, dtype=base_mse.dtype)
+        pseudo_negative_over_ratio = jnp.asarray(0.0, dtype=base_mse.dtype)
         hotspot_retention_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
         raw_error = pred_raw_delta - target_raw
         if loss_config["loss_mode"] == "background_hotspot":
@@ -506,20 +545,42 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
                 + loss_config["background_weight"] * background_penalty
                 + loss_config["hotspot_weight"] * hotspot_retention_loss
             )
-        elif loss_config["loss_mode"] in {"background_l1_bias", "background_l1_relative"}:
+        elif loss_config["loss_mode"] in {"background_l1_bias", "background_l1_relative", "background_pseudo_negative"}:
             background_l1 = _masked_mean(jnp.abs(pred_raw_delta), background_mask)
             background_signed_bias_loss = jnp.abs(_masked_mean(raw_error, background_mask))
             background_overprediction_loss = _masked_mean(jnp.maximum(raw_error, 0.0), background_mask)
             hotspot_retention_loss = _masked_mean(jnp.square(pred - target), hotspot_mask)
-            if loss_config["loss_mode"] == "background_l1_relative":
+            if loss_config["loss_mode"] in {"background_l1_relative", "background_pseudo_negative"}:
                 denom = _safe_relative_denominator(target_raw, loss_config)
                 background_relative_abs = _masked_mean(jnp.abs(raw_error) / denom, background_mask)
+            if loss_config["loss_mode"] == "background_pseudo_negative":
+                pseudo_negative_mask = _pseudo_negative_mask(target_raw, loss_config)
+                pn_count = jnp.sum(pseudo_negative_mask.astype(base_mse.dtype))
+                enough_points = pn_count >= float(loss_config["pseudo_negative_min_count"])
+                pn_over = jnp.maximum(raw_error - loss_config["pseudo_negative_over_margin"], 0.0)
+                pseudo_negative_over_loss = jnp.where(
+                    enough_points,
+                    _masked_mean(jnp.square(pn_over), pseudo_negative_mask),
+                    jnp.asarray(0.0, dtype=base_mse.dtype),
+                )
+                pseudo_negative_bias = jnp.where(
+                    enough_points,
+                    _masked_mean(raw_error, pseudo_negative_mask),
+                    jnp.asarray(0.0, dtype=base_mse.dtype),
+                )
+                pseudo_negative_over_ratio = jnp.where(
+                    enough_points,
+                    _masked_mean((raw_error > loss_config["pseudo_negative_over_margin"]).astype(base_mse.dtype), pseudo_negative_mask),
+                    jnp.asarray(0.0, dtype=base_mse.dtype),
+                )
+                pseudo_negative_count = pseudo_negative_count + pn_count
             total_loss = (
                 base_mse
                 + loss_config["background_l1_weight"] * background_l1
                 + loss_config["background_bias_weight"] * background_signed_bias_loss
                 + loss_config["background_over_weight"] * background_overprediction_loss
                 + loss_config["background_relative_weight"] * background_relative_abs
+                + loss_config["pseudo_negative_weight"] * pseudo_negative_over_loss
                 + loss_config["hotspot_weight"] * hotspot_retention_loss
             )
         else:
@@ -539,6 +600,9 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
             weighted["background_overprediction_loss"] + background_overprediction_loss * n
         )
         weighted["background_relative_abs"] = weighted["background_relative_abs"] + background_relative_abs * n
+        weighted["pseudo_negative_over_loss"] = weighted["pseudo_negative_over_loss"] + pseudo_negative_over_loss * n
+        weighted["pseudo_negative_bias"] = weighted["pseudo_negative_bias"] + pseudo_negative_bias * n
+        weighted["pseudo_negative_over_ratio"] = weighted["pseudo_negative_over_ratio"] + pseudo_negative_over_ratio * n
         weighted["hotspot_retention_loss"] = weighted["hotspot_retention_loss"] + hotspot_retention_loss * n
         weighted["total_loss"] = weighted["total_loss"] + total_loss * n
         weighted["bg_pred_raw_mean"] = weighted["bg_pred_raw_mean"] + bg_pred_raw_mean * n
@@ -547,7 +611,9 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         weighted["hotspot_raw_mae"] = weighted["hotspot_raw_mae"] + hotspot_raw_mae * n
         count += int(n)
     divisor = max(count, 1)
-    return {key: value / divisor for key, value in weighted.items()}
+    result = {key: value / divisor for key, value in weighted.items()}
+    result["pseudo_negative_count"] = pseudo_negative_count
+    return result
 
 
 def _loss_components_payload(components: dict[str, Any]) -> dict[str, float]:
@@ -606,6 +672,14 @@ def _epoch_history_record(
         "valid_background_overprediction_loss": float(valid_components["background_overprediction_loss"]),
         "train_background_relative_abs": float(train_components["background_relative_abs"]),
         "valid_background_relative_abs": float(valid_components["background_relative_abs"]),
+        "train_pseudo_negative_count": float(train_components["pseudo_negative_count"]),
+        "valid_pseudo_negative_count": float(valid_components["pseudo_negative_count"]),
+        "train_pseudo_negative_over_loss": float(train_components["pseudo_negative_over_loss"]),
+        "valid_pseudo_negative_over_loss": float(valid_components["pseudo_negative_over_loss"]),
+        "train_pseudo_negative_bias": float(train_components["pseudo_negative_bias"]),
+        "valid_pseudo_negative_bias": float(valid_components["pseudo_negative_bias"]),
+        "train_pseudo_negative_over_ratio": float(train_components["pseudo_negative_over_ratio"]),
+        "valid_pseudo_negative_over_ratio": float(valid_components["pseudo_negative_over_ratio"]),
         "train_hotspot_retention_loss": float(train_components["hotspot_retention_loss"]),
         "valid_hotspot_retention_loss": float(valid_components["hotspot_retention_loss"]),
         "train_bg_pred_raw_mean": float(train_components["bg_pred_raw_mean"]),
@@ -637,6 +711,9 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             f"valid_base_mse={record['valid_base_mse']:.6e} "
             f"valid_bg_bias={record['valid_bg_signed_bias']:.6e} "
             f"valid_rel={record['valid_background_relative_abs']:.6e} "
+            f"valid_pn_bias={record['valid_pseudo_negative_bias']:.6e} "
+            f"valid_pn_over={record['valid_pseudo_negative_over_loss']:.6e} "
+            f"valid_pn_over_ratio={record['valid_pseudo_negative_over_ratio']:.6e} "
             f"valid_hotspot_mae={record['valid_hotspot_raw_mae']:.6e} "
             f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.6e} "
             f"rel_w={record['current_background_relative_weight']:.3e} "
@@ -660,6 +737,14 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"valid_background_overprediction_loss={record['valid_background_overprediction_loss']:.8e} "
         f"train_background_relative_abs={record['train_background_relative_abs']:.8e} "
         f"valid_background_relative_abs={record['valid_background_relative_abs']:.8e} "
+        f"train_pseudo_negative_count={record['train_pseudo_negative_count']:.8e} "
+        f"valid_pseudo_negative_count={record['valid_pseudo_negative_count']:.8e} "
+        f"train_pseudo_negative_over_loss={record['train_pseudo_negative_over_loss']:.8e} "
+        f"valid_pseudo_negative_over_loss={record['valid_pseudo_negative_over_loss']:.8e} "
+        f"train_pseudo_negative_bias={record['train_pseudo_negative_bias']:.8e} "
+        f"valid_pseudo_negative_bias={record['valid_pseudo_negative_bias']:.8e} "
+        f"train_pseudo_negative_over_ratio={record['train_pseudo_negative_over_ratio']:.8e} "
+        f"valid_pseudo_negative_over_ratio={record['valid_pseudo_negative_over_ratio']:.8e} "
         f"train_hotspot_retention_loss={record['train_hotspot_retention_loss']:.8e} "
         f"valid_hotspot_retention_loss={record['valid_hotspot_retention_loss']:.8e} "
         f"train_bg_pred_raw_mean={record['train_bg_pred_raw_mean']:.8e} "
@@ -909,7 +994,12 @@ def _print_startup_summary(
             f"background_over_weight={loss_config['background_over_weight']} "
             f"background_relative_weight={loss_config['background_relative_weight']} "
             f"relative_floor={loss_config['relative_floor']} "
-            f"relative_floor_mode={loss_config['relative_floor_mode']}"
+            f"relative_floor_mode={loss_config['relative_floor_mode']} "
+            f"pseudo_negative_quantile={loss_config['pseudo_negative_quantile']} "
+            f"pseudo_negative_delta_threshold={loss_config['pseudo_negative_delta_threshold']} "
+            f"pseudo_negative_weight={loss_config['pseudo_negative_weight']} "
+            f"pseudo_negative_over_margin={loss_config['pseudo_negative_over_margin']} "
+            f"pseudo_negative_min_count={loss_config['pseudo_negative_min_count']}"
         )
         _emit(f"  loss weight schedule: {_loss_weight_schedule_payload(loss_config)}")
     _emit("  feature mode: relative BC features, diag3 k encoding, zero_delta_u_bridge")
@@ -1014,6 +1104,26 @@ def _print_final_summary(
             "    final valid background relative abs: "
             f"{result['final_valid_loss_components']['background_relative_abs']:.8e}"
         )
+        _emit(f"    final train pseudo-negative count: {result['final_train_loss_components']['pseudo_negative_count']:.8e}")
+        _emit(f"    final valid pseudo-negative count: {result['final_valid_loss_components']['pseudo_negative_count']:.8e}")
+        _emit(
+            "    final train pseudo-negative over loss: "
+            f"{result['final_train_loss_components']['pseudo_negative_over_loss']:.8e}"
+        )
+        _emit(
+            "    final valid pseudo-negative over loss: "
+            f"{result['final_valid_loss_components']['pseudo_negative_over_loss']:.8e}"
+        )
+        _emit(f"    final train pseudo-negative bias: {result['final_train_loss_components']['pseudo_negative_bias']:.8e}")
+        _emit(f"    final valid pseudo-negative bias: {result['final_valid_loss_components']['pseudo_negative_bias']:.8e}")
+        _emit(
+            "    final train pseudo-negative over ratio: "
+            f"{result['final_train_loss_components']['pseudo_negative_over_ratio']:.8e}"
+        )
+        _emit(
+            "    final valid pseudo-negative over ratio: "
+            f"{result['final_valid_loss_components']['pseudo_negative_over_ratio']:.8e}"
+        )
         _emit(f"    final train bg pred raw mean: {result['final_train_loss_components']['bg_pred_raw_mean']:.8e}")
         _emit(f"    final valid bg pred raw mean: {result['final_valid_loss_components']['bg_pred_raw_mean']:.8e}")
         _emit(f"    final train bg signed bias: {result['final_train_loss_components']['bg_signed_bias']:.8e}")
@@ -1035,6 +1145,9 @@ def _print_final_summary(
             "  final background/hotspot: "
             f"valid_bg_bias={result['final_valid_loss_components']['bg_signed_bias']:.8e} "
             f"valid_bg_rel={result['final_valid_loss_components']['background_relative_abs']:.8e} "
+            f"valid_pn_bias={result['final_valid_loss_components']['pseudo_negative_bias']:.8e} "
+            f"valid_pn_over={result['final_valid_loss_components']['pseudo_negative_over_loss']:.8e} "
+            f"valid_pn_over_ratio={result['final_valid_loss_components']['pseudo_negative_over_ratio']:.8e} "
             f"valid_hotspot_mae={result['final_valid_loss_components']['hotspot_raw_mae']:.8e}"
         )
 
@@ -1327,6 +1440,11 @@ def main() -> int:
         "background_relative_weight": loss_config["background_relative_weight"],
         "relative_floor": loss_config["relative_floor"],
         "relative_floor_mode": loss_config["relative_floor_mode"],
+        "pseudo_negative_quantile": loss_config["pseudo_negative_quantile"],
+        "pseudo_negative_delta_threshold": loss_config["pseudo_negative_delta_threshold"],
+        "pseudo_negative_weight": loss_config["pseudo_negative_weight"],
+        "pseudo_negative_over_margin": loss_config["pseudo_negative_over_margin"],
+        "pseudo_negative_min_count": loss_config["pseudo_negative_min_count"],
         **_loss_weight_schedule_payload(loss_config),
         "loss": loss_config,
         "lr_config": lr_config,
@@ -1380,6 +1498,11 @@ def main() -> int:
         "background_relative_weight": loss_config["background_relative_weight"],
         "relative_floor": loss_config["relative_floor"],
         "relative_floor_mode": loss_config["relative_floor_mode"],
+        "pseudo_negative_quantile": loss_config["pseudo_negative_quantile"],
+        "pseudo_negative_delta_threshold": loss_config["pseudo_negative_delta_threshold"],
+        "pseudo_negative_weight": loss_config["pseudo_negative_weight"],
+        "pseudo_negative_over_margin": loss_config["pseudo_negative_over_margin"],
+        "pseudo_negative_min_count": loss_config["pseudo_negative_min_count"],
         **_loss_weight_schedule_payload(loss_config),
         "lr": lr_config["lr"],
         "lr_schedule": lr_config["lr_schedule"],
