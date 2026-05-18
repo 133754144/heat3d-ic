@@ -32,7 +32,7 @@ def _parse(argv: list[str]):
         sys.argv = original
 
 
-def _components(loss_mode: str):
+def _components(loss_mode: str, loss_type: str = "mse"):
     args = _parse(
         [
             "--loss-mode",
@@ -51,6 +51,10 @@ def _components(loss_mode: str):
             "0.0",
             "--pseudo-negative-min-count",
             "1",
+            "--pseudo-negative-loss-type",
+            loss_type,
+            "--pseudo-negative-relative-floor",
+            "0.02",
         ]
     )
     loss_config = runner._loss_config_from_args(args)
@@ -74,7 +78,10 @@ def main() -> int:
     default_args = _parse([])
     mse_components, _ = _components("mse")
     rel_components, rel_config = _components("background_l1_relative")
-    pn_components, pn_config = _components("background_pseudo_negative")
+    pn_components, pn_config = _components("background_pseudo_negative", "mse")
+    pn_l1_components, pn_l1_config = _components("background_pseudo_negative", "l1")
+    pn_rel_l1_components, pn_rel_l1_config = _components("background_pseudo_negative", "relative_l1")
+    pn_rel_mse_components, pn_rel_mse_config = _components("background_pseudo_negative", "relative_mse")
     metrics = {"raw_delta_mse": 1.0, "recovered_temperature_mse": 1.0}
     record = runner._epoch_history_record(
         1,
@@ -91,17 +98,49 @@ def main() -> int:
         "pseudo_negative_delta_threshold": pn_config["pseudo_negative_delta_threshold"],
         "pseudo_negative_weight": pn_config["pseudo_negative_weight"],
         "pseudo_negative_over_margin": pn_config["pseudo_negative_over_margin"],
+        "pseudo_negative_loss_type": pn_config["pseudo_negative_loss_type"],
+        "pseudo_negative_relative_floor": pn_config["pseudo_negative_relative_floor"],
         "epoch_history": [record],
         "final_train_loss_components": runner._loss_components_payload(pn_components),
     }
     json.dumps(loss_summary_stub, sort_keys=True)
+    expected_mse = 0.0016
+    expected_l1 = 0.04
+    expected_relative_l1 = 2.0
+    expected_relative_mse = 4.0
     checks = {
         "default_mse_unchanged": default_args.loss_mode == "mse",
+        "default_pseudo_negative_loss_type_unchanged": default_args.pseudo_negative_loss_type == "mse",
         "l1_relative_mode_still_valid": rel_config["loss_mode"] == "background_l1_relative",
         "pseudo_negative_mode_valid": pn_config["loss_mode"] == "background_pseudo_negative",
+        "pseudo_negative_mse_type_valid": pn_config["pseudo_negative_loss_type"] == "mse",
+        "pseudo_negative_l1_type_valid": pn_l1_config["pseudo_negative_loss_type"] == "l1",
+        "pseudo_negative_relative_l1_type_valid": pn_rel_l1_config["pseudo_negative_loss_type"] == "relative_l1",
+        "pseudo_negative_relative_mse_type_valid": pn_rel_mse_config["pseudo_negative_loss_type"] == "relative_mse",
         "pseudo_negative_count_positive": float(pn_components["pseudo_negative_count"]) > 0.0,
         "pseudo_negative_over_loss_positive": float(pn_components["pseudo_negative_over_loss"]) > 0.0,
         "pseudo_negative_increases_total_loss": float(pn_components["total_loss"]) > float(rel_components["total_loss"]),
+        "pseudo_negative_mse_matches_old_formula": abs(float(pn_components["pseudo_negative_unweighted_loss"]) - expected_mse)
+        < 1e-6,
+        "pseudo_negative_l1_formula": abs(float(pn_l1_components["pseudo_negative_unweighted_loss"]) - expected_l1)
+        < 1e-6,
+        "pseudo_negative_relative_l1_formula": abs(
+            float(pn_rel_l1_components["pseudo_negative_unweighted_loss"]) - expected_relative_l1
+        )
+        < 1e-6,
+        "pseudo_negative_relative_mse_formula": abs(
+            float(pn_rel_mse_components["pseudo_negative_unweighted_loss"]) - expected_relative_mse
+        )
+        < 1e-6,
+        "pseudo_negative_weighted_loss_recorded": abs(
+            float(pn_components["pseudo_negative_weighted_loss"])
+            - pn_config["pseudo_negative_weight"] * float(pn_components["pseudo_negative_unweighted_loss"])
+        )
+        < 1e-6,
+        "pseudo_negative_weighted_fraction_recorded": float(
+            pn_components["pseudo_negative_weighted_fraction_of_total_loss"]
+        )
+        > 0.0,
         "mse_pseudo_fields_zero": float(mse_components["pseudo_negative_over_loss"]) == 0.0
         and float(mse_components["pseudo_negative_count"]) == 0.0,
         "relative_pseudo_fields_zero": float(rel_components["pseudo_negative_over_loss"]) == 0.0
@@ -113,10 +152,19 @@ def main() -> int:
                 "valid_pseudo_negative_count",
                 "train_pseudo_negative_over_loss",
                 "valid_pseudo_negative_over_loss",
+                "train_pseudo_negative_unweighted_loss",
+                "valid_pseudo_negative_unweighted_loss",
+                "train_pseudo_negative_weighted_loss",
+                "valid_pseudo_negative_weighted_loss",
+                "train_pseudo_negative_weighted_fraction_of_total_loss",
+                "valid_pseudo_negative_weighted_fraction_of_total_loss",
                 "train_pseudo_negative_bias",
                 "valid_pseudo_negative_bias",
                 "train_pseudo_negative_over_ratio",
                 "valid_pseudo_negative_over_ratio",
+                "valid_pn_bias",
+                "valid_pn_over",
+                "valid_pn_over_ratio",
             )
         ),
         "summary_fields": all(
@@ -126,6 +174,8 @@ def main() -> int:
                 "pseudo_negative_delta_threshold",
                 "pseudo_negative_weight",
                 "pseudo_negative_over_margin",
+                "pseudo_negative_loss_type",
+                "pseudo_negative_relative_floor",
             )
         ),
     }
