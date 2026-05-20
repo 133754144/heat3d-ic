@@ -1,10 +1,10 @@
 # Frozen Heat3D v1 diagnostic reference.
-# This file records confirmed reference values only. Unknown values are null.
-# It is a comparison reference, not a formal benchmark.
+# This file records confirmed reference values only.
+# It is a diagnostic-stage historical V1 best, not a formal benchmark.
 schema_version: heat3d_v2_reference_draft_v0
 config_role: baseline_reference
 name: frozen_v1_best_diagnostic
-description: "Frozen v1 diagnostic baseline for v2 baseline comparison."
+description: "Historical V1 best diagnostic run for v2 baseline comparison; not a formal benchmark."
 non_claims:
   - diagnostic_reference_only
   - not_formal_benchmark
@@ -19,17 +19,35 @@ dataset:
   manifest_path: configs/heat3d_v1_physics_label_medium1024_gapA_manifest.json
 
 training:
+  run_name: medium1024_gapA_full1024_v2_e050_pn_relative_l1_w0.10_bgrel0.10_seed0
   loss_mode: background_pseudo_negative
+  background_quantile: 0.50
+  hotspot_quantile: 0.90
+  background_l1_weight: 1.0
+  background_bias_weight: 1.0
+  background_over_weight: 1.0
+  background_relative_weight: 0.10
+  relative_floor: 0.02
+  relative_floor_mode: fixed
+  hotspot_weight: 0.02
+  pseudo_negative_quantile: 0.25
   pseudo_negative_loss_type: relative_l1
   pseudo_negative_weight: 0.10
-  background_relative_weight: 0.10
+  pseudo_negative_relative_floor: 0.02
+  pseudo_negative_over_margin: 0.0
+  pseudo_negative_min_count: 1
   lr: 1.0e-2
   lr_schedule: constant
+  loss_weight_schedule: constant
   best_epoch: 33
   optimizer: manual_full_batch_gradient_descent
-  seed: null  # Unknown from committed docs; do not infer.
-  epochs: null  # Unknown from committed docs; do not infer.
-  selection_metric: null  # Unknown from committed docs; do not infer.
+  seed: 0
+  epochs: 50
+  selection_metric: valid_loss
+  report_every: 5
+  save_predictions: true
+  save_best_predictions: true
+  best_predictions_name: best_predictions.npz
 
 metrics:
   best_overall_rmse: 3.94142446e-02
