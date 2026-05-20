@@ -312,3 +312,10 @@ Do not claim:
 - high-fidelity solver validation;
 - production-ready thermal simulator;
 - publication-ready model performance.
+
+## 9. V1 Freeze And V2 Transition
+
+V1 is frozen as a diagnostic baseline. V2 will address model capacity, optimizer
+design, hotspot / field-shape diagnostics, staged loss behavior, and a more
+formal training protocol while keeping the frozen V1 results as the comparison
+reference.
