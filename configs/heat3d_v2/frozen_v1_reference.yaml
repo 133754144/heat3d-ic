@@ -1,0 +1,62 @@
+# Frozen Heat3D v1 diagnostic reference.
+# This file records confirmed reference values only. Unknown values are null.
+# It is a comparison reference, not a formal benchmark.
+schema_version: heat3d_v2_reference_draft_v0
+config_role: baseline_reference
+name: frozen_v1_best_diagnostic
+description: "Frozen v1 diagnostic baseline for v2 baseline comparison."
+non_claims:
+  - diagnostic_reference_only
+  - not_formal_benchmark
+  - not_model_performance_claim
+  - not_ood_generalization_evidence
+  - not_high_fidelity_validation
+  - not_publication_ready_result
+
+dataset:
+  name: medium1024_gapA_full1024_v2
+  subset_path: data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2
+  manifest_path: configs/heat3d_v1_physics_label_medium1024_gapA_manifest.json
+
+training:
+  loss_mode: background_pseudo_negative
+  pseudo_negative_loss_type: relative_l1
+  pseudo_negative_weight: 0.10
+  background_relative_weight: 0.10
+  lr: 1.0e-2
+  lr_schedule: constant
+  best_epoch: 33
+  optimizer: manual_full_batch_gradient_descent
+  seed: null  # Unknown from committed docs; do not infer.
+  epochs: null  # Unknown from committed docs; do not infer.
+  selection_metric: null  # Unknown from committed docs; do not infer.
+
+metrics:
+  best_overall_rmse: 3.94142446e-02
+  best_overall_mae: 2.46786651e-02
+  best_valid_rmse: 2.73560372e-02
+  best_valid_mae: 2.30636740e-02
+  bin_0_bias: 1.89761732e-02
+  bin_0_rmse_relative_change: 2.5656
+  bin_0_mae_relative_change: 4.0444
+  bin_0_over_ratio: 1.0
+  peak_error: null  # Unknown from committed docs; do not infer.
+  p95_abs_error: null  # Unknown from committed docs; do not infer.
+  p99_abs_error: null  # Unknown from committed docs; do not infer.
+  top_k_overlap: null  # Unknown from committed docs; do not infer.
+  field_variance_ratio: null  # Not available in v1 reference docs.
+  spatial_correlation: null  # Not available in v1 reference docs.
+
+reporting:
+  required_language:
+    - diagnostic
+    - research-stage
+    - controlled training
+    - V1 baseline comparison
+    - benchmark-candidate preparation
+  forbidden_claims:
+    - formal benchmark
+    - OOD generalization solved
+    - high-fidelity validation
+    - production-ready solver
+    - publication-ready result
