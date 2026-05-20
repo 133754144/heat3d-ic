@@ -69,6 +69,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-lr", type=float, default=1e-5)
     parser.add_argument("--second-stage-epoch", type=int, default=0)
     parser.add_argument("--second-stage-lr", type=float, default=1e-4)
+    parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="manual_gd")
+    parser.add_argument("--gradient-clip-norm", type=float, default=None)
+    parser.add_argument("--weight-decay", type=float, default=0.0)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
@@ -293,6 +296,16 @@ def _lr_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _optimizer_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "optimizer": args.optimizer,
+        "gradient_clip_norm": (
+            None if args.gradient_clip_norm is None else float(args.gradient_clip_norm)
+        ),
+        "weight_decay": float(args.weight_decay),
+    }
+
+
 def _validate_loss_config(config: dict[str, Any]) -> None:
     background_quantile = float(config["background_quantile"])
     hotspot_quantile = float(config["hotspot_quantile"])
@@ -357,6 +370,16 @@ def _validate_lr_config(config: dict[str, Any]) -> None:
         raise ValueError("--second-stage-epoch must be >= 0")
     if float(config["second_stage_lr"]) < 0.0:
         raise ValueError("--second-stage-lr must be >= 0")
+
+
+def _validate_optimizer_config(config: dict[str, Any]) -> None:
+    if config["optimizer"] not in {"manual_gd", "adam", "adamw"}:
+        raise ValueError("--optimizer must be manual_gd, adam, or adamw")
+    gradient_clip_norm = config.get("gradient_clip_norm")
+    if gradient_clip_norm is not None and float(gradient_clip_norm) <= 0.0:
+        raise ValueError("--gradient-clip-norm must be > 0 when provided")
+    if float(config["weight_decay"]) < 0.0:
+        raise ValueError("--weight-decay must be >= 0")
 
 
 def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
@@ -666,6 +689,83 @@ def _loss_components_payload(components: dict[str, Any]) -> dict[str, float]:
     return {key: float(value) for key, value in components.items()}
 
 
+def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
+    schedule = lr_config["lr_schedule"]
+    base_lr = float(lr_config["lr"])
+
+    if schedule == "constant":
+        return base_lr
+
+    def learning_rate(count):
+        epoch = jnp.asarray(count, dtype=jnp.float32) + 1.0
+        base = jnp.asarray(base_lr, dtype=jnp.float32)
+        if schedule == "two_stage":
+            second_stage_epoch = int(lr_config["second_stage_epoch"])
+            if second_stage_epoch <= 0:
+                return base
+            second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
+            return jnp.where(epoch <= float(second_stage_epoch), base, second_lr)
+
+        if schedule == "warmup_cosine":
+            min_lr = jnp.asarray(float(lr_config["min_lr"]), dtype=jnp.float32)
+            warmup_epochs = int(lr_config["warmup_epochs"])
+            if warmup_epochs > 0:
+                warmup_progress = jnp.clip(epoch / float(warmup_epochs), 0.0, 1.0)
+                warmup_lr = min_lr + warmup_progress * (base - min_lr)
+                decay_epochs = max(epochs - warmup_epochs, 1)
+                decay_progress = jnp.clip((epoch - float(warmup_epochs)) / float(decay_epochs), 0.0, 1.0)
+                cosine_lr = min_lr + 0.5 * (1.0 + jnp.cos(jnp.pi * decay_progress)) * (base - min_lr)
+                return jnp.where(epoch <= float(warmup_epochs), warmup_lr, cosine_lr)
+
+            decay_epochs = max(epochs - 1, 1)
+            decay_progress = jnp.clip((epoch - 1.0) / float(decay_epochs), 0.0, 1.0)
+            return min_lr + 0.5 * (1.0 + jnp.cos(jnp.pi * decay_progress)) * (base - min_lr)
+
+        raise ValueError(f"Unsupported lr schedule: {schedule}")
+
+    return learning_rate
+
+
+def _build_optax_state(
+    params,
+    *,
+    epochs: int,
+    lr_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+):
+    optimizer_name = optimizer_config["optimizer"]
+    if optimizer_name == "manual_gd":
+        return None
+
+    try:
+        import optax
+    except ImportError as exc:  # pragma: no cover - environment guard
+        raise ImportError("--optimizer adam/adamw requires optax") from exc
+
+    transforms = []
+    gradient_clip_norm = optimizer_config.get("gradient_clip_norm")
+    if gradient_clip_norm is not None:
+        transforms.append(optax.clip_by_global_norm(float(gradient_clip_norm)))
+
+    learning_rate = _optax_learning_rate_schedule(epochs, lr_config)
+    weight_decay = float(optimizer_config["weight_decay"])
+    if optimizer_name == "adam":
+        if weight_decay > 0.0:
+            transforms.append(optax.add_decayed_weights(weight_decay))
+        transforms.append(optax.adam(learning_rate=learning_rate))
+    elif optimizer_name == "adamw":
+        transforms.append(optax.adamw(learning_rate=learning_rate, weight_decay=weight_decay))
+    else:
+        raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+
+    tx = optax.chain(*transforms)
+    return {
+        "tx": tx,
+        "state": tx.init(params),
+        "apply_updates": optax.apply_updates,
+    }
+
+
 def _copy_params(params):
     return tree.tree_map(lambda value: value.copy() if hasattr(value, "copy") else value, params)
 
@@ -842,6 +942,7 @@ def _fit_once(
     seed: int,
     report_every: int,
     loss_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
     selection_metric: str,
     log_mode: str,
     progress_enabled: bool,
@@ -876,6 +977,12 @@ def _fit_once(
     best_score: float | None = None
     best_record: dict[str, Any] | None = None
     best_params = None
+    optax_state = _build_optax_state(
+        params,
+        epochs=epochs,
+        lr_config=lr_config,
+        optimizer_config=optimizer_config,
+    )
     _progress(progress_enabled, "train", f"epoch loop start epochs={epochs} report_every={report_every}")
     epoch_loop_start = time.perf_counter()
     for epoch in range(1, epochs + 1):
@@ -895,7 +1002,12 @@ def _fit_once(
         grad_norm = _global_norm(grads)
         grad_norms.append(grad_norm)
         grad_finite = grad_finite and bool(np.isfinite(grad_norm))
-        params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
+        if optax_state is None:
+            params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
+        else:
+            updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
+            optax_state["state"] = opt_state
+            params = optax_state["apply_updates"](params, updates)
         train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
         valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
         valid_metrics = _metrics(model, params, valid_groups, stats)
@@ -1006,6 +1118,7 @@ def _print_startup_summary(
     output_dir: Path,
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
 ) -> None:
     if args.log_mode == "quiet":
         return
@@ -1017,7 +1130,7 @@ def _print_startup_summary(
     _emit(
         "  run: "
         f"epochs={args.epochs} lr={args.lr} lr_schedule={lr_config['lr_schedule']} "
-        f"seed={args.seed} report_every={args.report_every}"
+        f"optimizer={optimizer_config['optimizer']} seed={args.seed} report_every={args.report_every}"
     )
     _emit(
         "  output: "
@@ -1047,6 +1160,12 @@ def _print_startup_summary(
             f"warmup_epochs={lr_config['warmup_epochs']} min_lr={lr_config['min_lr']} "
             f"second_stage_epoch={lr_config['second_stage_epoch']} "
             f"second_stage_lr={lr_config['second_stage_lr']}"
+        )
+        _emit(
+            "  optimizer params: "
+            f"optimizer={optimizer_config['optimizer']} "
+            f"gradient_clip_norm={optimizer_config['gradient_clip_norm']} "
+            f"weight_decay={optimizer_config['weight_decay']}"
         )
         _emit(f"  loss mode: {loss_config['loss_mode']}")
         _emit(f"  loss space: {loss_config['loss_space']}")
@@ -1084,6 +1203,7 @@ def _print_final_summary(
     result: dict[str, Any],
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
     predictions_path: Path,
     predictions_saved: bool,
     prediction_count: int,
@@ -1223,6 +1343,7 @@ def _print_final_summary(
     else:
         _emit(
             "  optimization: "
+            f"optimizer={optimizer_config['optimizer']} "
             f"loss_mode={loss_config['loss_mode']} loss_weight_schedule={loss_config['loss_weight_schedule']} "
             f"lr_schedule={lr_config['lr_schedule']} lr_summary={lr_history_summary}"
         )
@@ -1326,8 +1447,10 @@ def main() -> int:
     )
     loss_config = _loss_config_from_args(args)
     lr_config = _lr_config_from_args(args)
+    optimizer_config = _optimizer_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
+    _validate_optimizer_config(optimizer_config)
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
@@ -1423,6 +1546,7 @@ def main() -> int:
         output_dir=output_dir,
         loss_config=loss_config,
         lr_config=lr_config,
+        optimizer_config=optimizer_config,
     )
 
     result = _fit_once(
@@ -1434,6 +1558,7 @@ def main() -> int:
         args.seed,
         args.report_every,
         loss_config,
+        optimizer_config,
         args.selection_metric,
         args.log_mode,
         progress_enabled,
@@ -1502,7 +1627,9 @@ def main() -> int:
         "min_lr": lr_config["min_lr"],
         "second_stage_epoch": lr_config["second_stage_epoch"],
         "second_stage_lr": lr_config["second_stage_lr"],
-        "optimizer": "manual_full_batch_gradient_descent",
+        "optimizer": optimizer_config["optimizer"],
+        "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
+        "weight_decay": optimizer_config["weight_decay"],
         "seed": args.seed,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
@@ -1536,6 +1663,7 @@ def main() -> int:
         **_loss_weight_schedule_payload(loss_config),
         "loss": loss_config,
         "lr_config": lr_config,
+        "optimizer_config": optimizer_config,
         "split_counts": split_counts,
         "timing_diagnostics": dict(timings),
         "train_ids": train_ids,
@@ -1600,10 +1728,14 @@ def main() -> int:
         "min_lr": lr_config["min_lr"],
         "second_stage_epoch": lr_config["second_stage_epoch"],
         "second_stage_lr": lr_config["second_stage_lr"],
+        "optimizer": optimizer_config["optimizer"],
+        "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
+        "weight_decay": optimizer_config["weight_decay"],
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
         "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
         "lr_config": lr_config,
+        "optimizer_config": optimizer_config,
         "epoch_history": result["epoch_history"],
         "loss": loss_config,
         "final_train_loss_components": result["final_train_loss_components"],
@@ -1624,6 +1756,7 @@ def main() -> int:
         result=result,
         loss_config=loss_config,
         lr_config=lr_config,
+        optimizer_config=optimizer_config,
         predictions_path=predictions_path,
         predictions_saved=bool(args.save_predictions),
         prediction_count=len(predictions),

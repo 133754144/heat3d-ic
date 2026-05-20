@@ -26,6 +26,7 @@ REQUIRED_CONTROLLED_KINDS = {
     "error_bins",
     "run_summary",
     "condition_diagnostics",
+    "field_shape_diagnostics",
 }
 
 

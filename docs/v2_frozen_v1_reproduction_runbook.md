@@ -40,10 +40,12 @@ python3 scripts/run_heat3d_v1_medium_controlled_training_export.py --subset data
 2. final error bins
 3. final run summary
 4. final condition diagnostics
-5. best baseline comparison
-6. best error bins
-7. best run summary
-8. best condition diagnostics
+5. final field-shape diagnostics
+6. best baseline comparison
+7. best error bins
+8. best run summary
+9. best condition diagnostics
+10. best field-shape diagnostics
 
 对应命令如下：
 
@@ -52,22 +54,24 @@ python3 scripts/compare_heat3d_v1_medium_baselines.py --subset data/heat3d-therm
 python3 scripts/analyze_heat3d_v1_medium_error_bins.py --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2 --trained-predictions output/heat3d_v2_runs/frozen_v1_equivalent_seed0/predictions.npz --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/error_bins_final.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/error_bins_final.md --bins p50,p75,p90,p95 --stdout-mode compact
 python3 scripts/analyze_heat3d_v1_medium_run_summary.py --run-dir output/heat3d_v2_runs/frozen_v1_equivalent_seed0 --loss-summary output/heat3d_v2_runs/frozen_v1_equivalent_seed0/loss_summary.json --baseline-comparison-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/baseline_comparison_final.json --error-bins-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/error_bins_final.json --prediction-label final --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/run_analysis_final.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/run_analysis_final.md --stdout-mode compact --metric-set mean_T_rmse mean_T_mae mean_DeltaT_rmse mean_max_abs mean_p95_abs mean_peak_T_err mean_hotspot_dist
 python3 scripts/analyze_heat3d_v1_medium_condition_diagnostics.py --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2 --trained-predictions output/heat3d_v2_runs/frozen_v1_equivalent_seed0/predictions.npz --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/condition_diagnostics_final.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/condition_diagnostics_final.md --prediction-label final --bins p50,p75,p90,p95 --q-power-bins p33,p66 --stdout-mode compact
+python3 scripts/analyze_heat3d_v2_field_shape_diagnostics.py --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2 --trained-predictions output/heat3d_v2_runs/frozen_v1_equivalent_seed0/predictions.npz --prediction-label final --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/field_shape_diagnostics_final.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/field_shape_diagnostics_final.md --top-k 5 --stdout-mode compact
 python3 scripts/compare_heat3d_v1_medium_baselines.py --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2 --trained-predictions output/heat3d_v2_runs/frozen_v1_equivalent_seed0/best_predictions.npz --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/baseline_comparison_best.json --top-k 5 --stdout-mode compact
 python3 scripts/analyze_heat3d_v1_medium_error_bins.py --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2 --trained-predictions output/heat3d_v2_runs/frozen_v1_equivalent_seed0/best_predictions.npz --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/error_bins_best.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/error_bins_best.md --bins p50,p75,p90,p95 --stdout-mode compact
 python3 scripts/analyze_heat3d_v1_medium_run_summary.py --run-dir output/heat3d_v2_runs/frozen_v1_equivalent_seed0 --loss-summary output/heat3d_v2_runs/frozen_v1_equivalent_seed0/loss_summary.json --baseline-comparison-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/baseline_comparison_best.json --error-bins-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/error_bins_best.json --prediction-label best --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/run_analysis_best.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/run_analysis_best.md --stdout-mode compact --metric-set mean_T_rmse mean_T_mae mean_DeltaT_rmse mean_max_abs mean_p95_abs mean_peak_T_err mean_hotspot_dist
 python3 scripts/analyze_heat3d_v1_medium_condition_diagnostics.py --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2 --trained-predictions output/heat3d_v2_runs/frozen_v1_equivalent_seed0/best_predictions.npz --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/condition_diagnostics_best.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/condition_diagnostics_best.md --prediction-label best --bins p50,p75,p90,p95 --q-power-bins p33,p66 --stdout-mode compact
+python3 scripts/analyze_heat3d_v2_field_shape_diagnostics.py --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2 --trained-predictions output/heat3d_v2_runs/frozen_v1_equivalent_seed0/best_predictions.npz --prediction-label best --output-json output/heat3d_v2_runs/frozen_v1_equivalent_seed0/field_shape_diagnostics_best.json --output-md output/heat3d_v2_runs/frozen_v1_equivalent_seed0/field_shape_diagnostics_best.md --top-k 5 --stdout-mode compact
 ```
 
 ## mapped / unmapped / implicit 摘要
 
 Mapped:
 
-- dataset subset、runner epochs / log fields、lr / schedule / seed、loss 参数、prediction export、final/best diagnostics labels。
+- dataset subset、runner epochs / log fields、lr / schedule / seed、loss 参数、prediction export、final/best diagnostics labels、final/best field-shape diagnostics command。
 
 Unmapped:
 
 - model capacity fields 仍不传给 v1 runner CLI；
-- `field_shape_metrics` 和 `p_quantiles` 仍是 v2 diagnostics 草案；
+- `p_quantiles` 仍是 v2 diagnostics 草案，field-shape CLI 当前固定输出 p95 / p99；
 - `baseline_reference.path` 只用于 loader 校验和 runbook 说明；
 - `run.device_policy` 只表达本地/SSH 策略。
 

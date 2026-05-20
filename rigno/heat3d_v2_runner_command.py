@@ -22,6 +22,9 @@ RUN_SUMMARY_SCRIPT = "scripts/analyze_heat3d_v1_medium_run_summary.py"
 CONDITION_DIAGNOSTICS_SCRIPT = (
     "scripts/analyze_heat3d_v1_medium_condition_diagnostics.py"
 )
+FIELD_SHAPE_DIAGNOSTICS_SCRIPT = (
+    "scripts/analyze_heat3d_v2_field_shape_diagnostics.py"
+)
 LEGACY_OPTIMIZER_NAME = "manual_full_batch_gradient_descent"
 NON_EXECUTION_NOTE = (
     "Dry-run only: generated commands are not executed and no output "
@@ -44,6 +47,7 @@ def build_training_command(
     command = [python_executable, TRAINING_SCRIPT]
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--epochs", run.get("epochs"))
+    _append_option(command, "--optimizer", _runner_optimizer_name(optimizer.get("name")))
     _append_option(command, "--lr", optimizer.get("lr"))
     _append_option(command, "--lr-schedule", optimizer.get("lr_schedule"))
     _append_option(command, "--warmup-epochs", optimizer.get("warmup_epochs"))
@@ -52,6 +56,8 @@ def build_training_command(
         command, "--second-stage-epoch", optimizer.get("second_stage_epoch")
     )
     _append_option(command, "--second-stage-lr", optimizer.get("second_stage_lr"))
+    _append_option(command, "--gradient-clip-norm", optimizer.get("gradient_clip_norm"))
+    _append_option(command, "--weight-decay", optimizer.get("weight_decay"))
     _append_option(command, "--seed", optimizer.get("seed"))
     _append_option(command, "--output-dir", export.get("output_dir"))
 
@@ -253,6 +259,40 @@ def build_condition_diagnostics_command(
     ]
 
 
+def build_field_shape_diagnostics_command(
+    config: Mapping[str, Any],
+    *,
+    prediction_label: str,
+    predictions_path: str,
+    python_executable: str = "python3",
+) -> list[str]:
+    """Build a v2 field-shape diagnostics command for one prediction archive."""
+
+    validate_v2_config(config)
+    _validate_prediction_label(prediction_label)
+    dataset = _section(config, "dataset")
+    diagnostics = _section(config, "diagnostics")
+    output_dir = _output_dir(config)
+    return [
+        python_executable,
+        FIELD_SHAPE_DIAGNOSTICS_SCRIPT,
+        "--subset",
+        _stringify(dataset.get("subset_path")),
+        "--trained-predictions",
+        predictions_path,
+        "--prediction-label",
+        prediction_label,
+        "--output-json",
+        _join_output(output_dir, f"field_shape_diagnostics_{prediction_label}.json"),
+        "--output-md",
+        _join_output(output_dir, f"field_shape_diagnostics_{prediction_label}.md"),
+        "--top-k",
+        _stringify(diagnostics.get("top_k", 5)),
+        "--stdout-mode",
+        _stdout_mode(config),
+    ]
+
+
 def build_v2_command_plan(
     config: Mapping[str, Any], *, python_executable: str = "python3"
 ) -> dict[str, Any]:
@@ -332,6 +372,19 @@ def build_v2_command_plan(
                     ),
                 )
             )
+        if _field_shape_enabled(diagnostics):
+            plan["diagnostics_commands"].append(
+                _diagnostic_entry(
+                    "field_shape_diagnostics",
+                    label,
+                    build_field_shape_diagnostics_command(
+                        config,
+                        prediction_label=label,
+                        predictions_path=predictions_path,
+                        python_executable=python_executable,
+                    ),
+                )
+            )
 
     return plan
 
@@ -376,12 +429,15 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.log_mode", "training --log-mode"),
         ("run.progress_log", "training --progress-log/--no-progress-log"),
         ("run.progress_detail", "training --progress-detail"),
+        ("optimizer.name", "training --optimizer"),
         ("optimizer.lr", "training --lr"),
         ("optimizer.lr_schedule", "training --lr-schedule"),
         ("optimizer.warmup_epochs", "training --warmup-epochs"),
         ("optimizer.min_lr", "training --min-lr"),
         ("optimizer.second_stage_epoch", "training --second-stage-epoch"),
         ("optimizer.second_stage_lr", "training --second-stage-lr"),
+        ("optimizer.gradient_clip_norm", "training --gradient-clip-norm"),
+        ("optimizer.weight_decay", "training --weight-decay"),
         ("optimizer.seed", "training --seed"),
         ("loss.mode", "training --loss-mode"),
         ("loss.background_quantile", "training --background-quantile"),
@@ -423,6 +479,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
             "diagnostics.q_power_bins",
             "condition diagnostics --q-power-bins",
         ),
+        (
+            "diagnostics.field_shape_metrics",
+            "field-shape diagnostics command group",
+        ),
         ("diagnostics.prediction_labels", "final/best diagnostics command groups"),
         ("diagnostics.metric_set", "run summary --metric-set"),
     ]
@@ -442,10 +502,7 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         "model.mlp_hidden_layers",
         "model.report_parameter_count",
         "model.report_memory_estimate",
-        "optimizer.weight_decay",
-        "optimizer.gradient_clip_norm",
         "optimizer.multi_seed",
-        "diagnostics.field_shape_metrics",
         "diagnostics.p_quantiles",
         "baseline_reference.path",
         "dataset.k_encoding_mode",
@@ -457,15 +514,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         value = _get_dotted(config, field)
         if value is not None:
             entries.append({"field": field, "reason": _unmapped_reason(field)})
-
-    optimizer_name = _get_dotted(config, "optimizer.name")
-    if optimizer_name in {"adam", "adamw"}:
-        entries.append(
-            {
-                "field": "optimizer.name",
-                "reason": "v1 runner CLI has no optimizer selector; legacy manual optimizer remains in effect.",
-            }
-        )
 
     final_name = _get_dotted(config, "export.final_predictions_name")
     if final_name is not None and final_name != "predictions.npz":
@@ -481,13 +529,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
 
 def _warnings(config: Mapping[str, Any]) -> list[str]:
     warnings: list[str] = []
-    optimizer_name = _get_dotted(config, "optimizer.name")
-    if optimizer_name in {"adam", "adamw"}:
-        warnings.append(
-            "current v1 runner does not implement optimizer.name; generated "
-            "command uses legacy manual optimizer behavior."
-        )
-
     for field in (
         "model.node_latent_size",
         "model.edge_latent_size",
@@ -505,19 +546,18 @@ def _warnings(config: Mapping[str, Any]) -> list[str]:
             "is not passed to the v1 runner."
         )
 
-    if _get_dotted(config, "diagnostics.field_shape_metrics"):
-        warnings.append(
-            "diagnostics.field_shape_metrics is a v2 draft field and has no "
-            "v1 diagnostics command yet."
-        )
     return warnings
+
+
+def _field_shape_enabled(diagnostics: Mapping[str, Any]) -> bool:
+    if "run_field_shape_diagnostics" in diagnostics:
+        return bool(diagnostics.get("run_field_shape_diagnostics"))
+    return "field_shape_metrics" in diagnostics
 
 
 def _unmapped_reason(field: str) -> str:
     if field.startswith("model."):
         return "current v1 runner imports MODEL_CONFIG and has no model-capacity CLI."
-    if field in {"optimizer.weight_decay", "optimizer.gradient_clip_norm"}:
-        return "current v1 runner uses legacy manual optimizer behavior."
     if field == "optimizer.multi_seed":
         return "multi-seed execution is outside this dry-run command builder."
     if field.startswith("diagnostics."):
@@ -598,6 +638,14 @@ def _append_option(command: list[str], flag: str, value: Any) -> None:
     if value is None:
         return
     command.extend([flag, _stringify(value)])
+
+
+def _runner_optimizer_name(value: Any) -> str | None:
+    if value is None:
+        return None
+    if value == LEGACY_OPTIMIZER_NAME:
+        return "manual_gd"
+    return _stringify(value)
 
 
 def _stringify(value: Any) -> str:
