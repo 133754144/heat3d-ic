@@ -76,6 +76,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--edge-latent-size", type=int, default=MODEL_CONFIG["edge_latent_size"])
     parser.add_argument("--processor-steps", type=int, default=MODEL_CONFIG["processor_steps"])
     parser.add_argument("--mlp-hidden-layers", type=int, default=MODEL_CONFIG["mlp_hidden_layers"])
+    parser.add_argument("--batch-size", type=int, default=0)
+    parser.add_argument("--validation-batch-size", type=int, default=0)
+    parser.add_argument("--prediction-batch-size", type=int, default=0)
+    parser.add_argument("--shuffle-train-batches", action="store_true")
+    parser.add_argument("--drop-last", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
@@ -323,6 +328,20 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return model_config
 
 
+def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "batch_size": _optional_batch_size(args.batch_size, "batch-size"),
+        "validation_batch_size": _optional_batch_size(
+            args.validation_batch_size, "validation-batch-size"
+        ),
+        "prediction_batch_size": _optional_batch_size(
+            args.prediction_batch_size, "prediction-batch-size"
+        ),
+        "shuffle_train_batches": bool(args.shuffle_train_batches),
+        "drop_last": bool(args.drop_last),
+    }
+
+
 def _validate_loss_config(config: dict[str, Any]) -> None:
     background_quantile = float(config["background_quantile"])
     hotspot_quantile = float(config["hotspot_quantile"])
@@ -403,6 +422,32 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     for key in ("node_latent_size", "edge_latent_size", "processor_steps", "mlp_hidden_layers"):
         if int(config[key]) < 1:
             raise ValueError(f"--{key.replace('_', '-')} must be >= 1")
+
+
+def _validate_batch_config(config: dict[str, Any]) -> None:
+    for key in ("batch_size", "validation_batch_size", "prediction_batch_size"):
+        value = config.get(key)
+        if value is not None and int(value) < 1:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 1 or 0 for legacy full-batch")
+
+
+def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "batch_size": batch_config["batch_size"],
+        "validation_batch_size": batch_config["validation_batch_size"],
+        "prediction_batch_size": batch_config["prediction_batch_size"],
+        "shuffle_train_batches": batch_config["shuffle_train_batches"],
+        "drop_last": batch_config["drop_last"],
+        "batching_mode": "mini_batch" if batch_config["batch_size"] is not None else "legacy_full_batch",
+    }
+
+
+def _optional_batch_size(value: int | None, flag_name: str) -> int | None:
+    if value is None or int(value) == 0:
+        return None
+    if int(value) < 0:
+        raise ValueError(f"--{flag_name} must be >= 1 or 0 for legacy full-batch")
+    return int(value)
 
 
 def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
@@ -712,6 +757,46 @@ def _loss_components_payload(components: dict[str, Any]) -> dict[str, float]:
     return {key: float(value) for key, value in components.items()}
 
 
+def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[str, Any]:
+    weighted_normalized_loss = 0.0
+    weighted_raw_delta_mse = 0.0
+    weighted_recovered_mse = 0.0
+    count = 0
+    finite_ok = True
+    shape_ok = True
+    for group in groups:
+        pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
+        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
+        recovered = group["t_ref"] + pred_delta
+        n = pred_normalized.shape[0]
+        weighted_normalized_loss = weighted_normalized_loss + jnp.mean(
+            jnp.square(pred_normalized - group["target_normalized"])
+        ) * n
+        weighted_raw_delta_mse = weighted_raw_delta_mse + jnp.mean(
+            jnp.square(pred_delta - group["target_delta_raw"])
+        ) * n
+        weighted_recovered_mse = weighted_recovered_mse + jnp.mean(
+            jnp.square(recovered - group["target_temperature"])
+        ) * n
+        finite_ok = (
+            finite_ok
+            and bool(jnp.all(jnp.isfinite(pred_normalized)))
+            and bool(jnp.all(jnp.isfinite(pred_delta)))
+            and bool(jnp.all(jnp.isfinite(recovered)))
+        )
+        shape_ok = shape_ok and pred_normalized.shape == group["target_normalized"].shape
+        count += int(n)
+
+    divisor = max(count, 1)
+    return {
+        "normalized_loss": float(weighted_normalized_loss / divisor),
+        "raw_delta_mse": float(weighted_raw_delta_mse / divisor),
+        "recovered_temperature_mse": float(weighted_recovered_mse / divisor),
+        "finite_ok": finite_ok,
+        "shape_ok": shape_ok,
+    }
+
+
 def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
     schedule = lr_config["lr_schedule"]
     base_lr = float(lr_config["lr"])
@@ -967,6 +1052,7 @@ def _fit_once(
     loss_config: dict[str, Any],
     optimizer_config: dict[str, Any],
     model_config: dict[str, Any],
+    batch_config: dict[str, Any],
     selection_metric: str,
     log_mode: str,
     progress_enabled: bool,
@@ -994,6 +1080,7 @@ def _fit_once(
     train_losses = [float(train_initial_components["total_loss"])]
     valid_losses = [float(valid_initial_components["total_loss"])]
     grad_norms = []
+    epoch_batch_counts = []
     lr_history = []
     loss_weight_history = []
     grad_finite = True
@@ -1007,7 +1094,19 @@ def _fit_once(
         lr_config=lr_config,
         optimizer_config=optimizer_config,
     )
-    _progress(progress_enabled, "train", f"epoch loop start epochs={epochs} report_every={report_every}")
+    batch_enabled = batch_config.get("batch_size") is not None
+    metrics_fn = _weighted_metrics if batch_enabled else _metrics
+    if batch_enabled:
+        _progress(
+            progress_enabled,
+            "train",
+            (
+                f"epoch loop start epochs={epochs} report_every={report_every} "
+                f"mini_batch_groups={len(train_groups)} batch_size={batch_config['batch_size']}"
+            ),
+        )
+    else:
+        _progress(progress_enabled, "train", f"epoch loop start epochs={epochs} report_every={report_every}")
     epoch_loop_start = time.perf_counter()
     for epoch in range(1, epochs + 1):
         lr_epoch = _lr_for_epoch(epoch, epochs, lr_config)
@@ -1017,25 +1116,61 @@ def _fit_once(
         should_report = _should_report_epoch(epoch, epochs, report_every)
         epoch_start = time.perf_counter()
         if should_report or epoch <= 3:
-            _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e}")
+            if batch_enabled:
+                _progress(
+                    progress_enabled,
+                    "train",
+                    (
+                        f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e} "
+                        f"batches={len(train_groups)}"
+                    ),
+                )
+            else:
+                _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e}")
 
-        def loss_fn(current_params):
-            return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
+        if batch_enabled:
+            train_epoch_groups = _epoch_train_groups(
+                train_groups,
+                epoch=epoch,
+                seed=seed,
+                shuffle=bool(batch_config.get("shuffle_train_batches")),
+            )
+            batch_grad_norms = []
+            for batch_group in train_epoch_groups:
+                def loss_fn(current_params, group=batch_group):
+                    return _loss_components(model, current_params, [group], stats, current_loss_config)["total_loss"]
 
-        _, grads = jax.value_and_grad(loss_fn)(params)
-        grad_norm = _global_norm(grads)
-        grad_norms.append(grad_norm)
-        grad_finite = grad_finite and bool(np.isfinite(grad_norm))
-        if optax_state is None:
-            params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
+                _, grads = jax.value_and_grad(loss_fn)(params)
+                grad_norm = _global_norm(grads)
+                batch_grad_norms.append(grad_norm)
+                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+                if optax_state is None:
+                    params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
+                else:
+                    updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
+                    optax_state["state"] = opt_state
+                    params = optax_state["apply_updates"](params, updates)
+            epoch_batch_counts.append(len(train_epoch_groups))
+            grad_norms.append(float(np.mean(batch_grad_norms)) if batch_grad_norms else float("nan"))
         else:
-            updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
-            optax_state["state"] = opt_state
-            params = optax_state["apply_updates"](params, updates)
+            def loss_fn(current_params):
+                return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
+
+            _, grads = jax.value_and_grad(loss_fn)(params)
+            grad_norm = _global_norm(grads)
+            grad_norms.append(grad_norm)
+            grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+            if optax_state is None:
+                params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
+            else:
+                updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
+                optax_state["state"] = opt_state
+                params = optax_state["apply_updates"](params, updates)
+            epoch_batch_counts.append(1)
         train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
         valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
-        valid_metrics = _metrics(model, params, valid_groups, stats)
-        train_metrics = _metrics(model, params, train_groups, stats)
+        valid_metrics = metrics_fn(model, params, valid_groups, stats)
+        train_metrics = metrics_fn(model, params, train_groups, stats)
         train_losses.append(float(train_components["total_loss"]))
         valid_losses.append(float(valid_components["total_loss"]))
         record = _epoch_history_record(
@@ -1047,6 +1182,8 @@ def _fit_once(
             valid_metrics,
             train_metrics,
         )
+        record["train_batch_count"] = int(epoch_batch_counts[-1])
+        record["batch_size"] = batch_config.get("batch_size")
         epoch_history.append(record)
         score = float(record[selection_metric])
         if best_score is None or score < best_score:
@@ -1060,8 +1197,8 @@ def _fit_once(
 
     _progress(progress_enabled, "train", "computing final train/valid metrics ...")
     final_metrics_start = time.perf_counter()
-    train_metrics = _metrics(model, params, train_groups, stats)
-    valid_metrics = _metrics(model, params, valid_groups, stats)
+    train_metrics = metrics_fn(model, params, train_groups, stats)
+    valid_metrics = metrics_fn(model, params, valid_groups, stats)
     final_loss_config = _loss_config_for_epoch(loss_config, epochs)
     final_train_components = _loss_components(model, params, train_groups, stats, final_loss_config)
     final_valid_components = _loss_components(model, params, valid_groups, stats, final_loss_config)
@@ -1081,6 +1218,7 @@ def _fit_once(
         "train_losses": np.asarray(train_losses, dtype=np.float64),
         "valid_losses": np.asarray(valid_losses, dtype=np.float64),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
+        "epoch_batch_counts": np.asarray(epoch_batch_counts, dtype=np.int64),
         "lr_history": np.asarray(lr_history, dtype=np.float64),
         "loss_weight_history": loss_weight_history,
         "train_metrics": train_metrics,
@@ -1144,6 +1282,7 @@ def _print_startup_summary(
     lr_config: dict[str, Any],
     optimizer_config: dict[str, Any],
     model_config: dict[str, Any],
+    batch_config: dict[str, Any],
 ) -> None:
     if args.log_mode == "quiet":
         return
@@ -1168,6 +1307,15 @@ def _print_startup_summary(
         "  output: "
         f"dir={output_dir} save_predictions={bool(args.save_predictions)} "
         f"save_best_predictions={bool(args.save_best_predictions)}"
+    )
+    _emit(
+        "  batching: "
+        f"mode={'mini_batch' if batch_config['batch_size'] is not None else 'legacy_full_batch'} "
+        f"batch_size={batch_config['batch_size']} "
+        f"validation_batch_size={batch_config['validation_batch_size']} "
+        f"prediction_batch_size={batch_config['prediction_batch_size']} "
+        f"shuffle_train_batches={batch_config['shuffle_train_batches']} "
+        f"drop_last={batch_config['drop_last']}"
     )
     _emit(
         "  logging: "
@@ -1403,10 +1551,13 @@ def _make_groups_with_progress(
     label: str,
     progress_enabled: bool,
     verbose_progress_enabled: bool,
+    batch_size: int | None = None,
+    drop_last: bool = False,
 ) -> list[dict]:
     start = time.perf_counter()
     sample_count = len(examples)
-    _progress(progress_enabled, "startup", f"group build {label}: start samples={sample_count} ...")
+    batch_text = f" batch_size={batch_size}" if batch_size else " legacy_full_batch"
+    _progress(progress_enabled, "startup", f"group build {label}: start samples={sample_count}{batch_text} ...")
 
     grouped: dict[tuple[int, tuple[str, ...], tuple[tuple[int, ...], ...]], list] = {}
     checkpoints = _progress_checkpoints(sample_count)
@@ -1438,25 +1589,57 @@ def _make_groups_with_progress(
     result = []
     for group_index, ((n_points, feature_names, _signature), group_examples) in enumerate(grouped.items(), start=1):
         group_name = f"group_{group_index}_N{n_points}_F{len(feature_names)}"
-        batch_start = time.perf_counter()
-        _progress(
-            progress_enabled,
-            "startup",
-            (
-                f"group build {label}: group {group_index}/{len(grouped)} "
-                f"{group_name} arrays+graph start samples={len(group_examples)} ..."
-            ),
-        )
-        result.append(_make_batch_group(group_name, group_examples, stats, builder))
-        _progress(
-            progress_enabled,
-            "startup",
-            f"group build {label}: group {group_index}/{len(grouped)} arrays+graph built",
-            batch_start,
-        )
+        batches = _chunk_examples(group_examples, batch_size=batch_size, drop_last=drop_last)
+        for batch_index, batch_examples in enumerate(batches, start=1):
+            batch_start = time.perf_counter()
+            if batch_size:
+                batch_group_name = f"{group_name}_batch_{batch_index:04d}_B{len(batch_examples)}"
+            else:
+                batch_group_name = group_name
+            _progress(
+                progress_enabled,
+                "startup",
+                (
+                    f"group build {label}: group {group_index}/{len(grouped)} "
+                    f"{batch_group_name} arrays+graph start samples={len(batch_examples)} ..."
+                ),
+            )
+            result.append(_make_batch_group(batch_group_name, batch_examples, stats, builder))
+            _progress(
+                progress_enabled,
+                "startup",
+                f"group build {label}: {batch_group_name} arrays+graph built",
+                batch_start,
+            )
 
     _progress(progress_enabled, "startup", f"group build {label}: done groups={len(result)}", start)
     return result
+
+
+def _chunk_examples(examples, *, batch_size: int | None, drop_last: bool) -> list:
+    examples = list(examples)
+    if batch_size is None:
+        return [examples] if examples else []
+    chunks = []
+    for start in range(0, len(examples), batch_size):
+        chunk = examples[start : start + batch_size]
+        if len(chunk) < batch_size and drop_last:
+            continue
+        chunks.append(chunk)
+    return chunks
+
+
+def _require_nonempty_groups(groups: list[dict], label: str) -> None:
+    if not groups:
+        raise ValueError(f"{label} group build produced no groups; check batch_size/drop_last")
+
+
+def _epoch_train_groups(groups: list[dict], *, epoch: int, seed: int, shuffle: bool) -> list[dict]:
+    if not shuffle or len(groups) <= 1:
+        return groups
+    rng = np.random.default_rng(seed + epoch)
+    indices = rng.permutation(len(groups))
+    return [groups[int(index)] for index in indices]
 
 
 def main() -> int:
@@ -1483,10 +1666,12 @@ def main() -> int:
     lr_config = _lr_config_from_args(args)
     optimizer_config = _optimizer_config_from_args(args)
     model_config = _model_config_from_args(args)
+    batch_config = _batch_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
     _validate_optimizer_config(optimizer_config)
     _validate_model_config(model_config)
+    _validate_batch_config(batch_config)
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
@@ -1547,6 +1732,8 @@ def main() -> int:
         "train",
         progress_detail_enabled,
         verbose_progress_enabled,
+        batch_size=batch_config["batch_size"],
+        drop_last=batch_config["drop_last"],
     )
     valid_groups = _make_groups_with_progress(
         valid_examples,
@@ -1555,6 +1742,8 @@ def main() -> int:
         "valid",
         progress_detail_enabled,
         verbose_progress_enabled,
+        batch_size=batch_config["validation_batch_size"],
+        drop_last=False,
     )
     all_groups = _make_groups_with_progress(
         all_examples,
@@ -1563,7 +1752,12 @@ def main() -> int:
         "all",
         progress_detail_enabled,
         verbose_progress_enabled,
+        batch_size=batch_config["prediction_batch_size"],
+        drop_last=False,
     )
+    _require_nonempty_groups(train_groups, "train")
+    _require_nonempty_groups(valid_groups, "valid")
+    _require_nonempty_groups(all_groups, "all")
     _record_timing(timings, "group_build", group_start)
     _progress(
         progress_enabled,
@@ -1584,6 +1778,7 @@ def main() -> int:
         lr_config=lr_config,
         optimizer_config=optimizer_config,
         model_config=model_config,
+        batch_config=batch_config,
     )
 
     result = _fit_once(
@@ -1597,6 +1792,7 @@ def main() -> int:
         loss_config,
         optimizer_config,
         model_config,
+        batch_config,
         args.selection_metric,
         args.log_mode,
         progress_enabled,
@@ -1669,6 +1865,7 @@ def main() -> int:
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],
         "model_config": model_config,
+        **_batch_config_payload(batch_config),
         "seed": args.seed,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
@@ -1704,6 +1901,7 @@ def main() -> int:
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
         "model_config": model_config,
+        "batch_config": batch_config,
         "split_counts": split_counts,
         "timing_diagnostics": dict(timings),
         "train_ids": train_ids,
@@ -1772,12 +1970,15 @@ def main() -> int:
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],
         "model_config": model_config,
+        **_batch_config_payload(batch_config),
+        "epoch_batch_counts": [int(value) for value in result["epoch_batch_counts"]],
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
         "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
         "model_config": model_config,
+        "batch_config": batch_config,
         "epoch_history": result["epoch_history"],
         "loss": loss_config,
         "final_train_loss_components": result["final_train_loss_components"],

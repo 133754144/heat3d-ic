@@ -46,7 +46,6 @@ BATCH_CONFIGS = {
 }
 
 REQUIRED_WARNING_SNIPPETS = (
-    "batch CLI is dry-run only until runner implements it",
     "run.micro_batch_size is a future gradient-accumulation field",
 )
 

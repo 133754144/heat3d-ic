@@ -31,6 +31,8 @@ P4b-2：mini-batch training smoke。
 - 只做小样本 / 1 epoch smoke。
 - 不改 `rigno/models/*`，不改 loss API。
 - 重点验证 batch path、weighted aggregate、best-valid selection 和 final/best export contract。
+- 当前实现让 `--batch-size > 0` 时按 shape group 切成 sample mini-batches，每个 mini-batch 单独 `value_and_grad` 和 optimizer update；`--batch-size 0` 保持 legacy full-batch。
+- `--validation-batch-size` 和 `--prediction-batch-size` 分别控制 valid aggregation 和 final/best prediction export 的 batch group 大小；`.npz` 文件名和 sample_id key 契约不变。
 
 P4b-3：M1-lite e50。
 
@@ -44,11 +46,20 @@ P4b-4：M1 retry。
 
 ## 本轮边界
 
-本轮只是 dry-run/config 接口，不改变训练 runner 行为，不运行训练，不生成数据，不改变 loss，也不改变模型。生成的 batch flags 目前是 planned command-interface fields；在 runner 真正实现前，不应直接执行带 batch flags 的 command。
+P4b-1 只做 dry-run/config 接口；P4b-2 已将 batch CLI 接入 runner，但仍是 research-stage memory-safe training path，不是 strict full-batch reference。mini-batch 与 full-batch 使用相同 loss 公式，但 batch 内 quantile / update order 会改变数值轨迹，因此结果不能与 strict e50 full-batch A0 视为数值等价。
+
+## SSH 验证递进策略
+
+1. 先跑 M1-lite e1，验证 mini-batch path 能完成一次 epoch 和 final/best export。
+2. 若 e1 不 OOM，再跑 M1-lite e3，确认多 epoch、best-valid selection 和 batch shuffling 没有明显问题。
+3. 若 M1-lite e3 通过，再跑原 M1 e1，验证 latent64/steps4/mlp2 在 batch path 下是否可行。
+4. 若原 M1 e1 通过，再跑原 M1 e50 并生成 final/best 全套 diagnostics。
+
+如果 M1 e50 成功，下一步再比较 field-shape metrics、bin0、high-bin 与 A0/A2 的 tradeoff。如果 M1 e1 仍 OOM，下一步先减小 batch size，之后再考虑 micro-batch gradient accumulation；不要直接做更大模型或 sweep。
 
 ## 需要记录的可复现字段
 
-后续真正接入 mini-batch 时，run config / loss summary 至少应记录：
+P4b-2 接入 mini-batch 后，run config / loss summary 至少应记录：
 
 - `batch_size`；
 - `micro_batch_size`；

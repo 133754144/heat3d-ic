@@ -445,11 +445,11 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.log_mode", "training --log-mode"),
         ("run.progress_log", "training --progress-log/--no-progress-log"),
         ("run.progress_detail", "training --progress-detail"),
-        ("run.batch_size", "planned training --batch-size"),
-        ("run.validation_batch_size", "planned training --validation-batch-size"),
-        ("run.prediction_batch_size", "planned training --prediction-batch-size"),
-        ("run.shuffle_train_batches", "planned training --shuffle-train-batches"),
-        ("run.drop_last", "planned training --drop-last"),
+        ("run.batch_size", "training --batch-size"),
+        ("run.validation_batch_size", "training --validation-batch-size"),
+        ("run.prediction_batch_size", "training --prediction-batch-size"),
+        ("run.shuffle_train_batches", "training --shuffle-train-batches"),
+        ("run.drop_last", "training --drop-last"),
         ("optimizer.name", "training --optimizer"),
         ("optimizer.lr", "training --lr"),
         ("optimizer.lr_schedule", "training --lr-schedule"),
@@ -547,12 +547,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
 
 def _warnings(config: Mapping[str, Any]) -> list[str]:
     warnings: list[str] = []
-    if _has_any_batch_cli_field(config):
-        warnings.append(
-            "batch CLI is dry-run only until runner implements it; generated "
-            "batch flags are planned command-interface fields and must not be "
-            "executed against the current runner."
-        )
     if _get_dotted(config, "run.micro_batch_size") is not None:
         warnings.append(
             "run.micro_batch_size is a future gradient-accumulation field and "
@@ -593,19 +587,6 @@ def _unmapped_reason(field: str) -> str:
     if field in {"export.save_run_config", "export.save_loss_summary"}:
         return "v1 runner writes these files implicitly."
     return "not mapped to current v1 CLI."
-
-
-def _has_any_batch_cli_field(config: Mapping[str, Any]) -> bool:
-    for field in (
-        "run.batch_size",
-        "run.validation_batch_size",
-        "run.prediction_batch_size",
-        "run.shuffle_train_batches",
-        "run.drop_last",
-    ):
-        if _get_dotted(config, field) is not None:
-            return True
-    return False
 
 
 def _prediction_labels(config: Mapping[str, Any]) -> list[str]:
