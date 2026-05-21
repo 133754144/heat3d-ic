@@ -41,6 +41,7 @@ def main() -> int:
 
         if relative_path.name == "medium1024_gapA_controlled.yaml":
             _assert_controlled_final_best_diagnostics(plan)
+            _assert_controlled_model_capacity(plan)
 
     print("Heat3D v2 config-to-command smoke passed.")
     return 0
@@ -86,6 +87,26 @@ def _assert_controlled_final_best_diagnostics(plan: dict) -> None:
             f"controlled config expected {expected_count} diagnostics commands, "
             f"got {actual_count}"
         )
+
+
+def _assert_controlled_model_capacity(plan: dict) -> None:
+    command = plan["training_command"]
+    _assert_option(command, "--node-latent-size", "64")
+    _assert_option(command, "--edge-latent-size", "64")
+    _assert_option(command, "--processor-steps", "4")
+    _assert_option(command, "--mlp-hidden-layers", "2")
+
+
+def _assert_option(command: list[str], flag: str, expected: str) -> None:
+    if flag not in command:
+        raise AssertionError(f"command missing {flag}")
+    index = command.index(flag)
+    try:
+        actual = command[index + 1]
+    except IndexError as exc:
+        raise AssertionError(f"command flag {flag} has no value") from exc
+    if actual != expected:
+        raise AssertionError(f"{flag} expected {expected!r}, got {actual!r}")
 
 
 if __name__ == "__main__":

@@ -39,6 +39,7 @@ def build_training_command(
 
     validate_v2_config(config)
     dataset = _section(config, "dataset")
+    model = _section(config, "model")
     run = _section(config, "run")
     optimizer = _section(config, "optimizer")
     loss = _section(config, "loss")
@@ -47,6 +48,10 @@ def build_training_command(
     command = [python_executable, TRAINING_SCRIPT]
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--epochs", run.get("epochs"))
+    _append_option(command, "--node-latent-size", model.get("node_latent_size"))
+    _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))
+    _append_option(command, "--processor-steps", model.get("processor_steps"))
+    _append_option(command, "--mlp-hidden-layers", model.get("mlp_hidden_layers"))
     _append_option(command, "--optimizer", _runner_optimizer_name(optimizer.get("name")))
     _append_option(command, "--lr", optimizer.get("lr"))
     _append_option(command, "--lr-schedule", optimizer.get("lr_schedule"))
@@ -424,6 +429,10 @@ def _diagnostic_entry(kind: str, prediction_label: str, command: list[str]) -> d
 def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
     mappings = [
         ("dataset.subset_path", "training --subset"),
+        ("model.node_latent_size", "training --node-latent-size"),
+        ("model.edge_latent_size", "training --edge-latent-size"),
+        ("model.processor_steps", "training --processor-steps"),
+        ("model.mlp_hidden_layers", "training --mlp-hidden-layers"),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
         ("run.log_mode", "training --log-mode"),
@@ -496,10 +505,6 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
 def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
     entries: list[dict[str, str]] = []
     for field in (
-        "model.node_latent_size",
-        "model.edge_latent_size",
-        "model.processor_steps",
-        "model.mlp_hidden_layers",
         "model.report_parameter_count",
         "model.report_memory_estimate",
         "optimizer.multi_seed",
@@ -529,17 +534,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
 
 def _warnings(config: Mapping[str, Any]) -> list[str]:
     warnings: list[str] = []
-    for field in (
-        "model.node_latent_size",
-        "model.edge_latent_size",
-        "model.processor_steps",
-        "model.mlp_hidden_layers",
-    ):
-        if _get_dotted(config, field) is not None:
-            warnings.append(
-                f"{field} is not passed through the current v1 runner CLI."
-            )
-
     if _get_dotted(config, "baseline_reference.path") is not None:
         warnings.append(
             "baseline_reference.path is checked by config validation only; it "
@@ -557,7 +551,7 @@ def _field_shape_enabled(diagnostics: Mapping[str, Any]) -> bool:
 
 def _unmapped_reason(field: str) -> str:
     if field.startswith("model."):
-        return "current v1 runner imports MODEL_CONFIG and has no model-capacity CLI."
+        return "model reporting field is not a runner CLI parameter."
     if field == "optimizer.multi_seed":
         return "multi-seed execution is outside this dry-run command builder."
     if field.startswith("diagnostics."):

@@ -24,6 +24,12 @@ ABLATIONS = {
         "weight_decay": 0.0,
         "gradient_clip_norm": 1.0,
         "output_dir": "output/heat3d_v2_runs/adam_lr1e3_seed0",
+        "model": {
+            "node_latent_size": 16,
+            "edge_latent_size": 16,
+            "processor_steps": 2,
+            "mlp_hidden_layers": 1,
+        },
     },
     "A2": {
         "path": Path("configs/heat3d_v2/frozen_v1_e050_adamw_lr1e3_wd1e4_seed0.yaml"),
@@ -32,6 +38,12 @@ ABLATIONS = {
         "weight_decay": 1.0e-4,
         "gradient_clip_norm": 1.0,
         "output_dir": "output/heat3d_v2_runs/adamw_lr1e3_wd1e4_seed0",
+        "model": {
+            "node_latent_size": 16,
+            "edge_latent_size": 16,
+            "processor_steps": 2,
+            "mlp_hidden_layers": 1,
+        },
     },
     "A3": {
         "path": Path("configs/heat3d_v2/frozen_v1_e050_adamw_lr3e4_wd1e4_seed0.yaml"),
@@ -40,6 +52,32 @@ ABLATIONS = {
         "weight_decay": 1.0e-4,
         "gradient_clip_norm": 1.0,
         "output_dir": "output/heat3d_v2_runs/adamw_lr3e4_wd1e4_seed0",
+        "model": {
+            "node_latent_size": 16,
+            "edge_latent_size": 16,
+            "processor_steps": 2,
+            "mlp_hidden_layers": 1,
+        },
+    },
+    "M1": {
+        "path": Path(
+            "configs/heat3d_v2/"
+            "frozen_v1_e050_adamw_lr1e3_wd1e4_m1_latent64_steps4_mlp2_seed0.yaml"
+        ),
+        "optimizer": "adamw",
+        "lr": 1.0e-3,
+        "weight_decay": 1.0e-4,
+        "gradient_clip_norm": 1.0,
+        "output_dir": (
+            "output/heat3d_v2_runs/"
+            "adamw_lr1e3_wd1e4_m1_latent64_steps4_mlp2_seed0"
+        ),
+        "model": {
+            "node_latent_size": 64,
+            "edge_latent_size": 64,
+            "processor_steps": 4,
+            "mlp_hidden_layers": 2,
+        },
     },
 }
 
@@ -64,7 +102,7 @@ def main() -> int:
     for label, spec in ABLATIONS.items():
         config = load_v2_config(REPO_ROOT / spec["path"])
         _assert_same("dataset", config["dataset"], baseline_dataset)
-        _assert_same("model", config["model"], baseline_model)
+        _assert_expected_model(label, config["model"], spec["model"], baseline_model)
         _assert_same("loss", config["loss"], baseline_loss)
         if config["run"]["epochs"] != 50 or config["run"]["mode"] != "controlled":
             raise AssertionError(f"{label}: expected controlled e50 run")
@@ -82,6 +120,7 @@ def main() -> int:
         _assert_option(command, "--lr-schedule", "constant")
         _assert_option(command, "--seed", "0")
         _assert_option(command, "--epochs", "50")
+        _assert_model_command(label, command, spec["model"])
         _assert_option(command, "--selection-metric", "valid_loss")
         _assert_option(command, "--output-dir", spec["output_dir"])
         _assert_option(command, "--loss-mode", baseline_loss["mode"])
@@ -95,7 +134,11 @@ def main() -> int:
         print(
             f"{label}: dataset={expected_dataset_name} optimizer={spec['optimizer']} "
             f"lr={spec['lr']} weight_decay={spec['weight_decay']} "
-            f"gradient_clip_norm={spec['gradient_clip_norm']}"
+            f"gradient_clip_norm={spec['gradient_clip_norm']} "
+            f"model={spec['model']['node_latent_size']}/"
+            f"{spec['model']['edge_latent_size']}/"
+            f"{spec['model']['processor_steps']}/"
+            f"{spec['model']['mlp_hidden_layers']}"
         )
 
     print("Heat3D v2 optimizer config smoke passed.")
@@ -105,6 +148,31 @@ def main() -> int:
 def _assert_same(name: str, actual: dict[str, Any], expected: dict[str, Any]) -> None:
     if actual != expected:
         raise AssertionError(f"{name} differs from strict A0 baseline")
+
+
+def _assert_expected_model(
+    label: str,
+    actual: dict[str, Any],
+    expected_capacity: dict[str, int],
+    baseline_model: dict[str, Any],
+) -> None:
+    expected = dict(baseline_model)
+    expected.update(expected_capacity)
+    if actual != expected:
+        raise AssertionError(f"{label}: model config differs from expected capacity")
+
+
+def _assert_model_command(
+    label: str, command: list[str], expected_capacity: dict[str, int]
+) -> None:
+    field_to_flag = {
+        "node_latent_size": "--node-latent-size",
+        "edge_latent_size": "--edge-latent-size",
+        "processor_steps": "--processor-steps",
+        "mlp_hidden_layers": "--mlp-hidden-layers",
+    }
+    for field, flag in field_to_flag.items():
+        _assert_option(command, flag, expected_capacity[field])
 
 
 def _assert_final_best_diagnostics(label: str, plan: dict[str, Any]) -> None:

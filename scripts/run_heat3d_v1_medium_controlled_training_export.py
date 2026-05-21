@@ -72,6 +72,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="manual_gd")
     parser.add_argument("--gradient-clip-norm", type=float, default=None)
     parser.add_argument("--weight-decay", type=float, default=0.0)
+    parser.add_argument("--node-latent-size", type=int, default=MODEL_CONFIG["node_latent_size"])
+    parser.add_argument("--edge-latent-size", type=int, default=MODEL_CONFIG["edge_latent_size"])
+    parser.add_argument("--processor-steps", type=int, default=MODEL_CONFIG["processor_steps"])
+    parser.add_argument("--mlp-hidden-layers", type=int, default=MODEL_CONFIG["mlp_hidden_layers"])
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
@@ -306,6 +310,19 @@ def _optimizer_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    model_config = dict(MODEL_CONFIG)
+    model_config.update(
+        {
+            "node_latent_size": int(args.node_latent_size),
+            "edge_latent_size": int(args.edge_latent_size),
+            "processor_steps": int(args.processor_steps),
+            "mlp_hidden_layers": int(args.mlp_hidden_layers),
+        }
+    )
+    return model_config
+
+
 def _validate_loss_config(config: dict[str, Any]) -> None:
     background_quantile = float(config["background_quantile"])
     hotspot_quantile = float(config["hotspot_quantile"])
@@ -380,6 +397,12 @@ def _validate_optimizer_config(config: dict[str, Any]) -> None:
         raise ValueError("--gradient-clip-norm must be > 0 when provided")
     if float(config["weight_decay"]) < 0.0:
         raise ValueError("--weight-decay must be >= 0")
+
+
+def _validate_model_config(config: dict[str, Any]) -> None:
+    for key in ("node_latent_size", "edge_latent_size", "processor_steps", "mlp_hidden_layers"):
+        if int(config[key]) < 1:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 1")
 
 
 def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
@@ -943,6 +966,7 @@ def _fit_once(
     report_every: int,
     loss_config: dict[str, Any],
     optimizer_config: dict[str, Any],
+    model_config: dict[str, Any],
     selection_metric: str,
     log_mode: str,
     progress_enabled: bool,
@@ -951,7 +975,7 @@ def _fit_once(
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
     _progress(progress_enabled, "startup", "initializing model parameters ...")
-    model = GraphNeuralOperator(**MODEL_CONFIG)
+    model = GraphNeuralOperator(**model_config)
     params = model.init(
         jax.random.PRNGKey(seed),
         inputs=train_groups[0]["inputs"],
@@ -1119,6 +1143,7 @@ def _print_startup_summary(
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
     optimizer_config: dict[str, Any],
+    model_config: dict[str, Any],
 ) -> None:
     if args.log_mode == "quiet":
         return
@@ -1131,6 +1156,13 @@ def _print_startup_summary(
         "  run: "
         f"epochs={args.epochs} lr={args.lr} lr_schedule={lr_config['lr_schedule']} "
         f"optimizer={optimizer_config['optimizer']} seed={args.seed} report_every={args.report_every}"
+    )
+    _emit(
+        "  model: "
+        f"node_latent_size={model_config['node_latent_size']} "
+        f"edge_latent_size={model_config['edge_latent_size']} "
+        f"processor_steps={model_config['processor_steps']} "
+        f"mlp_hidden_layers={model_config['mlp_hidden_layers']}"
     )
     _emit(
         "  output: "
@@ -1204,6 +1236,7 @@ def _print_final_summary(
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
     optimizer_config: dict[str, Any],
+    model_config: dict[str, Any],
     predictions_path: Path,
     predictions_saved: bool,
     prediction_count: int,
@@ -1248,6 +1281,7 @@ def _print_final_summary(
 
     if args.log_mode == "full":
         _emit("  loss/optimization")
+        _emit(f"    model config: {model_config}")
         _emit(f"    loss mode: {loss_config['loss_mode']}")
         _emit(f"    loss weight schedule: {loss_config['loss_weight_schedule']}")
         _emit(f"    relative weight summary: {relative_weight_summary}")
@@ -1448,9 +1482,11 @@ def main() -> int:
     loss_config = _loss_config_from_args(args)
     lr_config = _lr_config_from_args(args)
     optimizer_config = _optimizer_config_from_args(args)
+    model_config = _model_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
     _validate_optimizer_config(optimizer_config)
+    _validate_model_config(model_config)
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
@@ -1547,6 +1583,7 @@ def main() -> int:
         loss_config=loss_config,
         lr_config=lr_config,
         optimizer_config=optimizer_config,
+        model_config=model_config,
     )
 
     result = _fit_once(
@@ -1559,6 +1596,7 @@ def main() -> int:
         args.report_every,
         loss_config,
         optimizer_config,
+        model_config,
         args.selection_metric,
         args.log_mode,
         progress_enabled,
@@ -1630,6 +1668,7 @@ def main() -> int:
         "optimizer": optimizer_config["optimizer"],
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],
+        "model_config": model_config,
         "seed": args.seed,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
@@ -1664,6 +1703,7 @@ def main() -> int:
         "loss": loss_config,
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
+        "model_config": model_config,
         "split_counts": split_counts,
         "timing_diagnostics": dict(timings),
         "train_ids": train_ids,
@@ -1731,11 +1771,13 @@ def main() -> int:
         "optimizer": optimizer_config["optimizer"],
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],
+        "model_config": model_config,
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
         "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
+        "model_config": model_config,
         "epoch_history": result["epoch_history"],
         "loss": loss_config,
         "final_train_loss_components": result["final_train_loss_components"],
@@ -1757,6 +1799,7 @@ def main() -> int:
         loss_config=loss_config,
         lr_config=lr_config,
         optimizer_config=optimizer_config,
+        model_config=model_config,
         predictions_path=predictions_path,
         predictions_saved=bool(args.save_predictions),
         prediction_count=len(predictions),
