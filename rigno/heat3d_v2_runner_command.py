@@ -52,6 +52,13 @@ def build_training_command(
     _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))
     _append_option(command, "--processor-steps", model.get("processor_steps"))
     _append_option(command, "--mlp-hidden-layers", model.get("mlp_hidden_layers"))
+    _append_option(command, "--batch-size", run.get("batch_size"))
+    _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
+    _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
+    if run.get("shuffle_train_batches") is True:
+        command.append("--shuffle-train-batches")
+    if run.get("drop_last") is True:
+        command.append("--drop-last")
     _append_option(command, "--optimizer", _runner_optimizer_name(optimizer.get("name")))
     _append_option(command, "--lr", optimizer.get("lr"))
     _append_option(command, "--lr-schedule", optimizer.get("lr_schedule"))
@@ -438,6 +445,11 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.log_mode", "training --log-mode"),
         ("run.progress_log", "training --progress-log/--no-progress-log"),
         ("run.progress_detail", "training --progress-detail"),
+        ("run.batch_size", "planned training --batch-size"),
+        ("run.validation_batch_size", "planned training --validation-batch-size"),
+        ("run.prediction_batch_size", "planned training --prediction-batch-size"),
+        ("run.shuffle_train_batches", "planned training --shuffle-train-batches"),
+        ("run.drop_last", "planned training --drop-last"),
         ("optimizer.name", "training --optimizer"),
         ("optimizer.lr", "training --lr"),
         ("optimizer.lr_schedule", "training --lr-schedule"),
@@ -508,6 +520,7 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         "model.report_parameter_count",
         "model.report_memory_estimate",
         "optimizer.multi_seed",
+        "run.micro_batch_size",
         "diagnostics.p_quantiles",
         "baseline_reference.path",
         "dataset.k_encoding_mode",
@@ -534,6 +547,17 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
 
 def _warnings(config: Mapping[str, Any]) -> list[str]:
     warnings: list[str] = []
+    if _has_any_batch_cli_field(config):
+        warnings.append(
+            "batch CLI is dry-run only until runner implements it; generated "
+            "batch flags are planned command-interface fields and must not be "
+            "executed against the current runner."
+        )
+    if _get_dotted(config, "run.micro_batch_size") is not None:
+        warnings.append(
+            "run.micro_batch_size is a future gradient-accumulation field and "
+            "is not passed to the current v1 runner command."
+        )
     if _get_dotted(config, "baseline_reference.path") is not None:
         warnings.append(
             "baseline_reference.path is checked by config validation only; it "
@@ -554,6 +578,8 @@ def _unmapped_reason(field: str) -> str:
         return "model reporting field is not a runner CLI parameter."
     if field == "optimizer.multi_seed":
         return "multi-seed execution is outside this dry-run command builder."
+    if field == "run.micro_batch_size":
+        return "future micro-batch gradient accumulation field; not passed to current runner CLI."
     if field.startswith("diagnostics."):
         return "draft v2 diagnostics field is not implemented by current v1 scripts."
     if field == "baseline_reference.path":
@@ -567,6 +593,19 @@ def _unmapped_reason(field: str) -> str:
     if field in {"export.save_run_config", "export.save_loss_summary"}:
         return "v1 runner writes these files implicitly."
     return "not mapped to current v1 CLI."
+
+
+def _has_any_batch_cli_field(config: Mapping[str, Any]) -> bool:
+    for field in (
+        "run.batch_size",
+        "run.validation_batch_size",
+        "run.prediction_batch_size",
+        "run.shuffle_train_batches",
+        "run.drop_last",
+    ):
+        if _get_dotted(config, field) is not None:
+            return True
+    return False
 
 
 def _prediction_labels(config: Mapping[str, Any]) -> list[str]:

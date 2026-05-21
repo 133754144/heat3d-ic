@@ -29,6 +29,13 @@ RUN_CONFIG_REQUIRED_SECTIONS = (
     "export",
     "diagnostics",
 )
+BATCH_SIZE_FIELDS = (
+    "batch_size",
+    "micro_batch_size",
+    "validation_batch_size",
+    "prediction_batch_size",
+)
+BATCH_BOOL_FIELDS = ("shuffle_train_batches", "drop_last")
 
 _MISSING = object()
 
@@ -197,6 +204,7 @@ def _validate_run_config(
         raise ValueError(
             f"{label}: field 'run.allow_long_training_local' must be false"
         )
+    _validate_batch_fields(run, label)
 
     export = _required_mapping(config, "export", label)
     output_dir = export.get("output_dir")
@@ -223,6 +231,23 @@ def _validate_run_config(
                     f"{label}: field 'baseline_reference.path' points to a "
                     f"missing file: {reference_path!r} resolved as {resolved}"
                 )
+
+
+def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
+    for field in BATCH_SIZE_FIELDS:
+        if field not in run:
+            continue
+        value = run[field]
+        if value is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{label}: field 'run.{field}' must be an int or null")
+        if value <= 0:
+            raise ValueError(f"{label}: field 'run.{field}' must be a positive int or null")
+
+    for field in BATCH_BOOL_FIELDS:
+        if field in run and not isinstance(run[field], bool):
+            raise ValueError(f"{label}: field 'run.{field}' must be a bool")
 
 
 def _validate_baseline_reference(config: Mapping[str, Any], *, label: str) -> None:
