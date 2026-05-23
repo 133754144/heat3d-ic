@@ -97,6 +97,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--progress-log", dest="progress_log", action="store_true", default=True)
     parser.add_argument("--no-progress-log", dest="progress_log", action="store_false")
     parser.add_argument("--progress-detail", choices=("off", "basic", "verbose"), default="basic")
+    parser.add_argument("--profile-timing", action="store_true")
+    parser.add_argument("--profile-timing-json", type=Path, default=None)
     parser.add_argument(
         "--loss-mode",
         choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative", "background_pseudo_negative"),
@@ -205,12 +207,105 @@ def _timing_summary(timings: dict[str, float]) -> str:
     return " ".join(f"{key}={timings[key]:.2f}s" for key in keys if key in timings)
 
 
+def _profile_timing_enabled(args: argparse.Namespace) -> bool:
+    return bool(args.profile_timing or args.profile_timing_json is not None)
+
+
+def _bump_profile_count(counts: dict[str, int] | None, key: str, amount: int = 1) -> None:
+    if counts is not None:
+        counts[key] = int(counts.get(key, 0)) + int(amount)
+
+
+def _profile_timing_payload(
+    *,
+    timings: dict[str, float],
+    profile_counts: dict[str, int],
+    epoch_records: list[dict[str, Any]],
+    train_group_count: int,
+    valid_group_count: int,
+    all_group_count: int,
+    train_batch_counts: list[int],
+    subset: Path,
+    output_dir: Path,
+) -> dict[str, Any]:
+    per_epoch = []
+    for record in epoch_records:
+        per_epoch.append(
+            {
+                "epoch": int(record["epoch"]),
+                "total_time_s": float(record.get("epoch_total_time_s", 0.0)),
+                "train_time_s": float(record.get("epoch_train_time_s", 0.0)),
+                "train_metrics_time_s": float(record.get("epoch_train_metrics_time_s", 0.0)),
+                "validation_time_s": float(record.get("epoch_validation_time_s", 0.0)),
+                "train_batch_count": int(record.get("train_batch_count", 0)),
+                "valid_batch_count": int(record.get("valid_batch_count", valid_group_count)),
+            }
+        )
+
+    return {
+        "schema_version": 1,
+        "diagnostic_scope": "Heat3D v2 graph/group build timing profile",
+        "subset": str(subset),
+        "output_dir": str(output_dir),
+        "timings_s": {key: float(value) for key, value in sorted(timings.items())},
+        "counts": {
+            "train_groups": int(train_group_count),
+            "valid_groups": int(valid_group_count),
+            "all_groups": int(all_group_count),
+            "train_batches_per_epoch": [int(value) for value in train_batch_counts],
+            "valid_batches": int(valid_group_count),
+            "prediction_batches": int(all_group_count),
+            **{key: int(value) for key, value in sorted(profile_counts.items())},
+        },
+        "per_epoch": per_epoch,
+    }
+
+
+def _print_profile_timing(payload: dict[str, Any]) -> None:
+    counts = payload["counts"]
+    timings = payload["timings_s"]
+    _emit("")
+    _emit("profile timing")
+    _emit(
+        "  graph/group: "
+        f"group_build={timings.get('group_build', 0.0):.2f}s "
+        f"metadata_calls={counts.get('graph_metadata_build_calls', 0)} "
+        f"build_graphs_calls={counts.get('graph_build_graphs_calls', 0)}"
+    )
+    _emit(
+        "  groups/batches: "
+        f"train_groups={counts['train_groups']} valid_groups={counts['valid_groups']} "
+        f"all_groups={counts['all_groups']} valid_batches={counts['valid_batches']} "
+        f"prediction_batches={counts['prediction_batches']}"
+    )
+    for record in payload["per_epoch"]:
+        _emit(
+            "  epoch "
+            f"{record['epoch']:03d}: total={record['total_time_s']:.2f}s "
+            f"train={record['train_time_s']:.2f}s "
+            f"validation={record['validation_time_s']:.2f}s "
+            f"train_batches={record['train_batch_count']} "
+            f"valid_batches={record['valid_batch_count']}"
+        )
+    if "prediction_export" in timings:
+        _emit(f"  prediction_export={timings['prediction_export']:.2f}s")
+
+
 def _ensure_ignored_output_dir(path: Path) -> Path:
     resolved = path.resolve()
     output_root = (REPO_DIR / "output").resolve()
     if resolved != output_root and output_root not in resolved.parents:
         raise ValueError(f"--output-dir must be under ignored output/: {path}")
     resolved.mkdir(parents=True, exist_ok=True)
+    return resolved
+
+
+def _ensure_ignored_output_file(path: Path, flag: str) -> Path:
+    resolved = path.resolve()
+    output_root = (REPO_DIR / "output").resolve()
+    if resolved == output_root or output_root not in resolved.parents:
+        raise ValueError(f"--{flag} must be a file under ignored output/: {path}")
+    resolved.parent.mkdir(parents=True, exist_ok=True)
     return resolved
 
 
@@ -1128,6 +1223,7 @@ def _fit_once(
             else:
                 _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e}")
 
+        train_step_start = time.perf_counter()
         if batch_enabled:
             train_epoch_groups = _epoch_train_groups(
                 train_groups,
@@ -1167,10 +1263,18 @@ def _fit_once(
                 optax_state["state"] = opt_state
                 params = optax_state["apply_updates"](params, updates)
             epoch_batch_counts.append(1)
+        train_step_time = time.perf_counter() - train_step_start
+
+        train_metrics_start = time.perf_counter()
         train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
+        train_metrics = metrics_fn(model, params, train_groups, stats)
+        train_metrics_time = time.perf_counter() - train_metrics_start
+
+        validation_start = time.perf_counter()
         valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
         valid_metrics = metrics_fn(model, params, valid_groups, stats)
-        train_metrics = metrics_fn(model, params, train_groups, stats)
+        validation_time = time.perf_counter() - validation_start
+
         train_losses.append(float(train_components["total_loss"]))
         valid_losses.append(float(valid_components["total_loss"]))
         record = _epoch_history_record(
@@ -1183,13 +1287,18 @@ def _fit_once(
             train_metrics,
         )
         record["train_batch_count"] = int(epoch_batch_counts[-1])
+        record["valid_batch_count"] = int(len(valid_groups))
         record["batch_size"] = batch_config.get("batch_size")
-        epoch_history.append(record)
         score = float(record[selection_metric])
         if best_score is None or score < best_score:
             best_score = score
             best_record = dict(record)
             best_params = _copy_params(params)
+        record["epoch_train_time_s"] = float(train_step_time)
+        record["epoch_train_metrics_time_s"] = float(train_metrics_time)
+        record["epoch_validation_time_s"] = float(validation_time)
+        record["epoch_total_time_s"] = float(time.perf_counter() - epoch_start)
+        epoch_history.append(record)
         if should_report:
             _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} metrics computed", epoch_start)
             _print_epoch_progress(record, epochs, log_mode)
@@ -1553,6 +1662,7 @@ def _make_groups_with_progress(
     verbose_progress_enabled: bool,
     batch_size: int | None = None,
     drop_last: bool = False,
+    profile_counts: dict[str, int] | None = None,
 ) -> list[dict]:
     start = time.perf_counter()
     sample_count = len(examples)
@@ -1565,6 +1675,8 @@ def _make_groups_with_progress(
     for index, example in enumerate(examples, start=1):
         bridge = _bridge_for(example)
         signature = _metadata_shape_signature(builder.build_metadata(example.condition.coords))
+        _bump_profile_count(profile_counts, "graph_metadata_build_calls")
+        _bump_profile_count(profile_counts, f"{label}_scan_metadata_build_calls")
         key = (
             example.condition.coords.shape[0],
             bridge.condition_feature_names,
@@ -1604,6 +1716,10 @@ def _make_groups_with_progress(
                     f"{batch_group_name} arrays+graph start samples={len(batch_examples)} ..."
                 ),
             )
+            _bump_profile_count(profile_counts, "graph_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, f"{label}_batch_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, "graph_build_graphs_calls")
+            _bump_profile_count(profile_counts, f"{label}_build_graphs_calls")
             result.append(_make_batch_group(batch_group_name, batch_examples, stats, builder))
             _progress(
                 progress_enabled,
@@ -1653,6 +1769,7 @@ def main() -> int:
     progress_detail_enabled = _progress_detail_enabled(args)
     verbose_progress_enabled = _verbose_progress_enabled(args)
     timings: dict[str, float] = {}
+    profile_counts: dict[str, int] = {}
     script_start = time.perf_counter()
     _progress(
         progress_enabled,
@@ -1675,6 +1792,11 @@ def main() -> int:
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
+    profile_timing_json_path = (
+        _ensure_ignored_output_file(args.profile_timing_json, "profile-timing-json")
+        if args.profile_timing_json is not None
+        else None
+    )
     _progress(progress_enabled, "startup", f"output dir ready: {output_dir}", output_start)
 
     dataset_start = time.perf_counter()
@@ -1734,6 +1856,7 @@ def main() -> int:
         verbose_progress_enabled,
         batch_size=batch_config["batch_size"],
         drop_last=batch_config["drop_last"],
+        profile_counts=profile_counts,
     )
     valid_groups = _make_groups_with_progress(
         valid_examples,
@@ -1744,6 +1867,7 @@ def main() -> int:
         verbose_progress_enabled,
         batch_size=batch_config["validation_batch_size"],
         drop_last=False,
+        profile_counts=profile_counts,
     )
     all_groups = _make_groups_with_progress(
         all_examples,
@@ -1754,6 +1878,7 @@ def main() -> int:
         verbose_progress_enabled,
         batch_size=batch_config["prediction_batch_size"],
         drop_last=False,
+        profile_counts=profile_counts,
     )
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, "valid")
@@ -1876,6 +2001,8 @@ def main() -> int:
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
         "progress_detail": args.progress_detail,
+        "profile_timing": bool(args.profile_timing),
+        "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
         **best_selection,
         "checkpoint_saved": False,
         "loss_mode": loss_config["loss_mode"],
@@ -1904,6 +2031,7 @@ def main() -> int:
         "batch_config": batch_config,
         "split_counts": split_counts,
         "timing_diagnostics": dict(timings),
+        "timing_profile_counts": dict(profile_counts),
         "train_ids": train_ids,
         "valid_ids": valid_ids,
         "ignored_candidate_ids": sorted(
@@ -1940,6 +2068,8 @@ def main() -> int:
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
         "progress_detail": args.progress_detail,
+        "profile_timing": bool(args.profile_timing),
+        "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
         **best_selection,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
@@ -1993,6 +2123,30 @@ def main() -> int:
     _write_json(output_dir / "loss_summary.json", loss_summary)
     _record_timing(timings, "summary_write", summary_write_start)
     _progress(progress_enabled, "export", "run summary files written", summary_write_start)
+
+    profile_payload = _profile_timing_payload(
+        timings=timings,
+        profile_counts=profile_counts,
+        epoch_records=result["epoch_history"],
+        train_group_count=len(train_groups),
+        valid_group_count=len(valid_groups),
+        all_group_count=len(all_groups),
+        train_batch_counts=[int(value) for value in result["epoch_batch_counts"]],
+        subset=sample_root,
+        output_dir=output_dir,
+    )
+    if args.profile_timing:
+        _print_profile_timing(profile_payload)
+    if profile_timing_json_path is not None:
+        profile_json_start = time.perf_counter()
+        _write_json(profile_timing_json_path, profile_payload)
+        _record_timing(timings, "profile_timing_json_write", profile_json_start)
+        _progress(
+            progress_enabled,
+            "export",
+            f"profile timing json written: {profile_timing_json_path}",
+            profile_json_start,
+        )
 
     _print_final_summary(
         args,
