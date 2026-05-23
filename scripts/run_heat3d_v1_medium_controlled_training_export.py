@@ -208,7 +208,7 @@ def _timing_summary(timings: dict[str, float]) -> str:
 
 
 def _profile_timing_enabled(args: argparse.Namespace) -> bool:
-    return bool(args.profile_timing or args.profile_timing_json is not None)
+    return bool(args.profile_timing)
 
 
 def _bump_profile_count(counts: dict[str, int] | None, key: str, amount: int = 1) -> None:
@@ -216,37 +216,233 @@ def _bump_profile_count(counts: dict[str, int] | None, key: str, amount: int = 1
         counts[key] = int(counts.get(key, 0)) + int(amount)
 
 
+def _block_until_ready_tree(value) -> None:
+    for leaf in tree.tree_leaves(value):
+        block = getattr(leaf, "block_until_ready", None)
+        if block is not None:
+            block()
+
+
+def _shape_list(value) -> list[int] | None:
+    shape = getattr(value, "shape", None)
+    if shape is None:
+        return None
+    return [int(dim) for dim in shape]
+
+
+def _sample_count(group: dict[str, Any]) -> int:
+    target_shape = getattr(group["target_normalized"], "shape", ())
+    return int(target_shape[0]) if target_shape else 0
+
+
+def _graph_edge_shape_count(graphs) -> int | None:
+    total = 0
+    found = False
+    for graph_name in ("p2r", "r2r", "r2p"):
+        graph = getattr(graphs, graph_name, None)
+        if graph is None:
+            continue
+        for edge in getattr(graph, "edges", {}).values():
+            leaves = tree.tree_leaves(edge.features)
+            for leaf in leaves:
+                shape = getattr(leaf, "shape", None)
+                if shape is not None and len(shape) >= 2:
+                    total += int(shape[1])
+                    found = True
+                    break
+    return total if found else None
+
+
+def _batch_shape_signature(group: dict[str, Any]) -> dict[str, Any]:
+    inputs = group["inputs"]
+    graph_leaf_shapes = sorted(
+        {
+            str(tuple(int(dim) for dim in leaf.shape))
+            for leaf in tree.tree_leaves(group["graphs"])
+            if hasattr(leaf, "shape")
+        }
+    )
+    input_x_shape = _shape_list(inputs.x_inp)
+    sample_count = _sample_count(group)
+    nodes_per_sample = input_x_shape[-2] if input_x_shape and len(input_x_shape) >= 2 else None
+    return {
+        "group_count": 1,
+        "sample_count": sample_count,
+        "total_nodes": sample_count * nodes_per_sample if nodes_per_sample is not None else None,
+        "total_edges": _graph_edge_shape_count(group["graphs"]),
+        "input_u_shape": _shape_list(inputs.u),
+        "input_c_shape": _shape_list(inputs.c),
+        "input_x_inp_shape": input_x_shape,
+        "input_x_out_shape": _shape_list(inputs.x_out),
+        "target_shape": _shape_list(group["target_normalized"]),
+        "graph_leaf_shapes": graph_leaf_shapes,
+        "graph_leaf_shape_count": len(graph_leaf_shapes),
+    }
+
+
+def _shape_signature_key(signature: dict[str, Any]) -> str:
+    return json.dumps(signature, sort_keys=True, separators=(",", ":"))
+
+
+def _summarize_batch_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+    times = [float(record["total_batch_time"]) for record in records]
+    later_times = times[1:]
+    later_median = float(np.median(later_times)) if later_times else None
+    possible_recompile_count = 0
+    for index, record in enumerate(records):
+        possible = bool(index > 0 and later_median and float(record["total_batch_time"]) > 3.0 * later_median)
+        record["possible_recompile"] = possible
+        record["possible_recompile_reason"] = (
+            "later_batch_time_gt_3x_later_median" if possible else None
+        )
+        possible_recompile_count += int(possible)
+    return {
+        "mean_train_batch_time": float(np.mean(times)) if times else 0.0,
+        "median_train_batch_time": float(np.median(times)) if times else 0.0,
+        "max_train_batch_time": float(max(times)) if times else 0.0,
+        "first_train_batch_time": float(times[0]) if times else 0.0,
+        "later_train_batch_median_time": later_median,
+        "possible_recompile_batch_count": int(possible_recompile_count),
+    }
+
+
+def _combine_loss_components(weighted_entries: list[tuple[int, dict[str, Any]]]) -> dict[str, float]:
+    total_count = sum(count for count, _ in weighted_entries)
+    if total_count <= 0:
+        return {}
+    keys = set()
+    for _, components in weighted_entries:
+        keys.update(components.keys())
+    combined: dict[str, float] = {}
+    for key in sorted(keys):
+        if key == "pseudo_negative_count":
+            combined[key] = float(sum(float(components.get(key, 0.0)) for _, components in weighted_entries))
+        else:
+            combined[key] = float(
+                sum(float(components.get(key, 0.0)) * count for count, components in weighted_entries)
+                / total_count
+            )
+    return combined
+
+
+def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]]) -> dict[str, Any]:
+    total_count = sum(count for count, _ in weighted_entries)
+    if total_count <= 0:
+        return {}
+    numeric_keys = ("normalized_loss", "raw_delta_mse", "recovered_temperature_mse")
+    combined = {
+        key: float(
+            sum(float(metrics.get(key, 0.0)) * count for count, metrics in weighted_entries)
+            / total_count
+        )
+        for key in numeric_keys
+    }
+    combined["finite_ok"] = all(bool(metrics.get("finite_ok")) for _, metrics in weighted_entries)
+    combined["shape_ok"] = all(bool(metrics.get("shape_ok")) for _, metrics in weighted_entries)
+    return combined
+
+
+def _evaluate_groups_profiled(
+    model,
+    params,
+    groups: list[dict],
+    stats: dict,
+    loss_config: dict[str, Any],
+    metrics_fn,
+    *,
+    epoch: int,
+    split: str,
+) -> tuple[dict[str, float], dict[str, Any], list[dict[str, Any]]]:
+    component_entries = []
+    metric_entries = []
+    batch_records = []
+    for index, group in enumerate(groups, start=1):
+        batch_start = time.perf_counter()
+        components = _loss_components(model, params, [group], stats, loss_config)
+        metrics = metrics_fn(model, params, [group], stats)
+        _block_until_ready_tree((components, metrics))
+        elapsed = time.perf_counter() - batch_start
+        count = _sample_count(group)
+        component_entries.append((count, components))
+        metric_entries.append((count, metrics))
+        batch_records.append(
+            {
+                "epoch_index": int(epoch),
+                "batch_index": int(index),
+                "split": split,
+                "batch_size": int(count),
+                "group_count": 1,
+                "total_batch_time": float(elapsed),
+                "batch_shape_signature": _batch_shape_signature(group),
+            }
+        )
+    return (
+        _combine_loss_components(component_entries),
+        _combine_metric_payloads(metric_entries),
+        batch_records,
+    )
+
+
 def _profile_timing_payload(
     *,
     timings: dict[str, float],
     profile_counts: dict[str, int],
     epoch_records: list[dict[str, Any]],
+    train_batch_records: list[dict[str, Any]] | None = None,
+    validation_batch_records: list[dict[str, Any]] | None = None,
     train_group_count: int,
     valid_group_count: int,
     all_group_count: int,
     train_batch_counts: list[int],
     subset: Path,
     output_dir: Path,
+    total_run_time_so_far: float | None = None,
 ) -> dict[str, Any]:
+    train_batch_records = train_batch_records or []
+    validation_batch_records = validation_batch_records or []
     per_epoch = []
     for record in epoch_records:
+        batch_summary = record.get("train_batch_timing_summary", {})
         per_epoch.append(
             {
                 "epoch": int(record["epoch"]),
+                "epoch_index": int(record["epoch"]),
                 "total_time_s": float(record.get("epoch_total_time_s", 0.0)),
+                "epoch_total_time": float(record.get("epoch_total_time_s", 0.0)),
                 "train_time_s": float(record.get("epoch_train_time_s", 0.0)),
+                "train_total_time": float(record.get("epoch_train_time_s", 0.0)),
                 "train_metrics_time_s": float(record.get("epoch_train_metrics_time_s", 0.0)),
                 "validation_time_s": float(record.get("epoch_validation_time_s", 0.0)),
+                "validation_total_time": float(record.get("epoch_validation_time_s", 0.0)),
                 "train_batch_count": int(record.get("train_batch_count", 0)),
+                "num_train_batches": int(record.get("train_batch_count", 0)),
                 "valid_batch_count": int(record.get("valid_batch_count", valid_group_count)),
+                "num_valid_batches": int(record.get("valid_batch_count", valid_group_count)),
+                "mean_train_batch_time": float(batch_summary.get("mean_train_batch_time", 0.0)),
+                "median_train_batch_time": float(batch_summary.get("median_train_batch_time", 0.0)),
+                "max_train_batch_time": float(batch_summary.get("max_train_batch_time", 0.0)),
+                "first_train_batch_time": float(batch_summary.get("first_train_batch_time", 0.0)),
+                "later_train_batch_median_time": batch_summary.get("later_train_batch_median_time"),
+                "possible_recompile_batch_count": int(batch_summary.get("possible_recompile_batch_count", 0)),
             }
         )
 
+    run_level = {
+        "dataset_load_time": float(timings.get("dataset_load", 0.0)),
+        "group_build_time": float(timings.get("group_build", 0.0)),
+        "train_groups_count": int(train_group_count),
+        "valid_groups_count": int(valid_group_count),
+        "all_groups_count": int(all_group_count),
+        "metadata_calls": int(profile_counts.get("graph_metadata_build_calls", 0)),
+        "build_graphs_calls": int(profile_counts.get("graph_build_graphs_calls", 0)),
+        "total_run_time_so_far": float(total_run_time_so_far or 0.0),
+    }
     return {
         "schema_version": 1,
         "diagnostic_scope": "Heat3D v2 graph/group build timing profile",
         "subset": str(subset),
         "output_dir": str(output_dir),
+        "run_level": run_level,
         "timings_s": {key: float(value) for key, value in sorted(timings.items())},
         "counts": {
             "train_groups": int(train_group_count),
@@ -258,19 +454,22 @@ def _profile_timing_payload(
             **{key: int(value) for key, value in sorted(profile_counts.items())},
         },
         "per_epoch": per_epoch,
+        "train_batches": train_batch_records,
+        "validation_batches": validation_batch_records,
     }
 
 
 def _print_profile_timing(payload: dict[str, Any]) -> None:
     counts = payload["counts"]
     timings = payload["timings_s"]
+    run_level = payload.get("run_level", {})
     _emit("")
     _emit("profile timing")
     _emit(
         "  graph/group: "
-        f"group_build={timings.get('group_build', 0.0):.2f}s "
-        f"metadata_calls={counts.get('graph_metadata_build_calls', 0)} "
-        f"build_graphs_calls={counts.get('graph_build_graphs_calls', 0)}"
+        f"group_build={run_level.get('group_build_time', timings.get('group_build', 0.0)):.2f}s "
+        f"metadata_calls={run_level.get('metadata_calls', counts.get('graph_metadata_build_calls', 0))} "
+        f"build_graphs_calls={run_level.get('build_graphs_calls', counts.get('graph_build_graphs_calls', 0))}"
     )
     _emit(
         "  groups/batches: "
@@ -281,11 +480,13 @@ def _print_profile_timing(payload: dict[str, Any]) -> None:
     for record in payload["per_epoch"]:
         _emit(
             "  epoch "
-            f"{record['epoch']:03d}: total={record['total_time_s']:.2f}s "
-            f"train={record['train_time_s']:.2f}s "
-            f"validation={record['validation_time_s']:.2f}s "
-            f"train_batches={record['train_batch_count']} "
-            f"valid_batches={record['valid_batch_count']}"
+            f"{record['epoch_index']:03d}: total={record['epoch_total_time']:.2f}s "
+            f"train={record['train_total_time']:.2f}s "
+            f"validation={record['validation_total_time']:.2f}s "
+            f"train_batches={record['num_train_batches']} "
+            f"first_batch={record['first_train_batch_time']:.2f}s "
+            f"later_median={record['later_train_batch_median_time']} "
+            f"possible_recompile={record['possible_recompile_batch_count']}"
         )
     if "prediction_export" in timings:
         _emit(f"  prediction_export={timings['prediction_export']:.2f}s")
@@ -1152,6 +1353,7 @@ def _fit_once(
     log_mode: str,
     progress_enabled: bool,
     timings: dict[str, float] | None = None,
+    profile_enabled: bool = False,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
@@ -1180,6 +1382,8 @@ def _fit_once(
     loss_weight_history = []
     grad_finite = True
     epoch_history = []
+    train_batch_records: list[dict[str, Any]] = []
+    validation_batch_records: list[dict[str, Any]] = []
     best_score: float | None = None
     best_record: dict[str, Any] | None = None
     best_params = None
@@ -1224,6 +1428,7 @@ def _fit_once(
                 _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e}")
 
         train_step_start = time.perf_counter()
+        epoch_train_batch_records: list[dict[str, Any]] = []
         if batch_enabled:
             train_epoch_groups = _epoch_train_groups(
                 train_groups,
@@ -1232,47 +1437,151 @@ def _fit_once(
                 shuffle=bool(batch_config.get("shuffle_train_batches")),
             )
             batch_grad_norms = []
-            for batch_group in train_epoch_groups:
+            for batch_index, batch_group in enumerate(train_epoch_groups, start=1):
                 def loss_fn(current_params, group=batch_group):
                     return _loss_components(model, current_params, [group], stats, current_loss_config)["total_loss"]
 
-                _, grads = jax.value_and_grad(loss_fn)(params)
+                batch_start = time.perf_counter()
+                loss_grad_start = time.perf_counter()
+                loss_value, grads = jax.value_and_grad(loss_fn)(params)
+                if profile_enabled:
+                    _block_until_ready_tree((loss_value, grads))
+                loss_grad_time = time.perf_counter() - loss_grad_start
+
+                grad_norm_start = time.perf_counter()
                 grad_norm = _global_norm(grads)
+                grad_norm_time = time.perf_counter() - grad_norm_start
                 batch_grad_norms.append(grad_norm)
                 grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+
+                optimizer_update_start = time.perf_counter()
                 if optax_state is None:
                     params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
                 else:
                     updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                     optax_state["state"] = opt_state
                     params = optax_state["apply_updates"](params, updates)
+                if profile_enabled:
+                    _block_until_ready_tree(params)
+                optimizer_update_time = time.perf_counter() - optimizer_update_start
+
+                if profile_enabled:
+                    total_batch_time = time.perf_counter() - batch_start
+                    output_scalar_extraction_time = 0.0
+                    other_time = max(
+                        total_batch_time
+                        - loss_grad_time
+                        - grad_norm_time
+                        - optimizer_update_time
+                        - output_scalar_extraction_time,
+                        0.0,
+                    )
+                    batch_record = {
+                        "epoch_index": int(epoch),
+                        "batch_index": int(batch_index),
+                        "split": "train",
+                        "batch_size": _sample_count(batch_group),
+                        "group_count": 1,
+                        "total_batch_time": float(total_batch_time),
+                        "loss_grad_time": float(loss_grad_time),
+                        "grad_norm_time": float(grad_norm_time),
+                        "optimizer_update_time": float(optimizer_update_time),
+                        "output_scalar_extraction_time": float(output_scalar_extraction_time),
+                        "other_time": float(other_time),
+                        "batch_shape_signature": _batch_shape_signature(batch_group),
+                    }
+                    batch_record["batch_shape_signature_key"] = _shape_signature_key(
+                        batch_record["batch_shape_signature"]
+                    )
+                    epoch_train_batch_records.append(batch_record)
+                    train_batch_records.append(batch_record)
             epoch_batch_counts.append(len(train_epoch_groups))
             grad_norms.append(float(np.mean(batch_grad_norms)) if batch_grad_norms else float("nan"))
         else:
             def loss_fn(current_params):
                 return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
 
-            _, grads = jax.value_and_grad(loss_fn)(params)
+            batch_start = time.perf_counter()
+            loss_grad_start = time.perf_counter()
+            loss_value, grads = jax.value_and_grad(loss_fn)(params)
+            if profile_enabled:
+                _block_until_ready_tree((loss_value, grads))
+            loss_grad_time = time.perf_counter() - loss_grad_start
+
+            grad_norm_start = time.perf_counter()
             grad_norm = _global_norm(grads)
+            grad_norm_time = time.perf_counter() - grad_norm_start
             grad_norms.append(grad_norm)
             grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+
+            optimizer_update_start = time.perf_counter()
             if optax_state is None:
                 params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
             else:
                 updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                 optax_state["state"] = opt_state
                 params = optax_state["apply_updates"](params, updates)
+            if profile_enabled:
+                _block_until_ready_tree(params)
+            optimizer_update_time = time.perf_counter() - optimizer_update_start
+            if profile_enabled:
+                total_batch_time = time.perf_counter() - batch_start
+                output_scalar_extraction_time = 0.0
+                other_time = max(
+                    total_batch_time
+                    - loss_grad_time
+                    - grad_norm_time
+                    - optimizer_update_time
+                    - output_scalar_extraction_time,
+                    0.0,
+                )
+                signature = {
+                    "group_count": len(train_groups),
+                    "group_signatures": [_batch_shape_signature(group) for group in train_groups],
+                }
+                batch_record = {
+                    "epoch_index": int(epoch),
+                    "batch_index": 1,
+                    "split": "train",
+                    "batch_size": sum(_sample_count(group) for group in train_groups),
+                    "group_count": len(train_groups),
+                    "total_batch_time": float(total_batch_time),
+                    "loss_grad_time": float(loss_grad_time),
+                    "grad_norm_time": float(grad_norm_time),
+                    "optimizer_update_time": float(optimizer_update_time),
+                    "output_scalar_extraction_time": float(output_scalar_extraction_time),
+                    "other_time": float(other_time),
+                    "batch_shape_signature": signature,
+                }
+                batch_record["batch_shape_signature_key"] = _shape_signature_key(signature)
+                epoch_train_batch_records.append(batch_record)
+                train_batch_records.append(batch_record)
             epoch_batch_counts.append(1)
         train_step_time = time.perf_counter() - train_step_start
 
         train_metrics_start = time.perf_counter()
         train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
         train_metrics = metrics_fn(model, params, train_groups, stats)
+        if profile_enabled:
+            _block_until_ready_tree((train_components, train_metrics))
         train_metrics_time = time.perf_counter() - train_metrics_start
 
         validation_start = time.perf_counter()
-        valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
-        valid_metrics = metrics_fn(model, params, valid_groups, stats)
+        if profile_enabled:
+            valid_components, valid_metrics, epoch_validation_records = _evaluate_groups_profiled(
+                model,
+                params,
+                valid_groups,
+                stats,
+                current_loss_config,
+                metrics_fn,
+                epoch=epoch,
+                split="valid",
+            )
+            validation_batch_records.extend(epoch_validation_records)
+        else:
+            valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
+            valid_metrics = metrics_fn(model, params, valid_groups, stats)
         validation_time = time.perf_counter() - validation_start
 
         train_losses.append(float(train_components["total_loss"]))
@@ -1289,6 +1598,8 @@ def _fit_once(
         record["train_batch_count"] = int(epoch_batch_counts[-1])
         record["valid_batch_count"] = int(len(valid_groups))
         record["batch_size"] = batch_config.get("batch_size")
+        batch_summary = _summarize_batch_records(epoch_train_batch_records) if profile_enabled else {}
+        record["train_batch_timing_summary"] = batch_summary
         score = float(record[selection_metric])
         if best_score is None or score < best_score:
             best_score = score
@@ -1333,6 +1644,8 @@ def _fit_once(
         "train_metrics": train_metrics,
         "valid_metrics": valid_metrics,
         "epoch_history": epoch_history,
+        "train_batch_records": train_batch_records,
+        "validation_batch_records": validation_batch_records,
         "selection_metric": selection_metric,
         "best_record": best_record,
         "best_params": best_params,
@@ -1768,6 +2081,7 @@ def main() -> int:
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
     verbose_progress_enabled = _verbose_progress_enabled(args)
+    profile_enabled = _profile_timing_enabled(args)
     timings: dict[str, float] = {}
     profile_counts: dict[str, int] = {}
     script_start = time.perf_counter()
@@ -1856,7 +2170,7 @@ def main() -> int:
         verbose_progress_enabled,
         batch_size=batch_config["batch_size"],
         drop_last=batch_config["drop_last"],
-        profile_counts=profile_counts,
+        profile_counts=profile_counts if profile_enabled else None,
     )
     valid_groups = _make_groups_with_progress(
         valid_examples,
@@ -1867,7 +2181,7 @@ def main() -> int:
         verbose_progress_enabled,
         batch_size=batch_config["validation_batch_size"],
         drop_last=False,
-        profile_counts=profile_counts,
+        profile_counts=profile_counts if profile_enabled else None,
     )
     all_groups = _make_groups_with_progress(
         all_examples,
@@ -1878,7 +2192,7 @@ def main() -> int:
         verbose_progress_enabled,
         batch_size=batch_config["prediction_batch_size"],
         drop_last=False,
-        profile_counts=profile_counts,
+        profile_counts=profile_counts if profile_enabled else None,
     )
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, "valid")
@@ -1922,6 +2236,7 @@ def main() -> int:
         args.log_mode,
         progress_enabled,
         timings,
+        profile_enabled=profile_enabled,
     )
     prediction_start = time.perf_counter()
     _progress(progress_enabled, "export", "building recovered predictions ...")
@@ -2110,6 +2425,8 @@ def main() -> int:
         "model_config": model_config,
         "batch_config": batch_config,
         "epoch_history": result["epoch_history"],
+        "train_batch_records": result["train_batch_records"] if profile_enabled else [],
+        "validation_batch_records": result["validation_batch_records"] if profile_enabled else [],
         "loss": loss_config,
         "final_train_loss_components": result["final_train_loss_components"],
         "final_valid_loss_components": result["final_valid_loss_components"],
@@ -2128,14 +2445,17 @@ def main() -> int:
         timings=timings,
         profile_counts=profile_counts,
         epoch_records=result["epoch_history"],
+        train_batch_records=result["train_batch_records"] if profile_enabled else [],
+        validation_batch_records=result["validation_batch_records"] if profile_enabled else [],
         train_group_count=len(train_groups),
         valid_group_count=len(valid_groups),
         all_group_count=len(all_groups),
         train_batch_counts=[int(value) for value in result["epoch_batch_counts"]],
         subset=sample_root,
         output_dir=output_dir,
+        total_run_time_so_far=time.perf_counter() - script_start,
     )
-    if args.profile_timing:
+    if profile_enabled:
         _print_profile_timing(profile_payload)
     if profile_timing_json_path is not None:
         profile_json_start = time.perf_counter()
