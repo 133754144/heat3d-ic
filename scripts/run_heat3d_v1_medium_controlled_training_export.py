@@ -52,6 +52,7 @@ DEFAULT_SUBSET = (
     / "v1_multilayer_bc_eq_physics_label_medium_v2"
 )
 DEFAULT_OUTPUT_DIR = REPO_DIR / "output" / "heat3d_v1_medium_runs" / "export_smoke_seed0"
+TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
 
 
 def parse_args() -> argparse.Namespace:
@@ -93,6 +94,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-best-predictions", action="store_true")
     parser.add_argument("--best-predictions-name", type=str, default="best_predictions.npz")
     parser.add_argument("--report-every", type=int, default=1)
+    parser.add_argument(
+        "--train-metrics-schedule",
+        choices=TRAIN_METRICS_SCHEDULE_CHOICES,
+        default="half_and_final",
+        help="Schedule for full train split metrics during the epoch loop.",
+    )
     parser.add_argument("--log-mode", choices=("compact", "full", "quiet"), default="compact")
     parser.add_argument("--progress-log", dest="progress_log", action="store_true", default=True)
     parser.add_argument("--no-progress-log", dest="progress_log", action="store_false")
@@ -209,6 +216,39 @@ def _timing_summary(timings: dict[str, float]) -> str:
 
 def _profile_timing_enabled(args: argparse.Namespace) -> bool:
     return bool(args.profile_timing)
+
+
+def train_metrics_epochs(schedule: str, epochs: int) -> list[int]:
+    if epochs < 1:
+        raise ValueError("--epochs must be >= 1")
+    if schedule == "every_epoch":
+        return list(range(1, epochs + 1))
+    if schedule == "half_and_final":
+        midpoint = int(math.ceil(epochs / 2))
+        return sorted({midpoint, epochs})
+    if schedule == "final_only":
+        return [epochs]
+    if schedule == "none":
+        return []
+    raise ValueError(f"Unknown train metrics schedule: {schedule!r}")
+
+
+def _maybe_float(payload: dict[str, Any] | None, key: str) -> float:
+    if payload is None:
+        return float("nan")
+    return float(payload[key])
+
+
+def _format_progress_value(value: Any, *, precision: int = 6) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return f"{numeric:.{precision}e}"
 
 
 def _bump_profile_count(counts: dict[str, int] | None, key: str, amount: int = 1) -> None:
@@ -396,6 +436,8 @@ def _profile_timing_payload(
     train_batch_counts: list[int],
     subset: Path,
     output_dir: Path,
+    train_metrics_schedule: str,
+    train_metrics_epoch_values: list[int],
     total_run_time_so_far: float | None = None,
 ) -> dict[str, Any]:
     train_batch_records = train_batch_records or []
@@ -412,6 +454,8 @@ def _profile_timing_payload(
                 "train_time_s": float(record.get("epoch_train_time_s", 0.0)),
                 "train_total_time": float(record.get("epoch_train_time_s", 0.0)),
                 "train_metrics_time_s": float(record.get("epoch_train_metrics_time_s", 0.0)),
+                "train_metrics_time": float(record.get("epoch_train_metrics_time_s", 0.0)),
+                "train_metrics_computed": bool(record.get("train_full_metrics_computed", False)),
                 "validation_time_s": float(record.get("epoch_validation_time_s", 0.0)),
                 "validation_total_time": float(record.get("epoch_validation_time_s", 0.0)),
                 "train_batch_count": int(record.get("train_batch_count", 0)),
@@ -436,6 +480,8 @@ def _profile_timing_payload(
         "metadata_calls": int(profile_counts.get("graph_metadata_build_calls", 0)),
         "build_graphs_calls": int(profile_counts.get("graph_build_graphs_calls", 0)),
         "total_run_time_so_far": float(total_run_time_so_far or 0.0),
+        "train_metrics_schedule": train_metrics_schedule,
+        "train_metrics_epochs": [int(epoch) for epoch in train_metrics_epoch_values],
     }
     return {
         "schema_version": 1,
@@ -443,6 +489,8 @@ def _profile_timing_payload(
         "subset": str(subset),
         "output_dir": str(output_dir),
         "run_level": run_level,
+        "train_metrics_schedule": train_metrics_schedule,
+        "train_metrics_epochs": [int(epoch) for epoch in train_metrics_epoch_values],
         "timings_s": {key: float(value) for key, value in sorted(timings.items())},
         "counts": {
             "train_groups": int(train_group_count),
@@ -477,11 +525,18 @@ def _print_profile_timing(payload: dict[str, Any]) -> None:
         f"all_groups={counts['all_groups']} valid_batches={counts['valid_batches']} "
         f"prediction_batches={counts['prediction_batches']}"
     )
+    _emit(
+        "  train_metrics: "
+        f"schedule={payload.get('train_metrics_schedule')} "
+        f"epochs={payload.get('train_metrics_epochs')}"
+    )
     for record in payload["per_epoch"]:
         _emit(
             "  epoch "
             f"{record['epoch_index']:03d}: total={record['epoch_total_time']:.2f}s "
             f"train={record['train_total_time']:.2f}s "
+            f"train_metrics={record['train_metrics_time']:.2f}s "
+            f"train_metrics_computed={record['train_metrics_computed']} "
             f"validation={record['validation_total_time']:.2f}s "
             f"train_batches={record['num_train_batches']} "
             f"first_batch={record['first_train_batch_time']:.2f}s "
@@ -1200,63 +1255,65 @@ def _epoch_history_record(
     epoch: int,
     lr_epoch: float,
     current_loss_config: dict[str, Any],
-    train_components: dict[str, Any],
+    train_components: dict[str, Any] | None,
     valid_components: dict[str, Any],
     valid_metrics: dict[str, Any],
-    train_metrics: dict[str, Any],
+    train_metrics: dict[str, Any] | None,
 ) -> dict[str, Any]:
     record = {
         "epoch": int(epoch),
         "lr": float(lr_epoch),
-        "train_loss": float(train_components["total_loss"]),
+        "train_loss": _maybe_float(train_components, "total_loss"),
         "valid_loss": float(valid_components["total_loss"]),
-        "train_base_mse": float(train_components["base_mse"]),
+        "train_base_mse": _maybe_float(train_components, "base_mse"),
         "valid_base_mse": float(valid_components["base_mse"]),
-        "train_background_penalty": float(train_components["background_penalty"]),
+        "train_background_penalty": _maybe_float(train_components, "background_penalty"),
         "valid_background_penalty": float(valid_components["background_penalty"]),
-        "train_background_l1": float(train_components["background_l1"]),
+        "train_background_l1": _maybe_float(train_components, "background_l1"),
         "valid_background_l1": float(valid_components["background_l1"]),
-        "train_background_signed_bias_loss": float(train_components["background_signed_bias_loss"]),
+        "train_background_signed_bias_loss": _maybe_float(train_components, "background_signed_bias_loss"),
         "valid_background_signed_bias_loss": float(valid_components["background_signed_bias_loss"]),
-        "train_background_overprediction_loss": float(train_components["background_overprediction_loss"]),
+        "train_background_overprediction_loss": _maybe_float(train_components, "background_overprediction_loss"),
         "valid_background_overprediction_loss": float(valid_components["background_overprediction_loss"]),
-        "train_background_relative_abs": float(train_components["background_relative_abs"]),
+        "train_background_relative_abs": _maybe_float(train_components, "background_relative_abs"),
         "valid_background_relative_abs": float(valid_components["background_relative_abs"]),
-        "train_pseudo_negative_count": float(train_components["pseudo_negative_count"]),
+        "train_pseudo_negative_count": _maybe_float(train_components, "pseudo_negative_count"),
         "valid_pseudo_negative_count": float(valid_components["pseudo_negative_count"]),
-        "train_pseudo_negative_over_loss": float(train_components["pseudo_negative_over_loss"]),
+        "train_pseudo_negative_over_loss": _maybe_float(train_components, "pseudo_negative_over_loss"),
         "valid_pseudo_negative_over_loss": float(valid_components["pseudo_negative_over_loss"]),
-        "train_pseudo_negative_unweighted_loss": float(train_components["pseudo_negative_unweighted_loss"]),
+        "train_pseudo_negative_unweighted_loss": _maybe_float(train_components, "pseudo_negative_unweighted_loss"),
         "valid_pseudo_negative_unweighted_loss": float(valid_components["pseudo_negative_unweighted_loss"]),
-        "train_pseudo_negative_weighted_loss": float(train_components["pseudo_negative_weighted_loss"]),
+        "train_pseudo_negative_weighted_loss": _maybe_float(train_components, "pseudo_negative_weighted_loss"),
         "valid_pseudo_negative_weighted_loss": float(valid_components["pseudo_negative_weighted_loss"]),
-        "train_pseudo_negative_weighted_fraction_of_total_loss": float(
-            train_components["pseudo_negative_weighted_fraction_of_total_loss"]
+        "train_pseudo_negative_weighted_fraction_of_total_loss": _maybe_float(
+            train_components,
+            "pseudo_negative_weighted_fraction_of_total_loss",
         ),
         "valid_pseudo_negative_weighted_fraction_of_total_loss": float(
             valid_components["pseudo_negative_weighted_fraction_of_total_loss"]
         ),
-        "train_pseudo_negative_bias": float(train_components["pseudo_negative_bias"]),
+        "train_pseudo_negative_bias": _maybe_float(train_components, "pseudo_negative_bias"),
         "valid_pseudo_negative_bias": float(valid_components["pseudo_negative_bias"]),
-        "train_pseudo_negative_over_ratio": float(train_components["pseudo_negative_over_ratio"]),
+        "train_pseudo_negative_over_ratio": _maybe_float(train_components, "pseudo_negative_over_ratio"),
         "valid_pseudo_negative_over_ratio": float(valid_components["pseudo_negative_over_ratio"]),
         "valid_pn_bias": float(valid_components["pseudo_negative_bias"]),
         "valid_pn_over": float(valid_components["pseudo_negative_over_loss"]),
         "valid_pn_over_ratio": float(valid_components["pseudo_negative_over_ratio"]),
-        "train_hotspot_retention_loss": float(train_components["hotspot_retention_loss"]),
+        "train_hotspot_retention_loss": _maybe_float(train_components, "hotspot_retention_loss"),
         "valid_hotspot_retention_loss": float(valid_components["hotspot_retention_loss"]),
-        "train_bg_pred_raw_mean": float(train_components["bg_pred_raw_mean"]),
+        "train_bg_pred_raw_mean": _maybe_float(train_components, "bg_pred_raw_mean"),
         "valid_bg_pred_raw_mean": float(valid_components["bg_pred_raw_mean"]),
-        "train_bg_signed_bias": float(train_components["bg_signed_bias"]),
+        "train_bg_signed_bias": _maybe_float(train_components, "bg_signed_bias"),
         "valid_bg_signed_bias": float(valid_components["bg_signed_bias"]),
-        "train_bg_abs_mean": float(train_components["bg_abs_mean"]),
+        "train_bg_abs_mean": _maybe_float(train_components, "bg_abs_mean"),
         "valid_bg_abs_mean": float(valid_components["bg_abs_mean"]),
-        "train_hotspot_raw_mae": float(train_components["hotspot_raw_mae"]),
+        "train_hotspot_raw_mae": _maybe_float(train_components, "hotspot_raw_mae"),
         "valid_hotspot_raw_mae": float(valid_components["hotspot_raw_mae"]),
-        "train_raw_deltaT_mse": float(train_metrics["raw_delta_mse"]),
+        "train_raw_deltaT_mse": _maybe_float(train_metrics, "raw_delta_mse"),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
-        "train_recovered_T_mse": float(train_metrics["recovered_temperature_mse"]),
+        "train_recovered_T_mse": _maybe_float(train_metrics, "recovered_temperature_mse"),
         "valid_recovered_T_mse": float(valid_metrics["recovered_temperature_mse"]),
+        "train_full_metrics_computed": train_components is not None and train_metrics is not None,
     }
     record.update(_current_weight_payload(current_loss_config))
     return record
@@ -1269,7 +1326,8 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         _emit(
             f"epoch {record['epoch']:03d}/{epochs:03d} "
             f"lr={record['lr']:.3e} "
-            f"train_loss={record['train_loss']:.6e} "
+            f"train_loss={_format_progress_value(record['train_loss'])} "
+            f"train_full_metrics={'computed' if record.get('train_full_metrics_computed') else 'skipped'} "
             f"valid_loss={record['valid_loss']:.6e} "
             f"valid_base_mse={record['valid_base_mse']:.6e} "
             f"valid_bg_bias={record['valid_bg_signed_bias']:.6e} "
@@ -1288,6 +1346,7 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"epoch {record['epoch']:03d}/{epochs:03d} "
         f"lr={record['lr']:.8e} "
         f"train_loss={record['train_loss']:.8e} "
+        f"train_full_metrics={'computed' if record.get('train_full_metrics_computed') else 'skipped'} "
         f"valid_loss={record['valid_loss']:.8e} "
         f"train_base_mse={record['train_base_mse']:.8e} "
         f"valid_base_mse={record['valid_base_mse']:.8e} "
@@ -1345,6 +1404,7 @@ def _fit_once(
     lr_config: dict[str, Any],
     seed: int,
     report_every: int,
+    train_metrics_schedule: str,
     loss_config: dict[str, Any],
     optimizer_config: dict[str, Any],
     model_config: dict[str, Any],
@@ -1375,6 +1435,7 @@ def _fit_once(
     _record_timing(timings, "initial_loss", initial_start)
     _progress(progress_enabled, "startup", "initial train/valid losses computed", initial_start)
     train_losses = [float(train_initial_components["total_loss"])]
+    train_loss_epochs = [0]
     valid_losses = [float(valid_initial_components["total_loss"])]
     grad_norms = []
     epoch_batch_counts = []
@@ -1395,17 +1456,29 @@ def _fit_once(
     )
     batch_enabled = batch_config.get("batch_size") is not None
     metrics_fn = _weighted_metrics if batch_enabled else _metrics
+    train_metrics_epoch_values = train_metrics_epochs(train_metrics_schedule, epochs)
+    train_metrics_epoch_lookup = set(train_metrics_epoch_values)
     if batch_enabled:
         _progress(
             progress_enabled,
             "train",
             (
                 f"epoch loop start epochs={epochs} report_every={report_every} "
-                f"mini_batch_groups={len(train_groups)} batch_size={batch_config['batch_size']}"
+                f"mini_batch_groups={len(train_groups)} batch_size={batch_config['batch_size']} "
+                f"train_metrics_schedule={train_metrics_schedule} "
+                f"train_metrics_epochs={train_metrics_epoch_values}"
             ),
         )
     else:
-        _progress(progress_enabled, "train", f"epoch loop start epochs={epochs} report_every={report_every}")
+        _progress(
+            progress_enabled,
+            "train",
+            (
+                f"epoch loop start epochs={epochs} report_every={report_every} "
+                f"train_metrics_schedule={train_metrics_schedule} "
+                f"train_metrics_epochs={train_metrics_epoch_values}"
+            ),
+        )
     epoch_loop_start = time.perf_counter()
     for epoch in range(1, epochs + 1):
         lr_epoch = _lr_for_epoch(epoch, epochs, lr_config)
@@ -1559,12 +1632,17 @@ def _fit_once(
             epoch_batch_counts.append(1)
         train_step_time = time.perf_counter() - train_step_start
 
-        train_metrics_start = time.perf_counter()
-        train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
-        train_metrics = metrics_fn(model, params, train_groups, stats)
-        if profile_enabled:
-            _block_until_ready_tree((train_components, train_metrics))
-        train_metrics_time = time.perf_counter() - train_metrics_start
+        train_metrics_computed = epoch in train_metrics_epoch_lookup
+        train_components = None
+        train_metrics = None
+        train_metrics_time = 0.0
+        if train_metrics_computed:
+            train_metrics_start = time.perf_counter()
+            train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
+            train_metrics = metrics_fn(model, params, train_groups, stats)
+            if profile_enabled:
+                _block_until_ready_tree((train_components, train_metrics))
+            train_metrics_time = time.perf_counter() - train_metrics_start
 
         validation_start = time.perf_counter()
         if profile_enabled:
@@ -1584,7 +1662,9 @@ def _fit_once(
             valid_metrics = metrics_fn(model, params, valid_groups, stats)
         validation_time = time.perf_counter() - validation_start
 
-        train_losses.append(float(train_components["total_loss"]))
+        if train_components is not None:
+            train_losses.append(float(train_components["total_loss"]))
+            train_loss_epochs.append(int(epoch))
         valid_losses.append(float(valid_components["total_loss"]))
         record = _epoch_history_record(
             epoch,
@@ -1598,6 +1678,8 @@ def _fit_once(
         record["train_batch_count"] = int(epoch_batch_counts[-1])
         record["valid_batch_count"] = int(len(valid_groups))
         record["batch_size"] = batch_config.get("batch_size")
+        record["train_full_metrics_schedule"] = train_metrics_schedule
+        record["train_full_metrics_epoch"] = bool(train_metrics_computed)
         batch_summary = _summarize_batch_records(epoch_train_batch_records) if profile_enabled else {}
         record["train_batch_timing_summary"] = batch_summary
         score = float(record[selection_metric])
@@ -1636,6 +1718,7 @@ def _fit_once(
         "model": model,
         "params": params,
         "train_losses": np.asarray(train_losses, dtype=np.float64),
+        "train_loss_epochs": np.asarray(train_loss_epochs, dtype=np.int64),
         "valid_losses": np.asarray(valid_losses, dtype=np.float64),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
         "epoch_batch_counts": np.asarray(epoch_batch_counts, dtype=np.int64),
@@ -1646,6 +1729,8 @@ def _fit_once(
         "epoch_history": epoch_history,
         "train_batch_records": train_batch_records,
         "validation_batch_records": validation_batch_records,
+        "train_metrics_schedule": train_metrics_schedule,
+        "train_metrics_epochs": train_metrics_epoch_values,
         "selection_metric": selection_metric,
         "best_record": best_record,
         "best_params": best_params,
@@ -1672,9 +1757,23 @@ def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dic
     return predictions
 
 
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        value = float(value)
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     with path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, sort_keys=True)
+        json.dump(_json_safe(payload), f, allow_nan=False, indent=2, sort_keys=True)
 
 
 def _stats_payload(stats: dict) -> dict[str, Any]:
@@ -2228,6 +2327,7 @@ def main() -> int:
         lr_config,
         args.seed,
         args.report_every,
+        args.train_metrics_schedule,
         loss_config,
         optimizer_config,
         model_config,
@@ -2318,6 +2418,8 @@ def main() -> int:
         "progress_detail": args.progress_detail,
         "profile_timing": bool(args.profile_timing),
         "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
+        "train_metrics_schedule": result["train_metrics_schedule"],
+        "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
         **best_selection,
         "checkpoint_saved": False,
         "loss_mode": loss_config["loss_mode"],
@@ -2358,6 +2460,7 @@ def main() -> int:
         "status_ok": bool(result["status_ok"]),
         "grad_finite": bool(result["grad_finite"]),
         "train_losses": [float(value) for value in result["train_losses"]],
+        "train_loss_epochs": [int(value) for value in result["train_loss_epochs"]],
         "valid_losses": [float(value) for value in result["valid_losses"]],
         "grad_norms": [float(value) for value in result["grad_norms"]],
         "lr_history": [float(value) for value in result["lr_history"]],
@@ -2385,6 +2488,8 @@ def main() -> int:
         "progress_detail": args.progress_detail,
         "profile_timing": bool(args.profile_timing),
         "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
+        "train_metrics_schedule": result["train_metrics_schedule"],
+        "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
         **best_selection,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
@@ -2418,6 +2523,10 @@ def main() -> int:
         **_batch_config_payload(batch_config),
         "epoch_batch_counts": [int(value) for value in result["epoch_batch_counts"]],
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
+        "train_loss_selected_epochs": [
+            (int(result["train_loss_epochs"][index]), float(result["train_losses"][index]))
+            for index, _ in _selected_steps(result["train_losses"], args.report_every)
+        ],
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
         "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
         "lr_config": lr_config,
@@ -2453,6 +2562,8 @@ def main() -> int:
         train_batch_counts=[int(value) for value in result["epoch_batch_counts"]],
         subset=sample_root,
         output_dir=output_dir,
+        train_metrics_schedule=result["train_metrics_schedule"],
+        train_metrics_epoch_values=[int(epoch) for epoch in result["train_metrics_epochs"]],
         total_run_time_so_far=time.perf_counter() - script_start,
     )
     if profile_enabled:

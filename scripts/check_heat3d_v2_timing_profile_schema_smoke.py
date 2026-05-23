@@ -21,6 +21,8 @@ REQUIRED_EPOCH_FIELDS = {
     "epoch_total_time",
     "train_total_time",
     "validation_total_time",
+    "train_metrics_computed",
+    "train_metrics_time",
     "num_train_batches",
     "num_valid_batches",
     "mean_train_batch_time",
@@ -65,6 +67,7 @@ def main() -> int:
         "epoch_train_time_s": 16.1,
         "epoch_train_metrics_time_s": 0.7,
         "epoch_validation_time_s": 1.2,
+        "train_full_metrics_computed": True,
         "train_batch_count": len(train_batches),
         "valid_batch_count": 2,
         "train_batch_timing_summary": summary,
@@ -99,6 +102,8 @@ def main() -> int:
         train_batch_counts=[4],
         subset=runner.DEFAULT_SUBSET,
         output_dir=REPO_DIR / "output" / "heat3d_v2_runs" / "timing_schema_smoke",
+        train_metrics_schedule="half_and_final",
+        train_metrics_epoch_values=[1],
         total_run_time_so_far=36.0,
     )
     encoded = json.dumps(payload, sort_keys=True)
@@ -113,6 +118,10 @@ def main() -> int:
         raise AssertionError(f"missing per-batch fields: {sorted(missing_batch)}")
     if decoded["run_level"]["metadata_calls"] != 12:
         raise AssertionError("run-level metadata call count missing")
+    if decoded["train_metrics_schedule"] != "half_and_final":
+        raise AssertionError("train metrics schedule missing")
+    if decoded["per_epoch"][0]["train_metrics_computed"] is not True:
+        raise AssertionError("per-epoch train metrics computed flag missing")
     print("Heat3D v2 timing profile schema smoke passed.")
     return 0
 

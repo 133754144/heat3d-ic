@@ -79,9 +79,13 @@ def build_training_command(
         command.append("--save-best-predictions")
     _append_option(command, "--best-predictions-name", export.get("best_predictions_name"))
     _append_option(command, "--report-every", run.get("report_every"))
+    _append_option(command, "--train-metrics-schedule", run.get("train_metrics_schedule"))
     _append_option(command, "--log-mode", run.get("log_mode"))
     command.append("--progress-log" if run.get("progress_log", True) else "--no-progress-log")
     _append_option(command, "--progress-detail", run.get("progress_detail"))
+    if run.get("profile_timing") is True:
+        command.append("--profile-timing")
+    _append_option(command, "--profile-timing-json", run.get("profile_timing_json"))
     _append_option(command, "--selection-metric", export.get("selection_metric"))
 
     _append_option(command, "--loss-mode", loss.get("mode"))
@@ -442,9 +446,12 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("model.mlp_hidden_layers", "training --mlp-hidden-layers"),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
+        ("run.train_metrics_schedule", "training --train-metrics-schedule"),
         ("run.log_mode", "training --log-mode"),
         ("run.progress_log", "training --progress-log/--no-progress-log"),
         ("run.progress_detail", "training --progress-detail"),
+        ("run.profile_timing", "training --profile-timing"),
+        ("run.profile_timing_json", "training --profile-timing-json"),
         ("run.batch_size", "training --batch-size"),
         ("run.validation_batch_size", "training --validation-batch-size"),
         ("run.prediction_batch_size", "training --prediction-batch-size"),

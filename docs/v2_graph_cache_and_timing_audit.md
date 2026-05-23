@@ -85,6 +85,52 @@ python scripts/check_heat3d_v2_graph_build_timing_smoke.py
 3. 若 group_build 仍显著但占比有限：做 in-memory sample/group cache。
 4. 最后才考虑 optional disk graph cache。
 
+## P4b-time-2 train metrics 频率
+
+上一轮 M1 e5 profile 显示：
+
+- `group_build ~= 193s`，是一次性启动成本；
+- epoch loop 平均约 `464s/epoch`；
+- train batch update 约 `330-344s/epoch`；
+- validation 约 `20s/epoch`；
+- full train metrics evaluation 约 `110-111s/epoch`。
+
+其中 full train metrics 是每个 epoch 后对完整 train split 再做一次 loss/metrics forward，不参与 optimizer update，也不参与 best-valid selection。它是主要非必要开销。
+
+本轮只优化 full train metrics 的频率，新增：
+
+```bash
+--train-metrics-schedule half_and_final
+```
+
+可选值：
+
+- `every_epoch`：旧行为，每个 epoch 后计算 full train metrics；
+- `half_and_final`：默认，只在 `ceil(epochs / 2)` 和最后一轮计算；
+- `final_only`：只在最后一轮计算；
+- `none`：epoch loop 中不计算 full train metrics。
+
+默认使用 `half_and_final` 的原因是保留一个训练中点和终点的 train full metrics 诊断，同时避免每个 epoch 都做完整 train split forward。该优化不改变 train batch loss、optimizer update、validation、loss、模型或 best-valid selection。
+
+对本轮 M1 e5 对照 profile：
+
+- e5 只在 epoch 3 和 epoch 5 计算 full train metrics；
+- 预计比上一轮少 3 次 train metrics，节省约 `3 * 110s`；
+- validation 曲线仍每 epoch 完整；
+- train RMSE/MAE 等 full train 曲线会变稀疏。
+
+对 e50：
+
+- 默认只在 epoch 25 和 epoch 50 计算 full train metrics；
+- 预计比 every-epoch 行为少 48 次 train metrics；
+- best checkpoint 仍由每 epoch validation 指标选择，不受影响。
+
+主要风险：
+
+- 训练过程中的 train RMSE/MAE 曲线变稀疏；
+- skipped epoch 的 epoch history 只保留 validation 和训练 step 计时，full train metrics 字段会标记为 skipped；
+- 若后续诊断确实需要每轮 train full metrics，应显式使用 `--train-metrics-schedule every_epoch`。
+
 ## 若确认 graph build 是瓶颈
 
 推荐路线：

@@ -36,6 +36,7 @@ BATCH_SIZE_FIELDS = (
     "prediction_batch_size",
 )
 BATCH_BOOL_FIELDS = ("shuffle_train_batches", "drop_last")
+TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"}
 
 _MISSING = object()
 
@@ -205,6 +206,12 @@ def _validate_run_config(
             f"{label}: field 'run.allow_long_training_local' must be false"
         )
     _validate_batch_fields(run, label)
+    train_metrics_schedule = run.get("train_metrics_schedule")
+    if train_metrics_schedule is not None and train_metrics_schedule not in TRAIN_METRICS_SCHEDULES:
+        raise ValueError(
+            f"{label}: field 'run.train_metrics_schedule' must be one of "
+            f"{sorted(TRAIN_METRICS_SCHEDULES)}, got {train_metrics_schedule!r}"
+        )
 
     export = _required_mapping(config, "export", label)
     output_dir = export.get("output_dir")
