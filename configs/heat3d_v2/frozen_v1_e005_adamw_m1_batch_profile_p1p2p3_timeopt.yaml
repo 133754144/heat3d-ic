@@ -1,0 +1,120 @@
+schema_version: heat3d_v2_config_draft_v0
+config_role: controlled
+description: "P4b-time-4 M1 same-config e5 profile with P1/P2/P3 nonessential time optimizations."
+non_claims: [diagnostic, timing_profile, not_formal_benchmark, not_model_performance_evidence, not_publication_ready_result]
+
+dataset:
+  name: medium1024_gapA_full1024_v2
+  subset_path: data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2
+  manifest_path: configs/heat3d_v1_physics_label_medium1024_gapA_manifest.json
+  k_encoding_mode: diag3
+  target: normalized_deltaT
+  recovery: T_ref_plus_deltaT
+  feature_view: relative_bc_features
+  bridge: zero_delta_u_bridge
+  split_source: sample_meta
+  sample_limit: null
+  debug_only: false
+
+model:
+  architecture: RIGNO
+  num_outputs: 1
+  node_latent_size: 64
+  edge_latent_size: 64
+  processor_steps: 4
+  mlp_hidden_layers: 2
+  concatenate_tau: false
+  concatenate_t: false
+  conditioned_normalization: false
+  cond_norm_hidden_size: 16
+  p_edge_masking: 0.0
+  report_parameter_count: false
+  report_memory_estimate: false
+
+optimizer:
+  name: adamw
+  lr: 1.0e-3
+  lr_schedule: constant
+  warmup_epochs: 0
+  min_lr: 1.0e-5
+  second_stage_epoch: null
+  second_stage_lr: null
+  weight_decay: 1.0e-4
+  gradient_clip_norm: 1.0
+  seed: 0
+  multi_seed: []
+
+loss:
+  mode: background_pseudo_negative
+  base_space: normalized_deltaT
+  background_quantile: 0.50
+  hotspot_quantile: 0.90
+  background_weight: 1.0
+  hotspot_weight: 0.02
+  background_l1_weight: 1.0
+  background_bias_weight: 1.0
+  background_over_weight: 1.0
+  background_relative_weight: 0.10
+  relative_floor: 0.02
+  relative_floor_mode: fixed
+  pseudo_negative_quantile: 0.25
+  pseudo_negative_delta_threshold: null
+  pseudo_negative_weight: 0.10
+  pseudo_negative_over_margin: 0.0
+  pseudo_negative_min_count: 1
+  pseudo_negative_loss_type: relative_l1
+  pseudo_negative_relative_floor: 0.02
+  weight_schedule: constant
+  transition_epoch: 0
+  draft_peak_loss_weight: null
+  draft_field_shape_loss_weight: null
+
+run:
+  mode: controlled
+  epochs: 5
+  batching: mini_batch
+  batch_size: 4
+  micro_batch_size: null
+  validation_batch_size: 4
+  prediction_batch_size: 4
+  shuffle_train_batches: true
+  drop_last: false
+  report_every: 1
+  train_metrics_schedule: half_and_final
+  grad_norm_report_every: 10
+  log_mode: compact
+  progress_log: true
+  progress_detail: basic
+  profile_timing: true
+  profile_timing_json: output/heat3d_v2_runs/m1_batch_profile_e5_p1p2p3_timeopt_seed0/profile_timing.json
+  device_policy: ssh_required_for_training
+  allow_long_training_local: false
+
+export:
+  output_dir: output/heat3d_v2_runs/m1_batch_profile_e5_p1p2p3_timeopt_seed0
+  run_name: m1_batch_profile_e5_p1p2p3_timeopt_seed0
+  save_final_predictions: false
+  final_predictions_name: predictions.npz
+  save_best_predictions: false
+  best_predictions_name: best_predictions.npz
+  selection_metric: valid_loss
+  save_run_config: true
+  save_loss_summary: true
+  profile_focus: train_valid_timing_no_prediction_npz
+
+diagnostics:
+  prediction_labels: []
+  run_baseline_comparison: false
+  run_error_bins: false
+  run_condition_diagnostics: false
+  run_summary: false
+  top_k: 5
+  deltaT_bins: p50,p75,p90,p95
+  q_power_bins: p33,p66
+  metric_set: []
+  field_shape_metrics: []
+  p_quantiles: [0.95, 0.99]
+
+baseline_reference:
+  path: configs/heat3d_v2/frozen_v1_reference.yaml
+  compare_against: frozen_v1_best_diagnostic

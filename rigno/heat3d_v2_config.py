@@ -212,6 +212,12 @@ def _validate_run_config(
             f"{label}: field 'run.train_metrics_schedule' must be one of "
             f"{sorted(TRAIN_METRICS_SCHEDULES)}, got {train_metrics_schedule!r}"
         )
+    grad_norm_report_every = run.get("grad_norm_report_every")
+    if grad_norm_report_every is not None:
+        if isinstance(grad_norm_report_every, bool) or not isinstance(grad_norm_report_every, int):
+            raise ValueError(f"{label}: field 'run.grad_norm_report_every' must be an int or null")
+        if grad_norm_report_every < 0:
+            raise ValueError(f"{label}: field 'run.grad_norm_report_every' must be >= 0")
 
     export = _required_mapping(config, "export", label)
     output_dir = export.get("output_dir")

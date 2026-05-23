@@ -100,6 +100,15 @@ def parse_args() -> argparse.Namespace:
         default="half_and_final",
         help="Schedule for full train split metrics during the epoch loop.",
     )
+    parser.add_argument(
+        "--grad-norm-report-every",
+        type=int,
+        default=10,
+        help=(
+            "Frequency for external grad norm diagnostics. "
+            "Use 1 for every train batch, N>1 for every N batches, or 0 to disable reporting."
+        ),
+    )
     parser.add_argument("--log-mode", choices=("compact", "full", "quiet"), default="compact")
     parser.add_argument("--progress-log", dest="progress_log", action="store_true", default=True)
     parser.add_argument("--no-progress-log", dest="progress_log", action="store_false")
@@ -205,6 +214,7 @@ def _timing_summary(timings: dict[str, float]) -> str:
         "model_init",
         "initial_loss",
         "epoch_loop",
+        "final_metrics",
         "prediction_export",
         "prediction_save",
         "best_prediction_export",
@@ -231,6 +241,34 @@ def train_metrics_epochs(schedule: str, epochs: int) -> list[int]:
     if schedule == "none":
         return []
     raise ValueError(f"Unknown train metrics schedule: {schedule!r}")
+
+
+def should_report_grad_norm(grad_norm_report_every: int, batch_index: int) -> bool:
+    if grad_norm_report_every < 0:
+        raise ValueError("--grad-norm-report-every must be >= 0")
+    if batch_index < 1:
+        raise ValueError("batch_index must be 1-indexed")
+    if grad_norm_report_every == 0:
+        return False
+    return batch_index % grad_norm_report_every == 0
+
+
+def grad_norm_reporting_mode(grad_norm_report_every: int) -> str:
+    if grad_norm_report_every < 0:
+        raise ValueError("--grad-norm-report-every must be >= 0")
+    if grad_norm_report_every == 0:
+        return "disabled"
+    if grad_norm_report_every == 1:
+        return "every_batch"
+    return f"every_{grad_norm_report_every}_batches"
+
+
+def should_build_final_predictions(save_predictions: bool) -> bool:
+    return bool(save_predictions)
+
+
+def should_reuse_final_metrics(final_epoch_train_metrics_computed: bool) -> bool:
+    return bool(final_epoch_train_metrics_computed)
 
 
 def _maybe_float(payload: dict[str, Any] | None, key: str) -> float:
@@ -438,6 +476,13 @@ def _profile_timing_payload(
     output_dir: Path,
     train_metrics_schedule: str,
     train_metrics_epoch_values: list[int],
+    grad_norm_report_every: int = 1,
+    grad_norm_reported_batch_count: int = 0,
+    grad_norm_skipped_batch_count: int = 0,
+    final_metrics_reused: bool = False,
+    final_metrics_reuse_source: str | None = None,
+    final_prediction_export_skipped: bool = False,
+    final_prediction_export_skip_reason: str | None = None,
     total_run_time_so_far: float | None = None,
 ) -> dict[str, Any]:
     train_batch_records = train_batch_records or []
@@ -482,6 +527,15 @@ def _profile_timing_payload(
         "total_run_time_so_far": float(total_run_time_so_far or 0.0),
         "train_metrics_schedule": train_metrics_schedule,
         "train_metrics_epochs": [int(epoch) for epoch in train_metrics_epoch_values],
+        "grad_norm_report_every": int(grad_norm_report_every),
+        "grad_norm_reported_batch_count": int(grad_norm_reported_batch_count),
+        "grad_norm_skipped_batch_count": int(grad_norm_skipped_batch_count),
+        "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
+        "final_metrics_reused": bool(final_metrics_reused),
+        "final_metrics_reuse_source": final_metrics_reuse_source,
+        "final_metrics_time": float(timings.get("final_metrics", 0.0)),
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
     }
     return {
         "schema_version": 1,
@@ -491,6 +545,12 @@ def _profile_timing_payload(
         "run_level": run_level,
         "train_metrics_schedule": train_metrics_schedule,
         "train_metrics_epochs": [int(epoch) for epoch in train_metrics_epoch_values],
+        "grad_norm_report_every": int(grad_norm_report_every),
+        "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
+        "final_metrics_reused": bool(final_metrics_reused),
+        "final_metrics_reuse_source": final_metrics_reuse_source,
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         "timings_s": {key: float(value) for key, value in sorted(timings.items())},
         "counts": {
             "train_groups": int(train_group_count),
@@ -530,6 +590,17 @@ def _print_profile_timing(payload: dict[str, Any]) -> None:
         f"schedule={payload.get('train_metrics_schedule')} "
         f"epochs={payload.get('train_metrics_epochs')}"
     )
+    _emit(
+        "  grad_norm: "
+        f"mode={payload.get('grad_norm_reporting_mode')} "
+        f"reported={run_level.get('grad_norm_reported_batch_count', 0)} "
+        f"skipped={run_level.get('grad_norm_skipped_batch_count', 0)}"
+    )
+    _emit(
+        "  final: "
+        f"metrics_reused={payload.get('final_metrics_reused')} "
+        f"prediction_export_skipped={payload.get('final_prediction_export_skipped')}"
+    )
     for record in payload["per_epoch"]:
         _emit(
             "  epoch "
@@ -545,6 +616,8 @@ def _print_profile_timing(payload: dict[str, Any]) -> None:
         )
     if "prediction_export" in timings:
         _emit(f"  prediction_export={timings['prediction_export']:.2f}s")
+    if "final_metrics" in timings:
+        _emit(f"  final_metrics={timings['final_metrics']:.2f}s")
 
 
 def _ensure_ignored_output_dir(path: Path) -> Path:
@@ -892,6 +965,12 @@ def _sequence_summary(values) -> dict[str, float | int | None]:
         "min": min(floats),
         "max": max(floats),
     }
+
+
+def _selected_steps_or_empty(values: np.ndarray, report_every: int) -> list[tuple[int, float]]:
+    if len(values) == 0:
+        return []
+    return _selected_steps(values, report_every)
 
 
 def _history_field_summary(history: list[dict[str, Any]], field: str) -> dict[str, float | int | None]:
@@ -1405,6 +1484,7 @@ def _fit_once(
     seed: int,
     report_every: int,
     train_metrics_schedule: str,
+    grad_norm_report_every: int,
     loss_config: dict[str, Any],
     optimizer_config: dict[str, Any],
     model_config: dict[str, Any],
@@ -1438,6 +1518,8 @@ def _fit_once(
     train_loss_epochs = [0]
     valid_losses = [float(valid_initial_components["total_loss"])]
     grad_norms = []
+    grad_norm_reported_batch_count = 0
+    grad_norm_skipped_batch_count = 0
     epoch_batch_counts = []
     lr_history = []
     loss_weight_history = []
@@ -1448,6 +1530,10 @@ def _fit_once(
     best_score: float | None = None
     best_record: dict[str, Any] | None = None
     best_params = None
+    final_epoch_train_components = None
+    final_epoch_train_metrics = None
+    final_epoch_valid_components = None
+    final_epoch_valid_metrics = None
     optax_state = _build_optax_state(
         params,
         epochs=epochs,
@@ -1521,11 +1607,17 @@ def _fit_once(
                     _block_until_ready_tree((loss_value, grads))
                 loss_grad_time = time.perf_counter() - loss_grad_start
 
-                grad_norm_start = time.perf_counter()
-                grad_norm = _global_norm(grads)
-                grad_norm_time = time.perf_counter() - grad_norm_start
-                batch_grad_norms.append(grad_norm)
-                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+                grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
+                grad_norm_time = 0.0
+                if grad_norm_reported:
+                    grad_norm_start = time.perf_counter()
+                    grad_norm = _global_norm(grads)
+                    grad_norm_time = time.perf_counter() - grad_norm_start
+                    batch_grad_norms.append(grad_norm)
+                    grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+                    grad_norm_reported_batch_count += 1
+                else:
+                    grad_norm_skipped_batch_count += 1
 
                 optimizer_update_start = time.perf_counter()
                 if optax_state is None:
@@ -1558,6 +1650,7 @@ def _fit_once(
                         "total_batch_time": float(total_batch_time),
                         "loss_grad_time": float(loss_grad_time),
                         "grad_norm_time": float(grad_norm_time),
+                        "grad_norm_reported": bool(grad_norm_reported),
                         "optimizer_update_time": float(optimizer_update_time),
                         "output_scalar_extraction_time": float(output_scalar_extraction_time),
                         "other_time": float(other_time),
@@ -1569,7 +1662,8 @@ def _fit_once(
                     epoch_train_batch_records.append(batch_record)
                     train_batch_records.append(batch_record)
             epoch_batch_counts.append(len(train_epoch_groups))
-            grad_norms.append(float(np.mean(batch_grad_norms)) if batch_grad_norms else float("nan"))
+            if batch_grad_norms:
+                grad_norms.append(float(np.mean(batch_grad_norms)))
         else:
             def loss_fn(current_params):
                 return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
@@ -1581,11 +1675,17 @@ def _fit_once(
                 _block_until_ready_tree((loss_value, grads))
             loss_grad_time = time.perf_counter() - loss_grad_start
 
-            grad_norm_start = time.perf_counter()
-            grad_norm = _global_norm(grads)
-            grad_norm_time = time.perf_counter() - grad_norm_start
-            grad_norms.append(grad_norm)
-            grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+            grad_norm_reported = should_report_grad_norm(grad_norm_report_every, 1)
+            grad_norm_time = 0.0
+            if grad_norm_reported:
+                grad_norm_start = time.perf_counter()
+                grad_norm = _global_norm(grads)
+                grad_norm_time = time.perf_counter() - grad_norm_start
+                grad_norms.append(grad_norm)
+                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+                grad_norm_reported_batch_count += 1
+            else:
+                grad_norm_skipped_batch_count += 1
 
             optimizer_update_start = time.perf_counter()
             if optax_state is None:
@@ -1621,6 +1721,7 @@ def _fit_once(
                     "total_batch_time": float(total_batch_time),
                     "loss_grad_time": float(loss_grad_time),
                     "grad_norm_time": float(grad_norm_time),
+                    "grad_norm_reported": bool(grad_norm_reported),
                     "optimizer_update_time": float(optimizer_update_time),
                     "output_scalar_extraction_time": float(output_scalar_extraction_time),
                     "other_time": float(other_time),
@@ -1666,6 +1767,11 @@ def _fit_once(
             train_losses.append(float(train_components["total_loss"]))
             train_loss_epochs.append(int(epoch))
         valid_losses.append(float(valid_components["total_loss"]))
+        if epoch == epochs and should_reuse_final_metrics(train_metrics_computed):
+            final_epoch_train_components = train_components
+            final_epoch_train_metrics = train_metrics
+            final_epoch_valid_components = valid_components
+            final_epoch_valid_metrics = valid_metrics
         record = _epoch_history_record(
             epoch,
             lr_epoch,
@@ -1697,14 +1803,30 @@ def _fit_once(
             _print_epoch_progress(record, epochs, log_mode)
     _record_timing(timings, "epoch_loop", epoch_loop_start)
 
-    _progress(progress_enabled, "train", "computing final train/valid metrics ...")
-    final_metrics_start = time.perf_counter()
-    train_metrics = metrics_fn(model, params, train_groups, stats)
-    valid_metrics = metrics_fn(model, params, valid_groups, stats)
-    final_loss_config = _loss_config_for_epoch(loss_config, epochs)
-    final_train_components = _loss_components(model, params, train_groups, stats, final_loss_config)
-    final_valid_components = _loss_components(model, params, valid_groups, stats, final_loss_config)
-    _progress(progress_enabled, "train", "final train/valid metrics computed", final_metrics_start)
+    final_metrics_reused = (
+        final_epoch_train_components is not None
+        and final_epoch_train_metrics is not None
+        and final_epoch_valid_components is not None
+        and final_epoch_valid_metrics is not None
+    )
+    final_metrics_reuse_source = "last_epoch_full_metrics" if final_metrics_reused else None
+    if final_metrics_reused:
+        timings["final_metrics"] = 0.0
+        train_metrics = final_epoch_train_metrics
+        valid_metrics = final_epoch_valid_metrics
+        final_train_components = final_epoch_train_components
+        final_valid_components = final_epoch_valid_components
+        _progress(progress_enabled, "train", "final train/valid metrics reused from last epoch full metrics")
+    else:
+        _progress(progress_enabled, "train", "computing final train/valid metrics ...")
+        final_metrics_start = time.perf_counter()
+        train_metrics = metrics_fn(model, params, train_groups, stats)
+        valid_metrics = metrics_fn(model, params, valid_groups, stats)
+        final_loss_config = _loss_config_for_epoch(loss_config, epochs)
+        final_train_components = _loss_components(model, params, train_groups, stats, final_loss_config)
+        final_valid_components = _loss_components(model, params, valid_groups, stats, final_loss_config)
+        _record_timing(timings, "final_metrics", final_metrics_start)
+        _progress(progress_enabled, "train", "final train/valid metrics computed", final_metrics_start)
     status_ok = (
         grad_finite
         and train_metrics["finite_ok"]
@@ -1721,6 +1843,10 @@ def _fit_once(
         "train_loss_epochs": np.asarray(train_loss_epochs, dtype=np.int64),
         "valid_losses": np.asarray(valid_losses, dtype=np.float64),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
+        "grad_norm_report_every": int(grad_norm_report_every),
+        "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
+        "grad_norm_reported_batch_count": int(grad_norm_reported_batch_count),
+        "grad_norm_skipped_batch_count": int(grad_norm_skipped_batch_count),
         "epoch_batch_counts": np.asarray(epoch_batch_counts, dtype=np.int64),
         "lr_history": np.asarray(lr_history, dtype=np.float64),
         "loss_weight_history": loss_weight_history,
@@ -1739,6 +1865,9 @@ def _fit_once(
         "final_valid_loss": float(valid_losses[-1]),
         "final_train_loss_components": _loss_components_payload(final_train_components),
         "final_valid_loss_components": _loss_components_payload(final_valid_components),
+        "final_metrics_reused": bool(final_metrics_reused),
+        "final_metrics_reuse_source": final_metrics_reuse_source,
+        "final_metrics_time_s": float(timings.get("final_metrics", 0.0)),
         "grad_finite": grad_finite,
         "status_ok": status_ok,
     }
@@ -1912,6 +2041,8 @@ def _print_final_summary(
     best_predictions_path: Path | None,
     best_predictions_saved: bool,
     best_prediction_count: int,
+    final_prediction_export_skipped: bool,
+    final_prediction_export_skip_reason: str | None,
     timings: dict[str, float],
 ) -> None:
     lr_history_summary = _sequence_summary(result["lr_history"])
@@ -1941,7 +2072,9 @@ def _print_final_summary(
         f"final_saved={bool(predictions_saved)} final_path={predictions_path if predictions_saved else 'not_written'} "
         f"final_count={prediction_count} best_saved={bool(best_predictions_saved)} "
         f"best_path={best_predictions_path if best_predictions_saved else 'not_written'} "
-        f"best_count={best_prediction_count}"
+        f"best_count={best_prediction_count} "
+        f"final_export_skipped={bool(final_prediction_export_skipped)} "
+        f"final_export_skip_reason={final_prediction_export_skip_reason}"
     )
     _emit(
         "  status: "
@@ -2176,6 +2309,8 @@ def main() -> int:
         raise ValueError("--epochs must be >= 1")
     if args.report_every < 1:
         raise ValueError("--report-every must be >= 1")
+    if args.grad_norm_report_every < 0:
+        raise ValueError("--grad-norm-report-every must be >= 0")
     _output_filename(args.best_predictions_name, "best-predictions-name")
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
@@ -2328,6 +2463,7 @@ def main() -> int:
         args.seed,
         args.report_every,
         args.train_metrics_schedule,
+        args.grad_norm_report_every,
         loss_config,
         optimizer_config,
         model_config,
@@ -2338,13 +2474,24 @@ def main() -> int:
         timings,
         profile_enabled=profile_enabled,
     )
-    prediction_start = time.perf_counter()
-    _progress(progress_enabled, "export", "building recovered predictions ...")
-    predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
-    _record_timing(timings, "prediction_export", prediction_start)
-    _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
-
     predictions_path = output_dir / "predictions.npz"
+    predictions: dict[str, np.ndarray] = {}
+    final_prediction_export_skipped = not should_build_final_predictions(bool(args.save_predictions))
+    final_prediction_export_skip_reason = "save_predictions_false" if final_prediction_export_skipped else None
+    if should_build_final_predictions(bool(args.save_predictions)):
+        prediction_start = time.perf_counter()
+        _progress(progress_enabled, "export", "building recovered predictions ...")
+        predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
+        _record_timing(timings, "prediction_export", prediction_start)
+        _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
+    else:
+        timings["prediction_export"] = 0.0
+        _progress(
+            progress_enabled,
+            "export",
+            "prediction export skipped: save_predictions=False",
+        )
+
     best_predictions_path = output_dir / args.best_predictions_name if args.save_best_predictions else None
     best_predictions: dict[str, np.ndarray] = {}
     best_predictions_saved = False
@@ -2420,6 +2567,15 @@ def main() -> int:
         "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
         "train_metrics_schedule": result["train_metrics_schedule"],
         "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
+        "grad_norm_report_every": result["grad_norm_report_every"],
+        "grad_norm_reported_batch_count": result["grad_norm_reported_batch_count"],
+        "grad_norm_skipped_batch_count": result["grad_norm_skipped_batch_count"],
+        "grad_norm_reporting_mode": result["grad_norm_reporting_mode"],
+        "final_metrics_reused": result["final_metrics_reused"],
+        "final_metrics_reuse_source": result["final_metrics_reuse_source"],
+        "final_metrics_time_s": result["final_metrics_time_s"],
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
         "checkpoint_saved": False,
         "loss_mode": loss_config["loss_mode"],
@@ -2490,6 +2646,15 @@ def main() -> int:
         "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
         "train_metrics_schedule": result["train_metrics_schedule"],
         "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
+        "grad_norm_report_every": result["grad_norm_report_every"],
+        "grad_norm_reported_batch_count": result["grad_norm_reported_batch_count"],
+        "grad_norm_skipped_batch_count": result["grad_norm_skipped_batch_count"],
+        "grad_norm_reporting_mode": result["grad_norm_reporting_mode"],
+        "final_metrics_reused": result["final_metrics_reused"],
+        "final_metrics_reuse_source": result["final_metrics_reuse_source"],
+        "final_metrics_time_s": result["final_metrics_time_s"],
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
@@ -2528,7 +2693,7 @@ def main() -> int:
             for index, _ in _selected_steps(result["train_losses"], args.report_every)
         ],
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
-        "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
+        "grad_norm_selected": _selected_steps_or_empty(result["grad_norms"], args.report_every),
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
         "model_config": model_config,
@@ -2564,6 +2729,13 @@ def main() -> int:
         output_dir=output_dir,
         train_metrics_schedule=result["train_metrics_schedule"],
         train_metrics_epoch_values=[int(epoch) for epoch in result["train_metrics_epochs"]],
+        grad_norm_report_every=result["grad_norm_report_every"],
+        grad_norm_reported_batch_count=result["grad_norm_reported_batch_count"],
+        grad_norm_skipped_batch_count=result["grad_norm_skipped_batch_count"],
+        final_metrics_reused=result["final_metrics_reused"],
+        final_metrics_reuse_source=result["final_metrics_reuse_source"],
+        final_prediction_export_skipped=final_prediction_export_skipped,
+        final_prediction_export_skip_reason=final_prediction_export_skip_reason,
         total_run_time_so_far=time.perf_counter() - script_start,
     )
     if profile_enabled:
@@ -2592,6 +2764,8 @@ def main() -> int:
         best_predictions_path=best_predictions_path,
         best_predictions_saved=best_predictions_saved,
         best_prediction_count=best_prediction_count,
+        final_prediction_export_skipped=final_prediction_export_skipped,
+        final_prediction_export_skip_reason=final_prediction_export_skip_reason,
         timings=timings,
     )
     _progress(progress_enabled, "done", "script complete", script_start)

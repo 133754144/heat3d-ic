@@ -89,3 +89,46 @@ P7: optional disk cache。最后考虑，风险是 cache key、数据变化和 g
 - 中风险：P4。profile 数据解释会变化，需要明确 coarse/detailed 语义。
 - 中高风险：P5。可能引入 JAX static arg、pytree、compile cache 和 shape 约束问题。
 - 中高风险：P6/P7。cache 失效和数据/graph config 变化风险需要严格 key。
+
+## P4b-time-4 P1/P2/P3 实现
+
+本轮实现三个不改变训练语义的删减/降频项：
+
+P1: `save_predictions=False` 时跳过 final prediction arrays build。
+
+- 之前即使不保存 `predictions.npz`，runner 仍会调用 `_predict_temperatures(...)` 构建 1024 个 recovered prediction arrays；
+- 现在只有 `--save-predictions` 为真时才构建 final predictions；
+- `save_best_predictions=True` 时仍单独构建 best-valid predictions，不改变 `best_predictions.npz` 文件契约；
+- run summary 记录 `final_prediction_export_skipped=true` 和 `final_prediction_export_skip_reason=save_predictions_false`；
+- 预期节省约 `70s/run`。
+
+P2: 新增 `--grad-norm-report-every`。
+
+- 默认值为 `10`；
+- `1` 表示旧行为，每个 train batch 都计算外部 `_global_norm(grads)`；
+- `N>1` 表示只在 batch index 可被 `N` 整除时计算外部 grad norm；
+- `0` 表示关闭外部 grad norm reporting；
+- 这不关闭 `optimizer_config["gradient_clip_norm"]`，Adam/AdamW path 中的 `optax.clip_by_global_norm(...)` 仍保留；
+- 不改变 grads、params update、loss、optimizer 类型或 batch size；
+- `profile_timing` 中 skipped batch 的 `grad_norm_time=0`，并标记 `grad_norm_reported=false`；
+- 风险是 grad norm 曲线变稀疏，finite check 只覆盖 reported grad norm 和最终 train/valid metrics。
+
+P3: final metrics reuse。
+
+- 当最后一个 epoch 已按 `train_metrics_schedule` 计算 full train metrics 时，缓存最后一轮的 train/valid loss components 和 metrics；
+- epoch loop 后直接复用这些结果作为 final metrics，不重复调用 full train/valid forward；
+- 记录 `final_metrics_reused=true` 和 `final_metrics_reuse_source=last_epoch_full_metrics`；
+- 若 `train_metrics_schedule=none` 或最后一轮未 computed，则 fallback 到旧逻辑，确保 final metrics 仍存在；
+- 预期节省约 `131s/run`。
+
+本轮 M1 e5 对照 config：
+
+```text
+configs/heat3d_v2/frozen_v1_e005_adamw_m1_batch_profile_p1p2p3_timeopt.yaml
+```
+
+该 config 与上一轮 M1 e5 profile 保持相同 model、optimizer、loss、dataset、batch sizes、epochs 和 seed，仅差异为：
+
+- `grad_norm_report_every=10`；
+- `save_predictions=false` 时跳过 final prediction arrays build；
+- 最后 epoch full train metrics 已 computed 时复用 final metrics。

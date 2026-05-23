@@ -80,6 +80,7 @@ def build_training_command(
     _append_option(command, "--best-predictions-name", export.get("best_predictions_name"))
     _append_option(command, "--report-every", run.get("report_every"))
     _append_option(command, "--train-metrics-schedule", run.get("train_metrics_schedule"))
+    _append_option(command, "--grad-norm-report-every", run.get("grad_norm_report_every"))
     _append_option(command, "--log-mode", run.get("log_mode"))
     command.append("--progress-log" if run.get("progress_log", True) else "--no-progress-log")
     _append_option(command, "--progress-detail", run.get("progress_detail"))
@@ -447,6 +448,7 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
         ("run.train_metrics_schedule", "training --train-metrics-schedule"),
+        ("run.grad_norm_report_every", "training --grad-norm-report-every"),
         ("run.log_mode", "training --log-mode"),
         ("run.progress_log", "training --progress-log/--no-progress-log"),
         ("run.progress_detail", "training --progress-detail"),
