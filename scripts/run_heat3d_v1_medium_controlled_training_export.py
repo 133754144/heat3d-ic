@@ -112,7 +112,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log-mode", choices=("compact", "full", "quiet"), default="compact")
     parser.add_argument("--progress-log", dest="progress_log", action="store_true", default=True)
     parser.add_argument("--no-progress-log", dest="progress_log", action="store_false")
-    parser.add_argument("--progress-detail", choices=("off", "basic", "verbose"), default="basic")
+    parser.add_argument(
+        "--progress-detail",
+        choices=("off", "quiet", "basic", "verbose", "full"),
+        default="basic",
+        help=(
+            "Startup progress detail. basic uses compact progress updates; "
+            "verbose/full prints per-group details; off/quiet disables group-build progress."
+        ),
+    )
     parser.add_argument("--profile-timing", action="store_true")
     parser.add_argument("--profile-timing-json", type=Path, default=None)
     parser.add_argument(
@@ -176,12 +184,20 @@ def _progress(enabled: bool, stage: str, message: str, start_time: float | None 
         _emit(f"[{stage}] {message}{_format_elapsed(start_time)}")
 
 
+def _progress_detail_mode(progress_detail: str) -> str:
+    if progress_detail in {"off", "quiet"}:
+        return "off"
+    if progress_detail in {"verbose", "full"}:
+        return "full"
+    return "basic"
+
+
 def _progress_detail_enabled(args: argparse.Namespace) -> bool:
-    return _progress_enabled(args) and args.progress_detail != "off"
+    return _progress_enabled(args) and _progress_detail_mode(args.progress_detail) != "off"
 
 
 def _verbose_progress_enabled(args: argparse.Namespace) -> bool:
-    return _progress_enabled(args) and args.progress_detail == "verbose"
+    return _progress_enabled(args) and _progress_detail_mode(args.progress_detail) == "full"
 
 
 def _progress_checkpoints(total: int) -> set[int]:
@@ -198,6 +214,95 @@ def _progress_checkpoints(total: int) -> set[int]:
     checkpoints = set(range(step, total + 1, step))
     checkpoints.add(total)
     return checkpoints
+
+
+class _ProgressBar:
+    """Small stdout progress helper for startup phases without extra deps."""
+
+    def __init__(
+        self,
+        enabled: bool,
+        label: str,
+        total: int,
+        *,
+        min_interval_s: float = 2.0,
+        width: int = 24,
+        stream=None,
+    ) -> None:
+        self.enabled = bool(enabled)
+        self.label = label
+        self.total = max(0, int(total))
+        self.min_interval_s = float(min_interval_s)
+        self.width = max(4, int(width))
+        self.stream = sys.stdout if stream is None else stream
+        self.start_time = time.perf_counter()
+        self.last_emit_time = self.start_time
+        self.last_current = 0
+        self.closed = False
+        self.is_tty = bool(getattr(self.stream, "isatty", lambda: False)())
+        self.percent_step = max(1, math.ceil(max(1, self.total) * 0.05))
+        self.next_percent_current = self.percent_step
+
+    def update(self, current: int, *, detail: str | None = None, force: bool = False) -> None:
+        if not self.enabled or self.closed:
+            return
+        current = max(0, int(current))
+        if self.total:
+            current = min(current, self.total)
+        now = time.perf_counter()
+        should_emit = force or current >= self.total
+        should_emit = should_emit or (now - self.last_emit_time) >= self.min_interval_s
+        should_emit = should_emit or current >= self.next_percent_current
+        if not should_emit:
+            self.last_current = current
+            return
+        self._write(self._format_line(current, detail=detail), overwrite=self.is_tty and not force)
+        self.last_emit_time = now
+        self.last_current = current
+        while self.next_percent_current <= current:
+            self.next_percent_current += self.percent_step
+
+    def close(self, *, current: int | None = None) -> None:
+        if not self.enabled or self.closed:
+            return
+        final_current = self.last_current if current is None else int(current)
+        self.update(final_current, force=True)
+        if self.is_tty:
+            self.stream.write("\n")
+        elapsed = time.perf_counter() - self.start_time
+        avg = elapsed / final_current if final_current > 0 else 0.0
+        self.stream.write(
+            f"{self.label} completed groups={final_current} "
+            f"elapsed={elapsed:.1f}s avg={avg:.2f}s\n"
+        )
+        self.stream.flush()
+        self.closed = True
+
+    def _format_line(self, current: int, *, detail: str | None) -> str:
+        elapsed = time.perf_counter() - self.start_time
+        avg = elapsed / current if current > 0 else 0.0
+        if self.total > 0 and current > 0:
+            eta = max(0.0, avg * (self.total - current))
+        else:
+            eta = 0.0
+        if self.total > 0:
+            ratio = min(1.0, max(0.0, current / self.total))
+        else:
+            ratio = 1.0
+        filled = int(round(self.width * ratio))
+        bar = "#" * filled + "-" * (self.width - filled)
+        suffix = f" {detail}" if detail else ""
+        return (
+            f"{self.label} [{bar}] {current}/{self.total} "
+            f"elapsed={elapsed:.1f}s avg={avg:.2f}s eta={eta:.1f}s{suffix}"
+        )
+
+    def _write(self, text: str, *, overwrite: bool) -> None:
+        if overwrite:
+            self.stream.write("\r" + text)
+        else:
+            self.stream.write(text + "\n")
+        self.stream.flush()
 
 
 def _record_timing(timings: dict[str, float], key: str, start_time: float) -> float:
@@ -2204,7 +2309,7 @@ def _make_groups_with_progress(
     builder: Heat3DGraphBuilder,
     label: str,
     progress_enabled: bool,
-    verbose_progress_enabled: bool,
+    progress_detail: str,
     batch_size: int | None = None,
     drop_last: bool = False,
     profile_counts: dict[str, int] | None = None,
@@ -2213,6 +2318,8 @@ def _make_groups_with_progress(
     sample_count = len(examples)
     batch_text = f" batch_size={batch_size}" if batch_size else " legacy_full_batch"
     _progress(progress_enabled, "startup", f"group build {label}: start samples={sample_count}{batch_text} ...")
+    detail_mode = _progress_detail_mode(progress_detail)
+    verbose_progress_enabled = progress_enabled and detail_mode == "full"
 
     grouped: dict[tuple[int, tuple[str, ...], tuple[tuple[int, ...], ...]], list] = {}
     checkpoints = _progress_checkpoints(sample_count)
@@ -2243,21 +2350,32 @@ def _make_groups_with_progress(
         scan_start,
     )
 
-    result = []
+    pending_batches: list[tuple[int, int, str, list]] = []
+    grouped_count = len(grouped)
     for group_index, ((n_points, feature_names, _signature), group_examples) in enumerate(grouped.items(), start=1):
         group_name = f"group_{group_index}_N{n_points}_F{len(feature_names)}"
         batches = _chunk_examples(group_examples, batch_size=batch_size, drop_last=drop_last)
         for batch_index, batch_examples in enumerate(batches, start=1):
-            batch_start = time.perf_counter()
             if batch_size:
                 batch_group_name = f"{group_name}_batch_{batch_index:04d}_B{len(batch_examples)}"
             else:
                 batch_group_name = group_name
+            pending_batches.append((group_index, grouped_count, batch_group_name, batch_examples))
+
+    result = []
+    bar = _ProgressBar(
+        progress_enabled and detail_mode == "basic",
+        f"[startup] group build {label}",
+        len(pending_batches),
+    )
+    for current_index, (group_index, grouped_count, batch_group_name, batch_examples) in enumerate(pending_batches, start=1):
+        batch_start = time.perf_counter()
+        if verbose_progress_enabled:
             _progress(
-                progress_enabled,
+                True,
                 "startup",
                 (
-                    f"group build {label}: group {group_index}/{len(grouped)} "
+                    f"group build {label}: group {group_index}/{grouped_count} "
                     f"{batch_group_name} arrays+graph start samples={len(batch_examples)} ..."
                 ),
             )
@@ -2265,14 +2383,23 @@ def _make_groups_with_progress(
             _bump_profile_count(profile_counts, f"{label}_batch_metadata_build_calls", len(batch_examples))
             _bump_profile_count(profile_counts, "graph_build_graphs_calls")
             _bump_profile_count(profile_counts, f"{label}_build_graphs_calls")
-            result.append(_make_batch_group(batch_group_name, batch_examples, stats, builder))
+        else:
+            _bump_profile_count(profile_counts, "graph_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, f"{label}_batch_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, "graph_build_graphs_calls")
+            _bump_profile_count(profile_counts, f"{label}_build_graphs_calls")
+        result.append(_make_batch_group(batch_group_name, batch_examples, stats, builder))
+        if verbose_progress_enabled:
             _progress(
-                progress_enabled,
+                True,
                 "startup",
                 f"group build {label}: {batch_group_name} arrays+graph built",
                 batch_start,
             )
+        else:
+            bar.update(current_index)
 
+    bar.close(current=len(result))
     _progress(progress_enabled, "startup", f"group build {label}: done groups={len(result)}", start)
     return result
 
@@ -2314,7 +2441,6 @@ def main() -> int:
     _output_filename(args.best_predictions_name, "best-predictions-name")
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
-    verbose_progress_enabled = _verbose_progress_enabled(args)
     profile_enabled = _profile_timing_enabled(args)
     timings: dict[str, float] = {}
     profile_counts: dict[str, int] = {}
@@ -2401,7 +2527,7 @@ def main() -> int:
         builder,
         "train",
         progress_detail_enabled,
-        verbose_progress_enabled,
+        args.progress_detail,
         batch_size=batch_config["batch_size"],
         drop_last=batch_config["drop_last"],
         profile_counts=profile_counts if profile_enabled else None,
@@ -2412,7 +2538,7 @@ def main() -> int:
         builder,
         "valid",
         progress_detail_enabled,
-        verbose_progress_enabled,
+        args.progress_detail,
         batch_size=batch_config["validation_batch_size"],
         drop_last=False,
         profile_counts=profile_counts if profile_enabled else None,
@@ -2423,7 +2549,7 @@ def main() -> int:
         builder,
         "all",
         progress_detail_enabled,
-        verbose_progress_enabled,
+        args.progress_detail,
         batch_size=batch_config["prediction_batch_size"],
         drop_last=False,
         profile_counts=profile_counts if profile_enabled else None,
