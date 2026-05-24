@@ -65,7 +65,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
-    parser.add_argument("--lr-schedule", choices=("constant", "warmup_cosine", "two_stage"), default="constant")
+    parser.add_argument(
+        "--lr-schedule",
+        choices=("constant", "warmup_cosine", "two_stage", "second_stage"),
+        default="constant",
+    )
     parser.add_argument("--warmup-epochs", type=int, default=0)
     parser.add_argument("--min-lr", type=float, default=1e-5)
     parser.add_argument("--second-stage-epoch", type=int, default=0)
@@ -989,6 +993,11 @@ def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
         if second_stage_epoch <= 0 or epoch <= second_stage_epoch:
             return base_lr
         return float(config["second_stage_lr"])
+    if schedule == "second_stage":
+        second_stage_epoch = int(config["second_stage_epoch"])
+        if second_stage_epoch <= 0 or epoch < second_stage_epoch:
+            return base_lr
+        return float(config["second_stage_lr"])
     if schedule == "warmup_cosine":
         warmup_epochs = int(config["warmup_epochs"])
         min_lr = float(config["min_lr"])
@@ -1348,6 +1357,13 @@ def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
                 return base
             second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
             return jnp.where(epoch <= float(second_stage_epoch), base, second_lr)
+
+        if schedule == "second_stage":
+            second_stage_epoch = int(lr_config["second_stage_epoch"])
+            if second_stage_epoch <= 0:
+                return base
+            second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
+            return jnp.where(epoch < float(second_stage_epoch), base, second_lr)
 
         if schedule == "warmup_cosine":
             min_lr = jnp.asarray(float(lr_config["min_lr"]), dtype=jnp.float32)
