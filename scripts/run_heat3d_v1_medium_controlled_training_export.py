@@ -1091,6 +1091,17 @@ def _sequence_summary(values) -> dict[str, float | int | None]:
     }
 
 
+def _epoch_monitor_summary(values: list[float]) -> dict[str, float | None]:
+    floats = [float(value) for value in values if np.isfinite(float(value))]
+    if not floats:
+        return {"mean": None, "min": None, "max": None}
+    return {
+        "mean": float(np.mean(floats)),
+        "min": float(np.min(floats)),
+        "max": float(np.max(floats)),
+    }
+
+
 def _selected_steps_or_empty(values: np.ndarray, report_every: int) -> list[tuple[int, float]]:
     if len(values) == 0:
         return []
@@ -1736,6 +1747,11 @@ def _fit_once(
 
         train_step_start = time.perf_counter()
         epoch_train_batch_records: list[dict[str, Any]] = []
+        epoch_train_batch_losses: list[float] = []
+        epoch_grad_norms: list[float] = []
+        epoch_update_norms: list[float] = []
+        epoch_param_norms: list[float] = []
+        epoch_update_to_param_ratios: list[float] = []
         if batch_enabled:
             train_epoch_groups = _epoch_train_groups(
                 train_groups,
@@ -1754,22 +1770,25 @@ def _fit_once(
                 if profile_enabled:
                     _block_until_ready_tree((loss_value, grads))
                 loss_grad_time = time.perf_counter() - loss_grad_start
+                batch_loss_value = float(loss_value)
+                epoch_train_batch_losses.append(batch_loss_value)
 
                 grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
-                grad_norm_time = 0.0
+                grad_norm_start = time.perf_counter()
+                grad_norm = _global_norm(grads)
+                grad_norm_time = time.perf_counter() - grad_norm_start
+                epoch_grad_norms.append(grad_norm)
+                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
                 if grad_norm_reported:
-                    grad_norm_start = time.perf_counter()
-                    grad_norm = _global_norm(grads)
-                    grad_norm_time = time.perf_counter() - grad_norm_start
                     batch_grad_norms.append(grad_norm)
-                    grad_finite = grad_finite and bool(np.isfinite(grad_norm))
                     grad_norm_reported_batch_count += 1
                 else:
                     grad_norm_skipped_batch_count += 1
 
                 optimizer_update_start = time.perf_counter()
                 if optax_state is None:
-                    params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
+                    updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
+                    params = tree.tree_map(lambda param, update: param + update, params, updates)
                 else:
                     updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                     optax_state["state"] = opt_state
@@ -1777,6 +1796,11 @@ def _fit_once(
                 if profile_enabled:
                     _block_until_ready_tree(params)
                 optimizer_update_time = time.perf_counter() - optimizer_update_start
+                update_norm = _global_norm(updates)
+                param_norm = _global_norm(params)
+                epoch_update_norms.append(update_norm)
+                epoch_param_norms.append(param_norm)
+                epoch_update_to_param_ratios.append(update_norm / max(param_norm, 1.0e-12))
 
                 if profile_enabled:
                     total_batch_time = time.perf_counter() - batch_start
@@ -1795,10 +1819,15 @@ def _fit_once(
                         "split": "train",
                         "batch_size": _sample_count(batch_group),
                         "group_count": 1,
+                        "train_batch_loss": float(batch_loss_value),
                         "total_batch_time": float(total_batch_time),
                         "loss_grad_time": float(loss_grad_time),
                         "grad_norm_time": float(grad_norm_time),
+                        "grad_norm": float(grad_norm),
                         "grad_norm_reported": bool(grad_norm_reported),
+                        "update_norm": float(update_norm),
+                        "param_norm": float(param_norm),
+                        "update_to_param_norm_ratio": float(update_norm / max(param_norm, 1.0e-12)),
                         "optimizer_update_time": float(optimizer_update_time),
                         "output_scalar_extraction_time": float(output_scalar_extraction_time),
                         "other_time": float(other_time),
@@ -1822,22 +1851,25 @@ def _fit_once(
             if profile_enabled:
                 _block_until_ready_tree((loss_value, grads))
             loss_grad_time = time.perf_counter() - loss_grad_start
+            batch_loss_value = float(loss_value)
+            epoch_train_batch_losses.append(batch_loss_value)
 
             grad_norm_reported = should_report_grad_norm(grad_norm_report_every, 1)
-            grad_norm_time = 0.0
+            grad_norm_start = time.perf_counter()
+            grad_norm = _global_norm(grads)
+            grad_norm_time = time.perf_counter() - grad_norm_start
+            epoch_grad_norms.append(grad_norm)
+            grad_finite = grad_finite and bool(np.isfinite(grad_norm))
             if grad_norm_reported:
-                grad_norm_start = time.perf_counter()
-                grad_norm = _global_norm(grads)
-                grad_norm_time = time.perf_counter() - grad_norm_start
                 grad_norms.append(grad_norm)
-                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
                 grad_norm_reported_batch_count += 1
             else:
                 grad_norm_skipped_batch_count += 1
 
             optimizer_update_start = time.perf_counter()
             if optax_state is None:
-                params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
+                updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
+                params = tree.tree_map(lambda param, update: param + update, params, updates)
             else:
                 updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                 optax_state["state"] = opt_state
@@ -1845,6 +1877,11 @@ def _fit_once(
             if profile_enabled:
                 _block_until_ready_tree(params)
             optimizer_update_time = time.perf_counter() - optimizer_update_start
+            update_norm = _global_norm(updates)
+            param_norm = _global_norm(params)
+            epoch_update_norms.append(update_norm)
+            epoch_param_norms.append(param_norm)
+            epoch_update_to_param_ratios.append(update_norm / max(param_norm, 1.0e-12))
             if profile_enabled:
                 total_batch_time = time.perf_counter() - batch_start
                 output_scalar_extraction_time = 0.0
@@ -1866,10 +1903,15 @@ def _fit_once(
                     "split": "train",
                     "batch_size": sum(_sample_count(group) for group in train_groups),
                     "group_count": len(train_groups),
+                    "train_batch_loss": float(batch_loss_value),
                     "total_batch_time": float(total_batch_time),
                     "loss_grad_time": float(loss_grad_time),
                     "grad_norm_time": float(grad_norm_time),
+                    "grad_norm": float(grad_norm),
                     "grad_norm_reported": bool(grad_norm_reported),
+                    "update_norm": float(update_norm),
+                    "param_norm": float(param_norm),
+                    "update_to_param_norm_ratio": float(update_norm / max(param_norm, 1.0e-12)),
                     "optimizer_update_time": float(optimizer_update_time),
                     "output_scalar_extraction_time": float(output_scalar_extraction_time),
                     "other_time": float(other_time),
@@ -1936,6 +1978,21 @@ def _fit_once(
         record["train_full_metrics_epoch"] = bool(train_metrics_computed)
         batch_summary = _summarize_batch_records(epoch_train_batch_records) if profile_enabled else {}
         record["train_batch_timing_summary"] = batch_summary
+        batch_loss_summary = _epoch_monitor_summary(epoch_train_batch_losses)
+        grad_norm_summary = _epoch_monitor_summary(epoch_grad_norms)
+        update_norm_summary = _epoch_monitor_summary(epoch_update_norms)
+        param_norm_summary = _epoch_monitor_summary(epoch_param_norms)
+        update_param_ratio_summary = _epoch_monitor_summary(epoch_update_to_param_ratios)
+        record["epoch_mean_train_batch_loss"] = batch_loss_summary["mean"]
+        record["epoch_min_train_batch_loss"] = batch_loss_summary["min"]
+        record["epoch_max_train_batch_loss"] = batch_loss_summary["max"]
+        record["epoch_mean_grad_norm"] = grad_norm_summary["mean"]
+        record["epoch_max_grad_norm"] = grad_norm_summary["max"]
+        record["epoch_mean_update_norm"] = update_norm_summary["mean"]
+        record["epoch_max_update_norm"] = update_norm_summary["max"]
+        record["epoch_mean_param_norm"] = param_norm_summary["mean"]
+        record["epoch_update_to_param_norm_ratio"] = update_param_ratio_summary["mean"]
+        record["epoch_max_update_to_param_norm_ratio"] = update_param_ratio_summary["max"]
         score = float(record[selection_metric])
         if best_score is None or score < best_score:
             best_score = score
@@ -2813,6 +2870,36 @@ def main() -> int:
         "total_update_count": result["total_update_count"],
         "final_best_ratio": result["final_best_ratio"],
         "epoch_lrs": result["epoch_lrs"],
+        "epoch_mean_train_batch_loss": [
+            record.get("epoch_mean_train_batch_loss") for record in result["epoch_history"]
+        ],
+        "epoch_min_train_batch_loss": [
+            record.get("epoch_min_train_batch_loss") for record in result["epoch_history"]
+        ],
+        "epoch_max_train_batch_loss": [
+            record.get("epoch_max_train_batch_loss") for record in result["epoch_history"]
+        ],
+        "epoch_mean_grad_norm": [
+            record.get("epoch_mean_grad_norm") for record in result["epoch_history"]
+        ],
+        "epoch_max_grad_norm": [
+            record.get("epoch_max_grad_norm") for record in result["epoch_history"]
+        ],
+        "epoch_mean_update_norm": [
+            record.get("epoch_mean_update_norm") for record in result["epoch_history"]
+        ],
+        "epoch_max_update_norm": [
+            record.get("epoch_max_update_norm") for record in result["epoch_history"]
+        ],
+        "epoch_mean_param_norm": [
+            record.get("epoch_mean_param_norm") for record in result["epoch_history"]
+        ],
+        "epoch_update_to_param_norm_ratio": [
+            record.get("epoch_update_to_param_norm_ratio") for record in result["epoch_history"]
+        ],
+        "epoch_max_update_to_param_norm_ratio": [
+            record.get("epoch_max_update_to_param_norm_ratio") for record in result["epoch_history"]
+        ],
         "grad_norms": [float(value) for value in result["grad_norms"]],
         "lr_history": [float(value) for value in result["lr_history"]],
         "lr_history_summary": _sequence_summary(result["lr_history"]),
