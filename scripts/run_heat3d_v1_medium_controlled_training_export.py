@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument(
         "--lr-schedule",
-        choices=("constant", "warmup_cosine", "two_stage", "second_stage"),
+        choices=("constant", "warmup_cosine", "rapid_decay", "two_stage", "second_stage"),
         default="constant",
     )
     parser.add_argument("--warmup-epochs", type=int, default=0)
@@ -1012,6 +1012,16 @@ def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
             progress = min(max((epoch - 1) / decay_epochs, 0.0), 1.0)
         cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
         return min_lr + cosine * (base_lr - min_lr)
+    if schedule == "rapid_decay":
+        min_lr = float(config["min_lr"])
+        mid_lr = max(min_lr, base_lr * 0.1)
+        if epoch <= 1:
+            return base_lr
+        if epoch <= 10:
+            progress = min(max((epoch - 1) / 9.0, 0.0), 1.0)
+            return base_lr + progress * (mid_lr - base_lr)
+        progress = min(max((epoch - 10) / max(epochs - 10, 1), 0.0), 1.0)
+        return mid_lr + progress * (min_lr - mid_lr)
     raise ValueError(f"Unsupported lr schedule: {schedule}")
 
 
@@ -1344,26 +1354,29 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
 def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
     schedule = lr_config["lr_schedule"]
     base_lr = float(lr_config["lr"])
+    updates_per_epoch = max(int(lr_config.get("updates_per_epoch", 1)), 1)
 
     if schedule == "constant":
         return base_lr
 
     def learning_rate(count):
-        epoch = jnp.asarray(count, dtype=jnp.float32) + 1.0
+        update_count = jnp.asarray(count, dtype=jnp.float32)
+        epoch = jnp.floor(update_count / float(updates_per_epoch)) + 1.0
+        legacy_epoch = update_count + 1.0
         base = jnp.asarray(base_lr, dtype=jnp.float32)
         if schedule == "two_stage":
             second_stage_epoch = int(lr_config["second_stage_epoch"])
             if second_stage_epoch <= 0:
                 return base
             second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
-            return jnp.where(epoch <= float(second_stage_epoch), base, second_lr)
+            return jnp.where(legacy_epoch <= float(second_stage_epoch), base, second_lr)
 
         if schedule == "second_stage":
             second_stage_epoch = int(lr_config["second_stage_epoch"])
             if second_stage_epoch <= 0:
                 return base
             second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
-            return jnp.where(epoch < float(second_stage_epoch), base, second_lr)
+            return jnp.where(legacy_epoch < float(second_stage_epoch), base, second_lr)
 
         if schedule == "warmup_cosine":
             min_lr = jnp.asarray(float(lr_config["min_lr"]), dtype=jnp.float32)
@@ -1379,6 +1392,15 @@ def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
             decay_epochs = max(epochs - 1, 1)
             decay_progress = jnp.clip((epoch - 1.0) / float(decay_epochs), 0.0, 1.0)
             return min_lr + 0.5 * (1.0 + jnp.cos(jnp.pi * decay_progress)) * (base - min_lr)
+
+        if schedule == "rapid_decay":
+            min_lr = jnp.asarray(float(lr_config["min_lr"]), dtype=jnp.float32)
+            mid_lr = jnp.maximum(min_lr, base * jnp.asarray(0.1, dtype=jnp.float32))
+            early_progress = jnp.clip((epoch - 1.0) / 9.0, 0.0, 1.0)
+            early_lr = base + early_progress * (mid_lr - base)
+            late_progress = jnp.clip((epoch - 10.0) / float(max(epochs - 10, 1)), 0.0, 1.0)
+            late_lr = mid_lr + late_progress * (min_lr - mid_lr)
+            return jnp.where(epoch <= 10.0, early_lr, late_lr)
 
         raise ValueError(f"Unsupported lr schedule: {schedule}")
 
@@ -1628,11 +1650,16 @@ def _fit_once(
     _record_timing(timings, "model_init", init_start)
     _progress(progress_enabled, "startup", "model parameters initialized", init_start)
 
+    batch_enabled = batch_config.get("batch_size") is not None
+    metrics_fn = _weighted_metrics if batch_enabled else _metrics
+    updates_per_epoch = int(len(train_groups) if batch_enabled else 1)
+
     initial_start = time.perf_counter()
     _progress(progress_enabled, "startup", "computing initial train/valid losses ...")
     initial_loss_config = _loss_config_for_epoch(loss_config, 1)
     train_initial_components = _loss_components(model, params, train_groups, stats, initial_loss_config)
     valid_initial_components = _loss_components(model, params, valid_groups, stats, initial_loss_config)
+    valid_initial_metrics = metrics_fn(model, params, valid_groups, stats)
     _record_timing(timings, "initial_loss", initial_start)
     _progress(progress_enabled, "startup", "initial train/valid losses computed", initial_start)
     train_losses = [float(train_initial_components["total_loss"])]
@@ -1655,14 +1682,14 @@ def _fit_once(
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
     final_epoch_valid_metrics = None
+    optax_lr_config = dict(lr_config)
+    optax_lr_config["updates_per_epoch"] = updates_per_epoch
     optax_state = _build_optax_state(
         params,
         epochs=epochs,
-        lr_config=lr_config,
+        lr_config=optax_lr_config,
         optimizer_config=optimizer_config,
     )
-    batch_enabled = batch_config.get("batch_size") is not None
-    metrics_fn = _weighted_metrics if batch_enabled else _metrics
     train_metrics_epoch_values = train_metrics_epochs(train_metrics_schedule, epochs)
     train_metrics_epoch_lookup = set(train_metrics_epoch_values)
     if batch_enabled:
@@ -1963,6 +1990,10 @@ def _fit_once(
         "train_losses": np.asarray(train_losses, dtype=np.float64),
         "train_loss_epochs": np.asarray(train_loss_epochs, dtype=np.int64),
         "valid_losses": np.asarray(valid_losses, dtype=np.float64),
+        "initial_train_loss": float(train_initial_components["total_loss"]),
+        "initial_valid_loss": float(valid_initial_components["total_loss"]),
+        "initial_valid_base_mse": float(valid_initial_components["base_mse"]),
+        "initial_valid_raw_deltaT_mse": float(valid_initial_metrics["raw_delta_mse"]),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
         "grad_norm_report_every": int(grad_norm_report_every),
         "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
@@ -1970,6 +2001,9 @@ def _fit_once(
         "grad_norm_skipped_batch_count": int(grad_norm_skipped_batch_count),
         "epoch_batch_counts": np.asarray(epoch_batch_counts, dtype=np.int64),
         "lr_history": np.asarray(lr_history, dtype=np.float64),
+        "epoch_lrs": [float(value) for value in lr_history],
+        "updates_per_epoch": int(updates_per_epoch),
+        "total_update_count": int(sum(epoch_batch_counts)),
         "loss_weight_history": loss_weight_history,
         "train_metrics": train_metrics,
         "valid_metrics": valid_metrics,
@@ -1984,6 +2018,11 @@ def _fit_once(
         "best_score": best_score,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
+        "final_best_ratio": (
+            float(valid_losses[-1]) / float(best_record["valid_loss"])
+            if best_record is not None and best_record.get("valid_loss") not in (None, 0.0)
+            else None
+        ),
         "final_train_loss_components": _loss_components_payload(final_train_components),
         "final_valid_loss_components": _loss_components_payload(final_valid_components),
         "final_metrics_reused": bool(final_metrics_reused),
@@ -2709,6 +2748,12 @@ def main() -> int:
         "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
         "train_metrics_schedule": result["train_metrics_schedule"],
         "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
+        "initial_valid_loss": result["initial_valid_loss"],
+        "initial_valid_raw_deltaT_mse": result["initial_valid_raw_deltaT_mse"],
+        "updates_per_epoch": result["updates_per_epoch"],
+        "total_update_count": result["total_update_count"],
+        "final_best_ratio": result["final_best_ratio"],
+        "epoch_lrs": result["epoch_lrs"],
         "grad_norm_report_every": result["grad_norm_report_every"],
         "grad_norm_reported_batch_count": result["grad_norm_reported_batch_count"],
         "grad_norm_skipped_batch_count": result["grad_norm_skipped_batch_count"],
@@ -2760,6 +2805,14 @@ def main() -> int:
         "train_losses": [float(value) for value in result["train_losses"]],
         "train_loss_epochs": [int(value) for value in result["train_loss_epochs"]],
         "valid_losses": [float(value) for value in result["valid_losses"]],
+        "initial_train_loss": result["initial_train_loss"],
+        "initial_valid_loss": result["initial_valid_loss"],
+        "initial_valid_base_mse": result["initial_valid_base_mse"],
+        "initial_valid_raw_deltaT_mse": result["initial_valid_raw_deltaT_mse"],
+        "updates_per_epoch": result["updates_per_epoch"],
+        "total_update_count": result["total_update_count"],
+        "final_best_ratio": result["final_best_ratio"],
+        "epoch_lrs": result["epoch_lrs"],
         "grad_norms": [float(value) for value in result["grad_norms"]],
         "lr_history": [float(value) for value in result["lr_history"]],
         "lr_history_summary": _sequence_summary(result["lr_history"]),
