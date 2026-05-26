@@ -24,6 +24,12 @@ def parse_args() -> argparse.Namespace:
         description="Analyze Heat3D v2 train/valid split metadata and label distributions."
     )
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help="Optional split-map JSON that overrides sample_meta split labels.",
+    )
     parser.add_argument("--output-md", type=Path, default=None)
     parser.add_argument("--splits", default="train,valid")
     return parser.parse_args()
@@ -44,6 +50,16 @@ def _metadata(sample_dir: Path) -> dict[str, Any]:
         for key, value in data.items():
             merged.setdefault(key, value)
     return merged
+
+
+def _load_split_map(path: Path | None) -> dict[str, str]:
+    if path is None:
+        return {}
+    loaded = _load_json(path)
+    mapping = loaded.get("sample_splits", loaded)
+    if not isinstance(mapping, dict):
+        raise ValueError(f"{path}: split map must be a mapping or contain sample_splits")
+    return {str(sample_id): str(split) for sample_id, split in mapping.items()}
 
 
 def _field(metadata: dict[str, Any], *keys: str, default: Any = "missing") -> Any:
@@ -177,11 +193,12 @@ def _metric_table(metric_by_split: dict[str, list[float]], title: str, splits: l
     return lines
 
 
-def build_report(subset: Path, splits: list[str]) -> str:
+def build_report(subset: Path, splits: list[str], split_map: dict[str, str] | None = None) -> str:
     sample_root = subset / "samples"
     if not sample_root.exists():
         raise FileNotFoundError(f"Missing samples directory: {sample_root}")
 
+    split_map = split_map or {}
     split_set = set(splits)
     sample_counts: Counter[str] = Counter()
     available_fields: dict[str, set[str]] = defaultdict(set)
@@ -212,7 +229,8 @@ def build_report(subset: Path, splits: list[str]) -> str:
 
     for sample_dir in sorted(path for path in sample_root.iterdir() if path.is_dir()):
         metadata = _metadata(sample_dir)
-        split = str(_field(metadata, "split", default="missing"))
+        sample_id = str(metadata.get("sample_id") or sample_dir.name)
+        split = split_map.get(sample_id, str(_field(metadata, "split", default="missing")))
         if split not in split_set:
             continue
         sample_counts[split] += 1
@@ -257,6 +275,8 @@ def build_report(subset: Path, splits: list[str]) -> str:
         "Scope: read-only split diagnostics; not a formal benchmark.",
         "",
         f"Subset: `{subset}`",
+        "",
+        f"Split source: `{'split_map' if split_map else 'sample_meta'}`",
         "",
         "## Sample Counts",
         "",
@@ -318,7 +338,8 @@ def build_report(subset: Path, splits: list[str]) -> str:
 def main() -> int:
     args = parse_args()
     splits = [split.strip() for split in args.splits.split(",") if split.strip()]
-    report = build_report(args.subset, splits)
+    split_map = _load_split_map(args.split_map)
+    report = build_report(args.subset, splits, split_map=split_map)
     if args.output_md is not None:
         args.output_md.parent.mkdir(parents=True, exist_ok=True)
         args.output_md.write_text(report, encoding="utf-8")
