@@ -96,10 +96,7 @@ def _check_config_draft() -> None:
         "--output-dir" in command and "output/heat3d_v2_runs/m1_B192_base_mse_stratified_seed0" in command,
         "command must use the stratified output dir",
     )
-    _require(
-        "--split-map" not in command,
-        "runner command unexpectedly contains split-map support; update this smoke if support is implemented",
-    )
+    _require("--split-map" in command and str(SPLIT_MAP) in command, "command must include split-map support")
 
 
 def main() -> int:

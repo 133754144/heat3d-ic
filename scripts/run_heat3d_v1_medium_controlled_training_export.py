@@ -63,6 +63,16 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help=(
+            "Optional JSON sample_id-to-split map. When provided, train uses "
+            "split=train, primary validation uses valid_iid, and valid_stress "
+            "is reported as diagnostics only."
+        ),
+    )
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument(
@@ -764,6 +774,42 @@ def _require_train_valid_splits(split_ids: dict[str, list[str]]) -> None:
             "Expected non-empty train and valid splits for controlled training export, "
             f"found train={len(train_ids)} valid={len(valid_ids)}"
         )
+
+
+def _load_external_split_map(path: Path) -> dict[str, list[str]]:
+    with path.open("r", encoding="utf-8") as file:
+        loaded = json.load(file)
+    mapping = loaded.get("sample_splits", loaded)
+    if not isinstance(mapping, dict):
+        raise ValueError(f"--split-map must be a mapping or contain sample_splits: {path}")
+    split_ids: dict[str, list[str]] = {}
+    for sample_id, split in mapping.items():
+        if not isinstance(sample_id, str) or not sample_id:
+            raise ValueError(f"--split-map contains invalid sample_id: {sample_id!r}")
+        if not isinstance(split, str) or not split:
+            raise ValueError(f"--split-map contains invalid split for {sample_id!r}: {split!r}")
+        split_ids.setdefault(split, []).append(sample_id)
+    return {split: sorted(ids) for split, ids in split_ids.items()}
+
+
+def _resolve_training_splits(
+    sample_root: Path,
+    split_map_path: Path | None,
+) -> tuple[dict[str, list[str]], str, str, str | None]:
+    if split_map_path is None:
+        split_ids = _subset_split_ids(sample_root)
+        _require_train_valid_splits(split_ids)
+        return split_ids, "sample_meta", "valid", None
+
+    split_ids = _load_external_split_map(split_map_path)
+    train_ids = split_ids.get("train", [])
+    valid_iid_ids = split_ids.get("valid_iid", [])
+    if not train_ids or not valid_iid_ids:
+        raise ValueError(
+            "Expected non-empty train and valid_iid splits for --split-map, "
+            f"found train={len(train_ids)} valid_iid={len(valid_iid_ids)}"
+        )
+    return split_ids, "split_map", "valid_iid", "valid_stress" if split_ids.get("valid_stress") else None
 
 
 def _should_report_epoch(epoch: int, epochs: int, report_every: int) -> bool:
@@ -1471,14 +1517,32 @@ def _best_selection_payload(
     best_record = result.get("best_record") or {}
     return {
         "selection_metric": result.get("selection_metric"),
+        "primary_validation_split": result.get("primary_validation_split"),
+        "stress_validation_split": result.get("stress_validation_split"),
         "best_epoch": best_record.get("epoch"),
         "best_valid_loss": best_record.get("valid_loss"),
+        "best_valid_iid_loss": best_record.get("valid_iid_loss"),
+        "best_valid_stress_loss": best_record.get("valid_stress_loss"),
         "best_valid_raw_deltaT_mse": best_record.get("valid_raw_deltaT_mse"),
+        "best_valid_iid_raw_deltaT_mse": best_record.get("valid_iid_raw_deltaT_mse"),
+        "best_valid_stress_raw_deltaT_mse": best_record.get("valid_stress_raw_deltaT_mse"),
         "best_valid_base_mse": best_record.get("valid_base_mse"),
+        "best_valid_iid_base_mse": best_record.get("valid_iid_base_mse"),
+        "best_valid_stress_base_mse": best_record.get("valid_stress_base_mse"),
         "final_epoch": result.get("final_epoch"),
         "final_valid_loss": result.get("final_valid_loss"),
+        "final_valid_iid_loss": result.get("final_valid_iid_loss"),
+        "final_valid_stress_loss": result.get("final_valid_stress_loss"),
         "final_valid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
+        "final_valid_iid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
+        "final_valid_stress_raw_deltaT_mse": result.get("final_valid_stress_raw_deltaT_mse"),
         "final_valid_base_mse": result.get("final_valid_loss_components", {}).get("base_mse"),
+        "final_valid_iid_base_mse": (
+            result.get("final_valid_iid_loss_components", {}) or {}
+        ).get("base_mse"),
+        "final_valid_stress_base_mse": (
+            result.get("final_valid_stress_loss_components", {}) or {}
+        ).get("base_mse"),
         "best_predictions_saved": bool(best_predictions_saved),
         "best_predictions_path": str(best_predictions_path) if best_predictions_path is not None else None,
     }
@@ -1492,14 +1556,22 @@ def _epoch_history_record(
     valid_components: dict[str, Any],
     valid_metrics: dict[str, Any],
     train_metrics: dict[str, Any] | None,
+    *,
+    primary_validation_split: str = "valid",
+    valid_stress_components: dict[str, Any] | None = None,
+    valid_stress_metrics: dict[str, Any] | None = None,
+    stress_validation_split: str | None = None,
 ) -> dict[str, Any]:
     record = {
         "epoch": int(epoch),
         "lr": float(lr_epoch),
+        "primary_validation_split": primary_validation_split,
         "train_loss": _maybe_float(train_components, "total_loss"),
         "valid_loss": float(valid_components["total_loss"]),
+        "valid_iid_loss": float(valid_components["total_loss"]) if primary_validation_split == "valid_iid" else None,
         "train_base_mse": _maybe_float(train_components, "base_mse"),
         "valid_base_mse": float(valid_components["base_mse"]),
+        "valid_iid_base_mse": float(valid_components["base_mse"]) if primary_validation_split == "valid_iid" else None,
         "train_background_penalty": _maybe_float(train_components, "background_penalty"),
         "valid_background_penalty": float(valid_components["background_penalty"]),
         "train_background_l1": _maybe_float(train_components, "background_l1"),
@@ -1544,10 +1616,26 @@ def _epoch_history_record(
         "valid_hotspot_raw_mae": float(valid_components["hotspot_raw_mae"]),
         "train_raw_deltaT_mse": _maybe_float(train_metrics, "raw_delta_mse"),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
+        "valid_iid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]) if primary_validation_split == "valid_iid" else None,
         "train_recovered_T_mse": _maybe_float(train_metrics, "recovered_temperature_mse"),
         "valid_recovered_T_mse": float(valid_metrics["recovered_temperature_mse"]),
+        "valid_iid_recovered_T_mse": (
+            float(valid_metrics["recovered_temperature_mse"]) if primary_validation_split == "valid_iid" else None
+        ),
         "train_full_metrics_computed": train_components is not None and train_metrics is not None,
     }
+    if valid_stress_components is not None and valid_stress_metrics is not None:
+        record.update(
+            {
+                "stress_validation_split": stress_validation_split or "valid_stress",
+                "valid_stress_loss": float(valid_stress_components["total_loss"]),
+                "valid_stress_base_mse": float(valid_stress_components["base_mse"]),
+                "valid_stress_raw_deltaT_mse": float(valid_stress_metrics["raw_delta_mse"]),
+                "valid_stress_recovered_T_mse": float(valid_stress_metrics["recovered_temperature_mse"]),
+                "valid_stress_bg_signed_bias": float(valid_stress_components["bg_signed_bias"]),
+                "valid_stress_hotspot_raw_mae": float(valid_stress_components["hotspot_raw_mae"]),
+            }
+        )
     record.update(_current_weight_payload(current_loss_config))
     return record
 
@@ -1561,7 +1649,9 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             f"lr={record['lr']:.3e} "
             f"train_loss={_format_progress_value(record['train_loss'])} "
             f"train_full_metrics={'computed' if record.get('train_full_metrics_computed') else 'skipped'} "
+            f"primary_valid={record.get('primary_validation_split', 'valid')} "
             f"valid_loss={record['valid_loss']:.6e} "
+            f"valid_stress_loss={_format_progress_value(record.get('valid_stress_loss'))} "
             f"valid_base_mse={record['valid_base_mse']:.6e} "
             f"valid_bg_bias={record['valid_bg_signed_bias']:.6e} "
             f"valid_rel={record['valid_background_relative_abs']:.6e} "
@@ -1580,7 +1670,9 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"lr={record['lr']:.8e} "
         f"train_loss={record['train_loss']:.8e} "
         f"train_full_metrics={'computed' if record.get('train_full_metrics_computed') else 'skipped'} "
+        f"primary_valid={record.get('primary_validation_split', 'valid')} "
         f"valid_loss={record['valid_loss']:.8e} "
+        f"valid_stress_loss={_format_progress_value(record.get('valid_stress_loss'))} "
         f"train_base_mse={record['train_base_mse']:.8e} "
         f"valid_base_mse={record['valid_base_mse']:.8e} "
         f"train_background_penalty={record['train_background_penalty']:.8e} "
@@ -1632,6 +1724,7 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
 def _fit_once(
     train_groups: list[dict],
     valid_groups: list[dict],
+    valid_stress_groups: list[dict],
     stats: dict,
     epochs: int,
     lr_config: dict[str, Any],
@@ -1648,6 +1741,8 @@ def _fit_once(
     progress_enabled: bool,
     timings: dict[str, float] | None = None,
     profile_enabled: bool = False,
+    primary_validation_split: str = "valid",
+    stress_validation_split: str | None = None,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
@@ -1671,11 +1766,26 @@ def _fit_once(
     train_initial_components = _loss_components(model, params, train_groups, stats, initial_loss_config)
     valid_initial_components = _loss_components(model, params, valid_groups, stats, initial_loss_config)
     valid_initial_metrics = metrics_fn(model, params, valid_groups, stats)
+    valid_stress_initial_components = (
+        _loss_components(model, params, valid_stress_groups, stats, initial_loss_config)
+        if valid_stress_groups
+        else None
+    )
+    valid_stress_initial_metrics = (
+        metrics_fn(model, params, valid_stress_groups, stats)
+        if valid_stress_groups
+        else None
+    )
     _record_timing(timings, "initial_loss", initial_start)
     _progress(progress_enabled, "startup", "initial train/valid losses computed", initial_start)
     train_losses = [float(train_initial_components["total_loss"])]
     train_loss_epochs = [0]
     valid_losses = [float(valid_initial_components["total_loss"])]
+    valid_stress_losses = (
+        [float(valid_stress_initial_components["total_loss"])]
+        if valid_stress_initial_components is not None
+        else []
+    )
     grad_norms = []
     grad_norm_reported_batch_count = 0
     grad_norm_skipped_batch_count = 0
@@ -1693,6 +1803,8 @@ def _fit_once(
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
     final_epoch_valid_metrics = None
+    final_epoch_valid_stress_components = None
+    final_epoch_valid_stress_metrics = None
     optax_lr_config = dict(lr_config)
     optax_lr_config["updates_per_epoch"] = updates_per_epoch
     optax_state = _build_optax_state(
@@ -1953,15 +2065,43 @@ def _fit_once(
             valid_metrics = metrics_fn(model, params, valid_groups, stats)
         validation_time = time.perf_counter() - validation_start
 
+        valid_stress_components = None
+        valid_stress_metrics = None
+        valid_stress_time = 0.0
+        if valid_stress_groups:
+            valid_stress_start = time.perf_counter()
+            if profile_enabled:
+                valid_stress_components, valid_stress_metrics, epoch_stress_records = _evaluate_groups_profiled(
+                    model,
+                    params,
+                    valid_stress_groups,
+                    stats,
+                    current_loss_config,
+                    metrics_fn,
+                    epoch=epoch,
+                    split=stress_validation_split or "valid_stress",
+                )
+                validation_batch_records.extend(epoch_stress_records)
+            else:
+                valid_stress_components = _loss_components(
+                    model, params, valid_stress_groups, stats, current_loss_config
+                )
+                valid_stress_metrics = metrics_fn(model, params, valid_stress_groups, stats)
+            valid_stress_time = time.perf_counter() - valid_stress_start
+
         if train_components is not None:
             train_losses.append(float(train_components["total_loss"]))
             train_loss_epochs.append(int(epoch))
         valid_losses.append(float(valid_components["total_loss"]))
+        if valid_stress_components is not None:
+            valid_stress_losses.append(float(valid_stress_components["total_loss"]))
         if epoch == epochs and should_reuse_final_metrics(train_metrics_computed):
             final_epoch_train_components = train_components
             final_epoch_train_metrics = train_metrics
             final_epoch_valid_components = valid_components
             final_epoch_valid_metrics = valid_metrics
+            final_epoch_valid_stress_components = valid_stress_components
+            final_epoch_valid_stress_metrics = valid_stress_metrics
         record = _epoch_history_record(
             epoch,
             lr_epoch,
@@ -1970,6 +2110,10 @@ def _fit_once(
             valid_components,
             valid_metrics,
             train_metrics,
+            primary_validation_split=primary_validation_split,
+            valid_stress_components=valid_stress_components,
+            valid_stress_metrics=valid_stress_metrics,
+            stress_validation_split=stress_validation_split,
         )
         record["train_batch_count"] = int(epoch_batch_counts[-1])
         record["valid_batch_count"] = int(len(valid_groups))
@@ -2001,6 +2145,7 @@ def _fit_once(
         record["epoch_train_time_s"] = float(train_step_time)
         record["epoch_train_metrics_time_s"] = float(train_metrics_time)
         record["epoch_validation_time_s"] = float(validation_time)
+        record["epoch_valid_stress_time_s"] = float(valid_stress_time)
         record["epoch_total_time_s"] = float(time.perf_counter() - epoch_start)
         epoch_history.append(record)
         if should_report:
@@ -2021,25 +2166,36 @@ def _fit_once(
         valid_metrics = final_epoch_valid_metrics
         final_train_components = final_epoch_train_components
         final_valid_components = final_epoch_valid_components
+        final_valid_stress_components = final_epoch_valid_stress_components
+        final_valid_stress_metrics = final_epoch_valid_stress_metrics
         _progress(progress_enabled, "train", "final train/valid metrics reused from last epoch full metrics")
     else:
         _progress(progress_enabled, "train", "computing final train/valid metrics ...")
         final_metrics_start = time.perf_counter()
         train_metrics = metrics_fn(model, params, train_groups, stats)
         valid_metrics = metrics_fn(model, params, valid_groups, stats)
+        final_valid_stress_metrics = metrics_fn(model, params, valid_stress_groups, stats) if valid_stress_groups else None
         final_loss_config = _loss_config_for_epoch(loss_config, epochs)
         final_train_components = _loss_components(model, params, train_groups, stats, final_loss_config)
         final_valid_components = _loss_components(model, params, valid_groups, stats, final_loss_config)
+        final_valid_stress_components = (
+            _loss_components(model, params, valid_stress_groups, stats, final_loss_config)
+            if valid_stress_groups
+            else None
+        )
         _record_timing(timings, "final_metrics", final_metrics_start)
         _progress(progress_enabled, "train", "final train/valid metrics computed", final_metrics_start)
     status_ok = (
         grad_finite
         and train_metrics["finite_ok"]
         and valid_metrics["finite_ok"]
+        and (final_valid_stress_metrics is None or final_valid_stress_metrics["finite_ok"])
         and train_metrics["shape_ok"]
         and valid_metrics["shape_ok"]
+        and (final_valid_stress_metrics is None or final_valid_stress_metrics["shape_ok"])
         and bool(np.all(np.isfinite(train_losses)))
         and bool(np.all(np.isfinite(valid_losses)))
+        and (not valid_stress_losses or bool(np.all(np.isfinite(valid_stress_losses))))
     )
     return {
         "model": model,
@@ -2047,10 +2203,24 @@ def _fit_once(
         "train_losses": np.asarray(train_losses, dtype=np.float64),
         "train_loss_epochs": np.asarray(train_loss_epochs, dtype=np.int64),
         "valid_losses": np.asarray(valid_losses, dtype=np.float64),
+        "valid_iid_losses": np.asarray(valid_losses, dtype=np.float64) if primary_validation_split == "valid_iid" else np.asarray([], dtype=np.float64),
+        "valid_stress_losses": np.asarray(valid_stress_losses, dtype=np.float64),
         "initial_train_loss": float(train_initial_components["total_loss"]),
         "initial_valid_loss": float(valid_initial_components["total_loss"]),
+        "initial_valid_iid_loss": float(valid_initial_components["total_loss"]) if primary_validation_split == "valid_iid" else None,
         "initial_valid_base_mse": float(valid_initial_components["base_mse"]),
         "initial_valid_raw_deltaT_mse": float(valid_initial_metrics["raw_delta_mse"]),
+        "initial_valid_iid_raw_deltaT_mse": float(valid_initial_metrics["raw_delta_mse"]) if primary_validation_split == "valid_iid" else None,
+        "initial_valid_stress_loss": (
+            float(valid_stress_initial_components["total_loss"])
+            if valid_stress_initial_components is not None
+            else None
+        ),
+        "initial_valid_stress_raw_deltaT_mse": (
+            float(valid_stress_initial_metrics["raw_delta_mse"])
+            if valid_stress_initial_metrics is not None
+            else None
+        ),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
         "grad_norm_report_every": int(grad_norm_report_every),
         "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
@@ -2070,11 +2240,24 @@ def _fit_once(
         "train_metrics_schedule": train_metrics_schedule,
         "train_metrics_epochs": train_metrics_epoch_values,
         "selection_metric": selection_metric,
+        "primary_validation_split": primary_validation_split,
+        "stress_validation_split": stress_validation_split,
         "best_record": best_record,
         "best_params": best_params,
         "best_score": best_score,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
+        "final_valid_iid_loss": float(valid_losses[-1]) if primary_validation_split == "valid_iid" else None,
+        "final_valid_stress_loss": (
+            float(valid_stress_losses[-1])
+            if valid_stress_losses
+            else None
+        ),
+        "final_valid_stress_raw_deltaT_mse": (
+            float(final_valid_stress_metrics["raw_delta_mse"])
+            if final_valid_stress_metrics is not None
+            else None
+        ),
         "final_best_ratio": (
             float(valid_losses[-1]) / float(best_record["valid_loss"])
             if best_record is not None and best_record.get("valid_loss") not in (None, 0.0)
@@ -2082,6 +2265,19 @@ def _fit_once(
         ),
         "final_train_loss_components": _loss_components_payload(final_train_components),
         "final_valid_loss_components": _loss_components_payload(final_valid_components),
+        "final_valid_iid_loss_components": (
+            _loss_components_payload(final_valid_components) if primary_validation_split == "valid_iid" else None
+        ),
+        "final_valid_stress_loss_components": (
+            _loss_components_payload(final_valid_stress_components)
+            if final_valid_stress_components is not None
+            else None
+        ),
+        "valid_stress_metrics": (
+            final_valid_stress_metrics
+            if final_valid_stress_metrics is not None
+            else None
+        ),
         "final_metrics_reused": bool(final_metrics_reused),
         "final_metrics_reuse_source": final_metrics_reuse_source,
         "final_metrics_time_s": float(timings.get("final_metrics", 0.0)),
@@ -2144,6 +2340,9 @@ def _print_startup_summary(
     *,
     sample_root: Path,
     split_counts: dict[str, int],
+    split_source: str,
+    primary_validation_split: str,
+    stress_validation_split: str | None,
     output_dir: Path,
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
@@ -2158,6 +2357,12 @@ def _print_startup_summary(
     _emit("  scope: research reference diagnostics only; not formal model performance")
     _emit(f"  subset: {sample_root}")
     _emit(f"  split counts: {split_counts}")
+    _emit(
+        "  split mode: "
+        f"source={split_source} split_map={args.split_map} "
+        f"primary_validation_split={primary_validation_split} "
+        f"stress_validation_split={stress_validation_split}"
+    )
     _emit(
         "  run: "
         f"epochs={args.epochs} lr={args.lr} lr_schedule={lr_config['lr_schedule']} "
@@ -2277,6 +2482,13 @@ def _print_final_summary(
         f"valid_base_mse={result['final_valid_loss_components']['base_mse']:.8e} "
         f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e}"
     )
+    if result.get("primary_validation_split") == "valid_iid":
+        _emit(
+            "  final stratified: "
+            f"valid_iid_loss={result['final_valid_iid_loss']:.8e} "
+            f"valid_stress_loss={_format_progress_value(result.get('final_valid_stress_loss'))} "
+            f"valid_stress_raw_deltaT_mse={_format_progress_value(result.get('final_valid_stress_raw_deltaT_mse'))}"
+        )
     _emit(
         "  best-valid: "
         f"metric={args.selection_metric} epoch={best.get('epoch')} "
@@ -2588,12 +2800,15 @@ def main() -> int:
     dataset_start = time.perf_counter()
     sample_root = _sample_root(args.subset)
     _progress(progress_enabled, "startup", f"loading dataset from {sample_root} ...")
-    split_ids = _subset_split_ids(sample_root)
-    _require_train_valid_splits(split_ids)
+    split_ids, split_source, primary_validation_split, stress_validation_split = _resolve_training_splits(
+        sample_root,
+        args.split_map,
+    )
 
     all_ids = sorted(sample_id for ids in split_ids.values() for sample_id in ids)
     train_ids = split_ids["train"]
-    valid_ids = split_ids["valid"]
+    valid_ids = split_ids[primary_validation_split]
+    valid_stress_ids = split_ids.get(stress_validation_split, []) if stress_validation_split is not None else []
     split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
     for sample_id in all_ids:
         if not (sample_root / sample_id / "temperature.npy").is_file():
@@ -2607,11 +2822,15 @@ def main() -> int:
 
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
+    valid_stress_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_stress_ids]
     all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
     _progress(
         progress_enabled,
         "startup",
-        f"dataset loaded: sample_count={len(dataset)} split_counts={split_counts}",
+        (
+            f"dataset loaded: sample_count={len(dataset)} split_source={split_source} "
+            f"primary_validation_split={primary_validation_split} split_counts={split_counts}"
+        ),
         dataset_start,
     )
     _record_timing(timings, "dataset_load", dataset_start)
@@ -2648,12 +2867,27 @@ def main() -> int:
         valid_examples,
         stats,
         builder,
-        "valid",
+        primary_validation_split,
         progress_detail_enabled,
         args.progress_detail,
         batch_size=batch_config["validation_batch_size"],
         drop_last=False,
         profile_counts=profile_counts if profile_enabled else None,
+    )
+    valid_stress_groups = (
+        _make_groups_with_progress(
+            valid_stress_examples,
+            stats,
+            builder,
+            stress_validation_split,
+            progress_detail_enabled,
+            args.progress_detail,
+            batch_size=batch_config["validation_batch_size"],
+            drop_last=False,
+            profile_counts=profile_counts if profile_enabled else None,
+        )
+        if stress_validation_split is not None and valid_stress_examples
+        else []
     )
     all_groups = _make_groups_with_progress(
         all_examples,
@@ -2667,7 +2901,7 @@ def main() -> int:
         profile_counts=profile_counts if profile_enabled else None,
     )
     _require_nonempty_groups(train_groups, "train")
-    _require_nonempty_groups(valid_groups, "valid")
+    _require_nonempty_groups(valid_groups, primary_validation_split)
     _require_nonempty_groups(all_groups, "all")
     _record_timing(timings, "group_build", group_start)
     _progress(
@@ -2675,7 +2909,8 @@ def main() -> int:
         "startup",
         (
             "groups built: "
-            f"train_groups={len(train_groups)} valid_groups={len(valid_groups)} all_groups={len(all_groups)}"
+            f"train_groups={len(train_groups)} {primary_validation_split}_groups={len(valid_groups)} "
+            f"valid_stress_groups={len(valid_stress_groups)} all_groups={len(all_groups)}"
         ),
         group_start,
     )
@@ -2684,6 +2919,9 @@ def main() -> int:
         args,
         sample_root=sample_root,
         split_counts=split_counts,
+        split_source=split_source,
+        primary_validation_split=primary_validation_split,
+        stress_validation_split=stress_validation_split,
         output_dir=output_dir,
         loss_config=loss_config,
         lr_config=lr_config,
@@ -2695,6 +2933,7 @@ def main() -> int:
     result = _fit_once(
         train_groups,
         valid_groups,
+        valid_stress_groups,
         stats,
         args.epochs,
         lr_config,
@@ -2711,6 +2950,8 @@ def main() -> int:
         progress_enabled,
         timings,
         profile_enabled=profile_enabled,
+        primary_validation_split=primary_validation_split,
+        stress_validation_split=stress_validation_split,
     )
     predictions_path = output_dir / "predictions.npz"
     predictions: dict[str, np.ndarray] = {}
@@ -2779,6 +3020,10 @@ def main() -> int:
     run_config = {
         "diagnostic_scope": "controlled training export smoke; not formal model performance",
         "subset": str(sample_root),
+        "split_map_path": str(args.split_map) if args.split_map is not None else None,
+        "split_source": split_source,
+        "primary_validation_split": primary_validation_split,
+        "stress_validation_split": stress_validation_split,
         "epochs": args.epochs,
         "lr": args.lr,
         "lr_schedule": lr_config["lr_schedule"],
@@ -2806,7 +3051,11 @@ def main() -> int:
         "train_metrics_schedule": result["train_metrics_schedule"],
         "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
         "initial_valid_loss": result["initial_valid_loss"],
+        "initial_valid_iid_loss": result["initial_valid_iid_loss"],
+        "initial_valid_stress_loss": result["initial_valid_stress_loss"],
         "initial_valid_raw_deltaT_mse": result["initial_valid_raw_deltaT_mse"],
+        "initial_valid_iid_raw_deltaT_mse": result["initial_valid_iid_raw_deltaT_mse"],
+        "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
         "final_best_ratio": result["final_best_ratio"],
@@ -2851,21 +3100,37 @@ def main() -> int:
         "timing_profile_counts": dict(profile_counts),
         "train_ids": train_ids,
         "valid_ids": valid_ids,
+        "valid_iid_ids": valid_ids if primary_validation_split == "valid_iid" else [],
+        "valid_stress_ids": valid_stress_ids,
         "ignored_candidate_ids": sorted(
-            sample_id for split, ids in split_ids.items() if split not in {"train", "valid"} for sample_id in ids
+            sample_id
+            for split, ids in split_ids.items()
+            if split not in {"train", primary_validation_split, stress_validation_split}
+            for sample_id in ids
         ),
     }
 
     loss_summary = {
         "status_ok": bool(result["status_ok"]),
         "grad_finite": bool(result["grad_finite"]),
+        "split_map_path": str(args.split_map) if args.split_map is not None else None,
+        "split_source": split_source,
+        "primary_validation_split": primary_validation_split,
+        "stress_validation_split": stress_validation_split,
+        "split_counts": split_counts,
         "train_losses": [float(value) for value in result["train_losses"]],
         "train_loss_epochs": [int(value) for value in result["train_loss_epochs"]],
         "valid_losses": [float(value) for value in result["valid_losses"]],
+        "valid_iid_losses": [float(value) for value in result["valid_iid_losses"]],
+        "valid_stress_losses": [float(value) for value in result["valid_stress_losses"]],
         "initial_train_loss": result["initial_train_loss"],
         "initial_valid_loss": result["initial_valid_loss"],
+        "initial_valid_iid_loss": result["initial_valid_iid_loss"],
+        "initial_valid_stress_loss": result["initial_valid_stress_loss"],
         "initial_valid_base_mse": result["initial_valid_base_mse"],
         "initial_valid_raw_deltaT_mse": result["initial_valid_raw_deltaT_mse"],
+        "initial_valid_iid_raw_deltaT_mse": result["initial_valid_iid_raw_deltaT_mse"],
+        "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
         "final_best_ratio": result["final_best_ratio"],
@@ -2921,6 +3186,12 @@ def main() -> int:
         },
         "train_metrics": _metrics_payload(result["train_metrics"]),
         "valid_metrics": _metrics_payload(result["valid_metrics"]),
+        "valid_iid_metrics": _metrics_payload(result["valid_metrics"]) if primary_validation_split == "valid_iid" else {},
+        "valid_stress_metrics": (
+            _metrics_payload(result["valid_stress_metrics"])
+            if result["valid_stress_metrics"] is not None
+            else {}
+        ),
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
         "progress_detail": args.progress_detail,
@@ -2986,6 +3257,8 @@ def main() -> int:
         "loss": loss_config,
         "final_train_loss_components": result["final_train_loss_components"],
         "final_valid_loss_components": result["final_valid_loss_components"],
+        "final_valid_iid_loss_components": result["final_valid_iid_loss_components"],
+        "final_valid_stress_loss_components": result["final_valid_stress_loss_components"],
         "train_only_normalization": _stats_payload(stats),
     }
     summary_write_start = time.perf_counter()

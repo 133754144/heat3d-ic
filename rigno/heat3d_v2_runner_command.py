@@ -47,6 +47,7 @@ def build_training_command(
 
     command = [python_executable, TRAINING_SCRIPT]
     _append_option(command, "--subset", dataset.get("subset_path"))
+    _append_option(command, "--split-map", dataset.get("split_map_path"))
     _append_option(command, "--epochs", run.get("epochs"))
     _append_option(command, "--node-latent-size", model.get("node_latent_size"))
     _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))

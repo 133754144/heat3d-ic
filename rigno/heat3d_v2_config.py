@@ -220,6 +220,18 @@ def _validate_run_config(
             raise ValueError(f"{label}: field 'run.grad_norm_report_every' must be >= 0")
 
     export = _required_mapping(config, "export", label)
+    dataset = _required_mapping(config, "dataset", label)
+    split_map_path = dataset.get("split_map_path")
+    if split_map_path is not None:
+        if not isinstance(split_map_path, str) or not split_map_path:
+            raise ValueError(f"{label}: field 'dataset.split_map_path' must be a non-empty string or null")
+        resolved = _resolve_path(split_map_path, config_path=config_path)
+        if not resolved.exists():
+            raise ValueError(
+                f"{label}: field 'dataset.split_map_path' points to a missing file: "
+                f"{split_map_path!r} resolved as {resolved}"
+            )
+
     output_dir = export.get("output_dir")
     if output_dir is not None:
         if not isinstance(output_dir, str):
