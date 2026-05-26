@@ -29,6 +29,8 @@ DEFAULT_GROUP_KEYS = (
     "source_category",
 )
 
+DEFAULT_DELTAT_BIN_PERCENTILES = (50.0, 75.0, 90.0, 95.0)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -211,9 +213,14 @@ def _sample_row(
                 "rmse": _rmse(error[mask]),
                 "signed_bias": float(np.mean(error[mask])) if np.any(mask) else None,
                 "overprediction_ratio": float(np.mean(error[mask] > 0.0)) if np.any(mask) else None,
+                "underprediction_ratio": float(np.mean(error[mask] < 0.0)) if np.any(mask) else None,
+                "p95_abs_error": float(np.percentile(abs_error[mask], 95)) if np.any(mask) else None,
+                "p99_abs_error": float(np.percentile(abs_error[mask], 99)) if np.any(mask) else None,
             }
             for name, mask in low_masks.items()
         },
+        "_true_delta_values": true_delta,
+        "_error_values": error,
         **{key: field_metrics.get(key) for key in (
             "field_variance_ratio",
             "centered_spatial_correlation",
@@ -230,6 +237,110 @@ def _mean(rows: list[dict[str, Any]], key: str) -> float | None:
     if not finite:
         return None
     return float(np.mean(finite))
+
+
+def _concat_arrays(rows: list[dict[str, Any]], key: str) -> np.ndarray:
+    arrays = [np.asarray(row[key], dtype=np.float64).reshape(-1) for row in rows if key in row]
+    if not arrays:
+        return np.asarray([], dtype=np.float64)
+    return np.concatenate(arrays)
+
+
+def _point_error_stats(error: np.ndarray, *, point_fraction: float | None = None) -> dict[str, Any]:
+    values = np.asarray(error, dtype=np.float64).reshape(-1)
+    result: dict[str, Any] = {
+        "point_count": int(values.size),
+        "point_fraction": point_fraction,
+    }
+    if values.size == 0:
+        result.update(
+            {
+                "rmse": None,
+                "mae": None,
+                "signed_bias": None,
+                "overprediction_ratio": None,
+                "underprediction_ratio": None,
+                "over_ratio": None,
+                "under_ratio": None,
+                "p95_abs_error": None,
+                "p99_abs_error": None,
+            }
+        )
+        return result
+    abs_values = np.abs(values)
+    over_ratio = float(np.mean(values > 0.0))
+    under_ratio = float(np.mean(values < 0.0))
+    result.update(
+        {
+            "rmse": _rmse(values),
+            "mae": _mae(values),
+            "signed_bias": float(np.mean(values)),
+            "overprediction_ratio": over_ratio,
+            "underprediction_ratio": under_ratio,
+            "over_ratio": over_ratio,
+            "under_ratio": under_ratio,
+            "p95_abs_error": float(np.percentile(abs_values, 95)),
+            "p99_abs_error": float(np.percentile(abs_values, 99)),
+        }
+    )
+    return result
+
+
+def _low_deltaT_bin_summary(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    true_delta = _concat_arrays(rows, "_true_delta_values")
+    error = _concat_arrays(rows, "_error_values")
+    result: dict[str, dict[str, Any]] = {}
+    if true_delta.size == 0 or error.size == 0:
+        for name in ("le_0p01", "le_0p02", "le_0p05"):
+            result[name] = _point_error_stats(np.asarray([], dtype=np.float64), point_fraction=None)
+        return result
+    for name, threshold in (("le_0p01", 0.01), ("le_0p02", 0.02), ("le_0p05", 0.05)):
+        mask = true_delta <= threshold
+        result[name] = _point_error_stats(error[mask], point_fraction=float(np.mean(mask)))
+    return result
+
+
+def _deltaT_bin_summary(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    true_delta = _concat_arrays(rows, "_true_delta_values")
+    error = _concat_arrays(rows, "_error_values")
+    result: dict[str, dict[str, Any]] = {}
+    if true_delta.size == 0 or error.size == 0:
+        return result
+    thresholds = [float(np.percentile(true_delta, percentile)) for percentile in DEFAULT_DELTAT_BIN_PERCENTILES]
+    lower = float(np.min(true_delta))
+    previous_mask = np.zeros(true_delta.shape, dtype=bool)
+    for index, upper in enumerate(thresholds):
+        if index == 0:
+            mask = true_delta <= upper
+            lower_label = lower
+        else:
+            mask = (~previous_mask) & (true_delta <= upper)
+            lower_label = thresholds[index - 1]
+        previous_mask |= mask
+        item = _point_error_stats(error[mask], point_fraction=float(np.mean(mask)))
+        item.update(
+            {
+                "lower": lower_label,
+                "upper": upper,
+                "lower_inclusive": index == 0,
+                "upper_inclusive": True,
+                "definition": "true_raw_deltaT_percentile_bin",
+            }
+        )
+        result[f"bin_{index}"] = item
+    mask = ~previous_mask
+    item = _point_error_stats(error[mask], point_fraction=float(np.mean(mask)))
+    item.update(
+        {
+            "lower": thresholds[-1],
+            "upper": float(np.max(true_delta)),
+            "lower_inclusive": False,
+            "upper_inclusive": True,
+            "definition": "true_raw_deltaT_percentile_bin",
+        }
+    )
+    result[f"bin_{len(thresholds)}"] = item
+    return result
 
 
 def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -254,17 +365,12 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "hotspot_mae",
     ):
         result[key] = _mean(rows, key)
-    low_bins: dict[str, dict[str, Any]] = {}
-    for name in ("le_0p01", "le_0p02", "le_0p05"):
-        bin_rows = [row["low_deltaT_bin_errors"][name] for row in rows if row.get("low_deltaT_bin_errors")]
-        low_bins[name] = {
-            "point_fraction": _mean(bin_rows, "point_fraction"),
-            "mae": _mean(bin_rows, "mae"),
-            "rmse": _mean(bin_rows, "rmse"),
-            "signed_bias": _mean(bin_rows, "signed_bias"),
-            "overprediction_ratio": _mean(bin_rows, "overprediction_ratio"),
-        }
-    result["low_deltaT_bin_errors"] = low_bins
+    delta_bins = _deltaT_bin_summary(rows)
+    result["low_deltaT_bin_errors"] = _low_deltaT_bin_summary(rows)
+    result["deltaT_bin_errors"] = delta_bins
+    background = dict(delta_bins.get("bin_0", _point_error_stats(np.asarray([], dtype=np.float64))))
+    background["definition"] = "bin_0_[min,p50]_true_raw_deltaT"
+    result["background_diagnostics"] = background
     return result
 
 
@@ -368,6 +474,7 @@ def analyze_split_aware_diagnostics(
         if slice_output_dir is not None
         else []
     )
+    overall = _summary(rows)
     payload = {
         "diagnostic_scope": "Heat3D v2 split-aware diagnostics; read-only; not formal benchmark",
         "prediction_label": prediction_label,
@@ -380,9 +487,11 @@ def analyze_split_aware_diagnostics(
         },
         "sample_count": len(rows),
         "split": split,
-        "overall": _summary(rows),
+        "overall": overall,
         "condition_summary": _condition_summary(rows),
-        "low_deltaT_bin_errors": _summary(rows)["low_deltaT_bin_errors"],
+        "low_deltaT_bin_errors": overall["low_deltaT_bin_errors"],
+        "deltaT_bin_errors": overall["deltaT_bin_errors"],
+        "background_diagnostics": overall["background_diagnostics"],
         "slice_exports": slice_entries,
     }
     output_json.parent.mkdir(parents=True, exist_ok=True)
@@ -439,14 +548,33 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "",
         "## Low-DeltaT Bins",
         "",
-        "| bin | point_fraction | mae | rmse | signed_bias | overprediction_ratio |",
-        "|---|---:|---:|---:|---:|---:|",
+        "| bin | point_fraction | mae | rmse | signed_bias | over_ratio | under_ratio | p95_abs_error | p99_abs_error |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for name, item in payload["low_deltaT_bin_errors"].items():
         lines.append(
             f"| {name} | {_fmt(item.get('point_fraction'))} | {_fmt(item.get('mae'))} | "
             f"{_fmt(item.get('rmse'))} | {_fmt(item.get('signed_bias'))} | "
-            f"{_fmt(item.get('overprediction_ratio'))} |"
+            f"{_fmt(item.get('overprediction_ratio'))} | {_fmt(item.get('underprediction_ratio'))} | "
+            f"{_fmt(item.get('p95_abs_error'))} | {_fmt(item.get('p99_abs_error'))} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Background / Raw DeltaT Bins",
+            "",
+            "Background uses `bin_0`, the lowest true raw DeltaT percentile bin `[min, p50]`.",
+            "",
+            "| bin | point_fraction | mae | rmse | signed_bias | over_ratio | under_ratio | p95_abs_error | p99_abs_error |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for name, item in payload["deltaT_bin_errors"].items():
+        lines.append(
+            f"| {name} | {_fmt(item.get('point_fraction'))} | {_fmt(item.get('mae'))} | "
+            f"{_fmt(item.get('rmse'))} | {_fmt(item.get('signed_bias'))} | "
+            f"{_fmt(item.get('over_ratio'))} | {_fmt(item.get('under_ratio'))} | "
+            f"{_fmt(item.get('p95_abs_error'))} | {_fmt(item.get('p99_abs_error'))} |"
         )
     lines.extend(["", "## Condition Diagnostics", ""])
     for key, rows in payload["condition_summary"].items():

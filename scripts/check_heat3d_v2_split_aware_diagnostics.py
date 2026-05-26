@@ -105,6 +105,17 @@ def main() -> int:
             raise AssertionError(f"expected 2 valid_iid samples, got {payload['sample_count']}")
         if "field_variance_ratio" not in payload["overall"]:
             raise AssertionError("missing field-shape metric")
+        if "background_diagnostics" not in payload:
+            raise AssertionError("missing background diagnostics")
+        if "deltaT_bin_errors" not in payload or "bin_0" not in payload["deltaT_bin_errors"]:
+            raise AssertionError("missing raw DeltaT bin_0 diagnostics")
+        bin0 = payload["deltaT_bin_errors"]["bin_0"]
+        for key in ("mae", "signed_bias", "over_ratio", "under_ratio"):
+            if key not in bin0:
+                raise AssertionError(f"missing bin_0 field: {key}")
+        low_bin = payload["low_deltaT_bin_errors"]["le_0p05"]
+        if "underprediction_ratio" not in low_bin:
+            raise AssertionError("missing low-DeltaT underprediction ratio")
         if not payload["slice_exports"]:
             raise AssertionError("slice metadata was not exported")
         if not out_json.exists() or not out_md.exists():
