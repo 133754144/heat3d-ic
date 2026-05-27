@@ -8,9 +8,11 @@ diagnostic comparison. It is not a formal training experiment.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
+import subprocess
 import sys
 import time
 from typing import Any
@@ -408,6 +410,18 @@ def _format_progress_value(value: Any, *, precision: int = 6) -> str:
     return f"{numeric:.{precision}e}"
 
 
+def _format_progress_decimal(value: Any, *, precision: int = 2) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return f"{numeric:.{precision}f}"
+
+
 def _format_progress_percent(value: Any, *, precision: int = 2) -> str:
     if value is None:
         return "skipped"
@@ -451,6 +465,56 @@ def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
     if metrics.get("raw_deltaT_relative_rmse_pct") is not None:
         return float(metrics["raw_deltaT_relative_rmse_pct"])
     return _deltaT_error_pct(metrics.get("raw_delta_mse"), metrics.get("mean_abs_true_deltaT"))
+
+
+def _progress_numeric_or_none(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _first_progress_numeric(*values: Any) -> float | None:
+    for value in values:
+        numeric = _progress_numeric_or_none(value)
+        if numeric is not None:
+            return numeric
+    return None
+
+
+def _short_hash(parts) -> str:
+    digest = hashlib.sha256()
+    for part in parts:
+        digest.update(str(part).encode("utf-8"))
+        digest.update(b"\0")
+    return digest.hexdigest()[:16]
+
+
+def _group_sample_id_hash(groups: list[dict]) -> str:
+    parts = []
+    for group in groups:
+        parts.append("[group]")
+        parts.extend(group.get("sample_ids", ()))
+    return _short_hash(parts)
+
+
+def _current_git_commit() -> str | None:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=REPO_DIR,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except OSError:
+        return None
+    commit = completed.stdout.strip()
+    return commit or None
 
 
 def _bump_profile_count(counts: dict[str, int] | None, key: str, amount: int = 1) -> None:
@@ -1707,7 +1771,10 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
     if log_mode == "quiet":
         return
     if log_mode == "compact":
-        train_label = "train_full_loss" if record.get("train_full_metrics_computed") else "train_loss"
+        train_loss = _first_progress_numeric(
+            record.get("train_loss"),
+            record.get("epoch_mean_train_batch_loss"),
+        )
         valid_iid_loss = record.get("valid_iid_loss")
         if valid_iid_loss is None:
             valid_iid_loss = record.get("valid_loss")
@@ -1715,15 +1782,15 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         if valid_iid_error_pct is None:
             valid_iid_error_pct = record.get("valid_error_pct")
         _emit(
-            f"epoch {record['epoch']:03d}/{epochs:03d} "
-            f"lr={record['lr']:.3e} "
-            f"{train_label}={_format_progress_value(record.get('train_loss'))} "
-            f"valid_iid_loss={_format_progress_value(valid_iid_loss)} "
-            f"valid_iid_error_pct={_format_progress_percent(valid_iid_error_pct)} "
-            f"valid_stress_loss={_format_progress_value(record.get('valid_stress_loss'))} "
-            f"valid_stress_error_pct={_format_progress_percent(record.get('valid_stress_error_pct'))} "
-            f"best_epoch={_format_progress_int(record.get('best_epoch'))} "
-            f"best_valid_iid_loss={_format_progress_value(record.get('best_valid_iid_loss'))}"
+            f"epoch {record['epoch']}/{epochs} "
+            f"lr={record['lr']:.2e} "
+            f"train={_format_progress_decimal(train_loss)} "
+            f"iid={_format_progress_decimal(valid_iid_loss)} "
+            f"iid_err={_format_progress_percent(valid_iid_error_pct)} "
+            f"stress={_format_progress_decimal(record.get('valid_stress_loss'))} "
+            f"stress_err={_format_progress_percent(record.get('valid_stress_error_pct'))} "
+            f"best=e{_format_progress_int(record.get('best_epoch'))}/"
+            f"{_format_progress_decimal(record.get('best_valid_iid_loss'))}"
         )
         return
     _emit(
@@ -1851,6 +1918,7 @@ def _fit_once(
     grad_norm_reported_batch_count = 0
     grad_norm_skipped_batch_count = 0
     epoch_batch_counts = []
+    epoch_train_batch_order_hashes = []
     lr_history = []
     loss_weight_history = []
     grad_finite = True
@@ -1932,6 +2000,7 @@ def _fit_once(
                 seed=seed,
                 shuffle=bool(batch_config.get("shuffle_train_batches")),
             )
+            epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_epoch_groups))
             batch_grad_norms = []
             for batch_index, batch_group in enumerate(train_epoch_groups, start=1):
                 def loss_fn(current_params, group=batch_group):
@@ -2015,6 +2084,7 @@ def _fit_once(
             if batch_grad_norms:
                 grad_norms.append(float(np.mean(batch_grad_norms)))
         else:
+            epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_groups))
             def loss_fn(current_params):
                 return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
 
@@ -2290,10 +2360,21 @@ def _fit_once(
         "grad_norm_reported_batch_count": int(grad_norm_reported_batch_count),
         "grad_norm_skipped_batch_count": int(grad_norm_skipped_batch_count),
         "epoch_batch_counts": np.asarray(epoch_batch_counts, dtype=np.int64),
+        "epoch_train_batch_order_hashes": epoch_train_batch_order_hashes,
         "lr_history": np.asarray(lr_history, dtype=np.float64),
         "epoch_lrs": [float(value) for value in lr_history],
         "updates_per_epoch": int(updates_per_epoch),
         "total_update_count": int(sum(epoch_batch_counts)),
+        "train_group_count": int(len(train_groups)),
+        "valid_iid_group_count": int(len(valid_groups)) if primary_validation_split == "valid_iid" else None,
+        "valid_stress_group_count": int(len(valid_stress_groups)),
+        "train_group_sample_id_hash": _group_sample_id_hash(train_groups),
+        "valid_iid_sample_id_hash": (
+            _group_sample_id_hash(valid_groups) if primary_validation_split == "valid_iid" else None
+        ),
+        "valid_stress_sample_id_hash": _group_sample_id_hash(valid_stress_groups),
+        "deterministic_audit_enabled": True,
+        "code_version_or_git_commit": _current_git_commit(),
         "loss_weight_history": loss_weight_history,
         "train_metrics": train_metrics,
         "valid_metrics": valid_metrics,
@@ -3121,6 +3202,15 @@ def main() -> int:
         "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
+        "train_group_count": result["train_group_count"],
+        "valid_iid_group_count": result["valid_iid_group_count"],
+        "valid_stress_group_count": result["valid_stress_group_count"],
+        "train_group_sample_id_hash": result["train_group_sample_id_hash"],
+        "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
+        "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
+        "deterministic_audit_enabled": result["deterministic_audit_enabled"],
+        "epoch_train_batch_order_hashes": result["epoch_train_batch_order_hashes"],
+        "code_version_or_git_commit": result["code_version_or_git_commit"],
         "final_best_ratio": result["final_best_ratio"],
         "epoch_lrs": result["epoch_lrs"],
         "grad_norm_report_every": result["grad_norm_report_every"],
@@ -3196,6 +3286,15 @@ def main() -> int:
         "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
+        "train_group_count": result["train_group_count"],
+        "valid_iid_group_count": result["valid_iid_group_count"],
+        "valid_stress_group_count": result["valid_stress_group_count"],
+        "train_group_sample_id_hash": result["train_group_sample_id_hash"],
+        "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
+        "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
+        "deterministic_audit_enabled": result["deterministic_audit_enabled"],
+        "epoch_train_batch_order_hashes": result["epoch_train_batch_order_hashes"],
+        "code_version_or_git_commit": result["code_version_or_git_commit"],
         "final_best_ratio": result["final_best_ratio"],
         "epoch_lrs": result["epoch_lrs"],
         "epoch_mean_train_batch_loss": [
