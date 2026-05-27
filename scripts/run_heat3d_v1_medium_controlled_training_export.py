@@ -408,6 +408,51 @@ def _format_progress_value(value: Any, *, precision: int = 6) -> str:
     return f"{numeric:.{precision}e}"
 
 
+def _format_progress_percent(value: Any, *, precision: int = 2) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return f"{numeric:.{precision}f}%"
+
+
+def _format_progress_int(value: Any) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return str(int(numeric))
+
+
+def _deltaT_error_pct(raw_delta_mse: Any, mean_abs_true_deltaT: Any) -> float | None:
+    if raw_delta_mse is None or mean_abs_true_deltaT is None:
+        return None
+    try:
+        mse = float(raw_delta_mse)
+        denominator = float(mean_abs_true_deltaT)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(mse) or not math.isfinite(denominator) or denominator <= 0.0:
+        return None
+    return 100.0 * math.sqrt(max(mse, 0.0)) / denominator
+
+
+def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
+    if metrics is None:
+        return None
+    if metrics.get("raw_deltaT_relative_rmse_pct") is not None:
+        return float(metrics["raw_deltaT_relative_rmse_pct"])
+    return _deltaT_error_pct(metrics.get("raw_delta_mse"), metrics.get("mean_abs_true_deltaT"))
+
+
 def _bump_profile_count(counts: dict[str, int] | None, key: str, amount: int = 1) -> None:
     if counts is not None:
         counts[key] = int(counts.get(key, 0)) + int(amount)
@@ -526,7 +571,12 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
     total_count = sum(count for count, _ in weighted_entries)
     if total_count <= 0:
         return {}
-    numeric_keys = ("normalized_loss", "raw_delta_mse", "recovered_temperature_mse")
+    numeric_keys = (
+        "normalized_loss",
+        "raw_delta_mse",
+        "recovered_temperature_mse",
+        "mean_abs_true_deltaT",
+    )
     combined = {
         key: float(
             sum(float(metrics.get(key, 0.0)) * count for count, metrics in weighted_entries)
@@ -534,6 +584,7 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
         )
         for key in numeric_keys
     }
+    combined["raw_deltaT_relative_rmse_pct"] = _metric_error_pct(combined)
     combined["finite_ok"] = all(bool(metrics.get("finite_ok")) for _, metrics in weighted_entries)
     combined["shape_ok"] = all(bool(metrics.get("shape_ok")) for _, metrics in weighted_entries)
     return combined
@@ -1372,6 +1423,7 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     weighted_normalized_loss = 0.0
     weighted_raw_delta_mse = 0.0
     weighted_recovered_mse = 0.0
+    weighted_mean_abs_true_delta = 0.0
     count = 0
     finite_ok = True
     shape_ok = True
@@ -1389,6 +1441,9 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
         weighted_recovered_mse = weighted_recovered_mse + jnp.mean(
             jnp.square(recovered - group["target_temperature"])
         ) * n
+        weighted_mean_abs_true_delta = weighted_mean_abs_true_delta + jnp.mean(
+            jnp.abs(group["target_delta_raw"])
+        ) * n
         finite_ok = (
             finite_ok
             and bool(jnp.all(jnp.isfinite(pred_normalized)))
@@ -1399,10 +1454,14 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
         count += int(n)
 
     divisor = max(count, 1)
+    mean_abs_true_delta = float(weighted_mean_abs_true_delta / divisor)
+    raw_delta_mse = float(weighted_raw_delta_mse / divisor)
     return {
         "normalized_loss": float(weighted_normalized_loss / divisor),
-        "raw_delta_mse": float(weighted_raw_delta_mse / divisor),
+        "raw_delta_mse": raw_delta_mse,
         "recovered_temperature_mse": float(weighted_recovered_mse / divisor),
+        "mean_abs_true_deltaT": mean_abs_true_delta,
+        "raw_deltaT_relative_rmse_pct": _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta),
         "finite_ok": finite_ok,
         "shape_ok": shape_ok,
     }
@@ -1617,6 +1676,9 @@ def _epoch_history_record(
         "train_raw_deltaT_mse": _maybe_float(train_metrics, "raw_delta_mse"),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
         "valid_iid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]) if primary_validation_split == "valid_iid" else None,
+        "train_error_pct": _metric_error_pct(train_metrics),
+        "valid_error_pct": _metric_error_pct(valid_metrics),
+        "valid_iid_error_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
         "train_recovered_T_mse": _maybe_float(train_metrics, "recovered_temperature_mse"),
         "valid_recovered_T_mse": float(valid_metrics["recovered_temperature_mse"]),
         "valid_iid_recovered_T_mse": (
@@ -1631,6 +1693,7 @@ def _epoch_history_record(
                 "valid_stress_loss": float(valid_stress_components["total_loss"]),
                 "valid_stress_base_mse": float(valid_stress_components["base_mse"]),
                 "valid_stress_raw_deltaT_mse": float(valid_stress_metrics["raw_delta_mse"]),
+                "valid_stress_error_pct": _metric_error_pct(valid_stress_metrics),
                 "valid_stress_recovered_T_mse": float(valid_stress_metrics["recovered_temperature_mse"]),
                 "valid_stress_bg_signed_bias": float(valid_stress_components["bg_signed_bias"]),
                 "valid_stress_hotspot_raw_mae": float(valid_stress_components["hotspot_raw_mae"]),
@@ -1644,25 +1707,23 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
     if log_mode == "quiet":
         return
     if log_mode == "compact":
+        train_label = "train_full_loss" if record.get("train_full_metrics_computed") else "train_loss"
+        valid_iid_loss = record.get("valid_iid_loss")
+        if valid_iid_loss is None:
+            valid_iid_loss = record.get("valid_loss")
+        valid_iid_error_pct = record.get("valid_iid_error_pct")
+        if valid_iid_error_pct is None:
+            valid_iid_error_pct = record.get("valid_error_pct")
         _emit(
             f"epoch {record['epoch']:03d}/{epochs:03d} "
             f"lr={record['lr']:.3e} "
-            f"train_loss={_format_progress_value(record['train_loss'])} "
-            f"train_full_metrics={'computed' if record.get('train_full_metrics_computed') else 'skipped'} "
-            f"primary_valid={record.get('primary_validation_split', 'valid')} "
-            f"valid_loss={record['valid_loss']:.6e} "
+            f"{train_label}={_format_progress_value(record.get('train_loss'))} "
+            f"valid_iid_loss={_format_progress_value(valid_iid_loss)} "
+            f"valid_iid_error_pct={_format_progress_percent(valid_iid_error_pct)} "
             f"valid_stress_loss={_format_progress_value(record.get('valid_stress_loss'))} "
-            f"valid_base_mse={record['valid_base_mse']:.6e} "
-            f"valid_bg_bias={record['valid_bg_signed_bias']:.6e} "
-            f"valid_rel={record['valid_background_relative_abs']:.6e} "
-            f"valid_pn_bias={record['valid_pseudo_negative_bias']:.6e} "
-            f"valid_pn_over={record['valid_pseudo_negative_over_loss']:.6e} "
-            f"valid_pn_over_ratio={record['valid_pseudo_negative_over_ratio']:.6e} "
-            f"valid_pn_weighted_fraction={record['valid_pseudo_negative_weighted_fraction_of_total_loss']:.6e} "
-            f"valid_hotspot_mae={record['valid_hotspot_raw_mae']:.6e} "
-            f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.6e} "
-            f"rel_w={record['current_background_relative_weight']:.3e} "
-            f"hot_w={record['current_hotspot_weight']:.3e}"
+            f"valid_stress_error_pct={_format_progress_percent(record.get('valid_stress_error_pct'))} "
+            f"best_epoch={_format_progress_int(record.get('best_epoch'))} "
+            f"best_valid_iid_loss={_format_progress_value(record.get('best_valid_iid_loss'))}"
         )
         return
     _emit(
@@ -2142,6 +2203,8 @@ def _fit_once(
             best_score = score
             best_record = dict(record)
             best_params = _copy_params(params)
+        record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
+        record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
         record["epoch_train_time_s"] = float(train_step_time)
         record["epoch_train_metrics_time_s"] = float(train_metrics_time)
         record["epoch_validation_time_s"] = float(validation_time)
