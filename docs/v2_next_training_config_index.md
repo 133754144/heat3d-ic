@@ -51,3 +51,39 @@ diagnostic only.
    and bin0 tradeoffs are clear.
 5. P2: very low LR, rapid decay, and extra M1.5 seeds if P0/P1 leave an
    actionable direction.
+
+## Long Epoch / Overshoot-Control Configs
+
+Context: M1.5 B96 warmup-cosine e200 is the current stable candidate, with
+better scalar/stress loss than the M1 B192 e200 baseline but remaining stress
+amplitude overshoot. These configs are prepared for manual SSH runs only.
+
+| priority | config | model | batch | epochs | lr/schedule | regularization/loss variant | purpose |
+|---|---|---:|---:|---:|---|---|---|
+| P0 | `frozen_v1_e300_adamw_m15_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | wd=1e-4, clip=1.0, base MSE | test whether warmup e200 is undertrained |
+| P0 | `frozen_v1_e400_adamw_m15_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M1.5 | 96 | 400 | 3e-4 / warmup_cosine | wd=1e-4, clip=1.0, base MSE | longer continuation if e300 still helps |
+| P0 | `frozen_v1_e300_adamw_m15_B96_base_mse_warmup_cosine_stratified_seed1.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | wd=1e-4, clip=1.0, base MSE | candidate stability seed1 |
+| P0 | `frozen_v1_e300_adamw_m15_B96_base_mse_warmup_cosine_stratified_seed2.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | wd=1e-4, clip=1.0, base MSE | candidate stability seed2 |
+| P1 | `frozen_v1_e300_adamw_m15_B96_base_mse_warmup_cosine_clip0p5_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | clip=0.5 | reduce stress amplitude/variance overshoot |
+| P2 | `frozen_v1_e300_adamw_m15_B96_base_mse_warmup_cosine_clip0p1_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | clip=0.1 | strong clipping stress test |
+| P1 | `frozen_v1_e300_adamw_m15_B96_base_mse_warmup_cosine_wd1e3_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | wd=1e-3 | regularization for overshoot control |
+| P2 | `frozen_v1_e300_adamw_m15_B96_base_mse_warmup_cosine_wd1e2_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | wd=1e-2 | high regularization stress test |
+| P2 | `frozen_v1_e300_adamw_m15_B96_light_bg_over_warmup_cosine_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | light bg over=0.01 | suppress low-DeltaT overprediction |
+| P2 | `frozen_v1_e300_adamw_m15_B96_light_bg_bias_warmup_cosine_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | light bg bias=0.01 | suppress low-DeltaT signed bias |
+| P2 | `frozen_v1_e300_adamw_m15_B96_light_bg_bias_over_warmup_cosine_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / warmup_cosine | light bg bias=0.01, over=0.01 | combined light background control |
+| P0 | `frozen_v1_e300_adamw_m125_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M1.25 | 96 | 300 | 3e-4 / warmup_cosine | wd=1e-4, clip=1.0, base MSE | intermediate capacity, safer memory |
+| P0 | `frozen_v1_e300_adamw_m125_B128_base_mse_warmup_cosine_stratified_seed0.yaml` | M1.25 | 128 | 300 | 3e-4 / warmup_cosine | wd=1e-4, clip=1.0, base MSE | intermediate capacity, B128 if memory allows |
+| P1 | `frozen_v1_e300_adamw_m125_B96_base_mse_lr3e4_stratified_seed0.yaml` | M1.25 | 96 | 300 | 3e-4 / constant | wd=1e-4, clip=1.0, base MSE | intermediate constant-LR control |
+| P1 | `frozen_v1_e300_adamw_m125_B128_base_mse_lr3e4_stratified_seed0.yaml` | M1.25 | 128 | 300 | 3e-4 / constant | wd=1e-4, clip=1.0, base MSE | intermediate B128 constant-LR control |
+| P2 | `frozen_v1_e300_adamw_m15_B96_base_mse_lr3e4_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / constant | wd=1e-4, clip=1.0, base MSE | best-checkpoint route; inspect best not only final |
+| P2 | `frozen_v1_e300_adamw_m15_B96_base_mse_lr3e4_clip0p5_stratified_seed0.yaml` | M1.5 | 96 | 300 | 3e-4 / constant | clip=0.5 | stabilize constant-LR best-checkpoint route |
+
+## Long Config Suggested SSH Order
+
+1. P0: M1.5 B96 warmup e300 seed0, then e400 only if e300 still improves
+   without unacceptable stress amplitude/variance overshoot.
+2. P0: M1.5 B96 warmup e300 seed1/seed2 if seed0 remains a candidate.
+3. P0: M1.25 B96/B128 warmup e300 to test intermediate capacity.
+4. P1: clip0.5 and wd1e-3 overshoot controls.
+5. P2: light background and constant-LR best-checkpoint route after the
+   warmup/capacity direction is clear.
