@@ -173,3 +173,26 @@ not performance conclusions.
 
 B48 suggested SSH order: run the B48 e400 control first, then M2-depth B48
 or M2.5-width B48, and only consider M3-width if memory/time budget remains.
+
+## Large B48 Capacity Probe and Long Configs
+
+Context: the first B48 probe batch showed that `192/192/steps6/mlp2`,
+`128/128/steps8/mlp2`, and `128/128/steps6/mlp3` are feasible for two-epoch
+checks. The larger probes below test the next capacity boundary. Probe results
+remain feasibility-only; e400 configs are prepared only for successful probes.
+
+| priority | config | model | node/edge/steps/mlp | batch | epochs | probe result | purpose |
+|---|---|---|---:|---:|---:|---|---|
+| P0 | `frozen_v1_e002_adamw_m3width_B48_base_mse_warmup_cosine_mlp3_capacity_probe_seed0.yaml` | M3+mlp3 B48 | 192/192/6/3 | 48 | 2 | passed | key feasibility check for M3 plus mlp3 |
+| P0 | `frozen_v1_e002_adamw_m25depth_B48_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2.5-depth B48 | 160/160/8/2 | 48 | 2 | passed | test width 160 plus steps8 |
+| P1 | `frozen_v1_e002_adamw_m3depth_B48_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M3-depth B48 | 192/192/8/2 | 48 | 2 | passed | high-risk width 192 plus steps8 |
+| P1 | `frozen_v1_e002_adamw_m35width_B48_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M3.5-width B48 | 224/224/6/2 | 48 | 2 | passed | test width 224 upper bound |
+| P2 | `frozen_v1_e002_adamw_m35width_B48_base_mse_warmup_cosine_mlp3_capacity_probe_seed0.yaml` | M3.5+mlp3 B48 | 224/224/6/3 | 48 | 2 | OOM | extreme width plus mlp3; do not long-run |
+| P1 | `frozen_v1_e400_adamw_m3width_B48_base_mse_warmup_cosine_mlp3_stratified_seed0.yaml` | M3+mlp3 B48 | 192/192/6/3 | 48 | 400 | prepared | long-run candidate after probe success |
+| P1 | `frozen_v1_e400_adamw_m25depth_B48_base_mse_warmup_cosine_stratified_seed0.yaml` | M2.5-depth B48 | 160/160/8/2 | 48 | 400 | prepared | steps8 long-run candidate |
+| P2 | `frozen_v1_e400_adamw_m3depth_B48_base_mse_warmup_cosine_stratified_seed0.yaml` | M3-depth B48 | 192/192/8/2 | 48 | 400 | prepared | high-risk steps8 long-run candidate |
+| P1 | `frozen_v1_e400_adamw_m35width_B48_base_mse_warmup_cosine_stratified_seed0.yaml` | M3.5-width B48 | 224/224/6/2 | 48 | 400 | prepared | widest successful steps6 long-run candidate |
+
+Large B48 suggested SSH order: first run M3+mlp3 or M2.5-depth e400, then
+M3.5-width e400 if memory/time allows. Do not run M3.5+mlp3 e400 because the
+two-epoch probe OOMed.
