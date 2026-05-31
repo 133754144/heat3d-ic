@@ -150,3 +150,26 @@ path, while both routes still need amplitude and field-variance monitoring.
 | P2 | `frozen_v1_e500_adamw_m15_B96_base_mse_warmup_cosine_minlr1e5_mlp3_stratified_seed0.yaml` | M1.5 mlp3 | 96 | 500 | warmup_cosine | min_lr=1e-5 | schedule variant for lower final loss |
 | P2 | `frozen_v1_e500_adamw_m2width_B96_base_mse_warmup_cosine_minlr1e5_stratified_seed0.yaml` | M2-width | 96 | 500 | warmup_cosine | min_lr=1e-5 | schedule variant for lower final loss |
 | P2 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_clip0p5_stratified_seed0.yaml` | M2-width | 96 | 400 | warmup_cosine | wd=1e-4, clip=0.5 | clipping control for amplitude/variance overshoot |
+
+## B48 Capacity Probe and Long Configs
+
+Context: B96 reached capacity limits for `steps=8` and `mlp_hidden_layers=4`.
+B48 probes test whether a smaller batch restores memory headroom for wider,
+deeper, or MLP-deeper candidates. Probe results are feasibility checks only,
+not performance conclusions.
+
+| priority | config | model | node/edge/steps/mlp | batch | epochs | purpose |
+|---|---|---|---:|---:|---:|---|
+| P0 | `frozen_v1_e002_adamw_m2width_B48_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2-width B48 | 128/128/6/2 | 48 | 2 | B48 control probe |
+| P0 | `frozen_v1_e002_adamw_m25width_B48_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2.5-width B48 | 160/160/6/2 | 48 | 2 | width 160 feasibility |
+| P0 | `frozen_v1_e002_adamw_m3width_B48_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M3-width B48 | 192/192/6/2 | 48 | 2 | high-risk width 192 feasibility |
+| P0 | `frozen_v1_e002_adamw_m2depth_B48_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2-depth B48 | 128/128/8/2 | 48 | 2 | test whether B48 restores steps8 feasibility |
+| P0 | `frozen_v1_e002_adamw_m2width_B48_base_mse_warmup_cosine_mlp3_capacity_probe_seed0.yaml` | M2-width B48 mlp3 | 128/128/6/3 | 48 | 2 | test whether B48 restores M2 mlp3 feasibility |
+| P1 | `frozen_v1_e400_adamw_m2width_B48_base_mse_warmup_cosine_stratified_seed0.yaml` | M2-width B48 | 128/128/6/2 | 48 | 400 | B48 long-run control |
+| P1 | `frozen_v1_e400_adamw_m25width_B48_base_mse_warmup_cosine_stratified_seed0.yaml` | M2.5-width B48 | 160/160/6/2 | 48 | 400 | width 160 long-run candidate |
+| P2 | `frozen_v1_e400_adamw_m3width_B48_base_mse_warmup_cosine_stratified_seed0.yaml` | M3-width B48 | 192/192/6/2 | 48 | 400 | high-risk width 192 long-run candidate |
+| P1 | `frozen_v1_e400_adamw_m2depth_B48_base_mse_warmup_cosine_stratified_seed0.yaml` | M2-depth B48 | 128/128/8/2 | 48 | 400 | steps8 long-run candidate |
+| P1 | `frozen_v1_e400_adamw_m2width_B48_base_mse_warmup_cosine_mlp3_stratified_seed0.yaml` | M2-width B48 mlp3 | 128/128/6/3 | 48 | 400 | M2-width plus mlp3 long-run candidate |
+
+B48 suggested SSH order: run the B48 e400 control first, then M2-depth B48
+or M2.5-width B48, and only consider M3-width if memory/time budget remains.
