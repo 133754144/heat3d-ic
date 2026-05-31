@@ -87,3 +87,32 @@ amplitude overshoot. These configs are prepared for manual SSH runs only.
 4. P1: clip0.5 and wd1e-3 overshoot controls.
 5. P2: light background and constant-LR best-checkpoint route after the
    warmup/capacity direction is clear.
+
+## M2 Capacity Probe and Long Training Configs
+
+Context: current best candidate is M1.5 B96 base-MSE warmup-cosine e400 seed0.
+M2 configs keep batch size at 96 and test whether larger capacity improves
+scalar/stress loss without making stress amplitude or field variance overshoot
+unacceptable.
+
+| priority | config | model | node/edge/steps | batch | epochs | schedule | wd/clip | purpose | OOM risk | suggested SSH order |
+|---|---|---|---:|---:|---:|---|---|---|---|---:|
+| P0 | `frozen_v1_e005_adamw_m2lite_B96_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2-lite-width | 112/112/6 | 96 | 5 | warmup_cosine | 1e-4 / 1.0 | quick OOM probe for width-only scaling | low-medium | 1 |
+| P0 | `frozen_v1_e005_adamw_m2width_B96_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2-width | 128/128/6 | 96 | 5 | warmup_cosine | 1e-4 / 1.0 | quick OOM probe for width 128 | medium | 2 |
+| P0 | `frozen_v1_e005_adamw_m2depthlite_B96_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2-lite-depth | 112/112/8 | 96 | 5 | warmup_cosine | 1e-4 / 1.0 | quick OOM probe for extra processor steps | medium-high | 3 |
+| P2 | `frozen_v1_e005_adamw_m2risk_B96_base_mse_warmup_cosine_capacity_probe_seed0.yaml` | M2-risk | 128/128/8 | 96 | 5 | warmup_cosine | 1e-4 / 1.0 | high-risk OOM probe only | high | 4 |
+| P0 | `frozen_v1_e400_adamw_m2lite_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M2-lite-width | 112/112/6 | 96 | 400 | warmup_cosine | 1e-4 / 1.0 | lowest-risk M2 long run | low-medium | 5 |
+| P0 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M2-width | 128/128/6 | 96 | 400 | warmup_cosine | 1e-4 / 1.0 | test upstream-style latent width | medium | 6 |
+| P0 | `frozen_v1_e400_adamw_m2depthlite_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M2-lite-depth | 112/112/8 | 96 | 400 | warmup_cosine | 1e-4 / 1.0 | test whether more processor steps help more than width | medium-high | 7 |
+| P1 | `frozen_v1_e400_adamw_m2lite_B96_base_mse_warmup_cosine_wd1e3_stratified_seed0.yaml` | M2-lite-width | 112/112/6 | 96 | 400 | warmup_cosine | 1e-3 / 1.0 | M2-lite with overshoot-control regularization | low-medium | 8 |
+| P1 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_wd1e3_stratified_seed0.yaml` | M2-width | 128/128/6 | 96 | 400 | warmup_cosine | 1e-3 / 1.0 | M2-width with overshoot-control regularization | medium | 9 |
+| P2 | `frozen_v1_e300_adamw_m2risk_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M2-risk | 128/128/8 | 96 | 300 | warmup_cosine | 1e-4 / 1.0 | only after e005 risk probe passes with memory headroom | high | 10 |
+
+M2 suggested SSH order:
+
+1. Run e005 probes first: M2-lite-width, M2-width, M2-lite-depth, then M2-risk.
+2. If probes do not OOM, run M2-lite e400 first.
+3. Then run M2-width e400.
+4. Then run M2-lite-depth e400.
+5. If overshoot is high, run the wd1e-3 versions.
+6. Consider M2-risk e300 only if all probes pass and GPU memory headroom is clear.

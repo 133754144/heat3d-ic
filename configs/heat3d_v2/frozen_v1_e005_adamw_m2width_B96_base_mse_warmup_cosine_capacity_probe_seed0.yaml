@@ -1,0 +1,143 @@
+schema_version: heat3d_v2_config_draft_v0
+config_role: controlled
+description: M2-width B96 warmup-cosine e005 capacity/OOM probe.
+non_claims:
+- diagnostic
+- research_stage
+- not_formal_benchmark
+- not_model_performance_evidence
+- not_publication_ready_result
+dataset:
+  name: medium1024_gapA_full1024_v2
+  subset_path: data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2
+  manifest_path: configs/heat3d_v1_physics_label_medium1024_gapA_manifest.json
+  split_map_path: configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json
+  k_encoding_mode: diag3
+  target: normalized_deltaT
+  recovery: T_ref_plus_deltaT
+  feature_view: relative_bc_features
+  bridge: zero_delta_u_bridge
+  split_source: split_map
+  sample_limit: null
+  debug_only: false
+model:
+  architecture: RIGNO
+  num_outputs: 1
+  node_latent_size: 128
+  edge_latent_size: 128
+  processor_steps: 6
+  mlp_hidden_layers: 2
+  concatenate_tau: false
+  concatenate_t: false
+  conditioned_normalization: false
+  cond_norm_hidden_size: 16
+  p_edge_masking: 0.0
+  report_parameter_count: false
+  report_memory_estimate: false
+optimizer:
+  name: adamw
+  lr: 0.0003
+  lr_schedule: warmup_cosine
+  warmup_epochs: 10
+  min_lr: 1.0e-06
+  second_stage_epoch: null
+  second_stage_lr: null
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  seed: 0
+  multi_seed: []
+loss:
+  mode: mse
+  base_space: normalized_deltaT
+  background_quantile: 0.5
+  hotspot_quantile: 0.9
+  background_weight: 0.0
+  hotspot_weight: 0.0
+  background_l1_weight: 0.0
+  background_bias_weight: 0.0
+  background_over_weight: 0.0
+  background_relative_weight: 0.0
+  relative_floor: 0.02
+  relative_floor_mode: fixed
+  pseudo_negative_quantile: 0.25
+  pseudo_negative_delta_threshold: null
+  pseudo_negative_weight: 0.0
+  pseudo_negative_over_margin: 0.0
+  pseudo_negative_min_count: 1
+  pseudo_negative_loss_type: relative_l1
+  pseudo_negative_relative_floor: 0.02
+  weight_schedule: constant
+  transition_epoch: 0
+  draft_peak_loss_weight: null
+  draft_field_shape_loss_weight: null
+run:
+  mode: controlled
+  epochs: 5
+  batching: mini_batch
+  batch_size: 96
+  micro_batch_size: null
+  validation_batch_size: 96
+  prediction_batch_size: 96
+  shuffle_train_batches: true
+  drop_last: false
+  report_every: 5
+  train_metrics_schedule: half_and_final
+  grad_norm_report_every: 10
+  log_mode: compact
+  progress_log: true
+  progress_detail: basic
+  device_policy: ssh_required_for_training
+  allow_long_training_local: false
+export:
+  output_dir: output/heat3d_v2_runs/m2width_B96_base_mse_warmup_cosine_e005_capacity_probe_seed0
+  run_name: m2width_B96_base_mse_warmup_cosine_e005_capacity_probe_seed0
+  save_final_predictions: true
+  final_predictions_name: predictions.npz
+  save_best_predictions: true
+  best_predictions_name: best_predictions.npz
+  selection_metric: valid_loss
+  save_run_config: true
+  save_loss_summary: true
+diagnostics:
+  prediction_labels:
+  - final
+  - best
+  run_baseline_comparison: true
+  run_error_bins: true
+  run_condition_diagnostics: true
+  run_summary: true
+  top_k: 5
+  deltaT_bins: p50,p75,p90,p95
+  q_power_bins: p33,p66
+  metric_set:
+  - mean_T_rmse
+  - mean_T_mae
+  - mean_DeltaT_rmse
+  - mean_max_abs
+  - mean_p95_abs
+  - mean_peak_T_err
+  - mean_hotspot_dist
+  field_shape_metrics:
+  - field_variance_ratio
+  - centered_spatial_correlation
+  - amplitude_ratio
+  - peak_abs_error
+  - top_k_overlap
+  p_quantiles:
+  - 0.95
+  - 0.99
+baseline_reference:
+  path: configs/heat3d_v2/frozen_v1_reference.yaml
+  compare_against: frozen_v1_best_diagnostic
+metadata:
+  training_batch_plan: m2_capacity_probe
+  priority: P0
+  capacity_label: M2-width
+  oom_risk: medium
+  purpose: Quick SSH feasibility probe for width 128 steps 6.
+  baseline_context: Current best candidate is M1.5 B96 base_mse warmup_cosine e400
+    seed0.
+  risk_note: Track valid_stress amplitude_ratio, field_variance_ratio, bin0 overprediction,
+    and OOM behavior.
+  determinism_note: runner records deterministic audit hashes in loss_summary.json;
+    no extra YAML field is required.
