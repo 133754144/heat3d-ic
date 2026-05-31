@@ -131,3 +131,22 @@ exploratory rather than an upstream-default alignment.
 MLP-depth note: `mlp_hidden_layers=4` was tested as a two-epoch feasibility
 probe on SSH and OOMed during the first training gradient step, so no mlp4
 e400 candidate is listed.
+
+## Loss Reduction Next Configs
+
+Context: M1.5 mlp3 e400 lowered `valid_stress` versus M1.5 mlp2 e400 but did
+not beat M2-width on scalar loss. M2-width remains the strongest scalar-loss
+path, while both routes still need amplitude and field-variance monitoring.
+
+| priority | config | model | batch | epochs | schedule | regularization | purpose |
+|---|---|---|---:|---:|---|---|---|
+| P0 | `frozen_v1_e400_adamw_m15_B96_base_mse_warmup_cosine_mlp3_stratified_seed1.yaml` | M1.5 mlp3 | 96 | 400 | warmup_cosine | wd=1e-4, clip=1.0 | mlp3 seed stability |
+| P0 | `frozen_v1_e400_adamw_m15_B96_base_mse_warmup_cosine_mlp3_stratified_seed2.yaml` | M1.5 mlp3 | 96 | 400 | warmup_cosine | wd=1e-4, clip=1.0 | mlp3 seed stability |
+| P0 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_stratified_seed1.yaml` | M2-width | 96 | 400 | warmup_cosine | wd=1e-4, clip=1.0 | M2 scalar-path seed stability |
+| P0 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_stratified_seed2.yaml` | M2-width | 96 | 400 | warmup_cosine | wd=1e-4, clip=1.0 | M2 scalar-path seed stability |
+| P1 | `frozen_v1_e600_adamw_m15_B96_base_mse_warmup_cosine_mlp3_stratified_seed0.yaml` | M1.5 mlp3 | 96 | 600 | warmup_cosine | wd=1e-4, clip=1.0 | check if mlp3 continues improving after e400 |
+| P1 | `frozen_v1_e600_adamw_m2width_B96_base_mse_warmup_cosine_stratified_seed0.yaml` | M2-width | 96 | 600 | warmup_cosine | wd=1e-4, clip=1.0 | check if M2 scalar gain continues after e400 |
+| P1 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_wd1e3_stratified_seed0.yaml` | M2-width | 96 | 400 | warmup_cosine | wd=1e-3, clip=1.0 | overshoot-control regularization |
+| P2 | `frozen_v1_e500_adamw_m15_B96_base_mse_warmup_cosine_minlr1e5_mlp3_stratified_seed0.yaml` | M1.5 mlp3 | 96 | 500 | warmup_cosine | min_lr=1e-5 | schedule variant for lower final loss |
+| P2 | `frozen_v1_e500_adamw_m2width_B96_base_mse_warmup_cosine_minlr1e5_stratified_seed0.yaml` | M2-width | 96 | 500 | warmup_cosine | min_lr=1e-5 | schedule variant for lower final loss |
+| P2 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_clip0p5_stratified_seed0.yaml` | M2-width | 96 | 400 | warmup_cosine | wd=1e-4, clip=0.5 | clipping control for amplitude/variance overshoot |
