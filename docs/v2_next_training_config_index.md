@@ -116,3 +116,18 @@ M2 suggested SSH order:
 4. Then run M2-lite-depth e400.
 5. If overshoot is high, run the wd1e-3 versions.
 6. Consider M2-risk e300 only if all probes pass and GPU memory headroom is clear.
+
+## MLP-Depth Probe Configs
+
+Context: upstream RIGNO exposes `mlp_hidden_layers`, with default/example value
+1. Current Heat3D v2 M1.5 uses `mlp_hidden_layers=2`, so deeper MLPs are
+exploratory rather than an upstream-default alignment.
+
+| priority | config | model | node/edge/steps/mlp | batch | epochs | schedule | purpose | OOM risk | suggested SSH order |
+|---|---|---|---:|---:|---:|---|---|---|---:|
+| P0 | `frozen_v1_e002_adamw_m15_B96_base_mse_warmup_cosine_mlp3_probe_seed0.yaml` | M1.5-MLP3 | 96/96/6/3 | 96 | 2 | warmup_cosine | quick feasibility probe for one deeper MLP layer | medium | 1 |
+| P1 | `frozen_v1_e400_adamw_m15_B96_base_mse_warmup_cosine_mlp3_stratified_seed0.yaml` | M1.5-MLP3 | 96/96/6/3 | 96 | 400 | warmup_cosine | long run only because the e002 probe completed without OOM | medium | 2 |
+
+MLP-depth note: `mlp_hidden_layers=4` was tested as a two-epoch feasibility
+probe on SSH and OOMed during the first training gradient step, so no mlp4
+e400 candidate is listed.
