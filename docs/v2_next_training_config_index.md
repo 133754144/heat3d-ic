@@ -196,3 +196,24 @@ remain feasibility-only; e400 configs are prepared only for successful probes.
 Large B48 suggested SSH order: first run M3+mlp3 or M2.5-depth e400, then
 M3.5-width e400 if memory/time allows. Do not run M3.5+mlp3 e400 because the
 two-epoch probe OOMed.
+
+## M2.5 B48 Follow-up Configs
+
+Context: B48 capacity review found `M2.5 B48 = 160/160/steps6/mlp2` to be the
+current strongest scalar candidate. These configs test whether that result is
+stable across seeds and whether conservative overshoot controls help without
+turning `valid_stress` into the primary validation split.
+
+| priority | config | model | batch | epochs | schedule | variant | purpose |
+|---|---|---:|---:|---:|---|---|---|
+| P0 | `frozen_v1_e400_adamw_m25width_B48_base_mse_warmup_cosine_stratified_seed1.yaml` | 160/160/s6/m2 | 48 | 400 | warmup_cosine | seed1 | seed stability for current scalar candidate |
+| P0 | `frozen_v1_e400_adamw_m25width_B48_base_mse_warmup_cosine_stratified_seed2.yaml` | 160/160/s6/m2 | 48 | 400 | warmup_cosine | seed2 | seed stability for current scalar candidate |
+| P1 | `frozen_v1_e400_adamw_m25width_B48_base_mse_warmup_cosine_wd1e3_stratified_seed0.yaml` | 160/160/s6/m2 | 48 | 400 | warmup_cosine | wd=1e-3 | conservative regularization for amplitude/variance overshoot |
+| P1 | `frozen_v1_e400_adamw_m25width_B48_light_bg_bias_over_warmup_cosine_stratified_seed0.yaml` | 160/160/s6/m2 | 48 | 400 | warmup_cosine | bg bias=0.01, bg over=0.01 | light low-DeltaT/bin0 overprediction control |
+
+Suggested SSH order:
+
+1. Run seed1 and seed2 first.
+2. If seed stability is acceptable, run the `wd1e-3` variant.
+3. Run the light background bias/over variant only after comparing scalar,
+   field-shape, and bin0/le0.05 diagnostics for the first three runs.
