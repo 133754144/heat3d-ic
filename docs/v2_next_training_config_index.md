@@ -217,3 +217,27 @@ Suggested SSH order:
 2. If seed stability is acceptable, run the `wd1e-3` variant.
 3. Run the light background bias/over variant only after comparing scalar,
    field-shape, and bin0/le0.05 diagnostics for the first three runs.
+
+## B96 Follow-up Configs After M2.5 Probe
+
+Context: the B96 line is preferred for follow-up tuning because B48 runs are
+slower. A two-epoch feasibility probe for `M2.5 B96 = 160/160/steps6/mlp2`
+OOMed during the first training epoch, so no M2.5 B96 e400 config is prepared.
+The B96 follow-up set therefore stays on known-feasible `M2-width B96 =
+128/128/steps6/mlp2`.
+
+| priority | config | model | batch | epochs | schedule | variant | purpose |
+|---|---|---:|---:|---:|---|---|---|
+| P0 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_stratified_seed1.yaml` | 128/128/s6/m2 | 96 | 400 | warmup_cosine | seed1 | seed stability for B96 M2-width |
+| P0 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_stratified_seed2.yaml` | 128/128/s6/m2 | 96 | 400 | warmup_cosine | seed2 | seed stability for B96 M2-width |
+| P1 | `frozen_v1_e400_adamw_m2width_B96_base_mse_warmup_cosine_wd1e3_stratified_seed0.yaml` | 128/128/s6/m2 | 96 | 400 | warmup_cosine | wd=1e-3 | conservative regularization for amplitude/variance overshoot |
+| P1 | `frozen_v1_e400_adamw_m2width_B96_light_bg_bias_over_warmup_cosine_stratified_seed0.yaml` | 128/128/s6/m2 | 96 | 400 | warmup_cosine | bg bias=0.01, bg over=0.01 | light low-DeltaT/bin0 overprediction control |
+
+Suggested SSH order:
+
+1. Run M2-width B96 seed1 and seed2 first.
+2. If seed stability is acceptable, run the `wd1e-3` variant.
+3. Run the light background bias/over variant after comparing scalar,
+   field-shape, bin0, and le0.05 diagnostics.
+4. Do not run M2.5 B96 long training unless a future smaller-memory strategy
+   makes the two-epoch probe pass without OOM.
