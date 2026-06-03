@@ -51,7 +51,13 @@ DEFAULT_SUBSET = (
     / "data"
     / "heat3d-thermal-simulation"
     / "subsets"
-    / "v1_multilayer_bc_eq_physics_label_medium_v2"
+    / "v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2"
+)
+DEFAULT_SPLIT_MAP = (
+    REPO_DIR
+    / "configs"
+    / "heat3d_v2"
+    / "medium1024_gapA_stratified_split_seed0.json"
 )
 DEFAULT_OUTPUT_DIR = REPO_DIR / "output" / "heat3d_v1_medium_runs" / "export_smoke_seed0"
 TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
@@ -68,11 +74,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--split-map",
         type=Path,
-        default=None,
+        default=DEFAULT_SPLIT_MAP,
         help=(
-            "Optional JSON sample_id-to-split map. When provided, train uses "
-            "split=train, primary validation uses valid_iid, and valid_stress "
-            "is reported as diagnostics only."
+            "JSON sample_id-to-split map. Defaults to the current Heat3D v2 "
+            "medium1024 Gap-A stratified split map; train uses split=train, "
+            "primary validation uses valid_iid, and valid_stress is reported "
+            "as diagnostics only."
         ),
     )
     parser.add_argument("--epochs", type=int, default=5)

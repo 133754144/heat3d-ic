@@ -16,6 +16,9 @@ from rigno.heat3d_v2_config import validate_v2_config
 
 
 TRAINING_SCRIPT = "scripts/run_heat3d_v1_medium_controlled_training_export.py"
+DEFAULT_MEDIUM1024_GAPA_SPLIT_MAP = (
+    "configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json"
+)
 COMPARISON_SCRIPT = "scripts/compare_heat3d_v1_medium_baselines.py"
 ERROR_BINS_SCRIPT = "scripts/analyze_heat3d_v1_medium_error_bins.py"
 RUN_SUMMARY_SCRIPT = "scripts/analyze_heat3d_v1_medium_run_summary.py"
@@ -47,7 +50,7 @@ def build_training_command(
 
     command = [python_executable, TRAINING_SCRIPT]
     _append_option(command, "--subset", dataset.get("subset_path"))
-    _append_option(command, "--split-map", dataset.get("split_map_path"))
+    _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
     _append_option(command, "--epochs", run.get("epochs"))
     _append_option(command, "--node-latent-size", model.get("node_latent_size"))
     _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))
@@ -670,6 +673,24 @@ def _runner_optimizer_name(value: Any) -> str | None:
     if value == LEGACY_OPTIMIZER_NAME:
         return "manual_gd"
     return _stringify(value)
+
+
+def _split_map_path_for_dataset(dataset: Mapping[str, Any]) -> Any:
+    split_map_path = dataset.get("split_map_path")
+    if split_map_path:
+        return split_map_path
+    if _is_medium1024_gapA_dataset(dataset):
+        return DEFAULT_MEDIUM1024_GAPA_SPLIT_MAP
+    return None
+
+
+def _is_medium1024_gapA_dataset(dataset: Mapping[str, Any]) -> bool:
+    dataset_name = str(dataset.get("name") or "")
+    subset_path = str(dataset.get("subset_path") or "")
+    return (
+        dataset_name == "medium1024_gapA_full1024_v2"
+        or "medium1024_gapA_full1024_v2" in subset_path
+    )
 
 
 def _stringify(value: Any) -> str:

@@ -50,10 +50,14 @@ Split map:
 
 `valid_stress` keeps pressure-test value by concentrating harder cases, especially high-top-h, diag3, high-contrast interface k, and barrier/TIM variation. It should be reported separately from IID validation.
 
-## Config readiness
+## Default split status
 
 `configs/heat3d_v2/frozen_v1_e050_adamw_m1_B192_base_mse_stratified_seed0.yaml` includes:
 
 `dataset.split_map_path: configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json`
 
-This is a config draft. The current command builder and runner still read `sample_meta.json` splits and do not yet consume `split_map_path`. The next implementation step is minimal runner support for external split maps and separate `valid_iid` / `valid_stress` reporting.
+The v2 command builder and controlled training runner now use this split map as
+the default for `medium1024_gapA_full1024_v2`. Direct runner calls default to the
+same stratified map, while configs may still pass `dataset.split_map_path`
+explicitly. In split-map mode, `valid_iid` is the primary validation split and
+`valid_stress` remains diagnostic-only.
