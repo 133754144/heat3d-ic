@@ -74,12 +74,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--split-map",
         type=Path,
-        default=DEFAULT_SPLIT_MAP,
+        default=None,
         help=(
-            "JSON sample_id-to-split map. Defaults to the current Heat3D v2 "
-            "medium1024 Gap-A stratified split map; train uses split=train, "
-            "primary validation uses valid_iid, and valid_stress is reported "
-            "as diagnostics only."
+            "Optional JSON sample_id-to-split map. For the current Heat3D v2 "
+            "medium1024 Gap-A subset, omitted values default to the stratified "
+            "split map; train uses split=train, primary validation uses "
+            "valid_iid, and valid_stress is reported as diagnostics only."
         ),
     )
     parser.add_argument("--epochs", type=int, default=5)
@@ -184,7 +184,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--background-bias-weight-end", type=float, default=None)
     parser.add_argument("--background-over-weight-start", type=float, default=None)
     parser.add_argument("--background-over-weight-end", type=float, default=None)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.split_map is None and _is_medium1024_gapA_subset(args.subset):
+        args.split_map = DEFAULT_SPLIT_MAP
+    return args
+
+
+def _is_medium1024_gapA_subset(subset: Path) -> bool:
+    return "medium1024_gapA_full1024_v2" in str(subset)
 
 
 def _emit(*args, **kwargs) -> None:

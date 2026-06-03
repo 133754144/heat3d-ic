@@ -73,6 +73,11 @@ def _check_runner_default_text() -> None:
         encoding="utf-8"
     )
     _require("DEFAULT_SPLIT_MAP" in runner_text, "runner must define DEFAULT_SPLIT_MAP")
+    _require("default=None" in runner_text, "runner --split-map argparse default must stay None")
+    _require(
+        "args.split_map is None and _is_medium1024_gapA_subset(args.subset)" in runner_text,
+        "runner must apply default split map only for medium1024 Gap-A",
+    )
     _require('"configs"' in runner_text, "runner default split map must include configs/")
     _require('"heat3d_v2"' in runner_text, "runner default split map must include heat3d_v2/")
     _require(
