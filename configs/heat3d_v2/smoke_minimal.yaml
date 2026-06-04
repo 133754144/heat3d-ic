@@ -1,0 +1,98 @@
+# Heat3D v2 schema draft / placeholder config.
+# This file is not consumed by any training script yet.
+schema_version: heat3d_v2_config_draft_v0
+config_role: smoke
+description: "Minimal local smoke placeholder; no long training and no data generation."
+non_claims:
+  - not_formal_benchmark
+  - not_model_performance_evidence
+  - not_ood_generalization_evidence
+  - not_high_fidelity_validation
+
+dataset:
+  name: medium256_debug
+  subset_path: data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium256_v2
+  manifest_path: configs/heat3d_v1_physics_label_medium256_manifest.json
+  k_encoding_mode: diag3
+  target: normalized_deltaT
+  recovery: T_ref_plus_deltaT
+  feature_view: relative_bc_features
+  bridge: zero_delta_u_bridge
+  split_source: sample_meta
+  sample_limit: 8
+  debug_only: true
+
+model:
+  architecture: RIGNO
+  num_outputs: 1
+  node_latent_size: 16
+  edge_latent_size: 16
+  processor_steps: 2
+  mlp_hidden_layers: 1
+  concatenate_tau: false
+  concatenate_t: false
+  conditioned_normalization: false
+  cond_norm_hidden_size: 16
+  p_edge_masking: 0.0
+
+optimizer:
+  name: manual_full_batch_gradient_descent
+  lr: 1.0e-5
+  lr_schedule: constant
+  warmup_epochs: 0
+  min_lr: 1.0e-5
+  second_stage_epoch: null
+  second_stage_lr: null
+  weight_decay: null
+  gradient_clip_norm: null
+  seed: 0
+  multi_seed: []
+
+loss:
+  mode: mse
+  base_space: normalized_deltaT
+  background_quantile: 0.50
+  hotspot_quantile: 0.90
+  background_weight: 1.0
+  hotspot_weight: 0.1
+  background_relative_weight: 0.0
+  pseudo_negative_weight: 0.1
+  pseudo_negative_loss_type: mse
+  weight_schedule: constant
+
+run:
+  mode: smoke
+  epochs: 1
+  batching: full_batch_grouped
+  report_every: 1
+  log_mode: compact
+  progress_log: true
+  progress_detail: basic
+  device_policy: local_small_only
+  allow_long_training_local: false
+
+export:
+  output_dir: output/heat3d_v2_runs/smoke_minimal_seed0
+  run_name: smoke_minimal_seed0
+  save_final_predictions: false
+  final_predictions_name: predictions.npz
+  save_best_predictions: false
+  best_predictions_name: best_predictions.npz
+  selection_metric: valid_loss
+  save_run_config: true
+  save_loss_summary: true
+
+diagnostics:
+  prediction_labels: []
+  run_baseline_comparison: false
+  run_error_bins: false
+  run_condition_diagnostics: false
+  run_summary: false
+  top_k: 5
+  deltaT_bins: p50,p75,p90,p95
+  q_power_bins: p33,p66
+  field_shape_metrics: []
+  p_quantiles: [0.95, 0.99]
+
+baseline_reference:
+  path: configs/heat3d_v2/frozen_v1_reference.yaml

@@ -8,9 +8,11 @@ diagnostic comparison. It is not a formal training experiment.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
+import subprocess
 import sys
 import time
 from typing import Any
@@ -49,9 +51,16 @@ DEFAULT_SUBSET = (
     / "data"
     / "heat3d-thermal-simulation"
     / "subsets"
-    / "v1_multilayer_bc_eq_physics_label_medium_v2"
+    / "v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2"
+)
+DEFAULT_SPLIT_MAP = (
+    REPO_DIR
+    / "configs"
+    / "heat3d_v2"
+    / "medium1024_gapA_stratified_split_seed0.json"
 )
 DEFAULT_OUTPUT_DIR = REPO_DIR / "output" / "heat3d_v1_medium_runs" / "export_smoke_seed0"
+TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,14 +71,60 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help=(
+            "Optional JSON sample_id-to-split map. For the current Heat3D v2 "
+            "medium1024 Gap-A subset, omitted values default to the stratified "
+            "split map; train uses split=train, primary validation uses "
+            "valid_iid, and valid_stress is reported as diagnostics only."
+        ),
+    )
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
-    parser.add_argument("--lr-schedule", choices=("constant", "warmup_cosine", "two_stage"), default="constant")
+    parser.add_argument(
+        "--lr-schedule",
+        choices=("constant", "warmup_cosine", "rapid_decay", "two_stage", "second_stage"),
+        default="constant",
+    )
     parser.add_argument("--warmup-epochs", type=int, default=0)
     parser.add_argument("--min-lr", type=float, default=1e-5)
     parser.add_argument("--second-stage-epoch", type=int, default=0)
     parser.add_argument("--second-stage-lr", type=float, default=1e-4)
+    parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="manual_gd")
+    parser.add_argument("--gradient-clip-norm", type=float, default=None)
+    parser.add_argument("--weight-decay", type=float, default=0.0)
+    parser.add_argument("--node-latent-size", type=int, default=MODEL_CONFIG["node_latent_size"])
+    parser.add_argument("--edge-latent-size", type=int, default=MODEL_CONFIG["edge_latent_size"])
+    parser.add_argument("--processor-steps", type=int, default=MODEL_CONFIG["processor_steps"])
+    parser.add_argument("--mlp-hidden-layers", type=int, default=MODEL_CONFIG["mlp_hidden_layers"])
+    parser.add_argument("--batch-size", type=int, default=0)
+    parser.add_argument("--validation-batch-size", type=int, default=0)
+    parser.add_argument("--prediction-batch-size", type=int, default=0)
+    parser.add_argument(
+        "--prediction-split",
+        choices=("all", "train", "valid_iid", "valid_stress"),
+        default="all",
+        help="Limit final/best prediction export to one split; training behavior is unchanged.",
+    )
+    parser.add_argument("--shuffle-train-batches", action="store_true")
+    parser.add_argument("--drop-last", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--boundary-mask-fallback",
+        dest="boundary_mask_fallback",
+        action="store_true",
+        default=True,
+        help="Reconstruct boundary masks from coordinate min/max when boundary_regions is missing.",
+    )
+    parser.add_argument(
+        "--no-boundary-mask-fallback",
+        dest="boundary_mask_fallback",
+        action="store_false",
+        help="Preserve the legacy all-interior mask behavior when boundary_regions is missing.",
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
     parser.add_argument(
@@ -81,10 +136,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-best-predictions", action="store_true")
     parser.add_argument("--best-predictions-name", type=str, default="best_predictions.npz")
     parser.add_argument("--report-every", type=int, default=1)
+    parser.add_argument(
+        "--train-metrics-schedule",
+        choices=TRAIN_METRICS_SCHEDULE_CHOICES,
+        default="half_and_final",
+        help="Schedule for full train split metrics during the epoch loop.",
+    )
+    parser.add_argument(
+        "--grad-norm-report-every",
+        type=int,
+        default=10,
+        help=(
+            "Frequency for external grad norm diagnostics. "
+            "Use 1 for every train batch, N>1 for every N batches, or 0 to disable reporting."
+        ),
+    )
     parser.add_argument("--log-mode", choices=("compact", "full", "quiet"), default="compact")
     parser.add_argument("--progress-log", dest="progress_log", action="store_true", default=True)
     parser.add_argument("--no-progress-log", dest="progress_log", action="store_false")
-    parser.add_argument("--progress-detail", choices=("off", "basic", "verbose"), default="basic")
+    parser.add_argument(
+        "--progress-detail",
+        choices=("off", "quiet", "basic", "verbose", "full"),
+        default="basic",
+        help=(
+            "Startup progress detail. basic uses compact progress updates; "
+            "verbose/full prints per-group details; off/quiet disables group-build progress."
+        ),
+    )
+    parser.add_argument("--profile-timing", action="store_true")
+    parser.add_argument("--profile-timing-json", type=Path, default=None)
     parser.add_argument(
         "--loss-mode",
         choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative", "background_pseudo_negative"),
@@ -123,7 +203,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--background-bias-weight-end", type=float, default=None)
     parser.add_argument("--background-over-weight-start", type=float, default=None)
     parser.add_argument("--background-over-weight-end", type=float, default=None)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.split_map is None and _is_medium1024_gapA_subset(args.subset):
+        args.split_map = DEFAULT_SPLIT_MAP
+    return args
+
+
+def _is_medium1024_gapA_subset(subset: Path) -> bool:
+    return "medium1024_gapA_full1024_v2" in str(subset)
 
 
 def _emit(*args, **kwargs) -> None:
@@ -146,12 +233,20 @@ def _progress(enabled: bool, stage: str, message: str, start_time: float | None 
         _emit(f"[{stage}] {message}{_format_elapsed(start_time)}")
 
 
+def _progress_detail_mode(progress_detail: str) -> str:
+    if progress_detail in {"off", "quiet"}:
+        return "off"
+    if progress_detail in {"verbose", "full"}:
+        return "full"
+    return "basic"
+
+
 def _progress_detail_enabled(args: argparse.Namespace) -> bool:
-    return _progress_enabled(args) and args.progress_detail != "off"
+    return _progress_enabled(args) and _progress_detail_mode(args.progress_detail) != "off"
 
 
 def _verbose_progress_enabled(args: argparse.Namespace) -> bool:
-    return _progress_enabled(args) and args.progress_detail == "verbose"
+    return _progress_enabled(args) and _progress_detail_mode(args.progress_detail) == "full"
 
 
 def _progress_checkpoints(total: int) -> set[int]:
@@ -170,6 +265,95 @@ def _progress_checkpoints(total: int) -> set[int]:
     return checkpoints
 
 
+class _ProgressBar:
+    """Small stdout progress helper for startup phases without extra deps."""
+
+    def __init__(
+        self,
+        enabled: bool,
+        label: str,
+        total: int,
+        *,
+        min_interval_s: float = 2.0,
+        width: int = 24,
+        stream=None,
+    ) -> None:
+        self.enabled = bool(enabled)
+        self.label = label
+        self.total = max(0, int(total))
+        self.min_interval_s = float(min_interval_s)
+        self.width = max(4, int(width))
+        self.stream = sys.stdout if stream is None else stream
+        self.start_time = time.perf_counter()
+        self.last_emit_time = self.start_time
+        self.last_current = 0
+        self.closed = False
+        self.is_tty = bool(getattr(self.stream, "isatty", lambda: False)())
+        self.percent_step = max(1, math.ceil(max(1, self.total) * 0.05))
+        self.next_percent_current = self.percent_step
+
+    def update(self, current: int, *, detail: str | None = None, force: bool = False) -> None:
+        if not self.enabled or self.closed:
+            return
+        current = max(0, int(current))
+        if self.total:
+            current = min(current, self.total)
+        now = time.perf_counter()
+        should_emit = force or current >= self.total
+        should_emit = should_emit or (now - self.last_emit_time) >= self.min_interval_s
+        should_emit = should_emit or current >= self.next_percent_current
+        if not should_emit:
+            self.last_current = current
+            return
+        self._write(self._format_line(current, detail=detail), overwrite=self.is_tty and not force)
+        self.last_emit_time = now
+        self.last_current = current
+        while self.next_percent_current <= current:
+            self.next_percent_current += self.percent_step
+
+    def close(self, *, current: int | None = None) -> None:
+        if not self.enabled or self.closed:
+            return
+        final_current = self.last_current if current is None else int(current)
+        self.update(final_current, force=True)
+        if self.is_tty:
+            self.stream.write("\n")
+        elapsed = time.perf_counter() - self.start_time
+        avg = elapsed / final_current if final_current > 0 else 0.0
+        self.stream.write(
+            f"{self.label} completed groups={final_current} "
+            f"elapsed={elapsed:.1f}s avg={avg:.2f}s\n"
+        )
+        self.stream.flush()
+        self.closed = True
+
+    def _format_line(self, current: int, *, detail: str | None) -> str:
+        elapsed = time.perf_counter() - self.start_time
+        avg = elapsed / current if current > 0 else 0.0
+        if self.total > 0 and current > 0:
+            eta = max(0.0, avg * (self.total - current))
+        else:
+            eta = 0.0
+        if self.total > 0:
+            ratio = min(1.0, max(0.0, current / self.total))
+        else:
+            ratio = 1.0
+        filled = int(round(self.width * ratio))
+        bar = "#" * filled + "-" * (self.width - filled)
+        suffix = f" {detail}" if detail else ""
+        return (
+            f"{self.label} [{bar}] {current}/{self.total} "
+            f"elapsed={elapsed:.1f}s avg={avg:.2f}s eta={eta:.1f}s{suffix}"
+        )
+
+    def _write(self, text: str, *, overwrite: bool) -> None:
+        if overwrite:
+            self.stream.write("\r" + text)
+        else:
+            self.stream.write(text + "\n")
+        self.stream.flush()
+
+
 def _record_timing(timings: dict[str, float], key: str, start_time: float) -> float:
     elapsed = time.perf_counter() - start_time
     timings[key] = elapsed
@@ -184,6 +368,7 @@ def _timing_summary(timings: dict[str, float]) -> str:
         "model_init",
         "initial_loss",
         "epoch_loop",
+        "final_metrics",
         "prediction_export",
         "prediction_save",
         "best_prediction_export",
@@ -193,12 +378,530 @@ def _timing_summary(timings: dict[str, float]) -> str:
     return " ".join(f"{key}={timings[key]:.2f}s" for key in keys if key in timings)
 
 
+def _profile_timing_enabled(args: argparse.Namespace) -> bool:
+    return bool(args.profile_timing)
+
+
+def train_metrics_epochs(schedule: str, epochs: int) -> list[int]:
+    if epochs < 1:
+        raise ValueError("--epochs must be >= 1")
+    if schedule == "every_epoch":
+        return list(range(1, epochs + 1))
+    if schedule == "half_and_final":
+        midpoint = int(math.ceil(epochs / 2))
+        return sorted({midpoint, epochs})
+    if schedule == "final_only":
+        return [epochs]
+    if schedule == "none":
+        return []
+    raise ValueError(f"Unknown train metrics schedule: {schedule!r}")
+
+
+def should_report_grad_norm(grad_norm_report_every: int, batch_index: int) -> bool:
+    if grad_norm_report_every < 0:
+        raise ValueError("--grad-norm-report-every must be >= 0")
+    if batch_index < 1:
+        raise ValueError("batch_index must be 1-indexed")
+    if grad_norm_report_every == 0:
+        return False
+    return batch_index % grad_norm_report_every == 0
+
+
+def grad_norm_reporting_mode(grad_norm_report_every: int) -> str:
+    if grad_norm_report_every < 0:
+        raise ValueError("--grad-norm-report-every must be >= 0")
+    if grad_norm_report_every == 0:
+        return "disabled"
+    if grad_norm_report_every == 1:
+        return "every_batch"
+    return f"every_{grad_norm_report_every}_batches"
+
+
+def should_build_final_predictions(save_predictions: bool) -> bool:
+    return bool(save_predictions)
+
+
+def should_reuse_final_metrics(final_epoch_train_metrics_computed: bool) -> bool:
+    return bool(final_epoch_train_metrics_computed)
+
+
+def _maybe_float(payload: dict[str, Any] | None, key: str) -> float:
+    if payload is None:
+        return float("nan")
+    return float(payload[key])
+
+
+def _format_progress_value(value: Any, *, precision: int = 6) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return f"{numeric:.{precision}e}"
+
+
+def _format_progress_decimal(value: Any, *, precision: int = 2) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return f"{numeric:.{precision}f}"
+
+
+def _format_progress_percent(value: Any, *, precision: int = 2) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return f"{numeric:.{precision}f}%"
+
+
+def _format_progress_int(value: Any) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return str(int(numeric))
+
+
+def _deltaT_error_pct(raw_delta_mse: Any, mean_abs_true_deltaT: Any) -> float | None:
+    if raw_delta_mse is None or mean_abs_true_deltaT is None:
+        return None
+    try:
+        mse = float(raw_delta_mse)
+        denominator = float(mean_abs_true_deltaT)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(mse) or not math.isfinite(denominator) or denominator <= 0.0:
+        return None
+    return 100.0 * math.sqrt(max(mse, 0.0)) / denominator
+
+
+def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
+    if metrics is None:
+        return None
+    if metrics.get("raw_deltaT_relative_rmse_pct") is not None:
+        return float(metrics["raw_deltaT_relative_rmse_pct"])
+    return _deltaT_error_pct(metrics.get("raw_delta_mse"), metrics.get("mean_abs_true_deltaT"))
+
+
+def _progress_numeric_or_none(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _first_progress_numeric(*values: Any) -> float | None:
+    for value in values:
+        numeric = _progress_numeric_or_none(value)
+        if numeric is not None:
+            return numeric
+    return None
+
+
+def _short_hash(parts) -> str:
+    digest = hashlib.sha256()
+    for part in parts:
+        digest.update(str(part).encode("utf-8"))
+        digest.update(b"\0")
+    return digest.hexdigest()[:16]
+
+
+def _group_sample_id_hash(groups: list[dict]) -> str:
+    parts = []
+    for group in groups:
+        parts.append("[group]")
+        parts.extend(group.get("sample_ids", ()))
+    return _short_hash(parts)
+
+
+def _current_git_commit() -> str | None:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=REPO_DIR,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except OSError:
+        return None
+    commit = completed.stdout.strip()
+    return commit or None
+
+
+def _bump_profile_count(counts: dict[str, int] | None, key: str, amount: int = 1) -> None:
+    if counts is not None:
+        counts[key] = int(counts.get(key, 0)) + int(amount)
+
+
+def _block_until_ready_tree(value) -> None:
+    for leaf in tree.tree_leaves(value):
+        block = getattr(leaf, "block_until_ready", None)
+        if block is not None:
+            block()
+
+
+def _shape_list(value) -> list[int] | None:
+    shape = getattr(value, "shape", None)
+    if shape is None:
+        return None
+    return [int(dim) for dim in shape]
+
+
+def _sample_count(group: dict[str, Any]) -> int:
+    target_shape = getattr(group["target_normalized"], "shape", ())
+    return int(target_shape[0]) if target_shape else 0
+
+
+def _graph_edge_shape_count(graphs) -> int | None:
+    total = 0
+    found = False
+    for graph_name in ("p2r", "r2r", "r2p"):
+        graph = getattr(graphs, graph_name, None)
+        if graph is None:
+            continue
+        for edge in getattr(graph, "edges", {}).values():
+            leaves = tree.tree_leaves(edge.features)
+            for leaf in leaves:
+                shape = getattr(leaf, "shape", None)
+                if shape is not None and len(shape) >= 2:
+                    total += int(shape[1])
+                    found = True
+                    break
+    return total if found else None
+
+
+def _batch_shape_signature(group: dict[str, Any]) -> dict[str, Any]:
+    inputs = group["inputs"]
+    graph_leaf_shapes = sorted(
+        {
+            str(tuple(int(dim) for dim in leaf.shape))
+            for leaf in tree.tree_leaves(group["graphs"])
+            if hasattr(leaf, "shape")
+        }
+    )
+    input_x_shape = _shape_list(inputs.x_inp)
+    sample_count = _sample_count(group)
+    nodes_per_sample = input_x_shape[-2] if input_x_shape and len(input_x_shape) >= 2 else None
+    return {
+        "group_count": 1,
+        "sample_count": sample_count,
+        "total_nodes": sample_count * nodes_per_sample if nodes_per_sample is not None else None,
+        "total_edges": _graph_edge_shape_count(group["graphs"]),
+        "input_u_shape": _shape_list(inputs.u),
+        "input_c_shape": _shape_list(inputs.c),
+        "input_x_inp_shape": input_x_shape,
+        "input_x_out_shape": _shape_list(inputs.x_out),
+        "target_shape": _shape_list(group["target_normalized"]),
+        "graph_leaf_shapes": graph_leaf_shapes,
+        "graph_leaf_shape_count": len(graph_leaf_shapes),
+    }
+
+
+def _shape_signature_key(signature: dict[str, Any]) -> str:
+    return json.dumps(signature, sort_keys=True, separators=(",", ":"))
+
+
+def _summarize_batch_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+    times = [float(record["total_batch_time"]) for record in records]
+    later_times = times[1:]
+    later_median = float(np.median(later_times)) if later_times else None
+    possible_recompile_count = 0
+    for index, record in enumerate(records):
+        possible = bool(index > 0 and later_median and float(record["total_batch_time"]) > 3.0 * later_median)
+        record["possible_recompile"] = possible
+        record["possible_recompile_reason"] = (
+            "later_batch_time_gt_3x_later_median" if possible else None
+        )
+        possible_recompile_count += int(possible)
+    return {
+        "mean_train_batch_time": float(np.mean(times)) if times else 0.0,
+        "median_train_batch_time": float(np.median(times)) if times else 0.0,
+        "max_train_batch_time": float(max(times)) if times else 0.0,
+        "first_train_batch_time": float(times[0]) if times else 0.0,
+        "later_train_batch_median_time": later_median,
+        "possible_recompile_batch_count": int(possible_recompile_count),
+    }
+
+
+def _combine_loss_components(weighted_entries: list[tuple[int, dict[str, Any]]]) -> dict[str, float]:
+    total_count = sum(count for count, _ in weighted_entries)
+    if total_count <= 0:
+        return {}
+    keys = set()
+    for _, components in weighted_entries:
+        keys.update(components.keys())
+    combined: dict[str, float] = {}
+    for key in sorted(keys):
+        if key == "pseudo_negative_count":
+            combined[key] = float(sum(float(components.get(key, 0.0)) for _, components in weighted_entries))
+        else:
+            combined[key] = float(
+                sum(float(components.get(key, 0.0)) * count for count, components in weighted_entries)
+                / total_count
+            )
+    return combined
+
+
+def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]]) -> dict[str, Any]:
+    total_count = sum(count for count, _ in weighted_entries)
+    if total_count <= 0:
+        return {}
+    numeric_keys = (
+        "normalized_loss",
+        "raw_delta_mse",
+        "recovered_temperature_mse",
+        "mean_abs_true_deltaT",
+    )
+    combined = {
+        key: float(
+            sum(float(metrics.get(key, 0.0)) * count for count, metrics in weighted_entries)
+            / total_count
+        )
+        for key in numeric_keys
+    }
+    combined["raw_deltaT_relative_rmse_pct"] = _metric_error_pct(combined)
+    combined["finite_ok"] = all(bool(metrics.get("finite_ok")) for _, metrics in weighted_entries)
+    combined["shape_ok"] = all(bool(metrics.get("shape_ok")) for _, metrics in weighted_entries)
+    return combined
+
+
+def _evaluate_groups_profiled(
+    model,
+    params,
+    groups: list[dict],
+    stats: dict,
+    loss_config: dict[str, Any],
+    metrics_fn,
+    *,
+    epoch: int,
+    split: str,
+) -> tuple[dict[str, float], dict[str, Any], list[dict[str, Any]]]:
+    component_entries = []
+    metric_entries = []
+    batch_records = []
+    for index, group in enumerate(groups, start=1):
+        batch_start = time.perf_counter()
+        components = _loss_components(model, params, [group], stats, loss_config)
+        metrics = metrics_fn(model, params, [group], stats)
+        _block_until_ready_tree((components, metrics))
+        elapsed = time.perf_counter() - batch_start
+        count = _sample_count(group)
+        component_entries.append((count, components))
+        metric_entries.append((count, metrics))
+        batch_records.append(
+            {
+                "epoch_index": int(epoch),
+                "batch_index": int(index),
+                "split": split,
+                "batch_size": int(count),
+                "group_count": 1,
+                "total_batch_time": float(elapsed),
+                "batch_shape_signature": _batch_shape_signature(group),
+            }
+        )
+    return (
+        _combine_loss_components(component_entries),
+        _combine_metric_payloads(metric_entries),
+        batch_records,
+    )
+
+
+def _profile_timing_payload(
+    *,
+    timings: dict[str, float],
+    profile_counts: dict[str, int],
+    epoch_records: list[dict[str, Any]],
+    train_batch_records: list[dict[str, Any]] | None = None,
+    validation_batch_records: list[dict[str, Any]] | None = None,
+    train_group_count: int,
+    valid_group_count: int,
+    all_group_count: int,
+    train_batch_counts: list[int],
+    subset: Path,
+    output_dir: Path,
+    train_metrics_schedule: str,
+    train_metrics_epoch_values: list[int],
+    grad_norm_report_every: int = 1,
+    grad_norm_reported_batch_count: int = 0,
+    grad_norm_skipped_batch_count: int = 0,
+    final_metrics_reused: bool = False,
+    final_metrics_reuse_source: str | None = None,
+    final_prediction_export_skipped: bool = False,
+    final_prediction_export_skip_reason: str | None = None,
+    total_run_time_so_far: float | None = None,
+) -> dict[str, Any]:
+    train_batch_records = train_batch_records or []
+    validation_batch_records = validation_batch_records or []
+    per_epoch = []
+    for record in epoch_records:
+        batch_summary = record.get("train_batch_timing_summary", {})
+        per_epoch.append(
+            {
+                "epoch": int(record["epoch"]),
+                "epoch_index": int(record["epoch"]),
+                "total_time_s": float(record.get("epoch_total_time_s", 0.0)),
+                "epoch_total_time": float(record.get("epoch_total_time_s", 0.0)),
+                "train_time_s": float(record.get("epoch_train_time_s", 0.0)),
+                "train_total_time": float(record.get("epoch_train_time_s", 0.0)),
+                "train_metrics_time_s": float(record.get("epoch_train_metrics_time_s", 0.0)),
+                "train_metrics_time": float(record.get("epoch_train_metrics_time_s", 0.0)),
+                "train_metrics_computed": bool(record.get("train_full_metrics_computed", False)),
+                "validation_time_s": float(record.get("epoch_validation_time_s", 0.0)),
+                "validation_total_time": float(record.get("epoch_validation_time_s", 0.0)),
+                "train_batch_count": int(record.get("train_batch_count", 0)),
+                "num_train_batches": int(record.get("train_batch_count", 0)),
+                "valid_batch_count": int(record.get("valid_batch_count", valid_group_count)),
+                "num_valid_batches": int(record.get("valid_batch_count", valid_group_count)),
+                "mean_train_batch_time": float(batch_summary.get("mean_train_batch_time", 0.0)),
+                "median_train_batch_time": float(batch_summary.get("median_train_batch_time", 0.0)),
+                "max_train_batch_time": float(batch_summary.get("max_train_batch_time", 0.0)),
+                "first_train_batch_time": float(batch_summary.get("first_train_batch_time", 0.0)),
+                "later_train_batch_median_time": batch_summary.get("later_train_batch_median_time"),
+                "possible_recompile_batch_count": int(batch_summary.get("possible_recompile_batch_count", 0)),
+            }
+        )
+
+    run_level = {
+        "dataset_load_time": float(timings.get("dataset_load", 0.0)),
+        "group_build_time": float(timings.get("group_build", 0.0)),
+        "train_groups_count": int(train_group_count),
+        "valid_groups_count": int(valid_group_count),
+        "all_groups_count": int(all_group_count),
+        "metadata_calls": int(profile_counts.get("graph_metadata_build_calls", 0)),
+        "build_graphs_calls": int(profile_counts.get("graph_build_graphs_calls", 0)),
+        "total_run_time_so_far": float(total_run_time_so_far or 0.0),
+        "train_metrics_schedule": train_metrics_schedule,
+        "train_metrics_epochs": [int(epoch) for epoch in train_metrics_epoch_values],
+        "grad_norm_report_every": int(grad_norm_report_every),
+        "grad_norm_reported_batch_count": int(grad_norm_reported_batch_count),
+        "grad_norm_skipped_batch_count": int(grad_norm_skipped_batch_count),
+        "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
+        "final_metrics_reused": bool(final_metrics_reused),
+        "final_metrics_reuse_source": final_metrics_reuse_source,
+        "final_metrics_time": float(timings.get("final_metrics", 0.0)),
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
+    }
+    return {
+        "schema_version": 1,
+        "diagnostic_scope": "Heat3D v2 graph/group build timing profile",
+        "subset": str(subset),
+        "output_dir": str(output_dir),
+        "run_level": run_level,
+        "train_metrics_schedule": train_metrics_schedule,
+        "train_metrics_epochs": [int(epoch) for epoch in train_metrics_epoch_values],
+        "grad_norm_report_every": int(grad_norm_report_every),
+        "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
+        "final_metrics_reused": bool(final_metrics_reused),
+        "final_metrics_reuse_source": final_metrics_reuse_source,
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
+        "timings_s": {key: float(value) for key, value in sorted(timings.items())},
+        "counts": {
+            "train_groups": int(train_group_count),
+            "valid_groups": int(valid_group_count),
+            "all_groups": int(all_group_count),
+            "train_batches_per_epoch": [int(value) for value in train_batch_counts],
+            "valid_batches": int(valid_group_count),
+            "prediction_batches": int(all_group_count),
+            **{key: int(value) for key, value in sorted(profile_counts.items())},
+        },
+        "per_epoch": per_epoch,
+        "train_batches": train_batch_records,
+        "validation_batches": validation_batch_records,
+    }
+
+
+def _print_profile_timing(payload: dict[str, Any]) -> None:
+    counts = payload["counts"]
+    timings = payload["timings_s"]
+    run_level = payload.get("run_level", {})
+    _emit("")
+    _emit("profile timing")
+    _emit(
+        "  graph/group: "
+        f"group_build={run_level.get('group_build_time', timings.get('group_build', 0.0)):.2f}s "
+        f"metadata_calls={run_level.get('metadata_calls', counts.get('graph_metadata_build_calls', 0))} "
+        f"build_graphs_calls={run_level.get('build_graphs_calls', counts.get('graph_build_graphs_calls', 0))}"
+    )
+    _emit(
+        "  groups/batches: "
+        f"train_groups={counts['train_groups']} valid_groups={counts['valid_groups']} "
+        f"all_groups={counts['all_groups']} valid_batches={counts['valid_batches']} "
+        f"prediction_batches={counts['prediction_batches']}"
+    )
+    _emit(
+        "  train_metrics: "
+        f"schedule={payload.get('train_metrics_schedule')} "
+        f"epochs={payload.get('train_metrics_epochs')}"
+    )
+    _emit(
+        "  grad_norm: "
+        f"mode={payload.get('grad_norm_reporting_mode')} "
+        f"reported={run_level.get('grad_norm_reported_batch_count', 0)} "
+        f"skipped={run_level.get('grad_norm_skipped_batch_count', 0)}"
+    )
+    _emit(
+        "  final: "
+        f"metrics_reused={payload.get('final_metrics_reused')} "
+        f"prediction_export_skipped={payload.get('final_prediction_export_skipped')}"
+    )
+    for record in payload["per_epoch"]:
+        _emit(
+            "  epoch "
+            f"{record['epoch_index']:03d}: total={record['epoch_total_time']:.2f}s "
+            f"train={record['train_total_time']:.2f}s "
+            f"train_metrics={record['train_metrics_time']:.2f}s "
+            f"train_metrics_computed={record['train_metrics_computed']} "
+            f"validation={record['validation_total_time']:.2f}s "
+            f"train_batches={record['num_train_batches']} "
+            f"first_batch={record['first_train_batch_time']:.2f}s "
+            f"later_median={record['later_train_batch_median_time']} "
+            f"possible_recompile={record['possible_recompile_batch_count']}"
+        )
+    if "prediction_export" in timings:
+        _emit(f"  prediction_export={timings['prediction_export']:.2f}s")
+    if "final_metrics" in timings:
+        _emit(f"  final_metrics={timings['final_metrics']:.2f}s")
+
+
 def _ensure_ignored_output_dir(path: Path) -> Path:
     resolved = path.resolve()
     output_root = (REPO_DIR / "output").resolve()
     if resolved != output_root and output_root not in resolved.parents:
         raise ValueError(f"--output-dir must be under ignored output/: {path}")
     resolved.mkdir(parents=True, exist_ok=True)
+    return resolved
+
+
+def _ensure_ignored_output_file(path: Path, flag: str) -> Path:
+    resolved = path.resolve()
+    output_root = (REPO_DIR / "output").resolve()
+    if resolved == output_root or output_root not in resolved.parents:
+        raise ValueError(f"--{flag} must be a file under ignored output/: {path}")
+    resolved.parent.mkdir(parents=True, exist_ok=True)
     return resolved
 
 
@@ -219,6 +922,42 @@ def _require_train_valid_splits(split_ids: dict[str, list[str]]) -> None:
             "Expected non-empty train and valid splits for controlled training export, "
             f"found train={len(train_ids)} valid={len(valid_ids)}"
         )
+
+
+def _load_external_split_map(path: Path) -> dict[str, list[str]]:
+    with path.open("r", encoding="utf-8") as file:
+        loaded = json.load(file)
+    mapping = loaded.get("sample_splits", loaded)
+    if not isinstance(mapping, dict):
+        raise ValueError(f"--split-map must be a mapping or contain sample_splits: {path}")
+    split_ids: dict[str, list[str]] = {}
+    for sample_id, split in mapping.items():
+        if not isinstance(sample_id, str) or not sample_id:
+            raise ValueError(f"--split-map contains invalid sample_id: {sample_id!r}")
+        if not isinstance(split, str) or not split:
+            raise ValueError(f"--split-map contains invalid split for {sample_id!r}: {split!r}")
+        split_ids.setdefault(split, []).append(sample_id)
+    return {split: sorted(ids) for split, ids in split_ids.items()}
+
+
+def _resolve_training_splits(
+    sample_root: Path,
+    split_map_path: Path | None,
+) -> tuple[dict[str, list[str]], str, str, str | None]:
+    if split_map_path is None:
+        split_ids = _subset_split_ids(sample_root)
+        _require_train_valid_splits(split_ids)
+        return split_ids, "sample_meta", "valid", None
+
+    split_ids = _load_external_split_map(split_map_path)
+    train_ids = split_ids.get("train", [])
+    valid_iid_ids = split_ids.get("valid_iid", [])
+    if not train_ids or not valid_iid_ids:
+        raise ValueError(
+            "Expected non-empty train and valid_iid splits for --split-map, "
+            f"found train={len(train_ids)} valid_iid={len(valid_iid_ids)}"
+        )
+    return split_ids, "split_map", "valid_iid", "valid_stress" if split_ids.get("valid_stress") else None
 
 
 def _should_report_epoch(epoch: int, epochs: int, report_every: int) -> bool:
@@ -293,6 +1032,43 @@ def _lr_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _optimizer_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "optimizer": args.optimizer,
+        "gradient_clip_norm": (
+            None if args.gradient_clip_norm is None else float(args.gradient_clip_norm)
+        ),
+        "weight_decay": float(args.weight_decay),
+    }
+
+
+def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    model_config = dict(MODEL_CONFIG)
+    model_config.update(
+        {
+            "node_latent_size": int(args.node_latent_size),
+            "edge_latent_size": int(args.edge_latent_size),
+            "processor_steps": int(args.processor_steps),
+            "mlp_hidden_layers": int(args.mlp_hidden_layers),
+        }
+    )
+    return model_config
+
+
+def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "batch_size": _optional_batch_size(args.batch_size, "batch-size"),
+        "validation_batch_size": _optional_batch_size(
+            args.validation_batch_size, "validation-batch-size"
+        ),
+        "prediction_batch_size": _optional_batch_size(
+            args.prediction_batch_size, "prediction-batch-size"
+        ),
+        "shuffle_train_batches": bool(args.shuffle_train_batches),
+        "drop_last": bool(args.drop_last),
+    }
+
+
 def _validate_loss_config(config: dict[str, Any]) -> None:
     background_quantile = float(config["background_quantile"])
     hotspot_quantile = float(config["hotspot_quantile"])
@@ -359,6 +1135,48 @@ def _validate_lr_config(config: dict[str, Any]) -> None:
         raise ValueError("--second-stage-lr must be >= 0")
 
 
+def _validate_optimizer_config(config: dict[str, Any]) -> None:
+    if config["optimizer"] not in {"manual_gd", "adam", "adamw"}:
+        raise ValueError("--optimizer must be manual_gd, adam, or adamw")
+    gradient_clip_norm = config.get("gradient_clip_norm")
+    if gradient_clip_norm is not None and float(gradient_clip_norm) <= 0.0:
+        raise ValueError("--gradient-clip-norm must be > 0 when provided")
+    if float(config["weight_decay"]) < 0.0:
+        raise ValueError("--weight-decay must be >= 0")
+
+
+def _validate_model_config(config: dict[str, Any]) -> None:
+    for key in ("node_latent_size", "edge_latent_size", "processor_steps", "mlp_hidden_layers"):
+        if int(config[key]) < 1:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 1")
+
+
+def _validate_batch_config(config: dict[str, Any]) -> None:
+    for key in ("batch_size", "validation_batch_size", "prediction_batch_size"):
+        value = config.get(key)
+        if value is not None and int(value) < 1:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 1 or 0 for legacy full-batch")
+
+
+def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "batch_size": batch_config["batch_size"],
+        "validation_batch_size": batch_config["validation_batch_size"],
+        "prediction_batch_size": batch_config["prediction_batch_size"],
+        "shuffle_train_batches": batch_config["shuffle_train_batches"],
+        "drop_last": batch_config["drop_last"],
+        "batching_mode": "mini_batch" if batch_config["batch_size"] is not None else "legacy_full_batch",
+    }
+
+
+def _optional_batch_size(value: int | None, flag_name: str) -> int | None:
+    if value is None or int(value) == 0:
+        return None
+    if int(value) < 0:
+        raise ValueError(f"--{flag_name} must be >= 1 or 0 for legacy full-batch")
+    return int(value)
+
+
 def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
     base_lr = float(config["lr"])
     schedule = config["lr_schedule"]
@@ -367,6 +1185,11 @@ def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
     if schedule == "two_stage":
         second_stage_epoch = int(config["second_stage_epoch"])
         if second_stage_epoch <= 0 or epoch <= second_stage_epoch:
+            return base_lr
+        return float(config["second_stage_lr"])
+    if schedule == "second_stage":
+        second_stage_epoch = int(config["second_stage_epoch"])
+        if second_stage_epoch <= 0 or epoch < second_stage_epoch:
             return base_lr
         return float(config["second_stage_lr"])
     if schedule == "warmup_cosine":
@@ -383,6 +1206,16 @@ def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
             progress = min(max((epoch - 1) / decay_epochs, 0.0), 1.0)
         cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
         return min_lr + cosine * (base_lr - min_lr)
+    if schedule == "rapid_decay":
+        min_lr = float(config["min_lr"])
+        mid_lr = max(min_lr, base_lr * 0.1)
+        if epoch <= 1:
+            return base_lr
+        if epoch <= 10:
+            progress = min(max((epoch - 1) / 9.0, 0.0), 1.0)
+            return base_lr + progress * (mid_lr - base_lr)
+        progress = min(max((epoch - 10) / max(epochs - 10, 1), 0.0), 1.0)
+        return mid_lr + progress * (min_lr - mid_lr)
     raise ValueError(f"Unsupported lr schedule: {schedule}")
 
 
@@ -450,6 +1283,23 @@ def _sequence_summary(values) -> dict[str, float | int | None]:
         "min": min(floats),
         "max": max(floats),
     }
+
+
+def _epoch_monitor_summary(values: list[float]) -> dict[str, float | None]:
+    floats = [float(value) for value in values if np.isfinite(float(value))]
+    if not floats:
+        return {"mean": None, "min": None, "max": None}
+    return {
+        "mean": float(np.mean(floats)),
+        "min": float(np.min(floats)),
+        "max": float(np.max(floats)),
+    }
+
+
+def _selected_steps_or_empty(values: np.ndarray, report_every: int) -> list[tuple[int, float]]:
+    if len(values) == 0:
+        return []
+    return _selected_steps(values, report_every)
 
 
 def _history_field_summary(history: list[dict[str, Any]], field: str) -> dict[str, float | int | None]:
@@ -666,6 +1516,150 @@ def _loss_components_payload(components: dict[str, Any]) -> dict[str, float]:
     return {key: float(value) for key, value in components.items()}
 
 
+def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[str, Any]:
+    weighted_normalized_loss = 0.0
+    weighted_raw_delta_mse = 0.0
+    weighted_recovered_mse = 0.0
+    weighted_mean_abs_true_delta = 0.0
+    count = 0
+    finite_ok = True
+    shape_ok = True
+    for group in groups:
+        pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
+        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
+        recovered = group["t_ref"] + pred_delta
+        n = pred_normalized.shape[0]
+        weighted_normalized_loss = weighted_normalized_loss + jnp.mean(
+            jnp.square(pred_normalized - group["target_normalized"])
+        ) * n
+        weighted_raw_delta_mse = weighted_raw_delta_mse + jnp.mean(
+            jnp.square(pred_delta - group["target_delta_raw"])
+        ) * n
+        weighted_recovered_mse = weighted_recovered_mse + jnp.mean(
+            jnp.square(recovered - group["target_temperature"])
+        ) * n
+        weighted_mean_abs_true_delta = weighted_mean_abs_true_delta + jnp.mean(
+            jnp.abs(group["target_delta_raw"])
+        ) * n
+        finite_ok = (
+            finite_ok
+            and bool(jnp.all(jnp.isfinite(pred_normalized)))
+            and bool(jnp.all(jnp.isfinite(pred_delta)))
+            and bool(jnp.all(jnp.isfinite(recovered)))
+        )
+        shape_ok = shape_ok and pred_normalized.shape == group["target_normalized"].shape
+        count += int(n)
+
+    divisor = max(count, 1)
+    mean_abs_true_delta = float(weighted_mean_abs_true_delta / divisor)
+    raw_delta_mse = float(weighted_raw_delta_mse / divisor)
+    return {
+        "normalized_loss": float(weighted_normalized_loss / divisor),
+        "raw_delta_mse": raw_delta_mse,
+        "recovered_temperature_mse": float(weighted_recovered_mse / divisor),
+        "mean_abs_true_deltaT": mean_abs_true_delta,
+        "raw_deltaT_relative_rmse_pct": _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta),
+        "finite_ok": finite_ok,
+        "shape_ok": shape_ok,
+    }
+
+
+def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
+    schedule = lr_config["lr_schedule"]
+    base_lr = float(lr_config["lr"])
+    updates_per_epoch = max(int(lr_config.get("updates_per_epoch", 1)), 1)
+
+    if schedule == "constant":
+        return base_lr
+
+    def learning_rate(count):
+        update_count = jnp.asarray(count, dtype=jnp.float32)
+        epoch = jnp.floor(update_count / float(updates_per_epoch)) + 1.0
+        legacy_epoch = update_count + 1.0
+        base = jnp.asarray(base_lr, dtype=jnp.float32)
+        if schedule == "two_stage":
+            second_stage_epoch = int(lr_config["second_stage_epoch"])
+            if second_stage_epoch <= 0:
+                return base
+            second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
+            return jnp.where(legacy_epoch <= float(second_stage_epoch), base, second_lr)
+
+        if schedule == "second_stage":
+            second_stage_epoch = int(lr_config["second_stage_epoch"])
+            if second_stage_epoch <= 0:
+                return base
+            second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
+            return jnp.where(legacy_epoch < float(second_stage_epoch), base, second_lr)
+
+        if schedule == "warmup_cosine":
+            min_lr = jnp.asarray(float(lr_config["min_lr"]), dtype=jnp.float32)
+            warmup_epochs = int(lr_config["warmup_epochs"])
+            if warmup_epochs > 0:
+                warmup_progress = jnp.clip(epoch / float(warmup_epochs), 0.0, 1.0)
+                warmup_lr = min_lr + warmup_progress * (base - min_lr)
+                decay_epochs = max(epochs - warmup_epochs, 1)
+                decay_progress = jnp.clip((epoch - float(warmup_epochs)) / float(decay_epochs), 0.0, 1.0)
+                cosine_lr = min_lr + 0.5 * (1.0 + jnp.cos(jnp.pi * decay_progress)) * (base - min_lr)
+                return jnp.where(epoch <= float(warmup_epochs), warmup_lr, cosine_lr)
+
+            decay_epochs = max(epochs - 1, 1)
+            decay_progress = jnp.clip((epoch - 1.0) / float(decay_epochs), 0.0, 1.0)
+            return min_lr + 0.5 * (1.0 + jnp.cos(jnp.pi * decay_progress)) * (base - min_lr)
+
+        if schedule == "rapid_decay":
+            min_lr = jnp.asarray(float(lr_config["min_lr"]), dtype=jnp.float32)
+            mid_lr = jnp.maximum(min_lr, base * jnp.asarray(0.1, dtype=jnp.float32))
+            early_progress = jnp.clip((epoch - 1.0) / 9.0, 0.0, 1.0)
+            early_lr = base + early_progress * (mid_lr - base)
+            late_progress = jnp.clip((epoch - 10.0) / float(max(epochs - 10, 1)), 0.0, 1.0)
+            late_lr = mid_lr + late_progress * (min_lr - mid_lr)
+            return jnp.where(epoch <= 10.0, early_lr, late_lr)
+
+        raise ValueError(f"Unsupported lr schedule: {schedule}")
+
+    return learning_rate
+
+
+def _build_optax_state(
+    params,
+    *,
+    epochs: int,
+    lr_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+):
+    optimizer_name = optimizer_config["optimizer"]
+    if optimizer_name == "manual_gd":
+        return None
+
+    try:
+        import optax
+    except ImportError as exc:  # pragma: no cover - environment guard
+        raise ImportError("--optimizer adam/adamw requires optax") from exc
+
+    transforms = []
+    gradient_clip_norm = optimizer_config.get("gradient_clip_norm")
+    if gradient_clip_norm is not None:
+        transforms.append(optax.clip_by_global_norm(float(gradient_clip_norm)))
+
+    learning_rate = _optax_learning_rate_schedule(epochs, lr_config)
+    weight_decay = float(optimizer_config["weight_decay"])
+    if optimizer_name == "adam":
+        if weight_decay > 0.0:
+            transforms.append(optax.add_decayed_weights(weight_decay))
+        transforms.append(optax.adam(learning_rate=learning_rate))
+    elif optimizer_name == "adamw":
+        transforms.append(optax.adamw(learning_rate=learning_rate, weight_decay=weight_decay))
+    else:
+        raise ValueError(f"Unsupported optimizer: {optimizer_name}")
+
+    tx = optax.chain(*transforms)
+    return {
+        "tx": tx,
+        "state": tx.init(params),
+        "apply_updates": optax.apply_updates,
+    }
+
+
 def _copy_params(params):
     return tree.tree_map(lambda value: value.copy() if hasattr(value, "copy") else value, params)
 
@@ -679,14 +1673,32 @@ def _best_selection_payload(
     best_record = result.get("best_record") or {}
     return {
         "selection_metric": result.get("selection_metric"),
+        "primary_validation_split": result.get("primary_validation_split"),
+        "stress_validation_split": result.get("stress_validation_split"),
         "best_epoch": best_record.get("epoch"),
         "best_valid_loss": best_record.get("valid_loss"),
+        "best_valid_iid_loss": best_record.get("valid_iid_loss"),
+        "best_valid_stress_loss": best_record.get("valid_stress_loss"),
         "best_valid_raw_deltaT_mse": best_record.get("valid_raw_deltaT_mse"),
+        "best_valid_iid_raw_deltaT_mse": best_record.get("valid_iid_raw_deltaT_mse"),
+        "best_valid_stress_raw_deltaT_mse": best_record.get("valid_stress_raw_deltaT_mse"),
         "best_valid_base_mse": best_record.get("valid_base_mse"),
+        "best_valid_iid_base_mse": best_record.get("valid_iid_base_mse"),
+        "best_valid_stress_base_mse": best_record.get("valid_stress_base_mse"),
         "final_epoch": result.get("final_epoch"),
         "final_valid_loss": result.get("final_valid_loss"),
+        "final_valid_iid_loss": result.get("final_valid_iid_loss"),
+        "final_valid_stress_loss": result.get("final_valid_stress_loss"),
         "final_valid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
+        "final_valid_iid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
+        "final_valid_stress_raw_deltaT_mse": result.get("final_valid_stress_raw_deltaT_mse"),
         "final_valid_base_mse": result.get("final_valid_loss_components", {}).get("base_mse"),
+        "final_valid_iid_base_mse": (
+            result.get("final_valid_iid_loss_components", {}) or {}
+        ).get("base_mse"),
+        "final_valid_stress_base_mse": (
+            result.get("final_valid_stress_loss_components", {}) or {}
+        ).get("base_mse"),
         "best_predictions_saved": bool(best_predictions_saved),
         "best_predictions_path": str(best_predictions_path) if best_predictions_path is not None else None,
     }
@@ -696,64 +1708,94 @@ def _epoch_history_record(
     epoch: int,
     lr_epoch: float,
     current_loss_config: dict[str, Any],
-    train_components: dict[str, Any],
+    train_components: dict[str, Any] | None,
     valid_components: dict[str, Any],
     valid_metrics: dict[str, Any],
-    train_metrics: dict[str, Any],
+    train_metrics: dict[str, Any] | None,
+    *,
+    primary_validation_split: str = "valid",
+    valid_stress_components: dict[str, Any] | None = None,
+    valid_stress_metrics: dict[str, Any] | None = None,
+    stress_validation_split: str | None = None,
 ) -> dict[str, Any]:
     record = {
         "epoch": int(epoch),
         "lr": float(lr_epoch),
-        "train_loss": float(train_components["total_loss"]),
+        "primary_validation_split": primary_validation_split,
+        "train_loss": _maybe_float(train_components, "total_loss"),
         "valid_loss": float(valid_components["total_loss"]),
-        "train_base_mse": float(train_components["base_mse"]),
+        "valid_iid_loss": float(valid_components["total_loss"]) if primary_validation_split == "valid_iid" else None,
+        "train_base_mse": _maybe_float(train_components, "base_mse"),
         "valid_base_mse": float(valid_components["base_mse"]),
-        "train_background_penalty": float(train_components["background_penalty"]),
+        "valid_iid_base_mse": float(valid_components["base_mse"]) if primary_validation_split == "valid_iid" else None,
+        "train_background_penalty": _maybe_float(train_components, "background_penalty"),
         "valid_background_penalty": float(valid_components["background_penalty"]),
-        "train_background_l1": float(train_components["background_l1"]),
+        "train_background_l1": _maybe_float(train_components, "background_l1"),
         "valid_background_l1": float(valid_components["background_l1"]),
-        "train_background_signed_bias_loss": float(train_components["background_signed_bias_loss"]),
+        "train_background_signed_bias_loss": _maybe_float(train_components, "background_signed_bias_loss"),
         "valid_background_signed_bias_loss": float(valid_components["background_signed_bias_loss"]),
-        "train_background_overprediction_loss": float(train_components["background_overprediction_loss"]),
+        "train_background_overprediction_loss": _maybe_float(train_components, "background_overprediction_loss"),
         "valid_background_overprediction_loss": float(valid_components["background_overprediction_loss"]),
-        "train_background_relative_abs": float(train_components["background_relative_abs"]),
+        "train_background_relative_abs": _maybe_float(train_components, "background_relative_abs"),
         "valid_background_relative_abs": float(valid_components["background_relative_abs"]),
-        "train_pseudo_negative_count": float(train_components["pseudo_negative_count"]),
+        "train_pseudo_negative_count": _maybe_float(train_components, "pseudo_negative_count"),
         "valid_pseudo_negative_count": float(valid_components["pseudo_negative_count"]),
-        "train_pseudo_negative_over_loss": float(train_components["pseudo_negative_over_loss"]),
+        "train_pseudo_negative_over_loss": _maybe_float(train_components, "pseudo_negative_over_loss"),
         "valid_pseudo_negative_over_loss": float(valid_components["pseudo_negative_over_loss"]),
-        "train_pseudo_negative_unweighted_loss": float(train_components["pseudo_negative_unweighted_loss"]),
+        "train_pseudo_negative_unweighted_loss": _maybe_float(train_components, "pseudo_negative_unweighted_loss"),
         "valid_pseudo_negative_unweighted_loss": float(valid_components["pseudo_negative_unweighted_loss"]),
-        "train_pseudo_negative_weighted_loss": float(train_components["pseudo_negative_weighted_loss"]),
+        "train_pseudo_negative_weighted_loss": _maybe_float(train_components, "pseudo_negative_weighted_loss"),
         "valid_pseudo_negative_weighted_loss": float(valid_components["pseudo_negative_weighted_loss"]),
-        "train_pseudo_negative_weighted_fraction_of_total_loss": float(
-            train_components["pseudo_negative_weighted_fraction_of_total_loss"]
+        "train_pseudo_negative_weighted_fraction_of_total_loss": _maybe_float(
+            train_components,
+            "pseudo_negative_weighted_fraction_of_total_loss",
         ),
         "valid_pseudo_negative_weighted_fraction_of_total_loss": float(
             valid_components["pseudo_negative_weighted_fraction_of_total_loss"]
         ),
-        "train_pseudo_negative_bias": float(train_components["pseudo_negative_bias"]),
+        "train_pseudo_negative_bias": _maybe_float(train_components, "pseudo_negative_bias"),
         "valid_pseudo_negative_bias": float(valid_components["pseudo_negative_bias"]),
-        "train_pseudo_negative_over_ratio": float(train_components["pseudo_negative_over_ratio"]),
+        "train_pseudo_negative_over_ratio": _maybe_float(train_components, "pseudo_negative_over_ratio"),
         "valid_pseudo_negative_over_ratio": float(valid_components["pseudo_negative_over_ratio"]),
         "valid_pn_bias": float(valid_components["pseudo_negative_bias"]),
         "valid_pn_over": float(valid_components["pseudo_negative_over_loss"]),
         "valid_pn_over_ratio": float(valid_components["pseudo_negative_over_ratio"]),
-        "train_hotspot_retention_loss": float(train_components["hotspot_retention_loss"]),
+        "train_hotspot_retention_loss": _maybe_float(train_components, "hotspot_retention_loss"),
         "valid_hotspot_retention_loss": float(valid_components["hotspot_retention_loss"]),
-        "train_bg_pred_raw_mean": float(train_components["bg_pred_raw_mean"]),
+        "train_bg_pred_raw_mean": _maybe_float(train_components, "bg_pred_raw_mean"),
         "valid_bg_pred_raw_mean": float(valid_components["bg_pred_raw_mean"]),
-        "train_bg_signed_bias": float(train_components["bg_signed_bias"]),
+        "train_bg_signed_bias": _maybe_float(train_components, "bg_signed_bias"),
         "valid_bg_signed_bias": float(valid_components["bg_signed_bias"]),
-        "train_bg_abs_mean": float(train_components["bg_abs_mean"]),
+        "train_bg_abs_mean": _maybe_float(train_components, "bg_abs_mean"),
         "valid_bg_abs_mean": float(valid_components["bg_abs_mean"]),
-        "train_hotspot_raw_mae": float(train_components["hotspot_raw_mae"]),
+        "train_hotspot_raw_mae": _maybe_float(train_components, "hotspot_raw_mae"),
         "valid_hotspot_raw_mae": float(valid_components["hotspot_raw_mae"]),
-        "train_raw_deltaT_mse": float(train_metrics["raw_delta_mse"]),
+        "train_raw_deltaT_mse": _maybe_float(train_metrics, "raw_delta_mse"),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
-        "train_recovered_T_mse": float(train_metrics["recovered_temperature_mse"]),
+        "valid_iid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]) if primary_validation_split == "valid_iid" else None,
+        "train_error_pct": _metric_error_pct(train_metrics),
+        "valid_error_pct": _metric_error_pct(valid_metrics),
+        "valid_iid_error_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
+        "train_recovered_T_mse": _maybe_float(train_metrics, "recovered_temperature_mse"),
         "valid_recovered_T_mse": float(valid_metrics["recovered_temperature_mse"]),
+        "valid_iid_recovered_T_mse": (
+            float(valid_metrics["recovered_temperature_mse"]) if primary_validation_split == "valid_iid" else None
+        ),
+        "train_full_metrics_computed": train_components is not None and train_metrics is not None,
     }
+    if valid_stress_components is not None and valid_stress_metrics is not None:
+        record.update(
+            {
+                "stress_validation_split": stress_validation_split or "valid_stress",
+                "valid_stress_loss": float(valid_stress_components["total_loss"]),
+                "valid_stress_base_mse": float(valid_stress_components["base_mse"]),
+                "valid_stress_raw_deltaT_mse": float(valid_stress_metrics["raw_delta_mse"]),
+                "valid_stress_error_pct": _metric_error_pct(valid_stress_metrics),
+                "valid_stress_recovered_T_mse": float(valid_stress_metrics["recovered_temperature_mse"]),
+                "valid_stress_bg_signed_bias": float(valid_stress_components["bg_signed_bias"]),
+                "valid_stress_hotspot_raw_mae": float(valid_stress_components["hotspot_raw_mae"]),
+            }
+        )
     record.update(_current_weight_payload(current_loss_config))
     return record
 
@@ -762,29 +1804,36 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
     if log_mode == "quiet":
         return
     if log_mode == "compact":
+        train_loss = _first_progress_numeric(
+            record.get("train_loss"),
+            record.get("epoch_mean_train_batch_loss"),
+        )
+        valid_iid_loss = record.get("valid_iid_loss")
+        if valid_iid_loss is None:
+            valid_iid_loss = record.get("valid_loss")
+        valid_iid_error_pct = record.get("valid_iid_error_pct")
+        if valid_iid_error_pct is None:
+            valid_iid_error_pct = record.get("valid_error_pct")
         _emit(
-            f"epoch {record['epoch']:03d}/{epochs:03d} "
-            f"lr={record['lr']:.3e} "
-            f"train_loss={record['train_loss']:.6e} "
-            f"valid_loss={record['valid_loss']:.6e} "
-            f"valid_base_mse={record['valid_base_mse']:.6e} "
-            f"valid_bg_bias={record['valid_bg_signed_bias']:.6e} "
-            f"valid_rel={record['valid_background_relative_abs']:.6e} "
-            f"valid_pn_bias={record['valid_pseudo_negative_bias']:.6e} "
-            f"valid_pn_over={record['valid_pseudo_negative_over_loss']:.6e} "
-            f"valid_pn_over_ratio={record['valid_pseudo_negative_over_ratio']:.6e} "
-            f"valid_pn_weighted_fraction={record['valid_pseudo_negative_weighted_fraction_of_total_loss']:.6e} "
-            f"valid_hotspot_mae={record['valid_hotspot_raw_mae']:.6e} "
-            f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.6e} "
-            f"rel_w={record['current_background_relative_weight']:.3e} "
-            f"hot_w={record['current_hotspot_weight']:.3e}"
+            f"epoch {record['epoch']}/{epochs} "
+            f"lr={record['lr']:.2e} "
+            f"train={_format_progress_decimal(train_loss)} "
+            f"iid={_format_progress_decimal(valid_iid_loss)} "
+            f"iid_err={_format_progress_percent(valid_iid_error_pct)} "
+            f"stress={_format_progress_decimal(record.get('valid_stress_loss'))} "
+            f"stress_err={_format_progress_percent(record.get('valid_stress_error_pct'))} "
+            f"best=e{_format_progress_int(record.get('best_epoch'))}/"
+            f"{_format_progress_decimal(record.get('best_valid_iid_loss'))}"
         )
         return
     _emit(
         f"epoch {record['epoch']:03d}/{epochs:03d} "
         f"lr={record['lr']:.8e} "
         f"train_loss={record['train_loss']:.8e} "
+        f"train_full_metrics={'computed' if record.get('train_full_metrics_computed') else 'skipped'} "
+        f"primary_valid={record.get('primary_validation_split', 'valid')} "
         f"valid_loss={record['valid_loss']:.8e} "
+        f"valid_stress_loss={_format_progress_value(record.get('valid_stress_loss'))} "
         f"train_base_mse={record['train_base_mse']:.8e} "
         f"valid_base_mse={record['valid_base_mse']:.8e} "
         f"train_background_penalty={record['train_background_penalty']:.8e} "
@@ -836,21 +1885,30 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
 def _fit_once(
     train_groups: list[dict],
     valid_groups: list[dict],
+    valid_stress_groups: list[dict],
     stats: dict,
     epochs: int,
     lr_config: dict[str, Any],
     seed: int,
     report_every: int,
+    train_metrics_schedule: str,
+    grad_norm_report_every: int,
     loss_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+    model_config: dict[str, Any],
+    batch_config: dict[str, Any],
     selection_metric: str,
     log_mode: str,
     progress_enabled: bool,
     timings: dict[str, float] | None = None,
+    profile_enabled: bool = False,
+    primary_validation_split: str = "valid",
+    stress_validation_split: str | None = None,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
     _progress(progress_enabled, "startup", "initializing model parameters ...")
-    model = GraphNeuralOperator(**MODEL_CONFIG)
+    model = GraphNeuralOperator(**model_config)
     params = model.init(
         jax.random.PRNGKey(seed),
         inputs=train_groups[0]["inputs"],
@@ -859,24 +1917,87 @@ def _fit_once(
     _record_timing(timings, "model_init", init_start)
     _progress(progress_enabled, "startup", "model parameters initialized", init_start)
 
+    batch_enabled = batch_config.get("batch_size") is not None
+    metrics_fn = _weighted_metrics if batch_enabled else _metrics
+    updates_per_epoch = int(len(train_groups) if batch_enabled else 1)
+
     initial_start = time.perf_counter()
     _progress(progress_enabled, "startup", "computing initial train/valid losses ...")
     initial_loss_config = _loss_config_for_epoch(loss_config, 1)
     train_initial_components = _loss_components(model, params, train_groups, stats, initial_loss_config)
     valid_initial_components = _loss_components(model, params, valid_groups, stats, initial_loss_config)
+    valid_initial_metrics = metrics_fn(model, params, valid_groups, stats)
+    valid_stress_initial_components = (
+        _loss_components(model, params, valid_stress_groups, stats, initial_loss_config)
+        if valid_stress_groups
+        else None
+    )
+    valid_stress_initial_metrics = (
+        metrics_fn(model, params, valid_stress_groups, stats)
+        if valid_stress_groups
+        else None
+    )
     _record_timing(timings, "initial_loss", initial_start)
     _progress(progress_enabled, "startup", "initial train/valid losses computed", initial_start)
     train_losses = [float(train_initial_components["total_loss"])]
+    train_loss_epochs = [0]
     valid_losses = [float(valid_initial_components["total_loss"])]
+    valid_stress_losses = (
+        [float(valid_stress_initial_components["total_loss"])]
+        if valid_stress_initial_components is not None
+        else []
+    )
     grad_norms = []
+    grad_norm_reported_batch_count = 0
+    grad_norm_skipped_batch_count = 0
+    epoch_batch_counts = []
+    epoch_train_batch_order_hashes = []
     lr_history = []
     loss_weight_history = []
     grad_finite = True
     epoch_history = []
+    train_batch_records: list[dict[str, Any]] = []
+    validation_batch_records: list[dict[str, Any]] = []
     best_score: float | None = None
     best_record: dict[str, Any] | None = None
     best_params = None
-    _progress(progress_enabled, "train", f"epoch loop start epochs={epochs} report_every={report_every}")
+    final_epoch_train_components = None
+    final_epoch_train_metrics = None
+    final_epoch_valid_components = None
+    final_epoch_valid_metrics = None
+    final_epoch_valid_stress_components = None
+    final_epoch_valid_stress_metrics = None
+    optax_lr_config = dict(lr_config)
+    optax_lr_config["updates_per_epoch"] = updates_per_epoch
+    optax_state = _build_optax_state(
+        params,
+        epochs=epochs,
+        lr_config=optax_lr_config,
+        optimizer_config=optimizer_config,
+    )
+    train_metrics_epoch_values = train_metrics_epochs(train_metrics_schedule, epochs)
+    train_metrics_epoch_lookup = set(train_metrics_epoch_values)
+    if batch_enabled:
+        _progress(
+            progress_enabled,
+            "train",
+            (
+                f"epoch loop start epochs={epochs} report_every={report_every} "
+                f"mini_batch_groups={len(train_groups)} batch_size={batch_config['batch_size']} "
+                f"train_metrics_schedule={train_metrics_schedule} "
+                f"train_metrics_epochs={train_metrics_epoch_values}"
+            ),
+        )
+    else:
+        _progress(
+            progress_enabled,
+            "train",
+            (
+                f"epoch loop start epochs={epochs} report_every={report_every} "
+                f"train_metrics_schedule={train_metrics_schedule} "
+                f"train_metrics_epochs={train_metrics_epoch_values}"
+            ),
+        )
     epoch_loop_start = time.perf_counter()
     for epoch in range(1, epochs + 1):
         lr_epoch = _lr_for_epoch(epoch, epochs, lr_config)
@@ -886,22 +2007,265 @@ def _fit_once(
         should_report = _should_report_epoch(epoch, epochs, report_every)
         epoch_start = time.perf_counter()
         if should_report or epoch <= 3:
-            _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e}")
+            if batch_enabled:
+                _progress(
+                    progress_enabled,
+                    "train",
+                    (
+                        f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e} "
+                        f"batches={len(train_groups)}"
+                    ),
+                )
+            else:
+                _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} start lr={lr_epoch:.3e}")
 
-        def loss_fn(current_params):
-            return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
+        train_step_start = time.perf_counter()
+        epoch_train_batch_records: list[dict[str, Any]] = []
+        epoch_train_batch_losses: list[float] = []
+        epoch_grad_norms: list[float] = []
+        epoch_update_norms: list[float] = []
+        epoch_param_norms: list[float] = []
+        epoch_update_to_param_ratios: list[float] = []
+        if batch_enabled:
+            train_epoch_groups = _epoch_train_groups(
+                train_groups,
+                epoch=epoch,
+                seed=seed,
+                shuffle=bool(batch_config.get("shuffle_train_batches")),
+            )
+            epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_epoch_groups))
+            batch_grad_norms = []
+            for batch_index, batch_group in enumerate(train_epoch_groups, start=1):
+                def loss_fn(current_params, group=batch_group):
+                    return _loss_components(model, current_params, [group], stats, current_loss_config)["total_loss"]
 
-        _, grads = jax.value_and_grad(loss_fn)(params)
-        grad_norm = _global_norm(grads)
-        grad_norms.append(grad_norm)
-        grad_finite = grad_finite and bool(np.isfinite(grad_norm))
-        params = tree.tree_map(lambda param, grad: param - lr_epoch * grad, params, grads)
-        train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
-        valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
-        valid_metrics = _metrics(model, params, valid_groups, stats)
-        train_metrics = _metrics(model, params, train_groups, stats)
-        train_losses.append(float(train_components["total_loss"]))
+                batch_start = time.perf_counter()
+                loss_grad_start = time.perf_counter()
+                loss_value, grads = jax.value_and_grad(loss_fn)(params)
+                if profile_enabled:
+                    _block_until_ready_tree((loss_value, grads))
+                loss_grad_time = time.perf_counter() - loss_grad_start
+                batch_loss_value = float(loss_value)
+                epoch_train_batch_losses.append(batch_loss_value)
+
+                grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
+                grad_norm_start = time.perf_counter()
+                grad_norm = _global_norm(grads)
+                grad_norm_time = time.perf_counter() - grad_norm_start
+                epoch_grad_norms.append(grad_norm)
+                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+                if grad_norm_reported:
+                    batch_grad_norms.append(grad_norm)
+                    grad_norm_reported_batch_count += 1
+                else:
+                    grad_norm_skipped_batch_count += 1
+
+                optimizer_update_start = time.perf_counter()
+                if optax_state is None:
+                    updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
+                    params = tree.tree_map(lambda param, update: param + update, params, updates)
+                else:
+                    updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
+                    optax_state["state"] = opt_state
+                    params = optax_state["apply_updates"](params, updates)
+                if profile_enabled:
+                    _block_until_ready_tree(params)
+                optimizer_update_time = time.perf_counter() - optimizer_update_start
+                update_norm = _global_norm(updates)
+                param_norm = _global_norm(params)
+                epoch_update_norms.append(update_norm)
+                epoch_param_norms.append(param_norm)
+                epoch_update_to_param_ratios.append(update_norm / max(param_norm, 1.0e-12))
+
+                if profile_enabled:
+                    total_batch_time = time.perf_counter() - batch_start
+                    output_scalar_extraction_time = 0.0
+                    other_time = max(
+                        total_batch_time
+                        - loss_grad_time
+                        - grad_norm_time
+                        - optimizer_update_time
+                        - output_scalar_extraction_time,
+                        0.0,
+                    )
+                    batch_record = {
+                        "epoch_index": int(epoch),
+                        "batch_index": int(batch_index),
+                        "split": "train",
+                        "batch_size": _sample_count(batch_group),
+                        "group_count": 1,
+                        "train_batch_loss": float(batch_loss_value),
+                        "total_batch_time": float(total_batch_time),
+                        "loss_grad_time": float(loss_grad_time),
+                        "grad_norm_time": float(grad_norm_time),
+                        "grad_norm": float(grad_norm),
+                        "grad_norm_reported": bool(grad_norm_reported),
+                        "update_norm": float(update_norm),
+                        "param_norm": float(param_norm),
+                        "update_to_param_norm_ratio": float(update_norm / max(param_norm, 1.0e-12)),
+                        "optimizer_update_time": float(optimizer_update_time),
+                        "output_scalar_extraction_time": float(output_scalar_extraction_time),
+                        "other_time": float(other_time),
+                        "batch_shape_signature": _batch_shape_signature(batch_group),
+                    }
+                    batch_record["batch_shape_signature_key"] = _shape_signature_key(
+                        batch_record["batch_shape_signature"]
+                    )
+                    epoch_train_batch_records.append(batch_record)
+                    train_batch_records.append(batch_record)
+            epoch_batch_counts.append(len(train_epoch_groups))
+            if batch_grad_norms:
+                grad_norms.append(float(np.mean(batch_grad_norms)))
+        else:
+            epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_groups))
+            def loss_fn(current_params):
+                return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
+
+            batch_start = time.perf_counter()
+            loss_grad_start = time.perf_counter()
+            loss_value, grads = jax.value_and_grad(loss_fn)(params)
+            if profile_enabled:
+                _block_until_ready_tree((loss_value, grads))
+            loss_grad_time = time.perf_counter() - loss_grad_start
+            batch_loss_value = float(loss_value)
+            epoch_train_batch_losses.append(batch_loss_value)
+
+            grad_norm_reported = should_report_grad_norm(grad_norm_report_every, 1)
+            grad_norm_start = time.perf_counter()
+            grad_norm = _global_norm(grads)
+            grad_norm_time = time.perf_counter() - grad_norm_start
+            epoch_grad_norms.append(grad_norm)
+            grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+            if grad_norm_reported:
+                grad_norms.append(grad_norm)
+                grad_norm_reported_batch_count += 1
+            else:
+                grad_norm_skipped_batch_count += 1
+
+            optimizer_update_start = time.perf_counter()
+            if optax_state is None:
+                updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
+                params = tree.tree_map(lambda param, update: param + update, params, updates)
+            else:
+                updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
+                optax_state["state"] = opt_state
+                params = optax_state["apply_updates"](params, updates)
+            if profile_enabled:
+                _block_until_ready_tree(params)
+            optimizer_update_time = time.perf_counter() - optimizer_update_start
+            update_norm = _global_norm(updates)
+            param_norm = _global_norm(params)
+            epoch_update_norms.append(update_norm)
+            epoch_param_norms.append(param_norm)
+            epoch_update_to_param_ratios.append(update_norm / max(param_norm, 1.0e-12))
+            if profile_enabled:
+                total_batch_time = time.perf_counter() - batch_start
+                output_scalar_extraction_time = 0.0
+                other_time = max(
+                    total_batch_time
+                    - loss_grad_time
+                    - grad_norm_time
+                    - optimizer_update_time
+                    - output_scalar_extraction_time,
+                    0.0,
+                )
+                signature = {
+                    "group_count": len(train_groups),
+                    "group_signatures": [_batch_shape_signature(group) for group in train_groups],
+                }
+                batch_record = {
+                    "epoch_index": int(epoch),
+                    "batch_index": 1,
+                    "split": "train",
+                    "batch_size": sum(_sample_count(group) for group in train_groups),
+                    "group_count": len(train_groups),
+                    "train_batch_loss": float(batch_loss_value),
+                    "total_batch_time": float(total_batch_time),
+                    "loss_grad_time": float(loss_grad_time),
+                    "grad_norm_time": float(grad_norm_time),
+                    "grad_norm": float(grad_norm),
+                    "grad_norm_reported": bool(grad_norm_reported),
+                    "update_norm": float(update_norm),
+                    "param_norm": float(param_norm),
+                    "update_to_param_norm_ratio": float(update_norm / max(param_norm, 1.0e-12)),
+                    "optimizer_update_time": float(optimizer_update_time),
+                    "output_scalar_extraction_time": float(output_scalar_extraction_time),
+                    "other_time": float(other_time),
+                    "batch_shape_signature": signature,
+                }
+                batch_record["batch_shape_signature_key"] = _shape_signature_key(signature)
+                epoch_train_batch_records.append(batch_record)
+                train_batch_records.append(batch_record)
+            epoch_batch_counts.append(1)
+        train_step_time = time.perf_counter() - train_step_start
+
+        train_metrics_computed = epoch in train_metrics_epoch_lookup
+        train_components = None
+        train_metrics = None
+        train_metrics_time = 0.0
+        if train_metrics_computed:
+            train_metrics_start = time.perf_counter()
+            train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
+            train_metrics = metrics_fn(model, params, train_groups, stats)
+            if profile_enabled:
+                _block_until_ready_tree((train_components, train_metrics))
+            train_metrics_time = time.perf_counter() - train_metrics_start
+
+        validation_start = time.perf_counter()
+        if profile_enabled:
+            valid_components, valid_metrics, epoch_validation_records = _evaluate_groups_profiled(
+                model,
+                params,
+                valid_groups,
+                stats,
+                current_loss_config,
+                metrics_fn,
+                epoch=epoch,
+                split="valid",
+            )
+            validation_batch_records.extend(epoch_validation_records)
+        else:
+            valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
+            valid_metrics = metrics_fn(model, params, valid_groups, stats)
+        validation_time = time.perf_counter() - validation_start
+
+        valid_stress_components = None
+        valid_stress_metrics = None
+        valid_stress_time = 0.0
+        if valid_stress_groups:
+            valid_stress_start = time.perf_counter()
+            if profile_enabled:
+                valid_stress_components, valid_stress_metrics, epoch_stress_records = _evaluate_groups_profiled(
+                    model,
+                    params,
+                    valid_stress_groups,
+                    stats,
+                    current_loss_config,
+                    metrics_fn,
+                    epoch=epoch,
+                    split=stress_validation_split or "valid_stress",
+                )
+                validation_batch_records.extend(epoch_stress_records)
+            else:
+                valid_stress_components = _loss_components(
+                    model, params, valid_stress_groups, stats, current_loss_config
+                )
+                valid_stress_metrics = metrics_fn(model, params, valid_stress_groups, stats)
+            valid_stress_time = time.perf_counter() - valid_stress_start
+
+        if train_components is not None:
+            train_losses.append(float(train_components["total_loss"]))
+            train_loss_epochs.append(int(epoch))
         valid_losses.append(float(valid_components["total_loss"]))
+        if valid_stress_components is not None:
+            valid_stress_losses.append(float(valid_stress_components["total_loss"]))
+        if epoch == epochs and should_reuse_final_metrics(train_metrics_computed):
+            final_epoch_train_components = train_components
+            final_epoch_train_metrics = train_metrics
+            final_epoch_valid_components = valid_components
+            final_epoch_valid_metrics = valid_metrics
+            final_epoch_valid_stress_components = valid_stress_components
+            final_epoch_valid_stress_metrics = valid_stress_metrics
         record = _epoch_history_record(
             epoch,
             lr_epoch,
@@ -910,54 +2274,190 @@ def _fit_once(
             valid_components,
             valid_metrics,
             train_metrics,
+            primary_validation_split=primary_validation_split,
+            valid_stress_components=valid_stress_components,
+            valid_stress_metrics=valid_stress_metrics,
+            stress_validation_split=stress_validation_split,
         )
-        epoch_history.append(record)
+        record["train_batch_count"] = int(epoch_batch_counts[-1])
+        record["valid_batch_count"] = int(len(valid_groups))
+        record["batch_size"] = batch_config.get("batch_size")
+        record["train_full_metrics_schedule"] = train_metrics_schedule
+        record["train_full_metrics_epoch"] = bool(train_metrics_computed)
+        batch_summary = _summarize_batch_records(epoch_train_batch_records) if profile_enabled else {}
+        record["train_batch_timing_summary"] = batch_summary
+        batch_loss_summary = _epoch_monitor_summary(epoch_train_batch_losses)
+        grad_norm_summary = _epoch_monitor_summary(epoch_grad_norms)
+        update_norm_summary = _epoch_monitor_summary(epoch_update_norms)
+        param_norm_summary = _epoch_monitor_summary(epoch_param_norms)
+        update_param_ratio_summary = _epoch_monitor_summary(epoch_update_to_param_ratios)
+        record["epoch_mean_train_batch_loss"] = batch_loss_summary["mean"]
+        record["epoch_min_train_batch_loss"] = batch_loss_summary["min"]
+        record["epoch_max_train_batch_loss"] = batch_loss_summary["max"]
+        record["epoch_mean_grad_norm"] = grad_norm_summary["mean"]
+        record["epoch_max_grad_norm"] = grad_norm_summary["max"]
+        record["epoch_mean_update_norm"] = update_norm_summary["mean"]
+        record["epoch_max_update_norm"] = update_norm_summary["max"]
+        record["epoch_mean_param_norm"] = param_norm_summary["mean"]
+        record["epoch_update_to_param_norm_ratio"] = update_param_ratio_summary["mean"]
+        record["epoch_max_update_to_param_norm_ratio"] = update_param_ratio_summary["max"]
         score = float(record[selection_metric])
         if best_score is None or score < best_score:
             best_score = score
             best_record = dict(record)
             best_params = _copy_params(params)
+        record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
+        record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
+        record["epoch_train_time_s"] = float(train_step_time)
+        record["epoch_train_metrics_time_s"] = float(train_metrics_time)
+        record["epoch_validation_time_s"] = float(validation_time)
+        record["epoch_valid_stress_time_s"] = float(valid_stress_time)
+        record["epoch_total_time_s"] = float(time.perf_counter() - epoch_start)
+        epoch_history.append(record)
         if should_report:
             _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} metrics computed", epoch_start)
             _print_epoch_progress(record, epochs, log_mode)
     _record_timing(timings, "epoch_loop", epoch_loop_start)
 
-    _progress(progress_enabled, "train", "computing final train/valid metrics ...")
-    final_metrics_start = time.perf_counter()
-    train_metrics = _metrics(model, params, train_groups, stats)
-    valid_metrics = _metrics(model, params, valid_groups, stats)
-    final_loss_config = _loss_config_for_epoch(loss_config, epochs)
-    final_train_components = _loss_components(model, params, train_groups, stats, final_loss_config)
-    final_valid_components = _loss_components(model, params, valid_groups, stats, final_loss_config)
-    _progress(progress_enabled, "train", "final train/valid metrics computed", final_metrics_start)
+    final_metrics_reused = (
+        final_epoch_train_components is not None
+        and final_epoch_train_metrics is not None
+        and final_epoch_valid_components is not None
+        and final_epoch_valid_metrics is not None
+    )
+    final_metrics_reuse_source = "last_epoch_full_metrics" if final_metrics_reused else None
+    if final_metrics_reused:
+        timings["final_metrics"] = 0.0
+        train_metrics = final_epoch_train_metrics
+        valid_metrics = final_epoch_valid_metrics
+        final_train_components = final_epoch_train_components
+        final_valid_components = final_epoch_valid_components
+        final_valid_stress_components = final_epoch_valid_stress_components
+        final_valid_stress_metrics = final_epoch_valid_stress_metrics
+        _progress(progress_enabled, "train", "final train/valid metrics reused from last epoch full metrics")
+    else:
+        _progress(progress_enabled, "train", "computing final train/valid metrics ...")
+        final_metrics_start = time.perf_counter()
+        train_metrics = metrics_fn(model, params, train_groups, stats)
+        valid_metrics = metrics_fn(model, params, valid_groups, stats)
+        final_valid_stress_metrics = metrics_fn(model, params, valid_stress_groups, stats) if valid_stress_groups else None
+        final_loss_config = _loss_config_for_epoch(loss_config, epochs)
+        final_train_components = _loss_components(model, params, train_groups, stats, final_loss_config)
+        final_valid_components = _loss_components(model, params, valid_groups, stats, final_loss_config)
+        final_valid_stress_components = (
+            _loss_components(model, params, valid_stress_groups, stats, final_loss_config)
+            if valid_stress_groups
+            else None
+        )
+        _record_timing(timings, "final_metrics", final_metrics_start)
+        _progress(progress_enabled, "train", "final train/valid metrics computed", final_metrics_start)
     status_ok = (
         grad_finite
         and train_metrics["finite_ok"]
         and valid_metrics["finite_ok"]
+        and (final_valid_stress_metrics is None or final_valid_stress_metrics["finite_ok"])
         and train_metrics["shape_ok"]
         and valid_metrics["shape_ok"]
+        and (final_valid_stress_metrics is None or final_valid_stress_metrics["shape_ok"])
         and bool(np.all(np.isfinite(train_losses)))
         and bool(np.all(np.isfinite(valid_losses)))
+        and (not valid_stress_losses or bool(np.all(np.isfinite(valid_stress_losses))))
     )
     return {
         "model": model,
         "params": params,
         "train_losses": np.asarray(train_losses, dtype=np.float64),
+        "train_loss_epochs": np.asarray(train_loss_epochs, dtype=np.int64),
         "valid_losses": np.asarray(valid_losses, dtype=np.float64),
+        "valid_iid_losses": np.asarray(valid_losses, dtype=np.float64) if primary_validation_split == "valid_iid" else np.asarray([], dtype=np.float64),
+        "valid_stress_losses": np.asarray(valid_stress_losses, dtype=np.float64),
+        "initial_train_loss": float(train_initial_components["total_loss"]),
+        "initial_valid_loss": float(valid_initial_components["total_loss"]),
+        "initial_valid_iid_loss": float(valid_initial_components["total_loss"]) if primary_validation_split == "valid_iid" else None,
+        "initial_valid_base_mse": float(valid_initial_components["base_mse"]),
+        "initial_valid_raw_deltaT_mse": float(valid_initial_metrics["raw_delta_mse"]),
+        "initial_valid_iid_raw_deltaT_mse": float(valid_initial_metrics["raw_delta_mse"]) if primary_validation_split == "valid_iid" else None,
+        "initial_valid_stress_loss": (
+            float(valid_stress_initial_components["total_loss"])
+            if valid_stress_initial_components is not None
+            else None
+        ),
+        "initial_valid_stress_raw_deltaT_mse": (
+            float(valid_stress_initial_metrics["raw_delta_mse"])
+            if valid_stress_initial_metrics is not None
+            else None
+        ),
         "grad_norms": np.asarray(grad_norms, dtype=np.float64),
+        "grad_norm_report_every": int(grad_norm_report_every),
+        "grad_norm_reporting_mode": grad_norm_reporting_mode(int(grad_norm_report_every)),
+        "grad_norm_reported_batch_count": int(grad_norm_reported_batch_count),
+        "grad_norm_skipped_batch_count": int(grad_norm_skipped_batch_count),
+        "epoch_batch_counts": np.asarray(epoch_batch_counts, dtype=np.int64),
+        "epoch_train_batch_order_hashes": epoch_train_batch_order_hashes,
         "lr_history": np.asarray(lr_history, dtype=np.float64),
+        "epoch_lrs": [float(value) for value in lr_history],
+        "updates_per_epoch": int(updates_per_epoch),
+        "total_update_count": int(sum(epoch_batch_counts)),
+        "train_group_count": int(len(train_groups)),
+        "valid_iid_group_count": int(len(valid_groups)) if primary_validation_split == "valid_iid" else None,
+        "valid_stress_group_count": int(len(valid_stress_groups)),
+        "train_group_sample_id_hash": _group_sample_id_hash(train_groups),
+        "valid_iid_sample_id_hash": (
+            _group_sample_id_hash(valid_groups) if primary_validation_split == "valid_iid" else None
+        ),
+        "valid_stress_sample_id_hash": _group_sample_id_hash(valid_stress_groups),
+        "deterministic_audit_enabled": True,
+        "code_version_or_git_commit": _current_git_commit(),
         "loss_weight_history": loss_weight_history,
         "train_metrics": train_metrics,
         "valid_metrics": valid_metrics,
         "epoch_history": epoch_history,
+        "train_batch_records": train_batch_records,
+        "validation_batch_records": validation_batch_records,
+        "train_metrics_schedule": train_metrics_schedule,
+        "train_metrics_epochs": train_metrics_epoch_values,
         "selection_metric": selection_metric,
+        "primary_validation_split": primary_validation_split,
+        "stress_validation_split": stress_validation_split,
         "best_record": best_record,
         "best_params": best_params,
         "best_score": best_score,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
+        "final_valid_iid_loss": float(valid_losses[-1]) if primary_validation_split == "valid_iid" else None,
+        "final_valid_stress_loss": (
+            float(valid_stress_losses[-1])
+            if valid_stress_losses
+            else None
+        ),
+        "final_valid_stress_raw_deltaT_mse": (
+            float(final_valid_stress_metrics["raw_delta_mse"])
+            if final_valid_stress_metrics is not None
+            else None
+        ),
+        "final_best_ratio": (
+            float(valid_losses[-1]) / float(best_record["valid_loss"])
+            if best_record is not None and best_record.get("valid_loss") not in (None, 0.0)
+            else None
+        ),
         "final_train_loss_components": _loss_components_payload(final_train_components),
         "final_valid_loss_components": _loss_components_payload(final_valid_components),
+        "final_valid_iid_loss_components": (
+            _loss_components_payload(final_valid_components) if primary_validation_split == "valid_iid" else None
+        ),
+        "final_valid_stress_loss_components": (
+            _loss_components_payload(final_valid_stress_components)
+            if final_valid_stress_components is not None
+            else None
+        ),
+        "valid_stress_metrics": (
+            final_valid_stress_metrics
+            if final_valid_stress_metrics is not None
+            else None
+        ),
+        "final_metrics_reused": bool(final_metrics_reused),
+        "final_metrics_reuse_source": final_metrics_reuse_source,
+        "final_metrics_time_s": float(timings.get("final_metrics", 0.0)),
         "grad_finite": grad_finite,
         "status_ok": status_ok,
     }
@@ -976,9 +2476,23 @@ def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dic
     return predictions
 
 
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        value = float(value)
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     with path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, sort_keys=True)
+        json.dump(_json_safe(payload), f, allow_nan=False, indent=2, sort_keys=True)
 
 
 def _stats_payload(stats: dict) -> dict[str, Any]:
@@ -1003,9 +2517,15 @@ def _print_startup_summary(
     *,
     sample_root: Path,
     split_counts: dict[str, int],
+    split_source: str,
+    primary_validation_split: str,
+    stress_validation_split: str | None,
     output_dir: Path,
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+    model_config: dict[str, Any],
+    batch_config: dict[str, Any],
 ) -> None:
     if args.log_mode == "quiet":
         return
@@ -1015,14 +2535,36 @@ def _print_startup_summary(
     _emit(f"  subset: {sample_root}")
     _emit(f"  split counts: {split_counts}")
     _emit(
+        "  split mode: "
+        f"source={split_source} split_map={args.split_map} "
+        f"primary_validation_split={primary_validation_split} "
+        f"stress_validation_split={stress_validation_split}"
+    )
+    _emit(
         "  run: "
         f"epochs={args.epochs} lr={args.lr} lr_schedule={lr_config['lr_schedule']} "
-        f"seed={args.seed} report_every={args.report_every}"
+        f"optimizer={optimizer_config['optimizer']} seed={args.seed} report_every={args.report_every}"
+    )
+    _emit(
+        "  model: "
+        f"node_latent_size={model_config['node_latent_size']} "
+        f"edge_latent_size={model_config['edge_latent_size']} "
+        f"processor_steps={model_config['processor_steps']} "
+        f"mlp_hidden_layers={model_config['mlp_hidden_layers']}"
     )
     _emit(
         "  output: "
         f"dir={output_dir} save_predictions={bool(args.save_predictions)} "
         f"save_best_predictions={bool(args.save_best_predictions)}"
+    )
+    _emit(
+        "  batching: "
+        f"mode={'mini_batch' if batch_config['batch_size'] is not None else 'legacy_full_batch'} "
+        f"batch_size={batch_config['batch_size']} "
+        f"validation_batch_size={batch_config['validation_batch_size']} "
+        f"prediction_batch_size={batch_config['prediction_batch_size']} "
+        f"shuffle_train_batches={batch_config['shuffle_train_batches']} "
+        f"drop_last={batch_config['drop_last']}"
     )
     _emit(
         "  logging: "
@@ -1047,6 +2589,12 @@ def _print_startup_summary(
             f"warmup_epochs={lr_config['warmup_epochs']} min_lr={lr_config['min_lr']} "
             f"second_stage_epoch={lr_config['second_stage_epoch']} "
             f"second_stage_lr={lr_config['second_stage_lr']}"
+        )
+        _emit(
+            "  optimizer params: "
+            f"optimizer={optimizer_config['optimizer']} "
+            f"gradient_clip_norm={optimizer_config['gradient_clip_norm']} "
+            f"weight_decay={optimizer_config['weight_decay']}"
         )
         _emit(f"  loss mode: {loss_config['loss_mode']}")
         _emit(f"  loss space: {loss_config['loss_space']}")
@@ -1084,12 +2632,16 @@ def _print_final_summary(
     result: dict[str, Any],
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+    model_config: dict[str, Any],
     predictions_path: Path,
     predictions_saved: bool,
     prediction_count: int,
     best_predictions_path: Path | None,
     best_predictions_saved: bool,
     best_prediction_count: int,
+    final_prediction_export_skipped: bool,
+    final_prediction_export_skip_reason: str | None,
     timings: dict[str, float],
 ) -> None:
     lr_history_summary = _sequence_summary(result["lr_history"])
@@ -1107,6 +2659,13 @@ def _print_final_summary(
         f"valid_base_mse={result['final_valid_loss_components']['base_mse']:.8e} "
         f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e}"
     )
+    if result.get("primary_validation_split") == "valid_iid":
+        _emit(
+            "  final stratified: "
+            f"valid_iid_loss={result['final_valid_iid_loss']:.8e} "
+            f"valid_stress_loss={_format_progress_value(result.get('final_valid_stress_loss'))} "
+            f"valid_stress_raw_deltaT_mse={_format_progress_value(result.get('final_valid_stress_raw_deltaT_mse'))}"
+        )
     _emit(
         "  best-valid: "
         f"metric={args.selection_metric} epoch={best.get('epoch')} "
@@ -1119,7 +2678,9 @@ def _print_final_summary(
         f"final_saved={bool(predictions_saved)} final_path={predictions_path if predictions_saved else 'not_written'} "
         f"final_count={prediction_count} best_saved={bool(best_predictions_saved)} "
         f"best_path={best_predictions_path if best_predictions_saved else 'not_written'} "
-        f"best_count={best_prediction_count}"
+        f"best_count={best_prediction_count} "
+        f"final_export_skipped={bool(final_prediction_export_skipped)} "
+        f"final_export_skip_reason={final_prediction_export_skip_reason}"
     )
     _emit(
         "  status: "
@@ -1128,6 +2689,7 @@ def _print_final_summary(
 
     if args.log_mode == "full":
         _emit("  loss/optimization")
+        _emit(f"    model config: {model_config}")
         _emit(f"    loss mode: {loss_config['loss_mode']}")
         _emit(f"    loss weight schedule: {loss_config['loss_weight_schedule']}")
         _emit(f"    relative weight summary: {relative_weight_summary}")
@@ -1223,6 +2785,7 @@ def _print_final_summary(
     else:
         _emit(
             "  optimization: "
+            f"optimizer={optimizer_config['optimizer']} "
             f"loss_mode={loss_config['loss_mode']} loss_weight_schedule={loss_config['loss_weight_schedule']} "
             f"lr_schedule={lr_config['lr_schedule']} lr_summary={lr_history_summary}"
         )
@@ -1247,11 +2810,17 @@ def _make_groups_with_progress(
     builder: Heat3DGraphBuilder,
     label: str,
     progress_enabled: bool,
-    verbose_progress_enabled: bool,
+    progress_detail: str,
+    batch_size: int | None = None,
+    drop_last: bool = False,
+    profile_counts: dict[str, int] | None = None,
 ) -> list[dict]:
     start = time.perf_counter()
     sample_count = len(examples)
-    _progress(progress_enabled, "startup", f"group build {label}: start samples={sample_count} ...")
+    batch_text = f" batch_size={batch_size}" if batch_size else " legacy_full_batch"
+    _progress(progress_enabled, "startup", f"group build {label}: start samples={sample_count}{batch_text} ...")
+    detail_mode = _progress_detail_mode(progress_detail)
+    verbose_progress_enabled = progress_enabled and detail_mode == "full"
 
     grouped: dict[tuple[int, tuple[str, ...], tuple[tuple[int, ...], ...]], list] = {}
     checkpoints = _progress_checkpoints(sample_count)
@@ -1259,6 +2828,8 @@ def _make_groups_with_progress(
     for index, example in enumerate(examples, start=1):
         bridge = _bridge_for(example)
         signature = _metadata_shape_signature(builder.build_metadata(example.condition.coords))
+        _bump_profile_count(profile_counts, "graph_metadata_build_calls")
+        _bump_profile_count(profile_counts, f"{label}_scan_metadata_build_calls")
         key = (
             example.condition.coords.shape[0],
             bridge.condition_feature_names,
@@ -1280,28 +2851,103 @@ def _make_groups_with_progress(
         scan_start,
     )
 
-    result = []
+    pending_batches: list[tuple[int, int, str, list]] = []
+    grouped_count = len(grouped)
     for group_index, ((n_points, feature_names, _signature), group_examples) in enumerate(grouped.items(), start=1):
         group_name = f"group_{group_index}_N{n_points}_F{len(feature_names)}"
-        batch_start = time.perf_counter()
-        _progress(
-            progress_enabled,
-            "startup",
-            (
-                f"group build {label}: group {group_index}/{len(grouped)} "
-                f"{group_name} arrays+graph start samples={len(group_examples)} ..."
-            ),
-        )
-        result.append(_make_batch_group(group_name, group_examples, stats, builder))
-        _progress(
-            progress_enabled,
-            "startup",
-            f"group build {label}: group {group_index}/{len(grouped)} arrays+graph built",
-            batch_start,
-        )
+        batches = _chunk_examples(group_examples, batch_size=batch_size, drop_last=drop_last)
+        for batch_index, batch_examples in enumerate(batches, start=1):
+            if batch_size:
+                batch_group_name = f"{group_name}_batch_{batch_index:04d}_B{len(batch_examples)}"
+            else:
+                batch_group_name = group_name
+            pending_batches.append((group_index, grouped_count, batch_group_name, batch_examples))
 
+    result = []
+    bar = _ProgressBar(
+        progress_enabled and detail_mode == "basic",
+        f"[startup] group build {label}",
+        len(pending_batches),
+    )
+    for current_index, (group_index, grouped_count, batch_group_name, batch_examples) in enumerate(pending_batches, start=1):
+        batch_start = time.perf_counter()
+        if verbose_progress_enabled:
+            _progress(
+                True,
+                "startup",
+                (
+                    f"group build {label}: group {group_index}/{grouped_count} "
+                    f"{batch_group_name} arrays+graph start samples={len(batch_examples)} ..."
+                ),
+            )
+            _bump_profile_count(profile_counts, "graph_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, f"{label}_batch_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, "graph_build_graphs_calls")
+            _bump_profile_count(profile_counts, f"{label}_build_graphs_calls")
+        else:
+            _bump_profile_count(profile_counts, "graph_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, f"{label}_batch_metadata_build_calls", len(batch_examples))
+            _bump_profile_count(profile_counts, "graph_build_graphs_calls")
+            _bump_profile_count(profile_counts, f"{label}_build_graphs_calls")
+        result.append(_make_batch_group(batch_group_name, batch_examples, stats, builder))
+        if verbose_progress_enabled:
+            _progress(
+                True,
+                "startup",
+                f"group build {label}: {batch_group_name} arrays+graph built",
+                batch_start,
+            )
+        else:
+            bar.update(current_index)
+
+    bar.close(current=len(result))
     _progress(progress_enabled, "startup", f"group build {label}: done groups={len(result)}", start)
     return result
+
+
+def _chunk_examples(examples, *, batch_size: int | None, drop_last: bool) -> list:
+    examples = list(examples)
+    if batch_size is None:
+        return [examples] if examples else []
+    chunks = []
+    for start in range(0, len(examples), batch_size):
+        chunk = examples[start : start + batch_size]
+        if len(chunk) < batch_size and drop_last:
+            continue
+        chunks.append(chunk)
+    return chunks
+
+
+def _require_nonempty_groups(groups: list[dict], label: str) -> None:
+    if not groups:
+        raise ValueError(f"{label} group build produced no groups; check batch_size/drop_last")
+
+
+def _prediction_groups_for_split(
+    prediction_split: str,
+    *,
+    all_groups: list[dict],
+    train_groups: list[dict],
+    valid_groups: list[dict],
+    valid_stress_groups: list[dict],
+) -> list[dict]:
+    groups_by_split = {
+        "all": all_groups,
+        "train": train_groups,
+        "valid_iid": valid_groups,
+        "valid_stress": valid_stress_groups,
+    }
+    groups = groups_by_split[prediction_split]
+    _require_nonempty_groups(groups, f"prediction split {prediction_split}")
+    return groups
+
+
+def _epoch_train_groups(groups: list[dict], *, epoch: int, seed: int, shuffle: bool) -> list[dict]:
+    if not shuffle or len(groups) <= 1:
+        return groups
+    rng = np.random.default_rng(seed + epoch)
+    indices = rng.permutation(len(groups))
+    return [groups[int(index)] for index in indices]
 
 
 def main() -> int:
@@ -1310,11 +2956,14 @@ def main() -> int:
         raise ValueError("--epochs must be >= 1")
     if args.report_every < 1:
         raise ValueError("--report-every must be >= 1")
+    if args.grad_norm_report_every < 0:
+        raise ValueError("--grad-norm-report-every must be >= 0")
     _output_filename(args.best_predictions_name, "best-predictions-name")
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
-    verbose_progress_enabled = _verbose_progress_enabled(args)
+    profile_enabled = _profile_timing_enabled(args)
     timings: dict[str, float] = {}
+    profile_counts: dict[str, int] = {}
     script_start = time.perf_counter()
     _progress(
         progress_enabled,
@@ -1326,28 +2975,46 @@ def main() -> int:
     )
     loss_config = _loss_config_from_args(args)
     lr_config = _lr_config_from_args(args)
+    optimizer_config = _optimizer_config_from_args(args)
+    model_config = _model_config_from_args(args)
+    batch_config = _batch_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
+    _validate_optimizer_config(optimizer_config)
+    _validate_model_config(model_config)
+    _validate_batch_config(batch_config)
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
+    profile_timing_json_path = (
+        _ensure_ignored_output_file(args.profile_timing_json, "profile-timing-json")
+        if args.profile_timing_json is not None
+        else None
+    )
     _progress(progress_enabled, "startup", f"output dir ready: {output_dir}", output_start)
 
     dataset_start = time.perf_counter()
     sample_root = _sample_root(args.subset)
     _progress(progress_enabled, "startup", f"loading dataset from {sample_root} ...")
-    split_ids = _subset_split_ids(sample_root)
-    _require_train_valid_splits(split_ids)
+    split_ids, split_source, primary_validation_split, stress_validation_split = _resolve_training_splits(
+        sample_root,
+        args.split_map,
+    )
 
     all_ids = sorted(sample_id for ids in split_ids.values() for sample_id in ids)
     train_ids = split_ids["train"]
-    valid_ids = split_ids["valid"]
+    valid_ids = split_ids[primary_validation_split]
+    valid_stress_ids = split_ids.get(stress_validation_split, []) if stress_validation_split is not None else []
     split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
     for sample_id in all_ids:
         if not (sample_root / sample_id / "temperature.npy").is_file():
             raise FileNotFoundError(f"Missing temperature.npy for {sample_id}")
 
-    dataset = Heat3DV1NativeSupervisedDataset(sample_root, k_encoding_mode="diag3")
+    dataset = Heat3DV1NativeSupervisedDataset(
+        sample_root,
+        k_encoding_mode="diag3",
+        boundary_mask_fallback=args.boundary_mask_fallback,
+    )
     index_by_id = dataset.sample_index_by_id()
     missing = [sample_id for sample_id in all_ids if sample_id not in index_by_id]
     if missing:
@@ -1355,11 +3022,15 @@ def main() -> int:
 
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
+    valid_stress_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_stress_ids]
     all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
     _progress(
         progress_enabled,
         "startup",
-        f"dataset loaded: sample_count={len(dataset)} split_counts={split_counts}",
+        (
+            f"dataset loaded: sample_count={len(dataset)} split_source={split_source} "
+            f"primary_validation_split={primary_validation_split} split_counts={split_counts}"
+        ),
         dataset_start,
     )
     _record_timing(timings, "dataset_load", dataset_start)
@@ -1387,15 +3058,36 @@ def main() -> int:
         builder,
         "train",
         progress_detail_enabled,
-        verbose_progress_enabled,
+        args.progress_detail,
+        batch_size=batch_config["batch_size"],
+        drop_last=batch_config["drop_last"],
+        profile_counts=profile_counts if profile_enabled else None,
     )
     valid_groups = _make_groups_with_progress(
         valid_examples,
         stats,
         builder,
-        "valid",
+        primary_validation_split,
         progress_detail_enabled,
-        verbose_progress_enabled,
+        args.progress_detail,
+        batch_size=batch_config["validation_batch_size"],
+        drop_last=False,
+        profile_counts=profile_counts if profile_enabled else None,
+    )
+    valid_stress_groups = (
+        _make_groups_with_progress(
+            valid_stress_examples,
+            stats,
+            builder,
+            stress_validation_split,
+            progress_detail_enabled,
+            args.progress_detail,
+            batch_size=batch_config["validation_batch_size"],
+            drop_last=False,
+            profile_counts=profile_counts if profile_enabled else None,
+        )
+        if stress_validation_split is not None and valid_stress_examples
+        else []
     )
     all_groups = _make_groups_with_progress(
         all_examples,
@@ -1403,15 +3095,22 @@ def main() -> int:
         builder,
         "all",
         progress_detail_enabled,
-        verbose_progress_enabled,
+        args.progress_detail,
+        batch_size=batch_config["prediction_batch_size"],
+        drop_last=False,
+        profile_counts=profile_counts if profile_enabled else None,
     )
+    _require_nonempty_groups(train_groups, "train")
+    _require_nonempty_groups(valid_groups, primary_validation_split)
+    _require_nonempty_groups(all_groups, "all")
     _record_timing(timings, "group_build", group_start)
     _progress(
         progress_enabled,
         "startup",
         (
             "groups built: "
-            f"train_groups={len(train_groups)} valid_groups={len(valid_groups)} all_groups={len(all_groups)}"
+            f"train_groups={len(train_groups)} {primary_validation_split}_groups={len(valid_groups)} "
+            f"valid_stress_groups={len(valid_stress_groups)} all_groups={len(all_groups)}"
         ),
         group_start,
     )
@@ -1420,32 +3119,65 @@ def main() -> int:
         args,
         sample_root=sample_root,
         split_counts=split_counts,
+        split_source=split_source,
+        primary_validation_split=primary_validation_split,
+        stress_validation_split=stress_validation_split,
         output_dir=output_dir,
         loss_config=loss_config,
         lr_config=lr_config,
+        optimizer_config=optimizer_config,
+        model_config=model_config,
+        batch_config=batch_config,
     )
 
     result = _fit_once(
         train_groups,
         valid_groups,
+        valid_stress_groups,
         stats,
         args.epochs,
         lr_config,
         args.seed,
         args.report_every,
+        args.train_metrics_schedule,
+        args.grad_norm_report_every,
         loss_config,
+        optimizer_config,
+        model_config,
+        batch_config,
         args.selection_metric,
         args.log_mode,
         progress_enabled,
         timings,
+        profile_enabled=profile_enabled,
+        primary_validation_split=primary_validation_split,
+        stress_validation_split=stress_validation_split,
     )
-    prediction_start = time.perf_counter()
-    _progress(progress_enabled, "export", "building recovered predictions ...")
-    predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
-    _record_timing(timings, "prediction_export", prediction_start)
-    _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
-
+    prediction_groups = _prediction_groups_for_split(
+        args.prediction_split,
+        all_groups=all_groups,
+        train_groups=train_groups,
+        valid_groups=valid_groups,
+        valid_stress_groups=valid_stress_groups,
+    )
     predictions_path = output_dir / "predictions.npz"
+    predictions: dict[str, np.ndarray] = {}
+    final_prediction_export_skipped = not should_build_final_predictions(bool(args.save_predictions))
+    final_prediction_export_skip_reason = "save_predictions_false" if final_prediction_export_skipped else None
+    if should_build_final_predictions(bool(args.save_predictions)):
+        prediction_start = time.perf_counter()
+        _progress(progress_enabled, "export", "building recovered predictions ...")
+        predictions = _predict_temperatures(result["model"], result["params"], prediction_groups, stats)
+        _record_timing(timings, "prediction_export", prediction_start)
+        _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
+    else:
+        timings["prediction_export"] = 0.0
+        _progress(
+            progress_enabled,
+            "export",
+            "prediction export skipped: save_predictions=False",
+        )
+
     best_predictions_path = output_dir / args.best_predictions_name if args.save_best_predictions else None
     best_predictions: dict[str, np.ndarray] = {}
     best_predictions_saved = False
@@ -1465,7 +3197,7 @@ def main() -> int:
             raise RuntimeError("best params are unavailable; expected at least one training epoch")
         best_prediction_start = time.perf_counter()
         _progress(progress_enabled, "export", "building best-valid recovered predictions ...")
-        best_predictions = _predict_temperatures(result["model"], result["best_params"], all_groups, stats)
+        best_predictions = _predict_temperatures(result["model"], result["best_params"], prediction_groups, stats)
         best_prediction_count = len(best_predictions)
         _record_timing(timings, "best_prediction_export", best_prediction_start)
         _progress(
@@ -1495,6 +3227,10 @@ def main() -> int:
     run_config = {
         "diagnostic_scope": "controlled training export smoke; not formal model performance",
         "subset": str(sample_root),
+        "split_map_path": str(args.split_map) if args.split_map is not None else None,
+        "split_source": split_source,
+        "primary_validation_split": primary_validation_split,
+        "stress_validation_split": stress_validation_split,
         "epochs": args.epochs,
         "lr": args.lr,
         "lr_schedule": lr_config["lr_schedule"],
@@ -1502,17 +3238,55 @@ def main() -> int:
         "min_lr": lr_config["min_lr"],
         "second_stage_epoch": lr_config["second_stage_epoch"],
         "second_stage_lr": lr_config["second_stage_lr"],
-        "optimizer": "manual_full_batch_gradient_descent",
+        "optimizer": optimizer_config["optimizer"],
+        "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
+        "weight_decay": optimizer_config["weight_decay"],
+        "model_config": model_config,
+        **_batch_config_payload(batch_config),
         "seed": args.seed,
+        "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
+        "prediction_split": args.prediction_split,
         "predictions_path": str(predictions_path) if args.save_predictions else None,
         "save_best_predictions": bool(args.save_best_predictions),
         "best_predictions_name": args.best_predictions_name,
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
         "progress_detail": args.progress_detail,
+        "profile_timing": bool(args.profile_timing),
+        "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
+        "train_metrics_schedule": result["train_metrics_schedule"],
+        "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
+        "initial_valid_loss": result["initial_valid_loss"],
+        "initial_valid_iid_loss": result["initial_valid_iid_loss"],
+        "initial_valid_stress_loss": result["initial_valid_stress_loss"],
+        "initial_valid_raw_deltaT_mse": result["initial_valid_raw_deltaT_mse"],
+        "initial_valid_iid_raw_deltaT_mse": result["initial_valid_iid_raw_deltaT_mse"],
+        "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
+        "updates_per_epoch": result["updates_per_epoch"],
+        "total_update_count": result["total_update_count"],
+        "train_group_count": result["train_group_count"],
+        "valid_iid_group_count": result["valid_iid_group_count"],
+        "valid_stress_group_count": result["valid_stress_group_count"],
+        "train_group_sample_id_hash": result["train_group_sample_id_hash"],
+        "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
+        "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
+        "deterministic_audit_enabled": result["deterministic_audit_enabled"],
+        "epoch_train_batch_order_hashes": result["epoch_train_batch_order_hashes"],
+        "code_version_or_git_commit": result["code_version_or_git_commit"],
+        "final_best_ratio": result["final_best_ratio"],
+        "epoch_lrs": result["epoch_lrs"],
+        "grad_norm_report_every": result["grad_norm_report_every"],
+        "grad_norm_reported_batch_count": result["grad_norm_reported_batch_count"],
+        "grad_norm_skipped_batch_count": result["grad_norm_skipped_batch_count"],
+        "grad_norm_reporting_mode": result["grad_norm_reporting_mode"],
+        "final_metrics_reused": result["final_metrics_reused"],
+        "final_metrics_reuse_source": result["final_metrics_reuse_source"],
+        "final_metrics_time_s": result["final_metrics_time_s"],
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
         "checkpoint_saved": False,
         "loss_mode": loss_config["loss_mode"],
@@ -1536,20 +3310,90 @@ def main() -> int:
         **_loss_weight_schedule_payload(loss_config),
         "loss": loss_config,
         "lr_config": lr_config,
+        "optimizer_config": optimizer_config,
+        "model_config": model_config,
+        "batch_config": batch_config,
         "split_counts": split_counts,
+        "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "timing_diagnostics": dict(timings),
+        "timing_profile_counts": dict(profile_counts),
         "train_ids": train_ids,
         "valid_ids": valid_ids,
+        "valid_iid_ids": valid_ids if primary_validation_split == "valid_iid" else [],
+        "valid_stress_ids": valid_stress_ids,
         "ignored_candidate_ids": sorted(
-            sample_id for split, ids in split_ids.items() if split not in {"train", "valid"} for sample_id in ids
+            sample_id
+            for split, ids in split_ids.items()
+            if split not in {"train", primary_validation_split, stress_validation_split}
+            for sample_id in ids
         ),
     }
 
     loss_summary = {
         "status_ok": bool(result["status_ok"]),
         "grad_finite": bool(result["grad_finite"]),
+        "split_map_path": str(args.split_map) if args.split_map is not None else None,
+        "split_source": split_source,
+        "primary_validation_split": primary_validation_split,
+        "stress_validation_split": stress_validation_split,
+        "prediction_split": args.prediction_split,
+        "split_counts": split_counts,
         "train_losses": [float(value) for value in result["train_losses"]],
+        "train_loss_epochs": [int(value) for value in result["train_loss_epochs"]],
         "valid_losses": [float(value) for value in result["valid_losses"]],
+        "valid_iid_losses": [float(value) for value in result["valid_iid_losses"]],
+        "valid_stress_losses": [float(value) for value in result["valid_stress_losses"]],
+        "initial_train_loss": result["initial_train_loss"],
+        "initial_valid_loss": result["initial_valid_loss"],
+        "initial_valid_iid_loss": result["initial_valid_iid_loss"],
+        "initial_valid_stress_loss": result["initial_valid_stress_loss"],
+        "initial_valid_base_mse": result["initial_valid_base_mse"],
+        "initial_valid_raw_deltaT_mse": result["initial_valid_raw_deltaT_mse"],
+        "initial_valid_iid_raw_deltaT_mse": result["initial_valid_iid_raw_deltaT_mse"],
+        "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
+        "updates_per_epoch": result["updates_per_epoch"],
+        "total_update_count": result["total_update_count"],
+        "train_group_count": result["train_group_count"],
+        "valid_iid_group_count": result["valid_iid_group_count"],
+        "valid_stress_group_count": result["valid_stress_group_count"],
+        "train_group_sample_id_hash": result["train_group_sample_id_hash"],
+        "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
+        "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
+        "deterministic_audit_enabled": result["deterministic_audit_enabled"],
+        "epoch_train_batch_order_hashes": result["epoch_train_batch_order_hashes"],
+        "code_version_or_git_commit": result["code_version_or_git_commit"],
+        "final_best_ratio": result["final_best_ratio"],
+        "epoch_lrs": result["epoch_lrs"],
+        "epoch_mean_train_batch_loss": [
+            record.get("epoch_mean_train_batch_loss") for record in result["epoch_history"]
+        ],
+        "epoch_min_train_batch_loss": [
+            record.get("epoch_min_train_batch_loss") for record in result["epoch_history"]
+        ],
+        "epoch_max_train_batch_loss": [
+            record.get("epoch_max_train_batch_loss") for record in result["epoch_history"]
+        ],
+        "epoch_mean_grad_norm": [
+            record.get("epoch_mean_grad_norm") for record in result["epoch_history"]
+        ],
+        "epoch_max_grad_norm": [
+            record.get("epoch_max_grad_norm") for record in result["epoch_history"]
+        ],
+        "epoch_mean_update_norm": [
+            record.get("epoch_mean_update_norm") for record in result["epoch_history"]
+        ],
+        "epoch_max_update_norm": [
+            record.get("epoch_max_update_norm") for record in result["epoch_history"]
+        ],
+        "epoch_mean_param_norm": [
+            record.get("epoch_mean_param_norm") for record in result["epoch_history"]
+        ],
+        "epoch_update_to_param_norm_ratio": [
+            record.get("epoch_update_to_param_norm_ratio") for record in result["epoch_history"]
+        ],
+        "epoch_max_update_to_param_norm_ratio": [
+            record.get("epoch_max_update_to_param_norm_ratio") for record in result["epoch_history"]
+        ],
         "grad_norms": [float(value) for value in result["grad_norms"]],
         "lr_history": [float(value) for value in result["lr_history"]],
         "lr_history_summary": _sequence_summary(result["lr_history"]),
@@ -1571,9 +3415,28 @@ def main() -> int:
         },
         "train_metrics": _metrics_payload(result["train_metrics"]),
         "valid_metrics": _metrics_payload(result["valid_metrics"]),
+        "valid_iid_metrics": _metrics_payload(result["valid_metrics"]) if primary_validation_split == "valid_iid" else {},
+        "valid_stress_metrics": (
+            _metrics_payload(result["valid_stress_metrics"])
+            if result["valid_stress_metrics"] is not None
+            else {}
+        ),
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
         "progress_detail": args.progress_detail,
+        "profile_timing": bool(args.profile_timing),
+        "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
+        "train_metrics_schedule": result["train_metrics_schedule"],
+        "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
+        "grad_norm_report_every": result["grad_norm_report_every"],
+        "grad_norm_reported_batch_count": result["grad_norm_reported_batch_count"],
+        "grad_norm_skipped_batch_count": result["grad_norm_skipped_batch_count"],
+        "grad_norm_reporting_mode": result["grad_norm_reporting_mode"],
+        "final_metrics_reused": result["final_metrics_reused"],
+        "final_metrics_reuse_source": result["final_metrics_reuse_source"],
+        "final_metrics_time_s": result["final_metrics_time_s"],
+        "final_prediction_export_skipped": bool(final_prediction_export_skipped),
+        "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
@@ -1600,14 +3463,31 @@ def main() -> int:
         "min_lr": lr_config["min_lr"],
         "second_stage_epoch": lr_config["second_stage_epoch"],
         "second_stage_lr": lr_config["second_stage_lr"],
+        "optimizer": optimizer_config["optimizer"],
+        "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
+        "weight_decay": optimizer_config["weight_decay"],
+        "model_config": model_config,
+        **_batch_config_payload(batch_config),
+        "epoch_batch_counts": [int(value) for value in result["epoch_batch_counts"]],
         "train_loss_selected": _selected_steps(result["train_losses"], args.report_every),
+        "train_loss_selected_epochs": [
+            (int(result["train_loss_epochs"][index]), float(result["train_losses"][index]))
+            for index, _ in _selected_steps(result["train_losses"], args.report_every)
+        ],
         "valid_loss_selected": _selected_steps(result["valid_losses"], args.report_every),
-        "grad_norm_selected": _selected_steps(result["grad_norms"], args.report_every),
+        "grad_norm_selected": _selected_steps_or_empty(result["grad_norms"], args.report_every),
         "lr_config": lr_config,
+        "optimizer_config": optimizer_config,
+        "model_config": model_config,
+        "batch_config": batch_config,
         "epoch_history": result["epoch_history"],
+        "train_batch_records": result["train_batch_records"] if profile_enabled else [],
+        "validation_batch_records": result["validation_batch_records"] if profile_enabled else [],
         "loss": loss_config,
         "final_train_loss_components": result["final_train_loss_components"],
         "final_valid_loss_components": result["final_valid_loss_components"],
+        "final_valid_iid_loss_components": result["final_valid_iid_loss_components"],
+        "final_valid_stress_loss_components": result["final_valid_stress_loss_components"],
         "train_only_normalization": _stats_payload(stats),
     }
     summary_write_start = time.perf_counter()
@@ -1619,17 +3499,57 @@ def main() -> int:
     _record_timing(timings, "summary_write", summary_write_start)
     _progress(progress_enabled, "export", "run summary files written", summary_write_start)
 
+    profile_payload = _profile_timing_payload(
+        timings=timings,
+        profile_counts=profile_counts,
+        epoch_records=result["epoch_history"],
+        train_batch_records=result["train_batch_records"] if profile_enabled else [],
+        validation_batch_records=result["validation_batch_records"] if profile_enabled else [],
+        train_group_count=len(train_groups),
+        valid_group_count=len(valid_groups),
+        all_group_count=len(all_groups),
+        train_batch_counts=[int(value) for value in result["epoch_batch_counts"]],
+        subset=sample_root,
+        output_dir=output_dir,
+        train_metrics_schedule=result["train_metrics_schedule"],
+        train_metrics_epoch_values=[int(epoch) for epoch in result["train_metrics_epochs"]],
+        grad_norm_report_every=result["grad_norm_report_every"],
+        grad_norm_reported_batch_count=result["grad_norm_reported_batch_count"],
+        grad_norm_skipped_batch_count=result["grad_norm_skipped_batch_count"],
+        final_metrics_reused=result["final_metrics_reused"],
+        final_metrics_reuse_source=result["final_metrics_reuse_source"],
+        final_prediction_export_skipped=final_prediction_export_skipped,
+        final_prediction_export_skip_reason=final_prediction_export_skip_reason,
+        total_run_time_so_far=time.perf_counter() - script_start,
+    )
+    if profile_enabled:
+        _print_profile_timing(profile_payload)
+    if profile_timing_json_path is not None:
+        profile_json_start = time.perf_counter()
+        _write_json(profile_timing_json_path, profile_payload)
+        _record_timing(timings, "profile_timing_json_write", profile_json_start)
+        _progress(
+            progress_enabled,
+            "export",
+            f"profile timing json written: {profile_timing_json_path}",
+            profile_json_start,
+        )
+
     _print_final_summary(
         args,
         result=result,
         loss_config=loss_config,
         lr_config=lr_config,
+        optimizer_config=optimizer_config,
+        model_config=model_config,
         predictions_path=predictions_path,
         predictions_saved=bool(args.save_predictions),
         prediction_count=len(predictions),
         best_predictions_path=best_predictions_path,
         best_predictions_saved=best_predictions_saved,
         best_prediction_count=best_prediction_count,
+        final_prediction_export_skipped=final_prediction_export_skipped,
+        final_prediction_export_skip_reason=final_prediction_export_skip_reason,
         timings=timings,
     )
     _progress(progress_enabled, "done", "script complete", script_start)

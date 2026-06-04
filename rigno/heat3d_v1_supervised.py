@@ -50,6 +50,7 @@ class Heat3DV1SupervisedDataset(Heat3DV1MetadataDataset):
     repo_dir: str | Path | None = None,
     input_mode: str = "pure_physics",
     k_encoding_mode: str = "diag3",
+    boundary_mask_fallback: bool = True,
   ) -> None:
     super().__init__(
       datadir=(default_v1_supervised_samples_dir(repo_dir) if datadir is None else datadir),
@@ -57,6 +58,7 @@ class Heat3DV1SupervisedDataset(Heat3DV1MetadataDataset):
       input_mode=input_mode,
       k_encoding_mode=k_encoding_mode,
       allowed_stages=PHYSICS_LABEL_SUPERVISED_STAGES,
+      boundary_mask_fallback=boundary_mask_fallback,
     )
 
   def _load_sample(self, sample_dir: Path) -> dict[str, Any]:

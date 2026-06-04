@@ -96,6 +96,7 @@ class Heat3DV1MetadataDataset:
     input_mode: str = "pure_physics",
     k_encoding_mode: str = "native",
     allowed_stages: tuple[str, ...] = ("metadata_only",),
+    boundary_mask_fallback: bool = True,
   ) -> None:
     if input_mode != "pure_physics":
       raise ValueError("Heat3DV1MetadataDataset currently supports only input_mode='pure_physics'")
@@ -116,6 +117,7 @@ class Heat3DV1MetadataDataset:
     self.input_mode = input_mode
     self.k_encoding_mode = k_encoding_mode
     self.allowed_stages = tuple(allowed_stages)
+    self.boundary_mask_fallback = bool(boundary_mask_fallback)
     self.samples = [self._load_sample(sample_dir) for sample_dir in self.sample_dirs]
 
   @staticmethod
@@ -164,7 +166,11 @@ class Heat3DV1MetadataDataset:
     q_field = np.load(sample_dir / "q_field.npy")
 
     encoded_k_field, k_feature_names = self._encode_k_field(k_field, self.k_encoding_mode)
-    bc_encoding = self._encode_boundary_conditions(coords, meta)
+    bc_encoding = self._encode_boundary_conditions(
+      coords,
+      meta,
+      boundary_mask_fallback=self.boundary_mask_fallback,
+    )
     feature_names = k_feature_names + PURE_PHYSICS_BASE_FEATURE_NAMES
     features = np.concatenate([encoded_k_field, q_field, bc_encoding], axis=-1)
     if features.shape[1] != len(feature_names):
@@ -197,10 +203,40 @@ class Heat3DV1MetadataDataset:
     }
 
   @staticmethod
-  def _boundary_masks(n_points: int, meta: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+  def _coordinate_boundary_masks(coords: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    n_points = coords.shape[0]
+    span = np.ptp(coords, axis=0)
+    tolerance = max(float(np.max(span)) * 1.0e-6, 1.0e-12)
+    minimum = np.min(coords, axis=0)
+    maximum = np.max(coords, axis=0)
+
+    top = np.isclose(coords[:, 2], maximum[2], rtol=0.0, atol=tolerance).reshape(n_points, 1)
+    bottom = np.isclose(coords[:, 2], minimum[2], rtol=0.0, atol=tolerance).reshape(n_points, 1)
+    side = (
+      np.isclose(coords[:, 0], minimum[0], rtol=0.0, atol=tolerance)
+      | np.isclose(coords[:, 0], maximum[0], rtol=0.0, atol=tolerance)
+      | np.isclose(coords[:, 1], minimum[1], rtol=0.0, atol=tolerance)
+      | np.isclose(coords[:, 1], maximum[1], rtol=0.0, atol=tolerance)
+    ).reshape(n_points, 1)
+    return top.astype(np.float64), bottom.astype(np.float64), side.astype(np.float64)
+
+  @classmethod
+  def _boundary_masks(
+    cls,
+    coords: np.ndarray,
+    meta: dict[str, Any],
+    *,
+    boundary_mask_fallback: bool,
+  ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    n_points = coords.shape[0]
     top = np.zeros((n_points, 1), dtype=np.float64)
     bottom = np.zeros((n_points, 1), dtype=np.float64)
     side = np.zeros((n_points, 1), dtype=np.float64)
+
+    if "boundary_regions" not in meta:
+      if boundary_mask_fallback:
+        return cls._coordinate_boundary_masks(coords)
+      return top, bottom, side
 
     boundary_regions = meta.get("boundary_regions", [])
     if not isinstance(boundary_regions, list):
@@ -224,9 +260,19 @@ class Heat3DV1MetadataDataset:
     return top, bottom, side
 
   @classmethod
-  def _encode_boundary_conditions(cls, coords: np.ndarray, meta: dict[str, Any]) -> np.ndarray:
+  def _encode_boundary_conditions(
+    cls,
+    coords: np.ndarray,
+    meta: dict[str, Any],
+    *,
+    boundary_mask_fallback: bool = True,
+  ) -> np.ndarray:
     n_points = coords.shape[0]
-    top, bottom, side = cls._boundary_masks(n_points, meta)
+    top, bottom, side = cls._boundary_masks(
+      coords,
+      meta,
+      boundary_mask_fallback=boundary_mask_fallback,
+    )
     interior = ((top + bottom + side) == 0.0).astype(np.float64)
 
     params = meta.get("boundary_params", {})
@@ -349,6 +395,7 @@ class Heat3DV1MetadataDataset:
       "sample_count": len(self.samples),
       "input_mode": self.input_mode,
       "k_encoding_mode": self.k_encoding_mode,
+      "boundary_mask_fallback": self.boundary_mask_fallback,
       "supported_k_shapes": SUPPORTED_K_SHAPES[self.k_encoding_mode],
       "feature_names": list(self.samples[0]["physics_input"].feature_names) if self.samples else [],
       "stage_requirement": list(self.allowed_stages),
