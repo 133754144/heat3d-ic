@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Formal read-only Heat3D v3 P0 p2r/r2p graph coverage audit."""
+"""Formal read-only Heat3D v3 P0/P1 p2r/r2p graph coverage audit."""
 
 from __future__ import annotations
 
@@ -44,6 +44,21 @@ POLICY_CURRENT = "current"
 POLICY_NO_HARD_RESET = "candidate_no_hard_reset"
 POLICY_NO_GLOBAL_CLIP = "candidate_no_global_clip"
 POLICY_NO_HARD_RESET_NO_GLOBAL_CLIP = "candidate_no_hard_reset_no_global_clip"
+POLICY_NEAREST_REPAIR = "candidate-nearest-repair"
+POLICY_DISCRETE_COVERAGE_RADIUS = "candidate-discrete-coverage-radius"
+POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR = (
+    "candidate-discrete-coverage-radius-with-nearest-repair"
+)
+P1_POLICIES = {
+    POLICY_NEAREST_REPAIR,
+    POLICY_DISCRETE_COVERAGE_RADIUS,
+    POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR,
+}
+P0_SIMULATED_POLICIES = {
+    POLICY_NO_HARD_RESET,
+    POLICY_NO_GLOBAL_CLIP,
+    POLICY_NO_HARD_RESET_NO_GLOBAL_CLIP,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -78,6 +93,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--candidate-no-hard-reset", action="store_true")
     parser.add_argument("--candidate-no-global-clip", action="store_true")
     parser.add_argument("--candidate-no-hard-reset-no-global-clip", action="store_true")
+    parser.add_argument("--candidate-nearest-repair", action="store_true")
+    parser.add_argument("--candidate-discrete-coverage-radius", action="store_true")
+    parser.add_argument(
+        "--candidate-discrete-coverage-radius-with-nearest-repair",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--coverage-repair-policy",
+        choices=("none", "nearest_rnode"),
+        default="none",
+    )
+    parser.add_argument(
+        "--radius-policy",
+        choices=("legacy_kdtree_mean4", "discrete_physical_coverage"),
+        default="legacy_kdtree_mean4",
+    )
+    parser.add_argument("--repair-p2r", dest="repair_p2r", action="store_true", default=True)
+    parser.add_argument("--no-repair-p2r", dest="repair_p2r", action="store_false")
+    parser.add_argument("--repair-r2p", dest="repair_r2p", action="store_true", default=True)
+    parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
+    parser.add_argument("--min-physical-coverage", type=int, default=1)
     return parser.parse_args()
 
 
@@ -103,7 +139,34 @@ def selected_policies(args: argparse.Namespace) -> list[str]:
         policies.append(POLICY_NO_GLOBAL_CLIP)
     if args.candidate_no_hard_reset_no_global_clip:
         policies.append(POLICY_NO_HARD_RESET_NO_GLOBAL_CLIP)
-    return policies
+    if args.candidate_nearest_repair:
+        policies.append(POLICY_NEAREST_REPAIR)
+    if args.candidate_discrete_coverage_radius:
+        policies.append(POLICY_DISCRETE_COVERAGE_RADIUS)
+    if args.candidate_discrete_coverage_radius_with_nearest_repair:
+        policies.append(POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR)
+
+    configured_policy = _configured_policy_name(
+        radius_policy=args.radius_policy,
+        coverage_repair_policy=args.coverage_repair_policy,
+    )
+    if configured_policy is not None:
+        policies.append(configured_policy)
+    return list(dict.fromkeys(policies))
+
+
+def _configured_policy_name(
+    *,
+    radius_policy: str,
+    coverage_repair_policy: str,
+) -> str | None:
+    if radius_policy == "discrete_physical_coverage":
+        if coverage_repair_policy == "nearest_rnode":
+            return POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR
+        return POLICY_DISCRETE_COVERAGE_RADIUS
+    if coverage_repair_policy == "nearest_rnode":
+        return POLICY_NEAREST_REPAIR
+    return None
 
 
 def all_policies() -> list[str]:
@@ -112,6 +175,9 @@ def all_policies() -> list[str]:
         POLICY_NO_HARD_RESET,
         POLICY_NO_GLOBAL_CLIP,
         POLICY_NO_HARD_RESET_NO_GLOBAL_CLIP,
+        POLICY_NEAREST_REPAIR,
+        POLICY_DISCRETE_COVERAGE_RADIUS,
+        POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR,
     ]
 
 
@@ -123,6 +189,13 @@ def _policy_switches(policy: str) -> tuple[bool, bool]:
     if policy == POLICY_NO_GLOBAL_CLIP:
         return True, False
     if policy == POLICY_NO_HARD_RESET_NO_GLOBAL_CLIP:
+        return False, False
+    if policy == POLICY_NEAREST_REPAIR:
+        return True, True
+    if policy in {
+        POLICY_DISCRETE_COVERAGE_RADIUS,
+        POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR,
+    }:
         return False, False
     raise ValueError(f"Unknown graph coverage policy: {policy}")
 
@@ -195,8 +268,26 @@ def _degrees(edges: np.ndarray, node_count: int, column: int) -> np.ndarray:
 
 
 def _radius_stages(raw: np.ndarray, overlap_factor: float, policy: str) -> dict[str, Any]:
-    use_hard_reset, use_global_clip = _policy_switches(policy)
     raw = np.asarray(raw, dtype=np.float64).reshape(-1)
+    if policy in {
+        POLICY_DISCRETE_COVERAGE_RADIUS,
+        POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR,
+    }:
+        overlap = raw.copy()
+        legacy_hard_reset_candidates = overlap >= 0.5
+        return {
+            "raw": _percentile_stats(raw),
+            "overlap": _percentile_stats(overlap),
+            "clipped": _percentile_stats(overlap),
+            "hard_reset": _percentile_stats(overlap),
+            "hard_reset_trigger_count": 0,
+            "hard_reset_candidate_count": int(np.sum(legacy_hard_reset_candidates)),
+            "coverage_guarantee_preserved": True,
+            "effective_overlap_factor": 1.0,
+            "legacy_overlap_factor_not_applied": float(overlap_factor),
+        }
+
+    use_hard_reset, use_global_clip = _policy_switches(policy)
     overlap = overlap_factor * raw
     clipped = np.minimum(overlap, np.max(raw)) if use_global_clip else overlap.copy()
     hard_reset_candidates = clipped >= 0.5
@@ -208,6 +299,9 @@ def _radius_stages(raw: np.ndarray, overlap_factor: float, policy: str) -> dict[
         "hard_reset": _percentile_stats(final),
         "hard_reset_trigger_count": int(np.sum(hard_reset_candidates)) if use_hard_reset else 0,
         "hard_reset_candidate_count": int(np.sum(hard_reset_candidates)),
+        "coverage_guarantee_preserved": False,
+        "effective_overlap_factor": float(overlap_factor),
+        "legacy_overlap_factor_not_applied": None,
     }
 
 
@@ -336,6 +430,74 @@ def _grouped_coverage(
     }
 
 
+def _builder_for_policy(
+    policy: str,
+    *,
+    repair_p2r: bool,
+    repair_r2p: bool,
+    min_physical_coverage: int,
+) -> Heat3DGraphBuilder:
+    if policy == POLICY_NEAREST_REPAIR:
+        return Heat3DGraphBuilder(
+            coverage_repair_policy="nearest_rnode",
+            repair_p2r=repair_p2r,
+            repair_r2p=repair_r2p,
+            min_physical_coverage=min_physical_coverage,
+        )
+    if policy == POLICY_DISCRETE_COVERAGE_RADIUS:
+        return Heat3DGraphBuilder(radius_policy="discrete_physical_coverage")
+    if policy == POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR:
+        return Heat3DGraphBuilder(
+            radius_policy="discrete_physical_coverage",
+            coverage_repair_policy="nearest_rnode",
+            repair_p2r=repair_p2r,
+            repair_r2p=repair_r2p,
+            min_physical_coverage=min_physical_coverage,
+        )
+    return Heat3DGraphBuilder()
+
+
+def _edge_set(edges: np.ndarray) -> set[tuple[int, int]]:
+    return {(int(sender), int(receiver)) for sender, receiver in np.asarray(edges)}
+
+
+def _edge_delta(candidate: np.ndarray, baseline: np.ndarray) -> dict[str, int | float]:
+    candidate_set = _edge_set(candidate)
+    baseline_set = _edge_set(baseline)
+    return {
+        "added_edge_count": len(candidate_set - baseline_set),
+        "removed_edge_count": len(baseline_set - candidate_set),
+        "edge_ratio": float(len(candidate) / len(baseline)) if len(baseline) else float("inf"),
+    }
+
+
+def _repaired_physical_count(
+    candidate_degree: np.ndarray,
+    baseline_degree: np.ndarray,
+    min_physical_coverage: int,
+) -> int:
+    return int(
+        np.sum(
+            (np.asarray(baseline_degree) < min_physical_coverage)
+            & (np.asarray(candidate_degree) >= min_physical_coverage)
+        )
+    )
+
+
+def _node_and_r2r_stable(candidate: Any, legacy: Any) -> bool:
+    fields = (
+        "x_pnodes_inp",
+        "x_pnodes_out",
+        "x_rnodes",
+        "r2r_edge_indices",
+        "r2r_edge_domains",
+    )
+    return all(
+        np.array_equal(np.asarray(getattr(candidate, field)), np.asarray(getattr(legacy, field)))
+        for field in fields
+    )
+
+
 def audit_coords(
     *,
     sample_id: str,
@@ -345,6 +507,9 @@ def audit_coords(
     policies: Iterable[str],
     layer_id: np.ndarray | None = None,
     material_id: np.ndarray | None = None,
+    repair_p2r: bool = True,
+    repair_r2p: bool = True,
+    min_physical_coverage: int = 1,
 ) -> list[dict[str, Any]]:
     coords = np.asarray(coords, dtype=np.float64)
     seeds = list(seeds)
@@ -352,45 +517,84 @@ def audit_coords(
     if coords.ndim != 2 or coords.shape[1] != 3:
         raise ValueError(f"{sample_id}: coords must have shape (N, 3), found {coords.shape}")
 
+    if min_physical_coverage < 1:
+        raise ValueError("min_physical_coverage must be at least 1")
+
     records: list[dict[str, Any]] = []
-    builder = Heat3DGraphBuilder()
+    legacy_builder = Heat3DGraphBuilder()
     for seed in seeds:
         metadata_start = time.perf_counter()
-        metadata = builder.build_metadata(coords, key=jax.random.PRNGKey(seed))
-        metadata_build_time = time.perf_counter() - metadata_start
+        legacy_metadata = legacy_builder.build_metadata(coords, key=jax.random.PRNGKey(seed))
+        legacy_metadata_build_time = time.perf_counter() - metadata_start
 
         n_physical_nodes = coords.shape[0]
-        n_rnodes = int(np.asarray(metadata.x_rnodes).shape[1] - 1)
+        n_rnodes = int(np.asarray(legacy_metadata.x_rnodes).shape[1] - 1)
         if n_rnodes < 5:
             raise ValueError(f"{sample_id}: need at least 5 real regional nodes, found {n_rnodes}")
 
-        x_pnodes = np.asarray(metadata.x_pnodes_inp)[0, :n_physical_nodes]
-        x_rnodes = np.asarray(metadata.x_rnodes)[0, :n_rnodes]
-        raw_radius = np.asarray(metadata.r_rnodes)[0, :n_rnodes]
+        x_pnodes = np.asarray(legacy_metadata.x_pnodes_inp)[0, :n_physical_nodes]
+        x_rnodes = np.asarray(legacy_metadata.x_rnodes)[0, :n_rnodes]
+        legacy_raw_radius = np.asarray(legacy_metadata.r_rnodes)[0, :n_rnodes]
         distance = np.linalg.norm(x_pnodes[:, None, :] - x_rnodes[None, :, :], axis=-1)
-        current_dtype = np.asarray(metadata.p2r_edge_indices).dtype
+        current_dtype = np.asarray(legacy_metadata.p2r_edge_indices).dtype
+        legacy_p2r = _real_edges(
+            legacy_metadata.p2r_edge_indices, n_physical_nodes, n_rnodes
+        )
+        legacy_r2p_values = legacy_metadata.r2p_edge_indices
+        if legacy_r2p_values is None:
+            legacy_r2p_values = jnp.flip(legacy_metadata.p2r_edge_indices, axis=-1)
+        legacy_r2p = _real_edges(legacy_r2p_values, n_rnodes, n_physical_nodes)
+        legacy_p2r_degree = _degrees(legacy_p2r, n_physical_nodes, column=0)
+        legacy_r2p_degree = _degrees(legacy_r2p, n_physical_nodes, column=1)
+
+        p1_metadata: dict[str, Any] = {}
+        p1_build_times: dict[str, float] = {}
+        p1_builders: dict[str, Heat3DGraphBuilder] = {}
+        policies_to_build = set(policies) & P1_POLICIES
+        if POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR in policies_to_build:
+            policies_to_build.add(POLICY_DISCRETE_COVERAGE_RADIUS)
+        for p1_policy in sorted(policies_to_build):
+            p1_builder = _builder_for_policy(
+                p1_policy,
+                repair_p2r=repair_p2r,
+                repair_r2p=repair_r2p,
+                min_physical_coverage=min_physical_coverage,
+            )
+            metadata_start = time.perf_counter()
+            candidate_metadata = p1_builder.build_metadata(
+                coords,
+                key=jax.random.PRNGKey(seed),
+            )
+            p1_build_times[p1_policy] = time.perf_counter() - metadata_start
+            p1_builders[p1_policy] = p1_builder
+            p1_metadata[p1_policy] = candidate_metadata
 
         for policy in policies:
-            p2r_stages = _radius_stages(raw_radius, builder.config["overlap_factor_p2r"], policy)
-            r2p_stages = _radius_stages(raw_radius, builder.config["overlap_factor_r2p"], policy)
-
             graph_start = time.perf_counter()
             if policy == POLICY_CURRENT:
-                policy_metadata = metadata
-            else:
+                policy_builder = legacy_builder
+                policy_metadata = legacy_metadata
+                metadata_build_time = legacy_metadata_build_time
+            elif policy in P1_POLICIES:
+                policy_builder = p1_builders[policy]
+                policy_metadata = p1_metadata[policy]
+                metadata_build_time = p1_build_times[policy]
+            elif policy in P0_SIMULATED_POLICIES:
+                policy_builder = legacy_builder
+                metadata_build_time = legacy_metadata_build_time
                 use_hard_reset, use_global_clip = _policy_switches(policy)
 
                 def final_radii(overlap_factor: float) -> np.ndarray:
-                    radii = overlap_factor * raw_radius
+                    radii = overlap_factor * legacy_raw_radius
                     if use_global_clip:
-                        radii = np.minimum(radii, np.max(raw_radius))
+                        radii = np.minimum(radii, np.max(legacy_raw_radius))
                     if use_hard_reset:
                         radii = np.where(radii < 0.5, radii, 0.2)
                     return radii
 
                 p2r_edges = _candidate_edges(
                     distance,
-                    final_radii(builder.config["overlap_factor_p2r"]),
+                    final_radii(legacy_builder.config["overlap_factor_p2r"]),
                     reverse=False,
                     dtype=current_dtype,
                     n_physical_nodes=n_physical_nodes,
@@ -398,23 +602,37 @@ def audit_coords(
                 )
                 r2p_edges = _candidate_edges(
                     distance,
-                    final_radii(builder.config["overlap_factor_r2p"]),
+                    final_radii(legacy_builder.config["overlap_factor_r2p"]),
                     reverse=True,
                     dtype=current_dtype,
                     n_physical_nodes=n_physical_nodes,
                     n_rnodes=n_rnodes,
                 )
-                policy_metadata = type(metadata)(
-                    x_pnodes_inp=metadata.x_pnodes_inp,
-                    x_pnodes_out=metadata.x_pnodes_out,
-                    x_rnodes=metadata.x_rnodes,
-                    r_rnodes=metadata.r_rnodes,
+                policy_metadata = type(legacy_metadata)(
+                    x_pnodes_inp=legacy_metadata.x_pnodes_inp,
+                    x_pnodes_out=legacy_metadata.x_pnodes_out,
+                    x_rnodes=legacy_metadata.x_rnodes,
+                    r_rnodes=legacy_metadata.r_rnodes,
                     p2r_edge_indices=p2r_edges,
-                    r2r_edge_indices=metadata.r2r_edge_indices,
-                    r2r_edge_domains=metadata.r2r_edge_domains,
+                    r2r_edge_indices=legacy_metadata.r2r_edge_indices,
+                    r2r_edge_domains=legacy_metadata.r2r_edge_domains,
                     r2p_edge_indices=r2p_edges,
                 )
-            graphs = builder.build_graphs(policy_metadata)
+            else:
+                raise ValueError(f"Unsupported audit policy: {policy}")
+
+            raw_radius = np.asarray(policy_metadata.r_rnodes)[0, :n_rnodes]
+            p2r_stages = _radius_stages(
+                raw_radius,
+                policy_builder.config["overlap_factor_p2r"],
+                policy,
+            )
+            r2p_stages = _radius_stages(
+                raw_radius,
+                policy_builder.config["overlap_factor_r2p"],
+                policy,
+            )
+            graphs = policy_builder.build_graphs(policy_metadata)
             graph_build_time = time.perf_counter() - graph_start
 
             p2r_real = _real_edges(
@@ -427,6 +645,41 @@ def audit_coords(
             r2p_real = _real_edges(r2p_values, n_rnodes, n_physical_nodes)
             p2r_degree = _degrees(p2r_real, n_physical_nodes, column=0)
             r2p_degree = _degrees(r2p_real, n_physical_nodes, column=1)
+            p2r_delta = _edge_delta(p2r_real, legacy_p2r)
+            r2p_delta = _edge_delta(r2p_real, legacy_r2p)
+
+            if policy == POLICY_NEAREST_REPAIR:
+                repair_base_p2r = legacy_p2r
+                repair_base_r2p = legacy_r2p
+                repair_base_p2r_degree = legacy_p2r_degree
+                repair_base_r2p_degree = legacy_r2p_degree
+            elif policy == POLICY_DISCRETE_COVERAGE_RADIUS_WITH_NEAREST_REPAIR:
+                discrete_metadata = p1_metadata[POLICY_DISCRETE_COVERAGE_RADIUS]
+                repair_base_p2r = _real_edges(
+                    discrete_metadata.p2r_edge_indices, n_physical_nodes, n_rnodes
+                )
+                discrete_r2p_values = discrete_metadata.r2p_edge_indices
+                if discrete_r2p_values is None:
+                    discrete_r2p_values = jnp.flip(
+                        discrete_metadata.p2r_edge_indices,
+                        axis=-1,
+                    )
+                repair_base_r2p = _real_edges(
+                    discrete_r2p_values, n_rnodes, n_physical_nodes
+                )
+                repair_base_p2r_degree = _degrees(
+                    repair_base_p2r, n_physical_nodes, column=0
+                )
+                repair_base_r2p_degree = _degrees(
+                    repair_base_r2p, n_physical_nodes, column=1
+                )
+            else:
+                repair_base_p2r = p2r_real
+                repair_base_r2p = r2p_real
+                repair_base_p2r_degree = p2r_degree
+                repair_base_r2p_degree = r2p_degree
+            p2r_repair_delta = _edge_delta(p2r_real, repair_base_p2r)
+            r2p_repair_delta = _edge_delta(r2p_real, repair_base_r2p)
 
             record: dict[str, Any] = {
                 "sample_id": sample_id,
@@ -438,15 +691,43 @@ def audit_coords(
                 "p2r_real_edge_count": int(p2r_real.shape[0]),
                 "r2p_real_edge_count": int(r2p_real.shape[0]),
                 "r2r_real_edge_count": int(r2r_real.shape[0]),
+                "legacy_p2r_real_edge_count": int(legacy_p2r.shape[0]),
+                "legacy_r2p_real_edge_count": int(legacy_r2p.shape[0]),
                 "p2r_physical_node_coverage": _coverage_stats(p2r_degree),
                 "r2p_physical_node_coverage": _coverage_stats(r2p_degree),
                 "radius_stages": {"p2r": p2r_stages, "r2p": r2p_stages},
+                "builder_config": policy_builder.config,
+                "edge_delta_vs_legacy": {"p2r": p2r_delta, "r2p": r2p_delta},
+                "edge_ratio_vs_legacy": {
+                    "p2r": p2r_delta["edge_ratio"],
+                    "r2p": r2p_delta["edge_ratio"],
+                },
+                "repaired_edge_count": {
+                    "p2r": p2r_repair_delta["added_edge_count"],
+                    "r2p": r2p_repair_delta["added_edge_count"],
+                },
+                "repaired_physical_count": {
+                    "p2r": _repaired_physical_count(
+                        p2r_degree,
+                        repair_base_p2r_degree,
+                        min_physical_coverage,
+                    ),
+                    "r2p": _repaired_physical_count(
+                        r2p_degree,
+                        repair_base_r2p_degree,
+                        min_physical_coverage,
+                    ),
+                },
                 "metadata_build_time_seconds": float(metadata_build_time),
                 "graph_build_time_seconds": float(graph_build_time),
                 "metadata_shape_signature": _shape_signature(policy_metadata),
                 "graph_leaf_shape_signature": _shape_signature(graphs),
                 "metadata_all_finite": _all_finite(policy_metadata),
                 "graph_all_finite": _all_finite(graphs),
+                "node_and_r2r_stable_vs_legacy": _node_and_r2r_stable(
+                    policy_metadata,
+                    legacy_metadata,
+                ),
                 "dummy_excluded": True,
             }
             record.update(
@@ -472,6 +753,9 @@ def run_synthetic_probes(
     *,
     seeds: Iterable[int],
     policies: Iterable[str],
+    repair_p2r: bool = True,
+    repair_r2p: bool = True,
+    min_physical_coverage: int = 1,
 ) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for shape in SYNTHETIC_GRID_SHAPES:
@@ -485,6 +769,9 @@ def run_synthetic_probes(
                 policies=policies,
                 layer_id=layer_id,
                 material_id=material_id,
+                repair_p2r=repair_p2r,
+                repair_r2p=repair_r2p,
+                min_physical_coverage=min_physical_coverage,
             )
         )
     return records
@@ -515,6 +802,9 @@ def audit_real_dataset(
     policies: Iterable[str],
     k_encoding_mode: str,
     boundary_mask_fallback: bool,
+    repair_p2r: bool = True,
+    repair_r2p: bool = True,
+    min_physical_coverage: int = 1,
 ) -> list[dict[str, Any]]:
     subset = subset.resolve()
     if not subset.is_dir():
@@ -559,6 +849,9 @@ def audit_real_dataset(
                 policies=policies,
                 layer_id=_load_optional_array(sample_dir, "layer_id.npy"),
                 material_id=_load_optional_array(sample_dir, "material_id.npy"),
+                repair_p2r=repair_p2r,
+                repair_r2p=repair_r2p,
+                min_physical_coverage=min_physical_coverage,
             )
         )
     return records
@@ -570,14 +863,24 @@ def summarize_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
         grouped[record["policy"]].append(record)
     summary: dict[str, Any] = {}
     for policy, policy_records in sorted(grouped.items()):
+        p2r_edge_count = int(sum(row["p2r_real_edge_count"] for row in policy_records))
+        r2p_edge_count = int(sum(row["r2p_real_edge_count"] for row in policy_records))
+        legacy_p2r_edge_count = int(
+            sum(row["legacy_p2r_real_edge_count"] for row in policy_records)
+        )
+        legacy_r2p_edge_count = int(
+            sum(row["legacy_r2p_real_edge_count"] for row in policy_records)
+        )
+        p2r_zero_count = int(
+            sum(row["p2r_physical_node_coverage"]["zero_count"] for row in policy_records)
+        )
+        r2p_zero_count = int(
+            sum(row["r2p_physical_node_coverage"]["zero_count"] for row in policy_records)
+        )
         summary[policy] = {
             "record_count": len(policy_records),
-            "p2r_zero_count_total": int(
-                sum(row["p2r_physical_node_coverage"]["zero_count"] for row in policy_records)
-            ),
-            "r2p_zero_count_total": int(
-                sum(row["r2p_physical_node_coverage"]["zero_count"] for row in policy_records)
-            ),
+            "p2r_zero_count_total": p2r_zero_count,
+            "r2p_zero_count_total": r2p_zero_count,
             "p2r_low_coverage_count_total": int(
                 sum(
                     row["p2r_physical_node_coverage"]["low_coverage_count"]
@@ -590,14 +893,32 @@ def summarize_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
                     for row in policy_records
                 )
             ),
-            "p2r_real_edge_count_total": int(
-                sum(row["p2r_real_edge_count"] for row in policy_records)
-            ),
-            "r2p_real_edge_count_total": int(
-                sum(row["r2p_real_edge_count"] for row in policy_records)
-            ),
+            "p2r_real_edge_count_total": p2r_edge_count,
+            "r2p_real_edge_count_total": r2p_edge_count,
             "r2r_real_edge_count_total": int(
                 sum(row["r2r_real_edge_count"] for row in policy_records)
+            ),
+            "p2r_repaired_edge_count_total": int(
+                sum(row["repaired_edge_count"]["p2r"] for row in policy_records)
+            ),
+            "r2p_repaired_edge_count_total": int(
+                sum(row["repaired_edge_count"]["r2p"] for row in policy_records)
+            ),
+            "p2r_repaired_physical_count_total": int(
+                sum(row["repaired_physical_count"]["p2r"] for row in policy_records)
+            ),
+            "r2p_repaired_physical_count_total": int(
+                sum(row["repaired_physical_count"]["r2p"] for row in policy_records)
+            ),
+            "p2r_edge_ratio_vs_legacy": (
+                float(p2r_edge_count / legacy_p2r_edge_count)
+                if legacy_p2r_edge_count
+                else None
+            ),
+            "r2p_edge_ratio_vs_legacy": (
+                float(r2p_edge_count / legacy_r2p_edge_count)
+                if legacy_r2p_edge_count
+                else None
             ),
             "p2r_hard_reset_trigger_count_total": int(
                 sum(
@@ -614,6 +935,16 @@ def summarize_records(records: Iterable[dict[str, Any]]) -> dict[str, Any]:
             "graph_build_time_seconds_total": float(
                 sum(row["graph_build_time_seconds"] for row in policy_records)
             ),
+            "metadata_build_time_seconds_total": float(
+                sum(row["metadata_build_time_seconds"] for row in policy_records)
+            ),
+            "all_metadata_finite": all(row["metadata_all_finite"] for row in policy_records),
+            "all_graphs_finite": all(row["graph_all_finite"] for row in policy_records),
+            "all_node_and_r2r_stable_vs_legacy": all(
+                row["node_and_r2r_stable_vs_legacy"] for row in policy_records
+            ),
+            "all_dummy_excluded": all(row["dummy_excluded"] for row in policy_records),
+            "coverage_gate_passed": p2r_zero_count == 0 and r2p_zero_count == 0,
         }
     return summary
 
@@ -625,7 +956,7 @@ def make_payload(
     scope: str,
 ) -> dict[str, Any]:
     return {
-        "schema_version": "heat3d_v3_graph_coverage_audit_v1",
+        "schema_version": "heat3d_v3_graph_coverage_audit_v2",
         "diagnostic_scope": scope,
         "config": config,
         "summary": summarize_records(records),
@@ -660,7 +991,9 @@ def print_summary(summary: dict[str, Any]) -> None:
             f"p2r_zero={values['p2r_zero_count_total']} "
             f"r2p_zero={values['r2p_zero_count_total']} "
             f"p2r_edges={values['p2r_real_edge_count_total']} "
-            f"r2p_edges={values['r2p_real_edge_count_total']}"
+            f"r2p_edges={values['r2p_real_edge_count_total']} "
+            f"edge_ratio={values['p2r_edge_ratio_vs_legacy']:.3f}/"
+            f"{values['r2p_edge_ratio_vs_legacy']:.3f}"
         )
 
 
@@ -678,6 +1011,9 @@ def main() -> int:
         policies=policies,
         k_encoding_mode=args.k_encoding_mode,
         boundary_mask_fallback=args.boundary_mask_fallback,
+        repair_p2r=args.repair_p2r,
+        repair_r2p=args.repair_r2p,
+        min_physical_coverage=args.min_physical_coverage,
     )
     payload = make_payload(
         records=records,
@@ -691,6 +1027,11 @@ def main() -> int:
             "policies": policies,
             "k_encoding_mode": args.k_encoding_mode,
             "boundary_mask_fallback": args.boundary_mask_fallback,
+            "coverage_repair_policy": args.coverage_repair_policy,
+            "radius_policy": args.radius_policy,
+            "repair_p2r": args.repair_p2r,
+            "repair_r2p": args.repair_r2p,
+            "min_physical_coverage": args.min_physical_coverage,
         },
     )
     print_summary(payload["summary"])

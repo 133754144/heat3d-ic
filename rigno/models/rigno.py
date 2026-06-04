@@ -52,7 +52,12 @@ class RegionInteractionGraphBuilder:
     subsample_factor: float,
     overlap_factor_p2r: float,
     overlap_factor_r2p: float,
-    node_coordinate_freqs: int
+    node_coordinate_freqs: int,
+    coverage_repair_policy: str = "none",
+    radius_policy: str = "legacy_kdtree_mean4",
+    repair_p2r: bool = True,
+    repair_r2p: bool = True,
+    min_physical_coverage: int = 1,
   ):
     """
     Class for building the graphs that are used in RIGNO.
@@ -69,7 +74,30 @@ class RegionInteractionGraphBuilder:
           in the r2p graph get multiplied to.
         node_coordinate_freqs: Number of frequencies for encoding the
           spatial coordinates. Ignored if periodic is False.
+        coverage_repair_policy: Optional post-radius graph repair. The legacy
+          default is "none"; "nearest_rnode" adds nearest regional edges only
+          for physical nodes below min_physical_coverage.
+        radius_policy: Support-radius policy. The legacy default is
+          "legacy_kdtree_mean4"; "discrete_physical_coverage" constructs a
+          radius that covers every physical node assigned to each regional node.
+        repair_p2r: Apply nearest-rnode repair to p2r when repair is enabled.
+        repair_r2p: Apply nearest-rnode repair to r2p when repair is enabled.
+        min_physical_coverage: Minimum physical-node degree targeted by repair.
     """
+
+    if coverage_repair_policy not in {"none", "nearest_rnode"}:
+      raise ValueError(
+        "coverage_repair_policy must be one of {'none', 'nearest_rnode'}, "
+        f"found {coverage_repair_policy!r}"
+      )
+    if radius_policy not in {"legacy_kdtree_mean4", "discrete_physical_coverage"}:
+      raise ValueError(
+        "radius_policy must be one of "
+        "{'legacy_kdtree_mean4', 'discrete_physical_coverage'}, "
+        f"found {radius_policy!r}"
+      )
+    if min_physical_coverage < 1:
+      raise ValueError("min_physical_coverage must be at least 1")
 
     # Set attributes
     self.periodic = periodic
@@ -78,6 +106,11 @@ class RegionInteractionGraphBuilder:
     self.node_coordinate_freqs = node_coordinate_freqs
     self.rmesh_levels = rmesh_levels
     self.subsample_factor = subsample_factor
+    self.coverage_repair_policy = coverage_repair_policy
+    self.radius_policy = radius_policy
+    self.repair_p2r = bool(repair_p2r)
+    self.repair_r2p = bool(repair_r2p)
+    self.min_physical_coverage = int(min_physical_coverage)
 
     # Domain shifts for periodic BC
     # self._domain_shifts = jnp.concatenate([
@@ -135,11 +168,52 @@ class RegionInteractionGraphBuilder:
         radii[i] = np.mean(dist[1:]) * 0.8
       return jnp.array(radii)
 
+  def _get_physical_to_regional_distance(self,
+    centers: Array,
+    points: Array,
+    ord_distance: int = 2,
+  ) -> np.ndarray:
+    """Returns physical-to-regional distances in the graph coordinate metric."""
+
+    rel = np.asarray(points)[:, None] - np.asarray(centers)
+    if self.periodic:
+      rel = np.where(rel >= 1., (rel - 2.), rel)
+      rel = np.where(rel < -1., (rel + 2.), rel)
+    return np.linalg.norm(rel, ord=ord_distance, axis=-1)
+
+  def _compute_discrete_physical_coverage_radius(self,
+    centers: Array,
+    points: Array,
+  ) -> Array:
+    """Returns radii covering each regional node's assigned physical nodes."""
+
+    distance = self._get_physical_to_regional_distance(centers=centers, points=points)
+    nearest_rnodes = np.argmin(distance, axis=1)
+    nearest_distance = distance[np.arange(distance.shape[0]), nearest_rnodes]
+    radii = np.zeros(shape=(np.asarray(centers).shape[0],), dtype=distance.dtype)
+    np.maximum.at(radii, nearest_rnodes, nearest_distance)
+    radii = np.nextafter(radii, np.asarray(np.inf, dtype=radii.dtype))
+    return jnp.asarray(radii)
+
+  def _get_effective_support_radii(self,
+    r_rnodes: Array,
+    overlap_factor: float,
+  ) -> Array:
+    """Returns final radii before physical-to-regional edge construction."""
+
+    if self.radius_policy == "discrete_physical_coverage":
+      # This monotone policy deliberately bypasses the legacy global clip and
+      # non-monotone hard reset. It uses the minimal 1x coverage radius to
+      # retain the guarantee without inheriting the legacy overlap edge cost.
+      return r_rnodes
+    return jnp.clip(overlap_factor * r_rnodes, a_min=0, a_max=r_rnodes.max())
+
   def _get_supported_pnodes_by_rnodes(self,
     centers: Array,
     points: Array,
     radii: Array,
     ord_distance: int = 2,
+    apply_legacy_hard_reset: bool = True,
   ) -> Array:
     """
     Get the indices of the physical nodes that lie in the support sub-region of
@@ -157,10 +231,11 @@ class RegionInteractionGraphBuilder:
       The indices of the physical nodes for each regional node.
     """
 
-    # Replace large radii
-    # NOTE: Makeshift solution for peculiar geometries
-    # TODO: Instead, remove out-of-domain mesh edges in order to avoid large radiuses
-    radii = np.where(radii < .5, radii, .2)
+    if apply_legacy_hard_reset:
+      # Replace large radii
+      # NOTE: Makeshift solution for peculiar geometries
+      # TODO: Instead, remove out-of-domain mesh edges in order to avoid large radiuses
+      radii = np.where(radii < .5, radii, .2)
 
     # Get relative coordinates
     rel = points[:, None] - centers
@@ -178,6 +253,49 @@ class RegionInteractionGraphBuilder:
     idx_nodes = jnp.stack(jnp.where(distance <= radii), axis=-1)
 
     return idx_nodes
+
+  def _repair_physical_node_coverage(self,
+    edge_indices: Array,
+    centers: Array,
+    points: Array,
+  ) -> Array:
+    """Adds nearest regional edges for physical nodes below the repair target."""
+
+    n_rnodes = int(np.asarray(centers).shape[0])
+    if self.min_physical_coverage > n_rnodes:
+      raise ValueError(
+        "min_physical_coverage cannot exceed the number of regional nodes: "
+        f"{self.min_physical_coverage} > {n_rnodes}"
+      )
+
+    edges = np.asarray(edge_indices)
+    degree = np.bincount(edges[:, 0], minlength=np.asarray(points).shape[0])
+    nodes_to_repair = np.flatnonzero(degree < self.min_physical_coverage)
+    if nodes_to_repair.size == 0:
+      return edge_indices
+
+    distance = self._get_physical_to_regional_distance(centers=centers, points=points)
+    nearest_order = np.argsort(distance, axis=1)
+    existing = {(int(pnode), int(rnode)) for pnode, rnode in edges}
+    additions = []
+    for pnode in nodes_to_repair:
+      needed = self.min_physical_coverage - int(degree[pnode])
+      for rnode in nearest_order[pnode]:
+        edge = (int(pnode), int(rnode))
+        if edge in existing:
+          continue
+        additions.append(edge)
+        existing.add(edge)
+        needed -= 1
+        if needed == 0:
+          break
+
+    if not additions:
+      return edge_indices
+    return jnp.concatenate(
+      [edge_indices, jnp.asarray(additions, dtype=edge_indices.dtype)],
+      axis=0,
+    )
 
   def _get_r2r_edges(self, x_rmesh: Array) -> Tuple[Array, Array]:
     """
@@ -244,20 +362,51 @@ class RegionInteractionGraphBuilder:
       x_rnodes = _upsample_pointset(key=key, x=x_rnodes, factor=(1 / rmesh_correction_dsf))
 
     # Compute minimum support radius of each rmesh node —— 计算每个区域节点的“最小支持半径”
-    r_rnodes = self._compute_minimum_support_radius(x_rnodes)
+    if self.radius_policy == "discrete_physical_coverage":
+      coverage_points = jnp.concatenate([x_inp, x_out], axis=0)
+      r_rnodes = self._compute_discrete_physical_coverage_radius(
+        centers=x_rnodes,
+        points=coverage_points,
+      )
+    else:
+      r_rnodes = self._compute_minimum_support_radius(x_rnodes)
 
     # Get edge indices
     p2r_edge_indices = self._get_supported_pnodes_by_rnodes(
       centers=x_rnodes, # 区域节点坐标
       points=x_inp,     # 物理节点坐标
-      radii=jnp.clip(self.overlap_factor_p2r * r_rnodes, a_min=0, a_max=r_rnodes.max()), # 每个区域节点的支持半径
+      radii=self._get_effective_support_radii(r_rnodes, self.overlap_factor_p2r),
+      apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
     ) # 返回哪些物理点连到哪些区域点
     r2r_edge_indices, r2r_edge_domains = self._get_r2r_edges(x_rnodes)
+    r2p_points = (
+      x_inp
+      if (
+        self.radius_policy == "legacy_kdtree_mean4"
+        and self.coverage_repair_policy == "none"
+      )
+      else x_out
+    )
     r2p_edge_indices = self._get_supported_pnodes_by_rnodes(
       centers=x_rnodes,
-      points=x_inp,
-      radii=jnp.clip(self.overlap_factor_r2p * r_rnodes, a_min=0, a_max=r_rnodes.max()),
+      points=r2p_points,
+      radii=self._get_effective_support_radii(r_rnodes, self.overlap_factor_r2p),
+      apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
     )
+
+    if self.coverage_repair_policy == "nearest_rnode":
+      if self.repair_p2r:
+        p2r_edge_indices = self._repair_physical_node_coverage(
+          edge_indices=p2r_edge_indices,
+          centers=x_rnodes,
+          points=x_inp,
+        )
+      if self.repair_r2p:
+        r2p_edge_indices = self._repair_physical_node_coverage(
+          edge_indices=r2p_edge_indices,
+          centers=x_rnodes,
+          points=x_out,
+        )
     r2p_edge_indices = jnp.flip(r2p_edge_indices, axis=-1)
 
     # Add dummy nodes and edges
@@ -277,7 +426,13 @@ class RegionInteractionGraphBuilder:
       r2r_edge_indices=r2r_edge_indices.astype(jnp.uint16)
       r2p_edge_indices=r2p_edge_indices.astype(jnp.uint16)
     # Ommit storing duplicated edge indices
-    if self.overlap_factor_p2r == self.overlap_factor_r2p:
+    if (
+      self.overlap_factor_p2r == self.overlap_factor_r2p
+      and np.array_equal(
+        np.asarray(r2p_edge_indices),
+        np.flip(np.asarray(p2r_edge_indices), axis=-1),
+      )
+    ):
       # NOTE: it will be the inverse of p2r edges
       r2p_edge_indices = None
 

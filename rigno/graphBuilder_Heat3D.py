@@ -11,6 +11,11 @@ class Heat3DGraphBuilder:
         overlap_factor_p2r=1.5,
         overlap_factor_r2p=2.0,
         node_coordinate_freqs=4,
+        coverage_repair_policy="none",
+        radius_policy="legacy_kdtree_mean4",
+        repair_p2r=True,
+        repair_r2p=True,
+        min_physical_coverage=1,
     ):
 
         self.config = {
@@ -19,6 +24,11 @@ class Heat3DGraphBuilder:
             "overlap_factor_p2r": overlap_factor_p2r,
             "overlap_factor_r2p": overlap_factor_r2p,
             "node_coordinate_freqs": node_coordinate_freqs,
+            "coverage_repair_policy": coverage_repair_policy,
+            "radius_policy": radius_policy,
+            "repair_p2r": repair_p2r,
+            "repair_r2p": repair_r2p,
+            "min_physical_coverage": min_physical_coverage,
         }
 
         self.builder = RegionInteractionGraphBuilder(
@@ -33,6 +43,11 @@ class Heat3DGraphBuilder:
             overlap_factor_r2p=overlap_factor_r2p,
 
             node_coordinate_freqs=node_coordinate_freqs,
+            coverage_repair_policy=coverage_repair_policy,
+            radius_policy=radius_policy,
+            repair_p2r=repair_p2r,
+            repair_r2p=repair_r2p,
+            min_physical_coverage=min_physical_coverage,
         )
 
 

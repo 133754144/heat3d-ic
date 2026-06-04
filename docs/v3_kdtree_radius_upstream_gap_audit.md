@@ -411,3 +411,20 @@ instances，16-sample 结果包含 64 个 records、7,808 个 physical-node inst
 5. current 的 zero coverage 在 side group 尤其集中，但 interior 也存在 zero；不能只做边界补丁。
 6. supervised-small P0 证据已足以支持一个保留 legacy 开关的 P1 prototype；medium/stress subset
    可用后，仍需完成同样的 4/16-sample gate，再决定默认 policy。
+
+## 10. P1 Coverage Repair Prototype
+
+P1 已实现并完成只读验证，详细设计和结果见
+`docs/v3_graph_coverage_repair_plan.md`。
+
+结论摘要：
+
+- 默认仍为 legacy KDTree radius + no repair，synthetic 固定基线和 P0 real current summary 未变化。
+- nearest repair 只为 zero-coverage physical nodes 补最近 real rnode edge；16-sample × 4-seed 达到
+  p2r/r2p zero `0/0`，edge ratio 为 `1.435x/1.458x`。
+- discrete physical coverage radius 将 physical nodes 分配给最近 rnode，并取负责节点最大距离作为
+  最小 coverage radius；它绕过会破坏 guarantee 的 legacy clip/hard reset。16-sample × 4-seed
+  达到 `0/0`，edge ratio 为 `2.676x/2.812x`。
+- discrete radius + nearest repair 与 discrete radius 完全相同，说明 P1-b 已自行满足离散 coverage
+  guarantee。
+- 建议 P2 以 nearest repair 为主 control，并以 discrete coverage radius 做 coverage-oriented A/B。
