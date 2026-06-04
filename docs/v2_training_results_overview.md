@@ -1,40 +1,34 @@
 # Heat3D v2 Training Results Overview
 
 Scope: research-stage diagnostic summary for `medium1024_gapA_full1024_v2`
-with the stratified split. This is not a formal benchmark.
+using `medium1024_gapA_stratified_split_seed0.json`. This is not a formal
+benchmark.
 
-## Current Baseline
+## Closeout Anchor
 
-| role | run | status |
-|---|---|---|
-| scalar-loss baseline | `m1_B192_base_mse_lr3e4_e200_stratified_seed0` | keep as current baseline |
-| replay audit | `m1_B192_base_mse_lr3e4_e200_stratified_replay_seed0` | old e200 reproduced |
-| non-baseline extension | `m1_B192_base_mse_lr3e4_e300_stratified_seed0` | not treated as strict e200 continuation |
+The stable v2 controlled-training anchor is M2 B96:
 
-## Existing Conclusions
+- model: node/edge latent `128/128`, processor steps `6`, MLP hidden layers `2`;
+- batch: `96`;
+- optimizer/schedule: AdamW with warmup-cosine;
+- run length: `e400`;
+- primary validation: `valid_iid`;
+- diagnostic split: `valid_stress`.
 
-| finding | conclusion |
+The remaining IID error is still approximately 70%. V2 therefore closes as a
+reproducible training and diagnostics baseline, not as a solved thermal-field
+surrogate.
+
+## Confirmed Conclusions
+
+| finding | closeout conclusion |
 |---|---|
-| M1 e200 replay | old M1 B192 e200 is reproducible and remains the scalar-loss baseline. |
-| M1 B96 control | B96/update dynamics alone did not explain the M1.5 gain. |
-| M1.5 B96 | capacity helps spatial correlation and top-k overlap. |
-| M1.5 tradeoff | field variance and amplitude overshoot became worse. |
-| low-DeltaT/bin0 | overprediction is reduced in some runs but remains unresolved. |
-| M1 e300 | not adopted as a new baseline and should not be treated as strict old e200 extension. |
-| M1.5 B192 | known OOM risk; do not prepare B192 M1.5 runs here. |
+| controlled training | YAML configuration, deterministic audit hooks, final/best export, and split-aware reporting are stable enough to carry into `main`. |
+| diagnostics | Field-shape, condition, error-bin, background/bin0, and final-vs-best diagnostics are available for research-stage comparisons. |
+| data protocol | Medium1024 Gap-A full1024 v2 with the stratified split is the default v2 protocol. |
+| capacity history | B48, M2.5, and larger-capacity runs remain diagnostic history rather than the default mainline. |
+| memorization | One-sample RIGNO fitting remains around 42% error, while the pointwise MLP fits the 1/4-sample cases below 20%. |
+| primary bottleneck | Evidence points to graph coverage and the graph-to-output path, rather than simply insufficient width or training duration. |
 
-## Next Training Direction
-
-Prepare, but do not run locally:
-
-- M1.5 B96 e200 capacity continuation.
-- M1.5 lower LR and schedule controls.
-- M1.5 stronger clip / weight decay regularization controls.
-- Light background anti-overshoot controls using existing runner loss modes only.
-- M1.25 intermediate-capacity controls.
-- M1 B192 seed robustness controls.
-
-The next SSH runs should compare scalar loss, split-aware field-shape metrics,
-and bin0/background diagnostics together. A run that improves scalar loss but
-worsens variance, amplitude, or low-DeltaT overprediction should be treated as
-a tradeoff, not a clean improvement.
+V2 should not continue high-risk model-path changes. Those experiments belong
+to the v3 graph-coverage work described in `v3_development_starting_plan.md`.

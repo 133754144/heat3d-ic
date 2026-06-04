@@ -1,5 +1,11 @@
 # Heat3D v2 Next Training Config Index
 
+> **V2 closeout notice:** this file is retained as a reproducibility and
+> diagnostic-history index. It is no longer the active execution roadmap.
+> The stable v2 anchor is M2 B96 (`128/128/s6/mlp2`, warmup-cosine, e400).
+> B48, M2.5, larger-capacity, steps8, and deeper-MLP configurations are
+> historical probes. Graph coverage and model-path changes move to v3.
+
 All configs below are dry-run prepared YAML files. They use the existing
 `medium1024_gapA_full1024_v2` stratified split, save final/best predictions,
 and keep `valid_iid` as primary validation while `valid_stress` remains
