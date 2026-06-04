@@ -41,6 +41,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split-map", type=Path, required=True)
     parser.add_argument("--max-neighbor-samples", type=int, default=256)
     parser.add_argument("--output-json", type=Path, default=None)
+    parser.add_argument(
+        "--boundary-mask-fallback",
+        dest="boundary_mask_fallback",
+        action="store_true",
+        default=True,
+    )
+    parser.add_argument(
+        "--no-boundary-mask-fallback",
+        dest="boundary_mask_fallback",
+        action="store_false",
+    )
     return parser.parse_args()
 
 
@@ -81,6 +92,21 @@ def _safe_corr(x: list[float], y: list[float]) -> float | None:
         return None
     value = float(np.corrcoef(a, b)[0, 1])
     return value if np.isfinite(value) else None
+
+
+def _column_stats(values: np.ndarray, names: list[str]) -> list[dict[str, Any]]:
+    return [
+        {
+            "name": name,
+            "min": float(np.min(values[:, index])),
+            "max": float(np.max(values[:, index])),
+            "mean": float(np.mean(values[:, index])),
+            "std": float(np.std(values[:, index])),
+            "all_zero": bool(np.all(values[:, index] == 0.0)),
+            "constant": bool(np.std(values[:, index]) < 1.0e-12),
+        }
+        for index, name in enumerate(names)
+    ]
 
 
 def _split_stats(rows: list[dict[str, Any]], split: str) -> dict[str, Any]:
@@ -128,9 +154,19 @@ def _nearest_pairs(rows: list[dict[str, Any]], max_samples: int) -> list[dict[st
     return result
 
 
-def audit(subset: Path, split_map_path: Path, max_neighbor_samples: int) -> dict[str, Any]:
+def audit(
+    subset: Path,
+    split_map_path: Path,
+    max_neighbor_samples: int,
+    *,
+    boundary_mask_fallback: bool,
+) -> dict[str, Any]:
     mapping = _split_map(split_map_path)
-    dataset = Heat3DV1NativeSupervisedDataset(_sample_root(subset), k_encoding_mode="diag3")
+    dataset = Heat3DV1NativeSupervisedDataset(
+        _sample_root(subset),
+        k_encoding_mode="diag3",
+        boundary_mask_fallback=boundary_mask_fallback,
+    )
     rows: list[dict[str, Any]] = []
     feature_name_sets: set[tuple[str, ...]] = set()
     input_to_targets: dict[str, set[str]] = {}
@@ -140,12 +176,15 @@ def audit(subset: Path, split_map_path: Path, max_neighbor_samples: int) -> dict
     max_zero_bridge_abs = 0.0
     boundary_type_counts: dict[str, int] = {}
     t_ref_sources: dict[str, int] = {}
+    missing_boundary_regions_count = 0
 
     for example in dataset.samples:
         sample_id = example.sample_id
         if sample_id not in mapping:
             continue
         split = mapping[sample_id]
+        if "boundary_regions" not in example.meta:
+            missing_boundary_regions_count += 1
         bridge = example.build_temperature_rise_legacy_inputs_from_relative_features(
             bridge_policy="zero_delta_u_bridge"
         )
@@ -229,14 +268,17 @@ def audit(subset: Path, split_map_path: Path, max_neighbor_samples: int) -> dict
     train_examples = [example for example in dataset.samples if example.sample_id in train_ids]
     train_condition = []
     train_delta = []
+    train_coords = []
     for example in train_examples:
         bridge = example.build_temperature_rise_legacy_inputs_from_relative_features(
             bridge_policy="zero_delta_u_bridge"
         )
         train_condition.append(np.asarray(bridge.legacy_inputs.c, dtype=np.float64).reshape(-1, len(bridge.condition_feature_names)))
         train_delta.append(np.asarray(bridge.target_delta_u, dtype=np.float64).reshape(-1, 1))
+        train_coords.append(np.asarray(bridge.legacy_inputs.x_inp, dtype=np.float64).reshape(-1, 3))
     condition_all = np.concatenate(train_condition, axis=0)
     delta_all = np.concatenate(train_delta, axis=0)
+    coords_all = np.concatenate(train_coords, axis=0)
     condition_mean = np.mean(condition_all, axis=0)
     condition_std = np.std(condition_all, axis=0)
     target_mean = float(np.mean(delta_all))
@@ -245,6 +287,12 @@ def audit(subset: Path, split_map_path: Path, max_neighbor_samples: int) -> dict
     recovered = normalized * (target_std if target_std >= 1.0e-12 else 1.0) + target_mean
     normalization_recovery_error = float(np.max(np.abs(recovered - delta_all)))
     feature_names = list(next(iter(feature_name_sets))) if len(feature_name_sets) == 1 else []
+    safe_condition_std = np.where(condition_std < 1.0e-12, 1.0, condition_std)
+    normalized_condition = (condition_all - condition_mean) / safe_condition_std
+    coord_min = np.min(coords_all, axis=0)
+    coord_max = np.max(coords_all, axis=0)
+    coord_span = np.where((coord_max - coord_min) < 1.0e-12, 1.0, coord_max - coord_min)
+    normalized_coords = 2.0 * ((coords_all - coord_min) / coord_span) - 1.0
     constant_features = [
         name for name, std in zip(feature_names, condition_std, strict=True) if float(std) < 1.0e-12
     ]
@@ -265,6 +313,8 @@ def audit(subset: Path, split_map_path: Path, max_neighbor_samples: int) -> dict
     return {
         "diagnostic_scope": "Heat3D v2 input/target representation audit; not formal benchmark",
         "sample_count": len(rows),
+        "boundary_mask_fallback": boundary_mask_fallback,
+        "missing_boundary_regions_count": missing_boundary_regions_count,
         "feature_names": feature_names,
         "feature_shape_consistent": len(feature_name_sets) == 1,
         "required_relative_features_present": sorted(REQUIRED_RELATIVE_FEATURES & set(feature_names)),
@@ -279,6 +329,15 @@ def audit(subset: Path, split_map_path: Path, max_neighbor_samples: int) -> dict
             "target_delta_std": target_std,
             "normalization_recovery_max_abs_error": normalization_recovery_error,
             "constant_condition_features": constant_features,
+        },
+        "model_input_train_audit": {
+            "condition_tensor_shape_per_sample": [1, 1, int(train_coords[0].shape[0]), len(feature_names)],
+            "coordinate_tensor_shape_per_sample": [1, 1, int(train_coords[0].shape[0]), 3],
+            "zero_delta_u_bridge_all_zero": max_zero_bridge_abs == 0.0,
+            "raw_condition_columns": _column_stats(condition_all, feature_names),
+            "normalized_condition_columns": _column_stats(normalized_condition, feature_names),
+            "raw_coordinate_columns": _column_stats(coords_all, ["x", "y", "z"]),
+            "normalized_coordinate_columns": _column_stats(normalized_coords, ["x", "y", "z"]),
         },
         "boundary_type_counts": boundary_type_counts,
         "t_ref_sources": t_ref_sources,
@@ -298,24 +357,32 @@ def audit(subset: Path, split_map_path: Path, max_neighbor_samples: int) -> dict
             "coordinates": "passed separately as normalized x_inp/x_out",
             "k_q_bc": "k, q, boundary masks, top_h, relative top ambient, and relative bottom fixed temperature are in condition c",
             "zero_delta_u_bridge": "legacy u is identically zero; all physical forcing is routed through c and coordinates",
-            "auxiliary_ids": "layer_id, region_id, and material_id are loaded as metadata but are not direct model inputs",
+            "auxiliary_ids": "layer_id, region_id, and material_id are intentionally metadata-only and are not required model inputs",
             "target_normalization": "single global train-only DeltaT mean/std; not per-sample normalization",
             "absolute_t_ref": "not model-visible in zero-delta/relative-BC view; recovery adds metadata-derived T_ref after prediction",
+            "sample_level_scales": "k, q, and top_h are model-visible; T_ref is recovery-only and is constant for the audited dataset",
         },
         "metric_naming_audit": {
             "runner_raw_delta_mse": "actual mean squared raw DeltaT error",
-            "split_aware_raw_deltaT_mse": (
-                "misnamed: stores per-sample RMSE via _rmse(pred_delta - true_delta), then averages samples"
-                if '"raw_deltaT_mse": _rmse(pred_delta - true_delta)' in split_source
-                else "source pattern not found; inspect manually"
+            "split_aware_raw_deltaT_rmse": (
+                "canonical RMSE field is present"
+                if '"raw_deltaT_rmse": _rmse(pred_delta - true_delta)' in split_source
+                else "canonical RMSE source pattern not found; inspect manually"
             ),
+            "split_aware_raw_deltaT_mse": "deprecated compatibility alias containing RMSE",
+            "split_aware_raw_deltaT_true_mse": "canonical true MSE field",
         },
     }
 
 
 def main() -> int:
     args = parse_args()
-    result = audit(args.subset, args.split_map, args.max_neighbor_samples)
+    result = audit(
+        args.subset,
+        args.split_map,
+        args.max_neighbor_samples,
+        boundary_mask_fallback=args.boundary_mask_fallback,
+    )
     if args.output_json is not None:
         args.output_json.parent.mkdir(parents=True, exist_ok=True)
         args.output_json.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")

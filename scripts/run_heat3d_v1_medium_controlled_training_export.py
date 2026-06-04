@@ -106,6 +106,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--shuffle-train-batches", action="store_true")
     parser.add_argument("--drop-last", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--boundary-mask-fallback",
+        dest="boundary_mask_fallback",
+        action="store_true",
+        default=True,
+        help="Reconstruct boundary masks from coordinate min/max when boundary_regions is missing.",
+    )
+    parser.add_argument(
+        "--no-boundary-mask-fallback",
+        dest="boundary_mask_fallback",
+        action="store_false",
+        help="Preserve the legacy all-interior mask behavior when boundary_regions is missing.",
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
     parser.add_argument(
@@ -2972,7 +2985,11 @@ def main() -> int:
         if not (sample_root / sample_id / "temperature.npy").is_file():
             raise FileNotFoundError(f"Missing temperature.npy for {sample_id}")
 
-    dataset = Heat3DV1NativeSupervisedDataset(sample_root, k_encoding_mode="diag3")
+    dataset = Heat3DV1NativeSupervisedDataset(
+        sample_root,
+        k_encoding_mode="diag3",
+        boundary_mask_fallback=args.boundary_mask_fallback,
+    )
     index_by_id = dataset.sample_index_by_id()
     missing = [sample_id for sample_id in all_ids if sample_id not in index_by_id]
     if missing:
@@ -3195,6 +3212,7 @@ def main() -> int:
         "model_config": model_config,
         **_batch_config_payload(batch_config),
         "seed": args.seed,
+        "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
@@ -3263,6 +3281,7 @@ def main() -> int:
         "model_config": model_config,
         "batch_config": batch_config,
         "split_counts": split_counts,
+        "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "timing_diagnostics": dict(timings),
         "timing_profile_counts": dict(profile_counts),
         "train_ids": train_ids,

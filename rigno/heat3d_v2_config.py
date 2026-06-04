@@ -221,6 +221,11 @@ def _validate_run_config(
 
     export = _required_mapping(config, "export", label)
     dataset = _required_mapping(config, "dataset", label)
+    boundary_mask_fallback = dataset.get("boundary_mask_fallback")
+    if boundary_mask_fallback is not None and not isinstance(boundary_mask_fallback, bool):
+        raise ValueError(
+            f"{label}: field 'dataset.boundary_mask_fallback' must be a bool or null"
+        )
     split_map_path = dataset.get("split_map_path")
     if split_map_path is not None:
         if not isinstance(split_map_path, str) or not split_map_path:

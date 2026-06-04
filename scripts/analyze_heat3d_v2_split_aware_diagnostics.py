@@ -150,6 +150,10 @@ def _rmse(values: np.ndarray) -> float:
     return float(np.sqrt(np.mean(np.square(values)))) if values.size else float("nan")
 
 
+def _mse(values: np.ndarray) -> float:
+    return float(np.mean(np.square(values))) if values.size else float("nan")
+
+
 def _mae(values: np.ndarray) -> float:
     return float(np.mean(np.abs(values))) if values.size else float("nan")
 
@@ -196,6 +200,9 @@ def _sample_row(
         "point_count": n_points,
         "coords_shape": list(coords.shape),
         "groups": groups,
+        "raw_deltaT_rmse": _rmse(pred_delta - true_delta),
+        "raw_deltaT_true_mse": _mse(pred_delta - true_delta),
+        # Deprecated compatibility alias. Historical split-aware outputs stored RMSE here.
         "raw_deltaT_mse": _rmse(pred_delta - true_delta),
         "raw_deltaT_mae": _mae(pred_delta - true_delta),
         "recovered_T_mse": _rmse(error) ** 2,
@@ -349,6 +356,8 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "point_count": int(sum(int(row.get("point_count") or 0) for row in rows)),
     }
     for key in (
+        "raw_deltaT_rmse",
+        "raw_deltaT_true_mse",
         "raw_deltaT_mse",
         "raw_deltaT_mae",
         "recovered_T_mse",
@@ -477,6 +486,14 @@ def analyze_split_aware_diagnostics(
     overall = _summary(rows)
     payload = {
         "diagnostic_scope": "Heat3D v2 split-aware diagnostics; read-only; not formal benchmark",
+        "metric_schema": {
+            "raw_deltaT_rmse": "canonical raw DeltaT root mean squared error",
+            "raw_deltaT_true_mse": "canonical raw DeltaT mean squared error",
+            "raw_deltaT_mse": (
+                "deprecated compatibility alias containing RMSE; retained so historical "
+                "result readers do not break"
+            ),
+        },
         "prediction_label": prediction_label,
         "inputs": {
             "subset": str(subset),
@@ -526,13 +543,14 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "",
         "## Overall",
         "",
-        "| raw_deltaT_mse | raw_deltaT_mae | field_variance_ratio | centered_spatial_correlation | amplitude_ratio | p95_abs_error | p99_abs_error | peak_abs_error | top_k_overlap | hotspot_mae |",
-        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| raw_deltaT_rmse | raw_deltaT_true_mse | raw_deltaT_mae | field_variance_ratio | centered_spatial_correlation | amplitude_ratio | p95_abs_error | p99_abs_error | peak_abs_error | top_k_overlap | hotspot_mae |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         "| "
         + " | ".join(
             _fmt(overall.get(key))
             for key in (
-                "raw_deltaT_mse",
+                "raw_deltaT_rmse",
+                "raw_deltaT_true_mse",
                 "raw_deltaT_mae",
                 "field_variance_ratio",
                 "centered_spatial_correlation",
@@ -582,13 +600,14 @@ def render_markdown(payload: dict[str, Any]) -> str:
             [
                 f"### {key}",
                 "",
-                "| value | samples | raw_deltaT_mse | raw_deltaT_mae | p95_abs_error | hotspot_mae | signed_bias |",
-                "|---|---:|---:|---:|---:|---:|---:|",
+                "| value | samples | raw_deltaT_rmse | raw_deltaT_true_mse | raw_deltaT_mae | p95_abs_error | hotspot_mae | signed_bias |",
+                "|---|---:|---:|---:|---:|---:|---:|---:|",
             ]
         )
         for row in rows:
             lines.append(
-                f"| {row['group_value']} | {row['sample_count']} | {_fmt(row.get('raw_deltaT_mse'))} | "
+                f"| {row['group_value']} | {row['sample_count']} | {_fmt(row.get('raw_deltaT_rmse'))} | "
+                f"{_fmt(row.get('raw_deltaT_true_mse'))} | "
                 f"{_fmt(row.get('raw_deltaT_mae'))} | {_fmt(row.get('p95_abs_error'))} | "
                 f"{_fmt(row.get('hotspot_mae'))} | {_fmt(row.get('signed_bias'))} |"
             )
@@ -620,7 +639,8 @@ def main() -> int:
         print(
             "Heat3D v2 split-aware diagnostics: "
             f"split={payload['split']} label={payload['prediction_label']} "
-            f"samples={payload['sample_count']} raw_mse={_fmt(overall.get('raw_deltaT_mse'))} "
+            f"samples={payload['sample_count']} raw_rmse={_fmt(overall.get('raw_deltaT_rmse'))} "
+            f"raw_mse={_fmt(overall.get('raw_deltaT_true_mse'))} "
             f"corr={_fmt(overall.get('centered_spatial_correlation'))}",
             flush=True,
         )

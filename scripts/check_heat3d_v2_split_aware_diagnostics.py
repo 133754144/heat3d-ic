@@ -101,6 +101,15 @@ def main() -> int:
             top_k=2,
             max_slice_samples=2,
         )
+        overall = payload["overall"]
+        if not np.isclose(overall["raw_deltaT_rmse"], 0.0015):
+            raise AssertionError("expected canonical raw_deltaT_rmse=0.0015")
+        if not np.isclose(overall["raw_deltaT_true_mse"], 2.5e-6):
+            raise AssertionError("expected canonical raw_deltaT_true_mse=2.5e-6")
+        if not np.isclose(overall["raw_deltaT_mse"], overall["raw_deltaT_rmse"]):
+            raise AssertionError("deprecated raw_deltaT_mse compatibility alias must contain RMSE")
+        if "deprecated compatibility alias" not in payload["metric_schema"]["raw_deltaT_mse"]:
+            raise AssertionError("metric schema must mark raw_deltaT_mse deprecated")
         if payload["sample_count"] != 2:
             raise AssertionError(f"expected 2 valid_iid samples, got {payload['sample_count']}")
         if "field_variance_ratio" not in payload["overall"]:

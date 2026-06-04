@@ -215,13 +215,16 @@ class Heat3DV1NativeSupervisedDataset:
     datadir: str | Path | None = None,
     repo_dir: str | Path | None = None,
     k_encoding_mode: str = "diag3",
+    boundary_mask_fallback: bool = True,
   ) -> None:
     self._legacy_dataset = Heat3DV1SupervisedDataset(
       datadir=(default_v1_supervised_samples_dir(repo_dir) if datadir is None else datadir),
       repo_dir=repo_dir,
       k_encoding_mode=k_encoding_mode,
+      boundary_mask_fallback=boundary_mask_fallback,
     )
     self.k_encoding_mode = k_encoding_mode
+    self.boundary_mask_fallback = bool(boundary_mask_fallback)
     self.samples = [self._to_native(sample) for sample in self._legacy_dataset.samples]
 
   def _to_native(self, sample: dict[str, Any]) -> V1SteadySupervisedExampleNative:

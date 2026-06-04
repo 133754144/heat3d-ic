@@ -51,6 +51,10 @@ def build_training_command(
     command = [python_executable, TRAINING_SCRIPT]
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
+    if dataset.get("boundary_mask_fallback") is True:
+        command.append("--boundary-mask-fallback")
+    elif dataset.get("boundary_mask_fallback") is False:
+        command.append("--no-boundary-mask-fallback")
     _append_option(command, "--epochs", run.get("epochs"))
     _append_option(command, "--node-latent-size", model.get("node_latent_size"))
     _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))
@@ -445,6 +449,7 @@ def _diagnostic_entry(kind: str, prediction_label: str, command: list[str]) -> d
 def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
     mappings = [
         ("dataset.subset_path", "training --subset"),
+        ("dataset.boundary_mask_fallback", "training --boundary-mask-fallback/--no-boundary-mask-fallback"),
         ("model.node_latent_size", "training --node-latent-size"),
         ("model.edge_latent_size", "training --edge-latent-size"),
         ("model.processor_steps", "training --processor-steps"),

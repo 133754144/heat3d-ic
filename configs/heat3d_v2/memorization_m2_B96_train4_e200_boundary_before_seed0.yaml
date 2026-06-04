@@ -1,10 +1,10 @@
 schema_version: heat3d_v2_config_draft_v0
 config_role: controlled
-description: Fixed 16-sample M2 fitting-capability audit; not generalization evidence.
+description: Fixed four-sample M2 fitting audit with legacy all-interior boundary masks.
 dataset:
-  name: medium1024_gapA_memorization_train16_seed0
+  name: medium1024_gapA_memorization_train4_boundary_before_seed0
   subset_path: data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2
-  split_map_path: configs/heat3d_v2/medium1024_gapA_memorization_train16_seed0.json
+  split_map_path: configs/heat3d_v2/medium1024_gapA_memorization_train4_seed0.json
   boundary_mask_fallback: false
   k_encoding_mode: diag3
   target: normalized_deltaT
@@ -32,7 +32,6 @@ run:
   mode: controlled
   epochs: 200
   batch_size: 96
-  micro_batch_size: null
   validation_batch_size: 96
   prediction_batch_size: 96
   shuffle_train_batches: false
@@ -46,14 +45,12 @@ run:
   device_policy: ssh_required_for_training
   allow_long_training_local: false
 export:
-  output_dir: output/heat3d_v2_runs/memorization_m2_B96_train16_e200_seed0
-  run_name: memorization_m2_B96_train16_e200_seed0
+  output_dir: output/heat3d_v2_runs/memorization_m2_B96_train4_e200_boundary_before_seed0
+  run_name: memorization_m2_B96_train4_e200_boundary_before_seed0
   save_final_predictions: false
   save_best_predictions: false
   best_predictions_name: best_predictions.npz
   selection_metric: valid_loss
-  save_run_config: true
-  save_loss_summary: true
 diagnostics:
   prediction_labels: []
   run_baseline_comparison: false
