@@ -37,6 +37,7 @@ BATCH_SIZE_FIELDS = (
 )
 BATCH_BOOL_FIELDS = ("shuffle_train_batches", "drop_last")
 TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"}
+PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
 
 _MISSING = object()
 
@@ -246,6 +247,12 @@ def _validate_run_config(
                 f"{label}: field 'export.output_dir' must be under output/, "
                 f"got {output_dir!r}"
             )
+    prediction_split = export.get("prediction_split")
+    if prediction_split is not None and prediction_split not in PREDICTION_SPLITS:
+        raise ValueError(
+            f"{label}: field 'export.prediction_split' must be one of "
+            f"{sorted(PREDICTION_SPLITS)}, got {prediction_split!r}"
+        )
 
     if role == "controlled":
         baseline_reference = config.get("baseline_reference")

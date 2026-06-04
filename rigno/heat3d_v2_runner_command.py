@@ -80,6 +80,7 @@ def build_training_command(
     _append_option(command, "--weight-decay", optimizer.get("weight_decay"))
     _append_option(command, "--seed", optimizer.get("seed"))
     _append_option(command, "--output-dir", export.get("output_dir"))
+    _append_option(command, "--prediction-split", export.get("prediction_split"))
 
     if export.get("save_final_predictions") is True:
         command.append("--save-predictions")
@@ -508,6 +509,7 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("loss.weight_schedule", "training --loss-weight-schedule"),
         ("loss.transition_epoch", "training --loss-transition-epoch"),
         ("export.output_dir", "training --output-dir"),
+        ("export.prediction_split", "training --prediction-split"),
         ("export.save_final_predictions", "training --save-predictions"),
         ("export.save_best_predictions", "training --save-best-predictions"),
         ("export.best_predictions_name", "training --best-predictions-name"),

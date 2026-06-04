@@ -103,6 +103,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=0)
     parser.add_argument("--validation-batch-size", type=int, default=0)
     parser.add_argument("--prediction-batch-size", type=int, default=0)
+    parser.add_argument(
+        "--prediction-split",
+        choices=("all", "train", "valid_iid", "valid_stress"),
+        default="all",
+        help="Limit final/best prediction export to one split; training behavior is unchanged.",
+    )
     parser.add_argument("--shuffle-train-batches", action="store_true")
     parser.add_argument("--drop-last", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
@@ -2917,6 +2923,25 @@ def _require_nonempty_groups(groups: list[dict], label: str) -> None:
         raise ValueError(f"{label} group build produced no groups; check batch_size/drop_last")
 
 
+def _prediction_groups_for_split(
+    prediction_split: str,
+    *,
+    all_groups: list[dict],
+    train_groups: list[dict],
+    valid_groups: list[dict],
+    valid_stress_groups: list[dict],
+) -> list[dict]:
+    groups_by_split = {
+        "all": all_groups,
+        "train": train_groups,
+        "valid_iid": valid_groups,
+        "valid_stress": valid_stress_groups,
+    }
+    groups = groups_by_split[prediction_split]
+    _require_nonempty_groups(groups, f"prediction split {prediction_split}")
+    return groups
+
+
 def _epoch_train_groups(groups: list[dict], *, epoch: int, seed: int, shuffle: bool) -> list[dict]:
     if not shuffle or len(groups) <= 1:
         return groups
@@ -3128,6 +3153,13 @@ def main() -> int:
         primary_validation_split=primary_validation_split,
         stress_validation_split=stress_validation_split,
     )
+    prediction_groups = _prediction_groups_for_split(
+        args.prediction_split,
+        all_groups=all_groups,
+        train_groups=train_groups,
+        valid_groups=valid_groups,
+        valid_stress_groups=valid_stress_groups,
+    )
     predictions_path = output_dir / "predictions.npz"
     predictions: dict[str, np.ndarray] = {}
     final_prediction_export_skipped = not should_build_final_predictions(bool(args.save_predictions))
@@ -3135,7 +3167,7 @@ def main() -> int:
     if should_build_final_predictions(bool(args.save_predictions)):
         prediction_start = time.perf_counter()
         _progress(progress_enabled, "export", "building recovered predictions ...")
-        predictions = _predict_temperatures(result["model"], result["params"], all_groups, stats)
+        predictions = _predict_temperatures(result["model"], result["params"], prediction_groups, stats)
         _record_timing(timings, "prediction_export", prediction_start)
         _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
     else:
@@ -3165,7 +3197,7 @@ def main() -> int:
             raise RuntimeError("best params are unavailable; expected at least one training epoch")
         best_prediction_start = time.perf_counter()
         _progress(progress_enabled, "export", "building best-valid recovered predictions ...")
-        best_predictions = _predict_temperatures(result["model"], result["best_params"], all_groups, stats)
+        best_predictions = _predict_temperatures(result["model"], result["best_params"], prediction_groups, stats)
         best_prediction_count = len(best_predictions)
         _record_timing(timings, "best_prediction_export", best_prediction_start)
         _progress(
@@ -3216,6 +3248,7 @@ def main() -> int:
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
+        "prediction_split": args.prediction_split,
         "predictions_path": str(predictions_path) if args.save_predictions else None,
         "save_best_predictions": bool(args.save_best_predictions),
         "best_predictions_name": args.best_predictions_name,
@@ -3303,6 +3336,7 @@ def main() -> int:
         "split_source": split_source,
         "primary_validation_split": primary_validation_split,
         "stress_validation_split": stress_validation_split,
+        "prediction_split": args.prediction_split,
         "split_counts": split_counts,
         "train_losses": [float(value) for value in result["train_losses"]],
         "train_loss_epochs": [int(value) for value in result["train_loss_epochs"]],
