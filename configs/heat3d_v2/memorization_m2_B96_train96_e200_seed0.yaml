@@ -1,0 +1,61 @@
+schema_version: heat3d_v2_config_draft_v0
+config_role: controlled
+description: Fixed 96-sample M2 fitting-capability audit; not generalization evidence.
+dataset:
+  name: medium1024_gapA_memorization_train96_seed0
+  subset_path: data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2
+  split_map_path: configs/heat3d_v2/medium1024_gapA_memorization_train96_seed0.json
+  k_encoding_mode: diag3
+  target: normalized_deltaT
+  recovery: T_ref_plus_deltaT
+  feature_view: relative_bc_features
+  bridge: zero_delta_u_bridge
+model:
+  architecture: RIGNO
+  node_latent_size: 128
+  edge_latent_size: 128
+  processor_steps: 6
+  mlp_hidden_layers: 2
+optimizer:
+  name: adamw
+  lr: 0.0003
+  lr_schedule: warmup_cosine
+  warmup_epochs: 10
+  min_lr: 1.0e-06
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  seed: 0
+loss:
+  mode: mse
+run:
+  mode: controlled
+  epochs: 200
+  batch_size: 96
+  micro_batch_size: null
+  validation_batch_size: 96
+  prediction_batch_size: 96
+  shuffle_train_batches: false
+  drop_last: false
+  report_every: 5
+  train_metrics_schedule: every_epoch
+  grad_norm_report_every: 10
+  log_mode: compact
+  progress_log: true
+  progress_detail: basic
+  device_policy: ssh_required_for_training
+  allow_long_training_local: false
+export:
+  output_dir: output/heat3d_v2_runs/memorization_m2_B96_train96_e200_seed0
+  run_name: memorization_m2_B96_train96_e200_seed0
+  save_final_predictions: false
+  save_best_predictions: false
+  best_predictions_name: best_predictions.npz
+  selection_metric: valid_loss
+  save_run_config: true
+  save_loss_summary: true
+diagnostics:
+  prediction_labels: []
+  run_baseline_comparison: false
+  run_error_bins: false
+  run_condition_diagnostics: false
+  run_summary: false
