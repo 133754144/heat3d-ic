@@ -34,7 +34,21 @@ Prepared and intended to run on SSH devbox:
 
 Scope: two-epoch OOM/compatibility probe only. No benchmark claim.
 
-Probe result: pending devbox run.
+Probe result: passed on SSH devbox.
+
+Key probe fields:
+
+- `status_ok=true`
+- `grad_finite=true`
+- `best_epoch=2`
+- `best_valid_loss=1.0683878660202026`
+- `final_valid_loss=1.0683878660202026`
+- `valid_iid raw_deltaT_relative_rmse_pct=159.77`
+- `valid_stress raw_deltaT_relative_rmse_pct=146.13`
+- `graph_config={"radius_policy": "legacy_kdtree_mean4", "coverage_repair_policy": "nearest_rnode", "repair_p2r": true, "repair_r2p": true, "min_physical_coverage": 1}`
+
+The probe completed graph/group build, two training epochs, final/best prediction
+export, and `run_config.json` / `loss_summary.json` writing without OOM.
 
 ## e400 Config
 
@@ -59,5 +73,24 @@ PY
 
 ## P2 Follow-Up
 
-legacy vs nearest_repair 1/4/16-sample Adam lr=1e-3 constant e1000 results:
-pending devbox run.
+legacy vs nearest_repair 1/4/16-sample Adam lr=1e-3 constant e1000:
+
+| sample_count | legacy best relative RMSE | nearest_repair best relative RMSE | nearest better |
+| ---: | ---: | ---: | --- |
+| 1 | 37.04% | 37.84% | no |
+| 4 | 50.49% | 58.48% | no |
+| 16 | 54.78% | 55.30% | no |
+
+Optional B96 AdamW warmup-cosine e1000:
+
+| sample_count | legacy best relative RMSE | nearest_repair best relative RMSE | nearest better |
+| ---: | ---: | ---: | --- |
+| 1 | 19.68% | 19.62% | slight |
+| 4 | 55.39% | 17.76% | yes |
+| 16 | 60.81% | 59.71% | slight |
+
+Interpretation: nearest_repair is not optimizer-agnostically stable, because
+Adam lr=1e-3 constant makes it slightly worse than legacy. Under the B96 AdamW
+schedule, it is the better B96 A/B candidate and passes the 2-epoch full
+medium1024 compatibility probe. It should be treated as a diagnostic graph A/B,
+not as a confirmed complete fix for the 16-sample bottleneck.

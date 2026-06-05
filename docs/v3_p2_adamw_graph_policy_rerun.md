@@ -186,4 +186,33 @@ python3 scripts/run_heat3d_v3_p2_adamw_graph_policy_rerun.py \
   --output-json output/heat3d_v3_p2_adamw_rerun/followup_sample16_adam_lr1e3_e1000.json
 ```
 
-Results: pending devbox run.
+### Adam lr=1e-3 constant, 1000 epochs
+
+| sample_count | policy | best relative RMSE | final relative RMSE | best loss | best epoch | p2r/r2p zero | edge ratio p2r/r2p | finite |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | legacy | 37.04% | 37.04% | 3.215249e-01 | 1000 | 58 / 58 | 1.000 / 1.000 | true |
+| 1 | nearest_repair | 37.84% | 37.40% | 3.267605e-01 | 986 | 0 / 0 | 1.468 / 1.475 | true |
+| 4 | legacy | 50.49% | 55.88% | 5.060120e-01 | 912 | 222 / 222 | 1.000 / 1.000 | true |
+| 4 | nearest_repair | 58.48% | 56.55% | 6.228310e-01 | 684 | 0 / 0 | 1.500 / 1.507 | true |
+| 16 | legacy | 54.78% | 54.92% | 6.034866e-01 | 998 | 908 / 908 | 1.000 / 1.000 | true |
+| 16 | nearest_repair | 55.30% | 55.39% | 6.162985e-01 | 998 | 0 / 0 | 1.506 / 1.519 | true |
+
+Adam lr=1e-3 constant does not support nearest_repair as stable improvement.
+It removes zero coverage, but the best relative RMSE is slightly worse than
+legacy for all three sample counts in this run.
+
+### Optional B96 AdamW warmup-cosine, 1000 epochs
+
+| sample_count | policy | best relative RMSE | final relative RMSE | best loss | best epoch | p2r/r2p zero | edge ratio p2r/r2p | finite |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | legacy | 19.68% | 19.68% | 9.077220e-02 | 1000 | 58 / 58 | 1.000 / 1.000 | true |
+| 1 | nearest_repair | 19.62% | 19.62% | 9.017006e-02 | 1000 | 0 / 0 | 1.468 / 1.475 | true |
+| 4 | legacy | 55.39% | 55.39% | 6.117184e-01 | 995 | 222 / 222 | 1.000 / 1.000 | true |
+| 4 | nearest_repair | 17.76% | 17.76% | 6.383359e-02 | 1000 | 0 / 0 | 1.500 / 1.507 | true |
+| 16 | legacy | 60.81% | 60.81% | 7.416919e-01 | 999 | 908 / 908 | 1.000 / 1.000 | true |
+| 16 | nearest_repair | 59.71% | 59.71% | 7.225689e-01 | 1000 | 0 / 0 | 1.506 / 1.519 | true |
+
+B96 AdamW e1000 gives a more favorable but still mixed result: nearest_repair is
+slightly better for 1-sample, strongly better for 4-sample, and only slightly
+better for 16-sample. This supports nearest_repair as the B96 A/B candidate, but
+not as a complete fix for the 16-sample fitting bottleneck.
