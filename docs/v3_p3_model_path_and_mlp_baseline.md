@@ -82,10 +82,19 @@ Local 50-epoch smoke, hidden `128 x 3`, lr `1e-3`:
 | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | 50 | 1.192728e-01 | 6.787140e-02 | 5.368451e-02 | 22.56% | false | false |
 
-Devbox long result: pending.
+Devbox 1000-epoch result, hidden `128 x 3`, lr `1e-3`:
+
+| best_epoch | final_loss | best_loss | raw DeltaT RMSE | raw DeltaT MAE | relative RMSE | <=20% | <=2% |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 976 | 9.228293e-05 | 7.969997e-05 | 1.754468e-03 | 1.312043e-03 | 0.583% | true | true |
+
+The optional 3000-epoch / hidden-256 run was not needed because the 1000-epoch
+baseline already passed both the 20% and 2% relative-RMSE gates.
 
 ## Next Judgment
 
-If devbox MLP reaches `<=20%` while RIGNO remains around P2 error levels, move
-to deeper RIGNO decoder/model-path audit. If MLP also fails, audit
-target/normalization/training pipeline before changing model structure.
+The pointwise MLP fits the same sample and target to `<=2%` relative RMSE while
+RIGNO P2 remains around high relative error. This points away from target
+normalization as the primary blocker and toward RIGNO decoder/model-path
+bottlenecks. Move next to a deeper RIGNO decoder/model-path audit before
+changing loss or adding pointwise skip.
