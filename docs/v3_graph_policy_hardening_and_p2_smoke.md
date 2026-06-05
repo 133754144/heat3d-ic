@@ -120,3 +120,73 @@ regression.
 
 If 16-sample P2-b still fails to separate nearest repair from legacy, move to P3
 model path / decoder audit before changing loss or adding pointwise skip.
+
+## P2-b Longer 16-sample Smoke
+
+V2 source check:
+
+- `docs/v2_closeout_summary.md` and `docs/v2_training_results_overview.md`
+  explicitly record one-sample RIGNO memorization around 42% error.
+- The same files record that a pointwise MLP fits the 1/4-sample cases below
+  20%.
+- A local search across `docs/`, `configs/`, current ignored `output/`, and
+  sibling worktree v2 docs/output/config indexes did not find a clear source
+  for MLP single-sample IID error below 2%. Treat `<2%` as user-reported,
+  source pending.
+
+V3 near-term fitting target: reduce RIGNO small-sample relative RMSE to
+`<=20%` before any full-dataset benchmark.
+
+Command:
+
+```bash
+python3 scripts/run_heat3d_v3_p2_policy_16sample_longer_smoke.py \
+  --subset "/Users/xuyihua/.codex/worktrees/8d2b/3D IC Heat/data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_supervised_small" \
+  --epochs 100 \
+  --lr 1e-5 \
+  --output-dir output/heat3d_v3_p2_policy_smoke
+```
+
+Settings:
+
+- 16 supervised-small samples, all treated as train-only fitting smoke.
+- Original split composition: 10 train, 3 valid, 1 test_smoke, 1 test_ood_bc,
+  1 test_ood_stack.
+- Model/bridge/loss/optimizer semantics unchanged from P2-a smoke.
+- No checkpoint and no full-dataset run.
+- The optional 200-epoch run was skipped because the 100-epoch smoke took
+  several minutes on the non-JIT manual-GD path.
+
+Output: `output/heat3d_v3_p2_policy_smoke/p2_policy_16sample_longer_e100.json`.
+
+| policy | final_loss | best_loss | loss_drop | raw DeltaT RMSE | raw DeltaT MAE | relative RMSE | p2r/r2p zero | p2r/r2p edges | edge_ratio p2r/r2p | <=20% |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| legacy | 1.085127e+00 | 1.085127e+00 | 4.939425e-02 | 3.033689e-01 | 2.299350e-01 | 73.07% | 908 / 908 | 1796 / 1750 | 1.000 / 1.000 | false |
+| nearest_repair | 1.127428e+00 | 1.127428e+00 | 4.747283e-02 | 3.091313e-01 | 2.371595e-01 | 74.46% | 0 / 0 | 2704 / 2658 | 1.506 / 1.519 | false |
+| discrete_radius | 1.142690e+00 | 1.142690e+00 | 3.371632e-02 | 3.112457e-01 | 2.414942e-01 | 74.97% | 0 / 0 | 4923 / 4923 | 2.741 / 2.813 | false |
+
+Additional run diagnostics:
+
+| policy | loss_drop_ratio | relative RMSE gap to 20% | grad_norm min/median/max/final | graph_build_s | train_step_s |
+| --- | ---: | ---: | --- | ---: | ---: |
+| legacy | 4.35% | 53.07 pp | 3.741 / 5.419 / 18.700 / 3.741 | 0.154 | 1.620 |
+| nearest_repair | 4.04% | 54.46 pp | 3.908 / 5.207 / 18.458 / 3.908 | 8.544 | 1.517 |
+| discrete_radius | 2.87% | 54.97 pp | 4.088 / 4.730 / 14.389 / 4.088 | 2.292 | 1.486 |
+
+Interpretation:
+
+- P2-b confirms graph repair safety at 16 samples: nearest repair and discrete
+  radius both remove p2r/r2p zero coverage while staying finite and shape-stable.
+- P2-b does not support coverage repair as sufficient to reduce fitting error:
+  legacy has the best final/best loss and lowest relative RMSE in this smoke.
+- Nearest repair remains the lower-cost coverage guarantee, but it does not
+  outperform legacy on fitting error here.
+- Discrete radius remains useful as a coverage-oriented research candidate, but
+  its edge cost is much higher and its 100-epoch fitting result is weaker.
+
+Recommendation after P2-b:
+
+- Do not run full-dataset controlled training yet.
+- Do not change objective/loss or add pointwise skip from this evidence.
+- Move next to P3 model path / decoder audit, because graph coverage repair
+  alone did not bring RIGNO small-sample fitting close to the `<=20%` target.
