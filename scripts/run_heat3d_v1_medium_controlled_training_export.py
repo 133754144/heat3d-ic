@@ -2312,12 +2312,17 @@ def _fit_once(
                 epoch_train_batch_losses.append(batch_loss_value)
 
                 grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
-                grad_norm_start = time.perf_counter()
-                grad_norm = _global_norm(grads)
-                grad_norm_time = time.perf_counter() - grad_norm_start
-                epoch_grad_norms.append(grad_norm)
-                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+                compute_batch_norms = bool(grad_norm_reported or profile_enabled)
+                grad_norm = None
+                grad_norm_time = 0.0
+                if compute_batch_norms:
+                    grad_norm_start = time.perf_counter()
+                    grad_norm = _global_norm(grads)
+                    grad_norm_time = time.perf_counter() - grad_norm_start
+                    epoch_grad_norms.append(grad_norm)
+                    grad_finite = grad_finite and bool(np.isfinite(grad_norm))
                 if grad_norm_reported:
+                    assert grad_norm is not None
                     batch_grad_norms.append(grad_norm)
                     grad_norm_reported_batch_count += 1
                 else:
@@ -2334,11 +2339,16 @@ def _fit_once(
                 if profile_enabled:
                     _block_until_ready_tree(params)
                 optimizer_update_time = time.perf_counter() - optimizer_update_start
-                update_norm = _global_norm(updates)
-                param_norm = _global_norm(params)
-                epoch_update_norms.append(update_norm)
-                epoch_param_norms.append(param_norm)
-                epoch_update_to_param_ratios.append(update_norm / max(param_norm, 1.0e-12))
+                update_norm = None
+                param_norm = None
+                update_to_param_norm_ratio = None
+                if compute_batch_norms:
+                    update_norm = _global_norm(updates)
+                    param_norm = _global_norm(params)
+                    update_to_param_norm_ratio = update_norm / max(param_norm, 1.0e-12)
+                    epoch_update_norms.append(update_norm)
+                    epoch_param_norms.append(param_norm)
+                    epoch_update_to_param_ratios.append(update_to_param_norm_ratio)
 
                 if profile_enabled:
                     total_batch_time = time.perf_counter() - batch_start
@@ -2361,11 +2371,13 @@ def _fit_once(
                         "total_batch_time": float(total_batch_time),
                         "loss_grad_time": float(loss_grad_time),
                         "grad_norm_time": float(grad_norm_time),
-                        "grad_norm": float(grad_norm),
+                        "grad_norm": float(grad_norm) if grad_norm is not None else None,
                         "grad_norm_reported": bool(grad_norm_reported),
-                        "update_norm": float(update_norm),
-                        "param_norm": float(param_norm),
-                        "update_to_param_norm_ratio": float(update_norm / max(param_norm, 1.0e-12)),
+                        "update_norm": float(update_norm) if update_norm is not None else None,
+                        "param_norm": float(param_norm) if param_norm is not None else None,
+                        "update_to_param_norm_ratio": (
+                            float(update_to_param_norm_ratio) if update_to_param_norm_ratio is not None else None
+                        ),
                         "optimizer_update_time": float(optimizer_update_time),
                         "output_scalar_extraction_time": float(output_scalar_extraction_time),
                         "other_time": float(other_time),
@@ -2384,9 +2396,9 @@ def _fit_once(
                         split="train",
                         detail={
                             "loss": float(batch_loss_value),
-                            "grad_norm": float(grad_norm),
-                            "update_norm": float(update_norm),
-                            "param_norm": float(param_norm),
+                            "grad_norm": float(grad_norm) if grad_norm is not None else None,
+                            "update_norm": float(update_norm) if update_norm is not None else None,
+                            "param_norm": float(param_norm) if param_norm is not None else None,
                         },
                     )
                 del grads, updates, loss_value
@@ -2416,12 +2428,17 @@ def _fit_once(
             epoch_train_batch_losses.append(batch_loss_value)
 
             grad_norm_reported = should_report_grad_norm(grad_norm_report_every, 1)
-            grad_norm_start = time.perf_counter()
-            grad_norm = _global_norm(grads)
-            grad_norm_time = time.perf_counter() - grad_norm_start
-            epoch_grad_norms.append(grad_norm)
-            grad_finite = grad_finite and bool(np.isfinite(grad_norm))
+            compute_batch_norms = bool(grad_norm_reported or profile_enabled)
+            grad_norm = None
+            grad_norm_time = 0.0
+            if compute_batch_norms:
+                grad_norm_start = time.perf_counter()
+                grad_norm = _global_norm(grads)
+                grad_norm_time = time.perf_counter() - grad_norm_start
+                epoch_grad_norms.append(grad_norm)
+                grad_finite = grad_finite and bool(np.isfinite(grad_norm))
             if grad_norm_reported:
+                assert grad_norm is not None
                 grad_norms.append(grad_norm)
                 grad_norm_reported_batch_count += 1
             else:
@@ -2438,11 +2455,16 @@ def _fit_once(
             if profile_enabled:
                 _block_until_ready_tree(params)
             optimizer_update_time = time.perf_counter() - optimizer_update_start
-            update_norm = _global_norm(updates)
-            param_norm = _global_norm(params)
-            epoch_update_norms.append(update_norm)
-            epoch_param_norms.append(param_norm)
-            epoch_update_to_param_ratios.append(update_norm / max(param_norm, 1.0e-12))
+            update_norm = None
+            param_norm = None
+            update_to_param_norm_ratio = None
+            if compute_batch_norms:
+                update_norm = _global_norm(updates)
+                param_norm = _global_norm(params)
+                update_to_param_norm_ratio = update_norm / max(param_norm, 1.0e-12)
+                epoch_update_norms.append(update_norm)
+                epoch_param_norms.append(param_norm)
+                epoch_update_to_param_ratios.append(update_to_param_norm_ratio)
             if profile_enabled:
                 total_batch_time = time.perf_counter() - batch_start
                 output_scalar_extraction_time = 0.0
@@ -2468,11 +2490,13 @@ def _fit_once(
                     "total_batch_time": float(total_batch_time),
                     "loss_grad_time": float(loss_grad_time),
                     "grad_norm_time": float(grad_norm_time),
-                    "grad_norm": float(grad_norm),
+                    "grad_norm": float(grad_norm) if grad_norm is not None else None,
                     "grad_norm_reported": bool(grad_norm_reported),
-                    "update_norm": float(update_norm),
-                    "param_norm": float(param_norm),
-                    "update_to_param_norm_ratio": float(update_norm / max(param_norm, 1.0e-12)),
+                    "update_norm": float(update_norm) if update_norm is not None else None,
+                    "param_norm": float(param_norm) if param_norm is not None else None,
+                    "update_to_param_norm_ratio": (
+                        float(update_to_param_norm_ratio) if update_to_param_norm_ratio is not None else None
+                    ),
                     "optimizer_update_time": float(optimizer_update_time),
                     "output_scalar_extraction_time": float(output_scalar_extraction_time),
                     "other_time": float(other_time),
@@ -2489,9 +2513,9 @@ def _fit_once(
                     split="train",
                     detail={
                         "loss": float(batch_loss_value),
-                        "grad_norm": float(grad_norm),
-                        "update_norm": float(update_norm),
-                        "param_norm": float(param_norm),
+                        "grad_norm": float(grad_norm) if grad_norm is not None else None,
+                        "update_norm": float(update_norm) if update_norm is not None else None,
+                        "param_norm": float(param_norm) if param_norm is not None else None,
                     },
                 )
             del grads, updates, loss_value
