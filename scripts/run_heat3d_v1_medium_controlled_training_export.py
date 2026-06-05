@@ -8,10 +8,13 @@ diagnostic comparison. It is not a formal training experiment.
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
+import resource
 import subprocess
 import sys
 import time
@@ -184,6 +187,22 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--profile-timing", action="store_true")
     parser.add_argument("--profile-timing-json", type=Path, default=None)
+    parser.add_argument(
+        "--memory-audit-jsonl",
+        type=Path,
+        default=None,
+        help="Optional ignored JSONL path for CPU/GPU memory trace events.",
+    )
+    parser.add_argument(
+        "--memory-audit-every-batch",
+        action="store_true",
+        help="Record per-train-batch memory audit events when --memory-audit-jsonl is set.",
+    )
+    parser.add_argument(
+        "--memory-audit-gc",
+        action="store_true",
+        help="Run gc.collect() at epoch boundaries while memory audit is enabled.",
+    )
     parser.add_argument(
         "--loss-mode",
         choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative", "background_pseudo_negative"),
@@ -638,6 +657,25 @@ def _batch_shape_signature(group: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _groups_memory_signature(groups: list[dict[str, Any]]) -> dict[str, Any]:
+    shape_counts: dict[str, int] = {}
+    total_sample_count = 0
+    total_edge_count = 0
+    for group in groups:
+        signature = _batch_shape_signature(group)
+        key = _shape_signature_key(signature)
+        shape_counts[key] = shape_counts.get(key, 0) + 1
+        total_sample_count += int(signature.get("sample_count") or 0)
+        total_edge_count += int(signature.get("total_edges") or 0)
+    return {
+        "group_count": int(len(groups)),
+        "sample_count": int(total_sample_count),
+        "total_edges": int(total_edge_count),
+        "shape_signature_count": int(len(shape_counts)),
+        "shape_signature_counts": shape_counts,
+    }
+
+
 def _shape_signature_key(signature: dict[str, Any]) -> str:
     return json.dumps(signature, sort_keys=True, separators=(",", ":"))
 
@@ -922,6 +960,134 @@ def _ensure_ignored_output_file(path: Path, flag: str) -> Path:
         raise ValueError(f"--{flag} must be a file under ignored output/: {path}")
     resolved.parent.mkdir(parents=True, exist_ok=True)
     return resolved
+
+
+def _current_rss_mb() -> float | None:
+    status_path = Path("/proc/self/status")
+    if status_path.is_file():
+        for line in status_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            if line.startswith("VmRSS:"):
+                parts = line.split()
+                if len(parts) >= 2:
+                    return float(parts[1]) / 1024.0
+    usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if usage <= 0:
+        return None
+    if sys.platform == "darwin":
+        return float(usage) / (1024.0 * 1024.0)
+    return float(usage) / 1024.0
+
+
+def _run_text_command(command: list[str]) -> str | None:
+    try:
+        completed = subprocess.run(
+            command,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except OSError:
+        return None
+    if completed.returncode != 0:
+        return None
+    return completed.stdout.strip()
+
+
+def _gpu_memory_snapshot() -> dict[str, Any]:
+    snapshot: dict[str, Any] = {
+        "gpus": [],
+        "process_gpu_memory_mb": None,
+    }
+    gpu_output = _run_text_command(
+        [
+            "nvidia-smi",
+            "--query-gpu=memory.used,memory.total",
+            "--format=csv,noheader,nounits",
+        ]
+    )
+    if gpu_output:
+        for index, line in enumerate(gpu_output.splitlines()):
+            parts = [part.strip() for part in line.split(",")]
+            if len(parts) >= 2:
+                try:
+                    snapshot["gpus"].append(
+                        {
+                            "index": int(index),
+                            "memory_used_mb": int(float(parts[0])),
+                            "memory_total_mb": int(float(parts[1])),
+                        }
+                    )
+                except ValueError:
+                    continue
+
+    process_output = _run_text_command(
+        [
+            "nvidia-smi",
+            "--query-compute-apps=pid,used_memory",
+            "--format=csv,noheader,nounits",
+        ]
+    )
+    if process_output:
+        current_pid = os.getpid()
+        total = 0
+        found = False
+        for line in process_output.splitlines():
+            parts = [part.strip() for part in line.split(",")]
+            if len(parts) < 2:
+                continue
+            try:
+                pid = int(parts[0])
+                used = int(float(parts[1]))
+            except ValueError:
+                continue
+            if pid == current_pid:
+                total += used
+                found = True
+        if found:
+            snapshot["process_gpu_memory_mb"] = int(total)
+    return snapshot
+
+
+class MemoryAudit:
+    def __init__(self, path: Path, *, every_batch: bool = False, gc_enabled: bool = False):
+        self.path = path
+        self.every_batch = bool(every_batch)
+        self.gc_enabled = bool(gc_enabled)
+        self.event_index = 0
+        with self.path.open("w", encoding="utf-8") as file:
+            file.write("")
+
+    def record(
+        self,
+        stage: str,
+        *,
+        epoch: int | None = None,
+        batch_index: int | None = None,
+        split: str | None = None,
+        detail: dict[str, Any] | None = None,
+    ) -> None:
+        self.event_index += 1
+        gpu = _gpu_memory_snapshot()
+        payload = {
+            "event_index": self.event_index,
+            "time_unix": time.time(),
+            "stage": stage,
+            "epoch": epoch,
+            "batch_index": batch_index,
+            "split": split,
+            "rss_mb": _current_rss_mb(),
+            "gpu_memory": gpu,
+            "detail": detail or {},
+        }
+        with self.path.open("a", encoding="utf-8") as file:
+            file.write(json.dumps(_json_safe(payload), sort_keys=True) + "\n")
+            file.flush()
+
+    def collect(self, stage: str, *, epoch: int | None = None) -> None:
+        if self.gc_enabled:
+            gc.collect()
+            self.record(stage, epoch=epoch)
 
 
 def _output_filename(name: str, flag: str) -> str:
@@ -1942,11 +2108,14 @@ def _fit_once(
     progress_enabled: bool,
     timings: dict[str, float] | None = None,
     profile_enabled: bool = False,
+    memory_audit: MemoryAudit | None = None,
     primary_validation_split: str = "valid",
     stress_validation_split: str | None = None,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
+    if memory_audit is not None:
+        memory_audit.record("model_init_start")
     _progress(progress_enabled, "startup", "initializing model parameters ...")
     model = GraphNeuralOperator(**model_config)
     params = model.init(
@@ -1955,6 +2124,8 @@ def _fit_once(
         graphs=train_groups[0]["graphs"],
     )["params"]
     _record_timing(timings, "model_init", init_start)
+    if memory_audit is not None:
+        memory_audit.record("model_init_end")
     _progress(progress_enabled, "startup", "model parameters initialized", init_start)
 
     batch_enabled = batch_config.get("batch_size") is not None
@@ -1962,6 +2133,8 @@ def _fit_once(
     updates_per_epoch = int(len(train_groups) if batch_enabled else 1)
 
     initial_start = time.perf_counter()
+    if memory_audit is not None:
+        memory_audit.record("initial_loss_start")
     _progress(progress_enabled, "startup", "computing initial train/valid losses ...")
     initial_loss_config = _loss_config_for_epoch(loss_config, 1)
     train_initial_components = _loss_components(model, params, train_groups, stats, initial_loss_config)
@@ -1978,6 +2151,8 @@ def _fit_once(
         else None
     )
     _record_timing(timings, "initial_loss", initial_start)
+    if memory_audit is not None:
+        memory_audit.record("initial_loss_end")
     _progress(progress_enabled, "startup", "initial train/valid losses computed", initial_start)
     train_losses = [float(train_initial_components["total_loss"])]
     train_loss_epochs = [0]
@@ -2046,6 +2221,8 @@ def _fit_once(
         lr_history.append(lr_epoch)
         should_report = _should_report_epoch(epoch, epochs, report_every)
         epoch_start = time.perf_counter()
+        if memory_audit is not None:
+            memory_audit.record("epoch_start", epoch=epoch)
         if should_report or epoch <= 3:
             if batch_enabled:
                 _progress(
@@ -2074,8 +2251,22 @@ def _fit_once(
                 shuffle=bool(batch_config.get("shuffle_train_batches")),
             )
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_epoch_groups))
+            if memory_audit is not None:
+                memory_audit.record(
+                    "train_epoch_groups_ready",
+                    epoch=epoch,
+                    detail=_groups_memory_signature(train_epoch_groups),
+                )
             batch_grad_norms = []
             for batch_index, batch_group in enumerate(train_epoch_groups, start=1):
+                if memory_audit is not None and memory_audit.every_batch:
+                    memory_audit.record(
+                        "train_batch_start",
+                        epoch=epoch,
+                        batch_index=batch_index,
+                        split="train",
+                        detail=_batch_shape_signature(batch_group),
+                    )
                 def loss_fn(current_params, group=batch_group):
                     return _loss_components(model, current_params, [group], stats, current_loss_config)["total_loss"]
 
@@ -2153,6 +2344,20 @@ def _fit_once(
                     )
                     epoch_train_batch_records.append(batch_record)
                     train_batch_records.append(batch_record)
+                if memory_audit is not None and memory_audit.every_batch:
+                    memory_audit.record(
+                        "train_batch_end",
+                        epoch=epoch,
+                        batch_index=batch_index,
+                        split="train",
+                        detail={
+                            "loss": float(batch_loss_value),
+                            "grad_norm": float(grad_norm),
+                            "update_norm": float(update_norm),
+                            "param_norm": float(param_norm),
+                        },
+                    )
+                del grads, updates, loss_value
             epoch_batch_counts.append(len(train_epoch_groups))
             if batch_grad_norms:
                 grad_norms.append(float(np.mean(batch_grad_norms)))
@@ -2162,6 +2367,14 @@ def _fit_once(
                 return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
 
             batch_start = time.perf_counter()
+            if memory_audit is not None:
+                memory_audit.record(
+                    "train_full_batch_start",
+                    epoch=epoch,
+                    batch_index=1,
+                    split="train",
+                    detail=_groups_memory_signature(train_groups),
+                )
             loss_grad_start = time.perf_counter()
             loss_value, grads = jax.value_and_grad(loss_fn)(params)
             if profile_enabled:
@@ -2236,6 +2449,20 @@ def _fit_once(
                 batch_record["batch_shape_signature_key"] = _shape_signature_key(signature)
                 epoch_train_batch_records.append(batch_record)
                 train_batch_records.append(batch_record)
+            if memory_audit is not None:
+                memory_audit.record(
+                    "train_full_batch_end",
+                    epoch=epoch,
+                    batch_index=1,
+                    split="train",
+                    detail={
+                        "loss": float(batch_loss_value),
+                        "grad_norm": float(grad_norm),
+                        "update_norm": float(update_norm),
+                        "param_norm": float(param_norm),
+                    },
+                )
+            del grads, updates, loss_value
             epoch_batch_counts.append(1)
         train_step_time = time.perf_counter() - train_step_start
 
@@ -2245,13 +2472,29 @@ def _fit_once(
         train_metrics_time = 0.0
         if train_metrics_computed:
             train_metrics_start = time.perf_counter()
+            if memory_audit is not None:
+                memory_audit.record(
+                    "train_metrics_start",
+                    epoch=epoch,
+                    split="train",
+                    detail=_groups_memory_signature(train_groups),
+                )
             train_components = _loss_components(model, params, train_groups, stats, current_loss_config)
             train_metrics = metrics_fn(model, params, train_groups, stats)
             if profile_enabled:
                 _block_until_ready_tree((train_components, train_metrics))
             train_metrics_time = time.perf_counter() - train_metrics_start
+            if memory_audit is not None:
+                memory_audit.record("train_metrics_end", epoch=epoch, split="train")
 
         validation_start = time.perf_counter()
+        if memory_audit is not None:
+            memory_audit.record(
+                "valid_start",
+                epoch=epoch,
+                split=primary_validation_split,
+                detail=_groups_memory_signature(valid_groups),
+            )
         if profile_enabled:
             valid_components, valid_metrics, epoch_validation_records = _evaluate_groups_profiled(
                 model,
@@ -2268,12 +2511,21 @@ def _fit_once(
             valid_components = _loss_components(model, params, valid_groups, stats, current_loss_config)
             valid_metrics = metrics_fn(model, params, valid_groups, stats)
         validation_time = time.perf_counter() - validation_start
+        if memory_audit is not None:
+            memory_audit.record("valid_end", epoch=epoch, split=primary_validation_split)
 
         valid_stress_components = None
         valid_stress_metrics = None
         valid_stress_time = 0.0
         if valid_stress_groups:
             valid_stress_start = time.perf_counter()
+            if memory_audit is not None:
+                memory_audit.record(
+                    "valid_stress_start",
+                    epoch=epoch,
+                    split=stress_validation_split or "valid_stress",
+                    detail=_groups_memory_signature(valid_stress_groups),
+                )
             if profile_enabled:
                 valid_stress_components, valid_stress_metrics, epoch_stress_records = _evaluate_groups_profiled(
                     model,
@@ -2292,6 +2544,12 @@ def _fit_once(
                 )
                 valid_stress_metrics = metrics_fn(model, params, valid_stress_groups, stats)
             valid_stress_time = time.perf_counter() - valid_stress_start
+            if memory_audit is not None:
+                memory_audit.record(
+                    "valid_stress_end",
+                    epoch=epoch,
+                    split=stress_validation_split or "valid_stress",
+                )
 
         if train_components is not None:
             train_losses.append(float(train_components["total_loss"]))
@@ -2343,9 +2601,17 @@ def _fit_once(
         record["epoch_max_update_to_param_norm_ratio"] = update_param_ratio_summary["max"]
         score = float(record[selection_metric])
         if best_score is None or score < best_score:
+            if memory_audit is not None:
+                memory_audit.record(
+                    "best_params_copy_start",
+                    epoch=epoch,
+                    detail={"selection_metric": selection_metric, "score": score},
+                )
             best_score = score
             best_record = dict(record)
             best_params = _copy_params(params)
+            if memory_audit is not None:
+                memory_audit.record("best_params_copy_end", epoch=epoch)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
         record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
         record["epoch_train_time_s"] = float(train_step_time)
@@ -2354,6 +2620,19 @@ def _fit_once(
         record["epoch_valid_stress_time_s"] = float(valid_stress_time)
         record["epoch_total_time_s"] = float(time.perf_counter() - epoch_start)
         epoch_history.append(record)
+        if memory_audit is not None:
+            memory_audit.collect("epoch_gc_end", epoch=epoch)
+            memory_audit.record(
+                "epoch_end",
+                epoch=epoch,
+                detail={
+                    "train_time_s": float(train_step_time),
+                    "validation_time_s": float(validation_time),
+                    "valid_stress_time_s": float(valid_stress_time),
+                    "train_metrics_time_s": float(train_metrics_time),
+                    "best_epoch": record["best_epoch"],
+                },
+            )
         if should_report:
             _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} metrics computed", epoch_start)
             _print_epoch_progress(record, epochs, log_mode)
@@ -3033,6 +3312,22 @@ def main() -> int:
         if args.profile_timing_json is not None
         else None
     )
+    memory_audit_jsonl_path = (
+        _ensure_ignored_output_file(args.memory_audit_jsonl, "memory-audit-jsonl")
+        if args.memory_audit_jsonl is not None
+        else None
+    )
+    memory_audit = (
+        MemoryAudit(
+            memory_audit_jsonl_path,
+            every_batch=bool(args.memory_audit_every_batch),
+            gc_enabled=bool(args.memory_audit_gc),
+        )
+        if memory_audit_jsonl_path is not None
+        else None
+    )
+    if memory_audit is not None:
+        memory_audit.record("startup_output_ready", detail={"output_dir": str(output_dir)})
     _progress(progress_enabled, "startup", f"output dir ready: {output_dir}", output_start)
 
     dataset_start = time.perf_counter()
@@ -3156,6 +3451,16 @@ def main() -> int:
         ),
         group_start,
     )
+    if memory_audit is not None:
+        memory_audit.record(
+            "groups_built",
+            detail={
+                "train": _groups_memory_signature(train_groups),
+                primary_validation_split: _groups_memory_signature(valid_groups),
+                "valid_stress": _groups_memory_signature(valid_stress_groups),
+                "all": _groups_memory_signature(all_groups),
+            },
+        )
 
     _print_startup_summary(
         args,
@@ -3192,6 +3497,7 @@ def main() -> int:
         progress_enabled,
         timings,
         profile_enabled=profile_enabled,
+        memory_audit=memory_audit,
         primary_validation_split=primary_validation_split,
         stress_validation_split=stress_validation_split,
     )
@@ -3208,9 +3514,16 @@ def main() -> int:
     final_prediction_export_skip_reason = "save_predictions_false" if final_prediction_export_skipped else None
     if should_build_final_predictions(bool(args.save_predictions)):
         prediction_start = time.perf_counter()
+        if memory_audit is not None:
+            memory_audit.record(
+                "prediction_export_start",
+                detail=_groups_memory_signature(prediction_groups),
+            )
         _progress(progress_enabled, "export", "building recovered predictions ...")
         predictions = _predict_temperatures(result["model"], result["params"], prediction_groups, stats)
         _record_timing(timings, "prediction_export", prediction_start)
+        if memory_audit is not None:
+            memory_audit.record("prediction_export_end", detail={"prediction_count": len(predictions)})
         _progress(progress_enabled, "export", f"prediction arrays built: key_count={len(predictions)}", prediction_start)
     else:
         timings["prediction_export"] = 0.0
@@ -3233,15 +3546,27 @@ def main() -> int:
     else:
         _progress(progress_enabled, "export", f"prediction save skipped: key_count={len(predictions)}", save_start)
     _record_timing(timings, "prediction_save", save_start)
+    if memory_audit is not None:
+        memory_audit.record("prediction_save_end", detail={"prediction_count": len(predictions)})
 
     if args.save_best_predictions:
         if result.get("best_params") is None:
             raise RuntimeError("best params are unavailable; expected at least one training epoch")
         best_prediction_start = time.perf_counter()
+        if memory_audit is not None:
+            memory_audit.record(
+                "best_prediction_export_start",
+                detail=_groups_memory_signature(prediction_groups),
+            )
         _progress(progress_enabled, "export", "building best-valid recovered predictions ...")
         best_predictions = _predict_temperatures(result["model"], result["best_params"], prediction_groups, stats)
         best_prediction_count = len(best_predictions)
         _record_timing(timings, "best_prediction_export", best_prediction_start)
+        if memory_audit is not None:
+            memory_audit.record(
+                "best_prediction_export_end",
+                detail={"prediction_count": best_prediction_count},
+            )
         _progress(
             progress_enabled,
             "export",
@@ -3253,6 +3578,11 @@ def main() -> int:
         np.savez_compressed(best_predictions_path, **best_predictions)
         best_predictions_saved = True
         _record_timing(timings, "best_prediction_save", best_save_start)
+        if memory_audit is not None:
+            memory_audit.record(
+                "best_prediction_save_end",
+                detail={"prediction_count": best_prediction_count},
+            )
         _progress(
             progress_enabled,
             "export",
@@ -3300,6 +3630,9 @@ def main() -> int:
         "progress_detail": args.progress_detail,
         "profile_timing": bool(args.profile_timing),
         "profile_timing_json": str(profile_timing_json_path) if profile_timing_json_path is not None else None,
+        "memory_audit_jsonl": str(memory_audit_jsonl_path) if memory_audit_jsonl_path is not None else None,
+        "memory_audit_every_batch": bool(args.memory_audit_every_batch),
+        "memory_audit_gc": bool(args.memory_audit_gc),
         "train_metrics_schedule": result["train_metrics_schedule"],
         "train_metrics_epochs": [int(epoch) for epoch in result["train_metrics_epochs"]],
         "initial_valid_loss": result["initial_valid_loss"],
@@ -3382,6 +3715,9 @@ def main() -> int:
         "stress_validation_split": stress_validation_split,
         "prediction_split": args.prediction_split,
         "split_counts": split_counts,
+        "memory_audit_jsonl": str(memory_audit_jsonl_path) if memory_audit_jsonl_path is not None else None,
+        "memory_audit_every_batch": bool(args.memory_audit_every_batch),
+        "memory_audit_gc": bool(args.memory_audit_gc),
         "train_losses": [float(value) for value in result["train_losses"]],
         "train_loss_epochs": [int(value) for value in result["train_loss_epochs"]],
         "valid_losses": [float(value) for value in result["valid_losses"]],
