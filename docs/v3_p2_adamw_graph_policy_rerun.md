@@ -145,3 +145,45 @@ The combined evidence does not support "zero coverage is the only bottleneck."
 It supports a narrower conclusion: explicit nearest repair is useful and should
 remain the P2/P3 graph candidate, but 16-sample fitting still points to model
 path, routing, capacity, optimizer schedule, or decoder bottlenecks.
+
+## Follow-Up: Adam lr=1e-3, 1000 epochs
+
+Purpose: rerun only `legacy` and `nearest_repair` for `sample_count=1/4/16`
+with B96-style model capacity and Adam lr=1e-3 constant. `discrete_radius` is
+paused as a mainline candidate.
+
+Commands:
+
+```bash
+python3 scripts/run_heat3d_v3_p2_adamw_graph_policy_rerun.py \
+  --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_supervised_small \
+  --sample-count 1 \
+  --policy legacy,nearest_repair \
+  --optimizer adam \
+  --lr 1e-3 \
+  --lr-schedule constant \
+  --epochs 1000 \
+  --output-json output/heat3d_v3_p2_adamw_rerun/followup_sample1_adam_lr1e3_e1000.json
+
+python3 scripts/run_heat3d_v3_p2_adamw_graph_policy_rerun.py \
+  --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_supervised_small \
+  --sample-count 4 \
+  --policy legacy,nearest_repair \
+  --optimizer adam \
+  --lr 1e-3 \
+  --lr-schedule constant \
+  --epochs 1000 \
+  --output-json output/heat3d_v3_p2_adamw_rerun/followup_sample4_adam_lr1e3_e1000.json
+
+python3 scripts/run_heat3d_v3_p2_adamw_graph_policy_rerun.py \
+  --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_supervised_small \
+  --sample-count 16 \
+  --policy legacy,nearest_repair \
+  --optimizer adam \
+  --lr 1e-3 \
+  --lr-schedule constant \
+  --epochs 1000 \
+  --output-json output/heat3d_v3_p2_adamw_rerun/followup_sample16_adam_lr1e3_e1000.json
+```
+
+Results: pending devbox run.

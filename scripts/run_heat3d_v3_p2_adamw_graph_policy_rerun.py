@@ -78,8 +78,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample-count", type=int, choices=(1, 4, 16), default=16)
     parser.add_argument(
         "--policy",
-        choices=("legacy", "nearest_repair", "discrete_radius", "all"),
         default="all",
+        help=(
+            "Graph policy to run: legacy, nearest_repair, discrete_radius, all, "
+            "or a comma-separated list such as legacy,nearest_repair."
+        ),
     )
     parser.add_argument(
         "--optimizer",
@@ -132,7 +135,14 @@ def _write_json(path: Path, payload: dict[str, Any]) -> Path:
 def _selected_policy_names(value: str) -> list[str]:
     if value == "all":
         return ["legacy", "nearest_repair", "discrete_radius"]
-    return [value]
+    names = [item.strip() for item in value.split(",") if item.strip()]
+    if not names:
+        raise ValueError("--policy must name at least one policy")
+    unknown = [name for name in names if name not in POLICIES]
+    if unknown:
+        allowed = ", ".join(sorted([*POLICIES, "all"]))
+        raise ValueError(f"Unknown --policy value(s): {unknown}; expected one of {allowed}")
+    return names
 
 
 def _load_examples(args: argparse.Namespace) -> tuple[list[Any], dict[str, Any]]:

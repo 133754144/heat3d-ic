@@ -61,6 +61,8 @@ DEFAULT_SPLIT_MAP = (
 )
 DEFAULT_OUTPUT_DIR = REPO_DIR / "output" / "heat3d_v1_medium_runs" / "export_smoke_seed0"
 TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
+RADIUS_POLICY_CHOICES = ("legacy_kdtree_mean4", "discrete_physical_coverage")
+COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
 
 
 def parse_args() -> argparse.Namespace:
@@ -125,6 +127,23 @@ def parse_args() -> argparse.Namespace:
         action="store_false",
         help="Preserve the legacy all-interior mask behavior when boundary_regions is missing.",
     )
+    parser.add_argument(
+        "--radius-policy",
+        choices=RADIUS_POLICY_CHOICES,
+        default="legacy_kdtree_mean4",
+        help="Heat3D graph radius policy. Default preserves legacy graph behavior.",
+    )
+    parser.add_argument(
+        "--coverage-repair-policy",
+        choices=COVERAGE_REPAIR_POLICY_CHOICES,
+        default="none",
+        help="Optional Heat3D graph coverage repair policy. Default disables repair.",
+    )
+    parser.add_argument("--repair-p2r", dest="repair_p2r", action="store_true", default=True)
+    parser.add_argument("--no-repair-p2r", dest="repair_p2r", action="store_false")
+    parser.add_argument("--repair-r2p", dest="repair_r2p", action="store_true", default=True)
+    parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
+    parser.add_argument("--min-physical-coverage", type=int, default=1)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
     parser.add_argument(
@@ -1069,6 +1088,16 @@ def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _graph_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "radius_policy": args.radius_policy,
+        "coverage_repair_policy": args.coverage_repair_policy,
+        "repair_p2r": bool(args.repair_p2r),
+        "repair_r2p": bool(args.repair_r2p),
+        "min_physical_coverage": int(args.min_physical_coverage),
+    }
+
+
 def _validate_loss_config(config: dict[str, Any]) -> None:
     background_quantile = float(config["background_quantile"])
     hotspot_quantile = float(config["hotspot_quantile"])
@@ -1156,6 +1185,17 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
         value = config.get(key)
         if value is not None and int(value) < 1:
             raise ValueError(f"--{key.replace('_', '-')} must be >= 1 or 0 for legacy full-batch")
+
+
+def _validate_graph_config(config: dict[str, Any]) -> None:
+    if config["radius_policy"] not in RADIUS_POLICY_CHOICES:
+        raise ValueError(f"--radius-policy must be one of {RADIUS_POLICY_CHOICES}")
+    if config["coverage_repair_policy"] not in COVERAGE_REPAIR_POLICY_CHOICES:
+        raise ValueError(
+            f"--coverage-repair-policy must be one of {COVERAGE_REPAIR_POLICY_CHOICES}"
+        )
+    if int(config["min_physical_coverage"]) < 1:
+        raise ValueError("--min-physical-coverage must be >= 1")
 
 
 def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
@@ -2978,11 +3018,13 @@ def main() -> int:
     optimizer_config = _optimizer_config_from_args(args)
     model_config = _model_config_from_args(args)
     batch_config = _batch_config_from_args(args)
+    graph_config = _graph_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
     _validate_optimizer_config(optimizer_config)
     _validate_model_config(model_config)
     _validate_batch_config(batch_config)
+    _validate_graph_config(graph_config)
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
@@ -3035,7 +3077,7 @@ def main() -> int:
     )
     _record_timing(timings, "dataset_load", dataset_start)
 
-    builder = Heat3DGraphBuilder()
+    builder = Heat3DGraphBuilder(**graph_config)
     norm_start = time.perf_counter()
     _progress(progress_enabled, "startup", "computing train-only target normalization ...")
     stats = _train_only_stats(train_examples)
@@ -3245,6 +3287,7 @@ def main() -> int:
         **_batch_config_payload(batch_config),
         "seed": args.seed,
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
+        "graph_config": graph_config,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
@@ -3313,6 +3356,7 @@ def main() -> int:
         "optimizer_config": optimizer_config,
         "model_config": model_config,
         "batch_config": batch_config,
+        "graph_config": graph_config,
         "split_counts": split_counts,
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "timing_diagnostics": dict(timings),
@@ -3480,6 +3524,7 @@ def main() -> int:
         "optimizer_config": optimizer_config,
         "model_config": model_config,
         "batch_config": batch_config,
+        "graph_config": graph_config,
         "epoch_history": result["epoch_history"],
         "train_batch_records": result["train_batch_records"] if profile_enabled else [],
         "validation_batch_records": result["validation_batch_records"] if profile_enabled else [],

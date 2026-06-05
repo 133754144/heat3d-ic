@@ -38,6 +38,8 @@ BATCH_SIZE_FIELDS = (
 BATCH_BOOL_FIELDS = ("shuffle_train_batches", "drop_last")
 TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"}
 PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
+RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
+COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 
 _MISSING = object()
 
@@ -121,6 +123,7 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
     diagnostics = _mapping_or_empty(config.get("diagnostics"))
     baseline_reference = _mapping_or_empty(config.get("baseline_reference"))
     training = _mapping_or_empty(config.get("training"))
+    graph = _mapping_or_empty(config.get("graph"))
 
     summary: dict[str, Any] = {
         "config_role": config.get("config_role"),
@@ -136,6 +139,8 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "run_epochs": run.get("epochs"),
         "export_output_dir": export.get("output_dir"),
         "diagnostics_enabled": _summarize_diagnostics(diagnostics),
+        "graph_radius_policy": graph.get("radius_policy"),
+        "graph_coverage_repair_policy": graph.get("coverage_repair_policy"),
     }
 
     if config.get("config_role") == "baseline_reference":
@@ -222,6 +227,12 @@ def _validate_run_config(
 
     export = _required_mapping(config, "export", label)
     dataset = _required_mapping(config, "dataset", label)
+    graph = config.get("graph")
+    if graph is not None:
+        if not isinstance(graph, Mapping):
+            raise ValueError(f"{label}: field 'graph' must be a mapping")
+        _validate_graph_fields(graph, label)
+
     boundary_mask_fallback = dataset.get("boundary_mask_fallback")
     if boundary_mask_fallback is not None and not isinstance(boundary_mask_fallback, bool):
         raise ValueError(
@@ -285,6 +296,40 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
     for field in BATCH_BOOL_FIELDS:
         if field in run and not isinstance(run[field], bool):
             raise ValueError(f"{label}: field 'run.{field}' must be a bool")
+
+
+def _validate_graph_fields(graph: Mapping[str, Any], label: str) -> None:
+    radius_policy = graph.get("radius_policy")
+    if radius_policy is not None and radius_policy not in RADIUS_POLICIES:
+        raise ValueError(
+            f"{label}: field 'graph.radius_policy' must be one of "
+            f"{sorted(RADIUS_POLICIES)}, got {radius_policy!r}"
+        )
+
+    coverage_repair_policy = graph.get("coverage_repair_policy")
+    if (
+        coverage_repair_policy is not None
+        and coverage_repair_policy not in COVERAGE_REPAIR_POLICIES
+    ):
+        raise ValueError(
+            f"{label}: field 'graph.coverage_repair_policy' must be one of "
+            f"{sorted(COVERAGE_REPAIR_POLICIES)}, got {coverage_repair_policy!r}"
+        )
+
+    for field in ("repair_p2r", "repair_r2p"):
+        if field in graph and not isinstance(graph[field], bool):
+            raise ValueError(f"{label}: field 'graph.{field}' must be a bool")
+
+    min_physical_coverage = graph.get("min_physical_coverage")
+    if min_physical_coverage is not None:
+        if isinstance(min_physical_coverage, bool) or not isinstance(min_physical_coverage, int):
+            raise ValueError(
+                f"{label}: field 'graph.min_physical_coverage' must be an int or null"
+            )
+        if min_physical_coverage < 1:
+            raise ValueError(
+                f"{label}: field 'graph.min_physical_coverage' must be >= 1"
+            )
 
 
 def _validate_baseline_reference(config: Mapping[str, Any], *, label: str) -> None:

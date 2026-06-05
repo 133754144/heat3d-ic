@@ -47,6 +47,8 @@ def build_training_command(
     optimizer = _section(config, "optimizer")
     loss = _section(config, "loss")
     export = _section(config, "export")
+    graph_section = config.get("graph")
+    graph = graph_section if isinstance(graph_section, Mapping) else {}
 
     command = [python_executable, TRAINING_SCRIPT]
     _append_option(command, "--subset", dataset.get("subset_path"))
@@ -81,6 +83,17 @@ def build_training_command(
     _append_option(command, "--seed", optimizer.get("seed"))
     _append_option(command, "--output-dir", export.get("output_dir"))
     _append_option(command, "--prediction-split", export.get("prediction_split"))
+    _append_option(command, "--radius-policy", graph.get("radius_policy"))
+    _append_option(command, "--coverage-repair-policy", graph.get("coverage_repair_policy"))
+    if graph.get("repair_p2r") is True:
+        command.append("--repair-p2r")
+    elif graph.get("repair_p2r") is False:
+        command.append("--no-repair-p2r")
+    if graph.get("repair_r2p") is True:
+        command.append("--repair-r2p")
+    elif graph.get("repair_r2p") is False:
+        command.append("--no-repair-r2p")
+    _append_option(command, "--min-physical-coverage", graph.get("min_physical_coverage"))
 
     if export.get("save_final_predictions") is True:
         command.append("--save-predictions")
@@ -514,6 +527,11 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("export.save_best_predictions", "training --save-best-predictions"),
         ("export.best_predictions_name", "training --best-predictions-name"),
         ("export.selection_metric", "training --selection-metric"),
+        ("graph.radius_policy", "training --radius-policy"),
+        ("graph.coverage_repair_policy", "training --coverage-repair-policy"),
+        ("graph.repair_p2r", "training --repair-p2r/--no-repair-p2r"),
+        ("graph.repair_r2p", "training --repair-r2p/--no-repair-r2p"),
+        ("graph.min_physical_coverage", "training --min-physical-coverage"),
         ("diagnostics.top_k", "comparison --top-k"),
         ("diagnostics.deltaT_bins", "error bins/condition diagnostics --bins"),
         (
