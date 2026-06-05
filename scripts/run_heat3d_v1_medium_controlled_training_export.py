@@ -997,8 +997,40 @@ def _run_text_command(command: list[str]) -> str | None:
 def _gpu_memory_snapshot() -> dict[str, Any]:
     snapshot: dict[str, Any] = {
         "gpus": [],
+        "jax_devices": [],
         "process_gpu_memory_mb": None,
     }
+    for device in jax.devices():
+        memory_stats = getattr(device, "memory_stats", None)
+        if memory_stats is None:
+            continue
+        try:
+            stats = memory_stats()
+        except Exception:
+            continue
+        if not isinstance(stats, dict):
+            continue
+        converted = {
+            "device": str(device),
+            "platform": getattr(device, "platform", None),
+        }
+        for key, value in stats.items():
+            if key.endswith("bytes") or key in {
+                "bytes_in_use",
+                "peak_bytes_in_use",
+                "bytes_limit",
+                "bytes_reserved",
+                "peak_bytes_reserved",
+                "pool_bytes",
+                "peak_pool_bytes",
+                "largest_alloc_size",
+                "largest_free_block_bytes",
+            }:
+                converted[f"{key}_mb"] = float(value) / (1024.0 * 1024.0)
+            else:
+                converted[key] = value
+        snapshot["jax_devices"].append(converted)
+
     gpu_output = _run_text_command(
         [
             "nvidia-smi",
