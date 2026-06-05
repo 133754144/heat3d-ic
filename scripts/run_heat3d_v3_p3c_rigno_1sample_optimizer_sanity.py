@@ -42,16 +42,13 @@ from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     _make_batch_group,
     _train_only_stats,
 )
+from run_heat3d_v3_p2_policy_small_training_smoke import B96_ADAMW_DEFAULTS  # noqa: E402
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 
 
 DEFAULT_OUTPUT_JSON = REPO_ROOT / "output" / "heat3d_v3_p3c" / "optimizer_sanity.json"
 DEFAULT_MATRIX = (
-    ("manual_gd", 1.0e-5),
-    ("manual_gd", 1.0e-4),
-    ("manual_gd", 1.0e-3),
-    ("adam", 1.0e-4),
-    ("adam", 1.0e-3),
+    (B96_ADAMW_DEFAULTS["optimizer"], B96_ADAMW_DEFAULTS["lr"]),
 )
 EPS = 1.0e-12
 
@@ -62,8 +59,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample-id", default="sample_000")
     parser.add_argument("--k-encoding-mode", default="diag3")
     parser.add_argument("--policy", choices=("legacy", "nearest_repair"), default="legacy")
-    parser.add_argument("--optimizer", choices=("manual_gd", "adam"), default=None)
+    parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default=None)
     parser.add_argument("--lr", type=float, default=None)
+    parser.add_argument("--weight-decay", type=float, default=B96_ADAMW_DEFAULTS["weight_decay"])
+    parser.add_argument(
+        "--gradient-clip-norm",
+        type=float,
+        default=B96_ADAMW_DEFAULTS["gradient_clip_norm"],
+    )
     parser.add_argument("--epochs", type=int, default=300)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_OUTPUT_JSON)
@@ -144,6 +147,8 @@ def _train_setting(
     stats: dict,
     optimizer_name: str,
     lr: float,
+    weight_decay: float,
+    gradient_clip_norm: float | None,
     epochs: int,
 ) -> dict[str, Any]:
     params = initial_params
@@ -152,8 +157,17 @@ def _train_setting(
         pred = model.apply({"params": current_params}, inputs=group["inputs"], graphs=group["graphs"])
         return jnp.mean(jnp.square(pred - group["target_normalized"]))
 
-    if optimizer_name == "adam":
-        tx = optax.adam(learning_rate=lr)
+    if optimizer_name in {"adam", "adamw"}:
+        transforms = []
+        if gradient_clip_norm is not None:
+            transforms.append(optax.clip_by_global_norm(float(gradient_clip_norm)))
+        if optimizer_name == "adam":
+            if weight_decay > 0.0:
+                transforms.append(optax.add_decayed_weights(float(weight_decay)))
+            transforms.append(optax.adam(learning_rate=lr))
+        else:
+            transforms.append(optax.adamw(learning_rate=lr, weight_decay=float(weight_decay)))
+        tx = optax.chain(*transforms)
         opt_state = tx.init(params)
     else:
         tx = None
@@ -185,7 +199,7 @@ def _train_setting(
     for epoch in range(1, epochs + 1):
         if optimizer_name == "manual_gd":
             params, previous_loss, grads = manual_step(params)
-        elif optimizer_name == "adam":
+        elif optimizer_name in {"adam", "adamw"}:
             params, opt_state, previous_loss, grads = adam_step(params, opt_state)
         else:
             raise ValueError(f"Unsupported optimizer: {optimizer_name}")
@@ -214,6 +228,8 @@ def _train_setting(
     return {
         "optimizer": optimizer_name,
         "lr": float(lr),
+        "weight_decay": float(weight_decay),
+        "gradient_clip_norm": None if gradient_clip_norm is None else float(gradient_clip_norm),
         "epochs_requested": int(epochs),
         "epochs_completed": int(len(losses) - 1),
         "initial_loss": initial_loss,
@@ -275,6 +291,10 @@ def main() -> int:
     args = parse_args()
     if args.epochs < 1:
         raise ValueError("--epochs must be >= 1")
+    if args.weight_decay < 0:
+        raise ValueError("--weight-decay must be >= 0")
+    if args.gradient_clip_norm is not None and args.gradient_clip_norm <= 0:
+        raise ValueError("--gradient-clip-norm must be > 0 when provided")
 
     matrix = _matrix_from_args(args)
     example = _load_example(args)
@@ -297,6 +317,8 @@ def main() -> int:
             stats=stats,
             optimizer_name=optimizer_name,
             lr=lr,
+            weight_decay=args.weight_decay,
+            gradient_clip_norm=args.gradient_clip_norm,
             epochs=args.epochs,
         )
         results.append(result)
@@ -319,7 +341,17 @@ def main() -> int:
             "policy": args.policy,
             "epochs": args.epochs,
             "seed": args.seed,
-            "matrix": [{"optimizer": opt, "lr": lr} for opt, lr in matrix],
+            "weight_decay": args.weight_decay,
+            "gradient_clip_norm": args.gradient_clip_norm,
+            "matrix": [
+                {
+                    "optimizer": opt,
+                    "lr": lr,
+                    "weight_decay": args.weight_decay,
+                    "gradient_clip_norm": args.gradient_clip_norm,
+                }
+                for opt, lr in matrix
+            ],
             "model_config": MODEL_CONFIG,
             "builder_config": builder.config,
         },

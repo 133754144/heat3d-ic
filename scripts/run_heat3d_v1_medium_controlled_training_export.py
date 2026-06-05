@@ -83,19 +83,19 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument(
         "--lr-schedule",
         choices=("constant", "warmup_cosine", "rapid_decay", "two_stage", "second_stage"),
-        default="constant",
+        default="warmup_cosine",
     )
-    parser.add_argument("--warmup-epochs", type=int, default=0)
-    parser.add_argument("--min-lr", type=float, default=1e-5)
+    parser.add_argument("--warmup-epochs", type=int, default=10)
+    parser.add_argument("--min-lr", type=float, default=1e-6)
     parser.add_argument("--second-stage-epoch", type=int, default=0)
     parser.add_argument("--second-stage-lr", type=float, default=1e-4)
-    parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="manual_gd")
-    parser.add_argument("--gradient-clip-norm", type=float, default=None)
-    parser.add_argument("--weight-decay", type=float, default=0.0)
+    parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="adamw")
+    parser.add_argument("--gradient-clip-norm", type=float, default=1.0)
+    parser.add_argument("--weight-decay", type=float, default=1.0e-4)
     parser.add_argument("--node-latent-size", type=int, default=MODEL_CONFIG["node_latent_size"])
     parser.add_argument("--edge-latent-size", type=int, default=MODEL_CONFIG["edge_latent_size"])
     parser.add_argument("--processor-steps", type=int, default=MODEL_CONFIG["processor_steps"])

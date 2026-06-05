@@ -20,6 +20,7 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util as tree
 import numpy as np
+import optax
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -86,6 +87,15 @@ POLICIES = {
     },
 }
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "output" / "heat3d_v3_p2_policy_smoke"
+B96_ADAMW_DEFAULTS = {
+    "optimizer": "adamw",
+    "lr": 3.0e-4,
+    "lr_schedule": "warmup_cosine",
+    "warmup_epochs": 10,
+    "min_lr": 1.0e-6,
+    "weight_decay": 1.0e-4,
+    "gradient_clip_norm": 1.0,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -96,7 +106,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample-counts", default="1,4")
     parser.add_argument("--epochs-1-sample", type=int, default=20)
     parser.add_argument("--epochs-4-sample", type=int, default=10)
-    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument(
+        "--optimizer",
+        choices=("adamw", "adam", "manual_gd"),
+        default=B96_ADAMW_DEFAULTS["optimizer"],
+    )
+    parser.add_argument("--lr", type=float, default=B96_ADAMW_DEFAULTS["lr"])
+    parser.add_argument(
+        "--lr-schedule",
+        choices=("constant", "warmup_cosine"),
+        default=B96_ADAMW_DEFAULTS["lr_schedule"],
+    )
+    parser.add_argument("--warmup-epochs", type=int, default=B96_ADAMW_DEFAULTS["warmup_epochs"])
+    parser.add_argument("--min-lr", type=float, default=B96_ADAMW_DEFAULTS["min_lr"])
+    parser.add_argument("--weight-decay", type=float, default=B96_ADAMW_DEFAULTS["weight_decay"])
+    parser.add_argument(
+        "--gradient-clip-norm",
+        type=float,
+        default=B96_ADAMW_DEFAULTS["gradient_clip_norm"],
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     return parser.parse_args()
@@ -250,6 +278,48 @@ def _metrics(model: GraphNeuralOperator, params: Any, groups: list[dict], stats:
     }
 
 
+def _learning_rate_schedule(args: argparse.Namespace):
+    if args.lr_schedule == "constant":
+        return float(args.lr)
+
+    def schedule(count):
+        epoch = jnp.asarray(count, dtype=jnp.float32) + 1.0
+        base = jnp.asarray(float(args.lr), dtype=jnp.float32)
+        min_lr = jnp.asarray(float(args.min_lr), dtype=jnp.float32)
+        warmup_epochs = int(args.warmup_epochs)
+        if warmup_epochs > 0:
+            warmup_progress = jnp.clip(epoch / float(warmup_epochs), 0.0, 1.0)
+            warmup_lr = min_lr + warmup_progress * (base - min_lr)
+            decay_epochs = max(max(args.epochs_1_sample, args.epochs_4_sample) - warmup_epochs, 1)
+            decay_progress = jnp.clip((epoch - float(warmup_epochs)) / float(decay_epochs), 0.0, 1.0)
+            cosine_lr = min_lr + 0.5 * (1.0 + jnp.cos(jnp.pi * decay_progress)) * (base - min_lr)
+            return jnp.where(epoch <= float(warmup_epochs), warmup_lr, cosine_lr)
+        decay_epochs = max(max(args.epochs_1_sample, args.epochs_4_sample) - 1, 1)
+        decay_progress = jnp.clip((epoch - 1.0) / float(decay_epochs), 0.0, 1.0)
+        return min_lr + 0.5 * (1.0 + jnp.cos(jnp.pi * decay_progress)) * (base - min_lr)
+
+    return schedule
+
+
+def _build_optimizer(args: argparse.Namespace, params: Any):
+    if args.optimizer == "manual_gd":
+        return None
+    transforms = []
+    if args.gradient_clip_norm is not None:
+        transforms.append(optax.clip_by_global_norm(float(args.gradient_clip_norm)))
+    lr = _learning_rate_schedule(args)
+    if args.optimizer == "adam":
+        if float(args.weight_decay) > 0.0:
+            transforms.append(optax.add_decayed_weights(float(args.weight_decay)))
+        transforms.append(optax.adam(learning_rate=lr))
+    elif args.optimizer == "adamw":
+        transforms.append(optax.adamw(learning_rate=lr, weight_decay=float(args.weight_decay)))
+    else:
+        raise ValueError(f"Unsupported optimizer: {args.optimizer}")
+    tx = optax.chain(*transforms)
+    return {"tx": tx, "state": tx.init(params)}
+
+
 def _coverage_for_examples(examples: list[Any]) -> dict[str, Any]:
     records = []
     for example in examples:
@@ -273,7 +343,7 @@ def _run_policy(
     policy_name: str,
     examples: list[Any],
     epochs: int,
-    lr: float,
+    args: argparse.Namespace,
     seed: int,
     legacy_edge_totals: dict[str, int],
 ) -> dict[str, Any]:
@@ -295,6 +365,7 @@ def _run_policy(
     def loss_fn(current_params):
         return _weighted_loss(model, current_params, groups)
 
+    opt_state = _build_optimizer(args, params)
     initial_loss = float(loss_fn(params))
     initial_metrics = _metrics(model, params, groups, stats)
     losses = [initial_loss]
@@ -306,7 +377,12 @@ def _run_policy(
         grad_norm = _global_norm(grads)
         grad_norms.append(grad_norm)
         grad_finite = grad_finite and bool(np.isfinite(grad_norm))
-        params = tree.tree_map(lambda param, grad: param - lr * grad, params, grads)
+        if opt_state is None:
+            params = tree.tree_map(lambda param, grad: param - float(args.lr) * grad, params, grads)
+        else:
+            updates, next_state = opt_state["tx"].update(grads, opt_state["state"], params)
+            opt_state["state"] = next_state
+            params = optax.apply_updates(params, updates)
         losses.append(float(loss_fn(params)))
     train_time = time.perf_counter() - train_start
 
@@ -325,7 +401,13 @@ def _run_policy(
     return {
         "policy": policy_name,
         "epochs": epochs,
-        "lr": lr,
+        "optimizer": args.optimizer,
+        "lr": args.lr,
+        "lr_schedule": args.lr_schedule,
+        "warmup_epochs": args.warmup_epochs,
+        "min_lr": args.min_lr,
+        "weight_decay": args.weight_decay,
+        "gradient_clip_norm": args.gradient_clip_norm,
         "seed": seed,
         "initial_loss": initial_loss,
         "final_loss": final_loss,
@@ -408,6 +490,14 @@ def main() -> int:
         raise ValueError("epoch counts must be >= 1")
     if args.lr <= 0:
         raise ValueError("--lr must be positive")
+    if args.warmup_epochs < 0:
+        raise ValueError("--warmup-epochs must be >= 0")
+    if args.min_lr < 0:
+        raise ValueError("--min-lr must be >= 0")
+    if args.weight_decay < 0:
+        raise ValueError("--weight-decay must be >= 0")
+    if args.gradient_clip_norm is not None and args.gradient_clip_norm <= 0:
+        raise ValueError("--gradient-clip-norm must be > 0 when provided")
 
     all_examples, dataset_metadata = _load_train_examples(args, max(sample_counts))
     sample_results = []
@@ -425,7 +515,7 @@ def main() -> int:
                     policy_name=policy_name,
                     examples=examples,
                     epochs=_epochs_for_count(args, sample_count),
-                    lr=args.lr,
+                    args=args,
                     seed=args.seed,
                     legacy_edge_totals=legacy_edge_totals,
                 )
@@ -451,7 +541,13 @@ def main() -> int:
             "sample_counts": sample_counts,
             "epochs_1_sample": args.epochs_1_sample,
             "epochs_4_sample": args.epochs_4_sample,
+            "optimizer": args.optimizer,
             "lr": args.lr,
+            "lr_schedule": args.lr_schedule,
+            "warmup_epochs": args.warmup_epochs,
+            "min_lr": args.min_lr,
+            "weight_decay": args.weight_decay,
+            "gradient_clip_norm": args.gradient_clip_norm,
             "seed": args.seed,
             "policies": POLICIES,
         },
@@ -469,6 +565,7 @@ def main() -> int:
     print(f"  subset: {dataset_metadata['sample_root']}")
     print(f"  selected train ids: {dataset_metadata['selected_train_ids']}")
     print(f"  lr: {args.lr}")
+    print(f"  optimizer: {args.optimizer}")
     for sample_result in sample_results:
         print(f"  sample_count={sample_result['sample_count']} epochs={sample_result['epochs']}")
         for result in sample_result["policy_results"]:

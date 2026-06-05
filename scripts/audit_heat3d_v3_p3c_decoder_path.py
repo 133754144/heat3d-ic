@@ -48,6 +48,7 @@ from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     _make_batch_group,
     _train_only_stats,
 )
+from run_heat3d_v3_p2_policy_small_training_smoke import B96_ADAMW_DEFAULTS  # noqa: E402
 from rigno.models.operator import Inputs  # noqa: E402
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 
@@ -63,8 +64,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--k-encoding-mode", default="diag3")
     parser.add_argument("--policy", choices=("legacy", "nearest_repair"), default="legacy")
     parser.add_argument("--use-best-from", type=Path, default=None)
-    parser.add_argument("--optimizer", choices=("manual_gd", "adam"), default=None)
+    parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default=None)
     parser.add_argument("--lr", type=float, default=None)
+    parser.add_argument("--weight-decay", type=float, default=B96_ADAMW_DEFAULTS["weight_decay"])
+    parser.add_argument(
+        "--gradient-clip-norm",
+        type=float,
+        default=B96_ADAMW_DEFAULTS["gradient_clip_norm"],
+    )
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_OUTPUT_JSON)
@@ -106,6 +113,10 @@ def _read_best_setting(args: argparse.Namespace) -> dict[str, Any]:
             "source": "explicit_cli",
             "optimizer": args.optimizer,
             "lr": float(args.lr),
+            "weight_decay": float(args.weight_decay),
+            "gradient_clip_norm": (
+                None if args.gradient_clip_norm is None else float(args.gradient_clip_norm)
+            ),
             "epochs": int(args.epochs),
             "optimizer_sanity_best": None,
         }
@@ -119,6 +130,11 @@ def _read_best_setting(args: argparse.Namespace) -> dict[str, Any]:
         "source": str(args.use_best_from),
         "optimizer": best["optimizer"],
         "lr": float(best["lr"]),
+        "weight_decay": float(best.get("weight_decay", B96_ADAMW_DEFAULTS["weight_decay"])),
+        "gradient_clip_norm": best.get(
+            "gradient_clip_norm",
+            B96_ADAMW_DEFAULTS["gradient_clip_norm"],
+        ),
         "epochs": epochs,
         "optimizer_sanity_best": best,
     }
@@ -131,14 +147,25 @@ def _train_params(
     group: dict,
     optimizer_name: str,
     lr: float,
+    weight_decay: float,
+    gradient_clip_norm: float | None,
     epochs: int,
 ) -> dict[str, Any]:
     def loss_fn(current_params):
         pred = model.apply({"params": current_params}, inputs=group["inputs"], graphs=group["graphs"])
         return jnp.mean(jnp.square(pred - group["target_normalized"]))
 
-    if optimizer_name == "adam":
-        tx = optax.adam(learning_rate=lr)
+    if optimizer_name in {"adam", "adamw"}:
+        transforms = []
+        if gradient_clip_norm is not None:
+            transforms.append(optax.clip_by_global_norm(float(gradient_clip_norm)))
+        if optimizer_name == "adam":
+            if weight_decay > 0.0:
+                transforms.append(optax.add_decayed_weights(float(weight_decay)))
+            transforms.append(optax.adam(learning_rate=lr))
+        else:
+            transforms.append(optax.adamw(learning_rate=lr, weight_decay=float(weight_decay)))
+        tx = optax.chain(*transforms)
         opt_state = tx.init(params)
     else:
         tx = None
@@ -167,7 +194,7 @@ def _train_params(
     for epoch in range(1, epochs + 1):
         if optimizer_name == "manual_gd":
             params, _previous_loss = manual_step(params)
-        elif optimizer_name == "adam":
+        elif optimizer_name in {"adam", "adamw"}:
             params, opt_state, _previous_loss = adam_step(params, opt_state)
         else:
             raise ValueError(f"Unsupported optimizer: {optimizer_name}")
@@ -474,6 +501,8 @@ def main() -> int:
         group=group,
         optimizer_name=setting["optimizer"],
         lr=setting["lr"],
+        weight_decay=setting["weight_decay"],
+        gradient_clip_norm=setting["gradient_clip_norm"],
         epochs=setting["epochs"],
     )
     trained_params = train_result.pop("params")
