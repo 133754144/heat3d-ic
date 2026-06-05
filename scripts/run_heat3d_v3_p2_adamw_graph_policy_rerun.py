@@ -249,6 +249,12 @@ def _grad_stats(values: list[float]) -> dict[str, Any]:
     }
 
 
+def _global_norm_jax(tree_value: Any) -> jax.Array:
+    leaves = tree.tree_leaves(tree_value)
+    total = sum(jnp.sum(jnp.square(leaf)) for leaf in leaves)
+    return jnp.sqrt(total)
+
+
 def _learning_rate_schedule(args: argparse.Namespace):
     if args.lr_schedule == "constant":
         return float(args.lr)
@@ -315,6 +321,28 @@ def _run_policy(
         return _weighted_loss(model, current_params, groups)
 
     opt_state = _build_optimizer(args, params)
+    if opt_state is None:
+        @jax.jit
+        def train_step(current_params):
+            loss_value, grads = jax.value_and_grad(loss_fn)(current_params)
+            next_params = tree.tree_map(
+                lambda param, grad: param - float(args.lr) * grad,
+                current_params,
+                grads,
+            )
+            return next_params, loss_value, _global_norm_jax(grads)
+    else:
+        @jax.jit
+        def train_step(current_params, current_opt_state):
+            loss_value, grads = jax.value_and_grad(loss_fn)(current_params)
+            updates, next_state = opt_state["tx"].update(
+                grads,
+                current_opt_state,
+                current_params,
+            )
+            next_params = optax.apply_updates(current_params, updates)
+            return next_params, next_state, loss_value, _global_norm_jax(grads)
+
     losses = [float(loss_fn(params))]
     initial_metrics = _metrics(model, params, groups, stats)
     best_loss = float(losses[0])
@@ -325,17 +353,18 @@ def _run_policy(
     finite = bool(np.isfinite(losses[0]) and initial_metrics["finite"])
     train_start = time.perf_counter()
     for epoch in range(1, args.epochs + 1):
-        previous_loss, grads = jax.value_and_grad(loss_fn)(params)
-        grad_norm = _global_norm(grads)
+        if opt_state is None:
+            params, previous_loss, grad_norm_value = train_step(params)
+        else:
+            params, next_state, previous_loss, grad_norm_value = train_step(
+                params,
+                opt_state["state"],
+            )
+            opt_state["state"] = next_state
+        grad_norm = float(grad_norm_value)
         grad_norms.append(grad_norm)
         grad_finite = grad_finite and bool(np.isfinite(grad_norm))
-        if opt_state is None:
-            params = tree.tree_map(lambda param, grad: param - float(args.lr) * grad, params, grads)
-        else:
-            updates, next_state = opt_state["tx"].update(grads, opt_state["state"], params)
-            opt_state["state"] = next_state
-            params = optax.apply_updates(params, updates)
-        loss_value = float(loss_fn(params))
+        loss_value = float(previous_loss)
         losses.append(loss_value)
         finite = finite and bool(np.isfinite(float(previous_loss)) and np.isfinite(loss_value))
         if finite and loss_value < best_loss:
@@ -345,6 +374,11 @@ def _run_policy(
         if not finite:
             break
     train_time = time.perf_counter() - train_start
+    final_loss = float(loss_fn(params))
+    if finite and final_loss < best_loss:
+        best_loss = final_loss
+        best_epoch = int(len(losses) - 1)
+        best_params = params
     final_metrics = _metrics(model, params, groups, stats)
     best_metrics = _metrics(model, best_params, groups, stats)
     finite = bool(
@@ -372,11 +406,11 @@ def _run_policy(
         "gradient_clip_norm": args.gradient_clip_norm,
         "seed": args.seed,
         "initial_loss": float(losses[0]),
-        "final_loss": float(losses[-1]),
+        "final_loss": float(final_loss),
         "best_loss": float(best_loss),
         "best_epoch": int(best_epoch),
-        "loss_drop": float(losses[0] - losses[-1]),
-        "loss_drop_ratio": float((losses[0] - losses[-1]) / losses[0]) if abs(losses[0]) > EPS else None,
+        "loss_drop": float(losses[0] - final_loss),
+        "loss_drop_ratio": float((losses[0] - final_loss) / losses[0]) if abs(losses[0]) > EPS else None,
         "losses_first_last": {
             "first_10": [float(value) for value in losses[:10]],
             "last_10": [float(value) for value in losses[-10:]],
