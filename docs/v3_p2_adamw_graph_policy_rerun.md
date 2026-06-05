@@ -71,6 +71,19 @@ python3 scripts/run_heat3d_v3_p2_adamw_graph_policy_rerun.py \
   --output-json output/heat3d_v3_p2_adamw_rerun/sample16_b96_adamw_e300.json
 ```
 
+Optional optimizer contrast:
+
+```bash
+python3 scripts/run_heat3d_v3_p2_adamw_graph_policy_rerun.py \
+  --subset data/heat3d-thermal-simulation/subsets/v1_multilayer_bc_eq_supervised_small \
+  --sample-count 1 \
+  --policy all \
+  --optimizer adam \
+  --lr 1e-3 \
+  --epochs 1000 \
+  --output-json output/heat3d_v3_p2_adamw_rerun/sample1_adam_lr1e3_e1000.json
+```
+
 ## Local Check
 
 Passed with `sample_count=1`, `policy=legacy`, `epochs=2`.
@@ -85,9 +98,50 @@ locally.
 
 ## Devbox Results
 
-Pending.
+All runs used supervised-small train-only samples and wrote JSON only under
+ignored `output/heat3d_v3_p2_adamw_rerun/`.
+
+### B96 AdamW, 300 epochs
+
+| sample_count | policy | best relative RMSE | final relative RMSE | best loss | best epoch | p2r/r2p zero | edge ratio p2r/r2p | finite |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | legacy | 25.89% | 25.89% | 1.570592e-01 | 300 | 58 / 58 | 1.000 / 1.000 | true |
+| 1 | nearest_repair | 25.83% | 25.83% | 1.563841e-01 | 300 | 0 / 0 | 1.468 / 1.475 | true |
+| 1 | discrete_radius | 57.01% | 57.01% | 7.614899e-01 | 300 | 0 / 0 | 2.621 / 2.664 | true |
+| 4 | legacy | 56.32% | 56.32% | 6.321909e-01 | 300 | 222 / 222 | 1.000 / 1.000 | true |
+| 4 | nearest_repair | 26.47% | 26.47% | 1.404833e-01 | 300 | 0 / 0 | 1.500 / 1.507 | true |
+| 4 | discrete_radius | 59.35% | 59.35% | 7.064050e-01 | 300 | 0 / 0 | 2.768 / 2.806 | true |
+| 16 | legacy | 62.01% | 62.01% | 7.714413e-01 | 297 | 908 / 908 | 1.000 / 1.000 | true |
+| 16 | nearest_repair | 61.20% | 61.20% | 7.586823e-01 | 300 | 0 / 0 | 1.506 / 1.519 | true |
+| 16 | discrete_radius | 61.33% | 61.33% | 7.619693e-01 | 300 | 0 / 0 | 2.753 / 2.826 | true |
+
+### Adam lr=1e-3, 1000 epochs, sample_count=1
+
+| policy | best relative RMSE | final relative RMSE | best loss | best epoch | p2r/r2p zero | edge ratio p2r/r2p | finite |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| legacy | 54.19% | 54.19% | 6.880412e-01 | 1000 | 58 / 58 | 1.000 / 1.000 | true |
+| nearest_repair | 9.84% | 9.84% | 2.268889e-02 | 1000 | 0 / 0 | 1.468 / 1.475 | true |
+| discrete_radius | 54.14% | 54.14% | 6.867742e-01 | 1000 | 0 / 0 | 2.621 / 2.664 | true |
 
 ## Initial Interpretation
 
-Pending. The decision point is whether nearest repair or discrete radius
-improves best relative RMSE after optimizer/capacity confounding is removed.
+Changing the default optimizer away from manual GD is necessary. B96 AdamW
+reduces 1-sample legacy error from the old low-lr regime to about 25.9%, but it
+still does not reach the v3 <=20% small-fitting gate.
+
+Nearest repair is the strongest graph-policy candidate. It eliminates p2r/r2p
+zero coverage with about 1.47x-1.52x p2r/r2p edge cost. Under B96 AdamW it gives
+only a tiny 1-sample gain, a large 4-sample gain, and a tiny 16-sample gain.
+Under the Adam lr=1e-3 1-sample contrast, nearest repair reaches 9.84% while
+legacy remains at 54.19%, so zero coverage can be a real bottleneck in at least
+some optimizer settings.
+
+Discrete coverage radius is not recommended as the next default candidate. It
+also removes zero coverage, but costs about 2.6x-2.8x p2r/r2p edges and does
+not improve fitting in these runs. The current discrete policy likely changes
+the support distribution too aggressively, not just the uncovered-node cases.
+
+The combined evidence does not support "zero coverage is the only bottleneck."
+It supports a narrower conclusion: explicit nearest repair is useful and should
+remain the P2/P3 graph candidate, but 16-sample fitting still points to model
+path, routing, capacity, optimizer schedule, or decoder bottlenecks.
