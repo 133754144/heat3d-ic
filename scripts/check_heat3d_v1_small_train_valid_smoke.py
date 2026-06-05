@@ -68,6 +68,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report-every", type=int, default=1)
     parser.add_argument("--atol", type=float, default=1e-8)
     parser.add_argument("--rtol", type=float, default=1e-7)
+    parser.add_argument(
+        "--radius-policy",
+        choices=("legacy_kdtree_mean4", "discrete_physical_coverage"),
+        default="legacy_kdtree_mean4",
+    )
+    parser.add_argument(
+        "--coverage-repair-policy",
+        choices=("none", "nearest_rnode"),
+        default="none",
+    )
+    parser.add_argument("--repair-p2r", dest="repair_p2r", action="store_true", default=True)
+    parser.add_argument("--no-repair-p2r", dest="repair_p2r", action="store_false")
+    parser.add_argument("--repair-r2p", dest="repair_r2p", action="store_true", default=True)
+    parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
+    parser.add_argument("--min-physical-coverage", type=int, default=1)
     return parser.parse_args()
 
 
@@ -445,7 +460,13 @@ def main() -> int:
     index_by_id = dataset.sample_index_by_id()
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
-    builder = Heat3DGraphBuilder()
+    builder = Heat3DGraphBuilder(
+        radius_policy=args.radius_policy,
+        coverage_repair_policy=args.coverage_repair_policy,
+        repair_p2r=args.repair_p2r,
+        repair_r2p=args.repair_r2p,
+        min_physical_coverage=args.min_physical_coverage,
+    )
     stats = _train_only_stats(train_examples)
     train_groups = _make_groups(train_examples, stats, builder)
     valid_groups = _make_groups(valid_examples, stats, builder)
@@ -474,6 +495,7 @@ def main() -> int:
     print(f"  seed: {args.seed}")
     print(f"  repeat runs: {args.runs}")
     print(f"  report every: {args.report_every}")
+    print(f"  graph builder config: {builder.config}")
 
     print("\ntrain-only normalization stats")
     c_mean = stats["condition_mean"].reshape(-1)
