@@ -57,12 +57,44 @@ decoder sensitivity to both processed rnodes and latent pnodes.
 
 ## Devbox Result
 
-Pending.
+300 epochs, lr `1e-5`, `sample_000`:
+
+| policy | initial loss | final/best loss | trained relative RMSE | raw RMSE | raw MAE | judgment |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| legacy | 1.214658e+00 | 1.093013e+00 | 68.30% | 2.054607e-01 | 1.565238e-01 | pnode-dominant |
+| nearest_repair | 1.270305e+00 | 1.137618e+00 | 69.68% | 2.096111e-01 | 1.622061e-01 | pnode-dominant |
+
+Trained-path sensitivity:
+
+| policy | zero q rel delta | shuffle q rel delta | shuffle k rel delta | zero BC rel delta | shuffle BC rel delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| legacy | 4.870105e-03 | 6.961931e-03 | -2.492655e-02 | 6.865218e-02 | 3.457322e-02 |
+| nearest_repair | 4.934216e-03 | 6.551693e-03 | -2.900326e-02 | 5.883529e-02 | 3.293862e-02 |
+
+Trained processor/decoder path:
+
+| policy | encoder grad | processor grad | decoder grad | output grad | rnode latent rel change | zero rnodes rel delta | shuffle rnodes rel delta | zero pnodes rel delta | shuffle pnodes rel delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| legacy | 3.258e+00 | 2.137e-01 | 2.554e+00 | 1.250e+00 | 7.830e-01 | 1.907341e-02 | 3.890747e-02 | -6.293266e-02 | 1.665166e-02 |
+| nearest_repair | 3.489e+00 | 2.999e-01 | 2.860e+00 | 1.454e+00 | 8.068e-01 | 1.182549e-02 | 4.592917e-02 | -5.000570e-02 | 1.528543e-02 |
+
+Both policies keep active q/k/BC sensitivity after training. q sensitivity is
+weaker than BC/k but nonzero by output-change and loss-change checks. Processor
+gradients are nonzero, and processor output changes rnode latents by roughly
+`0.78x` to `0.81x` relative norm. Decoder ablation confirms dependence on both
+processed rnodes and latent pnodes, but the larger pnode ablations make the path
+pnode-dominant.
 
 ## Next Judgment
 
-If the 300-epoch RIGNO audit remains high-error while q/k/BC sensitivity and
-gradients are active, the bottleneck is more likely decoder/regional path
-capacity or routing than target normalization. If q sensitivity remains weak
-after training, input scaling or heat-source encoding should be audited before
-adding pointwise skip.
+P3-b does not support processor-underuse as the primary failure mode: processor
+gradients and rnode latent changes are active. It also does not show that
+nearest-repair alone improves one-sample fitting: trained relative RMSE remains
+near `70%`, slightly worse than legacy in this 300-epoch audit.
+
+The current bottleneck looks more like decoder/regional path capacity or routing:
+the model uses regional information, but the decoder remains pnode-dominant and
+does not fit the same target that the pointwise MLP fits to `0.583%` relative
+RMSE. Next work should audit decoder feature use and regional-to-point output
+routing before changing loss/objective or adding P5 pointwise/local decoder
+paths.
