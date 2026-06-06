@@ -11,7 +11,7 @@ REPO_DIR = Path(__file__).resolve().parents[1]
 if str(REPO_DIR) not in sys.path:
     sys.path.insert(0, str(REPO_DIR))
 
-from rigno.heat3d_v2_config import load_v2_config, validate_v2_config  # noqa: E402
+from rigno.heat3d_v2_config import load_v2_config, summarize_v2_config, validate_v2_config  # noqa: E402
 from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
 
 
@@ -53,6 +53,72 @@ NEW_CONFIGS = [
     ),
 ]
 
+B88_SAMPLE_SHUFFLE_CONFIGS = [
+    (
+        REPO_DIR / (
+            "configs/heat3d_v2/"
+            "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_"
+            "warmup_cosine_legacy_model_seed0_batchbuild0_batchorder0_graphseed0.yaml"
+        ),
+        "legacy",
+        0,
+    ),
+    (
+        REPO_DIR / (
+            "configs/heat3d_v2/"
+            "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_"
+            "warmup_cosine_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml"
+        ),
+        "nearest_repair",
+        0,
+    ),
+    (
+        REPO_DIR / (
+            "configs/heat3d_v2/"
+            "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_"
+            "warmup_cosine_nearest_repair_model_seed1_batchbuild0_batchorder0_graphseed0.yaml"
+        ),
+        "nearest_repair",
+        1,
+    ),
+    (
+        REPO_DIR / (
+            "configs/heat3d_v2/"
+            "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_"
+            "warmup_cosine_nearest_repair_model_seed2_batchbuild0_batchorder0_graphseed0.yaml"
+        ),
+        "nearest_repair",
+        2,
+    ),
+    (
+        REPO_DIR / (
+            "configs/heat3d_v2/"
+            "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_"
+            "warmup_cosine_discrete_radius_model_seed0_batchbuild0_batchorder0_graphseed0.yaml"
+        ),
+        "discrete_radius",
+        0,
+    ),
+    (
+        REPO_DIR / (
+            "configs/heat3d_v2/"
+            "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_"
+            "warmup_cosine_discrete_radius_model_seed1_batchbuild0_batchorder0_graphseed0.yaml"
+        ),
+        "discrete_radius",
+        1,
+    ),
+    (
+        REPO_DIR / (
+            "configs/heat3d_v2/"
+            "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_"
+            "warmup_cosine_discrete_radius_model_seed2_batchbuild0_batchorder0_graphseed0.yaml"
+        ),
+        "discrete_radius",
+        2,
+    ),
+]
+
 
 def _flag_value(command: list[str], flag: str) -> str | None:
     try:
@@ -68,6 +134,47 @@ def _assert_flag(command: list[str], flag: str, expected: str) -> None:
     actual = _flag_value(command, flag)
     if actual != expected:
         raise AssertionError(f"{flag}: expected {expected!r}, got {actual!r}")
+
+
+def _assert_b88_sample_shuffle_config(path: Path, policy: str, model_seed: int) -> None:
+    config = load_v2_config(path)
+    command = build_training_command(config)
+    optimizer = config["optimizer"]
+    run = config["run"]
+    graph = config["graph"]
+    summary = summarize_v2_config(config)
+
+    _assert_flag(command, "--batch-plan", "sample_shuffle")
+    _assert_flag(command, "--batch-build-seed", "0")
+    _assert_flag(command, "--batch-size", "88")
+    _assert_flag(command, "--validation-batch-size", "88")
+    _assert_flag(command, "--prediction-batch-size", "88")
+    _assert_flag(command, "--model-seed", str(model_seed))
+    _assert_flag(command, "--batch-order-seed", "0")
+    _assert_flag(command, "--graph-seed", "0")
+    if int(run["batch_build_seed"]) != 0:
+        raise AssertionError(f"{path}: expected run.batch_build_seed=0")
+    if int(optimizer["batch_order_seed"]) != 0 or int(optimizer["graph_seed"]) != 0:
+        raise AssertionError(f"{path}: expected optimizer batch_order_seed=0 and graph_seed=0")
+    if int(optimizer["model_seed"]) != model_seed:
+        raise AssertionError(f"{path}: expected optimizer.model_seed={model_seed}")
+    if summary.get("batch_plan") != "sample_shuffle" or summary.get("batch_build_seed") != 0:
+        raise AssertionError(f"{path}: summary missing B88 batch fields")
+    if summary.get("model_seed") != model_seed or summary.get("batch_order_seed") != 0 or summary.get("graph_seed") != 0:
+        raise AssertionError(f"{path}: summary missing seed fields")
+
+    expected_graph = {
+        "legacy": ("legacy_kdtree_mean4", "none"),
+        "nearest_repair": ("legacy_kdtree_mean4", "nearest_rnode"),
+        "discrete_radius": ("discrete_physical_coverage", "none"),
+    }[policy]
+    if (graph["radius_policy"], graph["coverage_repair_policy"]) != expected_graph:
+        raise AssertionError(
+            f"{path}: unexpected graph policy "
+            f"{graph['radius_policy']}/{graph['coverage_repair_policy']}"
+        )
+    if policy == "discrete_radius" and graph["coverage_repair_policy"] != "none":
+        raise AssertionError(f"{path}: discrete_radius must remain pure discrete without nearest repair")
 
 
 def main() -> int:
@@ -108,6 +215,20 @@ def main() -> int:
             optimizer["graph_seed"],
             "epochs",
             config["run"]["epochs"],
+        )
+
+    for path, policy, model_seed in B88_SAMPLE_SHUFFLE_CONFIGS:
+        _assert_b88_sample_shuffle_config(path, policy, model_seed)
+        print(
+            path.relative_to(REPO_DIR),
+            "policy",
+            policy,
+            "model_seed",
+            model_seed,
+            "batch_plan",
+            "sample_shuffle",
+            "batch_size",
+            88,
         )
 
     print("seed decoupling config smoke ok")

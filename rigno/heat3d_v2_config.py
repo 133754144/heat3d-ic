@@ -40,6 +40,7 @@ TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"
 PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
+BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
 
 _MISSING = object()
 
@@ -141,6 +142,8 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "loss_mode": loss.get("mode"),
         "run_mode": run.get("mode"),
         "run_epochs": run.get("epochs"),
+        "batch_plan": run.get("batch_plan"),
+        "batch_build_seed": run.get("batch_build_seed"),
         "export_output_dir": export.get("output_dir"),
         "diagnostics_enabled": _summarize_diagnostics(diagnostics),
         "graph_radius_policy": graph.get("radius_policy"),
@@ -301,6 +304,26 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
     for field in BATCH_BOOL_FIELDS:
         if field in run and not isinstance(run[field], bool):
             raise ValueError(f"{label}: field 'run.{field}' must be a bool")
+
+    batch_plan = run.get("batch_plan")
+    if batch_plan is not None and batch_plan not in BATCH_PLANS:
+        raise ValueError(
+            f"{label}: field 'run.batch_plan' must be one of "
+            f"{sorted(BATCH_PLANS)}, got {batch_plan!r}"
+        )
+    batch_build_seed = run.get("batch_build_seed")
+    if batch_build_seed is not None:
+        if isinstance(batch_build_seed, bool) or not isinstance(batch_build_seed, int):
+            raise ValueError(f"{label}: field 'run.batch_build_seed' must be an int or null")
+        if batch_build_seed < 0:
+            raise ValueError(f"{label}: field 'run.batch_build_seed' must be >= 0")
+    if batch_plan == "sample_shuffle":
+        batch_size = run.get("batch_size")
+        if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size <= 0:
+            raise ValueError(
+                f"{label}: field 'run.batch_size' must be a positive int when "
+                "run.batch_plan is 'sample_shuffle'"
+            )
 
 
 def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) -> None:

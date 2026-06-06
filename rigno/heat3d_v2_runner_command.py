@@ -65,6 +65,8 @@ def build_training_command(
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
+    _append_option(command, "--batch-plan", run.get("batch_plan"))
+    _append_option(command, "--batch-build-seed", run.get("batch_build_seed"))
     if run.get("shuffle_train_batches") is True:
         command.append("--shuffle-train-batches")
     if run.get("drop_last") is True:
@@ -483,6 +485,8 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.batch_size", "training --batch-size"),
         ("run.validation_batch_size", "training --validation-batch-size"),
         ("run.prediction_batch_size", "training --prediction-batch-size"),
+        ("run.batch_plan", "training --batch-plan"),
+        ("run.batch_build_seed", "training --batch-build-seed"),
         ("run.shuffle_train_batches", "training --shuffle-train-batches"),
         ("run.drop_last", "training --drop-last"),
         ("optimizer.name", "training --optimizer"),
