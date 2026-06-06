@@ -36,9 +36,9 @@ from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     MODEL_CONFIG,
     _bridge_for,
     _global_norm,
-    _make_batch_group,
     _metadata_shape_signature,
     _metrics,
+    _normalize_coords,
     _sample_root,
     _selected_steps,
     _subset_split_ids,
@@ -47,6 +47,7 @@ from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
+from rigno.models.operator import Inputs  # noqa: E402
 
 
 DEFAULT_SUBSET = (
@@ -117,6 +118,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--shuffle-train-batches", action="store_true")
     parser.add_argument("--drop-last", action="store_true")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--model-seed",
+        type=int,
+        default=None,
+        help="Optional model initialization seed. Defaults to --seed for legacy compatibility.",
+    )
+    parser.add_argument(
+        "--batch-order-seed",
+        type=int,
+        default=None,
+        help="Optional train batch shuffle seed. Defaults to 0 when omitted.",
+    )
+    parser.add_argument(
+        "--graph-seed",
+        type=int,
+        default=None,
+        help="Optional graph/rmesh metadata seed. Defaults to 0 when omitted.",
+    )
     parser.add_argument(
         "--boundary-mask-fallback",
         dest="boundary_mask_fallback",
@@ -1259,6 +1278,17 @@ def _optimizer_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _seed_config_from_args(args: argparse.Namespace) -> dict[str, int]:
+    legacy_seed = int(args.seed)
+    return {
+        "seed": legacy_seed,
+        "legacy_seed": legacy_seed,
+        "model_seed": legacy_seed if args.model_seed is None else int(args.model_seed),
+        "batch_order_seed": 0 if args.batch_order_seed is None else int(args.batch_order_seed),
+        "graph_seed": 0 if args.graph_seed is None else int(args.graph_seed),
+    }
+
+
 def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     model_config = dict(MODEL_CONFIG)
     model_config.update(
@@ -1370,6 +1400,12 @@ def _validate_optimizer_config(config: dict[str, Any]) -> None:
         raise ValueError("--gradient-clip-norm must be > 0 when provided")
     if float(config["weight_decay"]) < 0.0:
         raise ValueError("--weight-decay must be >= 0")
+
+
+def _validate_seed_config(config: dict[str, int]) -> None:
+    for key in ("seed", "legacy_seed", "model_seed", "batch_order_seed", "graph_seed"):
+        if int(config[key]) < 0:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 0")
 
 
 def _validate_model_config(config: dict[str, Any]) -> None:
@@ -2127,7 +2163,8 @@ def _fit_once(
     stats: dict,
     epochs: int,
     lr_config: dict[str, Any],
-    seed: int,
+    model_seed: int,
+    batch_order_seed: int,
     report_every: int,
     train_metrics_schedule: str,
     grad_norm_report_every: int,
@@ -2151,7 +2188,7 @@ def _fit_once(
     _progress(progress_enabled, "startup", "initializing model parameters ...")
     model = GraphNeuralOperator(**model_config)
     params = model.init(
-        jax.random.PRNGKey(seed),
+        jax.random.PRNGKey(model_seed),
         inputs=train_groups[0]["inputs"],
         graphs=train_groups[0]["graphs"],
     )["params"]
@@ -2279,7 +2316,7 @@ def _fit_once(
             train_epoch_groups = _epoch_train_groups(
                 train_groups,
                 epoch=epoch,
-                seed=seed,
+                seed=batch_order_seed,
                 shuffle=bool(batch_config.get("shuffle_train_batches")),
             )
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_epoch_groups))
@@ -2771,6 +2808,8 @@ def _fit_once(
         "epoch_train_batch_order_hashes": epoch_train_batch_order_hashes,
         "lr_history": np.asarray(lr_history, dtype=np.float64),
         "epoch_lrs": [float(value) for value in lr_history],
+        "model_seed": int(model_seed),
+        "batch_order_seed": int(batch_order_seed),
         "updates_per_epoch": int(updates_per_epoch),
         "total_update_count": int(sum(epoch_batch_counts)),
         "train_group_count": int(len(train_groups)),
@@ -2899,6 +2938,7 @@ def _print_startup_summary(
     loss_config: dict[str, Any],
     lr_config: dict[str, Any],
     optimizer_config: dict[str, Any],
+    seed_config: dict[str, int],
     model_config: dict[str, Any],
     batch_config: dict[str, Any],
 ) -> None:
@@ -2918,7 +2958,11 @@ def _print_startup_summary(
     _emit(
         "  run: "
         f"epochs={args.epochs} lr={args.lr} lr_schedule={lr_config['lr_schedule']} "
-        f"optimizer={optimizer_config['optimizer']} seed={args.seed} report_every={args.report_every}"
+        f"optimizer={optimizer_config['optimizer']} seed={seed_config['seed']} "
+        f"model_seed={seed_config['model_seed']} "
+        f"batch_order_seed={seed_config['batch_order_seed']} "
+        f"graph_seed={seed_config['graph_seed']} "
+        f"report_every={args.report_every}"
     )
     _emit(
         "  model: "
@@ -3179,6 +3223,75 @@ def _print_final_summary(
     _progress(_progress_enabled(args), "done", "script complete")
 
 
+def _metadata_key(graph_seed: int):
+    return jax.random.PRNGKey(int(graph_seed))
+
+
+def _build_batch_metadata_with_seed(
+    builder: Heat3DGraphBuilder,
+    coords_list: list[np.ndarray],
+    *,
+    graph_seed: int,
+):
+    metadata_list = [
+        builder.build_metadata(coords, key=_metadata_key(graph_seed))
+        for coords in coords_list
+    ]
+    same_coords = all(np.array_equal(coords_list[0], coords) for coords in coords_list[1:])
+    if same_coords:
+        return tree.tree_map(
+            lambda value: jnp.repeat(value, repeats=len(coords_list), axis=0),
+            metadata_list[0],
+        ), True
+    return tree.tree_map(lambda *values: jnp.concatenate(values, axis=0), *metadata_list), False
+
+
+def _make_batch_group_with_seed(
+    group_name: str,
+    examples,
+    stats: dict,
+    builder: Heat3DGraphBuilder,
+    *,
+    graph_seed: int,
+) -> dict:
+    bridges = [_bridge_for(example) for example in examples]
+    feature_names = bridges[0].condition_feature_names
+    for bridge in bridges[1:]:
+        if bridge.condition_feature_names != feature_names:
+            raise ValueError(f"Feature-name mismatch in {group_name}")
+
+    raw_u = jnp.concatenate([bridge.legacy_inputs.u for bridge in bridges], axis=0)
+    raw_c = jnp.concatenate([bridge.legacy_inputs.c for bridge in bridges], axis=0)
+    raw_coords = jnp.concatenate([bridge.legacy_inputs.x_inp for bridge in bridges], axis=0)
+    target_delta = jnp.concatenate([bridge.target_delta_u for bridge in bridges], axis=0)
+    t_ref = jnp.concatenate([bridge.t_ref for bridge in bridges], axis=0)
+
+    c = (raw_c - stats["condition_mean"]) / stats["condition_std"]
+    target = (target_delta - stats["target_delta_mean"]) / stats["target_delta_std"]
+    coords = _normalize_coords(raw_coords, stats)
+    inputs = Inputs(u=raw_u, c=c, x_inp=coords, x_out=coords, t=None, tau=None)
+    metadata, shared = _build_batch_metadata_with_seed(
+        builder=builder,
+        coords_list=[example.condition.coords for example in examples],
+        graph_seed=graph_seed,
+    )
+    graphs = builder.build_graphs(metadata)
+    return {
+        "name": group_name,
+        "sample_ids": tuple(example.sample_id for example in examples),
+        "split": examples[0].meta.get("split"),
+        "inputs": inputs,
+        "target_normalized": target,
+        "target_delta_raw": target_delta,
+        "target_temperature": t_ref + target_delta,
+        "t_ref": t_ref,
+        "graphs": graphs,
+        "metadata": metadata,
+        "shared_metadata": shared,
+        "feature_names": feature_names,
+    }
+
+
 def _make_groups_with_progress(
     examples,
     stats: dict,
@@ -3186,6 +3299,7 @@ def _make_groups_with_progress(
     label: str,
     progress_enabled: bool,
     progress_detail: str,
+    graph_seed: int,
     batch_size: int | None = None,
     drop_last: bool = False,
     profile_counts: dict[str, int] | None = None,
@@ -3202,7 +3316,9 @@ def _make_groups_with_progress(
     scan_start = time.perf_counter()
     for index, example in enumerate(examples, start=1):
         bridge = _bridge_for(example)
-        signature = _metadata_shape_signature(builder.build_metadata(example.condition.coords))
+        signature = _metadata_shape_signature(
+            builder.build_metadata(example.condition.coords, key=_metadata_key(graph_seed))
+        )
         _bump_profile_count(profile_counts, "graph_metadata_build_calls")
         _bump_profile_count(profile_counts, f"{label}_scan_metadata_build_calls")
         key = (
@@ -3264,7 +3380,15 @@ def _make_groups_with_progress(
             _bump_profile_count(profile_counts, f"{label}_batch_metadata_build_calls", len(batch_examples))
             _bump_profile_count(profile_counts, "graph_build_graphs_calls")
             _bump_profile_count(profile_counts, f"{label}_build_graphs_calls")
-        result.append(_make_batch_group(batch_group_name, batch_examples, stats, builder))
+        result.append(
+            _make_batch_group_with_seed(
+                batch_group_name,
+                batch_examples,
+                stats,
+                builder,
+                graph_seed=graph_seed,
+            )
+        )
         if verbose_progress_enabled:
             _progress(
                 True,
@@ -3351,12 +3475,14 @@ def main() -> int:
     loss_config = _loss_config_from_args(args)
     lr_config = _lr_config_from_args(args)
     optimizer_config = _optimizer_config_from_args(args)
+    seed_config = _seed_config_from_args(args)
     model_config = _model_config_from_args(args)
     batch_config = _batch_config_from_args(args)
     graph_config = _graph_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
     _validate_optimizer_config(optimizer_config)
+    _validate_seed_config(seed_config)
     _validate_model_config(model_config)
     _validate_batch_config(batch_config)
     _validate_graph_config(graph_config)
@@ -3452,6 +3578,7 @@ def main() -> int:
         "train",
         progress_detail_enabled,
         args.progress_detail,
+        seed_config["graph_seed"],
         batch_size=batch_config["batch_size"],
         drop_last=batch_config["drop_last"],
         profile_counts=profile_counts if profile_enabled else None,
@@ -3463,6 +3590,7 @@ def main() -> int:
         primary_validation_split,
         progress_detail_enabled,
         args.progress_detail,
+        seed_config["graph_seed"],
         batch_size=batch_config["validation_batch_size"],
         drop_last=False,
         profile_counts=profile_counts if profile_enabled else None,
@@ -3475,6 +3603,7 @@ def main() -> int:
             stress_validation_split,
             progress_detail_enabled,
             args.progress_detail,
+            seed_config["graph_seed"],
             batch_size=batch_config["validation_batch_size"],
             drop_last=False,
             profile_counts=profile_counts if profile_enabled else None,
@@ -3489,6 +3618,7 @@ def main() -> int:
         "all",
         progress_detail_enabled,
         args.progress_detail,
+        seed_config["graph_seed"],
         batch_size=batch_config["prediction_batch_size"],
         drop_last=False,
         profile_counts=profile_counts if profile_enabled else None,
@@ -3529,6 +3659,7 @@ def main() -> int:
         loss_config=loss_config,
         lr_config=lr_config,
         optimizer_config=optimizer_config,
+        seed_config=seed_config,
         model_config=model_config,
         batch_config=batch_config,
     )
@@ -3540,7 +3671,8 @@ def main() -> int:
         stats,
         args.epochs,
         lr_config,
-        args.seed,
+        seed_config["model_seed"],
+        seed_config["batch_order_seed"],
         args.report_every,
         args.train_metrics_schedule,
         args.grad_norm_report_every,
@@ -3671,7 +3803,11 @@ def main() -> int:
         "weight_decay": optimizer_config["weight_decay"],
         "model_config": model_config,
         **_batch_config_payload(batch_config),
-        "seed": args.seed,
+        "seed": seed_config["seed"],
+        "legacy_seed": seed_config["legacy_seed"],
+        "model_seed": seed_config["model_seed"],
+        "batch_order_seed": seed_config["batch_order_seed"],
+        "graph_seed": seed_config["graph_seed"],
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "graph_config": graph_config,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
@@ -3796,6 +3932,12 @@ def main() -> int:
         "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
         "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
         "deterministic_audit_enabled": result["deterministic_audit_enabled"],
+        "seed": seed_config["seed"],
+        "legacy_seed": seed_config["legacy_seed"],
+        "model_seed": result["model_seed"],
+        "batch_order_seed": result["batch_order_seed"],
+        "graph_seed": seed_config["graph_seed"],
+        "shuffle_train_batches": bool(batch_config["shuffle_train_batches"]),
         "epoch_train_batch_order_hashes": result["epoch_train_batch_order_hashes"],
         "code_version_or_git_commit": result["code_version_or_git_commit"],
         "final_best_ratio": result["final_best_ratio"],

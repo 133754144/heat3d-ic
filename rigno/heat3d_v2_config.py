@@ -134,6 +134,10 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "model_processor_steps": model.get("processor_steps"),
         "optimizer_name": optimizer.get("name"),
         "optimizer_lr": optimizer.get("lr"),
+        "optimizer_seed": optimizer.get("seed"),
+        "model_seed": optimizer.get("model_seed"),
+        "batch_order_seed": optimizer.get("batch_order_seed"),
+        "graph_seed": optimizer.get("graph_seed"),
         "loss_mode": loss.get("mode"),
         "run_mode": run.get("mode"),
         "run_epochs": run.get("epochs"),
@@ -212,6 +216,7 @@ def _validate_run_config(
             f"{label}: field 'run.allow_long_training_local' must be false"
         )
     _validate_batch_fields(run, label)
+    _validate_optimizer_seed_fields(_required_mapping(config, "optimizer", label), label)
     train_metrics_schedule = run.get("train_metrics_schedule")
     if train_metrics_schedule is not None and train_metrics_schedule not in TRAIN_METRICS_SCHEDULES:
         raise ValueError(
@@ -296,6 +301,19 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
     for field in BATCH_BOOL_FIELDS:
         if field in run and not isinstance(run[field], bool):
             raise ValueError(f"{label}: field 'run.{field}' must be a bool")
+
+
+def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) -> None:
+    for field in ("seed", "model_seed", "batch_order_seed", "graph_seed"):
+        if field not in optimizer:
+            continue
+        value = optimizer[field]
+        if value is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be an int or null")
+        if value < 0:
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be >= 0")
 
 
 def _validate_graph_fields(graph: Mapping[str, Any], label: str) -> None:

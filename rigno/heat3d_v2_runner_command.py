@@ -81,6 +81,9 @@ def build_training_command(
     _append_option(command, "--gradient-clip-norm", optimizer.get("gradient_clip_norm"))
     _append_option(command, "--weight-decay", optimizer.get("weight_decay"))
     _append_option(command, "--seed", optimizer.get("seed"))
+    _append_option(command, "--model-seed", optimizer.get("model_seed"))
+    _append_option(command, "--batch-order-seed", optimizer.get("batch_order_seed"))
+    _append_option(command, "--graph-seed", optimizer.get("graph_seed"))
     _append_option(command, "--output-dir", export.get("output_dir"))
     _append_option(command, "--prediction-split", export.get("prediction_split"))
     _append_option(command, "--radius-policy", graph.get("radius_policy"))
@@ -492,6 +495,9 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("optimizer.gradient_clip_norm", "training --gradient-clip-norm"),
         ("optimizer.weight_decay", "training --weight-decay"),
         ("optimizer.seed", "training --seed"),
+        ("optimizer.model_seed", "training --model-seed"),
+        ("optimizer.batch_order_seed", "training --batch-order-seed"),
+        ("optimizer.graph_seed", "training --graph-seed"),
         ("loss.mode", "training --loss-mode"),
         ("loss.background_quantile", "training --background-quantile"),
         ("loss.hotspot_quantile", "training --hotspot-quantile"),
