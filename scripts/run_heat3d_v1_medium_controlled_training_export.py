@@ -117,6 +117,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--shuffle-train-batches", action="store_true")
     parser.add_argument("--drop-last", action="store_true")
+    parser.add_argument(
+        "--batch-plan",
+        choices=("current_graph_shape", "sample_shuffle"),
+        default="current_graph_shape",
+        help="Train batch construction plan. Default preserves the legacy graph-shape grouping path.",
+    )
+    parser.add_argument(
+        "--batch-build-seed",
+        type=int,
+        default=None,
+        help="Optional seed for batch construction plans such as sample_shuffle. Defaults to 0.",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument(
         "--model-seed",
@@ -1313,6 +1325,8 @@ def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         ),
         "shuffle_train_batches": bool(args.shuffle_train_batches),
         "drop_last": bool(args.drop_last),
+        "batch_plan": args.batch_plan,
+        "batch_build_seed": 0 if args.batch_build_seed is None else int(args.batch_build_seed),
     }
 
 
@@ -1419,6 +1433,12 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
         value = config.get(key)
         if value is not None and int(value) < 1:
             raise ValueError(f"--{key.replace('_', '-')} must be >= 1 or 0 for legacy full-batch")
+    if config["batch_plan"] not in {"current_graph_shape", "sample_shuffle"}:
+        raise ValueError("--batch-plan must be current_graph_shape or sample_shuffle")
+    if config["batch_plan"] == "sample_shuffle" and config["batch_size"] is None:
+        raise ValueError("--batch-plan sample_shuffle requires --batch-size >= 1")
+    if int(config["batch_build_seed"]) < 0:
+        raise ValueError("--batch-build-seed must be >= 0")
 
 
 def _validate_graph_config(config: dict[str, Any]) -> None:
@@ -1439,6 +1459,8 @@ def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
         "prediction_batch_size": batch_config["prediction_batch_size"],
         "shuffle_train_batches": batch_config["shuffle_train_batches"],
         "drop_last": batch_config["drop_last"],
+        "batch_plan": batch_config["batch_plan"],
+        "batch_build_seed": batch_config["batch_build_seed"],
         "batching_mode": "mini_batch" if batch_config["batch_size"] is not None else "legacy_full_batch",
     }
 
@@ -2813,6 +2835,8 @@ def _fit_once(
         "updates_per_epoch": int(updates_per_epoch),
         "total_update_count": int(sum(epoch_batch_counts)),
         "train_group_count": int(len(train_groups)),
+        "train_group_sample_counts": [int(_sample_count(group)) for group in train_groups],
+        "train_group_names": [str(group["name"]) for group in train_groups],
         "valid_iid_group_count": int(len(valid_groups)) if primary_validation_split == "valid_iid" else None,
         "valid_stress_group_count": int(len(valid_stress_groups)),
         "train_group_sample_id_hash": _group_sample_id_hash(train_groups),
@@ -2979,6 +3003,8 @@ def _print_startup_summary(
     _emit(
         "  batching: "
         f"mode={'mini_batch' if batch_config['batch_size'] is not None else 'legacy_full_batch'} "
+        f"batch_plan={batch_config['batch_plan']} "
+        f"batch_build_seed={batch_config['batch_build_seed']} "
         f"batch_size={batch_config['batch_size']} "
         f"validation_batch_size={batch_config['validation_batch_size']} "
         f"prediction_batch_size={batch_config['prediction_batch_size']} "
@@ -3404,6 +3430,124 @@ def _make_groups_with_progress(
     return result
 
 
+def _sample_shuffle_failure_debug(
+    batch_index: int,
+    batch_group_name: str,
+    batch_examples,
+    builder: Heat3DGraphBuilder,
+    graph_seed: int,
+) -> dict[str, Any]:
+    sample_debug = []
+    signature_counts: dict[str, int] = {}
+    for example in batch_examples:
+        payload = {
+            "sample_id": example.sample_id,
+            "coords_shape": [int(dim) for dim in example.condition.coords.shape],
+        }
+        try:
+            metadata = builder.build_metadata(example.condition.coords, key=_metadata_key(graph_seed))
+            signature = _metadata_shape_signature(metadata)
+            payload["metadata_shape_signature"] = [list(shape) for shape in signature]
+            key = json.dumps(payload["metadata_shape_signature"], sort_keys=True, separators=(",", ":"))
+            signature_counts[key] = signature_counts.get(key, 0) + 1
+        except Exception as exc:  # pragma: no cover - diagnostic path.
+            payload["metadata_shape_error"] = f"{type(exc).__name__}: {exc}"
+        sample_debug.append(payload)
+    return {
+        "batch_index": int(batch_index),
+        "batch_group_name": batch_group_name,
+        "sample_count": int(len(batch_examples)),
+        "sample_ids": [example.sample_id for example in batch_examples],
+        "metadata_shape_signature_counts": signature_counts,
+        "samples": sample_debug,
+    }
+
+
+def _make_sample_shuffle_groups_with_progress(
+    examples,
+    stats: dict,
+    builder: Heat3DGraphBuilder,
+    label: str,
+    progress_enabled: bool,
+    progress_detail: str,
+    graph_seed: int,
+    batch_size: int,
+    batch_build_seed: int,
+    drop_last: bool = False,
+    profile_counts: dict[str, int] | None = None,
+) -> list[dict]:
+    start = time.perf_counter()
+    sample_count = len(examples)
+    _progress(
+        progress_enabled,
+        "startup",
+        (
+            f"group build {label}: sample_shuffle start samples={sample_count} "
+            f"batch_size={batch_size} batch_build_seed={batch_build_seed} ..."
+        ),
+    )
+    rng = np.random.default_rng(int(batch_build_seed))
+    indices = rng.permutation(sample_count)
+    shuffled = [examples[int(index)] for index in indices]
+    pending_batches = _chunk_examples(shuffled, batch_size=batch_size, drop_last=drop_last)
+    result = []
+    detail_mode = _progress_detail_mode(progress_detail)
+    verbose_progress_enabled = progress_enabled and detail_mode == "full"
+    bar = _ProgressBar(
+        progress_enabled and detail_mode == "basic",
+        f"[startup] group build {label} sample_shuffle",
+        len(pending_batches),
+    )
+    for batch_index, batch_examples in enumerate(pending_batches, start=1):
+        batch_group_name = f"{label}_sample_shuffle_batch_{batch_index:04d}_B{len(batch_examples)}"
+        batch_start = time.perf_counter()
+        if verbose_progress_enabled:
+            _progress(
+                True,
+                "startup",
+                f"group build {label}: {batch_group_name} arrays+graph start samples={len(batch_examples)} ...",
+            )
+        _bump_profile_count(profile_counts, "graph_metadata_build_calls", len(batch_examples))
+        _bump_profile_count(profile_counts, f"{label}_sample_shuffle_batch_metadata_build_calls", len(batch_examples))
+        _bump_profile_count(profile_counts, "graph_build_graphs_calls")
+        _bump_profile_count(profile_counts, f"{label}_sample_shuffle_build_graphs_calls")
+        try:
+            result.append(
+                _make_batch_group_with_seed(
+                    batch_group_name,
+                    batch_examples,
+                    stats,
+                    builder,
+                    graph_seed=graph_seed,
+                )
+            )
+        except Exception as exc:
+            debug = _sample_shuffle_failure_debug(
+                batch_index,
+                batch_group_name,
+                batch_examples,
+                builder,
+                graph_seed,
+            )
+            raise RuntimeError(
+                "sample_shuffle train batch build failed; "
+                f"failure_stage=make_batch_group_with_seed; debug={json.dumps(_json_safe(debug), sort_keys=True)}"
+            ) from exc
+        if verbose_progress_enabled:
+            _progress(True, "startup", f"group build {label}: {batch_group_name} arrays+graph built", batch_start)
+        else:
+            bar.update(batch_index)
+
+    bar.close(current=len(result))
+    _progress(
+        progress_enabled,
+        "startup",
+        f"group build {label}: sample_shuffle done groups={len(result)}",
+        start,
+    )
+    return result
+
+
 def _chunk_examples(examples, *, batch_size: int | None, drop_last: bool) -> list:
     examples = list(examples)
     if batch_size is None:
@@ -3571,18 +3715,33 @@ def main() -> int:
     _record_timing(timings, "normalization", norm_start)
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
-    train_groups = _make_groups_with_progress(
-        train_examples,
-        stats,
-        builder,
-        "train",
-        progress_detail_enabled,
-        args.progress_detail,
-        seed_config["graph_seed"],
-        batch_size=batch_config["batch_size"],
-        drop_last=batch_config["drop_last"],
-        profile_counts=profile_counts if profile_enabled else None,
-    )
+    if batch_config["batch_plan"] == "sample_shuffle":
+        train_groups = _make_sample_shuffle_groups_with_progress(
+            train_examples,
+            stats,
+            builder,
+            "train",
+            progress_detail_enabled,
+            args.progress_detail,
+            seed_config["graph_seed"],
+            batch_size=batch_config["batch_size"],
+            batch_build_seed=batch_config["batch_build_seed"],
+            drop_last=batch_config["drop_last"],
+            profile_counts=profile_counts if profile_enabled else None,
+        )
+    else:
+        train_groups = _make_groups_with_progress(
+            train_examples,
+            stats,
+            builder,
+            "train",
+            progress_detail_enabled,
+            args.progress_detail,
+            seed_config["graph_seed"],
+            batch_size=batch_config["batch_size"],
+            drop_last=batch_config["drop_last"],
+            profile_counts=profile_counts if profile_enabled else None,
+        )
     valid_groups = _make_groups_with_progress(
         valid_examples,
         stats,
@@ -3836,6 +3995,8 @@ def main() -> int:
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
         "train_group_count": result["train_group_count"],
+        "train_group_sample_counts": result["train_group_sample_counts"],
+        "train_group_names": result["train_group_names"],
         "valid_iid_group_count": result["valid_iid_group_count"],
         "valid_stress_group_count": result["valid_stress_group_count"],
         "train_group_sample_id_hash": result["train_group_sample_id_hash"],
@@ -3926,6 +4087,8 @@ def main() -> int:
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
         "train_group_count": result["train_group_count"],
+        "train_group_sample_counts": result["train_group_sample_counts"],
+        "train_group_names": result["train_group_names"],
         "valid_iid_group_count": result["valid_iid_group_count"],
         "valid_stress_group_count": result["valid_stress_group_count"],
         "train_group_sample_id_hash": result["train_group_sample_id_hash"],
