@@ -81,6 +81,52 @@ def _seed_stability_spec(
     }
 
 
+def _b88_lr_sweep_path(
+    *,
+    variant: str,
+    model_seed: int,
+    lr_tag: str,
+    schedule_tag: str,
+    min_lr_tag: str,
+) -> Path:
+    return REPO_DIR / (
+        "configs/heat3d_v2/"
+        "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_"
+        f"nearest_repair_{variant}_model_seed{model_seed}_batchbuild0_"
+        f"batchorder0_graphseed0_{lr_tag}_{schedule_tag}_{min_lr_tag}_"
+        "wd1e-4.yaml"
+    )
+
+
+def _lr_sweep_spec(
+    *,
+    variant: str,
+    model_seed: int,
+    lr: float,
+    lr_tag: str,
+    lr_schedule: str,
+    schedule_tag: str,
+    min_lr: float,
+    min_lr_tag: str,
+    warmup_epochs: int = 10,
+) -> dict[str, object]:
+    return {
+        "path": _b88_lr_sweep_path(
+            variant=variant,
+            model_seed=model_seed,
+            lr_tag=lr_tag,
+            schedule_tag=schedule_tag,
+            min_lr_tag=min_lr_tag,
+        ),
+        "variant": variant,
+        "model_seed": model_seed,
+        "lr": lr,
+        "lr_schedule": lr_schedule,
+        "warmup_epochs": warmup_epochs,
+        "min_lr": min_lr,
+    }
+
+
 NEW_CONFIGS = [
     REPO_DIR / (
         "configs/heat3d_v2/"
@@ -274,6 +320,135 @@ B88_SEED_STABILITY_CONFIGS = [
     ),
 ]
 
+B88_LR_SWEEP_CONFIGS = [
+    _lr_sweep_spec(
+        variant="LR_A1",
+        model_seed=1,
+        lr=1e-4,
+        lr_tag="lr1e-4",
+        lr_schedule="constant",
+        schedule_tag="constant",
+        warmup_epochs=0,
+        min_lr=1e-6,
+        min_lr_tag="minlr1e-6",
+    ),
+    _lr_sweep_spec(
+        variant="LR_A2",
+        model_seed=1,
+        lr=2e-4,
+        lr_tag="lr2e-4",
+        lr_schedule="constant",
+        schedule_tag="constant",
+        warmup_epochs=0,
+        min_lr=1e-6,
+        min_lr_tag="minlr1e-6",
+    ),
+    _lr_sweep_spec(
+        variant="LR_A3",
+        model_seed=1,
+        lr=3e-4,
+        lr_tag="lr3e-4",
+        lr_schedule="constant",
+        schedule_tag="constant",
+        warmup_epochs=0,
+        min_lr=1e-6,
+        min_lr_tag="minlr1e-6",
+    ),
+    _lr_sweep_spec(
+        variant="LR_A4",
+        model_seed=1,
+        lr=5e-4,
+        lr_tag="lr5e-4",
+        lr_schedule="constant",
+        schedule_tag="constant",
+        warmup_epochs=0,
+        min_lr=1e-6,
+        min_lr_tag="minlr1e-6",
+    ),
+    _lr_sweep_spec(
+        variant="LR_A5",
+        model_seed=1,
+        lr=1e-3,
+        lr_tag="lr1e-3",
+        lr_schedule="constant",
+        schedule_tag="constant",
+        warmup_epochs=0,
+        min_lr=1e-6,
+        min_lr_tag="minlr1e-6",
+    ),
+    _lr_sweep_spec(
+        variant="LR_A6",
+        model_seed=0,
+        lr=3e-4,
+        lr_tag="lr3e-4",
+        lr_schedule="constant",
+        schedule_tag="constant",
+        warmup_epochs=0,
+        min_lr=1e-6,
+        min_lr_tag="minlr1e-6",
+    ),
+    _lr_sweep_spec(
+        variant="LR_B1",
+        model_seed=1,
+        lr=5e-4,
+        lr_tag="lr5e-4",
+        lr_schedule="warmup_cosine",
+        schedule_tag="warmup10",
+        min_lr=3e-5,
+        min_lr_tag="minlr3e-5",
+    ),
+    _lr_sweep_spec(
+        variant="LR_B2",
+        model_seed=1,
+        lr=5e-4,
+        lr_tag="lr5e-4",
+        lr_schedule="warmup_cosine",
+        schedule_tag="warmup10",
+        min_lr=5e-5,
+        min_lr_tag="minlr5e-5",
+    ),
+    _lr_sweep_spec(
+        variant="LR_B3",
+        model_seed=1,
+        lr=5e-4,
+        lr_tag="lr5e-4",
+        lr_schedule="warmup_cosine",
+        schedule_tag="warmup10",
+        min_lr=1e-4,
+        min_lr_tag="minlr1e-4",
+    ),
+    _lr_sweep_spec(
+        variant="LR_B4",
+        model_seed=1,
+        lr=7e-4,
+        lr_tag="lr7e-4",
+        lr_schedule="warmup_cosine",
+        schedule_tag="warmup10",
+        min_lr=5e-5,
+        min_lr_tag="minlr5e-5",
+    ),
+    _lr_sweep_spec(
+        variant="LR_B5",
+        model_seed=1,
+        lr=1e-3,
+        lr_tag="lr1e-3",
+        lr_schedule="warmup_cosine",
+        schedule_tag="warmup10",
+        min_lr=1e-4,
+        min_lr_tag="minlr1e-4",
+    ),
+    _lr_sweep_spec(
+        variant="LR_B6",
+        model_seed=0,
+        lr=5e-4,
+        lr_tag="lr5e-4",
+        lr_schedule="warmup_cosine",
+        schedule_tag="warmup10",
+        min_lr=5e-5,
+        min_lr_tag="minlr5e-5",
+    ),
+]
+
 
 def _flag_value(command: list[str], flag: str) -> str | None:
     try:
@@ -309,6 +484,7 @@ def _assert_b88_sample_shuffle_config(
     graph_seed: int = 0,
     optimizer_name: str = "adamw",
     lr: float = 3e-4,
+    lr_schedule: str = "warmup_cosine",
     warmup_epochs: int = 10,
     min_lr: float = 1e-6,
     weight_decay: float = 1e-4,
@@ -332,6 +508,7 @@ def _assert_b88_sample_shuffle_config(
     _assert_flag(command, "--batch-order-seed", "0")
     _assert_flag(command, "--graph-seed", str(graph_seed))
     _assert_flag(command, "--optimizer", optimizer_name)
+    _assert_flag(command, "--lr-schedule", lr_schedule)
     _assert_flag(command, "--warmup-epochs", str(warmup_epochs))
     _assert_float_close(_flag_value(command, "--lr"), lr, f"{path}: --lr")
     _assert_float_close(_flag_value(command, "--min-lr"), min_lr, f"{path}: --min-lr")
@@ -352,6 +529,8 @@ def _assert_b88_sample_shuffle_config(
         raise AssertionError(f"{path}: expected optimizer.model_seed={model_seed}")
     if optimizer["name"] != optimizer_name:
         raise AssertionError(f"{path}: expected optimizer.name={optimizer_name}")
+    if optimizer["lr_schedule"] != lr_schedule:
+        raise AssertionError(f"{path}: expected optimizer.lr_schedule={lr_schedule}")
     _assert_float_close(optimizer["lr"], lr, f"{path}: optimizer.lr")
     if int(optimizer["warmup_epochs"]) != warmup_epochs:
         raise AssertionError(f"{path}: expected warmup_epochs={warmup_epochs}")
@@ -496,6 +675,53 @@ def main() -> int:
             spec["min_lr"],
             "weight_decay",
             spec["weight_decay"],
+        )
+
+    if len(B88_LR_SWEEP_CONFIGS) != 12:
+        raise AssertionError(
+            f"expected 12 B88 LR-sweep configs, got {len(B88_LR_SWEEP_CONFIGS)}"
+        )
+    seen_lr_variants = set()
+    for spec in B88_LR_SWEEP_CONFIGS:
+        path = spec["path"]
+        if not isinstance(path, Path):
+            raise AssertionError(f"invalid path spec: {spec}")
+        variant = str(spec["variant"])
+        if variant in seen_lr_variants:
+            raise AssertionError(f"duplicate B88 LR-sweep variant: {variant}")
+        seen_lr_variants.add(variant)
+        _assert_b88_sample_shuffle_config(
+            path,
+            "nearest_repair",
+            int(spec["model_seed"]),
+            variant=variant,
+            lr=float(spec["lr"]),
+            lr_schedule=str(spec["lr_schedule"]),
+            warmup_epochs=int(spec["warmup_epochs"]),
+            min_lr=float(spec["min_lr"]),
+        )
+        print(
+            path.relative_to(REPO_DIR),
+            "variant",
+            variant,
+            "policy",
+            "nearest_repair",
+            "optimizer",
+            "adamw",
+            "model_seed",
+            spec["model_seed"],
+            "graph_seed",
+            0,
+            "lr",
+            spec["lr"],
+            "lr_schedule",
+            spec["lr_schedule"],
+            "warmup",
+            spec["warmup_epochs"],
+            "min_lr",
+            spec["min_lr"],
+            "weight_decay",
+            1e-4,
         )
 
     print("seed decoupling config smoke ok")
