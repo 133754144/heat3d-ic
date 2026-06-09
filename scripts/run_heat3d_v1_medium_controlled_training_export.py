@@ -92,13 +92,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument(
         "--lr-schedule",
-        choices=("constant", "warmup_cosine", "rapid_decay", "two_stage", "second_stage"),
+        choices=(
+            "constant",
+            "warmup_cosine",
+            "rapid_decay",
+            "two_stage",
+            "second_stage",
+            "upstream_onecycle",
+        ),
         default="warmup_cosine",
     )
     parser.add_argument("--warmup-epochs", type=int, default=10)
     parser.add_argument("--min-lr", type=float, default=1e-6)
     parser.add_argument("--second-stage-epoch", type=int, default=0)
     parser.add_argument("--second-stage-lr", type=float, default=1e-4)
+    parser.add_argument("--lr-init", type=float, default=1e-5)
+    parser.add_argument("--lr-peak", type=float, default=2e-4)
+    parser.add_argument("--lr-base", type=float, default=1e-5)
+    parser.add_argument("--lr-lowr", type=float, default=1e-6)
+    parser.add_argument("--pct-start", type=float, default=0.02)
+    parser.add_argument("--pct-final", type=float, default=0.10)
     parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="adamw")
     parser.add_argument("--gradient-clip-norm", type=float, default=1.0)
     parser.add_argument("--weight-decay", type=float, default=1.0e-4)
@@ -1277,6 +1290,12 @@ def _lr_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "min_lr": float(args.min_lr),
         "second_stage_epoch": int(args.second_stage_epoch),
         "second_stage_lr": float(args.second_stage_lr),
+        "lr_init": float(args.lr_init),
+        "lr_peak": float(args.lr_peak),
+        "lr_base": float(args.lr_base),
+        "lr_lowr": float(args.lr_lowr),
+        "pct_start": float(args.pct_start),
+        "pct_final": float(args.pct_final),
     }
 
 
@@ -1404,6 +1423,20 @@ def _validate_lr_config(config: dict[str, Any]) -> None:
         raise ValueError("--second-stage-epoch must be >= 0")
     if float(config["second_stage_lr"]) < 0.0:
         raise ValueError("--second-stage-lr must be >= 0")
+    for key in ("lr_init", "lr_peak", "lr_base", "lr_lowr"):
+        if float(config[key]) < 0.0:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 0")
+    for key in ("pct_start", "pct_final"):
+        value = float(config[key])
+        if value < 0.0 or value > 1.0:
+            raise ValueError(f"--{key.replace('_', '-')} must be in [0, 1]")
+    if config["lr_schedule"] == "upstream_onecycle":
+        if float(config["pct_start"]) <= 0.0:
+            raise ValueError("--pct-start must be > 0 for upstream_onecycle")
+        if float(config["pct_final"]) < 0.0 or float(config["pct_final"]) >= 1.0:
+            raise ValueError("--pct-final must be in [0, 1) for upstream_onecycle")
+        if float(config["pct_start"]) + float(config["pct_final"]) >= 1.0:
+            raise ValueError("--pct-start + --pct-final must be < 1 for upstream_onecycle")
 
 
 def _validate_optimizer_config(config: dict[str, Any]) -> None:
@@ -1512,6 +1545,23 @@ def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
             return base_lr + progress * (mid_lr - base_lr)
         progress = min(max((epoch - 10) / max(epochs - 10, 1), 0.0), 1.0)
         return mid_lr + progress * (min_lr - mid_lr)
+    if schedule == "upstream_onecycle":
+        progress = 0.0 if epochs <= 1 else min(max((epoch - 1) / (epochs - 1), 0.0), 1.0)
+        pct_start = float(config["pct_start"])
+        pct_final = float(config["pct_final"])
+        pct_decay_end = max(1.0 - pct_final, pct_start)
+        lr_init = float(config["lr_init"])
+        lr_peak = float(config["lr_peak"])
+        lr_base = float(config["lr_base"])
+        lr_lowr = float(config["lr_lowr"])
+        if progress <= pct_start:
+            local = progress / max(pct_start, 1e-12)
+            return lr_init + local * (lr_peak - lr_init)
+        if progress <= pct_decay_end:
+            local = (progress - pct_start) / max(pct_decay_end - pct_start, 1e-12)
+            return lr_peak + local * (lr_base - lr_peak)
+        local = (progress - pct_decay_end) / max(1.0 - pct_decay_end, 1e-12)
+        return lr_base + local * (lr_lowr - lr_base)
     raise ValueError(f"Unsupported lr schedule: {schedule}")
 
 
@@ -1910,6 +1960,36 @@ def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
             late_progress = jnp.clip((epoch - 10.0) / float(max(epochs - 10, 1)), 0.0, 1.0)
             late_lr = mid_lr + late_progress * (min_lr - mid_lr)
             return jnp.where(epoch <= 10.0, early_lr, late_lr)
+
+        if schedule == "upstream_onecycle":
+            total_updates = max(epochs * updates_per_epoch - 1, 1)
+            progress = jnp.clip(update_count / float(total_updates), 0.0, 1.0)
+            pct_start = float(lr_config["pct_start"])
+            pct_final = float(lr_config["pct_final"])
+            pct_decay_end = max(1.0 - pct_final, pct_start)
+            lr_init = jnp.asarray(float(lr_config["lr_init"]), dtype=jnp.float32)
+            lr_peak = jnp.asarray(float(lr_config["lr_peak"]), dtype=jnp.float32)
+            lr_base = jnp.asarray(float(lr_config["lr_base"]), dtype=jnp.float32)
+            lr_lowr = jnp.asarray(float(lr_config["lr_lowr"]), dtype=jnp.float32)
+            warmup_progress = jnp.clip(progress / max(pct_start, 1e-12), 0.0, 1.0)
+            warmup_lr = lr_init + warmup_progress * (lr_peak - lr_init)
+            decay_progress = jnp.clip(
+                (progress - pct_start) / max(pct_decay_end - pct_start, 1e-12),
+                0.0,
+                1.0,
+            )
+            decay_lr = lr_peak + decay_progress * (lr_base - lr_peak)
+            final_progress = jnp.clip(
+                (progress - pct_decay_end) / max(1.0 - pct_decay_end, 1e-12),
+                0.0,
+                1.0,
+            )
+            final_lr = lr_base + final_progress * (lr_lowr - lr_base)
+            return jnp.where(
+                progress <= pct_start,
+                warmup_lr,
+                jnp.where(progress <= pct_decay_end, decay_lr, final_lr),
+            )
 
         raise ValueError(f"Unsupported lr schedule: {schedule}")
 
@@ -3033,7 +3113,10 @@ def _print_startup_summary(
             "  lr schedule params: "
             f"warmup_epochs={lr_config['warmup_epochs']} min_lr={lr_config['min_lr']} "
             f"second_stage_epoch={lr_config['second_stage_epoch']} "
-            f"second_stage_lr={lr_config['second_stage_lr']}"
+            f"second_stage_lr={lr_config['second_stage_lr']} "
+            f"lr_init={lr_config['lr_init']} lr_peak={lr_config['lr_peak']} "
+            f"lr_base={lr_config['lr_base']} lr_lowr={lr_config['lr_lowr']} "
+            f"pct_start={lr_config['pct_start']} pct_final={lr_config['pct_final']}"
         )
         _emit(
             "  optimizer params: "
@@ -3957,6 +4040,12 @@ def main() -> int:
         "min_lr": lr_config["min_lr"],
         "second_stage_epoch": lr_config["second_stage_epoch"],
         "second_stage_lr": lr_config["second_stage_lr"],
+        "lr_init": lr_config["lr_init"],
+        "lr_peak": lr_config["lr_peak"],
+        "lr_base": lr_config["lr_base"],
+        "lr_lowr": lr_config["lr_lowr"],
+        "pct_start": lr_config["pct_start"],
+        "pct_final": lr_config["pct_final"],
         "optimizer": optimizer_config["optimizer"],
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],
@@ -4204,6 +4293,12 @@ def main() -> int:
         "min_lr": lr_config["min_lr"],
         "second_stage_epoch": lr_config["second_stage_epoch"],
         "second_stage_lr": lr_config["second_stage_lr"],
+        "lr_init": lr_config["lr_init"],
+        "lr_peak": lr_config["lr_peak"],
+        "lr_base": lr_config["lr_base"],
+        "lr_lowr": lr_config["lr_lowr"],
+        "pct_start": lr_config["pct_start"],
+        "pct_final": lr_config["pct_final"],
         "optimizer": optimizer_config["optimizer"],
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],

@@ -41,6 +41,14 @@ PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
+LR_SCHEDULES = {
+    "constant",
+    "warmup_cosine",
+    "rapid_decay",
+    "two_stage",
+    "second_stage",
+    "upstream_onecycle",
+}
 
 _MISSING = object()
 
@@ -135,6 +143,13 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "model_processor_steps": model.get("processor_steps"),
         "optimizer_name": optimizer.get("name"),
         "optimizer_lr": optimizer.get("lr"),
+        "optimizer_lr_schedule": optimizer.get("lr_schedule"),
+        "optimizer_lr_init": optimizer.get("lr_init"),
+        "optimizer_lr_peak": optimizer.get("lr_peak"),
+        "optimizer_lr_base": optimizer.get("lr_base"),
+        "optimizer_lr_lowr": optimizer.get("lr_lowr"),
+        "optimizer_pct_start": optimizer.get("pct_start"),
+        "optimizer_pct_final": optimizer.get("pct_final"),
         "optimizer_seed": optimizer.get("seed"),
         "model_seed": optimizer.get("model_seed"),
         "batch_order_seed": optimizer.get("batch_order_seed"),
@@ -219,7 +234,9 @@ def _validate_run_config(
             f"{label}: field 'run.allow_long_training_local' must be false"
         )
     _validate_batch_fields(run, label)
-    _validate_optimizer_seed_fields(_required_mapping(config, "optimizer", label), label)
+    optimizer = _required_mapping(config, "optimizer", label)
+    _validate_optimizer_seed_fields(optimizer, label)
+    _validate_optimizer_schedule_fields(optimizer, label)
     train_metrics_schedule = run.get("train_metrics_schedule")
     if train_metrics_schedule is not None and train_metrics_schedule not in TRAIN_METRICS_SCHEDULES:
         raise ValueError(
@@ -337,6 +354,71 @@ def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) ->
             raise ValueError(f"{label}: field 'optimizer.{field}' must be an int or null")
         if value < 0:
             raise ValueError(f"{label}: field 'optimizer.{field}' must be >= 0")
+
+
+def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str) -> None:
+    lr_schedule = optimizer.get("lr_schedule")
+    if lr_schedule is not None and lr_schedule not in LR_SCHEDULES:
+        raise ValueError(
+            f"{label}: field 'optimizer.lr_schedule' must be one of "
+            f"{sorted(LR_SCHEDULES)}, got {lr_schedule!r}"
+        )
+
+    for field in (
+        "lr",
+        "min_lr",
+        "second_stage_lr",
+        "lr_init",
+        "lr_peak",
+        "lr_base",
+        "lr_lowr",
+        "weight_decay",
+        "gradient_clip_norm",
+    ):
+        if field not in optimizer or optimizer[field] is None:
+            continue
+        value = optimizer[field]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be numeric or null")
+        if float(value) < 0.0:
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be >= 0")
+
+    for field in ("warmup_epochs", "second_stage_epoch"):
+        if field not in optimizer or optimizer[field] is None:
+            continue
+        value = optimizer[field]
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be an int or null")
+        if value < 0:
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be >= 0")
+
+    for field in ("pct_start", "pct_final"):
+        if field not in optimizer or optimizer[field] is None:
+            continue
+        value = optimizer[field]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be numeric or null")
+        if float(value) < 0.0 or float(value) > 1.0:
+            raise ValueError(f"{label}: field 'optimizer.{field}' must be in [0, 1]")
+
+    if lr_schedule == "upstream_onecycle":
+        required = ("lr_init", "lr_peak", "lr_base", "lr_lowr", "pct_start", "pct_final")
+        missing = [field for field in required if optimizer.get(field) is None]
+        if missing:
+            raise ValueError(
+                f"{label}: optimizer.lr_schedule='upstream_onecycle' requires "
+                f"{', '.join('optimizer.' + field for field in missing)}"
+            )
+        pct_start = float(optimizer["pct_start"])
+        pct_final = float(optimizer["pct_final"])
+        if pct_start <= 0.0:
+            raise ValueError(f"{label}: field 'optimizer.pct_start' must be > 0")
+        if pct_final >= 1.0:
+            raise ValueError(f"{label}: field 'optimizer.pct_final' must be < 1")
+        if pct_start + pct_final >= 1.0:
+            raise ValueError(
+                f"{label}: optimizer.pct_start + optimizer.pct_final must be < 1"
+            )
 
 
 def _validate_graph_fields(graph: Mapping[str, Any], label: str) -> None:

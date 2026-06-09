@@ -127,6 +127,25 @@ def _lr_sweep_spec(
     }
 
 
+def _upstream_onecycle_path(*, variant: str, model_seed: int) -> Path:
+    return REPO_DIR / (
+        "configs/heat3d_v2/"
+        "frozen_v1_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_"
+        f"nearest_repair_{variant}_model_seed{model_seed}_batchbuild0_"
+        "batchorder0_graphseed0_upstream_onecycle_lrinit1e-5_"
+        "lrpeak2e-4_lrbase1e-5_lrlowr1e-6_pctstart0p02_"
+        "pctfinal0p10_wd1e-8.yaml"
+    )
+
+
+def _upstream_onecycle_spec(*, variant: str, model_seed: int) -> dict[str, object]:
+    return {
+        "path": _upstream_onecycle_path(variant=variant, model_seed=model_seed),
+        "variant": variant,
+        "model_seed": model_seed,
+    }
+
+
 NEW_CONFIGS = [
     REPO_DIR / (
         "configs/heat3d_v2/"
@@ -449,6 +468,12 @@ B88_LR_SWEEP_CONFIGS = [
     ),
 ]
 
+B88_UPSTREAM_ONECYCLE_CONFIGS = [
+    _upstream_onecycle_spec(variant="U1", model_seed=1),
+    _upstream_onecycle_spec(variant="U2", model_seed=0),
+    _upstream_onecycle_spec(variant="U3", model_seed=4),
+]
+
 
 def _flag_value(command: list[str], flag: str) -> str | None:
     try:
@@ -722,6 +747,66 @@ def main() -> int:
             spec["min_lr"],
             "weight_decay",
             1e-4,
+        )
+
+    if len(B88_UPSTREAM_ONECYCLE_CONFIGS) != 3:
+        raise AssertionError(
+            "expected 3 B88 upstream_onecycle configs, got "
+            f"{len(B88_UPSTREAM_ONECYCLE_CONFIGS)}"
+        )
+    for spec in B88_UPSTREAM_ONECYCLE_CONFIGS:
+        path = spec["path"]
+        if not isinstance(path, Path):
+            raise AssertionError(f"invalid path spec: {spec}")
+        variant = str(spec["variant"])
+        config = load_v2_config(path)
+        command = build_training_command(config)
+        _assert_b88_sample_shuffle_config(
+            path,
+            "nearest_repair",
+            int(spec["model_seed"]),
+            variant=variant,
+            lr=2e-4,
+            lr_schedule="upstream_onecycle",
+            warmup_epochs=10,
+            min_lr=1e-6,
+            weight_decay=1e-8,
+        )
+        _assert_float_close(_flag_value(command, "--lr-init"), 1e-5, f"{path}: --lr-init")
+        _assert_float_close(_flag_value(command, "--lr-peak"), 2e-4, f"{path}: --lr-peak")
+        _assert_float_close(_flag_value(command, "--lr-base"), 1e-5, f"{path}: --lr-base")
+        _assert_float_close(_flag_value(command, "--lr-lowr"), 1e-6, f"{path}: --lr-lowr")
+        _assert_float_close(_flag_value(command, "--pct-start"), 0.02, f"{path}: --pct-start")
+        _assert_float_close(_flag_value(command, "--pct-final"), 0.10, f"{path}: --pct-final")
+        summary = summarize_v2_config(config)
+        if summary.get("optimizer_lr_schedule") != "upstream_onecycle":
+            raise AssertionError(f"{path}: summary missing upstream_onecycle schedule")
+        print(
+            path.relative_to(REPO_DIR),
+            "variant",
+            variant,
+            "policy",
+            "nearest_repair",
+            "optimizer",
+            "adamw",
+            "model_seed",
+            spec["model_seed"],
+            "lr_schedule",
+            "upstream_onecycle",
+            "lr_init",
+            1e-5,
+            "lr_peak",
+            2e-4,
+            "lr_base",
+            1e-5,
+            "lr_lowr",
+            1e-6,
+            "pct_start",
+            0.02,
+            "pct_final",
+            0.10,
+            "weight_decay",
+            1e-8,
         )
 
     print("seed decoupling config smoke ok")

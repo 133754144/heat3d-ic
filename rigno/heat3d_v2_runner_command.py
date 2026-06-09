@@ -80,6 +80,12 @@ def build_training_command(
         command, "--second-stage-epoch", optimizer.get("second_stage_epoch")
     )
     _append_option(command, "--second-stage-lr", optimizer.get("second_stage_lr"))
+    _append_option(command, "--lr-init", optimizer.get("lr_init"))
+    _append_option(command, "--lr-peak", optimizer.get("lr_peak"))
+    _append_option(command, "--lr-base", optimizer.get("lr_base"))
+    _append_option(command, "--lr-lowr", optimizer.get("lr_lowr"))
+    _append_option(command, "--pct-start", optimizer.get("pct_start"))
+    _append_option(command, "--pct-final", optimizer.get("pct_final"))
     _append_option(command, "--gradient-clip-norm", optimizer.get("gradient_clip_norm"))
     _append_option(command, "--weight-decay", optimizer.get("weight_decay"))
     _append_option(command, "--seed", optimizer.get("seed"))
@@ -496,6 +502,12 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("optimizer.min_lr", "training --min-lr"),
         ("optimizer.second_stage_epoch", "training --second-stage-epoch"),
         ("optimizer.second_stage_lr", "training --second-stage-lr"),
+        ("optimizer.lr_init", "training --lr-init"),
+        ("optimizer.lr_peak", "training --lr-peak"),
+        ("optimizer.lr_base", "training --lr-base"),
+        ("optimizer.lr_lowr", "training --lr-lowr"),
+        ("optimizer.pct_start", "training --pct-start"),
+        ("optimizer.pct_final", "training --pct-final"),
         ("optimizer.gradient_clip_norm", "training --gradient-clip-norm"),
         ("optimizer.weight_decay", "training --weight-decay"),
         ("optimizer.seed", "training --seed"),
