@@ -61,6 +61,69 @@ The check verifies:
 - `warmup_cosine` keeps the existing epoch-derived behavior.
 - `upstream_onecycle` remains a per-update continuous schedule.
 
+## Post-Fix Trusted Schedule Diagnostics
+
+| run | trust classification | schedule | scalar result | interpretation |
+| --- | --- | --- | --- | --- |
+| W1 seed1 e1200 warmup-flat | trusted completed diagnostic run; not formal benchmark; not publication-ready result | `upstream_onecycle`, `lr_init=1e-4`, `lr_peak=lr_base=lr_lowr=1e-3`, `pct_start=10/1200`, `pct_final=0` | final `valid_loss=0.114535391`; best epoch 1199, best `valid_loss=0.109367043` | early-positive, final-negative versus L2 |
+
+W1 was trained after the two-stage schedule semantics fix and is not affected
+by the old stage-boundary bug. The synced WSL2 run was diagnosed read-only on
+the main SSH server from:
+
+`output/_from_wsl2/DESKTOP-2GE35DV/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_W1_seed1_e1200_upstream_warmup_flat_lr1e-3_wd1e-4`
+
+W1 scalar and diagnostics summary:
+
+- LR history: count 1200, first `1e-4`, last/min/max after warmup `1e-3`.
+- Final: `valid_iid_loss=0.114535391`, `valid_stress_loss=0.117784038`.
+- Best: epoch 1199, `valid_iid_loss=0.109367043`,
+  `valid_stress_loss=0.114138097`, `final_best_ratio=1.04725691`.
+- Final prediction diagnostics: mean DeltaT RMSE `0.009326461`, MAE
+  `0.004474867`, centered spatial correlation `0.978120523`,
+  top-k overlap `0.920703125`, bin0 signed bias `+0.002938616`,
+  bin0 overprediction ratio `0.990051270`.
+- Best prediction diagnostics: mean DeltaT RMSE `0.008499829`, MAE
+  `0.003310936`, centered spatial correlation `0.979145478`,
+  top-k overlap `0.927343750`, bin0 signed bias `-0.001069163`,
+  bin0 overprediction ratio `0.062642415`.
+- `per_sample_zscore_rmse` was not emitted by the current field-shape
+  diagnostics JSON; field-shape correlation and top-k overlap were available.
+
+W1 condition summary:
+
+- Loss summary records separate `valid_iid` and `valid_stress` losses. The
+  prediction diagnostics split grouping reports `valid` rather than separate
+  `valid_iid` / `valid_stress` labels for the exported prediction archive.
+- Best prediction weakest split-level DeltaT RMSE groups were
+  `test_ood_bc_candidate` (`0.027501449`), `test_ood_combined_candidate`
+  (`0.022440546`), `test_id` (`0.022070082`), and
+  `test_ood_stack_candidate` (`0.019846467`).
+- Best prediction weakest condition groups included
+  `source_category=multi_block_power` (`rmse=0.024381868`),
+  `source_category=high_dynamic_range_power_cases` (`0.023508902`),
+  `k_mode=diag3` (`0.020046640`),
+  `k_region_mode=high_contrast_interface_k` (`0.018967655`),
+  `k_region_mode=low_k_barrier_or_TIM_variation` (`0.018708248`),
+  `bc_category=very_low_top_h_candidate` (`0.030075804`),
+  `bc_category=held_out_top_h_candidate` (`0.023261133`), and
+  `bc_category=very_high_top_h_candidate` (`0.022996380`).
+
+Research interpretation:
+
+- W1 is early-positive: its e20/e50/e100/e200/e400 trajectory is consistent
+  with the earlier L3 early advantage and is clearly better than the L2 early
+  path.
+- W1 is final-negative relative to L2: its e1200 best `valid_loss=0.109367043`
+  is weaker than the L2 seed1 e1200 constant-lr reference
+  (`best/final valid_loss approximately 0.069704`).
+- Current conclusion: warmup-flat can repair the early seed1 trajectory, but
+  it does not reproduce L2 late-stage convergence.
+- Next emphasis should move toward checkpoint-level mechanism diagnostics and
+  P3 model-path audit instead of blindly adding more LR schedules.
+- The old T3 result remains an early-decay negative control, not a true
+  epoch-400 delayed-decay result.
+
 ## Next Use
 
 If delayed decay remains worth testing, rerun a true epoch-based `two_stage`
