@@ -41,6 +41,7 @@ PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
+INIT_MODES = {"real_first_batch", "upstream_dummy"}
 LR_SCHEDULES = {
     "constant",
     "warmup_cosine",
@@ -157,6 +158,7 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "loss_mode": loss.get("mode"),
         "run_mode": run.get("mode"),
         "run_epochs": run.get("epochs"),
+        "init_mode": run.get("init_mode"),
         "batch_plan": run.get("batch_plan"),
         "batch_build_seed": run.get("batch_build_seed"),
         "export_output_dir": export.get("output_dir"),
@@ -341,6 +343,12 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
                 f"{label}: field 'run.batch_size' must be a positive int when "
                 "run.batch_plan is 'sample_shuffle'"
             )
+    init_mode = run.get("init_mode")
+    if init_mode is not None and init_mode not in INIT_MODES:
+        raise ValueError(
+            f"{label}: field 'run.init_mode' must be one of "
+            f"{sorted(INIT_MODES)}, got {init_mode!r}"
+        )
 
 
 def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) -> None:

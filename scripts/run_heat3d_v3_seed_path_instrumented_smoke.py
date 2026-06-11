@@ -73,6 +73,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-build-seed", type=int, default=0)
     parser.add_argument("--batch-order-seed", type=int, default=0)
     parser.add_argument("--graph-seed", type=int, default=0)
+    parser.add_argument(
+        "--init-mode",
+        choices=("real_first_batch", "upstream_dummy"),
+        default="real_first_batch",
+    )
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--lr-schedule", choices=("constant", "warmup_cosine"), default="warmup_cosine")
     parser.add_argument("--warmup-epochs", type=int, default=10)
@@ -267,6 +272,25 @@ def _activation_record(
     }
 
 
+def _dummy_inputs_like(inputs):
+    return type(inputs)(
+        u=jnp.zeros_like(inputs.u),
+        c=None if inputs.c is None else jnp.zeros_like(inputs.c),
+        x_inp=jnp.zeros_like(inputs.x_inp),
+        x_out=jnp.zeros_like(inputs.x_out),
+        t=None if inputs.t is None else jnp.zeros_like(inputs.t),
+        tau=None if inputs.tau is None else jnp.zeros_like(inputs.tau),
+    )
+
+
+def _init_inputs_for_mode(group: dict[str, Any], init_mode: str):
+    if init_mode == "real_first_batch":
+        return group["inputs"]
+    if init_mode == "upstream_dummy":
+        return _dummy_inputs_like(group["inputs"])
+    raise ValueError(f"Unsupported init mode: {init_mode}")
+
+
 def _audit_checkpoint(
     *,
     epoch: int,
@@ -405,9 +429,10 @@ def _run_seed(
         "p_edge_masking": 0.0,
     }
     model = GraphNeuralOperator(**model_config)
+    init_inputs = _init_inputs_for_mode(train_groups[0], args.init_mode)
     params = model.init(
         jax.random.PRNGKey(seed),
-        inputs=train_groups[0]["inputs"],
+        inputs=init_inputs,
         graphs=train_groups[0]["graphs"],
     )["params"]
     lr_config = {
@@ -510,6 +535,7 @@ def _run_seed(
     elapsed = time.perf_counter() - start
     return {
         "model_seed": int(seed),
+        "init_mode": args.init_mode,
         "epochs": int(args.epochs),
         "train_time_seconds": float(elapsed),
         "train_step_time_seconds": float(elapsed / max(args.epochs * len(train_groups), 1)),
@@ -576,6 +602,7 @@ def main() -> int:
             "batch_build_seed": int(args.batch_build_seed),
             "batch_order_seed": int(args.batch_order_seed),
             "graph_seed": int(args.graph_seed),
+            "init_mode": args.init_mode,
             "lr": float(args.lr),
             "lr_schedule": args.lr_schedule,
             "warmup_epochs": int(args.warmup_epochs),

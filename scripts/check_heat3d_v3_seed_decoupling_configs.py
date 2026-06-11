@@ -612,12 +612,14 @@ def main() -> int:
     synthetic["optimizer"]["model_seed"] = 1
     synthetic["optimizer"]["batch_order_seed"] = 0
     synthetic["optimizer"]["graph_seed"] = 0
+    synthetic["run"]["init_mode"] = "upstream_dummy"
     validate_v2_config(synthetic)
     synthetic_command = build_training_command(synthetic)
     _assert_flag(synthetic_command, "--seed", "0")
     _assert_flag(synthetic_command, "--model-seed", "1")
     _assert_flag(synthetic_command, "--batch-order-seed", "0")
     _assert_flag(synthetic_command, "--graph-seed", "0")
+    _assert_flag(synthetic_command, "--init-mode", "upstream_dummy")
 
     for path in NEW_CONFIGS:
         config = load_v2_config(path)

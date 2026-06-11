@@ -67,6 +67,7 @@ DEFAULT_OUTPUT_DIR = REPO_DIR / "output" / "heat3d_v1_medium_runs" / "export_smo
 TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
 RADIUS_POLICY_CHOICES = ("legacy_kdtree_mean4", "discrete_physical_coverage")
 COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
+INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 
 
 def parse_args() -> argparse.Namespace:
@@ -130,6 +131,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--shuffle-train-batches", action="store_true")
     parser.add_argument("--drop-last", action="store_true")
+    parser.add_argument(
+        "--init-mode",
+        choices=INIT_MODE_CHOICES,
+        default="real_first_batch",
+        help=(
+            "Parameter initialization input policy. real_first_batch preserves "
+            "legacy behavior. upstream_dummy initializes on zero-valued dummy "
+            "inputs with the first batch graph shape, while training still uses "
+            "real batches."
+        ),
+    )
     parser.add_argument(
         "--batch-plan",
         choices=("current_graph_shape", "sample_shuffle"),
@@ -2040,6 +2052,25 @@ def _copy_params(params):
     return tree.tree_map(lambda value: value.copy() if hasattr(value, "copy") else value, params)
 
 
+def _dummy_inputs_like(inputs: Inputs) -> Inputs:
+    return Inputs(
+        u=jnp.zeros_like(inputs.u),
+        c=None if inputs.c is None else jnp.zeros_like(inputs.c),
+        x_inp=jnp.zeros_like(inputs.x_inp),
+        x_out=jnp.zeros_like(inputs.x_out),
+        t=None if inputs.t is None else jnp.zeros_like(inputs.t),
+        tau=None if inputs.tau is None else jnp.zeros_like(inputs.tau),
+    )
+
+
+def _init_inputs_for_mode(group: dict[str, Any], init_mode: str) -> Inputs:
+    if init_mode == "real_first_batch":
+        return group["inputs"]
+    if init_mode == "upstream_dummy":
+        return _dummy_inputs_like(group["inputs"])
+    raise ValueError(f"Unsupported init mode: {init_mode}")
+
+
 def _best_selection_payload(
     result: dict[str, Any],
     *,
@@ -2277,6 +2308,7 @@ def _fit_once(
     selection_metric: str,
     log_mode: str,
     progress_enabled: bool,
+    init_mode: str = "real_first_batch",
     timings: dict[str, float] | None = None,
     profile_enabled: bool = False,
     memory_audit: MemoryAudit | None = None,
@@ -2289,15 +2321,16 @@ def _fit_once(
         memory_audit.record("model_init_start")
     _progress(progress_enabled, "startup", "initializing model parameters ...")
     model = GraphNeuralOperator(**model_config)
+    init_inputs = _init_inputs_for_mode(train_groups[0], init_mode)
     params = model.init(
         jax.random.PRNGKey(model_seed),
-        inputs=train_groups[0]["inputs"],
+        inputs=init_inputs,
         graphs=train_groups[0]["graphs"],
     )["params"]
     _record_timing(timings, "model_init", init_start)
     if memory_audit is not None:
         memory_audit.record("model_init_end")
-    _progress(progress_enabled, "startup", "model parameters initialized", init_start)
+    _progress(progress_enabled, "startup", f"model parameters initialized init_mode={init_mode}", init_start)
 
     batch_enabled = batch_config.get("batch_size") is not None
     metrics_fn = _weighted_metrics if batch_enabled else _metrics
@@ -3925,7 +3958,8 @@ def main() -> int:
         args.selection_metric,
         args.log_mode,
         progress_enabled,
-        timings,
+        init_mode=args.init_mode,
+        timings=timings,
         profile_enabled=profile_enabled,
         memory_audit=memory_audit,
         primary_validation_split=primary_validation_split,
@@ -4049,6 +4083,7 @@ def main() -> int:
         "optimizer": optimizer_config["optimizer"],
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],
+        "init_mode": args.init_mode,
         "model_config": model_config,
         **_batch_config_payload(batch_config),
         "seed": seed_config["seed"],
@@ -4302,6 +4337,7 @@ def main() -> int:
         "optimizer": optimizer_config["optimizer"],
         "gradient_clip_norm": optimizer_config["gradient_clip_norm"],
         "weight_decay": optimizer_config["weight_decay"],
+        "init_mode": args.init_mode,
         "model_config": model_config,
         **_batch_config_payload(batch_config),
         "epoch_batch_counts": [int(value) for value in result["epoch_batch_counts"]],
