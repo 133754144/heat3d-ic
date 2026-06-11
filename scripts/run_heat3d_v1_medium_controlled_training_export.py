@@ -1530,7 +1530,7 @@ def _lr_for_epoch(epoch: int, epochs: int, config: dict[str, Any]) -> float:
         return float(config["second_stage_lr"])
     if schedule == "second_stage":
         second_stage_epoch = int(config["second_stage_epoch"])
-        if second_stage_epoch <= 0 or epoch < second_stage_epoch:
+        if second_stage_epoch <= 0 or epoch <= second_stage_epoch:
             return base_lr
         return float(config["second_stage_lr"])
     if schedule == "warmup_cosine":
@@ -1933,21 +1933,20 @@ def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
     def learning_rate(count):
         update_count = jnp.asarray(count, dtype=jnp.float32)
         epoch = jnp.floor(update_count / float(updates_per_epoch)) + 1.0
-        legacy_epoch = update_count + 1.0
         base = jnp.asarray(base_lr, dtype=jnp.float32)
         if schedule == "two_stage":
             second_stage_epoch = int(lr_config["second_stage_epoch"])
             if second_stage_epoch <= 0:
                 return base
             second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
-            return jnp.where(legacy_epoch <= float(second_stage_epoch), base, second_lr)
+            return jnp.where(epoch <= float(second_stage_epoch), base, second_lr)
 
         if schedule == "second_stage":
             second_stage_epoch = int(lr_config["second_stage_epoch"])
             if second_stage_epoch <= 0:
                 return base
             second_lr = jnp.asarray(float(lr_config["second_stage_lr"]), dtype=jnp.float32)
-            return jnp.where(legacy_epoch < float(second_stage_epoch), base, second_lr)
+            return jnp.where(epoch <= float(second_stage_epoch), base, second_lr)
 
         if schedule == "warmup_cosine":
             min_lr = jnp.asarray(float(lr_config["min_lr"]), dtype=jnp.float32)
