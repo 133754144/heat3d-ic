@@ -94,7 +94,7 @@ DEFAULT_RUNS: tuple[dict[str, Any], ...] = (
     },
     {
         "label": "S2_seed0_e1200_constant",
-        "root": "run_root",
+        "root": "wsl2_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S2_seed0_e1200_constant_lr1e-3_wd1e-4",
         "notes": "pending; seed0 constant-lr control",
         "expected_seed": 0,

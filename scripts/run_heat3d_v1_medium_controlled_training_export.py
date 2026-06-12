@@ -561,6 +561,18 @@ def _format_progress_percent(value: Any, *, precision: int = 2) -> str:
     return f"{numeric:.{precision}f}%"
 
 
+def _format_progress_loss(value: Any) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    return f"{numeric:.3g}"
+
+
 def _format_progress_int(value: Any) -> str:
     if value is None:
         return "skipped"
@@ -2223,13 +2235,13 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         _emit(
             f"epoch {record['epoch']}/{epochs} "
             f"lr={record['lr']:.2e} "
-            f"train={_format_progress_decimal(train_loss)} "
-            f"iid={_format_progress_decimal(valid_iid_loss)} "
+            f"train={_format_progress_loss(train_loss)} "
+            f"iid={_format_progress_loss(valid_iid_loss)} "
             f"iid_err={_format_progress_percent(valid_iid_error_pct)} "
-            f"stress={_format_progress_decimal(record.get('valid_stress_loss'))} "
+            f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
             f"stress_err={_format_progress_percent(record.get('valid_stress_error_pct'))} "
             f"best=e{_format_progress_int(record.get('best_epoch'))}/"
-            f"{_format_progress_decimal(record.get('best_valid_iid_loss'))}"
+            f"{_format_progress_loss(record.get('best_valid_iid_loss'))}"
         )
         return
     _emit(
