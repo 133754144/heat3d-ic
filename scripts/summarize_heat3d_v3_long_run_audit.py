@@ -15,108 +15,96 @@ from pathlib import Path
 from typing import Any
 
 
-MILESTONE_EPOCHS = (0, 20, 50, 100, 200, 400, 800, 1200, 1600)
+MILESTONE_EPOCHS = (1, 20, 50, 100, 200, 400, 800, 1200, 1600)
 
 DEFAULT_RUNS: tuple[dict[str, Any], ...] = (
     {
         "label": "W1_seed1_e1200_warmup_flat",
         "root": "wsl2_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_W1_seed1_e1200_upstream_warmup_flat_lr1e-3_wd1e-4",
-        "trusted_note": "trusted diagnostic; post-fix upstream_onecycle; not benchmark",
-        "expected": {
-            "seed": 1,
-            "model_seed": 1,
-            "batch_order_seed": 0,
-            "graph_seed": 0,
-            "lr_schedule": "upstream_onecycle",
-            "lr": 1.0e-3,
-            "epochs": 1200,
-            "graph_policy": "nearest_rnode",
-        },
+        "notes": "trusted diagnostic; post-fix upstream_onecycle; not benchmark",
+        "expected_seed": 1,
+        "expected_model_seed": 1,
+        "expected_batch_order_seed": 0,
+        "expected_graph_seed": 0,
+        "expected_schedule": "upstream_onecycle",
+        "expected_lr": 1.0e-3,
+        "expected_epochs": 1200,
+        "expected_graph_policy": "nearest_rnode",
     },
     {
         "label": "L2_seed1_e1200_constant",
         "root": "run_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_L2_seed1_e1200_constant_lr1e-3_wd1e-4",
-        "trusted_note": "trusted diagnostic; seed1 constant-lr repaired reference",
-        "expected": {
-            "seed": 1,
-            "model_seed": 1,
-            "batch_order_seed": 0,
-            "graph_seed": 0,
-            "lr_schedule": "constant",
-            "lr": 1.0e-3,
-            "epochs": 1200,
-            "graph_policy": "nearest_rnode",
-        },
+        "notes": "trusted diagnostic; seed1 constant-lr repaired reference",
+        "expected_seed": 1,
+        "expected_model_seed": 1,
+        "expected_batch_order_seed": 0,
+        "expected_graph_seed": 0,
+        "expected_schedule": "constant",
+        "expected_lr": 1.0e-3,
+        "expected_epochs": 1200,
+        "expected_graph_policy": "nearest_rnode",
     },
     {
         "label": "S1_seed1_e1600_constant",
         "root": "run_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S1_seed1_e1600_constant_lr1e-3_wd1e-4",
-        "trusted_note": "trusted diagnostic; extended seed1 constant-lr path; not benchmark",
-        "expected": {
-            "seed": 1,
-            "model_seed": 1,
-            "batch_order_seed": 0,
-            "graph_seed": 0,
-            "lr_schedule": "constant",
-            "lr": 1.0e-3,
-            "epochs": 1600,
-            "graph_policy": "nearest_rnode",
-        },
+        "notes": "trusted diagnostic; extended seed1 constant-lr path; not benchmark",
+        "expected_seed": 1,
+        "expected_model_seed": 1,
+        "expected_batch_order_seed": 0,
+        "expected_graph_seed": 0,
+        "expected_schedule": "constant",
+        "expected_lr": 1.0e-3,
+        "expected_epochs": 1600,
+        "expected_graph_policy": "nearest_rnode",
     },
     {
         "label": "B6_seed0_e400_warmup_cosine",
         "root": "run_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_LR_B6_e400_model_seed0_batchbuild0_batchorder0_graphseed0_lr5e-4_warmup10_minlr5e-5_wd1e-4",
-        "trusted_note": "trusted diagnostic; stronger seed0 baseline",
-        "expected": {
-            "seed": 0,
-            "model_seed": 0,
-            "batch_order_seed": 0,
-            "graph_seed": 0,
-            "lr_schedule": "warmup_cosine",
-            "lr": 5.0e-4,
-            "min_lr": 5.0e-5,
-            "warmup_epochs": 10,
-            "epochs": 400,
-            "graph_policy": "nearest_rnode",
-        },
+        "notes": "trusted diagnostic; stronger seed0 baseline",
+        "expected_seed": 0,
+        "expected_model_seed": 0,
+        "expected_batch_order_seed": 0,
+        "expected_graph_seed": 0,
+        "expected_schedule": "warmup_cosine",
+        "expected_lr": 5.0e-4,
+        "expected_min_lr": 5.0e-5,
+        "expected_warmup_epochs": 10,
+        "expected_epochs": 400,
+        "expected_graph_policy": "nearest_rnode",
     },
     {
         "label": "S2_seed0_e1200_constant",
         "root": "run_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S2_seed0_e1200_constant_lr1e-3_wd1e-4",
-        "trusted_note": "pending; seed0 constant-lr control",
-        "expected": {
-            "seed": 0,
-            "model_seed": 0,
-            "batch_order_seed": 0,
-            "graph_seed": 0,
-            "lr_schedule": "constant",
-            "lr": 1.0e-3,
-            "epochs": 1200,
-            "graph_policy": "nearest_rnode",
-        },
+        "notes": "pending; seed0 constant-lr control",
+        "expected_seed": 0,
+        "expected_model_seed": 0,
+        "expected_batch_order_seed": 0,
+        "expected_graph_seed": 0,
+        "expected_schedule": "constant",
+        "expected_lr": 1.0e-3,
+        "expected_epochs": 1200,
+        "expected_graph_policy": "nearest_rnode",
     },
     {
         "label": "S3_seed0_e1200_warmup_cosine",
         "root": "run_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S3_seed0_e1200_warmupcosine_lr1e-3_minlr1e-4_wd1e-4",
-        "trusted_note": "pending; seed0 L3-style warmup-cosine control",
-        "expected": {
-            "seed": 0,
-            "model_seed": 0,
-            "batch_order_seed": 0,
-            "graph_seed": 0,
-            "lr_schedule": "warmup_cosine",
-            "lr": 1.0e-3,
-            "min_lr": 1.0e-4,
-            "warmup_epochs": 10,
-            "epochs": 1200,
-            "graph_policy": "nearest_rnode",
-        },
+        "notes": "pending; seed0 L3-style warmup-cosine control",
+        "expected_seed": 0,
+        "expected_model_seed": 0,
+        "expected_batch_order_seed": 0,
+        "expected_graph_seed": 0,
+        "expected_schedule": "warmup_cosine",
+        "expected_lr": 1.0e-3,
+        "expected_min_lr": 1.0e-4,
+        "expected_warmup_epochs": 10,
+        "expected_epochs": 1200,
+        "expected_graph_policy": "nearest_rnode",
     },
 )
 
@@ -154,6 +142,91 @@ def _format_number(value: Any, digits: int = 4) -> str:
     if number is None:
         return "-"
     return f"{number:.{digits}g}"
+
+
+def _epoch_to_index(epoch: int) -> int:
+    if epoch < 1:
+        raise ValueError(f"epoch must be >= 1, got {epoch}")
+    return epoch - 1
+
+
+def _entry_expected(entry: dict[str, Any]) -> dict[str, Any]:
+    """Returns expected metadata from either flat or legacy nested fields."""
+
+    nested = entry.get("expected")
+    expected = dict(nested) if isinstance(nested, dict) else {}
+    field_map = {
+        "expected_seed": "seed",
+        "expected_model_seed": "model_seed",
+        "expected_batch_order_seed": "batch_order_seed",
+        "expected_graph_seed": "graph_seed",
+        "expected_schedule": "lr_schedule",
+        "expected_lr": "lr",
+        "expected_min_lr": "min_lr",
+        "expected_warmup_epochs": "warmup_epochs",
+        "expected_epochs": "epochs",
+        "expected_graph_policy": "graph_policy",
+    }
+    for source, target in field_map.items():
+        if source in entry:
+            expected[target] = entry[source]
+    return expected
+
+
+def _value_matches(actual: Any, expected: Any) -> bool:
+    if expected is None:
+        return True
+    actual_num = _to_float(actual)
+    expected_num = _to_float(expected)
+    if actual_num is not None and expected_num is not None:
+        return abs(actual_num - expected_num) <= max(1e-12, abs(expected_num) * 1e-9)
+    return str(actual) == str(expected)
+
+
+def _metadata_mismatch_warnings(
+    *,
+    summary: dict[str, Any] | None,
+    run_config: dict[str, Any] | None,
+    expected: dict[str, Any],
+    graph_policy: str | None,
+    final_epoch: int | None,
+    diagnostics_complete: bool,
+) -> list[str]:
+    warnings: list[str] = []
+    if summary is None:
+        warnings.append("loss_summary.json missing")
+        return warnings
+
+    checks = {
+        "seed": summary.get("legacy_seed", summary.get("seed")),
+        "model_seed": summary.get("model_seed"),
+        "batch_order_seed": summary.get("batch_order_seed"),
+        "graph_seed": summary.get("graph_seed"),
+        "lr_schedule": summary.get("lr_schedule"),
+        "lr": summary.get("lr"),
+        "min_lr": summary.get("min_lr"),
+        "warmup_epochs": summary.get("warmup_epochs"),
+        "graph_policy": graph_policy,
+    }
+    for key, actual in checks.items():
+        if key in expected and not _value_matches(actual, expected[key]):
+            warnings.append(f"{key} expected {expected[key]!r}, got {actual!r}")
+
+    expected_epochs = _to_int(expected.get("epochs"))
+    if expected_epochs is not None and final_epoch is not None and final_epoch < expected_epochs:
+        warnings.append(f"final_epoch {final_epoch} below configured {expected_epochs}")
+
+    configured_epochs = None
+    if run_config is not None:
+        configured_epochs = _to_int(run_config.get("epochs"))
+    if configured_epochs is not None and final_epoch is not None and final_epoch > configured_epochs:
+        warnings.append(
+            f"final_epoch {final_epoch} exceeds run_config epochs {configured_epochs}"
+        )
+
+    if not diagnostics_complete:
+        warnings.append("final/best diagnostics incomplete")
+    return warnings
 
 
 def _prediction_row(baseline: dict[str, Any] | None) -> dict[str, Any]:
@@ -221,6 +294,7 @@ def _weak_condition_groups(condition: dict[str, Any] | None) -> dict[str, list[d
         "k_mode",
         "k_region_mode",
         "bc_category",
+        "q_power_range",
     ):
         rows = groups.get(group_key)
         if not isinstance(rows, list):
@@ -286,9 +360,10 @@ def _prediction_metrics(run_dir: Path, label: str) -> dict[str, Any]:
 
 def _history_value(summary: dict[str, Any], field: str, epoch: int) -> float | None:
     values = summary.get(field)
-    if not isinstance(values, list) or epoch >= len(values):
+    index = _epoch_to_index(epoch)
+    if not isinstance(values, list) or index >= len(values):
         return None
-    return _to_float(values[epoch])
+    return _to_float(values[index])
 
 
 def _milestone_losses(summary: dict[str, Any]) -> list[dict[str, Any]]:
@@ -301,7 +376,7 @@ def _milestone_losses(summary: dict[str, Any]) -> list[dict[str, Any]]:
                 "valid_stress_loss": _history_value(
                     summary, "valid_stress_losses", epoch
                 ),
-                "lr": _history_value(summary, "epoch_lrs", max(epoch - 1, 0)),
+                "lr": _history_value(summary, "epoch_lrs", epoch),
             }
         )
     return rows
@@ -350,33 +425,62 @@ def _load_run_entries(path: Path | None) -> list[dict[str, Any]]:
 
 def _summarize_run(entry: dict[str, Any], run_root: Path, wsl2_root: Path) -> dict[str, Any]:
     run_dir = _resolve_run_dir(entry, run_root, wsl2_root)
-    expected = entry.get("expected")
-    if not isinstance(expected, dict):
-        expected = {}
+    expected = _entry_expected(entry)
 
     loss_summary = _read_json(run_dir / "loss_summary.json")
     run_config = _read_json(run_dir / "run_config.json")
-    status = "complete" if loss_summary else "missing"
+    predictions_path = run_dir / "predictions.npz"
+    best_predictions_path = run_dir / "best_predictions.npz"
     final_epoch = _to_int((loss_summary or {}).get("final_epoch"))
-
-    if loss_summary and bool(loss_summary.get("status_ok")) is False:
-        status = "partial"
+    configured_epochs = (run_config or {}).get("epochs", expected.get("epochs"))
 
     final_metrics = _prediction_metrics(run_dir, "final") if loss_summary else {}
     best_metrics = _prediction_metrics(run_dir, "best") if loss_summary else {}
     diagnostics_complete = bool(
         final_metrics.get("available") and best_metrics.get("available")
     )
-    if loss_summary and not diagnostics_complete:
+    predictions_complete = bool(predictions_path.exists() and best_predictions_path.exists())
+    graph_policy = _graph_policy(loss_summary, expected)
+
+    if loss_summary is None:
+        status = "missing"
+    elif bool(loss_summary.get("status_ok")) is False:
+        status = "partial"
+    elif not predictions_complete:
+        status = "needs_predictions"
+    elif not diagnostics_complete:
         status = "needs_diagnostics"
+    else:
+        status = "complete"
+
+    expected_epochs = _to_int(expected.get("epochs"))
+    if (
+        status == "complete"
+        and expected_epochs is not None
+        and final_epoch is not None
+        and final_epoch < expected_epochs
+    ):
+        status = "partial"
+
+    warnings = _metadata_mismatch_warnings(
+        summary=loss_summary,
+        run_config=run_config,
+        expected=expected,
+        graph_policy=graph_policy,
+        final_epoch=final_epoch,
+        diagnostics_complete=diagnostics_complete,
+    )
 
     return {
         "label": entry.get("label") or entry.get("run_name") or str(run_dir),
         "run_name": entry.get("run_name") or run_dir.name,
         "run_dir": str(run_dir),
         "status": status,
+        "predictions_complete": predictions_complete,
         "diagnostics_complete": diagnostics_complete,
-        "trusted_note": entry.get("trusted_note"),
+        "metadata_mismatch_warnings": warnings,
+        "trusted_note": entry.get("trusted_note") or entry.get("notes"),
+        "notes": entry.get("notes") or entry.get("trusted_note"),
         "seed": (loss_summary or {}).get("legacy_seed", (loss_summary or {}).get("seed", expected.get("seed"))),
         "model_seed": (loss_summary or {}).get("model_seed", expected.get("model_seed")),
         "batch_order_seed": (loss_summary or {}).get(
@@ -390,8 +494,9 @@ def _summarize_run(entry: dict[str, Any], run_root: Path, wsl2_root: Path) -> di
             "warmup_epochs", expected.get("warmup_epochs")
         ),
         "epochs": final_epoch or expected.get("epochs"),
-        "configured_epochs": (run_config or {}).get("epochs", expected.get("epochs")),
-        "graph_policy": _graph_policy(loss_summary, expected),
+        "final_epoch": final_epoch,
+        "configured_epochs": configured_epochs,
+        "graph_policy": graph_policy,
         "best_epoch": (loss_summary or {}).get("best_epoch"),
         "final_valid_iid_loss": (loss_summary or {}).get("final_valid_iid_loss"),
         "best_valid_iid_loss": (loss_summary or {}).get("best_valid_iid_loss"),
@@ -417,7 +522,12 @@ def _weak_split_text(result: dict[str, Any]) -> str:
 def _weak_condition_text(result: dict[str, Any]) -> str:
     groups = result.get("best_prediction", {}).get("weak_condition_groups") or {}
     parts = []
-    for group_key in ("source_category", "k_region_mode", "bc_category"):
+    for group_key in (
+        "source_category",
+        "k_region_mode",
+        "bc_category",
+        "q_power_range",
+    ):
         rows = groups.get(group_key) or []
         if rows:
             top = rows[0]
@@ -425,6 +535,13 @@ def _weak_condition_text(result: dict[str, Any]) -> str:
                 f"{group_key}={top.get('group_value')} {_format_number(top.get('rmse'))}"
             )
     return "; ".join(parts) if parts else "-"
+
+
+def _warnings_text(result: dict[str, Any]) -> str:
+    warnings = result.get("metadata_mismatch_warnings") or []
+    if not warnings:
+        return "-"
+    return "; ".join(str(item) for item in warnings[:3])
 
 
 def _write_markdown(summary: dict[str, Any], path: Path) -> None:
@@ -435,33 +552,39 @@ def _write_markdown(summary: dict[str, Any], path: Path) -> None:
         "Generated from existing `loss_summary.json` and diagnostics JSON files.",
         "No training is started by this script.",
         "",
-        "| run | status | seed | schedule | epochs | best_epoch | final/best iid | final/best stress | best RMSE/MAE | corr/top-k | bin0 bias/over | weak split | caveat |",
-        "| --- | --- | ---: | --- | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |",
+        "| run | status | seed | schedule | configured/final epochs | best_epoch | final/best iid | final/best stress | final RMSE/MAE | best RMSE/MAE | best corr/top-k | best bin0 bias/over | weak split | warnings | caveat |",
+        "| --- | --- | ---: | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for result in rows:
+        final = result.get("final_prediction", {})
         best = result.get("best_prediction", {})
         seed = result.get("model_seed")
         lines.append(
-            "| {label} | {status} | {seed} | {schedule} | {epochs} | {best_epoch} | "
+            "| {label} | {status} | {seed} | {schedule} | {configured_epochs}/{final_epoch} | {best_epoch} | "
             "{final_iid}/{best_iid} | {final_stress}/{best_stress} | "
-            "{rmse}/{mae} | {corr}/{topk} | {bias}/{over} | {weak_split} | {caveat} |".format(
+            "{final_rmse}/{final_mae} | {best_rmse}/{best_mae} | "
+            "{corr}/{topk} | {bias}/{over} | {weak_split} | {warnings} | {caveat} |".format(
                 label=result["label"],
                 status=result["status"],
                 seed=seed if seed is not None else "-",
                 schedule=result.get("schedule") or "-",
-                epochs=result.get("epochs") or "-",
+                configured_epochs=result.get("configured_epochs") or "-",
+                final_epoch=result.get("final_epoch") or "-",
                 best_epoch=result.get("best_epoch") or "-",
                 final_iid=_format_number(result.get("final_valid_iid_loss")),
                 best_iid=_format_number(result.get("best_valid_iid_loss")),
                 final_stress=_format_number(result.get("final_valid_stress_loss")),
                 best_stress=_format_number(result.get("best_valid_stress_loss")),
-                rmse=_format_number(best.get("mean_deltaT_rmse")),
-                mae=_format_number(best.get("mean_deltaT_mae")),
+                final_rmse=_format_number(final.get("mean_deltaT_rmse")),
+                final_mae=_format_number(final.get("mean_deltaT_mae")),
+                best_rmse=_format_number(best.get("mean_deltaT_rmse")),
+                best_mae=_format_number(best.get("mean_deltaT_mae")),
                 corr=_format_number(best.get("centered_spatial_correlation")),
                 topk=_format_number(best.get("top_k_overlap")),
                 bias=_format_number(best.get("bin0_signed_bias")),
                 over=_format_number(best.get("bin0_overprediction_ratio")),
                 weak_split=_weak_split_text(result),
+                warnings=_warnings_text(result),
                 caveat=result.get("trusted_note") or "-",
             )
         )
@@ -471,15 +594,16 @@ def _write_markdown(summary: dict[str, Any], path: Path) -> None:
             "",
             "## Milestone Losses",
             "",
-            "| run | e20 iid | e50 iid | e100 iid | e200 iid | e400 iid | e800 iid | e1200 iid | e1600 iid |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| run | e1 iid | e20 iid | e50 iid | e100 iid | e200 iid | e400 iid | e800 iid | e1200 iid | e1600 iid |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for result in rows:
         by_epoch = {row["epoch"]: row for row in result.get("milestone_losses", [])}
         lines.append(
-            "| {label} | {e20} | {e50} | {e100} | {e200} | {e400} | {e800} | {e1200} | {e1600} |".format(
+            "| {label} | {e1} | {e20} | {e50} | {e100} | {e200} | {e400} | {e800} | {e1200} | {e1600} |".format(
                 label=result["label"],
+                e1=_format_number(by_epoch.get(1, {}).get("valid_iid_loss")),
                 e20=_format_number(by_epoch.get(20, {}).get("valid_iid_loss")),
                 e50=_format_number(by_epoch.get(50, {}).get("valid_iid_loss")),
                 e100=_format_number(by_epoch.get(100, {}).get("valid_iid_loss")),
