@@ -1,5 +1,22 @@
 {
+  "schema_version": "heat3d_v3_long_run_audit_runs_v1",
   "description": "Default Heat3D v3 long-run audit matrix. This file is a reusable template for future P3/P4/P5 run matrices.",
+  "template_fields": [
+    "label",
+    "run_name",
+    "run_dir",
+    "expected_seed",
+    "expected_model_seed",
+    "expected_batch_order_seed",
+    "expected_graph_seed",
+    "expected_schedule",
+    "expected_lr",
+    "expected_min_lr",
+    "expected_warmup_epochs",
+    "expected_epochs",
+    "expected_graph_policy",
+    "notes"
+  ],
   "runs": [
     {
       "label": "W1_seed1_e1200_warmup_flat",

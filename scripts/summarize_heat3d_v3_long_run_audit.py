@@ -5,6 +5,13 @@ The script reads existing ``loss_summary.json`` and optional final/best
 diagnostics JSON files from run directories. It writes compact JSON and
 Markdown summaries for completed and pending runs. It intentionally does not
 import JAX, build graphs, load predictions, or execute training.
+
+External run-list JSON may be either a list of run objects or an object with a
+``runs`` list. Each run object should provide at least ``label``, ``run_name``
+or ``run_dir``, ``expected_seed``, ``expected_schedule``, ``expected_epochs``,
+and ``notes``. Optional expected fields include ``expected_model_seed``,
+``expected_batch_order_seed``, ``expected_graph_seed``, ``expected_lr``,
+``expected_min_lr``, ``expected_warmup_epochs``, and ``expected_graph_policy``.
 """
 
 from __future__ import annotations
@@ -16,6 +23,15 @@ from typing import Any
 
 
 MILESTONE_EPOCHS = (1, 20, 50, 100, 200, 400, 800, 1200, 1600)
+CONDITION_GROUP_KEYS = (
+    "split",
+    "source_category",
+    "q_power_range",
+    "k_mode",
+    "k_region_mode",
+    "bc_category",
+)
+MARKDOWN_WEAK_GROUP_LIMIT = 3
 
 DEFAULT_RUNS: tuple[dict[str, Any], ...] = (
     {
@@ -288,14 +304,7 @@ def _weak_condition_groups(condition: dict[str, Any] | None) -> dict[str, list[d
     if not isinstance(groups, dict):
         return {}
     result: dict[str, list[dict[str, Any]]] = {}
-    for group_key in (
-        "split",
-        "source_category",
-        "k_mode",
-        "k_region_mode",
-        "bc_category",
-        "q_power_range",
-    ):
+    for group_key in CONDITION_GROUP_KEYS:
         rows = groups.get(group_key)
         if not isinstance(rows, list):
             continue
@@ -323,7 +332,7 @@ def _weak_condition_groups(condition: dict[str, Any] | None) -> dict[str, list[d
                 }
             )
         if parsed:
-            result[group_key] = sorted(parsed, key=lambda item: item["rmse"], reverse=True)[:3]
+            result[group_key] = sorted(parsed, key=lambda item: item["rmse"], reverse=True)
     return result
 
 
@@ -521,19 +530,21 @@ def _weak_split_text(result: dict[str, Any]) -> str:
 
 def _weak_condition_text(result: dict[str, Any]) -> str:
     groups = result.get("best_prediction", {}).get("weak_condition_groups") or {}
+    flattened: list[dict[str, Any]] = []
+    for group_key in CONDITION_GROUP_KEYS:
+        for row in groups.get(group_key) or []:
+            flattened.append(dict(row))
+    flattened.sort(key=lambda item: _to_float(item.get("rmse")) or float("-inf"), reverse=True)
+
     parts = []
-    for group_key in (
-        "source_category",
-        "k_region_mode",
-        "bc_category",
-        "q_power_range",
-    ):
-        rows = groups.get(group_key) or []
-        if rows:
-            top = rows[0]
-            parts.append(
-                f"{group_key}={top.get('group_value')} {_format_number(top.get('rmse'))}"
+    for row in flattened[:MARKDOWN_WEAK_GROUP_LIMIT]:
+        parts.append(
+            "{group_key}={group_value} {rmse}".format(
+                group_key=row.get("group_key"),
+                group_value=row.get("group_value"),
+                rmse=_format_number(row.get("rmse")),
             )
+        )
     return "; ".join(parts) if parts else "-"
 
 
@@ -625,7 +636,10 @@ def _write_markdown(summary: dict[str, Any], path: Path) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--run-root", default="output/heat3d_v2_runs")
     parser.add_argument(
         "--wsl2-root",
@@ -635,7 +649,11 @@ def parse_args() -> argparse.Namespace:
         "--run-list-json",
         type=Path,
         default=None,
-        help="Optional JSON list of run entries. Defaults to v3 W1/L2/S1/B6/S2/S3.",
+        help=(
+            "Optional JSON list of run entries. Supports fields "
+            "label/run_name/run_dir/expected_seed/expected_schedule/"
+            "expected_epochs/notes. Defaults to v3 W1/L2/S1/B6/S2/S3."
+        ),
     )
     parser.add_argument(
         "--output-json",
