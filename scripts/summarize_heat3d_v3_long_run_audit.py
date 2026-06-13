@@ -108,7 +108,7 @@ DEFAULT_RUNS: tuple[dict[str, Any], ...] = (
     },
     {
         "label": "S3_seed0_e1200_warmup_cosine",
-        "root": "run_root",
+        "root": "wsl2_root",
         "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S3_seed0_e1200_warmupcosine_lr1e-3_minlr1e-4_wd1e-4",
         "notes": "pending; seed0 L3-style warmup-cosine control",
         "expected_seed": 0,
