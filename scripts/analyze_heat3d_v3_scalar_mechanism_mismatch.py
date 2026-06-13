@@ -29,6 +29,12 @@ DEFAULT_LABEL_TO_PREDICTION = {
     "best": "best_predictions.npz",
 }
 GROUP_KEYS = mech.GROUP_KEYS
+DEFAULT_PAIRED_COMPARISONS = (
+    "B6:best=S3:final",
+    "B6:best=S3:best",
+    "B6:best=S2:best",
+    "S3:best=S3:final",
+)
 
 
 def _parse_run(token: str) -> tuple[str, Path]:
@@ -40,6 +46,30 @@ def _parse_run(token: str) -> tuple[str, Path]:
     if not label:
         raise ValueError(f"empty run label in {token!r}")
     return label, Path(path)
+
+
+def _parse_endpoint(token: str) -> tuple[str, str]:
+    if ":" not in token:
+        raise ValueError(f"prediction endpoint must be RUN:LABEL, found {token!r}")
+    run, label = token.split(":", 1)
+    run = run.strip()
+    label = label.strip()
+    if not run or not label:
+        raise ValueError(f"prediction endpoint must be RUN:LABEL, found {token!r}")
+    if label not in DEFAULT_LABEL_TO_PREDICTION:
+        raise ValueError(f"unsupported prediction label {label!r} in endpoint {token!r}")
+    return run, label
+
+
+def _parse_pair(token: str) -> tuple[tuple[str, str], tuple[str, str]]:
+    if "=" not in token:
+        raise ValueError(f"paired comparison must be REF_RUN:REF_LABEL=TARGET_RUN:TARGET_LABEL, found {token!r}")
+    left, right = token.split("=", 1)
+    return _parse_endpoint(left), _parse_endpoint(right)
+
+
+def _endpoint_text(endpoint: tuple[str, str]) -> str:
+    return f"{endpoint[0]}:{endpoint[1]}"
 
 
 def _prediction_labels(spec: str) -> list[str]:
@@ -161,6 +191,7 @@ def _load_run_prediction(
         "top_error_samples": _top_samples(rows, metric="rmse", limit=top_samples),
         "top_peak_rel_samples": _top_samples(rows, metric="peak_rel_error", limit=top_samples),
         "top_shape_samples": _top_samples(rows, metric="zscore_rmse", limit=top_samples),
+        "per_sample": [_sample_row(row) for row in rows],
         "grouped": grouped,
         "failures": failures,
     }
@@ -245,6 +276,132 @@ def _compare_to_reference(
     return payload
 
 
+def _metric_delta(
+    target: dict[str, Any],
+    reference: dict[str, Any],
+    metric: str,
+) -> float | None:
+    target_value = mech._json_float(target.get(metric))
+    reference_value = mech._json_float(reference.get(metric))
+    if target_value is None or reference_value is None:
+        return None
+    return target_value - reference_value
+
+
+def _paired_row(
+    *,
+    reference_endpoint: tuple[str, str],
+    target_endpoint: tuple[str, str],
+    sample_id: str,
+    reference_row: dict[str, Any],
+    target_row: dict[str, Any],
+) -> dict[str, Any]:
+    groups = target_row.get("groups") or reference_row.get("groups") or {}
+    payload: dict[str, Any] = {
+        "sample_id": sample_id,
+        "reference_run": reference_endpoint[0],
+        "reference_label": reference_endpoint[1],
+        "target_run": target_endpoint[0],
+        "target_label": target_endpoint[1],
+        "groups": groups,
+    }
+    for key in GROUP_KEYS:
+        payload[key] = groups.get(key, "unknown")
+    for metric in ("rmse", "zscore_rmse", "peak_rel_error", "top_k_overlap"):
+        payload[f"reference_{metric}"] = reference_row.get(metric)
+        payload[f"target_{metric}"] = target_row.get(metric)
+        payload[f"delta_{metric}"] = _metric_delta(target_row, reference_row, metric)
+    return payload
+
+
+def _sample_map(result: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    rows = {}
+    for row in result.get("per_sample") or []:
+        sample_id = row.get("sample_id")
+        if sample_id is not None:
+            rows[str(sample_id)] = row
+    return rows
+
+
+def _sort_delta_rows(
+    rows: list[dict[str, Any]],
+    *,
+    metric: str,
+    reverse: bool,
+) -> list[dict[str, Any]]:
+    def key(row: dict[str, Any]) -> float:
+        value = mech._json_float(row.get(metric))
+        if value is None:
+            return float("-inf") if reverse else float("inf")
+        return value
+
+    return sorted(rows, key=key, reverse=reverse)
+
+
+def _paired_comparisons(
+    results: list[dict[str, Any]],
+    *,
+    pairs: list[tuple[tuple[str, str], tuple[str, str]]],
+    limit: int,
+) -> list[dict[str, Any]]:
+    complete = {
+        (str(result.get("run")), str(result.get("prediction_label"))): result
+        for result in results
+        if result.get("status") == "complete"
+    }
+    comparisons = []
+    for reference_endpoint, target_endpoint in pairs:
+        comparison_name = f"{_endpoint_text(reference_endpoint)}_vs_{_endpoint_text(target_endpoint)}"
+        reference = complete.get(reference_endpoint)
+        target = complete.get(target_endpoint)
+        if reference is None or target is None:
+            comparisons.append(
+                {
+                    "comparison": comparison_name,
+                    "reference": _endpoint_text(reference_endpoint),
+                    "target": _endpoint_text(target_endpoint),
+                    "status": "missing_endpoint",
+                    "reference_available": reference is not None,
+                    "target_available": target is not None,
+                    "rows": [],
+                    "reference_beats_target_most": [],
+                    "target_beats_reference_most": [],
+                }
+            )
+            continue
+
+        reference_rows = _sample_map(reference)
+        target_rows = _sample_map(target)
+        common_sample_ids = sorted(set(reference_rows).intersection(target_rows))
+        rows = [
+            _paired_row(
+                reference_endpoint=reference_endpoint,
+                target_endpoint=target_endpoint,
+                sample_id=sample_id,
+                reference_row=reference_rows[sample_id],
+                target_row=target_rows[sample_id],
+            )
+            for sample_id in common_sample_ids
+        ]
+        reference_beats = _sort_delta_rows(rows, metric="delta_rmse", reverse=True)
+        target_beats = _sort_delta_rows(rows, metric="delta_rmse", reverse=False)
+        comparisons.append(
+            {
+                "comparison": comparison_name,
+                "reference": _endpoint_text(reference_endpoint),
+                "target": _endpoint_text(target_endpoint),
+                "status": "complete",
+                "common_sample_count": len(common_sample_ids),
+                "reference_only_sample_count": len(set(reference_rows).difference(target_rows)),
+                "target_only_sample_count": len(set(target_rows).difference(reference_rows)),
+                "rows": rows,
+                "reference_beats_target_most": reference_beats[:limit],
+                "target_beats_reference_most": target_beats[:limit],
+            }
+        )
+    return comparisons
+
+
 def build_mismatch_payload(
     *,
     runs: list[tuple[str, Path]],
@@ -252,6 +409,8 @@ def build_mismatch_payload(
     top_k: int,
     top_samples: int,
     comparison_limit: int,
+    paired_limit: int,
+    pairs: list[tuple[tuple[str, str], tuple[str, str]]],
 ) -> dict[str, Any]:
     results = []
     for run_label, run_dir in runs:
@@ -283,6 +442,11 @@ def build_mismatch_payload(
             "prediction_labels": prediction_labels,
             "top_k": top_k,
             "top_samples": top_samples,
+            "paired_limit": paired_limit,
+            "pairs": [
+                {"reference": _endpoint_text(reference), "target": _endpoint_text(target)}
+                for reference, target in pairs
+            ],
         },
         "results": results,
         "rankings": rankings,
@@ -306,6 +470,7 @@ def build_mismatch_payload(
                 limit=comparison_limit,
             ),
         },
+        "paired_sample_deltas": _paired_comparisons(results, pairs=pairs, limit=paired_limit),
     }
 
 
@@ -365,6 +530,30 @@ def _top_delta_text(items: list[dict[str, Any]]) -> str:
     return "; ".join(parts)
 
 
+def _paired_sample_table(rows: list[dict[str, Any]]) -> list[str]:
+    lines = [
+        "| sample | split | source | q_power | k_mode | k_region | bc | dRMSE | dzRMSE | dPeakRel | dTopK |",
+        "| --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: |",
+    ]
+    for row in rows:
+        lines.append(
+            "| {sample} | {split} | {source} | {q} | {k_mode} | {k_region} | {bc} | {drmse} | {dz} | {dpeak} | {dtopk} |".format(
+                sample=row.get("sample_id"),
+                split=row.get("split"),
+                source=row.get("source_category"),
+                q=row.get("q_power_range"),
+                k_mode=row.get("k_mode"),
+                k_region=row.get("k_region_mode"),
+                bc=row.get("bc_category"),
+                drmse=_fmt(row.get("delta_rmse")),
+                dz=_fmt(row.get("delta_zscore_rmse")),
+                dpeak=_fmt(row.get("delta_peak_rel_error")),
+                dtopk=_fmt(row.get("delta_top_k_overlap")),
+            )
+        )
+    return lines
+
+
 def render_markdown(payload: dict[str, Any]) -> str:
     lines = [
         "# Heat3D v3 Scalar/Mechanism Mismatch Audit",
@@ -398,6 +587,30 @@ def render_markdown(payload: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Paired Per-Sample Deltas",
+            "",
+            "Deltas are target minus reference, aligned by sample_id. Positive dRMSE means the reference is better on RMSE; negative dRMSE means the target is better.",
+        ]
+    )
+    for comparison in payload.get("paired_sample_deltas", []):
+        lines.extend(
+            [
+                "",
+                f"### {comparison.get('comparison')}",
+                "",
+                f"- status: {comparison.get('status')}",
+                f"- common samples: {comparison.get('common_sample_count', 0)}",
+                "",
+                "Reference beats target most:",
+                "",
+            ]
+        )
+        lines.extend(_paired_sample_table(comparison.get("reference_beats_target_most", [])))
+        lines.extend(["", "Target beats reference most:", ""])
+        lines.extend(_paired_sample_table(comparison.get("target_beats_reference_most", [])))
+    lines.extend(
+        [
+            "",
             "## Interpretation Notes",
             "",
             "- Scalar losses come from the training loss summary; mechanism metrics are raw DeltaT / recovered-field diagnostics.",
@@ -415,6 +628,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--top-samples", type=int, default=20)
     parser.add_argument("--comparison-limit", type=int, default=12)
+    parser.add_argument(
+        "--pair",
+        action="append",
+        help=(
+            "Paired sample comparison as REF_RUN:REF_LABEL=TARGET_RUN:TARGET_LABEL. "
+            "Defaults to B6/S2/S3 comparisons when omitted."
+        ),
+    )
+    parser.add_argument("--paired-limit", type=int, default=10)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
     return parser.parse_args()
@@ -429,6 +651,8 @@ def main() -> int:
         top_k=args.top_k,
         top_samples=args.top_samples,
         comparison_limit=args.comparison_limit,
+        paired_limit=args.paired_limit,
+        pairs=[_parse_pair(token) for token in (args.pair or DEFAULT_PAIRED_COMPARISONS)],
     )
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

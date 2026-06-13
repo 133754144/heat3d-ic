@@ -77,6 +77,22 @@
       "notes": "trusted diagnostic; stronger seed0 baseline"
     },
     {
+      "label": "S4_seed0_e600_warmup_cosine",
+      "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S4_seed0_e600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4",
+      "run_dir": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S4_seed0_e600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4",
+      "expected_seed": 0,
+      "expected_model_seed": 0,
+      "expected_batch_order_seed": 0,
+      "expected_graph_seed": 0,
+      "expected_schedule": "warmup_cosine",
+      "expected_lr": 0.0005,
+      "expected_min_lr": 0.00005,
+      "expected_warmup_epochs": 10,
+      "expected_epochs": 600,
+      "expected_graph_policy": "nearest_rnode",
+      "notes": "pending; B6 single-variable e600 extension to test B6 e400 undertraining"
+    },
+    {
       "label": "S2_seed0_e1200_constant",
       "run_name": "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S2_seed0_e1200_constant_lr1e-3_wd1e-4",
       "run_dir": "output/_from_wsl2/DESKTOP-2GE35DV/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S2_seed0_e1200_constant_lr1e-3_wd1e-4",
