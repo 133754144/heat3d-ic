@@ -8,6 +8,7 @@ diagnostic comparison. It is not a formal training experiment.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import gc
 import hashlib
 import json
@@ -121,6 +122,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--edge-latent-size", type=int, default=MODEL_CONFIG["edge_latent_size"])
     parser.add_argument("--processor-steps", type=int, default=MODEL_CONFIG["processor_steps"])
     parser.add_argument("--mlp-hidden-layers", type=int, default=MODEL_CONFIG["mlp_hidden_layers"])
+    parser.add_argument("--p-edge-masking", type=float, default=float(MODEL_CONFIG.get("p_edge_masking", 0.0)))
     parser.add_argument("--batch-size", type=int, default=0)
     parser.add_argument("--validation-batch-size", type=int, default=0)
     parser.add_argument("--prediction-batch-size", type=int, default=0)
@@ -230,6 +232,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--final-checkpoint-name", type=str, default="params_final.pkl")
     parser.add_argument("--best-checkpoint-name", type=str, default="params_best.pkl")
+    parser.add_argument(
+        "--init-checkpoint",
+        type=Path,
+        default=None,
+        help="Optional params-only checkpoint used to initialize model params before training.",
+    )
+    parser.add_argument(
+        "--checkpoint-load-strict",
+        choices=("true", "false"),
+        default="true",
+        help="When true, --init-checkpoint params must exactly match the initialized param tree.",
+    )
     parser.add_argument("--report-every", type=int, default=1)
     parser.add_argument(
         "--train-metrics-schedule",
@@ -1369,6 +1383,7 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "edge_latent_size": int(args.edge_latent_size),
             "processor_steps": int(args.processor_steps),
             "mlp_hidden_layers": int(args.mlp_hidden_layers),
+            "p_edge_masking": float(args.p_edge_masking),
         }
     )
     return model_config
@@ -1500,6 +1515,9 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     for key in ("node_latent_size", "edge_latent_size", "processor_steps", "mlp_hidden_layers"):
         if int(config[key]) < 1:
             raise ValueError(f"--{key.replace('_', '-')} must be >= 1")
+    p_edge_masking = float(config.get("p_edge_masking", 0.0))
+    if p_edge_masking < 0.0 or p_edge_masking >= 1.0:
+        raise ValueError("--p-edge-masking must be in [0, 1)")
 
 
 def _validate_batch_config(config: dict[str, Any]) -> None:
@@ -2337,6 +2355,8 @@ def _fit_once(
     log_mode: str,
     progress_enabled: bool,
     init_mode: str = "real_first_batch",
+    init_checkpoint: Path | None = None,
+    checkpoint_load_strict: bool = True,
     timings: dict[str, float] | None = None,
     profile_enabled: bool = False,
     memory_audit: MemoryAudit | None = None,
@@ -2355,10 +2375,24 @@ def _fit_once(
         inputs=init_inputs,
         graphs=train_groups[0]["graphs"],
     )["params"]
+    params, checkpoint_load_info = _load_init_checkpoint_params(
+        params,
+        init_checkpoint,
+        strict=checkpoint_load_strict,
+    )
     _record_timing(timings, "model_init", init_start)
     if memory_audit is not None:
         memory_audit.record("model_init_end")
-    _progress(progress_enabled, "startup", f"model parameters initialized init_mode={init_mode}", init_start)
+    _progress(
+        progress_enabled,
+        "startup",
+        (
+            f"model parameters initialized init_mode={init_mode} "
+            f"checkpoint_loaded={checkpoint_load_info['loaded']} "
+            f"loaded_keys={checkpoint_load_info['loaded_key_count']}"
+        ),
+        init_start,
+    )
 
     batch_enabled = batch_config.get("batch_size") is not None
     metrics_fn = _weighted_metrics if batch_enabled else _metrics
@@ -2998,6 +3032,7 @@ def _fit_once(
         "selection_metric": selection_metric,
         "primary_validation_split": primary_validation_split,
         "stress_validation_split": stress_validation_split,
+        "checkpoint_load_info": checkpoint_load_info,
         "best_record": best_record,
         "best_params": best_params,
         "best_score": best_score,
@@ -3074,12 +3109,187 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         json.dump(_json_safe(payload), f, allow_nan=False, indent=2, sort_keys=True)
 
 
+def _stable_json_hash(payload: Any) -> str:
+    encoded = json.dumps(_json_safe(payload), sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _tree_path_entry_name(entry: Any) -> str:
+    for attr in ("key", "idx", "name"):
+        if hasattr(entry, attr):
+            return str(getattr(entry, attr))
+    return str(entry)
+
+
+def _tree_path_name(path: tuple[Any, ...]) -> str:
+    if not path:
+        return "<root>"
+    return "/".join(_tree_path_entry_name(entry) for entry in path)
+
+
+def _param_leaf_items(params: Any) -> list[tuple[str, Any]]:
+    return [(_tree_path_name(path), leaf) for path, leaf in tree.tree_flatten_with_path(params)[0]]
+
+
+def _param_tree_summary(params: Any) -> dict[str, Any]:
+    shapes = {}
+    dtypes = {}
+    param_count = 0
+    for path, leaf in _param_leaf_items(params):
+        array = np.asarray(leaf)
+        shapes[path] = list(array.shape)
+        dtypes[path] = str(array.dtype)
+        param_count += int(array.size)
+    return {
+        "leaf_count": len(shapes),
+        "param_count": int(param_count),
+        "param_shapes": shapes,
+        "param_dtypes": dtypes,
+    }
+
+
 def _host_params(params: Any) -> Any:
     host_params = jax.device_get(params)
     return tree.tree_map(
         lambda value: np.asarray(value) if hasattr(value, "shape") else value,
         host_params,
     )
+
+
+def _device_params(params: Any) -> Any:
+    return tree.tree_map(
+        lambda value: jnp.asarray(value) if hasattr(value, "shape") else value,
+        params,
+    )
+
+
+def _load_params_checkpoint(path: Path) -> dict[str, Any]:
+    with path.open("rb") as handle:
+        payload = pickle.load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path}: checkpoint payload must be a dict")
+    if "params" not in payload:
+        raise ValueError(f"{path}: checkpoint missing params")
+    return payload
+
+
+def _apply_checkpoint_params(
+    initial_params: Any,
+    checkpoint_params: Any,
+    *,
+    strict: bool,
+) -> tuple[Any, dict[str, Any]]:
+    initial_items = _param_leaf_items(initial_params)
+    checkpoint_items = _param_leaf_items(checkpoint_params)
+    initial_map = {path: leaf for path, leaf in initial_items}
+    checkpoint_map = {path: leaf for path, leaf in checkpoint_items}
+    loaded_keys = []
+    missing_keys = []
+    unused_keys = []
+    shape_mismatch_keys = []
+
+    if strict:
+        missing_keys = sorted(set(initial_map) - set(checkpoint_map))
+        unused_keys = sorted(set(checkpoint_map) - set(initial_map))
+        for path in sorted(set(initial_map).intersection(checkpoint_map)):
+            if tuple(np.shape(initial_map[path])) != tuple(np.shape(checkpoint_map[path])):
+                shape_mismatch_keys.append(
+                    {
+                        "key": path,
+                        "expected_shape": list(np.shape(initial_map[path])),
+                        "checkpoint_shape": list(np.shape(checkpoint_map[path])),
+                    }
+                )
+        if missing_keys or unused_keys or shape_mismatch_keys:
+            raise ValueError(
+                "strict checkpoint load failed: "
+                f"missing={len(missing_keys)} unused={len(unused_keys)} "
+                f"shape_mismatch={len(shape_mismatch_keys)}"
+            )
+        loaded_keys = sorted(initial_map)
+        loaded_params = tree.tree_unflatten(
+            tree.tree_structure(initial_params),
+            [jnp.asarray(checkpoint_map[path]) for path, _ in initial_items],
+        )
+    else:
+        new_leaves = []
+        for path, leaf in initial_items:
+            checkpoint_leaf = checkpoint_map.get(path)
+            if checkpoint_leaf is None:
+                missing_keys.append(path)
+                new_leaves.append(leaf)
+                continue
+            if tuple(np.shape(leaf)) != tuple(np.shape(checkpoint_leaf)):
+                shape_mismatch_keys.append(
+                    {
+                        "key": path,
+                        "expected_shape": list(np.shape(leaf)),
+                        "checkpoint_shape": list(np.shape(checkpoint_leaf)),
+                    }
+                )
+                new_leaves.append(leaf)
+                continue
+            loaded_keys.append(path)
+            new_leaves.append(jnp.asarray(checkpoint_leaf))
+        loaded_params = tree.tree_unflatten(tree.tree_structure(initial_params), new_leaves)
+        unused_keys = sorted(set(checkpoint_map) - set(initial_map))
+
+    info = {
+        "checkpoint_load_mode": "params_only",
+        "checkpoint_load_strict": bool(strict),
+        "loaded": True,
+        "loaded_key_count": len(loaded_keys),
+        "missing_key_count": len(missing_keys),
+        "unused_key_count": len(unused_keys),
+        "shape_mismatch_count": len(shape_mismatch_keys),
+        "loaded_keys": loaded_keys[:50],
+        "missing_keys": missing_keys[:50],
+        "unused_keys": unused_keys[:50],
+        "shape_mismatch_keys": shape_mismatch_keys[:50],
+    }
+    return loaded_params, info
+
+
+def _load_init_checkpoint_params(
+    initial_params: Any,
+    checkpoint_path: Path | None,
+    *,
+    strict: bool,
+) -> tuple[Any, dict[str, Any]]:
+    if checkpoint_path is None:
+        return initial_params, {
+            "checkpoint_load_mode": None,
+            "checkpoint_load_strict": bool(strict),
+            "loaded": False,
+            "loaded_key_count": 0,
+            "missing_key_count": 0,
+            "unused_key_count": 0,
+            "shape_mismatch_count": 0,
+            "loaded_keys": [],
+            "missing_keys": [],
+            "unused_keys": [],
+            "shape_mismatch_keys": [],
+        }
+    payload = _load_params_checkpoint(checkpoint_path)
+    loaded_params, info = _apply_checkpoint_params(
+        initial_params,
+        payload["params"],
+        strict=strict,
+    )
+    info.update(
+        {
+            "init_checkpoint": str(checkpoint_path),
+            "checkpoint_schema_version": payload.get("schema_version"),
+            "checkpoint_format_version": payload.get("checkpoint_format_version"),
+            "checkpoint_kind": payload.get("checkpoint_kind"),
+            "checkpoint_epoch": payload.get("epoch"),
+            "checkpoint_git_commit": payload.get("git_commit"),
+            "checkpoint_model_config_hash": payload.get("model_config_hash"),
+            "checkpoint_train_stats_hash": payload.get("train_stats_hash"),
+            "optimizer_state_loaded": False,
+        }
+    )
+    return loaded_params, info
 
 
 def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict[str, Any]:
@@ -3130,6 +3340,9 @@ def _checkpoint_run_metadata(
         "batch_config": batch_config,
         "graph_config": graph_config,
         "prediction_split": args.prediction_split,
+        "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
+        "checkpoint_load_mode": "params_only" if args.init_checkpoint is not None else None,
+        "checkpoint_load_strict": args.checkpoint_load_strict,
     }
 
 
@@ -3144,20 +3357,35 @@ def _write_params_checkpoint(
     record: dict[str, Any],
     run_metadata: dict[str, Any],
 ) -> None:
+    host_params = _host_params(params)
+    param_tree_summary = _param_tree_summary(host_params)
+    train_stats = _stats_payload(stats)
     payload = {
         "schema_version": "heat3d_v3_params_checkpoint_v1",
+        "checkpoint_format_version": 1,
         "checkpoint_kind": kind,
-        "params": _host_params(params),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "git_commit": _current_git_commit(),
+        "params": host_params,
         "model_config": _json_safe(model_config),
-        "train_only_normalization": _stats_payload(stats),
+        "train_only_normalization": train_stats,
         "epoch": int(epoch) if epoch is not None else None,
         "record": _json_safe(record),
         "run_config_metadata": _json_safe(run_metadata),
+        "param_tree_summary": param_tree_summary,
+        "param_count": param_tree_summary["param_count"],
+        "param_shapes": param_tree_summary["param_shapes"],
+        "model_config_hash": _stable_json_hash(model_config),
+        "train_stats_hash": _stable_json_hash(train_stats),
+        "load_policy_intended": "params_only",
         "optimizer_state_saved": False,
-        "warm_start_supported": False,
+        "warm_start_supported": True,
+        "warm_start_mode": "params_only",
     }
-    with path.open("wb") as handle:
+    tmp_path = path.with_name(path.name + ".tmp")
+    with tmp_path.open("wb") as handle:
         pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    tmp_path.replace(path)
 
 
 def _stats_payload(stats: dict) -> dict[str, Any]:
@@ -3220,7 +3448,8 @@ def _print_startup_summary(
         f"node_latent_size={model_config['node_latent_size']} "
         f"edge_latent_size={model_config['edge_latent_size']} "
         f"processor_steps={model_config['processor_steps']} "
-        f"mlp_hidden_layers={model_config['mlp_hidden_layers']}"
+        f"mlp_hidden_layers={model_config['mlp_hidden_layers']} "
+        f"p_edge_masking={model_config.get('p_edge_masking', 0.0)}"
     )
     _emit(
         "  output: "
@@ -3246,6 +3475,12 @@ def _print_startup_summary(
     _emit(
         "  selection: "
         f"metric={args.selection_metric} best_predictions_name={args.best_predictions_name}"
+    )
+    _emit(
+        "  checkpoint init: "
+        f"init_checkpoint={args.init_checkpoint if args.init_checkpoint is not None else 'none'} "
+        f"load_mode={'params_only' if args.init_checkpoint is not None else 'none'} "
+        f"strict={args.checkpoint_load_strict}"
     )
     if args.log_mode == "compact":
         _emit(
@@ -3875,6 +4110,9 @@ def main() -> int:
     _validate_model_config(model_config)
     _validate_batch_config(batch_config)
     _validate_graph_config(graph_config)
+    checkpoint_load_strict = args.checkpoint_load_strict == "true"
+    if args.init_checkpoint is not None and not args.init_checkpoint.is_file():
+        raise FileNotFoundError(f"--init-checkpoint not found: {args.init_checkpoint}")
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
@@ -4088,6 +4326,8 @@ def main() -> int:
         args.log_mode,
         progress_enabled,
         init_mode=args.init_mode,
+        init_checkpoint=args.init_checkpoint,
+        checkpoint_load_strict=checkpoint_load_strict,
         timings=timings,
         profile_enabled=profile_enabled,
         memory_audit=memory_audit,
@@ -4287,6 +4527,15 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
+        "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
+        "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
+        "checkpoint_loaded": bool(result["checkpoint_load_info"].get("loaded")),
+        "checkpoint_loaded_key_count": int(result["checkpoint_load_info"].get("loaded_key_count", 0)),
+        "checkpoint_missing_key_count": int(result["checkpoint_load_info"].get("missing_key_count", 0)),
+        "checkpoint_unused_key_count": int(result["checkpoint_load_info"].get("unused_key_count", 0)),
+        "checkpoint_shape_mismatch_count": int(result["checkpoint_load_info"].get("shape_mismatch_count", 0)),
+        "checkpoint_load_info": result["checkpoint_load_info"],
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
         "progress_detail": args.progress_detail,
@@ -4499,6 +4748,15 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
+        "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
+        "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
+        "checkpoint_loaded": bool(result["checkpoint_load_info"].get("loaded")),
+        "checkpoint_loaded_key_count": int(result["checkpoint_load_info"].get("loaded_key_count", 0)),
+        "checkpoint_missing_key_count": int(result["checkpoint_load_info"].get("missing_key_count", 0)),
+        "checkpoint_unused_key_count": int(result["checkpoint_load_info"].get("unused_key_count", 0)),
+        "checkpoint_shape_mismatch_count": int(result["checkpoint_load_info"].get("shape_mismatch_count", 0)),
+        "checkpoint_load_info": result["checkpoint_load_info"],
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],

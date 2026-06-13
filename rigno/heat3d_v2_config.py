@@ -142,6 +142,7 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "model_node_latent_size": model.get("node_latent_size"),
         "model_edge_latent_size": model.get("edge_latent_size"),
         "model_processor_steps": model.get("processor_steps"),
+        "model_p_edge_masking": model.get("p_edge_masking"),
         "optimizer_name": optimizer.get("name"),
         "optimizer_lr": optimizer.get("lr"),
         "optimizer_lr_schedule": optimizer.get("lr_schedule"),
@@ -236,6 +237,8 @@ def _validate_run_config(
             f"{label}: field 'run.allow_long_training_local' must be false"
         )
     _validate_batch_fields(run, label)
+    model = _required_mapping(config, "model", label)
+    _validate_model_fields(model, label)
     optimizer = _required_mapping(config, "optimizer", label)
     _validate_optimizer_seed_fields(optimizer, label)
     _validate_optimizer_schedule_fields(optimizer, label)
@@ -362,6 +365,20 @@ def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) ->
             raise ValueError(f"{label}: field 'optimizer.{field}' must be an int or null")
         if value < 0:
             raise ValueError(f"{label}: field 'optimizer.{field}' must be >= 0")
+
+
+def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
+    p_edge_masking = model.get("p_edge_masking")
+    if p_edge_masking is None:
+        return
+    if isinstance(p_edge_masking, bool) or not isinstance(p_edge_masking, (int, float)):
+        raise ValueError(
+            f"{label}: field 'model.p_edge_masking' must be numeric or null"
+        )
+    if float(p_edge_masking) < 0.0 or float(p_edge_masking) >= 1.0:
+        raise ValueError(
+            f"{label}: field 'model.p_edge_masking' must satisfy 0 <= value < 1"
+        )
 
 
 def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str) -> None:

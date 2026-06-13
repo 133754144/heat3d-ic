@@ -62,6 +62,7 @@ def build_training_command(
     _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))
     _append_option(command, "--processor-steps", model.get("processor_steps"))
     _append_option(command, "--mlp-hidden-layers", model.get("mlp_hidden_layers"))
+    _append_option(command, "--p-edge-masking", model.get("p_edge_masking"))
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
