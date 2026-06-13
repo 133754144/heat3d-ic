@@ -42,6 +42,7 @@ RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
+PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 LR_SCHEDULES = {
     "constant",
     "warmup_cosine",
@@ -160,6 +161,9 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "run_mode": run.get("mode"),
         "run_epochs": run.get("epochs"),
         "init_mode": run.get("init_mode"),
+        "init_checkpoint": run.get("init_checkpoint"),
+        "checkpoint_load_strict": run.get("checkpoint_load_strict"),
+        "partial_load_policy": run.get("partial_load_policy"),
         "batch_plan": run.get("batch_plan"),
         "batch_build_seed": run.get("batch_build_seed"),
         "export_output_dir": export.get("output_dir"),
@@ -351,6 +355,21 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
         raise ValueError(
             f"{label}: field 'run.init_mode' must be one of "
             f"{sorted(INIT_MODES)}, got {init_mode!r}"
+        )
+    init_checkpoint = run.get("init_checkpoint")
+    if init_checkpoint is not None:
+        if not isinstance(init_checkpoint, str) or not init_checkpoint:
+            raise ValueError(
+                f"{label}: field 'run.init_checkpoint' must be a non-empty string or null"
+            )
+    checkpoint_load_strict = run.get("checkpoint_load_strict")
+    if checkpoint_load_strict is not None and not isinstance(checkpoint_load_strict, bool):
+        raise ValueError(f"{label}: field 'run.checkpoint_load_strict' must be a bool or null")
+    partial_load_policy = run.get("partial_load_policy")
+    if partial_load_policy is not None and partial_load_policy not in PARTIAL_LOAD_POLICIES:
+        raise ValueError(
+            f"{label}: field 'run.partial_load_policy' must be one of "
+            f"{sorted(PARTIAL_LOAD_POLICIES)}, got {partial_load_policy!r}"
         )
 
 

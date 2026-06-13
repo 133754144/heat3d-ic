@@ -67,6 +67,9 @@ def build_training_command(
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
     _append_option(command, "--init-mode", run.get("init_mode"))
+    _append_option(command, "--init-checkpoint", run.get("init_checkpoint"))
+    _append_option(command, "--checkpoint-load-strict", run.get("checkpoint_load_strict"))
+    _append_option(command, "--partial-load-policy", run.get("partial_load_policy"))
     _append_option(command, "--batch-plan", run.get("batch_plan"))
     _append_option(command, "--batch-build-seed", run.get("batch_build_seed"))
     if run.get("shuffle_train_batches") is True:
@@ -494,6 +497,9 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.validation_batch_size", "training --validation-batch-size"),
         ("run.prediction_batch_size", "training --prediction-batch-size"),
         ("run.init_mode", "training --init-mode"),
+        ("run.init_checkpoint", "training --init-checkpoint"),
+        ("run.checkpoint_load_strict", "training --checkpoint-load-strict"),
+        ("run.partial_load_policy", "training --partial-load-policy"),
         ("run.batch_plan", "training --batch-plan"),
         ("run.batch_build_seed", "training --batch-build-seed"),
         ("run.shuffle_train_batches", "training --shuffle-train-batches"),

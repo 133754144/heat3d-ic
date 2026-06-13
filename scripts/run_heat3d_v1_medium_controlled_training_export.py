@@ -70,6 +70,7 @@ TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only",
 RADIUS_POLICY_CHOICES = ("legacy_kdtree_mean4", "discrete_physical_coverage")
 COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
 INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
+PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
 
 
 def parse_args() -> argparse.Namespace:
@@ -243,6 +244,16 @@ def parse_args() -> argparse.Namespace:
         choices=("true", "false"),
         default="true",
         help="When true, --init-checkpoint params must exactly match the initialized param tree.",
+    )
+    parser.add_argument(
+        "--partial-load-policy",
+        choices=PARTIAL_LOAD_POLICY_CHOICES,
+        default="matching",
+        help=(
+            "Policy used only with --checkpoint-load-strict false. matching loads all "
+            "shape-compatible matching leaves; skip_decoder leaves decoder params "
+            "fresh; encoder_processor_only loads only encoder/processor params."
+        ),
     )
     parser.add_argument("--report-every", type=int, default=1)
     parser.add_argument(
@@ -2357,6 +2368,7 @@ def _fit_once(
     init_mode: str = "real_first_batch",
     init_checkpoint: Path | None = None,
     checkpoint_load_strict: bool = True,
+    partial_load_policy: str = "matching",
     timings: dict[str, float] | None = None,
     profile_enabled: bool = False,
     memory_audit: MemoryAudit | None = None,
@@ -2379,6 +2391,7 @@ def _fit_once(
         params,
         init_checkpoint,
         strict=checkpoint_load_strict,
+        partial_load_policy=partial_load_policy,
     )
     _record_timing(timings, "model_init", init_start)
     if memory_audit is not None:
@@ -3173,12 +3186,25 @@ def _load_params_checkpoint(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _checkpoint_path_allowed(path: str, partial_load_policy: str) -> bool:
+    if partial_load_policy == "matching":
+        return True
+    if partial_load_policy == "skip_decoder":
+        return not path.startswith("decoder/")
+    if partial_load_policy == "encoder_processor_only":
+        return path.startswith("encoder/") or path.startswith("processor/")
+    raise ValueError(f"Unsupported partial load policy: {partial_load_policy}")
+
+
 def _apply_checkpoint_params(
     initial_params: Any,
     checkpoint_params: Any,
     *,
     strict: bool,
+    partial_load_policy: str,
 ) -> tuple[Any, dict[str, Any]]:
+    if partial_load_policy not in PARTIAL_LOAD_POLICY_CHOICES:
+        raise ValueError(f"--partial-load-policy must be one of {PARTIAL_LOAD_POLICY_CHOICES}")
     initial_items = _param_leaf_items(initial_params)
     checkpoint_items = _param_leaf_items(checkpoint_params)
     initial_map = {path: leaf for path, leaf in initial_items}
@@ -3186,6 +3212,7 @@ def _apply_checkpoint_params(
     loaded_keys = []
     missing_keys = []
     unused_keys = []
+    skipped_keys = []
     shape_mismatch_keys = []
 
     if strict:
@@ -3219,6 +3246,10 @@ def _apply_checkpoint_params(
                 missing_keys.append(path)
                 new_leaves.append(leaf)
                 continue
+            if not _checkpoint_path_allowed(path, partial_load_policy):
+                skipped_keys.append(path)
+                new_leaves.append(leaf)
+                continue
             if tuple(np.shape(leaf)) != tuple(np.shape(checkpoint_leaf)):
                 shape_mismatch_keys.append(
                     {
@@ -3237,12 +3268,15 @@ def _apply_checkpoint_params(
     info = {
         "checkpoint_load_mode": "params_only",
         "checkpoint_load_strict": bool(strict),
+        "partial_load_policy": partial_load_policy,
         "loaded": True,
         "loaded_key_count": len(loaded_keys),
+        "skipped_key_count": len(skipped_keys),
         "missing_key_count": len(missing_keys),
         "unused_key_count": len(unused_keys),
         "shape_mismatch_count": len(shape_mismatch_keys),
         "loaded_keys": loaded_keys[:50],
+        "skipped_keys": skipped_keys[:50],
         "missing_keys": missing_keys[:50],
         "unused_keys": unused_keys[:50],
         "shape_mismatch_keys": shape_mismatch_keys[:50],
@@ -3255,17 +3289,21 @@ def _load_init_checkpoint_params(
     checkpoint_path: Path | None,
     *,
     strict: bool,
+    partial_load_policy: str,
 ) -> tuple[Any, dict[str, Any]]:
     if checkpoint_path is None:
         return initial_params, {
             "checkpoint_load_mode": None,
             "checkpoint_load_strict": bool(strict),
+            "partial_load_policy": partial_load_policy,
             "loaded": False,
             "loaded_key_count": 0,
+            "skipped_key_count": 0,
             "missing_key_count": 0,
             "unused_key_count": 0,
             "shape_mismatch_count": 0,
             "loaded_keys": [],
+            "skipped_keys": [],
             "missing_keys": [],
             "unused_keys": [],
             "shape_mismatch_keys": [],
@@ -3275,6 +3313,7 @@ def _load_init_checkpoint_params(
         initial_params,
         payload["params"],
         strict=strict,
+        partial_load_policy=partial_load_policy,
     )
     info.update(
         {
@@ -3339,10 +3378,12 @@ def _checkpoint_run_metadata(
         "seed_config": seed_config,
         "batch_config": batch_config,
         "graph_config": graph_config,
+        "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "prediction_split": args.prediction_split,
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
         "checkpoint_load_mode": "params_only" if args.init_checkpoint is not None else None,
         "checkpoint_load_strict": args.checkpoint_load_strict,
+        "partial_load_policy": args.partial_load_policy,
     }
 
 
@@ -3480,7 +3521,8 @@ def _print_startup_summary(
         "  checkpoint init: "
         f"init_checkpoint={args.init_checkpoint if args.init_checkpoint is not None else 'none'} "
         f"load_mode={'params_only' if args.init_checkpoint is not None else 'none'} "
-        f"strict={args.checkpoint_load_strict}"
+        f"strict={args.checkpoint_load_strict} "
+        f"partial_load_policy={args.partial_load_policy}"
     )
     if args.log_mode == "compact":
         _emit(
@@ -4328,6 +4370,7 @@ def main() -> int:
         init_mode=args.init_mode,
         init_checkpoint=args.init_checkpoint,
         checkpoint_load_strict=checkpoint_load_strict,
+        partial_load_policy=args.partial_load_policy,
         timings=timings,
         profile_enabled=profile_enabled,
         memory_audit=memory_audit,
@@ -4530,8 +4573,10 @@ def main() -> int:
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
         "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
         "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
+        "partial_load_policy": result["checkpoint_load_info"].get("partial_load_policy"),
         "checkpoint_loaded": bool(result["checkpoint_load_info"].get("loaded")),
         "checkpoint_loaded_key_count": int(result["checkpoint_load_info"].get("loaded_key_count", 0)),
+        "checkpoint_skipped_key_count": int(result["checkpoint_load_info"].get("skipped_key_count", 0)),
         "checkpoint_missing_key_count": int(result["checkpoint_load_info"].get("missing_key_count", 0)),
         "checkpoint_unused_key_count": int(result["checkpoint_load_info"].get("unused_key_count", 0)),
         "checkpoint_shape_mismatch_count": int(result["checkpoint_load_info"].get("shape_mismatch_count", 0)),
@@ -4751,8 +4796,10 @@ def main() -> int:
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
         "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
         "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
+        "partial_load_policy": result["checkpoint_load_info"].get("partial_load_policy"),
         "checkpoint_loaded": bool(result["checkpoint_load_info"].get("loaded")),
         "checkpoint_loaded_key_count": int(result["checkpoint_load_info"].get("loaded_key_count", 0)),
+        "checkpoint_skipped_key_count": int(result["checkpoint_load_info"].get("skipped_key_count", 0)),
         "checkpoint_missing_key_count": int(result["checkpoint_load_info"].get("missing_key_count", 0)),
         "checkpoint_unused_key_count": int(result["checkpoint_load_info"].get("unused_key_count", 0)),
         "checkpoint_shape_mismatch_count": int(result["checkpoint_load_info"].get("shape_mismatch_count", 0)),
