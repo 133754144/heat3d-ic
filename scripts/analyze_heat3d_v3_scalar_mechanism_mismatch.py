@@ -12,9 +12,12 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 import json
+import math
 from pathlib import Path
 import sys
 from typing import Any
+
+import numpy as np
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -113,6 +116,150 @@ def _scalar_losses(loss_summary: dict[str, Any] | None, label: str) -> dict[str,
     }
 
 
+def _normalization_stats(
+    loss_summary: dict[str, Any] | None,
+    run_config: dict[str, Any] | None,
+) -> dict[str, float] | None:
+    stats = None
+    if loss_summary:
+        stats = loss_summary.get("train_only_normalization")
+    if not isinstance(stats, dict) and run_config:
+        stats = run_config.get("train_only_normalization")
+    if not isinstance(stats, dict):
+        return None
+    mean = mech._json_float(stats.get("target_delta_mean"))
+    std = mech._json_float(stats.get("target_delta_std"))
+    if mean is None or std is None or std <= 0.0:
+        return None
+    return {"target_delta_mean": mean, "target_delta_std": std}
+
+
+def _load_normalized_sample_metrics(
+    *,
+    subset: Path,
+    prediction_path: Path,
+    normalization: dict[str, float] | None,
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    if normalization is None:
+        return {}, [{"sample_id": None, "error": "missing train_only_normalization"}]
+    mean = float(normalization["target_delta_mean"])
+    std = float(normalization["target_delta_std"])
+    load_prediction, _ = mech._prediction_loader(prediction_path)
+    rows: dict[str, dict[str, Any]] = {}
+    failures: list[dict[str, Any]] = []
+    for sample_dir in mech.find_sample_dirs(mech._sample_root(subset)):
+        sample_id = sample_dir.name
+        try:
+            sample_meta = mech.load_json(sample_dir / "sample_meta.json")
+            metadata = mech._read_optional_json(sample_dir / "metadata.json")
+            sample_id = str(
+                metadata.get("sample_id") or sample_meta.get("sample_id") or sample_dir.name
+            )
+            coords = np.load(sample_dir / "coords.npy")
+            if coords.ndim != 2 or coords.shape[1] != 3:
+                raise ValueError(f"{sample_id}: coords.npy must have shape (N, 3), found {coords.shape}")
+            n_points = int(coords.shape[0])
+            true_temperature = mech._as_column(
+                np.load(sample_dir / "temperature.npy"),
+                n_points,
+                f"{sample_id} temperature.npy",
+            )
+            pred_temperature = mech._as_column(
+                load_prediction(sample_id),
+                n_points,
+                f"{sample_id} prediction",
+            )
+            t_ref = float(mech.resolve_t_ref(sample_meta)["value"])
+            target_delta = true_temperature.reshape(-1) - t_ref
+            pred_delta = pred_temperature.reshape(-1) - t_ref
+            normalized_error = ((pred_delta - mean) / std) - ((target_delta - mean) / std)
+            normalized_mse = float(np.mean(np.square(normalized_error)))
+            rows[sample_id] = {
+                "sample_id": sample_id,
+                "normalized_mse": mech._json_float(normalized_mse),
+                "normalized_rmse": mech._json_float(math.sqrt(normalized_mse)),
+            }
+        except Exception as exc:  # pragma: no cover - per-sample defensive diagnostics
+            failures.append({"sample_id": sample_id, "sample_dir": str(sample_dir), "error": str(exc)})
+    return rows, failures
+
+
+def _mean_metric(rows: list[dict[str, Any]], field: str) -> float | None:
+    values = []
+    for row in rows:
+        value = mech._json_float(row.get(field))
+        if value is not None:
+            values.append(value)
+    if not values:
+        return None
+    return mech._json_float(float(np.mean(values)))
+
+
+def _sum_metric(rows: list[dict[str, Any]], field: str) -> float | None:
+    values = []
+    for row in rows:
+        value = mech._json_float(row.get(field))
+        if value is not None:
+            values.append(value)
+    if not values:
+        return None
+    return mech._json_float(float(np.sum(values)))
+
+
+def _aggregate_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    payload = mech._aggregate(rows)
+    payload["normalized_mse"] = _mean_metric(rows, "normalized_mse")
+    payload["normalized_rmse"] = _mean_metric(rows, "normalized_rmse")
+    payload["normalized_mse_sum"] = _sum_metric(rows, "normalized_mse")
+    payload["normalized_mse_contribution_ratio"] = _sum_metric(
+        rows,
+        "normalized_mse_contribution_ratio",
+    )
+    return payload
+
+
+def _add_normalized_contributions(rows: list[dict[str, Any]]) -> None:
+    values = [
+        float(value)
+        for row in rows
+        if (value := mech._json_float(row.get("normalized_mse"))) is not None
+    ]
+    total = float(np.sum(values)) if values else 0.0
+    for row in rows:
+        value = mech._json_float(row.get("normalized_mse"))
+        row["normalized_mse_contribution_ratio"] = (
+            mech._json_float(value / total)
+            if value is not None and total > 0.0
+            else None
+        )
+
+
+def _pearson(rows: list[dict[str, Any]], x_key: str, y_key: str) -> float | None:
+    pairs = []
+    for row in rows:
+        x_value = mech._json_float(row.get(x_key))
+        y_value = mech._json_float(row.get(y_key))
+        if x_value is not None and y_value is not None:
+            pairs.append((x_value, y_value))
+    if len(pairs) < 2:
+        return None
+    xs = np.asarray([item[0] for item in pairs], dtype=np.float64)
+    ys = np.asarray([item[1] for item in pairs], dtype=np.float64)
+    if float(np.std(xs)) <= 0.0 or float(np.std(ys)) <= 0.0:
+        return None
+    return mech._json_float(float(np.corrcoef(xs, ys)[0, 1]))
+
+
+def _normalized_correlations(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "sample_count": len(rows),
+        "normalized_mse_vs_rmse": _pearson(rows, "normalized_mse", "rmse"),
+        "normalized_mse_vs_zscore_rmse": _pearson(rows, "normalized_mse", "zscore_rmse"),
+        "normalized_mse_vs_peak_rel_error": _pearson(rows, "normalized_mse", "peak_rel_error"),
+        "normalized_mse_vs_top_k_overlap": _pearson(rows, "normalized_mse", "top_k_overlap"),
+    }
+
+
 def _sample_row(row: dict[str, Any]) -> dict[str, Any]:
     rmse = mech._json_float(row.get("rmse"))
     return {
@@ -120,6 +267,9 @@ def _sample_row(row: dict[str, Any]) -> dict[str, Any]:
         "groups": row.get("groups", {}),
         "rmse": rmse,
         "squared_error": rmse * rmse if rmse is not None else None,
+        "normalized_mse": row.get("normalized_mse"),
+        "normalized_rmse": row.get("normalized_rmse"),
+        "normalized_mse_contribution_ratio": row.get("normalized_mse_contribution_ratio"),
         "mae": row.get("mae"),
         "peak_rel_error": row.get("peak_rel_error"),
         "zscore_rmse": row.get("zscore_rmse"),
@@ -138,12 +288,22 @@ def _top_samples(rows: list[dict[str, Any]], *, metric: str, limit: int) -> list
 
 
 def _group_summaries(rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
-    grouped = mech._grouped(rows)
     result: dict[str, list[dict[str, Any]]] = {}
-    for key, group_rows in grouped.items():
+    for key in GROUP_KEYS:
+        buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in rows:
+            buckets[str(row.get("groups", {}).get(key, "unknown"))].append(row)
+        group_rows = []
+        for value, items in sorted(buckets.items()):
+            item = {"group_key": key, "group_value": value}
+            item.update(_aggregate_rows(items))
+            group_rows.append(item)
         result[key] = sorted(
             group_rows,
-            key=lambda row: mech._json_float(row.get("rmse")) or float("-inf"),
+            key=lambda row: (
+                mech._json_float(row.get("normalized_mse_contribution_ratio")) or 0.0,
+                mech._json_float(row.get("rmse")) or float("-inf"),
+            ),
             reverse=True,
         )
     return result
@@ -158,6 +318,7 @@ def _load_run_prediction(
     top_samples: int,
 ) -> dict[str, Any]:
     loss_summary = _maybe_json(run_dir / "loss_summary.json")
+    run_config = _maybe_json(run_dir / "run_config.json")
     prediction_name = DEFAULT_LABEL_TO_PREDICTION[prediction_label]
     prediction_path = run_dir / prediction_name
     if not prediction_path.is_file():
@@ -176,6 +337,17 @@ def _load_run_prediction(
         prediction_path=prediction_path,
         top_k=top_k,
     )
+    normalization = _normalization_stats(loss_summary, run_config)
+    normalized_by_sample, normalized_failures = _load_normalized_sample_metrics(
+        subset=subset,
+        prediction_path=prediction_path,
+        normalization=normalization,
+    )
+    for row in rows:
+        metrics = normalized_by_sample.get(str(row.get("sample_id")))
+        if metrics:
+            row.update(metrics)
+    _add_normalized_contributions(rows)
     grouped = _group_summaries(rows)
     return {
         "run": run_label,
@@ -186,8 +358,18 @@ def _load_run_prediction(
         "sample_count": len(rows),
         "failed_sample_count": len(failures),
         "q_power_edges": q_edges,
+        "normalization_source": "loss_summary.train_only_normalization" if normalization else None,
+        "normalized_metric_failure_count": len(normalized_failures),
+        "normalized_metric_failures": normalized_failures[:20],
         "scalar_losses": _scalar_losses(loss_summary, prediction_label),
-        "overall": mech._aggregate(rows),
+        "overall": _aggregate_rows(rows),
+        "normalized_mse_correlations": _normalized_correlations(rows),
+        "top_scalar_loss_samples": _top_samples(rows, metric="normalized_mse", limit=top_samples),
+        "top_scalar_contribution_samples": _top_samples(
+            rows,
+            metric="normalized_mse_contribution_ratio",
+            limit=top_samples,
+        ),
         "top_error_samples": _top_samples(rows, metric="rmse", limit=top_samples),
         "top_peak_rel_samples": _top_samples(rows, metric="peak_rel_error", limit=top_samples),
         "top_shape_samples": _top_samples(rows, metric="zscore_rmse", limit=top_samples),
@@ -307,7 +489,14 @@ def _paired_row(
     }
     for key in GROUP_KEYS:
         payload[key] = groups.get(key, "unknown")
-    for metric in ("rmse", "zscore_rmse", "peak_rel_error", "top_k_overlap"):
+    for metric in (
+        "normalized_mse",
+        "normalized_rmse",
+        "rmse",
+        "zscore_rmse",
+        "peak_rel_error",
+        "top_k_overlap",
+    ):
         payload[f"reference_{metric}"] = reference_row.get(metric)
         payload[f"target_{metric}"] = target_row.get(metric)
         payload[f"delta_{metric}"] = _metric_delta(target_row, reference_row, metric)
@@ -383,8 +572,8 @@ def _paired_comparisons(
             )
             for sample_id in common_sample_ids
         ]
-        reference_beats = _sort_delta_rows(rows, metric="delta_rmse", reverse=True)
-        target_beats = _sort_delta_rows(rows, metric="delta_rmse", reverse=False)
+        reference_beats = _sort_delta_rows(rows, metric="delta_normalized_mse", reverse=True)
+        target_beats = _sort_delta_rows(rows, metric="delta_normalized_mse", reverse=False)
         comparisons.append(
             {
                 "comparison": comparison_name,
@@ -428,6 +617,8 @@ def build_mismatch_payload(
     rankings = {
         "scalar_valid_iid_loss": _rank_complete(results, ("scalar_losses", "valid_iid_loss")),
         "scalar_valid_stress_loss": _rank_complete(results, ("scalar_losses", "valid_stress_loss")),
+        "per_sample_normalized_mse": _rank_complete(results, ("overall", "normalized_mse")),
+        "per_sample_normalized_rmse": _rank_complete(results, ("overall", "normalized_rmse")),
         "raw_rmse": _rank_complete(results, ("overall", "rmse")),
         "zscore_rmse": _rank_complete(results, ("overall", "zscore_rmse")),
         "peak_rel_error": _rank_complete(results, ("overall", "peak_rel_error")),
@@ -469,6 +660,12 @@ def build_mismatch_payload(
                 metric="zscore_rmse",
                 limit=comparison_limit,
             ),
+            "normalized_mse_contribution_ratio": _compare_to_reference(
+                results,
+                reference_run="B6",
+                metric="normalized_mse_contribution_ratio",
+                limit=comparison_limit,
+            ),
         },
         "paired_sample_deltas": _paired_comparisons(results, pairs=pairs, limit=paired_limit),
     }
@@ -492,19 +689,21 @@ def _ranking_text(rows: list[dict[str, Any]]) -> str:
 
 def _result_table(results: list[dict[str, Any]]) -> list[str]:
     lines = [
-        "| run | label | status | valid_iid | valid_stress | raw RMSE | zRMSE | top-k | peak_rel |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| run | label | status | valid_iid | valid_stress | norm MSE | norm RMSE | raw RMSE | zRMSE | top-k | peak_rel |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for result in results:
         scalar = result.get("scalar_losses", {})
         overall = result.get("overall", {})
         lines.append(
-            "| {run} | {label} | {status} | {iid} | {stress} | {rmse} | {zrmse} | {topk} | {peak} |".format(
+            "| {run} | {label} | {status} | {iid} | {stress} | {nmse} | {nrmse} | {rmse} | {zrmse} | {topk} | {peak} |".format(
                 run=result.get("run"),
                 label=result.get("prediction_label"),
                 status=result.get("status"),
                 iid=_fmt(scalar.get("valid_iid_loss")),
                 stress=_fmt(scalar.get("valid_stress_loss")),
+                nmse=_fmt(overall.get("normalized_mse")),
+                nrmse=_fmt(overall.get("normalized_rmse")),
                 rmse=_fmt(overall.get("rmse")),
                 zrmse=_fmt(overall.get("zscore_rmse")),
                 topk=_fmt(overall.get("top_k_overlap")),
@@ -532,12 +731,12 @@ def _top_delta_text(items: list[dict[str, Any]]) -> str:
 
 def _paired_sample_table(rows: list[dict[str, Any]]) -> list[str]:
     lines = [
-        "| sample | split | source | q_power | k_mode | k_region | bc | dRMSE | dzRMSE | dPeakRel | dTopK |",
-        "| --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: |",
+        "| sample | split | source | q_power | k_mode | k_region | bc | dNormMSE | dNormRMSE | dRMSE | dzRMSE | dPeakRel | dTopK |",
+        "| --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in rows:
         lines.append(
-            "| {sample} | {split} | {source} | {q} | {k_mode} | {k_region} | {bc} | {drmse} | {dz} | {dpeak} | {dtopk} |".format(
+            "| {sample} | {split} | {source} | {q} | {k_mode} | {k_region} | {bc} | {dnmse} | {dnrmse} | {drmse} | {dz} | {dpeak} | {dtopk} |".format(
                 sample=row.get("sample_id"),
                 split=row.get("split"),
                 source=row.get("source_category"),
@@ -545,10 +744,69 @@ def _paired_sample_table(rows: list[dict[str, Any]]) -> list[str]:
                 k_mode=row.get("k_mode"),
                 k_region=row.get("k_region_mode"),
                 bc=row.get("bc_category"),
+                dnmse=_fmt(row.get("delta_normalized_mse")),
+                dnrmse=_fmt(row.get("delta_normalized_rmse")),
                 drmse=_fmt(row.get("delta_rmse")),
                 dz=_fmt(row.get("delta_zscore_rmse")),
                 dpeak=_fmt(row.get("delta_peak_rel_error")),
                 dtopk=_fmt(row.get("delta_top_k_overlap")),
+            )
+        )
+    return lines
+
+
+def _sample_summary_table(rows: list[dict[str, Any]]) -> list[str]:
+    lines = [
+        "| sample | split | source | q_power | k_mode | k_region | bc | norm MSE | contrib | raw RMSE | zRMSE | peak_rel | top-k |",
+        "| --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in rows:
+        groups = row.get("groups", {})
+        lines.append(
+            "| {sample} | {split} | {source} | {q} | {k_mode} | {k_region} | {bc} | {nmse} | {contrib} | {rmse} | {zrmse} | {peak} | {topk} |".format(
+                sample=row.get("sample_id"),
+                split=groups.get("split"),
+                source=groups.get("source_category"),
+                q=groups.get("q_power_range"),
+                k_mode=groups.get("k_mode"),
+                k_region=groups.get("k_region_mode"),
+                bc=groups.get("bc_category"),
+                nmse=_fmt(row.get("normalized_mse")),
+                contrib=_fmt(row.get("normalized_mse_contribution_ratio")),
+                rmse=_fmt(row.get("rmse")),
+                zrmse=_fmt(row.get("zscore_rmse")),
+                peak=_fmt(row.get("peak_rel_error")),
+                topk=_fmt(row.get("top_k_overlap")),
+            )
+        )
+    return lines
+
+
+def _group_contribution_table(grouped: dict[str, list[dict[str, Any]]], *, limit: int = 10) -> list[str]:
+    groups = []
+    for rows in grouped.values():
+        groups.extend(rows)
+    groups = sorted(
+        groups,
+        key=lambda row: mech._json_float(row.get("normalized_mse_contribution_ratio")) or 0.0,
+        reverse=True,
+    )[:limit]
+    lines = [
+        "| group | samples | contrib | norm MSE | raw RMSE | zRMSE | peak_rel | top-k |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for row in groups:
+        lines.append(
+            "| {group}={value} | {count} | {contrib} | {nmse} | {rmse} | {zrmse} | {peak} | {topk} |".format(
+                group=row.get("group_key"),
+                value=row.get("group_value"),
+                count=row.get("sample_count"),
+                contrib=_fmt(row.get("normalized_mse_contribution_ratio")),
+                nmse=_fmt(row.get("normalized_mse")),
+                rmse=_fmt(row.get("rmse")),
+                zrmse=_fmt(row.get("zscore_rmse")),
+                peak=_fmt(row.get("peak_rel_error")),
+                topk=_fmt(row.get("top_k_overlap")),
             )
         )
     return lines
@@ -571,6 +829,8 @@ def render_markdown(payload: dict[str, Any]) -> str:
             "",
             f"- scalar valid_iid: {_ranking_text(payload['rankings']['scalar_valid_iid_loss'])}",
             f"- scalar valid_stress: {_ranking_text(payload['rankings']['scalar_valid_stress_loss'])}",
+            f"- per-sample normalized MSE: {_ranking_text(payload['rankings']['per_sample_normalized_mse'])}",
+            f"- per-sample normalized RMSE: {_ranking_text(payload['rankings']['per_sample_normalized_rmse'])}",
             f"- raw RMSE: {_ranking_text(payload['rankings']['raw_rmse'])}",
             f"- zscore RMSE: {_ranking_text(payload['rankings']['zscore_rmse'])}",
             f"- peak relative error: {_ranking_text(payload['rankings']['peak_rel_error'])}",
@@ -584,12 +844,37 @@ def render_markdown(payload: dict[str, Any]) -> str:
         lines.append(f"- {metric}:")
         for label, items in by_label.items():
             lines.append(f"  - {label}: {_top_delta_text(items)}")
+    lines.extend(["", "## Normalized Scalar Attribution", ""])
+    for result in payload.get("results", []):
+        if result.get("status") != "complete":
+            continue
+        title = f"{result.get('run')}:{result.get('prediction_label')}"
+        corr = result.get("normalized_mse_correlations", {})
+        lines.extend(
+            [
+                f"### {title}",
+                "",
+                (
+                    "Correlations: "
+                    f"norm_mse/raw_rmse={_fmt(corr.get('normalized_mse_vs_rmse'))}, "
+                    f"norm_mse/zrmse={_fmt(corr.get('normalized_mse_vs_zscore_rmse'))}, "
+                    f"norm_mse/peak_rel={_fmt(corr.get('normalized_mse_vs_peak_rel_error'))}, "
+                    f"norm_mse/top_k={_fmt(corr.get('normalized_mse_vs_top_k_overlap'))}"
+                ),
+                "",
+                "Top normalized scalar-loss samples:",
+                "",
+            ]
+        )
+        lines.extend(_sample_summary_table(result.get("top_scalar_loss_samples", [])[:10]))
+        lines.extend(["", "Top normalized scalar contribution groups:", ""])
+        lines.extend(_group_contribution_table(result.get("grouped", {}), limit=10))
     lines.extend(
         [
             "",
             "## Paired Per-Sample Deltas",
             "",
-            "Deltas are target minus reference, aligned by sample_id. Positive dRMSE means the reference is better on RMSE; negative dRMSE means the target is better.",
+            "Deltas are target minus reference, aligned by sample_id. Positive dNormMSE means the reference is better on normalized scalar loss; negative dNormMSE means the target is better.",
         ]
     )
     for comparison in payload.get("paired_sample_deltas", []):

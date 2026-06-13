@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 import os
+import pickle
 from pathlib import Path
 import resource
 import subprocess
@@ -213,6 +214,22 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--save-best-predictions", action="store_true")
     parser.add_argument("--best-predictions-name", type=str, default="best_predictions.npz")
+    parser.add_argument(
+        "--no-save-final-checkpoint",
+        dest="save_final_checkpoint",
+        action="store_false",
+        default=True,
+        help="Disable writing params_final.pkl. Enabled by default for future read-only inference audits.",
+    )
+    parser.add_argument(
+        "--no-save-best-checkpoint",
+        dest="save_best_checkpoint",
+        action="store_false",
+        default=True,
+        help="Disable writing params_best.pkl. Enabled by default for future read-only inference audits.",
+    )
+    parser.add_argument("--final-checkpoint-name", type=str, default="params_final.pkl")
+    parser.add_argument("--best-checkpoint-name", type=str, default="params_best.pkl")
     parser.add_argument("--report-every", type=int, default=1)
     parser.add_argument(
         "--train-metrics-schedule",
@@ -3057,6 +3074,92 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         json.dump(_json_safe(payload), f, allow_nan=False, indent=2, sort_keys=True)
 
 
+def _host_params(params: Any) -> Any:
+    host_params = jax.device_get(params)
+    return tree.tree_map(
+        lambda value: np.asarray(value) if hasattr(value, "shape") else value,
+        host_params,
+    )
+
+
+def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict[str, Any]:
+    if kind == "best":
+        return dict(result.get("best_record") or {})
+    if kind == "final":
+        return {
+            "epoch": result.get("final_epoch"),
+            "valid_loss": result.get("final_valid_loss"),
+            "valid_iid_loss": result.get("final_valid_iid_loss"),
+            "valid_stress_loss": result.get("final_valid_stress_loss"),
+            "valid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
+            "valid_iid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
+            "valid_stress_raw_deltaT_mse": result.get("final_valid_stress_raw_deltaT_mse"),
+            "valid_base_mse": result.get("final_valid_loss_components", {}).get("base_mse"),
+            "valid_iid_base_mse": (result.get("final_valid_iid_loss_components", {}) or {}).get("base_mse"),
+            "valid_stress_base_mse": (result.get("final_valid_stress_loss_components", {}) or {}).get("base_mse"),
+        }
+    raise ValueError(f"unsupported checkpoint kind: {kind}")
+
+
+def _checkpoint_run_metadata(
+    *,
+    sample_root: Path,
+    args: argparse.Namespace,
+    split_source: str,
+    split_counts: dict[str, int],
+    model_config: dict[str, Any],
+    loss_config: dict[str, Any],
+    lr_config: dict[str, Any],
+    optimizer_config: dict[str, Any],
+    seed_config: dict[str, Any],
+    batch_config: dict[str, Any],
+    graph_config: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "subset": str(sample_root),
+        "split_map_path": str(args.split_map) if args.split_map is not None else None,
+        "split_source": split_source,
+        "split_counts": split_counts,
+        "epochs": int(args.epochs),
+        "output_dir": str(args.output_dir),
+        "model_config": model_config,
+        "loss_config": loss_config,
+        "lr_config": lr_config,
+        "optimizer_config": optimizer_config,
+        "seed_config": seed_config,
+        "batch_config": batch_config,
+        "graph_config": graph_config,
+        "prediction_split": args.prediction_split,
+    }
+
+
+def _write_params_checkpoint(
+    path: Path,
+    *,
+    params: Any,
+    model_config: dict[str, Any],
+    stats: dict[str, Any],
+    kind: str,
+    epoch: int | None,
+    record: dict[str, Any],
+    run_metadata: dict[str, Any],
+) -> None:
+    payload = {
+        "schema_version": "heat3d_v3_params_checkpoint_v1",
+        "checkpoint_kind": kind,
+        "params": _host_params(params),
+        "model_config": _json_safe(model_config),
+        "train_only_normalization": _stats_payload(stats),
+        "epoch": int(epoch) if epoch is not None else None,
+        "record": _json_safe(record),
+        "run_config_metadata": _json_safe(run_metadata),
+        "optimizer_state_saved": False,
+        "warm_start_supported": False,
+    }
+    with path.open("wb") as handle:
+        pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def _stats_payload(stats: dict) -> dict[str, Any]:
     return {
         "feature_names": list(stats["feature_names"]),
@@ -3212,6 +3315,10 @@ def _print_final_summary(
     best_predictions_path: Path | None,
     best_predictions_saved: bool,
     best_prediction_count: int,
+    final_checkpoint_path: Path | None,
+    final_checkpoint_saved: bool,
+    best_checkpoint_path: Path | None,
+    best_checkpoint_saved: bool,
     final_prediction_export_skipped: bool,
     final_prediction_export_skip_reason: str | None,
     timings: dict[str, float],
@@ -3255,8 +3362,17 @@ def _print_final_summary(
         f"final_export_skip_reason={final_prediction_export_skip_reason}"
     )
     _emit(
+        "  checkpoints: "
+        f"final_saved={bool(final_checkpoint_saved)} "
+        f"final_path={final_checkpoint_path if final_checkpoint_saved else 'not_written'} "
+        f"best_saved={bool(best_checkpoint_saved)} "
+        f"best_path={best_checkpoint_path if best_checkpoint_saved else 'not_written'}"
+    )
+    _emit(
         "  status: "
-        f"grad_finite={result['grad_finite']} checkpoint_saved=False export_smoke_ok={result['status_ok']}"
+        f"grad_finite={result['grad_finite']} "
+        f"checkpoint_saved={bool(final_checkpoint_saved or best_checkpoint_saved)} "
+        f"export_smoke_ok={result['status_ok']}"
     )
 
     if args.log_mode == "full":
@@ -3729,6 +3845,8 @@ def main() -> int:
     if args.grad_norm_report_every < 0:
         raise ValueError("--grad-norm-report-every must be >= 0")
     _output_filename(args.best_predictions_name, "best-predictions-name")
+    _output_filename(args.final_checkpoint_name, "final-checkpoint-name")
+    _output_filename(args.best_checkpoint_name, "best-checkpoint-name")
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
     profile_enabled = _profile_timing_enabled(args)
@@ -4070,6 +4188,56 @@ def main() -> int:
         best_predictions_path=best_predictions_path,
         best_predictions_saved=best_predictions_saved,
     )
+    checkpoint_run_metadata = _checkpoint_run_metadata(
+        sample_root=sample_root,
+        args=args,
+        split_source=split_source,
+        split_counts=split_counts,
+        model_config=model_config,
+        loss_config=loss_config,
+        lr_config=lr_config,
+        optimizer_config=optimizer_config,
+        seed_config=seed_config,
+        batch_config=batch_config,
+        graph_config=graph_config,
+    )
+    final_checkpoint_path = output_dir / args.final_checkpoint_name if args.save_final_checkpoint else None
+    best_checkpoint_path = output_dir / args.best_checkpoint_name if args.save_best_checkpoint else None
+    final_checkpoint_saved = False
+    best_checkpoint_saved = False
+    checkpoint_start = time.perf_counter()
+    if args.save_final_checkpoint:
+        _progress(progress_enabled, "export", f"saving final params checkpoint to {final_checkpoint_path} ...")
+        _write_params_checkpoint(
+            final_checkpoint_path,
+            params=result["params"],
+            model_config=model_config,
+            stats=stats,
+            kind="final",
+            epoch=result.get("final_epoch"),
+            record=_checkpoint_record_from_result(result, kind="final"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        final_checkpoint_saved = True
+        _progress(progress_enabled, "export", f"final params checkpoint saved: {final_checkpoint_path}", checkpoint_start)
+    if args.save_best_checkpoint:
+        if result.get("best_params") is None:
+            raise RuntimeError("best params are unavailable; expected at least one training epoch")
+        best_checkpoint_start = time.perf_counter()
+        _progress(progress_enabled, "export", f"saving best params checkpoint to {best_checkpoint_path} ...")
+        _write_params_checkpoint(
+            best_checkpoint_path,
+            params=result["best_params"],
+            model_config=model_config,
+            stats=stats,
+            kind="best",
+            epoch=(result.get("best_record") or {}).get("epoch"),
+            record=_checkpoint_record_from_result(result, kind="best"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        best_checkpoint_saved = True
+        _progress(progress_enabled, "export", f"best params checkpoint saved: {best_checkpoint_path}", best_checkpoint_start)
+    _record_timing(timings, "checkpoint_save", checkpoint_start)
 
     run_config = {
         "diagnostic_scope": "controlled training export smoke; not formal model performance",
@@ -4111,6 +4279,14 @@ def main() -> int:
         "predictions_path": str(predictions_path) if args.save_predictions else None,
         "save_best_predictions": bool(args.save_best_predictions),
         "best_predictions_name": args.best_predictions_name,
+        "save_final_checkpoint": bool(args.save_final_checkpoint),
+        "final_checkpoint_name": args.final_checkpoint_name,
+        "final_checkpoint_saved": bool(final_checkpoint_saved),
+        "final_checkpoint_path": str(final_checkpoint_path) if final_checkpoint_path is not None else None,
+        "save_best_checkpoint": bool(args.save_best_checkpoint),
+        "best_checkpoint_name": args.best_checkpoint_name,
+        "best_checkpoint_saved": bool(best_checkpoint_saved),
+        "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
         "log_mode": args.log_mode,
         "progress_log": bool(args.progress_log),
         "progress_detail": args.progress_detail,
@@ -4152,7 +4328,7 @@ def main() -> int:
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
-        "checkpoint_saved": False,
+        "checkpoint_saved": bool(final_checkpoint_saved or best_checkpoint_saved),
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
@@ -4314,6 +4490,15 @@ def main() -> int:
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
+        "checkpoint_saved": bool(final_checkpoint_saved or best_checkpoint_saved),
+        "save_final_checkpoint": bool(args.save_final_checkpoint),
+        "final_checkpoint_name": args.final_checkpoint_name,
+        "final_checkpoint_saved": bool(final_checkpoint_saved),
+        "final_checkpoint_path": str(final_checkpoint_path) if final_checkpoint_path is not None else None,
+        "save_best_checkpoint": bool(args.save_best_checkpoint),
+        "best_checkpoint_name": args.best_checkpoint_name,
+        "best_checkpoint_saved": bool(best_checkpoint_saved),
+        "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
@@ -4432,6 +4617,10 @@ def main() -> int:
         best_predictions_path=best_predictions_path,
         best_predictions_saved=best_predictions_saved,
         best_prediction_count=best_prediction_count,
+        final_checkpoint_path=final_checkpoint_path,
+        final_checkpoint_saved=final_checkpoint_saved,
+        best_checkpoint_path=best_checkpoint_path,
+        best_checkpoint_saved=best_checkpoint_saved,
         final_prediction_export_skipped=final_prediction_export_skipped,
         final_prediction_export_skip_reason=final_prediction_export_skip_reason,
         timings=timings,
