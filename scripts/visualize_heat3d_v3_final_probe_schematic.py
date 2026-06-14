@@ -27,7 +27,7 @@ import numpy as np
 
 EPS = 1.0e-12
 VISUAL_Z_SCALE = 2.8
-MAX_COMPONENTS_PER_CLASS = 6
+MAX_COMPONENTS_PER_CLASS = 8
 MIN_COMPONENT_VOXELS = 2
 
 COLOR_DOMAIN = "#cfcfcf"
@@ -48,6 +48,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metrics", type=Path, required=True)
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--structure-audit", type=Path, default=None)
     parser.add_argument("--visual-z-scale", type=float, default=VISUAL_Z_SCALE)
     return parser.parse_args()
 
@@ -312,7 +313,7 @@ def add_domain_outline(ax, z_scale: float) -> None:
         (3, 7),
     ]
     lines = [[corners[a], corners[b]] for a, b in edges]
-    ax.add_collection3d(Line3DCollection(lines, colors=COLOR_DOMAIN, linewidths=0.8, alpha=0.70))
+    ax.add_collection3d(Line3DCollection(lines, colors=COLOR_DOMAIN, linewidths=0.85, alpha=0.58))
 
 
 def add_top_boundary(ax, z_scale: float) -> None:
@@ -320,6 +321,41 @@ def add_top_boundary(ax, z_scale: float) -> None:
     hi = np.asarray([1.0, 1.0, z_scale])
     add_cuboid(ax, lo, hi, COLOR_TOP_H, 0.36, edge_alpha=0.55)
     ax.text(0.05, 0.08, z_scale * 1.02, "top Robin\nvery high h", color="darkgreen", fontsize=7)
+
+
+def component_center(component: dict[str, Any], shape: tuple[int, int, int], z_scale: float) -> np.ndarray:
+    lo, hi = component_bbox(component, shape, z_scale)
+    return 0.5 * (lo + hi)
+
+
+def component_z_fraction(component: dict[str, Any], shape: tuple[int, int, int]) -> float:
+    lo = int(component["lo_index"][2])
+    hi = int(component["hi_index"][2])
+    return float((hi - lo + 1) / max(int(shape[2]), 1))
+
+
+def draw_component_group(
+    ax,
+    components: list[dict[str, Any]],
+    shape: tuple[int, int, int],
+    z_scale: float,
+    *,
+    color: str,
+    max_count: int,
+    main_count: int,
+    main_alpha: float,
+    secondary_alpha: float,
+    edge_alpha: float = 0.42,
+) -> None:
+    selected = components[:max_count]
+    secondary = selected[main_count:]
+    main = selected[:main_count]
+    for comp in secondary:
+        lo, hi = component_bbox(comp, shape, z_scale)
+        add_cuboid(ax, lo, hi, color, secondary_alpha, edge_alpha=edge_alpha * 0.65)
+    for comp in main:
+        lo, hi = component_bbox(comp, shape, z_scale)
+        add_cuboid(ax, lo, hi, color, main_alpha, edge_alpha=edge_alpha)
 
 
 def grid_masks_for_sample(sample_dir: Path) -> dict[str, Any]:
@@ -379,31 +415,111 @@ def plot_schematic(
     *,
     z_scale: float,
     show_text: bool,
+    overview: bool = False,
+    audit_sample: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    meta = load_json(sample_dir / "sample_meta.json")
     masks = grid_masks_for_sample(sample_dir)
     shape = masks["grid_shape"]
+    probe_id = str(row.get("probe_id"))
+    high_components = masks["components"]["high_k"]
+    low_components = masks["components"]["low_k"]
+    strong_components = masks["components"]["strong_q"]
+    aniso_components = masks["components"]["anisotropic_k"]
+    weak_components = masks["components"]["weak_q"]
+
+    max_k = 4 if overview else 8
+    max_q = 4 if overview else 8
+    max_aniso = 2 if overview else 4
+    main_k = 2 if overview else 4
+    if probe_id == "P09":
+        k_main_alpha = 0.13 if overview else 0.18
+        k_secondary_alpha = 0.07 if overview else 0.10
+    else:
+        k_main_alpha = 0.26 if overview else 0.30
+        k_secondary_alpha = 0.12 if overview else 0.14
+    strong_alpha = 0.82 if not overview else 0.76
+
     add_domain_outline(ax, z_scale)
-    for comp in masks["components"]["weak_q"]:
-        lo, hi = component_bbox(comp, shape, z_scale)
-        add_cuboid(ax, lo, hi, COLOR_WEAK_Q, 0.045, edge_alpha=0.08)
-    for comp in masks["components"]["high_k"]:
-        lo, hi = component_bbox(comp, shape, z_scale)
-        add_cuboid(ax, lo, hi, COLOR_HIGH_K, 0.42)
-    for comp in masks["components"]["low_k"]:
-        lo, hi = component_bbox(comp, shape, z_scale)
-        add_cuboid(ax, lo, hi, COLOR_LOW_K, 0.48)
-    for comp in masks["components"]["anisotropic_k"]:
-        lo, hi = component_bbox(comp, shape, z_scale)
-        add_cuboid(ax, lo, hi, COLOR_ANISO, 0.48)
-    for comp in masks["components"]["strong_q"]:
-        lo, hi = component_bbox(comp, shape, z_scale)
-        add_cuboid(ax, lo, hi, COLOR_STRONG_Q, 0.58)
-    if str(row.get("probe_id")) == "P10":
+    if not overview:
+        for comp in weak_components[:1]:
+            lo, hi = component_bbox(comp, shape, z_scale)
+            add_cuboid(ax, lo, hi, COLOR_WEAK_Q, 0.022, edge_alpha=0.04)
+    draw_component_group(
+        ax,
+        low_components,
+        shape,
+        z_scale,
+        color=COLOR_LOW_K,
+        max_count=max_k,
+        main_count=main_k,
+        main_alpha=k_main_alpha,
+        secondary_alpha=k_secondary_alpha,
+    )
+    draw_component_group(
+        ax,
+        high_components,
+        shape,
+        z_scale,
+        color=COLOR_HIGH_K,
+        max_count=max_k,
+        main_count=main_k,
+        main_alpha=k_main_alpha,
+        secondary_alpha=k_secondary_alpha,
+    )
+    draw_component_group(
+        ax,
+        aniso_components,
+        shape,
+        z_scale,
+        color=COLOR_ANISO,
+        max_count=max_aniso,
+        main_count=max_aniso,
+        main_alpha=0.45,
+        secondary_alpha=0.30,
+        edge_alpha=0.62,
+    )
+    draw_component_group(
+        ax,
+        strong_components,
+        shape,
+        z_scale,
+        color=COLOR_STRONG_Q,
+        max_count=max_q,
+        main_count=max_q,
+        main_alpha=strong_alpha,
+        secondary_alpha=0.62,
+        edge_alpha=0.68,
+    )
+    if probe_id == "P10":
         add_top_boundary(ax, z_scale)
     setup_3d_axis(ax, z_scale)
 
+    if probe_id == "P03" and strong_components:
+        center = component_center(strong_components[0], shape, z_scale)
+        ax.text(center[0], center[1], center[2] + 0.10, "contained\nhotspot", color="darkred", fontsize=7)
+        if low_components:
+            barrier_center = component_center(low_components[0], shape, z_scale)
+            ax.text(
+                barrier_center[0],
+                barrier_center[1],
+                barrier_center[2] + 0.08,
+                "low-k\nbarrier",
+                color="#8a6500",
+                fontsize=7,
+            )
+    if probe_id == "P07" and high_components:
+        best = max(high_components, key=lambda comp: component_z_fraction(comp, shape))
+        if component_z_fraction(best, shape) >= 0.5:
+            center = component_center(best, shape, z_scale)
+            ax.text(center[0], center[1], center[2] + 0.10, "TSV-like\nhigh-k path", color="navy", fontsize=7)
+    if probe_id == "P09" and aniso_components:
+        center = component_center(aniso_components[0], shape, z_scale)
+        ax.text(center[0], center[1], center[2] + 0.10, "diag3\nanisotropic patch", color="#4b176e", fontsize=7)
+
     if show_text:
+        q_note = ""
+        if masks["q_background"] not in (None, 0.0) and weak_components:
+            q_note = "weak bg q present"
         text = [
             f"{row.get('probe_id')} / {row.get('k_region_mode')}",
             f"q={row.get('source_category')}",
@@ -412,11 +528,26 @@ def plot_schematic(
             f"Tmax_err={float(row.get('Tmax_error', math.nan)):.3g}",
             f"top5={float(row.get('top_5_percent_RMSE', math.nan)):.3g}",
         ]
-        if row.get("probe_id") == "P09" and masks["anisotropy_ratio"] is not None:
+        if q_note:
+            text.append(q_note)
+        if probe_id == "P09" and masks["anisotropy_ratio"] is not None:
+            k_field = masks["k_field"]
             text.append(f"diag3 max aniso={float(np.max(masks['anisotropy_ratio'])):.3g}")
-        if row.get("probe_id") == "P10":
+            if k_field.ndim == 2 and k_field.shape[1] >= 3:
+                text.append(
+                    "kx/ky/kz mean="
+                    f"{float(np.mean(k_field[:,0])):.3g}/"
+                    f"{float(np.mean(k_field[:,1])):.3g}/"
+                    f"{float(np.mean(k_field[:,2])):.3g}"
+                )
+        if probe_id == "P10":
+            text.append("global top Robin: very high h")
             text.append("localized contact unsupported")
             text.append("side asymmetry unsupported")
+        if audit_sample is not None:
+            summary = str(audit_sample.get("dominant_structure_summary") or "")
+            if summary:
+                text.append(summary[:120])
         ax.text2D(0.02, 0.98, "\n".join(text), transform=ax.transAxes, va="top", fontsize=8)
 
     return {
@@ -429,7 +560,7 @@ def plot_schematic(
     }
 
 
-def short_title(row: dict[str, Any]) -> str:
+def short_title(row: dict[str, Any], audit_sample: dict[str, Any] | None = None) -> str:
     probe = row.get("probe_id")
     k_region = str(row.get("k_region_mode") or "")
     source = str(row.get("source_category") or "")
@@ -449,7 +580,17 @@ def short_title(row: dict[str, Any]) -> str:
         first = "random-block background"
     else:
         first = k_region.replace("_", " ")
-    return f"{probe} {first}\nq={source} | RMSE={float(row.get('RMSE', math.nan)):.3g}"
+    suffix = ""
+    if audit_sample is not None:
+        q_space = audit_sample.get("q_space") if isinstance(audit_sample, dict) else None
+        if isinstance(q_space, dict) and q_space.get("weak_background_present"):
+            suffix = "\nweak bg q present"
+    return (
+        f"{probe} {first}\n"
+        f"q={source} | RMSE={float(row.get('RMSE', math.nan)):.3g} | "
+        f"TmaxErr={float(row.get('Tmax_error', math.nan)):.3g}"
+        f"{suffix}"
+    )
 
 
 def legend_handles() -> list[mpatches.Patch]:
@@ -467,16 +608,26 @@ def make_structure_overview(
     metrics_by_id: dict[str, dict[str, Any]],
     output_path: Path,
     z_scale: float,
+    audit_by_probe: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     fig = plt.figure(figsize=(20, 10), constrained_layout=True)
     component_summary: dict[str, Any] = {}
     for index, sample in enumerate(samples, start=1):
         row = metrics_by_id.get(sample["sample_id"]) or metrics_by_id[sample["probe_id"]]
+        audit_sample = (audit_by_probe or {}).get(str(row["probe_id"]))
         ax = fig.add_subplot(2, 5, index, projection="3d")
-        summary = plot_schematic(ax, sample["sample_dir"], row, z_scale=z_scale, show_text=False)
+        summary = plot_schematic(
+            ax,
+            sample["sample_dir"],
+            row,
+            z_scale=z_scale,
+            show_text=False,
+            overview=True,
+            audit_sample=audit_sample,
+        )
         component_summary[str(row["probe_id"])] = summary
-        ax.set_title(short_title(row), fontsize=9, pad=0)
-    fig.suptitle("Heat3D v3 final-target probe v0 - true structure schematics", fontsize=15)
+        ax.set_title(short_title(row, audit_sample), fontsize=9, pad=0)
+    fig.suptitle("Heat3D v3 final-target probe v0 — true structure schematics v2", fontsize=15)
     fig.legend(handles=legend_handles(), loc="lower center", ncol=5, frameon=True, fontsize=10)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=180)
@@ -489,15 +640,25 @@ def make_single_structure_figures(
     metrics_by_id: dict[str, dict[str, Any]],
     output_dir: Path,
     z_scale: float,
+    audit_by_probe: dict[str, Any] | None = None,
 ) -> list[Path]:
     paths = []
     for sample in samples:
         row = metrics_by_id.get(sample["sample_id"]) or metrics_by_id[sample["probe_id"]]
+        audit_sample = (audit_by_probe or {}).get(str(row["probe_id"]))
         fig = plt.figure(figsize=(7.2, 6.2), constrained_layout=True)
         ax = fig.add_subplot(1, 1, 1, projection="3d")
-        plot_schematic(ax, sample["sample_dir"], row, z_scale=z_scale, show_text=True)
-        fig.suptitle(short_title(row), fontsize=11)
-        path = output_dir / f"{row['probe_id']}_structure_schematic.png"
+        plot_schematic(
+            ax,
+            sample["sample_dir"],
+            row,
+            z_scale=z_scale,
+            show_text=True,
+            overview=False,
+            audit_sample=audit_sample,
+        )
+        fig.suptitle(short_title(row, audit_sample), fontsize=11)
+        path = output_dir / f"{row['probe_id']}_structure_schematic_v2.png"
         fig.savefig(path, dpi=190)
         plt.close(fig)
         paths.append(path)
@@ -564,7 +725,7 @@ def make_prediction_overview(
             ax.set_title(title, fontsize=8)
             if row_idx in (0, 9):
                 plt.colorbar(im, ax=ax, fraction=0.046, pad=0.02)
-    fig.suptitle("S5 final-probe compact prediction overview - source slices", fontsize=12)
+    fig.suptitle("S5 final-probe compact prediction overview v2 - source slices", fontsize=12)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=170)
     plt.close(fig)
@@ -587,17 +748,25 @@ def make_metric_summary(
     ]
     for ax, (field, label) in zip(axes.reshape(-1)[:3], fields):
         values = [float(row[field]) for row in rows]
-        ax.bar(probes, values, color=colors)
+        bars = ax.bar(probes, values, color=colors, edgecolor="black", linewidth=0.45)
+        for bar, probe in zip(bars, probes):
+            if probe in worst:
+                bar.set_hatch("//")
+                bar.set_linewidth(1.1)
         ax.set_title(label)
         ax.grid(axis="y", alpha=0.25)
         ax.tick_params(axis="x", rotation=0)
     ax = axes.reshape(-1)[3]
     values = [float(row["Tmax_error"]) for row in rows]
-    ax.barh(probes, values, color=colors)
+    bars = ax.barh(probes, values, color=colors, edgecolor="black", linewidth=0.45)
+    for bar, probe in zip(bars, probes):
+        if probe in worst:
+            bar.set_hatch("//")
+            bar.set_linewidth(1.1)
     ax.axvline(0.0, color="black", linewidth=0.8)
     ax.set_title("Tmax error")
     ax.grid(axis="x", alpha=0.25)
-    fig.suptitle("S5 final-probe schematic metrics summary (worst 3 highlighted)", fontsize=12)
+    fig.suptitle("S5 final-probe schematic metrics summary v2 (worst 3 highlighted)", fontsize=12)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=180)
     plt.close(fig)
@@ -641,7 +810,7 @@ def make_report(
     ]
     for path in figure_paths:
         lines.append(f"- `{path}`")
-    write_text(output_dir.parent / "schematic_visualization_report.md", "\n".join(lines) + "\n")
+    write_text(output_dir.parent / "schematic_visualization_report_v2.md", "\n".join(lines) + "\n")
 
 
 def main() -> int:
@@ -662,6 +831,15 @@ def main() -> int:
 
     samples = discover_samples(args.subset)
     metrics_by_id = load_metrics(args.metrics)
+    audit_payload: dict[str, Any] | None = None
+    audit_by_probe: dict[str, Any] = {}
+    if args.structure_audit is not None:
+        if not args.structure_audit.is_file():
+            raise FileNotFoundError(f"structure audit not found: {args.structure_audit}")
+        audit_payload = load_json(args.structure_audit)
+        loaded = audit_payload.get("samples_by_probe")
+        if isinstance(loaded, dict):
+            audit_by_probe = loaded
     with np.load(args.predictions) as archive:
         predictions = {key: np.asarray(archive[key], dtype=np.float64) for key in archive.files}
     missing_predictions = [sample["sample_id"] for sample in samples if sample["sample_id"] not in predictions]
@@ -670,11 +848,23 @@ def main() -> int:
 
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    overview = output_dir / "probe_structure_schematic_overview.png"
-    pred_overview = output_dir / "probe_prediction_compact_overview.png"
-    metric_summary = output_dir / "probe_metric_summary_clean.png"
-    component_summary = make_structure_overview(samples, metrics_by_id, overview, args.visual_z_scale)
-    single_paths = make_single_structure_figures(samples, metrics_by_id, output_dir, args.visual_z_scale)
+    overview = output_dir / "probe_structure_schematic_overview_v2.png"
+    pred_overview = output_dir / "probe_prediction_compact_overview_v2.png"
+    metric_summary = output_dir / "probe_metric_summary_clean_v2.png"
+    component_summary = make_structure_overview(
+        samples,
+        metrics_by_id,
+        overview,
+        args.visual_z_scale,
+        audit_by_probe=audit_by_probe,
+    )
+    single_paths = make_single_structure_figures(
+        samples,
+        metrics_by_id,
+        output_dir,
+        args.visual_z_scale,
+        audit_by_probe=audit_by_probe,
+    )
     make_prediction_overview(samples, metrics_by_id, predictions, pred_overview)
     make_metric_summary(samples, metrics_by_id, metric_summary)
     figure_paths = [overview, pred_overview, metric_summary] + single_paths
@@ -685,6 +875,8 @@ def main() -> int:
         "predictions": str(args.predictions),
         "metrics": str(args.metrics),
         "provenance": str(args.provenance),
+        "structure_audit": str(args.structure_audit) if args.structure_audit else None,
+        "structure_audit_loaded": bool(audit_payload is not None),
         "output_dir": str(output_dir),
         "visual_z_scale": float(args.visual_z_scale),
         "figure_count": len(figure_paths),
@@ -695,7 +887,7 @@ def main() -> int:
         "used_generator_this_round": False,
         "reran_s5_inference": False,
     }
-    manifest_path = output_dir / "schematic_figure_manifest.json"
+    manifest_path = output_dir / "schematic_figure_manifest_v2.json"
     write_json(manifest_path, manifest)
     make_report(output_dir, provenance, args.predictions, args.metrics, figure_paths)
     print(f"schematic visualization complete: figures={len(figure_paths)} output_dir={output_dir}")
