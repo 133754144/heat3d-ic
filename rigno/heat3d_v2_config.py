@@ -51,6 +51,14 @@ LR_SCHEDULES = {
     "second_stage",
     "upstream_onecycle",
 }
+LOSS_MODES = {
+    "mse",
+    "background_hotspot",
+    "background_l1_bias",
+    "background_l1_relative",
+    "background_pseudo_negative",
+    "hotspot_strong_q",
+}
 
 _MISSING = object()
 
@@ -158,6 +166,10 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "batch_order_seed": optimizer.get("batch_order_seed"),
         "graph_seed": optimizer.get("graph_seed"),
         "loss_mode": loss.get("mode"),
+        "loss_hotspot_quantile": loss.get("hotspot_quantile"),
+        "loss_hotspot_weight": loss.get("hotspot_weight"),
+        "loss_strong_q_quantile": loss.get("strong_q_quantile"),
+        "loss_strong_q_weight": loss.get("strong_q_weight"),
         "run_mode": run.get("mode"),
         "run_epochs": run.get("epochs"),
         "init_mode": run.get("init_mode"),
@@ -246,6 +258,8 @@ def _validate_run_config(
     optimizer = _required_mapping(config, "optimizer", label)
     _validate_optimizer_seed_fields(optimizer, label)
     _validate_optimizer_schedule_fields(optimizer, label)
+    loss = _required_mapping(config, "loss", label)
+    _validate_loss_fields(loss, label)
     train_metrics_schedule = run.get("train_metrics_schedule")
     if train_metrics_schedule is not None and train_metrics_schedule not in TRAIN_METRICS_SCHEDULES:
         raise ValueError(
@@ -398,6 +412,57 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
         raise ValueError(
             f"{label}: field 'model.p_edge_masking' must satisfy 0 <= value < 1"
         )
+
+
+def _validate_loss_fields(loss: Mapping[str, Any], label: str) -> None:
+    mode = loss.get("mode")
+    if mode is not None and mode not in LOSS_MODES:
+        raise ValueError(
+            f"{label}: field 'loss.mode' must be one of {sorted(LOSS_MODES)}, "
+            f"got {mode!r}"
+        )
+
+    for field in ("background_quantile", "hotspot_quantile", "strong_q_quantile"):
+        if field not in loss or loss[field] is None:
+            continue
+        value = loss[field]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"{label}: field 'loss.{field}' must be numeric or null")
+        if float(value) < 0.0 or float(value) > 1.0:
+            raise ValueError(f"{label}: field 'loss.{field}' must be in [0, 1]")
+
+    weight_fields = (
+        "background_weight",
+        "hotspot_weight",
+        "strong_q_weight",
+        "background_l1_weight",
+        "background_bias_weight",
+        "background_over_weight",
+        "background_relative_weight",
+        "pseudo_negative_weight",
+    )
+    for field in weight_fields:
+        if field not in loss or loss[field] is None:
+            continue
+        value = loss[field]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"{label}: field 'loss.{field}' must be numeric or null")
+        if float(value) < 0.0:
+            raise ValueError(f"{label}: field 'loss.{field}' must be >= 0")
+
+    if mode == "hotspot_strong_q":
+        required = (
+            "hotspot_quantile",
+            "hotspot_weight",
+            "strong_q_quantile",
+            "strong_q_weight",
+        )
+        missing = [field for field in required if loss.get(field) is None]
+        if missing:
+            raise ValueError(
+                f"{label}: loss.mode='hotspot_strong_q' requires "
+                f"{', '.join('loss.' + field for field in missing)}"
+            )
 
 
 def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str) -> None:

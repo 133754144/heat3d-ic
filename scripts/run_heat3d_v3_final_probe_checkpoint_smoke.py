@@ -64,8 +64,30 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument("--subset", type=Path, required=True)
-    parser.add_argument("--checkpoint", type=Path, required=True)
-    parser.add_argument("--run-config", type=Path, required=True)
+    parser.add_argument("--checkpoint", type=Path, default=None)
+    parser.add_argument("--run-config", type=Path, default=None)
+    parser.add_argument(
+        "--checkpoint-entry",
+        action="append",
+        default=None,
+        help=(
+            "Optional comparison entry in LABEL=CHECKPOINT=RUN_CONFIG format. "
+            "When present, the script runs all entries and writes comparison "
+            "JSON/MD under --output-dir."
+        ),
+    )
+    parser.add_argument(
+        "--comparison-output-json",
+        type=Path,
+        default=None,
+        help="Optional comparison JSON path for --checkpoint-entry mode.",
+    )
+    parser.add_argument(
+        "--comparison-output-md",
+        type=Path,
+        default=None,
+        help="Optional comparison Markdown path for --checkpoint-entry mode.",
+    )
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=0)
@@ -733,9 +755,167 @@ def write_report(
     write_text(output_dir / "s5_probe_smoke_report.md", "\n".join(lines) + "\n")
 
 
-def main() -> int:
-    args = parse_args()
-    output_dir = args.output_dir
+def _devbox_head() -> str:
+    devbox_head = "unknown"
+    head_path = REPO_DIR / ".git" / "HEAD"
+    try:
+        import subprocess
+
+        devbox_head = subprocess.check_output(
+            ["git", "log", "-1", "--oneline"],
+            cwd=REPO_DIR,
+            text=True,
+        ).strip()
+    except Exception:
+        if head_path.exists():
+            devbox_head = head_path.read_text(encoding="utf-8").strip()
+    return devbox_head
+
+
+def _mean_metric(metrics_rows: list[dict[str, Any]], key: str) -> float | None:
+    values = []
+    for row in metrics_rows:
+        value = row.get(key)
+        if value is None:
+            continue
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            values.append(value)
+    if not values:
+        return None
+    return float(np.mean(values))
+
+
+def _probe_focus(metrics_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_probe = {str(row.get("probe_id")): row for row in metrics_rows}
+    return {
+        "P02": by_probe.get("P02"),
+        "P03": by_probe.get("P03"),
+        "P09": by_probe.get("P09"),
+        "P10": by_probe.get("P10"),
+    }
+
+
+def _comparison_entry_summary(label: str, checkpoint: Path, output_dir: Path, metrics_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    summary = {
+        "label": label,
+        "checkpoint": str(checkpoint),
+        "output_dir": str(output_dir),
+        "sample_count": len(metrics_rows),
+        "RMSE": _mean_metric(metrics_rows, "RMSE"),
+        "MAE": _mean_metric(metrics_rows, "MAE"),
+        "relRMSE_DeltaT": _mean_metric(metrics_rows, "relative_RMSE_on_DeltaT"),
+        "Tmax_error": _mean_metric(metrics_rows, "Tmax_error"),
+        "top_5_percent_RMSE": _mean_metric(metrics_rows, "top_5_percent_RMSE"),
+        "q_region_RMSE": _mean_metric(metrics_rows, "q_region_RMSE"),
+        "strong_q_RMSE": _mean_metric(metrics_rows, "q_strong_region_RMSE"),
+        "background_RMSE": _mean_metric(metrics_rows, "background_region_RMSE"),
+        "P09_anisotropy": {},
+        "P10_unsupported_gap_flags": {},
+        "focus_probes": _probe_focus(metrics_rows),
+    }
+    p09 = summary["focus_probes"].get("P09")
+    if p09:
+        summary["P09_anisotropy"] = {
+            "anisotropic_patch_RMSE": p09.get("anisotropic_patch_RMSE"),
+            "anisotropic_background_RMSE": p09.get("anisotropic_background_RMSE"),
+            "k_channel_corr_pred_error": p09.get("k_channel_corr_pred_error"),
+        }
+    p10 = summary["focus_probes"].get("P10")
+    if p10:
+        summary["P10_unsupported_gap_flags"] = {
+            "localized_top_contact_supported": p10.get("localized_top_contact_supported"),
+            "side_asymmetry_supported": p10.get("side_asymmetry_supported"),
+            "gap_note": p10.get("gap_note"),
+        }
+    return summary
+
+
+def _fmt_optional_value(value: Any) -> str:
+    if value is None:
+        return "-"
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(value):
+        return "-"
+    return f"{value:.6g}"
+
+
+def _render_comparison_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Heat3D v3 S5-Family Final Probe Comparison",
+        "",
+        "Read-only checkpoint inference on the existing final-target probe subset. No final-probe training is performed.",
+        "",
+        "## Overall",
+        "",
+        "| label | RMSE | MAE | relRMSE_DeltaT | Tmax_error | top5% RMSE | q-region RMSE | strong-q RMSE | background RMSE |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for item in payload["entries"]:
+        lines.append(
+            f"| {item['label']} | {_fmt_optional_value(item.get('RMSE'))} | "
+            f"{_fmt_optional_value(item.get('MAE'))} | {_fmt_optional_value(item.get('relRMSE_DeltaT'))} | "
+            f"{_fmt_optional_value(item.get('Tmax_error'))} | {_fmt_optional_value(item.get('top_5_percent_RMSE'))} | "
+            f"{_fmt_optional_value(item.get('q_region_RMSE'))} | {_fmt_optional_value(item.get('strong_q_RMSE'))} | "
+            f"{_fmt_optional_value(item.get('background_RMSE'))} |"
+        )
+    lines.extend(["", "## Focus Probes", ""])
+    lines.append("| label | probe | RMSE | relRMSE_DeltaT | top5% RMSE | q-region RMSE | strong-q RMSE | note |")
+    lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |")
+    for item in payload["entries"]:
+        for probe_id in ("P02", "P03", "P09", "P10"):
+            row = (item.get("focus_probes") or {}).get(probe_id)
+            if not row:
+                continue
+            note = ""
+            if probe_id == "P09":
+                note = "anisotropy metrics recorded"
+            elif probe_id == "P10":
+                note = "localized top contact / side asymmetry unsupported"
+            lines.append(
+                f"| {item['label']} | {probe_id} | {_fmt_optional_value(row.get('RMSE'))} | "
+                f"{_fmt_optional_value(row.get('relative_RMSE_on_DeltaT'))} | "
+                f"{_fmt_optional_value(row.get('top_5_percent_RMSE'))} | "
+                f"{_fmt_optional_value(row.get('q_region_RMSE'))} | "
+                f"{_fmt_optional_value(row.get('q_strong_region_RMSE'))} | {note} |"
+            )
+    lines.extend(
+        [
+            "",
+            "P10 gap flag: localized top contact and side asymmetry remain unsupported by the current input/metadata path.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _parse_checkpoint_entry(token: str) -> tuple[str, Path, Path]:
+    parts = token.split("=")
+    if len(parts) != 3:
+        raise ValueError(
+            "--checkpoint-entry must use LABEL=CHECKPOINT=RUN_CONFIG format, "
+            f"found {token!r}"
+        )
+    label, checkpoint, run_config = (part.strip() for part in parts)
+    if not label or not checkpoint or not run_config:
+        raise ValueError(f"invalid empty field in --checkpoint-entry {token!r}")
+    return label, Path(checkpoint), Path(run_config)
+
+
+def _run_single_probe(
+    *,
+    subset: Path,
+    checkpoint: Path,
+    run_config_path: Path,
+    provenance_path: Path,
+    output_dir: Path,
+    batch_size: int,
+) -> dict[str, Any]:
     predictions_dir = output_dir / "predictions"
     metadata_dir = output_dir / "metadata"
     metrics_dir = output_dir / "metrics"
@@ -743,14 +923,14 @@ def main() -> int:
     for path in (predictions_dir, metadata_dir, metrics_dir, figures_dir):
         path.mkdir(parents=True, exist_ok=True)
 
-    if not args.checkpoint.is_file():
-        raise FileNotFoundError(f"--checkpoint not found: {args.checkpoint}")
-    if not args.run_config.is_file():
-        raise FileNotFoundError(f"--run-config not found: {args.run_config}")
-    if not args.provenance.is_file():
-        raise FileNotFoundError(f"--provenance not found: {args.provenance}")
+    if not checkpoint.is_file():
+        raise FileNotFoundError(f"--checkpoint not found: {checkpoint}")
+    if not run_config_path.is_file():
+        raise FileNotFoundError(f"--run-config not found: {run_config_path}")
+    if not provenance_path.is_file():
+        raise FileNotFoundError(f"--provenance not found: {provenance_path}")
 
-    provenance = load_json(args.provenance)
+    provenance = load_json(provenance_path)
     if provenance.get("used_local_regeneration") is not False:
         raise ValueError("provenance must state used_local_regeneration=false")
     if provenance.get("used_generator_this_round") is not False:
@@ -758,18 +938,18 @@ def main() -> int:
     if provenance.get("sha256_identity_check") != "pass":
         raise ValueError("provenance must state sha256_identity_check=pass")
 
-    checkpoint_payload = _load_params_checkpoint(args.checkpoint)
+    checkpoint_payload = _load_params_checkpoint(checkpoint)
     model_config = dict(checkpoint_payload.get("model_config") or {})
     checkpoint_stats = dict(checkpoint_payload.get("train_only_normalization") or {})
     if not model_config:
         raise ValueError("checkpoint missing model_config")
     if not checkpoint_stats:
         raise ValueError("checkpoint missing train_only_normalization")
-    run_config = load_json(args.run_config)
+    run_config = load_json(run_config_path)
 
     train_examples = load_training_examples(run_config, checkpoint_stats)
     stats = stats_from_checkpoint_payload(checkpoint_stats, train_examples)
-    probe_examples, sample_dirs_by_id = load_probe_examples(args.subset, checkpoint_stats)
+    probe_examples, sample_dirs_by_id = load_probe_examples(subset, checkpoint_stats)
     graph_config = dict(run_config.get("graph_config") or {})
     builder = Heat3DGraphBuilder(**graph_config)
     graph_seed = int(run_config.get("graph_seed", 0) or 0)
@@ -781,7 +961,7 @@ def main() -> int:
         False,
         "off",
         graph_seed,
-        batch_size=optional_batch_size(args.batch_size),
+        batch_size=optional_batch_size(batch_size),
         drop_last=False,
         profile_counts=None,
     )
@@ -803,7 +983,7 @@ def main() -> int:
     ]
     write_metrics(metrics_rows, metrics_dir)
 
-    checkpoint_name = args.checkpoint.parent.name
+    checkpoint_name = checkpoint.parent.name
     ordered_sample_dirs = [sample_dirs_by_id[example.sample_id] for example in probe_examples]
     figure_paths: list[Path] = []
     for example, metrics in zip(probe_examples, metrics_rows):
@@ -825,23 +1005,11 @@ def main() -> int:
     make_metric_bars(metrics_rows, metric_bars)
     figure_paths.extend([structure_overview, error_overview, metric_bars])
 
-    devbox_head = "unknown"
-    head_path = REPO_DIR / ".git" / "HEAD"
-    try:
-        import subprocess
-
-        devbox_head = subprocess.check_output(
-            ["git", "log", "-1", "--oneline"],
-            cwd=REPO_DIR,
-            text=True,
-        ).strip()
-    except Exception:
-        if head_path.exists():
-            devbox_head = head_path.read_text(encoding="utf-8").strip()
+    devbox_head = _devbox_head()
 
     prediction_metadata = {
         "diagnostic_scope": "checkpoint inference smoke; no training",
-        "checkpoint": str(args.checkpoint),
+        "checkpoint": str(checkpoint),
         "checkpoint_kind": checkpoint_payload.get("checkpoint_kind"),
         "checkpoint_epoch": checkpoint_payload.get("epoch"),
         "checkpoint_record": checkpoint_payload.get("record"),
@@ -849,7 +1017,7 @@ def main() -> int:
         "checkpoint_format_version": checkpoint_payload.get("checkpoint_format_version"),
         "model_config_hash": checkpoint_payload.get("model_config_hash") or _stable_json_hash(model_config),
         "train_stats_hash": checkpoint_payload.get("train_stats_hash"),
-        "subset": str(args.subset),
+        "subset": str(subset),
         "sample_count": len(metrics_rows),
         "sample_ids": [example.sample_id for example in probe_examples],
         "graph_config": graph_config,
@@ -861,10 +1029,68 @@ def main() -> int:
         "devbox_head": devbox_head,
     }
     _write_json(metadata_dir / "s5_probe_prediction_metadata.json", prediction_metadata)
-    write_report(output_dir, devbox_head, provenance, args.checkpoint, checkpoint_payload, metrics_rows, figure_paths)
-    print(f"S5 probe smoke complete: samples={len(metrics_rows)} output_dir={output_dir}")
+    write_report(output_dir, devbox_head, provenance, checkpoint, checkpoint_payload, metrics_rows, figure_paths)
+    return {
+        "metrics_rows": metrics_rows,
+        "metadata": prediction_metadata,
+        "output_dir": str(output_dir),
+    }
+
+
+def main() -> int:
+    args = parse_args()
+    if args.checkpoint_entry:
+        entries = [_parse_checkpoint_entry(token) for token in args.checkpoint_entry]
+        comparison_entries = []
+        for label, checkpoint, run_config_path in entries:
+            entry_output_dir = args.output_dir / label
+            result = _run_single_probe(
+                subset=args.subset,
+                checkpoint=checkpoint,
+                run_config_path=run_config_path,
+                provenance_path=args.provenance,
+                output_dir=entry_output_dir,
+                batch_size=args.batch_size,
+            )
+            comparison_entries.append(
+                _comparison_entry_summary(
+                    label,
+                    checkpoint,
+                    entry_output_dir,
+                    result["metrics_rows"],
+                )
+            )
+            print(f"S5 probe comparison entry complete: label={label} samples={len(result['metrics_rows'])}")
+        payload = {
+            "diagnostic_scope": "S5-family final-target probe checkpoint comparison; no training",
+            "subset": str(args.subset),
+            "provenance": str(args.provenance),
+            "output_dir": str(args.output_dir),
+            "entries": comparison_entries,
+            "P10_gap_note": "localized top contact and side asymmetry unsupported",
+        }
+        comparison_json = args.comparison_output_json or args.output_dir / "s5_family_final_probe_comparison.json"
+        comparison_md = args.comparison_output_md or args.output_dir / "s5_family_final_probe_comparison.md"
+        _write_json(comparison_json, payload)
+        write_text(comparison_md, _render_comparison_markdown(payload))
+        print(f"S5 probe comparison complete: entries={len(comparison_entries)} output_dir={args.output_dir}")
+        print(f"comparison_json={comparison_json}")
+        print(f"comparison_md={comparison_md}")
+        return 0
+
+    if args.checkpoint is None or args.run_config is None:
+        raise ValueError("--checkpoint and --run-config are required unless --checkpoint-entry is used")
+    result = _run_single_probe(
+        subset=args.subset,
+        checkpoint=args.checkpoint,
+        run_config_path=args.run_config,
+        provenance_path=args.provenance,
+        output_dir=args.output_dir,
+        batch_size=args.batch_size,
+    )
+    print(f"S5 probe smoke complete: samples={len(result['metrics_rows'])} output_dir={args.output_dir}")
     print("worst_3_by_RMSE:")
-    for row in sorted(metrics_rows, key=lambda item: item["RMSE"], reverse=True)[:3]:
+    for row in sorted(result["metrics_rows"], key=lambda item: item["RMSE"], reverse=True)[:3]:
         print(
             f"  {row['probe_id']} {row['sample_id']} RMSE={row['RMSE']:.6g} "
             f"relRMSE_DeltaT={row['relative_RMSE_on_DeltaT']:.6g}"

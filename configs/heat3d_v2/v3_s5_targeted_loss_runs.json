@@ -1,0 +1,22 @@
+{
+  "schema_version": "heat3d_v3_s5_targeted_loss_runs_v1",
+  "description": "Pending Heat3D v3 S5-family targeted-loss fine-tune configs. These entries are config-only and are not completed training results.",
+  "runs": [
+    {
+      "name": "S5finalFT_HL_e100_lr1e-5_hotspot0p05_strongq0p05",
+      "config": "configs/heat3d_v2/s5finalft_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_hotspot_strong_q_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "checkpoint_source": "s5final_ft_nomask_final",
+      "checkpoint_path": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5final_FT_e100_lr1e-5_nomask_wd1e-4/params_final.pkl",
+      "p_edge_masking": 0.0,
+      "learning_rate": 1.0e-5,
+      "epochs": 100,
+      "loss_mode": "hotspot_strong_q",
+      "hotspot_quantile": 0.9,
+      "hotspot_weight": 0.05,
+      "strong_q_quantile": 0.9,
+      "strong_q_weight": 0.05,
+      "purpose": "Prepare a conservative hotspot plus strong-q targeted-loss fine-tune from the S5final FT no-mask final checkpoint."
+    }
+  ]
+}

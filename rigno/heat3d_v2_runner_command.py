@@ -130,8 +130,10 @@ def build_training_command(
     _append_option(command, "--loss-mode", loss.get("mode"))
     _append_option(command, "--background-quantile", loss.get("background_quantile"))
     _append_option(command, "--hotspot-quantile", loss.get("hotspot_quantile"))
+    _append_option(command, "--strong-q-quantile", loss.get("strong_q_quantile"))
     _append_option(command, "--background-weight", loss.get("background_weight"))
     _append_option(command, "--hotspot-weight", loss.get("hotspot_weight"))
+    _append_option(command, "--strong-q-weight", loss.get("strong_q_weight"))
     _append_option(command, "--background-l1-weight", loss.get("background_l1_weight"))
     _append_option(
         command, "--background-bias-weight", loss.get("background_bias_weight")
@@ -526,8 +528,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("loss.mode", "training --loss-mode"),
         ("loss.background_quantile", "training --background-quantile"),
         ("loss.hotspot_quantile", "training --hotspot-quantile"),
+        ("loss.strong_q_quantile", "training --strong-q-quantile"),
         ("loss.background_weight", "training --background-weight"),
         ("loss.hotspot_weight", "training --hotspot-weight"),
+        ("loss.strong_q_weight", "training --strong-q-weight"),
         ("loss.background_l1_weight", "training --background-l1-weight"),
         ("loss.background_bias_weight", "training --background-bias-weight"),
         ("loss.background_over_weight", "training --background-over-weight"),

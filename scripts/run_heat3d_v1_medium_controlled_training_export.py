@@ -303,13 +303,22 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--loss-mode",
-        choices=("mse", "background_hotspot", "background_l1_bias", "background_l1_relative", "background_pseudo_negative"),
+        choices=(
+            "mse",
+            "background_hotspot",
+            "background_l1_bias",
+            "background_l1_relative",
+            "background_pseudo_negative",
+            "hotspot_strong_q",
+        ),
         default="mse",
     )
     parser.add_argument("--background-quantile", type=float, default=0.50)
     parser.add_argument("--hotspot-quantile", type=float, default=0.90)
     parser.add_argument("--background-weight", type=float, default=1.0)
     parser.add_argument("--hotspot-weight", type=float, default=0.1)
+    parser.add_argument("--strong-q-quantile", type=float, default=0.90)
+    parser.add_argument("--strong-q-weight", type=float, default=0.05)
     parser.add_argument("--background-l1-weight", type=float, default=1.0)
     parser.add_argument("--background-bias-weight", type=float, default=1.0)
     parser.add_argument("--background-over-weight", type=float, default=1.0)
@@ -1298,6 +1307,8 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "hotspot_quantile": float(args.hotspot_quantile),
         "background_weight": float(args.background_weight),
         "hotspot_weight": float(args.hotspot_weight),
+        "strong_q_quantile": float(args.strong_q_quantile),
+        "strong_q_weight": float(args.strong_q_weight),
         "background_l1_weight": float(args.background_l1_weight),
         "background_bias_weight": float(args.background_bias_weight),
         "background_over_weight": float(args.background_over_weight),
@@ -1326,8 +1337,8 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "background_over_weight_start": args.background_over_weight_start,
         "background_over_weight_end": args.background_over_weight_end,
         "loss_space": (
-            "base and hotspot terms use normalized_deltaT; background MSE/L1/bias/overprediction/relative "
-            "terms use raw_deltaT_K"
+            "base, hotspot, and strong-q terms use normalized_deltaT; "
+            "background MSE/L1/bias/overprediction/relative terms use raw_deltaT_K"
         ),
         "base_loss_space": "normalized_deltaT",
         "background_mask_space": "raw_deltaT_K quantile",
@@ -1344,6 +1355,9 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "pseudo_negative_over_loss_space": "raw_deltaT_K overprediction-only hinge; mse/l1/relative_l1/relative_mse selectable",
         "hotspot_mask_space": "raw_deltaT_K quantile",
         "hotspot_retention_loss_space": "normalized_deltaT",
+        "hotspot_strong_q_hotspot_mask_space": "sample-wise raw_deltaT_K top quantile",
+        "strong_q_mask_space": "sample-wise q>0 top quantile from unnormalized q feature",
+        "strong_q_loss_space": "normalized_deltaT",
         "target_normalization": "normalized_deltaT = (raw_deltaT - train_target_delta_mean) / train_target_delta_std",
     }
 
@@ -1439,6 +1453,11 @@ def _validate_loss_config(config: dict[str, Any]) -> None:
         raise ValueError("--background-weight must be >= 0")
     if float(config["hotspot_weight"]) < 0.0:
         raise ValueError("--hotspot-weight must be >= 0")
+    strong_q_quantile = float(config["strong_q_quantile"])
+    if not 0.0 <= strong_q_quantile <= 1.0:
+        raise ValueError("--strong-q-quantile must be in [0, 1]")
+    if float(config["strong_q_weight"]) < 0.0:
+        raise ValueError("--strong-q-weight must be >= 0")
     if float(config["background_l1_weight"]) < 0.0:
         raise ValueError("--background-l1-weight must be >= 0")
     if float(config["background_bias_weight"]) < 0.0:
@@ -1642,6 +1661,7 @@ def _loss_weight_keys() -> tuple[str, ...]:
         "background_over_weight",
         "background_relative_weight",
         "hotspot_weight",
+        "strong_q_weight",
     )
 
 
@@ -1745,6 +1765,43 @@ def _masked_mean(values, mask):
     return jnp.sum(values * mask) / jnp.maximum(jnp.sum(mask), 1.0)
 
 
+def _mask_fraction(mask, dtype):
+    return jnp.mean(mask.astype(dtype))
+
+
+def _samplewise_upper_quantile_mask(values, quantile: float):
+    flat = values.reshape((values.shape[0], -1))
+    thresholds = jnp.quantile(flat, quantile, axis=1, keepdims=True)
+    return (flat >= thresholds).reshape(values.shape)
+
+
+def _group_raw_condition_feature(group: dict, stats: dict, feature_name: str):
+    feature_names = tuple(group.get("feature_names") or stats.get("feature_names") or ())
+    if feature_name not in feature_names:
+        return None
+    inputs = group["inputs"]
+    if inputs.c is None:
+        return None
+    feature_index = feature_names.index(feature_name)
+    raw_c = inputs.c * stats["condition_std"] + stats["condition_mean"]
+    return raw_c[..., feature_index : feature_index + 1]
+
+
+def _samplewise_positive_upper_quantile_mask(values, quantile: float):
+    flat = values.reshape((values.shape[0], -1))
+    positive = flat > 0.0
+    counts = jnp.sum(positive.astype(jnp.int32), axis=1)
+    sorted_values = jnp.sort(jnp.where(positive, flat, -jnp.inf), axis=1)
+    n_values = flat.shape[1]
+    positive_start = n_values - counts
+    positive_offset = jnp.floor((jnp.maximum(counts, 1) - 1) * quantile).astype(jnp.int32)
+    threshold_index = jnp.clip(positive_start + positive_offset, 0, n_values - 1)
+    thresholds = jnp.take_along_axis(sorted_values, threshold_index[:, None], axis=1)
+    mask = jnp.logical_and(positive, flat >= thresholds)
+    mask = jnp.logical_and(mask, counts[:, None] > 0)
+    return mask.reshape(values.shape)
+
+
 def _normalized_delta_to_raw(pred_normalized, stats: dict):
     return pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
 
@@ -1804,6 +1861,10 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         "pseudo_negative_bias": 0.0,
         "pseudo_negative_over_ratio": 0.0,
         "hotspot_retention_loss": 0.0,
+        "hotspot_mse": 0.0,
+        "strong_q_mse": 0.0,
+        "hotspot_mask_fraction": 0.0,
+        "strong_q_mask_fraction": 0.0,
         "total_loss": 0.0,
         "bg_pred_raw_mean": 0.0,
         "bg_signed_bias": 0.0,
@@ -1834,6 +1895,10 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         pseudo_negative_bias = jnp.asarray(0.0, dtype=base_mse.dtype)
         pseudo_negative_over_ratio = jnp.asarray(0.0, dtype=base_mse.dtype)
         hotspot_retention_loss = jnp.asarray(0.0, dtype=base_mse.dtype)
+        hotspot_mse = jnp.asarray(0.0, dtype=base_mse.dtype)
+        strong_q_mse = jnp.asarray(0.0, dtype=base_mse.dtype)
+        hotspot_mask_fraction = jnp.asarray(0.0, dtype=base_mse.dtype)
+        strong_q_mask_fraction = jnp.asarray(0.0, dtype=base_mse.dtype)
         raw_error = pred_raw_delta - target_raw
         if loss_config["loss_mode"] == "background_hotspot":
             background_penalty = _masked_mean(jnp.square(pred_raw_delta), background_mask)
@@ -1886,6 +1951,29 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
             pseudo_negative_weighted_fraction = pseudo_negative_weighted_loss / jnp.maximum(
                 jnp.abs(total_loss), jnp.asarray(1.0e-12, dtype=base_mse.dtype)
             )
+        elif loss_config["loss_mode"] == "hotspot_strong_q":
+            hotspot_top_mask = _samplewise_upper_quantile_mask(
+                target_raw,
+                float(loss_config["hotspot_quantile"]),
+            )
+            q_values = _group_raw_condition_feature(group, stats, "q")
+            if q_values is None:
+                strong_q_mask = jnp.zeros_like(target_raw, dtype=bool)
+            else:
+                strong_q_mask = _samplewise_positive_upper_quantile_mask(
+                    q_values,
+                    float(loss_config["strong_q_quantile"]),
+                )
+            point_mse = jnp.square(pred - target)
+            hotspot_mse = _masked_mean(point_mse, hotspot_top_mask)
+            strong_q_mse = _masked_mean(point_mse, strong_q_mask)
+            hotspot_mask_fraction = _mask_fraction(hotspot_top_mask, base_mse.dtype)
+            strong_q_mask_fraction = _mask_fraction(strong_q_mask, base_mse.dtype)
+            total_loss = (
+                base_mse
+                + loss_config["hotspot_weight"] * hotspot_mse
+                + loss_config["strong_q_weight"] * strong_q_mse
+            )
         else:
             total_loss = base_mse
         bg_pred_raw_mean = _masked_mean(pred_raw_delta, background_mask)
@@ -1916,6 +2004,10 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         weighted["pseudo_negative_bias"] = weighted["pseudo_negative_bias"] + pseudo_negative_bias * n
         weighted["pseudo_negative_over_ratio"] = weighted["pseudo_negative_over_ratio"] + pseudo_negative_over_ratio * n
         weighted["hotspot_retention_loss"] = weighted["hotspot_retention_loss"] + hotspot_retention_loss * n
+        weighted["hotspot_mse"] = weighted["hotspot_mse"] + hotspot_mse * n
+        weighted["strong_q_mse"] = weighted["strong_q_mse"] + strong_q_mse * n
+        weighted["hotspot_mask_fraction"] = weighted["hotspot_mask_fraction"] + hotspot_mask_fraction * n
+        weighted["strong_q_mask_fraction"] = weighted["strong_q_mask_fraction"] + strong_q_mask_fraction * n
         weighted["total_loss"] = weighted["total_loss"] + total_loss * n
         weighted["bg_pred_raw_mean"] = weighted["bg_pred_raw_mean"] + bg_pred_raw_mean * n
         weighted["bg_signed_bias"] = weighted["bg_signed_bias"] + bg_signed_bias * n
@@ -2226,6 +2318,14 @@ def _epoch_history_record(
         "valid_pn_over_ratio": float(valid_components["pseudo_negative_over_ratio"]),
         "train_hotspot_retention_loss": _maybe_float(train_components, "hotspot_retention_loss"),
         "valid_hotspot_retention_loss": float(valid_components["hotspot_retention_loss"]),
+        "train_hotspot_mse": _maybe_float(train_components, "hotspot_mse"),
+        "valid_hotspot_mse": float(valid_components["hotspot_mse"]),
+        "train_strong_q_mse": _maybe_float(train_components, "strong_q_mse"),
+        "valid_strong_q_mse": float(valid_components["strong_q_mse"]),
+        "train_hotspot_mask_fraction": _maybe_float(train_components, "hotspot_mask_fraction"),
+        "valid_hotspot_mask_fraction": float(valid_components["hotspot_mask_fraction"]),
+        "train_strong_q_mask_fraction": _maybe_float(train_components, "strong_q_mask_fraction"),
+        "valid_strong_q_mask_fraction": float(valid_components["strong_q_mask_fraction"]),
         "train_bg_pred_raw_mean": _maybe_float(train_components, "bg_pred_raw_mean"),
         "valid_bg_pred_raw_mean": float(valid_components["bg_pred_raw_mean"]),
         "train_bg_signed_bias": _maybe_float(train_components, "bg_signed_bias"),
@@ -2258,6 +2358,10 @@ def _epoch_history_record(
                 "valid_stress_recovered_T_mse": float(valid_stress_metrics["recovered_temperature_mse"]),
                 "valid_stress_bg_signed_bias": float(valid_stress_components["bg_signed_bias"]),
                 "valid_stress_hotspot_raw_mae": float(valid_stress_components["hotspot_raw_mae"]),
+                "valid_stress_hotspot_mse": float(valid_stress_components["hotspot_mse"]),
+                "valid_stress_strong_q_mse": float(valid_stress_components["strong_q_mse"]),
+                "valid_stress_hotspot_mask_fraction": float(valid_stress_components["hotspot_mask_fraction"]),
+                "valid_stress_strong_q_mask_fraction": float(valid_stress_components["strong_q_mask_fraction"]),
             }
         )
     record.update(_current_weight_payload(current_loss_config))
@@ -2326,6 +2430,12 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"valid_pseudo_negative_over_ratio={record['valid_pseudo_negative_over_ratio']:.8e} "
         f"train_hotspot_retention_loss={record['train_hotspot_retention_loss']:.8e} "
         f"valid_hotspot_retention_loss={record['valid_hotspot_retention_loss']:.8e} "
+        f"train_hotspot_mse={record['train_hotspot_mse']:.8e} "
+        f"valid_hotspot_mse={record['valid_hotspot_mse']:.8e} "
+        f"train_strong_q_mse={record['train_strong_q_mse']:.8e} "
+        f"valid_strong_q_mse={record['valid_strong_q_mse']:.8e} "
+        f"valid_hotspot_mask_fraction={record['valid_hotspot_mask_fraction']:.8e} "
+        f"valid_strong_q_mask_fraction={record['valid_strong_q_mask_fraction']:.8e} "
         f"train_bg_pred_raw_mean={record['train_bg_pred_raw_mean']:.8e} "
         f"valid_bg_pred_raw_mean={record['valid_bg_pred_raw_mean']:.8e} "
         f"train_bg_signed_bias={record['train_bg_signed_bias']:.8e} "
@@ -2342,7 +2452,8 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"current_background_bias_weight={record['current_background_bias_weight']:.8e} "
         f"current_background_over_weight={record['current_background_over_weight']:.8e} "
         f"current_background_relative_weight={record['current_background_relative_weight']:.8e} "
-        f"current_hotspot_weight={record['current_hotspot_weight']:.8e}"
+        f"current_hotspot_weight={record['current_hotspot_weight']:.8e} "
+        f"current_strong_q_weight={record['current_strong_q_weight']:.8e}"
     )
 
 
@@ -3529,7 +3640,9 @@ def _print_startup_summary(
             "  loss: "
             f"mode={loss_config['loss_mode']} weight_schedule={loss_config['loss_weight_schedule']} "
             f"bg_q={loss_config['background_quantile']} hot_q={loss_config['hotspot_quantile']} "
+            f"strong_q={loss_config['strong_q_quantile']} "
             f"rel_w={loss_config['background_relative_weight']} hot_w={loss_config['hotspot_weight']} "
+            f"strong_q_w={loss_config['strong_q_weight']} "
             f"pn_type={loss_config['pseudo_negative_loss_type']} pn_w={loss_config['pseudo_negative_weight']}"
         )
     else:
@@ -3554,8 +3667,10 @@ def _print_startup_summary(
             "  loss params: "
             f"background_quantile={loss_config['background_quantile']} "
             f"hotspot_quantile={loss_config['hotspot_quantile']} "
+            f"strong_q_quantile={loss_config['strong_q_quantile']} "
             f"background_weight={loss_config['background_weight']} "
             f"hotspot_weight={loss_config['hotspot_weight']} "
+            f"strong_q_weight={loss_config['strong_q_weight']} "
             f"background_l1_weight={loss_config['background_l1_weight']} "
             f"background_bias_weight={loss_config['background_bias_weight']} "
             f"background_over_weight={loss_config['background_over_weight']} "
@@ -3605,6 +3720,7 @@ def _print_final_summary(
         result["loss_weight_history"], "current_background_relative_weight"
     )
     hotspot_weight_summary = _history_field_summary(result["loss_weight_history"], "current_hotspot_weight")
+    strong_q_weight_summary = _history_field_summary(result["loss_weight_history"], "current_strong_q_weight")
     best = result.get("best_record") or {}
 
     _emit("")
@@ -3659,6 +3775,7 @@ def _print_final_summary(
         _emit(f"    loss weight schedule: {loss_config['loss_weight_schedule']}")
         _emit(f"    relative weight summary: {relative_weight_summary}")
         _emit(f"    hotspot weight summary: {hotspot_weight_summary}")
+        _emit(f"    strong-q weight summary: {strong_q_weight_summary}")
         _emit(f"    lr schedule: {lr_config['lr_schedule']}")
         _emit(f"    lr history summary: {lr_history_summary}")
         _emit("  loss initial/final")
@@ -3745,6 +3862,18 @@ def _print_final_summary(
         _emit("  final hotspot metrics")
         _emit(f"    final train hotspot retention loss: {result['final_train_loss_components']['hotspot_retention_loss']:.8e}")
         _emit(f"    final valid hotspot retention loss: {result['final_valid_loss_components']['hotspot_retention_loss']:.8e}")
+        _emit(f"    final train hotspot MSE: {result['final_train_loss_components']['hotspot_mse']:.8e}")
+        _emit(f"    final valid hotspot MSE: {result['final_valid_loss_components']['hotspot_mse']:.8e}")
+        _emit(f"    final train strong-q MSE: {result['final_train_loss_components']['strong_q_mse']:.8e}")
+        _emit(f"    final valid strong-q MSE: {result['final_valid_loss_components']['strong_q_mse']:.8e}")
+        _emit(
+            "    final valid hotspot mask fraction: "
+            f"{result['final_valid_loss_components']['hotspot_mask_fraction']:.8e}"
+        )
+        _emit(
+            "    final valid strong-q mask fraction: "
+            f"{result['final_valid_loss_components']['strong_q_mask_fraction']:.8e}"
+        )
         _emit(f"    final train hotspot raw MAE: {result['final_train_loss_components']['hotspot_raw_mae']:.8e}")
         _emit(f"    final valid hotspot raw MAE: {result['final_valid_loss_components']['hotspot_raw_mae']:.8e}")
     else:
@@ -3762,7 +3891,9 @@ def _print_final_summary(
             f"valid_pn_over={result['final_valid_loss_components']['pseudo_negative_over_loss']:.8e} "
             f"valid_pn_over_ratio={result['final_valid_loss_components']['pseudo_negative_over_ratio']:.8e} "
             f"valid_pn_weighted_fraction={result['final_valid_loss_components']['pseudo_negative_weighted_fraction_of_total_loss']:.8e} "
-            f"valid_hotspot_mae={result['final_valid_loss_components']['hotspot_raw_mae']:.8e}"
+            f"valid_hotspot_mae={result['final_valid_loss_components']['hotspot_raw_mae']:.8e} "
+            f"valid_hotspot_mse={result['final_valid_loss_components']['hotspot_mse']:.8e} "
+            f"valid_strong_q_mse={result['final_valid_loss_components']['strong_q_mse']:.8e}"
         )
 
     _progress(_progress_enabled(args), "startup-summary", _timing_summary(timings))
@@ -4626,8 +4757,10 @@ def main() -> int:
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
+        "strong_q_quantile": loss_config["strong_q_quantile"],
         "background_weight": loss_config["background_weight"],
         "hotspot_weight": loss_config["hotspot_weight"],
+        "strong_q_weight": loss_config["strong_q_weight"],
         "background_l1_weight": loss_config["background_l1_weight"],
         "background_bias_weight": loss_config["background_bias_weight"],
         "background_over_weight": loss_config["background_over_weight"],
@@ -4758,6 +4891,9 @@ def main() -> int:
                 result["loss_weight_history"], "current_background_relative_weight"
             ),
             "current_hotspot_weight": _history_field_summary(result["loss_weight_history"], "current_hotspot_weight"),
+            "current_strong_q_weight": _history_field_summary(
+                result["loss_weight_history"], "current_strong_q_weight"
+            ),
         },
         "train_metrics": _metrics_payload(result["train_metrics"]),
         "valid_metrics": _metrics_payload(result["valid_metrics"]),
@@ -4807,8 +4943,10 @@ def main() -> int:
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
+        "strong_q_quantile": loss_config["strong_q_quantile"],
         "background_weight": loss_config["background_weight"],
         "hotspot_weight": loss_config["hotspot_weight"],
+        "strong_q_weight": loss_config["strong_q_weight"],
         "background_l1_weight": loss_config["background_l1_weight"],
         "background_bias_weight": loss_config["background_bias_weight"],
         "background_over_weight": loss_config["background_over_weight"],
