@@ -180,6 +180,8 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "final_probe_eval_after_training": run.get("final_probe_eval_after_training"),
         "final_probe_checkpoint_kind": run.get("final_probe_checkpoint_kind"),
         "final_probe_output_dir": run.get("final_probe_output_dir"),
+        "post_training_diagnostics": run.get("post_training_diagnostics"),
+        "post_training_diagnostics_output_dir": run.get("post_training_diagnostics_output_dir"),
         "batch_plan": run.get("batch_plan"),
         "batch_build_seed": run.get("batch_build_seed"),
         "export_output_dir": export.get("output_dir"),
@@ -417,6 +419,20 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
             raise ValueError(f"{label}: field 'run.final_probe_batch_size' must be an int or null")
         if final_probe_batch_size < 0:
             raise ValueError(f"{label}: field 'run.final_probe_batch_size' must be >= 0")
+    post_training_diagnostics = run.get("post_training_diagnostics")
+    if post_training_diagnostics is not None and not isinstance(post_training_diagnostics, bool):
+        raise ValueError(f"{label}: field 'run.post_training_diagnostics' must be a bool or null")
+    post_training_diagnostics_output_dir = run.get("post_training_diagnostics_output_dir")
+    if post_training_diagnostics_output_dir is not None:
+        if not isinstance(post_training_diagnostics_output_dir, str):
+            raise ValueError(
+                f"{label}: field 'run.post_training_diagnostics_output_dir' must be a string or null"
+            )
+        if not _is_output_relative_path(post_training_diagnostics_output_dir):
+            raise ValueError(
+                f"{label}: field 'run.post_training_diagnostics_output_dir' must be under output/, "
+                f"got {post_training_diagnostics_output_dir!r}"
+            )
 
 
 def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) -> None:

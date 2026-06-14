@@ -81,6 +81,17 @@ def build_training_command(
     _append_option(command, "--final-probe-subset", run.get("final_probe_subset"))
     _append_option(command, "--final-probe-provenance", run.get("final_probe_provenance"))
     _append_option(command, "--final-probe-batch-size", run.get("final_probe_batch_size"))
+    post_training_diagnostics = run.get("post_training_diagnostics", True)
+    command.append(
+        "--post-training-diagnostics"
+        if post_training_diagnostics is not False
+        else "--no-post-training-diagnostics"
+    )
+    _append_option(
+        command,
+        "--post-training-diagnostics-output-dir",
+        run.get("post_training_diagnostics_output_dir"),
+    )
     _append_option(command, "--batch-plan", run.get("batch_plan"))
     _append_option(command, "--batch-build-seed", run.get("batch_build_seed"))
     if run.get("shuffle_train_batches") is True:
@@ -519,6 +530,8 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.final_probe_subset", "training --final-probe-subset"),
         ("run.final_probe_provenance", "training --final-probe-provenance"),
         ("run.final_probe_batch_size", "training --final-probe-batch-size"),
+        ("run.post_training_diagnostics", "training --post-training-diagnostics/--no-post-training-diagnostics"),
+        ("run.post_training_diagnostics_output_dir", "training --post-training-diagnostics-output-dir"),
         ("run.batch_plan", "training --batch-plan"),
         ("run.batch_build_seed", "training --batch-build-seed"),
         ("run.shuffle_train_batches", "training --shuffle-train-batches"),

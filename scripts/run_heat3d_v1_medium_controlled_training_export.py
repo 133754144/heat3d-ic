@@ -285,6 +285,28 @@ def parse_args() -> argparse.Namespace:
         help="Batch size passed to final probe checkpoint smoke; 0 means one full prediction batch.",
     )
     parser.add_argument(
+        "--post-training-diagnostics",
+        dest="post_training_diagnostics",
+        action="store_true",
+        default=True,
+        help=(
+            "After prediction export, run read-only diagnostics over saved final/best "
+            "predictions. Enabled by default."
+        ),
+    )
+    parser.add_argument(
+        "--no-post-training-diagnostics",
+        dest="post_training_diagnostics",
+        action="store_false",
+        help="Disable post-training read-only diagnostics over saved predictions.",
+    )
+    parser.add_argument(
+        "--post-training-diagnostics-output-dir",
+        type=Path,
+        default=None,
+        help="Ignored output directory for optional post-training diagnostics.",
+    )
+    parser.add_argument(
         "--init-checkpoint",
         type=Path,
         default=None,
@@ -3977,6 +3999,278 @@ def _print_final_summary(
     _progress(_progress_enabled(args), "done", "script complete")
 
 
+def _run_logged_diagnostic_command(
+    command: list[str],
+    *,
+    log_prefix: str,
+    cwd: Path = REPO_DIR,
+) -> int:
+    completed = subprocess.run(
+        command,
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if completed.stdout:
+        for line in completed.stdout.rstrip().splitlines():
+            _emit(f"[{log_prefix}] {line}")
+    if completed.stderr:
+        for line in completed.stderr.rstrip().splitlines():
+            _emit(f"[{log_prefix}:stderr] {line}", file=sys.stderr)
+    if completed.returncode != 0:
+        raise RuntimeError(
+            f"post-training diagnostic command failed with returncode={completed.returncode}: "
+            + " ".join(command)
+        )
+    return int(completed.returncode)
+
+
+def _run_post_training_prediction_diagnostics(
+    args: argparse.Namespace,
+    *,
+    sample_root: Path,
+    output_dir: Path,
+    predictions_path: Path,
+    predictions_saved: bool,
+    best_predictions_path: Path | None,
+    best_predictions_saved: bool,
+    timings: dict[str, float],
+    progress_enabled: bool,
+) -> dict[str, Any]:
+    if not args.post_training_diagnostics:
+        return {"enabled": False, "reason": "disabled"}
+
+    diag_start = time.perf_counter()
+    diagnostics_dir = args.post_training_diagnostics_output_dir or (
+        output_dir / "post_training_diagnostics"
+    )
+    entries: list[tuple[str, Path]] = []
+    if predictions_saved and predictions_path.is_file():
+        entries.append(("final", predictions_path))
+    if best_predictions_saved and best_predictions_path is not None and best_predictions_path.is_file():
+        entries.append(("best", best_predictions_path))
+    if not entries:
+        result = {
+            "enabled": True,
+            "reason": "no_saved_predictions",
+            "output_dir": str(diagnostics_dir),
+            "entries": [],
+        }
+        _record_timing(timings, "post_training_diagnostics", diag_start)
+        return result
+
+    diagnostics_dir.mkdir(parents=True, exist_ok=True)
+    loss_summary_path = output_dir / "loss_summary.json"
+    entry_payloads: list[dict[str, Any]] = []
+    _progress(
+        progress_enabled,
+        "diagnostics",
+        (
+            "running post-training diagnostics "
+            f"labels={[label for label, _ in entries]} output_dir={diagnostics_dir}"
+        ),
+    )
+
+    for label, prediction_path in entries:
+        baseline_json = diagnostics_dir / f"baseline_comparison_{label}.json"
+        error_json = diagnostics_dir / f"error_bins_{label}.json"
+        error_md = diagnostics_dir / f"error_bins_{label}.md"
+        condition_json = diagnostics_dir / f"condition_diagnostics_{label}.json"
+        condition_md = diagnostics_dir / f"condition_diagnostics_{label}.md"
+        field_json = diagnostics_dir / f"field_shape_diagnostics_{label}.json"
+        field_md = diagnostics_dir / f"field_shape_diagnostics_{label}.md"
+        mechanism_json = diagnostics_dir / f"mechanism_{label}.json"
+        mechanism_md = diagnostics_dir / f"mechanism_{label}.md"
+        run_analysis_json = diagnostics_dir / f"run_analysis_{label}.json"
+        run_analysis_md = diagnostics_dir / f"run_analysis_{label}.md"
+
+        commands = [
+            (
+                "baseline",
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "compare_heat3d_v1_medium_baselines.py"),
+                    "--subset",
+                    str(sample_root),
+                    "--trained-predictions",
+                    str(prediction_path),
+                    "--output-json",
+                    str(baseline_json),
+                    "--stdout-mode",
+                    "compact",
+                ],
+            ),
+            (
+                "error-bins",
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_error_bins.py"),
+                    "--subset",
+                    str(sample_root),
+                    "--trained-predictions",
+                    str(prediction_path),
+                    "--output-json",
+                    str(error_json),
+                    "--output-md",
+                    str(error_md),
+                    "--stdout-mode",
+                    "compact",
+                ],
+            ),
+            (
+                "condition",
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_condition_diagnostics.py"),
+                    "--subset",
+                    str(sample_root),
+                    "--trained-predictions",
+                    str(prediction_path),
+                    "--prediction-label",
+                    label,
+                    "--output-json",
+                    str(condition_json),
+                    "--output-md",
+                    str(condition_md),
+                    "--stdout-mode",
+                    "compact",
+                ],
+            ),
+            (
+                "field-shape",
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "analyze_heat3d_v2_field_shape_diagnostics.py"),
+                    "--subset",
+                    str(sample_root),
+                    "--trained-predictions",
+                    str(prediction_path),
+                    "--prediction-label",
+                    label,
+                    "--output-json",
+                    str(field_json),
+                    "--output-md",
+                    str(field_md),
+                    "--stdout-mode",
+                    "compact",
+                ],
+            ),
+            (
+                "mechanism",
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "analyze_heat3d_v3_prediction_mechanisms.py"),
+                    "--run-dir",
+                    str(output_dir),
+                    "--prediction-name",
+                    prediction_path.name,
+                    "--prediction-label",
+                    label,
+                    "--subset",
+                    str(sample_root),
+                    "--output-json",
+                    str(mechanism_json),
+                    "--output-md",
+                    str(mechanism_md),
+                ],
+            ),
+            (
+                "run-summary",
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_run_summary.py"),
+                    "--run-dir",
+                    str(output_dir),
+                    "--loss-summary",
+                    str(loss_summary_path),
+                    "--baseline-comparison-json",
+                    str(baseline_json),
+                    "--error-bins-json",
+                    str(error_json),
+                    "--prediction-label",
+                    label,
+                    "--output-json",
+                    str(run_analysis_json),
+                    "--output-md",
+                    str(run_analysis_md),
+                    "--stdout-mode",
+                    "compact",
+                ],
+            ),
+        ]
+        for command_label, command in commands:
+            _run_logged_diagnostic_command(
+                command,
+                log_prefix=f"diagnostics:{label}:{command_label}",
+            )
+
+        mechanism_payload = json.loads(mechanism_json.read_text(encoding="utf-8"))
+        overall = mechanism_payload.get("overall") or {}
+        _emit(
+            f"post_diagnostics {label}: "
+            f"raw_RMSE={_format_progress_loss(overall.get('rmse'))} "
+            f"zRMSE={_format_progress_loss(overall.get('zscore_rmse'))} "
+            f"top_k={_format_progress_loss(overall.get('top_k_overlap'))} "
+            f"peak_rel={_format_progress_loss(overall.get('peak_rel_error'))} "
+            f"dir={diagnostics_dir}"
+        )
+        entry_payloads.append(
+            {
+                "label": label,
+                "prediction_path": str(prediction_path),
+                "baseline_comparison_json": str(baseline_json),
+                "error_bins_json": str(error_json),
+                "error_bins_md": str(error_md),
+                "condition_diagnostics_json": str(condition_json),
+                "condition_diagnostics_md": str(condition_md),
+                "field_shape_diagnostics_json": str(field_json),
+                "field_shape_diagnostics_md": str(field_md),
+                "mechanism_json": str(mechanism_json),
+                "mechanism_md": str(mechanism_md),
+                "run_analysis_json": str(run_analysis_json),
+                "run_analysis_md": str(run_analysis_md),
+                "summary": {
+                    "raw_RMSE": overall.get("rmse"),
+                    "zRMSE": overall.get("zscore_rmse"),
+                    "top_k_overlap": overall.get("top_k_overlap"),
+                    "peak_rel": overall.get("peak_rel_error"),
+                },
+            }
+        )
+
+    region_json = diagnostics_dir / "region_error_decomposition.json"
+    region_md = diagnostics_dir / "region_error_decomposition.md"
+    region_command = [
+        sys.executable,
+        str(SCRIPTS_DIR / "analyze_heat3d_v3_region_error_decomposition.py"),
+        "--subset",
+        str(sample_root),
+        "--output-json",
+        str(region_json),
+        "--output-md",
+        str(region_md),
+    ]
+    for label, prediction_path in entries:
+        region_command.extend(["--entry", f"{label}={output_dir}:{prediction_path.name}"])
+    _run_logged_diagnostic_command(
+        region_command,
+        log_prefix="diagnostics:region",
+    )
+
+    result = {
+        "enabled": True,
+        "output_dir": str(diagnostics_dir),
+        "entries": entry_payloads,
+        "region_error_decomposition_json": str(region_json),
+        "region_error_decomposition_md": str(region_md),
+    }
+    _record_timing(timings, "post_training_diagnostics", diag_start)
+    _progress(progress_enabled, "diagnostics", "post-training diagnostics complete", diag_start)
+    return result
+
+
 def _final_probe_eval_kinds(kind: str) -> tuple[str, ...]:
     if kind == "both":
         return ("best", "final")
@@ -4958,6 +5252,12 @@ def main() -> int:
         "final_probe_subset": str(args.final_probe_subset),
         "final_probe_provenance": str(args.final_probe_provenance),
         "final_probe_batch_size": int(args.final_probe_batch_size),
+        "post_training_diagnostics": bool(args.post_training_diagnostics),
+        "post_training_diagnostics_output_dir": (
+            str(args.post_training_diagnostics_output_dir)
+            if args.post_training_diagnostics_output_dir is not None
+            else str(output_dir / "post_training_diagnostics")
+        ),
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
         "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
         "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
@@ -5192,6 +5492,12 @@ def main() -> int:
         "final_probe_subset": str(args.final_probe_subset),
         "final_probe_provenance": str(args.final_probe_provenance),
         "final_probe_batch_size": int(args.final_probe_batch_size),
+        "post_training_diagnostics": bool(args.post_training_diagnostics),
+        "post_training_diagnostics_output_dir": (
+            str(args.post_training_diagnostics_output_dir)
+            if args.post_training_diagnostics_output_dir is not None
+            else str(output_dir / "post_training_diagnostics")
+        ),
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
         "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
         "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
@@ -5273,6 +5579,26 @@ def main() -> int:
     _write_json(output_dir / "loss_summary.json", loss_summary)
     _record_timing(timings, "summary_write", summary_write_start)
     _progress(progress_enabled, "export", "run summary files written", summary_write_start)
+
+    post_training_diagnostics_result = _run_post_training_prediction_diagnostics(
+        args,
+        sample_root=sample_root,
+        output_dir=output_dir,
+        predictions_path=predictions_path,
+        predictions_saved=bool(args.save_predictions),
+        best_predictions_path=best_predictions_path,
+        best_predictions_saved=best_predictions_saved,
+        timings=timings,
+        progress_enabled=progress_enabled,
+    )
+    run_config["post_training_diagnostics_result"] = post_training_diagnostics_result
+    loss_summary["post_training_diagnostics_result"] = post_training_diagnostics_result
+    loss_summary["timing_diagnostics"] = dict(timings)
+    run_config["timing_diagnostics"] = dict(timings)
+    diagnostics_summary_write_start = time.perf_counter()
+    _write_json(output_dir / "run_config.json", run_config)
+    _write_json(output_dir / "loss_summary.json", loss_summary)
+    _record_timing(timings, "post_training_diagnostics_summary_write", diagnostics_summary_write_start)
 
     final_probe_eval_result = _run_post_training_final_probe_eval(
         args,

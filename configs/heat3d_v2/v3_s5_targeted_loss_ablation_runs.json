@@ -1,0 +1,45 @@
+{
+  "schema_version": "heat3d_v3_s5_targeted_loss_ablation_runs_v1",
+  "description": "Pending Heat3D v3 second-round S5finalFT targeted-loss ablation configs. These entries are config-only and are not completed training results.",
+  "runs": [
+    {
+      "name": "S5finalFT_HL2_hotspot0p05_strongq0p00",
+      "config": "configs/heat3d_v2/s5finalft_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_hotspot_only_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5final_FT_e100_lr1e-5_nomask_wd1e-4/params_final.pkl",
+      "hotspot_weight": 0.05,
+      "strong_q_weight": 0.0,
+      "epochs": 100,
+      "lr": 1.0e-5,
+      "selection_metric": "valid_base_mse",
+      "final_probe_checkpoint_kind": "both",
+      "purpose": "Hotspot-only ablation to test whether the strong-q term caused the P4 final-probe regression."
+    },
+    {
+      "name": "S5finalFT_HL2_hotspot0p05_strongq0p025",
+      "config": "configs/heat3d_v2/s5finalft_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_hotspot0p05_strongq0p025_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5final_FT_e100_lr1e-5_nomask_wd1e-4/params_final.pkl",
+      "hotspot_weight": 0.05,
+      "strong_q_weight": 0.025,
+      "epochs": 100,
+      "lr": 1.0e-5,
+      "selection_metric": "valid_base_mse",
+      "final_probe_checkpoint_kind": "both",
+      "purpose": "Weaker strong-q ablation to retain hotspot emphasis while reducing localized source over-regularization risk."
+    },
+    {
+      "name": "S5finalFT_HL2_hotspot0p025_strongq0p025",
+      "config": "configs/heat3d_v2/s5finalft_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_hotspot0p025_strongq0p025_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5final_FT_e100_lr1e-5_nomask_wd1e-4/params_final.pkl",
+      "hotspot_weight": 0.025,
+      "strong_q_weight": 0.025,
+      "epochs": 100,
+      "lr": 1.0e-5,
+      "selection_metric": "valid_base_mse",
+      "final_probe_checkpoint_kind": "both",
+      "purpose": "Lighter combined targeted-loss ablation to protect final-probe robustness while testing smaller hotspot/source emphasis."
+    }
+  ]
+}
