@@ -21,3 +21,6 @@ Interpretation:
   rows available with params checkpoints.
 - The first targeted-loss config uses S5final FT no-mask final as the
   conservative no-mask starting point.
+- For `hotspot_strong_q` runs, `valid_loss` is the targeted total loss.
+  Cross-run model quality should be compared using `valid_base_mse`,
+  `valid_raw_deltaT_mse`, `iid_err`/`stress_err`, and downstream diagnostics.

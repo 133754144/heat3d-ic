@@ -2457,6 +2457,40 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
     )
 
 
+def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: str) -> None:
+    if log_mode == "quiet":
+        return
+    train_step = _first_progress_numeric(
+        record.get("epoch_mean_train_batch_loss"),
+        record.get("train_loss"),
+    )
+    valid_total = record.get("valid_iid_loss")
+    if valid_total is None:
+        valid_total = record.get("valid_loss")
+    valid_base = record.get("valid_iid_base_mse")
+    if valid_base is None:
+        valid_base = record.get("valid_base_mse")
+    iid_error_pct = record.get("valid_iid_error_pct")
+    if iid_error_pct is None:
+        iid_error_pct = record.get("valid_error_pct")
+    best_base = record.get("best_valid_iid_base_mse")
+    if best_base is None:
+        best_base = record.get("best_valid_base_mse")
+    _emit(
+        f"epoch {record['epoch']:03d}/{epochs:03d} "
+        f"lr={record['lr']:.2e} "
+        f"train_step={_format_progress_loss(train_step)} "
+        f"valid_total={_format_progress_loss(valid_total)} "
+        f"valid_base={_format_progress_loss(valid_base)} "
+        f"iid_err={_format_progress_percent(iid_error_pct)} "
+        f"stress_total={_format_progress_loss(record.get('valid_stress_loss'))} "
+        f"stress_base={_format_progress_loss(record.get('valid_stress_base_mse'))} "
+        f"stress_err={_format_progress_percent(record.get('valid_stress_error_pct'))} "
+        f"best=e{_format_progress_int(record.get('best_epoch'))}/"
+        f"base={_format_progress_loss(best_base)}"
+    )
+
+
 def _fit_once(
     train_groups: list[dict],
     valid_groups: list[dict],
@@ -3028,6 +3062,10 @@ def _fit_once(
                 memory_audit.record("best_params_copy_end", epoch=epoch)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
         record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
+        record["best_valid_base_mse"] = best_record.get("valid_base_mse") if best_record is not None else None
+        record["best_valid_iid_base_mse"] = (
+            best_record.get("valid_iid_base_mse") if best_record is not None else None
+        )
         record["epoch_train_time_s"] = float(train_step_time)
         record["epoch_train_metrics_time_s"] = float(train_metrics_time)
         record["epoch_validation_time_s"] = float(validation_time)
@@ -3050,6 +3088,8 @@ def _fit_once(
         if should_report:
             _progress(progress_enabled, "train", f"epoch {epoch:03d}/{epochs:03d} metrics computed", epoch_start)
             _print_epoch_progress(record, epochs, log_mode)
+        else:
+            _print_epoch_light_progress(record, epochs, log_mode)
     _record_timing(timings, "epoch_loop", epoch_loop_start)
 
     final_metrics_reused = (
