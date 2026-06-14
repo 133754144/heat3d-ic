@@ -1,0 +1,194 @@
+{
+  "dataset_name": "v3_final_target_probe_v0",
+  "output_subset_name": "v3_final_target_probe_v0",
+  "schema_version": "heat3d_v3_final_target_probe_manifest_v0",
+  "sample_stage": "physics_label_v3_final_target_probe_v0",
+  "label_role": "v3_final_target_probe_reference_label_v0",
+  "manifest_version": "v3_final_target_probe_v0_seed20260613",
+  "status": "probe_generation_ready_v0",
+  "description": "Ten-sample Heat3D v3 final-target probe. This is a diagnostic probe, not a formal validation set or benchmark.",
+  "non_claims": [
+    "not_formal_benchmark",
+    "not_high_fidelity_solver_evidence",
+    "not_model_performance_evidence",
+    "not_publication_ready_dataset"
+  ],
+  "generation_policy": {
+    "random_block_first": true,
+    "rectilinear_grid_sampling": true,
+    "model_input_policy": "pure_physics_coords_k_q_bc_only",
+    "metadata_only_fields": [
+      "layer_id",
+      "region_id",
+      "material_id",
+      "probe_family",
+      "semantic_scene_seed"
+    ],
+    "reference_solver": "heat3d_v1_reference_solver_v2",
+    "output_under_ignored_data_dir": true,
+    "generated_data_committed_to_git": false,
+    "paired_resolution_policy": "1024 generated first; 4096 deferred until solver and memory checks are stable"
+  },
+  "domain_bounds_m": {
+    "x": [0.0, 0.01],
+    "y": [0.0, 0.01],
+    "z": [0.0, 0.002]
+  },
+  "resolutions": {
+    "1024": {
+      "grid_shape": [16, 16, 4],
+      "status": "enabled_v0"
+    },
+    "4096": {
+      "grid_shape": [16, 16, 16],
+      "status": "planned_deferred_v0",
+      "reason": "dense reference solver v2 cost and memory need a separate stability gate"
+    }
+  },
+  "required_metadata_fields": [
+    "probe_id",
+    "probe_family",
+    "intended_stressor",
+    "resolution",
+    "semantic_scene_seed",
+    "k_mode",
+    "k_region_mode",
+    "source_category",
+    "q_power_range",
+    "bc_category",
+    "label_status",
+    "generator_capability_notes"
+  ],
+  "probes": [
+    {
+      "probe_id": "P01",
+      "probe_family": "random_material_block_composite",
+      "intended_stressor": "non_layered_conductivity_routing",
+      "semantic_scene_seed": 31001,
+      "k_mode": "iso1",
+      "k_region_mode": "high_low_k_mix",
+      "source_category": "multi_block_power",
+      "q_power_range": "nominal",
+      "bc_category": "nominal_top_h",
+      "scene_kind": "many_high_low_k_blocks",
+      "generator_capability_notes": "v0 supports scalar high/low-k rectangular blocks and reference labels at 1024."
+    },
+    {
+      "probe_id": "P02",
+      "probe_family": "random_material_block_composite",
+      "intended_stressor": "disconnected_conduction_paths",
+      "semantic_scene_seed": 31002,
+      "k_mode": "iso1",
+      "k_region_mode": "sparse_high_k_bridge",
+      "source_category": "compact_hotspot_with_weak_background",
+      "q_power_range": "high_dynamic_range",
+      "bc_category": "nominal_top_h",
+      "scene_kind": "sparse_high_k_bridges",
+      "generator_capability_notes": "v0 approximates bridges as scalar high-k vertical rectangular/cylindrical paths."
+    },
+    {
+      "probe_id": "P03",
+      "probe_family": "random_material_block_composite",
+      "intended_stressor": "local_hotspot_confinement",
+      "semantic_scene_seed": 31003,
+      "k_mode": "iso1",
+      "k_region_mode": "low_k_barrier",
+      "source_category": "contained_hotspot",
+      "q_power_range": "high",
+      "bc_category": "low_top_h",
+      "scene_kind": "dense_low_k_barriers_around_source",
+      "generator_capability_notes": "v0 supports scalar low-k barrier boxes around a compact source."
+    },
+    {
+      "probe_id": "P04",
+      "probe_family": "random_material_block_composite",
+      "intended_stressor": "multi_scale_material_discontinuity",
+      "semantic_scene_seed": 31004,
+      "k_mode": "iso1",
+      "k_region_mode": "multi_scale_interface",
+      "source_category": "multi_block_power",
+      "q_power_range": "nominal_high",
+      "bc_category": "high_top_h",
+      "scene_kind": "mixed_block_sizes_high_contrast_interfaces",
+      "generator_capability_notes": "v0 supports scalar nested and mixed-size material blocks."
+    },
+    {
+      "probe_id": "P05",
+      "probe_family": "random_volumetric_source",
+      "intended_stressor": "non_ic_source_topology",
+      "semantic_scene_seed": 31005,
+      "k_mode": "iso1",
+      "k_region_mode": "random_block_background",
+      "source_category": "multi_blob_power",
+      "q_power_range": "nominal",
+      "bc_category": "nominal_top_h",
+      "scene_kind": "several_random_volumetric_heat_blobs",
+      "generator_capability_notes": "v0 supports ellipsoid-like volumetric blobs on the rectilinear grid."
+    },
+    {
+      "probe_id": "P06",
+      "probe_family": "random_volumetric_source",
+      "intended_stressor": "anisotropic_power_distribution",
+      "semantic_scene_seed": 31006,
+      "k_mode": "iso1",
+      "k_region_mode": "random_block_background",
+      "source_category": "elongated_power",
+      "q_power_range": "low_background_plus_high_strip",
+      "bc_category": "nominal_top_h",
+      "scene_kind": "elongated_heat_source_with_weak_background",
+      "generator_capability_notes": "v0 supports an elongated source plus weak background heating."
+    },
+    {
+      "probe_id": "P07",
+      "probe_family": "ic_motif_random_background",
+      "intended_stressor": "vertical_heat_escape_amid_random_materials",
+      "semantic_scene_seed": 31007,
+      "k_mode": "iso1",
+      "k_region_mode": "tsv_like_high_k_path",
+      "source_category": "via_adjacent_hotspot",
+      "q_power_range": "high",
+      "bc_category": "high_top_h",
+      "scene_kind": "tsv_like_vertical_high_k_path",
+      "generator_capability_notes": "v0 approximates TSV/via as scalar vertical high-k path; no explicit IC layer label is used as input."
+    },
+    {
+      "probe_id": "P08",
+      "probe_family": "ic_motif_random_background",
+      "intended_stressor": "ic_source_pattern_off_manifold_material_context",
+      "semantic_scene_seed": 31008,
+      "k_mode": "iso1",
+      "k_region_mode": "random_block_background",
+      "source_category": "active_hotspot_motif",
+      "q_power_range": "high_dynamic_range",
+      "bc_category": "nominal_top_h",
+      "scene_kind": "active_die_hotspot_motif_in_non_layered_background",
+      "generator_capability_notes": "v0 supports IC-like hotspot placement inside random block material context."
+    },
+    {
+      "probe_id": "P09",
+      "probe_family": "anisotropic_tensor_k_patch",
+      "intended_stressor": "diag3_tensor_like_spreading_mismatch",
+      "semantic_scene_seed": 31009,
+      "k_mode": "diag3",
+      "k_region_mode": "localized_diag3_anisotropic_patch",
+      "source_category": "patch_adjacent_hotspot",
+      "q_power_range": "nominal",
+      "bc_category": "nominal_top_h",
+      "scene_kind": "localized_diag3_anisotropic_patch",
+      "generator_capability_notes": "v0 deliberately uses diag3 anisotropy only; full tensor-k is a schema/solver gap."
+    },
+    {
+      "probe_id": "P10",
+      "probe_family": "extreme_bc_contact",
+      "intended_stressor": "V1_extreme_top_h_boundary_extrapolation",
+      "semantic_scene_seed": 31010,
+      "k_mode": "iso1",
+      "k_region_mode": "random_block_background",
+      "source_category": "compact_hotspot",
+      "q_power_range": "nominal_high",
+      "bc_category": "very_high_top_h_candidate",
+      "scene_kind": "V1_extreme_top_h_only",
+      "generator_capability_notes": "v0 only uses V1 global top Robin HTC. Localized top contact and side asymmetry are recorded as generator/solver/schema gaps, not fabricated labels."
+    }
+  ]
+}
