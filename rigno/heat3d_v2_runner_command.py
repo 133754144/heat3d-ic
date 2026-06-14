@@ -70,6 +70,17 @@ def build_training_command(
     _append_option(command, "--init-checkpoint", run.get("init_checkpoint"))
     _append_option(command, "--checkpoint-load-strict", run.get("checkpoint_load_strict"))
     _append_option(command, "--partial-load-policy", run.get("partial_load_policy"))
+    final_probe_eval = run.get("final_probe_eval_after_training", True)
+    command.append(
+        "--final-probe-eval-after-training"
+        if final_probe_eval is not False
+        else "--no-final-probe-eval-after-training"
+    )
+    _append_option(command, "--final-probe-output-dir", run.get("final_probe_output_dir"))
+    _append_option(command, "--final-probe-checkpoint-kind", run.get("final_probe_checkpoint_kind"))
+    _append_option(command, "--final-probe-subset", run.get("final_probe_subset"))
+    _append_option(command, "--final-probe-provenance", run.get("final_probe_provenance"))
+    _append_option(command, "--final-probe-batch-size", run.get("final_probe_batch_size"))
     _append_option(command, "--batch-plan", run.get("batch_plan"))
     _append_option(command, "--batch-build-seed", run.get("batch_build_seed"))
     if run.get("shuffle_train_batches") is True:
@@ -502,6 +513,12 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.init_checkpoint", "training --init-checkpoint"),
         ("run.checkpoint_load_strict", "training --checkpoint-load-strict"),
         ("run.partial_load_policy", "training --partial-load-policy"),
+        ("run.final_probe_eval_after_training", "training --final-probe-eval-after-training/--no-final-probe-eval-after-training"),
+        ("run.final_probe_output_dir", "training --final-probe-output-dir"),
+        ("run.final_probe_checkpoint_kind", "training --final-probe-checkpoint-kind"),
+        ("run.final_probe_subset", "training --final-probe-subset"),
+        ("run.final_probe_provenance", "training --final-probe-provenance"),
+        ("run.final_probe_batch_size", "training --final-probe-batch-size"),
         ("run.batch_plan", "training --batch-plan"),
         ("run.batch_build_seed", "training --batch-build-seed"),
         ("run.shuffle_train_batches", "training --shuffle-train-batches"),

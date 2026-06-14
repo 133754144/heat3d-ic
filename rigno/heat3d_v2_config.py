@@ -43,6 +43,7 @@ COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
+FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
 LR_SCHEDULES = {
     "constant",
     "warmup_cosine",
@@ -176,6 +177,9 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "init_checkpoint": run.get("init_checkpoint"),
         "checkpoint_load_strict": run.get("checkpoint_load_strict"),
         "partial_load_policy": run.get("partial_load_policy"),
+        "final_probe_eval_after_training": run.get("final_probe_eval_after_training"),
+        "final_probe_checkpoint_kind": run.get("final_probe_checkpoint_kind"),
+        "final_probe_output_dir": run.get("final_probe_output_dir"),
         "batch_plan": run.get("batch_plan"),
         "batch_build_seed": run.get("batch_build_seed"),
         "export_output_dir": export.get("output_dir"),
@@ -385,6 +389,34 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
             f"{label}: field 'run.partial_load_policy' must be one of "
             f"{sorted(PARTIAL_LOAD_POLICIES)}, got {partial_load_policy!r}"
         )
+    final_probe_eval = run.get("final_probe_eval_after_training")
+    if final_probe_eval is not None and not isinstance(final_probe_eval, bool):
+        raise ValueError(f"{label}: field 'run.final_probe_eval_after_training' must be a bool or null")
+    final_probe_kind = run.get("final_probe_checkpoint_kind")
+    if final_probe_kind is not None and final_probe_kind not in FINAL_PROBE_CHECKPOINT_KINDS:
+        raise ValueError(
+            f"{label}: field 'run.final_probe_checkpoint_kind' must be one of "
+            f"{sorted(FINAL_PROBE_CHECKPOINT_KINDS)}, got {final_probe_kind!r}"
+        )
+    final_probe_output_dir = run.get("final_probe_output_dir")
+    if final_probe_output_dir is not None:
+        if not isinstance(final_probe_output_dir, str):
+            raise ValueError(f"{label}: field 'run.final_probe_output_dir' must be a string or null")
+        if not _is_output_relative_path(final_probe_output_dir):
+            raise ValueError(
+                f"{label}: field 'run.final_probe_output_dir' must be under output/, "
+                f"got {final_probe_output_dir!r}"
+            )
+    for field in ("final_probe_subset", "final_probe_provenance"):
+        value = run.get(field)
+        if value is not None and (not isinstance(value, str) or not value):
+            raise ValueError(f"{label}: field 'run.{field}' must be a non-empty string or null")
+    final_probe_batch_size = run.get("final_probe_batch_size")
+    if final_probe_batch_size is not None:
+        if isinstance(final_probe_batch_size, bool) or not isinstance(final_probe_batch_size, int):
+            raise ValueError(f"{label}: field 'run.final_probe_batch_size' must be an int or null")
+        if final_probe_batch_size < 0:
+            raise ValueError(f"{label}: field 'run.final_probe_batch_size' must be >= 0")
 
 
 def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) -> None:

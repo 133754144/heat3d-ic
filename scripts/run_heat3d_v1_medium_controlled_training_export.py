@@ -66,11 +66,26 @@ DEFAULT_SPLIT_MAP = (
     / "medium1024_gapA_stratified_split_seed0.json"
 )
 DEFAULT_OUTPUT_DIR = REPO_DIR / "output" / "heat3d_v1_medium_runs" / "export_smoke_seed0"
+DEFAULT_FINAL_PROBE_SUBSET = (
+    REPO_DIR
+    / "data"
+    / "heat3d-thermal-simulation"
+    / "subsets"
+    / "v3_final_target_probe_v0"
+)
+DEFAULT_FINAL_PROBE_PROVENANCE = (
+    REPO_DIR
+    / "output"
+    / "heat3d_v3_final_target_probe_s5_smoke"
+    / "metadata"
+    / "probe_data_provenance.json"
+)
 TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
 RADIUS_POLICY_CHOICES = ("legacy_kdtree_mean4", "discrete_physical_coverage")
 COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
 INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
+FINAL_PROBE_CHECKPOINT_KIND_CHOICES = ("best", "final", "both")
 
 
 def parse_args() -> argparse.Namespace:
@@ -233,6 +248,42 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--final-checkpoint-name", type=str, default="params_final.pkl")
     parser.add_argument("--best-checkpoint-name", type=str, default="params_best.pkl")
+    parser.add_argument(
+        "--final-probe-eval-after-training",
+        dest="final_probe_eval_after_training",
+        action="store_true",
+        default=True,
+        help=(
+            "After training and checkpoint export, run read-only final-target "
+            "probe inference using saved params checkpoints. Enabled by default."
+        ),
+    )
+    parser.add_argument(
+        "--no-final-probe-eval-after-training",
+        dest="final_probe_eval_after_training",
+        action="store_false",
+        help="Disable post-training final-target probe checkpoint inference.",
+    )
+    parser.add_argument(
+        "--final-probe-output-dir",
+        type=Path,
+        default=None,
+        help="Ignored output directory for optional post-training final probe inference.",
+    )
+    parser.add_argument(
+        "--final-probe-checkpoint-kind",
+        choices=FINAL_PROBE_CHECKPOINT_KIND_CHOICES,
+        default="best",
+        help="Checkpoint(s) to evaluate when --final-probe-eval-after-training is enabled.",
+    )
+    parser.add_argument("--final-probe-subset", type=Path, default=DEFAULT_FINAL_PROBE_SUBSET)
+    parser.add_argument("--final-probe-provenance", type=Path, default=DEFAULT_FINAL_PROBE_PROVENANCE)
+    parser.add_argument(
+        "--final-probe-batch-size",
+        type=int,
+        default=0,
+        help="Batch size passed to final probe checkpoint smoke; 0 means one full prediction batch.",
+    )
     parser.add_argument(
         "--init-checkpoint",
         type=Path,
@@ -2460,10 +2511,6 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
 def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: str) -> None:
     if log_mode == "quiet":
         return
-    train_step = _first_progress_numeric(
-        record.get("epoch_mean_train_batch_loss"),
-        record.get("train_loss"),
-    )
     valid_total = record.get("valid_iid_loss")
     if valid_total is None:
         valid_total = record.get("valid_loss")
@@ -2473,21 +2520,11 @@ def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: s
     iid_error_pct = record.get("valid_iid_error_pct")
     if iid_error_pct is None:
         iid_error_pct = record.get("valid_error_pct")
-    best_base = record.get("best_valid_iid_base_mse")
-    if best_base is None:
-        best_base = record.get("best_valid_base_mse")
     _emit(
         f"epoch {record['epoch']:03d}/{epochs:03d} "
-        f"lr={record['lr']:.2e} "
-        f"train_step={_format_progress_loss(train_step)} "
         f"valid_total={_format_progress_loss(valid_total)} "
         f"valid_base={_format_progress_loss(valid_base)} "
-        f"iid_err={_format_progress_percent(iid_error_pct)} "
-        f"stress_total={_format_progress_loss(record.get('valid_stress_loss'))} "
-        f"stress_base={_format_progress_loss(record.get('valid_stress_base_mse'))} "
-        f"stress_err={_format_progress_percent(record.get('valid_stress_error_pct'))} "
-        f"best=e{_format_progress_int(record.get('best_epoch'))}/"
-        f"base={_format_progress_loss(best_base)}"
+        f"iid_err={_format_progress_percent(iid_error_pct)}"
     )
 
 
@@ -3940,6 +3977,180 @@ def _print_final_summary(
     _progress(_progress_enabled(args), "done", "script complete")
 
 
+def _final_probe_eval_kinds(kind: str) -> tuple[str, ...]:
+    if kind == "both":
+        return ("best", "final")
+    if kind in {"best", "final"}:
+        return (kind,)
+    raise ValueError(f"Unsupported final probe checkpoint kind: {kind}")
+
+
+def _final_probe_checkpoint_entries(
+    args: argparse.Namespace,
+    *,
+    final_checkpoint_path: Path | None,
+    final_checkpoint_saved: bool,
+    best_checkpoint_path: Path | None,
+    best_checkpoint_saved: bool,
+) -> list[tuple[str, Path]]:
+    entries: list[tuple[str, Path]] = []
+    for kind in _final_probe_eval_kinds(args.final_probe_checkpoint_kind):
+        if kind == "best":
+            if not best_checkpoint_saved or best_checkpoint_path is None:
+                raise RuntimeError(
+                    "final probe eval requested best checkpoint, but params_best.pkl was not saved"
+                )
+            entries.append(("best", best_checkpoint_path))
+        elif kind == "final":
+            if not final_checkpoint_saved or final_checkpoint_path is None:
+                raise RuntimeError(
+                    "final probe eval requested final checkpoint, but params_final.pkl was not saved"
+                )
+            entries.append(("final", final_checkpoint_path))
+    return entries
+
+
+def _print_final_probe_eval_table(label: str, metrics_path: Path) -> None:
+    payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+    rows = payload.get("metrics") or []
+    _emit(f"final_probe {label}: sample_count={len(rows)} metrics={metrics_path}")
+    for row in rows:
+        probe_id = row.get("probe_id", "unknown")
+        flags = ""
+        if probe_id == "P10":
+            flags = (
+                " localized_top_contact_supported="
+                f"{row.get('localized_top_contact_supported')} "
+                "side_asymmetry_supported="
+                f"{row.get('side_asymmetry_supported')}"
+            )
+        _emit(
+            f"final_probe {label} {probe_id} "
+            f"RMSE={_format_progress_loss(row.get('RMSE'))} "
+            f"MAE={_format_progress_loss(row.get('MAE'))} "
+            f"relRMSE_DeltaT={_format_progress_loss(row.get('relative_RMSE_on_DeltaT'))} "
+            f"Tmax_error={_format_progress_loss(row.get('Tmax_error'))} "
+            f"top5_RMSE={_format_progress_loss(row.get('top_5_percent_RMSE'))}"
+            f"{flags}"
+        )
+
+
+def _run_post_training_final_probe_eval(
+    args: argparse.Namespace,
+    *,
+    output_dir: Path,
+    final_checkpoint_path: Path | None,
+    final_checkpoint_saved: bool,
+    best_checkpoint_path: Path | None,
+    best_checkpoint_saved: bool,
+    timings: dict[str, float],
+    progress_enabled: bool,
+) -> dict[str, Any]:
+    if not args.final_probe_eval_after_training:
+        return {
+            "enabled": False,
+            "reason": "disabled",
+            "checkpoint_kind": args.final_probe_checkpoint_kind,
+        }
+
+    eval_start = time.perf_counter()
+    run_config_path = output_dir / "run_config.json"
+    if not run_config_path.is_file():
+        raise FileNotFoundError(f"final probe eval requires run_config.json: {run_config_path}")
+    if not args.final_probe_subset.is_dir():
+        raise FileNotFoundError(f"final probe subset not found: {args.final_probe_subset}")
+    if not args.final_probe_provenance.is_file():
+        raise FileNotFoundError(f"final probe provenance not found: {args.final_probe_provenance}")
+
+    eval_output_dir = args.final_probe_output_dir or (output_dir / "final_probe_eval")
+    entries = _final_probe_checkpoint_entries(
+        args,
+        final_checkpoint_path=final_checkpoint_path,
+        final_checkpoint_saved=final_checkpoint_saved,
+        best_checkpoint_path=best_checkpoint_path,
+        best_checkpoint_saved=best_checkpoint_saved,
+    )
+    command = [
+        sys.executable,
+        str(SCRIPTS_DIR / "run_heat3d_v3_final_probe_checkpoint_smoke.py"),
+        "--subset",
+        str(args.final_probe_subset),
+        "--provenance",
+        str(args.final_probe_provenance),
+        "--output-dir",
+        str(eval_output_dir),
+        "--batch-size",
+        str(args.final_probe_batch_size),
+    ]
+    for label, checkpoint_path in entries:
+        command.extend(
+            [
+                "--checkpoint-entry",
+                f"{label}={checkpoint_path}={run_config_path}",
+            ]
+        )
+
+    _progress(
+        progress_enabled,
+        "final-probe",
+        (
+            "running post-training final probe checkpoint inference "
+            f"kinds={[label for label, _ in entries]} output_dir={eval_output_dir}"
+        ),
+    )
+    completed = subprocess.run(
+        command,
+        cwd=REPO_DIR,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if completed.stdout:
+        for line in completed.stdout.rstrip().splitlines():
+            _emit(f"[final-probe] {line}")
+    if completed.stderr:
+        for line in completed.stderr.rstrip().splitlines():
+            _emit(f"[final-probe:stderr] {line}", file=sys.stderr)
+    if completed.returncode != 0:
+        raise RuntimeError(
+            "post-training final probe inference failed with "
+            f"returncode={completed.returncode}"
+        )
+
+    entry_payloads = []
+    for label, checkpoint_path in entries:
+        metrics_path = eval_output_dir / label / "metrics" / "s5_probe_metrics.json"
+        if not metrics_path.is_file():
+            raise FileNotFoundError(f"final probe metrics not found: {metrics_path}")
+        _print_final_probe_eval_table(label, metrics_path)
+        entry_payloads.append(
+            {
+                "label": label,
+                "checkpoint_path": str(checkpoint_path),
+                "metrics_path": str(metrics_path),
+                "output_dir": str(eval_output_dir / label),
+            }
+        )
+
+    result = {
+        "enabled": True,
+        "checkpoint_kind": args.final_probe_checkpoint_kind,
+        "output_dir": str(eval_output_dir),
+        "subset": str(args.final_probe_subset),
+        "provenance": str(args.final_probe_provenance),
+        "batch_size": int(args.final_probe_batch_size),
+        "command": command,
+        "returncode": int(completed.returncode),
+        "entries": entry_payloads,
+        "comparison_json": str(eval_output_dir / "s5_family_final_probe_comparison.json"),
+        "comparison_md": str(eval_output_dir / "s5_family_final_probe_comparison.md"),
+    }
+    _record_timing(timings, "final_probe_eval", eval_start)
+    _progress(progress_enabled, "final-probe", "post-training final probe inference complete", eval_start)
+    return result
+
+
 def _metadata_key(graph_seed: int):
     return jax.random.PRNGKey(int(graph_seed))
 
@@ -4741,6 +4952,12 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
+        "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
+        "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),
+        "final_probe_subset": str(args.final_probe_subset),
+        "final_probe_provenance": str(args.final_probe_provenance),
+        "final_probe_batch_size": int(args.final_probe_batch_size),
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
         "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
         "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
@@ -4969,6 +5186,12 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
+        "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
+        "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),
+        "final_probe_subset": str(args.final_probe_subset),
+        "final_probe_provenance": str(args.final_probe_provenance),
+        "final_probe_batch_size": int(args.final_probe_batch_size),
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
         "checkpoint_load_mode": result["checkpoint_load_info"].get("checkpoint_load_mode"),
         "checkpoint_load_strict": bool(result["checkpoint_load_info"].get("checkpoint_load_strict")),
@@ -5050,6 +5273,25 @@ def main() -> int:
     _write_json(output_dir / "loss_summary.json", loss_summary)
     _record_timing(timings, "summary_write", summary_write_start)
     _progress(progress_enabled, "export", "run summary files written", summary_write_start)
+
+    final_probe_eval_result = _run_post_training_final_probe_eval(
+        args,
+        output_dir=output_dir,
+        final_checkpoint_path=final_checkpoint_path,
+        final_checkpoint_saved=final_checkpoint_saved,
+        best_checkpoint_path=best_checkpoint_path,
+        best_checkpoint_saved=best_checkpoint_saved,
+        timings=timings,
+        progress_enabled=progress_enabled,
+    )
+    run_config["final_probe_eval_result"] = final_probe_eval_result
+    loss_summary["final_probe_eval_result"] = final_probe_eval_result
+    loss_summary["timing_diagnostics"] = dict(timings)
+    run_config["timing_diagnostics"] = dict(timings)
+    final_probe_summary_write_start = time.perf_counter()
+    _write_json(output_dir / "run_config.json", run_config)
+    _write_json(output_dir / "loss_summary.json", loss_summary)
+    _record_timing(timings, "final_probe_summary_write", final_probe_summary_write_start)
 
     profile_payload = _profile_timing_payload(
         timings=timings,

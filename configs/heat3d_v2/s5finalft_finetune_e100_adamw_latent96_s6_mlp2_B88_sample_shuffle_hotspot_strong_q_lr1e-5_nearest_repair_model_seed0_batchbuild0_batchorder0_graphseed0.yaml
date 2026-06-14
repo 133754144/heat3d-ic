@@ -95,6 +95,9 @@ run:
   allow_long_training_local: false
   batch_plan: sample_shuffle
   batch_build_seed: 0
+  final_probe_eval_after_training: true
+  final_probe_checkpoint_kind: both
+  final_probe_output_dir: output/heat3d_v3_final_probe_p4_msebest
   init_checkpoint: output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5final_FT_e100_lr1e-5_nomask_wd1e-4/params_final.pkl
   checkpoint_load_strict: true
   partial_load_policy: matching
