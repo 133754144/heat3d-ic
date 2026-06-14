@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d_v3_s5_checkpoint_finetune_runs_v1",
+  "description": "Pending Heat3D v3 S5 checkpoint-based fine-tune configs. These entries are config-only and are not completed training results.",
+  "runs": [
+    {
+      "name": "S5best_FT_e100_lr1e-5_nomask",
+      "config": "configs/heat3d_v2/s5best_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_constant_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "checkpoint_source": "s5_best",
+      "checkpoint_path": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "p_edge_masking": 0.0,
+      "learning_rate": 1.0e-5,
+      "epochs": 100,
+      "purpose": "Low-lr no-mask fine-tune from S5 best, the scalar-oriented checkpoint baseline."
+    },
+    {
+      "name": "S5final_FT_e100_lr1e-5_nomask",
+      "config": "configs/heat3d_v2/s5final_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_constant_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "checkpoint_source": "s5_final",
+      "checkpoint_path": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_final.pkl",
+      "p_edge_masking": 0.0,
+      "learning_rate": 1.0e-5,
+      "epochs": 100,
+      "purpose": "Low-lr no-mask fine-tune from S5 final, the raw/stress-oriented checkpoint baseline."
+    },
+    {
+      "name": "S5best_EM_e100_lr1e-5_edgemask0p02",
+      "config": "configs/heat3d_v2/s5best_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_constant_lr1e-5_edgemask0p02_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "checkpoint_source": "s5_best",
+      "checkpoint_path": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "p_edge_masking": 0.02,
+      "learning_rate": 1.0e-5,
+      "epochs": 100,
+      "purpose": "Conservative graph robustness fine-tune from S5 best with p_edge_masking=0.02."
+    },
+    {
+      "name": "S5final_EM_e100_lr1e-5_edgemask0p02",
+      "config": "configs/heat3d_v2/s5final_finetune_e100_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_constant_lr1e-5_edgemask0p02_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "checkpoint_source": "s5_final",
+      "checkpoint_path": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_final.pkl",
+      "p_edge_masking": 0.02,
+      "learning_rate": 1.0e-5,
+      "epochs": 100,
+      "purpose": "Conservative graph robustness fine-tune from S5 final with p_edge_masking=0.02."
+    }
+  ]
+}
