@@ -188,10 +188,14 @@ def q_masks(q_field: np.ndarray) -> tuple[np.ndarray, np.ndarray, float | None, 
     if positive.size == 0:
         empty = np.zeros_like(q, dtype=bool)
         return empty, empty, None, None
-    rounded_positive = np.round(positive, decimals=6)
-    unique, counts = np.unique(rounded_positive, return_counts=True)
-    positive_mode = float(unique[int(np.argmax(counts))])
-    q_background = min(float(np.min(positive)), positive_mode)
+    positive_fraction = float(np.mean(q > 0.0))
+    if positive_fraction > 0.90:
+        rounded_positive = np.round(positive, decimals=6)
+        unique, counts = np.unique(rounded_positive, return_counts=True)
+        positive_mode = float(unique[int(np.argmax(counts))])
+        q_background = min(float(np.min(positive)), positive_mode)
+    else:
+        q_background = 0.0
     q_max = float(np.max(q))
     if q_max <= q_background:
         threshold = q_background
