@@ -31,3 +31,5 @@ Default hard-sample weighting policy:
 - `2.0` is an aggressive future ablation, not the default.
 
 The generated JSON records `default_weight=1.0`, `hard_sample_weight=1.25`, `hard_sample_split=train`, and `recommended_normalize=true`.
+
+WSL2 2-epoch smoke passed with `weighted=50/704`, normalized `mean=1`, `min=0.982554`, `max=1.22819`, finite loss/grad, no OOM, and prediction/final-probe/post-diagnostics outputs disabled. This validates only train-loss sample weighting plumbing; validation/stress metrics remain unweighted.

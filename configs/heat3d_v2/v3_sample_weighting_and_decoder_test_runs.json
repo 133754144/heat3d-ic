@@ -1,0 +1,69 @@
+{
+  "schema_version": "heat3d_v3_sample_weighting_decoder_test_runs_v1",
+  "description": "Pending e50 sample-weighting and decoder/model-path test configs. Config-only; no long training launched by this index.",
+  "hard_sample_json": "output/heat3d_v3_condition_error_mining/hard_sample_weights.json",
+  "hard_sample_weight": 1.25,
+  "smoke_summary": {
+    "sample_weighting": "passed on WSL2: weighted=50/704, normalized mean=1, finite loss/grad, no OOM",
+    "decoder_mlp3": "passed on WSL2: 2 epochs, finite loss/grad, no OOM",
+    "decoder_mlp4": "passed on WSL2: 2 epochs, finite loss/grad, no OOM",
+    "processor_steps8": "passed on WSL2: 2 epochs, finite loss/grad, no OOM"
+  },
+  "runs": [
+    {
+      "name": "W1",
+      "config": "configs/heat3d_v2/v3_W1_s5basebest_e50_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_sampleweight1p25_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "test_type": "sample_weighting",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "epochs": 50,
+      "expected_risk": "low_to_medium",
+      "smoke_source": "v3_sample_weight_hardlist_smoke_e002",
+      "run_condition": "sample-weighting smoke passed with weighted=50/704, finite loss/grad, no OOM"
+    },
+    {
+      "name": "W2",
+      "config": "configs/heat3d_v2/v3_W2_s5finalft_e50_adamw_latent96_s6_mlp2_B88_sample_shuffle_hotspot_only_sampleweight1p25_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "test_type": "sample_weighting",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5final_FT_e100_lr1e-5_nomask_wd1e-4/params_final.pkl",
+      "epochs": 50,
+      "expected_risk": "low_to_medium",
+      "smoke_source": "v3_sample_weight_hardlist_smoke_e002",
+      "run_condition": "sample-weighting smoke passed with weighted=50/704, finite loss/grad, no OOM"
+    },
+    {
+      "name": "D1",
+      "config": "configs/heat3d_v2/v3_D1_s5basebest_e50_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "test_type": "decoder_capacity",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "epochs": 50,
+      "expected_risk": "medium",
+      "smoke_source": "v3_decoder_capacity_mlp3_smoke_e002 passed",
+      "run_condition": "matching params-only warm-start; strict=false because architecture differs from S5 base best"
+    },
+    {
+      "name": "D2",
+      "config": "configs/heat3d_v2/v3_D2_s5basebest_e50_adamw_latent96_s6_mlp4_B88_sample_shuffle_base_mse_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "test_type": "decoder_capacity",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "epochs": 50,
+      "expected_risk": "medium_high",
+      "smoke_source": "v3_decoder_capacity_mlp4_smoke_e002 passed",
+      "run_condition": "matching params-only warm-start; strict=false because architecture differs from S5 base best"
+    },
+    {
+      "name": "D3",
+      "config": "configs/heat3d_v2/v3_D3_s5basebest_e50_adamw_latent96_s8_mlp2_B88_sample_shuffle_base_mse_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "test_type": "decoder_capacity",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "epochs": 50,
+      "expected_risk": "medium_high",
+      "smoke_source": "v3_decoder_capacity_steps8_smoke_e002 passed",
+      "run_condition": "matching params-only warm-start; strict=false because architecture differs from S5 base best"
+    }
+  ]
+}
