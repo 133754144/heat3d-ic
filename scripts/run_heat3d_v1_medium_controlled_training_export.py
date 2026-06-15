@@ -4552,7 +4552,7 @@ def _load_hard_sample_weights(path: Path) -> dict[str, float]:
         elif isinstance(payload.get("weights"), dict):
             source = payload["weights"]
         elif isinstance(payload.get("hard_samples"), list):
-            source = {str(sample_id): 2.0 for sample_id in payload["hard_samples"]}
+            source = payload["hard_samples"]
         elif isinstance(payload.get("samples"), list):
             source = payload["samples"]
         else:
@@ -4577,10 +4577,10 @@ def _load_hard_sample_weights(path: Path) -> dict[str, float]:
         for item in source:
             if isinstance(item, str):
                 sample_id = item
-                weight_value = 2.0
+                weight_value = 1.25
             elif isinstance(item, dict):
                 sample_id = str(item.get("sample_id") or item.get("id") or "")
-                weight_value = float(item.get("weight", 2.0))
+                weight_value = float(item.get("weight", 1.25))
             else:
                 raise ValueError(f"Invalid sample-weight list item: {item!r}")
             if not sample_id:

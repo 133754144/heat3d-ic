@@ -23,3 +23,11 @@ Outputs under ignored `output/heat3d_v3_condition_error_mining/`:
 - `hard_sample_weights.json`
 
 The hard-sample JSON is intended only as an input to smoke configs using `--sample-weight-policy hard_sample_list`. Validation metrics remain unweighted. Long sample-weighted runs require a successful 1-5 epoch smoke first.
+
+Default hard-sample weighting policy:
+
+- `1.25` is the default smoke / first long-test hard-sample weight.
+- `1.5` is reserved for a later stronger ablation if `1.25` is stable and useful.
+- `2.0` is an aggressive future ablation, not the default.
+
+The generated JSON records `default_weight=1.0`, `hard_sample_weight=1.25`, and `recommended_normalize=true`.
