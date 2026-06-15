@@ -64,6 +64,17 @@
       "expected_risk": "medium_high",
       "smoke_source": "v3_decoder_capacity_steps8_smoke_e002 passed",
       "run_condition": "matching params-only warm-start; strict=false because architecture differs from S5 base best"
+    },
+    {
+      "name": "D1-L400",
+      "config": "configs/heat3d_v2/v3_D1L_s5basebest_e400_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_warmupcosine_lr3e-5_minlr1e-6_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "status": "pending",
+      "test_type": "decoder_capacity_long",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "epochs": 400,
+      "expected_risk": "medium_high",
+      "smoke_source": "v3_decoder_capacity_mlp3_smoke_e002 passed; D1 e50 under-converged",
+      "run_condition": "D1 e50 showed continuous learning but under-converged; prepared only, not launched"
     }
   ]
 }
