@@ -114,6 +114,8 @@ def _load_split_map(path: Path | None) -> dict[str, str]:
         return {}
     payload = json.loads(path.read_text())
     mapping: dict[str, str] = {}
+    if isinstance(payload, dict) and isinstance(payload.get("sample_splits"), dict):
+        return {str(sample_id): str(split) for sample_id, split in payload["sample_splits"].items()}
     if isinstance(payload, dict) and all(isinstance(value, str) for value in payload.values()):
         return {str(sample_id): str(split) for sample_id, split in payload.items()}
     if isinstance(payload, dict):
