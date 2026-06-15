@@ -80,6 +80,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--strong-q-quantile", type=float, default=0.90)
     parser.add_argument("--hard-sample-count", type=int, default=50)
     parser.add_argument("--hard-sample-weight", type=float, default=1.25)
+    parser.add_argument("--hard-sample-split", default="train")
     parser.add_argument(
         "--output-json",
         type=Path,
@@ -273,9 +274,17 @@ def _aggregate(rows: list[dict[str, Any]], metric: str) -> list[dict[str, Any]]:
     return out
 
 
-def _hard_sample_weights(rows: list[dict[str, Any]], count: int, hard_sample_weight: float) -> dict[str, Any]:
+def _hard_sample_weights(
+    rows: list[dict[str, Any]],
+    count: int,
+    hard_sample_weight: float,
+    hard_sample_split: str,
+) -> dict[str, Any]:
     by_sample: dict[str, list[float]] = defaultdict(list)
-    for row in rows:
+    eligible_rows = [
+        row for row in rows if not hard_sample_split or str(row.get("split", "")) == hard_sample_split
+    ]
+    for row in eligible_rows:
         by_sample[str(row["sample_id"])].append(float(row["normalized_mse"]))
     ranked = [
         {
@@ -294,6 +303,8 @@ def _hard_sample_weights(rows: list[dict[str, Any]], count: int, hard_sample_wei
         "weight_policy": "hard_sample_list",
         "default_weight": 1.0,
         "hard_sample_weight": float(hard_sample_weight),
+        "hard_sample_split": hard_sample_split,
+        "source_row_count": int(len(eligible_rows)),
         "recommended_normalize": True,
         "hard_samples": selected,
         "sample_weights": {item["sample_id"]: item["weight"] for item in selected},
@@ -336,7 +347,12 @@ def main() -> int:
     for metric in metrics:
         hard_groups.extend(_aggregate(all_rows, metric)[:15])
     hard_groups.sort(key=lambda item: (item["mean"], item["max"]), reverse=True)
-    weights = _hard_sample_weights(all_rows, args.hard_sample_count, args.hard_sample_weight)
+    weights = _hard_sample_weights(
+        all_rows,
+        args.hard_sample_count,
+        args.hard_sample_weight,
+        args.hard_sample_split,
+    )
     payload = {
         "diagnostic_scope": "read-only condition error mining; not formal benchmark evidence",
         "entries": [
