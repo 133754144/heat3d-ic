@@ -30,6 +30,7 @@ DEFAULT_SUBSET = (
     / "subsets"
     / "v1_multilayer_bc_eq_physics_label_medium1024_gapA_full1024_v2"
 )
+DEFAULT_SPLIT_MAP = Path("configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json")
 DEFAULT_ENTRIES = (
     "S5_base_best=output/heat3d_v2_runs/"
     "latent96_s6_mlp2_B88_sample_shuffle_nearest_repair_S5_seed0_e1600_"
@@ -76,6 +77,7 @@ def parse_args() -> argparse.Namespace:
         description="Read-only condition error mining over existing Heat3D predictions."
     )
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
+    parser.add_argument("--split-map", type=Path, default=DEFAULT_SPLIT_MAP)
     parser.add_argument("--entry", action="append", default=None, help="LABEL=RUN_DIR:PREDICTION_NPZ")
     parser.add_argument("--strong-q-quantile", type=float, default=0.90)
     parser.add_argument("--hard-sample-count", type=int, default=50)
@@ -105,6 +107,21 @@ def _parse_entry(token: str) -> tuple[str, Path, str]:
     label, rest = token.split("=", 1)
     run_dir, prediction_name = rest.rsplit(":", 1)
     return label.strip(), Path(run_dir), prediction_name
+
+
+def _load_split_map(path: Path | None) -> dict[str, str]:
+    if path is None or not path.is_file():
+        return {}
+    payload = json.loads(path.read_text())
+    mapping: dict[str, str] = {}
+    if isinstance(payload, dict) and all(isinstance(value, str) for value in payload.values()):
+        return {str(sample_id): str(split) for sample_id, split in payload.items()}
+    if isinstance(payload, dict):
+        for split, ids in payload.items():
+            if isinstance(ids, list):
+                for sample_id in ids:
+                    mapping[str(sample_id)] = str(split)
+    return mapping
 
 
 def _scalar(value: Any) -> float:
@@ -154,17 +171,24 @@ def _top_h_category(metadata: dict[str, Any], sample_meta: dict[str, Any]) -> st
     return "unknown"
 
 
-def _reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+def _reference_samples(subset: Path, split_map_path: Path | None) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     sample_dirs = mech.find_sample_dirs(mech._sample_root(subset))
+    split_map = _load_split_map(split_map_path)
     pending = []
     q_powers = []
     failures = []
     for sample_dir in sample_dirs:
-        sample_id = sample_dir.name
+        sample_dir_id = sample_dir.name
+        sample_id = sample_dir_id
         try:
             sample_meta = mech.load_json(sample_dir / "sample_meta.json")
             metadata = mech._read_optional_json(sample_dir / "metadata.json")
             sample_id = str(metadata.get("sample_id") or sample_meta.get("sample_id") or sample_dir.name)
+            split = (
+                split_map.get(sample_dir_id)
+                or split_map.get(sample_id)
+                or mech._meta_value(metadata, sample_meta, "split")
+            )
             coords = np.load(sample_dir / "coords.npy")
             n_points = int(coords.shape[0])
             temperature = mech._as_column(np.load(sample_dir / "temperature.npy"), n_points, f"{sample_id} temperature")
@@ -173,7 +197,7 @@ def _reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], dict[st
             q_power = float(mech._integrated_power(metadata, sample_meta, q_field))
             q_powers.append(q_power)
             groups = {
-                "split": mech._meta_value(metadata, sample_meta, "split"),
+                "split": split,
                 "source_category": mech._meta_value(metadata, sample_meta, "source_pattern_tag"),
                 "k_region_mode": mech._meta_value(metadata, sample_meta, "k_region_mode"),
                 "bc_category": mech._meta_value(metadata, sample_meta, "bc_category"),
@@ -183,6 +207,8 @@ def _reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], dict[st
             pending.append(
                 {
                     "sample_id": sample_id,
+                    "sample_dir_id": sample_dir_id,
+                    "runner_sample_id": sample_dir_id,
                     "target_delta": temperature.reshape(-1) - t_ref,
                     "q_field": q_field.reshape(-1),
                     "t_ref": t_ref,
@@ -191,13 +217,18 @@ def _reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], dict[st
                 }
             )
         except Exception as exc:  # pragma: no cover - diagnostic robustness
-            failures.append({"sample_id": sample_id, "sample_dir": str(sample_dir), "error": str(exc)})
+            failures.append({"sample_id": sample_id, "sample_dir_id": sample_dir_id, "sample_dir": str(sample_dir), "error": str(exc)})
     q_edges = mech._q_power_edges(q_powers) if q_powers else {"ranges": []}
     refs = {}
     for item in pending:
         item["groups"]["q_power_range"] = mech._q_power_range(float(item["q_power"]), q_edges["ranges"])
         refs[str(item["sample_id"])] = item
-    return refs, {"sample_failures": failures, "q_power_edges": q_edges}
+    return refs, {
+        "sample_failures": failures,
+        "q_power_edges": q_edges,
+        "split_map_path": str(split_map_path) if split_map_path is not None else None,
+        "split_map_count": int(len(split_map)),
+    }
 
 
 def _rmse(values: np.ndarray) -> float:
@@ -236,6 +267,8 @@ def _sample_metrics(label: str, run_dir: Path, prediction_name: str, refs: dict[
             {
                 "label": label,
                 "sample_id": sample_id,
+                "sample_dir_id": ref.get("sample_dir_id", sample_id),
+                "runner_sample_id": ref.get("runner_sample_id", ref.get("sample_dir_id", sample_id)),
                 "prediction_name": prediction_name,
                 "normalized_mse": float(np.mean(np.square(norm_error))),
                 "rmse": _rmse(error),
@@ -285,10 +318,11 @@ def _hard_sample_weights(
         row for row in rows if not hard_sample_split or str(row.get("split", "")) == hard_sample_split
     ]
     for row in eligible_rows:
-        by_sample[str(row["sample_id"])].append(float(row["normalized_mse"]))
+        by_sample[str(row.get("runner_sample_id") or row["sample_id"])].append(float(row["normalized_mse"]))
     ranked = [
         {
             "sample_id": sample_id,
+            "runner_sample_id": sample_id,
             "score": float(max(scores)),
             "mean_score": float(np.mean(scores)),
             "weight": float(hard_sample_weight),
@@ -338,7 +372,7 @@ def _write_md(path: Path, payload: dict[str, Any]) -> None:
 def main() -> int:
     args = parse_args()
     entries = [_parse_entry(item) for item in (args.entry or DEFAULT_ENTRIES)]
-    refs, reference_meta = _reference_samples(args.subset)
+    refs, reference_meta = _reference_samples(args.subset, args.split_map)
     all_rows: list[dict[str, Any]] = []
     for label, run_dir, prediction_name in entries:
         all_rows.extend(_sample_metrics(label, run_dir, prediction_name, refs, args.strong_q_quantile))

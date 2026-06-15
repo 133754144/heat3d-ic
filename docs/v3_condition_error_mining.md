@@ -22,7 +22,7 @@ Outputs under ignored `output/heat3d_v3_condition_error_mining/`:
 - `condition_error_mining.md`
 - `hard_sample_weights.json`
 
-The hard-sample JSON is intended only as an input to smoke configs using `--sample-weight-policy hard_sample_list`. It defaults to selecting hard samples from the `train` split, because sample weighting is applied only to train loss. Validation metrics remain unweighted. Long sample-weighted runs require a successful 1-5 epoch smoke first.
+The hard-sample JSON is intended only as an input to smoke configs using `--sample-weight-policy hard_sample_list`. It defaults to selecting hard samples from the `train` split in `configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json`, because sample weighting is applied only to train loss. The generated `sample_weights` keys use the runner/sample-directory IDs rather than prediction archive aliases. Validation metrics remain unweighted. Long sample-weighted runs require a successful 1-5 epoch smoke first.
 
 Default hard-sample weighting policy:
 
