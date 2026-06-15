@@ -86,6 +86,7 @@ COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
 INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
 FINAL_PROBE_CHECKPOINT_KIND_CHOICES = ("best", "final", "both")
+SAMPLE_WEIGHT_POLICY_CHOICES = ("none", "hard_sample_list")
 
 
 def parse_args() -> argparse.Namespace:
@@ -222,6 +223,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repair-r2p", dest="repair_r2p", action="store_true", default=True)
     parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
     parser.add_argument("--min-physical-coverage", type=int, default=1)
+    parser.add_argument(
+        "--sample-weight-policy",
+        choices=SAMPLE_WEIGHT_POLICY_CHOICES,
+        default="none",
+        help="Optional train-only sample weighting policy. Default preserves unweighted training.",
+    )
+    parser.add_argument(
+        "--sample-weight-json",
+        type=Path,
+        default=None,
+        help="JSON hard-sample list or sample_id-to-weight map for --sample-weight-policy hard_sample_list.",
+    )
+    parser.add_argument("--sample-weight-default", type=float, default=1.0)
+    parser.add_argument("--sample-weight-normalize", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--save-predictions", action="store_true")
     parser.add_argument(
@@ -1919,6 +1934,50 @@ def _pseudo_negative_unweighted_loss(pn_over, target_raw, pseudo_negative_mask, 
     return _masked_mean(values, pseudo_negative_mask)
 
 
+def _sample_weights_for_group(group: dict) -> Any | None:
+    weights = group.get("sample_weights")
+    if weights is None:
+        return None
+    return jnp.asarray(weights, dtype=jnp.float32)
+
+
+def _mean_axes_except_batch(values) -> tuple[int, ...]:
+    return tuple(range(1, values.ndim))
+
+
+def _sample_weighted_mean(values, sample_weights):
+    if sample_weights is None:
+        return jnp.mean(values)
+    values = jnp.asarray(values)
+    per_sample = jnp.mean(values, axis=_mean_axes_except_batch(values)) if values.ndim > 1 else values
+    weights = sample_weights.astype(per_sample.dtype)
+    return jnp.sum(per_sample * weights) / jnp.maximum(
+        jnp.sum(weights),
+        jnp.asarray(1.0e-12, dtype=per_sample.dtype),
+    )
+
+
+def _sample_weighted_masked_mean(values, mask, sample_weights):
+    if sample_weights is None:
+        return _masked_mean(values, mask)
+    values = jnp.asarray(values)
+    mask_values = mask.astype(values.dtype)
+    axes = _mean_axes_except_batch(values)
+    numerator = jnp.sum(values * mask_values, axis=axes) if axes else values * mask_values
+    denominator = jnp.sum(mask_values, axis=axes) if axes else mask_values
+    per_sample = jnp.where(
+        denominator > 0.0,
+        numerator / jnp.maximum(denominator, jnp.asarray(1.0e-12, dtype=values.dtype)),
+        jnp.asarray(0.0, dtype=values.dtype),
+    )
+    active = (denominator > 0.0).astype(values.dtype)
+    weights = sample_weights.astype(values.dtype) * active
+    return jnp.sum(per_sample * weights) / jnp.maximum(
+        jnp.sum(weights),
+        jnp.asarray(1.0e-12, dtype=values.dtype),
+    )
+
+
 def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
     weighted = {
         "base_mse": 0.0,
@@ -1947,11 +2006,12 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
     count = 0
     pseudo_negative_count = jnp.asarray(0.0)
     for group in groups:
+        sample_weights = _sample_weights_for_group(group)
         pred = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
         target = group["target_normalized"]
         target_raw = group["target_delta_raw"]
         pred_raw_delta = _normalized_delta_to_raw(pred, stats)
-        base_mse = jnp.mean(jnp.square(pred - target))
+        base_mse = _sample_weighted_mean(jnp.square(pred - target), sample_weights)
         background_threshold = jnp.quantile(target_raw, loss_config["background_quantile"])
         hotspot_threshold = jnp.quantile(target_raw, loss_config["hotspot_quantile"])
         background_mask = target_raw <= background_threshold
@@ -1974,21 +2034,25 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
         strong_q_mask_fraction = jnp.asarray(0.0, dtype=base_mse.dtype)
         raw_error = pred_raw_delta - target_raw
         if loss_config["loss_mode"] == "background_hotspot":
-            background_penalty = _masked_mean(jnp.square(pred_raw_delta), background_mask)
-            hotspot_retention_loss = _masked_mean(jnp.square(pred - target), hotspot_mask)
+            background_penalty = _sample_weighted_masked_mean(jnp.square(pred_raw_delta), background_mask, sample_weights)
+            hotspot_retention_loss = _sample_weighted_masked_mean(jnp.square(pred - target), hotspot_mask, sample_weights)
             total_loss = (
                 base_mse
                 + loss_config["background_weight"] * background_penalty
                 + loss_config["hotspot_weight"] * hotspot_retention_loss
             )
         elif loss_config["loss_mode"] in {"background_l1_bias", "background_l1_relative", "background_pseudo_negative"}:
-            background_l1 = _masked_mean(jnp.abs(pred_raw_delta), background_mask)
-            background_signed_bias_loss = jnp.abs(_masked_mean(raw_error, background_mask))
-            background_overprediction_loss = _masked_mean(jnp.maximum(raw_error, 0.0), background_mask)
-            hotspot_retention_loss = _masked_mean(jnp.square(pred - target), hotspot_mask)
+            background_l1 = _sample_weighted_masked_mean(jnp.abs(pred_raw_delta), background_mask, sample_weights)
+            background_signed_bias_loss = jnp.abs(_sample_weighted_masked_mean(raw_error, background_mask, sample_weights))
+            background_overprediction_loss = _sample_weighted_masked_mean(
+                jnp.maximum(raw_error, 0.0), background_mask, sample_weights
+            )
+            hotspot_retention_loss = _sample_weighted_masked_mean(jnp.square(pred - target), hotspot_mask, sample_weights)
             if loss_config["loss_mode"] in {"background_l1_relative", "background_pseudo_negative"}:
                 denom = _safe_relative_denominator(target_raw, loss_config)
-                background_relative_abs = _masked_mean(jnp.abs(raw_error) / denom, background_mask)
+                background_relative_abs = _sample_weighted_masked_mean(
+                    jnp.abs(raw_error) / denom, background_mask, sample_weights
+                )
             if loss_config["loss_mode"] == "background_pseudo_negative":
                 pseudo_negative_mask = _pseudo_negative_mask(target_raw, loss_config)
                 pn_count = jnp.sum(pseudo_negative_mask.astype(base_mse.dtype))
@@ -2003,12 +2067,16 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
                 pseudo_negative_weighted_loss = loss_config["pseudo_negative_weight"] * pseudo_negative_unweighted_loss
                 pseudo_negative_bias = jnp.where(
                     enough_points,
-                    _masked_mean(raw_error, pseudo_negative_mask),
+                    _sample_weighted_masked_mean(raw_error, pseudo_negative_mask, sample_weights),
                     jnp.asarray(0.0, dtype=base_mse.dtype),
                 )
                 pseudo_negative_over_ratio = jnp.where(
                     enough_points,
-                    _masked_mean((raw_error > loss_config["pseudo_negative_over_margin"]).astype(base_mse.dtype), pseudo_negative_mask),
+                    _sample_weighted_masked_mean(
+                        (raw_error > loss_config["pseudo_negative_over_margin"]).astype(base_mse.dtype),
+                        pseudo_negative_mask,
+                        sample_weights,
+                    ),
                     jnp.asarray(0.0, dtype=base_mse.dtype),
                 )
                 pseudo_negative_count = pseudo_negative_count + pn_count
@@ -2038,10 +2106,18 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
                     float(loss_config["strong_q_quantile"]),
                 )
             point_mse = jnp.square(pred - target)
-            hotspot_mse = _masked_mean(point_mse, hotspot_top_mask)
-            strong_q_mse = _masked_mean(point_mse, strong_q_mask)
-            hotspot_mask_fraction = _mask_fraction(hotspot_top_mask, base_mse.dtype)
-            strong_q_mask_fraction = _mask_fraction(strong_q_mask, base_mse.dtype)
+            hotspot_mse = _sample_weighted_masked_mean(point_mse, hotspot_top_mask, sample_weights)
+            strong_q_mse = _sample_weighted_masked_mean(point_mse, strong_q_mask, sample_weights)
+            hotspot_mask_fraction = (
+                _sample_weighted_mean(hotspot_top_mask.astype(base_mse.dtype), sample_weights)
+                if sample_weights is not None
+                else _mask_fraction(hotspot_top_mask, base_mse.dtype)
+            )
+            strong_q_mask_fraction = (
+                _sample_weighted_mean(strong_q_mask.astype(base_mse.dtype), sample_weights)
+                if sample_weights is not None
+                else _mask_fraction(strong_q_mask, base_mse.dtype)
+            )
             total_loss = (
                 base_mse
                 + loss_config["hotspot_weight"] * hotspot_mse
@@ -2049,44 +2125,49 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
             )
         else:
             total_loss = base_mse
-        bg_pred_raw_mean = _masked_mean(pred_raw_delta, background_mask)
-        bg_signed_bias = _masked_mean(raw_error, background_mask)
-        bg_abs_mean = _masked_mean(jnp.abs(raw_error), background_mask)
-        hotspot_raw_mae = _masked_mean(jnp.abs(raw_error), hotspot_mask)
+        bg_pred_raw_mean = _sample_weighted_masked_mean(pred_raw_delta, background_mask, sample_weights)
+        bg_signed_bias = _sample_weighted_masked_mean(raw_error, background_mask, sample_weights)
+        bg_abs_mean = _sample_weighted_masked_mean(jnp.abs(raw_error), background_mask, sample_weights)
+        hotspot_raw_mae = _sample_weighted_masked_mean(jnp.abs(raw_error), hotspot_mask, sample_weights)
         n = target.shape[0]
-        weighted["base_mse"] = weighted["base_mse"] + base_mse * n
-        weighted["background_penalty"] = weighted["background_penalty"] + background_penalty * n
-        weighted["background_l1"] = weighted["background_l1"] + background_l1 * n
+        group_weight = (
+            jnp.sum(sample_weights.astype(base_mse.dtype))
+            if sample_weights is not None
+            else jnp.asarray(n, dtype=base_mse.dtype)
+        )
+        weighted["base_mse"] = weighted["base_mse"] + base_mse * group_weight
+        weighted["background_penalty"] = weighted["background_penalty"] + background_penalty * group_weight
+        weighted["background_l1"] = weighted["background_l1"] + background_l1 * group_weight
         weighted["background_signed_bias_loss"] = (
-            weighted["background_signed_bias_loss"] + background_signed_bias_loss * n
+            weighted["background_signed_bias_loss"] + background_signed_bias_loss * group_weight
         )
         weighted["background_overprediction_loss"] = (
-            weighted["background_overprediction_loss"] + background_overprediction_loss * n
+            weighted["background_overprediction_loss"] + background_overprediction_loss * group_weight
         )
-        weighted["background_relative_abs"] = weighted["background_relative_abs"] + background_relative_abs * n
-        weighted["pseudo_negative_over_loss"] = weighted["pseudo_negative_over_loss"] + pseudo_negative_over_loss * n
+        weighted["background_relative_abs"] = weighted["background_relative_abs"] + background_relative_abs * group_weight
+        weighted["pseudo_negative_over_loss"] = weighted["pseudo_negative_over_loss"] + pseudo_negative_over_loss * group_weight
         weighted["pseudo_negative_unweighted_loss"] = (
-            weighted["pseudo_negative_unweighted_loss"] + pseudo_negative_unweighted_loss * n
+            weighted["pseudo_negative_unweighted_loss"] + pseudo_negative_unweighted_loss * group_weight
         )
         weighted["pseudo_negative_weighted_loss"] = (
-            weighted["pseudo_negative_weighted_loss"] + pseudo_negative_weighted_loss * n
+            weighted["pseudo_negative_weighted_loss"] + pseudo_negative_weighted_loss * group_weight
         )
         weighted["pseudo_negative_weighted_fraction_of_total_loss"] = (
-            weighted["pseudo_negative_weighted_fraction_of_total_loss"] + pseudo_negative_weighted_fraction * n
+            weighted["pseudo_negative_weighted_fraction_of_total_loss"] + pseudo_negative_weighted_fraction * group_weight
         )
-        weighted["pseudo_negative_bias"] = weighted["pseudo_negative_bias"] + pseudo_negative_bias * n
-        weighted["pseudo_negative_over_ratio"] = weighted["pseudo_negative_over_ratio"] + pseudo_negative_over_ratio * n
-        weighted["hotspot_retention_loss"] = weighted["hotspot_retention_loss"] + hotspot_retention_loss * n
-        weighted["hotspot_mse"] = weighted["hotspot_mse"] + hotspot_mse * n
-        weighted["strong_q_mse"] = weighted["strong_q_mse"] + strong_q_mse * n
-        weighted["hotspot_mask_fraction"] = weighted["hotspot_mask_fraction"] + hotspot_mask_fraction * n
-        weighted["strong_q_mask_fraction"] = weighted["strong_q_mask_fraction"] + strong_q_mask_fraction * n
-        weighted["total_loss"] = weighted["total_loss"] + total_loss * n
-        weighted["bg_pred_raw_mean"] = weighted["bg_pred_raw_mean"] + bg_pred_raw_mean * n
-        weighted["bg_signed_bias"] = weighted["bg_signed_bias"] + bg_signed_bias * n
-        weighted["bg_abs_mean"] = weighted["bg_abs_mean"] + bg_abs_mean * n
-        weighted["hotspot_raw_mae"] = weighted["hotspot_raw_mae"] + hotspot_raw_mae * n
-        count += int(n)
+        weighted["pseudo_negative_bias"] = weighted["pseudo_negative_bias"] + pseudo_negative_bias * group_weight
+        weighted["pseudo_negative_over_ratio"] = weighted["pseudo_negative_over_ratio"] + pseudo_negative_over_ratio * group_weight
+        weighted["hotspot_retention_loss"] = weighted["hotspot_retention_loss"] + hotspot_retention_loss * group_weight
+        weighted["hotspot_mse"] = weighted["hotspot_mse"] + hotspot_mse * group_weight
+        weighted["strong_q_mse"] = weighted["strong_q_mse"] + strong_q_mse * group_weight
+        weighted["hotspot_mask_fraction"] = weighted["hotspot_mask_fraction"] + hotspot_mask_fraction * group_weight
+        weighted["strong_q_mask_fraction"] = weighted["strong_q_mask_fraction"] + strong_q_mask_fraction * group_weight
+        weighted["total_loss"] = weighted["total_loss"] + total_loss * group_weight
+        weighted["bg_pred_raw_mean"] = weighted["bg_pred_raw_mean"] + bg_pred_raw_mean * group_weight
+        weighted["bg_signed_bias"] = weighted["bg_signed_bias"] + bg_signed_bias * group_weight
+        weighted["bg_abs_mean"] = weighted["bg_abs_mean"] + bg_abs_mean * group_weight
+        weighted["hotspot_raw_mae"] = weighted["hotspot_raw_mae"] + hotspot_raw_mae * group_weight
+        count += int(n) if sample_weights is None else float(np.sum(np.asarray(group["sample_weights"], dtype=np.float64)))
     divisor = max(count, 1)
     result = {key: value / divisor for key, value in weighted.items()}
     result["pseudo_negative_count"] = pseudo_negative_count
@@ -4445,6 +4526,134 @@ def _run_post_training_final_probe_eval(
     return result
 
 
+def _sample_weight_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    default_weight = float(args.sample_weight_default)
+    if default_weight < 0.0:
+        raise ValueError("--sample-weight-default must be >= 0")
+    if args.sample_weight_policy == "none":
+        if args.sample_weight_json is not None:
+            raise ValueError("--sample-weight-json requires --sample-weight-policy hard_sample_list")
+    elif args.sample_weight_policy == "hard_sample_list":
+        if args.sample_weight_json is None:
+            raise ValueError("--sample-weight-policy hard_sample_list requires --sample-weight-json")
+    return {
+        "policy": args.sample_weight_policy,
+        "json_path": str(args.sample_weight_json) if args.sample_weight_json is not None else None,
+        "default": default_weight,
+        "normalize": bool(args.sample_weight_normalize),
+    }
+
+
+def _load_hard_sample_weights(path: Path) -> dict[str, float]:
+    payload = json.loads(path.read_text())
+    if isinstance(payload, dict):
+        if isinstance(payload.get("sample_weights"), dict):
+            source = payload["sample_weights"]
+        elif isinstance(payload.get("weights"), dict):
+            source = payload["weights"]
+        elif isinstance(payload.get("hard_samples"), list):
+            source = {str(sample_id): 2.0 for sample_id in payload["hard_samples"]}
+        elif isinstance(payload.get("samples"), list):
+            source = payload["samples"]
+        else:
+            source = payload
+    elif isinstance(payload, list):
+        source = payload
+    else:
+        raise ValueError(f"Unsupported sample-weight JSON root type: {type(payload).__name__}")
+
+    weights: dict[str, float] = {}
+    if isinstance(source, dict):
+        for sample_id, weight in source.items():
+            if not isinstance(sample_id, str) or not sample_id:
+                raise ValueError(f"Invalid sample id in sample-weight JSON: {sample_id!r}")
+            weight_value = float(weight)
+            if weight_value < 0.0:
+                raise ValueError(f"Negative weight for sample {sample_id!r}: {weight_value}")
+            weights[sample_id] = weight_value
+        return weights
+
+    if isinstance(source, list):
+        for item in source:
+            if isinstance(item, str):
+                sample_id = item
+                weight_value = 2.0
+            elif isinstance(item, dict):
+                sample_id = str(item.get("sample_id") or item.get("id") or "")
+                weight_value = float(item.get("weight", 2.0))
+            else:
+                raise ValueError(f"Invalid sample-weight list item: {item!r}")
+            if not sample_id:
+                raise ValueError(f"Invalid sample id in sample-weight JSON list item: {item!r}")
+            if weight_value < 0.0:
+                raise ValueError(f"Negative weight for sample {sample_id!r}: {weight_value}")
+            weights[sample_id] = weight_value
+        return weights
+
+    raise ValueError(f"Unsupported sample-weight JSON source type: {type(source).__name__}")
+
+
+def _prepare_train_sample_weights(
+    train_ids: list[str],
+    config: dict[str, Any],
+) -> tuple[dict[str, float], dict[str, Any]]:
+    policy = config["policy"]
+    default_weight = float(config["default"])
+    if policy == "none":
+        summary = {
+            "policy": "none",
+            "json_path": None,
+            "default": default_weight,
+            "normalize": bool(config["normalize"]),
+            "train_sample_count": int(len(train_ids)),
+            "weighted_sample_count": 0,
+            "mean": 1.0,
+            "min": 1.0,
+            "max": 1.0,
+            "sum": float(len(train_ids)),
+        }
+        return {}, summary
+
+    json_path = Path(str(config["json_path"]))
+    explicit = _load_hard_sample_weights(json_path)
+    weights = {sample_id: default_weight for sample_id in train_ids}
+    unknown = sorted(sample_id for sample_id in explicit if sample_id not in weights)
+    for sample_id, value in explicit.items():
+        if sample_id in weights:
+            weights[sample_id] = float(value)
+    if config["normalize"]:
+        total = float(sum(weights.values()))
+        if total > 0.0:
+            scale = float(len(train_ids)) / total
+            weights = {sample_id: value * scale for sample_id, value in weights.items()}
+    values = list(weights.values())
+    summary = {
+        "policy": policy,
+        "json_path": str(json_path),
+        "default": default_weight,
+        "normalize": bool(config["normalize"]),
+        "train_sample_count": int(len(train_ids)),
+        "weighted_sample_count": int(sum(1 for sample_id in train_ids if sample_id in explicit)),
+        "unknown_sample_count": int(len(unknown)),
+        "unknown_samples": unknown[:50],
+        "mean": float(np.mean(values)) if values else 0.0,
+        "min": float(np.min(values)) if values else 0.0,
+        "max": float(np.max(values)) if values else 0.0,
+        "sum": float(np.sum(values)) if values else 0.0,
+    }
+    return weights, summary
+
+
+def _attach_sample_weights_to_groups(groups: list[dict], sample_weights: dict[str, float]) -> None:
+    if not sample_weights:
+        return
+    for group in groups:
+        group["sample_weights"] = np.asarray(
+            [float(sample_weights.get(sample_id, 1.0)) for sample_id in group["sample_ids"]],
+            dtype=np.float32,
+        )
+
+
 def _metadata_key(graph_seed: int):
     return jax.random.PRNGKey(int(graph_seed))
 
@@ -4821,6 +5030,7 @@ def main() -> int:
     model_config = _model_config_from_args(args)
     batch_config = _batch_config_from_args(args)
     graph_config = _graph_config_from_args(args)
+    sample_weight_config = _sample_weight_config_from_args(args)
     _validate_loss_config(loss_config)
     _validate_lr_config(lr_config)
     _validate_optimizer_config(optimizer_config)
@@ -4870,6 +5080,23 @@ def main() -> int:
     valid_ids = split_ids[primary_validation_split]
     valid_stress_ids = split_ids.get(stress_validation_split, []) if stress_validation_split is not None else []
     split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
+    train_sample_weights, sample_weight_summary = _prepare_train_sample_weights(
+        train_ids,
+        sample_weight_config,
+    )
+    _progress(
+        progress_enabled,
+        "startup",
+        (
+            "sample weighting: "
+            f"policy={sample_weight_summary['policy']} "
+            f"weighted={sample_weight_summary['weighted_sample_count']}/"
+            f"{sample_weight_summary['train_sample_count']} "
+            f"mean={sample_weight_summary['mean']:.6g} "
+            f"min={sample_weight_summary['min']:.6g} "
+            f"max={sample_weight_summary['max']:.6g}"
+        ),
+    )
     for sample_id in all_ids:
         if not (sample_root / sample_id / "temperature.npy").is_file():
             raise FileNotFoundError(f"Missing temperature.npy for {sample_id}")
@@ -4983,6 +5210,7 @@ def main() -> int:
         drop_last=False,
         profile_counts=profile_counts if profile_enabled else None,
     )
+    _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
     _require_nonempty_groups(all_groups, "all")
@@ -5337,6 +5565,8 @@ def main() -> int:
         "optimizer_config": optimizer_config,
         "model_config": model_config,
         "batch_config": batch_config,
+        "sample_weight_config": sample_weight_config,
+        "sample_weight_summary": sample_weight_summary,
         "graph_config": graph_config,
         "split_counts": split_counts,
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
@@ -5560,6 +5790,8 @@ def main() -> int:
         "optimizer_config": optimizer_config,
         "model_config": model_config,
         "batch_config": batch_config,
+        "sample_weight_config": sample_weight_config,
+        "sample_weight_summary": sample_weight_summary,
         "graph_config": graph_config,
         "epoch_history": result["epoch_history"],
         "train_batch_records": result["train_batch_records"] if profile_enabled else [],

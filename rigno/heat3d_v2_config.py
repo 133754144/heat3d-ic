@@ -44,6 +44,7 @@ BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
+SAMPLE_WEIGHT_POLICIES = {"none", "hard_sample_list"}
 LR_SCHEDULES = {
     "constant",
     "warmup_cosine",
@@ -182,6 +183,10 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "final_probe_output_dir": run.get("final_probe_output_dir"),
         "post_training_diagnostics": run.get("post_training_diagnostics"),
         "post_training_diagnostics_output_dir": run.get("post_training_diagnostics_output_dir"),
+        "sample_weight_policy": run.get("sample_weight_policy"),
+        "sample_weight_json": run.get("sample_weight_json"),
+        "sample_weight_default": run.get("sample_weight_default"),
+        "sample_weight_normalize": run.get("sample_weight_normalize"),
         "batch_plan": run.get("batch_plan"),
         "batch_build_seed": run.get("batch_build_seed"),
         "export_output_dir": export.get("output_dir"),
@@ -433,6 +438,29 @@ def _validate_batch_fields(run: Mapping[str, Any], label: str) -> None:
                 f"{label}: field 'run.post_training_diagnostics_output_dir' must be under output/, "
                 f"got {post_training_diagnostics_output_dir!r}"
             )
+    sample_weight_policy = run.get("sample_weight_policy")
+    if sample_weight_policy is not None and sample_weight_policy not in SAMPLE_WEIGHT_POLICIES:
+        raise ValueError(
+            f"{label}: field 'run.sample_weight_policy' must be one of "
+            f"{sorted(SAMPLE_WEIGHT_POLICIES)}, got {sample_weight_policy!r}"
+        )
+    sample_weight_json = run.get("sample_weight_json")
+    if sample_weight_json is not None and (not isinstance(sample_weight_json, str) or not sample_weight_json):
+        raise ValueError(f"{label}: field 'run.sample_weight_json' must be a non-empty string or null")
+    sample_weight_default = run.get("sample_weight_default")
+    if sample_weight_default is not None:
+        if isinstance(sample_weight_default, bool) or not isinstance(sample_weight_default, (int, float)):
+            raise ValueError(f"{label}: field 'run.sample_weight_default' must be numeric or null")
+        if float(sample_weight_default) < 0.0:
+            raise ValueError(f"{label}: field 'run.sample_weight_default' must be >= 0")
+    sample_weight_normalize = run.get("sample_weight_normalize")
+    if sample_weight_normalize is not None and not isinstance(sample_weight_normalize, bool):
+        raise ValueError(f"{label}: field 'run.sample_weight_normalize' must be a bool or null")
+    if sample_weight_policy == "hard_sample_list" and not sample_weight_json:
+        raise ValueError(
+            f"{label}: field 'run.sample_weight_json' is required when "
+            "run.sample_weight_policy is 'hard_sample_list'"
+        )
 
 
 def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) -> None:

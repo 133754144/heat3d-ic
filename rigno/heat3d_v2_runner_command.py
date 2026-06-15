@@ -94,6 +94,11 @@ def build_training_command(
     )
     _append_option(command, "--batch-plan", run.get("batch_plan"))
     _append_option(command, "--batch-build-seed", run.get("batch_build_seed"))
+    _append_option(command, "--sample-weight-policy", run.get("sample_weight_policy"))
+    _append_option(command, "--sample-weight-json", run.get("sample_weight_json"))
+    _append_option(command, "--sample-weight-default", run.get("sample_weight_default"))
+    if run.get("sample_weight_normalize") is True:
+        command.append("--sample-weight-normalize")
     if run.get("shuffle_train_batches") is True:
         command.append("--shuffle-train-batches")
     if run.get("drop_last") is True:
@@ -534,6 +539,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.post_training_diagnostics_output_dir", "training --post-training-diagnostics-output-dir"),
         ("run.batch_plan", "training --batch-plan"),
         ("run.batch_build_seed", "training --batch-build-seed"),
+        ("run.sample_weight_policy", "training --sample-weight-policy"),
+        ("run.sample_weight_json", "training --sample-weight-json"),
+        ("run.sample_weight_default", "training --sample-weight-default"),
+        ("run.sample_weight_normalize", "training --sample-weight-normalize"),
         ("run.shuffle_train_batches", "training --shuffle-train-batches"),
         ("run.drop_last", "training --drop-last"),
         ("optimizer.name", "training --optimizer"),
