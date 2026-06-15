@@ -75,6 +75,16 @@
       "expected_risk": "medium_high",
       "smoke_source": "v3_decoder_capacity_mlp3_smoke_e002 passed; D1 e50 under-converged",
       "run_condition": "D1 e50 showed continuous learning but under-converged; prepared only, not launched"
+    },
+    {
+      "name": "D3-L200",
+      "status": "pending",
+      "test_type": "processor_depth_long",
+      "config": "configs/heat3d_v2/v3_D3L_s5basebest_e200_adamw_latent96_s8_mlp2_B88_sample_shuffle_base_mse_warmupcosine_lr3e-5_minlr1e-6_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "epochs": 200,
+      "expected_risk": "medium_high",
+      "smoke_source": "v3_decoder_capacity_steps8_smoke_e002 passed; D3 e50 best epoch was 50",
+      "run_condition": "D3 e50 was still improving at epoch 50; prepared for WSL2 long training"
     }
   ]
 }
