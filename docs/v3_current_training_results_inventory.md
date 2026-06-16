@@ -9,10 +9,20 @@ Scan summary:
 
 - devbox: 175 `loss_summary.json` files found.
 - WSL2: 16 `loss_summary.json` files found.
-- Active Heat3D training processes: none observed during this scan.
+- Active Heat3D training processes in the latest 2026-06-17 follow-up scan:
+  devbox `discrete_radius S4 e600` and WSL2 `S4mlp3bestFT2 e400`.
 - Table ranking key metric: best `valid_iid/base` where available.
 - `ckpt=BF` means both `params_best.pkl` and `params_final.pkl` exist.
 - `pred=BF` means both `best_predictions.npz` and `predictions.npz` exist.
+
+Latest S4 checkpoint/fine-tune update:
+
+- The S4 no-checkpoint row below is no longer the best usable checkpoint path.
+- `S4bestFT2` is now the strongest completed scalar/stress checkpoint:
+  best valid/base `0.0189541`, best stress/base `0.0253618`, final valid/base
+  `0.0190830`, final stress/base `0.0252795`.
+- Detailed S4-family results are in
+  `docs/v3_s4_checkpoint_finetune_latest_results.md`.
 
 ## Primary V3 Comparison
 
@@ -55,29 +65,34 @@ Scan summary:
 
 ## Current Ranking Conclusions
 
-1. Best scalar row: S4 best (`0.0197146` valid_iid/base), but it lacks saved
-   params and cannot be used as a checkpoint source.
-2. Best complete checkpoint baseline: S5 base best (`0.0210238`) with saved
-   best/final params and predictions.
-3. Best model-path variant: D3-L200 (`processor_steps=8`) is essentially tied
+1. Best completed scalar/stress checkpoint: S4bestFT2 best (`0.0189541`
+   valid_iid/base, `0.0253618` stress/base), with saved best/final params and
+   predictions.
+2. Scalar reference only: original S4 best (`0.0197146` valid_iid/base), but it
+   lacks saved params and should not be used as a checkpoint source.
+3. Best older complete checkpoint baseline before the S4 checkpoint/fine-tune
+   chain: S5 base best (`0.0210238`) with saved best/final params and
+   predictions.
+4. Best model-path variant: D3-L200 (`processor_steps=8`) is essentially tied
    with S5 on scalar and has the best stress value among complete checkpointed
    model-path runs (`0.0282471` final stress/base).
-4. Targeted-loss and LR-escape runs (P4/A/B/E2/W2/E6) produce small local
+5. Targeted-loss and LR-escape runs (P4/A/B/E2/W2/E6) produce small local
    movements around S5 but no clear breakthrough. Keep P4/A/E2 as diagnostics,
    not new baselines.
-5. Decoder MLP-depth expansion is not promising: D1-S5R/D2-S5R improve over
+6. Decoder MLP-depth expansion is not promising: D1-S5R/D2-S5R improve over
    weak low-lr D1/D2 tests, but remain worse than S5/D3 in scalar, stress, and
    final-probe means.
-6. Graph repair remains mandatory: legacy graph is around `0.209` best
+7. Graph repair remains mandatory: legacy graph is around `0.209` best
    valid_iid/base, an order of magnitude worse than S5-family runs.
 
 ## Recommended Comparison Set
 
 Use this compact set when comparing future configurations:
 
-- Scalar reference only: S4 best.
-- Complete checkpoint baselines: S5 base best/final, S5final FT no-mask final,
-  P4 best, A hotspot-only best/final.
+- Current scalar/stress checkpoint: S4bestFT2 best.
+- Scalar reference only: original S4 best.
+- Older complete checkpoint baselines: S5 base best/final, S5final FT no-mask
+  final, P4 best, A hotspot-only best/final.
 - Model-path candidate: D3-L200 best/final.
 - Negative controls: legacy graph, D1-L400, D1-S5R, D2-S5R, W1 seed1,
   S2 constant lr, and v2 B48/B96 baselines.
