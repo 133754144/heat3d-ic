@@ -107,6 +107,30 @@
       "expected_risk": "high",
       "smoke_source": "v3_decoder_capacity_mlp4_smoke_e002 passed; D2 e50 failed under weak partial warm-start",
       "run_condition": "Retraining-style long schedule from S5 checkpoint; uses S5 schedule and full export/diagnostics"
+    },
+    {
+      "name": "D1-S5R-best-FT200",
+      "status": "pending",
+      "test_type": "decoder_capacity_best_checkpoint_low_lr_finetune",
+      "config": "configs/heat3d_v2/v3_D1S5RbestFT_e200_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_constant_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp3_B88_sample_shuffle_nearest_repair_D1S5R_S5basebest_mse_e1600_s5schedule_wd1e-4/params_best.pkl",
+      "epochs": 200,
+      "lr": 1.0e-05,
+      "lr_schedule": "constant",
+      "expected_risk": "medium",
+      "run_condition": "Low-LR scalar-first fine-tune from D1-S5R best checkpoint; no post diagnostics/final probe unless scalar improves."
+    },
+    {
+      "name": "D2-S5R-best-FT200",
+      "status": "pending",
+      "test_type": "decoder_capacity_best_checkpoint_low_lr_finetune",
+      "config": "configs/heat3d_v2/v3_D2S5RbestFT_e200_adamw_latent96_s6_mlp4_B88_sample_shuffle_base_mse_constant_lr1e-5_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp4_B88_sample_shuffle_nearest_repair_D2S5R_S5basebest_mse_e1600_s5schedule_wd1e-4/params_best.pkl",
+      "epochs": 200,
+      "lr": 1.0e-05,
+      "lr_schedule": "constant",
+      "expected_risk": "medium",
+      "run_condition": "Low-LR scalar-first fine-tune from D2-S5R best checkpoint; no post diagnostics/final probe unless scalar improves."
     }
   ]
 }
