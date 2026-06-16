@@ -154,6 +154,19 @@
       "expected_risk": "high",
       "smoke_source": "Requested OOM/compatibility probe for S4 mlp3 with pure discrete radius",
       "run_condition": "Run only as 5-epoch smoke first; final probe, post diagnostics, and prediction export are disabled."
+    },
+    {
+      "name": "S4discretebestFT",
+      "status": "pending",
+      "test_type": "discrete_radius_checkpoint_finetune",
+      "config": "configs/heat3d_v2/v3_S4discretebestFT_e800_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_constant_lr1e-5_discrete_radius_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4_seed0_e600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "epochs": 800,
+      "lr": 1.0e-05,
+      "lr_schedule": "constant",
+      "expected_risk": "medium_high",
+      "smoke_source": "S4 discrete-radius e600 completed on devbox with best valid/base 0.0194904 and saved params",
+      "run_condition": "Prepare only; low-lr e800 continuation from S4 discrete-radius best, matching the earlier two-by-e400 S4 fine-tune budget in one run."
     }
   ]
 }

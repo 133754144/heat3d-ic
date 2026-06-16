@@ -10,7 +10,8 @@ Scan summary:
 - devbox: 175 `loss_summary.json` files found.
 - WSL2: 16 `loss_summary.json` files found.
 - Active Heat3D training processes in the latest 2026-06-17 follow-up scan:
-  devbox `discrete_radius S4 e600` and WSL2 `S4mlp3bestFT2 e400`.
+  none observed after `discrete_radius S4 e600` and `S4mlp3bestFT2 e400`
+  completed.
 - Table ranking key metric: best `valid_iid/base` where available.
 - `ckpt=BF` means both `params_best.pkl` and `params_final.pkl` exist.
 - `pred=BF` means both `best_predictions.npz` and `predictions.npz` exist.
@@ -21,6 +22,10 @@ Latest S4 checkpoint/fine-tune update:
 - `S4bestFT2` is now the strongest completed scalar/stress checkpoint:
   best valid/base `0.0189541`, best stress/base `0.0253618`, final valid/base
   `0.0190830`, final stress/base `0.0252795`.
+- `S4 discrete radius e600` completed with saved params and predictions:
+  best valid/base `0.0194904`, best stress/base `0.0268483`.
+- `S4mlp3bestFT2` completed on WSL2:
+  best valid/base `0.0191695`, best stress/base `0.0333086`.
 - Detailed S4-family results are in
   `docs/v3_s4_checkpoint_finetune_latest_results.md`.
 

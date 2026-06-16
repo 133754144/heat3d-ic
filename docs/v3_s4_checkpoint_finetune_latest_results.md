@@ -8,11 +8,11 @@ started by this audit, and no `output/`, `data/`, checkpoint, prediction, log, o
 
 | machine | branch | head | status | active Heat3D task |
 | --- | --- | --- | --- | --- |
-| devbox | `research/v3-startup-supervision` | `0b983b8` | clean | `discrete_radius S4 e600`, at about epoch 105/600, best valid/base about `0.0531` so far |
+| devbox | `research/v3-startup-supervision` | `0b983b8` | clean | `discrete_radius S4 e600` completed |
 | WSL2 | `research/v3-startup-supervision` | `ed75457` | clean | `S4mlp3bestFT2 e400` completed; stale tmux shell remains but no Heat3D training process |
 
-Running jobs were not interrupted. Completed-result conclusions below still
-exclude the still-running devbox `discrete_radius S4 e600` run.
+Running jobs were not interrupted. No active Heat3D training process was
+observed after the WSL2 smoke completed.
 
 ## Completed S4-Family Scalar Results
 
@@ -20,6 +20,7 @@ exclude the still-running devbox `discrete_radius S4 e600` run.
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | S4 original no-checkpoint | lat96/s6/mlp2 | 597 | 600 | 0.0197146 | 0.0200590 | 0.0313683 | 0.0313623 | 0.0060649 | 0.0061184 | no | best/final |
 | S4 checkpointed rerun | lat96/s6/mlp2 | 597 | 600 | 0.0198978 | 0.0203435 | 0.0269293 | 0.0270604 | 0.0060939 | 0.0061611 | best/final | best/final |
+| S4 discrete radius | lat96/s6/mlp2 | 587 | 600 | 0.0194904 | 0.0195491 | 0.0268483 | 0.0267553 | 0.0060310 | 0.0060395 | best/final | best/final |
 | S4bestFT | lat96/s6/mlp2 | 397 | 400 | 0.0192674 | 0.0193596 | 0.0258727 | 0.0260044 | 0.0059957 | 0.0060115 | best/final | best/final |
 | S4bestFT2 | lat96/s6/mlp2 | 307 | 400 | 0.0189541 | 0.0190830 | 0.0253618 | 0.0252795 | 0.0059465 | 0.0059672 | best/final | best/final |
 | S4 mlp3 | lat96/s6/mlp3 | 599 | 600 | 0.0202975 | 0.0204926 | 0.0349134 | 0.0350933 | 0.0061542 | 0.0061839 | best/final | best/final |
@@ -59,6 +60,21 @@ about 39% slower on the observed machines (`22.9s` versus `16.5s`). Validation
 does not improve proportionally: mlp3 FT2 (`0.0191695` best valid/base) remains
 slightly weaker than mlp2 S4bestFT2 (`0.0189541`).
 
+## Discrete-Radius Smoke
+
+The requested `mlp_hidden_layers=3` plus pure `discrete_physical_coverage`
+smoke was run on WSL2 for 5 epochs. It completed without OOM:
+
+| run | graph policy | model | epochs | best/final valid/base | best/final stress/base | checkpoints | predictions | status |
+| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
+| S4 mlp3 discrete-radius smoke | `discrete_physical_coverage`, repair `none` | lat96/s6/mlp3 | 5 | 0.488275 / 0.488275 | 0.536169 / 0.536169 | best/final | disabled | finite, no OOM |
+
+This is only an OOM/compatibility result. The high loss is expected for a
+5-epoch from-scratch smoke and should not be used as a model-quality conclusion.
+The smoke does show that the B88 mlp3 discrete-radius graph can build,
+initialize, run forward/backward/update, and save checkpoints in the current
+environment.
+
 ## Conclusions
 
 1. `S4bestFT2` is the strongest completed scalar/stress checkpoint so far:
@@ -77,9 +93,14 @@ slightly weaker than mlp2 S4bestFT2 (`0.0189541`).
 5. D1/D2 S5R best-checkpoint low-LR fine-tunes do not recover competitiveness.
    D1 improves only to `0.0240029`; D2 best is early at epoch 3 and then
    degrades. Do not prioritize wider decoder MLP continuation.
-6. The next graph-structure check should start with a 5-epoch smoke for
-   `mlp_hidden_layers=3` plus pure `discrete_physical_coverage`, because
-   discrete radius has higher graph cost and may OOM.
+6. S4 discrete radius e600 completed and is strong (`0.0194904` best valid/base,
+   `0.0268483` best stress/base), but still trails S4bestFT2. Keep it as a
+   serious graph-policy control, not the current scalar leader.
+7. The `mlp_hidden_layers=3` plus pure `discrete_physical_coverage` 5-epoch
+   smoke passed without OOM, so a longer run is feasible from a compatibility
+   standpoint. It should still wait for an explicit long-run decision because
+   discrete radius is costlier and the mlp3 nearest-repair chain is not yet a
+   scalar leader.
 
 ## Recommended Next Use
 
@@ -89,8 +110,13 @@ slightly weaker than mlp2 S4bestFT2 (`0.0189541`).
   they exercise different model-path hypotheses.
 - Run `S4mlp3bestFT3` only if continuing the mlp3 scalar path is still useful
   after reviewing S4bestFT2 as the scalar/stress checkpoint.
-- Run the `S4 mlp3 discrete_radius e005` smoke before any longer discrete-radius
-  mlp3 training. Do not start a long run unless the smoke is finite and does not
-  OOM.
-- Wait for the running devbox `discrete_radius S4 e600` job before making a
-  final statement about pure discrete-radius policy.
+- If testing mlp3 plus discrete radius further, start with an e50 or e100
+  diagnostic rather than jumping directly to e600.
+- Do not treat the 5-epoch smoke as performance evidence; use it only as the
+  compatibility/OOM gate.
+- Prepare `S4discretebestFT` as a direct e800 low-lr continuation from the
+  completed S4 discrete-radius best checkpoint. This mirrors the S4bestFT
+  pattern but uses one e800 run to match the earlier two-by-e400 fine-tune
+  budget: strict params load, constant `lr=1e-5`, pure discrete radius, full
+  prediction export, post-training diagnostics, and final-probe inference. It is
+  prepared as config only in this audit and was not started.
