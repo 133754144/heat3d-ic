@@ -131,6 +131,29 @@
       "lr_schedule": "constant",
       "expected_risk": "medium",
       "run_condition": "Low-LR scalar-first fine-tune from D2-S5R best checkpoint; no post diagnostics/final probe unless scalar improves."
+    },
+    {
+      "name": "S4mlp3bestFT3",
+      "status": "pending",
+      "test_type": "decoder_capacity_checkpoint_low_lr_finetune",
+      "config": "configs/heat3d_v2/v3_S4mlp3bestFT3_e400_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_constant_lr5e-6_nearest_repair_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp3_B88_sample_shuffle_nearest_repair_S4mlp3bestFT2_e400_constant_lr1e-5_wd1e-4/params_best.pkl",
+      "epochs": 400,
+      "lr": 5.0e-06,
+      "lr_schedule": "constant",
+      "expected_risk": "medium",
+      "smoke_source": "S4mlp3bestFT2 completed on WSL2; best epoch was 397/400",
+      "run_condition": "Prepare only; continue from S4mlp3bestFT2 best with half LR because FT2 still improved near the end."
+    },
+    {
+      "name": "S4-mlp3-discrete-radius-smoke-e005",
+      "status": "pending",
+      "test_type": "discrete_radius_capacity_smoke",
+      "config": "configs/heat3d_v2/v3_S4_mlp3_discrete_radius_smoke_e005_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_warmupcosine_lr5e-4_minlr5e-5_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "epochs": 5,
+      "expected_risk": "high",
+      "smoke_source": "Requested OOM/compatibility probe for S4 mlp3 with pure discrete radius",
+      "run_condition": "Run only as 5-epoch smoke first; final probe, post diagnostics, and prediction export are disabled."
     }
   ]
 }

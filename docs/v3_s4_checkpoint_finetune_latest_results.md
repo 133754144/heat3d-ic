@@ -9,10 +9,10 @@ started by this audit, and no `output/`, `data/`, checkpoint, prediction, log, o
 | machine | branch | head | status | active Heat3D task |
 | --- | --- | --- | --- | --- |
 | devbox | `research/v3-startup-supervision` | `0b983b8` | clean | `discrete_radius S4 e600`, at about epoch 105/600, best valid/base about `0.0531` so far |
-| WSL2 | `research/v3-startup-supervision` | `ed75457` | clean | `S4mlp3bestFT2 e400`, at about epoch 115/400, best valid/base about `0.0196` so far |
+| WSL2 | `research/v3-startup-supervision` | `ed75457` | clean | `S4mlp3bestFT2 e400` completed; stale tmux shell remains but no Heat3D training process |
 
-Running jobs were not interrupted. Completed-result conclusions below exclude
-the still-running `discrete_radius S4 e600` and `S4mlp3bestFT2 e400` runs.
+Running jobs were not interrupted. Completed-result conclusions below still
+exclude the still-running devbox `discrete_radius S4 e600` run.
 
 ## Completed S4-Family Scalar Results
 
@@ -24,6 +24,7 @@ the still-running `discrete_radius S4 e600` and `S4mlp3bestFT2 e400` runs.
 | S4bestFT2 | lat96/s6/mlp2 | 307 | 400 | 0.0189541 | 0.0190830 | 0.0253618 | 0.0252795 | 0.0059465 | 0.0059672 | best/final | best/final |
 | S4 mlp3 | lat96/s6/mlp3 | 599 | 600 | 0.0202975 | 0.0204926 | 0.0349134 | 0.0350933 | 0.0061542 | 0.0061839 | best/final | best/final |
 | S4mlp3bestFT | lat96/s6/mlp3 | 368 | 400 | 0.0196004 | 0.0196983 | 0.0339995 | 0.0340384 | 0.0060480 | 0.0060636 | best/final | best/final |
+| S4mlp3bestFT2 | lat96/s6/mlp3 | 397 | 400 | 0.0191695 | 0.0192581 | 0.0333086 | 0.0333961 | 0.0059806 | 0.0059939 | best/final | best/final |
 | D1S5RbestFT | lat96/s6/mlp3 | 187 | 200 | 0.0240029 | 0.0241774 | 0.0368855 | 0.0370016 | 0.0066929 | 0.0067170 | best/final | no |
 | D2S5RbestFT | lat96/s6/mlp4 | 3 | 200 | 0.0250621 | 0.0253261 | 0.0425532 | 0.0420662 | 0.0068386 | 0.0068739 | best/final | no |
 | S5 base reference | lat96/s6/mlp2 | 1527 | 1600 | 0.0210238 | 0.0212054 | 0.0291828 | 0.0289898 | 0.0062634 | 0.0062906 | best/final | best/final |
@@ -40,6 +41,24 @@ P10 remains an unsupported schema gap for final-probe interpretation:
 localized top contact and side asymmetry are not represented in the current
 probe generator/solver schema.
 
+## MLP Depth: Fit Quality Versus Time
+
+| run | model | epochs | final train/base | final valid/base | epoch loop | seconds/epoch |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| S4 checkpointed rerun | s6/mlp2 | 600 | 0.0013228 | 0.0203435 | 10297.35s | 17.16 |
+| S4bestFT | s6/mlp2 | 400 | 0.0010030 | 0.0193596 | 6955.78s | 17.39 |
+| S4bestFT2 | s6/mlp2 | 400 | 0.0007843 | 0.0190830 | 6581.20s | 16.45 |
+| S4 mlp3 | s6/mlp3 | 600 | 0.0009799 | 0.0204926 | 13677.12s | 22.80 |
+| S4mlp3bestFT | s6/mlp3 | 400 | 0.0006971 | 0.0196983 | 9128.82s | 22.82 |
+| S4mlp3bestFT2 | s6/mlp3 | 400 | 0.0005688 | 0.0192581 | 9155.47s | 22.89 |
+
+The data supports the hypothesis that increasing MLP depth lowers training loss
+but slows training. In the comparable low-lr fine-tune chain, mlp3 reaches lower
+final train/base than mlp2 (`0.0005688` versus `0.0007843`), while each epoch is
+about 39% slower on the observed machines (`22.9s` versus `16.5s`). Validation
+does not improve proportionally: mlp3 FT2 (`0.0191695` best valid/base) remains
+slightly weaker than mlp2 S4bestFT2 (`0.0189541`).
+
 ## Conclusions
 
 1. `S4bestFT2` is the strongest completed scalar/stress checkpoint so far:
@@ -51,12 +70,16 @@ probe generator/solver schema.
 3. The two-stage S4 low-LR continuation is effective: S4 checkpointed rerun
    best `0.0198978` -> S4bestFT best `0.0192674` -> S4bestFT2 best
    `0.0189541`.
-4. `S4mlp3bestFT` improves final-probe RMSE relative to S4bestFT2, but its
-   scalar and stress metrics are worse. It is a shape/probe diagnostic, not a
-   primary scalar checkpoint.
+4. `S4mlp3bestFT2` improves the mlp3 scalar path further (`0.0196004` ->
+   `0.0191695`) and selects best at epoch 397/400, so a lower-lr continuation is
+   justified. A prepared `S4mlp3bestFT3` config uses `lr=5e-6` from the FT2 best
+   checkpoint.
 5. D1/D2 S5R best-checkpoint low-LR fine-tunes do not recover competitiveness.
    D1 improves only to `0.0240029`; D2 best is early at epoch 3 and then
    degrades. Do not prioritize wider decoder MLP continuation.
+6. The next graph-structure check should start with a 5-epoch smoke for
+   `mlp_hidden_layers=3` plus pure `discrete_physical_coverage`, because
+   discrete radius has higher graph cost and may OOM.
 
 ## Recommended Next Use
 
@@ -64,6 +87,10 @@ probe generator/solver schema.
   candidate for downstream checkpoint-based experiments.
 - Keep `S5 base`, `S5final FT`, and `D3-L200` as comparison baselines because
   they exercise different model-path hypotheses.
-- Wait for the running WSL2 `S4mlp3bestFT2` and devbox `discrete_radius S4 e600`
-  jobs before making any final statement about mlp3 continuation or pure
-  discrete-radius policy.
+- Run `S4mlp3bestFT3` only if continuing the mlp3 scalar path is still useful
+  after reviewing S4bestFT2 as the scalar/stress checkpoint.
+- Run the `S4 mlp3 discrete_radius e005` smoke before any longer discrete-radius
+  mlp3 training. Do not start a long run unless the smoke is finite and does not
+  OOM.
+- Wait for the running devbox `discrete_radius S4 e600` job before making a
+  final statement about pure discrete-radius policy.
