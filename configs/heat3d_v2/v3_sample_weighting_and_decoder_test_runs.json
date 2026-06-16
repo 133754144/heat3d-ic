@@ -156,6 +156,18 @@
       "run_condition": "Run only as 5-epoch smoke first; final probe, post diagnostics, and prediction export are disabled."
     },
     {
+      "name": "S4-mlp3-discrete-radius-e600",
+      "status": "pending",
+      "test_type": "discrete_radius_capacity_long",
+      "config": "configs/heat3d_v2/v3_S4_mlp3_discrete_radius_e600_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_warmupcosine_lr5e-4_minlr5e-5_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "epochs": 600,
+      "lr": 0.0005,
+      "lr_schedule": "warmup_cosine",
+      "expected_risk": "high",
+      "smoke_source": "S4 mlp3 discrete-radius 5-epoch smoke completed without OOM",
+      "run_condition": "Prepared only; S4 schedule e600 comparison for mlp3 plus pure discrete radius with full predictions and diagnostics."
+    },
+    {
       "name": "S4discretebestFT",
       "status": "pending",
       "test_type": "discrete_radius_checkpoint_finetune",
