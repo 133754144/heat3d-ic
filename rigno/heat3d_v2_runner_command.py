@@ -138,9 +138,13 @@ def build_training_command(
         command.append("--no-repair-r2p")
     _append_option(command, "--min-physical-coverage", graph.get("min_physical_coverage"))
 
-    if export.get("save_final_predictions") is True:
+    if export.get("save_final_predictions") is False:
+        command.append("--no-save-predictions")
+    elif export.get("save_final_predictions") is True:
         command.append("--save-predictions")
-    if export.get("save_best_predictions") is True:
+    if export.get("save_best_predictions") is False:
+        command.append("--no-save-best-predictions")
+    elif export.get("save_best_predictions") is True:
         command.append("--save-best-predictions")
     _append_option(command, "--best-predictions-name", export.get("best_predictions_name"))
     _append_option(command, "--report-every", run.get("report_every"))

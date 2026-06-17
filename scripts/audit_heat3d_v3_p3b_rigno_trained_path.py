@@ -107,7 +107,13 @@ def _load_example(args: argparse.Namespace) -> Any:
 
 def _builder_for_policy(policy: str) -> Heat3DGraphBuilder:
     if policy == "legacy":
-        return Heat3DGraphBuilder()
+        return Heat3DGraphBuilder(
+            radius_policy="legacy_kdtree_mean4",
+            coverage_repair_policy="none",
+            repair_p2r=True,
+            repair_r2p=True,
+            min_physical_coverage=1,
+        )
     if policy == "nearest_repair":
         return Heat3DGraphBuilder(**POLICIES["nearest_repair"]["builder_kwargs"])
     raise ValueError(f"Unsupported policy: {policy}")

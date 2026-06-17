@@ -12,7 +12,7 @@ class Heat3DGraphBuilder:
         overlap_factor_r2p=2.0,
         node_coordinate_freqs=4,
         coverage_repair_policy="none",
-        radius_policy="legacy_kdtree_mean4",
+        radius_policy="discrete_physical_coverage",
         repair_p2r=True,
         repair_r2p=True,
         min_physical_coverage=1,

@@ -439,6 +439,7 @@ def _builder_for_policy(
 ) -> Heat3DGraphBuilder:
     if policy == POLICY_NEAREST_REPAIR:
         return Heat3DGraphBuilder(
+            radius_policy="legacy_kdtree_mean4",
             coverage_repair_policy="nearest_rnode",
             repair_p2r=repair_p2r,
             repair_r2p=repair_r2p,
@@ -454,7 +455,13 @@ def _builder_for_policy(
             repair_r2p=repair_r2p,
             min_physical_coverage=min_physical_coverage,
         )
-    return Heat3DGraphBuilder()
+    return Heat3DGraphBuilder(
+        radius_policy="legacy_kdtree_mean4",
+        coverage_repair_policy="none",
+        repair_p2r=True,
+        repair_r2p=True,
+        min_physical_coverage=1,
+    )
 
 
 def _edge_set(edges: np.ndarray) -> set[tuple[int, int]]:
@@ -521,7 +528,13 @@ def audit_coords(
         raise ValueError("min_physical_coverage must be at least 1")
 
     records: list[dict[str, Any]] = []
-    legacy_builder = Heat3DGraphBuilder()
+    legacy_builder = Heat3DGraphBuilder(
+        radius_policy="legacy_kdtree_mean4",
+        coverage_repair_policy="none",
+        repair_p2r=True,
+        repair_r2p=True,
+        min_physical_coverage=1,
+    )
     for seed in seeds:
         metadata_start = time.perf_counter()
         legacy_metadata = legacy_builder.build_metadata(coords, key=jax.random.PRNGKey(seed))

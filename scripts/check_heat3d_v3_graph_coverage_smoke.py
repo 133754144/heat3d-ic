@@ -111,13 +111,13 @@ def _assert_record_contract(record: dict) -> None:
             raise AssertionError(f"{record['sample_id']}: invalid {name} low coverage count")
 
 
-def _assert_legacy_default_equivalence() -> None:
+def _assert_default_discrete_equivalence() -> None:
     coords, _, _ = _synthetic_grid(SYNTHETIC_GRID_SHAPES[0])
     key = jax.random.PRNGKey(0)
     default_metadata = Heat3DGraphBuilder().build_metadata(coords, key=key)
     explicit_metadata = Heat3DGraphBuilder(
         coverage_repair_policy="none",
-        radius_policy="legacy_kdtree_mean4",
+        radius_policy="discrete_physical_coverage",
         repair_p2r=True,
         repair_r2p=True,
         min_physical_coverage=1,
@@ -125,12 +125,12 @@ def _assert_legacy_default_equivalence() -> None:
     default_leaves = jax.tree_util.tree_leaves(default_metadata)
     explicit_leaves = jax.tree_util.tree_leaves(explicit_metadata)
     if len(default_leaves) != len(explicit_leaves):
-        raise AssertionError("default and explicit legacy metadata leaf counts differ")
+        raise AssertionError("default and explicit discrete metadata leaf counts differ")
     if not all(
         np.array_equal(np.asarray(default), np.asarray(explicit))
         for default, explicit in zip(default_leaves, explicit_leaves)
     ):
-        raise AssertionError("default builder is not exactly equivalent to explicit legacy policy")
+        raise AssertionError("default builder is not exactly equivalent to explicit discrete policy")
 
 
 def _find_real_subset(
@@ -151,7 +151,7 @@ def _find_real_subset(
 
 def main() -> int:
     args = parse_args()
-    _assert_legacy_default_equivalence()
+    _assert_default_discrete_equivalence()
     policies = all_policies()
     synthetic_records = run_synthetic_probes(seeds=[0], policies=policies)
     expected_records = len(SYNTHETIC_GRID_SHAPES) * len(policies)

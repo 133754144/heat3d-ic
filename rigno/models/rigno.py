@@ -54,7 +54,7 @@ class RegionInteractionGraphBuilder:
     overlap_factor_r2p: float,
     node_coordinate_freqs: int,
     coverage_repair_policy: str = "none",
-    radius_policy: str = "legacy_kdtree_mean4",
+    radius_policy: str = "discrete_physical_coverage",
     repair_p2r: bool = True,
     repair_r2p: bool = True,
     min_physical_coverage: int = 1,
@@ -77,9 +77,9 @@ class RegionInteractionGraphBuilder:
         coverage_repair_policy: Optional post-radius graph repair. The legacy
           default is "none"; "nearest_rnode" adds nearest regional edges only
           for physical nodes below min_physical_coverage.
-        radius_policy: Support-radius policy. The legacy default is
-          "legacy_kdtree_mean4"; "discrete_physical_coverage" constructs a
-          radius that covers every physical node assigned to each regional node.
+        radius_policy: Support-radius policy. The v4 default is
+          "discrete_physical_coverage"; "legacy_kdtree_mean4" preserves the
+          earlier KDTree mean-4 radius policy for explicit ablation/control.
         repair_p2r: Apply nearest-rnode repair to p2r when repair is enabled.
         repair_r2p: Apply nearest-rnode repair to r2p when repair is enabled.
         min_physical_coverage: Minimum physical-node degree targeted by repair.

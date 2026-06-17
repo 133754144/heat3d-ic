@@ -201,10 +201,10 @@ def _check_metadata_edges(metadata: Any) -> dict[str, dict[str, int]]:
     }
 
 
-def _assert_legacy_default_equivalence(coords: np.ndarray) -> dict[str, Any]:
+def _assert_default_discrete_equivalence(coords: np.ndarray) -> dict[str, Any]:
     key = jax.random.PRNGKey(0)
     default_builder = Heat3DGraphBuilder()
-    explicit_builder = _policy_builder("legacy")
+    explicit_builder = _policy_builder("discrete_radius")
     default_metadata = default_builder.build_metadata(coords, key=key)
     explicit_metadata = explicit_builder.build_metadata(coords, key=key)
     default_graphs = default_builder.build_graphs(default_metadata)
@@ -213,7 +213,7 @@ def _assert_legacy_default_equivalence(coords: np.ndarray) -> dict[str, Any]:
     graph_equal = _tree_all_equal(default_graphs, explicit_graphs)
     if not metadata_equal or not graph_equal:
         raise AssertionError(
-            "default Heat3DGraphBuilder is not exactly equivalent to explicit legacy policy"
+            "default Heat3DGraphBuilder is not exactly equivalent to explicit discrete_radius policy"
         )
     return {
         "metadata_equal": metadata_equal,
@@ -385,11 +385,11 @@ def main() -> int:
         raise ValueError("--max-forward-samples must be >= 1")
 
     synthetic_coords, _, _ = _synthetic_grid(SYNTHETIC_GRID_SHAPES[0])
-    synthetic_equivalence = _assert_legacy_default_equivalence(synthetic_coords)
+    synthetic_equivalence = _assert_default_discrete_equivalence(synthetic_coords)
     synthetic = _assert_synthetic_baseline()
 
     examples, split_ids, split_source = _load_forward_examples(args)
-    real_equivalence = _assert_legacy_default_equivalence(examples[0].condition.coords)
+    real_equivalence = _assert_default_discrete_equivalence(examples[0].condition.coords)
     metadata_checks = _metadata_checks_for_examples(examples)
     forward = _forward_check(examples)
     real_coverage = _real_coverage_summary(args)
@@ -407,7 +407,7 @@ def main() -> int:
             "split_counts": {split: len(ids) for split, ids in split_ids.items()},
             "policies": POLICIES,
         },
-        "legacy_default_equivalence": {
+        "default_discrete_equivalence": {
             "synthetic": synthetic_equivalence,
             "real_first_sample": real_equivalence,
         },
@@ -416,7 +416,7 @@ def main() -> int:
         "metadata_checks": metadata_checks,
         "forward": forward,
         "status": {
-            "legacy_default_equivalent": True,
+            "default_discrete_equivalent": True,
             "synthetic_legacy_baseline_matches_p0": True,
             "all_policy_forward_passed": True,
             "dummy_and_index_checks_passed": True,
@@ -429,7 +429,7 @@ def main() -> int:
     print("Heat3D v3 graph policy hardening")
     print(f"  subset: {_sample_root(args.subset)}")
     print(f"  selected sample ids: {[example.sample_id for example in examples]}")
-    print("  legacy default equivalence: passed")
+    print("  default discrete equivalence: passed")
     print("  synthetic current baseline: passed")
     for policy_name, policy in POLICIES.items():
         audit_policy = policy["audit_policy"]

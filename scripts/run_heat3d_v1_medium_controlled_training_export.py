@@ -52,6 +52,13 @@ from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 from rigno.models.operator import Inputs  # noqa: E402
 
 
+RUNNER_MODEL_CONFIG = {
+    **MODEL_CONFIG,
+    "node_latent_size": 96,
+    "edge_latent_size": 96,
+    "processor_steps": 6,
+    "mlp_hidden_layers": 2,
+}
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -109,7 +116,7 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--lr", type=float, default=5e-4)
     parser.add_argument(
         "--lr-schedule",
         choices=(
@@ -123,7 +130,7 @@ def parse_args() -> argparse.Namespace:
         default="warmup_cosine",
     )
     parser.add_argument("--warmup-epochs", type=int, default=10)
-    parser.add_argument("--min-lr", type=float, default=1e-6)
+    parser.add_argument("--min-lr", type=float, default=5e-5)
     parser.add_argument("--second-stage-epoch", type=int, default=0)
     parser.add_argument("--second-stage-lr", type=float, default=1e-4)
     parser.add_argument("--lr-init", type=float, default=1e-5)
@@ -135,14 +142,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="adamw")
     parser.add_argument("--gradient-clip-norm", type=float, default=1.0)
     parser.add_argument("--weight-decay", type=float, default=1.0e-4)
-    parser.add_argument("--node-latent-size", type=int, default=MODEL_CONFIG["node_latent_size"])
-    parser.add_argument("--edge-latent-size", type=int, default=MODEL_CONFIG["edge_latent_size"])
-    parser.add_argument("--processor-steps", type=int, default=MODEL_CONFIG["processor_steps"])
-    parser.add_argument("--mlp-hidden-layers", type=int, default=MODEL_CONFIG["mlp_hidden_layers"])
-    parser.add_argument("--p-edge-masking", type=float, default=float(MODEL_CONFIG.get("p_edge_masking", 0.0)))
-    parser.add_argument("--batch-size", type=int, default=0)
-    parser.add_argument("--validation-batch-size", type=int, default=0)
-    parser.add_argument("--prediction-batch-size", type=int, default=0)
+    parser.add_argument("--node-latent-size", type=int, default=RUNNER_MODEL_CONFIG["node_latent_size"])
+    parser.add_argument("--edge-latent-size", type=int, default=RUNNER_MODEL_CONFIG["edge_latent_size"])
+    parser.add_argument("--processor-steps", type=int, default=RUNNER_MODEL_CONFIG["processor_steps"])
+    parser.add_argument("--mlp-hidden-layers", type=int, default=RUNNER_MODEL_CONFIG["mlp_hidden_layers"])
+    parser.add_argument("--p-edge-masking", type=float, default=float(RUNNER_MODEL_CONFIG.get("p_edge_masking", 0.0)))
+    parser.add_argument("--batch-size", type=int, default=88)
+    parser.add_argument("--validation-batch-size", type=int, default=88)
+    parser.add_argument("--prediction-batch-size", type=int, default=88)
     parser.add_argument(
         "--prediction-split",
         choices=("all", "train", "valid_iid", "valid_stress"),
@@ -165,8 +172,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--batch-plan",
         choices=("current_graph_shape", "sample_shuffle"),
-        default="current_graph_shape",
-        help="Train batch construction plan. Default preserves the legacy graph-shape grouping path.",
+        default="sample_shuffle",
+        help="Train batch construction plan. Default is the v4 B88 sample-shuffle path.",
     )
     parser.add_argument(
         "--batch-build-seed",
@@ -209,14 +216,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--radius-policy",
         choices=RADIUS_POLICY_CHOICES,
-        default="legacy_kdtree_mean4",
-        help="Heat3D graph radius policy. Default preserves legacy graph behavior.",
+        default="discrete_physical_coverage",
+        help="Heat3D graph radius policy. Default is v4 discrete physical-node coverage.",
     )
     parser.add_argument(
         "--coverage-repair-policy",
         choices=COVERAGE_REPAIR_POLICY_CHOICES,
         default="none",
-        help="Optional Heat3D graph coverage repair policy. Default disables repair.",
+        help="Optional Heat3D graph coverage repair policy. Default disables repair for pure discrete coverage.",
     )
     parser.add_argument("--repair-p2r", dest="repair_p2r", action="store_true", default=True)
     parser.add_argument("--no-repair-p2r", dest="repair_p2r", action="store_false")
@@ -238,14 +245,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample-weight-default", type=float, default=1.0)
     parser.add_argument("--sample-weight-normalize", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--save-predictions", action="store_true")
+    parser.add_argument("--save-predictions", dest="save_predictions", action="store_true", default=True)
+    parser.add_argument(
+        "--no-save-predictions",
+        dest="save_predictions",
+        action="store_false",
+        help="Disable final prediction export. Enabled by default for controlled long runs.",
+    )
     parser.add_argument(
         "--selection-metric",
         choices=("valid_loss", "valid_raw_deltaT_mse", "valid_base_mse"),
-        default="valid_loss",
+        default="valid_base_mse",
         help="Validation metric used to track the best epoch for optional best prediction export.",
     )
-    parser.add_argument("--save-best-predictions", action="store_true")
+    parser.add_argument("--save-best-predictions", dest="save_best_predictions", action="store_true", default=True)
+    parser.add_argument(
+        "--no-save-best-predictions",
+        dest="save_best_predictions",
+        action="store_false",
+        help="Disable best prediction export. Enabled by default for controlled long runs.",
+    )
     parser.add_argument("--best-predictions-name", type=str, default="best_predictions.npz")
     parser.add_argument(
         "--no-save-final-checkpoint",
@@ -288,7 +307,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--final-probe-checkpoint-kind",
         choices=FINAL_PROBE_CHECKPOINT_KIND_CHOICES,
-        default="best",
+        default="both",
         help="Checkpoint(s) to evaluate when --final-probe-eval-after-training is enabled.",
     )
     parser.add_argument("--final-probe-subset", type=Path, default=DEFAULT_FINAL_PROBE_SUBSET)
@@ -343,7 +362,7 @@ def parse_args() -> argparse.Namespace:
             "fresh; encoder_processor_only loads only encoder/processor params."
         ),
     )
-    parser.add_argument("--report-every", type=int, default=1)
+    parser.add_argument("--report-every", type=int, default=5)
     parser.add_argument(
         "--train-metrics-schedule",
         choices=TRAIN_METRICS_SCHEDULE_CHOICES,
@@ -1489,7 +1508,7 @@ def _seed_config_from_args(args: argparse.Namespace) -> dict[str, int]:
 
 
 def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
-    model_config = dict(MODEL_CONFIG)
+    model_config = dict(RUNNER_MODEL_CONFIG)
     model_config.update(
         {
             "node_latent_size": int(args.node_latent_size),
