@@ -179,6 +179,32 @@
       "expected_risk": "medium_high",
       "smoke_source": "S4 discrete-radius e600 completed on devbox with best valid/base 0.0194904 and saved params",
       "run_condition": "Prepare only; low-lr e800 continuation from S4 discrete-radius best, matching the earlier two-by-e400 S4 fine-tune budget in one run."
+    },
+    {
+      "name": "S4discretebestFT2",
+      "status": "pending",
+      "test_type": "discrete_radius_checkpoint_second_finetune",
+      "config": "configs/heat3d_v2/v3_S4discretebestFT2_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_constant_lr5e-6_discrete_radius_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4discretebestFT_e800_constant_lr1e-5_wd1e-4/params_best.pkl",
+      "epochs": 400,
+      "lr": 5.0e-06,
+      "lr_schedule": "constant",
+      "expected_risk": "medium_high",
+      "smoke_source": "S4discretebestFT e800 completed on devbox with best valid/base 0.0184043 and saved params",
+      "run_condition": "Run on devbox; lower-lr continuation from the current scalar/raw-RMSE leader."
+    },
+    {
+      "name": "S4mlp3discretebestFT",
+      "status": "pending",
+      "test_type": "discrete_radius_mlp3_checkpoint_finetune",
+      "config": "configs/heat3d_v2/v3_S4mlp3discretebestFT_e400_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_constant_lr1e-5_discrete_radius_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp3_B88_sample_shuffle_discrete_radius_S4_mlp3_seed0_e600_warmupcosine_lr5e-4_minlr5e-5_wd1e-4/params_best.pkl",
+      "epochs": 400,
+      "lr": 1.0e-05,
+      "lr_schedule": "constant",
+      "expected_risk": "high",
+      "smoke_source": "S4 mlp3 discrete-radius e600 completed on WSL2 with best valid/base 0.0220820 and saved params",
+      "run_condition": "Run on WSL2; first low-lr continuation for the higher-parameter mlp3 discrete-radius path."
     }
   ]
 }
