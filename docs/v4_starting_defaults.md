@@ -22,6 +22,11 @@ The corresponding v4 starter config is:
 
 `configs/heat3d_v2/v4_default_e600_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_warmupcosine_lr5e-4_minlr5e-5_discrete_radius_model_seed0_batchbuild0_batchorder0_graphseed0.yaml`
 
+The retained v3 best checkpoint for reference is the completed S4 discrete
+fine-tune path:
+
+`output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4discretebestFT2_e400_constant_lr5e-6_wd1e-4/params_best.pkl`
+
 ## Rationale
 
 `B88 sample_shuffle` removed the graph-shape batch concentration issue while

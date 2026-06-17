@@ -27,3 +27,15 @@ Purpose:
 - Do not start P7 loss/objective changes yet.
 - Wait for S4 plus paired per-sample mismatch evidence before deciding whether
   the next move is more training, decoder/path audit, or objective alignment.
+
+## Closeout Update
+
+v3 closeout promotes the S4 discrete-radius line to the retained v3 best
+checkpoint family. The strongest completed checkpoint observed at closeout is:
+
+`output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4discretebestFT2_e400_constant_lr5e-6_wd1e-4/params_best.pkl`
+
+This supersedes the older B6/S4-nearest reference for v4 initialization and
+default-setting discussions. `S4discretebestFT3` and
+`S4mlp3discretebestFT2` were still incomplete during the closeout audit, so
+they are tracked as pending artifacts rather than merge blockers.
