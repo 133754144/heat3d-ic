@@ -205,6 +205,32 @@
       "expected_risk": "high",
       "smoke_source": "S4 mlp3 discrete-radius e600 completed on WSL2 with best valid/base 0.0220820 and saved params",
       "run_condition": "Run on WSL2; first low-lr continuation for the higher-parameter mlp3 discrete-radius path."
+    },
+    {
+      "name": "S4discretebestFT3",
+      "status": "pending",
+      "test_type": "discrete_radius_checkpoint_third_finetune",
+      "config": "configs/heat3d_v2/v3_S4discretebestFT3_e400_adamw_latent96_s6_mlp2_B88_sample_shuffle_base_mse_constant_lr2p5e-6_discrete_radius_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4discretebestFT2_e400_constant_lr5e-6_wd1e-4/params_best.pkl",
+      "epochs": 400,
+      "lr": 2.5e-06,
+      "lr_schedule": "constant",
+      "expected_risk": "medium_high",
+      "smoke_source": "S4discretebestFT2 completed on devbox with best valid/base 0.0182252 and saved params",
+      "run_condition": "Recommended main continuation; lower-lr follow-up from the current scalar/raw-RMSE leader."
+    },
+    {
+      "name": "S4mlp3discretebestFT2",
+      "status": "pending",
+      "test_type": "discrete_radius_mlp3_checkpoint_second_finetune",
+      "config": "configs/heat3d_v2/v3_S4mlp3discretebestFT2_e400_adamw_latent96_s6_mlp3_B88_sample_shuffle_base_mse_constant_lr5e-6_discrete_radius_model_seed0_batchbuild0_batchorder0_graphseed0.yaml",
+      "init_checkpoint": "output/heat3d_v2_runs/latent96_s6_mlp3_B88_sample_shuffle_discrete_radius_S4mlp3discretebestFT_e400_constant_lr1e-5_wd1e-4/params_best.pkl",
+      "epochs": 400,
+      "lr": 5.0e-06,
+      "lr_schedule": "constant",
+      "expected_risk": "high",
+      "smoke_source": "S4mlp3discretebestFT completed on WSL2 with best valid/base 0.0216821 and saved params",
+      "run_condition": "Optional diagnostic continuation for the larger mlp3 discrete-radius path; not the mainline performance candidate."
     }
   ]
 }
