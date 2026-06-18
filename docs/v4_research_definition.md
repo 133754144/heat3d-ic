@@ -7,6 +7,16 @@ alignment, or deciding whether a proposed run belongs in V4.
 
 构建面向 3D IC 多层异质结构的稳态三维热仿真代理模型，目标是向可发表论文级模型推进。
 
+## Standard Task
+
+```text
+coords + k(x) + q(x) + BC -> T(x)
+```
+
+Boundary conditions are part of the model input. Layer-stack and interface
+metadata remain limited to dataset generation and evaluation grouping; they are
+not standard model-input features.
+
 ## Default Baseline
 
 B88 sample_shuffle / AdamW warmup_cosine / latent96-edge96-s6-mlp2 /
@@ -26,5 +36,7 @@ selection。
 - Changes must state whether they target control-plane reliability, model
   capacity, graph/solver fidelity, cross-resolution generalization, dataset
   realism, training stability, or paper-facing evaluation.
+- Standard V4 training proposals must keep BC in the model input and keep
+  layer-stack/interface metadata out of the default input path.
 - Runs that do not connect to multilayer heterogeneous 3D IC steady thermal
   simulation should stay diagnostic and must not be treated as V4 progress.
