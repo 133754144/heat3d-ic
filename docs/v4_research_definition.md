@@ -9,7 +9,9 @@ alignment, or deciding whether a proposed run belongs in V4.
 
 ## Default Baseline
 
-B88 sample_shuffle / AdamW warmup_cosine / latent96-s6-mlp2 / discrete radius / mse。
+B88 sample_shuffle / AdamW warmup_cosine / latent96-edge96-s6-mlp2 /
+discrete_physical_coverage + repair_none / plain mse / valid_base_mse
+selection。
 
 ## V4 Work Tracks
 
