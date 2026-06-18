@@ -1,9 +1,6 @@
 # V4 Branching Policy
 
-This document defines the V4 branch and worktree boundaries. It is a
-control-plane policy document; changing it does not approve training,
-evaluation, data generation, config-generator work, result-analysis tooling, or
-artifact export.
+This document defines the V4 branch and worktree boundaries.
 
 ## Branch Roles
 
@@ -24,8 +21,8 @@ artifact export.
 - V4 control-plane docs, branching policy, stage gates, decision logs, and
   closeout notes.
 - It must not add experiment YAML, start training, edit model code, summarize
-  fresh results, or modify generated artifacts unless that work is explicitly in
-  scope.
+  fresh results, or absorb implementation, launch, or result-mining work unless
+  that work first passed through the appropriate V4 branch.
 
 `research/v4-yaml-registry` may update:
 
@@ -41,17 +38,15 @@ artifact export.
 - result summaries, evaluation reports, comparison tables, figure references,
   and documentation derived from existing run outputs.
 - It must not edit training runners, model code, config-generation logic,
-  datasets, checkpoints, logs, or prediction artifacts.
+  YAML registry files, datasets, checkpoints, logs, or prediction artifacts.
 
 `research/v4-model-lab` may update:
 
 - model code, runner code, loader code, losses, metrics implementation, graph
   policy code, and focused code-level tests.
 - It must not modify data protocols, published dataset layout, generated
-  outputs, checkpoints, logs, or result summaries unless explicitly approved.
-
-All branches must treat `data/`, `output/`, `checkpoints/`, and `logs/` as
-no-write zones unless those paths are explicitly named in the current task.
+  outputs, checkpoints, logs, YAML registry policy, or result summaries unless
+  explicitly approved.
 
 ## Merge Gates
 
@@ -89,34 +84,3 @@ Before merging any V4 branch back to `research/v4`:
 - Confirm the branch is clean after commit.
 - Push the branch so remote worktrees and servers can fetch the same state.
 - End the task with `WF-REPORT`.
-
-## Forbidden Mixing
-
-- `research/v4` does not absorb implementation, launch, or result-mining work
-  unless that work first passed through the appropriate V4 branch.
-- `research/v4-yaml-registry` does not edit model code, training runner logic,
-  data loaders, result-analysis scripts, or existing run artifacts.
-- `research/v4-yaml-registry` does not start training unless the current user
-  request explicitly approves the launch and the launch workflow is in scope.
-- `research/v4-results-data` does not edit training runners, model code,
-  config-generation logic, YAML registry files, or datasets.
-- `research/v4-model-lab` does not change dataset protocols, result summaries,
-  YAML registry policy, generated data, checkpoints, logs, or predictions.
-- No V4 branch commits `data/`, `output/`, `checkpoints/`, `logs/`, tmux logs,
-  predictions, or local cache files unless the user explicitly requests artifact
-  packaging.
-
-## Final Report Rules
-
-Every V4 branch-policy, merge, launch, evaluation, or documentation task must
-finish with `WF-REPORT` from `docs/codex_heat3d_workflow.md`.
-
-The final report must state:
-
-- current branch, HEAD, and `git status --short`;
-- files changed, commit hash, and push status;
-- checks run and their result;
-- whether training, evaluation, data generation, artifact export, config
-  generator work, or result-analysis tooling happened;
-- whether `data/`, `output/`, `checkpoints/`, `logs/`, predictions, and local
-  artifacts remained unmodified and unstaged.
