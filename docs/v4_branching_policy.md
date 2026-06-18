@@ -1,5 +1,9 @@
 # V4 Branching Policy
 
+Read this file only for branch creation, merge, or cross-branch write-scope
+decisions. Do not load it for ordinary documentation, registry, config, launch,
+or evaluation tasks unless branch scope is unclear.
+
 This document defines the V4 branch and worktree boundaries.
 
 ## Branch Roles

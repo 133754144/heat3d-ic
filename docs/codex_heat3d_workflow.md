@@ -9,6 +9,8 @@ This document is the fixed rule set for Codex work in the Heat3D-IC repository.
   current task.
 - For V4 work, expected branch is `research/v4` unless the user names another
   branch.
+- For branch creation, merge, or cross-branch write-scope questions, read
+  `docs/v4_branching_policy.md`.
 - `AGENTS.md` is a tracked short entry file. It may be staged or committed when
   the user asks for constraint or control-plane files.
 - File-changing tasks should be committed and pushed to GitHub when complete
