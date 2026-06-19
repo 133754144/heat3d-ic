@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Check the authoritative Heat3D V4 run registry.
 
-The JSON registry is the only source of truth. The CSV file is an audit mirror,
-and generated YAML must be reproducible from the JSON registry plus
-``V4_base.yaml``.
+The JSON registry is the only source of truth. It resolves one baseline plus
+per-run overrides into CSV mirror rows and generated YAML.
 """
 
 from __future__ import annotations
@@ -100,11 +99,17 @@ EXPECTED_V4_BASELINE = {
     "dry_run_required": "true",
     "launch_policy": "explicit_user_instruction_only",
 }
+UNMAPPED_RUNNER_CONTROL_FIELDS = (
+    "dry_run_required",
+    "launch_policy",
+    "log_path",
+    "notes",
+)
 
 
 def main() -> int:
     args = _parse_args()
-    rows = check_registry(_repo_path(args.registry))
+    rows = check_registry(_repo_path(args.registry), emit_warnings=True)
     print(f"checked authoritative registry: {args.registry}")
     print(f"checked registry rows: {len(rows)}")
     for row in rows:
@@ -118,7 +123,9 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def check_registry(registry_path: Path | str = DEFAULT_REGISTRY) -> list[dict[str, str]]:
+def check_registry(
+    registry_path: Path | str = DEFAULT_REGISTRY, *, emit_warnings: bool = False
+) -> list[dict[str, str]]:
     registry_path = _repo_path(registry_path)
     registry = load_registry(registry_path)
     rows = registry_rows(registry)
@@ -129,6 +136,9 @@ def check_registry(registry_path: Path | str = DEFAULT_REGISTRY) -> list[dict[st
             _check_v4_baseline(row)
     if not any(row["config_id"] == "V4_baseline" for row in rows):
         raise AssertionError("registry must contain V4_baseline")
+    if emit_warnings:
+        for warning in runner_control_warnings(rows):
+            print(f"WARNING: {warning}")
     return rows
 
 
@@ -146,6 +156,8 @@ def load_registry(path: Path | str = DEFAULT_REGISTRY) -> dict[str, Any]:
         raise ValueError(f"{path}: registry_role must be 'authoritative'")
     if not isinstance(registry.get("csv_mirror_path"), str):
         raise ValueError(f"{path}: csv_mirror_path must be a string")
+    if not isinstance(registry.get("baseline"), dict):
+        raise ValueError(f"{path}: baseline must be an object")
     if not isinstance(registry.get("runs"), dict) or not registry["runs"]:
         raise ValueError(f"{path}: runs must be a non-empty object")
     return registry
@@ -154,16 +166,31 @@ def load_registry(path: Path | str = DEFAULT_REGISTRY) -> dict[str, Any]:
 def registry_rows(registry: Mapping[str, Any]) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     seen: set[str] = set()
+    baseline = _normalize_resolved_row(
+        registry.get("baseline", {}), context="registry baseline"
+    )
+    if baseline["config_id"] != "V4_baseline":
+        raise ValueError("registry baseline config_id must be 'V4_baseline'")
     runs = registry.get("runs")
     if not isinstance(runs, Mapping):
         raise ValueError("registry runs must be a mapping")
-    for key, raw_row in runs.items():
-        if not isinstance(raw_row, Mapping):
+    for key, raw_run in runs.items():
+        if not isinstance(raw_run, Mapping):
             raise ValueError(f"registry run {key!r} must be a mapping")
-        row = _normalize_row(raw_row)
-        config_id = row["config_id"]
+        extra = sorted(set(raw_run) - {"config_id", "overrides"})
+        if extra:
+            raise ValueError(
+                f"registry run {key!r} must contain only config_id and overrides; "
+                f"unsupported fields: {', '.join(extra)}"
+            )
+        config_id = _stringify(raw_run.get("config_id", key))
         if key != config_id:
             raise ValueError(f"registry key {key!r} must match config_id {config_id!r}")
+        overrides = raw_run.get("overrides", {})
+        if not isinstance(overrides, Mapping):
+            raise ValueError(f"registry run {key!r} overrides must be a mapping")
+        row = _resolve_registry_row(baseline, config_id, overrides)
+        config_id = row["config_id"]
         if config_id in seen:
             raise ValueError(f"duplicate config_id {config_id!r}")
         seen.add(config_id)
@@ -195,7 +222,9 @@ def build_inherited_yaml(row: Mapping[str, str]) -> dict[str, Any]:
     }
 
 
-def resolve_inherited_yaml(inherited: Mapping[str, Any], generated_path: Path) -> dict[str, Any]:
+def resolve_inherited_yaml(
+    inherited: Mapping[str, Any], generated_path: Path
+) -> dict[str, Any]:
     if inherited.get("schema_version") != INHERITED_SCHEMA_VERSION:
         raise ValueError("inherited YAML has wrong schema_version")
     extends = inherited.get("extends")
@@ -209,16 +238,58 @@ def resolve_inherited_yaml(inherited: Mapping[str, Any], generated_path: Path) -
     return _deep_merge(base_config, overrides)
 
 
-def _normalize_row(raw_row: Mapping[str, Any]) -> dict[str, str]:
+def runner_control_warnings(rows: list[dict[str, str]]) -> list[str]:
+    baseline = next((row for row in rows if row["config_id"] == "V4_baseline"), None)
+    if baseline is None:
+        return []
+    warnings: list[str] = []
+    for row in rows:
+        if row["config_id"] == "V4_baseline":
+            continue
+        for field in UNMAPPED_RUNNER_CONTROL_FIELDS:
+            if row.get(field) != baseline.get(field):
+                warnings.append(
+                    f"{row['config_id']}: {field} differs from V4_baseline; "
+                    "checker does not map this runner-control field into the "
+                    "executable config"
+                )
+    return warnings
+
+
+def _resolve_registry_row(
+    baseline: Mapping[str, str], config_id: str, overrides: Mapping[str, Any]
+) -> dict[str, str]:
+    if "config_id" in overrides:
+        raise ValueError(
+            f"registry run {config_id!r} overrides must not contain config_id; "
+            "use the run key instead"
+        )
+    extra = sorted(set(overrides) - set(CSV_FIELDNAMES))
+    if extra:
+        raise ValueError(
+            f"registry run {config_id!r} overrides unsupported fields: "
+            f"{', '.join(extra)}"
+        )
+    raw_row: dict[str, Any] = dict(baseline)
+    raw_row.update(overrides)
+    raw_row["config_id"] = config_id
+    return _normalize_resolved_row(
+        raw_row, context=f"resolved registry run {config_id}"
+    )
+
+
+def _normalize_resolved_row(
+    raw_row: Mapping[str, Any], *, context: str
+) -> dict[str, str]:
     missing = [field for field in CSV_FIELDNAMES if field not in raw_row]
     if missing:
-        raise ValueError(f"registry row missing fields: {', '.join(missing)}")
+        raise ValueError(f"{context} missing fields: {', '.join(missing)}")
     extra = sorted(set(raw_row) - set(CSV_FIELDNAMES))
     if extra:
-        raise ValueError(f"registry row has unsupported fields: {', '.join(extra)}")
+        raise ValueError(f"{context} has unsupported fields: {', '.join(extra)}")
     row = {field: _stringify(raw_row[field]) for field in CSV_FIELDNAMES}
     if not row["config_id"]:
-        raise ValueError("registry row has empty config_id")
+        raise ValueError(f"{context} has empty config_id")
     return row
 
 

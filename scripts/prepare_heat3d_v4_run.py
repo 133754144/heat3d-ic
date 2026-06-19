@@ -53,8 +53,9 @@ def main() -> int:
             print(f"wrote inherited YAML: {_relative_to_repo(path)}")
 
     # Required gate: prepare must not bypass the independent checker.
-    check_registry(registry_path)
+    checked_rows = check_registry(registry_path, emit_warnings=True)
     print("registry checker passed")
+    rows = _filter_rows(checked_rows, args.config_id)
 
     if args.dry_run:
         for row in rows:
