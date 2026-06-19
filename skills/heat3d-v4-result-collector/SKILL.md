@@ -40,7 +40,8 @@ valid_iid, valid_stress, hotspot, and diagnostics/final-probe status.
 When `loss_summary.json` references post-training diagnostics or final-probe
 metrics, it also fills available field-shape, region, bin0/le0.05, top-k,
 zRMSE, peak, and probe RMSE columns. For unlabeled diagnostics, prefer the
-`best` entry and fall back to `final`.
+`best` entry and fall back to `final`; treat `best_predictions` as `best` and
+`predictions`/`final_predictions` as `final`.
 
 ## Validation
 

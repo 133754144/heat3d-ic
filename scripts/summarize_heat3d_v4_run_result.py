@@ -371,10 +371,19 @@ def _select_labeled_entry(entries: Any, labels: tuple[str, ...]) -> dict[str, An
         return {}
     dict_entries = [entry for entry in entries if isinstance(entry, dict)]
     for label in labels:
+        aliases = _label_aliases(label)
         for entry in dict_entries:
-            if str(entry.get("label")) == label:
+            if str(entry.get("label")) in aliases:
                 return entry
     return dict_entries[0] if dict_entries else {}
+
+
+def _label_aliases(label: str) -> set[str]:
+    aliases = {
+        "best": {"best", "best_predictions"},
+        "final": {"final", "predictions", "final_predictions"},
+    }
+    return aliases.get(label, {label})
 
 
 def _bin_by_name(payload: dict[str, Any], name: str) -> dict[str, Any]:

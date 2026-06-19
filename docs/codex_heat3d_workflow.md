@@ -272,13 +272,16 @@ Metric rules:
 
 ## WF-SYNC: Remote Result Synchronization
 
-Use this when moving ignored output artifacts between WSL2, devbox, and local
-review folders.
+Use this when copying ignored output artifacts between devbox and WSL2. V4
+`output_dir` artifacts should stay on servers, not on the Codex host.
 
 Rules:
 
 - Synchronize ignored artifacts only; do not commit them.
 - Prefer non-overwriting sync when copying between remote machines.
+- For V4, use `scripts/heat3d_v4_remote_run.py --host devbox sync-command
+  --config-id <config_id> --target-host wsl2` to print the server-to-server
+  `rsync` command for the complete `output_dir`.
 - Record source machine, destination machine, source path, destination path,
   file counts, checkpoint counts, and whether existing files were skipped.
 - After macOS-to-Linux tar copies, remove AppleDouble `._*` metadata files if

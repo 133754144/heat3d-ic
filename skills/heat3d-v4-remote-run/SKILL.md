@@ -44,9 +44,17 @@ python3 -B scripts/heat3d_v4_remote_run.py --host devbox launch --config-id <con
 python3 -B scripts/heat3d_v4_remote_run.py --host devbox monitor --config-id <config_id>
 ```
 
+7. For devbox/WSL2 artifact mirroring, print the server-to-server sync command:
+
+```bash
+python3 -B scripts/heat3d_v4_remote_run.py --host devbox sync-command --config-id <config_id> --target-host wsl2
+```
+
 ## Rules
 
 - The helper performs remote `git fetch`, checkout, and `git pull --ff-only`.
+- `sync-command` syncs the complete `output_dir` between servers only; it must
+  not copy outputs to the Codex host.
 - Default branch is `research/v4`; change it only when the user names another
   branch.
 - Default remote is `devbox`, default conda env is `rigno`, default session is

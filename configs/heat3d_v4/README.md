@@ -45,16 +45,16 @@ Workflow:
 
 Remote run helpers:
 
-- `scripts/heat3d_v4_remote_run.py check --host devbox`
-- `scripts/heat3d_v4_remote_run.py launch --host devbox --config-id <config_id>`
-- `scripts/heat3d_v4_remote_run.py monitor --host devbox --config-id <config_id>`
-- `scripts/heat3d_v4_remote_run.py sync-command --host devbox --config-id <config_id>`
+- `scripts/heat3d_v4_remote_run.py --host devbox check`
+- `scripts/heat3d_v4_remote_run.py --host devbox launch --config-id <config_id>`
+- `scripts/heat3d_v4_remote_run.py --host devbox monitor --config-id <config_id>`
+- `scripts/heat3d_v4_remote_run.py --host devbox sync-command --config-id <config_id> --target-host wsl2`
 - `scripts/summarize_heat3d_v4_run_result.py --config-id <config_id> --update-csv`
 
 `launch` fetches and fast-forwards the requested branch, starts a detached tmux
 session, and runs the tracked YAML through `scripts/run_heat3d_v4_config.py`.
-`sync-command` prints a non-overwriting `rsync --ignore-existing` command for
-ignored artifacts; do not commit synced artifacts.
+`sync-command` prints a non-overwriting server-to-server `rsync --ignore-existing`
+command for the full `output_dir`; it does not sync outputs to the Codex host.
 
 Standard local check:
 

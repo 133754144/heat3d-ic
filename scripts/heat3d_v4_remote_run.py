@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import posixpath
 import re
 import shlex
 import subprocess
@@ -74,13 +75,19 @@ def _parse_args() -> argparse.Namespace:
     monitor.add_argument("--config-id", required=True)
 
     sync = subparsers.add_parser(
-        "sync-command", help="Print non-overwriting rsync command for a run."
+        "sync-command",
+        help="Print server-to-server rsync command for a run output_dir.",
     )
     sync.add_argument("--config-id", required=True)
     sync.add_argument(
-        "--destination",
-        default="output/heat3d_v4_synced",
-        help="Local destination root for ignored artifacts.",
+        "--target-host",
+        default="wsl2",
+        help="Destination server. Data stays on remote servers, not local host.",
+    )
+    sync.add_argument(
+        "--target-repo",
+        default=None,
+        help="Destination repo path. Defaults to --remote-repo.",
     )
     return parser.parse_args()
 
@@ -180,15 +187,40 @@ def _monitor_commands(args: argparse.Namespace, row: dict[str, str]) -> str:
 
 
 def _sync_command(args: argparse.Namespace, row: dict[str, str]) -> str:
-    destination = Path(args.destination) / row["config_id"]
-    remote_path = f"{args.host}:{args.remote_repo}/{row['output_dir']}/"
-    return shlex.join(
+    output_dir = row["output_dir"].strip("/")
+    parent_dir = posixpath.dirname(output_dir)
+    target_repo = args.target_repo or args.remote_repo
+    mkdir_target_parent = shlex.join(
         [
-            "rsync",
-            "-av",
-            "--ignore-existing",
-            remote_path,
-            str(destination),
+            "ssh",
+            args.target_host,
+            "bash",
+            "-lc",
+            f"mkdir -p {_remote_path(posixpath.join(target_repo, parent_dir))}",
+        ]
+    )
+    rsync_target = f"{args.target_host}:{target_repo.rstrip('/')}/{output_dir}/"
+    remote_script = "\n".join(
+        [
+            "set -e",
+            f"cd {_remote_path(args.remote_repo)}",
+            f"test -d {_q(output_dir)}",
+            mkdir_target_parent,
+            " ".join(
+                [
+                    "rsync",
+                    "-av",
+                    "--ignore-existing",
+                    f"{_q(output_dir)}/",
+                    _q(rsync_target),
+                ]
+            ),
+        ]
+    )
+    return "\n".join(
+        [
+            "# Server-to-server sync only; does not copy output_dir to this Codex host.",
+            _ssh_command_text(args.host, remote_script),
         ]
     )
 
