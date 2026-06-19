@@ -35,6 +35,14 @@ Normalized validation and raw DeltaT answer different questions:
 - normalized validation tracks the training/selection objective consistently;
 - raw DeltaT reports physical-scale error for readers and diagnostics.
 
+## Split And Background Diagnostics
+
+V4 result audits keep split-aware scalar diagnostics separate from selection.
+`valid_iid` and `valid_stress` summarize in-distribution and stress behavior,
+while error percentages explain relative movement. Low-DeltaT background
+columns such as `bin_0_over_ratio` and `le_0p05_over_ratio` track the V2/V3
+background overprediction failure mode.
+
 ## Final-Probe, OOD, Region, And Diagnostic Metrics
 
 Final-probe and OOD metrics report stress behavior and extrapolation behavior.

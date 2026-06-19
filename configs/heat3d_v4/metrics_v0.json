@@ -40,12 +40,25 @@
       ]
     },
     {
+      "group": "scalar_splits",
+      "usage": "report_split_behavior_only",
+      "metrics": [
+        "valid_iid_base_mse",
+        "valid_stress_base_mse",
+        "iid_err_pct",
+        "stress_err_pct",
+        "best_epoch",
+        "final_epoch"
+      ]
+    },
+    {
       "group": "raw_deltaT",
       "usage": "report_raw_physical_scale_only",
       "metrics": [
         "raw_deltaT_mse",
         "raw_deltaT_rmse",
-        "raw_deltaT_mae"
+        "raw_deltaT_mae",
+        "zscore_rmse"
       ]
     },
     {
@@ -67,7 +80,18 @@
         "strong_q_RMSE",
         "hotspot_RMSE",
         "top_5_percent_RMSE",
+        "top_10_percent_RMSE",
         "background_region_RMSE"
+      ]
+    },
+    {
+      "group": "low_deltaT_background",
+      "usage": "diagnose_background_overprediction_only",
+      "metrics": [
+        "bin_0_signed_bias",
+        "bin_0_over_ratio",
+        "le_0p05_signed_bias",
+        "le_0p05_over_ratio"
       ]
     },
     {
@@ -78,6 +102,7 @@
         "centered_spatial_correlation",
         "amplitude_ratio",
         "peak_abs_error",
+        "peak_rel_error",
         "top_k_overlap",
         "graph_physical_coverage",
         "coverage_repair_count"

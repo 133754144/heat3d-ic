@@ -20,6 +20,14 @@ when regenerating the CSV mirror and leaves result fields blank for newly added
 configs. `check_heat3d_v4_registry.py` requires result columns to exist but does
 not treat blank result values as errors.
 
+Result metric columns intentionally include V2/V3 audit axes: best/final
+MSE/RMSE/MAE, raw DeltaT MSE/RMSE/MAE, valid_iid and stress scalar summaries,
+field-shape diagnostics (`corr`, `amp`, variance, top-k), zRMSE, top5/top10,
+strong-q, peak/p95/p99/hotspot diagnostics, low-DeltaT background
+overprediction (`bin0`, `le0.05`), and final-probe
+RMSE/relRMSE/Tmax/probe-family summaries. These columns are for post-run audit
+entry; blank values are expected before a run is reviewed.
+
 Workflow:
 
 1. Register the run in `v4_run_registry.json` by adding only its overrides.
