@@ -67,6 +67,9 @@ def main() -> int:
             )
             print(f"config_id: {row['config_id']}")
             print(f"generated_yaml: {row['generated_yaml']}")
+            print(f"metrics_profile: {row['metrics_profile']}")
+            print(f"metrics_contract: {row['metrics_contract']}")
+            print(f"selection_metric: {row['selection_metric']}")
             print(summarize_command_plan(plan))
 
     print(f"prepared registry rows: {len(rows)}")

@@ -33,6 +33,10 @@ from rigno.heat3d_v2_runner_command import build_v2_command_plan  # noqa: E402
 
 REGISTRY_SCHEMA_VERSION = "heat3d_v4_run_registry_v0"
 INHERITED_SCHEMA_VERSION = "heat3d_v4_inherited_config_v0"
+METRICS_CONTRACT_SCHEMA_VERSION = "heat3d_v4_metrics_contract_v0"
+DEFAULT_METRICS_PROFILE = "v4_metrics_v0"
+DEFAULT_METRICS_CONTRACT = "configs/heat3d_v4/metrics_v0.json"
+DEFAULT_SELECTION_METRIC = "valid_base_mse"
 DEFAULT_REGISTRY = Path("configs/heat3d_v4/v4_run_registry.json")
 CSV_FIELDNAMES = (
     "config_id",
@@ -67,6 +71,8 @@ CSV_FIELDNAMES = (
     "coverage_repair_policy",
     "loss_mode",
     "selection_metric",
+    "metrics_profile",
+    "metrics_contract",
     "output_dir",
     "run_name",
     "log_path",
@@ -117,7 +123,9 @@ EXPECTED_V4_BASELINE = {
     "graph_radius_policy": "discrete_physical_coverage",
     "coverage_repair_policy": "none",
     "loss_mode": "mse",
-    "selection_metric": "valid_base_mse",
+    "selection_metric": DEFAULT_SELECTION_METRIC,
+    "metrics_profile": DEFAULT_METRICS_PROFILE,
+    "metrics_contract": DEFAULT_METRICS_CONTRACT,
     "dry_run_required": "true",
     "launch_policy": "explicit_user_instruction_only",
 }
@@ -145,6 +153,7 @@ def check_registry(
     registry_path = _repo_path(registry_path)
     registry = load_registry(registry_path)
     rows = registry_rows(registry)
+    _check_metrics_contracts(rows)
     _check_csv_mirror(registry, rows)
     for row in rows:
         _check_generated_yaml(row)
@@ -413,7 +422,10 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "graph.radius_policy": "discrete_physical_coverage",
             "graph.coverage_repair_policy": "none",
             "loss.mode": "mse",
-            "export.selection_metric": "valid_base_mse",
+            "export.selection_metric": DEFAULT_SELECTION_METRIC,
+            "metadata.metrics_profile": DEFAULT_METRICS_PROFILE,
+            "metadata.metrics_contract": DEFAULT_METRICS_CONTRACT,
+            "metadata.selection_metric": DEFAULT_SELECTION_METRIC,
         }
         for dotted, expected in checks.items():
             actual = _get_dotted(config, dotted)
@@ -489,6 +501,9 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
                 f"{row['graph_radius_policy']}_repair_{row['coverage_repair_policy']}"
             ),
             "loss_label": f"plain_{row['loss_mode']}",
+            "metrics_profile": row["metrics_profile"],
+            "metrics_contract": row["metrics_contract"],
+            "selection_metric": row["selection_metric"],
             "launch_policy": row["launch_policy"],
             "log_path": row["log_path"],
             "notes": row["notes"],
@@ -527,6 +542,9 @@ def _assert_registry_matches_resolved(
         "export.selection_metric": row["selection_metric"],
         "export.output_dir": row["output_dir"],
         "export.run_name": row["run_name"],
+        "metadata.metrics_profile": row["metrics_profile"],
+        "metadata.metrics_contract": row["metrics_contract"],
+        "metadata.selection_metric": row["selection_metric"],
     }
     for dotted, expected in checks.items():
         actual = _get_dotted(config, dotted)
@@ -534,6 +552,162 @@ def _assert_registry_matches_resolved(
             raise AssertionError(
                 f"{row['config_id']}: {dotted} expected {expected!r}, got {actual!r}"
             )
+
+
+def _check_metrics_contracts(rows: list[dict[str, str]]) -> None:
+    contracts: dict[str, Mapping[str, Any]] = {}
+    for row in rows:
+        contract_path_text = row["metrics_contract"]
+        if not contract_path_text:
+            raise ValueError(f"{row['config_id']}: metrics_contract must be set")
+        contract = contracts.get(contract_path_text)
+        if contract is None:
+            contract = _load_metrics_contract(contract_path_text)
+            _check_metrics_contract(contract, contract_path_text)
+            contracts[contract_path_text] = contract
+        profile = _required_string(
+            contract, "metrics_profile", f"{contract_path_text}: metrics contract"
+        )
+        if row["metrics_profile"] != profile:
+            raise AssertionError(
+                f"{row['config_id']}: metrics_profile {row['metrics_profile']!r} "
+                f"does not match {contract_path_text} profile {profile!r}"
+            )
+        allowed = _allowed_selection_metrics(contract, contract_path_text)
+        if row["selection_metric"] not in allowed:
+            raise AssertionError(
+                f"{row['config_id']}: selection_metric {row['selection_metric']!r} "
+                f"is not allowed by {contract_path_text}: {sorted(allowed)}"
+            )
+        if (
+            row["config_id"] == "V4_baseline"
+            and row["selection_metric"] != DEFAULT_SELECTION_METRIC
+        ):
+            raise AssertionError(
+                f"V4_baseline selection_metric must be {DEFAULT_SELECTION_METRIC!r}"
+            )
+
+
+def _load_metrics_contract(path_text: str) -> dict[str, Any]:
+    path = _repo_path(path_text)
+    if not path.is_file():
+        raise FileNotFoundError(f"metrics contract not found: {path_text}")
+    with path.open("r", encoding="utf-8") as file:
+        contract = json.load(file)
+    if not isinstance(contract, dict):
+        raise ValueError(f"{path_text}: metrics contract must be a JSON object")
+    return contract
+
+
+def _check_metrics_contract(contract: Mapping[str, Any], path_text: str) -> None:
+    context = f"{path_text}: metrics contract"
+    schema = _required_string(contract, "schema_version", context)
+    if schema != METRICS_CONTRACT_SCHEMA_VERSION:
+        raise ValueError(
+            f"{path_text}: schema_version must be "
+            f"{METRICS_CONTRACT_SCHEMA_VERSION!r}, got {schema!r}"
+        )
+    profile = _required_string(contract, "metrics_profile", context)
+    if profile != DEFAULT_METRICS_PROFILE:
+        raise ValueError(
+            f"{path_text}: metrics_profile must be {DEFAULT_METRICS_PROFILE!r}"
+        )
+    default_selection = _required_string(
+        contract, "default_checkpoint_selection_metric", context
+    )
+    if default_selection != DEFAULT_SELECTION_METRIC:
+        raise ValueError(
+            f"{path_text}: default checkpoint selection metric must be "
+            f"{DEFAULT_SELECTION_METRIC!r}"
+        )
+    allowed = _allowed_selection_metrics(contract, path_text)
+    if default_selection not in allowed:
+        raise ValueError(
+            f"{path_text}: default selection metric {default_selection!r} is "
+            "not listed in checkpoint_selection.allowed_selection_metrics"
+        )
+    metric_names = _contract_metric_names(contract, path_text)
+    if default_selection not in metric_names:
+        raise ValueError(
+            f"{path_text}: default selection metric {default_selection!r} is "
+            "not listed in metric_groups"
+        )
+    aggregation = contract.get("aggregation")
+    if not isinstance(aggregation, Mapping):
+        raise ValueError(f"{path_text}: aggregation must be an object")
+    if aggregation.get("per_sample_first") is not True:
+        raise ValueError(f"{path_text}: aggregation.per_sample_first must be true")
+    summaries = aggregation.get("split_group_summaries")
+    if not isinstance(summaries, list) or not {"mean", "median", "std"}.issubset(
+        set(summaries)
+    ):
+        raise ValueError(
+            f"{path_text}: aggregation.split_group_summaries must include "
+            "mean, median, and std"
+        )
+
+
+def _allowed_selection_metrics(
+    contract: Mapping[str, Any], path_text: str
+) -> set[str]:
+    selection = contract.get("checkpoint_selection")
+    if not isinstance(selection, Mapping):
+        raise ValueError(f"{path_text}: checkpoint_selection must be an object")
+    allowed = selection.get("allowed_selection_metrics")
+    if not isinstance(allowed, list) or not allowed:
+        raise ValueError(
+            f"{path_text}: checkpoint_selection.allowed_selection_metrics "
+            "must be a non-empty list"
+        )
+    result: set[str] = set()
+    for item in allowed:
+        if not isinstance(item, str) or not item:
+            raise ValueError(
+                f"{path_text}: allowed selection metrics must be non-empty strings"
+            )
+        if item in result:
+            raise ValueError(f"{path_text}: duplicate allowed selection metric {item!r}")
+        result.add(item)
+    return result
+
+
+def _contract_metric_names(contract: Mapping[str, Any], path_text: str) -> set[str]:
+    groups = contract.get("metric_groups")
+    if not isinstance(groups, list) or not groups:
+        raise ValueError(f"{path_text}: metric_groups must be a non-empty list")
+    seen: dict[str, str] = {}
+    for group in groups:
+        if not isinstance(group, Mapping):
+            raise ValueError(f"{path_text}: each metric group must be an object")
+        group_name = _required_string(group, "group", f"{path_text}: metric group")
+        metrics = group.get("metrics")
+        if not isinstance(metrics, list) or not metrics:
+            raise ValueError(
+                f"{path_text}: metric group {group_name!r} must list metrics"
+            )
+        for metric in metrics:
+            if not isinstance(metric, str) or not metric:
+                raise ValueError(
+                    f"{path_text}: metric names in group {group_name!r} must "
+                    "be non-empty strings"
+                )
+            prior_group = seen.get(metric)
+            if prior_group is not None:
+                raise ValueError(
+                    f"{path_text}: metric {metric!r} is listed in both "
+                    f"{prior_group!r} and {group_name!r}"
+                )
+            seen[metric] = group_name
+    return set(seen)
+
+
+def _required_string(
+    payload: Mapping[str, Any], key: str, context: str
+) -> str:
+    value = payload.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{context}: {key} must be a non-empty string")
+    return value
 
 
 def _diff_mapping(base: Mapping[str, Any], desired: Mapping[str, Any]) -> dict[str, Any]:

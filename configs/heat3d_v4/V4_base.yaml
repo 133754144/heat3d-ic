@@ -174,4 +174,7 @@ metadata:
   optimizer_label: adamw_warmup_cosine_lr5e-4_minlr5e-5
   graph_policy_label: discrete_physical_coverage_repair_none
   loss_label: plain_mse
+  metrics_profile: v4_metrics_v0
+  metrics_contract: configs/heat3d_v4/metrics_v0.json
+  selection_metric: valid_base_mse
   selection_metric_note: valid_base_mse is used by default so targeted-loss totals do not control checkpoint selection.
