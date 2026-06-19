@@ -43,6 +43,19 @@ Workflow:
 6. Start tmux training only when the current user request explicitly approves a
    launch on a named server. Report the log path for live output.
 
+Remote run helpers:
+
+- `scripts/heat3d_v4_remote_run.py check --host devbox`
+- `scripts/heat3d_v4_remote_run.py launch --host devbox --config-id <config_id>`
+- `scripts/heat3d_v4_remote_run.py monitor --host devbox --config-id <config_id>`
+- `scripts/heat3d_v4_remote_run.py sync-command --host devbox --config-id <config_id>`
+- `scripts/summarize_heat3d_v4_run_result.py --config-id <config_id> --update-csv`
+
+`launch` fetches and fast-forwards the requested branch, starts a detached tmux
+session, and runs the tracked YAML through `scripts/run_heat3d_v4_config.py`.
+`sync-command` prints a non-overwriting `rsync --ignore-existing` command for
+ignored artifacts; do not commit synced artifacts.
+
 Standard local check:
 
 ```bash

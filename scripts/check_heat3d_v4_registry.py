@@ -78,6 +78,15 @@ CONFIG_FIELDNAMES = (
     "log_path",
     "final_probe_output_dir",
     "post_training_diagnostics_output_dir",
+    "save_final_predictions",
+    "save_best_predictions",
+    "final_probe_eval_after_training",
+    "post_training_diagnostics",
+    "run_baseline_comparison",
+    "run_error_bins",
+    "run_condition_diagnostics",
+    "run_summary_diagnostics",
+    "run_field_shape_diagnostics",
     "dry_run_required",
     "launch_policy",
     "notes",
@@ -187,6 +196,15 @@ EXPECTED_V4_BASELINE = {
     "selection_metric": DEFAULT_SELECTION_METRIC,
     "metrics_profile": DEFAULT_METRICS_PROFILE,
     "metrics_contract": DEFAULT_METRICS_CONTRACT,
+    "save_final_predictions": "true",
+    "save_best_predictions": "true",
+    "final_probe_eval_after_training": "true",
+    "post_training_diagnostics": "true",
+    "run_baseline_comparison": "true",
+    "run_error_bins": "true",
+    "run_condition_diagnostics": "true",
+    "run_summary_diagnostics": "true",
+    "run_field_shape_diagnostics": "true",
     "dry_run_required": "true",
     "launch_policy": "explicit_user_instruction_only",
 }
@@ -567,7 +585,11 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "prediction_batch_size": _int(row, "prediction_batch_size"),
             "batch_plan": row["batch_plan"],
             "batch_build_seed": _int(row, "batch_build_seed"),
+            "final_probe_eval_after_training": _bool(
+                row, "final_probe_eval_after_training"
+            ),
             "final_probe_output_dir": row["final_probe_output_dir"],
+            "post_training_diagnostics": _bool(row, "post_training_diagnostics"),
             "post_training_diagnostics_output_dir": row[
                 "post_training_diagnostics_output_dir"
             ],
@@ -580,6 +602,17 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "output_dir": row["output_dir"],
             "run_name": row["run_name"],
             "selection_metric": row["selection_metric"],
+            "save_final_predictions": _bool(row, "save_final_predictions"),
+            "save_best_predictions": _bool(row, "save_best_predictions"),
+        },
+        "diagnostics": {
+            "run_baseline_comparison": _bool(row, "run_baseline_comparison"),
+            "run_error_bins": _bool(row, "run_error_bins"),
+            "run_condition_diagnostics": _bool(row, "run_condition_diagnostics"),
+            "run_summary": _bool(row, "run_summary_diagnostics"),
+            "run_field_shape_diagnostics": _bool(
+                row, "run_field_shape_diagnostics"
+            ),
         },
         "metadata": {
             "registry_config_id": config_id,
@@ -623,6 +656,10 @@ def _assert_registry_matches_resolved(
         "run.batch_plan": row["batch_plan"],
         "run.batch_build_seed": _int(row, "batch_build_seed"),
         "run.epochs": _int(row, "epochs"),
+        "run.final_probe_eval_after_training": _bool(
+            row, "final_probe_eval_after_training"
+        ),
+        "run.post_training_diagnostics": _bool(row, "post_training_diagnostics"),
         "optimizer.name": row["optimizer"],
         "optimizer.lr": _float(row, "lr"),
         "optimizer.model_seed": _int(row, "model_seed"),
@@ -640,6 +677,17 @@ def _assert_registry_matches_resolved(
         "export.selection_metric": row["selection_metric"],
         "export.output_dir": row["output_dir"],
         "export.run_name": row["run_name"],
+        "export.save_final_predictions": _bool(row, "save_final_predictions"),
+        "export.save_best_predictions": _bool(row, "save_best_predictions"),
+        "diagnostics.run_baseline_comparison": _bool(row, "run_baseline_comparison"),
+        "diagnostics.run_error_bins": _bool(row, "run_error_bins"),
+        "diagnostics.run_condition_diagnostics": _bool(
+            row, "run_condition_diagnostics"
+        ),
+        "diagnostics.run_summary": _bool(row, "run_summary_diagnostics"),
+        "diagnostics.run_field_shape_diagnostics": _bool(
+            row, "run_field_shape_diagnostics"
+        ),
         "metadata.metrics_profile": row["metrics_profile"],
         "metadata.metrics_contract": row["metrics_contract"],
         "metadata.selection_metric": row["selection_metric"],
@@ -870,6 +918,15 @@ def _int(row: Mapping[str, str], key: str) -> int:
 
 def _float(row: Mapping[str, str], key: str) -> float:
     return float(row[key])
+
+
+def _bool(row: Mapping[str, str], key: str) -> bool:
+    value = row[key].strip().lower()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    raise ValueError(f"{key} must be true or false, got {row[key]!r}")
 
 
 def _json_list(row: Mapping[str, str], key: str) -> list[Any]:

@@ -22,6 +22,50 @@
       "global_flatten_only"
     ]
   },
+  "result_source_mapping": {
+    "result_corr_iid": {
+      "metric": "centered_spatial_correlation",
+      "split": "valid_iid",
+      "source": "field_shape_diagnostics"
+    },
+    "result_corr_stress": {
+      "metric": "centered_spatial_correlation",
+      "split": "valid_stress",
+      "source": "field_shape_diagnostics"
+    },
+    "result_amp": {
+      "metric": "amplitude_ratio",
+      "split": "valid_iid",
+      "source": "field_shape_diagnostics"
+    },
+    "result_amp_stress": {
+      "metric": "amplitude_ratio",
+      "split": "valid_stress",
+      "source": "field_shape_diagnostics"
+    },
+    "result_valid_iid_topk": {
+      "metric": "top_k_overlap",
+      "split": "valid_iid",
+      "source": "field_shape_diagnostics"
+    },
+    "result_valid_stress_topk": {
+      "metric": "top_k_overlap",
+      "split": "valid_stress",
+      "source": "field_shape_diagnostics"
+    },
+    "result_bin0_over": {
+      "metric": "bin_0_over_ratio",
+      "source": "condition_or_split_aware_diagnostics"
+    },
+    "result_le005_over": {
+      "metric": "le_0p05_over_ratio",
+      "source": "split_aware_diagnostics"
+    },
+    "result_final_probe_relrmse": {
+      "metric": "final_probe_relRMSE_DeltaT",
+      "source": "final_probe_metrics"
+    }
+  },
   "metric_groups": [
     {
       "group": "selection",

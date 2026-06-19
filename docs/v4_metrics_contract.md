@@ -43,6 +43,20 @@ while error percentages explain relative movement. Low-DeltaT background
 columns such as `bin_0_over_ratio` and `le_0p05_over_ratio` track the V2/V3
 background overprediction failure mode.
 
+## Result Column Source Mapping
+
+Some `run_registry.csv` result columns use compact audit names. The metrics
+contract records their source metric names and split context:
+
+| result column | metric source |
+| --- | --- |
+| `result_corr_iid` | `centered_spatial_correlation` on `valid_iid` |
+| `result_amp` | `amplitude_ratio` on `valid_iid` |
+| `result_valid_iid_topk` | `top_k_overlap` on `valid_iid` |
+| `result_bin0_over` | `bin_0_over_ratio` |
+| `result_le005_over` | `le_0p05_over_ratio` |
+| `result_final_probe_relrmse` | `final_probe_relRMSE_DeltaT` |
+
 ## Final-Probe, OOD, Region, And Diagnostic Metrics
 
 Final-probe and OOD metrics report stress behavior and extrapolation behavior.

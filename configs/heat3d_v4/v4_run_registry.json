@@ -42,6 +42,15 @@
     "log_path": "output/heat3d_v4_logs/V4_baseline.log",
     "final_probe_output_dir": "output/heat3d_v4_final_probe/V4_baseline",
     "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4_baseline",
+    "save_final_predictions": "true",
+    "save_best_predictions": "true",
+    "final_probe_eval_after_training": "true",
+    "post_training_diagnostics": "true",
+    "run_baseline_comparison": "true",
+    "run_error_bins": "true",
+    "run_condition_diagnostics": "true",
+    "run_summary_diagnostics": "true",
+    "run_field_shape_diagnostics": "true",
     "dry_run_required": "true",
     "launch_policy": "explicit_user_instruction_only",
     "notes": "baseline default dry-run only until explicit launch approval"
@@ -88,6 +97,28 @@
         "final_probe_output_dir": "output/heat3d_v4_final_probe/V4Test00_baseline_seed_2",
         "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4Test00_baseline_seed_2",
         "notes": "V4Test00 baseline model_seed=2 dry-run only; launch requires explicit approval after registry and metrics checks pass"
+      }
+    },
+    "V4Test00_baseline_epoch_1": {
+      "config_id": "V4Test00_baseline_epoch_1",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4Test00_baseline_epoch_1.yaml",
+        "epochs": "1",
+        "output_dir": "output/heat3d_v4_runs/V4Test00_baseline_epoch_1",
+        "run_name": "V4Test00_baseline_epoch_1",
+        "log_path": "output/heat3d_v4_logs/V4Test00_baseline_epoch_1.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4Test00_baseline_epoch_1",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4Test00_baseline_epoch_1",
+        "save_final_predictions": "false",
+        "save_best_predictions": "false",
+        "final_probe_eval_after_training": "false",
+        "post_training_diagnostics": "false",
+        "run_baseline_comparison": "false",
+        "run_error_bins": "false",
+        "run_condition_diagnostics": "false",
+        "run_summary_diagnostics": "false",
+        "run_field_shape_diagnostics": "false",
+        "notes": "V4Test00 baseline epoch=1 remote launch smoke; prediction export, final-probe, and post-training diagnostics disabled"
       }
     }
   }
