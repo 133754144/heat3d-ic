@@ -193,7 +193,7 @@ def _run_or_print(args: argparse.Namespace, script: str) -> int:
     if args.print_only:
         print(_ssh_command_text(args.host, script))
         return 0
-    return subprocess.call(["ssh", args.host, "bash", "-lc", script])
+    return subprocess.call(["ssh", args.host, "bash", "-lc", shlex.quote(script)])
 
 
 def _ssh_command_text(host: str, script: str) -> str:

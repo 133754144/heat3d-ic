@@ -104,6 +104,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate rigno
 python --version
 nvidia-smi
+python -c "import jax; print(jax.devices())"
 df -h .
 pgrep -af "python|train_heat3d|heat3d_v" || true
 tmux ls || true
@@ -117,6 +118,9 @@ Rules:
 - In non-interactive SSH commands, source `conda.sh` before `conda activate
   rigno` if `conda` is not already available.
 - Do not use `set -u` around conda activation.
+- On WSL-backed remotes, `nvidia-smi` may be absent from `PATH` even when CUDA
+  is usable. Treat `nvidia-smi: command not found` as a warning only if the
+  activated environment can see a CUDA device through `jax.devices()`.
 - Do not start a new run if an active Heat3D training process is already using
   the target machine unless the user explicitly approves concurrent training.
 - Confirm branch and HEAD before trusting remote output.
