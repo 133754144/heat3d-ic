@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Prepare Heat3D V4 inherited YAML and dry-run command plans.
+
+Preparation is registry-driven. This script writes mirror/generated files from
+the authoritative JSON registry, then calls the independent registry checker
+before printing any dry-run command plan.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from check_heat3d_v4_registry import (  # noqa: E402
+    DEFAULT_REGISTRY,
+    build_inherited_yaml,
+    check_registry,
+    load_registry,
+    registry_rows,
+    resolve_inherited_yaml,
+    write_csv_mirror,
+    write_generated_yaml,
+)
+from rigno.heat3d_v2_runner_command import (  # noqa: E402
+    build_v2_command_plan,
+    summarize_command_plan,
+)
+
+
+def main() -> int:
+    args = _parse_args()
+    registry_path = _repo_path(args.registry)
+    registry = load_registry(registry_path)
+    rows = _filter_rows(registry_rows(registry), args.config_id)
+
+    if args.write_csv_mirror:
+        mirror_path = _repo_path(registry["csv_mirror_path"])
+        write_csv_mirror(mirror_path, registry_rows(registry))
+        print(f"wrote CSV audit mirror: {_relative_to_repo(mirror_path)}")
+
+    if args.write_yaml:
+        for row in rows:
+            path = write_generated_yaml(row)
+            print(f"wrote inherited YAML: {_relative_to_repo(path)}")
+
+    # Required gate: prepare must not bypass the independent checker.
+    check_registry(registry_path)
+    print("registry checker passed")
+
+    if args.dry_run:
+        for row in rows:
+            inherited = build_inherited_yaml(row)
+            generated_path = _repo_path(row["generated_yaml"])
+            resolved = resolve_inherited_yaml(inherited, generated_path)
+            plan = build_v2_command_plan(
+                resolved, python_executable=args.python_executable
+            )
+            print(f"config_id: {row['config_id']}")
+            print(f"generated_yaml: {row['generated_yaml']}")
+            print(summarize_command_plan(plan))
+
+    print(f"prepared registry rows: {len(rows)}")
+    return 0
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--registry", default=str(DEFAULT_REGISTRY))
+    parser.add_argument("--config-id", action="append")
+    parser.add_argument("--write-yaml", action="store_true")
+    parser.add_argument("--write-csv-mirror", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--python-executable", default="python3")
+    return parser.parse_args()
+
+
+def _filter_rows(
+    rows: list[dict[str, str]], config_ids: list[str] | None
+) -> list[dict[str, str]]:
+    if not config_ids:
+        return rows
+    wanted = set(config_ids)
+    selected = [row for row in rows if row["config_id"] in wanted]
+    missing = sorted(wanted - {row["config_id"] for row in selected})
+    if missing:
+        raise ValueError(f"missing config_id(s): {', '.join(missing)}")
+    return selected
+
+
+def _repo_path(path_value: str | Path) -> Path:
+    path = Path(path_value)
+    if path.is_absolute():
+        return path
+    return REPO_ROOT / path
+
+
+def _relative_to_repo(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
