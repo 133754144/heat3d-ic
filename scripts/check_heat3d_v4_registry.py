@@ -28,6 +28,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from rigno.heat3d_v2_config import load_v2_config, validate_v2_config  # noqa: E402
+from rigno.heat3d_v2_runner_command import build_v2_command_plan  # noqa: E402
 
 
 REGISTRY_SCHEMA_VERSION = "heat3d_v4_run_registry_v0"
@@ -51,6 +52,12 @@ CSV_FIELDNAMES = (
     "batch_plan",
     "optimizer",
     "lr",
+    "model_seed",
+    "batch_order_seed",
+    "graph_seed",
+    "seed",
+    "multi_seed",
+    "batch_build_seed",
     "lr_schedule",
     "warmup_epochs",
     "min_lr",
@@ -87,6 +94,12 @@ EXPECTED_V4_BASELINE = {
     "batch_plan": "sample_shuffle",
     "optimizer": "adamw",
     "lr": "0.0005",
+    "model_seed": "0",
+    "batch_order_seed": "0",
+    "graph_seed": "0",
+    "seed": "0",
+    "multi_seed": "[]",
+    "batch_build_seed": "0",
     "lr_schedule": "warmup_cosine",
     "warmup_epochs": "10",
     "min_lr": "0.00005",
@@ -99,12 +112,6 @@ EXPECTED_V4_BASELINE = {
     "dry_run_required": "true",
     "launch_policy": "explicit_user_instruction_only",
 }
-UNMAPPED_RUNNER_CONTROL_FIELDS = (
-    "dry_run_required",
-    "launch_policy",
-    "log_path",
-    "notes",
-)
 
 
 def main() -> int:
@@ -242,18 +249,42 @@ def runner_control_warnings(rows: list[dict[str, str]]) -> list[str]:
     baseline = next((row for row in rows if row["config_id"] == "V4_baseline"), None)
     if baseline is None:
         return []
+    baseline_config = _resolved_config_from_row(baseline)
+    baseline_unmapped = _runner_unmapped_field_reasons(baseline_config)
     warnings: list[str] = []
     for row in rows:
         if row["config_id"] == "V4_baseline":
             continue
-        for field in UNMAPPED_RUNNER_CONTROL_FIELDS:
-            if row.get(field) != baseline.get(field):
+        config = _resolved_config_from_row(row)
+        unmapped = _runner_unmapped_field_reasons(config)
+        for field in sorted(set(baseline_unmapped) | set(unmapped)):
+            actual = _get_dotted(config, field)
+            expected = _get_dotted(baseline_config, field)
+            if actual != expected:
+                reason = unmapped.get(field) or baseline_unmapped.get(field)
                 warnings.append(
-                    f"{row['config_id']}: {field} differs from V4_baseline; "
-                    "checker does not map this runner-control field into the "
-                    "executable config"
+                    f"{row['config_id']}: {field} differs from V4_baseline "
+                    f"({expected!r} -> {actual!r}); V2 runner reports this "
+                    f"field as unmapped: {reason}"
                 )
     return warnings
+
+
+def _resolved_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
+    return resolve_inherited_yaml(
+        build_inherited_yaml(row), _repo_path(row["generated_yaml"])
+    )
+
+
+def _runner_unmapped_field_reasons(config: Mapping[str, Any]) -> dict[str, str]:
+    plan = build_v2_command_plan(config)
+    reasons: dict[str, str] = {}
+    for entry in plan.get("unmapped_fields", []):
+        field = entry.get("field")
+        reason = entry.get("reason")
+        if isinstance(field, str) and isinstance(reason, str):
+            reasons[field] = reason
+    return reasons
 
 
 def _resolve_registry_row(
@@ -344,11 +375,17 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "run.batch_plan": "sample_shuffle",
             "optimizer.name": "adamw",
             "optimizer.lr": 0.0005,
+            "optimizer.model_seed": 0,
+            "optimizer.batch_order_seed": 0,
+            "optimizer.graph_seed": 0,
+            "optimizer.seed": 0,
+            "optimizer.multi_seed": [],
             "optimizer.lr_schedule": "warmup_cosine",
             "optimizer.warmup_epochs": 10,
             "optimizer.min_lr": 0.00005,
             "optimizer.weight_decay": 0.0001,
             "run.epochs": 600,
+            "run.batch_build_seed": 0,
             "graph.radius_policy": "discrete_physical_coverage",
             "graph.coverage_repair_policy": "none",
             "loss.mode": "mse",
@@ -378,6 +415,11 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
         "optimizer": {
             "name": row["optimizer"],
             "lr": _float(row, "lr"),
+            "model_seed": _int(row, "model_seed"),
+            "batch_order_seed": _int(row, "batch_order_seed"),
+            "graph_seed": _int(row, "graph_seed"),
+            "seed": _int(row, "seed"),
+            "multi_seed": _json_list(row, "multi_seed"),
             "lr_schedule": row["lr_schedule"],
             "warmup_epochs": _int(row, "warmup_epochs"),
             "min_lr": _float(row, "min_lr"),
@@ -390,6 +432,7 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "validation_batch_size": _int(row, "validation_batch_size"),
             "prediction_batch_size": _int(row, "prediction_batch_size"),
             "batch_plan": row["batch_plan"],
+            "batch_build_seed": _int(row, "batch_build_seed"),
             "final_probe_output_dir": row["final_probe_output_dir"],
             "post_training_diagnostics_output_dir": row[
                 "post_training_diagnostics_output_dir"
@@ -441,9 +484,15 @@ def _assert_registry_matches_resolved(
         "run.validation_batch_size": _int(row, "validation_batch_size"),
         "run.prediction_batch_size": _int(row, "prediction_batch_size"),
         "run.batch_plan": row["batch_plan"],
+        "run.batch_build_seed": _int(row, "batch_build_seed"),
         "run.epochs": _int(row, "epochs"),
         "optimizer.name": row["optimizer"],
         "optimizer.lr": _float(row, "lr"),
+        "optimizer.model_seed": _int(row, "model_seed"),
+        "optimizer.batch_order_seed": _int(row, "batch_order_seed"),
+        "optimizer.graph_seed": _int(row, "graph_seed"),
+        "optimizer.seed": _int(row, "seed"),
+        "optimizer.multi_seed": _json_list(row, "multi_seed"),
         "optimizer.lr_schedule": row["lr_schedule"],
         "optimizer.warmup_epochs": _int(row, "warmup_epochs"),
         "optimizer.min_lr": _float(row, "min_lr"),
@@ -512,6 +561,8 @@ def _relative_path(path: Path, start: Path) -> str:
 def _stringify(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
+    if isinstance(value, list):
+        return json.dumps(value, separators=(",", ":"))
     if value is None:
         return ""
     return str(value)
@@ -523,6 +574,13 @@ def _int(row: Mapping[str, str], key: str) -> int:
 
 def _float(row: Mapping[str, str], key: str) -> float:
     return float(row[key])
+
+
+def _json_list(row: Mapping[str, str], key: str) -> list[Any]:
+    value = json.loads(row[key])
+    if not isinstance(value, list):
+        raise ValueError(f"{key} must be a JSON array")
+    return value
 
 
 def _get_dotted(config: Mapping[str, Any], dotted: str) -> Any:

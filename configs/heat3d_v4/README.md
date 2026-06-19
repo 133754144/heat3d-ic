@@ -7,6 +7,9 @@ readiness tasks.
 `baseline` plus per-run `overrides`; `runs.*` must not repeat full rows.
 `run_registry.csv` is the only CSV file and is a resolved audit mirror generated
 from the JSON registry. Do not add compact CSV variants.
+Overrides may only use resolved CSV column names. To add another controlled
+field, first extend the resolved audit CSV columns and checker; do not add
+arbitrary dotted YAML overrides.
 
 Workflow:
 
