@@ -109,7 +109,11 @@ def _remote_check_script(args: argparse.Namespace) -> str:
             f"source {conda_sh}",
             f"conda activate {env}",
             "python --version",
-            "nvidia-smi",
+            (
+                "command -v nvidia-smi >/dev/null && nvidia-smi || "
+                "echo 'nvidia-smi not in PATH; rely on jax.devices()'"
+            ),
+            "python -c \"import jax; print(jax.devices())\"",
             "df -h .",
             "pgrep -af \"python|train_heat3d|heat3d_v\" || true",
             "tmux ls || true",

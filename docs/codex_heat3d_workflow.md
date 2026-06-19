@@ -59,6 +59,17 @@ and report any mismatch before changing files or launching remote work.
 | `WF-SYNC` | WSL2/devbox result synchronization without overwriting existing artifacts |
 | `WF-REPORT` | standard final answer format |
 
+## V4 Skills
+
+- `heat3d-v4-yaml-registry`: prepare registry/YAML, regenerate CSV/YAML, dry-run,
+  and checker; no launch.
+- `heat3d-v4-remote-run` (`skills/heat3d-v4-remote-run`): after explicit launch
+  approval, get `config_id`, push local changes, remote pull, tmux launch, and
+  return log monitor commands.
+- `heat3d-v4-result-collector` (`skills/heat3d-v4-result-collector`): read
+  `loss_summary.json` and related payloads, then update only CSV `result_*`
+  columns.
+
 ## WF-STATUS: Local Git And Artifact Hygiene
 
 Run this at the start and end of any non-trivial Heat3D task.
@@ -103,8 +114,8 @@ git status --short
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate rigno
 python --version
-nvidia-smi
 python -c "import jax; print(jax.devices())"
+command -v nvidia-smi >/dev/null && nvidia-smi || echo "nvidia-smi not in PATH"
 df -h .
 pgrep -af "python|train_heat3d|heat3d_v" || true
 tmux ls || true
@@ -118,9 +129,8 @@ Rules:
 - In non-interactive SSH commands, source `conda.sh` before `conda activate
   rigno` if `conda` is not already available.
 - Do not use `set -u` around conda activation.
-- On WSL-backed remotes, `nvidia-smi` may be absent from `PATH` even when CUDA
-  is usable. Treat `nvidia-smi: command not found` as a warning only if the
-  activated environment can see a CUDA device through `jax.devices()`.
+- `nvidia-smi` is optional on WSL-backed remotes; CUDA usability is checked by
+  `jax.devices()` after activating `rigno`.
 - Do not start a new run if an active Heat3D training process is already using
   the target machine unless the user explicitly approves concurrent training.
 - Confirm branch and HEAD before trusting remote output.
@@ -217,54 +227,19 @@ Rules:
 
 Use this only after explicit user approval to start training.
 
-Standard launch shape:
+Prefer `$heat3d-v4-remote-run` and the tracked helper:
 
 ```bash
-ssh devbox
-cd ~/myCodeGitOnly/heat3d-ic
-git fetch origin
-git checkout research/v4
-git pull --ff-only origin research/v4
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate rigno
-
-CONFIG=<tracked config path>
-OUT=<expected output dir>
-LOG=<log path under output/>
-test -f "$CONFIG"
-test ! -e "$OUT"
-tmux new -s <short_run_name>
-```
-
-Inside tmux:
-
-```bash
-export XLA_PYTHON_CLIENT_PREALLOCATE=false
-python - <<'PY' 2>&1 | tee "$LOG"
-from pathlib import Path
-import shlex
-import subprocess
-import sys
-from rigno.heat3d_v2_config import load_v2_config
-from rigno.heat3d_v2_runner_command import build_training_command
-
-config_path = Path("<tracked config path>")
-cmd = build_training_command(load_v2_config(config_path), python_executable="python")
-print(shlex.join(cmd), flush=True)
-sys.exit(subprocess.call(cmd))
-PY
-```
-
-Monitoring:
-
-```bash
-tail -f <log path>
-grep -E "epoch|valid_base|stress_base|best|checkpoint|final probe|diagnostics|OOM|RESOURCE_EXHAUSTED" <log path> | tail -n 100
+python3 -B scripts/heat3d_v4_remote_run.py --host devbox check
+python3 -B scripts/heat3d_v4_remote_run.py --host devbox launch --config-id <config_id>
+python3 -B scripts/heat3d_v4_remote_run.py --host devbox monitor --config-id <config_id>
 ```
 
 Rules:
 
 - Do not start training from Mac local unless the user explicitly asks.
+- Commit and push local config/script changes before launch; the helper performs
+  remote `git fetch`, checkout, and `git pull --ff-only`.
 - Prefer one active long run per machine unless the user approves otherwise.
 - If a run fails, capture the failing log tail and stop; do not silently launch
   a replacement run.
