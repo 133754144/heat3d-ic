@@ -76,6 +76,15 @@ CSV_FIELDNAMES = (
     "launch_policy",
     "notes",
 )
+UNIQUE_RESOLVED_FIELDS = (
+    "config_id",
+    "generated_yaml",
+    "output_dir",
+    "run_name",
+    "log_path",
+    "final_probe_output_dir",
+    "post_training_diagnostics_output_dir",
+)
 EXPECTED_V4_BASELINE = {
     "config_id": "V4_baseline",
     "phase": "v4",
@@ -202,6 +211,7 @@ def registry_rows(registry: Mapping[str, Any]) -> list[dict[str, str]]:
             raise ValueError(f"duplicate config_id {config_id!r}")
         seen.add(config_id)
         rows.append(row)
+    _check_unique_resolved_fields(rows)
     return rows
 
 
@@ -322,6 +332,20 @@ def _normalize_resolved_row(
     if not row["config_id"]:
         raise ValueError(f"{context} has empty config_id")
     return row
+
+
+def _check_unique_resolved_fields(rows: list[dict[str, str]]) -> None:
+    for field in UNIQUE_RESOLVED_FIELDS:
+        seen: dict[str, str] = {}
+        for row in rows:
+            value = row[field]
+            prior = seen.get(value)
+            if prior is not None:
+                raise ValueError(
+                    f"registry conflict: {field} {value!r} is used by "
+                    f"{prior!r} and {row['config_id']!r}"
+                )
+            seen[value] = row["config_id"]
 
 
 def _check_csv_mirror(

@@ -1,0 +1,22 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4Test00_baseline_seed_0
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4Test00_baseline_seed_0; standard task coords+k(x)+q(x)+BC->T(x);
+    generated from V4_base.yaml.
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4Test00_baseline_seed_0
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4Test00_baseline_seed_0
+  export:
+    output_dir: output/heat3d_v4_runs/V4Test00_baseline_seed_0
+    run_name: V4Test00_baseline_seed_0
+  metadata:
+    registry_config_id: V4Test00_baseline_seed_0
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4Test00_baseline_seed_0
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4Test00_baseline_seed_0.log
+    notes: V4Test00 baseline model_seed=0 dry-run only; remote scripts and metric
+      unification remain P0 follow-up
