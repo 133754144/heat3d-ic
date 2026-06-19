@@ -38,7 +38,7 @@ DEFAULT_METRICS_PROFILE = "v4_metrics_v0"
 DEFAULT_METRICS_CONTRACT = "configs/heat3d_v4/metrics_v0.json"
 DEFAULT_SELECTION_METRIC = "valid_base_mse"
 DEFAULT_REGISTRY = Path("configs/heat3d_v4/v4_run_registry.json")
-CSV_FIELDNAMES = (
+CONFIG_FIELDNAMES = (
     "config_id",
     "phase",
     "status",
@@ -82,6 +82,24 @@ CSV_FIELDNAMES = (
     "launch_policy",
     "notes",
 )
+RESULT_FIELDNAMES = (
+    "result_status",
+    "result_source",
+    "result_updated_at",
+    "result_commit",
+    "result_run_dir",
+    "result_log_path",
+    "result_loss_summary",
+    "result_params_best",
+    "result_params_final",
+    "result_best_epoch",
+    "result_best_valid_base_mse",
+    "result_final_valid_base_mse",
+    "result_final_probe_status",
+    "result_post_training_diagnostics_status",
+    "result_notes",
+)
+CSV_FIELDNAMES = CONFIG_FIELDNAMES + RESULT_FIELDNAMES
 UNIQUE_RESOLVED_FIELDS = (
     "config_id",
     "generated_yaml",
@@ -225,13 +243,19 @@ def registry_rows(registry: Mapping[str, Any]) -> list[dict[str, str]]:
 
 
 def write_csv_mirror(path: Path, rows: list[dict[str, str]]) -> None:
+    existing_results = _read_existing_result_fields(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as file:
         writer = csv.DictWriter(
             file, fieldnames=list(CSV_FIELDNAMES), lineterminator="\n"
         )
         writer.writeheader()
-        writer.writerows(rows)
+        for row in rows:
+            output_row = dict(row)
+            output_row.update(existing_results.get(row["config_id"], {}))
+            for field in RESULT_FIELDNAMES:
+                output_row.setdefault(field, "")
+            writer.writerow(output_row)
 
 
 def build_inherited_yaml(row: Mapping[str, str]) -> dict[str, Any]:
@@ -314,7 +338,7 @@ def _resolve_registry_row(
             f"registry run {config_id!r} overrides must not contain config_id; "
             "use the run key instead"
         )
-    extra = sorted(set(overrides) - set(CSV_FIELDNAMES))
+    extra = sorted(set(overrides) - set(CONFIG_FIELDNAMES))
     if extra:
         raise ValueError(
             f"registry run {config_id!r} overrides unsupported fields: "
@@ -331,13 +355,13 @@ def _resolve_registry_row(
 def _normalize_resolved_row(
     raw_row: Mapping[str, Any], *, context: str
 ) -> dict[str, str]:
-    missing = [field for field in CSV_FIELDNAMES if field not in raw_row]
+    missing = [field for field in CONFIG_FIELDNAMES if field not in raw_row]
     if missing:
         raise ValueError(f"{context} missing fields: {', '.join(missing)}")
-    extra = sorted(set(raw_row) - set(CSV_FIELDNAMES))
+    extra = sorted(set(raw_row) - set(CONFIG_FIELDNAMES))
     if extra:
         raise ValueError(f"{context} has unsupported fields: {', '.join(extra)}")
-    row = {field: _stringify(raw_row[field]) for field in CSV_FIELDNAMES}
+    row = {field: _stringify(raw_row[field]) for field in CONFIG_FIELDNAMES}
     if not row["config_id"]:
         raise ValueError(f"{context} has empty config_id")
     return row
@@ -366,10 +390,41 @@ def _check_csv_mirror(
         if tuple(reader.fieldnames or ()) != CSV_FIELDNAMES:
             raise AssertionError(f"{mirror_path}: CSV mirror header mismatch")
         csv_rows = list(reader)
-    if csv_rows != rows:
+    csv_config_rows = [
+        {field: row.get(field, "") for field in CONFIG_FIELDNAMES}
+        for row in csv_rows
+    ]
+    if csv_config_rows != rows:
         raise AssertionError(
-            f"{mirror_path}: CSV audit mirror differs from authoritative JSON"
+            f"{mirror_path}: CSV configuration fields differ from "
+            "authoritative JSON"
         )
+    for row in csv_rows:
+        missing_result_fields = [
+            field for field in RESULT_FIELDNAMES if field not in row
+        ]
+        if missing_result_fields:
+            raise AssertionError(
+                f"{mirror_path}: CSV result fields missing: "
+                f"{', '.join(missing_result_fields)}"
+            )
+
+
+def _read_existing_result_fields(path: Path) -> dict[str, dict[str, str]]:
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8", newline="") as file:
+        reader = csv.DictReader(file)
+        rows = list(reader)
+    results: dict[str, dict[str, str]] = {}
+    for row in rows:
+        config_id = row.get("config_id")
+        if not config_id:
+            continue
+        results[config_id] = {
+            field: row.get(field, "") for field in RESULT_FIELDNAMES
+        }
+    return results
 
 
 def _check_generated_yaml(row: Mapping[str, str]) -> None:

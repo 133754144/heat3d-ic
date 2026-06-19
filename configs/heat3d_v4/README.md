@@ -6,12 +6,19 @@ readiness tasks.
 `v4_run_registry.json` is the authoritative registry. It stores one resolved
 `baseline` plus per-run `overrides`; `runs.*` must not repeat full rows.
 `run_registry.csv` is the only CSV file and is a resolved audit mirror generated
-from the JSON registry. Do not add compact CSV variants.
+from the JSON registry. Do not add compact CSV variants. The CSV is split into
+configuration fields first and result fields last.
 `metrics_v0.json` is the V4 metrics contract referenced by the registry through
 `metrics_profile` and `metrics_contract`.
-Overrides may only use resolved CSV column names. To add another controlled
-field, first extend the resolved audit CSV columns and checker; do not add
-arbitrary dotted YAML overrides.
+Overrides may only use resolved configuration column names. To add another
+controlled field, first extend the resolved audit CSV configuration columns and
+checker; do not add arbitrary dotted YAML overrides.
+
+Result fields are CSV-only audit fields that are filled after training or
+post-run review. `prepare_heat3d_v4_run.py` preserves existing result values
+when regenerating the CSV mirror and leaves result fields blank for newly added
+configs. `check_heat3d_v4_registry.py` requires result columns to exist but does
+not treat blank result values as errors.
 
 Workflow:
 
