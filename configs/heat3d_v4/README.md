@@ -19,6 +19,10 @@ The registry/CSV configuration fields also include provenance fields:
 `feature_manifest_hash`. These are audit metadata written to generated YAML
 `metadata`; they do not add runner controls. `feature_manifest_hash` may remain
 `planned` until a real manifest hash writer exists.
+For V4 semantic-normalization ablations, `condition_feature_transform` is also
+mirrored into `dataset.condition_feature_transform` and passed to the V4 runner.
+Supported semantic ablations are BC flags only, q only, k only, and full
+semantic v1.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.

@@ -42,6 +42,14 @@ RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
 NORMALIZATION_PROFILES = {"legacy_zscore", "semantic_normalization_v1"}
+CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
+CONDITION_FEATURE_TRANSFORMS = {
+    CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
+    "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars",
+    "semantic_v1_bc_flags_binary_passthrough_only",
+    "semantic_v1_q_signedlog1p_only",
+    "semantic_v1_k_log_only",
+}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -304,6 +312,31 @@ def _validate_run_config(
             f"{label}: field 'dataset.normalization_profile' must be one of "
             f"{sorted(NORMALIZATION_PROFILES)}, got {normalization_profile!r}"
         )
+    condition_feature_transform = dataset.get("condition_feature_transform")
+    if condition_feature_transform is not None:
+        if condition_feature_transform not in CONDITION_FEATURE_TRANSFORMS:
+            raise ValueError(
+                f"{label}: field 'dataset.condition_feature_transform' must be "
+                f"one of {sorted(CONDITION_FEATURE_TRANSFORMS)}, got "
+                f"{condition_feature_transform!r}"
+            )
+        if (
+            normalization_profile in {None, "legacy_zscore"}
+            and condition_feature_transform != CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+        ):
+            raise ValueError(
+                f"{label}: legacy_zscore requires "
+                "dataset.condition_feature_transform="
+                f"{CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE!r}"
+            )
+        if (
+            normalization_profile == "semantic_normalization_v1"
+            and condition_feature_transform == CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+        ):
+            raise ValueError(
+                f"{label}: semantic_normalization_v1 requires a semantic "
+                "dataset.condition_feature_transform"
+            )
     split_map_path = dataset.get("split_map_path")
     if split_map_path is not None:
         if not isinstance(split_map_path, str) or not split_map_path:

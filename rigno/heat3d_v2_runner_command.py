@@ -23,6 +23,22 @@ NORMALIZATION_PROFILES = {
     NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     NORMALIZATION_PROFILE_SEMANTIC_V1,
 }
+CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL = (
+    "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
+)
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY = (
+    "semantic_v1_bc_flags_binary_passthrough_only"
+)
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY = "semantic_v1_q_signedlog1p_only"
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY = "semantic_v1_k_log_only"
+CONDITION_FEATURE_TRANSFORMS = {
+    CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY,
+}
 DEFAULT_MEDIUM1024_GAPA_SPLIT_MAP = (
     "configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json"
 )
@@ -58,9 +74,15 @@ def build_training_command(
     graph = graph_section if isinstance(graph_section, Mapping) else {}
 
     normalization_profile = _normalization_profile(config)
+    condition_feature_transform = _condition_feature_transform(config)
     command = [python_executable, _training_script_for_profile(normalization_profile)]
     if normalization_profile == NORMALIZATION_PROFILE_SEMANTIC_V1:
         _append_option(command, "--normalization-profile", normalization_profile)
+        _append_option(
+            command,
+            "--condition-feature-transform",
+            condition_feature_transform,
+        )
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
     if dataset.get("boundary_mask_fallback") is True:
@@ -408,6 +430,7 @@ def build_v2_command_plan(
             config, python_executable=python_executable
         ),
         "normalization_profile": _normalization_profile(config),
+        "condition_feature_transform": _condition_feature_transform(config),
         "training_script": _training_script_for_profile(_normalization_profile(config)),
         "diagnostics_commands": [],
         "mapped_fields": _mapped_fields(config),
@@ -496,6 +519,7 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
         f"config: {plan.get('config_name')}",
         f"role: {plan.get('config_role')}",
         f"normalization_profile: {plan.get('normalization_profile')}",
+        f"condition_feature_transform: {plan.get('condition_feature_transform')}",
         f"training_script: {plan.get('training_script')}",
         f"training: {shlex.join(plan['training_command'])}",
     ]
@@ -528,6 +552,7 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("dataset.subset_path", "training --subset"),
         ("dataset.boundary_mask_fallback", "training --boundary-mask-fallback/--no-boundary-mask-fallback"),
         ("dataset.normalization_profile", "training script selection and optional --normalization-profile"),
+        ("dataset.condition_feature_transform", "V4 training --condition-feature-transform"),
         ("model.node_latent_size", "training --node-latent-size"),
         ("model.edge_latent_size", "training --edge-latent-size"),
         ("model.processor_steps", "training --processor-steps"),
@@ -729,6 +754,39 @@ def _normalization_profile(config: Mapping[str, Any]) -> str:
             f"got {profile!r}"
         )
     return str(profile)
+
+
+def _condition_feature_transform(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    profile = _normalization_profile(config)
+    default = (
+        CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL
+        if profile == NORMALIZATION_PROFILE_SEMANTIC_V1
+        else CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+    )
+    transform = dataset.get("condition_feature_transform") or default
+    if transform not in CONDITION_FEATURE_TRANSFORMS:
+        raise ValueError(
+            "dataset.condition_feature_transform must be one of "
+            f"{sorted(CONDITION_FEATURE_TRANSFORMS)}, got {transform!r}"
+        )
+    if (
+        profile == NORMALIZATION_PROFILE_LEGACY_ZSCORE
+        and transform != CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+    ):
+        raise ValueError(
+            "legacy_zscore requires dataset.condition_feature_transform="
+            f"{CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE!r}"
+        )
+    if (
+        profile == NORMALIZATION_PROFILE_SEMANTIC_V1
+        and transform == CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+    ):
+        raise ValueError(
+            "semantic_normalization_v1 requires a semantic "
+            f"condition_feature_transform, got {transform!r}"
+        )
+    return str(transform)
 
 
 def _training_script_for_profile(normalization_profile: str) -> str:

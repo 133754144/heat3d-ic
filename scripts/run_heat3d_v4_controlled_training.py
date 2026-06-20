@@ -20,7 +20,11 @@ for path in (REPO_DIR, SCRIPTS_DIR):
         sys.path.insert(0, str(path))
 
 import run_heat3d_v1_medium_controlled_training_export as legacy_runner  # noqa: E402
-from rigno.heat3d_v1_normalization import training_normalization_stats  # noqa: E402
+from rigno.heat3d_v1_normalization import (  # noqa: E402
+    CONDITION_FEATURE_TRANSFORMS,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+    training_normalization_stats,
+)
 from rigno.heat3d_v1_training_semantics import (  # noqa: E402
     NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     NORMALIZATION_PROFILE_SEMANTIC_V1,
@@ -29,16 +33,27 @@ from rigno.heat3d_v1_training_semantics import (  # noqa: E402
 
 
 DEFAULT_NORMALIZATION_PROFILE = NORMALIZATION_PROFILE_SEMANTIC_V1
+DEFAULT_CONDITION_FEATURE_TRANSFORM = CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL
 
 
 def main() -> int:
-    profile = _pop_normalization_profile(sys.argv, default=DEFAULT_NORMALIZATION_PROFILE)
-    _install_profile_hooks(profile)
+    profile, condition_feature_transform = _pop_v4_profile_args(
+        sys.argv,
+        default_profile=DEFAULT_NORMALIZATION_PROFILE,
+        default_condition_feature_transform=DEFAULT_CONDITION_FEATURE_TRANSFORM,
+    )
+    _install_profile_hooks(profile, condition_feature_transform)
     return legacy_runner.main()
 
 
-def _pop_normalization_profile(argv: list[str], *, default: str) -> str:
-    profile = default
+def _pop_v4_profile_args(
+    argv: list[str],
+    *,
+    default_profile: str,
+    default_condition_feature_transform: str,
+) -> tuple[str, str]:
+    profile = default_profile
+    condition_feature_transform = default_condition_feature_transform
     cleaned = [argv[0]]
     index = 1
     while index < len(argv):
@@ -53,6 +68,16 @@ def _pop_normalization_profile(argv: list[str], *, default: str) -> str:
             profile = arg.split("=", 1)[1]
             index += 1
             continue
+        if arg == "--condition-feature-transform":
+            if index + 1 >= len(argv):
+                raise ValueError("--condition-feature-transform requires a value")
+            condition_feature_transform = argv[index + 1]
+            index += 2
+            continue
+        if arg.startswith("--condition-feature-transform="):
+            condition_feature_transform = arg.split("=", 1)[1]
+            index += 1
+            continue
         cleaned.append(arg)
         index += 1
 
@@ -61,16 +86,25 @@ def _pop_normalization_profile(argv: list[str], *, default: str) -> str:
             f"--normalization-profile must be one of {NORMALIZATION_PROFILES}, "
             f"found {profile!r}"
         )
+    if condition_feature_transform not in CONDITION_FEATURE_TRANSFORMS:
+        raise ValueError(
+            "--condition-feature-transform must be one of "
+            f"{CONDITION_FEATURE_TRANSFORMS}, found {condition_feature_transform!r}"
+        )
     argv[:] = cleaned
-    return profile
+    return profile, condition_feature_transform
 
 
-def _install_profile_hooks(profile: str) -> None:
+def _install_profile_hooks(profile: str, condition_feature_transform: str) -> None:
     if profile == NORMALIZATION_PROFILE_LEGACY_ZSCORE:
         return
 
     def _train_only_stats(examples: list[Any]) -> dict[str, Any]:
-        return training_normalization_stats(examples, normalization_profile=profile)
+        return training_normalization_stats(
+            examples,
+            normalization_profile=profile,
+            condition_feature_transform=condition_feature_transform,
+        )
 
     original_stats_payload = legacy_runner._stats_payload
     original_checkpoint_run_metadata = legacy_runner._checkpoint_run_metadata
@@ -79,6 +113,9 @@ def _install_profile_hooks(profile: str) -> None:
     def _stats_payload(stats: dict[str, Any]) -> dict[str, Any]:
         payload = original_stats_payload(stats)
         payload["normalization_profile"] = stats.get("normalization_profile", profile)
+        payload["condition_feature_transform"] = stats.get(
+            "condition_feature_transform", condition_feature_transform
+        )
         payload["condition_feature_transforms"] = list(
             stats.get("condition_feature_transforms", ())
         )
@@ -97,6 +134,7 @@ def _install_profile_hooks(profile: str) -> None:
     def _checkpoint_run_metadata(**kwargs: Any) -> dict[str, Any]:
         payload = original_checkpoint_run_metadata(**kwargs)
         payload["normalization_profile"] = profile
+        payload["condition_feature_transform"] = condition_feature_transform
         payload["runner"] = "scripts/run_heat3d_v4_controlled_training.py"
         return payload
 
@@ -104,6 +142,7 @@ def _install_profile_hooks(profile: str) -> None:
         if path.name in {"run_config.json", "loss_summary.json"}:
             payload = dict(payload)
             payload.setdefault("normalization_profile", profile)
+            payload.setdefault("condition_feature_transform", condition_feature_transform)
             payload.setdefault("runner", "scripts/run_heat3d_v4_controlled_training.py")
         original_write_json(path, payload)
 

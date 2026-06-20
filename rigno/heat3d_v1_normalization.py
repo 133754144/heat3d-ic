@@ -36,6 +36,28 @@ TRANSFORM_SIGNED_LOG1P_Q_ZSCORE = "signed_log1p_q_zscore"
 TRANSFORM_BINARY_PASSTHROUGH = "binary_passthrough"
 TRANSFORM_TOP_H_ZSCORE = "top_h_independent_zscore"
 TRANSFORM_RELATIVE_BC_TEMPERATURE_ZSCORE = "relative_bc_temperature_zscore"
+CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL = (
+    "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
+)
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY = (
+    "semantic_v1_bc_flags_binary_passthrough_only"
+)
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY = "semantic_v1_q_signedlog1p_only"
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY = "semantic_v1_k_log_only"
+CONDITION_FEATURE_TRANSFORMS = (
+    CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY,
+)
+SEMANTIC_CONDITION_FEATURE_TRANSFORMS = (
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY,
+)
 
 
 def safe_stats(array: np.ndarray, eps: float = LEGACY_ZSCORE_EPS) -> tuple[np.ndarray, np.ndarray]:
@@ -80,6 +102,7 @@ def legacy_train_only_stats(
     coord_span = np.where((coord_max - coord_min) < eps, 1.0, coord_max - coord_min)
     return {
         "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+        "condition_feature_transform": CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
         "feature_names": tuple(feature_names or ()),
         "condition_feature_transforms": tuple(
             TRANSFORM_LINEAR_ZSCORE for _ in tuple(feature_names or ())
@@ -96,11 +119,16 @@ def legacy_train_only_stats(
 def semantic_normalization_v1_train_only_stats(
     examples: list[Any],
     *,
+    condition_feature_transform: str = CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
     bridge_fn: Callable[[Any], Any] = build_legacy_zero_delta_bridge,
     eps: float = LEGACY_ZSCORE_EPS,
 ) -> dict[str, Any]:
     """Compute train-only stats for the opt-in semantic normalization profile."""
 
+    _check_condition_feature_transform(
+        condition_feature_transform,
+        normalization_profile=NORMALIZATION_PROFILE_SEMANTIC_V1,
+    )
     c_values = []
     transformed_values = []
     delta_values = []
@@ -113,7 +141,10 @@ def semantic_normalization_v1_train_only_stats(
         names = bridge.condition_feature_names
         if feature_names is None:
             feature_names = names
-            transforms = tuple(_semantic_transform_for_feature(name) for name in names)
+            transforms = tuple(
+                _semantic_transform_for_feature(name, condition_feature_transform)
+                for name in names
+            )
         elif feature_names != names:
             raise ValueError("Relative condition feature-name mismatch in train split")
 
@@ -139,6 +170,7 @@ def semantic_normalization_v1_train_only_stats(
     aspect = np.max(extents, axis=1) / np.maximum(np.min(extents, axis=1), eps)
     return {
         "normalization_profile": NORMALIZATION_PROFILE_SEMANTIC_V1,
+        "condition_feature_transform": condition_feature_transform,
         "feature_names": tuple(feature_names or ()),
         "condition_feature_transforms": tuple(transforms or ()),
         "condition_mean": transformed_mean.reshape(1, 1, 1, -1),
@@ -160,15 +192,27 @@ def training_normalization_stats(
     examples: list[Any],
     *,
     normalization_profile: str = NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+    condition_feature_transform: str | None = None,
     bridge_fn: Callable[[Any], Any] = build_legacy_zero_delta_bridge,
     eps: float = LEGACY_ZSCORE_EPS,
 ) -> dict[str, Any]:
     """Compute train-only stats for a supported Heat3D normalization profile."""
 
     _check_normalization_profile(normalization_profile)
+    transform = _default_condition_feature_transform(
+        normalization_profile, condition_feature_transform
+    )
     if normalization_profile == NORMALIZATION_PROFILE_LEGACY_ZSCORE:
+        _check_condition_feature_transform(
+            transform, normalization_profile=normalization_profile
+        )
         return legacy_train_only_stats(examples, bridge_fn=bridge_fn, eps=eps)
-    return semantic_normalization_v1_train_only_stats(examples, bridge_fn=bridge_fn, eps=eps)
+    return semantic_normalization_v1_train_only_stats(
+        examples,
+        condition_feature_transform=transform,
+        bridge_fn=bridge_fn,
+        eps=eps,
+    )
 
 
 def normalize_coords(coords: Any, stats: dict[str, Any]) -> Any:
@@ -219,22 +263,83 @@ def _check_normalization_profile(normalization_profile: str) -> None:
         )
 
 
+def _default_condition_feature_transform(
+    normalization_profile: str, condition_feature_transform: str | None
+) -> str:
+    if condition_feature_transform:
+        return condition_feature_transform
+    if normalization_profile == NORMALIZATION_PROFILE_SEMANTIC_V1:
+        return CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL
+    return CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+
+
+def _check_condition_feature_transform(
+    condition_feature_transform: str, *, normalization_profile: str
+) -> None:
+    if condition_feature_transform not in CONDITION_FEATURE_TRANSFORMS:
+        raise ValueError(
+            "condition_feature_transform must be one of "
+            f"{CONDITION_FEATURE_TRANSFORMS}, found {condition_feature_transform!r}"
+        )
+    if normalization_profile == NORMALIZATION_PROFILE_LEGACY_ZSCORE:
+        if condition_feature_transform != CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE:
+            raise ValueError(
+                "legacy_zscore requires condition_feature_transform="
+                f"{CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE!r}"
+            )
+        return
+    if condition_feature_transform not in SEMANTIC_CONDITION_FEATURE_TRANSFORMS:
+        raise ValueError(
+            "semantic_normalization_v1 requires a semantic "
+            f"condition_feature_transform, got {condition_feature_transform!r}"
+        )
+
+
 def _stats_profile(stats: dict[str, Any]) -> str:
     profile = stats.get("normalization_profile", NORMALIZATION_PROFILE_LEGACY_ZSCORE)
     _check_normalization_profile(profile)
     return str(profile)
 
 
-def _semantic_transform_for_feature(feature_name: str) -> str:
-    if feature_name in K_FEATURES:
+def _semantic_transform_for_feature(
+    feature_name: str, condition_feature_transform: str
+) -> str:
+    if (
+        condition_feature_transform
+        in {
+            CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+            CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY,
+        }
+        and feature_name in K_FEATURES
+    ):
         return TRANSFORM_LOG_K_ZSCORE
-    if feature_name in Q_FEATURES:
+    if (
+        condition_feature_transform
+        in {
+            CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+            CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY,
+        }
+        and feature_name in Q_FEATURES
+    ):
         return TRANSFORM_SIGNED_LOG1P_Q_ZSCORE
-    if feature_name in BC_FLAG_FEATURES:
+    if (
+        condition_feature_transform
+        in {
+            CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+            CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY,
+        }
+        and feature_name in BC_FLAG_FEATURES
+    ):
         return TRANSFORM_BINARY_PASSTHROUGH
-    if feature_name in TOP_H_FEATURES:
+    if (
+        condition_feature_transform == CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL
+        and feature_name in TOP_H_FEATURES
+    ):
         return TRANSFORM_TOP_H_ZSCORE
-    if feature_name in RELATIVE_BC_TEMPERATURE_FEATURES:
+    if (
+        condition_feature_transform == CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL
+        and feature_name in RELATIVE_BC_TEMPERATURE_FEATURES
+    ):
         return TRANSFORM_RELATIVE_BC_TEMPERATURE_ZSCORE
     return TRANSFORM_LINEAR_ZSCORE
 

@@ -52,6 +52,24 @@ CONDITION_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
 CONDITION_TRANSFORM_SEMANTIC_V1 = (
     "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
 )
+CONDITION_TRANSFORM_SEMANTIC_BC_ONLY = (
+    "semantic_v1_bc_flags_binary_passthrough_only"
+)
+CONDITION_TRANSFORM_SEMANTIC_Q_ONLY = "semantic_v1_q_signedlog1p_only"
+CONDITION_TRANSFORM_SEMANTIC_K_ONLY = "semantic_v1_k_log_only"
+CONDITION_TRANSFORMS = {
+    CONDITION_TRANSFORM_LEGACY_ZSCORE,
+    CONDITION_TRANSFORM_SEMANTIC_V1,
+    CONDITION_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_K_ONLY,
+}
+SEMANTIC_CONDITION_TRANSFORMS = {
+    CONDITION_TRANSFORM_SEMANTIC_V1,
+    CONDITION_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_K_ONLY,
+}
 TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF = (
     "deltaT_norm_to_K_plus_T_ref"
 )
@@ -479,11 +497,9 @@ def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
     profile_expected = {
         NORMALIZATION_PROFILE_LEGACY_ZSCORE: {
             "runner_family": RUNNER_FAMILY_LEGACY_V1,
-            "condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
         },
         NORMALIZATION_PROFILE_SEMANTIC_V1: {
             "runner_family": RUNNER_FAMILY_V4_SEMANTIC,
-            "condition_feature_transform": CONDITION_TRANSFORM_SEMANTIC_V1,
         },
     }
     for field, expected in {
@@ -496,6 +512,23 @@ def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
                 f"normalization_profile={row['normalization_profile']!r}, "
                 f"got {row[field]!r}"
             )
+    transform = row["condition_feature_transform"]
+    if transform not in CONDITION_TRANSFORMS:
+        raise ValueError(
+            f"{context} condition_feature_transform must be one of "
+            f"{sorted(CONDITION_TRANSFORMS)}, got {transform!r}"
+        )
+    if row["normalization_profile"] == NORMALIZATION_PROFILE_LEGACY_ZSCORE:
+        if transform != CONDITION_TRANSFORM_LEGACY_ZSCORE:
+            raise ValueError(
+                f"{context} legacy_zscore requires condition_feature_transform="
+                f"{CONDITION_TRANSFORM_LEGACY_ZSCORE!r}, got {transform!r}"
+            )
+    elif transform not in SEMANTIC_CONDITION_TRANSFORMS:
+        raise ValueError(
+            f"{context} semantic_normalization_v1 requires a semantic "
+            f"condition_feature_transform, got {transform!r}"
+        )
     feature_manifest_hash = row["feature_manifest_hash"]
     if feature_manifest_hash not in {"", FEATURE_MANIFEST_HASH_PLANNED}:
         if len(feature_manifest_hash) < 8:
@@ -616,6 +649,7 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "graph.coverage_repair_policy": "none",
             "loss.mode": "mse",
             "dataset.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+            "dataset.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
             "export.selection_metric": DEFAULT_SELECTION_METRIC,
             "metadata.runner_family": RUNNER_FAMILY_LEGACY_V1,
             "metadata.target_mode": TARGET_MODE_NORMALIZED_DELTAT,
@@ -652,6 +686,7 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
         },
         "dataset": {
             "normalization_profile": row["normalization_profile"],
+            "condition_feature_transform": row["condition_feature_transform"],
         },
         "optimizer": {
             "name": row["optimizer"],
@@ -771,6 +806,7 @@ def _assert_registry_matches_resolved(
         "graph.radius_policy": row["graph_radius_policy"],
         "graph.coverage_repair_policy": row["coverage_repair_policy"],
         "dataset.normalization_profile": row["normalization_profile"],
+        "dataset.condition_feature_transform": row["condition_feature_transform"],
         "loss.mode": row["loss_mode"],
         "export.selection_metric": row["selection_metric"],
         "export.output_dir": row["output_dir"],

@@ -6,6 +6,7 @@ overrides:
     task coords+k(x)+q(x)+BC->T(x); generated from V4_base.yaml.
   dataset:
     normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars
   run:
     final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_01_baseline_normalization
     post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_01_baseline_normalization
