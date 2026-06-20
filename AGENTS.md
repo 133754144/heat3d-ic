@@ -12,3 +12,4 @@
   explicit user request.
 - Do not start training, add config generators, or add result-analysis scripts
   unless the user explicitly asks for that scope.
+- 使用中文回答。
