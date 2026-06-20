@@ -36,18 +36,27 @@ for path in (REPO_DIR, SCRIPTS_DIR):
 
 from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     MODEL_CONFIG,
-    _bridge_for,
     _global_norm,
     _metadata_shape_signature,
     _metrics,
-    _normalize_coords,
     _sample_root,
     _selected_steps,
     _subset_split_ids,
-    _train_only_stats,
 )
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
+from rigno.heat3d_v1_normalization import (  # noqa: E402
+    legacy_train_only_stats as _train_only_stats,
+    normalize_condition,
+    normalize_coords as _normalize_coords,
+    normalize_target_delta,
+    normalized_delta_to_raw as _normalized_delta_to_raw,
+    recover_raw_condition,
+    recover_temperature_from_normalized_delta,
+)
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
+from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    build_legacy_zero_delta_bridge as _bridge_for,
+)
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 from rigno.models.operator import Inputs  # noqa: E402
 
@@ -1890,7 +1899,7 @@ def _group_raw_condition_feature(group: dict, stats: dict, feature_name: str):
     if inputs.c is None:
         return None
     feature_index = feature_names.index(feature_name)
-    raw_c = inputs.c * stats["condition_std"] + stats["condition_mean"]
+    raw_c = recover_raw_condition(inputs.c, stats)
     return raw_c[..., feature_index : feature_index + 1]
 
 
@@ -1907,10 +1916,6 @@ def _samplewise_positive_upper_quantile_mask(values, quantile: float):
     mask = jnp.logical_and(positive, flat >= thresholds)
     mask = jnp.logical_and(mask, counts[:, None] > 0)
     return mask.reshape(values.shape)
-
-
-def _normalized_delta_to_raw(pred_normalized, stats: dict):
-    return pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
 
 
 def _safe_relative_denominator(target_raw, loss_config: dict[str, Any]):
@@ -2207,8 +2212,8 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     shape_ok = True
     for group in groups:
         pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
-        recovered = group["t_ref"] + pred_delta
+        pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
+        recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         n = pred_normalized.shape[0]
         weighted_normalized_loss = weighted_normalized_loss + jnp.mean(
             jnp.square(pred_normalized - group["target_normalized"])
@@ -3404,8 +3409,9 @@ def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dic
     predictions: dict[str, np.ndarray] = {}
     for group in groups:
         pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
-        recovered = np.asarray(group["t_ref"] + pred_delta)
+        recovered = np.asarray(
+            recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
+        )
         if not np.all(np.isfinite(recovered)):
             raise ValueError(f"Non-finite recovered predictions in group {group['name']}")
         for batch_index, sample_id in enumerate(group["sample_ids"]):
@@ -4716,8 +4722,8 @@ def _make_batch_group_with_seed(
     target_delta = jnp.concatenate([bridge.target_delta_u for bridge in bridges], axis=0)
     t_ref = jnp.concatenate([bridge.t_ref for bridge in bridges], axis=0)
 
-    c = (raw_c - stats["condition_mean"]) / stats["condition_std"]
-    target = (target_delta - stats["target_delta_mean"]) / stats["target_delta_std"]
+    c = normalize_condition(raw_c, stats)
+    target = normalize_target_delta(target_delta, stats)
     coords = _normalize_coords(raw_coords, stats)
     inputs = Inputs(u=raw_u, c=c, x_inp=coords, x_out=coords, t=None, tau=None)
     metadata, shared = _build_batch_metadata_with_seed(

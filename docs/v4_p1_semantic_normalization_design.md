@@ -19,10 +19,13 @@ Planned but disabled design:
 
 ## Current Legacy Facts
 
-The active V4 path uses the V1 medium controlled runner and helper logic:
+The active V4 path uses the V1 medium controlled runner and extracted legacy
+helper logic:
 
 - `scripts/run_heat3d_v1_medium_controlled_training_export.py`
 - `scripts/check_heat3d_v1_small_train_valid_smoke.py`
+- `rigno/heat3d_v1_training_semantics.py`
+- `rigno/heat3d_v1_normalization.py`
 - `rigno/heat3d_v1_native_supervised.py`
 - `rigno/dataset_Heat3D_v1.py`
 
@@ -80,29 +83,35 @@ condition_feature_transform:
 
 ## Smoke-Path Cleanup
 
-Normalization and bridge semantics are currently spread across smoke/check and
-runner scripts:
+P1.1a extracts the current legacy behavior without enabling a new profile:
 
-| logic | current location | cleanup target |
+| logic | stable helper | current callers |
 | --- | --- | --- |
-| `zero_delta_u_bridge` choice | `scripts/check_heat3d_v1_small_train_valid_smoke.py::_bridge_for` | `rigno/heat3d_v1_training_semantics.py` |
-| train-only c/target/coord stats | `scripts/check_heat3d_v1_small_train_valid_smoke.py::_train_only_stats` | `rigno/heat3d_v1_normalization.py` |
-| coordinate normalization | `scripts/check_heat3d_v1_small_train_valid_smoke.py::_normalize_coords` | `rigno/heat3d_v1_normalization.py` |
-| batch packing with normalized c/target | smoke helper and medium runner group builders | shared training-semantics adapter |
-| raw DeltaT recovery | medium runner metrics/export helpers | shared target recovery helper |
+| `zero_delta_u_bridge` choice | `rigno/heat3d_v1_training_semantics.py` | smoke helper, medium runner, P1 audit/final-probe smoke |
+| train-only c/target/coord stats | `rigno/heat3d_v1_normalization.py` | smoke helper, medium runner, P1 audit/final-probe smoke |
+| coordinate normalization | `rigno/heat3d_v1_normalization.py` | smoke helper, medium runner, P1 audit |
+| c z-score and normalized target | `rigno/heat3d_v1_normalization.py` | smoke helper, medium runner, P1 audit |
+| raw DeltaT/T recovery | `rigno/heat3d_v1_normalization.py` | smoke helper and medium runner metrics/export helpers |
 | final-probe BC mask compatibility | final-probe eval script | final-probe adapter helper, separate from dataset loader |
 
-Suggested module split:
+Implemented module split:
 
 - `rigno/heat3d_v1_training_semantics.py`: named route contracts, bridge
   policy, target mode, feature manifest, recovery policy strings.
 - `rigno/heat3d_v1_normalization.py`: `legacy_zscore` implementation copied
-  from the existing smoke helper first, plus disabled
-  `semantic_normalization_v1` schema and validation.
+  from the existing smoke helper: train-only stats, coords min/max scaling,
+  condition z-score, target DeltaT normalization, and raw DeltaT/T recovery.
 
-The first implementation step should be a no-behavior-change extraction of
-`legacy_zscore`, with byte/metric equivalence checks against the current runner
-before enabling any new profile.
+Equivalence check:
+
+```bash
+python scripts/check_heat3d_v1_training_semantics_equivalence.py --subset <subset>
+```
+
+The checker compares the pre-extraction reference formulas against the helper
+for `u`, normalized coords, normalized `c`, normalized target, raw DeltaT
+recovery, and raw temperature recovery. `semantic_normalization_v1` remains
+design-only and disabled.
 
 ## Provenance Fields
 
@@ -123,6 +132,7 @@ Future runs should write these fields into `run_config.json`,
 ## Decision
 
 Keep `legacy_zscore` as the default V4 baseline until an explicit experiment
-promotes `semantic_normalization_v1`. The next safe code task is a
-no-behavior-change extraction of the current bridge/normalization/recovery
-helpers into stable `rigno/` modules, followed by equivalence tests.
+promotes `semantic_normalization_v1`. P1.1a only centralizes the existing
+bridge/normalization/recovery helpers and adds an equivalence checker; it does
+not change model inputs, target semantics, loader behavior, or training
+defaults.

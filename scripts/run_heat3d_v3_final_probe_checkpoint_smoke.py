@@ -33,6 +33,9 @@ from rigno.heat3d_v1_native_supervised import (  # noqa: E402
     V1SteadySupervisedExampleNative,
     V1SteadyTarget,
 )
+from rigno.heat3d_v1_normalization import (  # noqa: E402
+    legacy_train_only_stats as _train_only_stats,
+)
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
     Heat3DGraphBuilder,
@@ -44,7 +47,6 @@ from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     _resolve_training_splits,
     _sample_root,
     _stable_json_hash,
-    _train_only_stats,
     _write_json,
 )
 
