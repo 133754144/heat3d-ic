@@ -140,18 +140,20 @@ P1.1b runner/config plumbing:
 
 ## Provenance Fields
 
-Future runs should write these fields into `run_config.json`,
-`loss_summary.json`, and eventually result registry fields. Do not add them to
-`run_registry.csv` until a separate registry task approves the schema change.
+P1.1d adds these fields to the V4 registry and CSV mirror as configuration
+audit fields. Future runs should also write them into `run_config.json` and
+`loss_summary.json`. `feature_manifest_hash` may remain `planned` until a real
+manifest-hash writer exists.
 
 | field | value for current legacy baseline | purpose |
 | --- | --- | --- |
+| `runner_family` | `v1_controlled_legacy_runner` | Records the runner family implied by the normalization profile. |
 | `target_mode` | `normalized_deltaT` | Defines supervised target space. |
 | `bridge_policy` | `zero_delta_u_bridge` | Explains `Inputs.u` and `T_ref` handling. |
 | `normalization_profile` | `legacy_zscore` | Names the active transform profile. |
-| `feature_manifest_hash` | hash of ordered feature names and transforms | Detects silent feature/transform drift. |
+| `feature_manifest_hash` | `planned` until a real hash is available | Detects silent feature/transform drift. |
 | `coord_policy` | `train_minmax_to_unit_box` | Records coordinate scaling and extent handling. |
-| `condition_feature_transform` | per-feature transform map | Distinguishes z-scored flags from binary passthrough, log q, log k, etc. |
+| `condition_feature_transform` | `legacy_zscore_all_condition_features` | Distinguishes z-scored flags from binary passthrough, log q, log k, etc. |
 | `target_recovery_policy` | `deltaT_norm_to_K_plus_T_ref` | Defines raw K recovery from model output. |
 
 ## Decision

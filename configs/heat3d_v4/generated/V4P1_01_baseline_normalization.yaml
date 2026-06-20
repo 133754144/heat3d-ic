@@ -18,7 +18,9 @@ overrides:
     standard_task: coords+k(x)+q(x)+BC->T(x)
     variant_label: V4P1_01_baseline_normalization
     optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    runner_family: v4_controlled_semantic_wrapper
     normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars
     launch_policy: explicit_user_instruction_only
     log_path: output/heat3d_v4_logs/V4P1_01_baseline_normalization.log
     notes: V4 P1.1b baseline normalization variant; semantic_normalization_v1 selects

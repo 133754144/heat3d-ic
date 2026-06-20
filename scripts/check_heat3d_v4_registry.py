@@ -43,6 +43,19 @@ NORMALIZATION_PROFILES = {
     NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     NORMALIZATION_PROFILE_SEMANTIC_V1,
 }
+RUNNER_FAMILY_LEGACY_V1 = "v1_controlled_legacy_runner"
+RUNNER_FAMILY_V4_SEMANTIC = "v4_controlled_semantic_wrapper"
+TARGET_MODE_NORMALIZED_DELTAT = "normalized_deltaT"
+BRIDGE_POLICY_ZERO_DELTA_U = "zero_delta_u_bridge"
+COORD_POLICY_TRAIN_MINMAX_UNIT_BOX = "train_minmax_to_unit_box"
+CONDITION_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
+CONDITION_TRANSFORM_SEMANTIC_V1 = (
+    "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
+)
+TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF = (
+    "deltaT_norm_to_K_plus_T_ref"
+)
+FEATURE_MANIFEST_HASH_PLANNED = "planned"
 DEFAULT_REGISTRY = Path("configs/heat3d_v4/v4_run_registry.json")
 CONFIG_FIELDNAMES = (
     "config_id",
@@ -51,7 +64,14 @@ CONFIG_FIELDNAMES = (
     "base_yaml",
     "generated_yaml",
     "task",
+    "runner_family",
+    "target_mode",
+    "bridge_policy",
     "normalization_profile",
+    "coord_policy",
+    "condition_feature_transform",
+    "target_recovery_policy",
+    "feature_manifest_hash",
     "model_capacity",
     "node_latent_size",
     "edge_latent_size",
@@ -175,7 +195,14 @@ EXPECTED_V4_BASELINE = {
     "base_yaml": "configs/heat3d_v4/V4_base.yaml",
     "generated_yaml": "configs/heat3d_v4/generated/V4_baseline.yaml",
     "task": "coords+k(x)+q(x)+BC->T(x)",
+    "runner_family": RUNNER_FAMILY_LEGACY_V1,
+    "target_mode": TARGET_MODE_NORMALIZED_DELTAT,
+    "bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
     "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+    "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    "condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+    "target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
+    "feature_manifest_hash": FEATURE_MANIFEST_HASH_PLANNED,
     "model_capacity": "96/96/s6/m2",
     "node_latent_size": "96",
     "edge_latent_size": "96",
@@ -438,7 +465,44 @@ def _normalize_resolved_row(
             f"{context} normalization_profile must be one of "
             f"{sorted(NORMALIZATION_PROFILES)}, got {row['normalization_profile']!r}"
         )
+    _check_provenance_fields(row, context=context)
     return row
+
+
+def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
+    common_expected = {
+        "target_mode": TARGET_MODE_NORMALIZED_DELTAT,
+        "bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
+        "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+        "target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
+    }
+    profile_expected = {
+        NORMALIZATION_PROFILE_LEGACY_ZSCORE: {
+            "runner_family": RUNNER_FAMILY_LEGACY_V1,
+            "condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+        },
+        NORMALIZATION_PROFILE_SEMANTIC_V1: {
+            "runner_family": RUNNER_FAMILY_V4_SEMANTIC,
+            "condition_feature_transform": CONDITION_TRANSFORM_SEMANTIC_V1,
+        },
+    }
+    for field, expected in {
+        **common_expected,
+        **profile_expected[row["normalization_profile"]],
+    }.items():
+        if row[field] != expected:
+            raise ValueError(
+                f"{context} {field} must be {expected!r} for "
+                f"normalization_profile={row['normalization_profile']!r}, "
+                f"got {row[field]!r}"
+            )
+    feature_manifest_hash = row["feature_manifest_hash"]
+    if feature_manifest_hash not in {"", FEATURE_MANIFEST_HASH_PLANNED}:
+        if len(feature_manifest_hash) < 8:
+            raise ValueError(
+                f"{context} feature_manifest_hash must be blank, "
+                f"{FEATURE_MANIFEST_HASH_PLANNED!r}, or a real hash-like value"
+            )
 
 
 def _check_unique_resolved_fields(rows: list[dict[str, str]]) -> None:
@@ -553,7 +617,14 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "loss.mode": "mse",
             "dataset.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
             "export.selection_metric": DEFAULT_SELECTION_METRIC,
+            "metadata.runner_family": RUNNER_FAMILY_LEGACY_V1,
+            "metadata.target_mode": TARGET_MODE_NORMALIZED_DELTAT,
+            "metadata.bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
             "metadata.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+            "metadata.coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+            "metadata.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+            "metadata.target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
+            "metadata.feature_manifest_hash": FEATURE_MANIFEST_HASH_PLANNED,
             "metadata.metrics_profile": DEFAULT_METRICS_PROFILE,
             "metadata.metrics_contract": DEFAULT_METRICS_CONTRACT,
             "metadata.selection_metric": DEFAULT_SELECTION_METRIC,
@@ -653,7 +724,14 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "metrics_profile": row["metrics_profile"],
             "metrics_contract": row["metrics_contract"],
             "selection_metric": row["selection_metric"],
+            "runner_family": row["runner_family"],
+            "target_mode": row["target_mode"],
+            "bridge_policy": row["bridge_policy"],
             "normalization_profile": row["normalization_profile"],
+            "coord_policy": row["coord_policy"],
+            "condition_feature_transform": row["condition_feature_transform"],
+            "target_recovery_policy": row["target_recovery_policy"],
+            "feature_manifest_hash": row["feature_manifest_hash"],
             "launch_policy": row["launch_policy"],
             "log_path": row["log_path"],
             "notes": row["notes"],
@@ -711,7 +789,14 @@ def _assert_registry_matches_resolved(
         "metadata.metrics_profile": row["metrics_profile"],
         "metadata.metrics_contract": row["metrics_contract"],
         "metadata.selection_metric": row["selection_metric"],
+        "metadata.runner_family": row["runner_family"],
+        "metadata.target_mode": row["target_mode"],
+        "metadata.bridge_policy": row["bridge_policy"],
         "metadata.normalization_profile": row["normalization_profile"],
+        "metadata.coord_policy": row["coord_policy"],
+        "metadata.condition_feature_transform": row["condition_feature_transform"],
+        "metadata.target_recovery_policy": row["target_recovery_policy"],
+        "metadata.feature_manifest_hash": row["feature_manifest_hash"],
     }
     for dotted, expected in checks.items():
         actual = _get_dotted(config, dotted)

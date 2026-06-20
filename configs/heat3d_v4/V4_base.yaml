@@ -179,5 +179,12 @@ metadata:
   metrics_profile: v4_metrics_v0
   metrics_contract: configs/heat3d_v4/metrics_v0.json
   selection_metric: valid_base_mse
+  runner_family: v1_controlled_legacy_runner
+  target_mode: normalized_deltaT
+  bridge_policy: zero_delta_u_bridge
   normalization_profile: legacy_zscore
+  coord_policy: train_minmax_to_unit_box
+  condition_feature_transform: legacy_zscore_all_condition_features
+  target_recovery_policy: deltaT_norm_to_K_plus_T_ref
+  feature_manifest_hash: planned
   selection_metric_note: valid_base_mse is used by default so targeted-loss totals do not control checkpoint selection.

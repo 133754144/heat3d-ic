@@ -13,6 +13,12 @@ configuration fields first and result fields last.
 `normalization_profile` is a configuration field. Missing or `legacy_zscore`
 uses the legacy V1 controlled runner; `semantic_normalization_v1` selects the
 V4 controlled runner wrapper.
+The registry/CSV configuration fields also include provenance fields:
+`runner_family`, `target_mode`, `bridge_policy`, `coord_policy`,
+`condition_feature_transform`, `target_recovery_policy`, and
+`feature_manifest_hash`. These are audit metadata written to generated YAML
+`metadata`; they do not add runner controls. `feature_manifest_hash` may remain
+`planned` until a real manifest hash writer exists.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
@@ -38,11 +44,12 @@ Workflow:
 3. Generate inherited YAML from `V4_base.yaml`; generated YAML stores only
    executable overrides that differ from the base.
 4. Run `scripts/check_heat3d_v4_registry.py`; it validates the metrics contract,
-   legal selection metric, registry mirror, generated YAML, seed fields,
-   unmapped-field warnings, and path conflicts.
+   legal selection metric, provenance fields, registry mirror, generated YAML,
+   seed fields, unmapped-field warnings, and path conflicts.
 5. Run `scripts/prepare_heat3d_v4_run.py --dry-run` before any launch handoff;
-   the dry-run output must show `normalization_profile`, `metrics_profile`,
-   `metrics_contract`, `selection_metric`, and selected training script.
+   the dry-run output must show provenance fields, `normalization_profile`,
+   `metrics_profile`, `metrics_contract`, `selection_metric`, and selected
+   training script.
 6. Start tmux training only when the current user request explicitly approves a
    launch on a named server. Report the log path for live output.
 
