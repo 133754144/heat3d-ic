@@ -9,6 +9,7 @@
     "base_yaml": "configs/heat3d_v4/V4_base.yaml",
     "generated_yaml": "configs/heat3d_v4/generated/V4_baseline.yaml",
     "task": "coords+k(x)+q(x)+BC->T(x)",
+    "normalization_profile": "legacy_zscore",
     "model_capacity": "96/96/s6/m2",
     "node_latent_size": "96",
     "edge_latent_size": "96",
@@ -71,6 +72,19 @@
         "final_probe_output_dir": "output/heat3d_v4_final_probe/V4Test00_baseline_seed_0",
         "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4Test00_baseline_seed_0",
         "notes": "V4Test00 baseline model_seed=0 dry-run only; launch requires explicit approval after registry and metrics checks pass"
+      }
+    },
+    "V4P1_01_baseline_normalization": {
+      "config_id": "V4P1_01_baseline_normalization",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P1_01_baseline_normalization.yaml",
+        "normalization_profile": "semantic_normalization_v1",
+        "output_dir": "output/heat3d_v4_runs/V4P1_01_baseline_normalization",
+        "run_name": "V4P1_01_baseline_normalization",
+        "log_path": "output/heat3d_v4_logs/V4P1_01_baseline_normalization.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_01_baseline_normalization",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_01_baseline_normalization",
+        "notes": "V4 P1.1b baseline normalization variant; semantic_normalization_v1 selects the V4 runner; all training parameters match V4Test00_baseline_seed_0"
       }
     },
     "V4Test00_baseline_seed_1": {

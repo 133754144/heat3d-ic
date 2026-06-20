@@ -16,6 +16,13 @@ from rigno.heat3d_v2_config import validate_v2_config
 
 
 TRAINING_SCRIPT = "scripts/run_heat3d_v1_medium_controlled_training_export.py"
+V4_TRAINING_SCRIPT = "scripts/run_heat3d_v4_controlled_training.py"
+NORMALIZATION_PROFILE_LEGACY_ZSCORE = "legacy_zscore"
+NORMALIZATION_PROFILE_SEMANTIC_V1 = "semantic_normalization_v1"
+NORMALIZATION_PROFILES = {
+    NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+    NORMALIZATION_PROFILE_SEMANTIC_V1,
+}
 DEFAULT_MEDIUM1024_GAPA_SPLIT_MAP = (
     "configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json"
 )
@@ -50,7 +57,10 @@ def build_training_command(
     graph_section = config.get("graph")
     graph = graph_section if isinstance(graph_section, Mapping) else {}
 
-    command = [python_executable, TRAINING_SCRIPT]
+    normalization_profile = _normalization_profile(config)
+    command = [python_executable, _training_script_for_profile(normalization_profile)]
+    if normalization_profile == NORMALIZATION_PROFILE_SEMANTIC_V1:
+        _append_option(command, "--normalization-profile", normalization_profile)
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
     if dataset.get("boundary_mask_fallback") is True:
@@ -397,6 +407,8 @@ def build_v2_command_plan(
         "training_command": build_training_command(
             config, python_executable=python_executable
         ),
+        "normalization_profile": _normalization_profile(config),
+        "training_script": _training_script_for_profile(_normalization_profile(config)),
         "diagnostics_commands": [],
         "mapped_fields": _mapped_fields(config),
         "unmapped_fields": _unmapped_fields(config),
@@ -483,6 +495,8 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
     lines = [
         f"config: {plan.get('config_name')}",
         f"role: {plan.get('config_role')}",
+        f"normalization_profile: {plan.get('normalization_profile')}",
+        f"training_script: {plan.get('training_script')}",
         f"training: {shlex.join(plan['training_command'])}",
     ]
     diagnostics_commands = plan.get("diagnostics_commands", [])
@@ -513,6 +527,7 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
     mappings = [
         ("dataset.subset_path", "training --subset"),
         ("dataset.boundary_mask_fallback", "training --boundary-mask-fallback/--no-boundary-mask-fallback"),
+        ("dataset.normalization_profile", "training script selection and optional --normalization-profile"),
         ("model.node_latent_size", "training --node-latent-size"),
         ("model.edge_latent_size", "training --edge-latent-size"),
         ("model.processor_steps", "training --processor-steps"),
@@ -703,6 +718,23 @@ def _unmapped_reason(field: str) -> str:
     if field in {"export.save_run_config", "export.save_loss_summary"}:
         return "v1 runner writes these files implicitly."
     return "not mapped to current v1 CLI."
+
+
+def _normalization_profile(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    profile = dataset.get("normalization_profile") or NORMALIZATION_PROFILE_LEGACY_ZSCORE
+    if profile not in NORMALIZATION_PROFILES:
+        raise ValueError(
+            f"dataset.normalization_profile must be one of {sorted(NORMALIZATION_PROFILES)}, "
+            f"got {profile!r}"
+        )
+    return str(profile)
+
+
+def _training_script_for_profile(normalization_profile: str) -> str:
+    if normalization_profile == NORMALIZATION_PROFILE_SEMANTIC_V1:
+        return V4_TRAINING_SCRIPT
+    return TRAINING_SCRIPT
 
 
 def _prediction_labels(config: Mapping[str, Any]) -> list[str]:

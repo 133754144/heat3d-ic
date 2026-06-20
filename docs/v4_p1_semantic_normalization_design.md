@@ -13,7 +13,7 @@ Current default remains:
 
 `normalization_profile = legacy_zscore`
 
-Planned but disabled design:
+Opt-in profile under V4 runner plumbing:
 
 `normalization_profile = semantic_normalization_v1`
 
@@ -111,7 +111,23 @@ python scripts/check_heat3d_v1_training_semantics_equivalence.py --subset <subse
 The checker compares the pre-extraction reference formulas against the helper
 for `u`, normalized coords, normalized `c`, normalized target, raw DeltaT
 recovery, and raw temperature recovery. `semantic_normalization_v1` remains
-design-only and disabled.
+disabled by default and is available only through explicit registry opt-in.
+
+P1.1b runner/config plumbing:
+
+- `dataset.normalization_profile` is the only new registry/YAML config
+  dimension: `legacy_zscore` or `semantic_normalization_v1`.
+- Missing or `legacy_zscore` keeps the original
+  `scripts/run_heat3d_v1_medium_controlled_training_export.py` command path.
+- `semantic_normalization_v1` selects
+  `scripts/run_heat3d_v4_controlled_training.py`, a wrapper around the legacy
+  runner that swaps in semantic train-only normalization stats and records the
+  profile in future run provenance.
+- The first registered semantic config is
+  `V4P1_01_baseline_normalization`; it changes normalization profile and run
+  identity/paths only.
+- This is configuration plumbing and helper implementation, not performance
+  evidence.
 
 ## Provenance Fields
 
@@ -131,8 +147,7 @@ Future runs should write these fields into `run_config.json`,
 
 ## Decision
 
-Keep `legacy_zscore` as the default V4 baseline until an explicit experiment
-promotes `semantic_normalization_v1`. P1.1a only centralizes the existing
-bridge/normalization/recovery helpers and adds an equivalence checker; it does
-not change model inputs, target semantics, loader behavior, or training
-defaults.
+Keep `legacy_zscore` as the default V4 baseline unless a registry entry
+explicitly selects `semantic_normalization_v1`. P1.1b adds the opt-in V4 runner
+path and config plumbing; it does not change model structure, solver, loss, or
+loader behavior.

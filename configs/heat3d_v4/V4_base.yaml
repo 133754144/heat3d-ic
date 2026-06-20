@@ -19,6 +19,7 @@ dataset:
   recovery: T_ref_plus_deltaT
   feature_view: relative_bc_features
   bridge: zero_delta_u_bridge
+  normalization_profile: legacy_zscore
   split_source: split_map
   sample_limit: null
   debug_only: false
@@ -178,4 +179,5 @@ metadata:
   metrics_profile: v4_metrics_v0
   metrics_contract: configs/heat3d_v4/metrics_v0.json
   selection_metric: valid_base_mse
+  normalization_profile: legacy_zscore
   selection_metric_note: valid_base_mse is used by default so targeted-loss totals do not control checkpoint selection.

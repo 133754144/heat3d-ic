@@ -37,6 +37,12 @@ METRICS_CONTRACT_SCHEMA_VERSION = "heat3d_v4_metrics_contract_v0"
 DEFAULT_METRICS_PROFILE = "v4_metrics_v0"
 DEFAULT_METRICS_CONTRACT = "configs/heat3d_v4/metrics_v0.json"
 DEFAULT_SELECTION_METRIC = "valid_base_mse"
+NORMALIZATION_PROFILE_LEGACY_ZSCORE = "legacy_zscore"
+NORMALIZATION_PROFILE_SEMANTIC_V1 = "semantic_normalization_v1"
+NORMALIZATION_PROFILES = {
+    NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+    NORMALIZATION_PROFILE_SEMANTIC_V1,
+}
 DEFAULT_REGISTRY = Path("configs/heat3d_v4/v4_run_registry.json")
 CONFIG_FIELDNAMES = (
     "config_id",
@@ -45,6 +51,7 @@ CONFIG_FIELDNAMES = (
     "base_yaml",
     "generated_yaml",
     "task",
+    "normalization_profile",
     "model_capacity",
     "node_latent_size",
     "edge_latent_size",
@@ -168,6 +175,7 @@ EXPECTED_V4_BASELINE = {
     "base_yaml": "configs/heat3d_v4/V4_base.yaml",
     "generated_yaml": "configs/heat3d_v4/generated/V4_baseline.yaml",
     "task": "coords+k(x)+q(x)+BC->T(x)",
+    "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     "model_capacity": "96/96/s6/m2",
     "node_latent_size": "96",
     "edge_latent_size": "96",
@@ -425,6 +433,11 @@ def _normalize_resolved_row(
     row = {field: _stringify(raw_row[field]) for field in CONFIG_FIELDNAMES}
     if not row["config_id"]:
         raise ValueError(f"{context} has empty config_id")
+    if row["normalization_profile"] not in NORMALIZATION_PROFILES:
+        raise ValueError(
+            f"{context} normalization_profile must be one of "
+            f"{sorted(NORMALIZATION_PROFILES)}, got {row['normalization_profile']!r}"
+        )
     return row
 
 
@@ -538,7 +551,9 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "graph.radius_policy": "discrete_physical_coverage",
             "graph.coverage_repair_policy": "none",
             "loss.mode": "mse",
+            "dataset.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
             "export.selection_metric": DEFAULT_SELECTION_METRIC,
+            "metadata.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
             "metadata.metrics_profile": DEFAULT_METRICS_PROFILE,
             "metadata.metrics_contract": DEFAULT_METRICS_CONTRACT,
             "metadata.selection_metric": DEFAULT_SELECTION_METRIC,
@@ -563,6 +578,9 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "edge_latent_size": _int(row, "edge_latent_size"),
             "processor_steps": _int(row, "processor_steps"),
             "mlp_hidden_layers": _int(row, "mlp_hidden_layers"),
+        },
+        "dataset": {
+            "normalization_profile": row["normalization_profile"],
         },
         "optimizer": {
             "name": row["optimizer"],
@@ -635,6 +653,7 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "metrics_profile": row["metrics_profile"],
             "metrics_contract": row["metrics_contract"],
             "selection_metric": row["selection_metric"],
+            "normalization_profile": row["normalization_profile"],
             "launch_policy": row["launch_policy"],
             "log_path": row["log_path"],
             "notes": row["notes"],
@@ -673,6 +692,7 @@ def _assert_registry_matches_resolved(
         "optimizer.weight_decay": _float(row, "weight_decay"),
         "graph.radius_policy": row["graph_radius_policy"],
         "graph.coverage_repair_policy": row["coverage_repair_policy"],
+        "dataset.normalization_profile": row["normalization_profile"],
         "loss.mode": row["loss_mode"],
         "export.selection_metric": row["selection_metric"],
         "export.output_dir": row["output_dir"],
@@ -691,6 +711,7 @@ def _assert_registry_matches_resolved(
         "metadata.metrics_profile": row["metrics_profile"],
         "metadata.metrics_contract": row["metrics_contract"],
         "metadata.selection_metric": row["selection_metric"],
+        "metadata.normalization_profile": row["normalization_profile"],
     }
     for dotted, expected in checks.items():
         actual = _get_dotted(config, dotted)

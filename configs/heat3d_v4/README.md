@@ -10,6 +10,9 @@ from the JSON registry. Do not add compact CSV variants. The CSV is split into
 configuration fields first and result fields last.
 `metrics_v0.json` is the V4 metrics contract referenced by the registry through
 `metrics_profile` and `metrics_contract`.
+`normalization_profile` is a configuration field. Missing or `legacy_zscore`
+uses the legacy V1 controlled runner; `semantic_normalization_v1` selects the
+V4 controlled runner wrapper.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
@@ -38,8 +41,8 @@ Workflow:
    legal selection metric, registry mirror, generated YAML, seed fields,
    unmapped-field warnings, and path conflicts.
 5. Run `scripts/prepare_heat3d_v4_run.py --dry-run` before any launch handoff;
-   the dry-run output must show `metrics_profile`, `metrics_contract`, and
-   `selection_metric`.
+   the dry-run output must show `normalization_profile`, `metrics_profile`,
+   `metrics_contract`, `selection_metric`, and selected training script.
 6. Start tmux training only when the current user request explicitly approves a
    launch on a named server. Report the log path for live output.
 

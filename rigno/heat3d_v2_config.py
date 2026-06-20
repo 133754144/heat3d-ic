@@ -41,6 +41,7 @@ PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
+NORMALIZATION_PROFILES = {"legacy_zscore", "semantic_normalization_v1"}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -296,6 +297,12 @@ def _validate_run_config(
     if boundary_mask_fallback is not None and not isinstance(boundary_mask_fallback, bool):
         raise ValueError(
             f"{label}: field 'dataset.boundary_mask_fallback' must be a bool or null"
+        )
+    normalization_profile = dataset.get("normalization_profile")
+    if normalization_profile is not None and normalization_profile not in NORMALIZATION_PROFILES:
+        raise ValueError(
+            f"{label}: field 'dataset.normalization_profile' must be one of "
+            f"{sorted(NORMALIZATION_PROFILES)}, got {normalization_profile!r}"
         )
     split_map_path = dataset.get("split_map_path")
     if split_map_path is not None:
