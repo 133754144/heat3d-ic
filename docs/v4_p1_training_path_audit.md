@@ -3,6 +3,10 @@
 Read this file only for V4 active training path, feature-manifest,
 normalization, or input/target semantics questions.
 
+For full medium1024 range/OOD and final-probe amplitude conclusions, use
+`docs/v4_p1_full_medium1024_audit.md`; its full audit supersedes the proxy
+16-sample range snapshot below.
+
 ## Scope
 
 This is a control-plane audit only. It did not change model structure, solver,

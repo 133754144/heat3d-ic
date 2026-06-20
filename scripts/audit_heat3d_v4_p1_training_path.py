@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -25,7 +26,9 @@ except ImportError as exc:  # pragma: no cover - environment issue.
     raise SystemExit("PyYAML is required for the V4 P1 audit.") from exc
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(
+    os.environ.get("HEAT3D_REPO_ROOT", Path(__file__).resolve().parents[1])
+).resolve()
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 for path in (REPO_ROOT, SCRIPTS_DIR):
     if str(path) not in sys.path:
@@ -91,7 +94,24 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--final-probe-subset", type=Path, default=DEFAULT_FINAL_PROBE_SUBSET)
-    parser.add_argument("--max-samples-per-split", type=int, default=16)
+    parser.add_argument(
+        "--max-samples-per-split",
+        type=int,
+        default=16,
+        help="Maximum samples per split for range audit; use 0 for all samples.",
+    )
+    parser.add_argument(
+        "--amplitude-predictions",
+        type=Path,
+        default=None,
+        help="Optional final-probe prediction .npz for amplitude/shape diagnostics.",
+    )
+    parser.add_argument(
+        "--amplitude-prediction-dir",
+        type=Path,
+        default=None,
+        help="Optional directory containing final-probe *_pred.npy prediction files.",
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     return parser.parse_args()
 
@@ -127,6 +147,11 @@ def main() -> int:
         for split, examples in sorted(split_examples.items())
     }
     range_comparisons = compare_splits_to_train(summaries)
+    amplitude = amplitude_diagnostics(
+        final_examples,
+        prediction_npz=args.amplitude_predictions,
+        prediction_dir=args.amplitude_prediction_dir,
+    )
 
     training_path_audit = {
         "schema_version": AUDIT_SCHEMA_VERSION,
@@ -145,7 +170,9 @@ def main() -> int:
             "comparisons_to_train": range_comparisons,
             "gaps": local_gaps + final_gaps,
         },
+        "amplitude_diagnostics": amplitude,
         "artifact_record_gaps": artifact_record_gaps(),
+        "provenance_field_plan": provenance_field_plan(),
     }
     feature_manifest = build_feature_manifest(stats, summaries, local_gaps + final_gaps)
 
@@ -155,6 +182,8 @@ def main() -> int:
     write_json(training_path_path, training_path_audit)
     write_json(feature_manifest_path, feature_manifest)
     write_feature_csv(feature_csv_path, feature_manifest["entries"])
+    if amplitude.get("available"):
+        write_amplitude_csv(output_dir / "amplitude_diagnostics.csv", amplitude["rows"])
 
     print(f"wrote {training_path_path}")
     print(f"wrote {feature_manifest_path}")
@@ -275,7 +304,9 @@ def load_examples(
     examples: list[V1SteadySupervisedExampleNative] = []
     for split in sorted(by_split):
         selected = sorted(by_split[split], key=lambda item: item.sample_id)
-        examples.extend(selected[:max_samples_per_split])
+        if max_samples_per_split and max_samples_per_split > 0:
+            selected = selected[:max_samples_per_split]
+        examples.extend(selected)
     return examples, gaps
 
 
@@ -521,11 +552,233 @@ def scalar_stats(values: np.ndarray) -> dict[str, Any]:
         "available": True,
         "count": int(finite.size),
         "min": float(np.min(finite)),
+        "p01": float(np.percentile(finite, 1)),
+        "p05": float(np.percentile(finite, 5)),
+        "p10": float(np.percentile(finite, 10)),
+        "p25": float(np.percentile(finite, 25)),
         "max": float(np.max(finite)),
         "mean": float(np.mean(finite)),
         "median": float(np.median(finite)),
+        "p75": float(np.percentile(finite, 75)),
+        "p90": float(np.percentile(finite, 90)),
+        "p95": float(np.percentile(finite, 95)),
+        "p99": float(np.percentile(finite, 99)),
         "std": float(np.std(finite)),
     }
+
+
+def amplitude_diagnostics(
+    final_examples: list[V1SteadySupervisedExampleNative],
+    *,
+    prediction_npz: Path | None,
+    prediction_dir: Path | None,
+) -> dict[str, Any]:
+    if not final_examples:
+        return {
+            "available": False,
+            "gap": "no final-probe examples available for amplitude diagnostics",
+        }
+    predictions, prediction_gaps = load_prediction_sources(
+        prediction_npz=prediction_npz,
+        prediction_dir=prediction_dir,
+    )
+    if not predictions:
+        return {
+            "available": False,
+            "gap": "no final-probe prediction source provided or readable",
+            "source_gaps": prediction_gaps,
+            "expected_inputs": [
+                "--amplitude-predictions path/to/s5_probe_predictions.npz",
+                "--amplitude-prediction-dir path/to/predictions",
+            ],
+        }
+
+    rows = []
+    gaps = list(prediction_gaps)
+    for example in sorted(final_examples, key=lambda item: item.sample_id):
+        probe_id = str(example.meta.get("probe_id") or probe_id_from_sample_id(example.sample_id))
+        candidates = (
+            example.sample_id,
+            Path(str(example.meta.get("sample_dir", ""))).name,
+            probe_id,
+            f"{probe_id}_pred",
+            f"{probe_id}_pred.npy",
+        )
+        prediction = first_prediction(predictions, candidates)
+        if prediction is None:
+            gaps.append(
+                {
+                    "sample_id": example.sample_id,
+                    "probe_id": probe_id,
+                    "gap": "prediction_not_found_for_sample",
+                    "candidate_keys": [item for item in candidates if item],
+                }
+            )
+            continue
+        rows.append(amplitude_row(example, prediction, probe_id))
+
+    if not rows:
+        return {
+            "available": False,
+            "gap": "prediction sources were readable but did not match final-probe samples",
+            "source_gaps": gaps,
+        }
+    return {
+        "available": True,
+        "rows": rows,
+        "summary": summarize_amplitude_rows(rows),
+        "source_gaps": gaps,
+        "interpretation_rule": (
+            "High centered/shape correlation with low scale_ratio or range_ratio "
+            "indicates amplitude failure more than shape failure."
+        ),
+    }
+
+
+def load_prediction_sources(
+    *,
+    prediction_npz: Path | None,
+    prediction_dir: Path | None,
+) -> tuple[dict[str, np.ndarray], list[dict[str, Any]]]:
+    predictions: dict[str, np.ndarray] = {}
+    gaps: list[dict[str, Any]] = []
+    if prediction_npz is not None:
+        path = _repo_path(prediction_npz)
+        if path.is_file():
+            with np.load(path) as loaded:
+                for key in loaded.files:
+                    predictions[str(key)] = np.asarray(loaded[key], dtype=np.float64)
+        else:
+            gaps.append({"path": str(path), "gap": "prediction_npz_not_found"})
+    if prediction_dir is not None:
+        path = _repo_path(prediction_dir)
+        if path.is_dir():
+            for item in sorted(path.glob("*.npy")):
+                predictions[item.stem] = np.asarray(np.load(item), dtype=np.float64)
+                predictions[item.name] = predictions[item.stem]
+        else:
+            gaps.append({"path": str(path), "gap": "prediction_dir_not_found"})
+    return predictions, gaps
+
+
+def first_prediction(
+    predictions: dict[str, np.ndarray],
+    candidates: tuple[str, ...],
+) -> np.ndarray | None:
+    for candidate in candidates:
+        if candidate and candidate in predictions:
+            return predictions[candidate]
+    return None
+
+
+def probe_id_from_sample_id(sample_id: str) -> str:
+    for token in str(sample_id).replace("-", "_").split("_"):
+        if token.startswith("P") and token[1:].isdigit():
+            return token
+    return str(sample_id)
+
+
+def amplitude_row(
+    example: V1SteadySupervisedExampleNative,
+    prediction: np.ndarray,
+    probe_id: str,
+) -> dict[str, Any]:
+    label = np.asarray(example.target.target_u, dtype=np.float64).reshape(-1)
+    pred = np.asarray(prediction, dtype=np.float64).reshape(-1)
+    if pred.shape != label.shape:
+        raise ValueError(
+            f"{example.sample_id}: prediction shape {pred.shape} != label shape {label.shape}"
+        )
+    bridge = _bridge_for(example)
+    t_ref = float(bridge.t_ref_value)
+    label_delta = label - t_ref
+    pred_delta = pred - t_ref
+    error = pred - label
+    label_delta_peak = float(np.max(label_delta))
+    pred_delta_peak = float(np.max(pred_delta))
+    label_delta_range = float(np.max(label_delta) - np.min(label_delta))
+    pred_delta_range = float(np.max(pred_delta) - np.min(pred_delta))
+    return {
+        "sample_id": example.sample_id,
+        "probe_id": probe_id,
+        "RMSE_K": rmse(error),
+        "MAE_K": float(np.mean(np.abs(error))),
+        "relRMSE_DeltaT": safe_ratio(rmse(error), rmse(label_delta)),
+        "peak_error_K": float(pred_delta_peak - label_delta_peak),
+        "abs_peak_error_K": float(abs(pred_delta_peak - label_delta_peak)),
+        "mean_bias_K": float(np.mean(error)),
+        "pred_peak_K": float(np.max(pred)),
+        "label_peak_K": float(np.max(label)),
+        "pred_range_K": float(np.max(pred) - np.min(pred)),
+        "label_range_K": float(np.max(label) - np.min(label)),
+        "pred_deltaT_peak_K": pred_delta_peak,
+        "label_deltaT_peak_K": label_delta_peak,
+        "pred_deltaT_range_K": pred_delta_range,
+        "label_deltaT_range_K": label_delta_range,
+        "scale_ratio": safe_ratio(pred_delta_peak, label_delta_peak),
+        "range_ratio": safe_ratio(pred_delta_range, label_delta_range),
+        "centered_corr": centered_corr(label_delta, pred_delta),
+        "shape_corr": centered_corr(label_delta, pred_delta),
+    }
+
+
+def summarize_amplitude_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    numeric_keys = sorted(
+        key
+        for key in rows[0]
+        if key not in {"sample_id", "probe_id"} and isinstance(rows[0].get(key), (int, float))
+    )
+    summary = {
+        key: scalar_stats(
+            np.asarray(
+                [row[key] for row in rows if row.get(key) is not None],
+                dtype=np.float64,
+            )
+        )
+        for key in numeric_keys
+    }
+    centered = summary.get("centered_corr", {})
+    scale = summary.get("scale_ratio", {})
+    range_ratio = summary.get("range_ratio", {})
+    summary["failure_mode_hint"] = failure_mode_hint(centered, scale, range_ratio)
+    return summary
+
+
+def failure_mode_hint(
+    centered_corr_stats: dict[str, Any],
+    scale_ratio_stats: dict[str, Any],
+    range_ratio_stats: dict[str, Any],
+) -> str:
+    centered = centered_corr_stats.get("median")
+    scale = scale_ratio_stats.get("median")
+    range_ratio = range_ratio_stats.get("median")
+    if centered is None or scale is None or range_ratio is None:
+        return "insufficient_metrics"
+    if centered >= 0.75 and (scale < 0.75 or range_ratio < 0.75):
+        return "amplitude_failure_likely_shape_partly_preserved"
+    if centered < 0.5:
+        return "shape_failure_likely"
+    return "mixed_or_mild_amplitude_shape_issue"
+
+
+def rmse(values: np.ndarray) -> float:
+    array = np.asarray(values, dtype=np.float64).reshape(-1)
+    return float(np.sqrt(np.mean(np.square(array))))
+
+
+def safe_ratio(numerator: float, denominator: float) -> float | None:
+    if abs(float(denominator)) < 1.0e-12:
+        return None
+    return float(numerator) / float(denominator)
+
+
+def centered_corr(label: np.ndarray, pred: np.ndarray) -> float | None:
+    label_centered = np.asarray(label, dtype=np.float64).reshape(-1) - float(np.mean(label))
+    pred_centered = np.asarray(pred, dtype=np.float64).reshape(-1) - float(np.mean(pred))
+    denom = float(np.linalg.norm(label_centered) * np.linalg.norm(pred_centered))
+    if denom < 1.0e-12:
+        return None
+    return float(np.dot(label_centered, pred_centered) / denom)
 
 
 def compare_splits_to_train(summaries: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -544,6 +797,9 @@ def compare_splits_to_train(summaries: dict[str, dict[str, Any]]) -> dict[str, A
             "q_outside_train": outside_train(train["q_range"], summary["q_range"]),
             "bc_scalar_outside_train": compare_named_ranges(
                 train["bc_scalar_range"], summary["bc_scalar_range"]
+            ),
+            "bc_flag_distribution_shift": compare_bc_flag_means(
+                train["bc_flag_distribution"], summary["bc_flag_distribution"]
             ),
             "geometry_extent_outside_train": compare_named_ranges(
                 train["geometry"]["extent_m_by_sample"],
@@ -592,6 +848,32 @@ def compare_named_ranges(
     for name, candidate in candidate_ranges.items():
         train = train_ranges.get(name)
         result[name] = outside_train(train or {}, candidate)
+    return result
+
+
+def compare_bc_flag_means(
+    train_flags: dict[str, dict[str, Any]],
+    candidate_flags: dict[str, dict[str, Any]],
+    *,
+    tolerance: float = 0.05,
+) -> dict[str, Any]:
+    result = {}
+    for name, candidate in candidate_flags.items():
+        train = train_flags.get(name)
+        train_mean = None if train is None else train.get("mean_fraction")
+        candidate_mean = candidate.get("mean_fraction")
+        if train_mean is None or candidate_mean is None:
+            result[name] = {"available": False}
+            continue
+        diff = float(candidate_mean) - float(train_mean)
+        result[name] = {
+            "available": True,
+            "outside": abs(diff) > tolerance,
+            "train_mean_fraction": float(train_mean),
+            "candidate_mean_fraction": float(candidate_mean),
+            "difference": diff,
+            "tolerance": float(tolerance),
+        }
     return result
 
 
@@ -785,6 +1067,61 @@ def artifact_record_gaps() -> list[dict[str, str]]:
     ]
 
 
+def provenance_field_plan() -> list[dict[str, str]]:
+    return [
+        {
+            "field": "result_target_mode",
+            "role": "result provenance",
+            "reason": "Record whether metrics came from raw T, raw DeltaT, or normalized DeltaT.",
+        },
+        {
+            "field": "result_bridge_policy",
+            "role": "result provenance",
+            "reason": "Record zero_delta_u_bridge versus any future T_ref or native input bridge.",
+        },
+        {
+            "field": "result_normalization_profile",
+            "role": "result provenance",
+            "reason": "Record train-only c/target/coord normalization policy used by the run.",
+        },
+        {
+            "field": "result_feature_manifest_hash",
+            "role": "result provenance",
+            "reason": "Tie result rows to the model-facing feature/channel manifest.",
+        },
+        {
+            "field": "result_dataset_split_hash",
+            "role": "result provenance",
+            "reason": "Tie result rows to the exact train/valid split IDs.",
+        },
+        {
+            "field": "result_final_probe_scale_ratio",
+            "role": "amplitude diagnostic",
+            "reason": "Differentiate low-amplitude predictions from shape mismatch.",
+        },
+        {
+            "field": "result_final_probe_range_ratio",
+            "role": "amplitude diagnostic",
+            "reason": "Track predicted field dynamic range against label range.",
+        },
+        {
+            "field": "result_final_probe_centered_corr",
+            "role": "shape diagnostic",
+            "reason": "Track field shape agreement independent of mean and amplitude.",
+        },
+        {
+            "field": "result_final_probe_mean_bias_K",
+            "role": "amplitude diagnostic",
+            "reason": "Record signed average temperature bias.",
+        },
+        {
+            "field": "result_final_probe_peak_error_K",
+            "role": "amplitude diagnostic",
+            "reason": "Record signed peak-temperature under/overprediction.",
+        },
+    ]
+
+
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
@@ -799,6 +1136,36 @@ def write_feature_csv(path: Path, entries: list[dict[str, Any]]) -> None:
         writer.writeheader()
         for entry in entries:
             writer.writerow({field: entry.get(field, "") for field in fieldnames})
+
+
+def write_amplitude_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    fieldnames = [
+        "sample_id",
+        "probe_id",
+        "RMSE_K",
+        "MAE_K",
+        "relRMSE_DeltaT",
+        "peak_error_K",
+        "abs_peak_error_K",
+        "mean_bias_K",
+        "pred_peak_K",
+        "label_peak_K",
+        "pred_range_K",
+        "label_range_K",
+        "pred_deltaT_peak_K",
+        "label_deltaT_peak_K",
+        "pred_deltaT_range_K",
+        "label_deltaT_range_K",
+        "scale_ratio",
+        "range_ratio",
+        "centered_corr",
+        "shape_corr",
+    ]
+    with path.open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({field: row.get(field, "") for field in fieldnames})
 
 
 def json_safe(value: Any) -> Any:
