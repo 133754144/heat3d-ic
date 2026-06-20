@@ -27,6 +27,9 @@ python3 -B scripts/summarize_heat3d_v4_run_result.py --config-id <config_id> --s
 ```
 
 Use `--run-dir <path>` only when the output directory differs from the registry.
+When collecting from a remote without copying artifacts to the Codex host, run
+the remote summary command, save its small JSON payload locally, then update CSV
+with `--result-json <path> --update-csv`.
 
 ## Result Columns
 
@@ -42,6 +45,11 @@ metrics, it also fills available field-shape, region, bin0/le0.05, top-k,
 zRMSE, peak, and probe RMSE columns. For unlabeled diagnostics, prefer the
 `best` entry and fall back to `final`; treat `best_predictions` as `best` and
 `predictions`/`final_predictions` as `final`.
+
+For runs with `epochs >= 100`, result collection must include completed
+post-training diagnostics and completed final-probe metrics before updating the
+CSV. At minimum, require iid correlation, amplitude ratio, iid top-k overlap,
+final-probe RMSE, final-probe relRMSE, and final-probe Tmax error.
 
 ## Validation
 
