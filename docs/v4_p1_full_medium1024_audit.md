@@ -3,6 +3,11 @@
 Read this file only for V4 full medium1024 range/OOD, final-probe amplitude,
 or run-artifact provenance planning questions.
 
+For the follow-up final-probe BC mask compatibility fix/eval, see
+`docs/v4_p1_final_probe_bc_mask_compatibility.md`. That audit confirms the
+old all-interior final-probe flags were a metadata compatibility issue in
+final-probe evaluation, not a geometry range issue.
+
 ## Scope
 
 This audit was run read-only on WSL2 after `git pull` on `research/v4`. It did
