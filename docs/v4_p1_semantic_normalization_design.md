@@ -17,6 +17,14 @@ Opt-in profile under V4 runner plumbing:
 
 `normalization_profile = semantic_normalization_v1`
 
+`semantic_normalization_v1 = condition semantic normalization + coord provenance`
+
+This is not a global coordinate-normalization fix. It changes the condition
+feature transforms for k/q/BC/top_h/BC temperature scalars and records
+coordinate physical extent/aspect-ratio provenance, but model coordinates still
+use the legacy `train_minmax_to_unit_box` policy unless a later
+coordinate-policy or position-encoding experiment explicitly changes it.
+
 ## Current Legacy Facts
 
 The active V4 path uses the V1 medium controlled runner and extracted legacy
@@ -51,12 +59,13 @@ and target amplitude are all handled by generic linear statistics.
 
 ## Semantic Normalization V1
 
-`semantic_normalization_v1` should be an opt-in profile. It must not change
-`legacy_zscore` outputs unless the caller explicitly selects the new profile.
+`semantic_normalization_v1` is an opt-in condition-feature profile with
+coordinate provenance. It must not change `legacy_zscore` outputs unless the
+caller explicitly selects the new profile.
 
 | feature class | legacy_zscore | semantic_normalization_v1 plan |
 | --- | --- | --- |
-| coords | Train min/max to `[-1, 1]`; physical size is implicit. | Keep normalized coordinates, but also preserve `physical_extent_m` and `aspect_ratio` as manifest/provenance and, when promoted, condition scalars. |
+| coords | Train min/max to `[-1, 1]`; physical size is implicit. | Keep normalized coordinates unchanged. Record `physical_extent_m` and `aspect_ratio` as manifest/provenance only. A later coordinate-policy or position-encoding experiment may promote them to model inputs. |
 | u | Zero delta bridge, not z-scored. | Keep `zero_delta_u_bridge` unless a separate bridge experiment is approved. |
 | k | Linear per-axis z-score. | Use `log_k` or per-axis physical-scale transform; retain anisotropy information through `k_x/k_y/k_z` and optional ratios. |
 | q | Linear z-score of volumetric source. | Use `log1p_q` or source-power scale, with explicit zero-source handling. Record q scale unit/policy. |
