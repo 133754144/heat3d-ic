@@ -3,6 +3,11 @@
 Read this file only for V4 P1 target/normalization scale, final-probe
 amplitude, or model-lab merge review questions.
 
+Follow-up design: `docs/v4_p1_semantic_normalization_design.md`. The current
+issue is not missing per-channel z-score; current c features are already
+z-scored per feature. The issue is missing semantic normalization for masks,
+physical scales, source magnitude, coordinate extent, and target OOD scale.
+
 ## Scope
 
 This is a read-only diagnostic audit. It did not train, start tmux, create a
