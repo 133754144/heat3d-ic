@@ -169,6 +169,37 @@
         "notes": "V4 P1 decoder physical bypass: post-decoder residual from full normalized condition features; baseline training parameters match V4Test00_baseline_seed_0"
       }
     },
+    "V4P1_05_decoder_bypass_full_condition_smoke": {
+      "config_id": "V4P1_05_decoder_bypass_full_condition_smoke",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P1_05_decoder_bypass_full_condition_smoke.yaml",
+        "normalization_profile": "legacy_zscore",
+        "condition_feature_transform": "legacy_zscore_all_condition_features",
+        "decoder_bypass_mode": "post_decoder_residual",
+        "decoder_bypass_features": "full_condition",
+        "decoder_bypass_feature_source": "normalized_c",
+        "decoder_bypass_hidden_size": "64",
+        "decoder_bypass_layers": "2",
+        "decoder_bypass_init": "zero_residual",
+        "decoder_bypass_residual_scale": "1.0",
+        "epochs": "5",
+        "output_dir": "output/heat3d_v4_runs/V4P1_05_decoder_bypass_full_condition_smoke",
+        "run_name": "V4P1_05_decoder_bypass_full_condition_smoke",
+        "log_path": "output/heat3d_v4_logs/V4P1_05_decoder_bypass_full_condition_smoke.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_05_decoder_bypass_full_condition_smoke",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_05_decoder_bypass_full_condition_smoke",
+        "save_final_predictions": "false",
+        "save_best_predictions": "false",
+        "final_probe_eval_after_training": "false",
+        "post_training_diagnostics": "false",
+        "run_baseline_comparison": "false",
+        "run_error_bins": "false",
+        "run_condition_diagnostics": "false",
+        "run_summary_diagnostics": "false",
+        "run_field_shape_diagnostics": "false",
+        "notes": "V4 P1 decoder bypass smoke epoch=5; prediction export, final-probe, and post-training diagnostics disabled"
+      }
+    },
     "V4Test00_baseline_seed_1": {
       "config_id": "V4Test00_baseline_seed_1",
       "overrides": {
