@@ -345,16 +345,12 @@ def _semantic_transform_for_feature(
 
 
 def _semantic_transform_condition_np(raw_c: np.ndarray, transforms: tuple[str, ...]) -> np.ndarray:
-    columns = []
-    for index, transform in enumerate(transforms):
-        values = raw_c[:, index : index + 1]
-        if transform == TRANSFORM_LOG_K_ZSCORE:
-            columns.append(np.log(np.maximum(values, SEMANTIC_LOG_EPS)))
-        elif transform == TRANSFORM_SIGNED_LOG1P_Q_ZSCORE:
-            columns.append(np.sign(values) * np.log1p(np.abs(values)))
-        else:
-            columns.append(values)
-    transformed = np.concatenate(columns, axis=-1)
+    log_mask = _np_transform_mask(transforms, TRANSFORM_LOG_K_ZSCORE, raw_c.ndim)
+    q_mask = _np_transform_mask(transforms, TRANSFORM_SIGNED_LOG1P_Q_ZSCORE, raw_c.ndim)
+    log_values = np.log(np.maximum(raw_c, SEMANTIC_LOG_EPS))
+    signed_log_values = np.sign(raw_c) * np.log1p(np.abs(raw_c))
+    transformed = np.where(log_mask, log_values, raw_c)
+    transformed = np.where(q_mask, signed_log_values, transformed)
     if not np.all(np.isfinite(transformed)):
         raise ValueError("semantic_normalization_v1 produced non-finite condition features")
     return transformed
@@ -382,12 +378,16 @@ def _normalize_semantic_condition(raw_c: Any, stats: dict[str, Any]) -> Any:
         raise ValueError("semantic stats missing condition_feature_transforms")
     mean = stats["condition_mean"]
     std = stats["condition_std"]
-    columns = []
-    for index, transform in enumerate(transforms):
-        raw_column = raw_c[..., index : index + 1]
-        transformed = _semantic_transform_column(raw_column, transform)
-        columns.append((transformed - mean[..., index : index + 1]) / std[..., index : index + 1])
-    return jnp.concatenate(columns, axis=-1)
+    raw_array = jnp.asarray(raw_c)
+    log_mask = _jnp_transform_mask(transforms, TRANSFORM_LOG_K_ZSCORE, raw_array.ndim)
+    q_mask = _jnp_transform_mask(
+        transforms, TRANSFORM_SIGNED_LOG1P_Q_ZSCORE, raw_array.ndim
+    )
+    log_values = jnp.log(jnp.maximum(raw_array, SEMANTIC_LOG_EPS))
+    signed_log_values = jnp.sign(raw_array) * jnp.log1p(jnp.abs(raw_array))
+    transformed = jnp.where(log_mask, log_values, raw_array)
+    transformed = jnp.where(q_mask, signed_log_values, transformed)
+    return (transformed - mean) / std
 
 
 def _recover_semantic_condition(normalized_c: Any, stats: dict[str, Any]) -> Any:
@@ -396,25 +396,31 @@ def _recover_semantic_condition(normalized_c: Any, stats: dict[str, Any]) -> Any
         raise ValueError("semantic stats missing condition_feature_transforms")
     mean = stats["condition_mean"]
     std = stats["condition_std"]
-    columns = []
-    for index, transform in enumerate(transforms):
-        transformed = normalized_c[..., index : index + 1] * std[..., index : index + 1]
-        transformed = transformed + mean[..., index : index + 1]
-        columns.append(_semantic_inverse_transform_column(transformed, transform))
-    return jnp.concatenate(columns, axis=-1)
+    normalized_array = jnp.asarray(normalized_c)
+    transformed = normalized_array * std + mean
+    log_mask = _jnp_transform_mask(transforms, TRANSFORM_LOG_K_ZSCORE, transformed.ndim)
+    q_mask = _jnp_transform_mask(
+        transforms, TRANSFORM_SIGNED_LOG1P_Q_ZSCORE, transformed.ndim
+    )
+    log_raw = jnp.exp(transformed)
+    signed_log_raw = jnp.sign(transformed) * jnp.expm1(jnp.abs(transformed))
+    raw = jnp.where(log_mask, log_raw, transformed)
+    return jnp.where(q_mask, signed_log_raw, raw)
 
 
-def _semantic_transform_column(raw_column: Any, transform: str) -> Any:
-    if transform == TRANSFORM_LOG_K_ZSCORE:
-        return jnp.log(jnp.maximum(raw_column, SEMANTIC_LOG_EPS))
-    if transform == TRANSFORM_SIGNED_LOG1P_Q_ZSCORE:
-        return jnp.sign(raw_column) * jnp.log1p(jnp.abs(raw_column))
-    return raw_column
+def _np_transform_mask(
+    transforms: tuple[str, ...], selected_transform: str, ndim: int
+) -> np.ndarray:
+    mask = np.asarray(
+        [transform == selected_transform for transform in transforms],
+        dtype=bool,
+    )
+    return mask.reshape((1,) * max(0, ndim - 1) + (-1,))
 
 
-def _semantic_inverse_transform_column(transformed_column: Any, transform: str) -> Any:
-    if transform == TRANSFORM_LOG_K_ZSCORE:
-        return jnp.exp(transformed_column)
-    if transform == TRANSFORM_SIGNED_LOG1P_Q_ZSCORE:
-        return jnp.sign(transformed_column) * jnp.expm1(jnp.abs(transformed_column))
-    return transformed_column
+def _jnp_transform_mask(transforms: tuple[str, ...], selected_transform: str, ndim: int) -> Any:
+    mask = jnp.asarray(
+        [transform == selected_transform for transform in transforms],
+        dtype=bool,
+    )
+    return mask.reshape((1,) * max(0, ndim - 1) + (-1,))
