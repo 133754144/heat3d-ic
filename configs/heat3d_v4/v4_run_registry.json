@@ -15,6 +15,13 @@
     "normalization_profile": "legacy_zscore",
     "coord_policy": "train_minmax_to_unit_box",
     "condition_feature_transform": "legacy_zscore_all_condition_features",
+    "decoder_bypass_mode": "none",
+    "decoder_bypass_features": "none",
+    "decoder_bypass_feature_source": "normalized_c",
+    "decoder_bypass_hidden_size": "64",
+    "decoder_bypass_layers": "2",
+    "decoder_bypass_init": "zero_residual",
+    "decoder_bypass_residual_scale": "1.0",
     "target_recovery_policy": "deltaT_norm_to_K_plus_T_ref",
     "feature_manifest_hash": "planned",
     "model_capacity": "96/96/s6/m2",
@@ -139,6 +146,27 @@
         "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_04_normalization_k",
         "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_04_normalization_k",
         "notes": "V4 P1 semantic normalization ablation: k log transform only; q, BC flags, top_h, and BC temperature scalars stay legacy z-score; other training parameters match V4Test00_baseline_seed_0"
+      }
+    },
+    "V4P1_05_decoder_bypass_full_condition": {
+      "config_id": "V4P1_05_decoder_bypass_full_condition",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P1_05_decoder_bypass_full_condition.yaml",
+        "normalization_profile": "legacy_zscore",
+        "condition_feature_transform": "legacy_zscore_all_condition_features",
+        "decoder_bypass_mode": "post_decoder_residual",
+        "decoder_bypass_features": "full_condition",
+        "decoder_bypass_feature_source": "normalized_c",
+        "decoder_bypass_hidden_size": "64",
+        "decoder_bypass_layers": "2",
+        "decoder_bypass_init": "zero_residual",
+        "decoder_bypass_residual_scale": "1.0",
+        "output_dir": "output/heat3d_v4_runs/V4P1_05_decoder_bypass_full_condition",
+        "run_name": "V4P1_05_decoder_bypass_full_condition",
+        "log_path": "output/heat3d_v4_logs/V4P1_05_decoder_bypass_full_condition.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_05_decoder_bypass_full_condition",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_05_decoder_bypass_full_condition",
+        "notes": "V4 P1 decoder physical bypass: post-decoder residual from full normalized condition features; baseline training parameters match V4Test00_baseline_seed_0"
       }
     },
     "V4Test00_baseline_seed_1": {

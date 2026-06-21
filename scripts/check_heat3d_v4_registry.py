@@ -74,6 +74,22 @@ TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF = (
     "deltaT_norm_to_K_plus_T_ref"
 )
 FEATURE_MANIFEST_HASH_PLANNED = "planned"
+DECODER_BYPASS_MODE_NONE = "none"
+DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL = "post_decoder_residual"
+DECODER_BYPASS_MODES = {
+    DECODER_BYPASS_MODE_NONE,
+    DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL,
+}
+DECODER_BYPASS_FEATURES_NONE = "none"
+DECODER_BYPASS_FEATURES_FULL_CONDITION = "full_condition"
+DECODER_BYPASS_FEATURES = {
+    DECODER_BYPASS_FEATURES_NONE,
+    DECODER_BYPASS_FEATURES_FULL_CONDITION,
+}
+DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
+DECODER_BYPASS_FEATURE_SOURCES = {DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C}
+DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
+DECODER_BYPASS_INITS = {DECODER_BYPASS_INIT_ZERO_RESIDUAL}
 DEFAULT_REGISTRY = Path("configs/heat3d_v4/v4_run_registry.json")
 CONFIG_FIELDNAMES = (
     "config_id",
@@ -88,6 +104,13 @@ CONFIG_FIELDNAMES = (
     "normalization_profile",
     "coord_policy",
     "condition_feature_transform",
+    "decoder_bypass_mode",
+    "decoder_bypass_features",
+    "decoder_bypass_feature_source",
+    "decoder_bypass_hidden_size",
+    "decoder_bypass_layers",
+    "decoder_bypass_init",
+    "decoder_bypass_residual_scale",
     "target_recovery_policy",
     "feature_manifest_hash",
     "model_capacity",
@@ -219,6 +242,13 @@ EXPECTED_V4_BASELINE = {
     "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
     "condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+    "decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
+    "decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
+    "decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    "decoder_bypass_hidden_size": "64",
+    "decoder_bypass_layers": "2",
+    "decoder_bypass_init": DECODER_BYPASS_INIT_ZERO_RESIDUAL,
+    "decoder_bypass_residual_scale": "1.0",
     "target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
     "feature_manifest_hash": FEATURE_MANIFEST_HASH_PLANNED,
     "model_capacity": "96/96/s6/m2",
@@ -484,6 +514,7 @@ def _normalize_resolved_row(
             f"{sorted(NORMALIZATION_PROFILES)}, got {row['normalization_profile']!r}"
         )
     _check_provenance_fields(row, context=context)
+    _check_decoder_bypass_fields(row, context=context)
     return row
 
 
@@ -536,6 +567,68 @@ def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
                 f"{context} feature_manifest_hash must be blank, "
                 f"{FEATURE_MANIFEST_HASH_PLANNED!r}, or a real hash-like value"
             )
+
+
+def _check_decoder_bypass_fields(row: Mapping[str, str], *, context: str) -> None:
+    mode = row["decoder_bypass_mode"]
+    features = row["decoder_bypass_features"]
+    source = row["decoder_bypass_feature_source"]
+    init = row["decoder_bypass_init"]
+    if mode not in DECODER_BYPASS_MODES:
+        raise ValueError(
+            f"{context} decoder_bypass_mode must be one of "
+            f"{sorted(DECODER_BYPASS_MODES)}, got {mode!r}"
+        )
+    if features not in DECODER_BYPASS_FEATURES:
+        raise ValueError(
+            f"{context} decoder_bypass_features must be one of "
+            f"{sorted(DECODER_BYPASS_FEATURES)}, got {features!r}"
+        )
+    if source not in DECODER_BYPASS_FEATURE_SOURCES:
+        raise ValueError(
+            f"{context} decoder_bypass_feature_source must be one of "
+            f"{sorted(DECODER_BYPASS_FEATURE_SOURCES)}, got {source!r}"
+        )
+    if init not in DECODER_BYPASS_INITS:
+        raise ValueError(
+            f"{context} decoder_bypass_init must be one of "
+            f"{sorted(DECODER_BYPASS_INITS)}, got {init!r}"
+        )
+    hidden_size = _positive_int(row, "decoder_bypass_hidden_size", context)
+    layers = _positive_int(row, "decoder_bypass_layers", context)
+    _ = (hidden_size, layers)
+    try:
+        residual_scale = float(row["decoder_bypass_residual_scale"])
+    except ValueError as exc:
+        raise ValueError(
+            f"{context} decoder_bypass_residual_scale must be numeric"
+        ) from exc
+    if residual_scale < 0.0:
+        raise ValueError(
+            f"{context} decoder_bypass_residual_scale must be >= 0"
+        )
+    if mode == DECODER_BYPASS_MODE_NONE:
+        if features != DECODER_BYPASS_FEATURES_NONE:
+            raise ValueError(
+                f"{context} decoder_bypass_mode='none' requires "
+                "decoder_bypass_features='none'"
+            )
+        return
+    if features != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        raise ValueError(
+            f"{context} decoder_bypass_mode='post_decoder_residual' requires "
+            "decoder_bypass_features='full_condition'"
+        )
+
+
+def _positive_int(row: Mapping[str, str], field: str, context: str) -> int:
+    try:
+        value = int(row[field])
+    except ValueError as exc:
+        raise ValueError(f"{context} {field} must be an int") from exc
+    if value < 1:
+        raise ValueError(f"{context} {field} must be >= 1")
+    return value
 
 
 def _check_unique_resolved_fields(rows: list[dict[str, str]]) -> None:
@@ -630,6 +723,13 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "model.edge_latent_size": 96,
             "model.processor_steps": 6,
             "model.mlp_hidden_layers": 2,
+            "model.decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
+            "model.decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
+            "model.decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+            "model.decoder_bypass_hidden_size": 64,
+            "model.decoder_bypass_layers": 2,
+            "model.decoder_bypass_init": DECODER_BYPASS_INIT_ZERO_RESIDUAL,
+            "model.decoder_bypass_residual_scale": 1.0,
             "run.batch_size": 88,
             "run.batch_plan": "sample_shuffle",
             "optimizer.name": "adamw",
@@ -657,6 +757,9 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "metadata.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
             "metadata.coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
             "metadata.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+            "metadata.decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
+            "metadata.decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
+            "metadata.decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
             "metadata.target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
             "metadata.feature_manifest_hash": FEATURE_MANIFEST_HASH_PLANNED,
             "metadata.metrics_profile": DEFAULT_METRICS_PROFILE,
@@ -683,6 +786,15 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "edge_latent_size": _int(row, "edge_latent_size"),
             "processor_steps": _int(row, "processor_steps"),
             "mlp_hidden_layers": _int(row, "mlp_hidden_layers"),
+            "decoder_bypass_mode": row["decoder_bypass_mode"],
+            "decoder_bypass_features": row["decoder_bypass_features"],
+            "decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
+            "decoder_bypass_hidden_size": _int(row, "decoder_bypass_hidden_size"),
+            "decoder_bypass_layers": _int(row, "decoder_bypass_layers"),
+            "decoder_bypass_init": row["decoder_bypass_init"],
+            "decoder_bypass_residual_scale": _float(
+                row, "decoder_bypass_residual_scale"
+            ),
         },
         "dataset": {
             "normalization_profile": row["normalization_profile"],
@@ -765,6 +877,9 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "normalization_profile": row["normalization_profile"],
             "coord_policy": row["coord_policy"],
             "condition_feature_transform": row["condition_feature_transform"],
+            "decoder_bypass_mode": row["decoder_bypass_mode"],
+            "decoder_bypass_features": row["decoder_bypass_features"],
+            "decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
             "target_recovery_policy": row["target_recovery_policy"],
             "feature_manifest_hash": row["feature_manifest_hash"],
             "launch_policy": row["launch_policy"],
@@ -782,6 +897,15 @@ def _assert_registry_matches_resolved(
         "model.edge_latent_size": _int(row, "edge_latent_size"),
         "model.processor_steps": _int(row, "processor_steps"),
         "model.mlp_hidden_layers": _int(row, "mlp_hidden_layers"),
+        "model.decoder_bypass_mode": row["decoder_bypass_mode"],
+        "model.decoder_bypass_features": row["decoder_bypass_features"],
+        "model.decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
+        "model.decoder_bypass_hidden_size": _int(row, "decoder_bypass_hidden_size"),
+        "model.decoder_bypass_layers": _int(row, "decoder_bypass_layers"),
+        "model.decoder_bypass_init": row["decoder_bypass_init"],
+        "model.decoder_bypass_residual_scale": _float(
+            row, "decoder_bypass_residual_scale"
+        ),
         "run.batch_size": _int(row, "batch_size"),
         "run.validation_batch_size": _int(row, "validation_batch_size"),
         "run.prediction_batch_size": _int(row, "prediction_batch_size"),
@@ -831,6 +955,9 @@ def _assert_registry_matches_resolved(
         "metadata.normalization_profile": row["normalization_profile"],
         "metadata.coord_policy": row["coord_policy"],
         "metadata.condition_feature_transform": row["condition_feature_transform"],
+        "metadata.decoder_bypass_mode": row["decoder_bypass_mode"],
+        "metadata.decoder_bypass_features": row["decoder_bypass_features"],
+        "metadata.decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
         "metadata.target_recovery_policy": row["target_recovery_policy"],
         "metadata.feature_manifest_hash": row["feature_manifest_hash"],
     }

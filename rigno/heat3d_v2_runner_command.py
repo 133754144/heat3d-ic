@@ -95,6 +95,25 @@ def build_training_command(
     _append_option(command, "--processor-steps", model.get("processor_steps"))
     _append_option(command, "--mlp-hidden-layers", model.get("mlp_hidden_layers"))
     _append_option(command, "--p-edge-masking", model.get("p_edge_masking"))
+    _append_option(command, "--decoder-bypass-mode", model.get("decoder_bypass_mode"))
+    _append_option(command, "--decoder-bypass-features", model.get("decoder_bypass_features"))
+    _append_option(
+        command,
+        "--decoder-bypass-feature-source",
+        model.get("decoder_bypass_feature_source"),
+    )
+    _append_option(
+        command,
+        "--decoder-bypass-hidden-size",
+        model.get("decoder_bypass_hidden_size"),
+    )
+    _append_option(command, "--decoder-bypass-layers", model.get("decoder_bypass_layers"))
+    _append_option(command, "--decoder-bypass-init", model.get("decoder_bypass_init"))
+    _append_option(
+        command,
+        "--decoder-bypass-residual-scale",
+        model.get("decoder_bypass_residual_scale"),
+    )
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
@@ -422,6 +441,7 @@ def build_v2_command_plan(
     role = config.get("config_role")
     if role == "baseline_reference":
         raise ValueError("baseline_reference configs do not map to runner commands")
+    model = _section(config, "model")
 
     plan: dict[str, Any] = {
         "config_name": _config_name(config),
@@ -432,6 +452,11 @@ def build_v2_command_plan(
         "normalization_profile": _normalization_profile(config),
         "condition_feature_transform": _condition_feature_transform(config),
         "training_script": _training_script_for_profile(_normalization_profile(config)),
+        "decoder_bypass_mode": model.get("decoder_bypass_mode", "none"),
+        "decoder_bypass_features": model.get("decoder_bypass_features", "none"),
+        "decoder_bypass_feature_source": model.get(
+            "decoder_bypass_feature_source", "normalized_c"
+        ),
         "diagnostics_commands": [],
         "mapped_fields": _mapped_fields(config),
         "unmapped_fields": _unmapped_fields(config),
@@ -520,6 +545,9 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
         f"role: {plan.get('config_role')}",
         f"normalization_profile: {plan.get('normalization_profile')}",
         f"condition_feature_transform: {plan.get('condition_feature_transform')}",
+        f"decoder_bypass_mode: {plan.get('decoder_bypass_mode')}",
+        f"decoder_bypass_features: {plan.get('decoder_bypass_features')}",
+        f"decoder_bypass_feature_source: {plan.get('decoder_bypass_feature_source')}",
         f"training_script: {plan.get('training_script')}",
         f"training: {shlex.join(plan['training_command'])}",
     ]
@@ -557,6 +585,19 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("model.edge_latent_size", "training --edge-latent-size"),
         ("model.processor_steps", "training --processor-steps"),
         ("model.mlp_hidden_layers", "training --mlp-hidden-layers"),
+        ("model.decoder_bypass_mode", "training --decoder-bypass-mode"),
+        ("model.decoder_bypass_features", "training --decoder-bypass-features"),
+        (
+            "model.decoder_bypass_feature_source",
+            "training --decoder-bypass-feature-source",
+        ),
+        ("model.decoder_bypass_hidden_size", "training --decoder-bypass-hidden-size"),
+        ("model.decoder_bypass_layers", "training --decoder-bypass-layers"),
+        ("model.decoder_bypass_init", "training --decoder-bypass-init"),
+        (
+            "model.decoder_bypass_residual_scale",
+            "training --decoder-bypass-residual-scale",
+        ),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
         ("run.train_metrics_schedule", "training --train-metrics-schedule"),

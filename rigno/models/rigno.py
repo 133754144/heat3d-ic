@@ -1010,6 +1010,17 @@ class RIGNO(AbstractOperator):
   conditioned_normalization: bool = True
   cond_norm_hidden_size: int = 16
   p_edge_masking: int = 0.5
+  decoder_bypass_mode: str = 'none'
+  decoder_bypass_features: str = 'none'
+  decoder_bypass_feature_source: str = 'normalized_c'
+  decoder_bypass_feature_indices: Tuple[int, ...] = ()
+  decoder_bypass_feature_names: Tuple[str, ...] = ()
+  decoder_bypass_num_features: int = 0
+  decoder_bypass_output_space: str = 'normalized_deltaT'
+  decoder_bypass_hidden_size: int = 64
+  decoder_bypass_layers: int = 2
+  decoder_bypass_init: str = 'zero_residual'
+  decoder_bypass_residual_scale: float = 1.0
 
   def _check_coordinates(self, x: Array) -> None:
     assert x is not None
@@ -1025,6 +1036,7 @@ class RIGNO(AbstractOperator):
     assert u.shape[2] == x.shape[2], f'u: {u.shape}, x: {x.shape}'
 
   def setup(self):
+    self._validate_decoder_bypass_config()
     self.encoder = Encoder(
       edge_latent_size=self.edge_latent_size,
       node_latent_size=self.node_latent_size,
@@ -1056,6 +1068,81 @@ class RIGNO(AbstractOperator):
       p_edge_masking=self.p_edge_masking,
       name='decoder',
     )
+    if self._decoder_bypass_enabled():
+      self.decoder_bypass_hidden = [
+        nn.Dense(
+          self.decoder_bypass_hidden_size,
+          name=f'decoder_bypass_hidden_{index}',
+        )
+        for index in range(self.decoder_bypass_layers)
+      ]
+      output_kernel_init = (
+        nn.initializers.zeros
+        if self.decoder_bypass_init == 'zero_residual'
+        else nn.initializers.lecun_normal()
+      )
+      output_bias_init = (
+        nn.initializers.zeros
+        if self.decoder_bypass_init == 'zero_residual'
+        else nn.initializers.zeros
+      )
+      self.decoder_bypass_output = nn.Dense(
+        self.num_outputs,
+        kernel_init=output_kernel_init,
+        bias_init=output_bias_init,
+        name='decoder_bypass_output',
+      )
+    else:
+      self.decoder_bypass_hidden = ()
+      self.decoder_bypass_output = None
+
+  def _decoder_bypass_enabled(self) -> bool:
+    return self.decoder_bypass_mode != 'none'
+
+  def _validate_decoder_bypass_config(self) -> None:
+    if self.decoder_bypass_mode not in {'none', 'post_decoder_residual'}:
+      raise ValueError(
+        "decoder_bypass_mode must be one of {'none', 'post_decoder_residual'}, "
+        f"found {self.decoder_bypass_mode!r}"
+      )
+    if self.decoder_bypass_features not in {'none', 'full_condition'}:
+      raise ValueError(
+        "decoder_bypass_features must be one of {'none', 'full_condition'}, "
+        f"found {self.decoder_bypass_features!r}"
+      )
+    if self.decoder_bypass_feature_source != 'normalized_c':
+      raise ValueError(
+        "decoder_bypass_feature_source must be 'normalized_c', "
+        f"found {self.decoder_bypass_feature_source!r}"
+      )
+    if self.decoder_bypass_init != 'zero_residual':
+      raise ValueError(
+        "decoder_bypass_init must be 'zero_residual', "
+        f"found {self.decoder_bypass_init!r}"
+      )
+    if self.decoder_bypass_output_space != 'normalized_deltaT':
+      raise ValueError(
+        "decoder_bypass_output_space must be 'normalized_deltaT', "
+        f"found {self.decoder_bypass_output_space!r}"
+      )
+    if self.decoder_bypass_hidden_size < 1:
+      raise ValueError("decoder_bypass_hidden_size must be >= 1")
+    if self.decoder_bypass_layers < 1:
+      raise ValueError("decoder_bypass_layers must be >= 1")
+    if self.decoder_bypass_mode == 'none':
+      if self.decoder_bypass_features != 'none':
+        raise ValueError("decoder_bypass_mode='none' requires decoder_bypass_features='none'")
+      return
+    if self.decoder_bypass_features != 'full_condition':
+      raise ValueError(
+        "post_decoder_residual requires decoder_bypass_features='full_condition'"
+      )
+    if not self.decoder_bypass_feature_indices:
+      raise ValueError("decoder bypass requires resolved feature indices")
+    if self.decoder_bypass_num_features != len(self.decoder_bypass_feature_indices):
+      raise ValueError(
+        "decoder_bypass_num_features must match decoder_bypass_feature_indices"
+      )
 
   @staticmethod
   def _prepare_features(feats: Array) -> Array:
@@ -1175,9 +1262,33 @@ class RIGNO(AbstractOperator):
     # Reshape the output to u
     # [batch_size, num_pnodes_out, num_outputs] -> [batch_size, 1, num_pnodes_out, num_outputs]
     output = self._prepare_features(output_pnodes)
+    output = self._apply_decoder_bypass(output, inputs)
     self._check_function(output, x=inputs.x_out)
 
     return output
+
+  def _apply_decoder_bypass(self, base_output: Array, inputs: Inputs) -> Array:
+    if not self._decoder_bypass_enabled():
+      return base_output
+    if inputs.c is None:
+      raise ValueError("decoder bypass requires inputs.c")
+    if inputs.x_inp.shape != inputs.x_out.shape:
+      raise ValueError(
+        "decoder bypass requires one-to-one input/output node alignment; "
+        f"x_inp={inputs.x_inp.shape} x_out={inputs.x_out.shape}"
+      )
+    if inputs.c.shape[2] != base_output.shape[2]:
+      raise ValueError(
+        "decoder bypass requires inputs.c node count to match decoder output; "
+        f"c={inputs.c.shape} output={base_output.shape}"
+      )
+    indices = jnp.asarray(self.decoder_bypass_feature_indices, dtype=jnp.int32)
+    residual = jnp.take(inputs.c, indices, axis=-1)
+    for layer in self.decoder_bypass_hidden:
+      residual = nn.gelu(layer(residual))
+    residual = self.decoder_bypass_output(residual)
+    self.sow(col='intermediates', name='decoder_bypass_residual', value=residual)
+    return base_output + float(self.decoder_bypass_residual_scale) * residual
 
 def _subsample_pointset(key, x: Array, factor: float) -> Array:
   """Downsamples a point cloud by randomly subsampling them."""

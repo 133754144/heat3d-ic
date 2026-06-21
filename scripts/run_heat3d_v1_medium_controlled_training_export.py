@@ -68,6 +68,36 @@ RUNNER_MODEL_CONFIG = {
     "processor_steps": 6,
     "mlp_hidden_layers": 2,
 }
+DECODER_BYPASS_MODE_NONE = "none"
+DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL = "post_decoder_residual"
+DECODER_BYPASS_MODES = (
+    DECODER_BYPASS_MODE_NONE,
+    DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL,
+)
+DECODER_BYPASS_FEATURES_NONE = "none"
+DECODER_BYPASS_FEATURES_FULL_CONDITION = "full_condition"
+DECODER_BYPASS_FEATURES = (
+    DECODER_BYPASS_FEATURES_NONE,
+    DECODER_BYPASS_FEATURES_FULL_CONDITION,
+)
+DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
+DECODER_BYPASS_FEATURE_SOURCES = (DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,)
+DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
+DECODER_BYPASS_INITS = (DECODER_BYPASS_INIT_ZERO_RESIDUAL,)
+DECODER_BYPASS_OUTPUT_SPACE = "normalized_deltaT"
+DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES = (
+    "k_x",
+    "k_y",
+    "k_z",
+    "q",
+    "is_top",
+    "is_bottom",
+    "is_side",
+    "is_interior",
+    "top_h",
+    "top_T_inf_minus_T_ref",
+    "bottom_T_fixed_minus_T_ref",
+)
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -156,6 +186,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--processor-steps", type=int, default=RUNNER_MODEL_CONFIG["processor_steps"])
     parser.add_argument("--mlp-hidden-layers", type=int, default=RUNNER_MODEL_CONFIG["mlp_hidden_layers"])
     parser.add_argument("--p-edge-masking", type=float, default=float(RUNNER_MODEL_CONFIG.get("p_edge_masking", 0.0)))
+    parser.add_argument("--decoder-bypass-mode", choices=DECODER_BYPASS_MODES, default=DECODER_BYPASS_MODE_NONE)
+    parser.add_argument("--decoder-bypass-features", choices=DECODER_BYPASS_FEATURES, default=DECODER_BYPASS_FEATURES_NONE)
+    parser.add_argument(
+        "--decoder-bypass-feature-source",
+        choices=DECODER_BYPASS_FEATURE_SOURCES,
+        default=DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    )
+    parser.add_argument("--decoder-bypass-hidden-size", type=int, default=64)
+    parser.add_argument("--decoder-bypass-layers", type=int, default=2)
+    parser.add_argument("--decoder-bypass-init", choices=DECODER_BYPASS_INITS, default=DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    parser.add_argument("--decoder-bypass-residual-scale", type=float, default=1.0)
     parser.add_argument("--batch-size", type=int, default=88)
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
@@ -1525,6 +1566,17 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "processor_steps": int(args.processor_steps),
             "mlp_hidden_layers": int(args.mlp_hidden_layers),
             "p_edge_masking": float(args.p_edge_masking),
+            "decoder_bypass_mode": args.decoder_bypass_mode,
+            "decoder_bypass_features": args.decoder_bypass_features,
+            "decoder_bypass_feature_source": args.decoder_bypass_feature_source,
+            "decoder_bypass_feature_indices": (),
+            "decoder_bypass_feature_names": (),
+            "decoder_bypass_num_features": 0,
+            "decoder_bypass_output_space": DECODER_BYPASS_OUTPUT_SPACE,
+            "decoder_bypass_hidden_size": int(args.decoder_bypass_hidden_size),
+            "decoder_bypass_layers": int(args.decoder_bypass_layers),
+            "decoder_bypass_init": args.decoder_bypass_init,
+            "decoder_bypass_residual_scale": float(args.decoder_bypass_residual_scale),
         }
     )
     return model_config
@@ -1664,6 +1716,134 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     p_edge_masking = float(config.get("p_edge_masking", 0.0))
     if p_edge_masking < 0.0 or p_edge_masking >= 1.0:
         raise ValueError("--p-edge-masking must be in [0, 1)")
+    _validate_decoder_bypass_config(config)
+
+
+def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
+    mode = config.get("decoder_bypass_mode", DECODER_BYPASS_MODE_NONE)
+    features = config.get("decoder_bypass_features", DECODER_BYPASS_FEATURES_NONE)
+    source = config.get(
+        "decoder_bypass_feature_source",
+        DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    )
+    init = config.get("decoder_bypass_init", DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    if mode not in DECODER_BYPASS_MODES:
+        raise ValueError(f"--decoder-bypass-mode must be one of {DECODER_BYPASS_MODES}")
+    if features not in DECODER_BYPASS_FEATURES:
+        raise ValueError(
+            f"--decoder-bypass-features must be one of {DECODER_BYPASS_FEATURES}"
+        )
+    if source not in DECODER_BYPASS_FEATURE_SOURCES:
+        raise ValueError(
+            "--decoder-bypass-feature-source must be one of "
+            f"{DECODER_BYPASS_FEATURE_SOURCES}"
+        )
+    if init not in DECODER_BYPASS_INITS:
+        raise ValueError(f"--decoder-bypass-init must be one of {DECODER_BYPASS_INITS}")
+    if int(config.get("decoder_bypass_hidden_size", 0)) < 1:
+        raise ValueError("--decoder-bypass-hidden-size must be >= 1")
+    if int(config.get("decoder_bypass_layers", 0)) < 1:
+        raise ValueError("--decoder-bypass-layers must be >= 1")
+    if float(config.get("decoder_bypass_residual_scale", 0.0)) < 0.0:
+        raise ValueError("--decoder-bypass-residual-scale must be >= 0")
+    if mode == DECODER_BYPASS_MODE_NONE:
+        if features != DECODER_BYPASS_FEATURES_NONE:
+            raise ValueError(
+                "--decoder-bypass-mode none requires --decoder-bypass-features none"
+            )
+        return
+    if mode != DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL:
+        raise ValueError(f"unsupported decoder_bypass_mode: {mode}")
+    if features != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        raise ValueError(
+            "--decoder-bypass-mode post_decoder_residual requires "
+            "--decoder-bypass-features full_condition"
+        )
+    indices = tuple(config.get("decoder_bypass_feature_indices") or ())
+    names = tuple(config.get("decoder_bypass_feature_names") or ())
+    if indices and len(indices) != int(config.get("decoder_bypass_num_features", 0)):
+        raise ValueError("decoder_bypass_num_features must match feature_indices")
+    if names and len(names) != int(config.get("decoder_bypass_num_features", 0)):
+        raise ValueError("decoder_bypass_num_features must match feature_names")
+
+
+def _resolve_decoder_bypass_model_config(
+    model_config: dict[str, Any],
+    stats: dict[str, Any],
+) -> dict[str, Any]:
+    resolved = dict(model_config)
+    if resolved["decoder_bypass_mode"] == DECODER_BYPASS_MODE_NONE:
+        resolved["decoder_bypass_feature_indices"] = ()
+        resolved["decoder_bypass_feature_names"] = ()
+        resolved["decoder_bypass_num_features"] = 0
+        resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
+        return resolved
+
+    feature_names = tuple(stats.get("feature_names") or ())
+    missing = [
+        name
+        for name in DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES
+        if name not in feature_names
+    ]
+    if missing:
+        raise ValueError(
+            "decoder_bypass_features=full_condition missing required condition "
+            f"features: {missing}; available={feature_names}"
+        )
+    indices = tuple(range(len(feature_names)))
+    resolved["decoder_bypass_feature_indices"] = indices
+    resolved["decoder_bypass_feature_names"] = feature_names
+    resolved["decoder_bypass_num_features"] = len(indices)
+    resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
+    _validate_decoder_bypass_config(resolved)
+    return resolved
+
+
+def _decoder_bypass_payload(model_config: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "decoder_bypass_mode": model_config.get("decoder_bypass_mode"),
+        "decoder_bypass_features": model_config.get("decoder_bypass_features"),
+        "decoder_bypass_feature_source": model_config.get("decoder_bypass_feature_source"),
+        "decoder_bypass_hidden_size": int(model_config.get("decoder_bypass_hidden_size", 0)),
+        "decoder_bypass_layers": int(model_config.get("decoder_bypass_layers", 0)),
+        "decoder_bypass_init": model_config.get("decoder_bypass_init"),
+        "decoder_bypass_residual_scale": float(
+            model_config.get("decoder_bypass_residual_scale", 0.0)
+        ),
+        "decoder_bypass_feature_names": list(
+            model_config.get("decoder_bypass_feature_names") or ()
+        ),
+        "decoder_bypass_feature_indices": [
+            int(index) for index in model_config.get("decoder_bypass_feature_indices") or ()
+        ],
+        "decoder_bypass_num_features": int(
+            model_config.get("decoder_bypass_num_features", 0)
+        ),
+        "decoder_bypass_output_space": model_config.get("decoder_bypass_output_space"),
+    }
+
+
+def _check_decoder_bypass_input_alignment(
+    model_config: dict[str, Any],
+    groups: list[dict],
+) -> None:
+    if model_config.get("decoder_bypass_mode") == DECODER_BYPASS_MODE_NONE:
+        return
+    for group in groups:
+        inputs = group["inputs"]
+        x_inp = np.asarray(inputs.x_inp)
+        x_out = np.asarray(inputs.x_out)
+        if x_inp.shape != x_out.shape:
+            raise ValueError(
+                "decoder bypass requires one-to-one x_inp/x_out node alignment; "
+                f"group={group.get('group_name')} x_inp={x_inp.shape} x_out={x_out.shape}"
+            )
+        max_abs = float(np.max(np.abs(x_inp - x_out))) if x_inp.size else 0.0
+        if max_abs > 1.0e-8:
+            raise ValueError(
+                "decoder bypass requires identical x_inp/x_out node ordering; "
+                f"group={group.get('group_name')} max_abs_coord_diff={max_abs}"
+            )
 
 
 def _validate_batch_config(config: dict[str, Any]) -> None:
@@ -5166,6 +5346,8 @@ def main() -> int:
         norm_start,
     )
     _record_timing(timings, "normalization", norm_start)
+    model_config = _resolve_decoder_bypass_model_config(model_config, stats)
+    _validate_model_config(model_config)
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
     if batch_config["batch_plan"] == "sample_shuffle":
@@ -5239,6 +5421,10 @@ def main() -> int:
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
     _require_nonempty_groups(all_groups, "all")
+    _check_decoder_bypass_input_alignment(
+        model_config,
+        [*train_groups, *valid_groups, *valid_stress_groups, *all_groups],
+    )
     _record_timing(timings, "group_build", group_start)
     _progress(
         progress_enabled,
@@ -5485,6 +5671,7 @@ def main() -> int:
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "graph_config": graph_config,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
+        **_decoder_bypass_payload(model_config),
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
         "prediction_split": args.prediction_split,
@@ -5618,6 +5805,7 @@ def main() -> int:
         "stress_validation_split": stress_validation_split,
         "prediction_split": args.prediction_split,
         "split_counts": split_counts,
+        **_decoder_bypass_payload(model_config),
         "memory_audit_jsonl": str(memory_audit_jsonl_path) if memory_audit_jsonl_path is not None else None,
         "memory_audit_every_batch": bool(args.memory_audit_every_batch),
         "memory_audit_gc": bool(args.memory_audit_gc),

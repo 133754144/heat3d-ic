@@ -82,6 +82,15 @@ The V4 standard task is:
 coords + k(x) + q(x) + BC -> T(x)
 ```
 
+Decoder bypass fields:
+
+- `decoder_bypass_mode=none` is the default and preserves the baseline model.
+- `post_decoder_residual` adds an opt-in normalized-DeltaT residual after the
+  decoder.
+- `decoder_bypass_features=full_condition` resolves feature indices from
+  `feature_names`; missing required condition features are an error.
+- `zero_residual` initializes the bypass output layer to zero.
+
 Metrics policy:
 
 - default checkpoint selection is `valid_base_mse`;

@@ -37,6 +37,13 @@ model:
   conditioned_normalization: false
   cond_norm_hidden_size: 16
   p_edge_masking: 0.0
+  decoder_bypass_mode: none
+  decoder_bypass_features: none
+  decoder_bypass_feature_source: normalized_c
+  decoder_bypass_hidden_size: 64
+  decoder_bypass_layers: 2
+  decoder_bypass_init: zero_residual
+  decoder_bypass_residual_scale: 1.0
   report_parameter_count: false
   report_memory_estimate: false
 
@@ -186,6 +193,9 @@ metadata:
   normalization_profile: legacy_zscore
   coord_policy: train_minmax_to_unit_box
   condition_feature_transform: legacy_zscore_all_condition_features
+  decoder_bypass_mode: none
+  decoder_bypass_features: none
+  decoder_bypass_feature_source: normalized_c
   target_recovery_policy: deltaT_norm_to_K_plus_T_ref
   feature_manifest_hash: planned
   selection_metric_note: valid_base_mse is used by default so targeted-loss totals do not control checkpoint selection.

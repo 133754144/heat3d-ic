@@ -76,6 +76,12 @@ def main() -> int:
                 "condition_feature_transform: "
                 f"{row['condition_feature_transform']}"
             )
+            print(f"decoder_bypass_mode: {row['decoder_bypass_mode']}")
+            print(f"decoder_bypass_features: {row['decoder_bypass_features']}")
+            print(
+                "decoder_bypass_feature_source: "
+                f"{row['decoder_bypass_feature_source']}"
+            )
             print(f"target_recovery_policy: {row['target_recovery_policy']}")
             print(f"feature_manifest_hash: {row['feature_manifest_hash']}")
             print(f"metrics_profile: {row['metrics_profile']}")
