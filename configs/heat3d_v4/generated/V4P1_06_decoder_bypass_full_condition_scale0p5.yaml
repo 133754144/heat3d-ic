@@ -1,0 +1,28 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P1_06_decoder_bypass_full_condition_scale0p5
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P1_06_decoder_bypass_full_condition_scale0p5;
+    standard task coords+k(x)+q(x)+BC->T(x); generated from V4_base.yaml.
+  model:
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    decoder_bypass_residual_scale: 0.5
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_06_decoder_bypass_full_condition_scale0p5
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_06_decoder_bypass_full_condition_scale0p5
+  export:
+    output_dir: output/heat3d_v4_runs/V4P1_06_decoder_bypass_full_condition_scale0p5
+    run_name: V4P1_06_decoder_bypass_full_condition_scale0p5
+  metadata:
+    registry_config_id: V4P1_06_decoder_bypass_full_condition_scale0p5
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P1_06_decoder_bypass_full_condition_scale0p5
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P1_06_decoder_bypass_full_condition_scale0p5.log
+    notes: 'V4 P1 decoder bypass residual-scale ablation: full normalized condition
+      bypass with residual_scale=0.5; other parameters match V4P1_05'

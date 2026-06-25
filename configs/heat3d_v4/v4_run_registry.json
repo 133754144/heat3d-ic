@@ -169,6 +169,70 @@
         "notes": "V4 P1 decoder physical bypass: post-decoder residual from full normalized condition features; baseline training parameters match V4Test00_baseline_seed_0"
       }
     },
+    "V4P1_06_decoder_bypass_full_condition_scale0p5": {
+      "config_id": "V4P1_06_decoder_bypass_full_condition_scale0p5",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P1_06_decoder_bypass_full_condition_scale0p5.yaml",
+        "normalization_profile": "legacy_zscore",
+        "condition_feature_transform": "legacy_zscore_all_condition_features",
+        "decoder_bypass_mode": "post_decoder_residual",
+        "decoder_bypass_features": "full_condition",
+        "decoder_bypass_feature_source": "normalized_c",
+        "decoder_bypass_hidden_size": "64",
+        "decoder_bypass_layers": "2",
+        "decoder_bypass_init": "zero_residual",
+        "decoder_bypass_residual_scale": "0.5",
+        "output_dir": "output/heat3d_v4_runs/V4P1_06_decoder_bypass_full_condition_scale0p5",
+        "run_name": "V4P1_06_decoder_bypass_full_condition_scale0p5",
+        "log_path": "output/heat3d_v4_logs/V4P1_06_decoder_bypass_full_condition_scale0p5.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_06_decoder_bypass_full_condition_scale0p5",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_06_decoder_bypass_full_condition_scale0p5",
+        "notes": "V4 P1 decoder bypass residual-scale ablation: full normalized condition bypass with residual_scale=0.5; other parameters match V4P1_05"
+      }
+    },
+    "V4P1_07_decoder_bypass_full_condition_scale0p25": {
+      "config_id": "V4P1_07_decoder_bypass_full_condition_scale0p25",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P1_07_decoder_bypass_full_condition_scale0p25.yaml",
+        "normalization_profile": "legacy_zscore",
+        "condition_feature_transform": "legacy_zscore_all_condition_features",
+        "decoder_bypass_mode": "post_decoder_residual",
+        "decoder_bypass_features": "full_condition",
+        "decoder_bypass_feature_source": "normalized_c",
+        "decoder_bypass_hidden_size": "64",
+        "decoder_bypass_layers": "2",
+        "decoder_bypass_init": "zero_residual",
+        "decoder_bypass_residual_scale": "0.25",
+        "output_dir": "output/heat3d_v4_runs/V4P1_07_decoder_bypass_full_condition_scale0p25",
+        "run_name": "V4P1_07_decoder_bypass_full_condition_scale0p25",
+        "log_path": "output/heat3d_v4_logs/V4P1_07_decoder_bypass_full_condition_scale0p25.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_07_decoder_bypass_full_condition_scale0p25",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_07_decoder_bypass_full_condition_scale0p25",
+        "notes": "V4 P1 decoder bypass residual-scale ablation: full normalized condition bypass with residual_scale=0.25; other parameters match V4P1_05"
+      }
+    },
+    "V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0": {
+      "config_id": "V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0.yaml",
+        "runner_family": "v4_controlled_semantic_wrapper",
+        "normalization_profile": "semantic_normalization_v1",
+        "condition_feature_transform": "semantic_v1_bc_flags_binary_passthrough_only",
+        "decoder_bypass_mode": "post_decoder_residual",
+        "decoder_bypass_features": "full_condition",
+        "decoder_bypass_feature_source": "normalized_c",
+        "decoder_bypass_hidden_size": "64",
+        "decoder_bypass_layers": "2",
+        "decoder_bypass_init": "zero_residual",
+        "decoder_bypass_residual_scale": "1.0",
+        "output_dir": "output/heat3d_v4_runs/V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0",
+        "run_name": "V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0",
+        "log_path": "output/heat3d_v4_logs/V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_08_BC_passthrough_decoder_bypass_full_condition_scale1p0",
+        "notes": "V4 P1 combo: BC flags binary passthrough semantic condition profile plus V4P1_05 full-condition decoder bypass at residual_scale=1.0"
+      }
+    },
     "V4P1_05_decoder_bypass_full_condition_smoke": {
       "config_id": "V4P1_05_decoder_bypass_full_condition_smoke",
       "overrides": {
