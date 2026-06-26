@@ -121,6 +121,8 @@ run:
   sample_weight_normalize: false
 
 graph:
+  node_coordinate_encoding: raw
+  node_coordinate_freqs: 4
   radius_policy: discrete_physical_coverage
   coverage_repair_policy: none
   repair_p2r: true
@@ -193,6 +195,8 @@ metadata:
   normalization_profile: legacy_zscore
   coord_policy: train_minmax_to_unit_box
   condition_feature_transform: legacy_zscore_all_condition_features
+  node_coordinate_encoding: raw
+  node_coordinate_freqs: 4
   decoder_bypass_mode: none
   decoder_bypass_features: none
   decoder_bypass_feature_source: normalized_c

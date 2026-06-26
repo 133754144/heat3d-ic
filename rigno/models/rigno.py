@@ -53,6 +53,7 @@ class RegionInteractionGraphBuilder:
     overlap_factor_p2r: float,
     overlap_factor_r2p: float,
     node_coordinate_freqs: int,
+    node_coordinate_encoding: str = "raw",
     coverage_repair_policy: str = "none",
     radius_policy: str = "discrete_physical_coverage",
     repair_p2r: bool = True,
@@ -72,8 +73,12 @@ class RegionInteractionGraphBuilder:
           in the p2r graph get multiplied to.
         overlap_factor_r2p: Factor by which the minimum support-regions
           in the r2p graph get multiplied to.
+        node_coordinate_encoding: Node coordinate feature encoding. "raw"
+          preserves the normalized coordinates; "raw_plus_fourier" appends
+          non-periodic Fourier features to the raw coordinates.
         node_coordinate_freqs: Number of frequencies for encoding the
-          spatial coordinates. Ignored if periodic is False.
+          normalized spatial coordinates when node_coordinate_encoding is
+          "raw_plus_fourier".
         coverage_repair_policy: Optional post-radius graph repair. The legacy
           default is "none"; "nearest_rnode" adds nearest regional edges only
           for physical nodes below min_physical_coverage.
@@ -98,12 +103,20 @@ class RegionInteractionGraphBuilder:
       )
     if min_physical_coverage < 1:
       raise ValueError("min_physical_coverage must be at least 1")
+    if node_coordinate_encoding not in {"raw", "raw_plus_fourier"}:
+      raise ValueError(
+        "node_coordinate_encoding must be one of {'raw', 'raw_plus_fourier'}, "
+        f"found {node_coordinate_encoding!r}"
+      )
+    if int(node_coordinate_freqs) < 1:
+      raise ValueError("node_coordinate_freqs must be at least 1")
 
     # Set attributes
     self.periodic = periodic
     self.overlap_factor_p2r = overlap_factor_p2r
     self.overlap_factor_r2p = overlap_factor_r2p
-    self.node_coordinate_freqs = node_coordinate_freqs
+    self.node_coordinate_encoding = node_coordinate_encoding
+    self.node_coordinate_freqs = int(node_coordinate_freqs)
     self.rmesh_levels = rmesh_levels
     self.subsample_factor = subsample_factor
     self.coverage_repair_policy = coverage_repair_policy
@@ -129,6 +142,27 @@ class RegionInteractionGraphBuilder:
                 for dy in [-2, 0, 2]
                 for dz in [-2, 0, 2]
     ])
+
+  def _coordinate_node_features(self, x: Array) -> Array:
+    """Return node coordinate features independent from boundary periodicity."""
+
+    if self.node_coordinate_encoding == "raw":
+      return x
+    if self.node_coordinate_encoding != "raw_plus_fourier":
+      raise ValueError(
+        "node_coordinate_encoding must be one of {'raw', 'raw_plus_fourier'}, "
+        f"found {self.node_coordinate_encoding!r}"
+      )
+    phi = jnp.pi * (x + 1)  # train_minmax_to_unit_box coords [-1, 1] -> [0, 2pi]
+    freqs = jnp.arange(
+      1,
+      self.node_coordinate_freqs + 1,
+      dtype=phi.dtype,
+    )
+    angles = jnp.expand_dims(phi, axis=-1) * freqs
+    sin_feats = jnp.sin(angles).reshape(*x.shape[:-1], -1)
+    cos_feats = jnp.cos(angles).reshape(*x.shape[:-1], -1)
+    return jnp.concatenate([x, sin_feats, cos_feats], axis=-1)
 
   def _compute_minimum_support_radius(self, x: Array) -> Array:
       """
@@ -492,31 +526,10 @@ class RegionInteractionGraphBuilder:
     assert idx_sen.shape[1] == idx_rec.shape[1]
     num_edg = idx_sen.shape[1]
 
-    # Process coordinates
-    phi_sen = jnp.pi * (x_sen + 1)  # [0, 2pi]
-    phi_rec = jnp.pi * (x_rec + 1)  # [0, 2pi]
-
-    # Define node features
-    # NOTE: Sinusoidal features don't need normalization
-    if self.periodic:
-      k = jnp.arange(self.node_coordinate_freqs)
-      phi_sen_sin = jax.vmap(fun=(lambda _v, _k: jnp.sin(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_sen, k)
-      phi_sen_cos = jax.vmap(fun=(lambda _v, _k: jnp.cos(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_sen, k)
-      sender_node_feats = jnp.concatenate(
-        arrays=[
-          phi_sen_sin.reshape(*phi_sen_sin.shape[:-2], -1),
-          phi_sen_cos.reshape(*phi_sen_cos.shape[:-2], -1)
-        ], axis=-1)
-      phi_rec_sin = jax.vmap(fun=(lambda _v, _k: jnp.sin(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_rec, k)
-      phi_rec_cos = jax.vmap(fun=(lambda _v, _k: jnp.cos(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_rec, k)
-      receiver_node_feats = jnp.concatenate(
-        arrays=[
-          phi_rec_sin.reshape(*phi_rec_sin.shape[:-2], -1),
-          phi_rec_cos.reshape(*phi_rec_cos.shape[:-2], -1)
-        ], axis=-1)
-    else:
-      sender_node_feats = jnp.concatenate([x_sen], axis=-1)
-      receiver_node_feats = jnp.concatenate([x_rec], axis=-1)
+    # Define node features. Coordinate encoding is independent from periodic
+    # boundary handling; periodic only affects edge distance/wrap logic below.
+    sender_node_feats = self._coordinate_node_features(x_sen)
+    receiver_node_feats = self._coordinate_node_features(x_rec)
     # Concatenate with forced features
     if feats_sen is not None:
       sender_node_feats = jnp.concatenate([sender_node_feats, feats_sen], axis=-1)

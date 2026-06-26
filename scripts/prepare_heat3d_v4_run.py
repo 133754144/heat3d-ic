@@ -76,6 +76,8 @@ def main() -> int:
                 "condition_feature_transform: "
                 f"{row['condition_feature_transform']}"
             )
+            print(f"node_coordinate_encoding: {row['node_coordinate_encoding']}")
+            print(f"node_coordinate_freqs: {row['node_coordinate_freqs']}")
             print(f"decoder_bypass_mode: {row['decoder_bypass_mode']}")
             print(f"decoder_bypass_features: {row['decoder_bypass_features']}")
             print(

@@ -40,6 +40,7 @@ TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"
 PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
+NODE_COORDINATE_ENCODINGS = {"raw", "raw_plus_fourier"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
 NORMALIZATION_PROFILES = {"legacy_zscore", "semantic_normalization_v1"}
 CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
@@ -206,6 +207,8 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "diagnostics_enabled": _summarize_diagnostics(diagnostics),
         "graph_radius_policy": graph.get("radius_policy"),
         "graph_coverage_repair_policy": graph.get("coverage_repair_policy"),
+        "graph_node_coordinate_encoding": graph.get("node_coordinate_encoding"),
+        "graph_node_coordinate_freqs": graph.get("node_coordinate_freqs"),
     }
 
     if config.get("config_role") == "baseline_reference":
@@ -701,6 +704,27 @@ def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str
 
 
 def _validate_graph_fields(graph: Mapping[str, Any], label: str) -> None:
+    node_coordinate_encoding = graph.get("node_coordinate_encoding")
+    if (
+        node_coordinate_encoding is not None
+        and node_coordinate_encoding not in NODE_COORDINATE_ENCODINGS
+    ):
+        raise ValueError(
+            f"{label}: field 'graph.node_coordinate_encoding' must be one of "
+            f"{sorted(NODE_COORDINATE_ENCODINGS)}, got {node_coordinate_encoding!r}"
+        )
+
+    node_coordinate_freqs = graph.get("node_coordinate_freqs")
+    if node_coordinate_freqs is not None:
+        if (
+            isinstance(node_coordinate_freqs, bool)
+            or not isinstance(node_coordinate_freqs, int)
+            or node_coordinate_freqs < 1
+        ):
+            raise ValueError(
+                f"{label}: field 'graph.node_coordinate_freqs' must be an int >= 1"
+            )
+
     radius_policy = graph.get("radius_policy")
     if radius_policy is not None and radius_policy not in RADIUS_POLICIES:
         raise ValueError(

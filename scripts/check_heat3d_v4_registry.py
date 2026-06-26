@@ -48,6 +48,12 @@ RUNNER_FAMILY_V4_SEMANTIC = "v4_controlled_semantic_wrapper"
 TARGET_MODE_NORMALIZED_DELTAT = "normalized_deltaT"
 BRIDGE_POLICY_ZERO_DELTA_U = "zero_delta_u_bridge"
 COORD_POLICY_TRAIN_MINMAX_UNIT_BOX = "train_minmax_to_unit_box"
+NODE_COORDINATE_ENCODING_RAW = "raw"
+NODE_COORDINATE_ENCODING_RAW_PLUS_FOURIER = "raw_plus_fourier"
+NODE_COORDINATE_ENCODINGS = {
+    NODE_COORDINATE_ENCODING_RAW,
+    NODE_COORDINATE_ENCODING_RAW_PLUS_FOURIER,
+}
 CONDITION_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
 CONDITION_TRANSFORM_SEMANTIC_V1 = (
     "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
@@ -104,6 +110,8 @@ CONFIG_FIELDNAMES = (
     "normalization_profile",
     "coord_policy",
     "condition_feature_transform",
+    "node_coordinate_encoding",
+    "node_coordinate_freqs",
     "decoder_bypass_mode",
     "decoder_bypass_features",
     "decoder_bypass_feature_source",
@@ -242,6 +250,8 @@ EXPECTED_V4_BASELINE = {
     "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
     "condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+    "node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
+    "node_coordinate_freqs": "4",
     "decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
     "decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
     "decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
@@ -514,8 +524,24 @@ def _normalize_resolved_row(
             f"{sorted(NORMALIZATION_PROFILES)}, got {row['normalization_profile']!r}"
         )
     _check_provenance_fields(row, context=context)
+    _check_node_coordinate_fields(row, context=context)
     _check_decoder_bypass_fields(row, context=context)
     return row
+
+
+def _check_node_coordinate_fields(row: Mapping[str, str], *, context: str) -> None:
+    encoding = row["node_coordinate_encoding"]
+    if encoding not in NODE_COORDINATE_ENCODINGS:
+        raise ValueError(
+            f"{context} node_coordinate_encoding must be one of "
+            f"{sorted(NODE_COORDINATE_ENCODINGS)}, got {encoding!r}"
+        )
+    freqs = _positive_int(row, "node_coordinate_freqs", context)
+    if encoding == NODE_COORDINATE_ENCODING_RAW and freqs != 4:
+        raise ValueError(
+            f"{context} node_coordinate_freqs must remain 4 for raw baseline, "
+            f"got {freqs!r}"
+        )
 
 
 def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
@@ -730,6 +756,8 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "model.decoder_bypass_layers": 2,
             "model.decoder_bypass_init": DECODER_BYPASS_INIT_ZERO_RESIDUAL,
             "model.decoder_bypass_residual_scale": 1.0,
+            "graph.node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
+            "graph.node_coordinate_freqs": 4,
             "run.batch_size": 88,
             "run.batch_plan": "sample_shuffle",
             "optimizer.name": "adamw",
@@ -757,6 +785,8 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "metadata.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
             "metadata.coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
             "metadata.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+            "metadata.node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
+            "metadata.node_coordinate_freqs": 4,
             "metadata.decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
             "metadata.decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
             "metadata.decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
@@ -831,6 +861,8 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             ],
         },
         "graph": {
+            "node_coordinate_encoding": row["node_coordinate_encoding"],
+            "node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
             "radius_policy": row["graph_radius_policy"],
             "coverage_repair_policy": row["coverage_repair_policy"],
         },
@@ -877,6 +909,8 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "normalization_profile": row["normalization_profile"],
             "coord_policy": row["coord_policy"],
             "condition_feature_transform": row["condition_feature_transform"],
+            "node_coordinate_encoding": row["node_coordinate_encoding"],
+            "node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
             "decoder_bypass_mode": row["decoder_bypass_mode"],
             "decoder_bypass_features": row["decoder_bypass_features"],
             "decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
@@ -927,6 +961,8 @@ def _assert_registry_matches_resolved(
         "optimizer.warmup_epochs": _int(row, "warmup_epochs"),
         "optimizer.min_lr": _float(row, "min_lr"),
         "optimizer.weight_decay": _float(row, "weight_decay"),
+        "graph.node_coordinate_encoding": row["node_coordinate_encoding"],
+        "graph.node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
         "graph.radius_policy": row["graph_radius_policy"],
         "graph.coverage_repair_policy": row["coverage_repair_policy"],
         "dataset.normalization_profile": row["normalization_profile"],
@@ -955,6 +991,8 @@ def _assert_registry_matches_resolved(
         "metadata.normalization_profile": row["normalization_profile"],
         "metadata.coord_policy": row["coord_policy"],
         "metadata.condition_feature_transform": row["condition_feature_transform"],
+        "metadata.node_coordinate_encoding": row["node_coordinate_encoding"],
+        "metadata.node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
         "metadata.decoder_bypass_mode": row["decoder_bypass_mode"],
         "metadata.decoder_bypass_features": row["decoder_bypass_features"],
         "metadata.decoder_bypass_feature_source": row["decoder_bypass_feature_source"],

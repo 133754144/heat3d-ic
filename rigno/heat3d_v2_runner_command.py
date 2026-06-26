@@ -89,6 +89,12 @@ def build_training_command(
         command.append("--boundary-mask-fallback")
     elif dataset.get("boundary_mask_fallback") is False:
         command.append("--no-boundary-mask-fallback")
+    _append_option(
+        command,
+        "--node-coordinate-encoding",
+        graph.get("node_coordinate_encoding"),
+    )
+    _append_option(command, "--node-coordinate-freqs", graph.get("node_coordinate_freqs"))
     _append_option(command, "--epochs", run.get("epochs"))
     _append_option(command, "--node-latent-size", model.get("node_latent_size"))
     _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))
@@ -442,6 +448,8 @@ def build_v2_command_plan(
     if role == "baseline_reference":
         raise ValueError("baseline_reference configs do not map to runner commands")
     model = _section(config, "model")
+    graph_section = config.get("graph")
+    graph = graph_section if isinstance(graph_section, Mapping) else {}
 
     plan: dict[str, Any] = {
         "config_name": _config_name(config),
@@ -452,6 +460,8 @@ def build_v2_command_plan(
         "normalization_profile": _normalization_profile(config),
         "condition_feature_transform": _condition_feature_transform(config),
         "training_script": _training_script_for_profile(_normalization_profile(config)),
+        "node_coordinate_encoding": graph.get("node_coordinate_encoding", "raw"),
+        "node_coordinate_freqs": graph.get("node_coordinate_freqs", 4),
         "decoder_bypass_mode": model.get("decoder_bypass_mode", "none"),
         "decoder_bypass_features": model.get("decoder_bypass_features", "none"),
         "decoder_bypass_feature_source": model.get(
@@ -545,6 +555,8 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
         f"role: {plan.get('config_role')}",
         f"normalization_profile: {plan.get('normalization_profile')}",
         f"condition_feature_transform: {plan.get('condition_feature_transform')}",
+        f"node_coordinate_encoding: {plan.get('node_coordinate_encoding')}",
+        f"node_coordinate_freqs: {plan.get('node_coordinate_freqs')}",
         f"decoder_bypass_mode: {plan.get('decoder_bypass_mode')}",
         f"decoder_bypass_features: {plan.get('decoder_bypass_features')}",
         f"decoder_bypass_feature_source: {plan.get('decoder_bypass_feature_source')}",
@@ -581,6 +593,8 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("dataset.boundary_mask_fallback", "training --boundary-mask-fallback/--no-boundary-mask-fallback"),
         ("dataset.normalization_profile", "training script selection and optional --normalization-profile"),
         ("dataset.condition_feature_transform", "V4 training --condition-feature-transform"),
+        ("graph.node_coordinate_encoding", "training --node-coordinate-encoding"),
+        ("graph.node_coordinate_freqs", "training --node-coordinate-freqs"),
         ("model.node_latent_size", "training --node-latent-size"),
         ("model.edge_latent_size", "training --edge-latent-size"),
         ("model.processor_steps", "training --processor-steps"),

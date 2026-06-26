@@ -129,6 +129,7 @@ DEFAULT_FINAL_PROBE_PROVENANCE = (
 TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
 RADIUS_POLICY_CHOICES = ("legacy_kdtree_mean4", "discrete_physical_coverage")
 COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
+NODE_COORDINATE_ENCODING_CHOICES = ("raw", "raw_plus_fourier")
 INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
 FINAL_PROBE_CHECKPOINT_KIND_CHOICES = ("best", "final", "both")
@@ -280,6 +281,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repair-r2p", dest="repair_r2p", action="store_true", default=True)
     parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
     parser.add_argument("--min-physical-coverage", type=int, default=1)
+    parser.add_argument(
+        "--node-coordinate-encoding",
+        choices=NODE_COORDINATE_ENCODING_CHOICES,
+        default="raw",
+        help=(
+            "Structural node coordinate encoding. raw_plus_fourier appends "
+            "Fourier features to normalized unit-box coordinates without "
+            "changing Heat3D periodic=False graph topology."
+        ),
+    )
+    parser.add_argument("--node-coordinate-freqs", type=int, default=4)
     parser.add_argument(
         "--sample-weight-policy",
         choices=SAMPLE_WEIGHT_POLICY_CHOICES,
@@ -1600,6 +1612,8 @@ def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
 
 def _graph_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return {
+        "node_coordinate_encoding": args.node_coordinate_encoding,
+        "node_coordinate_freqs": int(args.node_coordinate_freqs),
         "radius_policy": args.radius_policy,
         "coverage_repair_policy": args.coverage_repair_policy,
         "repair_p2r": bool(args.repair_p2r),
@@ -1860,6 +1874,13 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
 
 
 def _validate_graph_config(config: dict[str, Any]) -> None:
+    if config["node_coordinate_encoding"] not in NODE_COORDINATE_ENCODING_CHOICES:
+        raise ValueError(
+            "--node-coordinate-encoding must be one of "
+            f"{NODE_COORDINATE_ENCODING_CHOICES}"
+        )
+    if int(config["node_coordinate_freqs"]) < 1:
+        raise ValueError("--node-coordinate-freqs must be >= 1")
     if config["radius_policy"] not in RADIUS_POLICY_CHOICES:
         raise ValueError(f"--radius-policy must be one of {RADIUS_POLICY_CHOICES}")
     if config["coverage_repair_policy"] not in COVERAGE_REPAIR_POLICY_CHOICES:

@@ -82,6 +82,16 @@ The V4 standard task is:
 coords + k(x) + q(x) + BC -> T(x)
 ```
 
+Coordinate encoding fields:
+
+- `node_coordinate_encoding=raw` is the default and preserves baseline node
+  coordinate features.
+- `raw_plus_fourier` appends Fourier features to the current
+  `train_minmax_to_unit_box` coordinates while retaining raw `x,y,z`.
+- This is not a physical coordinate scale fix and does not change Heat3D
+  `periodic=False`, graph topology, edge indices, distance logic, solver, loss,
+  or dataset.
+
 Decoder bypass fields:
 
 - `decoder_bypass_mode=none` is the default and preserves the baseline model.
