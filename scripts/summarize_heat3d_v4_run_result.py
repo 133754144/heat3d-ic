@@ -32,8 +32,12 @@ from check_heat3d_v4_registry import (  # noqa: E402
 def main() -> int:
     args = _parse_args()
     row = _row_for_config(args.config_id, args.registry)
-    run_dir = _repo_path(args.run_dir or row["output_dir"])
-    summary = _result_fields(row, run_dir, args.source_label)
+    if args.result_json:
+        summary = _read_result_json(args.result_json)
+    else:
+        run_dir = _repo_path(args.run_dir or row["output_dir"])
+        summary = _result_fields(row, run_dir, args.source_label)
+    _check_required_diagnostics(row, summary)
     if args.update_csv:
         _update_csv(_repo_path(args.csv), args.config_id, summary)
     print(json.dumps(summary, indent=2, sort_keys=True))
@@ -46,6 +50,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--registry", default=str(DEFAULT_REGISTRY))
     parser.add_argument("--csv", default="configs/heat3d_v4/run_registry.csv")
     parser.add_argument("--run-dir")
+    parser.add_argument(
+        "--result-json",
+        help=(
+            "Read a small precomputed result-fields JSON payload instead of "
+            "reading run artifacts. Use '-' for stdin."
+        ),
+    )
     parser.add_argument("--source-label", default="local")
     parser.add_argument("--update-csv", action="store_true")
     return parser.parse_args()
@@ -171,6 +182,51 @@ def _update_csv(path: Path, config_id: str, result_fields: dict[str, str]) -> No
         writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _read_result_json(path_value: str) -> dict[str, str]:
+    if path_value == "-":
+        payload = json.load(sys.stdin)
+    else:
+        with Path(path_value).open("r", encoding="utf-8") as file:
+            payload = json.load(file)
+    if not isinstance(payload, dict):
+        raise SystemExit("--result-json payload must be a JSON object")
+    result = {field: "" for field in RESULT_FIELDNAMES}
+    for field in RESULT_FIELDNAMES:
+        value = payload.get(field, "")
+        result[field] = "" if value is None else str(value)
+    return result
+
+
+def _check_required_diagnostics(row: dict[str, str], result: dict[str, str]) -> None:
+    try:
+        epochs = int(row.get("epochs", "0"))
+    except ValueError:
+        epochs = 0
+    if epochs < 100:
+        return
+
+    gaps = []
+    if result.get("result_post_training_diagnostics_status") != "completed":
+        gaps.append("result_post_training_diagnostics_status=completed")
+    if result.get("result_final_probe_status") != "completed":
+        gaps.append("result_final_probe_status=completed")
+    for field in (
+        "result_corr_iid",
+        "result_amp",
+        "result_valid_iid_topk",
+        "result_final_probe_rmse",
+        "result_final_probe_relrmse",
+        "result_final_probe_tmax_error",
+    ):
+        if not result.get(field):
+            gaps.append(field)
+    if gaps:
+        raise SystemExit(
+            f"{row['config_id']}: epochs>=100 result update requires diagnostics "
+            f"and final-probe metrics; missing {', '.join(gaps)}"
+        )
 
 
 def _fill_post_training_diagnostics(

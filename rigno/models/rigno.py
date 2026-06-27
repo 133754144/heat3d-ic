@@ -53,6 +53,7 @@ class RegionInteractionGraphBuilder:
     overlap_factor_p2r: float,
     overlap_factor_r2p: float,
     node_coordinate_freqs: int,
+    node_coordinate_encoding: str = "raw",
     coverage_repair_policy: str = "none",
     radius_policy: str = "discrete_physical_coverage",
     repair_p2r: bool = True,
@@ -72,8 +73,12 @@ class RegionInteractionGraphBuilder:
           in the p2r graph get multiplied to.
         overlap_factor_r2p: Factor by which the minimum support-regions
           in the r2p graph get multiplied to.
+        node_coordinate_encoding: Node coordinate feature encoding. "raw"
+          preserves the normalized coordinates; "raw_plus_fourier" appends
+          non-periodic Fourier features to the raw coordinates.
         node_coordinate_freqs: Number of frequencies for encoding the
-          spatial coordinates. Ignored if periodic is False.
+          normalized spatial coordinates when node_coordinate_encoding is
+          "raw_plus_fourier".
         coverage_repair_policy: Optional post-radius graph repair. The legacy
           default is "none"; "nearest_rnode" adds nearest regional edges only
           for physical nodes below min_physical_coverage.
@@ -98,12 +103,20 @@ class RegionInteractionGraphBuilder:
       )
     if min_physical_coverage < 1:
       raise ValueError("min_physical_coverage must be at least 1")
+    if node_coordinate_encoding not in {"raw", "raw_plus_fourier"}:
+      raise ValueError(
+        "node_coordinate_encoding must be one of {'raw', 'raw_plus_fourier'}, "
+        f"found {node_coordinate_encoding!r}"
+      )
+    if int(node_coordinate_freqs) < 1:
+      raise ValueError("node_coordinate_freqs must be at least 1")
 
     # Set attributes
     self.periodic = periodic
     self.overlap_factor_p2r = overlap_factor_p2r
     self.overlap_factor_r2p = overlap_factor_r2p
-    self.node_coordinate_freqs = node_coordinate_freqs
+    self.node_coordinate_encoding = node_coordinate_encoding
+    self.node_coordinate_freqs = int(node_coordinate_freqs)
     self.rmesh_levels = rmesh_levels
     self.subsample_factor = subsample_factor
     self.coverage_repair_policy = coverage_repair_policy
@@ -129,6 +142,27 @@ class RegionInteractionGraphBuilder:
                 for dy in [-2, 0, 2]
                 for dz in [-2, 0, 2]
     ])
+
+  def _coordinate_node_features(self, x: Array) -> Array:
+    """Return node coordinate features independent from boundary periodicity."""
+
+    if self.node_coordinate_encoding == "raw":
+      return x
+    if self.node_coordinate_encoding != "raw_plus_fourier":
+      raise ValueError(
+        "node_coordinate_encoding must be one of {'raw', 'raw_plus_fourier'}, "
+        f"found {self.node_coordinate_encoding!r}"
+      )
+    phi = jnp.pi * (x + 1)  # train_minmax_to_unit_box coords [-1, 1] -> [0, 2pi]
+    freqs = jnp.arange(
+      1,
+      self.node_coordinate_freqs + 1,
+      dtype=phi.dtype,
+    )
+    angles = jnp.expand_dims(phi, axis=-1) * freqs
+    sin_feats = jnp.sin(angles).reshape(*x.shape[:-1], -1)
+    cos_feats = jnp.cos(angles).reshape(*x.shape[:-1], -1)
+    return jnp.concatenate([x, sin_feats, cos_feats], axis=-1)
 
   def _compute_minimum_support_radius(self, x: Array) -> Array:
       """
@@ -492,31 +526,10 @@ class RegionInteractionGraphBuilder:
     assert idx_sen.shape[1] == idx_rec.shape[1]
     num_edg = idx_sen.shape[1]
 
-    # Process coordinates
-    phi_sen = jnp.pi * (x_sen + 1)  # [0, 2pi]
-    phi_rec = jnp.pi * (x_rec + 1)  # [0, 2pi]
-
-    # Define node features
-    # NOTE: Sinusoidal features don't need normalization
-    if self.periodic:
-      k = jnp.arange(self.node_coordinate_freqs)
-      phi_sen_sin = jax.vmap(fun=(lambda _v, _k: jnp.sin(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_sen, k)
-      phi_sen_cos = jax.vmap(fun=(lambda _v, _k: jnp.cos(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_sen, k)
-      sender_node_feats = jnp.concatenate(
-        arrays=[
-          phi_sen_sin.reshape(*phi_sen_sin.shape[:-2], -1),
-          phi_sen_cos.reshape(*phi_sen_cos.shape[:-2], -1)
-        ], axis=-1)
-      phi_rec_sin = jax.vmap(fun=(lambda _v, _k: jnp.sin(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_rec, k)
-      phi_rec_cos = jax.vmap(fun=(lambda _v, _k: jnp.cos(_v * (_k+1))), in_axes=(None, 0), out_axes=-1)(phi_rec, k)
-      receiver_node_feats = jnp.concatenate(
-        arrays=[
-          phi_rec_sin.reshape(*phi_rec_sin.shape[:-2], -1),
-          phi_rec_cos.reshape(*phi_rec_cos.shape[:-2], -1)
-        ], axis=-1)
-    else:
-      sender_node_feats = jnp.concatenate([x_sen], axis=-1)
-      receiver_node_feats = jnp.concatenate([x_rec], axis=-1)
+    # Define node features. Coordinate encoding is independent from periodic
+    # boundary handling; periodic only affects edge distance/wrap logic below.
+    sender_node_feats = self._coordinate_node_features(x_sen)
+    receiver_node_feats = self._coordinate_node_features(x_rec)
     # Concatenate with forced features
     if feats_sen is not None:
       sender_node_feats = jnp.concatenate([sender_node_feats, feats_sen], axis=-1)
@@ -1010,6 +1023,17 @@ class RIGNO(AbstractOperator):
   conditioned_normalization: bool = True
   cond_norm_hidden_size: int = 16
   p_edge_masking: int = 0.5
+  decoder_bypass_mode: str = 'none'
+  decoder_bypass_features: str = 'none'
+  decoder_bypass_feature_source: str = 'normalized_c'
+  decoder_bypass_feature_indices: Tuple[int, ...] = ()
+  decoder_bypass_feature_names: Tuple[str, ...] = ()
+  decoder_bypass_num_features: int = 0
+  decoder_bypass_output_space: str = 'normalized_deltaT'
+  decoder_bypass_hidden_size: int = 64
+  decoder_bypass_layers: int = 2
+  decoder_bypass_init: str = 'zero_residual'
+  decoder_bypass_residual_scale: float = 1.0
 
   def _check_coordinates(self, x: Array) -> None:
     assert x is not None
@@ -1025,6 +1049,7 @@ class RIGNO(AbstractOperator):
     assert u.shape[2] == x.shape[2], f'u: {u.shape}, x: {x.shape}'
 
   def setup(self):
+    self._validate_decoder_bypass_config()
     self.encoder = Encoder(
       edge_latent_size=self.edge_latent_size,
       node_latent_size=self.node_latent_size,
@@ -1056,6 +1081,81 @@ class RIGNO(AbstractOperator):
       p_edge_masking=self.p_edge_masking,
       name='decoder',
     )
+    if self._decoder_bypass_enabled():
+      self.decoder_bypass_hidden = [
+        nn.Dense(
+          self.decoder_bypass_hidden_size,
+          name=f'decoder_bypass_hidden_{index}',
+        )
+        for index in range(self.decoder_bypass_layers)
+      ]
+      output_kernel_init = (
+        nn.initializers.zeros
+        if self.decoder_bypass_init == 'zero_residual'
+        else nn.initializers.lecun_normal()
+      )
+      output_bias_init = (
+        nn.initializers.zeros
+        if self.decoder_bypass_init == 'zero_residual'
+        else nn.initializers.zeros
+      )
+      self.decoder_bypass_output = nn.Dense(
+        self.num_outputs,
+        kernel_init=output_kernel_init,
+        bias_init=output_bias_init,
+        name='decoder_bypass_output',
+      )
+    else:
+      self.decoder_bypass_hidden = ()
+      self.decoder_bypass_output = None
+
+  def _decoder_bypass_enabled(self) -> bool:
+    return self.decoder_bypass_mode != 'none'
+
+  def _validate_decoder_bypass_config(self) -> None:
+    if self.decoder_bypass_mode not in {'none', 'post_decoder_residual'}:
+      raise ValueError(
+        "decoder_bypass_mode must be one of {'none', 'post_decoder_residual'}, "
+        f"found {self.decoder_bypass_mode!r}"
+      )
+    if self.decoder_bypass_features not in {'none', 'full_condition'}:
+      raise ValueError(
+        "decoder_bypass_features must be one of {'none', 'full_condition'}, "
+        f"found {self.decoder_bypass_features!r}"
+      )
+    if self.decoder_bypass_feature_source != 'normalized_c':
+      raise ValueError(
+        "decoder_bypass_feature_source must be 'normalized_c', "
+        f"found {self.decoder_bypass_feature_source!r}"
+      )
+    if self.decoder_bypass_init != 'zero_residual':
+      raise ValueError(
+        "decoder_bypass_init must be 'zero_residual', "
+        f"found {self.decoder_bypass_init!r}"
+      )
+    if self.decoder_bypass_output_space != 'normalized_deltaT':
+      raise ValueError(
+        "decoder_bypass_output_space must be 'normalized_deltaT', "
+        f"found {self.decoder_bypass_output_space!r}"
+      )
+    if self.decoder_bypass_hidden_size < 1:
+      raise ValueError("decoder_bypass_hidden_size must be >= 1")
+    if self.decoder_bypass_layers < 1:
+      raise ValueError("decoder_bypass_layers must be >= 1")
+    if self.decoder_bypass_mode == 'none':
+      if self.decoder_bypass_features != 'none':
+        raise ValueError("decoder_bypass_mode='none' requires decoder_bypass_features='none'")
+      return
+    if self.decoder_bypass_features != 'full_condition':
+      raise ValueError(
+        "post_decoder_residual requires decoder_bypass_features='full_condition'"
+      )
+    if not self.decoder_bypass_feature_indices:
+      raise ValueError("decoder bypass requires resolved feature indices")
+    if self.decoder_bypass_num_features != len(self.decoder_bypass_feature_indices):
+      raise ValueError(
+        "decoder_bypass_num_features must match decoder_bypass_feature_indices"
+      )
 
   @staticmethod
   def _prepare_features(feats: Array) -> Array:
@@ -1175,9 +1275,33 @@ class RIGNO(AbstractOperator):
     # Reshape the output to u
     # [batch_size, num_pnodes_out, num_outputs] -> [batch_size, 1, num_pnodes_out, num_outputs]
     output = self._prepare_features(output_pnodes)
+    output = self._apply_decoder_bypass(output, inputs)
     self._check_function(output, x=inputs.x_out)
 
     return output
+
+  def _apply_decoder_bypass(self, base_output: Array, inputs: Inputs) -> Array:
+    if not self._decoder_bypass_enabled():
+      return base_output
+    if inputs.c is None:
+      raise ValueError("decoder bypass requires inputs.c")
+    if inputs.x_inp.shape != inputs.x_out.shape:
+      raise ValueError(
+        "decoder bypass requires one-to-one input/output node alignment; "
+        f"x_inp={inputs.x_inp.shape} x_out={inputs.x_out.shape}"
+      )
+    if inputs.c.shape[2] != base_output.shape[2]:
+      raise ValueError(
+        "decoder bypass requires inputs.c node count to match decoder output; "
+        f"c={inputs.c.shape} output={base_output.shape}"
+      )
+    indices = jnp.asarray(self.decoder_bypass_feature_indices, dtype=jnp.int32)
+    residual = jnp.take(inputs.c, indices, axis=-1)
+    for layer in self.decoder_bypass_hidden:
+      residual = nn.gelu(layer(residual))
+    residual = self.decoder_bypass_output(residual)
+    self.sow(col='intermediates', name='decoder_bypass_residual', value=residual)
+    return base_output + float(self.decoder_bypass_residual_scale) * residual
 
 def _subsample_pointset(key, x: Array, factor: float) -> Array:
   """Downsamples a point cloud by randomly subsampling them."""

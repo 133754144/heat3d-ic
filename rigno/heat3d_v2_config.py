@@ -40,7 +40,21 @@ TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"
 PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
+NODE_COORDINATE_ENCODINGS = {"raw", "raw_plus_fourier"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
+NORMALIZATION_PROFILES = {"legacy_zscore", "semantic_normalization_v1"}
+CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
+CONDITION_FEATURE_TRANSFORMS = {
+    CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
+    "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars",
+    "semantic_v1_bc_flags_binary_passthrough_only",
+    "semantic_v1_q_signedlog1p_only",
+    "semantic_v1_k_log_only",
+}
+DECODER_BYPASS_MODES = {"none", "post_decoder_residual"}
+DECODER_BYPASS_FEATURES = {"none", "full_condition"}
+DECODER_BYPASS_FEATURE_SOURCES = {"normalized_c"}
+DECODER_BYPASS_INITS = {"zero_residual"}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -149,6 +163,7 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "config_role": config.get("config_role"),
         "dataset_name": dataset.get("name"),
+        "dataset_split_map_path": dataset.get("split_map_path"),
         "model_architecture": model.get("architecture"),
         "model_node_latent_size": model.get("node_latent_size"),
         "model_edge_latent_size": model.get("edge_latent_size"),
@@ -193,6 +208,8 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "diagnostics_enabled": _summarize_diagnostics(diagnostics),
         "graph_radius_policy": graph.get("radius_policy"),
         "graph_coverage_repair_policy": graph.get("coverage_repair_policy"),
+        "graph_node_coordinate_encoding": graph.get("node_coordinate_encoding"),
+        "graph_node_coordinate_freqs": graph.get("node_coordinate_freqs"),
     }
 
     if config.get("config_role") == "baseline_reference":
@@ -297,6 +314,37 @@ def _validate_run_config(
         raise ValueError(
             f"{label}: field 'dataset.boundary_mask_fallback' must be a bool or null"
         )
+    normalization_profile = dataset.get("normalization_profile")
+    if normalization_profile is not None and normalization_profile not in NORMALIZATION_PROFILES:
+        raise ValueError(
+            f"{label}: field 'dataset.normalization_profile' must be one of "
+            f"{sorted(NORMALIZATION_PROFILES)}, got {normalization_profile!r}"
+        )
+    condition_feature_transform = dataset.get("condition_feature_transform")
+    if condition_feature_transform is not None:
+        if condition_feature_transform not in CONDITION_FEATURE_TRANSFORMS:
+            raise ValueError(
+                f"{label}: field 'dataset.condition_feature_transform' must be "
+                f"one of {sorted(CONDITION_FEATURE_TRANSFORMS)}, got "
+                f"{condition_feature_transform!r}"
+            )
+        if (
+            normalization_profile in {None, "legacy_zscore"}
+            and condition_feature_transform != CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+        ):
+            raise ValueError(
+                f"{label}: legacy_zscore requires "
+                "dataset.condition_feature_transform="
+                f"{CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE!r}"
+            )
+        if (
+            normalization_profile == "semantic_normalization_v1"
+            and condition_feature_transform == CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+        ):
+            raise ValueError(
+                f"{label}: semantic_normalization_v1 requires a semantic "
+                "dataset.condition_feature_transform"
+            )
     split_map_path = dataset.get("split_map_path")
     if split_map_path is not None:
         if not isinstance(split_map_path, str) or not split_map_path:
@@ -478,15 +526,65 @@ def _validate_optimizer_seed_fields(optimizer: Mapping[str, Any], label: str) ->
 
 def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
     p_edge_masking = model.get("p_edge_masking")
-    if p_edge_masking is None:
-        return
-    if isinstance(p_edge_masking, bool) or not isinstance(p_edge_masking, (int, float)):
+    if p_edge_masking is not None:
+        if isinstance(p_edge_masking, bool) or not isinstance(p_edge_masking, (int, float)):
+            raise ValueError(
+                f"{label}: field 'model.p_edge_masking' must be numeric or null"
+            )
+        if float(p_edge_masking) < 0.0 or float(p_edge_masking) >= 1.0:
+            raise ValueError(
+                f"{label}: field 'model.p_edge_masking' must satisfy 0 <= value < 1"
+            )
+    mode = model.get("decoder_bypass_mode")
+    features = model.get("decoder_bypass_features")
+    source = model.get("decoder_bypass_feature_source")
+    init = model.get("decoder_bypass_init")
+    if mode is not None and mode not in DECODER_BYPASS_MODES:
         raise ValueError(
-            f"{label}: field 'model.p_edge_masking' must be numeric or null"
+            f"{label}: field 'model.decoder_bypass_mode' must be one of "
+            f"{sorted(DECODER_BYPASS_MODES)}, got {mode!r}"
         )
-    if float(p_edge_masking) < 0.0 or float(p_edge_masking) >= 1.0:
+    if features is not None and features not in DECODER_BYPASS_FEATURES:
         raise ValueError(
-            f"{label}: field 'model.p_edge_masking' must satisfy 0 <= value < 1"
+            f"{label}: field 'model.decoder_bypass_features' must be one of "
+            f"{sorted(DECODER_BYPASS_FEATURES)}, got {features!r}"
+        )
+    if source is not None and source not in DECODER_BYPASS_FEATURE_SOURCES:
+        raise ValueError(
+            f"{label}: field 'model.decoder_bypass_feature_source' must be one of "
+            f"{sorted(DECODER_BYPASS_FEATURE_SOURCES)}, got {source!r}"
+        )
+    if init is not None and init not in DECODER_BYPASS_INITS:
+        raise ValueError(
+            f"{label}: field 'model.decoder_bypass_init' must be one of "
+            f"{sorted(DECODER_BYPASS_INITS)}, got {init!r}"
+        )
+    for field in ("decoder_bypass_hidden_size", "decoder_bypass_layers"):
+        value = model.get(field)
+        if value is None:
+            continue
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError(f"{label}: field 'model.{field}' must be an int >= 1")
+    residual_scale = model.get("decoder_bypass_residual_scale")
+    if residual_scale is not None:
+        if isinstance(residual_scale, bool) or not isinstance(residual_scale, (int, float)):
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_residual_scale' must be numeric"
+            )
+        if float(residual_scale) < 0.0:
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_residual_scale' must be >= 0"
+            )
+    if mode in {None, "none"}:
+        if features not in {None, "none"}:
+            raise ValueError(
+                f"{label}: model.decoder_bypass_mode='none' requires "
+                "model.decoder_bypass_features='none'"
+            )
+    elif features != "full_condition":
+        raise ValueError(
+            f"{label}: model.decoder_bypass_mode='post_decoder_residual' requires "
+            "model.decoder_bypass_features='full_condition'"
         )
 
 
@@ -607,6 +705,27 @@ def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str
 
 
 def _validate_graph_fields(graph: Mapping[str, Any], label: str) -> None:
+    node_coordinate_encoding = graph.get("node_coordinate_encoding")
+    if (
+        node_coordinate_encoding is not None
+        and node_coordinate_encoding not in NODE_COORDINATE_ENCODINGS
+    ):
+        raise ValueError(
+            f"{label}: field 'graph.node_coordinate_encoding' must be one of "
+            f"{sorted(NODE_COORDINATE_ENCODINGS)}, got {node_coordinate_encoding!r}"
+        )
+
+    node_coordinate_freqs = graph.get("node_coordinate_freqs")
+    if node_coordinate_freqs is not None:
+        if (
+            isinstance(node_coordinate_freqs, bool)
+            or not isinstance(node_coordinate_freqs, int)
+            or node_coordinate_freqs < 1
+        ):
+            raise ValueError(
+                f"{label}: field 'graph.node_coordinate_freqs' must be an int >= 1"
+            )
+
     radius_policy = graph.get("radius_policy")
     if radius_policy is not None and radius_policy not in RADIUS_POLICIES:
         raise ValueError(

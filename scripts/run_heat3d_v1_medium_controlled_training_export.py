@@ -36,18 +36,31 @@ for path in (REPO_DIR, SCRIPTS_DIR):
 
 from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     MODEL_CONFIG,
-    _bridge_for,
     _global_norm,
     _metadata_shape_signature,
     _metrics,
-    _normalize_coords,
     _sample_root,
     _selected_steps,
     _subset_split_ids,
-    _train_only_stats,
 )
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
+from rigno.heat3d_v1_normalization import (  # noqa: E402
+    legacy_train_only_stats as _train_only_stats,
+    normalize_condition,
+    normalize_coords as _normalize_coords,
+    normalize_target_delta,
+    normalized_delta_to_raw as _normalized_delta_to_raw,
+    recover_raw_condition,
+    recover_temperature_from_normalized_delta,
+)
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
+from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    build_legacy_zero_delta_bridge as _bridge_for,
+)
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    split_ids_from_sample_splits,
+)
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 from rigno.models.operator import Inputs  # noqa: E402
 
@@ -59,6 +72,36 @@ RUNNER_MODEL_CONFIG = {
     "processor_steps": 6,
     "mlp_hidden_layers": 2,
 }
+DECODER_BYPASS_MODE_NONE = "none"
+DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL = "post_decoder_residual"
+DECODER_BYPASS_MODES = (
+    DECODER_BYPASS_MODE_NONE,
+    DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL,
+)
+DECODER_BYPASS_FEATURES_NONE = "none"
+DECODER_BYPASS_FEATURES_FULL_CONDITION = "full_condition"
+DECODER_BYPASS_FEATURES = (
+    DECODER_BYPASS_FEATURES_NONE,
+    DECODER_BYPASS_FEATURES_FULL_CONDITION,
+)
+DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
+DECODER_BYPASS_FEATURE_SOURCES = (DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,)
+DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
+DECODER_BYPASS_INITS = (DECODER_BYPASS_INIT_ZERO_RESIDUAL,)
+DECODER_BYPASS_OUTPUT_SPACE = "normalized_deltaT"
+DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES = (
+    "k_x",
+    "k_y",
+    "k_z",
+    "q",
+    "is_top",
+    "is_bottom",
+    "is_side",
+    "is_interior",
+    "top_h",
+    "top_T_inf_minus_T_ref",
+    "bottom_T_fixed_minus_T_ref",
+)
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -90,6 +133,7 @@ DEFAULT_FINAL_PROBE_PROVENANCE = (
 TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
 RADIUS_POLICY_CHOICES = ("legacy_kdtree_mean4", "discrete_physical_coverage")
 COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
+NODE_COORDINATE_ENCODING_CHOICES = ("raw", "raw_plus_fourier")
 INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
 FINAL_PROBE_CHECKPOINT_KIND_CHOICES = ("best", "final", "both")
@@ -147,6 +191,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--processor-steps", type=int, default=RUNNER_MODEL_CONFIG["processor_steps"])
     parser.add_argument("--mlp-hidden-layers", type=int, default=RUNNER_MODEL_CONFIG["mlp_hidden_layers"])
     parser.add_argument("--p-edge-masking", type=float, default=float(RUNNER_MODEL_CONFIG.get("p_edge_masking", 0.0)))
+    parser.add_argument("--decoder-bypass-mode", choices=DECODER_BYPASS_MODES, default=DECODER_BYPASS_MODE_NONE)
+    parser.add_argument("--decoder-bypass-features", choices=DECODER_BYPASS_FEATURES, default=DECODER_BYPASS_FEATURES_NONE)
+    parser.add_argument(
+        "--decoder-bypass-feature-source",
+        choices=DECODER_BYPASS_FEATURE_SOURCES,
+        default=DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    )
+    parser.add_argument("--decoder-bypass-hidden-size", type=int, default=64)
+    parser.add_argument("--decoder-bypass-layers", type=int, default=2)
+    parser.add_argument("--decoder-bypass-init", choices=DECODER_BYPASS_INITS, default=DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    parser.add_argument("--decoder-bypass-residual-scale", type=float, default=1.0)
     parser.add_argument("--batch-size", type=int, default=88)
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
@@ -230,6 +285,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repair-r2p", dest="repair_r2p", action="store_true", default=True)
     parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
     parser.add_argument("--min-physical-coverage", type=int, default=1)
+    parser.add_argument(
+        "--node-coordinate-encoding",
+        choices=NODE_COORDINATE_ENCODING_CHOICES,
+        default="raw",
+        help=(
+            "Structural node coordinate encoding. raw_plus_fourier appends "
+            "Fourier features to normalized unit-box coordinates without "
+            "changing Heat3D periodic=False graph topology."
+        ),
+    )
+    parser.add_argument("--node-coordinate-freqs", type=int, default=4)
     parser.add_argument(
         "--sample-weight-policy",
         choices=SAMPLE_WEIGHT_POLICY_CHOICES,
@@ -1368,19 +1434,7 @@ def _require_train_valid_splits(split_ids: dict[str, list[str]]) -> None:
 
 
 def _load_external_split_map(path: Path) -> dict[str, list[str]]:
-    with path.open("r", encoding="utf-8") as file:
-        loaded = json.load(file)
-    mapping = loaded.get("sample_splits", loaded)
-    if not isinstance(mapping, dict):
-        raise ValueError(f"--split-map must be a mapping or contain sample_splits: {path}")
-    split_ids: dict[str, list[str]] = {}
-    for sample_id, split in mapping.items():
-        if not isinstance(sample_id, str) or not sample_id:
-            raise ValueError(f"--split-map contains invalid sample_id: {sample_id!r}")
-        if not isinstance(split, str) or not split:
-            raise ValueError(f"--split-map contains invalid split for {sample_id!r}: {split!r}")
-        split_ids.setdefault(split, []).append(sample_id)
-    return {split: sorted(ids) for split, ids in split_ids.items()}
+    return split_ids_from_sample_splits(load_sample_split_map(path))
 
 
 def _resolve_training_splits(
@@ -1516,6 +1570,17 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "processor_steps": int(args.processor_steps),
             "mlp_hidden_layers": int(args.mlp_hidden_layers),
             "p_edge_masking": float(args.p_edge_masking),
+            "decoder_bypass_mode": args.decoder_bypass_mode,
+            "decoder_bypass_features": args.decoder_bypass_features,
+            "decoder_bypass_feature_source": args.decoder_bypass_feature_source,
+            "decoder_bypass_feature_indices": (),
+            "decoder_bypass_feature_names": (),
+            "decoder_bypass_num_features": 0,
+            "decoder_bypass_output_space": DECODER_BYPASS_OUTPUT_SPACE,
+            "decoder_bypass_hidden_size": int(args.decoder_bypass_hidden_size),
+            "decoder_bypass_layers": int(args.decoder_bypass_layers),
+            "decoder_bypass_init": args.decoder_bypass_init,
+            "decoder_bypass_residual_scale": float(args.decoder_bypass_residual_scale),
         }
     )
     return model_config
@@ -1539,6 +1604,8 @@ def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
 
 def _graph_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return {
+        "node_coordinate_encoding": args.node_coordinate_encoding,
+        "node_coordinate_freqs": int(args.node_coordinate_freqs),
         "radius_policy": args.radius_policy,
         "coverage_repair_policy": args.coverage_repair_policy,
         "repair_p2r": bool(args.repair_p2r),
@@ -1655,6 +1722,134 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     p_edge_masking = float(config.get("p_edge_masking", 0.0))
     if p_edge_masking < 0.0 or p_edge_masking >= 1.0:
         raise ValueError("--p-edge-masking must be in [0, 1)")
+    _validate_decoder_bypass_config(config)
+
+
+def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
+    mode = config.get("decoder_bypass_mode", DECODER_BYPASS_MODE_NONE)
+    features = config.get("decoder_bypass_features", DECODER_BYPASS_FEATURES_NONE)
+    source = config.get(
+        "decoder_bypass_feature_source",
+        DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    )
+    init = config.get("decoder_bypass_init", DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    if mode not in DECODER_BYPASS_MODES:
+        raise ValueError(f"--decoder-bypass-mode must be one of {DECODER_BYPASS_MODES}")
+    if features not in DECODER_BYPASS_FEATURES:
+        raise ValueError(
+            f"--decoder-bypass-features must be one of {DECODER_BYPASS_FEATURES}"
+        )
+    if source not in DECODER_BYPASS_FEATURE_SOURCES:
+        raise ValueError(
+            "--decoder-bypass-feature-source must be one of "
+            f"{DECODER_BYPASS_FEATURE_SOURCES}"
+        )
+    if init not in DECODER_BYPASS_INITS:
+        raise ValueError(f"--decoder-bypass-init must be one of {DECODER_BYPASS_INITS}")
+    if int(config.get("decoder_bypass_hidden_size", 0)) < 1:
+        raise ValueError("--decoder-bypass-hidden-size must be >= 1")
+    if int(config.get("decoder_bypass_layers", 0)) < 1:
+        raise ValueError("--decoder-bypass-layers must be >= 1")
+    if float(config.get("decoder_bypass_residual_scale", 0.0)) < 0.0:
+        raise ValueError("--decoder-bypass-residual-scale must be >= 0")
+    if mode == DECODER_BYPASS_MODE_NONE:
+        if features != DECODER_BYPASS_FEATURES_NONE:
+            raise ValueError(
+                "--decoder-bypass-mode none requires --decoder-bypass-features none"
+            )
+        return
+    if mode != DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL:
+        raise ValueError(f"unsupported decoder_bypass_mode: {mode}")
+    if features != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        raise ValueError(
+            "--decoder-bypass-mode post_decoder_residual requires "
+            "--decoder-bypass-features full_condition"
+        )
+    indices = tuple(config.get("decoder_bypass_feature_indices") or ())
+    names = tuple(config.get("decoder_bypass_feature_names") or ())
+    if indices and len(indices) != int(config.get("decoder_bypass_num_features", 0)):
+        raise ValueError("decoder_bypass_num_features must match feature_indices")
+    if names and len(names) != int(config.get("decoder_bypass_num_features", 0)):
+        raise ValueError("decoder_bypass_num_features must match feature_names")
+
+
+def _resolve_decoder_bypass_model_config(
+    model_config: dict[str, Any],
+    stats: dict[str, Any],
+) -> dict[str, Any]:
+    resolved = dict(model_config)
+    if resolved["decoder_bypass_mode"] == DECODER_BYPASS_MODE_NONE:
+        resolved["decoder_bypass_feature_indices"] = ()
+        resolved["decoder_bypass_feature_names"] = ()
+        resolved["decoder_bypass_num_features"] = 0
+        resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
+        return resolved
+
+    feature_names = tuple(stats.get("feature_names") or ())
+    missing = [
+        name
+        for name in DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES
+        if name not in feature_names
+    ]
+    if missing:
+        raise ValueError(
+            "decoder_bypass_features=full_condition missing required condition "
+            f"features: {missing}; available={feature_names}"
+        )
+    indices = tuple(range(len(feature_names)))
+    resolved["decoder_bypass_feature_indices"] = indices
+    resolved["decoder_bypass_feature_names"] = feature_names
+    resolved["decoder_bypass_num_features"] = len(indices)
+    resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
+    _validate_decoder_bypass_config(resolved)
+    return resolved
+
+
+def _decoder_bypass_payload(model_config: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "decoder_bypass_mode": model_config.get("decoder_bypass_mode"),
+        "decoder_bypass_features": model_config.get("decoder_bypass_features"),
+        "decoder_bypass_feature_source": model_config.get("decoder_bypass_feature_source"),
+        "decoder_bypass_hidden_size": int(model_config.get("decoder_bypass_hidden_size", 0)),
+        "decoder_bypass_layers": int(model_config.get("decoder_bypass_layers", 0)),
+        "decoder_bypass_init": model_config.get("decoder_bypass_init"),
+        "decoder_bypass_residual_scale": float(
+            model_config.get("decoder_bypass_residual_scale", 0.0)
+        ),
+        "decoder_bypass_feature_names": list(
+            model_config.get("decoder_bypass_feature_names") or ()
+        ),
+        "decoder_bypass_feature_indices": [
+            int(index) for index in model_config.get("decoder_bypass_feature_indices") or ()
+        ],
+        "decoder_bypass_num_features": int(
+            model_config.get("decoder_bypass_num_features", 0)
+        ),
+        "decoder_bypass_output_space": model_config.get("decoder_bypass_output_space"),
+    }
+
+
+def _check_decoder_bypass_input_alignment(
+    model_config: dict[str, Any],
+    groups: list[dict],
+) -> None:
+    if model_config.get("decoder_bypass_mode") == DECODER_BYPASS_MODE_NONE:
+        return
+    for group in groups:
+        inputs = group["inputs"]
+        x_inp = np.asarray(inputs.x_inp)
+        x_out = np.asarray(inputs.x_out)
+        if x_inp.shape != x_out.shape:
+            raise ValueError(
+                "decoder bypass requires one-to-one x_inp/x_out node alignment; "
+                f"group={group.get('group_name')} x_inp={x_inp.shape} x_out={x_out.shape}"
+            )
+        max_abs = float(np.max(np.abs(x_inp - x_out))) if x_inp.size else 0.0
+        if max_abs > 1.0e-8:
+            raise ValueError(
+                "decoder bypass requires identical x_inp/x_out node ordering; "
+                f"group={group.get('group_name')} max_abs_coord_diff={max_abs}"
+            )
 
 
 def _validate_batch_config(config: dict[str, Any]) -> None:
@@ -1671,6 +1866,13 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
 
 
 def _validate_graph_config(config: dict[str, Any]) -> None:
+    if config["node_coordinate_encoding"] not in NODE_COORDINATE_ENCODING_CHOICES:
+        raise ValueError(
+            "--node-coordinate-encoding must be one of "
+            f"{NODE_COORDINATE_ENCODING_CHOICES}"
+        )
+    if int(config["node_coordinate_freqs"]) < 1:
+        raise ValueError("--node-coordinate-freqs must be >= 1")
     if config["radius_policy"] not in RADIUS_POLICY_CHOICES:
         raise ValueError(f"--radius-policy must be one of {RADIUS_POLICY_CHOICES}")
     if config["coverage_repair_policy"] not in COVERAGE_REPAIR_POLICY_CHOICES:
@@ -1890,7 +2092,7 @@ def _group_raw_condition_feature(group: dict, stats: dict, feature_name: str):
     if inputs.c is None:
         return None
     feature_index = feature_names.index(feature_name)
-    raw_c = inputs.c * stats["condition_std"] + stats["condition_mean"]
+    raw_c = recover_raw_condition(inputs.c, stats)
     return raw_c[..., feature_index : feature_index + 1]
 
 
@@ -1907,10 +2109,6 @@ def _samplewise_positive_upper_quantile_mask(values, quantile: float):
     mask = jnp.logical_and(positive, flat >= thresholds)
     mask = jnp.logical_and(mask, counts[:, None] > 0)
     return mask.reshape(values.shape)
-
-
-def _normalized_delta_to_raw(pred_normalized, stats: dict):
-    return pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
 
 
 def _safe_relative_denominator(target_raw, loss_config: dict[str, Any]):
@@ -2207,8 +2405,8 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     shape_ok = True
     for group in groups:
         pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
-        recovered = group["t_ref"] + pred_delta
+        pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
+        recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         n = pred_normalized.shape[0]
         weighted_normalized_loss = weighted_normalized_loss + jnp.mean(
             jnp.square(pred_normalized - group["target_normalized"])
@@ -3404,8 +3602,9 @@ def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dic
     predictions: dict[str, np.ndarray] = {}
     for group in groups:
         pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
-        recovered = np.asarray(group["t_ref"] + pred_delta)
+        recovered = np.asarray(
+            recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
+        )
         if not np.all(np.isfinite(recovered)):
             raise ValueError(f"Non-finite recovered predictions in group {group['name']}")
         for batch_index, sample_id in enumerate(group["sample_ids"]):
@@ -4172,6 +4371,11 @@ def _run_post_training_prediction_diagnostics(
             f"labels={[label for label, _ in entries]} output_dir={diagnostics_dir}"
         ),
     )
+    split_map_args = (
+        ["--split-map", str(args.split_map)]
+        if args.split_map is not None
+        else []
+    )
 
     for label, prediction_path in entries:
         baseline_json = diagnostics_dir / f"baseline_comparison_{label}.json"
@@ -4194,6 +4398,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "compare_heat3d_v1_medium_baselines.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--output-json",
@@ -4209,6 +4414,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_error_bins.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--output-json",
@@ -4226,6 +4432,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_condition_diagnostics.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--prediction-label",
@@ -4245,6 +4452,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v2_field_shape_diagnostics.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--prediction-label",
@@ -4270,6 +4478,7 @@ def _run_post_training_prediction_diagnostics(
                     label,
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--output-json",
                     str(mechanism_json),
                     "--output-md",
@@ -4347,6 +4556,7 @@ def _run_post_training_prediction_diagnostics(
         str(SCRIPTS_DIR / "analyze_heat3d_v3_region_error_decomposition.py"),
         "--subset",
         str(sample_root),
+        *split_map_args,
         "--output-json",
         str(region_json),
         "--output-md",
@@ -4716,8 +4926,8 @@ def _make_batch_group_with_seed(
     target_delta = jnp.concatenate([bridge.target_delta_u for bridge in bridges], axis=0)
     t_ref = jnp.concatenate([bridge.t_ref for bridge in bridges], axis=0)
 
-    c = (raw_c - stats["condition_mean"]) / stats["condition_std"]
-    target = (target_delta - stats["target_delta_mean"]) / stats["target_delta_std"]
+    c = normalize_condition(raw_c, stats)
+    target = normalize_target_delta(target_delta, stats)
     coords = _normalize_coords(raw_coords, stats)
     inputs = Inputs(u=raw_u, c=c, x_inp=coords, x_out=coords, t=None, tau=None)
     metadata, shared = _build_batch_metadata_with_seed(
@@ -5160,6 +5370,8 @@ def main() -> int:
         norm_start,
     )
     _record_timing(timings, "normalization", norm_start)
+    model_config = _resolve_decoder_bypass_model_config(model_config, stats)
+    _validate_model_config(model_config)
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
     if batch_config["batch_plan"] == "sample_shuffle":
@@ -5233,6 +5445,10 @@ def main() -> int:
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
     _require_nonempty_groups(all_groups, "all")
+    _check_decoder_bypass_input_alignment(
+        model_config,
+        [*train_groups, *valid_groups, *valid_stress_groups, *all_groups],
+    )
     _record_timing(timings, "group_build", group_start)
     _progress(
         progress_enabled,
@@ -5479,6 +5695,7 @@ def main() -> int:
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "graph_config": graph_config,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
+        **_decoder_bypass_payload(model_config),
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
         "prediction_split": args.prediction_split,
@@ -5612,6 +5829,7 @@ def main() -> int:
         "stress_validation_split": stress_validation_split,
         "prediction_split": args.prediction_split,
         "split_counts": split_counts,
+        **_decoder_bypass_payload(model_config),
         "memory_audit_jsonl": str(memory_audit_jsonl_path) if memory_audit_jsonl_path is not None else None,
         "memory_audit_every_batch": bool(args.memory_audit_every_batch),
         "memory_audit_gc": bool(args.memory_audit_gc),

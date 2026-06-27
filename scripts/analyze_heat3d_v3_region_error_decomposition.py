@@ -73,6 +73,12 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help="Optional sample_id-to-split map. When provided it overrides sample_meta split labels.",
+    )
     parser.add_argument("--entry", action="append", default=None)
     parser.add_argument(
         "--strong-q-quantile",
@@ -174,7 +180,10 @@ def _top_h_group(metadata: dict[str, Any], sample_meta: dict[str, Any]) -> str:
     return "unknown"
 
 
-def _load_reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+def _load_reference_samples(
+    subset: Path,
+    split_map: dict[str, str] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     sample_dirs = mech.find_sample_dirs(mech._sample_root(subset))
     if not sample_dirs:
         raise FileNotFoundError(f"no sample directories found under {subset}")
@@ -188,6 +197,12 @@ def _load_reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], di
             metadata = mech._read_optional_json(sample_dir / "metadata.json")
             sample_id = str(
                 metadata.get("sample_id") or sample_meta.get("sample_id") or sample_dir.name
+            )
+            split = mech.resolve_sample_split(
+                sample_id,
+                sample_meta,
+                metadata=metadata,
+                split_map=split_map,
             )
             coords = np.load(sample_dir / "coords.npy")
             if coords.ndim != 2 or coords.shape[1] != 3:
@@ -207,7 +222,7 @@ def _load_reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], di
             q_power = mech._integrated_power(metadata, sample_meta, q_field)
             q_powers.append(float(q_power))
             groups = {
-                "split": mech._meta_value(metadata, sample_meta, "split"),
+                "split": split,
                 "source_category": mech._meta_value(metadata, sample_meta, "source_pattern_tag"),
                 "k_region_mode": mech._meta_value(metadata, sample_meta, "k_region_mode"),
                 "bc_category": mech._meta_value(metadata, sample_meta, "bc_category"),
@@ -234,7 +249,11 @@ def _load_reference_samples(subset: Path) -> tuple[dict[str, dict[str, Any]], di
             q_edges["ranges"],
         )
         references[str(item["sample_id"])] = item
-    return references, {"sample_failures": failures, "q_power_edges": q_edges}
+    return references, {
+        "sample_failures": failures,
+        "q_power_edges": q_edges,
+        "split_source": mech.split_source_label(split_map),
+    }
 
 
 def _sample_region_rows(
@@ -398,10 +417,13 @@ def main() -> int:
     if not 0.0 <= args.background_quantile <= 1.0:
         raise ValueError("--background-quantile must be in [0, 1]")
     entries = [_parse_entry(token) for token in (args.entry or DEFAULT_ENTRIES)]
-    references, reference_meta = _load_reference_samples(args.subset)
+    split_map = mech.load_sample_split_map(args.split_map)
+    references, reference_meta = _load_reference_samples(args.subset, split_map)
     payload = {
         "diagnostic_scope": "read-only region error decomposition; no training",
         "subset": str(args.subset),
+        "split_source": mech.split_source_label(split_map),
+        "split_map": str(args.split_map) if args.split_map is not None else None,
         "strong_q_quantile": float(args.strong_q_quantile),
         "background_quantile": float(args.background_quantile),
         "region_definitions": {

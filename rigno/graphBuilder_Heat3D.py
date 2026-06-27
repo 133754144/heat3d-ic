@@ -10,6 +10,7 @@ class Heat3DGraphBuilder:
         subsample_factor=4,
         overlap_factor_p2r=1.5,
         overlap_factor_r2p=2.0,
+        node_coordinate_encoding="raw",
         node_coordinate_freqs=4,
         coverage_repair_policy="none",
         radius_policy="discrete_physical_coverage",
@@ -23,6 +24,7 @@ class Heat3DGraphBuilder:
             "subsample_factor": subsample_factor,
             "overlap_factor_p2r": overlap_factor_p2r,
             "overlap_factor_r2p": overlap_factor_r2p,
+            "node_coordinate_encoding": node_coordinate_encoding,
             "node_coordinate_freqs": node_coordinate_freqs,
             "coverage_repair_policy": coverage_repair_policy,
             "radius_policy": radius_policy,
@@ -42,6 +44,7 @@ class Heat3DGraphBuilder:
             overlap_factor_p2r=overlap_factor_p2r,
             overlap_factor_r2p=overlap_factor_r2p,
 
+            node_coordinate_encoding=node_coordinate_encoding,
             node_coordinate_freqs=node_coordinate_freqs,
             coverage_repair_policy=coverage_repair_policy,
             radius_policy=radius_policy,

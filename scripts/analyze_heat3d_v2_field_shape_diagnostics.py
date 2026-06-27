@@ -17,6 +17,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from rigno.heat3d_v1_label_diagnostics import find_sample_dirs, load_json, resolve_t_ref  # noqa: E402
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    resolve_sample_split,
+    split_source_label,
+)
 from rigno.heat3d_v2_field_shape_diagnostics import (  # noqa: E402
     build_field_shape_report,
     compute_field_shape_metrics,
@@ -35,6 +40,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prediction-label", choices=("final", "best"), required=True)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help="Optional sample_id-to-split map. When provided it overrides sample_meta split labels.",
+    )
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
     return parser.parse_args()
@@ -94,7 +105,12 @@ def _as_column(array: np.ndarray, n_points: int, name: str) -> np.ndarray:
     return values
 
 
-def _load_sample_rows(subset: Path, trained_predictions: Path, top_k: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
+def _load_sample_rows(
+    subset: Path,
+    trained_predictions: Path,
+    top_k: int,
+    split_map: dict[str, str] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
     sample_dirs = find_sample_dirs(_sample_root(subset))
     if not sample_dirs:
         raise FileNotFoundError(f"no sample directories found under {subset}")
@@ -108,7 +124,7 @@ def _load_sample_rows(subset: Path, trained_predictions: Path, top_k: int) -> tu
         try:
             meta = load_json(sample_dir / "sample_meta.json")
             sample_id = str(meta.get("sample_id", sample_dir.name))
-            split = str(meta.get("split", "unknown"))
+            split = resolve_sample_split(sample_id, meta, split_map=split_map)
             coords = np.load(sample_dir / "coords.npy")
             if coords.ndim != 2 or coords.shape[1] != 3:
                 raise ValueError(f"{sample_id}: coords.npy must have shape (N, 3), found {coords.shape}")
@@ -237,10 +253,12 @@ def analyze_field_shape_diagnostics(
     output_json: Path,
     output_md: Path,
     top_k: int = 5,
+    split_map_path: Path | None = None,
 ) -> dict[str, Any]:
     if top_k < 1:
         raise ValueError("--top-k must be >= 1")
-    rows, failures, warnings = _load_sample_rows(subset, trained_predictions, top_k)
+    split_map = load_sample_split_map(split_map_path)
+    rows, failures, warnings = _load_sample_rows(subset, trained_predictions, top_k, split_map)
     report = build_field_shape_report(rows, warnings=warnings, failures=failures)
     payload = {
         "diagnostic_scope": {
@@ -256,6 +274,8 @@ def analyze_field_shape_diagnostics(
         "inputs": {
             "subset": str(subset),
             "trained_predictions": str(trained_predictions),
+            "split_source": split_source_label(split_map),
+            "split_map": str(split_map_path) if split_map_path is not None else None,
             "prediction_schema": (
                 "recovered-temperature predictions loaded from .npz arrays keyed by sample_id; "
                 "directory fallback supports <sample_id>.npy, <sample_id>/temperature.npy, or "
@@ -326,6 +346,7 @@ def main() -> int:
         output_json=args.output_json,
         output_md=args.output_md,
         top_k=args.top_k,
+        split_map_path=args.split_map,
     )
     _print_stdout(payload, args.stdout_mode)
     return 0

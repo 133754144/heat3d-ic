@@ -67,6 +67,26 @@ def main() -> int:
             )
             print(f"config_id: {row['config_id']}")
             print(f"generated_yaml: {row['generated_yaml']}")
+            print(f"runner_family: {row['runner_family']}")
+            print(f"split_map_path: {row['split_map_path']}")
+            print(f"target_mode: {row['target_mode']}")
+            print(f"bridge_policy: {row['bridge_policy']}")
+            print(f"normalization_profile: {row['normalization_profile']}")
+            print(f"coord_policy: {row['coord_policy']}")
+            print(
+                "condition_feature_transform: "
+                f"{row['condition_feature_transform']}"
+            )
+            print(f"node_coordinate_encoding: {row['node_coordinate_encoding']}")
+            print(f"node_coordinate_freqs: {row['node_coordinate_freqs']}")
+            print(f"decoder_bypass_mode: {row['decoder_bypass_mode']}")
+            print(f"decoder_bypass_features: {row['decoder_bypass_features']}")
+            print(
+                "decoder_bypass_feature_source: "
+                f"{row['decoder_bypass_feature_source']}"
+            )
+            print(f"target_recovery_policy: {row['target_recovery_policy']}")
+            print(f"feature_manifest_hash: {row['feature_manifest_hash']}")
             print(f"metrics_profile: {row['metrics_profile']}")
             print(f"metrics_contract: {row['metrics_contract']}")
             print(f"selection_metric: {row['selection_metric']}")

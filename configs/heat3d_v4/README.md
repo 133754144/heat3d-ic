@@ -10,6 +10,19 @@ from the JSON registry. Do not add compact CSV variants. The CSV is split into
 configuration fields first and result fields last.
 `metrics_v0.json` is the V4 metrics contract referenced by the registry through
 `metrics_profile` and `metrics_contract`.
+`normalization_profile` is a configuration field. Missing or `legacy_zscore`
+uses the legacy V1 controlled runner; `semantic_normalization_v1` selects the
+V4 controlled runner wrapper.
+The registry/CSV configuration fields also include provenance fields:
+`runner_family`, `target_mode`, `bridge_policy`, `coord_policy`,
+`condition_feature_transform`, `target_recovery_policy`, and
+`feature_manifest_hash`. These are audit metadata written to generated YAML
+`metadata`; they do not add runner controls. `feature_manifest_hash` may remain
+`planned` until a real manifest hash writer exists.
+For V4 semantic-normalization ablations, `condition_feature_transform` is also
+mirrored into `dataset.condition_feature_transform` and passed to the V4 runner.
+Supported semantic ablations are BC flags only, q only, k only, and full
+semantic v1.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
@@ -35,11 +48,12 @@ Workflow:
 3. Generate inherited YAML from `V4_base.yaml`; generated YAML stores only
    executable overrides that differ from the base.
 4. Run `scripts/check_heat3d_v4_registry.py`; it validates the metrics contract,
-   legal selection metric, registry mirror, generated YAML, seed fields,
-   unmapped-field warnings, and path conflicts.
+   legal selection metric, provenance fields, registry mirror, generated YAML,
+   seed fields, unmapped-field warnings, and path conflicts.
 5. Run `scripts/prepare_heat3d_v4_run.py --dry-run` before any launch handoff;
-   the dry-run output must show `metrics_profile`, `metrics_contract`, and
-   `selection_metric`.
+   the dry-run output must show provenance fields, `normalization_profile`,
+   `metrics_profile`, `metrics_contract`, `selection_metric`, and selected
+   training script.
 6. Start tmux training only when the current user request explicitly approves a
    launch on a named server. Report the log path for live output.
 
@@ -67,6 +81,31 @@ The V4 standard task is:
 ```text
 coords + k(x) + q(x) + BC -> T(x)
 ```
+
+Coordinate encoding fields:
+
+- `node_coordinate_encoding=raw` is the default and preserves baseline node
+  coordinate features.
+- `raw_plus_fourier` appends Fourier features to the current
+  `train_minmax_to_unit_box` coordinates while retaining raw `x,y,z`.
+- This is not a physical coordinate scale fix and does not change Heat3D
+  `periodic=False`, graph topology, edge indices, distance logic, solver, loss,
+  or dataset.
+
+Split-map fields:
+
+- `split_map_path` is a resolved configuration field in the V4 registry/CSV.
+  Post-training diagnostics should use the active split map explicitly instead
+  of relying only on `sample_meta["split"]`.
+
+Decoder bypass fields:
+
+- `decoder_bypass_mode=none` is the default and preserves the baseline model.
+- `post_decoder_residual` adds an opt-in normalized-DeltaT residual after the
+  decoder.
+- `decoder_bypass_features=full_condition` resolves feature indices from
+  `feature_names`; missing required condition features are an error.
+- `zero_residual` initializes the bypass output layer to zero.
 
 Metrics policy:
 

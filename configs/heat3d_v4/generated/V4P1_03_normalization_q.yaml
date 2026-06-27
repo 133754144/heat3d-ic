@@ -1,0 +1,29 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P1_03_normalization_q
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P1_03_normalization_q; standard task coords+k(x)+q(x)+BC->T(x);
+    generated from V4_base.yaml.
+  dataset:
+    normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_q_signedlog1p_only
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_03_normalization_q
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_03_normalization_q
+  export:
+    output_dir: output/heat3d_v4_runs/V4P1_03_normalization_q
+    run_name: V4P1_03_normalization_q
+  metadata:
+    registry_config_id: V4P1_03_normalization_q
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P1_03_normalization_q
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    runner_family: v4_controlled_semantic_wrapper
+    normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_q_signedlog1p_only
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P1_03_normalization_q.log
+    notes: 'V4 P1 semantic normalization ablation: q signed log1p only; k, BC flags,
+      top_h, and BC temperature scalars stay legacy z-score; other training parameters
+      match V4Test00_baseline_seed_0'

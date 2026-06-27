@@ -34,11 +34,6 @@ for path in (REPO_ROOT, SCRIPTS_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
-    _bridge_for,
-    _normalize_coords,
-    _train_only_stats,
-)
 from check_heat3d_v4_registry import (  # noqa: E402
     DEFAULT_REGISTRY,
     build_inherited_yaml,
@@ -51,6 +46,15 @@ from rigno.heat3d_v1_native_supervised import (  # noqa: E402
     V1SteadyConditionInput,
     V1SteadySupervisedExampleNative,
     V1SteadyTarget,
+)
+from rigno.heat3d_v1_normalization import (  # noqa: E402
+    legacy_train_only_stats as _train_only_stats,
+    normalize_condition,
+    normalize_coords as _normalize_coords,
+    normalize_target_delta,
+)
+from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    build_legacy_zero_delta_bridge as _bridge_for,
 )
 from rigno.heat3d_v1_supervised import PHYSICS_LABEL_SUPERVISED_STAGES  # noqa: E402
 from rigno.heat3d_v2_runner_command import (  # noqa: E402
@@ -359,12 +363,8 @@ def active_batch_manifest(
     raw_c = np.asarray(bridge.legacy_inputs.c, dtype=np.float64)
     raw_x = np.asarray(bridge.legacy_inputs.x_inp, dtype=np.float64)
     target_delta = np.asarray(bridge.target_delta_u, dtype=np.float64)
-    c_norm = (raw_c - np.asarray(stats["condition_mean"], dtype=np.float64)) / np.asarray(
-        stats["condition_std"], dtype=np.float64
-    )
-    target_norm = (
-        target_delta - np.asarray(stats["target_delta_mean"], dtype=np.float64)
-    ) / np.asarray(stats["target_delta_std"], dtype=np.float64)
+    c_norm = np.asarray(normalize_condition(raw_c, stats), dtype=np.float64)
+    target_norm = np.asarray(normalize_target_delta(target_delta, stats), dtype=np.float64)
     x_norm = np.asarray(_normalize_coords(raw_x, stats), dtype=np.float64)
     return {
         "available": True,
@@ -446,15 +446,12 @@ def summarize_examples(
 
         if stats is not None:
             normalized_c_values.append(
-                ((c_raw - np.asarray(stats["condition_mean"], dtype=np.float64)) / np.asarray(
-                    stats["condition_std"], dtype=np.float64
-                )).reshape(-1, c_raw.shape[-1])
+                np.asarray(normalize_condition(c_raw, stats), dtype=np.float64).reshape(
+                    -1, c_raw.shape[-1]
+                )
             )
             normalized_target_values.append(
-                (
-                    (target_delta - np.asarray(stats["target_delta_mean"], dtype=np.float64))
-                    / np.asarray(stats["target_delta_std"], dtype=np.float64)
-                ).reshape(-1, 1)
+                np.asarray(normalize_target_delta(target_delta, stats), dtype=np.float64).reshape(-1, 1)
             )
             normalized_coord_values.append(
                 np.asarray(

@@ -37,6 +37,65 @@ METRICS_CONTRACT_SCHEMA_VERSION = "heat3d_v4_metrics_contract_v0"
 DEFAULT_METRICS_PROFILE = "v4_metrics_v0"
 DEFAULT_METRICS_CONTRACT = "configs/heat3d_v4/metrics_v0.json"
 DEFAULT_SELECTION_METRIC = "valid_base_mse"
+NORMALIZATION_PROFILE_LEGACY_ZSCORE = "legacy_zscore"
+NORMALIZATION_PROFILE_SEMANTIC_V1 = "semantic_normalization_v1"
+NORMALIZATION_PROFILES = {
+    NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+    NORMALIZATION_PROFILE_SEMANTIC_V1,
+}
+RUNNER_FAMILY_LEGACY_V1 = "v1_controlled_legacy_runner"
+RUNNER_FAMILY_V4_SEMANTIC = "v4_controlled_semantic_wrapper"
+TARGET_MODE_NORMALIZED_DELTAT = "normalized_deltaT"
+BRIDGE_POLICY_ZERO_DELTA_U = "zero_delta_u_bridge"
+COORD_POLICY_TRAIN_MINMAX_UNIT_BOX = "train_minmax_to_unit_box"
+NODE_COORDINATE_ENCODING_RAW = "raw"
+NODE_COORDINATE_ENCODING_RAW_PLUS_FOURIER = "raw_plus_fourier"
+NODE_COORDINATE_ENCODINGS = {
+    NODE_COORDINATE_ENCODING_RAW,
+    NODE_COORDINATE_ENCODING_RAW_PLUS_FOURIER,
+}
+CONDITION_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
+CONDITION_TRANSFORM_SEMANTIC_V1 = (
+    "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
+)
+CONDITION_TRANSFORM_SEMANTIC_BC_ONLY = (
+    "semantic_v1_bc_flags_binary_passthrough_only"
+)
+CONDITION_TRANSFORM_SEMANTIC_Q_ONLY = "semantic_v1_q_signedlog1p_only"
+CONDITION_TRANSFORM_SEMANTIC_K_ONLY = "semantic_v1_k_log_only"
+CONDITION_TRANSFORMS = {
+    CONDITION_TRANSFORM_LEGACY_ZSCORE,
+    CONDITION_TRANSFORM_SEMANTIC_V1,
+    CONDITION_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_K_ONLY,
+}
+SEMANTIC_CONDITION_TRANSFORMS = {
+    CONDITION_TRANSFORM_SEMANTIC_V1,
+    CONDITION_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_TRANSFORM_SEMANTIC_K_ONLY,
+}
+TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF = (
+    "deltaT_norm_to_K_plus_T_ref"
+)
+FEATURE_MANIFEST_HASH_PLANNED = "planned"
+DECODER_BYPASS_MODE_NONE = "none"
+DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL = "post_decoder_residual"
+DECODER_BYPASS_MODES = {
+    DECODER_BYPASS_MODE_NONE,
+    DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL,
+}
+DECODER_BYPASS_FEATURES_NONE = "none"
+DECODER_BYPASS_FEATURES_FULL_CONDITION = "full_condition"
+DECODER_BYPASS_FEATURES = {
+    DECODER_BYPASS_FEATURES_NONE,
+    DECODER_BYPASS_FEATURES_FULL_CONDITION,
+}
+DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
+DECODER_BYPASS_FEATURE_SOURCES = {DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C}
+DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
+DECODER_BYPASS_INITS = {DECODER_BYPASS_INIT_ZERO_RESIDUAL}
 DEFAULT_REGISTRY = Path("configs/heat3d_v4/v4_run_registry.json")
 CONFIG_FIELDNAMES = (
     "config_id",
@@ -45,6 +104,24 @@ CONFIG_FIELDNAMES = (
     "base_yaml",
     "generated_yaml",
     "task",
+    "split_map_path",
+    "runner_family",
+    "target_mode",
+    "bridge_policy",
+    "normalization_profile",
+    "coord_policy",
+    "condition_feature_transform",
+    "node_coordinate_encoding",
+    "node_coordinate_freqs",
+    "decoder_bypass_mode",
+    "decoder_bypass_features",
+    "decoder_bypass_feature_source",
+    "decoder_bypass_hidden_size",
+    "decoder_bypass_layers",
+    "decoder_bypass_init",
+    "decoder_bypass_residual_scale",
+    "target_recovery_policy",
+    "feature_manifest_hash",
     "model_capacity",
     "node_latent_size",
     "edge_latent_size",
@@ -168,6 +245,24 @@ EXPECTED_V4_BASELINE = {
     "base_yaml": "configs/heat3d_v4/V4_base.yaml",
     "generated_yaml": "configs/heat3d_v4/generated/V4_baseline.yaml",
     "task": "coords+k(x)+q(x)+BC->T(x)",
+    "split_map_path": "configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json",
+    "runner_family": RUNNER_FAMILY_LEGACY_V1,
+    "target_mode": TARGET_MODE_NORMALIZED_DELTAT,
+    "bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
+    "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+    "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    "condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+    "node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
+    "node_coordinate_freqs": "4",
+    "decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
+    "decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
+    "decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    "decoder_bypass_hidden_size": "64",
+    "decoder_bypass_layers": "2",
+    "decoder_bypass_init": DECODER_BYPASS_INIT_ZERO_RESIDUAL,
+    "decoder_bypass_residual_scale": "1.0",
+    "target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
+    "feature_manifest_hash": FEATURE_MANIFEST_HASH_PLANNED,
     "model_capacity": "96/96/s6/m2",
     "node_latent_size": "96",
     "edge_latent_size": "96",
@@ -425,7 +520,143 @@ def _normalize_resolved_row(
     row = {field: _stringify(raw_row[field]) for field in CONFIG_FIELDNAMES}
     if not row["config_id"]:
         raise ValueError(f"{context} has empty config_id")
+    if row["normalization_profile"] not in NORMALIZATION_PROFILES:
+        raise ValueError(
+            f"{context} normalization_profile must be one of "
+            f"{sorted(NORMALIZATION_PROFILES)}, got {row['normalization_profile']!r}"
+        )
+    _check_provenance_fields(row, context=context)
+    _check_node_coordinate_fields(row, context=context)
+    _check_decoder_bypass_fields(row, context=context)
     return row
+
+
+def _check_node_coordinate_fields(row: Mapping[str, str], *, context: str) -> None:
+    encoding = row["node_coordinate_encoding"]
+    if encoding not in NODE_COORDINATE_ENCODINGS:
+        raise ValueError(
+            f"{context} node_coordinate_encoding must be one of "
+            f"{sorted(NODE_COORDINATE_ENCODINGS)}, got {encoding!r}"
+        )
+    freqs = _positive_int(row, "node_coordinate_freqs", context)
+    if encoding == NODE_COORDINATE_ENCODING_RAW and freqs != 4:
+        raise ValueError(
+            f"{context} node_coordinate_freqs must remain 4 for raw baseline, "
+            f"got {freqs!r}"
+        )
+
+
+def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
+    common_expected = {
+        "target_mode": TARGET_MODE_NORMALIZED_DELTAT,
+        "bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
+        "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+        "target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
+    }
+    profile_expected = {
+        NORMALIZATION_PROFILE_LEGACY_ZSCORE: {
+            "runner_family": RUNNER_FAMILY_LEGACY_V1,
+        },
+        NORMALIZATION_PROFILE_SEMANTIC_V1: {
+            "runner_family": RUNNER_FAMILY_V4_SEMANTIC,
+        },
+    }
+    for field, expected in {
+        **common_expected,
+        **profile_expected[row["normalization_profile"]],
+    }.items():
+        if row[field] != expected:
+            raise ValueError(
+                f"{context} {field} must be {expected!r} for "
+                f"normalization_profile={row['normalization_profile']!r}, "
+                f"got {row[field]!r}"
+            )
+    transform = row["condition_feature_transform"]
+    if transform not in CONDITION_TRANSFORMS:
+        raise ValueError(
+            f"{context} condition_feature_transform must be one of "
+            f"{sorted(CONDITION_TRANSFORMS)}, got {transform!r}"
+        )
+    if row["normalization_profile"] == NORMALIZATION_PROFILE_LEGACY_ZSCORE:
+        if transform != CONDITION_TRANSFORM_LEGACY_ZSCORE:
+            raise ValueError(
+                f"{context} legacy_zscore requires condition_feature_transform="
+                f"{CONDITION_TRANSFORM_LEGACY_ZSCORE!r}, got {transform!r}"
+            )
+    elif transform not in SEMANTIC_CONDITION_TRANSFORMS:
+        raise ValueError(
+            f"{context} semantic_normalization_v1 requires a semantic "
+            f"condition_feature_transform, got {transform!r}"
+        )
+    feature_manifest_hash = row["feature_manifest_hash"]
+    if feature_manifest_hash not in {"", FEATURE_MANIFEST_HASH_PLANNED}:
+        if len(feature_manifest_hash) < 8:
+            raise ValueError(
+                f"{context} feature_manifest_hash must be blank, "
+                f"{FEATURE_MANIFEST_HASH_PLANNED!r}, or a real hash-like value"
+            )
+
+
+def _check_decoder_bypass_fields(row: Mapping[str, str], *, context: str) -> None:
+    mode = row["decoder_bypass_mode"]
+    features = row["decoder_bypass_features"]
+    source = row["decoder_bypass_feature_source"]
+    init = row["decoder_bypass_init"]
+    if mode not in DECODER_BYPASS_MODES:
+        raise ValueError(
+            f"{context} decoder_bypass_mode must be one of "
+            f"{sorted(DECODER_BYPASS_MODES)}, got {mode!r}"
+        )
+    if features not in DECODER_BYPASS_FEATURES:
+        raise ValueError(
+            f"{context} decoder_bypass_features must be one of "
+            f"{sorted(DECODER_BYPASS_FEATURES)}, got {features!r}"
+        )
+    if source not in DECODER_BYPASS_FEATURE_SOURCES:
+        raise ValueError(
+            f"{context} decoder_bypass_feature_source must be one of "
+            f"{sorted(DECODER_BYPASS_FEATURE_SOURCES)}, got {source!r}"
+        )
+    if init not in DECODER_BYPASS_INITS:
+        raise ValueError(
+            f"{context} decoder_bypass_init must be one of "
+            f"{sorted(DECODER_BYPASS_INITS)}, got {init!r}"
+        )
+    hidden_size = _positive_int(row, "decoder_bypass_hidden_size", context)
+    layers = _positive_int(row, "decoder_bypass_layers", context)
+    _ = (hidden_size, layers)
+    try:
+        residual_scale = float(row["decoder_bypass_residual_scale"])
+    except ValueError as exc:
+        raise ValueError(
+            f"{context} decoder_bypass_residual_scale must be numeric"
+        ) from exc
+    if residual_scale < 0.0:
+        raise ValueError(
+            f"{context} decoder_bypass_residual_scale must be >= 0"
+        )
+    if mode == DECODER_BYPASS_MODE_NONE:
+        if features != DECODER_BYPASS_FEATURES_NONE:
+            raise ValueError(
+                f"{context} decoder_bypass_mode='none' requires "
+                "decoder_bypass_features='none'"
+            )
+        return
+    if features != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        raise ValueError(
+            f"{context} decoder_bypass_mode='post_decoder_residual' requires "
+            "decoder_bypass_features='full_condition'"
+        )
+
+
+def _positive_int(row: Mapping[str, str], field: str, context: str) -> int:
+    try:
+        value = int(row[field])
+    except ValueError as exc:
+        raise ValueError(f"{context} {field} must be an int") from exc
+    if value < 1:
+        raise ValueError(f"{context} {field} must be >= 1")
+    return value
 
 
 def _check_unique_resolved_fields(rows: list[dict[str, str]]) -> None:
@@ -520,6 +751,16 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "model.edge_latent_size": 96,
             "model.processor_steps": 6,
             "model.mlp_hidden_layers": 2,
+            "model.decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
+            "model.decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
+            "model.decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+            "model.decoder_bypass_hidden_size": 64,
+            "model.decoder_bypass_layers": 2,
+            "model.decoder_bypass_init": DECODER_BYPASS_INIT_ZERO_RESIDUAL,
+            "model.decoder_bypass_residual_scale": 1.0,
+            "dataset.split_map_path": "configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json",
+            "graph.node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
+            "graph.node_coordinate_freqs": 4,
             "run.batch_size": 88,
             "run.batch_plan": "sample_shuffle",
             "optimizer.name": "adamw",
@@ -538,7 +779,22 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "graph.radius_policy": "discrete_physical_coverage",
             "graph.coverage_repair_policy": "none",
             "loss.mode": "mse",
+            "dataset.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+            "dataset.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
             "export.selection_metric": DEFAULT_SELECTION_METRIC,
+            "metadata.runner_family": RUNNER_FAMILY_LEGACY_V1,
+            "metadata.target_mode": TARGET_MODE_NORMALIZED_DELTAT,
+            "metadata.bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
+            "metadata.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+            "metadata.coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+            "metadata.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
+            "metadata.node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
+            "metadata.node_coordinate_freqs": 4,
+            "metadata.decoder_bypass_mode": DECODER_BYPASS_MODE_NONE,
+            "metadata.decoder_bypass_features": DECODER_BYPASS_FEATURES_NONE,
+            "metadata.decoder_bypass_feature_source": DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+            "metadata.target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
+            "metadata.feature_manifest_hash": FEATURE_MANIFEST_HASH_PLANNED,
             "metadata.metrics_profile": DEFAULT_METRICS_PROFILE,
             "metadata.metrics_contract": DEFAULT_METRICS_CONTRACT,
             "metadata.selection_metric": DEFAULT_SELECTION_METRIC,
@@ -563,6 +819,20 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "edge_latent_size": _int(row, "edge_latent_size"),
             "processor_steps": _int(row, "processor_steps"),
             "mlp_hidden_layers": _int(row, "mlp_hidden_layers"),
+            "decoder_bypass_mode": row["decoder_bypass_mode"],
+            "decoder_bypass_features": row["decoder_bypass_features"],
+            "decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
+            "decoder_bypass_hidden_size": _int(row, "decoder_bypass_hidden_size"),
+            "decoder_bypass_layers": _int(row, "decoder_bypass_layers"),
+            "decoder_bypass_init": row["decoder_bypass_init"],
+            "decoder_bypass_residual_scale": _float(
+                row, "decoder_bypass_residual_scale"
+            ),
+        },
+        "dataset": {
+            "split_map_path": row["split_map_path"],
+            "normalization_profile": row["normalization_profile"],
+            "condition_feature_transform": row["condition_feature_transform"],
         },
         "optimizer": {
             "name": row["optimizer"],
@@ -595,6 +865,8 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             ],
         },
         "graph": {
+            "node_coordinate_encoding": row["node_coordinate_encoding"],
+            "node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
             "radius_policy": row["graph_radius_policy"],
             "coverage_repair_policy": row["coverage_repair_policy"],
         },
@@ -635,6 +907,19 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "metrics_profile": row["metrics_profile"],
             "metrics_contract": row["metrics_contract"],
             "selection_metric": row["selection_metric"],
+            "runner_family": row["runner_family"],
+            "target_mode": row["target_mode"],
+            "bridge_policy": row["bridge_policy"],
+            "normalization_profile": row["normalization_profile"],
+            "coord_policy": row["coord_policy"],
+            "condition_feature_transform": row["condition_feature_transform"],
+            "node_coordinate_encoding": row["node_coordinate_encoding"],
+            "node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
+            "decoder_bypass_mode": row["decoder_bypass_mode"],
+            "decoder_bypass_features": row["decoder_bypass_features"],
+            "decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
+            "target_recovery_policy": row["target_recovery_policy"],
+            "feature_manifest_hash": row["feature_manifest_hash"],
             "launch_policy": row["launch_policy"],
             "log_path": row["log_path"],
             "notes": row["notes"],
@@ -650,6 +935,15 @@ def _assert_registry_matches_resolved(
         "model.edge_latent_size": _int(row, "edge_latent_size"),
         "model.processor_steps": _int(row, "processor_steps"),
         "model.mlp_hidden_layers": _int(row, "mlp_hidden_layers"),
+        "model.decoder_bypass_mode": row["decoder_bypass_mode"],
+        "model.decoder_bypass_features": row["decoder_bypass_features"],
+        "model.decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
+        "model.decoder_bypass_hidden_size": _int(row, "decoder_bypass_hidden_size"),
+        "model.decoder_bypass_layers": _int(row, "decoder_bypass_layers"),
+        "model.decoder_bypass_init": row["decoder_bypass_init"],
+        "model.decoder_bypass_residual_scale": _float(
+            row, "decoder_bypass_residual_scale"
+        ),
         "run.batch_size": _int(row, "batch_size"),
         "run.validation_batch_size": _int(row, "validation_batch_size"),
         "run.prediction_batch_size": _int(row, "prediction_batch_size"),
@@ -671,8 +965,13 @@ def _assert_registry_matches_resolved(
         "optimizer.warmup_epochs": _int(row, "warmup_epochs"),
         "optimizer.min_lr": _float(row, "min_lr"),
         "optimizer.weight_decay": _float(row, "weight_decay"),
+        "graph.node_coordinate_encoding": row["node_coordinate_encoding"],
+        "graph.node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
         "graph.radius_policy": row["graph_radius_policy"],
         "graph.coverage_repair_policy": row["coverage_repair_policy"],
+        "dataset.split_map_path": row["split_map_path"],
+        "dataset.normalization_profile": row["normalization_profile"],
+        "dataset.condition_feature_transform": row["condition_feature_transform"],
         "loss.mode": row["loss_mode"],
         "export.selection_metric": row["selection_metric"],
         "export.output_dir": row["output_dir"],
@@ -691,6 +990,19 @@ def _assert_registry_matches_resolved(
         "metadata.metrics_profile": row["metrics_profile"],
         "metadata.metrics_contract": row["metrics_contract"],
         "metadata.selection_metric": row["selection_metric"],
+        "metadata.runner_family": row["runner_family"],
+        "metadata.target_mode": row["target_mode"],
+        "metadata.bridge_policy": row["bridge_policy"],
+        "metadata.normalization_profile": row["normalization_profile"],
+        "metadata.coord_policy": row["coord_policy"],
+        "metadata.condition_feature_transform": row["condition_feature_transform"],
+        "metadata.node_coordinate_encoding": row["node_coordinate_encoding"],
+        "metadata.node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
+        "metadata.decoder_bypass_mode": row["decoder_bypass_mode"],
+        "metadata.decoder_bypass_features": row["decoder_bypass_features"],
+        "metadata.decoder_bypass_feature_source": row["decoder_bypass_feature_source"],
+        "metadata.target_recovery_policy": row["target_recovery_policy"],
+        "metadata.feature_manifest_hash": row["feature_manifest_hash"],
     }
     for dotted, expected in checks.items():
         actual = _get_dotted(config, dotted)

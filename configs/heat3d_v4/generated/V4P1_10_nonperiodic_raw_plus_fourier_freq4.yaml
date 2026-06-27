@@ -1,0 +1,26 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P1_10_nonperiodic_raw_plus_fourier_freq4
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P1_10_nonperiodic_raw_plus_fourier_freq4;
+    standard task coords+k(x)+q(x)+BC->T(x); generated from V4_base.yaml.
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_10_nonperiodic_raw_plus_fourier_freq4
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_10_nonperiodic_raw_plus_fourier_freq4
+  graph:
+    node_coordinate_encoding: raw_plus_fourier
+  export:
+    output_dir: output/heat3d_v4_runs/V4P1_10_nonperiodic_raw_plus_fourier_freq4
+    run_name: V4P1_10_nonperiodic_raw_plus_fourier_freq4
+  metadata:
+    registry_config_id: V4P1_10_nonperiodic_raw_plus_fourier_freq4
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P1_10_nonperiodic_raw_plus_fourier_freq4
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    node_coordinate_encoding: raw_plus_fourier
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P1_10_nonperiodic_raw_plus_fourier_freq4.log
+    notes: 'V4 P1 non-periodic coordinate encoding ablation: raw_plus_fourier freq4
+      on train_minmax_to_unit_box coordinates; Heat3D graph remains periodic=False;
+      other parameters match baseline'

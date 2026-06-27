@@ -1,0 +1,28 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P1_01_baseline_normalization
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P1_01_baseline_normalization; standard
+    task coords+k(x)+q(x)+BC->T(x); generated from V4_base.yaml.
+  dataset:
+    normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_01_baseline_normalization
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_01_baseline_normalization
+  export:
+    output_dir: output/heat3d_v4_runs/V4P1_01_baseline_normalization
+    run_name: V4P1_01_baseline_normalization
+  metadata:
+    registry_config_id: V4P1_01_baseline_normalization
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P1_01_baseline_normalization
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    runner_family: v4_controlled_semantic_wrapper
+    normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P1_01_baseline_normalization.log
+    notes: V4 P1.1b baseline normalization variant; semantic_normalization_v1 selects
+      the V4 runner; all training parameters match V4Test00_baseline_seed_0
