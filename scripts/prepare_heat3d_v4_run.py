@@ -68,6 +68,7 @@ def main() -> int:
             print(f"config_id: {row['config_id']}")
             print(f"generated_yaml: {row['generated_yaml']}")
             print(f"runner_family: {row['runner_family']}")
+            print(f"split_map_path: {row['split_map_path']}")
             print(f"target_mode: {row['target_mode']}")
             print(f"bridge_policy: {row['bridge_policy']}")
             print(f"normalization_profile: {row['normalization_profile']}")

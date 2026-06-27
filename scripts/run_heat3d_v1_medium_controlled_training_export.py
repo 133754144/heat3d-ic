@@ -57,6 +57,10 @@ from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  #
 from rigno.heat3d_v1_training_semantics import (  # noqa: E402
     build_legacy_zero_delta_bridge as _bridge_for,
 )
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    split_ids_from_sample_splits,
+)
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 from rigno.models.operator import Inputs  # noqa: E402
 
@@ -1430,19 +1434,7 @@ def _require_train_valid_splits(split_ids: dict[str, list[str]]) -> None:
 
 
 def _load_external_split_map(path: Path) -> dict[str, list[str]]:
-    with path.open("r", encoding="utf-8") as file:
-        loaded = json.load(file)
-    mapping = loaded.get("sample_splits", loaded)
-    if not isinstance(mapping, dict):
-        raise ValueError(f"--split-map must be a mapping or contain sample_splits: {path}")
-    split_ids: dict[str, list[str]] = {}
-    for sample_id, split in mapping.items():
-        if not isinstance(sample_id, str) or not sample_id:
-            raise ValueError(f"--split-map contains invalid sample_id: {sample_id!r}")
-        if not isinstance(split, str) or not split:
-            raise ValueError(f"--split-map contains invalid split for {sample_id!r}: {split!r}")
-        split_ids.setdefault(split, []).append(sample_id)
-    return {split: sorted(ids) for split, ids in split_ids.items()}
+    return split_ids_from_sample_splits(load_sample_split_map(path))
 
 
 def _resolve_training_splits(
@@ -4379,6 +4371,11 @@ def _run_post_training_prediction_diagnostics(
             f"labels={[label for label, _ in entries]} output_dir={diagnostics_dir}"
         ),
     )
+    split_map_args = (
+        ["--split-map", str(args.split_map)]
+        if args.split_map is not None
+        else []
+    )
 
     for label, prediction_path in entries:
         baseline_json = diagnostics_dir / f"baseline_comparison_{label}.json"
@@ -4401,6 +4398,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "compare_heat3d_v1_medium_baselines.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--output-json",
@@ -4416,6 +4414,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_error_bins.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--output-json",
@@ -4433,6 +4432,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_condition_diagnostics.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--prediction-label",
@@ -4452,6 +4452,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v2_field_shape_diagnostics.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--prediction-label",
@@ -4477,6 +4478,7 @@ def _run_post_training_prediction_diagnostics(
                     label,
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--output-json",
                     str(mechanism_json),
                     "--output-md",
@@ -4554,6 +4556,7 @@ def _run_post_training_prediction_diagnostics(
         str(SCRIPTS_DIR / "analyze_heat3d_v3_region_error_decomposition.py"),
         "--subset",
         str(sample_root),
+        *split_map_args,
         "--output-json",
         str(region_json),
         "--output-md",

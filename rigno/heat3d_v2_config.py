@@ -163,6 +163,7 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "config_role": config.get("config_role"),
         "dataset_name": dataset.get("name"),
+        "dataset_split_map_path": dataset.get("split_map_path"),
         "model_architecture": model.get("architecture"),
         "model_node_latent_size": model.get("node_latent_size"),
         "model_edge_latent_size": model.get("edge_latent_size"),

@@ -9,6 +9,7 @@
     "base_yaml": "configs/heat3d_v4/V4_base.yaml",
     "generated_yaml": "configs/heat3d_v4/generated/V4_baseline.yaml",
     "task": "coords+k(x)+q(x)+BC->T(x)",
+    "split_map_path": "configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json",
     "runner_family": "v1_controlled_legacy_runner",
     "target_mode": "normalized_deltaT",
     "bridge_policy": "zero_delta_u_bridge",
@@ -293,6 +294,29 @@
         "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_11_BC_passthrough_bypass_scale0p5_raw_plus_fourier_freq4",
         "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_11_BC_passthrough_bypass_scale0p5_raw_plus_fourier_freq4",
         "notes": "V4 P1 combo based on V4P1_09: BC flags binary passthrough plus full-condition decoder bypass residual_scale=0.5, changing only coordinate encoding to non-periodic raw_plus_fourier freq4"
+      }
+    },
+    "V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split": {
+      "config_id": "V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split.yaml",
+        "split_map_path": "configs/heat3d_v2/medium1024_gapA_train_consistent_split_seed0.json",
+        "runner_family": "v4_controlled_semantic_wrapper",
+        "normalization_profile": "semantic_normalization_v1",
+        "condition_feature_transform": "semantic_v1_bc_flags_binary_passthrough_only",
+        "decoder_bypass_mode": "post_decoder_residual",
+        "decoder_bypass_features": "full_condition",
+        "decoder_bypass_feature_source": "normalized_c",
+        "decoder_bypass_hidden_size": "64",
+        "decoder_bypass_layers": "2",
+        "decoder_bypass_init": "zero_residual",
+        "decoder_bypass_residual_scale": "0.5",
+        "output_dir": "output/heat3d_v4_runs/V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split",
+        "run_name": "V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split",
+        "log_path": "output/heat3d_v4_logs/V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P1_12_BC_passthrough_bypass_scale0p5_train_consistent_split",
+        "notes": "V4 P1 train-consistent IID split control based on V4P1_09; only split_map_path and output/log paths change"
       }
     },
     "V4P1_05_decoder_bypass_full_condition_smoke": {

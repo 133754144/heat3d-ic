@@ -25,6 +25,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from rigno.heat3d_v1_label_diagnostics import find_sample_dirs, load_json, resolve_t_ref  # noqa: E402
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    resolve_sample_split,
+    split_source_label,
+)
 
 
 EPS = 1.0e-12
@@ -378,6 +383,7 @@ def _load_sample_rows(
     subset: Path,
     prediction_path: Path,
     top_k: int,
+    split_map: dict[str, str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     sample_dirs = find_sample_dirs(_sample_root(subset))
     if not sample_dirs:
@@ -395,6 +401,7 @@ def _load_sample_rows(
             sample_id = str(
                 metadata.get("sample_id") or sample_meta.get("sample_id") or sample_dir.name
             )
+            split = resolve_sample_split(sample_id, sample_meta, metadata=metadata, split_map=split_map)
             coords = np.load(sample_dir / "coords.npy")
             if coords.ndim != 2 or coords.shape[1] != 3:
                 raise ValueError(f"{sample_id}: coords.npy must have shape (N, 3), found {coords.shape}")
@@ -413,7 +420,7 @@ def _load_sample_rows(
             q_power = _integrated_power(metadata, sample_meta, q_field)
             t_ref = float(resolve_t_ref(sample_meta)["value"])
             groups = {
-                "split": _meta_value(metadata, sample_meta, "split"),
+                "split": split,
                 "source_category": _meta_value(metadata, sample_meta, "source_pattern_tag"),
                 "k_mode": _meta_value(metadata, sample_meta, "k_field_mode"),
                 "k_region_mode": _meta_value(metadata, sample_meta, "k_region_mode"),
@@ -536,14 +543,17 @@ def analyze_prediction_mechanisms(
     output_json: Path,
     output_md: Path,
     subset: Path | None = None,
+    split_map_path: Path | None = None,
     top_k: int = 5,
 ) -> dict[str, Any]:
     subset_path = _resolve_subset(run_dir, subset)
     prediction_path = _resolve_prediction_path(run_dir, prediction_name)
+    split_map = load_sample_split_map(split_map_path)
     rows, failures, q_edges = _load_sample_rows(
         subset=subset_path,
         prediction_path=prediction_path,
         top_k=top_k,
+        split_map=split_map,
     )
     grouped = _grouped(rows)
     payload = {
@@ -554,6 +564,8 @@ def analyze_prediction_mechanisms(
             "prediction_name": prediction_name,
             "prediction_path": str(prediction_path),
             "subset": str(subset_path),
+            "split_source": split_source_label(split_map),
+            "split_map": str(split_map_path) if split_map_path is not None else None,
             "top_k": top_k,
         },
         "sample_count": len(rows),
@@ -585,6 +597,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
     parser.add_argument("--subset", type=Path, default=None)
+    parser.add_argument("--split-map", type=Path, default=None)
     parser.add_argument("--top-k", type=int, default=5)
     return parser.parse_args()
 
@@ -598,6 +611,7 @@ def main() -> int:
         output_json=args.output_json,
         output_md=args.output_md,
         subset=args.subset,
+        split_map_path=args.split_map,
         top_k=args.top_k,
     )
     print(f"wrote {args.output_json}")

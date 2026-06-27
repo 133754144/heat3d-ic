@@ -36,6 +36,11 @@ from rigno.heat3d_v1_metrics import (  # noqa: E402
     rmse,
     top_k_hotspot_overlap,
 )
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    resolve_sample_split,
+    split_source_label,
+)
 
 
 DEFAULT_SUBSET = (
@@ -91,6 +96,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Optional JSON output path. Prefer ignored output/ paths.",
+    )
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help="Optional sample_id-to-split map. When provided it overrides sample_meta split labels.",
     )
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
@@ -256,10 +267,15 @@ def _metric_row(
     return row
 
 
-def _sample_rows(sample_dir: Path, trained_loader, top_k: int) -> list[dict[str, Any]]:
+def _sample_rows(
+    sample_dir: Path,
+    trained_loader,
+    top_k: int,
+    split_map: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
     meta = load_json(sample_dir / "sample_meta.json")
     sample_id = str(meta.get("sample_id", sample_dir.name))
-    split = str(meta.get("split", "unknown"))
+    split = resolve_sample_split(sample_id, meta, split_map=split_map)
     coords = _load_array(sample_dir, "coords.npy")
     _load_array(sample_dir, "k_field.npy")
     _load_array(sample_dir, "q_field.npy")
@@ -330,10 +346,18 @@ def _group_summary(rows: list[dict[str, Any]], keys: tuple[str, ...]) -> list[di
     return result
 
 
-def _build_report(rows: list[dict[str, Any]], trained_enabled: bool) -> dict[str, Any]:
+def _build_report(
+    rows: list[dict[str, Any]],
+    trained_enabled: bool,
+    *,
+    split_source: str,
+    split_map_path: Path | None,
+) -> dict[str, Any]:
     report = {
         "diagnostic_scope": "baseline comparison tooling; not benchmark or model performance",
         "trained_comparison_status": "computed" if trained_enabled else "pending_no_trained_predictions",
+        "split_source": split_source,
+        "split_map_path": str(split_map_path) if split_map_path is not None else None,
         "per_sample": rows,
         "overall": _group_summary(rows, ("predictor",)),
         "split_summary": _group_summary(rows, ("split", "predictor")),
@@ -461,11 +485,17 @@ def main() -> int:
         raise FileNotFoundError(f"No sample directories found under {sample_root}")
 
     trained_loader = _prediction_loader(args.trained_predictions)
+    split_map = load_sample_split_map(args.split_map)
     rows: list[dict[str, Any]] = []
     for sample_dir in sample_dirs:
-        rows.extend(_sample_rows(sample_dir, trained_loader, args.top_k))
+        rows.extend(_sample_rows(sample_dir, trained_loader, args.top_k, split_map))
 
-    report = _build_report(rows, trained_enabled=trained_loader is not None)
+    report = _build_report(
+        rows,
+        trained_enabled=trained_loader is not None,
+        split_source=split_source_label(split_map),
+        split_map_path=args.split_map,
+    )
     if args.output_json is not None:
         _write_json(args.output_json, report)
     _print_report(report, args.subset, args.output_json, args.stdout_mode)

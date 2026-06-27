@@ -283,6 +283,7 @@ def build_baseline_comparison_command(
         COMPARISON_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--output-json",
@@ -313,6 +314,7 @@ def build_error_bins_command(
         ERROR_BINS_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--output-json",
@@ -387,6 +389,7 @@ def build_condition_diagnostics_command(
         CONDITION_DIAGNOSTICS_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--output-json",
@@ -423,6 +426,7 @@ def build_field_shape_diagnostics_command(
         FIELD_SHAPE_DIAGNOSTICS_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--prediction-label",
@@ -448,6 +452,7 @@ def build_v2_command_plan(
     if role == "baseline_reference":
         raise ValueError("baseline_reference configs do not map to runner commands")
     model = _section(config, "model")
+    dataset = _section(config, "dataset")
     graph_section = config.get("graph")
     graph = graph_section if isinstance(graph_section, Mapping) else {}
 
@@ -459,6 +464,7 @@ def build_v2_command_plan(
         ),
         "normalization_profile": _normalization_profile(config),
         "condition_feature_transform": _condition_feature_transform(config),
+        "split_map_path": _split_map_path_for_dataset(dataset),
         "training_script": _training_script_for_profile(_normalization_profile(config)),
         "node_coordinate_encoding": graph.get("node_coordinate_encoding", "raw"),
         "node_coordinate_freqs": graph.get("node_coordinate_freqs", 4),
@@ -555,6 +561,7 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
         f"role: {plan.get('config_role')}",
         f"normalization_profile: {plan.get('normalization_profile')}",
         f"condition_feature_transform: {plan.get('condition_feature_transform')}",
+        f"split_map_path: {plan.get('split_map_path')}",
         f"node_coordinate_encoding: {plan.get('node_coordinate_encoding')}",
         f"node_coordinate_freqs: {plan.get('node_coordinate_freqs')}",
         f"decoder_bypass_mode: {plan.get('decoder_bypass_mode')}",
@@ -590,6 +597,7 @@ def _diagnostic_entry(kind: str, prediction_label: str, command: list[str]) -> d
 def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
     mappings = [
         ("dataset.subset_path", "training --subset"),
+        ("dataset.split_map_path", "training/diagnostics --split-map"),
         ("dataset.boundary_mask_fallback", "training --boundary-mask-fallback/--no-boundary-mask-fallback"),
         ("dataset.normalization_profile", "training script selection and optional --normalization-profile"),
         ("dataset.condition_feature_transform", "V4 training --condition-feature-transform"),
@@ -930,6 +938,13 @@ def _split_map_path_for_dataset(dataset: Mapping[str, Any]) -> Any:
     if _is_medium1024_gapA_dataset(dataset):
         return DEFAULT_MEDIUM1024_GAPA_SPLIT_MAP
     return None
+
+
+def _split_map_args_for_dataset(dataset: Mapping[str, Any]) -> list[str]:
+    split_map_path = _split_map_path_for_dataset(dataset)
+    if not split_map_path:
+        return []
+    return ["--split-map", _stringify(split_map_path)]
 
 
 def _is_medium1024_gapA_dataset(dataset: Mapping[str, Any]) -> bool:

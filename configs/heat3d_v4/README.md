@@ -92,6 +92,12 @@ Coordinate encoding fields:
   `periodic=False`, graph topology, edge indices, distance logic, solver, loss,
   or dataset.
 
+Split-map fields:
+
+- `split_map_path` is a resolved configuration field in the V4 registry/CSV.
+  Post-training diagnostics should use the active split map explicitly instead
+  of relying only on `sample_meta["split"]`.
+
 Decoder bypass fields:
 
 - `decoder_bypass_mode=none` is the default and preserves the baseline model.
