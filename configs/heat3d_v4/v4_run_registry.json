@@ -373,6 +373,32 @@
         "notes": "V4 P2.02 based on V4P1_12: use sample_local_isotropic xyz coordinate normalization and broadcast log extent/aspect features; keep legacy BC flags and V4P1_12 training parameters"
       }
     },
+    "V4P2_03_boundary_distance_plus_xyz_unified": {
+      "config_id": "V4P2_03_boundary_distance_plus_xyz_unified",
+      "overrides": {
+        "generated_yaml": "configs/heat3d_v4/generated/V4P2_03_boundary_distance_plus_xyz_unified.yaml",
+        "split_map_path": "configs/heat3d_v2/medium1024_gapA_train_consistent_split_seed0.json",
+        "runner_family": "v4_controlled_semantic_wrapper",
+        "input_feature_schema": "boundary_distance_replacement",
+        "normalization_profile": "semantic_normalization_v1",
+        "coord_policy": "sample_local_isotropic",
+        "extent_feature_policy": "log_extent_broadcast",
+        "condition_feature_transform": "semantic_v1_bc_flags_binary_passthrough_only",
+        "decoder_bypass_mode": "post_decoder_residual",
+        "decoder_bypass_features": "full_condition",
+        "decoder_bypass_feature_source": "normalized_c",
+        "decoder_bypass_hidden_size": "64",
+        "decoder_bypass_layers": "2",
+        "decoder_bypass_init": "zero_residual",
+        "decoder_bypass_residual_scale": "0.5",
+        "output_dir": "output/heat3d_v4_runs/V4P2_03_boundary_distance_plus_xyz_unified",
+        "run_name": "V4P2_03_boundary_distance_plus_xyz_unified",
+        "log_path": "output/heat3d_v4_logs/V4P2_03_boundary_distance_plus_xyz_unified.log",
+        "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P2_03_boundary_distance_plus_xyz_unified",
+        "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P2_03_boundary_distance_plus_xyz_unified",
+        "notes": "V4 P2.03 combines V4P2_01 and V4P2_02: boundary distance replacement plus sample_local_isotropic coordinates and log extent/aspect broadcast; other V4P1_12 training parameters unchanged"
+      }
+    },
     "V4P1_05_decoder_bypass_full_condition_smoke": {
       "config_id": "V4P1_05_decoder_bypass_full_condition_smoke",
       "overrides": {
