@@ -43,6 +43,9 @@ COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 NODE_COORDINATE_ENCODINGS = {"raw", "raw_plus_fourier"}
 BATCH_PLANS = {"current_graph_shape", "sample_shuffle"}
 NORMALIZATION_PROFILES = {"legacy_zscore", "semantic_normalization_v1"}
+INPUT_FEATURE_SCHEMAS = {"legacy_bc_flags", "boundary_distance_replacement"}
+COORD_POLICIES = {"train_minmax_to_unit_box", "sample_local_isotropic"}
+EXTENT_FEATURE_POLICIES = {"none", "log_extent_broadcast"}
 CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
 CONDITION_FEATURE_TRANSFORMS = {
     CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
@@ -210,6 +213,9 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "graph_coverage_repair_policy": graph.get("coverage_repair_policy"),
         "graph_node_coordinate_encoding": graph.get("node_coordinate_encoding"),
         "graph_node_coordinate_freqs": graph.get("node_coordinate_freqs"),
+        "dataset_input_feature_schema": dataset.get("input_feature_schema"),
+        "dataset_coord_policy": dataset.get("coord_policy"),
+        "dataset_extent_feature_policy": dataset.get("extent_feature_policy"),
     }
 
     if config.get("config_role") == "baseline_reference":
@@ -319,6 +325,27 @@ def _validate_run_config(
         raise ValueError(
             f"{label}: field 'dataset.normalization_profile' must be one of "
             f"{sorted(NORMALIZATION_PROFILES)}, got {normalization_profile!r}"
+        )
+    input_feature_schema = dataset.get("input_feature_schema")
+    if input_feature_schema is not None and input_feature_schema not in INPUT_FEATURE_SCHEMAS:
+        raise ValueError(
+            f"{label}: field 'dataset.input_feature_schema' must be one of "
+            f"{sorted(INPUT_FEATURE_SCHEMAS)}, got {input_feature_schema!r}"
+        )
+    coord_policy = dataset.get("coord_policy")
+    if coord_policy is not None and coord_policy not in COORD_POLICIES:
+        raise ValueError(
+            f"{label}: field 'dataset.coord_policy' must be one of "
+            f"{sorted(COORD_POLICIES)}, got {coord_policy!r}"
+        )
+    extent_feature_policy = dataset.get("extent_feature_policy")
+    if (
+        extent_feature_policy is not None
+        and extent_feature_policy not in EXTENT_FEATURE_POLICIES
+    ):
+        raise ValueError(
+            f"{label}: field 'dataset.extent_feature_policy' must be one of "
+            f"{sorted(EXTENT_FEATURE_POLICIES)}, got {extent_feature_policy!r}"
         )
     condition_feature_transform = dataset.get("condition_feature_transform")
     if condition_feature_transform is not None:

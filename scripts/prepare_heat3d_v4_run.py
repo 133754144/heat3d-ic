@@ -72,7 +72,9 @@ def main() -> int:
             print(f"target_mode: {row['target_mode']}")
             print(f"bridge_policy: {row['bridge_policy']}")
             print(f"normalization_profile: {row['normalization_profile']}")
+            print(f"input_feature_schema: {row['input_feature_schema']}")
             print(f"coord_policy: {row['coord_policy']}")
+            print(f"extent_feature_policy: {row['extent_feature_policy']}")
             print(
                 "condition_feature_transform: "
                 f"{row['condition_feature_transform']}"

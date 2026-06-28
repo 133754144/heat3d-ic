@@ -14,11 +14,14 @@ configuration fields first and result fields last.
 uses the legacy V1 controlled runner; `semantic_normalization_v1` selects the
 V4 controlled runner wrapper.
 The registry/CSV configuration fields also include provenance fields:
-`runner_family`, `target_mode`, `bridge_policy`, `coord_policy`,
-`condition_feature_transform`, `target_recovery_policy`, and
+`runner_family`, `target_mode`, `bridge_policy`, `input_feature_schema`,
+`coord_policy`, `extent_feature_policy`, `condition_feature_transform`,
+`target_recovery_policy`, and
 `feature_manifest_hash`. These are audit metadata written to generated YAML
-`metadata`; they do not add runner controls. `feature_manifest_hash` may remain
-`planned` until a real manifest hash writer exists.
+`metadata`; `input_feature_schema`, `coord_policy`, and
+`extent_feature_policy` are also mirrored into `dataset` and passed to the V4
+runner when they are non-default. `feature_manifest_hash` may remain `planned`
+until a real manifest hash writer exists.
 For V4 semantic-normalization ablations, `condition_feature_transform` is also
 mirrored into `dataset.condition_feature_transform` and passed to the V4 runner.
 Supported semantic ablations are BC flags only, q only, k only, and full
@@ -97,6 +100,21 @@ Split-map fields:
 - `split_map_path` is a resolved configuration field in the V4 registry/CSV.
   Post-training diagnostics should use the active split map explicitly instead
   of relying only on `sample_meta["split"]`.
+
+Input feature and coordinate policy fields:
+
+- Default `input_feature_schema=legacy_bc_flags`,
+  `coord_policy=train_minmax_to_unit_box`, and `extent_feature_policy=none`
+  preserve the V4P1_12 input path.
+- `boundary_distance_replacement` removes
+  `is_top/is_bottom/is_side/is_interior` and adds
+  `d_xmin/d_xmax/d_ymin/d_ymax/d_bottom/d_top`; distances are normalized by the
+  sample's per-axis physical extent before condition normalization.
+- `sample_local_isotropic` normalizes each sample's `x/y/z` by one shared
+  max-axis scale. For that policy, `Inputs.x_inp/x_out` and graph metadata are
+  built from the same normalized coordinates.
+- `log_extent_broadcast` appends
+  `log_Lx/log_Ly/log_Lz/log_Lx_over_Lz/log_Ly_over_Lz` as condition features.
 
 Decoder bypass fields:
 

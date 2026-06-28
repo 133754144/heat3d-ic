@@ -13,9 +13,17 @@ import jax.numpy as jnp
 import numpy as np
 
 from rigno.heat3d_v1_training_semantics import (
+    COORD_POLICIES,
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+    COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    EXTENT_FEATURE_POLICIES,
+    EXTENT_FEATURE_POLICY_NONE,
+    INPUT_FEATURE_SCHEMAS,
+    INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
     NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     NORMALIZATION_PROFILE_SEMANTIC_V1,
     NORMALIZATION_PROFILES,
+    build_configured_zero_delta_bridge,
     build_legacy_zero_delta_bridge,
 )
 
@@ -71,26 +79,37 @@ def safe_stats(array: np.ndarray, eps: float = LEGACY_ZSCORE_EPS) -> tuple[np.nd
 def legacy_train_only_stats(
     examples: list[Any],
     *,
+    input_feature_schema: str = INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+    coord_policy: str = COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    extent_feature_policy: str = EXTENT_FEATURE_POLICY_NONE,
     bridge_fn: Callable[[Any], Any] = build_legacy_zero_delta_bridge,
     eps: float = LEGACY_ZSCORE_EPS,
 ) -> dict[str, Any]:
     """Compute the current train-only legacy normalization statistics."""
 
+    _check_input_feature_schema(input_feature_schema)
+    _check_coord_policy(coord_policy)
+    _check_extent_feature_policy(extent_feature_policy)
+    bridge = _feature_bridge_fn(
+        bridge_fn,
+        input_feature_schema=input_feature_schema,
+        extent_feature_policy=extent_feature_policy,
+    )
     c_values = []
     delta_values = []
     coord_values = []
     feature_names = None
     for example in examples:
-        bridge = bridge_fn(example)
-        names = bridge.condition_feature_names
+        example_bridge = bridge(example)
+        names = example_bridge.condition_feature_names
         if feature_names is None:
             feature_names = names
         elif feature_names != names:
             raise ValueError("Relative condition feature-name mismatch in train split")
 
-        c_values.append(np.asarray(bridge.legacy_inputs.c).reshape(-1, len(names)))
-        delta_values.append(np.asarray(bridge.target_delta_u).reshape(-1, 1))
-        coord_values.append(np.asarray(bridge.legacy_inputs.x_inp).reshape(-1, 3))
+        c_values.append(np.asarray(example_bridge.legacy_inputs.c).reshape(-1, len(names)))
+        delta_values.append(np.asarray(example_bridge.target_delta_u).reshape(-1, 1))
+        coord_values.append(np.asarray(example_bridge.legacy_inputs.x_inp).reshape(-1, 3))
 
     c_all = np.concatenate(c_values, axis=0)
     delta_all = np.concatenate(delta_values, axis=0)
@@ -103,6 +122,9 @@ def legacy_train_only_stats(
     return {
         "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
         "condition_feature_transform": CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
+        "input_feature_schema": input_feature_schema,
+        "coord_policy": coord_policy,
+        "extent_feature_policy": extent_feature_policy,
         "feature_names": tuple(feature_names or ()),
         "condition_feature_transforms": tuple(
             TRANSFORM_LINEAR_ZSCORE for _ in tuple(feature_names or ())
@@ -120,6 +142,9 @@ def semantic_normalization_v1_train_only_stats(
     examples: list[Any],
     *,
     condition_feature_transform: str = CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+    input_feature_schema: str = INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+    coord_policy: str = COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    extent_feature_policy: str = EXTENT_FEATURE_POLICY_NONE,
     bridge_fn: Callable[[Any], Any] = build_legacy_zero_delta_bridge,
     eps: float = LEGACY_ZSCORE_EPS,
 ) -> dict[str, Any]:
@@ -129,6 +154,14 @@ def semantic_normalization_v1_train_only_stats(
         condition_feature_transform,
         normalization_profile=NORMALIZATION_PROFILE_SEMANTIC_V1,
     )
+    _check_input_feature_schema(input_feature_schema)
+    _check_coord_policy(coord_policy)
+    _check_extent_feature_policy(extent_feature_policy)
+    bridge = _feature_bridge_fn(
+        bridge_fn,
+        input_feature_schema=input_feature_schema,
+        extent_feature_policy=extent_feature_policy,
+    )
     c_values = []
     transformed_values = []
     delta_values = []
@@ -137,8 +170,8 @@ def semantic_normalization_v1_train_only_stats(
     feature_names = None
     transforms = None
     for example in examples:
-        bridge = bridge_fn(example)
-        names = bridge.condition_feature_names
+        example_bridge = bridge(example)
+        names = example_bridge.condition_feature_names
         if feature_names is None:
             feature_names = names
             transforms = tuple(
@@ -148,11 +181,11 @@ def semantic_normalization_v1_train_only_stats(
         elif feature_names != names:
             raise ValueError("Relative condition feature-name mismatch in train split")
 
-        raw_c = np.asarray(bridge.legacy_inputs.c, dtype=np.float64).reshape(-1, len(names))
+        raw_c = np.asarray(example_bridge.legacy_inputs.c, dtype=np.float64).reshape(-1, len(names))
         c_values.append(raw_c)
         transformed_values.append(_semantic_transform_condition_np(raw_c, tuple(transforms)))
-        delta_values.append(np.asarray(bridge.target_delta_u).reshape(-1, 1))
-        coords = np.asarray(bridge.legacy_inputs.x_inp).reshape(-1, 3)
+        delta_values.append(np.asarray(example_bridge.target_delta_u).reshape(-1, 1))
+        coords = np.asarray(example_bridge.legacy_inputs.x_inp).reshape(-1, 3)
         coord_values.append(coords)
         sample_extents.append(np.max(coords, axis=0) - np.min(coords, axis=0))
 
@@ -171,6 +204,9 @@ def semantic_normalization_v1_train_only_stats(
     return {
         "normalization_profile": NORMALIZATION_PROFILE_SEMANTIC_V1,
         "condition_feature_transform": condition_feature_transform,
+        "input_feature_schema": input_feature_schema,
+        "coord_policy": coord_policy,
+        "extent_feature_policy": extent_feature_policy,
         "feature_names": tuple(feature_names or ()),
         "condition_feature_transforms": tuple(transforms or ()),
         "condition_mean": transformed_mean.reshape(1, 1, 1, -1),
@@ -193,6 +229,9 @@ def training_normalization_stats(
     *,
     normalization_profile: str = NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     condition_feature_transform: str | None = None,
+    input_feature_schema: str = INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+    coord_policy: str = COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    extent_feature_policy: str = EXTENT_FEATURE_POLICY_NONE,
     bridge_fn: Callable[[Any], Any] = build_legacy_zero_delta_bridge,
     eps: float = LEGACY_ZSCORE_EPS,
 ) -> dict[str, Any]:
@@ -206,10 +245,20 @@ def training_normalization_stats(
         _check_condition_feature_transform(
             transform, normalization_profile=normalization_profile
         )
-        return legacy_train_only_stats(examples, bridge_fn=bridge_fn, eps=eps)
+        return legacy_train_only_stats(
+            examples,
+            input_feature_schema=input_feature_schema,
+            coord_policy=coord_policy,
+            extent_feature_policy=extent_feature_policy,
+            bridge_fn=bridge_fn,
+            eps=eps,
+        )
     return semantic_normalization_v1_train_only_stats(
         examples,
         condition_feature_transform=transform,
+        input_feature_schema=input_feature_schema,
+        coord_policy=coord_policy,
+        extent_feature_policy=extent_feature_policy,
         bridge_fn=bridge_fn,
         eps=eps,
     )
@@ -218,6 +267,10 @@ def training_normalization_stats(
 def normalize_coords(coords: Any, stats: dict[str, Any]) -> Any:
     """Map physical coordinates to the legacy train min/max unit box."""
 
+    coord_policy = stats.get("coord_policy", COORD_POLICY_TRAIN_MINMAX_UNIT_BOX)
+    _check_coord_policy(str(coord_policy))
+    if coord_policy == COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC:
+        return _normalize_coords_sample_local_isotropic(coords)
     return 2.0 * ((coords - stats["coord_min"]) / stats["coord_span"]) - 1.0
 
 
@@ -261,6 +314,57 @@ def _check_normalization_profile(normalization_profile: str) -> None:
             f"normalization_profile must be one of {NORMALIZATION_PROFILES}, "
             f"found {normalization_profile!r}"
         )
+
+
+def _check_input_feature_schema(input_feature_schema: str) -> None:
+    if input_feature_schema not in INPUT_FEATURE_SCHEMAS:
+        raise ValueError(
+            f"input_feature_schema must be one of {INPUT_FEATURE_SCHEMAS}, "
+            f"found {input_feature_schema!r}"
+        )
+
+
+def _check_coord_policy(coord_policy: str) -> None:
+    if coord_policy not in COORD_POLICIES:
+        raise ValueError(
+            f"coord_policy must be one of {COORD_POLICIES}, found {coord_policy!r}"
+        )
+
+
+def _check_extent_feature_policy(extent_feature_policy: str) -> None:
+    if extent_feature_policy not in EXTENT_FEATURE_POLICIES:
+        raise ValueError(
+            "extent_feature_policy must be one of "
+            f"{EXTENT_FEATURE_POLICIES}, found {extent_feature_policy!r}"
+        )
+
+
+def _feature_bridge_fn(
+    bridge_fn: Callable[[Any], Any],
+    *,
+    input_feature_schema: str,
+    extent_feature_policy: str,
+) -> Callable[[Any], Any]:
+    if (
+        bridge_fn is build_legacy_zero_delta_bridge
+        or getattr(bridge_fn, "__name__", "") == build_legacy_zero_delta_bridge.__name__
+    ):
+        return lambda example: build_configured_zero_delta_bridge(
+            example,
+            input_feature_schema=input_feature_schema,
+            extent_feature_policy=extent_feature_policy,
+        )
+    return bridge_fn
+
+
+def _normalize_coords_sample_local_isotropic(coords: Any) -> Any:
+    coords_array = jnp.asarray(coords)
+    coord_min = jnp.min(coords_array, axis=-2, keepdims=True)
+    coord_max = jnp.max(coords_array, axis=-2, keepdims=True)
+    span = jnp.maximum(coord_max - coord_min, LEGACY_ZSCORE_EPS)
+    max_span = jnp.maximum(jnp.max(span, axis=-1, keepdims=True), LEGACY_ZSCORE_EPS)
+    center = 0.5 * (coord_min + coord_max)
+    return 2.0 * (coords_array - center) / max_span
 
 
 def _default_condition_feature_transform(

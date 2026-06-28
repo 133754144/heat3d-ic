@@ -47,7 +47,24 @@ RUNNER_FAMILY_LEGACY_V1 = "v1_controlled_legacy_runner"
 RUNNER_FAMILY_V4_SEMANTIC = "v4_controlled_semantic_wrapper"
 TARGET_MODE_NORMALIZED_DELTAT = "normalized_deltaT"
 BRIDGE_POLICY_ZERO_DELTA_U = "zero_delta_u_bridge"
+INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS = "legacy_bc_flags"
+INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT = "boundary_distance_replacement"
+INPUT_FEATURE_SCHEMAS = {
+    INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+    INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+}
 COORD_POLICY_TRAIN_MINMAX_UNIT_BOX = "train_minmax_to_unit_box"
+COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC = "sample_local_isotropic"
+COORD_POLICIES = {
+    COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+}
+EXTENT_FEATURE_POLICY_NONE = "none"
+EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST = "log_extent_broadcast"
+EXTENT_FEATURE_POLICIES = {
+    EXTENT_FEATURE_POLICY_NONE,
+    EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+}
 NODE_COORDINATE_ENCODING_RAW = "raw"
 NODE_COORDINATE_ENCODING_RAW_PLUS_FOURIER = "raw_plus_fourier"
 NODE_COORDINATE_ENCODINGS = {
@@ -108,8 +125,10 @@ CONFIG_FIELDNAMES = (
     "runner_family",
     "target_mode",
     "bridge_policy",
+    "input_feature_schema",
     "normalization_profile",
     "coord_policy",
+    "extent_feature_policy",
     "condition_feature_transform",
     "node_coordinate_encoding",
     "node_coordinate_freqs",
@@ -249,8 +268,10 @@ EXPECTED_V4_BASELINE = {
     "runner_family": RUNNER_FAMILY_LEGACY_V1,
     "target_mode": TARGET_MODE_NORMALIZED_DELTAT,
     "bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
+    "input_feature_schema": INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
     "normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    "extent_feature_policy": EXTENT_FEATURE_POLICY_NONE,
     "condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
     "node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
     "node_coordinate_freqs": "4",
@@ -550,27 +571,38 @@ def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
     common_expected = {
         "target_mode": TARGET_MODE_NORMALIZED_DELTAT,
         "bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
-        "coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
         "target_recovery_policy": TARGET_RECOVERY_POLICY_DELTAT_NORM_TO_K_PLUS_T_REF,
     }
-    profile_expected = {
-        NORMALIZATION_PROFILE_LEGACY_ZSCORE: {
-            "runner_family": RUNNER_FAMILY_LEGACY_V1,
-        },
-        NORMALIZATION_PROFILE_SEMANTIC_V1: {
-            "runner_family": RUNNER_FAMILY_V4_SEMANTIC,
-        },
-    }
-    for field, expected in {
-        **common_expected,
-        **profile_expected[row["normalization_profile"]],
-    }.items():
+    for field, expected in common_expected.items():
         if row[field] != expected:
             raise ValueError(
-                f"{context} {field} must be {expected!r} for "
-                f"normalization_profile={row['normalization_profile']!r}, "
-                f"got {row[field]!r}"
+                f"{context} {field} must be {expected!r}, got {row[field]!r}"
             )
+    expected_runner = _expected_runner_family(row)
+    if row["runner_family"] != expected_runner:
+        raise ValueError(
+            f"{context} runner_family must be {expected_runner!r} for "
+            f"normalization_profile={row['normalization_profile']!r}, "
+            f"input_feature_schema={row['input_feature_schema']!r}, "
+            f"coord_policy={row['coord_policy']!r}, "
+            f"extent_feature_policy={row['extent_feature_policy']!r}; "
+            f"got {row['runner_family']!r}"
+        )
+    if row["input_feature_schema"] not in INPUT_FEATURE_SCHEMAS:
+        raise ValueError(
+            f"{context} input_feature_schema must be one of "
+            f"{sorted(INPUT_FEATURE_SCHEMAS)}, got {row['input_feature_schema']!r}"
+        )
+    if row["coord_policy"] not in COORD_POLICIES:
+        raise ValueError(
+            f"{context} coord_policy must be one of "
+            f"{sorted(COORD_POLICIES)}, got {row['coord_policy']!r}"
+        )
+    if row["extent_feature_policy"] not in EXTENT_FEATURE_POLICIES:
+        raise ValueError(
+            f"{context} extent_feature_policy must be one of "
+            f"{sorted(EXTENT_FEATURE_POLICIES)}, got {row['extent_feature_policy']!r}"
+        )
     transform = row["condition_feature_transform"]
     if transform not in CONDITION_TRANSFORMS:
         raise ValueError(
@@ -595,6 +627,17 @@ def _check_provenance_fields(row: Mapping[str, str], *, context: str) -> None:
                 f"{context} feature_manifest_hash must be blank, "
                 f"{FEATURE_MANIFEST_HASH_PLANNED!r}, or a real hash-like value"
             )
+
+
+def _expected_runner_family(row: Mapping[str, str]) -> str:
+    if (
+        row["normalization_profile"] == NORMALIZATION_PROFILE_SEMANTIC_V1
+        or row["input_feature_schema"] != INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS
+        or row["coord_policy"] != COORD_POLICY_TRAIN_MINMAX_UNIT_BOX
+        or row["extent_feature_policy"] != EXTENT_FEATURE_POLICY_NONE
+    ):
+        return RUNNER_FAMILY_V4_SEMANTIC
+    return RUNNER_FAMILY_LEGACY_V1
 
 
 def _check_decoder_bypass_fields(row: Mapping[str, str], *, context: str) -> None:
@@ -780,13 +823,18 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "graph.coverage_repair_policy": "none",
             "loss.mode": "mse",
             "dataset.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+            "dataset.input_feature_schema": INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+            "dataset.coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+            "dataset.extent_feature_policy": EXTENT_FEATURE_POLICY_NONE,
             "dataset.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
             "export.selection_metric": DEFAULT_SELECTION_METRIC,
             "metadata.runner_family": RUNNER_FAMILY_LEGACY_V1,
             "metadata.target_mode": TARGET_MODE_NORMALIZED_DELTAT,
             "metadata.bridge_policy": BRIDGE_POLICY_ZERO_DELTA_U,
+            "metadata.input_feature_schema": INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
             "metadata.normalization_profile": NORMALIZATION_PROFILE_LEGACY_ZSCORE,
             "metadata.coord_policy": COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+            "metadata.extent_feature_policy": EXTENT_FEATURE_POLICY_NONE,
             "metadata.condition_feature_transform": CONDITION_TRANSFORM_LEGACY_ZSCORE,
             "metadata.node_coordinate_encoding": NODE_COORDINATE_ENCODING_RAW,
             "metadata.node_coordinate_freqs": 4,
@@ -832,6 +880,9 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
         "dataset": {
             "split_map_path": row["split_map_path"],
             "normalization_profile": row["normalization_profile"],
+            "input_feature_schema": row["input_feature_schema"],
+            "coord_policy": row["coord_policy"],
+            "extent_feature_policy": row["extent_feature_policy"],
             "condition_feature_transform": row["condition_feature_transform"],
         },
         "optimizer": {
@@ -910,8 +961,10 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "runner_family": row["runner_family"],
             "target_mode": row["target_mode"],
             "bridge_policy": row["bridge_policy"],
+            "input_feature_schema": row["input_feature_schema"],
             "normalization_profile": row["normalization_profile"],
             "coord_policy": row["coord_policy"],
+            "extent_feature_policy": row["extent_feature_policy"],
             "condition_feature_transform": row["condition_feature_transform"],
             "node_coordinate_encoding": row["node_coordinate_encoding"],
             "node_coordinate_freqs": _int(row, "node_coordinate_freqs"),
@@ -971,6 +1024,9 @@ def _assert_registry_matches_resolved(
         "graph.coverage_repair_policy": row["coverage_repair_policy"],
         "dataset.split_map_path": row["split_map_path"],
         "dataset.normalization_profile": row["normalization_profile"],
+        "dataset.input_feature_schema": row["input_feature_schema"],
+        "dataset.coord_policy": row["coord_policy"],
+        "dataset.extent_feature_policy": row["extent_feature_policy"],
         "dataset.condition_feature_transform": row["condition_feature_transform"],
         "loss.mode": row["loss_mode"],
         "export.selection_metric": row["selection_metric"],
@@ -993,8 +1049,10 @@ def _assert_registry_matches_resolved(
         "metadata.runner_family": row["runner_family"],
         "metadata.target_mode": row["target_mode"],
         "metadata.bridge_policy": row["bridge_policy"],
+        "metadata.input_feature_schema": row["input_feature_schema"],
         "metadata.normalization_profile": row["normalization_profile"],
         "metadata.coord_policy": row["coord_policy"],
+        "metadata.extent_feature_policy": row["extent_feature_policy"],
         "metadata.condition_feature_transform": row["condition_feature_transform"],
         "metadata.node_coordinate_encoding": row["node_coordinate_encoding"],
         "metadata.node_coordinate_freqs": _int(row, "node_coordinate_freqs"),

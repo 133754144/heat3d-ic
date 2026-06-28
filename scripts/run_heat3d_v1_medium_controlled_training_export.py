@@ -55,7 +55,9 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
 )
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
 from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
     build_legacy_zero_delta_bridge as _bridge_for,
+    decoder_bypass_required_full_condition_features,
 )
 from rigno.heat3d_v4_split_map import (  # noqa: E402
     load_sample_split_map,
@@ -1786,9 +1788,13 @@ def _resolve_decoder_bypass_model_config(
         return resolved
 
     feature_names = tuple(stats.get("feature_names") or ())
+    required_full_condition_features = decoder_bypass_required_full_condition_features(
+        input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
+        extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
+    )
     missing = [
         name
-        for name in DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES
+        for name in required_full_condition_features
         if name not in feature_names
     ]
     if missing:
@@ -4906,6 +4912,14 @@ def _build_batch_metadata_with_seed(
     return tree.tree_map(lambda *values: jnp.concatenate(values, axis=0), *metadata_list), False
 
 
+def _graph_coords_for_example(example, stats: dict) -> np.ndarray:
+    if stats.get("coord_policy") != COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC:
+        return np.asarray(example.condition.coords)
+    n_points = example.condition.coords.shape[0]
+    raw_coords = np.asarray(example.condition.coords).reshape(1, 1, n_points, 3)
+    return np.asarray(_normalize_coords(raw_coords, stats)).reshape(n_points, 3)
+
+
 def _make_batch_group_with_seed(
     group_name: str,
     examples,
@@ -4932,7 +4946,7 @@ def _make_batch_group_with_seed(
     inputs = Inputs(u=raw_u, c=c, x_inp=coords, x_out=coords, t=None, tau=None)
     metadata, shared = _build_batch_metadata_with_seed(
         builder=builder,
-        coords_list=[example.condition.coords for example in examples],
+        coords_list=[_graph_coords_for_example(example, stats) for example in examples],
         graph_seed=graph_seed,
     )
     graphs = builder.build_graphs(metadata)
@@ -4977,7 +4991,10 @@ def _make_groups_with_progress(
     for index, example in enumerate(examples, start=1):
         bridge = _bridge_for(example)
         signature = _metadata_shape_signature(
-            builder.build_metadata(example.condition.coords, key=_metadata_key(graph_seed))
+            builder.build_metadata(
+                _graph_coords_for_example(example, stats),
+                key=_metadata_key(graph_seed),
+            )
         )
         _bump_profile_count(profile_counts, "graph_metadata_build_calls")
         _bump_profile_count(profile_counts, f"{label}_scan_metadata_build_calls")
@@ -5068,6 +5085,7 @@ def _sample_shuffle_failure_debug(
     batch_index: int,
     batch_group_name: str,
     batch_examples,
+    stats: dict,
     builder: Heat3DGraphBuilder,
     graph_seed: int,
 ) -> dict[str, Any]:
@@ -5079,7 +5097,10 @@ def _sample_shuffle_failure_debug(
             "coords_shape": [int(dim) for dim in example.condition.coords.shape],
         }
         try:
-            metadata = builder.build_metadata(example.condition.coords, key=_metadata_key(graph_seed))
+            metadata = builder.build_metadata(
+                _graph_coords_for_example(example, stats),
+                key=_metadata_key(graph_seed),
+            )
             signature = _metadata_shape_signature(metadata)
             payload["metadata_shape_signature"] = [list(shape) for shape in signature]
             key = json.dumps(payload["metadata_shape_signature"], sort_keys=True, separators=(",", ":"))
@@ -5160,6 +5181,7 @@ def _make_sample_shuffle_groups_with_progress(
                 batch_index,
                 batch_group_name,
                 batch_examples,
+                stats,
                 builder,
                 graph_seed,
             )

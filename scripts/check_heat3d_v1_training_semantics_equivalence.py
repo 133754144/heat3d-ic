@@ -36,8 +36,15 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
     recover_raw_condition,
     recover_temperature_from_normalized_delta,
     semantic_normalization_v1_train_only_stats,
+    training_normalization_stats,
 )
 from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    BOUNDARY_DISTANCE_FEATURES,
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+    EXTENT_BROADCAST_FEATURES,
+    EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+    INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+    build_configured_zero_delta_bridge,
     build_legacy_zero_delta_bridge,
     legacy_training_semantics_manifest,
 )
@@ -452,6 +459,8 @@ def main() -> int:
                     np.max(np.minimum(np.abs(bc_raw), np.abs(bc_raw - 1.0)))
                 )
 
+    p2_checks = _check_p2_feature_and_coord_policies(train_examples, check_examples)
+
     max_abs_diff = max(diffs.values(), default=0.0)
     payload = {
         "script": Path(__file__).name,
@@ -461,12 +470,99 @@ def main() -> int:
         "checked_examples": [example.sample_id for example in check_examples],
         "semantics": legacy_training_semantics_manifest(),
         "semantic_condition_transforms_checked": semantic_checked,
+        "p2_checks": p2_checks,
         "max_abs_diff": max_abs_diff,
         "passed": bool(max_abs_diff <= args.atol),
         "diffs": diffs,
     }
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0 if payload["passed"] else 1
+
+
+def _check_p2_feature_and_coord_policies(
+    train_examples: list[Any],
+    check_examples: list[Any],
+) -> dict[str, Any]:
+    boundary_schema_samples: dict[str, Any] = {}
+    extent_schema_samples: dict[str, Any] = {}
+    for example in check_examples:
+        replacement_bridge = build_configured_zero_delta_bridge(
+            example,
+            input_feature_schema=INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+        )
+        names = tuple(replacement_bridge.condition_feature_names)
+        lingering_flags = [name for name in BC_FLAG_FEATURES if name in names]
+        missing_distances = [
+            name for name in BOUNDARY_DISTANCE_FEATURES if name not in names
+        ]
+        if lingering_flags or missing_distances:
+            raise ValueError(
+                "boundary_distance_replacement produced invalid feature names: "
+                f"flags={lingering_flags} missing_distances={missing_distances} names={names}"
+            )
+        distances = np.asarray(replacement_bridge.legacy_inputs.c)[
+            ...,
+            [names.index(name) for name in BOUNDARY_DISTANCE_FEATURES],
+        ]
+        if np.min(distances) < -REFERENCE_EPS or np.max(distances) > 1.0 + REFERENCE_EPS:
+            raise ValueError(
+                "boundary distance features must be in [0, 1], got "
+                f"min={float(np.min(distances))} max={float(np.max(distances))}"
+            )
+        for name in (
+            "top_h",
+            "top_T_inf_minus_T_ref",
+            "bottom_T_fixed_minus_T_ref",
+        ):
+            if name not in names:
+                raise ValueError(f"boundary schema dropped required BC scalar {name!r}")
+        boundary_schema_samples[example.sample_id] = {
+            "feature_count": len(names),
+            "distance_min": float(np.min(distances)),
+            "distance_max": float(np.max(distances)),
+        }
+
+        extent_bridge = build_configured_zero_delta_bridge(
+            example,
+            extent_feature_policy=EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+        )
+        extent_names = tuple(extent_bridge.condition_feature_names)
+        missing_extent = [
+            name for name in EXTENT_BROADCAST_FEATURES if name not in extent_names
+        ]
+        if missing_extent:
+            raise ValueError(f"extent broadcast missing features: {missing_extent}")
+        extent_schema_samples[example.sample_id] = {
+            "feature_count": len(extent_names),
+            "extent_feature_names": list(EXTENT_BROADCAST_FEATURES),
+        }
+
+    isotropic_stats = training_normalization_stats(
+        train_examples,
+        coord_policy=COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+        extent_feature_policy=EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+    )
+    isotropic_span_max = []
+    for example in check_examples:
+        bridge = build_configured_zero_delta_bridge(example)
+        coords = np.asarray(normalize_coords(bridge.legacy_inputs.x_inp, isotropic_stats))
+        spans = np.max(coords.reshape(-1, 3), axis=0) - np.min(
+            coords.reshape(-1, 3),
+            axis=0,
+        )
+        isotropic_span_max.append(float(np.max(spans)))
+    max_span_error = max(abs(value - 2.0) for value in isotropic_span_max)
+    if max_span_error > 1.0e-5:
+        raise ValueError(
+            "sample_local_isotropic should scale the longest sample axis to span 2; "
+            f"max_span_error={max_span_error}"
+        )
+    return {
+        "boundary_distance_replacement_samples": boundary_schema_samples,
+        "log_extent_broadcast_samples": extent_schema_samples,
+        "sample_local_isotropic_max_span_values": isotropic_span_max,
+        "sample_local_isotropic_max_span_error": max_span_error,
+    }
 
 
 if __name__ == "__main__":

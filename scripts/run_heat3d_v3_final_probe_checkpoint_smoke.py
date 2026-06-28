@@ -34,8 +34,12 @@ from rigno.heat3d_v1_native_supervised import (  # noqa: E402
     V1SteadyTarget,
 )
 from rigno.heat3d_v1_normalization import (  # noqa: E402
-    legacy_train_only_stats as _train_only_stats,
+    training_normalization_stats,
 )
+from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    build_configured_zero_delta_bridge,
+)
+import run_heat3d_v1_medium_controlled_training_export as runner_module  # noqa: E402
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
     Heat3DGraphBuilder,
@@ -165,7 +169,14 @@ def stats_from_checkpoint_payload(
     the final-target probe samples.
     """
 
-    stats = _train_only_stats(train_examples)
+    stats = training_normalization_stats(
+        train_examples,
+        normalization_profile=str(checkpoint_stats.get("normalization_profile", "legacy_zscore")),
+        condition_feature_transform=checkpoint_stats.get("condition_feature_transform"),
+        input_feature_schema=str(checkpoint_stats.get("input_feature_schema", "legacy_bc_flags")),
+        coord_policy=str(checkpoint_stats.get("coord_policy", "train_minmax_to_unit_box")),
+        extent_feature_policy=str(checkpoint_stats.get("extent_feature_policy", "none")),
+    )
     checkpoint_feature_names = tuple(checkpoint_stats.get("feature_names") or ())
     if checkpoint_feature_names and checkpoint_feature_names != tuple(stats["feature_names"]):
         raise ValueError(
@@ -185,7 +196,25 @@ def stats_from_checkpoint_payload(
     stats["condition_std"] = jnp.asarray(
         np.asarray(checkpoint_stats["condition_std"], dtype=np.float32).reshape(1, 1, 1, -1)
     )
+    if checkpoint_stats.get("condition_feature_transforms"):
+        stats["condition_feature_transforms"] = tuple(
+            checkpoint_stats["condition_feature_transforms"]
+        )
     return stats
+
+
+def install_checkpoint_feature_hooks(checkpoint_stats: dict[str, Any]) -> None:
+    input_feature_schema = str(checkpoint_stats.get("input_feature_schema", "legacy_bc_flags"))
+    extent_feature_policy = str(checkpoint_stats.get("extent_feature_policy", "none"))
+
+    def _bridge_for(example: Any) -> Any:
+        return build_configured_zero_delta_bridge(
+            example,
+            input_feature_schema=input_feature_schema,
+            extent_feature_policy=extent_feature_policy,
+        )
+
+    runner_module._bridge_for = _bridge_for
 
 
 def load_training_examples(run_config: dict[str, Any], checkpoint_stats: dict[str, Any]) -> list[Any]:
@@ -1210,6 +1239,7 @@ def _run_single_probe(
 
     train_examples = load_training_examples(run_config, checkpoint_stats)
     stats = stats_from_checkpoint_payload(checkpoint_stats, train_examples)
+    install_checkpoint_feature_hooks(checkpoint_stats)
     probe_examples, sample_dirs_by_id, mask_info_by_id = load_probe_examples(
         subset,
         checkpoint_stats,

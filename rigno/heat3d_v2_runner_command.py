@@ -23,6 +23,24 @@ NORMALIZATION_PROFILES = {
     NORMALIZATION_PROFILE_LEGACY_ZSCORE,
     NORMALIZATION_PROFILE_SEMANTIC_V1,
 }
+INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS = "legacy_bc_flags"
+INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT = "boundary_distance_replacement"
+INPUT_FEATURE_SCHEMAS = {
+    INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+    INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+}
+COORD_POLICY_TRAIN_MINMAX_UNIT_BOX = "train_minmax_to_unit_box"
+COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC = "sample_local_isotropic"
+COORD_POLICIES = {
+    COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+}
+EXTENT_FEATURE_POLICY_NONE = "none"
+EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST = "log_extent_broadcast"
+EXTENT_FEATURE_POLICIES = {
+    EXTENT_FEATURE_POLICY_NONE,
+    EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+}
 CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
 CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL = (
     "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
@@ -75,14 +93,20 @@ def build_training_command(
 
     normalization_profile = _normalization_profile(config)
     condition_feature_transform = _condition_feature_transform(config)
-    command = [python_executable, _training_script_for_profile(normalization_profile)]
-    if normalization_profile == NORMALIZATION_PROFILE_SEMANTIC_V1:
+    input_feature_schema = _input_feature_schema(config)
+    coord_policy = _coord_policy(config)
+    extent_feature_policy = _extent_feature_policy(config)
+    command = [python_executable, _training_script_for_config(config)]
+    if _requires_v4_training_wrapper(config):
         _append_option(command, "--normalization-profile", normalization_profile)
         _append_option(
             command,
             "--condition-feature-transform",
             condition_feature_transform,
         )
+        _append_option(command, "--input-feature-schema", input_feature_schema)
+        _append_option(command, "--coord-policy", coord_policy)
+        _append_option(command, "--extent-feature-policy", extent_feature_policy)
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
     if dataset.get("boundary_mask_fallback") is True:
@@ -463,9 +487,12 @@ def build_v2_command_plan(
             config, python_executable=python_executable
         ),
         "normalization_profile": _normalization_profile(config),
+        "input_feature_schema": _input_feature_schema(config),
+        "coord_policy": _coord_policy(config),
+        "extent_feature_policy": _extent_feature_policy(config),
         "condition_feature_transform": _condition_feature_transform(config),
         "split_map_path": _split_map_path_for_dataset(dataset),
-        "training_script": _training_script_for_profile(_normalization_profile(config)),
+        "training_script": _training_script_for_config(config),
         "node_coordinate_encoding": graph.get("node_coordinate_encoding", "raw"),
         "node_coordinate_freqs": graph.get("node_coordinate_freqs", 4),
         "decoder_bypass_mode": model.get("decoder_bypass_mode", "none"),
@@ -560,6 +587,9 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
         f"config: {plan.get('config_name')}",
         f"role: {plan.get('config_role')}",
         f"normalization_profile: {plan.get('normalization_profile')}",
+        f"input_feature_schema: {plan.get('input_feature_schema')}",
+        f"coord_policy: {plan.get('coord_policy')}",
+        f"extent_feature_policy: {plan.get('extent_feature_policy')}",
         f"condition_feature_transform: {plan.get('condition_feature_transform')}",
         f"split_map_path: {plan.get('split_map_path')}",
         f"node_coordinate_encoding: {plan.get('node_coordinate_encoding')}",
@@ -601,6 +631,9 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("dataset.boundary_mask_fallback", "training --boundary-mask-fallback/--no-boundary-mask-fallback"),
         ("dataset.normalization_profile", "training script selection and optional --normalization-profile"),
         ("dataset.condition_feature_transform", "V4 training --condition-feature-transform"),
+        ("dataset.input_feature_schema", "V4 training --input-feature-schema"),
+        ("dataset.coord_policy", "V4 training --coord-policy"),
+        ("dataset.extent_feature_policy", "V4 training --extent-feature-policy"),
         ("graph.node_coordinate_encoding", "training --node-coordinate-encoding"),
         ("graph.node_coordinate_freqs", "training --node-coordinate-freqs"),
         ("model.node_latent_size", "training --node-latent-size"),
@@ -850,6 +883,53 @@ def _condition_feature_transform(config: Mapping[str, Any]) -> str:
             f"condition_feature_transform, got {transform!r}"
         )
     return str(transform)
+
+
+def _input_feature_schema(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    value = dataset.get("input_feature_schema") or INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS
+    if value not in INPUT_FEATURE_SCHEMAS:
+        raise ValueError(
+            f"dataset.input_feature_schema must be one of {sorted(INPUT_FEATURE_SCHEMAS)}, "
+            f"got {value!r}"
+        )
+    return str(value)
+
+
+def _coord_policy(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    value = dataset.get("coord_policy") or COORD_POLICY_TRAIN_MINMAX_UNIT_BOX
+    if value not in COORD_POLICIES:
+        raise ValueError(
+            f"dataset.coord_policy must be one of {sorted(COORD_POLICIES)}, got {value!r}"
+        )
+    return str(value)
+
+
+def _extent_feature_policy(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    value = dataset.get("extent_feature_policy") or EXTENT_FEATURE_POLICY_NONE
+    if value not in EXTENT_FEATURE_POLICIES:
+        raise ValueError(
+            "dataset.extent_feature_policy must be one of "
+            f"{sorted(EXTENT_FEATURE_POLICIES)}, got {value!r}"
+        )
+    return str(value)
+
+
+def _requires_v4_training_wrapper(config: Mapping[str, Any]) -> bool:
+    return (
+        _normalization_profile(config) == NORMALIZATION_PROFILE_SEMANTIC_V1
+        or _input_feature_schema(config) != INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS
+        or _coord_policy(config) != COORD_POLICY_TRAIN_MINMAX_UNIT_BOX
+        or _extent_feature_policy(config) != EXTENT_FEATURE_POLICY_NONE
+    )
+
+
+def _training_script_for_config(config: Mapping[str, Any]) -> str:
+    if _requires_v4_training_wrapper(config):
+        return V4_TRAINING_SCRIPT
+    return TRAINING_SCRIPT
 
 
 def _training_script_for_profile(normalization_profile: str) -> str:

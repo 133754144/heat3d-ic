@@ -1,0 +1,38 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P2_01_boundary_distance_replacement
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P2_01_boundary_distance_replacement; standard
+    task coords+k(x)+q(x)+BC->T(x); generated from V4_base.yaml.
+  model:
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    decoder_bypass_residual_scale: 0.5
+  dataset:
+    split_map_path: configs/heat3d_v2/medium1024_gapA_train_consistent_split_seed0.json
+    normalization_profile: semantic_normalization_v1
+    input_feature_schema: boundary_distance_replacement
+    condition_feature_transform: semantic_v1_bc_flags_binary_passthrough_only
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P2_01_boundary_distance_replacement
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P2_01_boundary_distance_replacement
+  export:
+    output_dir: output/heat3d_v4_runs/V4P2_01_boundary_distance_replacement
+    run_name: V4P2_01_boundary_distance_replacement
+  metadata:
+    registry_config_id: V4P2_01_boundary_distance_replacement
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P2_01_boundary_distance_replacement
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    runner_family: v4_controlled_semantic_wrapper
+    input_feature_schema: boundary_distance_replacement
+    normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_bc_flags_binary_passthrough_only
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P2_01_boundary_distance_replacement.log
+    notes: 'V4 P2.01 based on V4P1_12: replace is_top/is_bottom/is_side/is_interior
+      with per-axis normalized boundary distance channels; keep train_minmax_to_unit_box
+      coordinates and V4P1_12 training parameters'
