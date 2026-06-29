@@ -291,7 +291,7 @@ def _merge_duplicate_points(
     )
     n_unique = unique_coords.shape[0]
     k_acc = np.zeros((n_unique, k_diag.shape[1]), dtype=np.float64)
-    q_acc = np.zeros((n_unique, 1), dtype=np.float64)
+    q_acc = np.full((n_unique, 1), -np.inf, dtype=np.float64)
     count_acc = np.zeros((n_unique, 1), dtype=np.float64)
 
     for original_idx, unique_idx in enumerate(inverse):

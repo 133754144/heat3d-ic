@@ -56,15 +56,19 @@ def _meta() -> dict[str, Any]:
     }
 
 
-def _synthetic_case(k_mode: str) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
+def _synthetic_case(
+    k_mode: str,
+    *,
+    duplicate_q_values: tuple[float, float] = (5.0, 11.0),
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
     coords = _coords()
     center = np.array([[0.005, 0.005, 0.001]], dtype=np.float64)
     center_idx = int(np.where(np.all(np.isclose(coords, center), axis=1))[0][0])
     coords = np.vstack([coords, center])
 
     q_field = np.zeros((coords.shape[0], 1), dtype=np.float64)
-    q_field[center_idx, 0] = 5.0
-    q_field[-1, 0] = 11.0
+    q_field[center_idx, 0] = duplicate_q_values[0]
+    q_field[-1, 0] = duplicate_q_values[1]
 
     if k_mode == "isotropic":
         k_field = np.full((coords.shape[0], 1), 10.0, dtype=np.float64)
@@ -86,8 +90,16 @@ def _expect(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
-def _check_case(k_mode: str) -> dict[str, Any]:
-    coords, k_field, q_field, meta = _synthetic_case(k_mode)
+def _check_case(
+    k_mode: str,
+    *,
+    duplicate_q_values: tuple[float, float] = (5.0, 11.0),
+    expected_duplicate_q: float = 11.0,
+) -> dict[str, Any]:
+    coords, k_field, q_field, meta = _synthetic_case(
+        k_mode,
+        duplicate_q_values=duplicate_q_values,
+    )
     problem = extract_problem_from_arrays(
         coords=coords,
         k_field=k_field,
@@ -120,7 +132,10 @@ def _check_case(k_mode: str) -> dict[str, Any]:
         _expect(problem.supported_k_mode == "diag3", "diag3 mode mismatch")
         _expect(np.allclose(problem.k_diag[center_idx], np.array([3.0, 6.0, 8.0])), "diag3 k merge")
 
-    _expect(float(problem.q_field[center_idx, 0]) == 11.0, "q max pooling mismatch")
+    _expect(
+        float(problem.q_field[center_idx, 0]) == expected_duplicate_q,
+        "q max pooling mismatch",
+    )
     _expect(problem.duplicate_merge["merged_duplicate_count"] == 1, "merge metadata mismatch")
     _expect(problem.duplicate_merge["duplicate_unique_indices"] == [center_idx], "duplicate index metadata")
 
@@ -145,6 +160,7 @@ def _check_case(k_mode: str) -> dict[str, Any]:
         "side_nodes": int(boundary.side_node_indices.size),
         "interior_nodes": int(boundary.interior_node_indices.size),
         "merged_duplicate_count": problem.duplicate_merge["merged_duplicate_count"],
+        "duplicate_q": float(problem.q_field[center_idx, 0]),
         "operator_backend": operator_meta.matrix_backend,
     }
 
@@ -152,7 +168,15 @@ def _check_case(k_mode: str) -> dict[str, Any]:
 def main() -> int:
     print("Heat3D V4 P3a problem extraction check")
     print("scope: interface skeleton only; no sparse solve, no contact solve, no artifact writes")
-    summaries = [_check_case("isotropic"), _check_case("diag3")]
+    summaries = [
+        _check_case("isotropic"),
+        _check_case("diag3"),
+        _check_case(
+            "isotropic",
+            duplicate_q_values=(-5.0, -2.0),
+            expected_duplicate_q=-2.0,
+        ),
+    ]
     for summary in summaries:
         print(
             "- "
@@ -164,6 +188,7 @@ def main() -> int:
             f"{summary['top_nodes']}/{summary['bottom_nodes']}/"
             f"{summary['side_nodes']}/{summary['interior_nodes']} "
             f"duplicates={summary['merged_duplicate_count']} "
+            f"duplicate_q={summary['duplicate_q']} "
             f"operator_backend={summary['operator_backend']}"
         )
     print("artifact_writes: false")
