@@ -26,6 +26,8 @@ Q_MERGE_POLICY = "max_preserves_active_source_when_duplicate_interface_nodes_exi
 NODE_ORDERING = "np_unique_axis0_lexicographic"
 CONTACT_NODE_ORDERING = "lexicographic_xyz_with_duplicate_interface_order_preserved"
 CONTACT_DUPLICATE_POLICY = "preserve_contact_duplicates_without_k_q_merge"
+V4_PRODUCTION_CONTACT_MODEL = "R_contact=0_perfect_contact"
+FINITE_CONTACT_RESISTANCE_STATUS = "experimental_smoke_deferred_not_v4_production"
 
 
 @dataclass(frozen=True)
@@ -393,25 +395,22 @@ def solve_temperature_from_problem(
     operator = build_operator(problem, options=options, matrix_backend=matrix_backend)
     temperature_unique, audit = solve_operator(operator)
     temperature_full = temperature_unique[problem.grid_mapping.original_to_unique].reshape(-1, 1)
-    bottom_error = _bottom_dirichlet_error(
-        problem.coords_original,
-        temperature_full,
-        problem.boundary.bottom_T_fixed_K,
-    )
+    solution_audit = _solution_audit_metadata(problem, operator, temperature_unique, audit)
     meta = {
         "solver_family": SOLVER_FAMILY,
         "contract_version": problem.contract_version,
         "solver_mode": operator.meta.solver_mode,
+        "v4_production_contact_model": V4_PRODUCTION_CONTACT_MODEL,
+        "finite_contact_resistance_status": (
+            FINITE_CONTACT_RESISTANCE_STATUS
+            if _has_positive_contact_resistance(problem)
+            else "not_enabled"
+        ),
         "matrix_backend": operator.meta.matrix_backend,
         "sparse_format": operator.meta.sparse_format,
         "legacy_equivalence_target": LEGACY_EQUIVALENCE_TARGET,
         "operator": operator.assembly,
-        "solution_audit": {
-            "status": audit.status,
-            "residual_norm": audit.residual_norm,
-            "bottom_dirichlet_error": bottom_error,
-            "warnings": list(audit.warnings),
-        },
+        "solution_audit": solution_audit,
         "contact_interfaces": _contact_solution_metadata(problem, operator, temperature_unique),
         "duplicate_merge": dict(problem.duplicate_merge),
     }
@@ -443,26 +442,27 @@ def _solve_zero_resistance_contact_limit(
         problem.grid_mapping.unique_to_first_original,
         0,
     ]
-    bottom_error = _bottom_dirichlet_error(
-        problem.coords_original,
-        perfect_temperature,
-        problem.boundary.bottom_T_fixed_K,
+    solution_audit = dict(perfect_solve_meta["solution_audit"])
+    solution_audit.update(
+        {
+            "solver_mode": "contact_resistance",
+            "contact_zero_resistance_limit": "perfect_contact_contraction",
+            "v4_production_contact_model": V4_PRODUCTION_CONTACT_MODEL,
+        }
     )
     meta = {
         "solver_family": SOLVER_FAMILY,
         "contract_version": problem.contract_version,
         "solver_mode": "contact_resistance",
         "contact_zero_resistance_limit": "perfect_contact_contraction",
+        "v4_production_contact_model": V4_PRODUCTION_CONTACT_MODEL,
+        "finite_contact_resistance_status": "not_enabled",
         "matrix_backend": contact_operator.meta.matrix_backend,
         "sparse_format": contact_operator.meta.sparse_format,
         "legacy_equivalence_target": LEGACY_EQUIVALENCE_TARGET,
-        "operator": contact_operator.assembly,
-        "solution_audit": {
-            "status": perfect_solve_meta["solution_audit"]["status"],
-            "residual_norm": perfect_solve_meta["solution_audit"]["residual_norm"],
-            "bottom_dirichlet_error": bottom_error,
-            "warnings": list(perfect_solve_meta["solution_audit"].get("warnings", [])),
-        },
+        "operator": perfect_solve_meta["operator"],
+        "contact_smoke_operator": contact_operator.assembly,
+        "solution_audit": solution_audit,
         "contact_interfaces": _contact_solution_metadata(
             problem,
             contact_operator,
@@ -480,6 +480,10 @@ def _all_contact_resistances_zero(problem: Heat3DProblem) -> bool:
     if not contact_interfaces:
         return False
     return all(float(interface.contact_resistance_m2K_W or 0.0) == 0.0 for interface in contact_interfaces)
+
+
+def _has_positive_contact_resistance(problem: Heat3DProblem) -> bool:
+    return any(float(interface.contact_resistance_m2K_W or 0.0) > 0.0 for interface in problem.interfaces)
 
 
 def _perfect_contact_meta(meta: dict[str, Any]) -> dict[str, Any]:
@@ -1058,8 +1062,14 @@ def _assemble_triplets(
         "bottom_dirichlet_policy": "row_replacement_T_equals_bottom",
         "solver_mode": options.solver_mode,
         "contact_model": (
-            "series_half_cell_R_contact_half_cell"
-            if options.solver_mode == "contact_resistance"
+            "experimental_series_half_cell_R_contact_half_cell"
+            if options.solver_mode == "contact_resistance" and _has_positive_contact_resistance(problem)
+            else V4_PRODUCTION_CONTACT_MODEL
+        ),
+        "v4_production_contact_model": V4_PRODUCTION_CONTACT_MODEL,
+        "finite_contact_resistance_status": (
+            FINITE_CONTACT_RESISTANCE_STATUS
+            if options.solver_mode == "contact_resistance" and _has_positive_contact_resistance(problem)
             else "not_enabled"
         ),
         "contact_faces": contact_faces,
@@ -1067,6 +1077,92 @@ def _assemble_triplets(
         "linear_system_shape": [int(n), int(n)],
     }
     return row, col, data, rhs, assembly_meta
+
+
+def _solution_audit_metadata(
+    problem: Heat3DProblem,
+    operator: AssembledOperator,
+    temperature_unique: np.ndarray,
+    audit: SolutionAudit,
+) -> dict[str, Any]:
+    source_power = _source_power_total(problem)
+    top_flux = _top_robin_flux_total(problem, temperature_unique)
+    bottom_flux = _bottom_flux_total(problem, temperature_unique)
+    energy_balance = source_power - top_flux - bottom_flux
+    return {
+        "status": audit.status,
+        "residual_norm": audit.residual_norm,
+        "bottom_dirichlet_error": _bottom_dirichlet_error(
+            problem.coords,
+            temperature_unique.reshape(-1, 1),
+            problem.boundary.bottom_T_fixed_K,
+        ),
+        "source_power_total": source_power,
+        "top_robin_flux_total": top_flux,
+        "bottom_flux_total": bottom_flux,
+        "energy_balance_residual": energy_balance,
+        "operator_checksum": operator.meta.operator_checksum,
+        "solver_mode": operator.meta.solver_mode,
+        "matrix_backend": operator.meta.matrix_backend,
+        "contact_model": operator.assembly.get("contact_model"),
+        "v4_production_contact_model": V4_PRODUCTION_CONTACT_MODEL,
+        "finite_contact_resistance_status": (
+            FINITE_CONTACT_RESISTANCE_STATUS
+            if _has_positive_contact_resistance(problem)
+            else "not_enabled"
+        ),
+        "warnings": list(audit.warnings),
+    }
+
+
+def _source_power_total(problem: Heat3DProblem) -> float:
+    grid = problem.grid_mapping.grid
+    spec = problem.grid_spec
+    total = 0.0
+    for ix in range(spec.x.size):
+        for iy in range(spec.y.size):
+            for iz in range(1, spec.z.size):
+                idx = int(grid[ix, iy, iz])
+                volume = float(spec.dx[ix] * spec.dy[iy] * spec.dz[iz])
+                total += float(problem.q_field[idx, 0]) * volume
+    return float(total)
+
+
+def _top_robin_flux_total(problem: Heat3DProblem, temperature_unique: np.ndarray) -> float:
+    grid = problem.grid_mapping.grid
+    spec = problem.grid_spec
+    iz = spec.z.size - 1
+    total = 0.0
+    for ix in range(spec.x.size):
+        for iy in range(spec.y.size):
+            idx = int(grid[ix, iy, iz])
+            area = float(spec.dx[ix] * spec.dy[iy])
+            total += problem.boundary.top_h_W_m2K * area * (
+                float(temperature_unique[idx]) - problem.boundary.top_T_inf_K
+            )
+    return float(total)
+
+
+def _bottom_flux_total(problem: Heat3DProblem, temperature_unique: np.ndarray) -> float:
+    grid = problem.grid_mapping.grid
+    spec = problem.grid_spec
+    if spec.z.size < 2:
+        return 0.0
+    total = 0.0
+    for ix in range(spec.x.size):
+        for iy in range(spec.y.size):
+            bottom = int(grid[ix, iy, 0])
+            above = int(grid[ix, iy, 1])
+            distance = float(spec.z[1] - spec.z[0])
+            if distance <= 0.0:
+                raise ValueError("bottom flux audit requires positive first z distance")
+            area = float(spec.dx[ix] * spec.dy[iy])
+            conductance = _harmonic_mean(
+                float(problem.k_diag[bottom, 2]),
+                float(problem.k_diag[above, 2]),
+            ) * area / distance
+            total += conductance * (float(temperature_unique[above]) - float(temperature_unique[bottom]))
+    return float(total)
 
 
 def _contact_face_lookup(problem: Heat3DProblem) -> tuple[dict[tuple[int, int], dict[str, Any]], list[dict[str, Any]]]:

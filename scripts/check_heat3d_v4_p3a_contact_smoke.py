@@ -27,7 +27,21 @@ from rigno.heat3d_v4_reference_solver import (  # noqa: E402
 
 T_TOL = 1e-10
 BOTTOM_TOL = 1e-12
+ENERGY_TOL_W = 1e-9
 R_VALUES = (0.0, 1.0e-7, 5.0e-7, 1.0e-6)
+PRODUCTION_CONTACT_MODEL = "R_contact=0_perfect_contact"
+FINITE_CONTACT_STATUS = "experimental_smoke_deferred_not_v4_production"
+REQUIRED_AUDIT_KEYS = (
+    "residual_norm",
+    "bottom_dirichlet_error",
+    "source_power_total",
+    "top_robin_flux_total",
+    "bottom_flux_total",
+    "energy_balance_residual",
+    "operator_checksum",
+    "solver_mode",
+    "matrix_backend",
+)
 
 
 def _expect(condition: bool, message: str) -> None:
@@ -139,16 +153,62 @@ def _contact_jump(meta: dict[str, Any]) -> float:
     return float(entry["temperature_jump_upper_minus_lower_K"]["max_abs"])
 
 
+def _check_solution_audit(
+    meta: dict[str, Any],
+    *,
+    expected_solver_mode: str,
+    finite_contact_expected: bool,
+) -> None:
+    audit = meta["solution_audit"]
+    for key in REQUIRED_AUDIT_KEYS:
+        _expect(key in audit, f"missing solution_audit key: {key}")
+    for key in (
+        "residual_norm",
+        "bottom_dirichlet_error",
+        "source_power_total",
+        "top_robin_flux_total",
+        "bottom_flux_total",
+        "energy_balance_residual",
+    ):
+        _expect(np.isfinite(float(audit[key])), f"non-finite audit field: {key}")
+    _expect(
+        abs(float(audit["energy_balance_residual"])) <= ENERGY_TOL_W,
+        f"energy balance residual too large: {audit['energy_balance_residual']}",
+    )
+    _expect(str(audit["operator_checksum"]), "operator checksum is empty")
+    _expect(audit["solver_mode"] == expected_solver_mode, "audit solver_mode mismatch")
+    _expect(audit["matrix_backend"] == "sparse_csr", "audit matrix_backend mismatch")
+    _expect(
+        audit["v4_production_contact_model"] == PRODUCTION_CONTACT_MODEL,
+        "production contact model must stay R_contact=0",
+    )
+    expected_status = FINITE_CONTACT_STATUS if finite_contact_expected else "not_enabled"
+    _expect(
+        audit["finite_contact_resistance_status"] == expected_status,
+        "finite contact status mismatch",
+    )
+
+
 def _run_gate() -> dict[str, float]:
     perfect_problem = _perfect_problem()
     perfect_t, perfect_meta = solve_temperature_from_problem(
         perfect_problem,
         SolverOptions(solver_mode="perfect_contact", matrix_backend="sparse_csr"),
     )
+    _check_solution_audit(
+        perfect_meta,
+        expected_solver_mode="perfect_contact",
+        finite_contact_expected=False,
+    )
     contact_t0, contact_meta0 = _solve_contact(0.0)
     r0_diff = _max_abs(contact_t0 - perfect_t)
     bottom_error = float(contact_meta0["solution_audit"]["bottom_dirichlet_error"])
     residual = float(contact_meta0["solution_audit"]["residual_norm"])
+    _check_solution_audit(
+        contact_meta0,
+        expected_solver_mode="contact_resistance",
+        finite_contact_expected=False,
+    )
 
     _expect(r0_diff <= T_TOL, f"R=0 contact vs perfect_contact maxdiff too large: {r0_diff}")
     _expect(bottom_error <= BOTTOM_TOL, f"bottom Dirichlet error too large: {bottom_error}")
@@ -159,6 +219,11 @@ def _run_gate() -> dict[str, float]:
     jumps = []
     for r_contact in R_VALUES:
         contact_t, contact_meta = _solve_contact(r_contact)
+        _check_solution_audit(
+            contact_meta,
+            expected_solver_mode="contact_resistance",
+            finite_contact_expected=r_contact > 0.0,
+        )
         _expect(np.all(np.isfinite(contact_t)), f"contact temperature has NaN/Inf for R={r_contact}")
         _expect(
             np.isfinite(float(contact_meta["solution_audit"]["residual_norm"])),
@@ -181,6 +246,7 @@ def _run_gate() -> dict[str, float]:
         "jump_R1e_7": jumps[1],
         "jump_R5e_7": jumps[2],
         "jump_R1e_6": jumps[3],
+        "r0_energy_balance_residual": float(contact_meta0["solution_audit"]["energy_balance_residual"]),
     }
 
 
@@ -199,6 +265,7 @@ def main() -> int:
         f"R0_contact_vs_perfect_T_maxdiff={summary['r0_contact_vs_perfect_T_maxdiff']:.6e} "
         f"R0_bottom_error={summary['r0_bottom_dirichlet_error']:.6e} "
         f"R0_residual={summary['r0_residual_norm']:.6e} "
+        f"R0_energy_residual={summary['r0_energy_balance_residual']:.6e} "
         f"jump_R0/R1e-7/R5e-7/R1e-6="
         f"{summary['jump_R0']:.6e}/"
         f"{summary['jump_R1e_7']:.6e}/"
