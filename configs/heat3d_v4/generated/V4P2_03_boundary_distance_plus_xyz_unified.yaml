@@ -37,6 +37,7 @@ overrides:
     decoder_bypass_features: full_condition
     launch_policy: explicit_user_instruction_only
     log_path: output/heat3d_v4_logs/V4P2_03_boundary_distance_plus_xyz_unified.log
-    notes: 'V4 P2.03 combines V4P2_01 and V4P2_02: boundary distance replacement plus
-      sample_local_isotropic coordinates and log extent/aspect broadcast; other V4P1_12
-      training parameters unchanged'
+    notes: V4 P2.03 combines sample_local_isotropic xyz coordinates, isotropic-scale
+      boundary distances using L_ref=max(Lx,Ly,Lz), and log extent/aspect broadcast;
+      other V4P1_12 training parameters unchanged. Previous per-axis-distance V4P2_03
+      results are invalidated and must be rerun.

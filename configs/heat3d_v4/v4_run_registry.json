@@ -396,7 +396,7 @@
         "log_path": "output/heat3d_v4_logs/V4P2_03_boundary_distance_plus_xyz_unified.log",
         "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P2_03_boundary_distance_plus_xyz_unified",
         "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P2_03_boundary_distance_plus_xyz_unified",
-        "notes": "V4 P2.03 combines V4P2_01 and V4P2_02: boundary distance replacement plus sample_local_isotropic coordinates and log extent/aspect broadcast; other V4P1_12 training parameters unchanged"
+        "notes": "V4 P2.03 combines sample_local_isotropic xyz coordinates, isotropic-scale boundary distances using L_ref=max(Lx,Ly,Lz), and log extent/aspect broadcast; other V4P1_12 training parameters unchanged. Previous per-axis-distance V4P2_03 results are invalidated and must be rerun."
       }
     },
     "V4P1_05_decoder_bypass_full_condition_smoke": {

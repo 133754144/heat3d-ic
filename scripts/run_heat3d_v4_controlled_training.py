@@ -195,6 +195,7 @@ def _install_profile_hooks(
         return build_configured_zero_delta_bridge(
             example,
             input_feature_schema=input_feature_schema,
+            coord_policy=coord_policy,
             extent_feature_policy=extent_feature_policy,
         )
 

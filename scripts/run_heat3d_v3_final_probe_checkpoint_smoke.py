@@ -205,12 +205,14 @@ def stats_from_checkpoint_payload(
 
 def install_checkpoint_feature_hooks(checkpoint_stats: dict[str, Any]) -> None:
     input_feature_schema = str(checkpoint_stats.get("input_feature_schema", "legacy_bc_flags"))
+    coord_policy = str(checkpoint_stats.get("coord_policy", "train_minmax_to_unit_box"))
     extent_feature_policy = str(checkpoint_stats.get("extent_feature_policy", "none"))
 
     def _bridge_for(example: Any) -> Any:
         return build_configured_zero_delta_bridge(
             example,
             input_feature_schema=input_feature_schema,
+            coord_policy=coord_policy,
             extent_feature_policy=extent_feature_policy,
         )
 

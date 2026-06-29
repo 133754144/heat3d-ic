@@ -84,11 +84,13 @@ def build_configured_zero_delta_bridge(
     example: Any,
     *,
     input_feature_schema: str = INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+    coord_policy: str = COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
     extent_feature_policy: str = EXTENT_FEATURE_POLICY_NONE,
 ) -> Any:
     """Build the zero-delta bridge with opt-in P2 condition feature views."""
 
     _check_input_feature_schema(input_feature_schema)
+    _check_coord_policy(coord_policy)
     _check_extent_feature_policy(extent_feature_policy)
     bridge = build_legacy_zero_delta_bridge(example)
     if (
@@ -105,6 +107,7 @@ def build_configured_zero_delta_bridge(
         tuple(bridge.condition_feature_names),
         coords,
         input_feature_schema=input_feature_schema,
+        coord_policy=coord_policy,
         extent_feature_policy=extent_feature_policy,
     )
     c = jnp.asarray(transformed_c.reshape(raw_c.shape[:-1] + (-1,)))
@@ -129,11 +132,13 @@ def transform_condition_feature_view(
     coords: np.ndarray,
     *,
     input_feature_schema: str,
+    coord_policy: str,
     extent_feature_policy: str,
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     """Apply the P2 feature-schema view before condition normalization."""
 
     _check_input_feature_schema(input_feature_schema)
+    _check_coord_policy(coord_policy)
     _check_extent_feature_policy(extent_feature_policy)
     features = np.asarray(condition_features, dtype=np.float64)
     if features.ndim != 2:
@@ -157,6 +162,7 @@ def transform_condition_feature_view(
             transformed,
             names,
             coords_array,
+            coord_policy=coord_policy,
         )
     if extent_feature_policy == EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST:
         transformed, names = _append_log_extent_broadcast(
@@ -215,6 +221,8 @@ def _replace_bc_flags_with_boundary_distances(
     features: np.ndarray,
     feature_names: tuple[str, ...],
     coords: np.ndarray,
+    *,
+    coord_policy: str,
 ) -> tuple[np.ndarray, tuple[str, ...]]:
     missing = [name for name in BC_FLAG_FEATURES if name not in feature_names]
     if missing:
@@ -222,7 +230,7 @@ def _replace_bc_flags_with_boundary_distances(
             "boundary_distance_replacement requires legacy BC flag features; "
             f"missing={missing} available={feature_names}"
         )
-    distance_features = _boundary_distance_features(coords)
+    distance_features = _boundary_distance_features(coords, coord_policy=coord_policy)
     distance_inserted = False
     columns: list[np.ndarray] = []
     names: list[str] = []
@@ -238,21 +246,27 @@ def _replace_bc_flags_with_boundary_distances(
     return np.concatenate(columns, axis=1), tuple(names)
 
 
-def _boundary_distance_features(coords: np.ndarray) -> np.ndarray:
+def _boundary_distance_features(coords: np.ndarray, *, coord_policy: str) -> np.ndarray:
+    _check_coord_policy(coord_policy)
     mins = np.min(coords, axis=0, keepdims=True)
     maxs = np.max(coords, axis=0, keepdims=True)
     spans = np.maximum(maxs - mins, _GEOMETRY_EPS)
+    if coord_policy == COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC:
+        l_ref = np.maximum(np.max(spans, axis=1, keepdims=True), _GEOMETRY_EPS)
+        denominators = np.repeat(l_ref, repeats=3, axis=1)
+    else:
+        denominators = spans
     x = coords[:, 0:1]
     y = coords[:, 1:2]
     z = coords[:, 2:3]
     return np.concatenate(
         (
-            (x - mins[:, 0:1]) / spans[:, 0:1],
-            (maxs[:, 0:1] - x) / spans[:, 0:1],
-            (y - mins[:, 1:2]) / spans[:, 1:2],
-            (maxs[:, 1:2] - y) / spans[:, 1:2],
-            (z - mins[:, 2:3]) / spans[:, 2:3],
-            (maxs[:, 2:3] - z) / spans[:, 2:3],
+            (x - mins[:, 0:1]) / denominators[:, 0:1],
+            (maxs[:, 0:1] - x) / denominators[:, 0:1],
+            (y - mins[:, 1:2]) / denominators[:, 1:2],
+            (maxs[:, 1:2] - y) / denominators[:, 1:2],
+            (z - mins[:, 2:3]) / denominators[:, 2:3],
+            (maxs[:, 2:3] - z) / denominators[:, 2:3],
         ),
         axis=1,
     )
@@ -292,6 +306,13 @@ def _check_input_feature_schema(value: str) -> None:
         raise ValueError(
             f"input_feature_schema must be one of {INPUT_FEATURE_SCHEMAS}, "
             f"found {value!r}"
+        )
+
+
+def _check_coord_policy(value: str) -> None:
+    if value not in COORD_POLICIES:
+        raise ValueError(
+            f"coord_policy must be one of {COORD_POLICIES}, found {value!r}"
         )
 
 

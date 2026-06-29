@@ -41,9 +41,11 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
 from rigno.heat3d_v1_training_semantics import (  # noqa: E402
     BOUNDARY_DISTANCE_FEATURES,
     COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+    COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
     EXTENT_BROADCAST_FEATURES,
     EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
     INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+    INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
     build_configured_zero_delta_bridge,
     build_legacy_zero_delta_bridge,
     legacy_training_semantics_manifest,
@@ -484,11 +486,14 @@ def _check_p2_feature_and_coord_policies(
     check_examples: list[Any],
 ) -> dict[str, Any]:
     boundary_schema_samples: dict[str, Any] = {}
+    isotropic_boundary_schema_samples: dict[str, Any] = {}
+    legacy_bc_schema_samples: dict[str, Any] = {}
     extent_schema_samples: dict[str, Any] = {}
     for example in check_examples:
         replacement_bridge = build_configured_zero_delta_bridge(
             example,
             input_feature_schema=INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+            coord_policy=COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
         )
         names = tuple(replacement_bridge.condition_feature_names)
         lingering_flags = [name for name in BC_FLAG_FEATURES if name in names]
@@ -516,10 +521,80 @@ def _check_p2_feature_and_coord_policies(
         ):
             if name not in names:
                 raise ValueError(f"boundary schema dropped required BC scalar {name!r}")
+        coords = np.asarray(replacement_bridge.legacy_inputs.x_inp).reshape(-1, 3)
+        per_axis_expected = _expected_boundary_distances(
+            coords,
+            coord_policy=COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+        ).reshape(distances.shape)
+        per_axis_error = _max_abs_diff(distances, per_axis_expected)
+        if per_axis_error > REFERENCE_EPS:
+            raise ValueError(
+                "train_minmax_to_unit_box boundary distances no longer match "
+                f"per-axis scaling; max_abs_diff={per_axis_error}"
+            )
         boundary_schema_samples[example.sample_id] = {
             "feature_count": len(names),
             "distance_min": float(np.min(distances)),
             "distance_max": float(np.max(distances)),
+            "per_axis_distance_error": per_axis_error,
+        }
+
+        isotropic_replacement_bridge = build_configured_zero_delta_bridge(
+            example,
+            input_feature_schema=INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+            coord_policy=COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+            extent_feature_policy=EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+        )
+        isotropic_names = tuple(isotropic_replacement_bridge.condition_feature_names)
+        isotropic_distances = np.asarray(isotropic_replacement_bridge.legacy_inputs.c)[
+            ...,
+            [isotropic_names.index(name) for name in BOUNDARY_DISTANCE_FEATURES],
+        ]
+        isotropic_expected = _expected_boundary_distances(
+            coords,
+            coord_policy=COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+        ).reshape(isotropic_distances.shape)
+        isotropic_error = _max_abs_diff(isotropic_distances, isotropic_expected)
+        if isotropic_error > REFERENCE_EPS:
+            raise ValueError(
+                "sample_local_isotropic boundary distances must use L_ref=max(Lx,Ly,Lz); "
+                f"max_abs_diff={isotropic_error}"
+            )
+        missing_extent = [
+            name for name in EXTENT_BROADCAST_FEATURES if name not in isotropic_names
+        ]
+        if missing_extent:
+            raise ValueError(
+                "V4P2_03-style feature view must include log extent broadcast; "
+                f"missing={missing_extent}"
+            )
+        isotropic_boundary_schema_samples[example.sample_id] = {
+            "feature_count": len(isotropic_names),
+            "distance_min": float(np.min(isotropic_distances)),
+            "distance_max": float(np.max(isotropic_distances)),
+            "isotropic_distance_error": isotropic_error,
+        }
+
+        legacy_bc_bridge = build_configured_zero_delta_bridge(
+            example,
+            input_feature_schema=INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+            coord_policy=COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+            extent_feature_policy=EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+        )
+        legacy_names = tuple(legacy_bc_bridge.condition_feature_names)
+        missing_flags = [name for name in BC_FLAG_FEATURES if name not in legacy_names]
+        unexpected_distances = [
+            name for name in BOUNDARY_DISTANCE_FEATURES if name in legacy_names
+        ]
+        if missing_flags or unexpected_distances:
+            raise ValueError(
+                "V4P2_02-style feature view must keep legacy BC flags and avoid "
+                "boundary distance replacement; "
+                f"missing_flags={missing_flags} unexpected_distances={unexpected_distances}"
+            )
+        legacy_bc_schema_samples[example.sample_id] = {
+            "feature_count": len(legacy_names),
+            "bc_flag_names": list(BC_FLAG_FEATURES),
         }
 
         extent_bridge = build_configured_zero_delta_bridge(
@@ -559,10 +634,37 @@ def _check_p2_feature_and_coord_policies(
         )
     return {
         "boundary_distance_replacement_samples": boundary_schema_samples,
+        "isotropic_boundary_distance_replacement_samples": isotropic_boundary_schema_samples,
+        "legacy_bc_flag_schema_samples": legacy_bc_schema_samples,
         "log_extent_broadcast_samples": extent_schema_samples,
         "sample_local_isotropic_max_span_values": isotropic_span_max,
         "sample_local_isotropic_max_span_error": max_span_error,
     }
+
+
+def _expected_boundary_distances(coords: np.ndarray, *, coord_policy: str) -> np.ndarray:
+    mins = np.min(coords, axis=0, keepdims=True)
+    maxs = np.max(coords, axis=0, keepdims=True)
+    spans = np.maximum(maxs - mins, REFERENCE_EPS)
+    if coord_policy == COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC:
+        l_ref = np.maximum(np.max(spans, axis=1, keepdims=True), REFERENCE_EPS)
+        denominators = np.repeat(l_ref, repeats=3, axis=1)
+    else:
+        denominators = spans
+    x = coords[:, 0:1]
+    y = coords[:, 1:2]
+    z = coords[:, 2:3]
+    return np.concatenate(
+        (
+            (x - mins[:, 0:1]) / denominators[:, 0:1],
+            (maxs[:, 0:1] - x) / denominators[:, 0:1],
+            (y - mins[:, 1:2]) / denominators[:, 1:2],
+            (maxs[:, 1:2] - y) / denominators[:, 1:2],
+            (z - mins[:, 2:3]) / denominators[:, 2:3],
+            (maxs[:, 2:3] - z) / denominators[:, 2:3],
+        ),
+        axis=1,
+    )
 
 
 if __name__ == "__main__":

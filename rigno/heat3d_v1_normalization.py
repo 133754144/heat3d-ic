@@ -93,6 +93,7 @@ def legacy_train_only_stats(
     bridge = _feature_bridge_fn(
         bridge_fn,
         input_feature_schema=input_feature_schema,
+        coord_policy=coord_policy,
         extent_feature_policy=extent_feature_policy,
     )
     c_values = []
@@ -160,6 +161,7 @@ def semantic_normalization_v1_train_only_stats(
     bridge = _feature_bridge_fn(
         bridge_fn,
         input_feature_schema=input_feature_schema,
+        coord_policy=coord_policy,
         extent_feature_policy=extent_feature_policy,
     )
     c_values = []
@@ -343,6 +345,7 @@ def _feature_bridge_fn(
     bridge_fn: Callable[[Any], Any],
     *,
     input_feature_schema: str,
+    coord_policy: str,
     extent_feature_policy: str,
 ) -> Callable[[Any], Any]:
     if (
@@ -352,6 +355,7 @@ def _feature_bridge_fn(
         return lambda example: build_configured_zero_delta_bridge(
             example,
             input_feature_schema=input_feature_schema,
+            coord_policy=coord_policy,
             extent_feature_policy=extent_feature_policy,
         )
     return bridge_fn
