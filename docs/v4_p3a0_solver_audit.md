@@ -256,6 +256,48 @@ Read-only devbox real-sample extraction check:
 - remote check was read-only: no solve, no `temperature.npy`, no data/output
   artifact writes.
 
+## P3a-2 Perfect-Contact Sparse Equivalence
+
+P3a-2 adds assembly and solve APIs to `rigno/heat3d_v4_reference_solver.py`
+without changing the old v1/v2 dense solver:
+
+- `AssembledOperator`
+- `build_operator(problem, matrix_backend="dense" | "sparse_csr")`
+- `solve_operator(operator)`
+- `solve_temperature_from_problem(problem, matrix_backend=...)`
+
+Both `dense` and `sparse_csr` backends are built from the same row/col/data/RHS
+triplets. The implemented mode is still only current dense-v2 physics:
+perfect-contact / `R_contact=0`, q times control-volume RHS, harmonic face
+conductance, top Robin diagonal/RHS contribution, bottom Dirichlet row
+replacement, and side adiabatic no-neighbor behavior. Contact resistance,
+generator integration, and dataset writing remain out of scope.
+
+Checker:
+
+- `scripts/check_heat3d_v4_p3a_sparse_legacy_equivalence.py`
+
+Local synthetic tiny gate:
+
+- dense `A` vs `sparse.toarray()` maxdiff: `0.0`
+- RHS maxdiff: `0.0`
+- dense vs sparse `T` maxdiff: `1.705303e-13`
+- dense vs sparse `DeltaT` maxdiff: `1.705303e-13`
+- bottom Dirichlet error: `0.0`
+- sparse residual: finite (`8.868314e-17` locally)
+
+Read-only devbox legacy-v2 comparison after pulling `research/v4-solver`:
+
+- `sample_000`: legacy v2 vs V4 sparse `T`/`DeltaT` maxdiff
+  `5.229595e-12`, bottom error `0.0`, sparse residual `2.000866e-15`
+- `sample_005`: legacy v2 vs V4 sparse `T`/`DeltaT` maxdiff
+  `3.353762e-12`, bottom error `0.0`, sparse residual `2.203704e-15`
+- `sample_008`: legacy v2 vs V4 sparse `T`/`DeltaT` maxdiff
+  `3.694822e-12`, bottom error `0.0`, sparse residual `1.476990e-15`
+
+All devbox sample checks were read-only: no `temperature.npy`, data/output,
+checkpoint, or log artifact was written.
+
 Generator integration should stay deferred until solver gates pass. When it is
 enabled, generators should record:
 
