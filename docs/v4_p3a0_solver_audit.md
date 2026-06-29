@@ -223,6 +223,11 @@ diag3, duplicate coordinates are merged by arithmetic-mean `k` and max-pooled
 `q`, rectilinear node ordering follows `np.unique(axis=0)`, and only
 perfect-contact interface metadata is accepted.
 
+P3a-1b fixes duplicate `q` pooling to be negative-q-safe. The max-pooling
+policy is unchanged, but the accumulator is initialized from a true negative
+infinity sentinel instead of `0`, so duplicate values such as `[-5, -2]` merge
+to `-2` rather than being clipped to `0`.
+
 P3a-1 checker:
 
 - `scripts/check_heat3d_v4_p3a_problem_extraction.py`
@@ -232,6 +237,24 @@ grid mapping, node ordering, isotropic and diag3 `k`, top/bottom/side face
 indices, duplicate merge policies, perfect-contact interface records, and the
 operator metadata skeleton. It does not write artifacts, generate
 `temperature.npy`, assemble a sparse operator, or solve a system.
+
+P3a-1b extends the checker with a negative-q duplicate case:
+
+- duplicate `q = [-5, -2]` must merge to `-2`.
+
+Read-only devbox real-sample extraction check:
+
+- branch pulled on devbox: `research/v4-solver`;
+- checker result: `p3a_problem_extraction_ok: true`;
+- samples checked:
+  - `sample_000`: isotropic expanded to diag3, grid `(4, 4, 5)`, 80 merged
+    nodes, 48 duplicate nodes, 3 interfaces;
+  - `sample_005`: isotropic expanded to diag3, grid `(4, 4, 5)`, 80 merged
+    nodes, 48 duplicate nodes, 3 interfaces;
+  - `sample_008`: diag3, grid `(4, 4, 5)`, 80 merged nodes, 48 duplicate
+    nodes, 3 interfaces.
+- remote check was read-only: no solve, no `temperature.npy`, no data/output
+  artifact writes.
 
 Generator integration should stay deferred until solver gates pass. When it is
 enabled, generators should record:
