@@ -16,6 +16,8 @@ This document is the fixed rule set for Codex work in the Heat3D-IC repository.
 - File-changing tasks should be committed and pushed to GitHub when complete
   unless the user explicitly says not to; servers pull latest changes from
   GitHub.
+- GitHub remotes must use SSH (`git@github.com:133754144/heat3d-ic.git`), not
+  HTTPS.
 - Do not modify `data/`, `output/`, `checkpoints/`, or `logs/` unless the user
   explicitly requests those paths.
 - Do not start training, evaluation, data generation, config-generator work, or
@@ -80,6 +82,7 @@ Required checks:
 pwd
 git branch --show-current
 git rev-parse --short HEAD
+git remote get-url origin
 git status --short
 git ls-files AGENTS.md docs/codex_heat3d_workflow.md
 git status --short --ignored data output checkpoint checkpoints logs log | head -n 80
@@ -96,6 +99,9 @@ Rules:
   before editing.
 - If only ignored artifacts exist, keep working but mention that they were not
   committed.
+- If `origin` uses HTTPS, run
+  `git remote set-url origin git@github.com:133754144/heat3d-ic.git` before
+  fetch, pull, or push.
 - For V4 work, expected branch is `research/v4` unless the user names another
   branch.
 
@@ -110,6 +116,7 @@ ssh devbox
 cd ~/myCodeGitOnly/heat3d-ic
 git branch --show-current
 git rev-parse --short HEAD
+git remote get-url origin
 git status --short
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate rigno
