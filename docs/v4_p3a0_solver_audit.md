@@ -196,6 +196,43 @@ Possible internal objects:
 - `SolutionAudit`: residual, BC fluxes, interface fluxes, energy balance,
   monotonicity flags, warnings.
 
+## P3a-1 Interface Skeleton
+
+P3a-1 adds the non-solving problem extraction and operator contract skeleton in
+`rigno/heat3d_v4_reference_solver.py`.
+
+Implemented dataclass contracts:
+
+- `Heat3DProblem`
+- `GridSpec`
+- `GridMapping`
+- `BoundarySpec`
+- `InterfaceRecord`
+- `OperatorMeta`
+- `SolutionAudit`
+- `SolverOptions`
+
+Implemented helpers:
+
+- `load_problem_from_sample(sample_dir)`
+- `extract_problem_from_arrays(coords, k_field, q_field, sample_meta)`
+- `operator_meta_for_problem(problem, options)`
+
+The extraction helper reuses dense-v2 semantics: `(N,1)` `k_field` expands to
+diag3, duplicate coordinates are merged by arithmetic-mean `k` and max-pooled
+`q`, rectilinear node ordering follows `np.unique(axis=0)`, and only
+perfect-contact interface metadata is accepted.
+
+P3a-1 checker:
+
+- `scripts/check_heat3d_v4_p3a_problem_extraction.py`
+
+The checker uses in-memory tiny synthetic samples only. It verifies rectilinear
+grid mapping, node ordering, isotropic and diag3 `k`, top/bottom/side face
+indices, duplicate merge policies, perfect-contact interface records, and the
+operator metadata skeleton. It does not write artifacts, generate
+`temperature.npy`, assemble a sparse operator, or solve a system.
+
 Generator integration should stay deferred until solver gates pass. When it is
 enabled, generators should record:
 
