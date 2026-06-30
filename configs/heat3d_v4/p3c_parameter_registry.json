@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v4_p3c_parameter_registry_v1",
+  "schema_version": "heat3d_v4_p3c_parameter_registry_v2",
   "scope": "design_registry_only_no_data_generated",
   "branch": "research/v4-dataset-p3c",
   "task": "coords+k(x)+q(x)+BC->T(x)",
@@ -41,7 +41,7 @@
       "authors": "Darshan Chalise; David G. Cahill",
       "year": 2023,
       "venue": "arXiv measurement preprint",
-      "url_or_doi": "https://doi.org/10.48550/arXiv.2308.04052",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2303.06785",
       "notes": "Anchors HBM anisotropy: in-plane about 100/140 W/m/K and through-plane about 7/2 W/m/K; use as a registry anchor, not as sole paper evidence."
     },
     {
@@ -1232,5 +1232,159 @@
       "used_in_v4_production": true,
       "metadata_tag": "production_mix=cooling_regime_min_fraction"
     }
-  ]
+  ],
+  "background_k_policy": {
+    "name": "background_k_policy",
+    "default_family": "effective_stack_medium_k",
+    "allowed_families": [
+      "effective_stack_medium_k",
+      "silicon_like",
+      "hbm_like_anisotropic_k"
+    ],
+    "low_k_dielectric_underfill_policy": "minority_background_or_block_only_not_default_background",
+    "families": [
+      {
+        "name": "effective_stack_medium_k",
+        "reference_values_W_mK": [
+          10.0,
+          30.0,
+          60.0
+        ],
+        "reference_materials": [
+          "equivalent substrate/interposer composite",
+          "effective chiplet stack background"
+        ],
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_anchor_plus_default_background",
+        "rationale": "Default background keeps P3c v0 close to a stable effective stack while random blocks add contrast.",
+        "metadata_tag": "background_k_family=effective_stack_medium_k"
+      },
+      {
+        "name": "silicon_like",
+        "reference_values_W_mK": [
+          100.0,
+          130.0,
+          150.0
+        ],
+        "reference_materials": [
+          "silicon-like die",
+          "silicon substrate/interposer"
+        ],
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_anchor_allowed_background",
+        "rationale": "Allowed background for die-like scenes, but not the default for v0.",
+        "metadata_tag": "background_k_family=silicon_like"
+      },
+      {
+        "name": "hbm_like_anisotropic_k",
+        "reference_values_W_mK": {
+          "in_plane": [
+            100.0,
+            140.0
+          ],
+          "through_plane": [
+            7.0,
+            2.0
+          ]
+        },
+        "reference_materials": [
+          "HBM-like stacked memory"
+        ],
+        "source_ref": [
+          "SRC-HBM-MEAS-2023",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "measurement_anchor_allowed_diag3_background",
+        "rationale": "Allowed only when diag3 arrays are active and metadata records anisotropic background.",
+        "metadata_tag": "background_k_family=hbm_like_anisotropic_k"
+      }
+    ],
+    "non_default_low_k_reference": {
+      "family": "low_k_dielectric_underfill",
+      "reference_values_W_mK": [
+        0.5,
+        1.2,
+        4.0,
+        8.0
+      ],
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "low_k_barrier_anchor_not_default_background",
+      "rationale": "Low-k materials can appear as barriers or rare/minority backgrounds but must not be the default background.",
+      "metadata_tag": "background_k_family=low_k_non_default"
+    },
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-3DICE4-2025",
+      "SRC-HBM-MEAS-2023"
+    ],
+    "source_type": "v4_design_requirement",
+    "rationale": "All nodes must receive background k before blocks are projected; low-k is not the default background.",
+    "metadata_tag": "policy=background_k"
+  },
+  "k_overlap_policy": {
+    "name": "deterministic_priority_override",
+    "initialization": "initialize_all_nodes_with_background_k",
+    "block_order": "deterministic_scene_block_order_later_blocks_override_earlier_blocks",
+    "node_value_policy": "each_node_keeps_final_k_only",
+    "metadata_fields": [
+      "background_k_family",
+      "background_k_value",
+      "covered_by_blocks",
+      "winning_block_id"
+    ],
+    "forbidden_default_merge": "arithmetic_mean",
+    "source_ref": [
+      "SRC-3DICE4-2025"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "Generator defaults must preserve deterministic material ownership rather than averaging overlapping k blocks.",
+    "metadata_tag": "policy=k_overlap_deterministic_priority_override"
+  },
+  "q_overlap_policy": {
+    "name": "sum_volumetric_sources",
+    "cell_merge": "sum",
+    "forbidden_default_merge": "max_pooling",
+    "metadata_fields": [
+      "contributing_q_blocks",
+      "summed_q_density_W_m3"
+    ],
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-SAUFNO-2025"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "Overlapping heat sources are additive volumetric power sources; max pooling is only a legacy duplicate-node extraction rule.",
+    "metadata_tag": "policy=q_overlap_sum_volumetric_sources"
+  },
+  "power_calibration_policy": {
+    "name": "calibrate_q_density_from_realized_volume_and_integrated_power_target",
+    "method": "calibrated_q_density_W_m3 = target_power_W / realized_volume_m3",
+    "required_metadata_fields": [
+      "target_power_W",
+      "realized_volume_m3",
+      "calibrated_q_density_W_m3",
+      "realized_power_W",
+      "power_error_W"
+    ],
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance_W": 1e-12,
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-HEAT3D-MEDIUM1024-2026"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "Realized block projection changes volume, so q density must be calibrated after projection to preserve integrated power targets.",
+    "metadata_tag": "policy=power_calibration_realized_volume"
+  }
 }

@@ -14,8 +14,11 @@ import json
 import math
 import random
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +31,10 @@ REQUIRED_TOP_SECTIONS = (
     "deltaT_distribution",
     "cooling_regimes",
     "production_mix",
+    "background_k_policy",
+    "k_overlap_policy",
+    "q_overlap_policy",
+    "power_calibration_policy",
 )
 REQUIRED_PARAMETER_SECTIONS = ("k", "q", "BC", "contact")
 REQUIRED_SOURCE_FIELDS = ("id", "title", "authors", "year", "venue", "url_or_doi", "notes")
@@ -132,6 +139,59 @@ def validate_registry(registry: dict[str, Any]) -> None:
     diag3_target = _by_name(production_mix, "diag3_target_fraction")
     _require(float(diag3_target.get("default")) == 0.2, "diag3 target fraction must be 0.20")
 
+    background_policy = registry["background_k_policy"]
+    _require(
+        background_policy.get("default_family") == "effective_stack_medium_k",
+        "default background family must be effective_stack_medium_k",
+    )
+    allowed_backgrounds = set(background_policy.get("allowed_families", []))
+    _require(
+        allowed_backgrounds == {"effective_stack_medium_k", "silicon_like", "hbm_like_anisotropic_k"},
+        "background allowed_families mismatch",
+    )
+    _require(
+        background_policy.get("low_k_dielectric_underfill_policy")
+        == "minority_background_or_block_only_not_default_background",
+        "low-k background policy mismatch",
+    )
+    for family in background_policy.get("families", []):
+        for field in ("source_ref", "source_type", "rationale", "metadata_tag"):
+            _require(field in family, f"background family missing {field}: {family.get('name')}")
+    _require(
+        "non_default_low_k_reference" in background_policy,
+        "background policy must document low-k non-default reference",
+    )
+
+    k_overlap_policy = registry["k_overlap_policy"]
+    _require(k_overlap_policy.get("name") == "deterministic_priority_override", "bad k overlap policy")
+    _require(
+        k_overlap_policy.get("forbidden_default_merge") == "arithmetic_mean",
+        "k arithmetic mean must be forbidden as generator default",
+    )
+    q_overlap_policy = registry["q_overlap_policy"]
+    _require(q_overlap_policy.get("name") == "sum_volumetric_sources", "bad q overlap policy")
+    _require(q_overlap_policy.get("cell_merge") == "sum", "q overlap must sum per cell")
+    _require(
+        q_overlap_policy.get("forbidden_default_merge") == "max_pooling",
+        "q max pooling must be forbidden as generator merge",
+    )
+    power_policy = registry["power_calibration_policy"]
+    _require(
+        power_policy.get("name") == "calibrate_q_density_from_realized_volume_and_integrated_power_target",
+        "bad power calibration policy",
+    )
+    for field in (
+        "target_power_W",
+        "realized_volume_m3",
+        "calibrated_q_density_W_m3",
+        "realized_power_W",
+        "power_error_W",
+    ):
+        _require(
+            field in power_policy.get("required_metadata_fields", []),
+            f"missing power calibration metadata field: {field}",
+        )
+
 
 def _rng_uniform(rng: random.Random, bounds: dict[str, Any], *, log_space: bool = False) -> float:
     lo = float(bounds["min"])
@@ -152,6 +212,100 @@ def _default_geometry(registry: dict[str, Any]) -> dict[str, Any]:
         "domain_z_mm": float(_by_name(geometry_entries, "domain_z_mm")["default"]),
         "grid_shape": list(_by_name(geometry_entries, "grid_shape_candidates")["default"]),
     }
+
+
+def _node_index(i: int, j: int, k: int, grid_shape: list[int]) -> int:
+    _, ny, nz = [int(v) for v in grid_shape]
+    return (i * ny + j) * nz + k
+
+
+def _block_node_indices(block: dict[str, Any], grid_shape: list[int]) -> list[int]:
+    start_i, start_j, start_k = [int(v) for v in block["start_ijk"]]
+    extent_i, extent_j, extent_k = [int(v) for v in block["extent_ijk"]]
+    indices: list[int] = []
+    for i in range(start_i, start_i + extent_i):
+        for j in range(start_j, start_j + extent_j):
+            for k in range(start_k, start_k + extent_k):
+                indices.append(_node_index(i, j, k, grid_shape))
+    return indices
+
+
+def _grid_coords(domain: dict[str, Any]) -> np.ndarray:
+    nx, ny, nz = [int(v) for v in domain["grid_shape"]]
+    x_max = float(domain["domain_xy_mm"]) * 1.0e-3
+    y_max = float(domain["domain_xy_mm"]) * 1.0e-3
+    z_max = float(domain["domain_z_mm"]) * 1.0e-3
+    xs = np.linspace(0.0, x_max, nx, dtype=np.float64)
+    ys = np.linspace(0.0, y_max, ny, dtype=np.float64)
+    zs = np.linspace(0.0, z_max, nz, dtype=np.float64)
+    return np.array([[x, y, z] for x in xs for y in ys for z in zs], dtype=np.float64)
+
+
+def _domain_volume_m3(domain: dict[str, Any]) -> float:
+    xy_m = float(domain["domain_xy_mm"]) * 1.0e-3
+    z_m = float(domain["domain_z_mm"]) * 1.0e-3
+    return xy_m * xy_m * z_m
+
+
+def _k_entry(registry: dict[str, Any], name: str) -> dict[str, Any]:
+    return _by_name(registry["parameters"]["k"], name)
+
+
+def _background_k(registry: dict[str, Any], *, diag3: bool) -> tuple[str, np.ndarray, dict[str, Any]]:
+    family = registry["background_k_policy"]["default_family"]
+    entry = _k_entry(registry, family)
+    value = float(entry["default"])
+    if diag3:
+        background_value = np.array([value, value, value], dtype=np.float64)
+        serial_value: Any = {"kx": value, "ky": value, "kz": value}
+    else:
+        background_value = np.array([value], dtype=np.float64)
+        serial_value = value
+    return family, background_value, {
+        "background_k_family": family,
+        "background_k_value": serial_value,
+        "background_k_metadata_tag": f"background_k_family={family}",
+    }
+
+
+def _block_k_value(block: dict[str, Any], *, diag3: bool) -> np.ndarray:
+    value = block["k_value"]
+    if "k" in value:
+        scalar = float(value["k"])
+        if diag3:
+            return np.array([scalar, scalar, scalar], dtype=np.float64)
+        return np.array([scalar], dtype=np.float64)
+    diag_value = np.array(
+        [float(value["kx"]), float(value["ky"]), float(value["kz"])],
+        dtype=np.float64,
+    )
+    if diag3:
+        return diag_value
+    return np.array([float(np.mean(diag_value))], dtype=np.float64)
+
+
+def _bc_features(domain: dict[str, Any]) -> tuple[np.ndarray, dict[str, int]]:
+    nx, ny, nz = [int(v) for v in domain["grid_shape"]]
+    flags = np.zeros((nx * ny * nz, 4), dtype=np.float64)
+    counts = {"top": 0, "bottom": 0, "side": 0, "interior": 0}
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                idx = _node_index(i, j, k, domain["grid_shape"])
+                if k == nz - 1:
+                    channel = 0
+                    counts["top"] += 1
+                elif k == 0:
+                    channel = 1
+                    counts["bottom"] += 1
+                elif i == 0 or i == nx - 1 or j == 0 or j == ny - 1:
+                    channel = 2
+                    counts["side"] += 1
+                else:
+                    channel = 3
+                    counts["interior"] += 1
+                flags[idx, channel] = 1.0
+    return flags, counts
 
 
 def _project_block(
@@ -453,6 +607,118 @@ def generate_dryrun_batch(
         "artifact_writes": False,
         "summary": summary,
         "scenes": scenes,
+    }
+
+
+def materialize_scene_arrays(
+    scene: dict[str, Any],
+    registry: dict[str, Any],
+) -> dict[str, Any]:
+    """Materialize a dry scene into in-memory arrays without solving or writing."""
+
+    validate_registry(registry)
+    scene = deepcopy(scene)
+    domain = scene["domain"]
+    grid_shape = [int(v) for v in domain["grid_shape"]]
+    node_count = int(domain["node_count"])
+    coords = _grid_coords(domain)
+    if coords.shape != (node_count, 3):
+        raise ValueError(f"coords shape mismatch: {coords.shape} vs {(node_count, 3)}")
+
+    is_diag3 = scene["k"]["mode"] == "diag3"
+    background_family, background_value, background_meta = _background_k(registry, diag3=is_diag3)
+    k_width = 3 if is_diag3 else 1
+    k_field = np.repeat(background_value.reshape(1, k_width), node_count, axis=0)
+    covered_by_blocks: list[list[str]] = [[] for _ in range(node_count)]
+    winning_block_id: list[str | None] = [None for _ in range(node_count)]
+
+    for block in scene["k"]["blocks"]:
+        indices = _block_node_indices(block, grid_shape)
+        block_value = _block_k_value(block, diag3=is_diag3)
+        for idx in indices:
+            covered_by_blocks[idx].append(block["block_id"])
+            winning_block_id[idx] = block["block_id"]
+            k_field[idx, :] = block_value
+        block["covered_cell_count"] = len(indices)
+
+    q_field = np.zeros((node_count, 1), dtype=np.float64)
+    q_contributors: list[list[str]] = [[] for _ in range(node_count)]
+    node_volume = _domain_volume_m3(domain) / float(node_count)
+    q_block_metadata = []
+    for block in scene["q"]["blocks"]:
+        indices = _block_node_indices(block, grid_shape)
+        realized_volume = float(len(indices)) * node_volume
+        if realized_volume <= 0.0:
+            raise ValueError(f"q block has non-positive realized volume: {block['block_id']}")
+        target_power = float(block["integrated_power_target_W"])
+        calibrated_q_density = target_power / realized_volume
+        for idx in indices:
+            q_field[idx, 0] += calibrated_q_density
+            q_contributors[idx].append(block["block_id"])
+        realized_power = calibrated_q_density * realized_volume
+        power_error = realized_power - target_power
+        block_meta = {
+            "block_id": block["block_id"],
+            "q_family": block["q_family"],
+            "target_power_W": target_power,
+            "realized_volume_m3": realized_volume,
+            "calibrated_q_density_W_m3": calibrated_q_density,
+            "realized_power_W": realized_power,
+            "power_error_W": power_error,
+            "realized_cell_count": int(len(indices)),
+            "DeltaT_target_bin": block["DeltaT_target_bin"],
+            "metadata_tag": block["metadata_tag"],
+        }
+        block.update(block_meta)
+        q_block_metadata.append(block_meta)
+
+    bc_features, bc_counts = _bc_features(domain)
+    uncovered = [idx for idx, winner in enumerate(winning_block_id) if winner is None]
+    final_winner = [
+        winner if winner is not None else "background"
+        for winner in winning_block_id
+    ]
+    sample_meta = {
+        "schema_version": "heat3d_v4_p3c_array_preflight_v0",
+        "scene_id": scene["scene_id"],
+        "seed": scene["seed"],
+        "array_preflight_only": True,
+        "artifact_writes": False,
+        "solver_called": False,
+        "generation_policy": {
+            "final_probe_role": registry["generation_policy"]["final_probe_role"],
+            "stress_split": registry["generation_policy"]["stress_split"],
+        },
+        "background_k": {
+            **background_meta,
+            "allowed_families": list(registry["background_k_policy"]["allowed_families"]),
+            "node_count": node_count,
+            "uncovered_node_count": len(uncovered),
+        },
+        "k_overlap_policy": registry["k_overlap_policy"]["name"],
+        "k_node_metadata": {
+            "covered_by_blocks": covered_by_blocks,
+            "winning_block_id": final_winner,
+        },
+        "q_overlap_policy": registry["q_overlap_policy"]["name"],
+        "q_node_metadata": {
+            "contributing_q_blocks": q_contributors,
+        },
+        "power_calibration_policy": registry["power_calibration_policy"]["name"],
+        "q_block_metadata": q_block_metadata,
+        "bc_feature_names": ["is_top", "is_bottom", "is_side", "is_interior"],
+        "bc_counts": bc_counts,
+        "contact": scene["contact"],
+        "deltaT_qc": scene["deltaT_qc"],
+        "k_shape_policy": "diag3_[N,3]" if is_diag3 else "scalar_[N,1]",
+    }
+    return {
+        "coords": coords,
+        "k_field": k_field,
+        "q_field": q_field,
+        "bc_features": bc_features,
+        "sample_meta": sample_meta,
+        "scene": scene,
     }
 
 

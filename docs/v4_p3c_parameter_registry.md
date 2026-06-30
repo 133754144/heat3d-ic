@@ -10,6 +10,8 @@ decisions. It is design-only and does not authorize data generation.
   registry, P3c dry-run generator, and checker.
 - P3c-2 validates dry-run scenes and array-preview contracts only. It must not
   write a dataset or call the solver.
+- P3c-2b validates real in-memory arrays and metadata only. It must not write a
+  dataset or call the solver.
 - Numeric ranges must point to source records with title, authors, year, venue,
   URL or DOI, and notes.
 - k entries use `literature_anchor`, `sampling_envelope`, and `rationale`.
@@ -27,7 +29,7 @@ decisions. It is design-only and does not authorize data generation.
 | id | title | authors | year | venue | URL or DOI | notes |
 | --- | --- | --- | ---: | --- | --- | --- |
 | SRC-3DICE4-2025 | 3D-ICE 4.0: Accurate and efficient thermal modeling for 2.5D/3D heterogeneous chiplet systems | Kai Zhu, Darong Huang, Luis Costero, David Atienza | 2025 | arXiv | https://doi.org/10.48550/arXiv.2512.05823 | supports heterogeneous/anisotropic materials and vertical thermal paths |
-| SRC-HBM-MEAS-2023 | Thermal Conductivity Measurement of High Bandwidth Memory | Darshan Chalise, David G. Cahill | 2023 | arXiv measurement preprint | https://doi.org/10.48550/arXiv.2308.04052 | anchors HBM anisotropy: in-plane about 100/140 W/m/K and through-plane about 7/2 W/m/K |
+| SRC-HBM-MEAS-2023 | Thermal Conductivity Measurement of High Bandwidth Memory | Darshan Chalise, David G. Cahill | 2023 | arXiv measurement preprint | https://doi.org/10.48550/arXiv.2303.06785 | anchors HBM anisotropy: in-plane about 100/140 W/m/K and through-plane about 7/2 W/m/K |
 | SRC-DEEPOHEAT-2023 | DeepOHeat: Operator Learning-based Ultra-fast Thermal Simulation in 3D-IC Design | Ziyue Liu, Yixing Li, Jing Hu, Xinling Yu, Shinyu Shiau, Xin Ai, Zhiyu Zeng, Zheng Zhang | 2023 | arXiv | https://doi.org/10.48550/arXiv.2302.12949 | supports operator mapping from physical fields to temperature |
 | SRC-DEEPOHEATV1-2025 | DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design | Xinling Yu, Ziyue Liu, Hai Li, Yixing Li, Xin Ai, Zhiyu Zeng, Ian Young, Zheng Zhang | 2025 | IEEE TCPMT / arXiv | https://doi.org/10.48550/arXiv.2504.03955 | supports solver-audit and trustworthiness separation from training |
 | SRC-BSPDN-2025 | Thermal Implications of Non-Uniform Power in BSPDN-Enabled 2.5D/3D Chiplet-based Systems-in-Package using Nanosheet Technology | Yukai Chen, Massimiliano Di Todaro, Bjorn Vermeersch, Herman Oprins, Daniele Jahier Pagliari, Julien Ryckaert, Dwaipayan Biswas, James Myers | 2025 | arXiv | https://doi.org/10.48550/arXiv.2508.02284 | supports chiplet/interposer dimensions, 200/2500 W/m2/K HTC anchors, layer k/thickness, and non-uniform power maps |
@@ -116,6 +118,27 @@ envelopes that must be validated by P3c smoke DeltaT and energy audits.
 | diag3_target_fraction | fraction | 0.20 to 0.20 / 0.20 | SRC-3DICE4-2025, SRC-HBM-MEAS-2023 | v4_design_requirement | production v0 must include anisotropic samples; generator/checker must support diag3 | production_mix=diag3_target_fraction |
 | q_family_uniformity | fraction | each active family at least 0.10 / balanced | SRC-BSPDN-2025, SRC-SAUFNO-2025 | design_policy | avoid a dataset dominated by one hotspot topology | production_mix=q_family_uniformity |
 | cooling_regime_min_fraction | fraction | each regime at least 0.15 / balanced | SRC-BSPDN-2025, SRC-LIENHARD-2024 | design_policy | guarantee weak, nominal, and strong cooling coverage | production_mix=cooling_regime_min_fraction |
+
+## Array Synthesis Policies
+
+| policy | required behavior |
+| --- | --- |
+| `background_k_policy` | default background is `effective_stack_medium_k`; allowed background families are `effective_stack_medium_k`, `silicon_like`, and `hbm_like_anisotropic_k`; `low_k_dielectric_underfill` is not the default background |
+| `k_overlap_policy` | `deterministic_priority_override`: initialize background k for every node, apply blocks in deterministic order, keep final k only, and record `covered_by_blocks` plus `winning_block_id` |
+| `q_overlap_policy` | `sum_volumetric_sources`: overlapping q blocks sum per cell; max pooling is forbidden for generator q merge |
+| `power_calibration_policy` | calibrate q density from realized block volume and integrated-power target, recording target power, realized volume, calibrated q density, realized power, and power error |
+
+## Background k Reference Values
+
+These are semiconductor substrate/material anchors for background selection,
+not final_probe-derived hard ranges.
+
+| background family | reference values | sources | use |
+| --- | --- | --- | --- |
+| `effective_stack_medium_k` | 10/30/60 W/m/K suggested composite anchors | SRC-BSPDN-2025, SRC-3DICE4-2025, SRC-SAUFNO-2025 | default background for equivalent stack/substrate/interposer composites |
+| `silicon_like` | 100 to 150 W/m/K | SRC-SAUFNO-2025, SRC-BSPDN-2025 | allowed background for silicon-like die/substrate scenes |
+| `hbm_like_anisotropic_k` | in-plane 100/140 W/m/K, through-plane 7/2 W/m/K | SRC-HBM-MEAS-2023, SRC-3DICE4-2025 | allowed diag3 background when anisotropic arrays are active |
+| `low_k_dielectric_underfill` | 0.5 to 8 W/m/K | SRC-BSPDN-2025, SRC-SAUFNO-2025 | minority background or block-only low-k barrier; never default background |
 
 ## Contact Registry Draft
 

@@ -59,7 +59,7 @@ creating a separate stress split or copying final-probe extremes.
 | source | design implication |
 | --- | --- |
 | 3D-ICE 4.0, Zhu et al., 2025, arXiv:2512.05823 | preserve material heterogeneity and anisotropy; keep vertical conduction and grid metadata auditable |
-| HBM thermal measurement, Chalise and Cahill, 2023, arXiv:2308.04052 | include anisotropic HBM-like material anchors, especially in-plane versus through-plane k contrast |
+| HBM thermal measurement, Chalise and Cahill, 2023, arXiv:2303.06785 | include anisotropic HBM-like material anchors, especially in-plane versus through-plane k contrast |
 | DeepOHeat, Liu et al., 2023, arXiv:2302.12949 | learn an operator from power/material/boundary functions to temperature fields |
 | DeepOHeat-v1, Yu et al., 2025, IEEE TCPMT/arXiv:2504.03955 | keep solver quality and confidence/audit metadata separate from model training changes |
 | Non-uniform BSPDN power maps, Chen et al., 2025, arXiv:2508.02284 | include fine-grained localized and synthetic power maps; use 200 and 2500 W/m2/K HTC anchors |
@@ -138,6 +138,48 @@ Initial bins:
 - Avoid pure uniform-power datasets; uniform or weak-background fields are
   allowed only as part of the mixture.
 - P3c smoke must check DeltaT amplitude before scaling to larger datasets.
+
+## P3c-2b Array Preflight Contract
+
+P3c-2b materializes real arrays in memory only: `coords`, `k_field`, `q_field`,
+`bc_features`, and `sample_meta`. It must not write `data/` or `output/`, must
+not call the solver, and must keep DeltaT QC as `pending_until_solve`.
+
+Executable policies:
+
+- `background_k_policy`: initialize all nodes with `effective_stack_medium_k`
+  by default. Allowed backgrounds are `effective_stack_medium_k`,
+  `silicon_like`, and `hbm_like_anisotropic_k`; `low_k_dielectric_underfill`
+  may appear only as minority background or block material and is not the
+  default background.
+- `k_overlap_policy`: `deterministic_priority_override`; initialize full-domain
+  background k first, then apply blocks in deterministic order. Each node keeps
+  only the final k value, while metadata records `covered_by_blocks` and
+  `winning_block_id`. Arithmetic-mean merge is not the generator default.
+- `q_overlap_policy`: `sum_volumetric_sources`; overlapping q blocks sum per
+  cell. Max pooling is not used for generator q merge.
+- `power_calibration_policy`: after block projection, use realized volume and
+  integrated-power target to compute calibrated q density and record target
+  power, realized volume, calibrated q density, realized power, and power error.
+
+Background k reference values are common semiconductor substrate/material
+anchors, not final_probe-derived hard ranges. P3c uses:
+
+- `effective_stack_medium_k`: default background, suggested reference values
+  around 10/30/60 W/m/K for equivalent substrate/interposer composites;
+- `silicon_like`: allowed background, reference values around 100 to 150 W/m/K
+  for silicon-like die/substrate material;
+- `hbm_like_anisotropic_k`: allowed diag3 background, HBM-like anchors near
+  in-plane 100/140 W/m/K and through-plane 7/2 W/m/K;
+- `low_k_dielectric_underfill`: non-default background/block-only low-k anchor
+  around 0.5 to 8 W/m/K.
+
+Shape rules:
+
+- scalar samples: `k_field` shape is `[N, 1]`;
+- diag3 samples: `k_field` shape is `[N, 3]`;
+- `q_field` shape is `[N, 1]`;
+- `bc_features` shape is `[N, 4]` for top, bottom, side, interior flags.
 
 ## Boundary And Contact Rules
 
