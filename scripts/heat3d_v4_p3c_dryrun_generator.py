@@ -53,6 +53,17 @@ REQUIRED_DELTAT_AUDIT_FIELDS = (
 FINAL_PROBE_ROLE = "reference_diagnostic_only_not_pass_fail"
 PRODUCTION_CONTACT_MODEL = "R_contact=0_perfect_contact"
 PENDING_DELTAT_BIN = "pending_until_solve"
+SMOKE16_SAMPLE_COUNT = 16
+SMOKE16_SEED = 4301
+SMOKE16_DATASET_DIR = "data/heat3d_v4_p3c_smoke16_v0"
+SMOKE16_OUTPUT_DIR = "output/heat3d_v4_p3c_smoke16_v0"
+PLANNED_SAMPLE_FILES = (
+    "coords.npy",
+    "k_field.npy",
+    "q_field.npy",
+    "bc_features.npy",
+    "sample_meta.json",
+)
 
 
 def _require(condition: bool, message: str) -> None:
@@ -308,6 +319,45 @@ def _bc_features(domain: dict[str, Any]) -> tuple[np.ndarray, dict[str, int]]:
     return flags, counts
 
 
+def _solver_boundary_contract(scene: dict[str, Any]) -> dict[str, Any]:
+    bc = scene["BC"]
+    top_ambient = float(bc["top_ambient_temperature_K"])
+    bottom_fixed = float(bc["bottom_dirichlet_temperature_K"])
+    return {
+        "boundary_types": {"top": "Robin", "bottom": "Dirichlet", "sides": "adiabatic"},
+        "boundary_params": {
+            "top": {
+                "type": "robin",
+                "h_W_m2K": float(bc["top_h_W_m2K"]),
+                "T_inf_K": top_ambient,
+                "ambient_temperature_K": top_ambient,
+            },
+            "bottom": {
+                "type": "dirichlet",
+                "T_fixed_K": bottom_fixed,
+                "fixed_temperature_K": bottom_fixed,
+            },
+            "side": {
+                "type": "adiabatic",
+            },
+        },
+    }
+
+
+def _solver_interface_contract(scene: dict[str, Any]) -> list[dict[str, Any]]:
+    domain_z_m = float(scene["domain"]["domain_z_mm"]) * 1.0e-3
+    return [
+        {
+            "id": "p3c_v0_perfect_contact",
+            "type": "perfect_contact",
+            "adjacent_layer_ids": [0, 1],
+            "z_position_m": domain_z_m * 0.5,
+            "R_contact_m2K_W": 0.0,
+            "contact_model": PRODUCTION_CONTACT_MODEL,
+        }
+    ]
+
+
 def _project_block(
     *,
     grid_shape: list[int],
@@ -486,7 +536,7 @@ def _q_blocks(
 
 def _choose_diag3_modes(sample_count: int, target_fraction: float) -> list[str]:
     diag3_count = int(round(sample_count * target_fraction))
-    strong_count = max(1, int(round(diag3_count * 0.2))) if diag3_count >= 5 else 0
+    strong_count = max(1, int(round(diag3_count * 0.2))) if diag3_count >= 3 else 0
     modes = ["scalar"] * sample_count
     for idx in range(diag3_count):
         modes[idx] = "hbm_like_strong" if idx < strong_count else "mild"
@@ -708,9 +758,18 @@ def materialize_scene_arrays(
         "q_block_metadata": q_block_metadata,
         "bc_feature_names": ["is_top", "is_bottom", "is_side", "is_interior"],
         "bc_counts": bc_counts,
+        **_solver_boundary_contract(scene),
+        "interfaces": _solver_interface_contract(scene),
         "contact": scene["contact"],
         "deltaT_qc": scene["deltaT_qc"],
         "k_shape_policy": "diag3_[N,3]" if is_diag3 else "scalar_[N,1]",
+        "units": {
+            "coords": "m",
+            "k_field": "W/m/K",
+            "q_field": "W/m^3",
+            "temperature": "K",
+            "bc_features": "one_hot_boundary_flags",
+        },
     }
     return {
         "coords": coords,
@@ -719,6 +778,57 @@ def materialize_scene_arrays(
         "bc_features": bc_features,
         "sample_meta": sample_meta,
         "scene": scene,
+    }
+
+
+def build_smoke16_write_plan(
+    registry: dict[str, Any],
+    *,
+    sample_count: int = SMOKE16_SAMPLE_COUNT,
+    seed: int = SMOKE16_SEED,
+    dataset_dir: str = SMOKE16_DATASET_DIR,
+    output_dir: str = SMOKE16_OUTPUT_DIR,
+) -> dict[str, Any]:
+    """Return a no-write dataset plan for the P3c smoke dataset."""
+
+    batch = generate_dryrun_batch(registry, sample_count=sample_count, seed=seed)
+    samples = []
+    for index, scene in enumerate(batch["scenes"]):
+        sample_id = f"sample_{index:03d}"
+        samples.append(
+            {
+                "sample_id": sample_id,
+                "scene_id": scene["scene_id"],
+                "sample_dir": f"{dataset_dir}/{sample_id}",
+                "planned_files": list(PLANNED_SAMPLE_FILES),
+                "label_file_after_solver": "temperature.npy",
+                "k_mode": scene["k"]["mode"],
+                "diag3_policy": scene["k"]["diag3_policy"],
+                "q_family": scene["q"]["family"],
+                "cooling_regime": scene["BC"]["cooling_regime"],
+            }
+        )
+    return {
+        "schema_version": "heat3d_v4_p3c_smoke16_write_plan_v0",
+        "sample_count": sample_count,
+        "seed": seed,
+        "dataset_dir": dataset_dir,
+        "output_dir": output_dir,
+        "artifact_writes": False,
+        "solver_called": False,
+        "root_dataset_files": ["manifest.json"],
+        "root_output_files": ["audit_summary.json"],
+        "sample_schema": {
+            "required_files": list(PLANNED_SAMPLE_FILES),
+            "label_file_after_solver": "temperature.npy",
+        },
+        "coverage": {
+            "k_modes": sorted({sample["k_mode"] for sample in samples}),
+            "diag3_policies": sorted({sample["diag3_policy"] for sample in samples}),
+            "q_families": sorted({sample["q_family"] for sample in samples}),
+            "cooling_regimes": sorted({sample["cooling_regime"] for sample in samples}),
+        },
+        "samples": samples,
     }
 
 

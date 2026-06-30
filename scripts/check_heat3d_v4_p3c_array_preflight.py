@@ -19,7 +19,11 @@ if str(SCRIPT_DIR) not in sys.path:
 from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     FINAL_PROBE_ROLE,
     PENDING_DELTAT_BIN,
+    PLANNED_SAMPLE_FILES,
     PRODUCTION_CONTACT_MODEL,
+    SMOKE16_SAMPLE_COUNT,
+    SMOKE16_SEED,
+    build_smoke16_write_plan,
     generate_dryrun_batch,
     load_registry,
     materialize_scene_arrays,
@@ -151,6 +155,48 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
         _expect(abs(block_meta["power_error_W"]) <= POWER_TOL, "q power calibration error too large")
 
 
+def _check_boundary_bridge(bundle: dict[str, Any]) -> None:
+    scene_bc = bundle["scene"]["BC"]
+    meta = bundle["sample_meta"]
+    _expect(
+        meta["boundary_types"] == {"top": "Robin", "bottom": "Dirichlet", "sides": "adiabatic"},
+        "solver boundary_types contract mismatch",
+    )
+    params = meta["boundary_params"]
+    top = params["top"]
+    bottom = params["bottom"]
+    side = params["side"]
+    _expect(top["type"] == "robin", "top boundary type mismatch")
+    _expect(bottom["type"] == "dirichlet", "bottom boundary type mismatch")
+    _expect(side["type"] == "adiabatic", "side boundary type mismatch")
+    _expect(np.isclose(top["h_W_m2K"], scene_bc["top_h_W_m2K"]), "top h bridge mismatch")
+    _expect(np.isclose(top["T_inf_K"], scene_bc["top_ambient_temperature_K"]), "top T_inf bridge mismatch")
+    _expect(
+        np.isclose(top["ambient_temperature_K"], scene_bc["top_ambient_temperature_K"]),
+        "legacy top ambient bridge mismatch",
+    )
+    _expect(
+        np.isclose(bottom["T_fixed_K"], scene_bc["bottom_dirichlet_temperature_K"]),
+        "bottom T_fixed bridge mismatch",
+    )
+    _expect(
+        np.isclose(bottom["fixed_temperature_K"], scene_bc["bottom_dirichlet_temperature_K"]),
+        "legacy bottom fixed bridge mismatch",
+    )
+
+    # Simulate both the requested bridge contract and the current solver access pattern.
+    _ = meta["boundary_params"]["top"]["h_W_m2K"]
+    _ = meta["boundary_params"]["top"]["T_inf_K"]
+    _ = meta["boundary_params"]["top"]["ambient_temperature_K"]
+    _ = meta["boundary_params"]["bottom"]["T_fixed_K"]
+    _ = meta["boundary_params"]["bottom"]["fixed_temperature_K"]
+    _ = meta["boundary_params"]["side"]["type"]
+    interfaces = meta["interfaces"]
+    _expect(isinstance(interfaces, list) and interfaces, "perfect-contact interface missing")
+    _expect(interfaces[0]["type"] == "perfect_contact", "interface must stay perfect_contact")
+    _expect(interfaces[0]["R_contact_m2K_W"] == 0.0, "P3c production interface must keep R=0")
+
+
 def _check_k_overlap_override(scene: dict[str, Any], registry: dict[str, Any]) -> None:
     overlap_scene = deepcopy(scene)
     first_block = deepcopy(overlap_scene["k"]["blocks"][0])
@@ -206,6 +252,35 @@ def _check_no_artifact_keys(value: Any) -> None:
             stack.extend(current)
 
 
+def _check_smoke16_write_plan(registry: dict[str, Any]) -> None:
+    plan = build_smoke16_write_plan(registry, sample_count=SMOKE16_SAMPLE_COUNT, seed=SMOKE16_SEED)
+    _expect(plan["artifact_writes"] is False, "write plan must not write artifacts")
+    _expect(plan["solver_called"] is False, "write plan must not call solver")
+    _expect(plan["sample_count"] == SMOKE16_SAMPLE_COUNT, "write plan sample count mismatch")
+    _expect(plan["sample_schema"]["required_files"] == list(PLANNED_SAMPLE_FILES), "sample schema mismatch")
+    _expect("manifest.json" in plan["root_dataset_files"], "manifest plan missing")
+    _expect("audit_summary.json" in plan["root_output_files"], "audit summary plan missing")
+
+    q_families = {entry["name"] for entry in registry["parameters"]["q"]}
+    cooling_regimes = {entry["name"] for entry in registry["cooling_regimes"]}
+    coverage = plan["coverage"]
+    _expect("scalar" in coverage["k_modes"], "write plan missing scalar k mode")
+    _expect("mild" in coverage["diag3_policies"], "write plan missing mild diag3")
+    _expect("hbm_like_strong" in coverage["diag3_policies"], "write plan missing HBM-like diag3")
+    _expect(q_families.issubset(set(coverage["q_families"])), "write plan missing q family coverage")
+    _expect(
+        cooling_regimes.issubset(set(coverage["cooling_regimes"])),
+        "write plan missing cooling regime coverage",
+    )
+
+    batch = generate_dryrun_batch(registry, sample_count=SMOKE16_SAMPLE_COUNT, seed=SMOKE16_SEED)
+    for scene in batch["scenes"]:
+        bundle = materialize_scene_arrays(scene, registry)
+        _check_boundary_bridge(bundle)
+        _expect(bundle["sample_meta"]["artifact_writes"] is False, "write-plan materialization wrote artifact")
+        _expect(bundle["sample_meta"]["solver_called"] is False, "write-plan materialization called solver")
+
+
 def main() -> int:
     print("Heat3D V4 P3c array preflight check")
     print("scope: in-memory coords/k/q/BC arrays only; no solver, no dataset, no artifact writes")
@@ -218,16 +293,20 @@ def main() -> int:
     diag3_bundle = materialize_scene_arrays(diag3_scene, registry)
     _check_array_bundle(scalar_bundle, expected_k_width=1)
     _check_array_bundle(diag3_bundle, expected_k_width=3)
+    _check_boundary_bridge(scalar_bundle)
+    _check_boundary_bridge(diag3_bundle)
     _check_k_overlap_override(scalar_scene, registry)
     _check_q_overlap_sum(scalar_scene, registry)
     _check_no_artifact_keys(scalar_bundle["sample_meta"])
     _check_no_artifact_keys(diag3_bundle["sample_meta"])
+    _check_smoke16_write_plan(registry)
     print(
         "- "
         f"scalar_k_shape={scalar_bundle['k_field'].shape} "
         f"diag3_k_shape={diag3_bundle['k_field'].shape} "
         f"q_shape={scalar_bundle['q_field'].shape} "
         f"bc_shape={scalar_bundle['bc_features'].shape} "
+        f"smoke16_write_plan_samples={SMOKE16_SAMPLE_COUNT} "
         f"background={scalar_bundle['sample_meta']['background_k']['background_k_family']} "
         f"final_probe_role={batch['final_probe_role']}"
     )
