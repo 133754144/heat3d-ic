@@ -1,0 +1,524 @@
+{
+  "schema_version": "heat3d_v4_p3c_parameter_registry_v0",
+  "scope": "design_registry_only_no_data_generated",
+  "branch": "research/v4-dataset-p3c",
+  "task": "coords+k(x)+q(x)+BC->T(x)",
+  "generation_policy": {
+    "distribution": "unified_random_generation_distribution",
+    "splits": [
+      "train",
+      "test"
+    ],
+    "random_split_seed": 4301,
+    "stress_split": "disabled",
+    "final_probe_role": "reference_diagnostic_only_not_pass_fail",
+    "production_contact_model": "R_contact=0_perfect_contact",
+    "finite_contact_resistance": "implemented_deferred_not_v4_dataset_default"
+  },
+  "source_refs": [
+    {
+      "id": "SRC-3DICE4-2025",
+      "title": "3D-ICE 4.0: Accurate and efficient thermal modeling for 2.5D/3D heterogeneous chiplet systems",
+      "authors": "Kai Zhu; Darong Huang; Luis Costero; David Atienza",
+      "year": 2025,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2512.05823",
+      "notes": "Supports heterogeneous and anisotropic material modeling, vertical thermal paths, and non-uniform grids."
+    },
+    {
+      "id": "SRC-DEEPOHEAT-2023",
+      "title": "DeepOHeat: Operator Learning-based Ultra-fast Thermal Simulation in 3D-IC Design",
+      "authors": "Ziyue Liu; Yixing Li; Jing Hu; Xinling Yu; Shinyu Shiau; Xin Ai; Zhiyu Zeng; Zheng Zhang",
+      "year": 2023,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2302.12949",
+      "notes": "Supports operator mapping from physical input fields and boundary conditions to temperature fields."
+    },
+    {
+      "id": "SRC-DEEPOHEATV1-2025",
+      "title": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
+      "authors": "Xinling Yu; Ziyue Liu; Hai Li; Yixing Li; Xin Ai; Zhiyu Zeng; Ian Young; Zheng Zhang",
+      "year": 2025,
+      "venue": "IEEE TCPMT / arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2504.03955",
+      "notes": "Supports solver-audit and trustworthiness separation from training changes."
+    },
+    {
+      "id": "SRC-BSPDN-2025",
+      "title": "Thermal Implications of Non-Uniform Power in BSPDN-Enabled 2.5D/3D Chiplet-based Systems-in-Package using Nanosheet Technology",
+      "authors": "Yukai Chen; Massimiliano Di Todaro; Bjorn Vermeersch; Herman Oprins; Daniele Jahier Pagliari; Julien Ryckaert; Dwaipayan Biswas; James Myers",
+      "year": 2025,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2508.02284",
+      "notes": "Supports localized synthetic power maps, 5 um power-map granularity, HTC examples, and layer conductivity examples."
+    },
+    {
+      "id": "SRC-SAUFNO-2025",
+      "title": "Self-Attention to Operator Learning-based 3D-IC Thermal Simulation",
+      "authors": "Zhen Huang; Hong Wang; Wenkai Yang; Muxi Tang; Depeng Xie; Ting-Jung Lin; Yu Zhang; Wei W. Xing; Lei He",
+      "year": 2025,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2510.15968",
+      "notes": "Supports high-frequency hotspot fields and same-distribution train/test splits."
+    },
+    {
+      "id": "SRC-MULTISCALE-REVIEW-2026",
+      "title": "A Review of Multiscale Thermal Modeling in Heterogeneous 3D ICs",
+      "authors": "Baibhari Priya Barua; Md Rahatul Islam Udoy; Ahmedullah Aziz",
+      "year": 2026,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2604.03290",
+      "notes": "Supports TIM, TBR, anisotropy risk tracking, and validation requirements."
+    },
+    {
+      "id": "SRC-LIENHARD-2024",
+      "title": "A Heat Transfer Textbook, 6th edition",
+      "authors": "John H. Lienhard V; John H. Lienhard IV",
+      "year": 2024,
+      "venue": "MIT open textbook",
+      "url_or_doi": "https://ahtt.mit.edu/",
+      "notes": "Supports heat-transfer coefficient and conduction boundary-condition terminology."
+    },
+    {
+      "id": "SRC-HEAT3D-MEDIUM1024-2026",
+      "title": "V4 P1 Full Medium1024 Audit",
+      "authors": "Heat3D internal audit",
+      "year": 2026,
+      "venue": "local doc",
+      "url_or_doi": "docs/v4_p1_full_medium1024_audit.md",
+      "notes": "Solver-scale reference only; not a publication range source."
+    },
+    {
+      "id": "SRC-HEAT3D-P3A-2026",
+      "title": "V4 P3a Closeout",
+      "authors": "Heat3D internal audit",
+      "year": 2026,
+      "venue": "local doc",
+      "url_or_doi": "docs/v4_p3a_closeout.md",
+      "notes": "Fixes V4 production contact model to R_contact=0_perfect_contact."
+    }
+  ],
+  "parameters": {
+    "k": [
+      {
+        "name": "low_k_dielectric_underfill",
+        "unit": "W/m/K",
+        "range": {
+          "min": 0.5,
+          "max": 8.0
+        },
+        "default": 1.2,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "per_material_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-MULTISCALE-REVIEW-2026"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=low_k_dielectric"
+      },
+      {
+        "name": "tim_effective",
+        "unit": "W/m/K",
+        "range": {
+          "min": 3.0,
+          "max": 30.0
+        },
+        "default": 8.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "per_tim_like_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-MULTISCALE-REVIEW-2026"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=tim_effective"
+      },
+      {
+        "name": "effective_stack_medium_k",
+        "unit": "W/m/K",
+        "range": {
+          "min": 5.0,
+          "max": 80.0
+        },
+        "default": 30.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "background_or_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=effective_stack"
+      },
+      {
+        "name": "silicon_like",
+        "unit": "W/m/K",
+        "range": {
+          "min": 80.0,
+          "max": 180.0
+        },
+        "default": 130.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "background_or_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=silicon_like"
+      },
+      {
+        "name": "high_k_tsv_or_spreader",
+        "unit": "W/m/K",
+        "range": {
+          "min": 150.0,
+          "max": 430.0
+        },
+        "default": 230.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "bridge_or_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=high_k_tsv_spreader"
+      },
+      {
+        "name": "diag3_anisotropy_ratio",
+        "unit": "ratio",
+        "range": {
+          "min": 0.5,
+          "max": 2.0
+        },
+        "default": {
+          "kx": 1.0,
+          "ky": 1.0,
+          "kz": 1.0
+        },
+        "sampling": {
+          "type": "bounded_ratio",
+          "scope": "around_scalar_base_k"
+        },
+        "source_ref": [
+          "SRC-3DICE4-2025",
+          "SRC-MULTISCALE-REVIEW-2026"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_mode=diag3"
+      }
+    ],
+    "q": [
+      {
+        "name": "compact_hotspot_q_density",
+        "unit": "W/m^3",
+        "range": {
+          "min": 50000000.0,
+          "max": 200000000.0
+        },
+        "default": 100000000.0,
+        "sampling": {
+          "type": "log_uniform",
+          "source_count": {
+            "min": 1,
+            "max": 3
+          }
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-SAUFNO-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=compact_hotspot"
+      },
+      {
+        "name": "multi_block_q_density",
+        "unit": "W/m^3",
+        "range": {
+          "min": 20000000.0,
+          "max": 150000000.0
+        },
+        "default": 80000000.0,
+        "sampling": {
+          "type": "log_uniform",
+          "source_count": {
+            "min": 2,
+            "max": 6
+          }
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-SAUFNO-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=multi_block"
+      },
+      {
+        "name": "elongated_q_density",
+        "unit": "W/m^3",
+        "range": {
+          "min": 10000000.0,
+          "max": 120000000.0
+        },
+        "default": 50000000.0,
+        "sampling": {
+          "type": "log_uniform",
+          "shape": "elongated_strip"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=elongated"
+      },
+      {
+        "name": "weak_background_q_density",
+        "unit": "W/m^3",
+        "range": {
+          "min": 1000000.0,
+          "max": 5000000.0
+        },
+        "default": 3000000.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "full_volume_or_broad_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=weak_background"
+      },
+      {
+        "name": "weak_background_hotspot_q_density",
+        "unit": "W/m^3",
+        "range": {
+          "min": 50000000.0,
+          "max": 200000000.0
+        },
+        "default": 100000000.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "hotspot_over_weak_background"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=background_plus_hotspot"
+      },
+      {
+        "name": "dual_z_q_density",
+        "unit": "W/m^3",
+        "range": {
+          "min": 20000000.0,
+          "max": 150000000.0
+        },
+        "default": 80000000.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "sources_in_two_z_bands"
+        },
+        "source_ref": [
+          "SRC-DEEPOHEAT-2023",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=dual_z"
+      },
+      {
+        "name": "tsv_adjacent_q_density",
+        "unit": "W/m^3",
+        "range": {
+          "min": 30000000.0,
+          "max": 180000000.0
+        },
+        "default": 90000000.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "near_high_k_vertical_path"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=tsv_adjacent"
+      }
+    ],
+    "BC": [
+      {
+        "name": "top_robin_h",
+        "unit": "W/m^2/K",
+        "range": {
+          "min": 300.0,
+          "max": 3000.0
+        },
+        "default": 1200.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "per_sample"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-LIENHARD-2024",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=top_robin_h"
+      },
+      {
+        "name": "bottom_dirichlet_temperature",
+        "unit": "K",
+        "range": {
+          "min": 300.0,
+          "max": 300.0
+        },
+        "default": 300.0,
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-LIENHARD-2024",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "physics_bc_contract",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=bottom_dirichlet_T"
+      },
+      {
+        "name": "top_ambient_temperature",
+        "unit": "K",
+        "range": {
+          "min": 300.0,
+          "max": 300.0
+        },
+        "default": 300.0,
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-LIENHARD-2024",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "physics_bc_contract",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=top_ambient_T"
+      },
+      {
+        "name": "bc_flag_channels",
+        "unit": "binary",
+        "range": {
+          "min": 0,
+          "max": 1
+        },
+        "default": "geometry_derived",
+        "sampling": {
+          "type": "deterministic_from_coordinates",
+          "channels": [
+            "top",
+            "bottom",
+            "side",
+            "interior"
+          ]
+        },
+        "source_ref": [
+          "SRC-DEEPOHEAT-2023",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "model_input_contract",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc_flags=top_bottom_side_interior"
+      },
+      {
+        "name": "side_boundary_model",
+        "unit": "enum",
+        "range": [
+          "adiabatic"
+        ],
+        "default": "adiabatic",
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-LIENHARD-2024",
+          "SRC-HEAT3D-P3A-2026"
+        ],
+        "source_type": "physics_bc_contract",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=side_adiabatic"
+      }
+    ],
+    "contact": [
+      {
+        "name": "production_contact_resistance",
+        "unit": "m^2*K/W",
+        "range": {
+          "min": 0.0,
+          "max": 0.0
+        },
+        "default": 0.0,
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-HEAT3D-P3A-2026"
+        ],
+        "source_type": "production_gate",
+        "used_in_v4_production": true,
+        "metadata_tag": "contact_model=R_contact_0_perfect_contact"
+      },
+      {
+        "name": "finite_contact_resistance_deferred",
+        "unit": "m^2*K/W",
+        "range": null,
+        "default": null,
+        "sampling": {
+          "type": "deferred_no_production_sampling",
+          "scope": "solver_smoke_only"
+        },
+        "source_ref": [
+          "SRC-MULTISCALE-REVIEW-2026",
+          "SRC-HEAT3D-P3A-2026"
+        ],
+        "source_type": "implemented_deferred_smoke_only",
+        "used_in_v4_production": false,
+        "metadata_tag": "contact_model=finite_R_deferred"
+      }
+    ]
+  }
+}
