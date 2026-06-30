@@ -6,6 +6,10 @@ decisions. It is design-only and does not authorize data generation.
 ## Registry Rules
 
 - The machine-readable mirror is `configs/heat3d_v4/p3c_parameter_registry.json`.
+- This document describes intent; enforceable constraints live in the JSON
+  registry, P3c dry-run generator, and checker.
+- P3c-2 validates dry-run scenes and array-preview contracts only. It must not
+  write a dataset or call the solver.
 - Numeric ranges must point to source records with title, authors, year, venue,
   URL or DOI, and notes.
 - k entries use `literature_anchor`, `sampling_envelope`, and `rationale`.

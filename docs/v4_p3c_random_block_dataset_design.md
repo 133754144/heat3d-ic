@@ -8,6 +8,11 @@ random-block design decisions.
 This is a design and registry-planning document only. It does not generate data,
 write a generator, run a solver, start training, or write artifacts.
 
+Docs define design intent only. P3c risks must be enforced by the machine
+registry, the P3c dry-run generator, and the checker. P3c-2 validates only the
+dry-run scene/array contract in memory; it must not write a dataset or call the
+solver.
+
 ## Target Task
 
 ```text
