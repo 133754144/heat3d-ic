@@ -21,6 +21,7 @@ from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     PENDING_DELTAT_BIN,
     PLANNED_SAMPLE_FILES,
     PRODUCTION_CONTACT_MODEL,
+    Q_POWER_INTEGRATION_POLICY,
     Q_SOURCE_POLICY,
     SEMANTIC_BOUNDARY_INSET_FRACTION,
     SEMANTIC_DOMAIN,
@@ -28,6 +29,7 @@ from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     SMOKE16_SAMPLE_COUNT,
     SMOKE16_SEED,
     build_smoke16_write_plan,
+    control_volume_weights_for_domain,
     generate_dryrun_batch,
     load_registry,
     materialize_scene_arrays,
@@ -126,6 +128,10 @@ def _check_registry_policies(registry: dict[str, Any]) -> None:
         "bad power calibration policy",
     )
     _expect(
+        registry["power_calibration_policy"]["integration"] == Q_POWER_INTEGRATION_POLICY,
+        "power calibration must use solver control-volume weights",
+    )
+    _expect(
         registry["generation_policy"]["final_probe_role"] == FINAL_PROBE_ROLE,
         "final_probe must remain reference-only",
     )
@@ -133,21 +139,37 @@ def _check_registry_policies(registry: dict[str, Any]) -> None:
 
 def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> None:
     coords = bundle["coords"]
+    layer_id = bundle["layer_id"]
+    region_id = bundle["region_id"]
+    material_id = bundle["material_id"]
     k_field = bundle["k_field"]
     q_field = bundle["q_field"]
     bc_features = bundle["bc_features"]
     meta = bundle["sample_meta"]
     node_count = coords.shape[0]
     _expect(coords.shape == (node_count, 3), "coords shape mismatch")
+    _expect(layer_id.shape == (node_count,), "layer_id shape mismatch")
+    _expect(region_id.shape == (node_count,), "region_id shape mismatch")
+    _expect(material_id.shape == (node_count,), "material_id shape mismatch")
     _expect(k_field.shape == (node_count, expected_k_width), "k_field shape mismatch")
     _expect(q_field.shape == (node_count, 1), "q_field shape mismatch")
     _expect(bc_features.shape == (node_count, 4), "bc_features shape mismatch")
     _expect(np.all(np.isfinite(coords)), "coords contain NaN/Inf")
+    _expect(np.all(np.isfinite(layer_id)), "layer_id contains NaN/Inf")
+    _expect(np.all(np.isfinite(region_id)), "region_id contains NaN/Inf")
+    _expect(np.all(np.isfinite(material_id)), "material_id contains NaN/Inf")
     _expect(np.all(np.isfinite(k_field)), "k_field contains NaN/Inf")
     _expect(np.all(np.isfinite(q_field)), "q_field contains NaN/Inf")
     _expect(np.all(np.isfinite(bc_features)), "bc_features contain NaN/Inf")
     _expect(meta["artifact_writes"] is False, "array preflight must not write artifacts")
     _expect(meta["solver_called"] is False, "array preflight must not call solver")
+    _expect(meta["stage"] == "physics_label_medium1024_gapA_generation_candidate", "bad loader bridge stage")
+    _expect(meta["split"] == "unassigned", "preflight split must remain unassigned")
+    _expect(meta["subset_name"] == "heat3d_v4_p3c_random_block", "bad subset name")
+    _expect(meta["layers"], "loader bridge layers metadata missing")
+    _expect(meta["regions"], "loader bridge regions metadata missing")
+    _expect(meta["materials"], "loader bridge materials metadata missing")
+    _expect(meta["boundary_regions"], "loader bridge boundary regions missing")
     _expect(meta["contact"]["contact_model"] == PRODUCTION_CONTACT_MODEL, "contact model must be R=0")
     _expect(meta["contact"]["R_contact_m2K_W"] == 0.0, "R_contact must be zero")
     _expect(meta["deltaT_qc"]["deltaT_bin"] == PENDING_DELTAT_BIN, "DeltaT must stay pending")
@@ -196,6 +218,10 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
         _expect(block_meta["realized_volume_m3"] > 0.0, "q block realized volume must be positive")
         _expect(block_meta["calibrated_q_density_W_m3"] > 0.0, "q density must be positive")
         _expect(abs(block_meta["power_error_W"]) <= POWER_TOL, "q power calibration error too large")
+        _expect(
+            block_meta["power_integration_policy"] == Q_POWER_INTEGRATION_POLICY,
+            "q block power integration policy mismatch",
+        )
         _expect(block_meta["q_source_policy"] == Q_SOURCE_POLICY, "q block source policy mismatch")
         _expect(block_meta["solver_safe_deposition_mask"] == SOLVER_SAFE_DEPOSITION_MASK, "bad q block mask")
 
@@ -219,6 +245,7 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
         "q_source_side_boundary_violation_count",
         "q_active_z_min",
         "q_active_z_max",
+        "q_power_integration_policy",
         "semantic_boundary_inset_fraction",
         "semantic_inset_domain_xyz",
         "solver_safe_deposition_mask",
@@ -226,6 +253,10 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
     ):
         _expect(field in q_audit, f"q audit missing {field}")
     _expect(abs(q_audit["q_total_power_error_W"]) <= POWER_TOL, "q total power error too large")
+    _expect(
+        q_audit["q_power_integration_policy"] == Q_POWER_INTEGRATION_POLICY,
+        "q audit integration policy mismatch",
+    )
     _expect(q_audit["q_power_on_bottom_W"] == 0.0, "q power touched bottom Dirichlet boundary")
     _expect(q_audit["q_power_on_top_W"] == 0.0, "q power touched top Robin boundary")
     _expect(q_audit["q_power_on_xmin_W"] == 0.0, "q power touched xmin side boundary")
@@ -244,10 +275,14 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
     _expect(q_audit["semantic_inset_domain_xyz"] == {"x": [0.8, 15.2], "y": [0.8, 15.2], "z": [0.2, 3.8]}, "bad q audit inset domain")
     _expect(q_audit["solver_safe_deposition_mask"] == SOLVER_SAFE_DEPOSITION_MASK, "bad q audit mask")
     domain = bundle["scene"]["domain"]
-    xy_m = float(domain["domain_xy_mm"]) * 1.0e-3
-    z_m = float(domain["domain_z_mm"]) * 1.0e-3
-    node_volume = xy_m * xy_m * z_m / node_count
-    _expect(np.isclose(np.sum(q_field) * node_volume, q_audit["q_integral_from_array_W"]), "q array integral mismatch")
+    control_volume_weights = control_volume_weights_for_domain(domain)
+    _expect(
+        np.isclose(
+            np.sum(q_field.reshape(-1) * control_volume_weights),
+            q_audit["q_integral_from_array_W"],
+        ),
+        "q array integral mismatch",
+    )
 
     q_grid = q_field.reshape(bundle["scene"]["domain"]["grid_shape"])
     _expect(np.all(q_grid[:, :, 0] == 0.0), "bottom q layer must be zero")

@@ -34,6 +34,7 @@ from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     SMOKE16_SAMPLE_COUNT,
     SMOKE16_SEED,
     build_smoke16_write_plan,
+    control_volume_weights_for_domain,
     generate_dryrun_batch,
     load_registry,
     materialize_scene_arrays,
@@ -53,6 +54,11 @@ DELTA_T_BINS = (
     ("review_high", 8.0, 15.0),
     ("reject_high", 15.0, None),
 )
+
+
+def _metadata_split_for_index(index: int, sample_count: int) -> str:
+    train_count = max(1, int(round(float(sample_count) * 0.75)))
+    return "train" if index < train_count else "test"
 
 
 def _json_default(value: Any) -> Any:
@@ -77,13 +83,6 @@ def _ensure_clean_target(path: Path, *, force: bool) -> None:
         shutil.rmtree(path)
         return
     raise FileExistsError(f"target already exists; pass --force to replace: {path}")
-
-
-def _node_volume_m3(scene: dict[str, Any]) -> float:
-    domain = scene["domain"]
-    xy_m = float(domain["domain_xy_mm"]) * 1.0e-3
-    z_m = float(domain["domain_z_mm"]) * 1.0e-3
-    return xy_m * xy_m * z_m / float(domain["node_count"])
 
 
 def _delta_t_bin(delta_t_peak: float) -> tuple[str, str | None]:
@@ -176,7 +175,8 @@ def _sample_audit(
     delta_t_bin, reject_reason = _delta_t_bin(delta_t_peak)
     q_meta = meta["q_block_metadata"]
     q_total_realized = float(sum(block["realized_power_W"] for block in q_meta))
-    q_integral_from_array = float(np.sum(bundle["q_field"].reshape(-1)) * _node_volume_m3(scene))
+    control_volume_weights = control_volume_weights_for_domain(scene["domain"])
+    q_integral_from_array = float(np.sum(bundle["q_field"].reshape(-1) * control_volume_weights))
     q_power_audit = meta["q_power_audit"]
     solution_audit = solve_meta["solution_audit"]
     nan_inf_ok = _finite_ok(
@@ -200,6 +200,7 @@ def _sample_audit(
         "q_total_realized_power_W": q_total_realized,
         "q_integral_from_array_W": q_integral_from_array,
         "q_total_power_error_W": q_power_audit["q_total_power_error_W"],
+        "q_power_integration_policy": q_power_audit["q_power_integration_policy"],
         "q_power_on_bottom_W": q_power_audit["q_power_on_bottom_W"],
         "q_power_on_top_W": q_power_audit["q_power_on_top_W"],
         "q_power_on_xmin_W": q_power_audit["q_power_on_xmin_W"],
@@ -269,7 +270,7 @@ def _summary(samples: list[dict[str, Any]], failures: list[dict[str, Any]]) -> d
     dataset_actions = sorted({sample["dataset_action"] for sample in samples})
     high_triage = sorted({sample["high_deltaT_triage"] for sample in samples})
     return {
-        "schema_version": "heat3d_v4_p3c_smoke16_audit_v2",
+        "schema_version": "heat3d_v4_p3c_smoke16_audit_v3",
         "sample_count": total,
         "pass_count": pass_count,
         "failure_count": len(failures),
@@ -358,9 +359,13 @@ def generate_smoke16(
                 "solver_called": False,
                 "dataset_id": dataset_dir.name,
                 "sample_id": sample_id,
+                "split": _metadata_split_for_index(index, sample_count),
             }
         )
         np.save(sample_dir / "coords.npy", bundle["coords"])
+        np.save(sample_dir / "layer_id.npy", bundle["layer_id"])
+        np.save(sample_dir / "region_id.npy", bundle["region_id"])
+        np.save(sample_dir / "material_id.npy", bundle["material_id"])
         np.save(sample_dir / "k_field.npy", bundle["k_field"])
         np.save(sample_dir / "q_field.npy", bundle["q_field"])
         np.save(sample_dir / "bc_features.npy", bundle["bc_features"])
@@ -375,6 +380,8 @@ def generate_smoke16(
             )
             temperature, solve_meta = solve_temperature_from_problem(problem, solver_options)
             meta["solver_called"] = True
+            meta["validation"]["solver_label_pending"] = False
+            meta["validation"]["solver_status"] = "solved"
             meta["label_solver"] = {
                 "solver_family": solve_meta["solver_family"],
                 "solver_mode": solve_meta["solver_mode"],
@@ -426,7 +433,7 @@ def generate_smoke16(
             break
 
     manifest = {
-        "schema_version": "heat3d_v4_p3c_smoke16_manifest_v2",
+        "schema_version": "heat3d_v4_p3c_smoke16_manifest_v3",
         "dataset_id": dataset_dir.name,
         "sample_count_requested": sample_count,
         "sample_count_written": len(manifest_samples),

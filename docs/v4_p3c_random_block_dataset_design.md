@@ -158,9 +158,9 @@ Executable policies:
   `winning_block_id`. Arithmetic-mean merge is not the generator default.
 - `q_overlap_policy`: `sum_volumetric_sources`; overlapping q blocks sum per
   cell. Max pooling is not used for generator q merge.
-- `power_calibration_policy`: after block projection, use realized volume and
-  integrated-power target to compute calibrated q density and record target
-  power, realized volume, calibrated q density, realized power, and power error.
+- `power_calibration_policy`: after block projection, use solver control-volume
+  weighted realized volume and integrated-power target to compute calibrated q
+  density; q audit must use the same weights as the solver.
 
 Background k reference values are common semiconductor substrate/material
 anchors, not final_probe-derived hard ranges. P3c uses:

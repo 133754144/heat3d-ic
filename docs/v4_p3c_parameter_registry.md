@@ -126,7 +126,7 @@ envelopes that must be validated by P3c smoke DeltaT and energy audits.
 | `background_k_policy` | default background is `effective_stack_medium_k`; allowed background families are `effective_stack_medium_k`, `silicon_like`, and `hbm_like_anisotropic_k`; `low_k_dielectric_underfill` is not the default background |
 | `k_overlap_policy` | `deterministic_priority_override`: initialize background k for every node, apply blocks in deterministic order, keep final k only, and record `covered_by_blocks` plus `winning_block_id` |
 | `q_overlap_policy` | `sum_volumetric_sources`: overlapping q blocks sum per cell; max pooling is forbidden for generator q merge |
-| `power_calibration_policy` | calibrate q density from realized block volume and integrated-power target, recording target power, realized volume, calibrated q density, realized power, and power error |
+| `power_calibration_policy` | calibrate q density from solver control-volume weighted realized block volume and integrated-power target; q audit uses the same weights as the solver |
 
 ## Background k Reference Values
 

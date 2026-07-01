@@ -72,6 +72,7 @@
       "q_source_side_boundary_violation_count",
       "q_active_z_min",
       "q_active_z_max",
+      "q_power_integration_policy",
       "semantic_boundary_inset_fraction",
       "semantic_inset_domain_xyz",
       "solver_safe_deposition_mask",
@@ -1435,13 +1436,15 @@
   },
   "power_calibration_policy": {
     "name": "calibrate_q_density_from_realized_volume_and_integrated_power_target",
-    "method": "calibrated_q_density_W_m3 = target_power_W / realized_volume_m3",
+    "integration": "solver_control_volume_weighted",
+    "method": "calibrated_q_density_W_m3 = target_power_W / sum(deposited_overlap_fraction_i * solver_control_volume_i)",
     "required_metadata_fields": [
       "target_power_W",
       "realized_volume_m3",
       "calibrated_q_density_W_m3",
       "realized_power_W",
-      "power_error_W"
+      "power_error_W",
+      "power_integration_policy"
     ],
     "relative_tolerance": 1e-12,
     "absolute_tolerance_W": 1e-12,
@@ -1450,7 +1453,7 @@
       "SRC-HEAT3D-MEDIUM1024-2026"
     ],
     "source_type": "generator_contract",
-    "rationale": "Realized block projection changes volume, so q density must be calibrated after projection to preserve integrated power targets.",
-    "metadata_tag": "policy=power_calibration_realized_volume"
+    "rationale": "Realized block projection changes volume, so q density must be calibrated after projection using the same control-volume weights consumed by the solver.",
+    "metadata_tag": "policy=power_calibration_solver_control_volume"
   }
 }
