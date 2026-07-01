@@ -116,9 +116,9 @@ def _sample_audit(
     delta_t_p95 = float(np.percentile(delta_t, 95))
     delta_t_bin, reject_reason = _delta_t_bin(delta_t_peak)
     q_meta = meta["q_block_metadata"]
-    q_total_target = float(sum(block["target_power_W"] for block in q_meta))
     q_total_realized = float(sum(block["realized_power_W"] for block in q_meta))
     q_integral_from_array = float(np.sum(bundle["q_field"].reshape(-1)) * _node_volume_m3(scene))
+    q_power_audit = meta["q_power_audit"]
     solution_audit = solve_meta["solution_audit"]
     nan_inf_ok = _finite_ok(
         bundle["coords"],
@@ -137,9 +137,18 @@ def _sample_audit(
         "DeltaT_peak_K": delta_t_peak,
         "DeltaT_p95_K": delta_t_p95,
         "DeltaT_bin": delta_t_bin,
-        "q_total_target_power_W": q_total_target,
+        "q_total_target_power_W": q_power_audit["q_total_target_power_W"],
         "q_total_realized_power_W": q_total_realized,
         "q_integral_from_array_W": q_integral_from_array,
+        "q_total_power_error_W": q_power_audit["q_total_power_error_W"],
+        "q_power_on_bottom_W": q_power_audit["q_power_on_bottom_W"],
+        "q_power_on_top_W": q_power_audit["q_power_on_top_W"],
+        "q_power_on_boundary_W": q_power_audit["q_power_on_boundary_W"],
+        "q_power_on_bottom_fraction": q_power_audit["q_power_on_bottom_fraction"],
+        "q_power_on_top_fraction": q_power_audit["q_power_on_top_fraction"],
+        "q_source_boundary_violation_count": q_power_audit["q_source_boundary_violation_count"],
+        "q_active_z_min": q_power_audit["q_active_z_min"],
+        "q_active_z_max": q_power_audit["q_active_z_max"],
         "q_max_after_sum_W_m3": float(np.max(bundle["q_field"])),
         "background_k_family": meta["background_k"]["background_k_family"],
         "background_k_value": meta["background_k"]["background_k_value"],
@@ -170,14 +179,29 @@ def _summary(samples: list[dict[str, Any]], failures: list[dict[str, Any]]) -> d
         for sample in samples
         if np.isfinite(float(sample["bottom_dirichlet_error"]))
     ]
+    q_boundary_power = [
+        abs(float(sample["q_power_on_boundary_W"]))
+        for sample in samples
+        if np.isfinite(float(sample["q_power_on_boundary_W"]))
+    ]
+    q_power_errors = [
+        abs(float(sample["q_total_power_error_W"]))
+        for sample in samples
+        if np.isfinite(float(sample["q_total_power_error_W"]))
+    ]
     return {
-        "schema_version": "heat3d_v4_p3c_smoke16_audit_v0",
+        "schema_version": "heat3d_v4_p3c_smoke16_audit_v1",
         "sample_count": total,
         "pass_count": pass_count,
         "failure_count": len(failures),
         "solver_pass_rate": pass_count / total if total else 0.0,
         "max_abs_energy_balance_residual": max(finite_energy) if finite_energy else None,
         "max_bottom_dirichlet_error": max(bottom_errors) if bottom_errors else None,
+        "max_abs_q_total_power_error_W": max(q_power_errors) if q_power_errors else None,
+        "max_q_power_on_boundary_W": max(q_boundary_power) if q_boundary_power else None,
+        "q_source_boundary_violation_count": sum(
+            int(sample["q_source_boundary_violation_count"]) for sample in samples
+        ),
         "DeltaT_bin_counts": {
             name: sum(1 for sample in samples if sample["DeltaT_bin"] == name)
             for name, _, _ in DELTA_T_BINS
@@ -304,7 +328,7 @@ def generate_smoke16(
             break
 
     manifest = {
-        "schema_version": "heat3d_v4_p3c_smoke16_manifest_v0",
+        "schema_version": "heat3d_v4_p3c_smoke16_manifest_v1",
         "dataset_id": dataset_dir.name,
         "sample_count_requested": sample_count,
         "sample_count_written": len(manifest_samples),
@@ -351,6 +375,8 @@ def main(argv: list[str] | None = None) -> int:
                 "DeltaT_bin_counts": audit["DeltaT_bin_counts"],
                 "max_abs_energy_balance_residual": audit["max_abs_energy_balance_residual"],
                 "max_bottom_dirichlet_error": audit["max_bottom_dirichlet_error"],
+                "max_q_power_on_boundary_W": audit["max_q_power_on_boundary_W"],
+                "q_source_boundary_violation_count": audit["q_source_boundary_violation_count"],
             },
             indent=2,
             sort_keys=True,

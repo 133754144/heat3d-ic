@@ -17,6 +17,10 @@ from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     FINAL_PROBE_ROLE,
     PENDING_DELTAT_BIN,
     PRODUCTION_CONTACT_MODEL,
+    Q_ACTIVE_Z_MAX,
+    Q_ACTIVE_Z_MIN,
+    Q_SOURCE_Z_POLICY,
+    SEMANTIC_DOMAIN,
     generate_dryrun_batch,
     load_registry,
     project_block_preview,
@@ -73,10 +77,20 @@ def _check_block_projection(batch: dict[str, Any]) -> None:
     blocks = _walk_blocks(batch)
     _expect(blocks, "dry-run produced no blocks")
     for block in blocks:
-        for field in ("requested_fraction", "realized_fraction", "realized_cell_count"):
+        for field in (
+            "requested_fraction",
+            "realized_fraction",
+            "realized_cell_count",
+            "continuous_bbox",
+            "overlap_fraction_sum",
+        ):
             _expect(field in block, f"block missing projection field: {field}")
         _expect(block["realized_cell_count"] >= 1, "block projected to zero cells")
         _expect(block["realized_fraction"] > 0.0, "block realized fraction must be positive")
+        bbox = block["continuous_bbox"]
+        _expect(0.0 <= bbox["x_min"] < bbox["x_max"] <= SEMANTIC_DOMAIN[0], "bad x semantic bbox")
+        _expect(0.0 <= bbox["y_min"] < bbox["y_max"] <= SEMANTIC_DOMAIN[1], "bad y semantic bbox")
+        _expect(0.0 <= bbox["z_min"] < bbox["z_max"] <= SEMANTIC_DOMAIN[2], "bad z semantic bbox")
         if block["projection_status"] != "realized":
             _expect(block["projection_status"] in {"resampled_min_one_cell", "rejected"}, "bad block status")
             _expect(block["reject_reason"], "invalid/resampled block must carry reject_reason")
@@ -96,7 +110,13 @@ def _check_block_projection(batch: dict[str, Any]) -> None:
 def _check_q_and_delta_t(batch: dict[str, Any]) -> None:
     q_families = set()
     for scene in batch["scenes"]:
+        _expect(
+            scene["semantic_projection"]["mode"] == "continuous_bbox_to_physical_control_volume_overlap",
+            "semantic projection mode mismatch",
+        )
         q_families.add(scene["q"]["family"])
+        _expect(scene["q"]["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "q source z policy mismatch")
+        _expect(scene["q"]["q_active_z_range"] == [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX], "q active z range mismatch")
         _expect(scene["deltaT_qc"]["deltaT_bin"] == PENDING_DELTAT_BIN, "DeltaT bin must stay pending")
         _expect(scene["deltaT_qc"]["q_rescale_factor"] == 1.0, "q rescale factor must be 1.0")
         _expect(scene["deltaT_qc"]["reject_reason"] is None, "dry-run must not solve/reject by DeltaT")
@@ -111,6 +131,10 @@ def _check_q_and_delta_t(batch: dict[str, Any]) -> None:
             _expect(block["source_volume_fraction"] > 0.0, "q source volume fraction must be positive")
             _expect(block["integrated_power_target_W"] > 0.0, "q integrated power must be positive")
             _expect(block["DeltaT_target_bin"], "q block missing DeltaT target bin")
+            _expect(block["z_policy"] == Q_SOURCE_Z_POLICY, "q block z policy mismatch")
+            bbox = block["continuous_bbox"]
+            _expect(bbox["z_min"] >= Q_ACTIVE_Z_MIN, "q bbox touches bottom boundary domain")
+            _expect(bbox["z_max"] <= Q_ACTIVE_Z_MAX, "q bbox touches top boundary domain")
     _expect(len(q_families) >= 7, "all q families should be exercised in the dry-run batch")
 
 

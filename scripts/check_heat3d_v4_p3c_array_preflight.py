@@ -21,6 +21,10 @@ from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     PENDING_DELTAT_BIN,
     PLANNED_SAMPLE_FILES,
     PRODUCTION_CONTACT_MODEL,
+    Q_ACTIVE_Z_MAX,
+    Q_ACTIVE_Z_MIN,
+    Q_SOURCE_Z_POLICY,
+    SEMANTIC_DOMAIN,
     SMOKE16_SAMPLE_COUNT,
     SMOKE16_SEED,
     build_smoke16_write_plan,
@@ -73,6 +77,7 @@ def _check_registry_policies(registry: dict[str, Any]) -> None:
         "k_overlap_policy",
         "q_overlap_policy",
         "power_calibration_policy",
+        "q_source_z_policy",
     ):
         _expect(section in registry, f"missing registry policy: {section}")
     background = registry["background_k_policy"]
@@ -92,7 +97,25 @@ def _check_registry_policies(registry: dict[str, Any]) -> None:
         "low-k background policy mismatch",
     )
     _expect(registry["k_overlap_policy"]["name"] == "deterministic_priority_override", "bad k policy")
+    _expect(
+        registry["k_overlap_policy"]["projection"] == "continuous_semantic_bbox_overlap",
+        "bad k projection policy",
+    )
+    _expect(
+        0.0 < float(registry["k_overlap_policy"]["material_claim_threshold"]) <= 1.0,
+        "bad material claim threshold",
+    )
     _expect(registry["q_overlap_policy"]["name"] == "sum_volumetric_sources", "bad q policy")
+    _expect(
+        registry["q_overlap_policy"]["projection"] == "continuous_semantic_bbox_overlap_fraction",
+        "bad q projection policy",
+    )
+    _expect(registry["q_overlap_policy"]["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "bad q source link")
+    q_source = registry["q_source_z_policy"]
+    _expect(q_source["name"] == Q_SOURCE_Z_POLICY, "bad q source z policy")
+    _expect(q_source["semantic_domain_xyz"] == list(SEMANTIC_DOMAIN), "bad semantic domain")
+    _expect(q_source["active_z_min"] == Q_ACTIVE_Z_MIN, "bad active z min")
+    _expect(q_source["active_z_max"] == Q_ACTIVE_Z_MAX, "bad active z max")
     _expect(
         registry["power_calibration_policy"]["name"]
         == "calibrate_q_density_from_realized_volume_and_integrated_power_target",
@@ -124,12 +147,20 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
     _expect(meta["contact"]["contact_model"] == PRODUCTION_CONTACT_MODEL, "contact model must be R=0")
     _expect(meta["contact"]["R_contact_m2K_W"] == 0.0, "R_contact must be zero")
     _expect(meta["deltaT_qc"]["deltaT_bin"] == PENDING_DELTAT_BIN, "DeltaT must stay pending")
+    projection = meta["semantic_projection"]
+    _expect(projection["semantic_domain_xyz"] == list(SEMANTIC_DOMAIN), "semantic domain mismatch")
+    _expect(projection["physical_grid_shape"] == bundle["scene"]["domain"]["grid_shape"], "grid shape mismatch")
+    _expect(projection["physical_control_volume_count"] == 1024, "physical grid must remain 16x16x4")
+    _expect(projection["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "q source z policy mismatch")
+    _expect(projection["q_active_z_range"] == [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX], "q active z range mismatch")
 
     background = meta["background_k"]
     _expect(background["background_k_family"] in background["allowed_families"], "bad background family")
     _expect(background["background_k_family"] != "low_k_dielectric_underfill", "low-k cannot be default")
     _expect(background["uncovered_node_count"] > 0, "expected uncovered nodes using background k")
     winners = meta["k_node_metadata"]["winning_block_id"]
+    winner_overlaps = meta["k_node_metadata"]["winning_block_overlap_fraction"]
+    _expect(len(winner_overlaps) == node_count, "winning overlap metadata length mismatch")
     background_indices = [idx for idx, winner in enumerate(winners) if winner == "background"]
     _expect(background_indices, "no background-owned nodes found")
     bg_value = background["background_k_value"]
@@ -153,6 +184,41 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
         _expect(block_meta["realized_volume_m3"] > 0.0, "q block realized volume must be positive")
         _expect(block_meta["calibrated_q_density_W_m3"] > 0.0, "q density must be positive")
         _expect(abs(block_meta["power_error_W"]) <= POWER_TOL, "q power calibration error too large")
+        _expect(block_meta["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "q block source policy mismatch")
+
+    q_audit = meta["q_power_audit"]
+    for field in (
+        "q_total_target_power_W",
+        "q_integral_from_array_W",
+        "q_total_power_error_W",
+        "q_power_on_bottom_W",
+        "q_power_on_top_W",
+        "q_power_on_boundary_W",
+        "q_power_on_bottom_fraction",
+        "q_power_on_top_fraction",
+        "q_source_boundary_violation_count",
+        "q_active_z_min",
+        "q_active_z_max",
+    ):
+        _expect(field in q_audit, f"q audit missing {field}")
+    _expect(abs(q_audit["q_total_power_error_W"]) <= POWER_TOL, "q total power error too large")
+    _expect(q_audit["q_power_on_bottom_W"] == 0.0, "q power touched bottom Dirichlet boundary")
+    _expect(q_audit["q_power_on_top_W"] == 0.0, "q power touched top Robin boundary")
+    _expect(q_audit["q_power_on_boundary_W"] == 0.0, "q power touched z boundary")
+    _expect(q_audit["q_power_on_bottom_fraction"] == 0.0, "bottom q fraction must be zero")
+    _expect(q_audit["q_power_on_top_fraction"] == 0.0, "top q fraction must be zero")
+    _expect(q_audit["q_source_boundary_violation_count"] == 0, "q boundary violation count must be zero")
+    _expect(q_audit["q_active_z_min"] >= Q_ACTIVE_Z_MIN, "q active z below interior range")
+    _expect(q_audit["q_active_z_max"] <= Q_ACTIVE_Z_MAX, "q active z above interior range")
+    domain = bundle["scene"]["domain"]
+    xy_m = float(domain["domain_xy_mm"]) * 1.0e-3
+    z_m = float(domain["domain_z_mm"]) * 1.0e-3
+    node_volume = xy_m * xy_m * z_m / node_count
+    _expect(np.isclose(np.sum(q_field) * node_volume, q_audit["q_integral_from_array_W"]), "q array integral mismatch")
+
+    q_grid = q_field.reshape(bundle["scene"]["domain"]["grid_shape"])
+    _expect(np.all(q_grid[:, :, 0] == 0.0), "bottom q layer must be zero")
+    _expect(np.all(q_grid[:, :, -1] == 0.0), "top q layer must be zero")
 
 
 def _check_boundary_bridge(bundle: dict[str, Any]) -> None:
@@ -207,12 +273,21 @@ def _check_k_overlap_override(scene: dict[str, Any], registry: dict[str, Any]) -
     override["metadata_tag"] = "k_class=override_test"
     overlap_scene["k"]["blocks"].append(override)
     bundle = materialize_scene_arrays(overlap_scene, registry)
-    indices = _block_indices(override, overlap_scene["domain"]["grid_shape"])
-    test_idx = indices[0]
     meta = bundle["sample_meta"]
+    claimed_indices = [
+        idx
+        for idx, winner in enumerate(meta["k_node_metadata"]["winning_block_id"])
+        if winner == "m_override"
+    ]
+    _expect(claimed_indices, "override did not claim any control volume")
+    test_idx = claimed_indices[0]
     _expect(meta["k_overlap_policy"] == "deterministic_priority_override", "bad k overlap policy")
-    _expect(meta["k_node_metadata"]["winning_block_id"][test_idx] == "m_override", "k override lost")
     _expect("m_override" in meta["k_node_metadata"]["covered_by_blocks"][test_idx], "override not recorded")
+    _expect(
+        meta["k_node_metadata"]["winning_block_overlap_fraction"][test_idx]
+        >= meta["semantic_projection"]["material_claim_threshold"],
+        "override overlap below claim threshold",
+    )
     _expect(float(bundle["k_field"][test_idx, 0]) == 77.0, "k override value mismatch")
 
 
@@ -227,15 +302,24 @@ def _check_q_overlap_sum(scene: dict[str, Any], registry: dict[str, Any]) -> Non
     q2["integrated_power_target_W"] = 2.0
     overlap_scene["q"]["blocks"] = [q1, q2]
     bundle = materialize_scene_arrays(overlap_scene, registry)
-    indices = _block_indices(q1, overlap_scene["domain"]["grid_shape"])
-    test_idx = indices[0]
+    contributors_by_node = bundle["sample_meta"]["q_node_metadata"]["contributing_q_blocks"]
+    overlap_fractions_by_node = bundle["sample_meta"]["q_node_metadata"]["contributing_q_overlap_fractions"]
+    matching_indices = [
+        idx
+        for idx, contributors in enumerate(contributors_by_node)
+        if contributors == ["q_overlap_a", "q_overlap_b"]
+    ]
+    _expect(matching_indices, "q overlap test found no shared projected cell")
+    test_idx = matching_indices[0]
     q_meta = {entry["block_id"]: entry for entry in bundle["sample_meta"]["q_block_metadata"]}
     q_a = q_meta["q_overlap_a"]["calibrated_q_density_W_m3"]
     q_b = q_meta["q_overlap_b"]["calibrated_q_density_W_m3"]
     q_value = float(bundle["q_field"][test_idx, 0])
+    frac_a, frac_b = overlap_fractions_by_node[test_idx]
+    expected_value = q_a * frac_a + q_b * frac_b
     _expect(bundle["sample_meta"]["q_overlap_policy"] == "sum_volumetric_sources", "bad q overlap policy")
-    _expect(np.isclose(q_value, q_a + q_b), "q overlap must sum densities")
-    _expect(q_value > max(q_a, q_b), "q overlap behaved like max pooling")
+    _expect(np.isclose(q_value, expected_value), "q overlap must sum overlap-weighted densities")
+    _expect(q_value > max(q_a * frac_a, q_b * frac_b), "q overlap behaved like max pooling")
     contributors = bundle["sample_meta"]["q_node_metadata"]["contributing_q_blocks"][test_idx]
     _expect(contributors == ["q_overlap_a", "q_overlap_b"], "q contributors metadata mismatch")
 

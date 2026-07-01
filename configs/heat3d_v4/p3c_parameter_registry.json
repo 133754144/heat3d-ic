@@ -25,6 +25,40 @@
       "P3c-8 closeout + handoff to training"
     ]
   },
+  "q_source_z_policy": {
+    "name": "active_interior_layers_only",
+    "semantic_domain_xyz": [
+      16.0,
+      16.0,
+      4.0
+    ],
+    "active_z_min": 1.0,
+    "active_z_max": 3.0,
+    "forbidden_boundary_layers": [
+      "bottom_dirichlet",
+      "top_robin"
+    ],
+    "required_audit_fields": [
+      "q_total_target_power_W",
+      "q_integral_from_array_W",
+      "q_total_power_error_W",
+      "q_power_on_bottom_W",
+      "q_power_on_top_W",
+      "q_power_on_boundary_W",
+      "q_power_on_bottom_fraction",
+      "q_power_on_top_fraction",
+      "q_source_boundary_violation_count",
+      "q_active_z_min",
+      "q_active_z_max"
+    ],
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-SAUFNO-2025"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "P3c q sources are semantic interior heat-generation regions and must not place power on Dirichlet or Robin boundary control volumes.",
+    "metadata_tag": "policy=q_source_z_active_interior_layers_only"
+  },
   "source_refs": [
     {
       "id": "SRC-3DICE4-2025",
@@ -1337,11 +1371,14 @@
     "initialization": "initialize_all_nodes_with_background_k",
     "block_order": "deterministic_scene_block_order_later_blocks_override_earlier_blocks",
     "node_value_policy": "each_node_keeps_final_k_only",
+    "projection": "continuous_semantic_bbox_overlap",
+    "material_claim_threshold": 0.2,
     "metadata_fields": [
       "background_k_family",
       "background_k_value",
       "covered_by_blocks",
-      "winning_block_id"
+      "winning_block_id",
+      "winning_block_overlap_fraction"
     ],
     "forbidden_default_merge": "arithmetic_mean",
     "source_ref": [
@@ -1354,9 +1391,12 @@
   "q_overlap_policy": {
     "name": "sum_volumetric_sources",
     "cell_merge": "sum",
+    "projection": "continuous_semantic_bbox_overlap_fraction",
+    "q_source_z_policy": "active_interior_layers_only",
     "forbidden_default_merge": "max_pooling",
     "metadata_fields": [
       "contributing_q_blocks",
+      "contributing_q_overlap_fractions",
       "summed_q_density_W_m3"
     ],
     "source_ref": [

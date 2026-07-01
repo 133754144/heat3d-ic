@@ -31,6 +31,7 @@ REQUIRED_TOP_SECTIONS = (
     "deltaT_distribution",
     "cooling_regimes",
     "production_mix",
+    "q_source_z_policy",
     "background_k_policy",
     "k_overlap_policy",
     "q_overlap_policy",
@@ -55,8 +56,13 @@ PRODUCTION_CONTACT_MODEL = "R_contact=0_perfect_contact"
 PENDING_DELTAT_BIN = "pending_until_solve"
 SMOKE16_SAMPLE_COUNT = 16
 SMOKE16_SEED = 4301
-SMOKE16_DATASET_DIR = "data/heat3d_v4_p3c_smoke16_v0"
-SMOKE16_OUTPUT_DIR = "output/heat3d_v4_p3c_smoke16_v0"
+SMOKE16_DATASET_DIR = "data/heat3d_v4_p3c_smoke16_v1"
+SMOKE16_OUTPUT_DIR = "output/heat3d_v4_p3c_smoke16_v1"
+SEMANTIC_DOMAIN = (16.0, 16.0, 4.0)
+Q_SOURCE_Z_POLICY = "active_interior_layers_only"
+Q_ACTIVE_Z_MIN = 1.0
+Q_ACTIVE_Z_MAX = 3.0
+DEFAULT_MATERIAL_CLAIM_THRESHOLD = 0.2
 PLANNED_SAMPLE_FILES = (
     "coords.npy",
     "k_field.npy",
@@ -115,6 +121,31 @@ def validate_registry(registry: dict[str, Any]) -> None:
         policy.get("production_contact_model") == PRODUCTION_CONTACT_MODEL,
         "production contact model must be R_contact=0_perfect_contact",
     )
+    q_source_policy = registry["q_source_z_policy"]
+    _require(q_source_policy.get("name") == Q_SOURCE_Z_POLICY, "bad q_source_z_policy")
+    _require(
+        list(q_source_policy.get("semantic_domain_xyz", [])) == list(SEMANTIC_DOMAIN),
+        "semantic domain must be [16,16,4]",
+    )
+    _require(float(q_source_policy.get("active_z_min")) == Q_ACTIVE_Z_MIN, "bad q active z min")
+    _require(float(q_source_policy.get("active_z_max")) == Q_ACTIVE_Z_MAX, "bad q active z max")
+    for field in (
+        "q_total_target_power_W",
+        "q_integral_from_array_W",
+        "q_total_power_error_W",
+        "q_power_on_bottom_W",
+        "q_power_on_top_W",
+        "q_power_on_boundary_W",
+        "q_power_on_bottom_fraction",
+        "q_power_on_top_fraction",
+        "q_source_boundary_violation_count",
+        "q_active_z_min",
+        "q_active_z_max",
+    ):
+        _require(
+            field in q_source_policy.get("required_audit_fields", []),
+            f"q_source_z_policy missing audit field: {field}",
+        )
 
     for entry in parameters["k"]:
         for field in ("literature_anchor", "sampling_envelope", "rationale"):
@@ -176,12 +207,25 @@ def validate_registry(registry: dict[str, Any]) -> None:
     k_overlap_policy = registry["k_overlap_policy"]
     _require(k_overlap_policy.get("name") == "deterministic_priority_override", "bad k overlap policy")
     _require(
+        k_overlap_policy.get("projection") == "continuous_semantic_bbox_overlap",
+        "k overlap projection must be continuous semantic bbox overlap",
+    )
+    _require(
+        0.0 < float(k_overlap_policy.get("material_claim_threshold", 0.0)) <= 1.0,
+        "k material_claim_threshold must be within (0,1]",
+    )
+    _require(
         k_overlap_policy.get("forbidden_default_merge") == "arithmetic_mean",
         "k arithmetic mean must be forbidden as generator default",
     )
     q_overlap_policy = registry["q_overlap_policy"]
     _require(q_overlap_policy.get("name") == "sum_volumetric_sources", "bad q overlap policy")
     _require(q_overlap_policy.get("cell_merge") == "sum", "q overlap must sum per cell")
+    _require(
+        q_overlap_policy.get("projection") == "continuous_semantic_bbox_overlap_fraction",
+        "q overlap projection must use continuous semantic bbox overlap fractions",
+    )
+    _require(q_overlap_policy.get("q_source_z_policy") == Q_SOURCE_Z_POLICY, "bad q source z policy link")
     _require(
         q_overlap_policy.get("forbidden_default_merge") == "max_pooling",
         "q max pooling must be forbidden as generator merge",
@@ -239,6 +283,44 @@ def _block_node_indices(block: dict[str, Any], grid_shape: list[int]) -> list[in
             for k in range(start_k, start_k + extent_k):
                 indices.append(_node_index(i, j, k, grid_shape))
     return indices
+
+
+def _node_ijk(index: int, grid_shape: list[int]) -> tuple[int, int, int]:
+    _, ny, nz = [int(v) for v in grid_shape]
+    i = int(index) // (ny * nz)
+    remainder = int(index) % (ny * nz)
+    j = remainder // nz
+    k = remainder % nz
+    return i, j, k
+
+
+def _control_volume_overlap_fraction(
+    bbox: dict[str, float],
+    *,
+    i: int,
+    j: int,
+    k: int,
+) -> float:
+    x_overlap = max(0.0, min(float(bbox["x_max"]), i + 1.0) - max(float(bbox["x_min"]), float(i)))
+    y_overlap = max(0.0, min(float(bbox["y_max"]), j + 1.0) - max(float(bbox["y_min"]), float(j)))
+    z_overlap = max(0.0, min(float(bbox["z_max"]), k + 1.0) - max(float(bbox["z_min"]), float(k)))
+    return float(x_overlap * y_overlap * z_overlap)
+
+
+def _block_overlap_fractions(block: dict[str, Any], grid_shape: list[int]) -> np.ndarray:
+    bbox = block["continuous_bbox"]
+    nx, ny, nz = [int(v) for v in grid_shape]
+    overlaps = np.zeros((nx * ny * nz,), dtype=np.float64)
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                overlaps[_node_index(i, j, k, grid_shape)] = _control_volume_overlap_fraction(
+                    bbox,
+                    i=i,
+                    j=j,
+                    k=k,
+                )
+    return overlaps
 
 
 def _grid_coords(domain: dict[str, Any]) -> np.ndarray:
@@ -364,36 +446,82 @@ def _project_block(
     xy_fraction: float,
     z_fraction: float,
     rng: random.Random,
+    z_policy: str = "full_domain",
+    material_claim_threshold: float | None = None,
 ) -> dict[str, Any]:
     nx, ny, nz = [int(v) for v in grid_shape]
     total_cells = nx * ny * nz
+    if (float(nx), float(ny), float(nz)) != SEMANTIC_DOMAIN:
+        raise ValueError(f"P3c semantic projection expects grid {SEMANTIC_DOMAIN}, got {grid_shape}")
+    z_lower, z_upper = (0.0, float(nz))
+    if z_policy == Q_SOURCE_Z_POLICY:
+        z_lower, z_upper = Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX
+    elif z_policy != "full_domain":
+        raise ValueError(f"unsupported semantic z policy: {z_policy}")
+    z_span = z_upper - z_lower
+    if z_span <= 0.0:
+        raise ValueError(f"invalid semantic z span for policy {z_policy}")
+
     side_fraction = math.sqrt(max(float(xy_fraction), 0.0))
-    requested_dims = [
-        math.floor(nx * side_fraction),
-        math.floor(ny * side_fraction),
-        math.floor(nz * max(float(z_fraction), 0.0)),
+    requested_lengths = [
+        min(float(nx), max(1.0e-9, float(nx) * side_fraction)),
+        min(float(ny), max(1.0e-9, float(ny) * side_fraction)),
+        min(z_span, max(1.0e-9, z_span * max(float(z_fraction), 0.0))),
     ]
-    realized_dims = [
-        min(nx, max(1, requested_dims[0])),
-        min(ny, max(1, requested_dims[1])),
-        min(nz, max(1, requested_dims[2])),
-    ]
+    requested_dims_floor = [math.floor(length) for length in requested_lengths]
     starts = [
-        rng.randint(0, nx - realized_dims[0]),
-        rng.randint(0, ny - realized_dims[1]),
-        rng.randint(0, nz - realized_dims[2]),
+        rng.uniform(0.0, float(nx) - requested_lengths[0]),
+        rng.uniform(0.0, float(ny) - requested_lengths[1]),
+        rng.uniform(z_lower, z_upper - requested_lengths[2]),
     ]
-    realized_cell_count = realized_dims[0] * realized_dims[1] * realized_dims[2]
-    adjusted = any(dim <= 0 for dim in requested_dims)
+    bbox = {
+        "x_min": starts[0],
+        "x_max": starts[0] + requested_lengths[0],
+        "y_min": starts[1],
+        "y_max": starts[1] + requested_lengths[1],
+        "z_min": starts[2],
+        "z_max": starts[2] + requested_lengths[2],
+    }
+    overlaps = _block_overlap_fractions({"continuous_bbox": bbox}, grid_shape)
+    if material_claim_threshold is None:
+        active_mask = overlaps > 0.0
+    else:
+        active_mask = overlaps >= float(material_claim_threshold)
+    realized_cell_count = int(np.count_nonzero(active_mask))
+    if realized_cell_count <= 0:
+        active_mask = overlaps > 0.0
+        realized_cell_count = int(np.count_nonzero(active_mask))
+    overlap_fraction_sum = float(np.sum(overlaps))
+    adjusted = any(dim <= 0 for dim in requested_dims_floor)
+    approx_start = [
+        max(0, min(int(math.floor(bbox["x_min"])), nx - 1)),
+        max(0, min(int(math.floor(bbox["y_min"])), ny - 1)),
+        max(0, min(int(math.floor(bbox["z_min"])), nz - 1)),
+    ]
+    approx_extent = [
+        max(1, min(nx - approx_start[0], int(math.ceil(bbox["x_max"])) - approx_start[0])),
+        max(1, min(ny - approx_start[1], int(math.ceil(bbox["y_max"])) - approx_start[1])),
+        max(1, min(nz - approx_start[2], int(math.ceil(bbox["z_max"])) - approx_start[2])),
+    ]
     return {
         "requested_fraction": float(xy_fraction) * float(z_fraction),
         "requested_xy_fraction": float(xy_fraction),
         "requested_z_fraction": float(z_fraction),
-        "requested_dims_floor": requested_dims,
-        "start_ijk": starts,
-        "extent_ijk": realized_dims,
-        "realized_fraction": realized_cell_count / total_cells,
+        "requested_dims_floor": requested_dims_floor,
+        "requested_lengths_semantic": requested_lengths,
+        "continuous_bbox": bbox,
+        "semantic_domain": {
+            "x": [0.0, float(nx)],
+            "y": [0.0, float(ny)],
+            "z": [0.0, float(nz)],
+        },
+        "z_policy": z_policy,
+        "start_ijk": approx_start,
+        "extent_ijk": approx_extent,
+        "realized_fraction": overlap_fraction_sum / total_cells,
         "realized_cell_count": realized_cell_count,
+        "overlap_fraction_sum": overlap_fraction_sum,
+        "max_overlap_fraction": float(np.max(overlaps)) if overlaps.size else 0.0,
         "projection_status": "resampled_min_one_cell" if adjusted else "realized",
         "reject_reason": "projected_zero_cells_resampled_to_one_cell" if adjusted else None,
     }
@@ -448,6 +576,9 @@ def _material_blocks(
     ]
     diag3_ratio = _by_name(k_entries, "diag3_anisotropy_ratio")
     hbm_entry = _by_name(k_entries, "hbm_like_anisotropic_k")
+    claim_threshold = float(
+        registry["k_overlap_policy"].get("material_claim_threshold", DEFAULT_MATERIAL_CLAIM_THRESHOLD)
+    )
     blocks: list[dict[str, Any]] = []
     for block_index in range(count):
         xy_fraction = _sample_fraction(rng, xy_entry, fallback_min=0.05, fallback_max=0.6)
@@ -457,6 +588,8 @@ def _material_blocks(
             xy_fraction=xy_fraction,
             z_fraction=z_fraction,
             rng=rng,
+            z_policy="full_domain",
+            material_claim_threshold=claim_threshold,
         )
         if diag3_mode == "hbm_like_strong" and block_index == 0:
             value = dict(hbm_entry["default"])
@@ -516,6 +649,7 @@ def _q_blocks(
             xy_fraction=xy_fraction,
             z_fraction=z_fraction,
             rng=rng,
+            z_policy=Q_SOURCE_Z_POLICY,
         )
         power_target = _rng_uniform(rng, q_entry["integrated_power_target"])
         q_density = _rng_uniform(rng, q_entry["range"], log_space=True)
@@ -579,6 +713,19 @@ def generate_dryrun_batch(
                     "domain_z_mm": geometry["domain_z_mm"],
                     "grid_shape": grid_shape,
                     "node_count": node_count,
+                    "semantic_domain_xyz": list(SEMANTIC_DOMAIN),
+                },
+                "semantic_projection": {
+                    "mode": "continuous_bbox_to_physical_control_volume_overlap",
+                    "semantic_domain_xyz": list(SEMANTIC_DOMAIN),
+                    "physical_grid_shape": grid_shape,
+                    "physical_control_volume_count": node_count,
+                    "material_claim_threshold": float(
+                        registry["k_overlap_policy"].get(
+                            "material_claim_threshold",
+                            DEFAULT_MATERIAL_CLAIM_THRESHOLD,
+                        )
+                    ),
                 },
                 "k": {
                     "mode": "diag3" if mode != "scalar" else "scalar",
@@ -588,6 +735,8 @@ def generate_dryrun_batch(
                 "q": {
                     "family": q_entry["name"],
                     "blocks": q_blocks,
+                    "q_source_z_policy": Q_SOURCE_Z_POLICY,
+                    "q_active_z_range": [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX],
                     "DeltaT_target_bin": q_entry["DeltaT_target_bin"],
                     "q_rescale_factor": 1.0,
                 },
@@ -650,7 +799,7 @@ def generate_dryrun_batch(
         "artifact_writes": False,
     }
     return {
-        "schema_version": "heat3d_v4_p3c_generator_dryrun_v0",
+        "schema_version": "heat3d_v4_p3c_generator_dryrun_v1",
         "registry_schema_version": registry.get("schema_version"),
         "final_probe_role": registry["generation_policy"]["final_probe_role"],
         "stress_split": registry["generation_policy"]["stress_split"],
@@ -681,30 +830,44 @@ def materialize_scene_arrays(
     k_field = np.repeat(background_value.reshape(1, k_width), node_count, axis=0)
     covered_by_blocks: list[list[str]] = [[] for _ in range(node_count)]
     winning_block_id: list[str | None] = [None for _ in range(node_count)]
+    winning_block_overlap_fraction = np.zeros((node_count,), dtype=np.float64)
+    material_claim_threshold = float(
+        registry["k_overlap_policy"].get("material_claim_threshold", DEFAULT_MATERIAL_CLAIM_THRESHOLD)
+    )
 
     for block in scene["k"]["blocks"]:
-        indices = _block_node_indices(block, grid_shape)
+        overlaps = _block_overlap_fractions(block, grid_shape)
+        indices = np.nonzero(overlaps >= material_claim_threshold)[0].astype(np.int64)
         block_value = _block_k_value(block, diag3=is_diag3)
         for idx in indices:
             covered_by_blocks[idx].append(block["block_id"])
             winning_block_id[idx] = block["block_id"]
+            winning_block_overlap_fraction[idx] = float(overlaps[idx])
             k_field[idx, :] = block_value
-        block["covered_cell_count"] = len(indices)
+        block["covered_cell_count"] = int(indices.size)
+        block["claimed_cell_count"] = int(indices.size)
+        block["material_claim_threshold"] = material_claim_threshold
+        block["overlap_fraction_sum"] = float(np.sum(overlaps))
+        block["max_overlap_fraction"] = float(np.max(overlaps)) if overlaps.size else 0.0
 
     q_field = np.zeros((node_count, 1), dtype=np.float64)
     q_contributors: list[list[str]] = [[] for _ in range(node_count)]
+    q_contributor_overlaps: list[list[float]] = [[] for _ in range(node_count)]
     node_volume = _domain_volume_m3(domain) / float(node_count)
     q_block_metadata = []
     for block in scene["q"]["blocks"]:
-        indices = _block_node_indices(block, grid_shape)
-        realized_volume = float(len(indices)) * node_volume
+        overlaps = _block_overlap_fractions(block, grid_shape)
+        indices = np.nonzero(overlaps > 0.0)[0].astype(np.int64)
+        realized_volume = float(np.sum(overlaps) * node_volume)
         if realized_volume <= 0.0:
             raise ValueError(f"q block has non-positive realized volume: {block['block_id']}")
         target_power = float(block["integrated_power_target_W"])
         calibrated_q_density = target_power / realized_volume
         for idx in indices:
-            q_field[idx, 0] += calibrated_q_density
+            overlap_fraction = float(overlaps[idx])
+            q_field[idx, 0] += calibrated_q_density * overlap_fraction
             q_contributors[idx].append(block["block_id"])
+            q_contributor_overlaps[idx].append(overlap_fraction)
         realized_power = calibrated_q_density * realized_volume
         power_error = realized_power - target_power
         block_meta = {
@@ -716,6 +879,9 @@ def materialize_scene_arrays(
             "realized_power_W": realized_power,
             "power_error_W": power_error,
             "realized_cell_count": int(len(indices)),
+            "overlap_fraction_sum": float(np.sum(overlaps)),
+            "max_overlap_fraction": float(np.max(overlaps)) if overlaps.size else 0.0,
+            "q_source_z_policy": Q_SOURCE_Z_POLICY,
             "DeltaT_target_bin": block["DeltaT_target_bin"],
             "metadata_tag": block["metadata_tag"],
         }
@@ -728,8 +894,49 @@ def materialize_scene_arrays(
         winner if winner is not None else "background"
         for winner in winning_block_id
     ]
+    q_flat = q_field.reshape(-1)
+    bottom_indices = []
+    top_indices = []
+    q_active_z_indices = []
+    nx, ny, nz = grid_shape
+    for idx in range(node_count):
+        _, _, k = _node_ijk(idx, grid_shape)
+        if k == 0:
+            bottom_indices.append(idx)
+        if k == nz - 1:
+            top_indices.append(idx)
+        if q_flat[idx] > 0.0:
+            q_active_z_indices.append(k)
+    q_total_target_power = float(sum(block["target_power_W"] for block in q_block_metadata))
+    q_integral_from_array = float(np.sum(q_flat) * node_volume)
+    q_power_on_bottom = float(np.sum(q_flat[bottom_indices]) * node_volume)
+    q_power_on_top = float(np.sum(q_flat[top_indices]) * node_volume)
+    q_power_on_boundary = q_power_on_bottom + q_power_on_top
+    q_boundary_violation_count = int(
+        np.count_nonzero(q_flat[bottom_indices] > 0.0) + np.count_nonzero(q_flat[top_indices] > 0.0)
+    )
+    q_active_z_min = float(min(q_active_z_indices)) if q_active_z_indices else None
+    q_active_z_max = float(max(q_active_z_indices) + 1) if q_active_z_indices else None
+    q_power_audit = {
+        "q_total_target_power_W": q_total_target_power,
+        "q_integral_from_array_W": q_integral_from_array,
+        "q_total_power_error_W": q_integral_from_array - q_total_target_power,
+        "q_power_on_bottom_W": q_power_on_bottom,
+        "q_power_on_top_W": q_power_on_top,
+        "q_power_on_boundary_W": q_power_on_boundary,
+        "q_power_on_bottom_fraction": (
+            q_power_on_bottom / q_integral_from_array if q_integral_from_array > 0.0 else 0.0
+        ),
+        "q_power_on_top_fraction": (
+            q_power_on_top / q_integral_from_array if q_integral_from_array > 0.0 else 0.0
+        ),
+        "q_source_boundary_violation_count": q_boundary_violation_count,
+        "q_active_z_min": q_active_z_min,
+        "q_active_z_max": q_active_z_max,
+        "q_source_z_policy": Q_SOURCE_Z_POLICY,
+    }
     sample_meta = {
-        "schema_version": "heat3d_v4_p3c_array_preflight_v0",
+        "schema_version": "heat3d_v4_p3c_array_preflight_v1",
         "scene_id": scene["scene_id"],
         "seed": scene["seed"],
         "array_preflight_only": True,
@@ -746,16 +953,27 @@ def materialize_scene_arrays(
             "uncovered_node_count": len(uncovered),
         },
         "k_overlap_policy": registry["k_overlap_policy"]["name"],
+        "semantic_projection": {
+            "semantic_domain_xyz": list(SEMANTIC_DOMAIN),
+            "physical_grid_shape": grid_shape,
+            "physical_control_volume_count": node_count,
+            "material_claim_threshold": material_claim_threshold,
+            "q_source_z_policy": Q_SOURCE_Z_POLICY,
+            "q_active_z_range": [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX],
+        },
         "k_node_metadata": {
             "covered_by_blocks": covered_by_blocks,
             "winning_block_id": final_winner,
+            "winning_block_overlap_fraction": winning_block_overlap_fraction.tolist(),
         },
         "q_overlap_policy": registry["q_overlap_policy"]["name"],
         "q_node_metadata": {
             "contributing_q_blocks": q_contributors,
+            "contributing_q_overlap_fractions": q_contributor_overlaps,
         },
         "power_calibration_policy": registry["power_calibration_policy"]["name"],
         "q_block_metadata": q_block_metadata,
+        "q_power_audit": q_power_audit,
         "bc_feature_names": ["is_top", "is_bottom", "is_side", "is_interior"],
         "bc_counts": bc_counts,
         **_solver_boundary_contract(scene),
@@ -809,7 +1027,7 @@ def build_smoke16_write_plan(
             }
         )
     return {
-        "schema_version": "heat3d_v4_p3c_smoke16_write_plan_v0",
+        "schema_version": "heat3d_v4_p3c_smoke16_write_plan_v1",
         "sample_count": sample_count,
         "seed": seed,
         "dataset_dir": dataset_dir,
