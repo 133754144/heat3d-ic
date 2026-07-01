@@ -17,10 +17,10 @@ from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     FINAL_PROBE_ROLE,
     PENDING_DELTAT_BIN,
     PRODUCTION_CONTACT_MODEL,
-    Q_ACTIVE_Z_MAX,
-    Q_ACTIVE_Z_MIN,
-    Q_SOURCE_Z_POLICY,
+    Q_SOURCE_POLICY,
+    SEMANTIC_BOUNDARY_INSET_FRACTION,
     SEMANTIC_DOMAIN,
+    SOLVER_SAFE_DEPOSITION_MASK,
     generate_dryrun_batch,
     load_registry,
     project_block_preview,
@@ -115,8 +115,16 @@ def _check_q_and_delta_t(batch: dict[str, Any]) -> None:
             "semantic projection mode mismatch",
         )
         q_families.add(scene["q"]["family"])
-        _expect(scene["q"]["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "q source z policy mismatch")
-        _expect(scene["q"]["q_active_z_range"] == [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX], "q active z range mismatch")
+        _expect(scene["q"]["q_source_policy"] == Q_SOURCE_POLICY, "q source policy mismatch")
+        _expect(
+            scene["q"]["semantic_boundary_inset_fraction"] == SEMANTIC_BOUNDARY_INSET_FRACTION,
+            "q semantic inset mismatch",
+        )
+        inset = scene["q"]["semantic_inset_domain_xyz"]
+        _expect(inset["x"] == [0.8, 15.2], "bad q inset x domain")
+        _expect(inset["y"] == [0.8, 15.2], "bad q inset y domain")
+        _expect(inset["z"] == [0.2, 3.8], "bad q inset z domain")
+        _expect(scene["q"]["solver_safe_deposition_mask"] == SOLVER_SAFE_DEPOSITION_MASK, "bad solver-safe mask")
         _expect(scene["deltaT_qc"]["deltaT_bin"] == PENDING_DELTAT_BIN, "DeltaT bin must stay pending")
         _expect(scene["deltaT_qc"]["q_rescale_factor"] == 1.0, "q rescale factor must be 1.0")
         _expect(scene["deltaT_qc"]["reject_reason"] is None, "dry-run must not solve/reject by DeltaT")
@@ -131,10 +139,14 @@ def _check_q_and_delta_t(batch: dict[str, Any]) -> None:
             _expect(block["source_volume_fraction"] > 0.0, "q source volume fraction must be positive")
             _expect(block["integrated_power_target_W"] > 0.0, "q integrated power must be positive")
             _expect(block["DeltaT_target_bin"], "q block missing DeltaT target bin")
-            _expect(block["z_policy"] == Q_SOURCE_Z_POLICY, "q block z policy mismatch")
+            _expect(block["placement_policy"] == Q_SOURCE_POLICY, "q block placement policy mismatch")
             bbox = block["continuous_bbox"]
-            _expect(bbox["z_min"] >= Q_ACTIVE_Z_MIN, "q bbox touches bottom boundary domain")
-            _expect(bbox["z_max"] <= Q_ACTIVE_Z_MAX, "q bbox touches top boundary domain")
+            _expect(bbox["x_min"] >= inset["x"][0], "q bbox touches xmin semantic boundary")
+            _expect(bbox["x_max"] <= inset["x"][1], "q bbox touches xmax semantic boundary")
+            _expect(bbox["y_min"] >= inset["y"][0], "q bbox touches ymin semantic boundary")
+            _expect(bbox["y_max"] <= inset["y"][1], "q bbox touches ymax semantic boundary")
+            _expect(bbox["z_min"] >= inset["z"][0], "q bbox touches bottom semantic boundary")
+            _expect(bbox["z_max"] <= inset["z"][1], "q bbox touches top semantic boundary")
     _expect(len(q_families) >= 7, "all q families should be exercised in the dry-run batch")
 
 

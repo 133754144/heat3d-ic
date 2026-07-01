@@ -101,6 +101,65 @@ def _finite_ok(*arrays: np.ndarray) -> bool:
     return all(bool(np.all(np.isfinite(array))) for array in arrays)
 
 
+def _low_k_overlap_fraction(bundle: dict[str, Any]) -> float:
+    q_active = bundle["q_field"].reshape(-1) > 0.0
+    active_count = int(np.count_nonzero(q_active))
+    if active_count == 0:
+        return 0.0
+    block_family = {
+        block["block_id"]: block["k_family"]
+        for block in bundle["scene"]["k"]["blocks"]
+    }
+    winners = bundle["sample_meta"]["k_node_metadata"]["winning_block_id"]
+    low_k_count = 0
+    for index, active in enumerate(q_active):
+        if active and block_family.get(winners[index]) == "low_k_dielectric_underfill":
+            low_k_count += 1
+    return low_k_count / float(active_count)
+
+
+def _triage_delta_t(sample: dict[str, Any], bundle: dict[str, Any]) -> dict[str, Any]:
+    high_delta_t = float(sample["DeltaT_peak_K"]) > 15.0
+    audit_passed = (
+        sample["solver_status"] == "solved"
+        and sample["nan_inf_ok"]
+        and abs(float(sample["q_total_power_error_W"])) <= 1.0e-10
+        and float(sample["q_power_on_boundary_W"]) == 0.0
+        and int(sample["q_source_boundary_violation_count"]) == 0
+        and int(sample["q_source_side_boundary_violation_count"]) == 0
+        and int(sample["q_deposited_on_boundary_node_count"]) == 0
+    )
+    low_k_fraction = _low_k_overlap_fraction(bundle)
+    hotspot_like = "hotspot" in sample["q_family"]
+    if not high_delta_t:
+        return {
+            "high_deltaT_triage": "not_high_deltaT",
+            "low_k_q_overlap_fraction": low_k_fraction,
+            "physical_keep_reason": None,
+            "dataset_action": "keep_for_pilot",
+        }
+    if not audit_passed:
+        return {
+            "high_deltaT_triage": "reject_policy_or_solver_violation",
+            "low_k_q_overlap_fraction": low_k_fraction,
+            "physical_keep_reason": None,
+            "dataset_action": "reject",
+        }
+    if hotspot_like and low_k_fraction >= 0.5:
+        return {
+            "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+            "low_k_q_overlap_fraction": low_k_fraction,
+            "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+            "dataset_action": "keep_for_pilot",
+        }
+    return {
+        "high_deltaT_triage": "audit_passed_high_deltaT_unclassified",
+        "low_k_q_overlap_fraction": low_k_fraction,
+        "physical_keep_reason": None,
+        "dataset_action": "review_for_pilot",
+    }
+
+
 def _sample_audit(
     *,
     sample_id: str,
@@ -127,7 +186,7 @@ def _sample_audit(
         bundle["bc_features"],
         temperature,
     )
-    return {
+    sample = {
         "sample_id": sample_id,
         "scene_id": scene["scene_id"],
         "solver_status": solution_audit["status"],
@@ -143,12 +202,23 @@ def _sample_audit(
         "q_total_power_error_W": q_power_audit["q_total_power_error_W"],
         "q_power_on_bottom_W": q_power_audit["q_power_on_bottom_W"],
         "q_power_on_top_W": q_power_audit["q_power_on_top_W"],
+        "q_power_on_xmin_W": q_power_audit["q_power_on_xmin_W"],
+        "q_power_on_xmax_W": q_power_audit["q_power_on_xmax_W"],
+        "q_power_on_ymin_W": q_power_audit["q_power_on_ymin_W"],
+        "q_power_on_ymax_W": q_power_audit["q_power_on_ymax_W"],
+        "q_power_on_side_W": q_power_audit["q_power_on_side_W"],
         "q_power_on_boundary_W": q_power_audit["q_power_on_boundary_W"],
         "q_power_on_bottom_fraction": q_power_audit["q_power_on_bottom_fraction"],
         "q_power_on_top_fraction": q_power_audit["q_power_on_top_fraction"],
+        "q_power_on_side_fraction": q_power_audit["q_power_on_side_fraction"],
         "q_source_boundary_violation_count": q_power_audit["q_source_boundary_violation_count"],
+        "q_source_side_boundary_violation_count": q_power_audit["q_source_side_boundary_violation_count"],
         "q_active_z_min": q_power_audit["q_active_z_min"],
         "q_active_z_max": q_power_audit["q_active_z_max"],
+        "semantic_boundary_inset_fraction": q_power_audit["semantic_boundary_inset_fraction"],
+        "semantic_inset_domain_xyz": q_power_audit["semantic_inset_domain_xyz"],
+        "solver_safe_deposition_mask": q_power_audit["solver_safe_deposition_mask"],
+        "q_deposited_on_boundary_node_count": q_power_audit["q_deposited_on_boundary_node_count"],
         "q_max_after_sum_W_m3": float(np.max(bundle["q_field"])),
         "background_k_family": meta["background_k"]["background_k_family"],
         "background_k_value": meta["background_k"]["background_k_value"],
@@ -164,6 +234,8 @@ def _sample_audit(
         "reject_or_review_reason": reject_reason,
         "operator_checksum": solution_audit["operator_checksum"],
     }
+    sample.update(_triage_delta_t(sample, bundle))
+    return sample
 
 
 def _summary(samples: list[dict[str, Any]], failures: list[dict[str, Any]]) -> dict[str, Any]:
@@ -184,13 +256,20 @@ def _summary(samples: list[dict[str, Any]], failures: list[dict[str, Any]]) -> d
         for sample in samples
         if np.isfinite(float(sample["q_power_on_boundary_W"]))
     ]
+    q_side_power = [
+        abs(float(sample["q_power_on_side_W"]))
+        for sample in samples
+        if np.isfinite(float(sample["q_power_on_side_W"]))
+    ]
     q_power_errors = [
         abs(float(sample["q_total_power_error_W"]))
         for sample in samples
         if np.isfinite(float(sample["q_total_power_error_W"]))
     ]
+    dataset_actions = sorted({sample["dataset_action"] for sample in samples})
+    high_triage = sorted({sample["high_deltaT_triage"] for sample in samples})
     return {
-        "schema_version": "heat3d_v4_p3c_smoke16_audit_v1",
+        "schema_version": "heat3d_v4_p3c_smoke16_audit_v2",
         "sample_count": total,
         "pass_count": pass_count,
         "failure_count": len(failures),
@@ -199,9 +278,25 @@ def _summary(samples: list[dict[str, Any]], failures: list[dict[str, Any]]) -> d
         "max_bottom_dirichlet_error": max(bottom_errors) if bottom_errors else None,
         "max_abs_q_total_power_error_W": max(q_power_errors) if q_power_errors else None,
         "max_q_power_on_boundary_W": max(q_boundary_power) if q_boundary_power else None,
+        "max_q_power_on_side_W": max(q_side_power) if q_side_power else None,
         "q_source_boundary_violation_count": sum(
             int(sample["q_source_boundary_violation_count"]) for sample in samples
         ),
+        "q_source_side_boundary_violation_count": sum(
+            int(sample["q_source_side_boundary_violation_count"]) for sample in samples
+        ),
+        "q_deposited_on_boundary_node_count": sum(
+            int(sample["q_deposited_on_boundary_node_count"]) for sample in samples
+        ),
+        "high_deltaT_count": sum(1 for sample in samples if float(sample["DeltaT_peak_K"]) > 15.0),
+        "dataset_action_counts": {
+            name: sum(1 for sample in samples if sample["dataset_action"] == name)
+            for name in dataset_actions
+        },
+        "high_deltaT_triage_counts": {
+            name: sum(1 for sample in samples if sample["high_deltaT_triage"] == name)
+            for name in high_triage
+        },
         "DeltaT_bin_counts": {
             name: sum(1 for sample in samples if sample["DeltaT_bin"] == name)
             for name, _, _ in DELTA_T_BINS
@@ -305,6 +400,9 @@ def generate_smoke16(
                     "cooling_regime": sample_audit["cooling_regime"],
                     "k_mode": sample_audit["k_mode"],
                     "diag3_policy": sample_audit["diag3_policy"],
+                    "high_deltaT_triage": sample_audit["high_deltaT_triage"],
+                    "physical_keep_reason": sample_audit["physical_keep_reason"],
+                    "dataset_action": sample_audit["dataset_action"],
                 }
             )
         except Exception as exc:  # noqa: BLE001
@@ -328,7 +426,7 @@ def generate_smoke16(
             break
 
     manifest = {
-        "schema_version": "heat3d_v4_p3c_smoke16_manifest_v1",
+        "schema_version": "heat3d_v4_p3c_smoke16_manifest_v2",
         "dataset_id": dataset_dir.name,
         "sample_count_requested": sample_count,
         "sample_count_written": len(manifest_samples),
@@ -376,7 +474,13 @@ def main(argv: list[str] | None = None) -> int:
                 "max_abs_energy_balance_residual": audit["max_abs_energy_balance_residual"],
                 "max_bottom_dirichlet_error": audit["max_bottom_dirichlet_error"],
                 "max_q_power_on_boundary_W": audit["max_q_power_on_boundary_W"],
+                "max_q_power_on_side_W": audit["max_q_power_on_side_W"],
                 "q_source_boundary_violation_count": audit["q_source_boundary_violation_count"],
+                "q_source_side_boundary_violation_count": audit["q_source_side_boundary_violation_count"],
+                "q_deposited_on_boundary_node_count": audit["q_deposited_on_boundary_node_count"],
+                "high_deltaT_count": audit["high_deltaT_count"],
+                "dataset_action_counts": audit["dataset_action_counts"],
+                "high_deltaT_triage_counts": audit["high_deltaT_triage_counts"],
             },
             indent=2,
             sort_keys=True,

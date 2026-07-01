@@ -21,10 +21,10 @@ from heat3d_v4_p3c_dryrun_generator import (  # noqa: E402
     PENDING_DELTAT_BIN,
     PLANNED_SAMPLE_FILES,
     PRODUCTION_CONTACT_MODEL,
-    Q_ACTIVE_Z_MAX,
-    Q_ACTIVE_Z_MIN,
-    Q_SOURCE_Z_POLICY,
+    Q_SOURCE_POLICY,
+    SEMANTIC_BOUNDARY_INSET_FRACTION,
     SEMANTIC_DOMAIN,
+    SOLVER_SAFE_DEPOSITION_MASK,
     SMOKE16_SAMPLE_COUNT,
     SMOKE16_SEED,
     build_smoke16_write_plan,
@@ -77,7 +77,7 @@ def _check_registry_policies(registry: dict[str, Any]) -> None:
         "k_overlap_policy",
         "q_overlap_policy",
         "power_calibration_policy",
-        "q_source_z_policy",
+        "q_source_policy",
     ):
         _expect(section in registry, f"missing registry policy: {section}")
     background = registry["background_k_policy"]
@@ -110,12 +110,16 @@ def _check_registry_policies(registry: dict[str, Any]) -> None:
         registry["q_overlap_policy"]["projection"] == "continuous_semantic_bbox_overlap_fraction",
         "bad q projection policy",
     )
-    _expect(registry["q_overlap_policy"]["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "bad q source link")
-    q_source = registry["q_source_z_policy"]
-    _expect(q_source["name"] == Q_SOURCE_Z_POLICY, "bad q source z policy")
+    _expect(registry["q_overlap_policy"]["q_source_policy"] == Q_SOURCE_POLICY, "bad q source link")
+    q_source = registry["q_source_policy"]
+    _expect(q_source["name"] == Q_SOURCE_POLICY, "bad q source policy")
     _expect(q_source["semantic_domain_xyz"] == list(SEMANTIC_DOMAIN), "bad semantic domain")
-    _expect(q_source["active_z_min"] == Q_ACTIVE_Z_MIN, "bad active z min")
-    _expect(q_source["active_z_max"] == Q_ACTIVE_Z_MAX, "bad active z max")
+    _expect(
+        q_source["semantic_boundary_inset_fraction"] == SEMANTIC_BOUNDARY_INSET_FRACTION,
+        "bad semantic boundary inset",
+    )
+    _expect(q_source["semantic_inset_domain_xyz"] == {"x": [0.8, 15.2], "y": [0.8, 15.2], "z": [0.2, 3.8]}, "bad semantic inset domain")
+    _expect(q_source["solver_safe_deposition_mask"] == SOLVER_SAFE_DEPOSITION_MASK, "bad solver-safe mask")
     _expect(
         registry["power_calibration_policy"]["name"]
         == "calibrate_q_density_from_realized_volume_and_integrated_power_target",
@@ -151,8 +155,16 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
     _expect(projection["semantic_domain_xyz"] == list(SEMANTIC_DOMAIN), "semantic domain mismatch")
     _expect(projection["physical_grid_shape"] == bundle["scene"]["domain"]["grid_shape"], "grid shape mismatch")
     _expect(projection["physical_control_volume_count"] == 1024, "physical grid must remain 16x16x4")
-    _expect(projection["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "q source z policy mismatch")
-    _expect(projection["q_active_z_range"] == [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX], "q active z range mismatch")
+    _expect(projection["q_source_policy"] == Q_SOURCE_POLICY, "q source policy mismatch")
+    _expect(
+        projection["semantic_boundary_inset_fraction"] == SEMANTIC_BOUNDARY_INSET_FRACTION,
+        "semantic inset fraction mismatch",
+    )
+    _expect(
+        projection["semantic_inset_domain_xyz"] == {"x": [0.8, 15.2], "y": [0.8, 15.2], "z": [0.2, 3.8]},
+        "semantic inset domain mismatch",
+    )
+    _expect(projection["solver_safe_deposition_mask"] == SOLVER_SAFE_DEPOSITION_MASK, "solver-safe mask mismatch")
 
     background = meta["background_k"]
     _expect(background["background_k_family"] in background["allowed_families"], "bad background family")
@@ -184,7 +196,8 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
         _expect(block_meta["realized_volume_m3"] > 0.0, "q block realized volume must be positive")
         _expect(block_meta["calibrated_q_density_W_m3"] > 0.0, "q density must be positive")
         _expect(abs(block_meta["power_error_W"]) <= POWER_TOL, "q power calibration error too large")
-        _expect(block_meta["q_source_z_policy"] == Q_SOURCE_Z_POLICY, "q block source policy mismatch")
+        _expect(block_meta["q_source_policy"] == Q_SOURCE_POLICY, "q block source policy mismatch")
+        _expect(block_meta["solver_safe_deposition_mask"] == SOLVER_SAFE_DEPOSITION_MASK, "bad q block mask")
 
     q_audit = meta["q_power_audit"]
     for field in (
@@ -193,23 +206,43 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
         "q_total_power_error_W",
         "q_power_on_bottom_W",
         "q_power_on_top_W",
+        "q_power_on_xmin_W",
+        "q_power_on_xmax_W",
+        "q_power_on_ymin_W",
+        "q_power_on_ymax_W",
+        "q_power_on_side_W",
         "q_power_on_boundary_W",
         "q_power_on_bottom_fraction",
         "q_power_on_top_fraction",
+        "q_power_on_side_fraction",
         "q_source_boundary_violation_count",
+        "q_source_side_boundary_violation_count",
         "q_active_z_min",
         "q_active_z_max",
+        "semantic_boundary_inset_fraction",
+        "semantic_inset_domain_xyz",
+        "solver_safe_deposition_mask",
+        "q_deposited_on_boundary_node_count",
     ):
         _expect(field in q_audit, f"q audit missing {field}")
     _expect(abs(q_audit["q_total_power_error_W"]) <= POWER_TOL, "q total power error too large")
     _expect(q_audit["q_power_on_bottom_W"] == 0.0, "q power touched bottom Dirichlet boundary")
     _expect(q_audit["q_power_on_top_W"] == 0.0, "q power touched top Robin boundary")
-    _expect(q_audit["q_power_on_boundary_W"] == 0.0, "q power touched z boundary")
+    _expect(q_audit["q_power_on_xmin_W"] == 0.0, "q power touched xmin side boundary")
+    _expect(q_audit["q_power_on_xmax_W"] == 0.0, "q power touched xmax side boundary")
+    _expect(q_audit["q_power_on_ymin_W"] == 0.0, "q power touched ymin side boundary")
+    _expect(q_audit["q_power_on_ymax_W"] == 0.0, "q power touched ymax side boundary")
+    _expect(q_audit["q_power_on_side_W"] == 0.0, "q power touched side boundary")
+    _expect(q_audit["q_power_on_boundary_W"] == 0.0, "q power touched solver boundary")
     _expect(q_audit["q_power_on_bottom_fraction"] == 0.0, "bottom q fraction must be zero")
     _expect(q_audit["q_power_on_top_fraction"] == 0.0, "top q fraction must be zero")
+    _expect(q_audit["q_power_on_side_fraction"] == 0.0, "side q fraction must be zero")
     _expect(q_audit["q_source_boundary_violation_count"] == 0, "q boundary violation count must be zero")
-    _expect(q_audit["q_active_z_min"] >= Q_ACTIVE_Z_MIN, "q active z below interior range")
-    _expect(q_audit["q_active_z_max"] <= Q_ACTIVE_Z_MAX, "q active z above interior range")
+    _expect(q_audit["q_source_side_boundary_violation_count"] == 0, "q side violation count must be zero")
+    _expect(q_audit["q_deposited_on_boundary_node_count"] == 0, "q deposited on boundary nodes")
+    _expect(q_audit["semantic_boundary_inset_fraction"] == SEMANTIC_BOUNDARY_INSET_FRACTION, "bad q audit inset")
+    _expect(q_audit["semantic_inset_domain_xyz"] == {"x": [0.8, 15.2], "y": [0.8, 15.2], "z": [0.2, 3.8]}, "bad q audit inset domain")
+    _expect(q_audit["solver_safe_deposition_mask"] == SOLVER_SAFE_DEPOSITION_MASK, "bad q audit mask")
     domain = bundle["scene"]["domain"]
     xy_m = float(domain["domain_xy_mm"]) * 1.0e-3
     z_m = float(domain["domain_z_mm"]) * 1.0e-3
@@ -219,6 +252,10 @@ def _check_array_bundle(bundle: dict[str, Any], *, expected_k_width: int) -> Non
     q_grid = q_field.reshape(bundle["scene"]["domain"]["grid_shape"])
     _expect(np.all(q_grid[:, :, 0] == 0.0), "bottom q layer must be zero")
     _expect(np.all(q_grid[:, :, -1] == 0.0), "top q layer must be zero")
+    _expect(np.all(q_grid[0, :, :] == 0.0), "xmin side q layer must be zero")
+    _expect(np.all(q_grid[-1, :, :] == 0.0), "xmax side q layer must be zero")
+    _expect(np.all(q_grid[:, 0, :] == 0.0), "ymin side q layer must be zero")
+    _expect(np.all(q_grid[:, -1, :] == 0.0), "ymax side q layer must be zero")
 
 
 def _check_boundary_bridge(bundle: dict[str, Any]) -> None:

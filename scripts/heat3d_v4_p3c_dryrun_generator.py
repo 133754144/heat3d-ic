@@ -31,7 +31,7 @@ REQUIRED_TOP_SECTIONS = (
     "deltaT_distribution",
     "cooling_regimes",
     "production_mix",
-    "q_source_z_policy",
+    "q_source_policy",
     "background_k_policy",
     "k_overlap_policy",
     "q_overlap_policy",
@@ -56,12 +56,12 @@ PRODUCTION_CONTACT_MODEL = "R_contact=0_perfect_contact"
 PENDING_DELTAT_BIN = "pending_until_solve"
 SMOKE16_SAMPLE_COUNT = 16
 SMOKE16_SEED = 4301
-SMOKE16_DATASET_DIR = "data/heat3d_v4_p3c_smoke16_v1"
-SMOKE16_OUTPUT_DIR = "output/heat3d_v4_p3c_smoke16_v1"
+SMOKE16_DATASET_DIR = "data/heat3d_v4_p3c_smoke16_v2"
+SMOKE16_OUTPUT_DIR = "output/heat3d_v4_p3c_smoke16_v2"
 SEMANTIC_DOMAIN = (16.0, 16.0, 4.0)
-Q_SOURCE_Z_POLICY = "active_interior_layers_only"
-Q_ACTIVE_Z_MIN = 1.0
-Q_ACTIVE_Z_MAX = 3.0
+Q_SOURCE_POLICY = "semantic_boundary_inset_5pct_solver_safe_deposition"
+SEMANTIC_BOUNDARY_INSET_FRACTION = 0.05
+SOLVER_SAFE_DEPOSITION_MASK = "exclude_bottom_top_side_boundary_nodes"
 DEFAULT_MATERIAL_CLAIM_THRESHOLD = 0.2
 PLANNED_SAMPLE_FILES = (
     "coords.npy",
@@ -89,6 +89,23 @@ def _by_name(entries: list[dict[str, Any]], name: str) -> dict[str, Any]:
         if entry.get("name") == name:
             return entry
     raise ValueError(f"missing registry entry: {name}")
+
+
+def _semantic_inset_domain() -> dict[str, list[float]]:
+    return {
+        "x": [
+            SEMANTIC_DOMAIN[0] * SEMANTIC_BOUNDARY_INSET_FRACTION,
+            SEMANTIC_DOMAIN[0] * (1.0 - SEMANTIC_BOUNDARY_INSET_FRACTION),
+        ],
+        "y": [
+            SEMANTIC_DOMAIN[1] * SEMANTIC_BOUNDARY_INSET_FRACTION,
+            SEMANTIC_DOMAIN[1] * (1.0 - SEMANTIC_BOUNDARY_INSET_FRACTION),
+        ],
+        "z": [
+            SEMANTIC_DOMAIN[2] * SEMANTIC_BOUNDARY_INSET_FRACTION,
+            SEMANTIC_DOMAIN[2] * (1.0 - SEMANTIC_BOUNDARY_INSET_FRACTION),
+        ],
+    }
 
 
 def validate_registry(registry: dict[str, Any]) -> None:
@@ -121,30 +138,53 @@ def validate_registry(registry: dict[str, Any]) -> None:
         policy.get("production_contact_model") == PRODUCTION_CONTACT_MODEL,
         "production contact model must be R_contact=0_perfect_contact",
     )
-    q_source_policy = registry["q_source_z_policy"]
-    _require(q_source_policy.get("name") == Q_SOURCE_Z_POLICY, "bad q_source_z_policy")
+    q_source_policy = registry["q_source_policy"]
+    _require(q_source_policy.get("name") == Q_SOURCE_POLICY, "bad q_source_policy")
     _require(
         list(q_source_policy.get("semantic_domain_xyz", [])) == list(SEMANTIC_DOMAIN),
         "semantic domain must be [16,16,4]",
     )
-    _require(float(q_source_policy.get("active_z_min")) == Q_ACTIVE_Z_MIN, "bad q active z min")
-    _require(float(q_source_policy.get("active_z_max")) == Q_ACTIVE_Z_MAX, "bad q active z max")
+    _require(
+        float(q_source_policy.get("semantic_boundary_inset_fraction"))
+        == SEMANTIC_BOUNDARY_INSET_FRACTION,
+        "bad semantic boundary inset fraction",
+    )
+    _require(
+        q_source_policy.get("solver_safe_deposition_mask") == SOLVER_SAFE_DEPOSITION_MASK,
+        "bad solver-safe deposition mask",
+    )
+    expected_inset = _semantic_inset_domain()
+    _require(
+        q_source_policy.get("semantic_inset_domain_xyz") == expected_inset,
+        "bad semantic inset domain",
+    )
     for field in (
         "q_total_target_power_W",
         "q_integral_from_array_W",
         "q_total_power_error_W",
         "q_power_on_bottom_W",
         "q_power_on_top_W",
+        "q_power_on_xmin_W",
+        "q_power_on_xmax_W",
+        "q_power_on_ymin_W",
+        "q_power_on_ymax_W",
+        "q_power_on_side_W",
         "q_power_on_boundary_W",
         "q_power_on_bottom_fraction",
         "q_power_on_top_fraction",
+        "q_power_on_side_fraction",
         "q_source_boundary_violation_count",
+        "q_source_side_boundary_violation_count",
         "q_active_z_min",
         "q_active_z_max",
+        "semantic_boundary_inset_fraction",
+        "semantic_inset_domain_xyz",
+        "solver_safe_deposition_mask",
+        "q_deposited_on_boundary_node_count",
     ):
         _require(
             field in q_source_policy.get("required_audit_fields", []),
-            f"q_source_z_policy missing audit field: {field}",
+            f"q_source_policy missing audit field: {field}",
         )
 
     for entry in parameters["k"]:
@@ -225,7 +265,7 @@ def validate_registry(registry: dict[str, Any]) -> None:
         q_overlap_policy.get("projection") == "continuous_semantic_bbox_overlap_fraction",
         "q overlap projection must use continuous semantic bbox overlap fractions",
     )
-    _require(q_overlap_policy.get("q_source_z_policy") == Q_SOURCE_Z_POLICY, "bad q source z policy link")
+    _require(q_overlap_policy.get("q_source_policy") == Q_SOURCE_POLICY, "bad q source policy link")
     _require(
         q_overlap_policy.get("forbidden_default_merge") == "max_pooling",
         "q max pooling must be forbidden as generator merge",
@@ -292,6 +332,31 @@ def _node_ijk(index: int, grid_shape: list[int]) -> tuple[int, int, int]:
     j = remainder // nz
     k = remainder % nz
     return i, j, k
+
+
+def _boundary_node_masks(grid_shape: list[int]) -> dict[str, np.ndarray]:
+    nx, ny, nz = [int(v) for v in grid_shape]
+    node_count = nx * ny * nz
+    masks = {
+        "bottom": np.zeros((node_count,), dtype=bool),
+        "top": np.zeros((node_count,), dtype=bool),
+        "xmin": np.zeros((node_count,), dtype=bool),
+        "xmax": np.zeros((node_count,), dtype=bool),
+        "ymin": np.zeros((node_count,), dtype=bool),
+        "ymax": np.zeros((node_count,), dtype=bool),
+    }
+    for idx in range(node_count):
+        i, j, k = _node_ijk(idx, grid_shape)
+        masks["bottom"][idx] = k == 0
+        masks["top"][idx] = k == nz - 1
+        masks["xmin"][idx] = i == 0
+        masks["xmax"][idx] = i == nx - 1
+        masks["ymin"][idx] = j == 0
+        masks["ymax"][idx] = j == ny - 1
+    masks["side"] = masks["xmin"] | masks["xmax"] | masks["ymin"] | masks["ymax"]
+    masks["boundary"] = masks["bottom"] | masks["top"] | masks["side"]
+    masks["solver_safe"] = ~masks["boundary"]
+    return masks
 
 
 def _control_volume_overlap_fraction(
@@ -446,33 +511,42 @@ def _project_block(
     xy_fraction: float,
     z_fraction: float,
     rng: random.Random,
-    z_policy: str = "full_domain",
+    placement_policy: str = "full_domain",
     material_claim_threshold: float | None = None,
 ) -> dict[str, Any]:
     nx, ny, nz = [int(v) for v in grid_shape]
     total_cells = nx * ny * nz
     if (float(nx), float(ny), float(nz)) != SEMANTIC_DOMAIN:
         raise ValueError(f"P3c semantic projection expects grid {SEMANTIC_DOMAIN}, got {grid_shape}")
-    z_lower, z_upper = (0.0, float(nz))
-    if z_policy == Q_SOURCE_Z_POLICY:
-        z_lower, z_upper = Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX
-    elif z_policy != "full_domain":
-        raise ValueError(f"unsupported semantic z policy: {z_policy}")
-    z_span = z_upper - z_lower
+    allowed = {
+        "x": [0.0, float(nx)],
+        "y": [0.0, float(ny)],
+        "z": [0.0, float(nz)],
+    }
+    if placement_policy == Q_SOURCE_POLICY:
+        allowed = _semantic_inset_domain()
+    elif placement_policy != "full_domain":
+        raise ValueError(f"unsupported semantic placement policy: {placement_policy}")
+
+    x_span = allowed["x"][1] - allowed["x"][0]
+    y_span = allowed["y"][1] - allowed["y"][0]
+    z_span = allowed["z"][1] - allowed["z"][0]
+    if x_span <= 0.0 or y_span <= 0.0 or z_span <= 0.0:
+        raise ValueError(f"invalid semantic domain for policy {placement_policy}")
     if z_span <= 0.0:
-        raise ValueError(f"invalid semantic z span for policy {z_policy}")
+        raise ValueError(f"invalid semantic z span for policy {placement_policy}")
 
     side_fraction = math.sqrt(max(float(xy_fraction), 0.0))
     requested_lengths = [
-        min(float(nx), max(1.0e-9, float(nx) * side_fraction)),
-        min(float(ny), max(1.0e-9, float(ny) * side_fraction)),
+        min(x_span, max(1.0e-9, x_span * side_fraction)),
+        min(y_span, max(1.0e-9, y_span * side_fraction)),
         min(z_span, max(1.0e-9, z_span * max(float(z_fraction), 0.0))),
     ]
     requested_dims_floor = [math.floor(length) for length in requested_lengths]
     starts = [
-        rng.uniform(0.0, float(nx) - requested_lengths[0]),
-        rng.uniform(0.0, float(ny) - requested_lengths[1]),
-        rng.uniform(z_lower, z_upper - requested_lengths[2]),
+        rng.uniform(allowed["x"][0], allowed["x"][1] - requested_lengths[0]),
+        rng.uniform(allowed["y"][0], allowed["y"][1] - requested_lengths[1]),
+        rng.uniform(allowed["z"][0], allowed["z"][1] - requested_lengths[2]),
     ]
     bbox = {
         "x_min": starts[0],
@@ -515,7 +589,11 @@ def _project_block(
             "y": [0.0, float(ny)],
             "z": [0.0, float(nz)],
         },
-        "z_policy": z_policy,
+        "placement_policy": placement_policy,
+        "semantic_boundary_inset_fraction": (
+            SEMANTIC_BOUNDARY_INSET_FRACTION if placement_policy == Q_SOURCE_POLICY else 0.0
+        ),
+        "semantic_inset_domain_xyz": _semantic_inset_domain() if placement_policy == Q_SOURCE_POLICY else None,
         "start_ijk": approx_start,
         "extent_ijk": approx_extent,
         "realized_fraction": overlap_fraction_sum / total_cells,
@@ -588,7 +666,7 @@ def _material_blocks(
             xy_fraction=xy_fraction,
             z_fraction=z_fraction,
             rng=rng,
-            z_policy="full_domain",
+            placement_policy="full_domain",
             material_claim_threshold=claim_threshold,
         )
         if diag3_mode == "hbm_like_strong" and block_index == 0:
@@ -649,7 +727,7 @@ def _q_blocks(
             xy_fraction=xy_fraction,
             z_fraction=z_fraction,
             rng=rng,
-            z_policy=Q_SOURCE_Z_POLICY,
+            placement_policy=Q_SOURCE_POLICY,
         )
         power_target = _rng_uniform(rng, q_entry["integrated_power_target"])
         q_density = _rng_uniform(rng, q_entry["range"], log_space=True)
@@ -735,8 +813,10 @@ def generate_dryrun_batch(
                 "q": {
                     "family": q_entry["name"],
                     "blocks": q_blocks,
-                    "q_source_z_policy": Q_SOURCE_Z_POLICY,
-                    "q_active_z_range": [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX],
+                    "q_source_policy": Q_SOURCE_POLICY,
+                    "semantic_boundary_inset_fraction": SEMANTIC_BOUNDARY_INSET_FRACTION,
+                    "semantic_inset_domain_xyz": _semantic_inset_domain(),
+                    "solver_safe_deposition_mask": SOLVER_SAFE_DEPOSITION_MASK,
                     "DeltaT_target_bin": q_entry["DeltaT_target_bin"],
                     "q_rescale_factor": 1.0,
                 },
@@ -799,7 +879,7 @@ def generate_dryrun_batch(
         "artifact_writes": False,
     }
     return {
-        "schema_version": "heat3d_v4_p3c_generator_dryrun_v1",
+        "schema_version": "heat3d_v4_p3c_generator_dryrun_v2",
         "registry_schema_version": registry.get("schema_version"),
         "final_probe_role": registry["generation_policy"]["final_probe_role"],
         "stress_split": registry["generation_policy"]["stress_split"],
@@ -854,17 +934,21 @@ def materialize_scene_arrays(
     q_contributors: list[list[str]] = [[] for _ in range(node_count)]
     q_contributor_overlaps: list[list[float]] = [[] for _ in range(node_count)]
     node_volume = _domain_volume_m3(domain) / float(node_count)
+    boundary_masks = _boundary_node_masks(grid_shape)
+    solver_safe_mask = boundary_masks["solver_safe"]
     q_block_metadata = []
     for block in scene["q"]["blocks"]:
         overlaps = _block_overlap_fractions(block, grid_shape)
-        indices = np.nonzero(overlaps > 0.0)[0].astype(np.int64)
-        realized_volume = float(np.sum(overlaps) * node_volume)
+        deposited_overlaps = np.where(solver_safe_mask, overlaps, 0.0)
+        blocked_overlap_fraction_sum = float(np.sum(overlaps) - np.sum(deposited_overlaps))
+        indices = np.nonzero(deposited_overlaps > 0.0)[0].astype(np.int64)
+        realized_volume = float(np.sum(deposited_overlaps) * node_volume)
         if realized_volume <= 0.0:
             raise ValueError(f"q block has non-positive realized volume: {block['block_id']}")
         target_power = float(block["integrated_power_target_W"])
         calibrated_q_density = target_power / realized_volume
         for idx in indices:
-            overlap_fraction = float(overlaps[idx])
+            overlap_fraction = float(deposited_overlaps[idx])
             q_field[idx, 0] += calibrated_q_density * overlap_fraction
             q_contributors[idx].append(block["block_id"])
             q_contributor_overlaps[idx].append(overlap_fraction)
@@ -880,8 +964,12 @@ def materialize_scene_arrays(
             "power_error_W": power_error,
             "realized_cell_count": int(len(indices)),
             "overlap_fraction_sum": float(np.sum(overlaps)),
+            "deposited_overlap_fraction_sum": float(np.sum(deposited_overlaps)),
+            "blocked_boundary_overlap_fraction_sum": blocked_overlap_fraction_sum,
             "max_overlap_fraction": float(np.max(overlaps)) if overlaps.size else 0.0,
-            "q_source_z_policy": Q_SOURCE_Z_POLICY,
+            "q_source_policy": Q_SOURCE_POLICY,
+            "semantic_boundary_inset_fraction": SEMANTIC_BOUNDARY_INSET_FRACTION,
+            "solver_safe_deposition_mask": SOLVER_SAFE_DEPOSITION_MASK,
             "DeltaT_target_bin": block["DeltaT_target_bin"],
             "metadata_tag": block["metadata_tag"],
         }
@@ -895,26 +983,24 @@ def materialize_scene_arrays(
         for winner in winning_block_id
     ]
     q_flat = q_field.reshape(-1)
-    bottom_indices = []
-    top_indices = []
     q_active_z_indices = []
-    nx, ny, nz = grid_shape
+    _, _, nz = grid_shape
     for idx in range(node_count):
         _, _, k = _node_ijk(idx, grid_shape)
-        if k == 0:
-            bottom_indices.append(idx)
-        if k == nz - 1:
-            top_indices.append(idx)
         if q_flat[idx] > 0.0:
             q_active_z_indices.append(k)
     q_total_target_power = float(sum(block["target_power_W"] for block in q_block_metadata))
     q_integral_from_array = float(np.sum(q_flat) * node_volume)
-    q_power_on_bottom = float(np.sum(q_flat[bottom_indices]) * node_volume)
-    q_power_on_top = float(np.sum(q_flat[top_indices]) * node_volume)
-    q_power_on_boundary = q_power_on_bottom + q_power_on_top
-    q_boundary_violation_count = int(
-        np.count_nonzero(q_flat[bottom_indices] > 0.0) + np.count_nonzero(q_flat[top_indices] > 0.0)
-    )
+    q_power_on_bottom = float(np.sum(q_flat[boundary_masks["bottom"]]) * node_volume)
+    q_power_on_top = float(np.sum(q_flat[boundary_masks["top"]]) * node_volume)
+    q_power_on_xmin = float(np.sum(q_flat[boundary_masks["xmin"]]) * node_volume)
+    q_power_on_xmax = float(np.sum(q_flat[boundary_masks["xmax"]]) * node_volume)
+    q_power_on_ymin = float(np.sum(q_flat[boundary_masks["ymin"]]) * node_volume)
+    q_power_on_ymax = float(np.sum(q_flat[boundary_masks["ymax"]]) * node_volume)
+    q_power_on_side = float(np.sum(q_flat[boundary_masks["side"]]) * node_volume)
+    q_power_on_boundary = float(np.sum(q_flat[boundary_masks["boundary"]]) * node_volume)
+    q_boundary_violation_count = int(np.count_nonzero(q_flat[boundary_masks["boundary"]] > 0.0))
+    q_side_boundary_violation_count = int(np.count_nonzero(q_flat[boundary_masks["side"]] > 0.0))
     q_active_z_min = float(min(q_active_z_indices)) if q_active_z_indices else None
     q_active_z_max = float(max(q_active_z_indices) + 1) if q_active_z_indices else None
     q_power_audit = {
@@ -923,6 +1009,11 @@ def materialize_scene_arrays(
         "q_total_power_error_W": q_integral_from_array - q_total_target_power,
         "q_power_on_bottom_W": q_power_on_bottom,
         "q_power_on_top_W": q_power_on_top,
+        "q_power_on_xmin_W": q_power_on_xmin,
+        "q_power_on_xmax_W": q_power_on_xmax,
+        "q_power_on_ymin_W": q_power_on_ymin,
+        "q_power_on_ymax_W": q_power_on_ymax,
+        "q_power_on_side_W": q_power_on_side,
         "q_power_on_boundary_W": q_power_on_boundary,
         "q_power_on_bottom_fraction": (
             q_power_on_bottom / q_integral_from_array if q_integral_from_array > 0.0 else 0.0
@@ -930,13 +1021,21 @@ def materialize_scene_arrays(
         "q_power_on_top_fraction": (
             q_power_on_top / q_integral_from_array if q_integral_from_array > 0.0 else 0.0
         ),
+        "q_power_on_side_fraction": (
+            q_power_on_side / q_integral_from_array if q_integral_from_array > 0.0 else 0.0
+        ),
         "q_source_boundary_violation_count": q_boundary_violation_count,
+        "q_source_side_boundary_violation_count": q_side_boundary_violation_count,
         "q_active_z_min": q_active_z_min,
         "q_active_z_max": q_active_z_max,
-        "q_source_z_policy": Q_SOURCE_Z_POLICY,
+        "semantic_boundary_inset_fraction": SEMANTIC_BOUNDARY_INSET_FRACTION,
+        "semantic_inset_domain_xyz": _semantic_inset_domain(),
+        "solver_safe_deposition_mask": SOLVER_SAFE_DEPOSITION_MASK,
+        "q_deposited_on_boundary_node_count": q_boundary_violation_count,
+        "q_source_policy": Q_SOURCE_POLICY,
     }
     sample_meta = {
-        "schema_version": "heat3d_v4_p3c_array_preflight_v1",
+        "schema_version": "heat3d_v4_p3c_array_preflight_v2",
         "scene_id": scene["scene_id"],
         "seed": scene["seed"],
         "array_preflight_only": True,
@@ -958,8 +1057,10 @@ def materialize_scene_arrays(
             "physical_grid_shape": grid_shape,
             "physical_control_volume_count": node_count,
             "material_claim_threshold": material_claim_threshold,
-            "q_source_z_policy": Q_SOURCE_Z_POLICY,
-            "q_active_z_range": [Q_ACTIVE_Z_MIN, Q_ACTIVE_Z_MAX],
+            "q_source_policy": Q_SOURCE_POLICY,
+            "semantic_boundary_inset_fraction": SEMANTIC_BOUNDARY_INSET_FRACTION,
+            "semantic_inset_domain_xyz": _semantic_inset_domain(),
+            "solver_safe_deposition_mask": SOLVER_SAFE_DEPOSITION_MASK,
         },
         "k_node_metadata": {
             "covered_by_blocks": covered_by_blocks,
@@ -1027,7 +1128,7 @@ def build_smoke16_write_plan(
             }
         )
     return {
-        "schema_version": "heat3d_v4_p3c_smoke16_write_plan_v1",
+        "schema_version": "heat3d_v4_p3c_smoke16_write_plan_v2",
         "sample_count": sample_count,
         "seed": seed,
         "dataset_dir": dataset_dir,
