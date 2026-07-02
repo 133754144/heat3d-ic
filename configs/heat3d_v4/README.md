@@ -26,6 +26,11 @@ For V4 semantic-normalization ablations, `condition_feature_transform` is also
 mirrored into `dataset.condition_feature_transform` and passed to the V4 runner.
 Supported semantic ablations are BC flags only, q only, k only, and full
 semantic v1.
+Dataset identity is explicit in the registry/CSV through `dataset_name`,
+`subset_path`, `manifest_path`, and `split_map_path`; these are mirrored into
+generated YAML `dataset` fields. V4 P3 candidate datasets use train/test split
+metadata, and the V4 runner bridges `test` to primary `valid_iid` validation
+while dropping `valid_stress`.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
@@ -55,8 +60,8 @@ Workflow:
    seed fields, unmapped-field warnings, and path conflicts.
 5. Run `scripts/prepare_heat3d_v4_run.py --dry-run` before any launch handoff;
    the dry-run output must show provenance fields, `normalization_profile`,
-   `metrics_profile`, `metrics_contract`, `selection_metric`, and selected
-   training script.
+   dataset identity fields, `metrics_profile`, `metrics_contract`,
+   `selection_metric`, and selected training script.
 6. Start tmux training only when the current user request explicitly approves a
    launch on a named server. Report the log path for live output.
 

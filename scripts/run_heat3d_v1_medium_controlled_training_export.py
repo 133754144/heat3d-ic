@@ -1439,16 +1439,59 @@ def _load_external_split_map(path: Path) -> dict[str, list[str]]:
     return split_ids_from_sample_splits(load_sample_split_map(path))
 
 
+def _is_heat3d_v4_subset(sample_root: Path) -> bool:
+    return sample_root.name.startswith("heat3d_v4_") or "heat3d_v4_" in str(sample_root)
+
+
+def _normalize_v4_train_test_splits(
+    split_ids: dict[str, list[str]],
+) -> tuple[dict[str, list[str]], bool]:
+    normalized = {split: list(ids) for split, ids in split_ids.items()}
+    normalized.pop("valid_stress", None)
+    bridged = False
+    if not normalized.get("valid_iid") and normalized.get("test"):
+        normalized["valid_iid"] = normalized.pop("test")
+        bridged = True
+    return normalized, bridged
+
+
 def _resolve_training_splits(
     sample_root: Path,
     split_map_path: Path | None,
 ) -> tuple[dict[str, list[str]], str, str, str | None]:
     if split_map_path is None:
         split_ids = _subset_split_ids(sample_root)
+        if _is_heat3d_v4_subset(sample_root):
+            split_ids, bridged = _normalize_v4_train_test_splits(split_ids)
+            train_ids = split_ids.get("train", [])
+            valid_iid_ids = split_ids.get("valid_iid", [])
+            if not train_ids or not valid_iid_ids:
+                raise ValueError(
+                    "Expected non-empty train and valid_iid/test splits for "
+                    "Heat3D V4 dataset sample_meta, found "
+                    f"train={len(train_ids)} valid_iid={len(valid_iid_ids)} "
+                    f"test={len(split_ids.get('test', []))}"
+                )
+            source = "sample_meta_v4_train_test_bridge" if bridged else "sample_meta_v4"
+            return split_ids, source, "valid_iid", None
         _require_train_valid_splits(split_ids)
         return split_ids, "sample_meta", "valid", None
 
     split_ids = _load_external_split_map(split_map_path)
+    if _is_heat3d_v4_subset(sample_root):
+        split_ids, bridged = _normalize_v4_train_test_splits(split_ids)
+        train_ids = split_ids.get("train", [])
+        valid_iid_ids = split_ids.get("valid_iid", [])
+        if not train_ids or not valid_iid_ids:
+            raise ValueError(
+                "Expected non-empty train and valid_iid/test splits for "
+                "--split-map on Heat3D V4 dataset, found "
+                f"train={len(train_ids)} valid_iid={len(valid_iid_ids)} "
+                f"test={len(split_ids.get('test', []))}"
+            )
+        source = "split_map_v4_train_test_bridge" if bridged else "split_map_v4"
+        return split_ids, source, "valid_iid", None
+
     train_ids = split_ids.get("train", [])
     valid_iid_ids = split_ids.get("valid_iid", [])
     if not train_ids or not valid_iid_ids:
