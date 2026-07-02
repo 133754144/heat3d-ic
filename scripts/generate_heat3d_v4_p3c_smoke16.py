@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Generate and solve the local V4 P3c 16-sample smoke dataset.
+"""Generate and solve local V4 P3c random-block datasets.
 
-This script is intentionally limited to the P3c smoke dataset path. It writes
-only the user-scoped smoke dataset and audit directories, calls the V4
-reference solver for labels, and never starts model training.
+This script writes only user-scoped P3c dataset and audit directories, calls
+the V4 reference solver for labels, and never starts model training.
 """
 
 from __future__ import annotations
 
 import argparse
+from collections import Counter
+import hashlib
 import json
 import shutil
 import sys
@@ -54,11 +55,258 @@ DELTA_T_BINS = (
     ("review_high", 8.0, 15.0),
     ("reject_high", 15.0, None),
 )
+SPLIT_AUDIT_FIELDS = (
+    "k_mode",
+    "diag3_policy",
+    "q_family",
+    "cooling_regime",
+    "DeltaT_bin",
+    "high_deltaT_triage",
+    "dataset_action",
+)
+SPLIT_POLICY_NAME = "deterministic_stratified_random_v0"
+DEFAULT_TRAIN_FRACTION = 0.75
 
 
-def _metadata_split_for_index(index: int, sample_count: int) -> str:
-    train_count = max(1, int(round(float(sample_count) * 0.75)))
-    return "train" if index < train_count else "test"
+def _target_split_counts(sample_count: int, train_fraction: float) -> tuple[int, int]:
+    if sample_count < 2:
+        return sample_count, 0
+    train_count = int(round(float(sample_count) * float(train_fraction)))
+    train_count = min(max(1, train_count), sample_count - 1)
+    return train_count, sample_count - train_count
+
+
+def _stable_unit_hash(seed: int, sample_id: str, salt: str) -> float:
+    digest = hashlib.sha256(f"{seed}:{salt}:{sample_id}".encode("utf-8")).hexdigest()
+    return int(digest[:16], 16) / float(16**16)
+
+
+def _desired_test_counts(
+    samples: list[dict[str, Any]],
+    *,
+    test_count: int,
+) -> dict[str, dict[str, int]]:
+    if not samples:
+        return {}
+    test_fraction = test_count / float(len(samples))
+    desired: dict[str, dict[str, int]] = {}
+    for field in SPLIT_AUDIT_FIELDS:
+        counts = Counter(str(sample.get(field, "missing")) for sample in samples)
+        desired[field] = {}
+        for value, count in counts.items():
+            if count <= 1:
+                desired[field][value] = 0
+            else:
+                desired[field][value] = min(count - 1, max(1, int(round(count * test_fraction))))
+    return desired
+
+
+def assign_stratified_splits(
+    samples: list[dict[str, Any]],
+    *,
+    seed: int,
+    train_fraction: float = DEFAULT_TRAIN_FRACTION,
+) -> dict[str, str]:
+    """Assign train/test using deterministic random tie-breaks and audit fields."""
+
+    train_count, test_count = _target_split_counts(len(samples), train_fraction)
+    if test_count == 0:
+        return {sample["sample_id"]: "train" for sample in samples}
+    desired = _desired_test_counts(samples, test_count=test_count)
+    field_counts = {
+        field: Counter(str(sample.get(field, "missing")) for sample in samples)
+        for field in SPLIT_AUDIT_FIELDS
+    }
+    selected_test: set[str] = set()
+    selected_counts = {field: Counter() for field in SPLIT_AUDIT_FIELDS}
+    remaining = {sample["sample_id"]: sample for sample in samples}
+
+    while len(selected_test) < test_count:
+        unsatisfied = []
+        for field in SPLIT_AUDIT_FIELDS:
+            for value, target in desired.get(field, {}).items():
+                current = selected_counts[field][value]
+                if target > current:
+                    unsatisfied.append(
+                        {
+                            "field": field,
+                            "value": value,
+                            "target": target,
+                            "current": current,
+                            "total": field_counts[field][value],
+                        }
+                    )
+        if not unsatisfied:
+            break
+        best_id = None
+        best_score = None
+        for sample_id, sample in remaining.items():
+            coverage_count = 0
+            weighted_coverage = 0.0
+            singleton_penalty = 0
+            for item in unsatisfied:
+                field = item["field"]
+                value = str(sample.get(field, "missing"))
+                if value == item["value"]:
+                    coverage_count += 1
+                    weighted_coverage += 1.0 / float(max(1, item["total"]))
+            if coverage_count == 0:
+                continue
+            for field in SPLIT_AUDIT_FIELDS:
+                value = str(sample.get(field, "missing"))
+                if field_counts[field][value] <= 1:
+                    singleton_penalty += 1
+            score = (
+                float(coverage_count),
+                weighted_coverage,
+                -float(singleton_penalty),
+                _stable_unit_hash(seed, sample_id, "strata_coverage"),
+            )
+            if best_score is None or score > best_score:
+                best_id = sample_id
+                best_score = score
+        if best_id is None:
+            break
+        selected_test.add(best_id)
+        chosen = remaining.pop(best_id)
+        for field in SPLIT_AUDIT_FIELDS:
+            selected_counts[field][str(chosen.get(field, "missing"))] += 1
+
+    while len(selected_test) < test_count:
+        best_id: str | None = None
+        best_score: tuple[float, ...] | None = None
+        for sample_id, sample in remaining.items():
+            need_count = 0
+            need_gap = 0
+            singleton_penalty = 0
+            for field in SPLIT_AUDIT_FIELDS:
+                value = str(sample.get(field, "missing"))
+                target = desired.get(field, {}).get(value, 0)
+                current = selected_counts[field][value]
+                gap = max(0, target - current)
+                if gap:
+                    need_count += 1
+                    need_gap += gap
+                if field_counts[field][value] <= 1:
+                    singleton_penalty += 1
+            score = (
+                float(need_count),
+                float(need_gap),
+                -float(singleton_penalty),
+                _stable_unit_hash(seed, sample_id, "split_tie_break"),
+            )
+            if best_score is None or score > best_score:
+                best_id = sample_id
+                best_score = score
+        if best_id is None:
+            break
+        selected_test.add(best_id)
+        chosen = remaining.pop(best_id)
+        for field in SPLIT_AUDIT_FIELDS:
+            selected_counts[field][str(chosen.get(field, "missing"))] += 1
+
+    split_map = {
+        sample["sample_id"]: ("test" if sample["sample_id"] in selected_test else "train")
+        for sample in samples
+    }
+    if sum(1 for split in split_map.values() if split == "train") != train_count:
+        raise RuntimeError("internal split count mismatch")
+    return split_map
+
+
+def build_split_audit(
+    samples: list[dict[str, Any]],
+    *,
+    split_map: dict[str, str],
+    seed: int,
+    train_fraction: float = DEFAULT_TRAIN_FRACTION,
+) -> dict[str, Any]:
+    split_counts = Counter(split_map.values())
+    fields: dict[str, Any] = {}
+    for field in SPLIT_AUDIT_FIELDS:
+        total = Counter(str(sample.get(field, "missing")) for sample in samples)
+        by_split = {
+            split: Counter(
+                str(sample.get(field, "missing"))
+                for sample in samples
+                if split_map.get(sample["sample_id"]) == split
+            )
+            for split in ("train", "test")
+        }
+        fields[field] = {
+            "total": dict(sorted(total.items())),
+            "by_split": {
+                split: dict(sorted(counts.items()))
+                for split, counts in by_split.items()
+            },
+            "missing_in_train": sorted(
+                value for value in total if by_split["train"].get(value, 0) == 0
+            ),
+            "missing_in_test": sorted(
+                value for value in total if by_split["test"].get(value, 0) == 0
+            ),
+        }
+    return {
+        "policy": SPLIT_POLICY_NAME,
+        "seed": int(seed),
+        "train_fraction": float(train_fraction),
+        "sample_count": len(samples),
+        "split_counts": dict(sorted(split_counts.items())),
+        "audit_fields": list(SPLIT_AUDIT_FIELDS),
+        "fields": fields,
+        "notes": [
+            "Split is assigned after solver audit so DeltaT/action strata are available.",
+            "Singleton categories cannot appear in both train and test; missing lists are expected for such categories.",
+        ],
+    }
+
+
+def build_review_closeout(samples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    records = []
+    for sample in samples:
+        if sample.get("dataset_action") == "keep_for_pilot":
+            continue
+        if sample.get("dataset_action") == "reject":
+            conclusion = "reject"
+        else:
+            conclusion = "review"
+        reasons = []
+        if sample.get("DeltaT_bin") in {"review_high", "reject_high"}:
+            reasons.append(
+                "high_deltaT_peak_without_solver_or_boundary_failure"
+            )
+        if abs(float(sample.get("q_total_power_error_W", 0.0))) <= 1.0e-10:
+            reasons.append("q_power_consistent")
+        if float(sample.get("q_power_on_boundary_W", 0.0)) == 0.0:
+            reasons.append("no_boundary_q_deposition")
+        if float(sample.get("low_k_q_overlap_fraction", 0.0)) >= 0.5:
+            reasons.append("substantial_low_k_source_overlap")
+        if sample.get("cooling_regime") == "weak_effective_air":
+            reasons.append("weak_cooling_regime")
+        if float(sample.get("q_total_target_power_W", 0.0)) > 2.0:
+            reasons.append("high_integrated_power_target")
+        records.append(
+            {
+                "sample_id": sample["sample_id"],
+                "split": sample.get("split", "unassigned"),
+                "conclusion": conclusion,
+                "dataset_action": sample.get("dataset_action"),
+                "DeltaT_bin": sample.get("DeltaT_bin"),
+                "DeltaT_peak_K": sample.get("DeltaT_peak_K"),
+                "DeltaT_p95_K": sample.get("DeltaT_p95_K"),
+                "q_family": sample.get("q_family"),
+                "cooling_regime": sample.get("cooling_regime"),
+                "q_total_target_power_W": sample.get("q_total_target_power_W"),
+                "q_max_after_sum_W_m3": sample.get("q_max_after_sum_W_m3"),
+                "low_k_q_overlap_fraction": sample.get("low_k_q_overlap_fraction"),
+                "high_deltaT_triage": sample.get("high_deltaT_triage"),
+                "solver_status": sample.get("solver_status"),
+                "q_total_power_error_W": sample.get("q_total_power_error_W"),
+                "q_power_on_boundary_W": sample.get("q_power_on_boundary_W"),
+                "reason_tags": reasons,
+            }
+        )
+    return records
 
 
 def _json_default(value: Any) -> Any:
@@ -344,6 +592,7 @@ def generate_smoke16(
     samples: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     manifest_samples = []
+    sample_records: list[dict[str, Any]] = []
     solver_options = SolverOptions(solver_mode="perfect_contact", matrix_backend="sparse_csr")
 
     for index, scene in enumerate(batch["scenes"]):
@@ -359,7 +608,7 @@ def generate_smoke16(
                 "solver_called": False,
                 "dataset_id": dataset_dir.name,
                 "sample_id": sample_id,
-                "split": _metadata_split_for_index(index, sample_count),
+                "split": "unassigned",
             }
         )
         np.save(sample_dir / "coords.npy", bundle["coords"])
@@ -410,6 +659,16 @@ def generate_smoke16(
                     "high_deltaT_triage": sample_audit["high_deltaT_triage"],
                     "physical_keep_reason": sample_audit["physical_keep_reason"],
                     "dataset_action": sample_audit["dataset_action"],
+                    "split": "unassigned",
+                }
+            )
+            sample_records.append(
+                {
+                    "sample_id": sample_id,
+                    "sample_dir": sample_dir,
+                    "meta": meta,
+                    "sample_audit": sample_audit,
+                    "manifest_sample": manifest_samples[-1],
                 }
             )
         except Exception as exc:  # noqa: BLE001
@@ -432,12 +691,32 @@ def generate_smoke16(
             failures.append(failure)
             break
 
+    split_map: dict[str, str] = {}
+    split_audit: dict[str, Any] = {}
+    if samples and not failures:
+        split_map = assign_stratified_splits(samples, seed=seed)
+        split_audit = build_split_audit(samples, split_map=split_map, seed=seed)
+        for record in sample_records:
+            split = split_map[record["sample_id"]]
+            record["meta"]["split"] = split
+            record["meta"]["split_policy"] = {
+                "policy": SPLIT_POLICY_NAME,
+                "seed": int(seed),
+                "assigned_after_solver_audit": True,
+                "audit_fields": list(SPLIT_AUDIT_FIELDS),
+            }
+            record["sample_audit"]["split"] = split
+            record["manifest_sample"]["split"] = split
+            _write_json(record["sample_dir"] / "sample_meta.json", record["meta"])
+
     manifest = {
-        "schema_version": "heat3d_v4_p3c_smoke16_manifest_v3",
+        "schema_version": "heat3d_v4_p3c_dataset_manifest_v4",
         "dataset_id": dataset_dir.name,
         "sample_count_requested": sample_count,
         "sample_count_written": len(manifest_samples),
         "seed": seed,
+        "split_map": split_map,
+        "split_audit": split_audit,
         "registry": str(registry_path.relative_to(REPO_ROOT)),
         "write_plan": write_plan,
         "sample_schema": {
@@ -446,6 +725,10 @@ def generate_smoke16(
         "samples": manifest_samples,
     }
     audit = _summary(samples, failures)
+    audit["schema_version"] = "heat3d_v4_p3c_dataset_audit_v4"
+    audit["split_map"] = split_map
+    audit["split_audit"] = split_audit
+    audit["review_sample_closeout"] = build_review_closeout(samples)
     _write_json(dataset_dir / "manifest.json", manifest)
     _write_json(output_dir / "audit_summary.json", audit)
     return audit
@@ -488,6 +771,8 @@ def main(argv: list[str] | None = None) -> int:
                 "high_deltaT_count": audit["high_deltaT_count"],
                 "dataset_action_counts": audit["dataset_action_counts"],
                 "high_deltaT_triage_counts": audit["high_deltaT_triage_counts"],
+                "split_counts": audit.get("split_audit", {}).get("split_counts", {}),
+                "review_sample_count": len(audit.get("review_sample_closeout", [])),
             },
             indent=2,
             sort_keys=True,
