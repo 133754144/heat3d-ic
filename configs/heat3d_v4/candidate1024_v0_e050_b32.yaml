@@ -1,0 +1,45 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: candidate1024_v0_e050_b32
+extends: V4_base.yaml
+overrides:
+  description: Heat3D V4 P3c candidate1024_v0 50-epoch training handoff config;
+    batch size selected by devbox 2-epoch B32 sweep.
+  dataset:
+    name: heat3d_v4_p3c_candidate1024_v0
+    subset_path: data/heat3d_v4_p3c_candidate1024_v0
+    manifest_path: data/heat3d_v4_p3c_candidate1024_v0/manifest.json
+    split_map_path: configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json
+    split_source: split_map
+  run:
+    epochs: 50
+    batch_size: 32
+    validation_batch_size: 32
+    prediction_batch_size: 32
+    final_probe_eval_after_training: false
+    post_training_diagnostics: false
+    final_probe_output_dir: output/heat3d_v4_final_probe/candidate1024_v0_e050_b32
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/candidate1024_v0_e050_b32
+    profile_timing: true
+    profile_timing_json: output/heat3d_v4_runs/candidate1024_v0_e050_b32/profile_timing.json
+  export:
+    output_dir: output/heat3d_v4_runs/candidate1024_v0_e050_b32
+    run_name: candidate1024_v0_e050_b32
+    prediction_split: valid_iid
+  metadata:
+    registry_config_id: candidate1024_v0_e050_b32
+    registry_status: standalone_yaml
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: candidate1024_v0_e050_b32
+    batch_policy_label: B32_sample_shuffle
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/candidate1024_v0_e050_b32.log
+    source_dataset_hash_manifest: 736336bab9f055232bf7b40643bc5e144e3b60b7e546822b30816a18a2fb2515
+    source_audit_summary_hash: 2d88977044e701bd1969bfa1e570ac3938ef96da0bf59734cc775d7ed6a4b175
+    source_sha256_manifest_hash: 4159d277a9c2810e4b0cac870f3e7b9d389bec60c22880143e1f2ee49036ed0d
+    batch_sweep_summary: B32 passed 2 epochs on devbox with finite losses,
+      finite gradients, and finite final/best predictions; B24/B16 not run
+      because B32 passed.
+    split_bridge_note: candidate1024_v0 published test split is mapped to
+      valid_iid for the current V4 runner; dataset manifest remains train/test.
+    reporting_requirements: stratify metrics by qc_class, DeltaT_bin, q_family,
+      cooling_regime, diag3_policy, and P3b-lite subset membership.
