@@ -95,6 +95,7 @@ def main() -> int:
             print(f"metrics_profile: {row['metrics_profile']}")
             print(f"metrics_contract: {row['metrics_contract']}")
             print(f"selection_metric: {row['selection_metric']}")
+            print(f"prediction_split: {row['prediction_split']}")
             print(summarize_command_plan(plan))
 
     print(f"prepared registry rows: {len(rows)}")

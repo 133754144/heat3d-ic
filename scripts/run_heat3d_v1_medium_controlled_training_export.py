@@ -2907,10 +2907,6 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             record.get("valid_iid_raw_rmse_K"),
             record.get("valid_raw_rmse_K"),
         )
-        valid_recovered_rmse = _first_progress_numeric(
-            record.get("valid_iid_recovered_T_rmse_K"),
-            record.get("valid_recovered_T_rmse_K"),
-        )
         valid_rel_rmse_pct = _first_progress_numeric(
             record.get("valid_iid_rel_rmse_v4_pct"),
             record.get("valid_rel_rmse_v4_pct"),
@@ -2923,7 +2919,6 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             f"train={_format_progress_loss(train_loss)} "
             f"valid={_format_progress_loss(valid_iid_loss)} "
             f"raw_rmse_K={_format_progress_value(valid_raw_rmse)} "
-            f"recovered_T_rmse_K={_format_progress_value(valid_recovered_rmse)} "
             f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)} "
             f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
             f"stress_raw_rmse_K={_format_progress_value(record.get('valid_stress_raw_rmse_K'))} "
@@ -2988,8 +2983,6 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"valid_rel_rmse_v4_pct={record['valid_rel_rmse_v4_pct']:.8e} "
         f"train_recovered_T_mse={record['train_recovered_T_mse']:.8e} "
         f"valid_recovered_T_mse={record['valid_recovered_T_mse']:.8e} "
-        f"train_recovered_T_rmse_K={record['train_recovered_T_rmse_K']:.8e} "
-        f"valid_recovered_T_rmse_K={record['valid_recovered_T_rmse_K']:.8e} "
         f"current_background_l1_weight={record['current_background_l1_weight']:.8e} "
         f"current_background_bias_weight={record['current_background_bias_weight']:.8e} "
         f"current_background_over_weight={record['current_background_over_weight']:.8e} "
@@ -3012,10 +3005,6 @@ def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: s
         record.get("valid_iid_raw_rmse_K"),
         record.get("valid_raw_rmse_K"),
     )
-    valid_recovered_rmse = _first_progress_numeric(
-        record.get("valid_iid_recovered_T_rmse_K"),
-        record.get("valid_recovered_T_rmse_K"),
-    )
     valid_rel_rmse_pct = _first_progress_numeric(
         record.get("valid_iid_rel_rmse_v4_pct"),
         record.get("valid_rel_rmse_v4_pct"),
@@ -3027,7 +3016,6 @@ def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: s
         f"valid_total={_format_progress_loss(valid_total)} "
         f"valid_base={_format_progress_loss(valid_base)} "
         f"raw_rmse_K={_format_progress_value(valid_raw_rmse)} "
-        f"recovered_T_rmse_K={_format_progress_value(valid_recovered_rmse)} "
         f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)}"
     )
 
@@ -4353,7 +4341,6 @@ def _print_final_summary(
         f"valid_base_mse={result['final_valid_loss_components']['base_mse']:.8e} "
         f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e} "
         f"raw_rmse_K={result['valid_metrics']['raw_rmse_K']:.8e} "
-        f"recovered_T_rmse_K={result['valid_metrics']['recovered_T_rmse_K']:.8e} "
         f"rel_rmse_v4_pct={_format_progress_percent(result['valid_metrics'].get('rel_rmse_v4_pct'))}"
     )
     if result.get("primary_validation_split") == "valid_iid":
@@ -4370,7 +4357,6 @@ def _print_final_summary(
         f"valid_base_mse={best.get('valid_base_mse'):.8e} "
         f"valid_raw_deltaT_mse={best.get('valid_raw_deltaT_mse'):.8e} "
         f"raw_rmse_K={_format_progress_value(best.get('valid_raw_deltaT_rmse_K'))} "
-        f"recovered_T_rmse_K={_format_progress_value(best.get('valid_recovered_T_rmse_K'))} "
         f"rel_rmse_v4_pct={_format_progress_percent(best.get('valid_rel_rmse_v4_pct'))}"
     )
     _emit(

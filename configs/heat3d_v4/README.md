@@ -109,6 +109,9 @@ Split-map fields:
   is the formal candidate1024_v0 train/valid/test split map.
 - `configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json` remains
   only as a legacy smoke bridge and should not be used for formal V4 P3 runs.
+- V4 formal training defaults to `prediction_split=valid_iid`; use
+  `prediction_split=all` only for explicit export/audit requests because it
+  forces full `all_groups` construction.
 
 Input feature and coordinate policy fields:
 
