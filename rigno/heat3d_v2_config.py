@@ -37,7 +37,7 @@ BATCH_SIZE_FIELDS = (
 )
 BATCH_BOOL_FIELDS = ("shuffle_train_batches", "drop_last")
 TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"}
-PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress"}
+PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress", "test_iid"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
 COVERAGE_REPAIR_POLICIES = {"none", "nearest_rnode"}
 NODE_COORDINATE_ENCODINGS = {"raw", "raw_plus_fourier"}

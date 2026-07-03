@@ -209,7 +209,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prediction-batch-size", type=int, default=88)
     parser.add_argument(
         "--prediction-split",
-        choices=("all", "train", "valid_iid", "valid_stress"),
+        choices=("all", "train", "valid_iid", "valid_stress", "test_iid"),
         default="all",
         help="Limit final/best prediction export to one split; training behavior is unchanged.",
     )
@@ -824,11 +824,28 @@ def _deltaT_error_pct(raw_delta_mse: Any, mean_abs_true_deltaT: Any) -> float | 
     return 100.0 * math.sqrt(max(mse, 0.0)) / denominator
 
 
+def _rmse_from_mse(mse: Any) -> float | None:
+    if mse is None:
+        return None
+    try:
+        value = float(mse)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(value):
+        return None
+    return math.sqrt(max(value, 0.0))
+
+
 def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
     if metrics is None:
         return None
-    if metrics.get("raw_deltaT_relative_rmse_pct") is not None:
-        return float(metrics["raw_deltaT_relative_rmse_pct"])
+    for key in (
+        "rel_rmse_v4_pct",
+        "raw_deltaT_relative_rmse_pct_v4",
+        "raw_deltaT_relative_rmse_pct",
+    ):
+        if metrics.get(key) is not None:
+            return float(metrics[key])
     return _deltaT_error_pct(metrics.get("raw_delta_mse"), metrics.get("mean_abs_true_deltaT"))
 
 
@@ -1032,7 +1049,12 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
         )
         for key in numeric_keys
     }
-    combined["raw_deltaT_relative_rmse_pct"] = _metric_error_pct(combined)
+    combined["raw_rmse_K"] = _rmse_from_mse(combined["raw_delta_mse"])
+    combined["recovered_T_rmse_K"] = _rmse_from_mse(combined["recovered_temperature_mse"])
+    relative_pct = _deltaT_error_pct(combined["raw_delta_mse"], combined["mean_abs_true_deltaT"])
+    combined["rel_rmse_v4_pct"] = relative_pct
+    combined["raw_deltaT_relative_rmse_pct_v4"] = relative_pct
+    combined["raw_deltaT_relative_rmse_pct"] = relative_pct
     combined["finite_ok"] = all(bool(metrics.get("finite_ok")) for _, metrics in weighted_entries)
     combined["shape_ok"] = all(bool(metrics.get("shape_ok")) for _, metrics in weighted_entries)
     return combined
@@ -1089,6 +1111,8 @@ def _profile_timing_payload(
     train_group_count: int,
     valid_group_count: int,
     all_group_count: int,
+    prediction_group_count: int | None = None,
+    all_groups_built: bool = True,
     train_batch_counts: list[int],
     subset: Path,
     output_dir: Path,
@@ -1105,6 +1129,7 @@ def _profile_timing_payload(
 ) -> dict[str, Any]:
     train_batch_records = train_batch_records or []
     validation_batch_records = validation_batch_records or []
+    prediction_group_count = int(all_group_count if prediction_group_count is None else prediction_group_count)
     per_epoch = []
     for record in epoch_records:
         batch_summary = record.get("train_batch_timing_summary", {})
@@ -1140,6 +1165,9 @@ def _profile_timing_payload(
         "train_groups_count": int(train_group_count),
         "valid_groups_count": int(valid_group_count),
         "all_groups_count": int(all_group_count),
+        "all_groups_built": bool(all_groups_built),
+        "all_groups_status": "built" if all_groups_built else "skipped",
+        "prediction_groups_count": int(prediction_group_count),
         "metadata_calls": int(profile_counts.get("graph_metadata_build_calls", 0)),
         "build_graphs_calls": int(profile_counts.get("graph_build_graphs_calls", 0)),
         "total_run_time_so_far": float(total_run_time_so_far or 0.0),
@@ -1176,7 +1204,7 @@ def _profile_timing_payload(
             "all_groups": int(all_group_count),
             "train_batches_per_epoch": [int(value) for value in train_batch_counts],
             "valid_batches": int(valid_group_count),
-            "prediction_batches": int(all_group_count),
+            "prediction_batches": int(prediction_group_count),
             **{key: int(value) for key, value in sorted(profile_counts.items())},
         },
         "per_epoch": per_epoch,
@@ -1200,7 +1228,9 @@ def _print_profile_timing(payload: dict[str, Any]) -> None:
     _emit(
         "  groups/batches: "
         f"train_groups={counts['train_groups']} valid_groups={counts['valid_groups']} "
-        f"all_groups={counts['all_groups']} valid_batches={counts['valid_batches']} "
+        f"all_groups={counts['all_groups']} "
+        f"all_groups_status={run_level.get('all_groups_status', 'built')} "
+        f"valid_batches={counts['valid_batches']} "
         f"prediction_batches={counts['prediction_batches']}"
     )
     _emit(
@@ -2481,12 +2511,18 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     divisor = max(count, 1)
     mean_abs_true_delta = float(weighted_mean_abs_true_delta / divisor)
     raw_delta_mse = float(weighted_raw_delta_mse / divisor)
+    recovered_temperature_mse = float(weighted_recovered_mse / divisor)
+    relative_pct = _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta)
     return {
         "normalized_loss": float(weighted_normalized_loss / divisor),
         "raw_delta_mse": raw_delta_mse,
-        "recovered_temperature_mse": float(weighted_recovered_mse / divisor),
+        "raw_rmse_K": _rmse_from_mse(raw_delta_mse),
+        "recovered_temperature_mse": recovered_temperature_mse,
+        "recovered_T_rmse_K": _rmse_from_mse(recovered_temperature_mse),
         "mean_abs_true_deltaT": mean_abs_true_delta,
-        "raw_deltaT_relative_rmse_pct": _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta),
+        "rel_rmse_v4_pct": relative_pct,
+        "raw_deltaT_relative_rmse_pct_v4": relative_pct,
+        "raw_deltaT_relative_rmse_pct": relative_pct,
         "finite_ok": finite_ok,
         "shape_ok": shape_ok,
     }
@@ -2658,6 +2694,21 @@ def _best_selection_payload(
         "best_valid_raw_deltaT_mse": best_record.get("valid_raw_deltaT_mse"),
         "best_valid_iid_raw_deltaT_mse": best_record.get("valid_iid_raw_deltaT_mse"),
         "best_valid_stress_raw_deltaT_mse": best_record.get("valid_stress_raw_deltaT_mse"),
+        "best_valid_raw_deltaT_rmse_K": best_record.get("valid_raw_deltaT_rmse_K"),
+        "best_valid_iid_raw_deltaT_rmse_K": best_record.get("valid_iid_raw_deltaT_rmse_K"),
+        "best_valid_stress_raw_deltaT_rmse_K": best_record.get("valid_stress_raw_deltaT_rmse_K"),
+        "best_valid_recovered_T_mse": best_record.get("valid_recovered_T_mse"),
+        "best_valid_iid_recovered_T_mse": best_record.get("valid_iid_recovered_T_mse"),
+        "best_valid_stress_recovered_T_mse": best_record.get("valid_stress_recovered_T_mse"),
+        "best_valid_recovered_T_rmse_K": best_record.get("valid_recovered_T_rmse_K"),
+        "best_valid_iid_recovered_T_rmse_K": best_record.get("valid_iid_recovered_T_rmse_K"),
+        "best_valid_stress_recovered_T_rmse_K": best_record.get("valid_stress_recovered_T_rmse_K"),
+        "best_valid_relative_rmse_pct_v4": best_record.get("valid_rel_rmse_v4_pct"),
+        "best_valid_iid_relative_rmse_pct_v4": best_record.get("valid_iid_rel_rmse_v4_pct"),
+        "best_valid_stress_relative_rmse_pct_v4": best_record.get("valid_stress_rel_rmse_v4_pct"),
+        "best_relative_metric_denominator_mean_abs_true_deltaT": best_record.get(
+            "valid_relative_metric_denominator_mean_abs_true_deltaT"
+        ),
         "best_valid_base_mse": best_record.get("valid_base_mse"),
         "best_valid_iid_base_mse": best_record.get("valid_iid_base_mse"),
         "best_valid_stress_base_mse": best_record.get("valid_stress_base_mse"),
@@ -2668,6 +2719,29 @@ def _best_selection_payload(
         "final_valid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
         "final_valid_iid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
         "final_valid_stress_raw_deltaT_mse": result.get("final_valid_stress_raw_deltaT_mse"),
+        "final_valid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+        "final_valid_iid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+        "final_valid_stress_raw_deltaT_rmse_K": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("raw_rmse_K"),
+        "final_valid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+        "final_valid_iid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+        "final_valid_stress_recovered_T_mse": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("recovered_temperature_mse"),
+        "final_valid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+        "final_valid_iid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+        "final_valid_stress_recovered_T_rmse_K": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("recovered_T_rmse_K"),
+        "final_valid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+        "final_valid_iid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+        "final_valid_stress_relative_rmse_pct_v4": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("rel_rmse_v4_pct"),
+        "final_relative_metric_denominator_mean_abs_true_deltaT": result.get("valid_metrics", {}).get(
+            "mean_abs_true_deltaT"
+        ),
         "final_valid_base_mse": result.get("final_valid_loss_components", {}).get("base_mse"),
         "final_valid_iid_base_mse": (
             result.get("final_valid_iid_loss_components", {}) or {}
@@ -2757,13 +2831,36 @@ def _epoch_history_record(
         "train_raw_deltaT_mse": _maybe_float(train_metrics, "raw_delta_mse"),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
         "valid_iid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]) if primary_validation_split == "valid_iid" else None,
+        "train_raw_rmse_K": _maybe_float(train_metrics, "raw_rmse_K"),
+        "valid_raw_rmse_K": float(valid_metrics["raw_rmse_K"]),
+        "valid_iid_raw_rmse_K": float(valid_metrics["raw_rmse_K"]) if primary_validation_split == "valid_iid" else None,
+        "train_raw_deltaT_rmse_K": _maybe_float(train_metrics, "raw_rmse_K"),
+        "valid_raw_deltaT_rmse_K": float(valid_metrics["raw_rmse_K"]),
+        "valid_iid_raw_deltaT_rmse_K": (
+            float(valid_metrics["raw_rmse_K"]) if primary_validation_split == "valid_iid" else None
+        ),
         "train_error_pct": _metric_error_pct(train_metrics),
         "valid_error_pct": _metric_error_pct(valid_metrics),
         "valid_iid_error_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
+        "train_rel_rmse_v4_pct": _metric_error_pct(train_metrics),
+        "valid_rel_rmse_v4_pct": _metric_error_pct(valid_metrics),
+        "valid_iid_rel_rmse_v4_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
+        "train_relative_metric_denominator_mean_abs_true_deltaT": _maybe_float(
+            train_metrics, "mean_abs_true_deltaT"
+        ),
+        "valid_relative_metric_denominator_mean_abs_true_deltaT": float(valid_metrics["mean_abs_true_deltaT"]),
+        "valid_iid_relative_metric_denominator_mean_abs_true_deltaT": (
+            float(valid_metrics["mean_abs_true_deltaT"]) if primary_validation_split == "valid_iid" else None
+        ),
         "train_recovered_T_mse": _maybe_float(train_metrics, "recovered_temperature_mse"),
         "valid_recovered_T_mse": float(valid_metrics["recovered_temperature_mse"]),
         "valid_iid_recovered_T_mse": (
             float(valid_metrics["recovered_temperature_mse"]) if primary_validation_split == "valid_iid" else None
+        ),
+        "train_recovered_T_rmse_K": _maybe_float(train_metrics, "recovered_T_rmse_K"),
+        "valid_recovered_T_rmse_K": float(valid_metrics["recovered_T_rmse_K"]),
+        "valid_iid_recovered_T_rmse_K": (
+            float(valid_metrics["recovered_T_rmse_K"]) if primary_validation_split == "valid_iid" else None
         ),
         "train_full_metrics_computed": train_components is not None and train_metrics is not None,
     }
@@ -2774,8 +2871,15 @@ def _epoch_history_record(
                 "valid_stress_loss": float(valid_stress_components["total_loss"]),
                 "valid_stress_base_mse": float(valid_stress_components["base_mse"]),
                 "valid_stress_raw_deltaT_mse": float(valid_stress_metrics["raw_delta_mse"]),
+                "valid_stress_raw_rmse_K": float(valid_stress_metrics["raw_rmse_K"]),
+                "valid_stress_raw_deltaT_rmse_K": float(valid_stress_metrics["raw_rmse_K"]),
                 "valid_stress_error_pct": _metric_error_pct(valid_stress_metrics),
+                "valid_stress_rel_rmse_v4_pct": _metric_error_pct(valid_stress_metrics),
+                "valid_stress_relative_metric_denominator_mean_abs_true_deltaT": float(
+                    valid_stress_metrics["mean_abs_true_deltaT"]
+                ),
                 "valid_stress_recovered_T_mse": float(valid_stress_metrics["recovered_temperature_mse"]),
+                "valid_stress_recovered_T_rmse_K": float(valid_stress_metrics["recovered_T_rmse_K"]),
                 "valid_stress_bg_signed_bias": float(valid_stress_components["bg_signed_bias"]),
                 "valid_stress_hotspot_raw_mae": float(valid_stress_components["hotspot_raw_mae"]),
                 "valid_stress_hotspot_mse": float(valid_stress_components["hotspot_mse"]),
@@ -2799,17 +2903,30 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         valid_iid_loss = record.get("valid_iid_loss")
         if valid_iid_loss is None:
             valid_iid_loss = record.get("valid_loss")
-        valid_iid_error_pct = record.get("valid_iid_error_pct")
-        if valid_iid_error_pct is None:
-            valid_iid_error_pct = record.get("valid_error_pct")
+        valid_raw_rmse = _first_progress_numeric(
+            record.get("valid_iid_raw_rmse_K"),
+            record.get("valid_raw_rmse_K"),
+        )
+        valid_recovered_rmse = _first_progress_numeric(
+            record.get("valid_iid_recovered_T_rmse_K"),
+            record.get("valid_recovered_T_rmse_K"),
+        )
+        valid_rel_rmse_pct = _first_progress_numeric(
+            record.get("valid_iid_rel_rmse_v4_pct"),
+            record.get("valid_rel_rmse_v4_pct"),
+            record.get("valid_iid_error_pct"),
+            record.get("valid_error_pct"),
+        )
         _emit(
             f"epoch {record['epoch']}/{epochs} "
             f"lr={record['lr']:.2e} "
             f"train={_format_progress_loss(train_loss)} "
-            f"iid={_format_progress_loss(valid_iid_loss)} "
-            f"iid_err={_format_progress_percent(valid_iid_error_pct)} "
+            f"valid={_format_progress_loss(valid_iid_loss)} "
+            f"raw_rmse_K={_format_progress_value(valid_raw_rmse)} "
+            f"recovered_T_rmse_K={_format_progress_value(valid_recovered_rmse)} "
+            f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)} "
             f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
-            f"stress_err={_format_progress_percent(record.get('valid_stress_error_pct'))} "
+            f"stress_raw_rmse_K={_format_progress_value(record.get('valid_stress_raw_rmse_K'))} "
             f"best=e{_format_progress_int(record.get('best_epoch'))}/"
             f"{_format_progress_loss(record.get('best_valid_iid_loss'))}"
         )
@@ -2866,8 +2983,13 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"valid_hotspot_raw_mae={record['valid_hotspot_raw_mae']:.8e} "
         f"train_raw_deltaT_mse={record['train_raw_deltaT_mse']:.8e} "
         f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.8e} "
+        f"train_raw_rmse_K={record['train_raw_rmse_K']:.8e} "
+        f"valid_raw_rmse_K={record['valid_raw_rmse_K']:.8e} "
+        f"valid_rel_rmse_v4_pct={record['valid_rel_rmse_v4_pct']:.8e} "
         f"train_recovered_T_mse={record['train_recovered_T_mse']:.8e} "
         f"valid_recovered_T_mse={record['valid_recovered_T_mse']:.8e} "
+        f"train_recovered_T_rmse_K={record['train_recovered_T_rmse_K']:.8e} "
+        f"valid_recovered_T_rmse_K={record['valid_recovered_T_rmse_K']:.8e} "
         f"current_background_l1_weight={record['current_background_l1_weight']:.8e} "
         f"current_background_bias_weight={record['current_background_bias_weight']:.8e} "
         f"current_background_over_weight={record['current_background_over_weight']:.8e} "
@@ -2886,14 +3008,27 @@ def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: s
     valid_base = record.get("valid_iid_base_mse")
     if valid_base is None:
         valid_base = record.get("valid_base_mse")
-    iid_error_pct = record.get("valid_iid_error_pct")
-    if iid_error_pct is None:
-        iid_error_pct = record.get("valid_error_pct")
+    valid_raw_rmse = _first_progress_numeric(
+        record.get("valid_iid_raw_rmse_K"),
+        record.get("valid_raw_rmse_K"),
+    )
+    valid_recovered_rmse = _first_progress_numeric(
+        record.get("valid_iid_recovered_T_rmse_K"),
+        record.get("valid_recovered_T_rmse_K"),
+    )
+    valid_rel_rmse_pct = _first_progress_numeric(
+        record.get("valid_iid_rel_rmse_v4_pct"),
+        record.get("valid_rel_rmse_v4_pct"),
+        record.get("valid_iid_error_pct"),
+        record.get("valid_error_pct"),
+    )
     _emit(
         f"epoch {record['epoch']:03d}/{epochs:03d} "
         f"valid_total={_format_progress_loss(valid_total)} "
         f"valid_base={_format_progress_loss(valid_base)} "
-        f"iid_err={_format_progress_percent(iid_error_pct)}"
+        f"raw_rmse_K={_format_progress_value(valid_raw_rmse)} "
+        f"recovered_T_rmse_K={_format_progress_value(valid_recovered_rmse)} "
+        f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)}"
     )
 
 
@@ -3006,6 +3141,7 @@ def _fit_once(
     best_score: float | None = None
     best_record: dict[str, Any] | None = None
     best_params = None
+    best_params_storage: str | None = None
     final_epoch_train_components = None
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
@@ -3463,7 +3599,8 @@ def _fit_once(
                 )
             best_score = score
             best_record = dict(record)
-            best_params = _copy_params(params)
+            best_params = _host_params(params)
+            best_params_storage = "cpu"
             if memory_audit is not None:
                 memory_audit.record("best_params_copy_end", epoch=epoch)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
@@ -3605,6 +3742,7 @@ def _fit_once(
         "checkpoint_load_info": checkpoint_load_info,
         "best_record": best_record,
         "best_params": best_params,
+        "best_params_storage": best_params_storage,
         "best_score": best_score,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
@@ -3901,6 +4039,27 @@ def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict
             "valid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
             "valid_iid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
             "valid_stress_raw_deltaT_mse": result.get("final_valid_stress_raw_deltaT_mse"),
+            "valid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+            "valid_iid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+            "valid_stress_raw_deltaT_rmse_K": (result.get("valid_stress_metrics", {}) or {}).get("raw_rmse_K"),
+            "valid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+            "valid_iid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+            "valid_stress_recovered_T_mse": (
+                result.get("valid_stress_metrics", {}) or {}
+            ).get("recovered_temperature_mse"),
+            "valid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+            "valid_iid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+            "valid_stress_recovered_T_rmse_K": (
+                result.get("valid_stress_metrics", {}) or {}
+            ).get("recovered_T_rmse_K"),
+            "valid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+            "valid_iid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+            "valid_stress_relative_rmse_pct_v4": (
+                result.get("valid_stress_metrics", {}) or {}
+            ).get("rel_rmse_v4_pct"),
+            "relative_metric_denominator_mean_abs_true_deltaT": result.get("valid_metrics", {}).get(
+                "mean_abs_true_deltaT"
+            ),
             "valid_base_mse": result.get("final_valid_loss_components", {}).get("base_mse"),
             "valid_iid_base_mse": (result.get("final_valid_iid_loss_components", {}) or {}).get("base_mse"),
             "valid_stress_base_mse": (result.get("final_valid_stress_loss_components", {}) or {}).get("base_mse"),
@@ -4001,6 +4160,22 @@ def _metrics_payload(metrics: dict[str, Any]) -> dict[str, Any]:
     return {
         key: (bool(value) if isinstance(value, (bool, np.bool_)) else float(value))
         for key, value in metrics.items()
+    }
+
+
+def _validation_metric_scalars(metrics: dict[str, Any]) -> dict[str, Any]:
+    relative_pct = _metric_error_pct(metrics)
+    return {
+        "valid_raw_deltaT_mse": float(metrics["raw_delta_mse"]),
+        "valid_raw_deltaT_rmse_K": float(metrics["raw_rmse_K"]),
+        "valid_recovered_T_mse": float(metrics["recovered_temperature_mse"]),
+        "valid_recovered_temperature_mse": float(metrics["recovered_temperature_mse"]),
+        "valid_recovered_T_rmse_K": float(metrics["recovered_T_rmse_K"]),
+        "valid_relative_rmse_pct_v4": relative_pct,
+        "rel_rmse_v4_pct": relative_pct,
+        "valid_raw_deltaT_relative_rmse_pct_v4": relative_pct,
+        "raw_deltaT_relative_rmse_pct_v4": relative_pct,
+        "relative_metric_denominator_mean_abs_true_deltaT": float(metrics["mean_abs_true_deltaT"]),
     }
 
 
@@ -4176,7 +4351,10 @@ def _print_final_summary(
         "  final: "
         f"epoch={result['final_epoch']} valid_loss={result['final_valid_loss']:.8e} "
         f"valid_base_mse={result['final_valid_loss_components']['base_mse']:.8e} "
-        f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e}"
+        f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e} "
+        f"raw_rmse_K={result['valid_metrics']['raw_rmse_K']:.8e} "
+        f"recovered_T_rmse_K={result['valid_metrics']['recovered_T_rmse_K']:.8e} "
+        f"rel_rmse_v4_pct={_format_progress_percent(result['valid_metrics'].get('rel_rmse_v4_pct'))}"
     )
     if result.get("primary_validation_split") == "valid_iid":
         _emit(
@@ -4190,7 +4368,10 @@ def _print_final_summary(
         f"metric={args.selection_metric} epoch={best.get('epoch')} "
         f"valid_loss={best.get('valid_loss'):.8e} "
         f"valid_base_mse={best.get('valid_base_mse'):.8e} "
-        f"valid_raw_deltaT_mse={best.get('valid_raw_deltaT_mse'):.8e}"
+        f"valid_raw_deltaT_mse={best.get('valid_raw_deltaT_mse'):.8e} "
+        f"raw_rmse_K={_format_progress_value(best.get('valid_raw_deltaT_rmse_K'))} "
+        f"recovered_T_rmse_K={_format_progress_value(best.get('valid_recovered_T_rmse_K'))} "
+        f"rel_rmse_v4_pct={_format_progress_percent(best.get('valid_rel_rmse_v4_pct'))}"
     )
     _emit(
         "  predictions: "
@@ -5272,12 +5453,14 @@ def _prediction_groups_for_split(
     train_groups: list[dict],
     valid_groups: list[dict],
     valid_stress_groups: list[dict],
+    test_iid_groups: list[dict],
 ) -> list[dict]:
     groups_by_split = {
         "all": all_groups,
         "train": train_groups,
         "valid_iid": valid_groups,
         "valid_stress": valid_stress_groups,
+        "test_iid": test_iid_groups,
     }
     groups = groups_by_split[prediction_split]
     _require_nonempty_groups(groups, f"prediction split {prediction_split}")
@@ -5373,6 +5556,7 @@ def main() -> int:
     train_ids = split_ids["train"]
     valid_ids = split_ids[primary_validation_split]
     valid_stress_ids = split_ids.get(stress_validation_split, []) if stress_validation_split is not None else []
+    test_iid_ids = split_ids.get("test_iid", [])
     split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
     train_sample_weights, sample_weight_summary = _prepare_train_sample_weights(
         train_ids,
@@ -5408,7 +5592,6 @@ def main() -> int:
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
     valid_stress_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_stress_ids]
-    all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
     _progress(
         progress_enabled,
         "startup",
@@ -5494,46 +5677,78 @@ def main() -> int:
         if stress_validation_split is not None and valid_stress_examples
         else []
     )
-    all_groups = _make_groups_with_progress(
-        all_examples,
-        stats,
-        builder,
-        "all",
-        progress_detail_enabled,
-        args.progress_detail,
-        seed_config["graph_seed"],
-        batch_size=batch_config["prediction_batch_size"],
-        drop_last=False,
-        profile_counts=profile_counts if profile_enabled else None,
-    )
+    build_all_groups = args.prediction_split == "all"
+    build_test_iid_groups = args.prediction_split == "test_iid"
+    all_groups: list[dict[str, Any]] = []
+    test_iid_groups: list[dict[str, Any]] = []
+    if build_all_groups:
+        all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
+        all_groups = _make_groups_with_progress(
+            all_examples,
+            stats,
+            builder,
+            "all",
+            progress_detail_enabled,
+            args.progress_detail,
+            seed_config["graph_seed"],
+            batch_size=batch_config["prediction_batch_size"],
+            drop_last=False,
+            profile_counts=profile_counts if profile_enabled else None,
+        )
+    if build_test_iid_groups:
+        test_iid_examples = [dataset[index_by_id[sample_id]] for sample_id in test_iid_ids]
+        test_iid_groups = _make_groups_with_progress(
+            test_iid_examples,
+            stats,
+            builder,
+            "test_iid",
+            progress_detail_enabled,
+            args.progress_detail,
+            seed_config["graph_seed"],
+            batch_size=batch_config["prediction_batch_size"],
+            drop_last=False,
+            profile_counts=profile_counts if profile_enabled else None,
+        )
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
-    _require_nonempty_groups(all_groups, "all")
-    _check_decoder_bypass_input_alignment(
-        model_config,
-        [*train_groups, *valid_groups, *valid_stress_groups, *all_groups],
-    )
+    if build_all_groups:
+        _require_nonempty_groups(all_groups, "all")
+    if build_test_iid_groups:
+        _require_nonempty_groups(test_iid_groups, "test_iid")
+    alignment_groups = [*train_groups, *valid_groups, *valid_stress_groups]
+    if build_all_groups:
+        alignment_groups.extend(all_groups)
+    if build_test_iid_groups:
+        alignment_groups.extend(test_iid_groups)
+    _check_decoder_bypass_input_alignment(model_config, alignment_groups)
     _record_timing(timings, "group_build", group_start)
+    all_groups_status = str(len(all_groups)) if build_all_groups else "skipped"
+    test_iid_groups_status = str(len(test_iid_groups)) if build_test_iid_groups else "skipped"
     _progress(
         progress_enabled,
         "startup",
         (
             "groups built: "
             f"train_groups={len(train_groups)} {primary_validation_split}_groups={len(valid_groups)} "
-            f"valid_stress_groups={len(valid_stress_groups)} all_groups={len(all_groups)}"
+            f"valid_stress_groups={len(valid_stress_groups)} "
+            f"test_iid_groups={test_iid_groups_status} all_groups={all_groups_status}"
         ),
         group_start,
     )
     if memory_audit is not None:
+        built_group_signatures = {
+            "train": _groups_memory_signature(train_groups),
+            primary_validation_split: _groups_memory_signature(valid_groups),
+            "valid_stress": _groups_memory_signature(valid_stress_groups),
+        }
+        if build_test_iid_groups:
+            built_group_signatures["test_iid"] = _groups_memory_signature(test_iid_groups)
+        if build_all_groups:
+            built_group_signatures["all"] = _groups_memory_signature(all_groups)
         memory_audit.record(
             "groups_built",
-            detail={
-                "train": _groups_memory_signature(train_groups),
-                primary_validation_split: _groups_memory_signature(valid_groups),
-                "valid_stress": _groups_memory_signature(valid_stress_groups),
-                "all": _groups_memory_signature(all_groups),
-            },
+            detail=built_group_signatures,
         )
 
     _print_startup_summary(
@@ -5587,6 +5802,7 @@ def main() -> int:
         train_groups=train_groups,
         valid_groups=valid_groups,
         valid_stress_groups=valid_stress_groups,
+        test_iid_groups=test_iid_groups,
     )
     predictions_path = output_dir / "predictions.npz"
     predictions: dict[str, np.ndarray] = {}
@@ -5639,7 +5855,11 @@ def main() -> int:
                 detail=_groups_memory_signature(prediction_groups),
             )
         _progress(progress_enabled, "export", "building best-valid recovered predictions ...")
-        best_predictions = _predict_temperatures(result["model"], result["best_params"], prediction_groups, stats)
+        best_params_device = _device_params(result["best_params"])
+        try:
+            best_predictions = _predict_temperatures(result["model"], best_params_device, prediction_groups, stats)
+        finally:
+            del best_params_device
         best_prediction_count = len(best_predictions)
         _record_timing(timings, "best_prediction_export", best_prediction_start)
         if memory_audit is not None:
@@ -5821,6 +6041,10 @@ def main() -> int:
         "train_group_names": result["train_group_names"],
         "valid_iid_group_count": result["valid_iid_group_count"],
         "valid_stress_group_count": result["valid_stress_group_count"],
+        "test_iid_group_count": len(test_iid_groups) if build_test_iid_groups else 0,
+        "all_groups_count": len(all_groups),
+        "all_groups_status": "built" if build_all_groups else "skipped",
+        "prediction_group_count": len(prediction_groups),
         "train_group_sample_id_hash": result["train_group_sample_id_hash"],
         "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
         "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
@@ -5836,6 +6060,8 @@ def main() -> int:
         "final_metrics_reused": result["final_metrics_reused"],
         "final_metrics_reuse_source": result["final_metrics_reuse_source"],
         "final_metrics_time_s": result["final_metrics_time_s"],
+        **_validation_metric_scalars(result["valid_metrics"]),
+        "best_params_storage": result.get("best_params_storage"),
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
@@ -5877,6 +6103,7 @@ def main() -> int:
         "valid_ids": valid_ids,
         "valid_iid_ids": valid_ids if primary_validation_split == "valid_iid" else [],
         "valid_stress_ids": valid_stress_ids,
+        "test_iid_ids": test_iid_ids,
         "ignored_candidate_ids": sorted(
             sample_id
             for split, ids in split_ids.items()
@@ -5918,6 +6145,10 @@ def main() -> int:
         "train_group_names": result["train_group_names"],
         "valid_iid_group_count": result["valid_iid_group_count"],
         "valid_stress_group_count": result["valid_stress_group_count"],
+        "test_iid_group_count": len(test_iid_groups) if build_test_iid_groups else 0,
+        "all_groups_count": len(all_groups),
+        "all_groups_status": "built" if build_all_groups else "skipped",
+        "prediction_group_count": len(prediction_groups),
         "train_group_sample_id_hash": result["train_group_sample_id_hash"],
         "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
         "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
@@ -6006,6 +6237,8 @@ def main() -> int:
         "final_metrics_reused": result["final_metrics_reused"],
         "final_metrics_reuse_source": result["final_metrics_reuse_source"],
         "final_metrics_time_s": result["final_metrics_time_s"],
+        **_validation_metric_scalars(result["valid_metrics"]),
+        "best_params_storage": result.get("best_params_storage"),
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
@@ -6162,6 +6395,8 @@ def main() -> int:
         train_group_count=len(train_groups),
         valid_group_count=len(valid_groups),
         all_group_count=len(all_groups),
+        prediction_group_count=len(prediction_groups),
+        all_groups_built=build_all_groups,
         train_batch_counts=[int(value) for value in result["epoch_batch_counts"]],
         subset=sample_root,
         output_dir=output_dir,

@@ -28,9 +28,9 @@ Supported semantic ablations are BC flags only, q only, k only, and full
 semantic v1.
 Dataset identity is explicit in the registry/CSV through `dataset_name`,
 `subset_path`, `manifest_path`, and `split_map_path`; these are mirrored into
-generated YAML `dataset` fields. V4 P3 candidate datasets use train/test split
-metadata, and the V4 runner bridges `test` to primary `valid_iid` validation
-while dropping `valid_stress`.
+generated YAML `dataset` fields. V4 P3 candidate1024 formal configs use the
+tracked train768/valid128/test128 split map. The older test-as-valid map is a
+smoke legacy reference only.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
@@ -105,6 +105,10 @@ Split-map fields:
 - `split_map_path` is a resolved configuration field in the V4 registry/CSV.
   Post-training diagnostics should use the active split map explicitly instead
   of relying only on `sample_meta["split"]`.
+- `configs/heat3d_v4/candidate1024_v0_train768_valid128_test128_stratified_seed0.json`
+  is the formal candidate1024_v0 train/valid/test split map.
+- `configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json` remains
+  only as a legacy smoke bridge and should not be used for formal V4 P3 runs.
 
 Input feature and coordinate policy fields:
 
@@ -133,6 +137,8 @@ Decoder bypass fields:
 Metrics policy:
 
 - default checkpoint selection is `valid_base_mse`;
+- runner progress no longer emits the legacy `iid_err` label. Use
+  `raw_rmse_K`, `recovered_T_rmse_K`, and `rel_rmse_v4_pct` instead.
 - `mse`, `rmse`, and `mae` are overall model-performance report metrics;
 - raw DeltaT metrics report physical-scale error and stay separate from
   normalized validation;

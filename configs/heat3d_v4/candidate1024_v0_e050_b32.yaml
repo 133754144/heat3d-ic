@@ -8,7 +8,7 @@ overrides:
     name: heat3d_v4_p3c_candidate1024_v0
     subset_path: data/heat3d_v4_p3c_candidate1024_v0
     manifest_path: data/heat3d_v4_p3c_candidate1024_v0/manifest.json
-    split_map_path: configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json
+    split_map_path: configs/heat3d_v4/candidate1024_v0_train768_valid128_test128_stratified_seed0.json
     split_source: split_map
   run:
     epochs: 50
@@ -39,7 +39,7 @@ overrides:
     batch_sweep_summary: B32 passed 2 epochs on devbox with finite losses,
       finite gradients, and finite final/best predictions; B24/B16 not run
       because B32 passed.
-    split_bridge_note: candidate1024_v0 published test split is mapped to
-      valid_iid for the current V4 runner; dataset manifest remains train/test.
+    split_protocol_note: formal candidate1024_v0 split map uses train 768,
+      valid_iid 128, and test_iid 128; old test-as-valid map is smoke-only.
     reporting_requirements: stratify metrics by qc_class, DeltaT_bin, q_family,
       cooling_regime, diag3_policy, and P3b-lite subset membership.

@@ -133,7 +133,7 @@ Batch-size note:
 - Accepted sample files checked: 1024 sample directories, with no missing
   required files.
 - Manifest split: train 768, test 256.
-- Runner split bridge:
+- Legacy smoke split bridge:
   `configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json`
   maps the published test split to `valid_iid` as 768 train / 256 valid_iid.
 - `Heat3DV1NativeSupervisedDataset` loaded 1024 samples with coords
@@ -143,6 +143,8 @@ Batch-size note:
   `scripts/run_heat3d_v4_controlled_training.py` with V4P3 semantic wrapper
   settings, B8 train, B16 validation/prediction, no final-probe, no
   post-training diagnostics, no checkpoints, and prediction split `valid_iid`.
+- The smoke used the legacy bridge map; formal training should use
+  `configs/heat3d_v4/candidate1024_v0_train768_valid128_test128_stratified_seed0.json`.
 - Ignored smoke output:
   `output/heat3d_v4_p3c_candidate1024_consumer_smoke_20260703/run/`.
 - Smoke result: `status_ok=true`, `grad_finite=true`, best epoch 1,
@@ -159,10 +161,7 @@ as a model-quality claim.
 ## Known Limitations
 
 - This is a 1-epoch consumer smoke, not a performance claim.
-- The existing runner still uses `valid_iid` naming, so a tracked formal split
-  bridge or runner update is needed for native train/test semantics.
-- The runner builds `all` groups during startup even when prediction is limited
-  to `valid_iid`; candidate1024 startup therefore has noticeable overhead.
+- The old test-as-valid split map is retained only as a smoke legacy reference.
 - P3b-lite is currently a fixed reference subset selection, not a separate
   physics-validation pass in this closeout.
 - `review_hold` samples are accepted for research coverage but must be reported
@@ -185,10 +184,9 @@ entries above so CSV audit and result collection stay consistent.
 Formal configs should keep:
 
 - subset: `data/heat3d_v4_p3c_candidate1024_v0`
-- split bridge:
-  `configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json`
-  until runner split naming is updated
-- split semantics: train 768 and published test-as-`valid_iid` 256
+- split map:
+  `configs/heat3d_v4/candidate1024_v0_train768_valid128_test128_stratified_seed0.json`
+- split semantics: train 768, `valid_iid` 128, and `test_iid` 128
 - batch size: B24 registry entries are the current launch candidates; reduce to
   B8/B16 only for smoke or memory triage
 - selection metric: `valid_base_mse`
@@ -204,6 +202,6 @@ Formal reporting must stratify metrics by:
 - P3b-lite reference subset membership
 
 Closeout status: candidate1024_v0 is suitable for training handoff with the
-split-bridge caveat above. It can enter long training through the tracked V4P3
+formal split map above. It can enter long training through the tracked V4P3
 registry entries after standard registry dry-run checks and explicit launch
 approval. Do not treat any 1-epoch smoke metric as model quality evidence.

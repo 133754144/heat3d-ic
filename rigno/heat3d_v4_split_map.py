@@ -18,7 +18,7 @@ DEFAULT_CATEGORY_KEYS = (
     "k_region_mode",
     "stack_template",
 )
-REGULAR_SPLITS = {"train", "valid_iid", "test_id"}
+REGULAR_SPLITS = {"train", "valid_iid", "test_iid", "test_id"}
 STRESS_HOLDOUT_SPLIT = "valid_stress"
 OOD_HOLDOUT_SPLITS = {"test_ood_bc", "test_ood_stack", "test_ood_combined"}
 LEGAL_SPLITS = REGULAR_SPLITS | {STRESS_HOLDOUT_SPLIT} | OOD_HOLDOUT_SPLITS
