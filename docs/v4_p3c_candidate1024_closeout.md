@@ -123,6 +123,39 @@ Batch-size note:
   backprop with GPU out-of-memory.
 - Batch size 8 for training and 16 for validation/prediction passed.
 
+2026-07-03 local consumer refresh:
+
+- Current branch: `research/v4`.
+- Dataset root: `data/heat3d_v4_p3c_candidate1024_v0/`.
+- Readable files: `manifest.json`, `audit_summary.json`,
+  `sha256_manifest.json`.
+- Hashes matched the published closeout values above.
+- Accepted sample files checked: 1024 sample directories, with no missing
+  required files.
+- Manifest split: train 768, test 256.
+- Runner split bridge:
+  `configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json`
+  maps the published test split to `valid_iid` as 768 train / 256 valid_iid.
+- `Heat3DV1NativeSupervisedDataset` loaded 1024 samples with coords
+  `(1024, 3)`, condition features `(1024, 11)`, and target `(1024, 1)`.
+- Required arrays were finite and matched expected point/target shapes.
+- Local 1-epoch smoke used
+  `scripts/run_heat3d_v4_controlled_training.py` with V4P3 semantic wrapper
+  settings, B8 train, B16 validation/prediction, no final-probe, no
+  post-training diagnostics, no checkpoints, and prediction split `valid_iid`.
+- Ignored smoke output:
+  `output/heat3d_v4_p3c_candidate1024_consumer_smoke_20260703/run/`.
+- Smoke result: `status_ok=true`, `grad_finite=true`, best epoch 1,
+  final/best valid_base_mse `1.2061412334442139`, final/best raw DeltaT MSE
+  `7.843317031860352`.
+- `predictions.npz` and `best_predictions.npz` each contain 256 finite
+  `(1024, 1)` prediction arrays.
+
+Local refresh conclusion: candidate1024_v0 passes consumer-side manifest,
+loader, batch-build, one-epoch train/eval, and prediction-export smoke on the
+current `research/v4` code path. The metric is smoke-only and must not be used
+as a model-quality claim.
+
 ## Known Limitations
 
 - This is a 1-epoch consumer smoke, not a performance claim.
@@ -137,15 +170,27 @@ Batch-size note:
 
 ## Training Handoff
 
-Recommendation: proceed to formal training setup after adding a registry/YAML
-entry for this dataset. The initial formal config should reuse the V4 baseline
-model route and set:
+Recommendation: proceed to formal training. Tracked registry/YAML entrances for
+this dataset already exist:
+
+- `V4P3_04`: boundary-distance replacement, train-minmax coordinates, B24.
+- `V4P3_05`: legacy BC flags, sample-local isotropic coordinates, B24.
+- `V4P3_06`: boundary-distance replacement plus sample-local isotropic
+  coordinates, B24.
+
+The standalone `configs/heat3d_v4/candidate1024_v0_e050_b32.yaml` remains a
+short-horizon handoff reference, but long training should prefer the registry
+entries above so CSV audit and result collection stay consistent.
+
+Formal configs should keep:
 
 - subset: `data/heat3d_v4_p3c_candidate1024_v0`
-- split bridge: train 768 and test-as-valid_iid 256 until runner split naming is
-  updated
-- batch size: start at train 8 and validation/prediction 16 on devbox, then
-  increase only after memory audit
+- split bridge:
+  `configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json`
+  until runner split naming is updated
+- split semantics: train 768 and published test-as-`valid_iid` 256
+- batch size: B24 registry entries are the current launch candidates; reduce to
+  B8/B16 only for smoke or memory triage
 - selection metric: `valid_base_mse`
 - long-run diagnostics: enabled only after the first stable short run
 
@@ -159,5 +204,6 @@ Formal reporting must stratify metrics by:
 - P3b-lite reference subset membership
 
 Closeout status: candidate1024_v0 is suitable for training handoff with the
-batch-size and split-bridge caveats above. Do not treat the 1-epoch smoke metric
-as model quality evidence.
+split-bridge caveat above. It can enter long training through the tracked V4P3
+registry entries after standard registry dry-run checks and explicit launch
+approval. Do not treat any 1-epoch smoke metric as model quality evidence.
