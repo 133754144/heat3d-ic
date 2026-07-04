@@ -4556,6 +4556,16 @@ def _run_post_training_prediction_diagnostics(
 ) -> dict[str, Any]:
     if not args.post_training_diagnostics:
         return {"enabled": False, "reason": "disabled"}
+    if args.prediction_split != "all":
+        diagnostics_dir = args.post_training_diagnostics_output_dir or (
+            output_dir / "post_training_diagnostics"
+        )
+        return {
+            "enabled": False,
+            "reason": "non_all_prediction_split",
+            "prediction_split": args.prediction_split,
+            "output_dir": str(diagnostics_dir),
+        }
 
     diag_start = time.perf_counter()
     diagnostics_dir = args.post_training_diagnostics_output_dir or (
