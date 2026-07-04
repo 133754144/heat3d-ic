@@ -763,6 +763,21 @@ def _format_progress_value(value: Any, *, precision: int = 6) -> str:
     return f"{numeric:.{precision}e}"
 
 
+def _format_progress_sigfig_decimal(value: Any, *, significant: int = 3) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    if numeric == 0.0:
+        return "0." + ("0" * max(significant - 1, 0))
+    decimals = max(significant - 1 - math.floor(math.log10(abs(numeric))), 0)
+    return f"{numeric:.{decimals}f}"
+
+
 def _format_progress_decimal(value: Any, *, precision: int = 2) -> str:
     if value is None:
         return "skipped"
@@ -2918,10 +2933,10 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             f"lr={record['lr']:.2e} "
             f"train={_format_progress_loss(train_loss)} "
             f"valid={_format_progress_loss(valid_iid_loss)} "
-            f"raw_rmse_K={_format_progress_value(valid_raw_rmse)} "
+            f"raw_rmse_K={_format_progress_sigfig_decimal(valid_raw_rmse)} "
             f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)} "
             f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
-            f"stress_raw_rmse_K={_format_progress_value(record.get('valid_stress_raw_rmse_K'))} "
+            f"stress_raw_rmse_K={_format_progress_sigfig_decimal(record.get('valid_stress_raw_rmse_K'))} "
             f"best=e{_format_progress_int(record.get('best_epoch'))}/"
             f"{_format_progress_loss(record.get('best_valid_iid_loss'))}"
         )
@@ -2978,8 +2993,8 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"valid_hotspot_raw_mae={record['valid_hotspot_raw_mae']:.8e} "
         f"train_raw_deltaT_mse={record['train_raw_deltaT_mse']:.8e} "
         f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.8e} "
-        f"train_raw_rmse_K={record['train_raw_rmse_K']:.8e} "
-        f"valid_raw_rmse_K={record['valid_raw_rmse_K']:.8e} "
+        f"train_raw_rmse_K={_format_progress_sigfig_decimal(record['train_raw_rmse_K'])} "
+        f"valid_raw_rmse_K={_format_progress_sigfig_decimal(record['valid_raw_rmse_K'])} "
         f"valid_rel_rmse_v4_pct={record['valid_rel_rmse_v4_pct']:.8e} "
         f"train_recovered_T_mse={record['train_recovered_T_mse']:.8e} "
         f"valid_recovered_T_mse={record['valid_recovered_T_mse']:.8e} "
@@ -3015,7 +3030,7 @@ def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: s
         f"epoch {record['epoch']:03d}/{epochs:03d} "
         f"valid_total={_format_progress_loss(valid_total)} "
         f"valid_base={_format_progress_loss(valid_base)} "
-        f"raw_rmse_K={_format_progress_value(valid_raw_rmse)} "
+        f"raw_rmse_K={_format_progress_sigfig_decimal(valid_raw_rmse)} "
         f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)}"
     )
 
@@ -4340,7 +4355,7 @@ def _print_final_summary(
         f"epoch={result['final_epoch']} valid_loss={result['final_valid_loss']:.8e} "
         f"valid_base_mse={result['final_valid_loss_components']['base_mse']:.8e} "
         f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e} "
-        f"raw_rmse_K={result['valid_metrics']['raw_rmse_K']:.8e} "
+        f"raw_rmse_K={_format_progress_sigfig_decimal(result['valid_metrics']['raw_rmse_K'])} "
         f"rel_rmse_v4_pct={_format_progress_percent(result['valid_metrics'].get('rel_rmse_v4_pct'))}"
     )
     if result.get("primary_validation_split") == "valid_iid":
@@ -4356,7 +4371,7 @@ def _print_final_summary(
         f"valid_loss={best.get('valid_loss'):.8e} "
         f"valid_base_mse={best.get('valid_base_mse'):.8e} "
         f"valid_raw_deltaT_mse={best.get('valid_raw_deltaT_mse'):.8e} "
-        f"raw_rmse_K={_format_progress_value(best.get('valid_raw_deltaT_rmse_K'))} "
+        f"raw_rmse_K={_format_progress_sigfig_decimal(best.get('valid_raw_deltaT_rmse_K'))} "
         f"rel_rmse_v4_pct={_format_progress_percent(best.get('valid_rel_rmse_v4_pct'))}"
     )
     _emit(
