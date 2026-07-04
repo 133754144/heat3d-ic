@@ -18,10 +18,10 @@ for path in (REPO_DIR, SCRIPTS_DIR):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from rigno.dataset_Heat3D_v1 import Heat3DV1NativeSupervisedDataset  # noqa: E402
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
     Heat3DGraphBuilder,
+    Heat3DV1NativeSupervisedDataset,
     _device_params,
     _load_params_checkpoint,
     _make_groups_with_progress,
