@@ -34,6 +34,9 @@ smoke legacy reference only.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
+The controlled loss-weight fields are `background_relative_weight`,
+`background_over_weight`, `strong_q_weight`, and `hotspot_weight`; they map to
+the matching `loss.*` YAML keys and default to `0.0`.
 
 Result fields are CSV-only audit fields that are filled after training or
 post-run review. `prepare_heat3d_v4_run.py` preserves existing result values

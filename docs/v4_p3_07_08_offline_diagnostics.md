@@ -60,16 +60,9 @@ Main findings:
   `high_deltaT_triage` groups. The reliable weak group here is the V3-style
   region/q_power decomposition.
 
-## Next Configs
+## Follow-Up Status
 
-The latest follow-up instruction requested a message-passing-depth ablation on
-the current V4P3_07 and V4P3_08 bases. Therefore:
-
-- `V4P3_09` = `V4P3_07` with `processor_steps=8` instead of 6.
-- `V4P3_10` = `V4P3_08` with `processor_steps=8` instead of 6.
-
-Both inherit the 07/08 600-epoch schedule, formal split map, B32 training,
-`prediction_split=valid_iid`, and memory-optimized non-all prediction behavior.
-Feature-transform and background-loss ablations remain the next logical
-direction after this message-passing pair, because the diagnostics show both
-shape gains and low-DeltaT/background bias.
+`V4P3_09` and `V4P3_10` tested the `processor_steps=8` direction and are now
+fixed as OOM failures under the current B32 / latent96-edge96 / AdamW memory
+budget. The next E200 plan starts from `V4P3_08`, not from the p8 configs; see
+`docs/v4_p3_next_config_plan.md`.

@@ -30,7 +30,7 @@ overrides:
     run_name: V4P3_09
   metadata:
     registry_config_id: V4P3_09
-    registry_status: registered
+    registry_status: oom_failed
     standard_task: coords+k(x)+q(x)+BC->T(x)
     variant_label: V4P3_09
     model_label: latent96-edge96-s8-mlp2
@@ -46,6 +46,6 @@ overrides:
     decoder_bypass_features: full_condition
     launch_policy: explicit_user_instruction_only
     log_path: output/heat3d_v4_logs/V4P3_09.log
-    notes: 'V4P3_09 is the V4P3_07 message-passing-depth ablation: processor_steps
-      increases from 6 to 8; dataset, formal split, feature schema, optimizer, loss,
-      diagnostics, prediction split, and B32 memory defaults are unchanged.'
+    notes: V4P3_09 was the V4P3_07 message-passing-depth ablation; processor_steps=8
+      failed under the current B32/latent96/AdamW memory budget. status=oom_failed;
+      reason=processor_steps8_oom.

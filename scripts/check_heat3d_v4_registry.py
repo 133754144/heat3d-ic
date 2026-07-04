@@ -169,6 +169,10 @@ CONFIG_FIELDNAMES = (
     "graph_radius_policy",
     "coverage_repair_policy",
     "loss_mode",
+    "background_relative_weight",
+    "background_over_weight",
+    "strong_q_weight",
+    "hotspot_weight",
     "selection_metric",
     "metrics_profile",
     "metrics_contract",
@@ -316,6 +320,10 @@ EXPECTED_V4_BASELINE = {
     "graph_radius_policy": "discrete_physical_coverage",
     "coverage_repair_policy": "none",
     "loss_mode": "mse",
+    "background_relative_weight": "0.0",
+    "background_over_weight": "0.0",
+    "strong_q_weight": "0.0",
+    "hotspot_weight": "0.0",
     "selection_metric": DEFAULT_SELECTION_METRIC,
     "metrics_profile": DEFAULT_METRICS_PROFILE,
     "metrics_contract": DEFAULT_METRICS_CONTRACT,
@@ -557,6 +565,7 @@ def _normalize_resolved_row(
     _check_provenance_fields(row, context=context)
     _check_node_coordinate_fields(row, context=context)
     _check_decoder_bypass_fields(row, context=context)
+    _check_loss_fields(row, context=context)
     return row
 
 
@@ -698,6 +707,21 @@ def _check_decoder_bypass_fields(row: Mapping[str, str], *, context: str) -> Non
             f"{context} decoder_bypass_mode='post_decoder_residual' requires "
             "decoder_bypass_features='full_condition'"
         )
+
+
+def _check_loss_fields(row: Mapping[str, str], *, context: str) -> None:
+    for field in (
+        "background_relative_weight",
+        "background_over_weight",
+        "strong_q_weight",
+        "hotspot_weight",
+    ):
+        try:
+            value = float(row[field])
+        except ValueError as exc:
+            raise ValueError(f"{context} {field} must be numeric") from exc
+        if value < 0.0:
+            raise ValueError(f"{context} {field} must be >= 0")
 
 
 def _positive_int(row: Mapping[str, str], field: str, context: str) -> int:
@@ -913,7 +937,13 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "min_lr": _float(row, "min_lr"),
             "weight_decay": _float(row, "weight_decay"),
         },
-        "loss": {"mode": row["loss_mode"]},
+        "loss": {
+            "mode": row["loss_mode"],
+            "background_relative_weight": _float(row, "background_relative_weight"),
+            "background_over_weight": _float(row, "background_over_weight"),
+            "strong_q_weight": _float(row, "strong_q_weight"),
+            "hotspot_weight": _float(row, "hotspot_weight"),
+        },
         "run": {
             "epochs": _int(row, "epochs"),
             "batch_size": _int(row, "batch_size"),
@@ -1048,6 +1078,10 @@ def _assert_registry_matches_resolved(
         "dataset.extent_feature_policy": row["extent_feature_policy"],
         "dataset.condition_feature_transform": row["condition_feature_transform"],
         "loss.mode": row["loss_mode"],
+        "loss.background_relative_weight": _float(row, "background_relative_weight"),
+        "loss.background_over_weight": _float(row, "background_over_weight"),
+        "loss.strong_q_weight": _float(row, "strong_q_weight"),
+        "loss.hotspot_weight": _float(row, "hotspot_weight"),
         "export.selection_metric": row["selection_metric"],
         "export.output_dir": row["output_dir"],
         "export.run_name": row["run_name"],

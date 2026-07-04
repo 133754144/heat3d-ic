@@ -1,11 +1,10 @@
 schema_version: heat3d_v4_inherited_config_v0
-config_id: V4P3_10
+config_id: V4P3_11
 extends: ../V4_base.yaml
 overrides:
-  description: Heat3D V4 registry config V4P3_10; standard task coords+k(x)+q(x)+BC->T(x);
+  description: Heat3D V4 registry config V4P3_11; standard task coords+k(x)+q(x)+BC->T(x);
     generated from V4_base.yaml.
   model:
-    processor_steps: 8
     decoder_bypass_mode: post_decoder_residual
     decoder_bypass_features: full_condition
     decoder_bypass_residual_scale: 0.5
@@ -19,20 +18,20 @@ overrides:
     extent_feature_policy: log_extent_broadcast
     condition_feature_transform: semantic_v1_bc_flags_binary_passthrough_only
   run:
+    epochs: 200
     batch_size: 32
     validation_batch_size: 128
     prediction_batch_size: 128
-    final_probe_output_dir: output/heat3d_v4_final_probe/V4P3_10
-    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P3_10
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P3_11
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P3_11
   export:
-    output_dir: output/heat3d_v4_runs/V4P3_10
-    run_name: V4P3_10
+    output_dir: output/heat3d_v4_runs/V4P3_11
+    run_name: V4P3_11
   metadata:
-    registry_config_id: V4P3_10
-    registry_status: oom_failed
+    registry_config_id: V4P3_11
+    registry_status: registered
     standard_task: coords+k(x)+q(x)+BC->T(x)
-    variant_label: V4P3_10
-    model_label: latent96-edge96-s8-mlp2
+    variant_label: V4P3_11
     batch_policy_label: B32_sample_shuffle
     optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
     runner_family: v4_controlled_semantic_wrapper
@@ -43,7 +42,7 @@ overrides:
     decoder_bypass_mode: post_decoder_residual
     decoder_bypass_features: full_condition
     launch_policy: explicit_user_instruction_only
-    log_path: output/heat3d_v4_logs/V4P3_10.log
-    notes: V4P3_10 was the V4P3_08 message-passing-depth ablation; processor_steps=8
-      failed under the current B32/latent96/AdamW memory budget. status=oom_failed;
-      reason=processor_steps8_oom.
+    log_path: output/heat3d_v4_logs/V4P3_11.log
+    notes: V4P3_11 is the E200 short/base control based on V4P3_08; only epochs changes
+      from 600 to 200, while processor_steps=6, B32, formal split, valid_iid prediction,
+      model, solver, optimizer, and loss remain unchanged.
