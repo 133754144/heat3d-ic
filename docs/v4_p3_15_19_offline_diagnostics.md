@@ -83,10 +83,11 @@ true DeltaT <= 0.05 K.
   test_iid RMSE (`0.372 K`), highest test_iid corr (`0.891`), best cosine
   (`0.928`), closest amplitude ratio (`1.271`), and lowest low-DeltaT
   overprediction among these runs (`le0.05 over=0.621`, still high).
-- Final-probe ranking does not favor V4P3_19. V4P3_17 is the best final-probe
-  compromise among 15-19 (`RMSE=0.220 K`, `relRMSE=0.510`,
-  `shape_corr=0.889`), while V4P3_19 has worse probe RMSE/relRMSE and a severe
-  P02 failure (`P02 RMSE=1.739 K` final).
+- Final-probe ranking does not favor V4P3_19. V4P3_16-final has the lowest
+  mean probe RMSE/relRMSE (`0.216 K` / `0.488`) and strongest mean shape corr
+  (`0.908`), while V4P3_17 has lower Tmax error and slightly better P02. Treat
+  V4P3_16-final and V4P3_17 as different final-probe controls; V4P3_19 is not a
+  probe candidate because of its severe P02 failure (`P02 RMSE=1.739 K` final).
 - V4P3_15 and V4P3_16 overfit by training scalar, but their final checkpoints
   improve split-aware RMSE and final-probe versus best checkpoints. This means
   `valid_base_mse` alone is still not a reliable final ranking metric for P3
@@ -113,6 +114,7 @@ true DeltaT <= 0.05 K.
 ## Next Direction
 
 Prioritize one research question: preserve V4P3_19 split-level gains while
-fixing final-probe P02 generalization. The next change should target
-evaluation/selection or feature/loss behavior for disconnected conduction paths
-and low-DeltaT overprediction; do not choose by `valid_base_mse` alone.
+fixing final-probe P02 generalization, using V4P3_16-final and V4P3_17 as
+final-probe controls. The next change should target evaluation/selection or
+feature/loss behavior for disconnected conduction paths and low-DeltaT
+overprediction; do not choose by `valid_base_mse` alone.
