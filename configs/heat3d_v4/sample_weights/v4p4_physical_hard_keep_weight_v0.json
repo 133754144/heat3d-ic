@@ -1,0 +1,993 @@
+{
+  "schema_version": "heat3d_v4_sample_weights_v0",
+  "dataset_id": "heat3d_v4_p3c_candidate1024_v0",
+  "split_map_path": "configs/heat3d_v4/candidate1024_v0_train768_valid128_test128_stratified_seed0.json",
+  "policy": "hard_sample_list",
+  "selection_rule": "formal train split samples with qc_class=physical_hard_keep; includes P02-like low-k hotspot and high-power bottleneck cases",
+  "default_weight": 1.0,
+  "hard_sample_weight": 2.0,
+  "recommended_normalize": true,
+  "selected_count": 121,
+  "reason_counts": {
+    "low_k_enclosed_compact_hotspot": 80,
+    "multi_source_or_high_power_bottleneck": 23,
+    "weak_cooling": 18
+  },
+  "high_deltaT_triage_counts": {
+    "physical_low_k_enclosed_compact_hotspot": 80,
+    "physical_multi_source_or_high_power_bottleneck": 23,
+    "physical_weak_cooling_high_deltaT": 18
+  },
+  "hard_samples": [
+    {
+      "sample_id": "sample_0004",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0018",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0034",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0039",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0049",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0062",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0067",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0083",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0097",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0106",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0112",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0119",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0122",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0125",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0129",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0136",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0140",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0158",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0170",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0186",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0187",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0201",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0228",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0244",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0249",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0253",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0256",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0257",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0263",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0264",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0269",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0272",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0277",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0291",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0327",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0331",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0341",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0345",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0365",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0381",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0388",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0403",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0407",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0414",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0416",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0431",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0434",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0449",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0464",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0468",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0479",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0500",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0511",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0513",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0514",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0521",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0524",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0525",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0530",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0532",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0546",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0555",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0556",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0571",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0572",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0600",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0603",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0605",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0612",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0618",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0623",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0628",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0631",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0645",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0656",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0660",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0677",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0681",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0687",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0691",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0703",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0706",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0711",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0725",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0742",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0743",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0745",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0755",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0766",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0772",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0776",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0825",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0831",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0833",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0841",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0848",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0868",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0874",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0880",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0886",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0888",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_0889",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0894",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0902",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0906",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0922",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0929",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0932",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0938",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0950",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0955",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0959",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    },
+    {
+      "sample_id": "sample_0962",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0966",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0992",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_0998",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_1006",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_1007",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_1014",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "multi_source_or_high_power_bottleneck",
+      "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck"
+    },
+    {
+      "sample_id": "sample_1017",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "low_k_enclosed_compact_hotspot",
+      "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot"
+    },
+    {
+      "sample_id": "sample_1021",
+      "weight": 2.0,
+      "qc_class": "physical_hard_keep",
+      "physical_keep_reason": "weak_cooling",
+      "high_deltaT_triage": "physical_weak_cooling_high_deltaT"
+    }
+  ],
+  "sample_weights": {
+    "sample_0004": 2.0,
+    "sample_0018": 2.0,
+    "sample_0034": 2.0,
+    "sample_0039": 2.0,
+    "sample_0049": 2.0,
+    "sample_0062": 2.0,
+    "sample_0067": 2.0,
+    "sample_0083": 2.0,
+    "sample_0097": 2.0,
+    "sample_0106": 2.0,
+    "sample_0112": 2.0,
+    "sample_0119": 2.0,
+    "sample_0122": 2.0,
+    "sample_0125": 2.0,
+    "sample_0129": 2.0,
+    "sample_0136": 2.0,
+    "sample_0140": 2.0,
+    "sample_0158": 2.0,
+    "sample_0170": 2.0,
+    "sample_0186": 2.0,
+    "sample_0187": 2.0,
+    "sample_0201": 2.0,
+    "sample_0228": 2.0,
+    "sample_0244": 2.0,
+    "sample_0249": 2.0,
+    "sample_0253": 2.0,
+    "sample_0256": 2.0,
+    "sample_0257": 2.0,
+    "sample_0263": 2.0,
+    "sample_0264": 2.0,
+    "sample_0269": 2.0,
+    "sample_0272": 2.0,
+    "sample_0277": 2.0,
+    "sample_0291": 2.0,
+    "sample_0327": 2.0,
+    "sample_0331": 2.0,
+    "sample_0341": 2.0,
+    "sample_0345": 2.0,
+    "sample_0365": 2.0,
+    "sample_0381": 2.0,
+    "sample_0388": 2.0,
+    "sample_0403": 2.0,
+    "sample_0407": 2.0,
+    "sample_0414": 2.0,
+    "sample_0416": 2.0,
+    "sample_0431": 2.0,
+    "sample_0434": 2.0,
+    "sample_0449": 2.0,
+    "sample_0464": 2.0,
+    "sample_0468": 2.0,
+    "sample_0479": 2.0,
+    "sample_0500": 2.0,
+    "sample_0511": 2.0,
+    "sample_0513": 2.0,
+    "sample_0514": 2.0,
+    "sample_0521": 2.0,
+    "sample_0524": 2.0,
+    "sample_0525": 2.0,
+    "sample_0530": 2.0,
+    "sample_0532": 2.0,
+    "sample_0546": 2.0,
+    "sample_0555": 2.0,
+    "sample_0556": 2.0,
+    "sample_0571": 2.0,
+    "sample_0572": 2.0,
+    "sample_0600": 2.0,
+    "sample_0603": 2.0,
+    "sample_0605": 2.0,
+    "sample_0612": 2.0,
+    "sample_0618": 2.0,
+    "sample_0623": 2.0,
+    "sample_0628": 2.0,
+    "sample_0631": 2.0,
+    "sample_0645": 2.0,
+    "sample_0656": 2.0,
+    "sample_0660": 2.0,
+    "sample_0677": 2.0,
+    "sample_0681": 2.0,
+    "sample_0687": 2.0,
+    "sample_0691": 2.0,
+    "sample_0703": 2.0,
+    "sample_0706": 2.0,
+    "sample_0711": 2.0,
+    "sample_0725": 2.0,
+    "sample_0742": 2.0,
+    "sample_0743": 2.0,
+    "sample_0745": 2.0,
+    "sample_0755": 2.0,
+    "sample_0766": 2.0,
+    "sample_0772": 2.0,
+    "sample_0776": 2.0,
+    "sample_0825": 2.0,
+    "sample_0831": 2.0,
+    "sample_0833": 2.0,
+    "sample_0841": 2.0,
+    "sample_0848": 2.0,
+    "sample_0868": 2.0,
+    "sample_0874": 2.0,
+    "sample_0880": 2.0,
+    "sample_0886": 2.0,
+    "sample_0888": 2.0,
+    "sample_0889": 2.0,
+    "sample_0894": 2.0,
+    "sample_0902": 2.0,
+    "sample_0906": 2.0,
+    "sample_0922": 2.0,
+    "sample_0929": 2.0,
+    "sample_0932": 2.0,
+    "sample_0938": 2.0,
+    "sample_0950": 2.0,
+    "sample_0955": 2.0,
+    "sample_0959": 2.0,
+    "sample_0962": 2.0,
+    "sample_0966": 2.0,
+    "sample_0992": 2.0,
+    "sample_0998": 2.0,
+    "sample_1006": 2.0,
+    "sample_1007": 2.0,
+    "sample_1014": 2.0,
+    "sample_1017": 2.0,
+    "sample_1021": 2.0
+  }
+}

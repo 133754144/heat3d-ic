@@ -113,6 +113,12 @@ DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
 DECODER_BYPASS_FEATURE_SOURCES = {DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C}
 DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
 DECODER_BYPASS_INITS = {DECODER_BYPASS_INIT_ZERO_RESIDUAL}
+SAMPLE_WEIGHT_POLICY_NONE = "none"
+SAMPLE_WEIGHT_POLICY_HARD_SAMPLE_LIST = "hard_sample_list"
+SAMPLE_WEIGHT_POLICIES = {
+    SAMPLE_WEIGHT_POLICY_NONE,
+    SAMPLE_WEIGHT_POLICY_HARD_SAMPLE_LIST,
+}
 DEFAULT_REGISTRY = Path("configs/heat3d_v4/v4_run_registry.json")
 CONFIG_FIELDNAMES = (
     "config_id",
@@ -157,12 +163,22 @@ CONFIG_FIELDNAMES = (
     "batch_plan",
     "optimizer",
     "lr",
+    "lr_init",
+    "lr_peak",
+    "lr_base",
+    "lr_lowr",
+    "pct_start",
+    "pct_final",
     "model_seed",
     "batch_order_seed",
     "graph_seed",
     "seed",
     "multi_seed",
     "batch_build_seed",
+    "sample_weight_policy",
+    "sample_weight_json",
+    "sample_weight_default",
+    "sample_weight_normalize",
     "lr_schedule",
     "warmup_epochs",
     "min_lr",
@@ -344,12 +360,22 @@ EXPECTED_V4_BASELINE = {
     "batch_plan": "sample_shuffle",
     "optimizer": "adamw",
     "lr": "0.0005",
+    "lr_init": "",
+    "lr_peak": "",
+    "lr_base": "",
+    "lr_lowr": "",
+    "pct_start": "",
+    "pct_final": "",
     "model_seed": "0",
     "batch_order_seed": "0",
     "graph_seed": "0",
     "seed": "0",
     "multi_seed": "[]",
     "batch_build_seed": "0",
+    "sample_weight_policy": SAMPLE_WEIGHT_POLICY_NONE,
+    "sample_weight_json": "",
+    "sample_weight_default": "1.0",
+    "sample_weight_normalize": "false",
     "lr_schedule": "warmup_cosine",
     "warmup_epochs": "10",
     "min_lr": "0.00005",
@@ -604,6 +630,7 @@ def _normalize_resolved_row(
     _check_node_coordinate_fields(row, context=context)
     _check_decoder_bypass_fields(row, context=context)
     _check_loss_fields(row, context=context)
+    _check_sample_weight_fields(row, context=context)
     _check_continuation_fields(row, context=context)
     return row
 
@@ -763,6 +790,35 @@ def _check_loss_fields(row: Mapping[str, str], *, context: str) -> None:
             raise ValueError(f"{context} {field} must be >= 0")
 
 
+def _check_sample_weight_fields(row: Mapping[str, str], *, context: str) -> None:
+    policy = row["sample_weight_policy"]
+    if policy not in SAMPLE_WEIGHT_POLICIES:
+        raise ValueError(
+            f"{context} sample_weight_policy must be one of "
+            f"{sorted(SAMPLE_WEIGHT_POLICIES)}, got {policy!r}"
+        )
+    sample_weight_json = row["sample_weight_json"]
+    try:
+        default = float(row["sample_weight_default"])
+    except ValueError as exc:
+        raise ValueError(
+            f"{context} sample_weight_default must be numeric"
+        ) from exc
+    if default < 0.0:
+        raise ValueError(f"{context} sample_weight_default must be >= 0")
+    _bool(row, "sample_weight_normalize")
+    if policy == SAMPLE_WEIGHT_POLICY_NONE and sample_weight_json:
+        raise ValueError(
+            f"{context} sample_weight_json requires sample_weight_policy="
+            f"{SAMPLE_WEIGHT_POLICY_HARD_SAMPLE_LIST!r}"
+        )
+    if policy == SAMPLE_WEIGHT_POLICY_HARD_SAMPLE_LIST and not sample_weight_json:
+        raise ValueError(
+            f"{context} sample_weight_json is required for "
+            f"sample_weight_policy={SAMPLE_WEIGHT_POLICY_HARD_SAMPLE_LIST!r}"
+        )
+
+
 def _check_continuation_fields(row: Mapping[str, str], *, context: str) -> None:
     init_checkpoint = row["init_checkpoint"]
     strict = row["checkpoint_load_strict"]
@@ -891,6 +947,10 @@ def _check_v4_baseline(row: Mapping[str, str]) -> None:
             "graph.node_coordinate_freqs": 4,
             "run.batch_size": 88,
             "run.batch_plan": "sample_shuffle",
+            "run.sample_weight_policy": SAMPLE_WEIGHT_POLICY_NONE,
+            "run.sample_weight_json": None,
+            "run.sample_weight_default": 1.0,
+            "run.sample_weight_normalize": False,
             "optimizer.name": "adamw",
             "optimizer.lr": 0.0005,
             "optimizer.model_seed": 0,
@@ -983,6 +1043,12 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "seed": _int(row, "seed"),
             "multi_seed": _json_list(row, "multi_seed"),
             "lr_schedule": row["lr_schedule"],
+            "lr_init": _optional_float(row, "lr_init"),
+            "lr_peak": _optional_float(row, "lr_peak"),
+            "lr_base": _optional_float(row, "lr_base"),
+            "lr_lowr": _optional_float(row, "lr_lowr"),
+            "pct_start": _optional_float(row, "pct_start"),
+            "pct_final": _optional_float(row, "pct_final"),
             "warmup_epochs": _int(row, "warmup_epochs"),
             "min_lr": _float(row, "min_lr"),
             "weight_decay": _float(row, "weight_decay"),
@@ -1007,6 +1073,10 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             ),
             "batch_plan": row["batch_plan"],
             "batch_build_seed": _int(row, "batch_build_seed"),
+            "sample_weight_policy": row["sample_weight_policy"],
+            "sample_weight_json": row["sample_weight_json"] or None,
+            "sample_weight_default": _float(row, "sample_weight_default"),
+            "sample_weight_normalize": _bool(row, "sample_weight_normalize"),
             "final_probe_eval_after_training": _bool(
                 row, "final_probe_eval_after_training"
             ),
@@ -1110,6 +1180,10 @@ def _assert_registry_matches_resolved(
         ),
         "run.batch_plan": row["batch_plan"],
         "run.batch_build_seed": _int(row, "batch_build_seed"),
+        "run.sample_weight_policy": row["sample_weight_policy"],
+        "run.sample_weight_json": row["sample_weight_json"] or None,
+        "run.sample_weight_default": _float(row, "sample_weight_default"),
+        "run.sample_weight_normalize": _bool(row, "sample_weight_normalize"),
         "run.epochs": _int(row, "epochs"),
         "run.final_probe_eval_after_training": _bool(
             row, "final_probe_eval_after_training"
@@ -1123,6 +1197,12 @@ def _assert_registry_matches_resolved(
         "optimizer.seed": _int(row, "seed"),
         "optimizer.multi_seed": _json_list(row, "multi_seed"),
         "optimizer.lr_schedule": row["lr_schedule"],
+        "optimizer.lr_init": _optional_float(row, "lr_init"),
+        "optimizer.lr_peak": _optional_float(row, "lr_peak"),
+        "optimizer.lr_base": _optional_float(row, "lr_base"),
+        "optimizer.lr_lowr": _optional_float(row, "lr_lowr"),
+        "optimizer.pct_start": _optional_float(row, "pct_start"),
+        "optimizer.pct_final": _optional_float(row, "pct_final"),
         "optimizer.warmup_epochs": _int(row, "warmup_epochs"),
         "optimizer.min_lr": _float(row, "min_lr"),
         "optimizer.weight_decay": _float(row, "weight_decay"),
@@ -1406,6 +1486,13 @@ def _int(row: Mapping[str, str], key: str) -> int:
 
 def _float(row: Mapping[str, str], key: str) -> float:
     return float(row[key])
+
+
+def _optional_float(row: Mapping[str, str], key: str) -> float | None:
+    value = row[key].strip()
+    if not value:
+        return None
+    return float(value)
 
 
 def _bool(row: Mapping[str, str], key: str) -> bool:

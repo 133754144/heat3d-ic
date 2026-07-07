@@ -40,6 +40,13 @@ the matching `loss.*` YAML keys and default to `0.0`.
 Continuation runs use the controlled fields `init_checkpoint` and
 `checkpoint_load_strict`; they map to `run.init_checkpoint` and
 `run.checkpoint_load_strict`.
+Sample-weight runs use the controlled fields `sample_weight_policy`,
+`sample_weight_json`, `sample_weight_default`, and
+`sample_weight_normalize`; they map to `run.sample_weight_*` YAML keys.
+`sample_weight_policy=hard_sample_list` requires a tracked JSON weight file.
+The optional upstream-onecycle fields `lr_init`, `lr_peak`, `lr_base`,
+`lr_lowr`, `pct_start`, and `pct_final` map to `optimizer.*` YAML keys and
+should stay blank for non-onecycle configs.
 
 Result fields are CSV-only audit fields that are filled after training or
 post-run review. `prepare_heat3d_v4_run.py` preserves existing result values
