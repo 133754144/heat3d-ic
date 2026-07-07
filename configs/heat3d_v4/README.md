@@ -37,6 +37,9 @@ checker; do not add arbitrary dotted YAML overrides.
 The controlled loss-weight fields are `background_relative_weight`,
 `background_over_weight`, `strong_q_weight`, and `hotspot_weight`; they map to
 the matching `loss.*` YAML keys and default to `0.0`.
+Continuation runs use the controlled fields `init_checkpoint` and
+`checkpoint_load_strict`; they map to `run.init_checkpoint` and
+`run.checkpoint_load_strict`.
 
 Result fields are CSV-only audit fields that are filled after training or
 post-run review. `prepare_heat3d_v4_run.py` preserves existing result values
@@ -51,6 +54,9 @@ strong-q, peak/p95/p99/hotspot diagnostics, low-DeltaT background
 overprediction (`bin0`, `le0.05`), and final-probe
 RMSE/relRMSE/Tmax/probe-family summaries. These columns are for post-run audit
 entry; blank values are expected before a run is reviewed.
+Additional split-aware audit columns after `result_notes` are also result
+fields; they record valid/test IID scalar, shape, background, peak, and
+final-probe summaries and must be preserved by the checker.
 
 Workflow:
 

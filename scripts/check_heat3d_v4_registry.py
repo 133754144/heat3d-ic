@@ -152,6 +152,8 @@ CONFIG_FIELDNAMES = (
     "batch_size",
     "validation_batch_size",
     "prediction_batch_size",
+    "init_checkpoint",
+    "checkpoint_load_strict",
     "batch_plan",
     "optimizer",
     "lr",
@@ -254,6 +256,40 @@ RESULT_FIELDNAMES = (
     "result_final_probe_status",
     "result_post_training_diagnostics_status",
     "result_notes",
+    "best_valid_iid_rmse",
+    "best_valid_iid_mae",
+    "best_valid_iid_corr",
+    "best_valid_iid_cosine",
+    "best_valid_iid_amp_ratio",
+    "best_valid_iid_topk",
+    "best_valid_iid_bg_over",
+    "best_valid_iid_le0p05_over",
+    "best_valid_iid_peak_err",
+    "best_valid_iid_p95_err",
+    "best_test_iid_rmse",
+    "best_test_iid_mae",
+    "best_test_iid_corr",
+    "best_test_iid_cosine",
+    "best_test_iid_amp_ratio",
+    "best_test_iid_topk",
+    "best_test_iid_bg_over",
+    "best_test_iid_le0p05_over",
+    "best_test_iid_peak_err",
+    "best_test_iid_p95_err",
+    "final_valid_iid_rmse",
+    "final_valid_iid_mae",
+    "final_valid_iid_corr",
+    "final_valid_iid_cosine",
+    "final_test_iid_rmse",
+    "final_test_iid_mae",
+    "final_test_iid_corr",
+    "final_test_iid_cosine",
+    "final_probe_best_RMSE",
+    "final_probe_best_relRMSE",
+    "final_probe_best_Tmax",
+    "final_probe_final_RMSE",
+    "final_probe_final_relRMSE",
+    "final_probe_final_Tmax",
 )
 CSV_FIELDNAMES = CONFIG_FIELDNAMES + RESULT_FIELDNAMES
 UNIQUE_RESOLVED_FIELDS = (
@@ -303,6 +339,8 @@ EXPECTED_V4_BASELINE = {
     "batch_size": "88",
     "validation_batch_size": "88",
     "prediction_batch_size": "88",
+    "init_checkpoint": "",
+    "checkpoint_load_strict": "",
     "batch_plan": "sample_shuffle",
     "optimizer": "adamw",
     "lr": "0.0005",
@@ -566,6 +604,7 @@ def _normalize_resolved_row(
     _check_node_coordinate_fields(row, context=context)
     _check_decoder_bypass_fields(row, context=context)
     _check_loss_fields(row, context=context)
+    _check_continuation_fields(row, context=context)
     return row
 
 
@@ -722,6 +761,17 @@ def _check_loss_fields(row: Mapping[str, str], *, context: str) -> None:
             raise ValueError(f"{context} {field} must be numeric") from exc
         if value < 0.0:
             raise ValueError(f"{context} {field} must be >= 0")
+
+
+def _check_continuation_fields(row: Mapping[str, str], *, context: str) -> None:
+    init_checkpoint = row["init_checkpoint"]
+    strict = row["checkpoint_load_strict"]
+    if strict:
+        _bool(row, "checkpoint_load_strict")
+    if strict and not init_checkpoint:
+        raise ValueError(
+            f"{context} checkpoint_load_strict requires init_checkpoint"
+        )
 
 
 def _positive_int(row: Mapping[str, str], field: str, context: str) -> int:
@@ -949,6 +999,12 @@ def _desired_config_from_row(row: Mapping[str, str]) -> dict[str, Any]:
             "batch_size": _int(row, "batch_size"),
             "validation_batch_size": _int(row, "validation_batch_size"),
             "prediction_batch_size": _int(row, "prediction_batch_size"),
+            "init_checkpoint": row["init_checkpoint"] or None,
+            "checkpoint_load_strict": (
+                _bool(row, "checkpoint_load_strict")
+                if row["checkpoint_load_strict"]
+                else None
+            ),
             "batch_plan": row["batch_plan"],
             "batch_build_seed": _int(row, "batch_build_seed"),
             "final_probe_eval_after_training": _bool(
@@ -1046,6 +1102,12 @@ def _assert_registry_matches_resolved(
         "run.batch_size": _int(row, "batch_size"),
         "run.validation_batch_size": _int(row, "validation_batch_size"),
         "run.prediction_batch_size": _int(row, "prediction_batch_size"),
+        "run.init_checkpoint": row["init_checkpoint"] or None,
+        "run.checkpoint_load_strict": (
+            _bool(row, "checkpoint_load_strict")
+            if row["checkpoint_load_strict"]
+            else None
+        ),
         "run.batch_plan": row["batch_plan"],
         "run.batch_build_seed": _int(row, "batch_build_seed"),
         "run.epochs": _int(row, "epochs"),
@@ -1288,6 +1350,8 @@ def _diff_mapping(base: Mapping[str, Any], desired: Mapping[str, Any]) -> dict[s
             nested = _diff_mapping(base_value, desired_value)
             if nested:
                 diff[key] = nested
+        elif desired_value is None and key not in base:
+            continue
         elif base_value != desired_value:
             diff[key] = desired_value
     return diff
