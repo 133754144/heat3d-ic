@@ -37,6 +37,9 @@ checker; do not add arbitrary dotted YAML overrides.
 The controlled loss-weight fields are `background_relative_weight`,
 `background_over_weight`, `strong_q_weight`, and `hotspot_weight`; they map to
 the matching `loss.*` YAML keys and default to `0.0`.
+For V4P4 hotspot/strong-q planned configs, nonzero `hotspot_weight` or
+`strong_q_weight` must be paired with `loss_mode=hotspot_strong_q`; under plain
+`mse` those weights are not part of the runner's total loss.
 Continuation runs use the controlled fields `init_checkpoint` and
 `checkpoint_load_strict`; they map to `run.init_checkpoint` and
 `run.checkpoint_load_strict`.

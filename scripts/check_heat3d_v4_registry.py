@@ -776,6 +776,7 @@ def _check_decoder_bypass_fields(row: Mapping[str, str], *, context: str) -> Non
 
 
 def _check_loss_fields(row: Mapping[str, str], *, context: str) -> None:
+    weights: dict[str, float] = {}
     for field in (
         "background_relative_weight",
         "background_over_weight",
@@ -788,6 +789,21 @@ def _check_loss_fields(row: Mapping[str, str], *, context: str) -> None:
             raise ValueError(f"{context} {field} must be numeric") from exc
         if value < 0.0:
             raise ValueError(f"{context} {field} must be >= 0")
+        weights[field] = value
+    if (
+        row["config_id"].startswith("V4P4_")
+        and row["status"] == "planned"
+        and (
+            weights["hotspot_weight"] > 0.0
+            or weights["strong_q_weight"] > 0.0
+        )
+        and row["loss_mode"] != "hotspot_strong_q"
+    ):
+        raise ValueError(
+            f"{context} V4P4 hotspot/strong-q planned configs require "
+            "loss_mode='hotspot_strong_q' when hotspot_weight or "
+            "strong_q_weight is nonzero"
+        )
 
 
 def _check_sample_weight_fields(row: Mapping[str, str], *, context: str) -> None:

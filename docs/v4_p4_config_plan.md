@@ -23,9 +23,9 @@ the resolved registry CSV still records those values.
 
 | config_id | short label | only changed from baseline recipe |
 | --- | --- | --- |
-| V4P4_01 | hotspot_x2 | `epochs=220`, `hotspot_weight=0.10`, `strong_q_weight=0.05`; paths and IDs use `V4P4_01`. |
-| V4P4_02 | strongq_x2 | `epochs=220`, `hotspot_weight=0.05`, `strong_q_weight=0.10`; paths and IDs use `V4P4_02`. |
-| V4P4_03 | hotspot_strongq_x2 | `epochs=220`, `hotspot_weight=0.10`, `strong_q_weight=0.10`; paths and IDs use `V4P4_03`. |
+| V4P4_01 | hotspot_x2 | `epochs=220`, `loss_mode=hotspot_strong_q`, `hotspot_weight=0.10`, `strong_q_weight=0.05`; paths and IDs use `V4P4_01`. |
+| V4P4_02 | strongq_x2 | `epochs=220`, `loss_mode=hotspot_strong_q`, `hotspot_weight=0.05`, `strong_q_weight=0.10`; paths and IDs use `V4P4_02`. |
+| V4P4_03 | hotspot_strongq_x2 | `epochs=220`, `loss_mode=hotspot_strong_q`, `hotspot_weight=0.10`, `strong_q_weight=0.10`; paths and IDs use `V4P4_03`. |
 | V4P4_04 | physical_hard_weighted | V4P4_03 plus `sample_weight_policy=hard_sample_list`, tracked weight JSON, default weight `1.0`, normalize `true`; paths and IDs use `V4P4_04`. |
 | V4P4_05 | fourier_hotspot_strongq | V4P4_03 plus `node_coordinate_encoding=raw_plus_fourier`, `node_coordinate_freqs=4`; paths and IDs use `V4P4_05`. |
 | V4P4_06 | upstream_onecycle_hotspot_strongq | V4P4_03 plus `lr_schedule=upstream_onecycle`, `lr_init=1.0e-5`, `lr_peak=2.0e-4`, `lr_base=1.0e-5`, `lr_lowr=1.0e-6`, `pct_start=0.02`, `pct_final=0.10`; paths and IDs use `V4P4_06`. |

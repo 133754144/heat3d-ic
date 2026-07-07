@@ -18,6 +18,7 @@ overrides:
     extent_feature_policy: log_extent_broadcast
     condition_feature_transform: semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars
   loss:
+    mode: hotspot_strong_q
     strong_q_weight: 0.1
     hotspot_weight: 0.05
   run:
@@ -37,6 +38,7 @@ overrides:
     variant_label: V4P4_02
     batch_policy_label: B32_sample_shuffle
     optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    loss_label: plain_hotspot_strong_q
     runner_family: v4_controlled_semantic_wrapper
     normalization_profile: semantic_normalization_v1
     coord_policy: sample_local_isotropic
