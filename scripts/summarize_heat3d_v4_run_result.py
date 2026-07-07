@@ -207,21 +207,52 @@ def _check_required_diagnostics(row: dict[str, str], result: dict[str, str]) -> 
     if epochs < 100:
         return
 
+    final_probe_fields = (
+        "result_final_probe_rmse",
+        "result_final_probe_relrmse",
+        "result_final_probe_tmax_error",
+    )
+    legacy_diagnostic_fields = (
+        "result_corr_iid",
+        "result_amp",
+        "result_valid_iid_topk",
+        *final_probe_fields,
+    )
+    split_aware_fields = (
+        "best_valid_iid_rmse",
+        "best_valid_iid_corr",
+        "best_test_iid_rmse",
+        "best_test_iid_corr",
+        "final_valid_iid_rmse",
+        "final_valid_iid_corr",
+        "final_test_iid_rmse",
+        "final_test_iid_corr",
+        *final_probe_fields,
+    )
+    legacy_complete = (
+        result.get("result_post_training_diagnostics_status") == "completed"
+        and all(result.get(field) for field in legacy_diagnostic_fields)
+    )
+    split_aware_complete = all(result.get(field) for field in split_aware_fields)
+    if legacy_complete or split_aware_complete:
+        return
+
     gaps = []
     if result.get("result_post_training_diagnostics_status") != "completed":
         gaps.append("result_post_training_diagnostics_status=completed")
     if result.get("result_final_probe_status") != "completed":
         gaps.append("result_final_probe_status=completed")
-    for field in (
-        "result_corr_iid",
-        "result_amp",
-        "result_valid_iid_topk",
-        "result_final_probe_rmse",
-        "result_final_probe_relrmse",
-        "result_final_probe_tmax_error",
-    ):
+    for field in legacy_diagnostic_fields:
         if not result.get(field):
             gaps.append(field)
+    missing_split_fields = [
+        field for field in split_aware_fields if not result.get(field)
+    ]
+    if missing_split_fields:
+        gaps.append(
+            "split-aware alternative missing "
+            + ", ".join(missing_split_fields)
+        )
     if gaps:
         raise SystemExit(
             f"{row['config_id']}: epochs>=100 result update requires diagnostics "
