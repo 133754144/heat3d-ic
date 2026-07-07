@@ -196,12 +196,13 @@ def _load_records(
     subset: Path,
     trained_predictions: Path,
     split_map: dict[str, str] | None = None,
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
     sample_dirs = find_sample_dirs(_sample_root(subset))
     if not sample_dirs:
         raise FileNotFoundError(f"no sample directories found under {subset}")
     load_prediction = _prediction_loader(trained_predictions)
     records = []
+    failures = []
     for sample_dir in sample_dirs:
         sample_meta = load_json(sample_dir / "sample_meta.json")
         metadata = _read_optional_json(sample_dir / "metadata.json")
@@ -212,7 +213,18 @@ def _load_records(
             raise ValueError(f"{sample_id}: coords.npy must have shape (N, 3), found {coords.shape}")
         n_points = coords.shape[0]
         true_temperature = _as_column(np.load(sample_dir / "temperature.npy"), n_points, f"{sample_id} temperature.npy")
-        trained_temperature = _as_column(load_prediction(sample_id), n_points, f"{sample_id} trained prediction")
+        try:
+            trained_raw = load_prediction(sample_id)
+        except (FileNotFoundError, KeyError) as exc:
+            failures.append(
+                {
+                    "sample_id": sample_id,
+                    "sample_dir": str(sample_dir),
+                    "error": str(exc),
+                }
+            )
+            continue
+        trained_temperature = _as_column(trained_raw, n_points, f"{sample_id} trained prediction")
         q_field = np.load(sample_dir / "q_field.npy")
         t_ref_info = resolve_t_ref(sample_meta)
         t_ref = float(t_ref_info["value"])
@@ -237,10 +249,14 @@ def _load_records(
                 "T_pred_zero": np.full(n_points, t_ref, dtype=np.float64),
             }
         )
+    if not records:
+        raise FileNotFoundError(
+            f"no prediction-matched samples found for {trained_predictions}"
+        )
     q_edges = _q_power_edges([record["q_power"] for record in records], "p33,p66")
     for record in records:
         record["groups"]["q_power_range"] = _q_power_range(record["q_power"], q_edges["ranges"])
-    return records, q_edges
+    return records, q_edges, failures
 
 
 def _summary_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -338,7 +354,7 @@ def analyze_condition_diagnostics(
     q_power_bins: str = "p33,p66",
 ) -> dict[str, Any]:
     split_map = load_sample_split_map(split_map_path)
-    records, _ = _load_records(subset, trained_predictions, split_map)
+    records, _, failures = _load_records(subset, trained_predictions, split_map)
     q_edges = _q_power_edges([record["q_power"] for record in records], q_power_bins)
     for record in records:
         record["groups"]["q_power_range"] = _q_power_range(record["q_power"], q_edges["ranges"])
@@ -366,12 +382,14 @@ def analyze_condition_diagnostics(
             "markdown": str(output_md),
         },
         "sample_count": len(records),
+        "failed_sample_count": len(failures),
         "point_count": int(sum(record["point_count"] for record in records)),
         "deltaT_bin_edges": delta_edges,
         "q_power_edges": q_edges,
         "overall": _condition_item("overall", "overall", records, delta_edges["bins"]),
         "condition_groups": group_payload,
         "top_background_bias_groups": _top_background_groups(group_payload),
+        "failures": failures,
     }
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -392,6 +410,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- subset: `{payload['inputs']['subset']}`",
         f"- trained_predictions: `{payload['inputs']['trained_predictions']}`",
         f"- sample_count: `{payload['sample_count']}`",
+        f"- failed_sample_count: `{payload['failed_sample_count']}`",
         f"- point_count: `{payload['point_count']}`",
         "",
         "## Overall",
