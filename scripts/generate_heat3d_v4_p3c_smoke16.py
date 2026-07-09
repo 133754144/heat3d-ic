@@ -915,8 +915,21 @@ def generate_smoke16(
     force: bool = False,
     reject_resample: bool = False,
     max_candidates: int | None = None,
+    accepted_qc_classes: set[str] | None = None,
 ) -> dict[str, Any]:
     registry = load_registry(registry_path)
+    qc_filter_enabled = accepted_qc_classes is not None
+    selected_qc_classes = (
+        set(ACCEPTED_QC_CLASSES)
+        if accepted_qc_classes is None
+        else set(accepted_qc_classes)
+    )
+    unknown_qc_classes = sorted(selected_qc_classes - ACCEPTED_QC_CLASSES)
+    if unknown_qc_classes:
+        raise ValueError(f"unknown accepted QC classes: {unknown_qc_classes}")
+    if not selected_qc_classes:
+        raise ValueError("accepted_qc_classes must not be empty")
+    resample_enabled = bool(reject_resample or qc_filter_enabled)
     _ensure_clean_target(dataset_dir, force=force)
     _ensure_clean_target(output_dir, force=force)
     dataset_dir.mkdir(parents=True)
@@ -925,7 +938,7 @@ def generate_smoke16(
     candidate_count = (
         int(max_candidates)
         if max_candidates is not None
-        else (int(sample_count) * 4 if reject_resample else int(sample_count))
+        else (int(sample_count) * 4 if resample_enabled else int(sample_count))
     )
     if candidate_count < sample_count:
         raise ValueError("--max-candidates must be >= --samples")
@@ -988,7 +1001,17 @@ def generate_smoke16(
             sample_audit["schema_loader_errors"] = schema_errors
             sample_audit.update(classify_qc_sample(sample_audit))
             sample_audit["dataset_action"] = sample_audit["qc_class"]
-            if reject_resample and sample_audit["qc_class"] == "reject_resample":
+            qc_class_filtered = (
+                qc_filter_enabled and sample_audit["qc_class"] not in selected_qc_classes
+            )
+            reject_resampled = (
+                reject_resample and sample_audit["qc_class"] == "reject_resample"
+            )
+            if qc_class_filtered or reject_resampled:
+                sample_audit["acceptance_filter"] = {
+                    "accepted_qc_classes": sorted(selected_qc_classes),
+                    "reason": "qc_class_not_selected",
+                }
                 rejected_candidates.append(sample_audit)
                 continue
 
@@ -1064,7 +1087,7 @@ def generate_smoke16(
                     "q_block_count": len(scene["q"]["blocks"]),
                 },
             }
-            if reject_resample:
+            if resample_enabled:
                 rejected_candidates.append(failure)
                 continue
             failures.append(failure)
@@ -1113,7 +1136,8 @@ def generate_smoke16(
         "candidate_count_generated": candidate_count,
         "candidate_count_consumed": len(samples) + len(rejected_candidates),
         "rejected_candidate_count": len(rejected_candidates),
-        "reject_resample_enabled": bool(reject_resample),
+        "reject_resample_enabled": resample_enabled,
+        "accepted_qc_classes": sorted(selected_qc_classes),
         "seed": seed,
         "split_map": split_map,
         "split_audit": split_audit,
@@ -1133,7 +1157,7 @@ def generate_smoke16(
     audit["review_sample_closeout"] = build_review_closeout(samples)
     audit["qc_policy"] = {
         "policy": "p3c_qc_freeze_v0",
-        "accepted_classes": sorted(ACCEPTED_QC_CLASSES),
+        "accepted_classes": sorted(selected_qc_classes),
         "reject_resample_reasons": [
             "solver_failure",
             "nan_inf",
@@ -1155,7 +1179,8 @@ def generate_smoke16(
         "candidate_count_generated": candidate_count,
         "candidate_count_consumed": len(samples) + len(rejected_candidates),
         "rejected_candidate_count": len(rejected_candidates),
-        "reject_resample_enabled": bool(reject_resample),
+        "reject_resample_enabled": resample_enabled,
+        "accepted_qc_classes": sorted(selected_qc_classes),
     }
     audit["rejected_candidates"] = rejected_candidates
     _write_json(dataset_dir / "manifest.json", manifest)
@@ -1176,6 +1201,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=SMOKE16_SEED)
     parser.add_argument("--reject-resample", action="store_true")
     parser.add_argument("--max-candidates", type=int, default=None)
+    parser.add_argument(
+        "--accept-qc-class",
+        action="append",
+        choices=sorted(ACCEPTED_QC_CLASSES),
+        default=None,
+        help="QC class to write; repeat for multiple classes. Others are resampled.",
+    )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args(argv)
 
@@ -1188,6 +1220,9 @@ def main(argv: list[str] | None = None) -> int:
         force=args.force,
         reject_resample=args.reject_resample,
         max_candidates=args.max_candidates,
+        accepted_qc_classes=(
+            set(args.accept_qc_class) if args.accept_qc_class is not None else None
+        ),
     )
     print(
         json.dumps(

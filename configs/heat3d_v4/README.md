@@ -31,6 +31,10 @@ Dataset identity is explicit in the registry/CSV through `dataset_name`,
 generated YAML `dataset` fields. V4 P3 candidate1024 formal configs use the
 tracked train768/valid128/test128 split map. The older test-as-valid map is a
 smoke legacy reference only.
+V4 P5 clean-nohard configs use
+`candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json`;
+its regular train/valid/test keys contain no `physical_hard_keep`, while the
+original hard samples remain under three explicit holdout/challenge keys.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
@@ -128,6 +132,9 @@ Split-map fields:
   is the formal candidate1024_v0 train/valid/test split map.
 - `configs/heat3d_v4/candidate1024_v0_test_as_valid_iid_split_map.json` remains
   only as a legacy smoke bridge and should not be used for formal V4 P3 runs.
+- `configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json`
+  is the P5 clean-IID split. See `docs/v4_p5_clean_nohard_dataset.md` for the
+  clean_iid, hard_challenge, and all_iid reporting relationship.
 - V4 formal training defaults to `prediction_split=valid_iid`; use
   `prediction_split=all` only for explicit export/audit requests because it
   forces full `all_groups` construction.
