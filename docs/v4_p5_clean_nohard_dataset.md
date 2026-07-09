@@ -23,6 +23,19 @@ The reproducible builder is
 `scripts/build_heat3d_v4_p5_clean_nohard_dataset.py`. Generated arrays,
 manifest, audit, and SHA256 manifest remain ignored under `data/`.
 
+Published/synchronized locations:
+
+- Hugging Face:
+  `https://huggingface.co/datasets/133754144X/heat3d-thermal-simulation/tree/main/subsets/heat3d_v4_p5_clean_nohard_v0`
+- wsl2/devbox:
+  `~/myCodeGitOnly/heat3d-ic/data/heat3d_v4_p5_clean_nohard_v0`
+
+All three locations contain 9660 files (`260013310` bytes). Root hashes:
+
+- `manifest.json`: `248fd8c82eac352c9c224aa30800e26e3cc5f4b869262be5098f70d7acddf4cc`
+- `audit_summary.json`: `f0e15b21579a0d2f274ef6abc946119db9b64e21e752053e16e52af081cb7797`
+- `sha256_manifest.json`: `a3ca52aa9aa204bd8cbad4f1f6e012f6b5b142af403c319590dfd895e4e40d5c`
+
 ## Split Protocol
 
 Tracked split:
