@@ -39,3 +39,14 @@ This supersedes the older B6/S4-nearest reference for v4 initialization and
 default-setting discussions. `S4discretebestFT3` and
 `S4mlp3discretebestFT2` were still incomplete during the closeout audit, so
 they are tracked as pending artifacts rather than merge blockers.
+
+## Latest Result Update
+
+`S4discretebestFT3` completed after the initial closeout and is now the
+strongest retained v3 scalar checkpoint:
+
+`output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4discretebestFT3_e400_constant_lr2p5e-6_wd1e-4/params_best.pkl`
+
+It improves best `valid_base_mse` to `0.0179973`. The corresponding mlp3
+follow-up, `S4mlp3discretebestFT2`, improved the mlp3 branch to `0.0214054`
+but remains weaker than mlp2, so v4 keeps `mlp_hidden_layers=2` as default.

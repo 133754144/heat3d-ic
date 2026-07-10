@@ -29,7 +29,7 @@ The corresponding v4 starter config is:
 The retained v3 best checkpoint for reference is the completed S4 discrete
 fine-tune path:
 
-`output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4discretebestFT2_e400_constant_lr5e-6_wd1e-4/params_best.pkl`
+`output/heat3d_v2_runs/latent96_s6_mlp2_B88_sample_shuffle_discrete_radius_S4discretebestFT3_e400_constant_lr2p5e-6_wd1e-4/params_best.pkl`
 
 ## Rationale
 
