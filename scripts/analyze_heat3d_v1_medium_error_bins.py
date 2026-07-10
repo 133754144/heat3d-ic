@@ -18,6 +18,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from rigno.heat3d_v1_label_diagnostics import find_sample_dirs, load_json, resolve_t_ref  # noqa: E402
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    resolve_sample_split,
+    split_source_label,
+)
 
 
 DEFAULT_BINS = "p50,p75,p90,p95"
@@ -44,6 +49,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trained-predictions", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, default=None)
     parser.add_argument("--output-md", type=Path, default=None)
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help="Optional sample_id-to-split map. When provided it overrides sample_meta split labels.",
+    )
     parser.add_argument("--bins", type=str, default=DEFAULT_BINS)
     parser.add_argument("--group-by", nargs="*", default=None)
     parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
@@ -150,7 +161,12 @@ def _as_column(array: np.ndarray, n_points: int, name: str) -> np.ndarray:
     return values
 
 
-def _load_sample_records(subset: Path, trained_predictions: Path, group_by: list[str]) -> list[dict[str, Any]]:
+def _load_sample_records(
+    subset: Path,
+    trained_predictions: Path,
+    group_by: list[str],
+    split_map: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
     sample_dirs = find_sample_dirs(_sample_root(subset))
     if not sample_dirs:
         raise FileNotFoundError(f"no sample directories found under {subset}")
@@ -159,6 +175,7 @@ def _load_sample_records(subset: Path, trained_predictions: Path, group_by: list
     for sample_dir in sample_dirs:
         meta = load_json(sample_dir / "sample_meta.json")
         sample_id = str(meta.get("sample_id", sample_dir.name))
+        split = resolve_sample_split(sample_id, meta, split_map=split_map)
         coords = np.load(sample_dir / "coords.npy")
         if coords.ndim != 2 or coords.shape[1] != 3:
             raise ValueError(f"{sample_id}: coords.npy must have shape (N, 3), found {coords.shape}")
@@ -169,7 +186,10 @@ def _load_sample_records(subset: Path, trained_predictions: Path, group_by: list
         t_ref = float(t_ref_info["value"])
         true_delta = true_temperature - t_ref
         zero_temperature = np.full_like(true_temperature, t_ref)
-        groups = {key: _condition_value(meta, key) for key in group_by}
+        groups = {
+            key: split if key == "split" else _condition_value(meta, key)
+            for key in group_by
+        }
         records.append(
             {
                 "sample_id": sample_id,
@@ -387,6 +407,7 @@ def analyze_error_bins(
     trained_predictions: Path,
     output_json: Path | None = None,
     output_md: Path | None = None,
+    split_map_path: Path | None = None,
     bins: str = DEFAULT_BINS,
     group_by: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -394,7 +415,8 @@ def analyze_error_bins(
     percentiles = _parse_percentile_bins(bins)
     output_json = output_json or trained_predictions.parent / "error_bins.json"
     output_md = output_md or trained_predictions.parent / "error_bins.md"
-    records = _load_sample_records(subset, trained_predictions, group_keys)
+    split_map = load_sample_split_map(split_map_path)
+    records = _load_sample_records(subset, trained_predictions, group_keys, split_map)
     all_delta = np.concatenate([record["DeltaT_true"] for record in records])
     edge_payload = _bin_edges(all_delta, percentiles)
     overall_bins = _bin_stats(records, edge_payload["bins"])
@@ -403,6 +425,8 @@ def analyze_error_bins(
         "inputs": {
             "subset": str(subset),
             "trained_predictions": str(trained_predictions),
+            "split_source": split_source_label(split_map),
+            "split_map": str(split_map_path) if split_map_path is not None else None,
             "prediction_schema": (
                 "recovered-temperature predictions loaded from .npz arrays keyed by sample_id; "
                 "directory fallback mirrors compare_heat3d_v1_medium_baselines.py"
@@ -654,6 +678,7 @@ def main() -> int:
         trained_predictions=args.trained_predictions,
         output_json=output_json,
         output_md=output_md,
+        split_map_path=args.split_map,
         bins=args.bins,
         group_by=args.group_by,
     )

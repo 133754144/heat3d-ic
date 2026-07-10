@@ -1,0 +1,38 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P1_05_decoder_bypass_full_condition_smoke
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P1_05_decoder_bypass_full_condition_smoke;
+    standard task coords+k(x)+q(x)+BC->T(x); generated from V4_base.yaml.
+  model:
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+  run:
+    epochs: 5
+    final_probe_eval_after_training: false
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_05_decoder_bypass_full_condition_smoke
+    post_training_diagnostics: false
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_05_decoder_bypass_full_condition_smoke
+  export:
+    output_dir: output/heat3d_v4_runs/V4P1_05_decoder_bypass_full_condition_smoke
+    run_name: V4P1_05_decoder_bypass_full_condition_smoke
+    save_final_predictions: false
+    save_best_predictions: false
+  diagnostics:
+    run_baseline_comparison: false
+    run_error_bins: false
+    run_condition_diagnostics: false
+    run_summary: false
+    run_field_shape_diagnostics: false
+  metadata:
+    registry_config_id: V4P1_05_decoder_bypass_full_condition_smoke
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P1_05_decoder_bypass_full_condition_smoke
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P1_05_decoder_bypass_full_condition_smoke.log
+    notes: V4 P1 decoder bypass smoke epoch=5; prediction export, final-probe, and
+      post-training diagnostics disabled

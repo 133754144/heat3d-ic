@@ -1,0 +1,4424 @@
+{
+  "actual_counts": {
+    "test_iid": 128,
+    "train": 768,
+    "valid_iid": 128
+  },
+  "assignment_method": "deterministic_stratified_combination_largest_remainder_v0",
+  "dataset_id": "heat3d_v4_p3c_candidate1024_v0",
+  "distributions": {
+    "DeltaT_bin": {
+      "categories": [
+        {
+          "category": "hard",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.0068359375,
+            "train": -0.0009765625,
+            "valid_iid": -0.0009765625
+          },
+          "split_counts": {
+            "test_iid": 40,
+            "train": 234,
+            "valid_iid": 39
+          },
+          "split_fractions": {
+            "test_iid": 0.3125,
+            "train": 0.3046875,
+            "valid_iid": 0.3046875
+          },
+          "total_count": 313,
+          "total_fraction": 0.3056640625
+        },
+        {
+          "category": "low",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.015625,
+            "train": 0.00390625,
+            "valid_iid": -0.0078125
+          },
+          "split_counts": {
+            "test_iid": 6,
+            "train": 51,
+            "valid_iid": 7
+          },
+          "split_fractions": {
+            "test_iid": 0.046875,
+            "train": 0.06640625,
+            "valid_iid": 0.0546875
+          },
+          "total_count": 64,
+          "total_fraction": 0.0625
+        },
+        {
+          "category": "nominal",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.0576171875,
+            "train": -0.0205078125,
+            "valid_iid": 0.0654296875
+          },
+          "split_counts": {
+            "test_iid": 56,
+            "train": 276,
+            "valid_iid": 57
+          },
+          "split_fractions": {
+            "test_iid": 0.4375,
+            "train": 0.359375,
+            "valid_iid": 0.4453125
+          },
+          "total_count": 389,
+          "total_fraction": 0.3798828125
+        },
+        {
+          "category": "reject_high",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0478515625,
+            "train": 0.015950520833333343,
+            "valid_iid": -0.0478515625
+          },
+          "split_counts": {
+            "test_iid": 12,
+            "train": 121,
+            "valid_iid": 12
+          },
+          "split_fractions": {
+            "test_iid": 0.09375,
+            "train": 0.15755208333333334,
+            "valid_iid": 0.09375
+          },
+          "total_count": 145,
+          "total_fraction": 0.1416015625
+        },
+        {
+          "category": "review_high",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0009765625,
+            "train": 0.0016276041666666713,
+            "valid_iid": -0.0087890625
+          },
+          "split_counts": {
+            "test_iid": 14,
+            "train": 86,
+            "valid_iid": 13
+          },
+          "split_fractions": {
+            "test_iid": 0.109375,
+            "train": 0.11197916666666667,
+            "valid_iid": 0.1015625
+          },
+          "total_count": 113,
+          "total_fraction": 0.1103515625
+        }
+      ],
+      "max_abs_fraction_delta": 0.0654296875
+    },
+    "cooling_regime": {
+      "categories": [
+        {
+          "category": "nominal_package",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0009765625,
+            "train": 0.0029296875,
+            "valid_iid": -0.0166015625
+          },
+          "split_counts": {
+            "test_iid": 42,
+            "train": 255,
+            "valid_iid": 40
+          },
+          "split_fractions": {
+            "test_iid": 0.328125,
+            "train": 0.33203125,
+            "valid_iid": 0.3125
+          },
+          "total_count": 337,
+          "total_fraction": 0.3291015625
+        },
+        {
+          "category": "strong_forced_or_effective_heatsink",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.021484375,
+            "train": -0.011067708333333315,
+            "valid_iid": 0.044921875
+          },
+          "split_counts": {
+            "test_iid": 45,
+            "train": 245,
+            "valid_iid": 48
+          },
+          "split_fractions": {
+            "test_iid": 0.3515625,
+            "train": 0.3190104166666667,
+            "valid_iid": 0.375
+          },
+          "total_count": 338,
+          "total_fraction": 0.330078125
+        },
+        {
+          "category": "weak_effective_air",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0205078125,
+            "train": 0.008138020833333315,
+            "valid_iid": -0.0283203125
+          },
+          "split_counts": {
+            "test_iid": 41,
+            "train": 268,
+            "valid_iid": 40
+          },
+          "split_fractions": {
+            "test_iid": 0.3203125,
+            "train": 0.3489583333333333,
+            "valid_iid": 0.3125
+          },
+          "total_count": 349,
+          "total_fraction": 0.3408203125
+        }
+      ],
+      "max_abs_fraction_delta": 0.044921875
+    },
+    "diag3_policy": {
+      "categories": [
+        {
+          "category": "hbm_like_strong",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.009765625,
+            "train": 0.008463541666666657,
+            "valid_iid": -0.041015625
+          },
+          "split_counts": {
+            "test_iid": 19,
+            "train": 128,
+            "valid_iid": 15
+          },
+          "split_fractions": {
+            "test_iid": 0.1484375,
+            "train": 0.16666666666666666,
+            "valid_iid": 0.1171875
+          },
+          "total_count": 162,
+          "total_fraction": 0.158203125
+        },
+        {
+          "category": "mild",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.0341796875,
+            "train": -0.01139322916666663,
+            "valid_iid": 0.0341796875
+          },
+          "split_counts": {
+            "test_iid": 84,
+            "train": 469,
+            "valid_iid": 84
+          },
+          "split_fractions": {
+            "test_iid": 0.65625,
+            "train": 0.6106770833333334,
+            "valid_iid": 0.65625
+          },
+          "total_count": 637,
+          "total_fraction": 0.6220703125
+        },
+        {
+          "category": "scalar",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0244140625,
+            "train": 0.0029296875,
+            "valid_iid": 0.0068359375
+          },
+          "split_counts": {
+            "test_iid": 25,
+            "train": 171,
+            "valid_iid": 29
+          },
+          "split_fractions": {
+            "test_iid": 0.1953125,
+            "train": 0.22265625,
+            "valid_iid": 0.2265625
+          },
+          "total_count": 225,
+          "total_fraction": 0.2197265625
+        }
+      ],
+      "max_abs_fraction_delta": 0.041015625
+    },
+    "high_deltaT_triage": {
+      "categories": [
+        {
+          "category": "not_high_deltaT",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.0478515625,
+            "train": -0.01595052083333337,
+            "valid_iid": 0.0478515625
+          },
+          "split_counts": {
+            "test_iid": 116,
+            "train": 647,
+            "valid_iid": 116
+          },
+          "split_fractions": {
+            "test_iid": 0.90625,
+            "train": 0.8424479166666666,
+            "valid_iid": 0.90625
+          },
+          "total_count": 879,
+          "total_fraction": 0.8583984375
+        },
+        {
+          "category": "physical_low_k_enclosed_compact_hotspot",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0244140625,
+            "train": 0.009440104166666671,
+            "valid_iid": -0.0322265625
+          },
+          "split_counts": {
+            "test_iid": 9,
+            "train": 80,
+            "valid_iid": 8
+          },
+          "split_fractions": {
+            "test_iid": 0.0703125,
+            "train": 0.10416666666666667,
+            "valid_iid": 0.0625
+          },
+          "total_count": 97,
+          "total_fraction": 0.0947265625
+        },
+        {
+          "category": "physical_multi_source_or_high_power_bottleneck",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.01171875,
+            "train": 0.002604166666666668,
+            "valid_iid": -0.00390625
+          },
+          "split_counts": {
+            "test_iid": 2,
+            "train": 23,
+            "valid_iid": 3
+          },
+          "split_fractions": {
+            "test_iid": 0.015625,
+            "train": 0.029947916666666668,
+            "valid_iid": 0.0234375
+          },
+          "total_count": 28,
+          "total_fraction": 0.02734375
+        },
+        {
+          "category": "physical_weak_cooling_high_deltaT",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.01171875,
+            "train": 0.00390625,
+            "valid_iid": -0.01171875
+          },
+          "split_counts": {
+            "test_iid": 1,
+            "train": 18,
+            "valid_iid": 1
+          },
+          "split_fractions": {
+            "test_iid": 0.0078125,
+            "train": 0.0234375,
+            "valid_iid": 0.0078125
+          },
+          "total_count": 20,
+          "total_fraction": 0.01953125
+        }
+      ],
+      "max_abs_fraction_delta": 0.0478515625
+    },
+    "k_mode": {
+      "categories": [
+        {
+          "category": "diag3",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.0244140625,
+            "train": -0.0029296875,
+            "valid_iid": -0.0068359375
+          },
+          "split_counts": {
+            "test_iid": 103,
+            "train": 597,
+            "valid_iid": 99
+          },
+          "split_fractions": {
+            "test_iid": 0.8046875,
+            "train": 0.77734375,
+            "valid_iid": 0.7734375
+          },
+          "total_count": 799,
+          "total_fraction": 0.7802734375
+        },
+        {
+          "category": "scalar",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0244140625,
+            "train": 0.0029296875,
+            "valid_iid": 0.0068359375
+          },
+          "split_counts": {
+            "test_iid": 25,
+            "train": 171,
+            "valid_iid": 29
+          },
+          "split_fractions": {
+            "test_iid": 0.1953125,
+            "train": 0.22265625,
+            "valid_iid": 0.2265625
+          },
+          "total_count": 225,
+          "total_fraction": 0.2197265625
+        }
+      ],
+      "max_abs_fraction_delta": 0.0244140625
+    },
+    "q_family": {
+      "categories": [
+        {
+          "category": "compact_hotspot_q_density",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.01171875,
+            "train": -0.0026041666666666574,
+            "valid_iid": 0.00390625
+          },
+          "split_counts": {
+            "test_iid": 20,
+            "train": 109,
+            "valid_iid": 19
+          },
+          "split_fractions": {
+            "test_iid": 0.15625,
+            "train": 0.14192708333333334,
+            "valid_iid": 0.1484375
+          },
+          "total_count": 148,
+          "total_fraction": 0.14453125
+        },
+        {
+          "category": "dual_z_q_density",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0166015625,
+            "train": 0.0029296875,
+            "valid_iid": -0.0009765625
+          },
+          "split_counts": {
+            "test_iid": 16,
+            "train": 111,
+            "valid_iid": 18
+          },
+          "split_fractions": {
+            "test_iid": 0.125,
+            "train": 0.14453125,
+            "valid_iid": 0.140625
+          },
+          "total_count": 145,
+          "total_fraction": 0.1416015625
+        },
+        {
+          "category": "elongated_q_density",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.01171875,
+            "train": -0.005208333333333343,
+            "valid_iid": 0.01953125
+          },
+          "split_counts": {
+            "test_iid": 20,
+            "train": 107,
+            "valid_iid": 21
+          },
+          "split_fractions": {
+            "test_iid": 0.15625,
+            "train": 0.13932291666666666,
+            "valid_iid": 0.1640625
+          },
+          "total_count": 148,
+          "total_fraction": 0.14453125
+        },
+        {
+          "category": "multi_block_q_density",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.005859375,
+            "train": 0.0006510416666666574,
+            "valid_iid": 0.001953125
+          },
+          "split_counts": {
+            "test_iid": 18,
+            "train": 113,
+            "valid_iid": 19
+          },
+          "split_fractions": {
+            "test_iid": 0.140625,
+            "train": 0.14713541666666666,
+            "valid_iid": 0.1484375
+          },
+          "total_count": 150,
+          "total_fraction": 0.146484375
+        },
+        {
+          "category": "tsv_adjacent_q_density",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0234375,
+            "train": 0.009114583333333343,
+            "valid_iid": -0.03125
+          },
+          "split_counts": {
+            "test_iid": 15,
+            "train": 115,
+            "valid_iid": 14
+          },
+          "split_fractions": {
+            "test_iid": 0.1171875,
+            "train": 0.14973958333333334,
+            "valid_iid": 0.109375
+          },
+          "total_count": 144,
+          "total_fraction": 0.140625
+        },
+        {
+          "category": "weak_background_hotspot_q_density",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.0048828125,
+            "train": 0.0009765625,
+            "valid_iid": -0.0107421875
+          },
+          "split_counts": {
+            "test_iid": 18,
+            "train": 105,
+            "valid_iid": 16
+          },
+          "split_fractions": {
+            "test_iid": 0.140625,
+            "train": 0.13671875,
+            "valid_iid": 0.125
+          },
+          "total_count": 139,
+          "total_fraction": 0.1357421875
+        },
+        {
+          "category": "weak_background_q_density",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.017578125,
+            "train": -0.005859375,
+            "valid_iid": 0.017578125
+          },
+          "split_counts": {
+            "test_iid": 21,
+            "train": 108,
+            "valid_iid": 21
+          },
+          "split_fractions": {
+            "test_iid": 0.1640625,
+            "train": 0.140625,
+            "valid_iid": 0.1640625
+          },
+          "total_count": 150,
+          "total_fraction": 0.146484375
+        }
+      ],
+      "max_abs_fraction_delta": 0.03125
+    },
+    "qc_class": {
+      "categories": [
+        {
+          "category": "clean_keep",
+          "fraction_deltas_vs_total": {
+            "test_iid": 0.048828125,
+            "train": -0.017578125,
+            "valid_iid": 0.056640625
+          },
+          "split_counts": {
+            "test_iid": 102,
+            "train": 561,
+            "valid_iid": 103
+          },
+          "split_fractions": {
+            "test_iid": 0.796875,
+            "train": 0.73046875,
+            "valid_iid": 0.8046875
+          },
+          "total_count": 766,
+          "total_fraction": 0.748046875
+        },
+        {
+          "category": "physical_hard_keep",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0478515625,
+            "train": 0.015950520833333343,
+            "valid_iid": -0.0478515625
+          },
+          "split_counts": {
+            "test_iid": 12,
+            "train": 121,
+            "valid_iid": 12
+          },
+          "split_fractions": {
+            "test_iid": 0.09375,
+            "train": 0.15755208333333334,
+            "valid_iid": 0.09375
+          },
+          "total_count": 145,
+          "total_fraction": 0.1416015625
+        },
+        {
+          "category": "review_hold",
+          "fraction_deltas_vs_total": {
+            "test_iid": -0.0009765625,
+            "train": 0.0016276041666666713,
+            "valid_iid": -0.0087890625
+          },
+          "split_counts": {
+            "test_iid": 14,
+            "train": 86,
+            "valid_iid": 13
+          },
+          "split_fractions": {
+            "test_iid": 0.109375,
+            "train": 0.11197916666666667,
+            "valid_iid": 0.1015625
+          },
+          "total_count": 113,
+          "total_fraction": 0.1103515625
+        }
+      ],
+      "max_abs_fraction_delta": 0.056640625
+    }
+  },
+  "schema_version": "heat3d_v4_candidate1024_split_audit_v1",
+  "seed": 0,
+  "source_files": {
+    "audit_summary_json": "data/heat3d_v4_p3c_candidate1024_v0/audit_summary.json",
+    "audit_summary_sha256": "2d88977044e701bd1969bfa1e570ac3938ef96da0bf59734cc775d7ed6a4b175",
+    "manifest_json": "data/heat3d_v4_p3c_candidate1024_v0/manifest.json",
+    "manifest_sha256": "736336bab9f055232bf7b40643bc5e144e3b60b7e546822b30816a18a2fb2515",
+    "sha256_manifest_json": "data/heat3d_v4_p3c_candidate1024_v0/sha256_manifest.json",
+    "sha256_manifest_sha256": "4159d277a9c2810e4b0cac870f3e7b9d389bec60c22880143e1f2ee49036ed0d"
+  },
+  "split_map_path": "configs/heat3d_v4/candidate1024_v0_train768_valid128_test128_stratified_seed0.json",
+  "stratify_keys": [
+    "qc_class",
+    "DeltaT_bin",
+    "q_family",
+    "cooling_regime",
+    "diag3_policy",
+    "k_mode",
+    "high_deltaT_triage"
+  ],
+  "stratum_allocations": [
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 13,
+      "train": 9,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 16,
+      "train": 12,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 18,
+      "train": 14,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 9,
+      "train": 7,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 10,
+      "train": 8,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 9,
+      "train": 7,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 13,
+      "train": 9,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 9,
+      "train": 7,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 9,
+      "train": 7,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 8,
+      "train": 6,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 14,
+      "train": 10,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 10,
+      "train": 8,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 8,
+      "train": 6,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "hard",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 1,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "low",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 10,
+      "train": 8,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 11,
+      "train": 9,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 1,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 9,
+      "train": 7,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 14,
+      "train": 10,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 11,
+      "train": 9,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 12,
+      "train": 8,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 12,
+      "train": 8,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 13,
+      "train": 9,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 14,
+      "train": 10,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 2,
+      "total": 16,
+      "train": 12,
+      "valid_iid": 2
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 10,
+      "train": 8,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 10,
+      "train": 8,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 10,
+      "train": 8,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 10,
+      "train": 8,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 3,
+      "total": 21,
+      "train": 15,
+      "valid_iid": 3
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 9,
+      "train": 7,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 3,
+      "total": 20,
+      "train": 14,
+      "valid_iid": 3
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 8,
+      "train": 6,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 3,
+      "total": 21,
+      "train": 15,
+      "valid_iid": 3
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "nominal",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_q_density",
+        "qc_class": "clean_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "dual_z_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 8,
+      "train": 6,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 8,
+      "train": 6,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_multi_source_or_high_power_bottleneck",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "physical_weak_cooling_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "reject_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "physical_low_k_enclosed_compact_hotspot",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "physical_hard_keep"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "compact_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "dual_z_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 5,
+      "train": 3,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "elongated_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 8,
+      "train": 6,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 8,
+      "train": 6,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "multi_block_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 3,
+      "train": 3,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 7,
+      "train": 5,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 1,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "tsv_adjacent_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 2,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "nominal_package",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "hbm_like_strong",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 6,
+      "train": 4,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "strong_forced_or_effective_heatsink",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 4,
+      "train": 2,
+      "valid_iid": 1
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "scalar",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "scalar",
+        "q_family": "weak_background_hotspot_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 1,
+      "total": 3,
+      "train": 2,
+      "valid_iid": 0
+    },
+    {
+      "stratum": {
+        "DeltaT_bin": "review_high",
+        "cooling_regime": "weak_effective_air",
+        "diag3_policy": "mild",
+        "high_deltaT_triage": "not_high_deltaT",
+        "k_mode": "diag3",
+        "q_family": "weak_background_q_density",
+        "qc_class": "review_hold"
+      },
+      "test_iid": 0,
+      "total": 1,
+      "train": 1,
+      "valid_iid": 0
+    }
+  ],
+  "stratum_count": 254,
+  "target_counts": {
+    "test_iid": 128,
+    "train": 768,
+    "valid_iid": 128
+  }
+}

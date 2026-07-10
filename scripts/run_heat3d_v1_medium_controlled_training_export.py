@@ -36,18 +36,33 @@ for path in (REPO_DIR, SCRIPTS_DIR):
 
 from check_heat3d_v1_small_train_valid_smoke import (  # noqa: E402
     MODEL_CONFIG,
-    _bridge_for,
     _global_norm,
     _metadata_shape_signature,
     _metrics,
-    _normalize_coords,
     _sample_root,
     _selected_steps,
     _subset_split_ids,
-    _train_only_stats,
 )
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
+from rigno.heat3d_v1_normalization import (  # noqa: E402
+    legacy_train_only_stats as _train_only_stats,
+    normalize_condition,
+    normalize_coords as _normalize_coords,
+    normalize_target_delta,
+    normalized_delta_to_raw as _normalized_delta_to_raw,
+    recover_raw_condition,
+    recover_temperature_from_normalized_delta,
+)
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
+from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+    build_legacy_zero_delta_bridge as _bridge_for,
+    decoder_bypass_required_full_condition_features,
+)
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    split_ids_from_sample_splits,
+)
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 from rigno.models.operator import Inputs  # noqa: E402
 
@@ -59,6 +74,39 @@ RUNNER_MODEL_CONFIG = {
     "processor_steps": 6,
     "mlp_hidden_layers": 2,
 }
+
+# The V4 wrapper enables this for compact logs when no stress split is defined.
+HIDE_MISSING_STRESS_COMPACT_LOG = False
+DECODER_BYPASS_MODE_NONE = "none"
+DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL = "post_decoder_residual"
+DECODER_BYPASS_MODES = (
+    DECODER_BYPASS_MODE_NONE,
+    DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL,
+)
+DECODER_BYPASS_FEATURES_NONE = "none"
+DECODER_BYPASS_FEATURES_FULL_CONDITION = "full_condition"
+DECODER_BYPASS_FEATURES = (
+    DECODER_BYPASS_FEATURES_NONE,
+    DECODER_BYPASS_FEATURES_FULL_CONDITION,
+)
+DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
+DECODER_BYPASS_FEATURE_SOURCES = (DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,)
+DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
+DECODER_BYPASS_INITS = (DECODER_BYPASS_INIT_ZERO_RESIDUAL,)
+DECODER_BYPASS_OUTPUT_SPACE = "normalized_deltaT"
+DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES = (
+    "k_x",
+    "k_y",
+    "k_z",
+    "q",
+    "is_top",
+    "is_bottom",
+    "is_side",
+    "is_interior",
+    "top_h",
+    "top_T_inf_minus_T_ref",
+    "bottom_T_fixed_minus_T_ref",
+)
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -90,6 +138,7 @@ DEFAULT_FINAL_PROBE_PROVENANCE = (
 TRAIN_METRICS_SCHEDULE_CHOICES = ("every_epoch", "half_and_final", "final_only", "none")
 RADIUS_POLICY_CHOICES = ("legacy_kdtree_mean4", "discrete_physical_coverage")
 COVERAGE_REPAIR_POLICY_CHOICES = ("none", "nearest_rnode")
+NODE_COORDINATE_ENCODING_CHOICES = ("raw", "raw_plus_fourier")
 INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
 FINAL_PROBE_CHECKPOINT_KIND_CHOICES = ("best", "final", "both")
@@ -147,12 +196,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--processor-steps", type=int, default=RUNNER_MODEL_CONFIG["processor_steps"])
     parser.add_argument("--mlp-hidden-layers", type=int, default=RUNNER_MODEL_CONFIG["mlp_hidden_layers"])
     parser.add_argument("--p-edge-masking", type=float, default=float(RUNNER_MODEL_CONFIG.get("p_edge_masking", 0.0)))
+    parser.add_argument("--decoder-bypass-mode", choices=DECODER_BYPASS_MODES, default=DECODER_BYPASS_MODE_NONE)
+    parser.add_argument("--decoder-bypass-features", choices=DECODER_BYPASS_FEATURES, default=DECODER_BYPASS_FEATURES_NONE)
+    parser.add_argument(
+        "--decoder-bypass-feature-source",
+        choices=DECODER_BYPASS_FEATURE_SOURCES,
+        default=DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    )
+    parser.add_argument("--decoder-bypass-hidden-size", type=int, default=64)
+    parser.add_argument("--decoder-bypass-layers", type=int, default=2)
+    parser.add_argument("--decoder-bypass-init", choices=DECODER_BYPASS_INITS, default=DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    parser.add_argument("--decoder-bypass-residual-scale", type=float, default=1.0)
     parser.add_argument("--batch-size", type=int, default=88)
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
     parser.add_argument(
         "--prediction-split",
-        choices=("all", "train", "valid_iid", "valid_stress"),
+        choices=("all", "train", "valid_iid", "valid_stress", "test_iid"),
         default="all",
         help="Limit final/best prediction export to one split; training behavior is unchanged.",
     )
@@ -230,6 +290,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repair-r2p", dest="repair_r2p", action="store_true", default=True)
     parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
     parser.add_argument("--min-physical-coverage", type=int, default=1)
+    parser.add_argument(
+        "--node-coordinate-encoding",
+        choices=NODE_COORDINATE_ENCODING_CHOICES,
+        default="raw",
+        help=(
+            "Structural node coordinate encoding. raw_plus_fourier appends "
+            "Fourier features to normalized unit-box coordinates without "
+            "changing Heat3D periodic=False graph topology."
+        ),
+    )
+    parser.add_argument("--node-coordinate-freqs", type=int, default=4)
     parser.add_argument(
         "--sample-weight-policy",
         choices=SAMPLE_WEIGHT_POLICY_CHOICES,
@@ -695,6 +766,21 @@ def _format_progress_value(value: Any, *, precision: int = 6) -> str:
     return f"{numeric:.{precision}e}"
 
 
+def _format_progress_sigfig_decimal(value: Any, *, significant: int = 3) -> str:
+    if value is None:
+        return "skipped"
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if not math.isfinite(numeric):
+        return "skipped"
+    if numeric == 0.0:
+        return "0." + ("0" * max(significant - 1, 0))
+    decimals = max(significant - 1 - math.floor(math.log10(abs(numeric))), 0)
+    return f"{numeric:.{decimals}f}"
+
+
 def _format_progress_decimal(value: Any, *, precision: int = 2) -> str:
     if value is None:
         return "skipped"
@@ -756,11 +842,28 @@ def _deltaT_error_pct(raw_delta_mse: Any, mean_abs_true_deltaT: Any) -> float | 
     return 100.0 * math.sqrt(max(mse, 0.0)) / denominator
 
 
+def _rmse_from_mse(mse: Any) -> float | None:
+    if mse is None:
+        return None
+    try:
+        value = float(mse)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(value):
+        return None
+    return math.sqrt(max(value, 0.0))
+
+
 def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
     if metrics is None:
         return None
-    if metrics.get("raw_deltaT_relative_rmse_pct") is not None:
-        return float(metrics["raw_deltaT_relative_rmse_pct"])
+    for key in (
+        "rel_rmse_v4_pct",
+        "raw_deltaT_relative_rmse_pct_v4",
+        "raw_deltaT_relative_rmse_pct",
+    ):
+        if metrics.get(key) is not None:
+            return float(metrics[key])
     return _deltaT_error_pct(metrics.get("raw_delta_mse"), metrics.get("mean_abs_true_deltaT"))
 
 
@@ -964,7 +1067,12 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
         )
         for key in numeric_keys
     }
-    combined["raw_deltaT_relative_rmse_pct"] = _metric_error_pct(combined)
+    combined["raw_rmse_K"] = _rmse_from_mse(combined["raw_delta_mse"])
+    combined["recovered_T_rmse_K"] = _rmse_from_mse(combined["recovered_temperature_mse"])
+    relative_pct = _deltaT_error_pct(combined["raw_delta_mse"], combined["mean_abs_true_deltaT"])
+    combined["rel_rmse_v4_pct"] = relative_pct
+    combined["raw_deltaT_relative_rmse_pct_v4"] = relative_pct
+    combined["raw_deltaT_relative_rmse_pct"] = relative_pct
     combined["finite_ok"] = all(bool(metrics.get("finite_ok")) for _, metrics in weighted_entries)
     combined["shape_ok"] = all(bool(metrics.get("shape_ok")) for _, metrics in weighted_entries)
     return combined
@@ -1021,6 +1129,8 @@ def _profile_timing_payload(
     train_group_count: int,
     valid_group_count: int,
     all_group_count: int,
+    prediction_group_count: int | None = None,
+    all_groups_built: bool = True,
     train_batch_counts: list[int],
     subset: Path,
     output_dir: Path,
@@ -1037,6 +1147,7 @@ def _profile_timing_payload(
 ) -> dict[str, Any]:
     train_batch_records = train_batch_records or []
     validation_batch_records = validation_batch_records or []
+    prediction_group_count = int(all_group_count if prediction_group_count is None else prediction_group_count)
     per_epoch = []
     for record in epoch_records:
         batch_summary = record.get("train_batch_timing_summary", {})
@@ -1072,6 +1183,9 @@ def _profile_timing_payload(
         "train_groups_count": int(train_group_count),
         "valid_groups_count": int(valid_group_count),
         "all_groups_count": int(all_group_count),
+        "all_groups_built": bool(all_groups_built),
+        "all_groups_status": "built" if all_groups_built else "skipped",
+        "prediction_groups_count": int(prediction_group_count),
         "metadata_calls": int(profile_counts.get("graph_metadata_build_calls", 0)),
         "build_graphs_calls": int(profile_counts.get("graph_build_graphs_calls", 0)),
         "total_run_time_so_far": float(total_run_time_so_far or 0.0),
@@ -1108,7 +1222,7 @@ def _profile_timing_payload(
             "all_groups": int(all_group_count),
             "train_batches_per_epoch": [int(value) for value in train_batch_counts],
             "valid_batches": int(valid_group_count),
-            "prediction_batches": int(all_group_count),
+            "prediction_batches": int(prediction_group_count),
             **{key: int(value) for key, value in sorted(profile_counts.items())},
         },
         "per_epoch": per_epoch,
@@ -1132,7 +1246,9 @@ def _print_profile_timing(payload: dict[str, Any]) -> None:
     _emit(
         "  groups/batches: "
         f"train_groups={counts['train_groups']} valid_groups={counts['valid_groups']} "
-        f"all_groups={counts['all_groups']} valid_batches={counts['valid_batches']} "
+        f"all_groups={counts['all_groups']} "
+        f"all_groups_status={run_level.get('all_groups_status', 'built')} "
+        f"valid_batches={counts['valid_batches']} "
         f"prediction_batches={counts['prediction_batches']}"
     )
     _emit(
@@ -1368,19 +1484,23 @@ def _require_train_valid_splits(split_ids: dict[str, list[str]]) -> None:
 
 
 def _load_external_split_map(path: Path) -> dict[str, list[str]]:
-    with path.open("r", encoding="utf-8") as file:
-        loaded = json.load(file)
-    mapping = loaded.get("sample_splits", loaded)
-    if not isinstance(mapping, dict):
-        raise ValueError(f"--split-map must be a mapping or contain sample_splits: {path}")
-    split_ids: dict[str, list[str]] = {}
-    for sample_id, split in mapping.items():
-        if not isinstance(sample_id, str) or not sample_id:
-            raise ValueError(f"--split-map contains invalid sample_id: {sample_id!r}")
-        if not isinstance(split, str) or not split:
-            raise ValueError(f"--split-map contains invalid split for {sample_id!r}: {split!r}")
-        split_ids.setdefault(split, []).append(sample_id)
-    return {split: sorted(ids) for split, ids in split_ids.items()}
+    return split_ids_from_sample_splits(load_sample_split_map(path))
+
+
+def _is_heat3d_v4_subset(sample_root: Path) -> bool:
+    return sample_root.name.startswith("heat3d_v4_") or "heat3d_v4_" in str(sample_root)
+
+
+def _normalize_v4_train_test_splits(
+    split_ids: dict[str, list[str]],
+) -> tuple[dict[str, list[str]], bool]:
+    normalized = {split: list(ids) for split, ids in split_ids.items()}
+    normalized.pop("valid_stress", None)
+    bridged = False
+    if not normalized.get("valid_iid") and normalized.get("test"):
+        normalized["valid_iid"] = normalized.pop("test")
+        bridged = True
+    return normalized, bridged
 
 
 def _resolve_training_splits(
@@ -1389,10 +1509,37 @@ def _resolve_training_splits(
 ) -> tuple[dict[str, list[str]], str, str, str | None]:
     if split_map_path is None:
         split_ids = _subset_split_ids(sample_root)
+        if _is_heat3d_v4_subset(sample_root):
+            split_ids, bridged = _normalize_v4_train_test_splits(split_ids)
+            train_ids = split_ids.get("train", [])
+            valid_iid_ids = split_ids.get("valid_iid", [])
+            if not train_ids or not valid_iid_ids:
+                raise ValueError(
+                    "Expected non-empty train and valid_iid/test splits for "
+                    "Heat3D V4 dataset sample_meta, found "
+                    f"train={len(train_ids)} valid_iid={len(valid_iid_ids)} "
+                    f"test={len(split_ids.get('test', []))}"
+                )
+            source = "sample_meta_v4_train_test_bridge" if bridged else "sample_meta_v4"
+            return split_ids, source, "valid_iid", None
         _require_train_valid_splits(split_ids)
         return split_ids, "sample_meta", "valid", None
 
     split_ids = _load_external_split_map(split_map_path)
+    if _is_heat3d_v4_subset(sample_root):
+        split_ids, bridged = _normalize_v4_train_test_splits(split_ids)
+        train_ids = split_ids.get("train", [])
+        valid_iid_ids = split_ids.get("valid_iid", [])
+        if not train_ids or not valid_iid_ids:
+            raise ValueError(
+                "Expected non-empty train and valid_iid/test splits for "
+                "--split-map on Heat3D V4 dataset, found "
+                f"train={len(train_ids)} valid_iid={len(valid_iid_ids)} "
+                f"test={len(split_ids.get('test', []))}"
+            )
+        source = "split_map_v4_train_test_bridge" if bridged else "split_map_v4"
+        return split_ids, source, "valid_iid", None
+
     train_ids = split_ids.get("train", [])
     valid_iid_ids = split_ids.get("valid_iid", [])
     if not train_ids or not valid_iid_ids:
@@ -1516,6 +1663,17 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "processor_steps": int(args.processor_steps),
             "mlp_hidden_layers": int(args.mlp_hidden_layers),
             "p_edge_masking": float(args.p_edge_masking),
+            "decoder_bypass_mode": args.decoder_bypass_mode,
+            "decoder_bypass_features": args.decoder_bypass_features,
+            "decoder_bypass_feature_source": args.decoder_bypass_feature_source,
+            "decoder_bypass_feature_indices": (),
+            "decoder_bypass_feature_names": (),
+            "decoder_bypass_num_features": 0,
+            "decoder_bypass_output_space": DECODER_BYPASS_OUTPUT_SPACE,
+            "decoder_bypass_hidden_size": int(args.decoder_bypass_hidden_size),
+            "decoder_bypass_layers": int(args.decoder_bypass_layers),
+            "decoder_bypass_init": args.decoder_bypass_init,
+            "decoder_bypass_residual_scale": float(args.decoder_bypass_residual_scale),
         }
     )
     return model_config
@@ -1539,6 +1697,8 @@ def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
 
 def _graph_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return {
+        "node_coordinate_encoding": args.node_coordinate_encoding,
+        "node_coordinate_freqs": int(args.node_coordinate_freqs),
         "radius_policy": args.radius_policy,
         "coverage_repair_policy": args.coverage_repair_policy,
         "repair_p2r": bool(args.repair_p2r),
@@ -1655,6 +1815,138 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     p_edge_masking = float(config.get("p_edge_masking", 0.0))
     if p_edge_masking < 0.0 or p_edge_masking >= 1.0:
         raise ValueError("--p-edge-masking must be in [0, 1)")
+    _validate_decoder_bypass_config(config)
+
+
+def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
+    mode = config.get("decoder_bypass_mode", DECODER_BYPASS_MODE_NONE)
+    features = config.get("decoder_bypass_features", DECODER_BYPASS_FEATURES_NONE)
+    source = config.get(
+        "decoder_bypass_feature_source",
+        DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
+    )
+    init = config.get("decoder_bypass_init", DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    if mode not in DECODER_BYPASS_MODES:
+        raise ValueError(f"--decoder-bypass-mode must be one of {DECODER_BYPASS_MODES}")
+    if features not in DECODER_BYPASS_FEATURES:
+        raise ValueError(
+            f"--decoder-bypass-features must be one of {DECODER_BYPASS_FEATURES}"
+        )
+    if source not in DECODER_BYPASS_FEATURE_SOURCES:
+        raise ValueError(
+            "--decoder-bypass-feature-source must be one of "
+            f"{DECODER_BYPASS_FEATURE_SOURCES}"
+        )
+    if init not in DECODER_BYPASS_INITS:
+        raise ValueError(f"--decoder-bypass-init must be one of {DECODER_BYPASS_INITS}")
+    if int(config.get("decoder_bypass_hidden_size", 0)) < 1:
+        raise ValueError("--decoder-bypass-hidden-size must be >= 1")
+    if int(config.get("decoder_bypass_layers", 0)) < 1:
+        raise ValueError("--decoder-bypass-layers must be >= 1")
+    if float(config.get("decoder_bypass_residual_scale", 0.0)) < 0.0:
+        raise ValueError("--decoder-bypass-residual-scale must be >= 0")
+    if mode == DECODER_BYPASS_MODE_NONE:
+        if features != DECODER_BYPASS_FEATURES_NONE:
+            raise ValueError(
+                "--decoder-bypass-mode none requires --decoder-bypass-features none"
+            )
+        return
+    if mode != DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL:
+        raise ValueError(f"unsupported decoder_bypass_mode: {mode}")
+    if features != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        raise ValueError(
+            "--decoder-bypass-mode post_decoder_residual requires "
+            "--decoder-bypass-features full_condition"
+        )
+    indices = tuple(config.get("decoder_bypass_feature_indices") or ())
+    names = tuple(config.get("decoder_bypass_feature_names") or ())
+    if indices and len(indices) != int(config.get("decoder_bypass_num_features", 0)):
+        raise ValueError("decoder_bypass_num_features must match feature_indices")
+    if names and len(names) != int(config.get("decoder_bypass_num_features", 0)):
+        raise ValueError("decoder_bypass_num_features must match feature_names")
+
+
+def _resolve_decoder_bypass_model_config(
+    model_config: dict[str, Any],
+    stats: dict[str, Any],
+) -> dict[str, Any]:
+    resolved = dict(model_config)
+    if resolved["decoder_bypass_mode"] == DECODER_BYPASS_MODE_NONE:
+        resolved["decoder_bypass_feature_indices"] = ()
+        resolved["decoder_bypass_feature_names"] = ()
+        resolved["decoder_bypass_num_features"] = 0
+        resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
+        return resolved
+
+    feature_names = tuple(stats.get("feature_names") or ())
+    required_full_condition_features = decoder_bypass_required_full_condition_features(
+        input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
+        extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
+    )
+    missing = [
+        name
+        for name in required_full_condition_features
+        if name not in feature_names
+    ]
+    if missing:
+        raise ValueError(
+            "decoder_bypass_features=full_condition missing required condition "
+            f"features: {missing}; available={feature_names}"
+        )
+    indices = tuple(range(len(feature_names)))
+    resolved["decoder_bypass_feature_indices"] = indices
+    resolved["decoder_bypass_feature_names"] = feature_names
+    resolved["decoder_bypass_num_features"] = len(indices)
+    resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
+    _validate_decoder_bypass_config(resolved)
+    return resolved
+
+
+def _decoder_bypass_payload(model_config: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "decoder_bypass_mode": model_config.get("decoder_bypass_mode"),
+        "decoder_bypass_features": model_config.get("decoder_bypass_features"),
+        "decoder_bypass_feature_source": model_config.get("decoder_bypass_feature_source"),
+        "decoder_bypass_hidden_size": int(model_config.get("decoder_bypass_hidden_size", 0)),
+        "decoder_bypass_layers": int(model_config.get("decoder_bypass_layers", 0)),
+        "decoder_bypass_init": model_config.get("decoder_bypass_init"),
+        "decoder_bypass_residual_scale": float(
+            model_config.get("decoder_bypass_residual_scale", 0.0)
+        ),
+        "decoder_bypass_feature_names": list(
+            model_config.get("decoder_bypass_feature_names") or ()
+        ),
+        "decoder_bypass_feature_indices": [
+            int(index) for index in model_config.get("decoder_bypass_feature_indices") or ()
+        ],
+        "decoder_bypass_num_features": int(
+            model_config.get("decoder_bypass_num_features", 0)
+        ),
+        "decoder_bypass_output_space": model_config.get("decoder_bypass_output_space"),
+    }
+
+
+def _check_decoder_bypass_input_alignment(
+    model_config: dict[str, Any],
+    groups: list[dict],
+) -> None:
+    if model_config.get("decoder_bypass_mode") == DECODER_BYPASS_MODE_NONE:
+        return
+    for group in groups:
+        inputs = group["inputs"]
+        x_inp = np.asarray(inputs.x_inp)
+        x_out = np.asarray(inputs.x_out)
+        if x_inp.shape != x_out.shape:
+            raise ValueError(
+                "decoder bypass requires one-to-one x_inp/x_out node alignment; "
+                f"group={group.get('group_name')} x_inp={x_inp.shape} x_out={x_out.shape}"
+            )
+        max_abs = float(np.max(np.abs(x_inp - x_out))) if x_inp.size else 0.0
+        if max_abs > 1.0e-8:
+            raise ValueError(
+                "decoder bypass requires identical x_inp/x_out node ordering; "
+                f"group={group.get('group_name')} max_abs_coord_diff={max_abs}"
+            )
 
 
 def _validate_batch_config(config: dict[str, Any]) -> None:
@@ -1671,6 +1963,13 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
 
 
 def _validate_graph_config(config: dict[str, Any]) -> None:
+    if config["node_coordinate_encoding"] not in NODE_COORDINATE_ENCODING_CHOICES:
+        raise ValueError(
+            "--node-coordinate-encoding must be one of "
+            f"{NODE_COORDINATE_ENCODING_CHOICES}"
+        )
+    if int(config["node_coordinate_freqs"]) < 1:
+        raise ValueError("--node-coordinate-freqs must be >= 1")
     if config["radius_policy"] not in RADIUS_POLICY_CHOICES:
         raise ValueError(f"--radius-policy must be one of {RADIUS_POLICY_CHOICES}")
     if config["coverage_repair_policy"] not in COVERAGE_REPAIR_POLICY_CHOICES:
@@ -1890,7 +2189,7 @@ def _group_raw_condition_feature(group: dict, stats: dict, feature_name: str):
     if inputs.c is None:
         return None
     feature_index = feature_names.index(feature_name)
-    raw_c = inputs.c * stats["condition_std"] + stats["condition_mean"]
+    raw_c = recover_raw_condition(inputs.c, stats)
     return raw_c[..., feature_index : feature_index + 1]
 
 
@@ -1907,10 +2206,6 @@ def _samplewise_positive_upper_quantile_mask(values, quantile: float):
     mask = jnp.logical_and(positive, flat >= thresholds)
     mask = jnp.logical_and(mask, counts[:, None] > 0)
     return mask.reshape(values.shape)
-
-
-def _normalized_delta_to_raw(pred_normalized, stats: dict):
-    return pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
 
 
 def _safe_relative_denominator(target_raw, loss_config: dict[str, Any]):
@@ -2207,8 +2502,8 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     shape_ok = True
     for group in groups:
         pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
-        recovered = group["t_ref"] + pred_delta
+        pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
+        recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         n = pred_normalized.shape[0]
         weighted_normalized_loss = weighted_normalized_loss + jnp.mean(
             jnp.square(pred_normalized - group["target_normalized"])
@@ -2234,12 +2529,18 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     divisor = max(count, 1)
     mean_abs_true_delta = float(weighted_mean_abs_true_delta / divisor)
     raw_delta_mse = float(weighted_raw_delta_mse / divisor)
+    recovered_temperature_mse = float(weighted_recovered_mse / divisor)
+    relative_pct = _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta)
     return {
         "normalized_loss": float(weighted_normalized_loss / divisor),
         "raw_delta_mse": raw_delta_mse,
-        "recovered_temperature_mse": float(weighted_recovered_mse / divisor),
+        "raw_rmse_K": _rmse_from_mse(raw_delta_mse),
+        "recovered_temperature_mse": recovered_temperature_mse,
+        "recovered_T_rmse_K": _rmse_from_mse(recovered_temperature_mse),
         "mean_abs_true_deltaT": mean_abs_true_delta,
-        "raw_deltaT_relative_rmse_pct": _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta),
+        "rel_rmse_v4_pct": relative_pct,
+        "raw_deltaT_relative_rmse_pct_v4": relative_pct,
+        "raw_deltaT_relative_rmse_pct": relative_pct,
         "finite_ok": finite_ok,
         "shape_ok": shape_ok,
     }
@@ -2411,6 +2712,21 @@ def _best_selection_payload(
         "best_valid_raw_deltaT_mse": best_record.get("valid_raw_deltaT_mse"),
         "best_valid_iid_raw_deltaT_mse": best_record.get("valid_iid_raw_deltaT_mse"),
         "best_valid_stress_raw_deltaT_mse": best_record.get("valid_stress_raw_deltaT_mse"),
+        "best_valid_raw_deltaT_rmse_K": best_record.get("valid_raw_deltaT_rmse_K"),
+        "best_valid_iid_raw_deltaT_rmse_K": best_record.get("valid_iid_raw_deltaT_rmse_K"),
+        "best_valid_stress_raw_deltaT_rmse_K": best_record.get("valid_stress_raw_deltaT_rmse_K"),
+        "best_valid_recovered_T_mse": best_record.get("valid_recovered_T_mse"),
+        "best_valid_iid_recovered_T_mse": best_record.get("valid_iid_recovered_T_mse"),
+        "best_valid_stress_recovered_T_mse": best_record.get("valid_stress_recovered_T_mse"),
+        "best_valid_recovered_T_rmse_K": best_record.get("valid_recovered_T_rmse_K"),
+        "best_valid_iid_recovered_T_rmse_K": best_record.get("valid_iid_recovered_T_rmse_K"),
+        "best_valid_stress_recovered_T_rmse_K": best_record.get("valid_stress_recovered_T_rmse_K"),
+        "best_valid_relative_rmse_pct_v4": best_record.get("valid_rel_rmse_v4_pct"),
+        "best_valid_iid_relative_rmse_pct_v4": best_record.get("valid_iid_rel_rmse_v4_pct"),
+        "best_valid_stress_relative_rmse_pct_v4": best_record.get("valid_stress_rel_rmse_v4_pct"),
+        "best_relative_metric_denominator_mean_abs_true_deltaT": best_record.get(
+            "valid_relative_metric_denominator_mean_abs_true_deltaT"
+        ),
         "best_valid_base_mse": best_record.get("valid_base_mse"),
         "best_valid_iid_base_mse": best_record.get("valid_iid_base_mse"),
         "best_valid_stress_base_mse": best_record.get("valid_stress_base_mse"),
@@ -2421,6 +2737,29 @@ def _best_selection_payload(
         "final_valid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
         "final_valid_iid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
         "final_valid_stress_raw_deltaT_mse": result.get("final_valid_stress_raw_deltaT_mse"),
+        "final_valid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+        "final_valid_iid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+        "final_valid_stress_raw_deltaT_rmse_K": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("raw_rmse_K"),
+        "final_valid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+        "final_valid_iid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+        "final_valid_stress_recovered_T_mse": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("recovered_temperature_mse"),
+        "final_valid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+        "final_valid_iid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+        "final_valid_stress_recovered_T_rmse_K": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("recovered_T_rmse_K"),
+        "final_valid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+        "final_valid_iid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+        "final_valid_stress_relative_rmse_pct_v4": (
+            result.get("valid_stress_metrics", {}) or {}
+        ).get("rel_rmse_v4_pct"),
+        "final_relative_metric_denominator_mean_abs_true_deltaT": result.get("valid_metrics", {}).get(
+            "mean_abs_true_deltaT"
+        ),
         "final_valid_base_mse": result.get("final_valid_loss_components", {}).get("base_mse"),
         "final_valid_iid_base_mse": (
             result.get("final_valid_iid_loss_components", {}) or {}
@@ -2510,13 +2849,36 @@ def _epoch_history_record(
         "train_raw_deltaT_mse": _maybe_float(train_metrics, "raw_delta_mse"),
         "valid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]),
         "valid_iid_raw_deltaT_mse": float(valid_metrics["raw_delta_mse"]) if primary_validation_split == "valid_iid" else None,
+        "train_raw_rmse_K": _maybe_float(train_metrics, "raw_rmse_K"),
+        "valid_raw_rmse_K": float(valid_metrics["raw_rmse_K"]),
+        "valid_iid_raw_rmse_K": float(valid_metrics["raw_rmse_K"]) if primary_validation_split == "valid_iid" else None,
+        "train_raw_deltaT_rmse_K": _maybe_float(train_metrics, "raw_rmse_K"),
+        "valid_raw_deltaT_rmse_K": float(valid_metrics["raw_rmse_K"]),
+        "valid_iid_raw_deltaT_rmse_K": (
+            float(valid_metrics["raw_rmse_K"]) if primary_validation_split == "valid_iid" else None
+        ),
         "train_error_pct": _metric_error_pct(train_metrics),
         "valid_error_pct": _metric_error_pct(valid_metrics),
         "valid_iid_error_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
+        "train_rel_rmse_v4_pct": _metric_error_pct(train_metrics),
+        "valid_rel_rmse_v4_pct": _metric_error_pct(valid_metrics),
+        "valid_iid_rel_rmse_v4_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
+        "train_relative_metric_denominator_mean_abs_true_deltaT": _maybe_float(
+            train_metrics, "mean_abs_true_deltaT"
+        ),
+        "valid_relative_metric_denominator_mean_abs_true_deltaT": float(valid_metrics["mean_abs_true_deltaT"]),
+        "valid_iid_relative_metric_denominator_mean_abs_true_deltaT": (
+            float(valid_metrics["mean_abs_true_deltaT"]) if primary_validation_split == "valid_iid" else None
+        ),
         "train_recovered_T_mse": _maybe_float(train_metrics, "recovered_temperature_mse"),
         "valid_recovered_T_mse": float(valid_metrics["recovered_temperature_mse"]),
         "valid_iid_recovered_T_mse": (
             float(valid_metrics["recovered_temperature_mse"]) if primary_validation_split == "valid_iid" else None
+        ),
+        "train_recovered_T_rmse_K": _maybe_float(train_metrics, "recovered_T_rmse_K"),
+        "valid_recovered_T_rmse_K": float(valid_metrics["recovered_T_rmse_K"]),
+        "valid_iid_recovered_T_rmse_K": (
+            float(valid_metrics["recovered_T_rmse_K"]) if primary_validation_split == "valid_iid" else None
         ),
         "train_full_metrics_computed": train_components is not None and train_metrics is not None,
     }
@@ -2527,8 +2889,15 @@ def _epoch_history_record(
                 "valid_stress_loss": float(valid_stress_components["total_loss"]),
                 "valid_stress_base_mse": float(valid_stress_components["base_mse"]),
                 "valid_stress_raw_deltaT_mse": float(valid_stress_metrics["raw_delta_mse"]),
+                "valid_stress_raw_rmse_K": float(valid_stress_metrics["raw_rmse_K"]),
+                "valid_stress_raw_deltaT_rmse_K": float(valid_stress_metrics["raw_rmse_K"]),
                 "valid_stress_error_pct": _metric_error_pct(valid_stress_metrics),
+                "valid_stress_rel_rmse_v4_pct": _metric_error_pct(valid_stress_metrics),
+                "valid_stress_relative_metric_denominator_mean_abs_true_deltaT": float(
+                    valid_stress_metrics["mean_abs_true_deltaT"]
+                ),
                 "valid_stress_recovered_T_mse": float(valid_stress_metrics["recovered_temperature_mse"]),
+                "valid_stress_recovered_T_rmse_K": float(valid_stress_metrics["recovered_T_rmse_K"]),
                 "valid_stress_bg_signed_bias": float(valid_stress_components["bg_signed_bias"]),
                 "valid_stress_hotspot_raw_mae": float(valid_stress_components["hotspot_raw_mae"]),
                 "valid_stress_hotspot_mse": float(valid_stress_components["hotspot_mse"]),
@@ -2552,17 +2921,30 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         valid_iid_loss = record.get("valid_iid_loss")
         if valid_iid_loss is None:
             valid_iid_loss = record.get("valid_loss")
-        valid_iid_error_pct = record.get("valid_iid_error_pct")
-        if valid_iid_error_pct is None:
-            valid_iid_error_pct = record.get("valid_error_pct")
+        valid_raw_rmse = _first_progress_numeric(
+            record.get("valid_iid_raw_rmse_K"),
+            record.get("valid_raw_rmse_K"),
+        )
+        valid_rel_rmse_pct = _first_progress_numeric(
+            record.get("valid_iid_rel_rmse_v4_pct"),
+            record.get("valid_rel_rmse_v4_pct"),
+            record.get("valid_iid_error_pct"),
+            record.get("valid_error_pct"),
+        )
+        stress_progress = ""
+        if not HIDE_MISSING_STRESS_COMPACT_LOG or record.get("valid_stress_loss") is not None:
+            stress_progress = (
+                f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
+                f"stress_raw_rmse_K={_format_progress_sigfig_decimal(record.get('valid_stress_raw_rmse_K'))} "
+            )
         _emit(
             f"epoch {record['epoch']}/{epochs} "
             f"lr={record['lr']:.2e} "
             f"train={_format_progress_loss(train_loss)} "
-            f"iid={_format_progress_loss(valid_iid_loss)} "
-            f"iid_err={_format_progress_percent(valid_iid_error_pct)} "
-            f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
-            f"stress_err={_format_progress_percent(record.get('valid_stress_error_pct'))} "
+            f"valid={_format_progress_loss(valid_iid_loss)} "
+            f"raw_rmse_K={_format_progress_sigfig_decimal(valid_raw_rmse)} "
+            f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)} "
+            f"{stress_progress}"
             f"best=e{_format_progress_int(record.get('best_epoch'))}/"
             f"{_format_progress_loss(record.get('best_valid_iid_loss'))}"
         )
@@ -2619,6 +3001,9 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         f"valid_hotspot_raw_mae={record['valid_hotspot_raw_mae']:.8e} "
         f"train_raw_deltaT_mse={record['train_raw_deltaT_mse']:.8e} "
         f"valid_raw_deltaT_mse={record['valid_raw_deltaT_mse']:.8e} "
+        f"train_raw_rmse_K={_format_progress_sigfig_decimal(record['train_raw_rmse_K'])} "
+        f"valid_raw_rmse_K={_format_progress_sigfig_decimal(record['valid_raw_rmse_K'])} "
+        f"valid_rel_rmse_v4_pct={record['valid_rel_rmse_v4_pct']:.8e} "
         f"train_recovered_T_mse={record['train_recovered_T_mse']:.8e} "
         f"valid_recovered_T_mse={record['valid_recovered_T_mse']:.8e} "
         f"current_background_l1_weight={record['current_background_l1_weight']:.8e} "
@@ -2639,14 +3024,22 @@ def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: s
     valid_base = record.get("valid_iid_base_mse")
     if valid_base is None:
         valid_base = record.get("valid_base_mse")
-    iid_error_pct = record.get("valid_iid_error_pct")
-    if iid_error_pct is None:
-        iid_error_pct = record.get("valid_error_pct")
+    valid_raw_rmse = _first_progress_numeric(
+        record.get("valid_iid_raw_rmse_K"),
+        record.get("valid_raw_rmse_K"),
+    )
+    valid_rel_rmse_pct = _first_progress_numeric(
+        record.get("valid_iid_rel_rmse_v4_pct"),
+        record.get("valid_rel_rmse_v4_pct"),
+        record.get("valid_iid_error_pct"),
+        record.get("valid_error_pct"),
+    )
     _emit(
         f"epoch {record['epoch']:03d}/{epochs:03d} "
         f"valid_total={_format_progress_loss(valid_total)} "
         f"valid_base={_format_progress_loss(valid_base)} "
-        f"iid_err={_format_progress_percent(iid_error_pct)}"
+        f"raw_rmse_K={_format_progress_sigfig_decimal(valid_raw_rmse)} "
+        f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)}"
     )
 
 
@@ -2759,6 +3152,7 @@ def _fit_once(
     best_score: float | None = None
     best_record: dict[str, Any] | None = None
     best_params = None
+    best_params_storage: str | None = None
     final_epoch_train_components = None
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
@@ -3216,7 +3610,8 @@ def _fit_once(
                 )
             best_score = score
             best_record = dict(record)
-            best_params = _copy_params(params)
+            best_params = _host_params(params)
+            best_params_storage = "cpu"
             if memory_audit is not None:
                 memory_audit.record("best_params_copy_end", epoch=epoch)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
@@ -3358,6 +3753,7 @@ def _fit_once(
         "checkpoint_load_info": checkpoint_load_info,
         "best_record": best_record,
         "best_params": best_params,
+        "best_params_storage": best_params_storage,
         "best_score": best_score,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
@@ -3404,8 +3800,9 @@ def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dic
     predictions: dict[str, np.ndarray] = {}
     for group in groups:
         pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
-        recovered = np.asarray(group["t_ref"] + pred_delta)
+        recovered = np.asarray(
+            recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
+        )
         if not np.all(np.isfinite(recovered)):
             raise ValueError(f"Non-finite recovered predictions in group {group['name']}")
         for batch_index, sample_id in enumerate(group["sample_ids"]):
@@ -3653,6 +4050,27 @@ def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict
             "valid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
             "valid_iid_raw_deltaT_mse": result.get("valid_metrics", {}).get("raw_delta_mse"),
             "valid_stress_raw_deltaT_mse": result.get("final_valid_stress_raw_deltaT_mse"),
+            "valid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+            "valid_iid_raw_deltaT_rmse_K": result.get("valid_metrics", {}).get("raw_rmse_K"),
+            "valid_stress_raw_deltaT_rmse_K": (result.get("valid_stress_metrics", {}) or {}).get("raw_rmse_K"),
+            "valid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+            "valid_iid_recovered_T_mse": result.get("valid_metrics", {}).get("recovered_temperature_mse"),
+            "valid_stress_recovered_T_mse": (
+                result.get("valid_stress_metrics", {}) or {}
+            ).get("recovered_temperature_mse"),
+            "valid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+            "valid_iid_recovered_T_rmse_K": result.get("valid_metrics", {}).get("recovered_T_rmse_K"),
+            "valid_stress_recovered_T_rmse_K": (
+                result.get("valid_stress_metrics", {}) or {}
+            ).get("recovered_T_rmse_K"),
+            "valid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+            "valid_iid_relative_rmse_pct_v4": result.get("valid_metrics", {}).get("rel_rmse_v4_pct"),
+            "valid_stress_relative_rmse_pct_v4": (
+                result.get("valid_stress_metrics", {}) or {}
+            ).get("rel_rmse_v4_pct"),
+            "relative_metric_denominator_mean_abs_true_deltaT": result.get("valid_metrics", {}).get(
+                "mean_abs_true_deltaT"
+            ),
             "valid_base_mse": result.get("final_valid_loss_components", {}).get("base_mse"),
             "valid_iid_base_mse": (result.get("final_valid_iid_loss_components", {}) or {}).get("base_mse"),
             "valid_stress_base_mse": (result.get("final_valid_stress_loss_components", {}) or {}).get("base_mse"),
@@ -3753,6 +4171,22 @@ def _metrics_payload(metrics: dict[str, Any]) -> dict[str, Any]:
     return {
         key: (bool(value) if isinstance(value, (bool, np.bool_)) else float(value))
         for key, value in metrics.items()
+    }
+
+
+def _validation_metric_scalars(metrics: dict[str, Any]) -> dict[str, Any]:
+    relative_pct = _metric_error_pct(metrics)
+    return {
+        "valid_raw_deltaT_mse": float(metrics["raw_delta_mse"]),
+        "valid_raw_deltaT_rmse_K": float(metrics["raw_rmse_K"]),
+        "valid_recovered_T_mse": float(metrics["recovered_temperature_mse"]),
+        "valid_recovered_temperature_mse": float(metrics["recovered_temperature_mse"]),
+        "valid_recovered_T_rmse_K": float(metrics["recovered_T_rmse_K"]),
+        "valid_relative_rmse_pct_v4": relative_pct,
+        "rel_rmse_v4_pct": relative_pct,
+        "valid_raw_deltaT_relative_rmse_pct_v4": relative_pct,
+        "raw_deltaT_relative_rmse_pct_v4": relative_pct,
+        "relative_metric_denominator_mean_abs_true_deltaT": float(metrics["mean_abs_true_deltaT"]),
     }
 
 
@@ -3928,7 +4362,9 @@ def _print_final_summary(
         "  final: "
         f"epoch={result['final_epoch']} valid_loss={result['final_valid_loss']:.8e} "
         f"valid_base_mse={result['final_valid_loss_components']['base_mse']:.8e} "
-        f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e}"
+        f"valid_raw_deltaT_mse={result['valid_metrics']['raw_delta_mse']:.8e} "
+        f"raw_rmse_K={_format_progress_sigfig_decimal(result['valid_metrics']['raw_rmse_K'])} "
+        f"rel_rmse_v4_pct={_format_progress_percent(result['valid_metrics'].get('rel_rmse_v4_pct'))}"
     )
     if result.get("primary_validation_split") == "valid_iid":
         _emit(
@@ -3942,7 +4378,9 @@ def _print_final_summary(
         f"metric={args.selection_metric} epoch={best.get('epoch')} "
         f"valid_loss={best.get('valid_loss'):.8e} "
         f"valid_base_mse={best.get('valid_base_mse'):.8e} "
-        f"valid_raw_deltaT_mse={best.get('valid_raw_deltaT_mse'):.8e}"
+        f"valid_raw_deltaT_mse={best.get('valid_raw_deltaT_mse'):.8e} "
+        f"raw_rmse_K={_format_progress_sigfig_decimal(best.get('valid_raw_deltaT_rmse_K'))} "
+        f"rel_rmse_v4_pct={_format_progress_percent(best.get('valid_rel_rmse_v4_pct'))}"
     )
     _emit(
         "  predictions: "
@@ -4141,6 +4579,16 @@ def _run_post_training_prediction_diagnostics(
 ) -> dict[str, Any]:
     if not args.post_training_diagnostics:
         return {"enabled": False, "reason": "disabled"}
+    if args.prediction_split != "all":
+        diagnostics_dir = args.post_training_diagnostics_output_dir or (
+            output_dir / "post_training_diagnostics"
+        )
+        return {
+            "enabled": False,
+            "reason": "non_all_prediction_split",
+            "prediction_split": args.prediction_split,
+            "output_dir": str(diagnostics_dir),
+        }
 
     diag_start = time.perf_counter()
     diagnostics_dir = args.post_training_diagnostics_output_dir or (
@@ -4172,6 +4620,11 @@ def _run_post_training_prediction_diagnostics(
             f"labels={[label for label, _ in entries]} output_dir={diagnostics_dir}"
         ),
     )
+    split_map_args = (
+        ["--split-map", str(args.split_map)]
+        if args.split_map is not None
+        else []
+    )
 
     for label, prediction_path in entries:
         baseline_json = diagnostics_dir / f"baseline_comparison_{label}.json"
@@ -4194,6 +4647,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "compare_heat3d_v1_medium_baselines.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--output-json",
@@ -4209,6 +4663,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_error_bins.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--output-json",
@@ -4226,6 +4681,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v1_medium_condition_diagnostics.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--prediction-label",
@@ -4245,6 +4701,7 @@ def _run_post_training_prediction_diagnostics(
                     str(SCRIPTS_DIR / "analyze_heat3d_v2_field_shape_diagnostics.py"),
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--trained-predictions",
                     str(prediction_path),
                     "--prediction-label",
@@ -4270,6 +4727,7 @@ def _run_post_training_prediction_diagnostics(
                     label,
                     "--subset",
                     str(sample_root),
+                    *split_map_args,
                     "--output-json",
                     str(mechanism_json),
                     "--output-md",
@@ -4347,6 +4805,7 @@ def _run_post_training_prediction_diagnostics(
         str(SCRIPTS_DIR / "analyze_heat3d_v3_region_error_decomposition.py"),
         "--subset",
         str(sample_root),
+        *split_map_args,
         "--output-json",
         str(region_json),
         "--output-md",
@@ -4696,6 +5155,14 @@ def _build_batch_metadata_with_seed(
     return tree.tree_map(lambda *values: jnp.concatenate(values, axis=0), *metadata_list), False
 
 
+def _graph_coords_for_example(example, stats: dict) -> np.ndarray:
+    if stats.get("coord_policy") != COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC:
+        return np.asarray(example.condition.coords)
+    n_points = example.condition.coords.shape[0]
+    raw_coords = np.asarray(example.condition.coords).reshape(1, 1, n_points, 3)
+    return np.asarray(_normalize_coords(raw_coords, stats)).reshape(n_points, 3)
+
+
 def _make_batch_group_with_seed(
     group_name: str,
     examples,
@@ -4716,13 +5183,13 @@ def _make_batch_group_with_seed(
     target_delta = jnp.concatenate([bridge.target_delta_u for bridge in bridges], axis=0)
     t_ref = jnp.concatenate([bridge.t_ref for bridge in bridges], axis=0)
 
-    c = (raw_c - stats["condition_mean"]) / stats["condition_std"]
-    target = (target_delta - stats["target_delta_mean"]) / stats["target_delta_std"]
+    c = normalize_condition(raw_c, stats)
+    target = normalize_target_delta(target_delta, stats)
     coords = _normalize_coords(raw_coords, stats)
     inputs = Inputs(u=raw_u, c=c, x_inp=coords, x_out=coords, t=None, tau=None)
     metadata, shared = _build_batch_metadata_with_seed(
         builder=builder,
-        coords_list=[example.condition.coords for example in examples],
+        coords_list=[_graph_coords_for_example(example, stats) for example in examples],
         graph_seed=graph_seed,
     )
     graphs = builder.build_graphs(metadata)
@@ -4767,7 +5234,10 @@ def _make_groups_with_progress(
     for index, example in enumerate(examples, start=1):
         bridge = _bridge_for(example)
         signature = _metadata_shape_signature(
-            builder.build_metadata(example.condition.coords, key=_metadata_key(graph_seed))
+            builder.build_metadata(
+                _graph_coords_for_example(example, stats),
+                key=_metadata_key(graph_seed),
+            )
         )
         _bump_profile_count(profile_counts, "graph_metadata_build_calls")
         _bump_profile_count(profile_counts, f"{label}_scan_metadata_build_calls")
@@ -4858,6 +5328,7 @@ def _sample_shuffle_failure_debug(
     batch_index: int,
     batch_group_name: str,
     batch_examples,
+    stats: dict,
     builder: Heat3DGraphBuilder,
     graph_seed: int,
 ) -> dict[str, Any]:
@@ -4869,7 +5340,10 @@ def _sample_shuffle_failure_debug(
             "coords_shape": [int(dim) for dim in example.condition.coords.shape],
         }
         try:
-            metadata = builder.build_metadata(example.condition.coords, key=_metadata_key(graph_seed))
+            metadata = builder.build_metadata(
+                _graph_coords_for_example(example, stats),
+                key=_metadata_key(graph_seed),
+            )
             signature = _metadata_shape_signature(metadata)
             payload["metadata_shape_signature"] = [list(shape) for shape in signature]
             key = json.dumps(payload["metadata_shape_signature"], sort_keys=True, separators=(",", ":"))
@@ -4950,6 +5424,7 @@ def _make_sample_shuffle_groups_with_progress(
                 batch_index,
                 batch_group_name,
                 batch_examples,
+                stats,
                 builder,
                 graph_seed,
             )
@@ -4997,12 +5472,14 @@ def _prediction_groups_for_split(
     train_groups: list[dict],
     valid_groups: list[dict],
     valid_stress_groups: list[dict],
+    test_iid_groups: list[dict],
 ) -> list[dict]:
     groups_by_split = {
         "all": all_groups,
         "train": train_groups,
         "valid_iid": valid_groups,
         "valid_stress": valid_stress_groups,
+        "test_iid": test_iid_groups,
     }
     groups = groups_by_split[prediction_split]
     _require_nonempty_groups(groups, f"prediction split {prediction_split}")
@@ -5098,6 +5575,7 @@ def main() -> int:
     train_ids = split_ids["train"]
     valid_ids = split_ids[primary_validation_split]
     valid_stress_ids = split_ids.get(stress_validation_split, []) if stress_validation_split is not None else []
+    test_iid_ids = split_ids.get("test_iid", [])
     split_counts = {split: len(ids) for split, ids in sorted(split_ids.items())}
     train_sample_weights, sample_weight_summary = _prepare_train_sample_weights(
         train_ids,
@@ -5133,7 +5611,6 @@ def main() -> int:
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
     valid_stress_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_stress_ids]
-    all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
     _progress(
         progress_enabled,
         "startup",
@@ -5160,6 +5637,8 @@ def main() -> int:
         norm_start,
     )
     _record_timing(timings, "normalization", norm_start)
+    model_config = _resolve_decoder_bypass_model_config(model_config, stats)
+    _validate_model_config(model_config)
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
     if batch_config["batch_plan"] == "sample_shuffle":
@@ -5217,42 +5696,78 @@ def main() -> int:
         if stress_validation_split is not None and valid_stress_examples
         else []
     )
-    all_groups = _make_groups_with_progress(
-        all_examples,
-        stats,
-        builder,
-        "all",
-        progress_detail_enabled,
-        args.progress_detail,
-        seed_config["graph_seed"],
-        batch_size=batch_config["prediction_batch_size"],
-        drop_last=False,
-        profile_counts=profile_counts if profile_enabled else None,
-    )
+    build_all_groups = args.prediction_split == "all"
+    build_test_iid_groups = args.prediction_split == "test_iid"
+    all_groups: list[dict[str, Any]] = []
+    test_iid_groups: list[dict[str, Any]] = []
+    if build_all_groups:
+        all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
+        all_groups = _make_groups_with_progress(
+            all_examples,
+            stats,
+            builder,
+            "all",
+            progress_detail_enabled,
+            args.progress_detail,
+            seed_config["graph_seed"],
+            batch_size=batch_config["prediction_batch_size"],
+            drop_last=False,
+            profile_counts=profile_counts if profile_enabled else None,
+        )
+    if build_test_iid_groups:
+        test_iid_examples = [dataset[index_by_id[sample_id]] for sample_id in test_iid_ids]
+        test_iid_groups = _make_groups_with_progress(
+            test_iid_examples,
+            stats,
+            builder,
+            "test_iid",
+            progress_detail_enabled,
+            args.progress_detail,
+            seed_config["graph_seed"],
+            batch_size=batch_config["prediction_batch_size"],
+            drop_last=False,
+            profile_counts=profile_counts if profile_enabled else None,
+        )
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
-    _require_nonempty_groups(all_groups, "all")
+    if build_all_groups:
+        _require_nonempty_groups(all_groups, "all")
+    if build_test_iid_groups:
+        _require_nonempty_groups(test_iid_groups, "test_iid")
+    alignment_groups = [*train_groups, *valid_groups, *valid_stress_groups]
+    if build_all_groups:
+        alignment_groups.extend(all_groups)
+    if build_test_iid_groups:
+        alignment_groups.extend(test_iid_groups)
+    _check_decoder_bypass_input_alignment(model_config, alignment_groups)
     _record_timing(timings, "group_build", group_start)
+    all_groups_status = str(len(all_groups)) if build_all_groups else "skipped"
+    test_iid_groups_status = str(len(test_iid_groups)) if build_test_iid_groups else "skipped"
     _progress(
         progress_enabled,
         "startup",
         (
             "groups built: "
             f"train_groups={len(train_groups)} {primary_validation_split}_groups={len(valid_groups)} "
-            f"valid_stress_groups={len(valid_stress_groups)} all_groups={len(all_groups)}"
+            f"valid_stress_groups={len(valid_stress_groups)} "
+            f"test_iid_groups={test_iid_groups_status} all_groups={all_groups_status}"
         ),
         group_start,
     )
     if memory_audit is not None:
+        built_group_signatures = {
+            "train": _groups_memory_signature(train_groups),
+            primary_validation_split: _groups_memory_signature(valid_groups),
+            "valid_stress": _groups_memory_signature(valid_stress_groups),
+        }
+        if build_test_iid_groups:
+            built_group_signatures["test_iid"] = _groups_memory_signature(test_iid_groups)
+        if build_all_groups:
+            built_group_signatures["all"] = _groups_memory_signature(all_groups)
         memory_audit.record(
             "groups_built",
-            detail={
-                "train": _groups_memory_signature(train_groups),
-                primary_validation_split: _groups_memory_signature(valid_groups),
-                "valid_stress": _groups_memory_signature(valid_stress_groups),
-                "all": _groups_memory_signature(all_groups),
-            },
+            detail=built_group_signatures,
         )
 
     _print_startup_summary(
@@ -5306,6 +5821,7 @@ def main() -> int:
         train_groups=train_groups,
         valid_groups=valid_groups,
         valid_stress_groups=valid_stress_groups,
+        test_iid_groups=test_iid_groups,
     )
     predictions_path = output_dir / "predictions.npz"
     predictions: dict[str, np.ndarray] = {}
@@ -5358,7 +5874,11 @@ def main() -> int:
                 detail=_groups_memory_signature(prediction_groups),
             )
         _progress(progress_enabled, "export", "building best-valid recovered predictions ...")
-        best_predictions = _predict_temperatures(result["model"], result["best_params"], prediction_groups, stats)
+        best_params_device = _device_params(result["best_params"])
+        try:
+            best_predictions = _predict_temperatures(result["model"], best_params_device, prediction_groups, stats)
+        finally:
+            del best_params_device
         best_prediction_count = len(best_predictions)
         _record_timing(timings, "best_prediction_export", best_prediction_start)
         if memory_audit is not None:
@@ -5479,6 +5999,7 @@ def main() -> int:
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "graph_config": graph_config,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
+        **_decoder_bypass_payload(model_config),
         "output_dir": str(output_dir),
         "save_predictions": bool(args.save_predictions),
         "prediction_split": args.prediction_split,
@@ -5539,6 +6060,10 @@ def main() -> int:
         "train_group_names": result["train_group_names"],
         "valid_iid_group_count": result["valid_iid_group_count"],
         "valid_stress_group_count": result["valid_stress_group_count"],
+        "test_iid_group_count": len(test_iid_groups) if build_test_iid_groups else 0,
+        "all_groups_count": len(all_groups),
+        "all_groups_status": "built" if build_all_groups else "skipped",
+        "prediction_group_count": len(prediction_groups),
         "train_group_sample_id_hash": result["train_group_sample_id_hash"],
         "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
         "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
@@ -5554,6 +6079,8 @@ def main() -> int:
         "final_metrics_reused": result["final_metrics_reused"],
         "final_metrics_reuse_source": result["final_metrics_reuse_source"],
         "final_metrics_time_s": result["final_metrics_time_s"],
+        **_validation_metric_scalars(result["valid_metrics"]),
+        "best_params_storage": result.get("best_params_storage"),
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
@@ -5595,6 +6122,7 @@ def main() -> int:
         "valid_ids": valid_ids,
         "valid_iid_ids": valid_ids if primary_validation_split == "valid_iid" else [],
         "valid_stress_ids": valid_stress_ids,
+        "test_iid_ids": test_iid_ids,
         "ignored_candidate_ids": sorted(
             sample_id
             for split, ids in split_ids.items()
@@ -5612,6 +6140,7 @@ def main() -> int:
         "stress_validation_split": stress_validation_split,
         "prediction_split": args.prediction_split,
         "split_counts": split_counts,
+        **_decoder_bypass_payload(model_config),
         "memory_audit_jsonl": str(memory_audit_jsonl_path) if memory_audit_jsonl_path is not None else None,
         "memory_audit_every_batch": bool(args.memory_audit_every_batch),
         "memory_audit_gc": bool(args.memory_audit_gc),
@@ -5635,6 +6164,10 @@ def main() -> int:
         "train_group_names": result["train_group_names"],
         "valid_iid_group_count": result["valid_iid_group_count"],
         "valid_stress_group_count": result["valid_stress_group_count"],
+        "test_iid_group_count": len(test_iid_groups) if build_test_iid_groups else 0,
+        "all_groups_count": len(all_groups),
+        "all_groups_status": "built" if build_all_groups else "skipped",
+        "prediction_group_count": len(prediction_groups),
         "train_group_sample_id_hash": result["train_group_sample_id_hash"],
         "valid_iid_sample_id_hash": result["valid_iid_sample_id_hash"],
         "valid_stress_sample_id_hash": result["valid_stress_sample_id_hash"],
@@ -5723,6 +6256,8 @@ def main() -> int:
         "final_metrics_reused": result["final_metrics_reused"],
         "final_metrics_reuse_source": result["final_metrics_reuse_source"],
         "final_metrics_time_s": result["final_metrics_time_s"],
+        **_validation_metric_scalars(result["valid_metrics"]),
+        "best_params_storage": result.get("best_params_storage"),
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
@@ -5879,6 +6414,8 @@ def main() -> int:
         train_group_count=len(train_groups),
         valid_group_count=len(valid_groups),
         all_group_count=len(all_groups),
+        prediction_group_count=len(prediction_groups),
+        all_groups_built=build_all_groups,
         train_batch_counts=[int(value) for value in result["epoch_batch_counts"]],
         subset=sample_root,
         output_dir=output_dir,

@@ -26,6 +26,11 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from rigno.heat3d_v1_label_diagnostics import find_sample_dirs, load_json, resolve_t_ref  # noqa: E402
+from rigno.heat3d_v4_split_map import (  # noqa: E402
+    load_sample_split_map,
+    resolve_sample_split,
+    split_source_label,
+)
 from analyze_heat3d_v1_medium_error_bins import (  # noqa: E402
     DEFAULT_BINS,
     _bin_edges,
@@ -59,6 +64,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
     parser.add_argument("--prediction-label", type=str, default="trained_prediction")
+    parser.add_argument(
+        "--split-map",
+        type=Path,
+        default=None,
+        help="Optional sample_id-to-split map. When provided it overrides sample_meta split labels.",
+    )
     parser.add_argument("--bins", type=str, default=DEFAULT_BINS)
     parser.add_argument("--q-power-bins", type=str, default="p33,p66")
     parser.add_argument("--stdout-mode", choices=("compact", "full", "quiet"), default="compact")
@@ -181,22 +192,39 @@ def _relative_change(trained: float, zero: float) -> float | None:
     return float((trained - zero) / denominator)
 
 
-def _load_records(subset: Path, trained_predictions: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def _load_records(
+    subset: Path,
+    trained_predictions: Path,
+    split_map: dict[str, str] | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
     sample_dirs = find_sample_dirs(_sample_root(subset))
     if not sample_dirs:
         raise FileNotFoundError(f"no sample directories found under {subset}")
     load_prediction = _prediction_loader(trained_predictions)
     records = []
+    failures = []
     for sample_dir in sample_dirs:
         sample_meta = load_json(sample_dir / "sample_meta.json")
         metadata = _read_optional_json(sample_dir / "metadata.json")
         sample_id = str(metadata.get("sample_id") or sample_meta.get("sample_id") or sample_dir.name)
+        split = resolve_sample_split(sample_id, sample_meta, metadata=metadata, split_map=split_map)
         coords = np.load(sample_dir / "coords.npy")
         if coords.ndim != 2 or coords.shape[1] != 3:
             raise ValueError(f"{sample_id}: coords.npy must have shape (N, 3), found {coords.shape}")
         n_points = coords.shape[0]
         true_temperature = _as_column(np.load(sample_dir / "temperature.npy"), n_points, f"{sample_id} temperature.npy")
-        trained_temperature = _as_column(load_prediction(sample_id), n_points, f"{sample_id} trained prediction")
+        try:
+            trained_raw = load_prediction(sample_id)
+        except (FileNotFoundError, KeyError) as exc:
+            failures.append(
+                {
+                    "sample_id": sample_id,
+                    "sample_dir": str(sample_dir),
+                    "error": str(exc),
+                }
+            )
+            continue
+        trained_temperature = _as_column(trained_raw, n_points, f"{sample_id} trained prediction")
         q_field = np.load(sample_dir / "q_field.npy")
         t_ref_info = resolve_t_ref(sample_meta)
         t_ref = float(t_ref_info["value"])
@@ -208,7 +236,7 @@ def _load_records(subset: Path, trained_predictions: Path) -> tuple[list[dict[st
                 "point_count": int(n_points),
                 "q_power": q_power,
                 "groups": {
-                    "split": _meta_value(metadata, sample_meta, "split"),
+                    "split": split,
                     "source_category": _meta_value(metadata, sample_meta, "source_pattern_tag"),
                     "k_region_mode": _meta_value(metadata, sample_meta, "k_region_mode"),
                     "bc_category": _meta_value(metadata, sample_meta, "bc_category"),
@@ -221,10 +249,14 @@ def _load_records(subset: Path, trained_predictions: Path) -> tuple[list[dict[st
                 "T_pred_zero": np.full(n_points, t_ref, dtype=np.float64),
             }
         )
+    if not records:
+        raise FileNotFoundError(
+            f"no prediction-matched samples found for {trained_predictions}"
+        )
     q_edges = _q_power_edges([record["q_power"] for record in records], "p33,p66")
     for record in records:
         record["groups"]["q_power_range"] = _q_power_range(record["q_power"], q_edges["ranges"])
-    return records, q_edges
+    return records, q_edges, failures
 
 
 def _summary_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -317,10 +349,12 @@ def analyze_condition_diagnostics(
     output_json: Path,
     output_md: Path,
     prediction_label: str = "trained_prediction",
+    split_map_path: Path | None = None,
     bins: str = DEFAULT_BINS,
     q_power_bins: str = "p33,p66",
 ) -> dict[str, Any]:
-    records, _ = _load_records(subset, trained_predictions)
+    split_map = load_sample_split_map(split_map_path)
+    records, _, failures = _load_records(subset, trained_predictions, split_map)
     q_edges = _q_power_edges([record["q_power"] for record in records], q_power_bins)
     for record in records:
         record["groups"]["q_power_range"] = _q_power_range(record["q_power"], q_edges["ranges"])
@@ -338,6 +372,8 @@ def analyze_condition_diagnostics(
         "inputs": {
             "subset": str(subset),
             "trained_predictions": str(trained_predictions),
+            "split_source": split_source_label(split_map),
+            "split_map": str(split_map_path) if split_map_path is not None else None,
             "bins": bins,
             "q_power_bins": q_power_bins,
         },
@@ -346,12 +382,14 @@ def analyze_condition_diagnostics(
             "markdown": str(output_md),
         },
         "sample_count": len(records),
+        "failed_sample_count": len(failures),
         "point_count": int(sum(record["point_count"] for record in records)),
         "deltaT_bin_edges": delta_edges,
         "q_power_edges": q_edges,
         "overall": _condition_item("overall", "overall", records, delta_edges["bins"]),
         "condition_groups": group_payload,
         "top_background_bias_groups": _top_background_groups(group_payload),
+        "failures": failures,
     }
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -372,6 +410,7 @@ def render_markdown(payload: dict[str, Any]) -> str:
         f"- subset: `{payload['inputs']['subset']}`",
         f"- trained_predictions: `{payload['inputs']['trained_predictions']}`",
         f"- sample_count: `{payload['sample_count']}`",
+        f"- failed_sample_count: `{payload['failed_sample_count']}`",
         f"- point_count: `{payload['point_count']}`",
         "",
         "## Overall",
@@ -480,6 +519,7 @@ def main() -> int:
         output_json=args.output_json,
         output_md=args.output_md,
         prediction_label=args.prediction_label,
+        split_map_path=args.split_map,
         bins=args.bins,
         q_power_bins=args.q_power_bins,
     )

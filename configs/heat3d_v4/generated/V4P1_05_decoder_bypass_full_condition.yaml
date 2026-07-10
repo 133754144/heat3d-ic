@@ -1,0 +1,27 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P1_05_decoder_bypass_full_condition
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P1_05_decoder_bypass_full_condition; standard
+    task coords+k(x)+q(x)+BC->T(x); generated from V4_base.yaml.
+  model:
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_05_decoder_bypass_full_condition
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_05_decoder_bypass_full_condition
+  export:
+    output_dir: output/heat3d_v4_runs/V4P1_05_decoder_bypass_full_condition
+    run_name: V4P1_05_decoder_bypass_full_condition
+  metadata:
+    registry_config_id: V4P1_05_decoder_bypass_full_condition
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P1_05_decoder_bypass_full_condition
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P1_05_decoder_bypass_full_condition.log
+    notes: 'V4 P1 decoder physical bypass: post-decoder residual from full normalized
+      condition features; baseline training parameters match V4Test00_baseline_seed_0'

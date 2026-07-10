@@ -1,8 +1,12 @@
-# Heat3D v4 Starting Defaults
+# Heat3D V4 Starting Defaults (Historical)
+
+These are the V4 entry defaults, not the frozen final baseline. The closed V4
+clean baseline is `V4P5_02_clean_baseline_raw_B28_e600`; see
+`docs/v4_closeout.md` for its P5 dataset, selected checkpoint, and metrics.
 
 ## Decision
 
-v4 starts from the v3 settings that were consistently useful across the
+V4 started from the V3 settings that were consistently useful across the
 long-run and checkpoint fine-tune audits:
 
 | Area | v4 default |

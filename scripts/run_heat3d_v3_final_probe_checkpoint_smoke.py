@@ -33,6 +33,13 @@ from rigno.heat3d_v1_native_supervised import (  # noqa: E402
     V1SteadySupervisedExampleNative,
     V1SteadyTarget,
 )
+from rigno.heat3d_v1_normalization import (  # noqa: E402
+    training_normalization_stats,
+)
+from rigno.heat3d_v1_training_semantics import (  # noqa: E402
+    build_configured_zero_delta_bridge,
+)
+import run_heat3d_v1_medium_controlled_training_export as runner_module  # noqa: E402
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
     Heat3DGraphBuilder,
@@ -44,7 +51,6 @@ from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     _resolve_training_splits,
     _sample_root,
     _stable_json_hash,
-    _train_only_stats,
     _write_json,
 )
 
@@ -54,6 +60,8 @@ HF_REVISION = "26733ceb1aad308ba1cc5fc3b8d48537ed48c8c2"
 HF_REPO_ID = "133754144X/heat3d-thermal-simulation"
 DATA_SOURCE_LABEL = "local HF upload staging copy"
 EPS = 1.0e-12
+BC_FLAG_NAMES = ("is_top", "is_bottom", "is_side", "is_interior")
+FINAL_PROBE_BC_MASK_POLICIES = ("coords_extrema_if_missing_indices", "legacy")
 
 
 def parse_args() -> argparse.Namespace:
@@ -91,6 +99,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=0)
+    parser.add_argument(
+        "--final-probe-bc-mask-policy",
+        choices=FINAL_PROBE_BC_MASK_POLICIES,
+        default="coords_extrema_if_missing_indices",
+        help=(
+            "Final-probe-only compatibility policy. The default reconstructs "
+            "top/bottom/side masks from coordinate extrema when metadata "
+            "declares boundary surfaces but omits point_indices."
+        ),
+    )
+    parser.add_argument(
+        "--no-save-predictions",
+        dest="save_predictions",
+        action="store_false",
+        default=True,
+        help="Do not write prediction npz/npy artifacts; metrics are still computed.",
+    )
+    parser.add_argument(
+        "--no-figures",
+        dest="write_figures",
+        action="store_false",
+        default=True,
+        help="Do not write reviewer figures; metrics and reports are still written.",
+    )
     return parser.parse_args()
 
 
@@ -137,7 +169,14 @@ def stats_from_checkpoint_payload(
     the final-target probe samples.
     """
 
-    stats = _train_only_stats(train_examples)
+    stats = training_normalization_stats(
+        train_examples,
+        normalization_profile=str(checkpoint_stats.get("normalization_profile", "legacy_zscore")),
+        condition_feature_transform=checkpoint_stats.get("condition_feature_transform"),
+        input_feature_schema=str(checkpoint_stats.get("input_feature_schema", "legacy_bc_flags")),
+        coord_policy=str(checkpoint_stats.get("coord_policy", "train_minmax_to_unit_box")),
+        extent_feature_policy=str(checkpoint_stats.get("extent_feature_policy", "none")),
+    )
     checkpoint_feature_names = tuple(checkpoint_stats.get("feature_names") or ())
     if checkpoint_feature_names and checkpoint_feature_names != tuple(stats["feature_names"]):
         raise ValueError(
@@ -157,7 +196,27 @@ def stats_from_checkpoint_payload(
     stats["condition_std"] = jnp.asarray(
         np.asarray(checkpoint_stats["condition_std"], dtype=np.float32).reshape(1, 1, 1, -1)
     )
+    if checkpoint_stats.get("condition_feature_transforms"):
+        stats["condition_feature_transforms"] = tuple(
+            checkpoint_stats["condition_feature_transforms"]
+        )
     return stats
+
+
+def install_checkpoint_feature_hooks(checkpoint_stats: dict[str, Any]) -> None:
+    input_feature_schema = str(checkpoint_stats.get("input_feature_schema", "legacy_bc_flags"))
+    coord_policy = str(checkpoint_stats.get("coord_policy", "train_minmax_to_unit_box"))
+    extent_feature_policy = str(checkpoint_stats.get("extent_feature_policy", "none"))
+
+    def _bridge_for(example: Any) -> Any:
+        return build_configured_zero_delta_bridge(
+            example,
+            input_feature_schema=input_feature_schema,
+            coord_policy=coord_policy,
+            extent_feature_policy=extent_feature_policy,
+        )
+
+    runner_module._bridge_for = _bridge_for
 
 
 def load_training_examples(run_config: dict[str, Any], checkpoint_stats: dict[str, Any]) -> list[Any]:
@@ -185,7 +244,12 @@ def load_training_examples(run_config: dict[str, Any], checkpoint_stats: dict[st
     return [dataset[index_by_id[sample_id]] for sample_id in train_ids]
 
 
-def load_probe_examples(subset: Path, checkpoint_stats: dict[str, Any]) -> tuple[list[Any], dict[str, Path]]:
+def load_probe_examples(
+    subset: Path,
+    checkpoint_stats: dict[str, Any],
+    *,
+    bc_mask_policy: str,
+) -> tuple[list[Any], dict[str, Path], dict[str, dict[str, Any]]]:
     sample_root = sample_root_from_subset(subset)
     feature_names = tuple(checkpoint_stats.get("feature_names") or ())
     k_encoding_mode = "diag3" if {"k_x", "k_y", "k_z"}.issubset(feature_names) else "native"
@@ -197,12 +261,17 @@ def load_probe_examples(subset: Path, checkpoint_stats: dict[str, Any]) -> tuple
     )
     examples: list[V1SteadySupervisedExampleNative] = []
     sample_dirs_by_id: dict[str, Path] = {}
+    mask_info_by_id: dict[str, dict[str, Any]] = {}
     for sample in dataset.samples:
         sample_dir = Path(sample["sample_dir"])
         temperature = as_column(np.load(sample_dir / "temperature.npy"))
+        condition_features, mask_info = final_probe_condition_features_with_bc_policy(
+            sample,
+            bc_mask_policy=bc_mask_policy,
+        )
         condition = V1SteadyConditionInput(
             coords=np.asarray(sample["coords"], dtype=np.float64),
-            condition_features=np.asarray(sample["physics_input"].features, dtype=np.float64),
+            condition_features=condition_features,
             condition_feature_names=tuple(sample["physics_input"].feature_names),
             k_encoding_mode=k_encoding_mode,
         )
@@ -215,8 +284,128 @@ def load_probe_examples(subset: Path, checkpoint_stats: dict[str, Any]) -> tuple
         )
         examples.append(example)
         sample_dirs_by_id[example.sample_id] = sample_dir
+        mask_info_by_id[example.sample_id] = mask_info
     examples.sort(key=lambda item: str(item.meta.get("probe_id") or item.sample_id))
-    return examples, sample_dirs_by_id
+    return examples, sample_dirs_by_id, mask_info_by_id
+
+
+def final_probe_condition_features_with_bc_policy(
+    sample: dict[str, Any],
+    *,
+    bc_mask_policy: str,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    if bc_mask_policy not in FINAL_PROBE_BC_MASK_POLICIES:
+        raise ValueError(
+            f"Unsupported final-probe BC mask policy {bc_mask_policy!r}; "
+            f"expected one of {FINAL_PROBE_BC_MASK_POLICIES}"
+        )
+
+    coords = np.asarray(sample["coords"], dtype=np.float64)
+    features = np.asarray(sample["physics_input"].features, dtype=np.float64).copy()
+    feature_names = tuple(sample["physics_input"].feature_names)
+    flag_indices = _bc_flag_indices(feature_names)
+    metadata_status = _boundary_region_index_status(dict(sample["meta"]), coords.shape[0])
+    before = _bc_flag_distribution(features, flag_indices)
+
+    mask_source = "metadata"
+    warning = ""
+    should_reconstruct = (
+        bc_mask_policy == "coords_extrema_if_missing_indices"
+        and not metadata_status["has_complete_point_indices"]
+    )
+    if should_reconstruct:
+        top, bottom, side = Heat3DV1MetadataDataset._coordinate_boundary_masks(coords)
+        interior = ((top + bottom + side) == 0.0).astype(np.float64)
+        reconstructed = {
+            "is_top": top.reshape(-1),
+            "is_bottom": bottom.reshape(-1),
+            "is_side": side.reshape(-1),
+            "is_interior": interior.reshape(-1),
+        }
+        for name, values in reconstructed.items():
+            features[:, flag_indices[name]] = values
+        mask_source = "coords_extrema_reconstructed"
+        warning = (
+            "final-probe metadata lacks boundary point_indices; reconstructed "
+            "top/bottom/side/interior masks from coordinate extrema"
+        )
+    elif not metadata_status["has_complete_point_indices"]:
+        mask_source = "metadata_missing_indices_unresolved"
+        warning = (
+            "legacy final-probe behavior preserved unresolved boundary_regions; "
+            "surface flags may remain zero"
+        )
+
+    return features, {
+        "policy": bc_mask_policy,
+        "mask_source": mask_source,
+        "warning": warning,
+        "metadata_status": metadata_status,
+        "before_distribution": before,
+        "after_distribution": _bc_flag_distribution(features, flag_indices),
+    }
+
+
+def _bc_flag_indices(feature_names: tuple[str, ...]) -> dict[str, int]:
+    missing = [name for name in BC_FLAG_NAMES if name not in feature_names]
+    if missing:
+        raise ValueError(f"BC flag feature(s) missing from final-probe features: {missing}")
+    return {name: feature_names.index(name) for name in BC_FLAG_NAMES}
+
+
+def _bc_flag_distribution(features: np.ndarray, indices: dict[str, int]) -> dict[str, float]:
+    return {
+        name: float(np.mean(np.asarray(features[:, index], dtype=np.float64)))
+        for name, index in indices.items()
+    }
+
+
+def _boundary_region_index_status(meta: dict[str, Any], n_points: int) -> dict[str, Any]:
+    boundary_regions = meta.get("boundary_regions")
+    if not isinstance(boundary_regions, list):
+        return {
+            "has_boundary_regions": False,
+            "has_complete_point_indices": False,
+            "missing_point_indices": ["top", "bottom", "sides"],
+            "regions": [],
+        }
+
+    regions: list[dict[str, Any]] = []
+    missing: list[str] = []
+    required = {"top", "bottom", "sides"}
+    seen: set[str] = set()
+    for region in boundary_regions:
+        if not isinstance(region, dict):
+            continue
+        name = str(region.get("name"))
+        if name not in required:
+            continue
+        seen.add(name)
+        indices = region.get("point_indices")
+        has_indices = isinstance(indices, list)
+        valid_count = (
+            sum(1 for index in indices if isinstance(index, int) and 0 <= index < n_points)
+            if has_indices
+            else 0
+        )
+        if not has_indices or valid_count == 0:
+            missing.append(name)
+        regions.append(
+            {
+                "name": name,
+                "surface": region.get("surface"),
+                "has_point_indices": has_indices,
+                "valid_point_index_count": int(valid_count),
+            }
+        )
+
+    missing.extend(sorted(required - seen))
+    return {
+        "has_boundary_regions": True,
+        "has_complete_point_indices": not missing,
+        "missing_point_indices": sorted(set(missing)),
+        "regions": regions,
+    }
 
 
 def probe_id_from_meta(meta: dict[str, Any], fallback: str) -> str:
@@ -333,6 +522,7 @@ def compute_metrics(
     sample_id: str,
     sample_dir: Path,
     prediction: np.ndarray,
+    bc_mask_info: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     meta = load_json(sample_dir / "sample_meta.json")
     coords = np.asarray(np.load(sample_dir / "coords.npy"), dtype=np.float64)
@@ -347,7 +537,12 @@ def compute_metrics(
         ((meta.get("boundary_params") or {}).get("bottom") or {}).get("fixed_temperature_K", 300.0)
     )
     delta = label - t_ref
+    pred_delta = pred - t_ref
     error = pred - label
+    label_delta_peak = float(np.max(delta))
+    pred_delta_peak = float(np.max(pred_delta))
+    label_delta_range = float(np.max(delta) - np.min(delta))
+    pred_delta_range = float(np.max(pred_delta) - np.min(pred_delta))
     q_mask = q_field > 0.0
     strong_mask, q_background, q_threshold = strong_q_mask(q_field)
     background_mask = ~q_mask
@@ -381,6 +576,20 @@ def compute_metrics(
         "T_pred_max": float(np.max(pred)),
         "T_pred_mean": float(np.mean(pred)),
         "Tmax_error": float(np.max(pred) - np.max(label)),
+        "peak_error_K": float(pred_delta_peak - label_delta_peak),
+        "mean_bias_K": float(np.mean(error)),
+        "pred_peak_K": float(np.max(pred)),
+        "label_peak_K": float(np.max(label)),
+        "pred_range_K": float(np.max(pred) - np.min(pred)),
+        "label_range_K": float(np.max(label) - np.min(label)),
+        "pred_deltaT_peak_K": pred_delta_peak,
+        "label_deltaT_peak_K": label_delta_peak,
+        "pred_deltaT_range_K": pred_delta_range,
+        "label_deltaT_range_K": label_delta_range,
+        "scale_ratio": safe_ratio(pred_delta_peak, label_delta_peak),
+        "range_ratio": safe_ratio(pred_delta_range, label_delta_range),
+        "centered_corr": centered_corr(delta, pred_delta),
+        "shape_corr": centered_corr(delta, pred_delta),
         "top_1_percent_RMSE": top_fraction_rmse(error, label_score, 0.01),
         "top_5_percent_RMSE": top_fraction_rmse(error, label_score, 0.05),
         "q_region_RMSE": masked_rmse(error, q_mask),
@@ -416,6 +625,20 @@ def compute_metrics(
                 }
             )
 
+    if bc_mask_info:
+        row.update(
+            {
+                "bc_mask_policy": bc_mask_info.get("policy"),
+                "bc_mask_source": bc_mask_info.get("mask_source"),
+                "bc_mask_warning": bc_mask_info.get("warning"),
+            }
+        )
+        after = bc_mask_info.get("after_distribution") or {}
+        before = bc_mask_info.get("before_distribution") or {}
+        for name in BC_FLAG_NAMES:
+            row[f"{name}_fraction"] = after.get(name)
+            row[f"legacy_{name}_fraction"] = before.get(name)
+
     if str(row["probe_id"]) == "P10":
         row.update(
             {
@@ -425,6 +648,27 @@ def compute_metrics(
             }
         )
     return row
+
+
+def safe_ratio(numerator: float, denominator: float) -> float | None:
+    if not math.isfinite(float(numerator)) or not math.isfinite(float(denominator)):
+        return None
+    if abs(float(denominator)) <= EPS:
+        return None
+    return float(numerator) / float(denominator)
+
+
+def centered_corr(reference: np.ndarray, candidate: np.ndarray) -> float | None:
+    ref = np.asarray(reference, dtype=np.float64).reshape(-1)
+    cand = np.asarray(candidate, dtype=np.float64).reshape(-1)
+    if ref.shape != cand.shape or ref.size == 0:
+        return None
+    ref = ref - np.mean(ref)
+    cand = cand - np.mean(cand)
+    denom = float(np.linalg.norm(ref) * np.linalg.norm(cand))
+    if denom <= EPS:
+        return None
+    return float(np.dot(ref, cand) / denom)
 
 
 def box_vertices(lo: np.ndarray, hi: np.ndarray) -> list[list[tuple[float, float, float]]]:
@@ -789,6 +1033,21 @@ def _mean_metric(metrics_rows: list[dict[str, Any]], key: str) -> float | None:
     return float(np.mean(values))
 
 
+def _source_counts(metrics_rows: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in metrics_rows:
+        value = str(row.get("bc_mask_source") or "unknown")
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
+def _bc_flag_mean_distribution(metrics_rows: list[dict[str, Any]], prefix: str = "") -> dict[str, float | None]:
+    return {
+        name: _mean_metric(metrics_rows, f"{prefix}{name}_fraction")
+        for name in BC_FLAG_NAMES
+    }
+
+
 def _probe_focus(metrics_rows: list[dict[str, Any]]) -> dict[str, Any]:
     by_probe = {str(row.get("probe_id")): row for row in metrics_rows}
     return {
@@ -809,6 +1068,17 @@ def _comparison_entry_summary(label: str, checkpoint: Path, output_dir: Path, me
         "MAE": _mean_metric(metrics_rows, "MAE"),
         "relRMSE_DeltaT": _mean_metric(metrics_rows, "relative_RMSE_on_DeltaT"),
         "Tmax_error": _mean_metric(metrics_rows, "Tmax_error"),
+        "peak_error_K": _mean_metric(metrics_rows, "peak_error_K"),
+        "mean_bias_K": _mean_metric(metrics_rows, "mean_bias_K"),
+        "scale_ratio": _mean_metric(metrics_rows, "scale_ratio"),
+        "range_ratio": _mean_metric(metrics_rows, "range_ratio"),
+        "centered_corr": _mean_metric(metrics_rows, "centered_corr"),
+        "shape_corr": _mean_metric(metrics_rows, "shape_corr"),
+        "pred_deltaT_peak_K": _mean_metric(metrics_rows, "pred_deltaT_peak_K"),
+        "label_deltaT_peak_K": _mean_metric(metrics_rows, "label_deltaT_peak_K"),
+        "bc_mask_source_counts": _source_counts(metrics_rows),
+        "bc_flag_distribution": _bc_flag_mean_distribution(metrics_rows),
+        "legacy_bc_flag_distribution": _bc_flag_mean_distribution(metrics_rows, prefix="legacy_"),
         "top_5_percent_RMSE": _mean_metric(metrics_rows, "top_5_percent_RMSE"),
         "q_region_RMSE": _mean_metric(metrics_rows, "q_region_RMSE"),
         "strong_q_RMSE": _mean_metric(metrics_rows, "q_strong_region_RMSE"),
@@ -866,8 +1136,8 @@ def _render_comparison_markdown(payload: dict[str, Any]) -> str:
             f"{_fmt_optional_value(item.get('background_RMSE'))} |"
         )
     lines.extend(["", "## Focus Probes", ""])
-    lines.append("| label | probe | RMSE | relRMSE_DeltaT | top5% RMSE | q-region RMSE | strong-q RMSE | note |")
-    lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |")
+    lines.append("| label | probe | RMSE | relRMSE_DeltaT | scale_ratio | centered_corr | top5% RMSE | q-region RMSE | strong-q RMSE | note |")
+    lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
     for item in payload["entries"]:
         for probe_id in ("P02", "P03", "P09", "P10"):
             row = (item.get("focus_probes") or {}).get(probe_id)
@@ -881,10 +1151,24 @@ def _render_comparison_markdown(payload: dict[str, Any]) -> str:
             lines.append(
                 f"| {item['label']} | {probe_id} | {_fmt_optional_value(row.get('RMSE'))} | "
                 f"{_fmt_optional_value(row.get('relative_RMSE_on_DeltaT'))} | "
+                f"{_fmt_optional_value(row.get('scale_ratio'))} | "
+                f"{_fmt_optional_value(row.get('centered_corr'))} | "
                 f"{_fmt_optional_value(row.get('top_5_percent_RMSE'))} | "
                 f"{_fmt_optional_value(row.get('q_region_RMSE'))} | "
                 f"{_fmt_optional_value(row.get('q_strong_region_RMSE'))} | {note} |"
             )
+    lines.extend(["", "## BC Mask Distribution", ""])
+    lines.append("| label | source_counts | top | bottom | side | interior |")
+    lines.append("| --- | --- | ---: | ---: | ---: | ---: |")
+    for item in payload["entries"]:
+        flags = item.get("bc_flag_distribution") or {}
+        lines.append(
+            f"| {item['label']} | `{item.get('bc_mask_source_counts')}` | "
+            f"{_fmt_optional_value(flags.get('is_top'))} | "
+            f"{_fmt_optional_value(flags.get('is_bottom'))} | "
+            f"{_fmt_optional_value(flags.get('is_side'))} | "
+            f"{_fmt_optional_value(flags.get('is_interior'))} |"
+        )
     lines.extend(
         [
             "",
@@ -915,12 +1199,20 @@ def _run_single_probe(
     provenance_path: Path,
     output_dir: Path,
     batch_size: int,
+    bc_mask_policy: str,
+    save_predictions: bool,
+    write_figures: bool,
 ) -> dict[str, Any]:
     predictions_dir = output_dir / "predictions"
     metadata_dir = output_dir / "metadata"
     metrics_dir = output_dir / "metrics"
     figures_dir = output_dir / "figures"
-    for path in (predictions_dir, metadata_dir, metrics_dir, figures_dir):
+    required_dirs = [metadata_dir, metrics_dir]
+    if save_predictions:
+        required_dirs.append(predictions_dir)
+    if write_figures:
+        required_dirs.append(figures_dir)
+    for path in required_dirs:
         path.mkdir(parents=True, exist_ok=True)
 
     if not checkpoint.is_file():
@@ -949,7 +1241,12 @@ def _run_single_probe(
 
     train_examples = load_training_examples(run_config, checkpoint_stats)
     stats = stats_from_checkpoint_payload(checkpoint_stats, train_examples)
-    probe_examples, sample_dirs_by_id = load_probe_examples(subset, checkpoint_stats)
+    install_checkpoint_feature_hooks(checkpoint_stats)
+    probe_examples, sample_dirs_by_id, mask_info_by_id = load_probe_examples(
+        subset,
+        checkpoint_stats,
+        bc_mask_policy=bc_mask_policy,
+    )
     graph_config = dict(run_config.get("graph_config") or {})
     builder = Heat3DGraphBuilder(**graph_config)
     graph_seed = int(run_config.get("graph_seed", 0) or 0)
@@ -972,13 +1269,19 @@ def _run_single_probe(
         groups,
         stats,
     )
-    np.savez_compressed(predictions_dir / "s5_probe_predictions.npz", **predictions)
-    for sample_id, pred in predictions.items():
-        probe_id = probe_id_from_meta(load_json(sample_dirs_by_id[sample_id] / "sample_meta.json"), sample_id)
-        np.save(predictions_dir / f"{probe_id}_pred.npy", pred)
+    if save_predictions:
+        np.savez_compressed(predictions_dir / "s5_probe_predictions.npz", **predictions)
+        for sample_id, pred in predictions.items():
+            probe_id = probe_id_from_meta(load_json(sample_dirs_by_id[sample_id] / "sample_meta.json"), sample_id)
+            np.save(predictions_dir / f"{probe_id}_pred.npy", pred)
 
     metrics_rows = [
-        compute_metrics(example.sample_id, sample_dirs_by_id[example.sample_id], predictions[example.sample_id])
+        compute_metrics(
+            example.sample_id,
+            sample_dirs_by_id[example.sample_id],
+            predictions[example.sample_id],
+            mask_info_by_id.get(example.sample_id),
+        )
         for example in probe_examples
     ]
     write_metrics(metrics_rows, metrics_dir)
@@ -986,24 +1289,25 @@ def _run_single_probe(
     checkpoint_name = checkpoint.parent.name
     ordered_sample_dirs = [sample_dirs_by_id[example.sample_id] for example in probe_examples]
     figure_paths: list[Path] = []
-    for example, metrics in zip(probe_examples, metrics_rows):
-        probe_id = str(metrics["probe_id"])
-        path = figures_dir / f"{probe_id}_reviewer_sheet.png"
-        make_reviewer_sheet(
-            sample_dirs_by_id[example.sample_id],
-            predictions[example.sample_id],
-            metrics,
-            checkpoint_name,
-            path,
-        )
-        figure_paths.append(path)
-    structure_overview = figures_dir / "reviewer_true_structure_overview.png"
-    error_overview = figures_dir / "reviewer_true_vs_pred_error_overview.png"
-    metric_bars = figures_dir / "reviewer_metric_bars.png"
-    make_structure_overview(ordered_sample_dirs, metrics_rows, checkpoint_name, structure_overview)
-    make_error_overview(ordered_sample_dirs, predictions, metrics_rows, checkpoint_name, error_overview)
-    make_metric_bars(metrics_rows, metric_bars)
-    figure_paths.extend([structure_overview, error_overview, metric_bars])
+    if write_figures:
+        for example, metrics in zip(probe_examples, metrics_rows):
+            probe_id = str(metrics["probe_id"])
+            path = figures_dir / f"{probe_id}_reviewer_sheet.png"
+            make_reviewer_sheet(
+                sample_dirs_by_id[example.sample_id],
+                predictions[example.sample_id],
+                metrics,
+                checkpoint_name,
+                path,
+            )
+            figure_paths.append(path)
+        structure_overview = figures_dir / "reviewer_true_structure_overview.png"
+        error_overview = figures_dir / "reviewer_true_vs_pred_error_overview.png"
+        metric_bars = figures_dir / "reviewer_metric_bars.png"
+        make_structure_overview(ordered_sample_dirs, metrics_rows, checkpoint_name, structure_overview)
+        make_error_overview(ordered_sample_dirs, predictions, metrics_rows, checkpoint_name, error_overview)
+        make_metric_bars(metrics_rows, metric_bars)
+        figure_paths.extend([structure_overview, error_overview, metric_bars])
 
     devbox_head = _devbox_head()
 
@@ -1018,6 +1322,10 @@ def _run_single_probe(
         "model_config_hash": checkpoint_payload.get("model_config_hash") or _stable_json_hash(model_config),
         "train_stats_hash": checkpoint_payload.get("train_stats_hash"),
         "subset": str(subset),
+        "final_probe_bc_mask_policy": bc_mask_policy,
+        "bc_mask_source_counts": _source_counts(metrics_rows),
+        "bc_flag_distribution": _bc_flag_mean_distribution(metrics_rows),
+        "legacy_bc_flag_distribution": _bc_flag_mean_distribution(metrics_rows, prefix="legacy_"),
         "sample_count": len(metrics_rows),
         "sample_ids": [example.sample_id for example in probe_examples],
         "graph_config": graph_config,
@@ -1026,6 +1334,8 @@ def _run_single_probe(
         "group_sample_counts": [len(group["sample_ids"]) for group in groups],
         "provenance": provenance,
         "output_dir": str(output_dir),
+        "predictions_saved": bool(save_predictions),
+        "figures_written": bool(write_figures),
         "devbox_head": devbox_head,
     }
     _write_json(metadata_dir / "s5_probe_prediction_metadata.json", prediction_metadata)
@@ -1051,6 +1361,9 @@ def main() -> int:
                 provenance_path=args.provenance,
                 output_dir=entry_output_dir,
                 batch_size=args.batch_size,
+                bc_mask_policy=args.final_probe_bc_mask_policy,
+                save_predictions=args.save_predictions,
+                write_figures=args.write_figures,
             )
             comparison_entries.append(
                 _comparison_entry_summary(
@@ -1066,6 +1379,9 @@ def main() -> int:
             "subset": str(args.subset),
             "provenance": str(args.provenance),
             "output_dir": str(args.output_dir),
+            "final_probe_bc_mask_policy": args.final_probe_bc_mask_policy,
+            "predictions_saved": bool(args.save_predictions),
+            "figures_written": bool(args.write_figures),
             "entries": comparison_entries,
             "P10_gap_note": "localized top contact and side asymmetry unsupported",
         }
@@ -1087,6 +1403,9 @@ def main() -> int:
         provenance_path=args.provenance,
         output_dir=args.output_dir,
         batch_size=args.batch_size,
+        bc_mask_policy=args.final_probe_bc_mask_policy,
+        save_predictions=args.save_predictions,
+        write_figures=args.write_figures,
     )
     print(f"S5 probe smoke complete: samples={len(result['metrics_rows'])} output_dir={args.output_dir}")
     print("worst_3_by_RMSE:")

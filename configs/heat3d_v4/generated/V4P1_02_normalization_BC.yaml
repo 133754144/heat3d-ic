@@ -1,0 +1,29 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P1_02_normalization_BC
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P1_02_normalization_BC; standard task coords+k(x)+q(x)+BC->T(x);
+    generated from V4_base.yaml.
+  dataset:
+    normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_bc_flags_binary_passthrough_only
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P1_02_normalization_BC
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P1_02_normalization_BC
+  export:
+    output_dir: output/heat3d_v4_runs/V4P1_02_normalization_BC
+    run_name: V4P1_02_normalization_BC
+  metadata:
+    registry_config_id: V4P1_02_normalization_BC
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P1_02_normalization_BC
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    runner_family: v4_controlled_semantic_wrapper
+    normalization_profile: semantic_normalization_v1
+    condition_feature_transform: semantic_v1_bc_flags_binary_passthrough_only
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P1_02_normalization_BC.log
+    notes: 'V4 P1 semantic normalization ablation: BC flags binary passthrough only;
+      k, q, top_h, and BC temperature scalars stay legacy z-score; other training
+      parameters match V4Test00_baseline_seed_0'

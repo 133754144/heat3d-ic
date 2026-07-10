@@ -1,0 +1,21 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4_baseline
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4_baseline; standard task coords+k(x)+q(x)+BC->T(x);
+    generated from V4_base.yaml.
+  run:
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4_baseline
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4_baseline
+  export:
+    output_dir: output/heat3d_v4_runs/V4_baseline_latent96_edge96_s6_mlp2_B88_discrete_physical_coverage_repair_none_e600
+    run_name: V4_baseline_latent96_edge96_s6_mlp2_B88_discrete_physical_coverage_repair_none_e600
+  metadata:
+    registry_config_id: V4_baseline
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4_baseline
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4_baseline.log
+    notes: baseline default dry-run only until explicit launch approval

@@ -1,0 +1,1459 @@
+{
+  "schema_version": "heat3d_v4_p3c_parameter_registry_v2",
+  "scope": "design_registry_only_no_data_generated",
+  "branch": "research/v4-dataset-p3c",
+  "task": "coords+k(x)+q(x)+BC->T(x)",
+  "generation_policy": {
+    "distribution": "unified_random_generation_distribution",
+    "splits": [
+      "train",
+      "test"
+    ],
+    "random_split_seed": 4301,
+    "stress_split": "disabled",
+    "final_probe_role": "reference_diagnostic_only_not_pass_fail",
+    "production_contact_model": "R_contact=0_perfect_contact",
+    "finite_contact_resistance": "implemented_deferred_not_v4_dataset_default",
+    "route": [
+      "P3c-0 design spec",
+      "P3c-1 parameter registry",
+      "P3c-2 generator skeleton",
+      "P3c-3 16-sample smoke + audit",
+      "P3c-4 64-sample pilot + split audit",
+      "P3c-5 P3b-lite validation subset selection",
+      "P3c-7 1024 production candidate",
+      "P3c-8 closeout + handoff to training"
+    ]
+  },
+  "q_source_policy": {
+    "name": "semantic_boundary_inset_5pct_solver_safe_deposition",
+    "semantic_domain_xyz": [
+      16.0,
+      16.0,
+      4.0
+    ],
+    "semantic_boundary_inset_fraction": 0.05,
+    "semantic_inset_domain_xyz": {
+      "x": [
+        0.8,
+        15.2
+      ],
+      "y": [
+        0.8,
+        15.2
+      ],
+      "z": [
+        0.2,
+        3.8
+      ]
+    },
+    "solver_safe_deposition_mask": "exclude_bottom_top_side_boundary_nodes",
+    "forbidden_boundary_layers": [
+      "bottom_dirichlet",
+      "top_robin",
+      "side_adiabatic"
+    ],
+    "required_audit_fields": [
+      "q_total_target_power_W",
+      "q_integral_from_array_W",
+      "q_total_power_error_W",
+      "q_power_on_bottom_W",
+      "q_power_on_top_W",
+      "q_power_on_xmin_W",
+      "q_power_on_xmax_W",
+      "q_power_on_ymin_W",
+      "q_power_on_ymax_W",
+      "q_power_on_side_W",
+      "q_power_on_boundary_W",
+      "q_power_on_bottom_fraction",
+      "q_power_on_top_fraction",
+      "q_power_on_side_fraction",
+      "q_source_boundary_violation_count",
+      "q_source_side_boundary_violation_count",
+      "q_active_z_min",
+      "q_active_z_max",
+      "q_power_integration_policy",
+      "semantic_boundary_inset_fraction",
+      "semantic_inset_domain_xyz",
+      "solver_safe_deposition_mask",
+      "q_deposited_on_boundary_node_count"
+    ],
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-SAUFNO-2025"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "P3c q sources are semantic interior heat-generation regions; continuous bboxes stay inside a 5% all-boundary inset and q is deposited only on solver-safe non-boundary nodes.",
+    "metadata_tag": "policy=q_source_semantic_boundary_inset_solver_safe_deposition"
+  },
+  "source_refs": [
+    {
+      "id": "SRC-3DICE4-2025",
+      "title": "3D-ICE 4.0: Accurate and efficient thermal modeling for 2.5D/3D heterogeneous chiplet systems",
+      "authors": "Kai Zhu; Darong Huang; Luis Costero; David Atienza",
+      "year": 2025,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2512.05823",
+      "notes": "Supports heterogeneous and anisotropic material modeling, vertical thermal paths, and non-uniform grids."
+    },
+    {
+      "id": "SRC-HBM-MEAS-2023",
+      "title": "Thermal Conductivity Measurement of High Bandwidth Memory",
+      "authors": "Darshan Chalise; David G. Cahill",
+      "year": 2023,
+      "venue": "arXiv measurement preprint",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2303.06785",
+      "notes": "Anchors HBM anisotropy: in-plane about 100/140 W/m/K and through-plane about 7/2 W/m/K; use as a registry anchor, not as sole paper evidence."
+    },
+    {
+      "id": "SRC-DEEPOHEAT-2023",
+      "title": "DeepOHeat: Operator Learning-based Ultra-fast Thermal Simulation in 3D-IC Design",
+      "authors": "Ziyue Liu; Yixing Li; Jing Hu; Xinling Yu; Shinyu Shiau; Xin Ai; Zhiyu Zeng; Zheng Zhang",
+      "year": 2023,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2302.12949",
+      "notes": "Supports operator mapping from physical input fields and boundary conditions to temperature fields."
+    },
+    {
+      "id": "SRC-DEEPOHEATV1-2025",
+      "title": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
+      "authors": "Xinling Yu; Ziyue Liu; Hai Li; Yixing Li; Xin Ai; Zhiyu Zeng; Ian Young; Zheng Zhang",
+      "year": 2025,
+      "venue": "IEEE TCPMT / arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2504.03955",
+      "notes": "Supports solver-audit and trustworthiness separation from training changes."
+    },
+    {
+      "id": "SRC-BSPDN-2025",
+      "title": "Thermal Implications of Non-Uniform Power in BSPDN-Enabled 2.5D/3D Chiplet-based Systems-in-Package using Nanosheet Technology",
+      "authors": "Yukai Chen; Massimiliano Di Todaro; Bjorn Vermeersch; Herman Oprins; Daniele Jahier Pagliari; Julien Ryckaert; Dwaipayan Biswas; James Myers",
+      "year": 2025,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2508.02284",
+      "notes": "Supports chiplet/interposer dimensions, 200/2500 W/m2/K HTC anchors, layer k/thickness, and non-uniform power maps."
+    },
+    {
+      "id": "SRC-SAUFNO-2025",
+      "title": "Self-Attention to Operator Learning-based 3D-IC Thermal Simulation",
+      "authors": "Zhen Huang; Hong Wang; Wenkai Yang; Muxi Tang; Depeng Xie; Ting-Jung Lin; Yu Zhang; Wei W. Xing; Lei He",
+      "year": 2025,
+      "venue": "arXiv",
+      "url_or_doi": "https://doi.org/10.48550/arXiv.2510.15968",
+      "notes": "Supports high-frequency hotspot fields and same-distribution train/test splits."
+    },
+    {
+      "id": "SRC-LIENHARD-2024",
+      "title": "A Heat Transfer Textbook, 6th edition",
+      "authors": "John H. Lienhard V; John H. Lienhard IV",
+      "year": 2024,
+      "venue": "MIT open textbook",
+      "url_or_doi": "https://ahtt.mit.edu/",
+      "notes": "Supports heat-transfer coefficient and conduction boundary-condition terminology."
+    },
+    {
+      "id": "SRC-HEAT3D-MEDIUM1024-2026",
+      "title": "V4 P1 Full Medium1024 Audit",
+      "authors": "Heat3D internal audit",
+      "year": 2026,
+      "venue": "local doc",
+      "url_or_doi": "docs/v4_p1_full_medium1024_audit.md",
+      "notes": "Solver-scale reference only; not a publication range source and not a final_probe hard range source."
+    },
+    {
+      "id": "SRC-HEAT3D-P3A-2026",
+      "title": "V4 P3a Closeout",
+      "authors": "Heat3D internal audit",
+      "year": 2026,
+      "venue": "local doc",
+      "url_or_doi": "docs/v4_p3a_closeout.md",
+      "notes": "Fixes V4 production contact model to R_contact=0_perfect_contact."
+    }
+  ],
+  "parameters": {
+    "k": [
+      {
+        "name": "low_k_dielectric_underfill",
+        "unit": "W/m/K",
+        "literature_anchor": "low-k package and underfill material class",
+        "sampling_envelope": {
+          "min": 0.5,
+          "max": 8.0,
+          "space": "log"
+        },
+        "range": {
+          "min": 0.5,
+          "max": 8.0
+        },
+        "default": 1.2,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "per_material_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "rationale": "Cover low-k barriers without using final_probe as the range source.",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=low_k_dielectric"
+      },
+      {
+        "name": "tim_effective",
+        "unit": "W/m/K",
+        "literature_anchor": "TIM/effective package thermal path",
+        "sampling_envelope": {
+          "min": 3.0,
+          "max": 30.0,
+          "space": "log"
+        },
+        "range": {
+          "min": 3.0,
+          "max": 30.0
+        },
+        "default": 8.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "per_tim_like_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "rationale": "Represent intermediate package and TIM-like conduction blocks.",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=tim_effective"
+      },
+      {
+        "name": "effective_stack_medium_k",
+        "unit": "W/m/K",
+        "literature_anchor": "effective chiplet/interposer stack layers",
+        "sampling_envelope": {
+          "min": 5.0,
+          "max": 80.0,
+          "space": "log"
+        },
+        "range": {
+          "min": 5.0,
+          "max": 80.0
+        },
+        "default": 30.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "background_or_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "rationale": "Provide non-extreme background and block materials.",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=effective_stack"
+      },
+      {
+        "name": "silicon_like",
+        "unit": "W/m/K",
+        "literature_anchor": "silicon-like layer conductivity",
+        "sampling_envelope": {
+          "min": 80.0,
+          "max": 180.0,
+          "space": "log"
+        },
+        "range": {
+          "min": 80.0,
+          "max": 180.0
+        },
+        "default": 130.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "background_or_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "rationale": "Cover die-like material fields and bridges.",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=silicon_like"
+      },
+      {
+        "name": "high_k_tsv_or_spreader",
+        "unit": "W/m/K",
+        "literature_anchor": "TSV, spreader, and high-k path materials",
+        "sampling_envelope": {
+          "min": 150.0,
+          "max": 430.0,
+          "space": "log"
+        },
+        "range": {
+          "min": 150.0,
+          "max": 430.0
+        },
+        "default": 230.0,
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "bridge_or_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "rationale": "Cover vertical escape and lateral spreading paths.",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=high_k_tsv_spreader"
+      },
+      {
+        "name": "hbm_like_anisotropic_k",
+        "unit": "W/m/K",
+        "literature_anchor": {
+          "in_plane_W_mK": [
+            100.0,
+            140.0
+          ],
+          "through_plane_W_mK": [
+            7.0,
+            2.0
+          ]
+        },
+        "sampling_envelope": {
+          "component_min": 2.0,
+          "component_max": 140.0,
+          "space": "class_anchor"
+        },
+        "range": {
+          "min": 2.0,
+          "max": 140.0
+        },
+        "default": {
+          "kx": 100.0,
+          "ky": 100.0,
+          "kz": 7.0
+        },
+        "sampling": {
+          "type": "diag3_anchor_choice",
+          "scope": "per_hbm_like_block"
+        },
+        "source_ref": [
+          "SRC-HBM-MEAS-2023",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "measurement_anchor_plus_sampling_envelope",
+        "rationale": "Force anisotropic thermal paths into the random-block family.",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_class=hbm_like_diag3"
+      },
+      {
+        "name": "diag3_anisotropy_ratio",
+        "unit": "ratio",
+        "literature_anchor": "anisotropic material support",
+        "sampling_envelope": {
+          "min": 0.5,
+          "max": 2.0,
+          "space": "bounded_ratio"
+        },
+        "range": {
+          "min": 0.5,
+          "max": 2.0
+        },
+        "default": {
+          "kx": 1.0,
+          "ky": 1.0,
+          "kz": 1.0
+        },
+        "sampling": {
+          "type": "bounded_ratio",
+          "scope": "around_scalar_base_k"
+        },
+        "source_ref": [
+          "SRC-3DICE4-2025",
+          "SRC-HBM-MEAS-2023"
+        ],
+        "source_type": "literature_informed_design_envelope",
+        "rationale": "Production v0 targets 20% diag3 samples; generator and checker must support it.",
+        "used_in_v4_production": true,
+        "metadata_tag": "k_mode=diag3"
+      }
+    ],
+    "q": [
+      {
+        "name": "compact_hotspot_q_density",
+        "unit": "W/m3",
+        "range": {
+          "min": 50000000.0,
+          "max": 200000000.0
+        },
+        "default": 100000000.0,
+        "source_volume_fraction": {
+          "min": 0.002,
+          "max": 0.03,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-SAUFNO-2025"
+          ],
+          "source_type": "literature_motif_design_envelope",
+          "rationale": "Compact non-uniform hotspot footprints should remain localized."
+        },
+        "integrated_power_target": {
+          "unit": "W",
+          "min": 0.02,
+          "max": 1.2,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-HEAT3D-MEDIUM1024-2026"
+          ],
+          "source_type": "literature_motif_plus_heat3d_scale_reference",
+          "rationale": "Initial power envelope for smoke calibration, not a final_probe hard range."
+        },
+        "DeltaT_target_bin": "nominal_to_hard",
+        "sampling": {
+          "type": "log_uniform",
+          "source_count": {
+            "min": 1,
+            "max": 3
+          }
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-SAUFNO-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "rationale": "Primary local hotspot family for random-block thermal fields.",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=compact_hotspot"
+      },
+      {
+        "name": "multi_block_q_density",
+        "unit": "W/m3",
+        "range": {
+          "min": 20000000.0,
+          "max": 150000000.0
+        },
+        "default": 80000000.0,
+        "source_volume_fraction": {
+          "min": 0.005,
+          "max": 0.08,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-SAUFNO-2025"
+          ],
+          "source_type": "literature_motif_design_envelope",
+          "rationale": "Multiple non-uniform power regions should cover broader active area than compact hotspots."
+        },
+        "integrated_power_target": {
+          "unit": "W",
+          "min": 0.05,
+          "max": 2.0,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-HEAT3D-MEDIUM1024-2026"
+          ],
+          "source_type": "literature_motif_plus_heat3d_scale_reference",
+          "rationale": "Allows several moderate sources while staying inside the initial DeltaT QC envelope."
+        },
+        "DeltaT_target_bin": "nominal_to_hard",
+        "sampling": {
+          "type": "log_uniform",
+          "source_count": {
+            "min": 2,
+            "max": 6
+          }
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-SAUFNO-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "rationale": "Captures non-uniform power maps beyond single-source cases.",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=multi_block"
+      },
+      {
+        "name": "elongated_q_density",
+        "unit": "W/m3",
+        "range": {
+          "min": 10000000.0,
+          "max": 120000000.0
+        },
+        "default": 50000000.0,
+        "source_volume_fraction": {
+          "min": 0.01,
+          "max": 0.08,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-SAUFNO-2025"
+          ],
+          "source_type": "literature_motif_design_envelope",
+          "rationale": "Elongated sources should be wider than compact hotspots and test directional spreading."
+        },
+        "integrated_power_target": {
+          "unit": "W",
+          "min": 0.05,
+          "max": 1.5,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-HEAT3D-MEDIUM1024-2026"
+          ],
+          "source_type": "literature_motif_plus_heat3d_scale_reference",
+          "rationale": "Keeps strip-like sources in the low-to-nominal DeltaT envelope initially."
+        },
+        "DeltaT_target_bin": "low_to_nominal",
+        "sampling": {
+          "type": "log_uniform",
+          "shape": "elongated_strip"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "rationale": "Tests anisotropic power layout without requiring anisotropic k.",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=elongated"
+      },
+      {
+        "name": "weak_background_q_density",
+        "unit": "W/m3",
+        "range": {
+          "min": 1000000.0,
+          "max": 5000000.0
+        },
+        "default": 3000000.0,
+        "source_volume_fraction": {
+          "min": 0.4,
+          "max": 1.0,
+          "source_ref": [
+            "SRC-BSPDN-2025"
+          ],
+          "source_type": "literature_motif_design_envelope",
+          "rationale": "Broad weak background supports background-plus-hotspot scenes."
+        },
+        "integrated_power_target": {
+          "unit": "W",
+          "min": 0.2,
+          "max": 1.0,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-HEAT3D-MEDIUM1024-2026"
+          ],
+          "source_type": "literature_motif_plus_heat3d_scale_reference",
+          "rationale": "Broad background power should remain low-amplitude before hotspot addition."
+        },
+        "DeltaT_target_bin": "low",
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "full_volume_or_broad_block"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "rationale": "Prevents the generator from producing only isolated hot spots.",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=weak_background"
+      },
+      {
+        "name": "weak_background_hotspot_q_density",
+        "unit": "W/m3",
+        "range": {
+          "min": 50000000.0,
+          "max": 200000000.0
+        },
+        "default": 100000000.0,
+        "source_volume_fraction": {
+          "min": 0.002,
+          "max": 0.03,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-SAUFNO-2025"
+          ],
+          "source_type": "literature_motif_design_envelope",
+          "rationale": "Hotspot component stays compact while background covers the domain."
+        },
+        "integrated_power_target": {
+          "unit": "W",
+          "min": 0.25,
+          "max": 2.0,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-HEAT3D-MEDIUM1024-2026"
+          ],
+          "source_type": "literature_motif_plus_heat3d_scale_reference",
+          "rationale": "Combines weak baseline heating with a calibrated hotspot power envelope."
+        },
+        "DeltaT_target_bin": "nominal_to_hard",
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "hotspot_over_weak_background"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "rationale": "Represents power maps with low baseline activity and a local peak.",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=background_plus_hotspot"
+      },
+      {
+        "name": "dual_z_q_density",
+        "unit": "W/m3",
+        "range": {
+          "min": 20000000.0,
+          "max": 150000000.0
+        },
+        "default": 80000000.0,
+        "source_volume_fraction": {
+          "min": 0.004,
+          "max": 0.06,
+          "source_ref": [
+            "SRC-DEEPOHEAT-2023",
+            "SRC-SAUFNO-2025"
+          ],
+          "source_type": "operator_learning_motif_design_envelope",
+          "rationale": "Multi-layer sources test vertical heat spreading and operator conditioning."
+        },
+        "integrated_power_target": {
+          "unit": "W",
+          "min": 0.05,
+          "max": 2.0,
+          "source_ref": [
+            "SRC-DEEPOHEAT-2023",
+            "SRC-HEAT3D-MEDIUM1024-2026"
+          ],
+          "source_type": "operator_learning_motif_plus_heat3d_scale_reference",
+          "rationale": "Initial integrated power should be calibrated by DeltaT QC."
+        },
+        "DeltaT_target_bin": "nominal_to_hard",
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "sources_in_two_z_bands"
+        },
+        "source_ref": [
+          "SRC-DEEPOHEAT-2023",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "rationale": "Tests whether vertical source separation is learned from fields, not labels.",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=dual_z"
+      },
+      {
+        "name": "tsv_adjacent_q_density",
+        "unit": "W/m3",
+        "range": {
+          "min": 30000000.0,
+          "max": 180000000.0
+        },
+        "default": 90000000.0,
+        "source_volume_fraction": {
+          "min": 0.002,
+          "max": 0.03,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-3DICE4-2025"
+          ],
+          "source_type": "ic_motif_design_envelope",
+          "rationale": "TSV-adjacent source footprints should be localized around high-k paths."
+        },
+        "integrated_power_target": {
+          "unit": "W",
+          "min": 0.05,
+          "max": 1.5,
+          "source_ref": [
+            "SRC-BSPDN-2025",
+            "SRC-HEAT3D-MEDIUM1024-2026"
+          ],
+          "source_type": "ic_motif_plus_heat3d_scale_reference",
+          "rationale": "Initial target keeps TSV-adjacent cases inside DeltaT QC."
+        },
+        "DeltaT_target_bin": "nominal_to_hard",
+        "sampling": {
+          "type": "log_uniform",
+          "scope": "near_high_k_vertical_path"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "literature_motif_plus_heat3d_scale_reference",
+        "rationale": "Couples source placement with high-k vertical path motifs.",
+        "used_in_v4_production": true,
+        "metadata_tag": "q_family=tsv_adjacent"
+      }
+    ],
+    "BC": [
+      {
+        "name": "top_robin_h",
+        "unit": "W/m2/K",
+        "range": {
+          "min": 200.0,
+          "max": 3000.0
+        },
+        "default": "by_cooling_regime",
+        "sampling": {
+          "type": "cooling_regime_mixture",
+          "regimes_ref": "cooling_regimes"
+        },
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-LIENHARD-2024"
+        ],
+        "source_type": "cooling_regime_mixture",
+        "rationale": "Use weak/nominal/strong cooling regimes instead of a single top_h range.",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=top_robin_h"
+      },
+      {
+        "name": "bottom_dirichlet_temperature",
+        "unit": "K",
+        "range": {
+          "min": 300.0,
+          "max": 300.0
+        },
+        "default": 300.0,
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-LIENHARD-2024",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "physics_bc_contract",
+        "rationale": "Keep the initial production boundary contract comparable to existing V4 data.",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=bottom_dirichlet_T"
+      },
+      {
+        "name": "top_ambient_temperature",
+        "unit": "K",
+        "range": {
+          "min": 300.0,
+          "max": 300.0
+        },
+        "default": 300.0,
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-LIENHARD-2024",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "physics_bc_contract",
+        "rationale": "Avoid conflating top_h coverage with ambient-temperature extrapolation in v0.",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=top_ambient_T"
+      },
+      {
+        "name": "bc_flag_channels",
+        "unit": "binary",
+        "range": {
+          "min": 0,
+          "max": 1
+        },
+        "default": "geometry_derived",
+        "sampling": {
+          "type": "deterministic_from_coordinates",
+          "channels": [
+            "top",
+            "bottom",
+            "side",
+            "interior"
+          ]
+        },
+        "source_ref": [
+          "SRC-DEEPOHEAT-2023",
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "model_input_contract",
+        "rationale": "BC flags are part of the V4 model input contract.",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc_flags=top_bottom_side_interior"
+      },
+      {
+        "name": "side_boundary_model",
+        "unit": "enum",
+        "range": [
+          "adiabatic"
+        ],
+        "default": "adiabatic",
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-LIENHARD-2024",
+          "SRC-HEAT3D-P3A-2026"
+        ],
+        "source_type": "physics_bc_contract",
+        "rationale": "Keep side boundary behavior fixed until P3b/P3c validation expands BC scope.",
+        "used_in_v4_production": true,
+        "metadata_tag": "bc=side_adiabatic"
+      }
+    ],
+    "contact": [
+      {
+        "name": "production_contact_resistance",
+        "unit": "m2*K/W",
+        "range": {
+          "min": 0.0,
+          "max": 0.0
+        },
+        "default": 0.0,
+        "sampling": {
+          "type": "fixed",
+          "scope": "p3c_production"
+        },
+        "source_ref": [
+          "SRC-HEAT3D-P3A-2026"
+        ],
+        "source_type": "production_gate",
+        "rationale": "P3a closeout fixed V4 production/default contact to perfect contact.",
+        "used_in_v4_production": true,
+        "metadata_tag": "contact_model=R_contact_0_perfect_contact"
+      },
+      {
+        "name": "finite_contact_resistance_deferred",
+        "unit": "m2*K/W",
+        "range": null,
+        "default": null,
+        "sampling": {
+          "type": "deferred_no_production_sampling",
+          "scope": "solver_smoke_only"
+        },
+        "source_ref": [
+          "SRC-3DICE4-2025",
+          "SRC-HEAT3D-P3A-2026"
+        ],
+        "source_type": "implemented_deferred_smoke_only",
+        "rationale": "Finite contact exists only as solver smoke until publication-grade validation exists.",
+        "used_in_v4_production": false,
+        "metadata_tag": "contact_model=finite_R_deferred"
+      }
+    ]
+  },
+  "geometry": [
+    {
+      "name": "domain_xy_mm",
+      "unit": "mm",
+      "range": {
+        "min": 5.0,
+        "max": 20.0
+      },
+      "default": 10.0,
+      "sampling": {
+        "type": "fixed_v0_or_bounded_uniform_later"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-HEAT3D-MEDIUM1024-2026"
+      ],
+      "source_type": "literature_anchor_plus_heat3d_reference",
+      "rationale": "Keep smoke comparable to the current 10 mm domain while allowing chiplet-scale planning.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=domain_xy_mm"
+    },
+    {
+      "name": "domain_z_mm",
+      "unit": "mm",
+      "range": {
+        "min": 0.5,
+        "max": 3.0
+      },
+      "default": 2.0,
+      "sampling": {
+        "type": "fixed_v0_or_bounded_uniform_later"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-HEAT3D-MEDIUM1024-2026"
+      ],
+      "source_type": "literature_anchor_plus_heat3d_reference",
+      "rationale": "Preserve a thin 3D stack aspect ratio and current solver comparability.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=domain_z_mm"
+    },
+    {
+      "name": "grid_shape_candidates",
+      "unit": "nodes",
+      "range": [
+        [
+          16,
+          16,
+          4
+        ],
+        [
+          32,
+          32,
+          4
+        ],
+        [
+          32,
+          32,
+          8
+        ]
+      ],
+      "default": [
+        16,
+        16,
+        4
+      ],
+      "sampling": {
+        "type": "discrete_choice_by_stage"
+      },
+      "source_ref": [
+        "SRC-3DICE4-2025",
+        "SRC-HEAT3D-MEDIUM1024-2026"
+      ],
+      "source_type": "solver_stage_envelope",
+      "rationale": "Start at existing 1024-node compatibility before scaling.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=grid_shape"
+    },
+    {
+      "name": "material_block_count",
+      "unit": "count",
+      "range": {
+        "min": 1,
+        "max": 12
+      },
+      "default": 4,
+      "sampling": {
+        "type": "discrete_uniform"
+      },
+      "source_ref": [
+        "SRC-3DICE4-2025",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "design_envelope_literature_motif",
+      "rationale": "Provide random-block heterogeneity without smoke-stage instability.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=material_block_count"
+    },
+    {
+      "name": "material_block_xy_fraction",
+      "unit": "fraction",
+      "range": {
+        "min": 0.05,
+        "max": 0.6
+      },
+      "default": 0.2,
+      "sampling": {
+        "type": "log_uniform_or_beta"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "design_envelope_literature_motif",
+      "rationale": "Cover local barriers, bridges, and broad spreaders.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=material_block_xy_fraction"
+    },
+    {
+      "name": "material_block_z_fraction",
+      "unit": "fraction",
+      "range": {
+        "min": 0.25,
+        "max": 1.0
+      },
+      "default": 0.5,
+      "sampling": {
+        "type": "discrete_or_bounded_uniform"
+      },
+      "source_ref": [
+        "SRC-3DICE4-2025",
+        "SRC-HBM-MEAS-2023"
+      ],
+      "source_type": "design_envelope_literature_motif",
+      "rationale": "Allow through-stack and partial-stack material paths.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=material_block_z_fraction"
+    },
+    {
+      "name": "source_block_count",
+      "unit": "count",
+      "range": {
+        "min": 1,
+        "max": 8
+      },
+      "default": 3,
+      "sampling": {
+        "type": "discrete_by_q_family"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "design_envelope_literature_motif",
+      "rationale": "Support compact, multi-block, and dual-z power maps.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=source_block_count"
+    },
+    {
+      "name": "source_block_xy_fraction",
+      "unit": "fraction",
+      "range": {
+        "min": 0.02,
+        "max": 0.4
+      },
+      "default": 0.08,
+      "sampling": {
+        "type": "log_uniform_or_beta"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "design_envelope_literature_motif",
+      "rationale": "Represent localized hotspots and elongated sources.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=source_block_xy_fraction"
+    },
+    {
+      "name": "source_block_z_fraction",
+      "unit": "fraction",
+      "range": {
+        "min": 0.25,
+        "max": 1.0
+      },
+      "default": 0.5,
+      "sampling": {
+        "type": "discrete_or_bounded_uniform"
+      },
+      "source_ref": [
+        "SRC-DEEPOHEAT-2023",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "design_envelope_literature_motif",
+      "rationale": "Support layer-local and multi-layer heat sources.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=source_block_z_fraction"
+    },
+    {
+      "name": "placement_policy",
+      "unit": "enum",
+      "range": [
+        "random_block_ic_motif_mixture"
+      ],
+      "default": "random_block_ic_motif_mixture",
+      "sampling": {
+        "type": "weighted_categorical"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-3DICE4-2025"
+      ],
+      "source_type": "design_policy",
+      "rationale": "Mix IC motifs into random blocks instead of stack-template interpolation.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=placement_policy"
+    },
+    {
+      "name": "overlap_policy",
+      "unit": "enum",
+      "range": [
+        "k_blocks_may_overlap_q_blocks"
+      ],
+      "default": "k_blocks_may_overlap_q_blocks",
+      "sampling": {
+        "type": "explicit_metadata"
+      },
+      "source_ref": [
+        "SRC-DEEPOHEAT-2023",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "design_policy",
+      "rationale": "Allow heat sources to sit inside, beside, or across material blocks.",
+      "used_in_v4_production": true,
+      "metadata_tag": "geometry=overlap_policy"
+    }
+  ],
+  "deltaT_distribution": {
+    "audit_fields": [
+      "deltaT_peak_K",
+      "deltaT_p95_K",
+      "deltaT_bin",
+      "q_rescale_factor",
+      "reject_reason"
+    ],
+    "bins": [
+      {
+        "name": "reject_low",
+        "unit": "K",
+        "range": {
+          "lt": 0.02
+        },
+        "source_ref": [
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "generator_qc_initial_bin",
+        "rationale": "Labels this small are likely numerically valid but uninformative for early training.",
+        "metadata_tag": "deltaT_bin=reject_low"
+      },
+      {
+        "name": "low",
+        "unit": "K",
+        "range": {
+          "min": 0.02,
+          "max": 0.2
+        },
+        "source_ref": [
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "generator_qc_initial_bin",
+        "rationale": "Preserve low-amplitude cases without letting them dominate.",
+        "metadata_tag": "deltaT_bin=low"
+      },
+      {
+        "name": "nominal",
+        "unit": "K",
+        "range": {
+          "min": 0.2,
+          "max": 2.0
+        },
+        "source_ref": [
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "generator_qc_initial_bin",
+        "rationale": "Preferred production mass before P3c-3/4 calibration.",
+        "metadata_tag": "deltaT_bin=nominal"
+      },
+      {
+        "name": "hard",
+        "unit": "K",
+        "range": {
+          "min": 2.0,
+          "max": 8.0
+        },
+        "source_ref": [
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "generator_qc_initial_bin",
+        "rationale": "Retain difficult but plausible cases if solver audit passes.",
+        "metadata_tag": "deltaT_bin=hard"
+      },
+      {
+        "name": "review_high",
+        "unit": "K",
+        "range": {
+          "min": 8.0,
+          "max": 15.0
+        },
+        "source_ref": [
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "generator_qc_initial_bin",
+        "rationale": "Manual review band until smoke/pilot calibration.",
+        "metadata_tag": "deltaT_bin=review_high"
+      },
+      {
+        "name": "reject_high",
+        "unit": "K",
+        "range": {
+          "gt": 15.0
+        },
+        "source_ref": [
+          "SRC-HEAT3D-MEDIUM1024-2026"
+        ],
+        "source_type": "generator_qc_initial_bin",
+        "rationale": "Reject or downscale to avoid uncalibrated amplitude outliers.",
+        "metadata_tag": "deltaT_bin=reject_high"
+      }
+    ]
+  },
+  "cooling_regimes": [
+    {
+      "name": "weak_effective_air",
+      "unit": "W/m2/K",
+      "range": {
+        "min": 200.0,
+        "max": 500.0
+      },
+      "default": 300.0,
+      "literature_anchor": "BSPDN 200 W/m2/K low-HTC anchor",
+      "sampling": {
+        "type": "log_uniform_within_regime"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-LIENHARD-2024"
+      ],
+      "source_type": "literature_anchor_plus_design_envelope",
+      "rationale": "Preserve weak-cooling samples without relying on final_probe.",
+      "used_in_v4_production": true,
+      "metadata_tag": "cooling=weak_effective_air"
+    },
+    {
+      "name": "nominal_package",
+      "unit": "W/m2/K",
+      "range": {
+        "min": 500.0,
+        "max": 1500.0
+      },
+      "default": 1000.0,
+      "literature_anchor": "package-level effective cooling between BSPDN anchors",
+      "sampling": {
+        "type": "log_uniform_within_regime"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-LIENHARD-2024",
+        "SRC-HEAT3D-MEDIUM1024-2026"
+      ],
+      "source_type": "literature_anchor_plus_heat3d_reference",
+      "rationale": "Center the production distribution near a stable solver scale.",
+      "used_in_v4_production": true,
+      "metadata_tag": "cooling=nominal_package"
+    },
+    {
+      "name": "strong_forced_or_effective_heatsink",
+      "unit": "W/m2/K",
+      "range": {
+        "min": 1500.0,
+        "max": 3000.0
+      },
+      "default": 2500.0,
+      "literature_anchor": "BSPDN 2500 W/m2/K high-HTC anchor",
+      "sampling": {
+        "type": "log_uniform_within_regime"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-LIENHARD-2024"
+      ],
+      "source_type": "literature_anchor_plus_design_envelope",
+      "rationale": "Include strong cooling without turning final_probe into a hard source.",
+      "used_in_v4_production": true,
+      "metadata_tag": "cooling=strong_forced_or_effective_heatsink"
+    }
+  ],
+  "production_mix": [
+    {
+      "name": "diag3_target_fraction",
+      "unit": "fraction",
+      "range": {
+        "min": 0.2,
+        "max": 0.2
+      },
+      "default": 0.2,
+      "sampling": {
+        "type": "fixed_target_fraction"
+      },
+      "source_ref": [
+        "SRC-3DICE4-2025",
+        "SRC-HBM-MEAS-2023"
+      ],
+      "source_type": "v4_design_requirement",
+      "rationale": "Production v0 must include anisotropic samples; generator/checker must support diag3.",
+      "used_in_v4_production": true,
+      "metadata_tag": "production_mix=diag3_target_fraction"
+    },
+    {
+      "name": "q_family_uniformity",
+      "unit": "fraction",
+      "range": {
+        "min_per_active_family": 0.1
+      },
+      "default": "balanced",
+      "sampling": {
+        "type": "coverage_constraint"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "design_policy",
+      "rationale": "Avoid a dataset dominated by one hotspot topology.",
+      "used_in_v4_production": true,
+      "metadata_tag": "production_mix=q_family_uniformity"
+    },
+    {
+      "name": "cooling_regime_min_fraction",
+      "unit": "fraction",
+      "range": {
+        "min_per_regime": 0.15
+      },
+      "default": "balanced",
+      "sampling": {
+        "type": "coverage_constraint"
+      },
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-LIENHARD-2024"
+      ],
+      "source_type": "design_policy",
+      "rationale": "Guarantee weak, nominal, and strong cooling coverage.",
+      "used_in_v4_production": true,
+      "metadata_tag": "production_mix=cooling_regime_min_fraction"
+    }
+  ],
+  "background_k_policy": {
+    "name": "background_k_policy",
+    "default_family": "effective_stack_medium_k",
+    "allowed_families": [
+      "effective_stack_medium_k",
+      "silicon_like",
+      "hbm_like_anisotropic_k"
+    ],
+    "low_k_dielectric_underfill_policy": "minority_background_or_block_only_not_default_background",
+    "families": [
+      {
+        "name": "effective_stack_medium_k",
+        "reference_values_W_mK": [
+          10.0,
+          30.0,
+          60.0
+        ],
+        "reference_materials": [
+          "equivalent substrate/interposer composite",
+          "effective chiplet stack background"
+        ],
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_anchor_plus_default_background",
+        "rationale": "Default background keeps P3c v0 close to a stable effective stack while random blocks add contrast.",
+        "metadata_tag": "background_k_family=effective_stack_medium_k"
+      },
+      {
+        "name": "silicon_like",
+        "reference_values_W_mK": [
+          100.0,
+          130.0,
+          150.0
+        ],
+        "reference_materials": [
+          "silicon-like die",
+          "silicon substrate/interposer"
+        ],
+        "source_ref": [
+          "SRC-BSPDN-2025",
+          "SRC-3DICE4-2025",
+          "SRC-SAUFNO-2025"
+        ],
+        "source_type": "literature_anchor_allowed_background",
+        "rationale": "Allowed background for die-like scenes, but not the default for v0.",
+        "metadata_tag": "background_k_family=silicon_like"
+      },
+      {
+        "name": "hbm_like_anisotropic_k",
+        "reference_values_W_mK": {
+          "in_plane": [
+            100.0,
+            140.0
+          ],
+          "through_plane": [
+            7.0,
+            2.0
+          ]
+        },
+        "reference_materials": [
+          "HBM-like stacked memory"
+        ],
+        "source_ref": [
+          "SRC-HBM-MEAS-2023",
+          "SRC-3DICE4-2025"
+        ],
+        "source_type": "measurement_anchor_allowed_diag3_background",
+        "rationale": "Allowed only when diag3 arrays are active and metadata records anisotropic background.",
+        "metadata_tag": "background_k_family=hbm_like_anisotropic_k"
+      }
+    ],
+    "non_default_low_k_reference": {
+      "family": "low_k_dielectric_underfill",
+      "reference_values_W_mK": [
+        0.5,
+        1.2,
+        4.0,
+        8.0
+      ],
+      "source_ref": [
+        "SRC-BSPDN-2025",
+        "SRC-SAUFNO-2025"
+      ],
+      "source_type": "low_k_barrier_anchor_not_default_background",
+      "rationale": "Low-k materials can appear as barriers or rare/minority backgrounds but must not be the default background.",
+      "metadata_tag": "background_k_family=low_k_non_default"
+    },
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-3DICE4-2025",
+      "SRC-HBM-MEAS-2023"
+    ],
+    "source_type": "v4_design_requirement",
+    "rationale": "All nodes must receive background k before blocks are projected; low-k is not the default background.",
+    "metadata_tag": "policy=background_k"
+  },
+  "k_overlap_policy": {
+    "name": "deterministic_priority_override",
+    "initialization": "initialize_all_nodes_with_background_k",
+    "block_order": "deterministic_scene_block_order_later_blocks_override_earlier_blocks",
+    "node_value_policy": "each_node_keeps_final_k_only",
+    "projection": "continuous_semantic_bbox_overlap",
+    "material_claim_threshold": 0.2,
+    "metadata_fields": [
+      "background_k_family",
+      "background_k_value",
+      "covered_by_blocks",
+      "winning_block_id",
+      "winning_block_overlap_fraction"
+    ],
+    "forbidden_default_merge": "arithmetic_mean",
+    "source_ref": [
+      "SRC-3DICE4-2025"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "Generator defaults must preserve deterministic material ownership rather than averaging overlapping k blocks.",
+    "metadata_tag": "policy=k_overlap_deterministic_priority_override"
+  },
+  "q_overlap_policy": {
+    "name": "sum_volumetric_sources",
+    "cell_merge": "sum",
+    "projection": "continuous_semantic_bbox_overlap_fraction",
+    "q_source_policy": "semantic_boundary_inset_5pct_solver_safe_deposition",
+    "forbidden_default_merge": "max_pooling",
+    "metadata_fields": [
+      "contributing_q_blocks",
+      "contributing_q_overlap_fractions",
+      "summed_q_density_W_m3"
+    ],
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-SAUFNO-2025"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "Overlapping heat sources are additive volumetric power sources; max pooling is only a legacy duplicate-node extraction rule.",
+    "metadata_tag": "policy=q_overlap_sum_volumetric_sources"
+  },
+  "power_calibration_policy": {
+    "name": "calibrate_q_density_from_realized_volume_and_integrated_power_target",
+    "integration": "solver_control_volume_weighted",
+    "method": "calibrated_q_density_W_m3 = target_power_W / sum(deposited_overlap_fraction_i * solver_control_volume_i)",
+    "required_metadata_fields": [
+      "target_power_W",
+      "realized_volume_m3",
+      "calibrated_q_density_W_m3",
+      "realized_power_W",
+      "power_error_W",
+      "power_integration_policy"
+    ],
+    "relative_tolerance": 1e-12,
+    "absolute_tolerance_W": 1e-12,
+    "source_ref": [
+      "SRC-BSPDN-2025",
+      "SRC-HEAT3D-MEDIUM1024-2026"
+    ],
+    "source_type": "generator_contract",
+    "rationale": "Realized block projection changes volume, so q density must be calibrated after projection using the same control-volume weights consumed by the solver.",
+    "metadata_tag": "policy=power_calibration_solver_control_volume"
+  }
+}

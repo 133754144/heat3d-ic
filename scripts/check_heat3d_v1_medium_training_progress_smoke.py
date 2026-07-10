@@ -15,6 +15,7 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 import run_heat3d_v1_medium_controlled_training_export as runner  # noqa: E402
+import run_heat3d_v4_controlled_training as v4_runner  # noqa: E402
 
 
 def _parse(argv: list[str]):
@@ -65,6 +66,31 @@ def main() -> int:
             log_mode="compact",
         )
 
+    v4_buffer = io.StringIO()
+    v4_runner._install_profile_hooks(
+        v4_runner.DEFAULT_NORMALIZATION_PROFILE,
+        v4_runner.DEFAULT_CONDITION_FEATURE_TRANSFORM,
+        v4_runner.DEFAULT_INPUT_FEATURE_SCHEMA,
+        v4_runner.DEFAULT_COORD_POLICY,
+        v4_runner.DEFAULT_EXTENT_FEATURE_POLICY,
+    )
+    with contextlib.redirect_stdout(v4_buffer):
+        runner._print_epoch_progress(
+            {
+                "epoch": 1,
+                "lr": 1.0e-3,
+                "train_loss": 1.0,
+                "valid_loss": 2.0,
+                "valid_base_mse": 3.0,
+                "valid_raw_rmse_K": 2.0,
+                "valid_rel_rmse_v4_pct": 25.0,
+                "best_epoch": 1,
+                "best_valid_iid_loss": 2.0,
+            },
+            epochs=2,
+            log_mode="compact",
+        )
+
     best_payload = runner._best_selection_payload(
         {
             "selection_metric": "valid_raw_deltaT_mse",
@@ -101,7 +127,15 @@ def main() -> int:
         "startup_line_printed": "[startup] loading dataset from fake_subset ..." in output,
         "elapsed_printed": "elapsed=" in output,
         "disabled_line_suppressed": "this should not print" not in output,
-        "compact_epoch_printed": "epoch 001/002" in output and "valid_bg_bias=" in output,
+        "legacy_compact_stress_placeholders_preserved": (
+            "epoch 1/2" in output
+            and "stress=skipped" in output
+            and "stress_raw_rmse_K=skipped" in output
+        ),
+        "v4_compact_stress_placeholders_suppressed": (
+            "stress=" not in v4_buffer.getvalue()
+            and "stress_raw_rmse_K=" not in v4_buffer.getvalue()
+        ),
     }
     ok = all(checks.values())
     print("Heat3D v1 medium training progress logging smoke")

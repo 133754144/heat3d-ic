@@ -1,0 +1,47 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P3_08
+extends: ../V4_base.yaml
+overrides:
+  description: Heat3D V4 registry config V4P3_08; standard task coords+k(x)+q(x)+BC->T(x);
+    generated from V4_base.yaml.
+  model:
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    decoder_bypass_residual_scale: 0.5
+  dataset:
+    name: heat3d_v4_p3c_candidate1024_v0
+    subset_path: data/heat3d_v4_p3c_candidate1024_v0
+    manifest_path: data/heat3d_v4_p3c_candidate1024_v0/manifest.json
+    split_map_path: configs/heat3d_v4/candidate1024_v0_train768_valid128_test128_stratified_seed0.json
+    normalization_profile: semantic_normalization_v1
+    coord_policy: sample_local_isotropic
+    extent_feature_policy: log_extent_broadcast
+    condition_feature_transform: semantic_v1_bc_flags_binary_passthrough_only
+  run:
+    batch_size: 32
+    validation_batch_size: 128
+    prediction_batch_size: 128
+    final_probe_output_dir: output/heat3d_v4_final_probe/V4P3_08
+    post_training_diagnostics_output_dir: output/heat3d_v4_post_training_diagnostics/V4P3_08
+  export:
+    output_dir: output/heat3d_v4_runs/V4P3_08
+    run_name: V4P3_08
+  metadata:
+    registry_config_id: V4P3_08
+    registry_status: registered
+    standard_task: coords+k(x)+q(x)+BC->T(x)
+    variant_label: V4P3_08
+    batch_policy_label: B32_sample_shuffle
+    optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+    runner_family: v4_controlled_semantic_wrapper
+    normalization_profile: semantic_normalization_v1
+    coord_policy: sample_local_isotropic
+    extent_feature_policy: log_extent_broadcast
+    condition_feature_transform: semantic_v1_bc_flags_binary_passthrough_only
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: full_condition
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v4_logs/V4P3_08.log
+    notes: 'V4P3_08 is the B32 memory-optimized V4P3_05 comparator for WSL2: sample_local_isotropic
+      plus log extent and decoder bypass are kept, while boundary_distance_replacement
+      is not used.'

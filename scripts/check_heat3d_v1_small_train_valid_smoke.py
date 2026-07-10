@@ -14,6 +14,17 @@ if str(REPO_DIR) not in sys.path:
     sys.path.insert(0, str(REPO_DIR))
 
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
+from rigno.heat3d_v1_normalization import (
+    legacy_train_only_stats as _train_only_stats,
+    normalize_condition,
+    normalize_coords as _normalize_coords,
+    normalize_target_delta,
+    normalized_delta_to_raw,
+    recover_temperature_from_normalized_delta,
+)
+from rigno.heat3d_v1_training_semantics import (
+    build_legacy_zero_delta_bridge as _bridge_for,
+)
 from rigno.heat3d_v1_schema import find_sample_dirs, load_sample_meta
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset
 from rigno.models.operator import Inputs
@@ -28,7 +39,6 @@ DEFAULT_SUBSET = (
     / "subsets"
     / "v1_multilayer_bc_eq_supervised_small"
 )
-EPS = 1e-8
 MODEL_CONFIG = {
     "num_outputs": 1,
     "processor_steps": 2,
@@ -136,58 +146,6 @@ def _metadata_shape_signature(metadata) -> tuple[tuple[int, ...], ...]:
     )
 
 
-def _bridge_for(example):
-    return example.build_temperature_rise_legacy_inputs_from_relative_features(
-        bridge_policy="zero_delta_u_bridge"
-    )
-
-
-def _safe_stats(array: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    mean = np.mean(array, axis=0, keepdims=True)
-    std = np.std(array, axis=0, keepdims=True)
-    return mean, np.where(std < EPS, 1.0, std)
-
-
-def _train_only_stats(examples) -> dict:
-    c_values = []
-    delta_values = []
-    coord_values = []
-    feature_names = None
-    for example in examples:
-        bridge = _bridge_for(example)
-        names = bridge.condition_feature_names
-        if feature_names is None:
-            feature_names = names
-        elif feature_names != names:
-            raise ValueError("Relative condition feature-name mismatch in train split")
-
-        c_values.append(np.asarray(bridge.legacy_inputs.c).reshape(-1, len(names)))
-        delta_values.append(np.asarray(bridge.target_delta_u).reshape(-1, 1))
-        coord_values.append(np.asarray(bridge.legacy_inputs.x_inp).reshape(-1, 3))
-
-    c_all = np.concatenate(c_values, axis=0)
-    delta_all = np.concatenate(delta_values, axis=0)
-    coord_all = np.concatenate(coord_values, axis=0)
-    c_mean, c_std = _safe_stats(c_all)
-    delta_mean, delta_std = _safe_stats(delta_all)
-    coord_min = np.min(coord_all, axis=0, keepdims=True)
-    coord_max = np.max(coord_all, axis=0, keepdims=True)
-    coord_span = np.where((coord_max - coord_min) < EPS, 1.0, coord_max - coord_min)
-    return {
-        "feature_names": tuple(feature_names or ()),
-        "condition_mean": c_mean.reshape(1, 1, 1, -1),
-        "condition_std": c_std.reshape(1, 1, 1, -1),
-        "target_delta_mean": delta_mean.reshape(1, 1, 1, 1),
-        "target_delta_std": delta_std.reshape(1, 1, 1, 1),
-        "coord_min": coord_min.reshape(1, 1, 1, 3),
-        "coord_span": coord_span.reshape(1, 1, 1, 3),
-    }
-
-
-def _normalize_coords(coords, stats: dict):
-    return 2.0 * ((coords - stats["coord_min"]) / stats["coord_span"]) - 1.0
-
-
 def _build_batch_metadata(builder: Heat3DGraphBuilder, coords_list: list[np.ndarray]):
     metadata_list = [builder.build_metadata(coords) for coords in coords_list]
     same_coords = all(np.array_equal(coords_list[0], coords) for coords in coords_list[1:])
@@ -212,8 +170,8 @@ def _make_batch_group(group_name: str, examples, stats: dict, builder: Heat3DGra
     target_delta = jnp.concatenate([bridge.target_delta_u for bridge in bridges], axis=0)
     t_ref = jnp.concatenate([bridge.t_ref for bridge in bridges], axis=0)
 
-    c = (raw_c - stats["condition_mean"]) / stats["condition_std"]
-    target = (target_delta - stats["target_delta_mean"]) / stats["target_delta_std"]
+    c = normalize_condition(raw_c, stats)
+    target = normalize_target_delta(target_delta, stats)
     coords = _normalize_coords(raw_coords, stats)
     inputs = Inputs(u=raw_u, c=c, x_inp=coords, x_out=coords, t=None, tau=None)
     metadata, shared = _build_batch_metadata(
@@ -283,8 +241,8 @@ def _metrics(model, params, groups: list[dict], stats: dict) -> dict:
     for group in groups:
         pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
         normalized_losses.append(jnp.mean(jnp.square(pred_normalized - group["target_normalized"])))
-        pred_delta = pred_normalized * stats["target_delta_std"] + stats["target_delta_mean"]
-        recovered = group["t_ref"] + pred_delta
+        pred_delta = normalized_delta_to_raw(pred_normalized, stats)
+        recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         raw_delta_mses.append(jnp.mean(jnp.square(pred_delta - group["target_delta_raw"])))
         recovered_mses.append(jnp.mean(jnp.square(recovered - group["target_temperature"])))
         finite_ok = (

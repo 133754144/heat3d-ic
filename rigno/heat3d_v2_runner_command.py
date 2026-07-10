@@ -16,6 +16,47 @@ from rigno.heat3d_v2_config import validate_v2_config
 
 
 TRAINING_SCRIPT = "scripts/run_heat3d_v1_medium_controlled_training_export.py"
+V4_TRAINING_SCRIPT = "scripts/run_heat3d_v4_controlled_training.py"
+NORMALIZATION_PROFILE_LEGACY_ZSCORE = "legacy_zscore"
+NORMALIZATION_PROFILE_SEMANTIC_V1 = "semantic_normalization_v1"
+NORMALIZATION_PROFILES = {
+    NORMALIZATION_PROFILE_LEGACY_ZSCORE,
+    NORMALIZATION_PROFILE_SEMANTIC_V1,
+}
+INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS = "legacy_bc_flags"
+INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT = "boundary_distance_replacement"
+INPUT_FEATURE_SCHEMAS = {
+    INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS,
+    INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT,
+}
+COORD_POLICY_TRAIN_MINMAX_UNIT_BOX = "train_minmax_to_unit_box"
+COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC = "sample_local_isotropic"
+COORD_POLICIES = {
+    COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
+}
+EXTENT_FEATURE_POLICY_NONE = "none"
+EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST = "log_extent_broadcast"
+EXTENT_FEATURE_POLICIES = {
+    EXTENT_FEATURE_POLICY_NONE,
+    EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST,
+}
+CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE = "legacy_zscore_all_condition_features"
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL = (
+    "semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars"
+)
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY = (
+    "semantic_v1_bc_flags_binary_passthrough_only"
+)
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY = "semantic_v1_q_signedlog1p_only"
+CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY = "semantic_v1_k_log_only"
+CONDITION_FEATURE_TRANSFORMS = {
+    CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_BC_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_Q_ONLY,
+    CONDITION_FEATURE_TRANSFORM_SEMANTIC_K_ONLY,
+}
 DEFAULT_MEDIUM1024_GAPA_SPLIT_MAP = (
     "configs/heat3d_v2/medium1024_gapA_stratified_split_seed0.json"
 )
@@ -50,19 +91,59 @@ def build_training_command(
     graph_section = config.get("graph")
     graph = graph_section if isinstance(graph_section, Mapping) else {}
 
-    command = [python_executable, TRAINING_SCRIPT]
+    normalization_profile = _normalization_profile(config)
+    condition_feature_transform = _condition_feature_transform(config)
+    input_feature_schema = _input_feature_schema(config)
+    coord_policy = _coord_policy(config)
+    extent_feature_policy = _extent_feature_policy(config)
+    command = [python_executable, _training_script_for_config(config)]
+    if _requires_v4_training_wrapper(config):
+        _append_option(command, "--normalization-profile", normalization_profile)
+        _append_option(
+            command,
+            "--condition-feature-transform",
+            condition_feature_transform,
+        )
+        _append_option(command, "--input-feature-schema", input_feature_schema)
+        _append_option(command, "--coord-policy", coord_policy)
+        _append_option(command, "--extent-feature-policy", extent_feature_policy)
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
     if dataset.get("boundary_mask_fallback") is True:
         command.append("--boundary-mask-fallback")
     elif dataset.get("boundary_mask_fallback") is False:
         command.append("--no-boundary-mask-fallback")
+    _append_option(
+        command,
+        "--node-coordinate-encoding",
+        graph.get("node_coordinate_encoding"),
+    )
+    _append_option(command, "--node-coordinate-freqs", graph.get("node_coordinate_freqs"))
     _append_option(command, "--epochs", run.get("epochs"))
     _append_option(command, "--node-latent-size", model.get("node_latent_size"))
     _append_option(command, "--edge-latent-size", model.get("edge_latent_size"))
     _append_option(command, "--processor-steps", model.get("processor_steps"))
     _append_option(command, "--mlp-hidden-layers", model.get("mlp_hidden_layers"))
     _append_option(command, "--p-edge-masking", model.get("p_edge_masking"))
+    _append_option(command, "--decoder-bypass-mode", model.get("decoder_bypass_mode"))
+    _append_option(command, "--decoder-bypass-features", model.get("decoder_bypass_features"))
+    _append_option(
+        command,
+        "--decoder-bypass-feature-source",
+        model.get("decoder_bypass_feature_source"),
+    )
+    _append_option(
+        command,
+        "--decoder-bypass-hidden-size",
+        model.get("decoder_bypass_hidden_size"),
+    )
+    _append_option(command, "--decoder-bypass-layers", model.get("decoder_bypass_layers"))
+    _append_option(command, "--decoder-bypass-init", model.get("decoder_bypass_init"))
+    _append_option(
+        command,
+        "--decoder-bypass-residual-scale",
+        model.get("decoder_bypass_residual_scale"),
+    )
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
@@ -226,6 +307,7 @@ def build_baseline_comparison_command(
         COMPARISON_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--output-json",
@@ -256,6 +338,7 @@ def build_error_bins_command(
         ERROR_BINS_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--output-json",
@@ -330,6 +413,7 @@ def build_condition_diagnostics_command(
         CONDITION_DIAGNOSTICS_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--output-json",
@@ -366,6 +450,7 @@ def build_field_shape_diagnostics_command(
         FIELD_SHAPE_DIAGNOSTICS_SCRIPT,
         "--subset",
         _stringify(dataset.get("subset_path")),
+        *_split_map_args_for_dataset(dataset),
         "--trained-predictions",
         predictions_path,
         "--prediction-label",
@@ -390,12 +475,30 @@ def build_v2_command_plan(
     role = config.get("config_role")
     if role == "baseline_reference":
         raise ValueError("baseline_reference configs do not map to runner commands")
+    model = _section(config, "model")
+    dataset = _section(config, "dataset")
+    graph_section = config.get("graph")
+    graph = graph_section if isinstance(graph_section, Mapping) else {}
 
     plan: dict[str, Any] = {
         "config_name": _config_name(config),
         "config_role": role,
         "training_command": build_training_command(
             config, python_executable=python_executable
+        ),
+        "normalization_profile": _normalization_profile(config),
+        "input_feature_schema": _input_feature_schema(config),
+        "coord_policy": _coord_policy(config),
+        "extent_feature_policy": _extent_feature_policy(config),
+        "condition_feature_transform": _condition_feature_transform(config),
+        "split_map_path": _split_map_path_for_dataset(dataset),
+        "training_script": _training_script_for_config(config),
+        "node_coordinate_encoding": graph.get("node_coordinate_encoding", "raw"),
+        "node_coordinate_freqs": graph.get("node_coordinate_freqs", 4),
+        "decoder_bypass_mode": model.get("decoder_bypass_mode", "none"),
+        "decoder_bypass_features": model.get("decoder_bypass_features", "none"),
+        "decoder_bypass_feature_source": model.get(
+            "decoder_bypass_feature_source", "normalized_c"
         ),
         "diagnostics_commands": [],
         "mapped_fields": _mapped_fields(config),
@@ -483,6 +586,18 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
     lines = [
         f"config: {plan.get('config_name')}",
         f"role: {plan.get('config_role')}",
+        f"normalization_profile: {plan.get('normalization_profile')}",
+        f"input_feature_schema: {plan.get('input_feature_schema')}",
+        f"coord_policy: {plan.get('coord_policy')}",
+        f"extent_feature_policy: {plan.get('extent_feature_policy')}",
+        f"condition_feature_transform: {plan.get('condition_feature_transform')}",
+        f"split_map_path: {plan.get('split_map_path')}",
+        f"node_coordinate_encoding: {plan.get('node_coordinate_encoding')}",
+        f"node_coordinate_freqs: {plan.get('node_coordinate_freqs')}",
+        f"decoder_bypass_mode: {plan.get('decoder_bypass_mode')}",
+        f"decoder_bypass_features: {plan.get('decoder_bypass_features')}",
+        f"decoder_bypass_feature_source: {plan.get('decoder_bypass_feature_source')}",
+        f"training_script: {plan.get('training_script')}",
         f"training: {shlex.join(plan['training_command'])}",
     ]
     diagnostics_commands = plan.get("diagnostics_commands", [])
@@ -512,11 +627,32 @@ def _diagnostic_entry(kind: str, prediction_label: str, command: list[str]) -> d
 def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
     mappings = [
         ("dataset.subset_path", "training --subset"),
+        ("dataset.split_map_path", "training/diagnostics --split-map"),
         ("dataset.boundary_mask_fallback", "training --boundary-mask-fallback/--no-boundary-mask-fallback"),
+        ("dataset.normalization_profile", "training script selection and optional --normalization-profile"),
+        ("dataset.condition_feature_transform", "V4 training --condition-feature-transform"),
+        ("dataset.input_feature_schema", "V4 training --input-feature-schema"),
+        ("dataset.coord_policy", "V4 training --coord-policy"),
+        ("dataset.extent_feature_policy", "V4 training --extent-feature-policy"),
+        ("graph.node_coordinate_encoding", "training --node-coordinate-encoding"),
+        ("graph.node_coordinate_freqs", "training --node-coordinate-freqs"),
         ("model.node_latent_size", "training --node-latent-size"),
         ("model.edge_latent_size", "training --edge-latent-size"),
         ("model.processor_steps", "training --processor-steps"),
         ("model.mlp_hidden_layers", "training --mlp-hidden-layers"),
+        ("model.decoder_bypass_mode", "training --decoder-bypass-mode"),
+        ("model.decoder_bypass_features", "training --decoder-bypass-features"),
+        (
+            "model.decoder_bypass_feature_source",
+            "training --decoder-bypass-feature-source",
+        ),
+        ("model.decoder_bypass_hidden_size", "training --decoder-bypass-hidden-size"),
+        ("model.decoder_bypass_layers", "training --decoder-bypass-layers"),
+        ("model.decoder_bypass_init", "training --decoder-bypass-init"),
+        (
+            "model.decoder_bypass_residual_scale",
+            "training --decoder-bypass-residual-scale",
+        ),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
         ("run.train_metrics_schedule", "training --train-metrics-schedule"),
@@ -705,6 +841,103 @@ def _unmapped_reason(field: str) -> str:
     return "not mapped to current v1 CLI."
 
 
+def _normalization_profile(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    profile = dataset.get("normalization_profile") or NORMALIZATION_PROFILE_LEGACY_ZSCORE
+    if profile not in NORMALIZATION_PROFILES:
+        raise ValueError(
+            f"dataset.normalization_profile must be one of {sorted(NORMALIZATION_PROFILES)}, "
+            f"got {profile!r}"
+        )
+    return str(profile)
+
+
+def _condition_feature_transform(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    profile = _normalization_profile(config)
+    default = (
+        CONDITION_FEATURE_TRANSFORM_SEMANTIC_FULL
+        if profile == NORMALIZATION_PROFILE_SEMANTIC_V1
+        else CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+    )
+    transform = dataset.get("condition_feature_transform") or default
+    if transform not in CONDITION_FEATURE_TRANSFORMS:
+        raise ValueError(
+            "dataset.condition_feature_transform must be one of "
+            f"{sorted(CONDITION_FEATURE_TRANSFORMS)}, got {transform!r}"
+        )
+    if (
+        profile == NORMALIZATION_PROFILE_LEGACY_ZSCORE
+        and transform != CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+    ):
+        raise ValueError(
+            "legacy_zscore requires dataset.condition_feature_transform="
+            f"{CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE!r}"
+        )
+    if (
+        profile == NORMALIZATION_PROFILE_SEMANTIC_V1
+        and transform == CONDITION_FEATURE_TRANSFORM_LEGACY_ZSCORE
+    ):
+        raise ValueError(
+            "semantic_normalization_v1 requires a semantic "
+            f"condition_feature_transform, got {transform!r}"
+        )
+    return str(transform)
+
+
+def _input_feature_schema(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    value = dataset.get("input_feature_schema") or INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS
+    if value not in INPUT_FEATURE_SCHEMAS:
+        raise ValueError(
+            f"dataset.input_feature_schema must be one of {sorted(INPUT_FEATURE_SCHEMAS)}, "
+            f"got {value!r}"
+        )
+    return str(value)
+
+
+def _coord_policy(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    value = dataset.get("coord_policy") or COORD_POLICY_TRAIN_MINMAX_UNIT_BOX
+    if value not in COORD_POLICIES:
+        raise ValueError(
+            f"dataset.coord_policy must be one of {sorted(COORD_POLICIES)}, got {value!r}"
+        )
+    return str(value)
+
+
+def _extent_feature_policy(config: Mapping[str, Any]) -> str:
+    dataset = _section(config, "dataset")
+    value = dataset.get("extent_feature_policy") or EXTENT_FEATURE_POLICY_NONE
+    if value not in EXTENT_FEATURE_POLICIES:
+        raise ValueError(
+            "dataset.extent_feature_policy must be one of "
+            f"{sorted(EXTENT_FEATURE_POLICIES)}, got {value!r}"
+        )
+    return str(value)
+
+
+def _requires_v4_training_wrapper(config: Mapping[str, Any]) -> bool:
+    return (
+        _normalization_profile(config) == NORMALIZATION_PROFILE_SEMANTIC_V1
+        or _input_feature_schema(config) != INPUT_FEATURE_SCHEMA_LEGACY_BC_FLAGS
+        or _coord_policy(config) != COORD_POLICY_TRAIN_MINMAX_UNIT_BOX
+        or _extent_feature_policy(config) != EXTENT_FEATURE_POLICY_NONE
+    )
+
+
+def _training_script_for_config(config: Mapping[str, Any]) -> str:
+    if _requires_v4_training_wrapper(config):
+        return V4_TRAINING_SCRIPT
+    return TRAINING_SCRIPT
+
+
+def _training_script_for_profile(normalization_profile: str) -> str:
+    if normalization_profile == NORMALIZATION_PROFILE_SEMANTIC_V1:
+        return V4_TRAINING_SCRIPT
+    return TRAINING_SCRIPT
+
+
 def _prediction_labels(config: Mapping[str, Any]) -> list[str]:
     diagnostics = _section(config, "diagnostics")
     raw_labels = diagnostics.get("prediction_labels") or []
@@ -785,6 +1018,13 @@ def _split_map_path_for_dataset(dataset: Mapping[str, Any]) -> Any:
     if _is_medium1024_gapA_dataset(dataset):
         return DEFAULT_MEDIUM1024_GAPA_SPLIT_MAP
     return None
+
+
+def _split_map_args_for_dataset(dataset: Mapping[str, Any]) -> list[str]:
+    split_map_path = _split_map_path_for_dataset(dataset)
+    if not split_map_path:
+        return []
+    return ["--split-map", _stringify(split_map_path)]
 
 
 def _is_medium1024_gapA_dataset(dataset: Mapping[str, Any]) -> bool:

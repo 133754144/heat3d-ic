@@ -1,0 +1,156 @@
+{
+  "schema_version": "heat3d_v4_metrics_contract_v0",
+  "metrics_profile": "v4_metrics_v0",
+  "default_checkpoint_selection_metric": "valid_base_mse",
+  "checkpoint_selection": {
+    "allowed_selection_metrics": [
+      "valid_base_mse"
+    ],
+    "rule": "lower_is_better",
+    "space": "normalized_deltaT",
+    "notes": "Checkpoint selection uses normalized validation base MSE by default; diagnostic or raw-scale metrics do not replace it."
+  },
+  "aggregation": {
+    "per_sample_first": true,
+    "split_group_summaries": [
+      "mean",
+      "median",
+      "std"
+    ],
+    "principle": "Compute metric values per sample first, then aggregate by split or group. Do not replace cross-sample statistics with one global flattened error.",
+    "forbidden": [
+      "global_flatten_only"
+    ]
+  },
+  "result_source_mapping": {
+    "result_corr_iid": {
+      "metric": "centered_spatial_correlation",
+      "split": "valid_iid",
+      "source": "field_shape_diagnostics"
+    },
+    "result_corr_stress": {
+      "metric": "centered_spatial_correlation",
+      "split": "valid_stress",
+      "source": "field_shape_diagnostics"
+    },
+    "result_amp": {
+      "metric": "amplitude_ratio",
+      "split": "valid_iid",
+      "source": "field_shape_diagnostics"
+    },
+    "result_amp_stress": {
+      "metric": "amplitude_ratio",
+      "split": "valid_stress",
+      "source": "field_shape_diagnostics"
+    },
+    "result_valid_iid_topk": {
+      "metric": "top_k_overlap",
+      "split": "valid_iid",
+      "source": "field_shape_diagnostics"
+    },
+    "result_valid_stress_topk": {
+      "metric": "top_k_overlap",
+      "split": "valid_stress",
+      "source": "field_shape_diagnostics"
+    },
+    "result_bin0_over": {
+      "metric": "bin_0_over_ratio",
+      "source": "condition_or_split_aware_diagnostics"
+    },
+    "result_le005_over": {
+      "metric": "le_0p05_over_ratio",
+      "source": "split_aware_diagnostics"
+    },
+    "result_final_probe_relrmse": {
+      "metric": "final_probe_relRMSE_DeltaT",
+      "source": "final_probe_metrics"
+    }
+  },
+  "metric_groups": [
+    {
+      "group": "selection",
+      "usage": "checkpoint_selection",
+      "metrics": [
+        "valid_base_mse"
+      ]
+    },
+    {
+      "group": "overall_model_performance",
+      "usage": "report_model_performance",
+      "metrics": [
+        "mse",
+        "rmse",
+        "mae"
+      ]
+    },
+    {
+      "group": "scalar_splits",
+      "usage": "report_split_behavior_only",
+      "metrics": [
+        "valid_iid_base_mse",
+        "valid_stress_base_mse",
+        "iid_err_pct",
+        "stress_err_pct",
+        "best_epoch",
+        "final_epoch"
+      ]
+    },
+    {
+      "group": "raw_deltaT",
+      "usage": "report_raw_physical_scale_only",
+      "metrics": [
+        "raw_deltaT_mse",
+        "raw_deltaT_rmse",
+        "raw_deltaT_mae",
+        "zscore_rmse"
+      ]
+    },
+    {
+      "group": "final_probe_ood",
+      "usage": "report_or_diagnose_generalization_only",
+      "metrics": [
+        "final_probe_relRMSE_DeltaT",
+        "final_probe_Tmax_error",
+        "ood_split_mse",
+        "ood_split_rmse",
+        "ood_split_mae"
+      ]
+    },
+    {
+      "group": "region_hotspot",
+      "usage": "report_or_diagnose_local_error_only",
+      "metrics": [
+        "q_region_RMSE",
+        "strong_q_RMSE",
+        "hotspot_RMSE",
+        "top_5_percent_RMSE",
+        "top_10_percent_RMSE",
+        "background_region_RMSE"
+      ]
+    },
+    {
+      "group": "low_deltaT_background",
+      "usage": "diagnose_background_overprediction_only",
+      "metrics": [
+        "bin_0_signed_bias",
+        "bin_0_over_ratio",
+        "le_0p05_signed_bias",
+        "le_0p05_over_ratio"
+      ]
+    },
+    {
+      "group": "diagnostic",
+      "usage": "diagnose_mechanism_only",
+      "metrics": [
+        "field_variance_ratio",
+        "centered_spatial_correlation",
+        "amplitude_ratio",
+        "peak_abs_error",
+        "peak_rel_error",
+        "top_k_overlap",
+        "graph_physical_coverage",
+        "coverage_repair_count"
+      ]
+    }
+  ]
+}
