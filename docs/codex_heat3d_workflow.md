@@ -22,6 +22,15 @@ Connect to the target server:
 ```bash
 ssh devbox
 # Or: ssh wsl2
+conda activate rigno
+```
+
+If `conda` is not available in the SSH session, initialize it and activate the
+environment before running any other project command:
+
+```bash
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate rigno
 ```
 
 On the server, verify the checkout before updating it. Do not pull when
@@ -47,14 +56,10 @@ git rev-parse --short HEAD
 git status --short
 ```
 
-Initialize and verify the Heat3D Python environment:
+Verify the active Heat3D Python environment:
 
 ```bash
-source ~/miniconda3/etc/profile.d/conda.sh
-conda activate rigno
 python --version
-python -c "import jax; print(jax.devices())"
-command -v nvidia-smi >/dev/null && nvidia-smi || echo "nvidia-smi not in PATH"
 ```
 
 For a non-interactive SSH command, initialize conda in the same remote shell:
@@ -73,5 +78,3 @@ ssh devbox 'source ~/miniconda3/etc/profile.d/conda.sh && conda activate rigno &
   and use `python` from that environment rather than assuming `python3` exists.
 - The server shows an unexpected branch or commit: inspect `git status --short`
   first, then use the clean-worktree update sequence above.
-- `jax.devices()` has no GPU: this can be normal on WSL-backed servers; record
-  the result and do not infer CUDA availability from `nvidia-smi` alone.
