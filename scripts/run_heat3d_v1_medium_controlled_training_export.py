@@ -74,6 +74,9 @@ RUNNER_MODEL_CONFIG = {
     "processor_steps": 6,
     "mlp_hidden_layers": 2,
 }
+
+# The V4 wrapper enables this for compact logs when no stress split is defined.
+HIDE_MISSING_STRESS_COMPACT_LOG = False
 DECODER_BYPASS_MODE_NONE = "none"
 DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL = "post_decoder_residual"
 DECODER_BYPASS_MODES = (
@@ -2928,6 +2931,12 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             record.get("valid_iid_error_pct"),
             record.get("valid_error_pct"),
         )
+        stress_progress = ""
+        if not HIDE_MISSING_STRESS_COMPACT_LOG or record.get("valid_stress_loss") is not None:
+            stress_progress = (
+                f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
+                f"stress_raw_rmse_K={_format_progress_sigfig_decimal(record.get('valid_stress_raw_rmse_K'))} "
+            )
         _emit(
             f"epoch {record['epoch']}/{epochs} "
             f"lr={record['lr']:.2e} "
@@ -2935,8 +2944,7 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
             f"valid={_format_progress_loss(valid_iid_loss)} "
             f"raw_rmse_K={_format_progress_sigfig_decimal(valid_raw_rmse)} "
             f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)} "
-            f"stress={_format_progress_loss(record.get('valid_stress_loss'))} "
-            f"stress_raw_rmse_K={_format_progress_sigfig_decimal(record.get('valid_stress_raw_rmse_K'))} "
+            f"{stress_progress}"
             f"best=e{_format_progress_int(record.get('best_epoch'))}/"
             f"{_format_progress_loss(record.get('best_valid_iid_loss'))}"
         )

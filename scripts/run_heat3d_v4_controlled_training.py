@@ -183,6 +183,7 @@ def _install_profile_hooks(
     coord_policy: str,
     extent_feature_policy: str,
 ) -> None:
+    legacy_runner.HIDE_MISSING_STRESS_COMPACT_LOG = True
     if (
         profile == NORMALIZATION_PROFILE_LEGACY_ZSCORE
         and input_feature_schema == DEFAULT_INPUT_FEATURE_SCHEMA
