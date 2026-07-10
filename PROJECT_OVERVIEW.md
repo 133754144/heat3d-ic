@@ -1,85 +1,117 @@
 # Heat3D-IC Project Overview
 
-Heat3D-IC is a research codebase for steady 3D thermal field prediction with
-graph neural operators. The current public version focuses on a simplified
-synthetic setting and provides the minimum runnable workflow needed to support
-future extensions.
+Heat3D-IC adapts a graph neural operator workflow to steady thermal fields in
+synthetic multilayer 3D IC-like structures. V4 closes with a frozen clean-IID
+baseline, an explicit hard-challenge protocol, and a documented negative
+Fourier ablation. The project remains a research codebase, not a thermal
+signoff or deployment system.
 
-## Problem Setting
+For the public entry points and compact baseline table, see
+[README.md](README.md). For exact V4P5 best/final metrics, see
+[docs/v4_closeout.md](docs/v4_closeout.md).
 
-The current supervised learning task is:
+## Phase Evolution
+
+| phase | contribution | current relevance |
+| --- | --- | --- |
+| V0 | established the inherited Heat3D execution path and legacy input bridge | historical compatibility evidence |
+| V1 | audited training semantics, normalization, target recovery, and feature provenance | foundation for controlled V4 runs |
+| V2 | formalized metric, graph, batch, and split diagnostics | retained audit methods |
+| V3 | expanded controlled training comparisons and final-probe analysis | historical baseline context |
+| V4 | introduced registry-driven controls, semantic normalization, formal candidate/P5 splits, split-aware diagnostics, and P5 clean/hard evaluation | current closed stage |
+
+## Current V4 Task
 
 ```text
-[k(x), q(x)] -> T(x)
+[k(x), q(x), boundary conditions, geometry/extent features]
+    -> steady DeltaT(x) / T(x)
 ```
 
-where:
+The standard model statement remains:
 
-- `k(x)` is the thermal conductivity field,
-- `q(x)` is the localized heat source field,
-- `T(x)` is the steady temperature field,
-- `x` is a 3D coordinate on a fixed UnitCube point cloud.
+```text
+coords + k(x) + q(x) + BC -> T(x)
+```
 
-The first public dataset is prototype synthetic data. It is suitable for
-checking feasibility and execution flow, but it is not intended to represent a
-complete final 3D IC/chiplet/package thermal dataset.
+`k(x)`, `q(x)`, and boundary conditions are active model inputs. Geometry and
+extent information is represented through the active coordinate and condition
+policies. Layer-stack, interface, layer-ID, region-ID, and material-ID metadata
+support dataset generation and evaluation grouping; they are not standard
+default model-input features.
 
-## Current Workflow
+## P5 Dataset And Split
 
-The public workflow is:
+V4 closes on the ignored local dataset
+`data/heat3d_v4_p5_clean_nohard_v0` and its tracked split map:
 
-1. Generate or download `dataset_3d_heat/`.
-2. Inspect local Heat3D sample loading:
-   `scripts/inspect_heat3d_dataset.py`.
-3. Verify batched graph construction:
-   `scripts/check_heat3d_batch_graphs.py`.
-4. Train a steady graph neural operator:
-   `scripts/train_heat3d_operator.py`.
-5. Reload the checkpoint and evaluate the stored split:
-   `scripts/evaluate_heat3d_operator.py`.
+`configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json`.
 
-The supporting implementation includes a Heat3D dataset adapter, a 3D graph
-builder wrapper, and a Heat3D training/evaluation pipeline. Upstream inheritance
-and license obligations are documented separately in `ATTRIBUTION.md`.
+- clean training/validation/test: 672 / 128 / 128;
+- hard train holdout/challenge validation/challenge test: 121 / 12 / 12;
+- clean roles contain no `physical_hard_keep` samples;
+- all-IID is a reporting union, never a replacement training split.
 
-## Main Technical Contributions In This Repository
+The P5 dataset preserves original hard samples as a challenge rather than
+deleting or relabeling them. It adds 49 solver-accepted clean replacements to
+complete the clean split sizes.
 
-The current contribution is the Heat3D task adaptation and runnable workflow:
+## RIGNO Adaptation And Training Semantics
 
-- a data representation for 3D heat samples using coordinates, thermal
-  conductivity field, localized heat source field, and steady temperature field
-  arrays,
-- a 3D graph-construction wrapper for non-periodic point-cloud heat data,
-- graph metadata reuse for fixed-coordinate samples,
-- coefficient-field normalization for inputs and temperature-field
-  normalization for outputs,
-- a steady-output training/evaluation path instead of time marching,
-- checkpoint payloads that store parameters, normalization statistics, split
-  indices, model configuration, graph builder configuration, and training
-  arguments,
-- evaluation metrics including MSE, RMSE, MAE, relative L1/L2, NRMSE, R2, and
-  median relative L1.
+The project keeps the upstream RIGNO graph-operator core while adding:
 
-## Current Limitations
+- native Heat3D sample loading and the legacy zero-DeltaT bridge where required;
+- non-periodic graph construction with discrete physical coverage and repair;
+- semantic normalization for k/q/BC condition semantics;
+- sample-local isotropic coordinates and log-extent broadcast features;
+- a post-decoder residual using normalized condition features;
+- run registry provenance, inherited YAML, result audit CSV, and checkpoint
+  metadata;
+- checkpoint selection by normalized `valid_base_mse` and sample-first
+  split-aware reporting.
 
-This repository does not claim:
+Raw DeltaT and recovered-temperature metrics are physical-scale reports. They
+do not replace the normalized selection metric. The metrics contract requires
+sample-first aggregation before split/group summaries; point-global flattened
+values are retained only as separately labeled cross-checks.
 
-- full industrial 3D IC/chiplet/package thermal simulation,
-- explicit TSV, micro-bump, interposer, BEOL, or package-layer modeling,
-- transient thermal simulation,
-- physics-informed training,
-- deployment-level reliability,
-- superiority over other thermal simulation or neural-operator methods without
-  controlled experiments.
+## V4 Final Baseline
 
-## Future Work
+The frozen clean baseline is
+`V4P5_02_clean_baseline_raw_B28_e600`:
 
-Planned research directions include:
+- raw coordinates, plain MSE, B28, seed 0, 600 epochs;
+- selected best checkpoint at epoch 405;
+- P5 clean-nohard training and formal split;
+- best clean valid/test sample-first RMSE: 0.119 / 0.153 K;
+- best clean valid/test point-global raw DeltaT RMSE: 0.170 / 0.236 K.
 
-- publishing and versioning the synthetic UnitCube dataset,
-- adding reproducible experiment configs,
-- adding baseline comparisons and runtime measurements,
-- using FEM adjacency or material-interface edges as additional graph structure,
-- adding PDE residual and interface-continuity losses,
-- extending the synthetic data generator to more complex geometries, boundary
-  conditions, package scenarios, TSVs, micro-bumps, and chiplet stacks.
+The final epoch-600 checkpoint is retained for trajectory comparison, but does
+not replace the selected best checkpoint. The V4P5_03 `raw_plus_fourier`,
+frequency-4 run completed without OOM but is a negative ablation: it worsens
+clean-IID and P02/P06 behavior despite a local P09 improvement.
+
+## Hard Challenge
+
+Hard challenge samples remain difficult. For the selected P5_02 checkpoint,
+sample-first RMSE is 4.709 K on hard validation and 3.683 K on hard test. The
+hard cohort contributes nearly all all-IID point MSE and shows a severe
+high-amplitude/top5/strong-q scale failure. This is why clean-IID, hard
+challenge, all-IID, and fixed final-probe results are reported separately.
+
+The hard tail should be investigated as a controlled curriculum, fine-tune, or
+feature-redesign line after the clean baseline is held fixed. It should not be
+silently mixed into clean-IID training or used to reinterpret clean metrics.
+
+## V5 Planned Direction
+
+V5 is planned, not implemented by the V4 closeout:
+
+1. q/target decomposition and a global physics-scale branch;
+2. shape-scale decomposition for amplitude failures;
+3. a bottom-Dirichlet hard constraint;
+4. discrete physical residual metrics;
+5. controlled hard-tail curriculum or fine-tune studies; and
+6. multi-seed evaluation.
+
+Upstream attribution and license obligations remain unchanged in
+[ATTRIBUTION.md](ATTRIBUTION.md).

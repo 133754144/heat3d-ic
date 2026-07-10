@@ -59,19 +59,23 @@ Tracked split:
 The original candidate1024 split remains unchanged and is the historical
 all-IID reference.
 
-## Baseline YAML
+## Baseline And Closeout
 
-`V4P5_01` generates
-`configs/heat3d_v4/generated/V4P5_01_clean_baseline_raw_B28.yaml`.
+`V4P5_01` remains the historical 200-epoch scratch handoff. It preserves the
+V4P3_19 model/semantic feature family while preventing an old hard-data
+continuation checkpoint from entering clean baseline training.
 
-- It preserves the V4P3_19 model, semantic feature, normalization, decoder
-  bypass, and graph semantics.
-- It uses the V4P3_14 scratch warmup-cosine path rather than the P3_19
-  continuation checkpoint, preventing old hard-data training from entering the
-  clean baseline.
-- Active controls: raw coordinates, plain MSE, 200 epochs, B28, 128-sample
-  validation/prediction batches, and `prediction_split=valid_iid`.
+The frozen P5 clean baseline is now
+`V4P5_02_clean_baseline_raw_B28_e600`, generated at
+`configs/heat3d_v4/generated/V4P5_02_clean_baseline_raw_B28_e600.yaml`.
+
+- It keeps raw coordinates, plain MSE, B28, 128-sample validation/prediction
+  batches, and `prediction_split=valid_iid`.
 - `672 / 28 = 24`, so every training batch has the same sample count.
-- Status is `planned`; launch policy is `explicit_user_instruction_only`.
+- Its selected best checkpoint is epoch 405 under `valid_base_mse`; the final
+  epoch-600 checkpoint is retained only as a trajectory control.
+- `V4P5_03_clean_fourier_freq4_B_safe` is the completed frequency-4 Fourier
+  negative ablation and is not a future default.
 
-No training or prediction export was performed while preparing this handoff.
+See `docs/v4_closeout.md` for the formal clean/hard/all-IID and final-probe
+results.

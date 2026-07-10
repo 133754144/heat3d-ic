@@ -28,7 +28,7 @@ overrides:
     run_name: V4P5_02_clean_baseline_raw_B28_e600
   metadata:
     registry_config_id: V4P5_02_clean_baseline_raw_B28_e600
-    registry_status: planned
+    registry_status: registered
     standard_task: coords+k(x)+q(x)+BC->T(x)
     variant_label: V4P5_02_clean_baseline_raw_B28_e600
     batch_policy_label: B28_sample_shuffle
@@ -42,5 +42,6 @@ overrides:
     decoder_bypass_features: full_condition
     launch_policy: explicit_user_instruction_only
     log_path: output/heat3d_v4_logs/V4P5_02_clean_baseline_raw_B28_e600.log
-    notes: 'V4P5_02 clean-nohard raw-coordinate long-schedule control: V4P5_01 unchanged
-      except epochs=600 and identity/output paths.'
+    notes: V4 closeout frozen clean baseline. V4P5_02 preserves V4P5_01 raw-coordinate
+      plain-MSE semantics with epochs=600; valid_base_mse selected params_best at
+      epoch 405. See docs/v4_closeout.md.

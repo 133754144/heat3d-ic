@@ -94,13 +94,11 @@ a severe amplitude collapse. The hard tail remains an independent
 curriculum/fine-tune/feature-redesign research line: this baseline does not
 restore `hard_weight=2.0` and does not perform hard fine-tuning.
 
-## Planned Controls
+## Follow-Up Outcome
 
-- `V4P5_02_clean_baseline_raw_B28_e600` is the raw-coordinate long-schedule
-  control. Relative to V4P5_01, only epochs change from 200 to 600, together
-  with identity and ignored output paths.
-- `V4P5_03_clean_fourier_freq4_B_safe` is the coordinate-encoding ablation.
-  Relative to V4P5_01, it changes only to `raw_plus_fourier` with four
-  frequencies, together with identity and ignored output paths.
-- Both are `planned` and `explicit_user_instruction_only`; this diagnostics
-  task did not launch either configuration.
+- `V4P5_02_clean_baseline_raw_B28_e600` completed and is frozen as the V4
+  clean baseline. Its selected checkpoint is epoch 405.
+- `V4P5_03_clean_fourier_freq4_B_safe` completed as a frequency-4 Fourier
+  negative ablation; it is not a V5 default.
+- The complete best/final clean, hard, all-IID, and final-probe closeout is in
+  `docs/v4_closeout.md`.

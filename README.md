@@ -1,275 +1,190 @@
-# Heat3D-IC: Steady Thermal Field Prediction with Graph Neural Operators
+# Heat3D-IC: Steady 3D IC Thermal Field Prediction
 
-Heat3D-IC is a research codebase for steady 3D thermal field prediction from
-heterogeneous thermal conductivity fields and localized heat source fields using
-graph neural operators.
+Heat3D-IC is a research codebase for steady thermal surrogate modeling of
+multilayer heterogeneous 3D IC structures with graph neural operators. The
+current repository state closes V4 around a clean-IID baseline and an explicit
+hard-challenge protocol; it does not claim industrial thermal-signoff accuracy
+or solved out-of-distribution behavior.
 
-The current public version provides a minimal runnable workflow for a simplified
-3D steady heat-conduction setting. It is designed as a foundation for continued
-research, not as a complete industrial 3D IC, chiplet, TSV, or package thermal
-simulation platform.
+For the stage history and implementation overview, see
+[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md). For the frozen V4 result table and
+metric definitions, see [docs/v4_closeout.md](docs/v4_closeout.md). Upstream
+inheritance and citation requirements are in [ATTRIBUTION.md](ATTRIBUTION.md).
 
 ## Project Overview
 
-The current workflow learns the operator
+The current V4 task is:
 
 ```text
-[thermal conductivity field k(x), localized heat source field q(x)] -> steady temperature field T(x)
+[k(x), q(x), boundary conditions, geometry/extent features]
+    -> steady DeltaT(x) / T(x)
 ```
 
-on a fixed 3D point cloud. The main project work is the task adaptation around a
-graph neural operator core:
-
-1. synthetic 3D heat data generation,
-2. local Heat3D data loading,
-3. 3D graph construction for the point cloud,
-4. coefficient-field to temperature-field training,
-5. checkpointed evaluation with reproducible splits and metrics.
-
-For a longer technical summary, see [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md).
-For upstream inheritance and citation requirements, see
-[`ATTRIBUTION.md`](ATTRIBUTION.md).
-
-## What Is Kept From The Upstream Core
-
-This repository retains a minimal upstream graph-operator core needed by the
-Heat3D workflow:
-
-- region interaction graph operator and graph builder logic,
-- graph network components,
-- typed graph data structures,
-- operator input structures,
-- shared model utilities.
-
-The generic upstream benchmark data interface, training CLI, testing CLI,
-plotting utilities, and broad PDE experiment workflow are not part of the
-current public entry path.
-
-## What Is Newly Added For Heat3D-IC
-
-Heat3D-specific components:
-
-- Heat3D dataset adapter: loads Heat3D samples and exposes model-compatible
-  temperature, coordinate, coefficient, and graph metadata fields.
-- Heat3D graph builder wrapper: builds non-periodic 3D graph metadata for the
-  Heat3D point cloud.
-- Heat3D training/evaluation pipeline: provides deterministic splits,
-  Heat3D-specific normalization, steady-output prediction, checkpoint IO, and
-  evaluation metrics.
-- `scripts/inspect_heat3d_dataset.py`: checks dataset loading and single-sample
-  graph construction.
-- `scripts/check_heat3d_batch_graphs.py`: checks batched graph metadata and
-  graph construction.
-- `scripts/train_heat3d_operator.py`: trains and saves a Heat3D graph neural
-  operator checkpoint.
-- `scripts/evaluate_heat3d_operator.py`: loads a checkpoint and evaluates the
-  stored test split.
-
-## Current Scope And Limitations
-
-Current scope:
-
-- steady-state 3D heat field prediction,
-- synthetic fixed-grid 3D samples,
-- heterogeneous thermal conductivity fields and localized heat source fields,
-- supervised coefficient-to-temperature operator learning,
-- minimal reproducible train/evaluate workflow.
-
-Current limitations:
-
-- The first public dataset is a prototype feasibility dataset, not a complete
-  real 3D IC thermal dataset.
-- TSVs, micro-bumps, BEOL interconnects, package layers, anisotropic materials,
-  and detailed boundary heat transfer are not explicitly modeled.
-- The current model is not physics-informed: it does not include PDE residual,
-  interface heat-flux continuity, or boundary-condition losses.
-- The current task is steady-state only, with no heat capacity term, time
-  sequence, or autoregressive rollout.
-- No deployment-level or industrial-accuracy claim is made.
-
-## Installation
-
-Create a fresh environment and install dependencies:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-`requirements.txt` uses the platform-neutral `jax` package so the default
-install works on CPU-oriented environments. For CUDA or another accelerator
-stack, install the JAX build that matches your platform according to the
-official JAX installation instructions. For example, on a compatible CUDA 12
-system, install the matching CUDA-enabled JAX package separately:
-
-```bash
-pip install -U "jax[cuda12]"
-```
-
-Check your local CUDA, driver, and Python compatibility before using the
-accelerated install path.
-
-Optional dataset-construction and inspection tools use a separate dependency
-file:
-
-```bash
-pip install -r requirements-optional.txt
-```
-
-The UnitCube data generator also requires FEniCS/DOLFIN, which is not listed as
-a regular pip dependency. Install it separately only if you need to regenerate
-the prototype dataset.
-
-## Dataset
-
-Local dataset directories are intentionally not tracked by Git. The recommended
-local layout mirrors the Hugging Face dataset structure:
+The standard model path is equivalently expressed as:
 
 ```text
-data/
-  heat3d-thermal-simulation/
-    subsets/
-      v0_unitcube_demo/
-        samples/
-          sample_000/
-            coords.npy
-            temperature.npy
-            k.npy
-            source.npy
-            edge_index.npy
-          sample_001/
-            ...
+coords + k(x) + q(x) + BC -> T(x)
 ```
 
-The public dataset entry point is:
+Boundary conditions are model inputs. Layer-stack and interface metadata are
+kept for dataset generation and evaluation grouping rather than added as
+default model features.
 
-- Hugging Face repo: `133754144X/heat3d-thermal-simulation`
-- Dataset title: `Heat3D Thermal Simulation Dataset: Synthetic 3D Heat-Conduction Data for Operator Learning`
-- Current public subset: `subsets/v0_unitcube_demo/`
+## Current V4 Physical Scope
 
-The current public subset is a prototype synthetic feasibility dataset. It uses
-a fixed UnitCube grid with heterogeneous thermal conductivity fields and
-localized heat source fields, and stores the resulting 3D steady temperature
-field. It is intended to validate the algorithm workflow, not to represent the
-final full 3D IC task setting.
+V4 covers supervised steady-state temperature-rise prediction for synthetic,
+multilayer 3D IC-like structures with:
 
-To run the current scripts, download the files under
-`subsets/v0_unitcube_demo/samples/` and place the `sample_xxx/` directories under
-`./data/heat3d-thermal-simulation/subsets/v0_unitcube_demo/samples/`.
+- heterogeneous conductivity fields `k(x)`, localized power fields `q(x)`,
+  and boundary-condition features;
+- sample-local coordinates plus geometry/extent features used by the active
+  semantic input path;
+- recovered absolute temperature `T(x)` from predicted DeltaT and reference
+  boundary temperature;
+- a non-periodic RIGNO graph path with discrete physical coverage and repair;
+- explicit clean-IID, hard-challenge, all-IID reporting, and fixed final probes.
 
-For compatibility with earlier local checkouts, the scripts also fall back to
-the legacy root-level `./dataset_3d_heat/` directory when the recommended path
-is not present. The `--data-dir` option can still point directly to any
-directory that contains `sample_xxx/` folders.
+The scope does not yet include a production package model, transient dynamics,
+hard PDE or Dirichlet constraints, discrete residual training, or multi-seed
+performance evidence.
 
-The current loader uses:
+## Current Dataset And Split
 
-- `coords.npy`: 3D node coordinates,
-- `temperature.npy`: target steady temperature field,
-- `k.npy`: thermal conductivity field,
-- `source.npy`: heat source field.
+The current V4 benchmark dataset is ignored locally and is not the historical
+UnitCube demo:
 
-`edge_index.npy` may be present from data generation, but the current graph
-operator path builds its own regional graph metadata from the 3D coordinates.
+- dataset: `data/heat3d_v4_p5_clean_nohard_v0`;
+- formal split:
+  `configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json`;
+- clean train / valid_iid / test_iid: `672 / 128 / 128`;
+- hard_train_holdout / hard_challenge_valid / hard_challenge_test:
+  `121 / 12 / 12`.
 
-## Dataset Generation Tools
+The clean splits contain zero `physical_hard_keep` samples. Hard samples remain
+unchanged in their challenge roles. `all_iid` is a reporting union of the
+matching clean and hard split; it is never a training split.
 
-The repository keeps the prototype scripts used to generate and inspect the
-current public UnitCube subset:
+The legacy `v0_unitcube_demo` remains useful only as an execution smoke
+dataset. It is not the current V4 training dataset, benchmark, or baseline.
 
-- `tools/generate_heat3d_unitcube_dataset.py`: generates the prototype
-  UnitCube steady heat-conduction samples that correspond to
-  `subsets/v0_unitcube_demo/` in the Hugging Face dataset.
-- `tools/inspect_heat3d_unitcube_dataset.py`: checks one generated sample and
-  writes simple diagnostic plots for the local UnitCube sample directory.
+## Frozen V4 Baseline
 
-These scripts are dataset-construction and analysis tools. They are not part of
-the main training/evaluation entry path. The generation script depends on
-optional FEM tooling, including FEniCS/DOLFIN, and the inspection script depends
-on plotting packages. Install `requirements-optional.txt` and the required
-FEniCS/DOLFIN environment only if you need to regenerate or inspect the UnitCube
-prototype data locally.
+`V4P5_02_clean_baseline_raw_B28_e600` is the frozen V4 clean baseline:
 
-## Minimal Run Commands
+- raw coordinate encoding, plain MSE, B28, seed 0, and clean-nohard training;
+- 600-epoch schedule, with the formal selected checkpoint at best epoch 405;
+- selection metric: normalized `valid_base_mse`, not a raw or final-probe
+  diagnostic;
+- checkpoint kind below is `best`; RMSE and MAE values are K, while corr and
+  amplitude ratio are dimensionless. Split metrics are sample-first means
+  unless explicitly marked point-global.
 
-Run from the repository root:
+| split | checkpoint | sample-first RMSE K | sample-first MAE K | corr | amp ratio | point-global raw DeltaT RMSE K |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| clean valid_iid | best e405 | 0.119 | 0.058 | 0.962 | 1.095 | 0.170 |
+| clean test_iid | best e405 | 0.153 | 0.074 | 0.964 | 1.076 | 0.236 |
+
+The best checkpoint has point-global clean-valid `rel_rmse_v4_pct=67.17%`.
+Hard challenge remains substantially harder: sample-first RMSE is 4.709 K on
+hard valid and 3.683 K on hard test. See the complete best/final tables,
+point-global cross-checks, low-DeltaT diagnostics, and final-probe results in
+[docs/v4_closeout.md](docs/v4_closeout.md).
+
+`V4P5_03_clean_fourier_freq4_B_safe` completed at B28 without OOM, but its
+best clean valid/test sample-first RMSE is 0.148/0.175 K. It also degrades P02
+and P06 final probes despite a local P09 gain. Fourier frequency 4 is therefore
+a negative V4 ablation, not a V5 default.
+
+## Reproducible Entry Points
+
+Run from the repository root after placing the P5 dataset at the ignored path
+above and activating the project environment:
 
 ```bash
-python3 scripts/inspect_heat3d_dataset.py
-python3 scripts/check_heat3d_batch_graphs.py
+python3 scripts/run_heat3d_v4_config.py \
+  --config configs/heat3d_v4/generated/V4P5_02_clean_baseline_raw_B28_e600.yaml
 ```
 
-Minimal train/eval smoke loop that writes only to `/tmp`:
+The registry is authoritative:
 
 ```bash
-python3 scripts/train_heat3d_operator.py \
-  --epochs 1 \
-  --batch-size 1 \
-  --n-train 1 \
-  --n-valid 1 \
-  --n-test 1 \
-  --output-dir /tmp/heat3d_smoke \
-  --checkpoint-name smoke.pkl
-
-python3 scripts/evaluate_heat3d_operator.py \
-  --checkpoint /tmp/heat3d_smoke/smoke.pkl \
-  --output-dir /tmp/heat3d_smoke_eval \
-  --batch-size 1
+python3 -B scripts/check_heat3d_v4_registry.py
+python3 -B scripts/prepare_heat3d_v4_run.py \
+  --config-id V4P5_02_clean_baseline_raw_B28_e600 \
+  --config-id V4P5_03_clean_fourier_freq4_B_safe \
+  --dry-run
 ```
 
-These commands verify the execution path only. A one-epoch, one-sample run is
-not a model-quality experiment.
+The commands above prepare or launch a registered V4 path only when the
+operator has explicitly approved training. They do not make a clean-IID result
+equivalent to hard-challenge or final-probe performance.
 
-## Training
+### Legacy UnitCube Smoke
 
-Default training reads
-`./data/heat3d-thermal-simulation/subsets/v0_unitcube_demo/samples/` and writes to
-`./output/heat3d_ic/`:
-
-```bash
-python3 scripts/train_heat3d_operator.py
-```
-
-Common options:
+The older UnitCube commands are retained only to check the historical minimal
+execution path. They are not the V4 benchmark:
 
 ```bash
 python3 scripts/train_heat3d_operator.py \
   --data-dir data/heat3d-thermal-simulation/subsets/v0_unitcube_demo/samples \
-  --output-dir output/heat3d_ic \
-  --checkpoint-name heat3d_operator_best.pkl \
-  --epochs 30 \
-  --batch-size 4 \
-  --n-train 160 \
-  --n-valid 20 \
-  --n-test 20
+  --epochs 1 --batch-size 1 --n-train 1 --n-valid 1 --n-test 1 \
+  --output-dir /tmp/heat3d_unitcube_legacy_smoke \
+  --checkpoint-name smoke.pkl
 ```
 
-The checkpoint stores model parameters, normalization statistics, split indices,
-model configuration, graph builder configuration, and training arguments.
+## Evaluation Protocol
 
-## Evaluation
+V4 uses the metrics contract in
+[configs/heat3d_v4/metrics_v0.json](configs/heat3d_v4/metrics_v0.json):
 
-Evaluate a checkpoint:
+1. Select checkpoints only with normalized `valid_base_mse`.
+2. Report MSE/RMSE/MAE as model-performance metrics and separately identify
+   whether they are sample-first or point-global.
+3. Report clean valid_iid/test_iid, hard_challenge valid/test, and their
+   all-IID reporting unions separately.
+4. Treat raw DeltaT, final-probe, region/hotspot, and low-DeltaT diagnostics as
+   report or diagnosis metrics, not replacement selection metrics.
+5. Aggregate per sample before reporting split/group mean, median, or standard
+   deviation. A flattened global error alone is insufficient.
 
-```bash
-python3 scripts/evaluate_heat3d_operator.py \
-  --checkpoint output/heat3d_ic/heat3d_operator_best.pkl \
-  --output-dir output/heat3d_ic_eval \
-  --batch-size 4
-```
+The P5 closeout used read-only checkpoint inference for missing test/hard
+predictions. Those artifacts remain ignored under `output/` and are not part
+of this repository history.
 
-A small reference checkpoint is retained at
-`output/heat3d_ic/heat3d_operator_best.pkl`. It is provided to exercise the
-load/evaluate path. Evaluation still requires the matching local
-UnitCube sample directory.
+## RIGNO Adaptation
 
-The evaluator reports aggregate regression metrics and median relative L1 error
-for operator-learning comparison.
+The repository retains the RIGNO graph-operator core and adds Heat3D-specific
+data semantics, graph construction, training controls, checkpoint provenance,
+and split-aware diagnostics. The active V4 path uses semantic normalization,
+sample-local isotropic coordinates, log-extent broadcast features, a
+post-decoder condition residual, and `valid_iid` prediction by default.
 
-## Citation / Attribution
+## Limitations
 
-This project is derived from a minimal subset of RIGNO:
+- The P5 data remains synthetic and controlled rather than a complete package,
+  chiplet, TSV, BEOL, or thermal-signoff workload.
+- The hard challenge has large amplitude/top5/strong-q errors and remains a
+  separate evaluation line.
+- Results are seed-0 evidence, not a multi-seed claim.
+- The current model has no implemented hard bottom-Dirichlet constraint or
+  discrete physical residual objective.
+- Raw coordinate encoding is the V4 baseline; Fourier frequency 4 did not
+  improve this setting.
+
+## V5 Roadmap
+
+The following are planned research directions only:
+
+- q/target decomposition;
+- a global physics-scale branch;
+- shape-scale decomposition for amplitude failures;
+- bottom-Dirichlet hard constraint;
+- discrete physical residual metrics; and
+- multi-seed evaluation.
+
+## Citation And Attribution
+
+This project derives its retained graph-operator core from RIGNO:
 
 - Upstream repository: <https://github.com/camlab-ethz/rigno>
 - Paper: <https://arxiv.org/abs/2501.19205>

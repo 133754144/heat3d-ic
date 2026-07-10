@@ -1467,8 +1467,8 @@
         "log_path": "output/heat3d_v4_logs/V4P5_02_clean_baseline_raw_B28_e600.log",
         "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P5_02_clean_baseline_raw_B28_e600",
         "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P5_02_clean_baseline_raw_B28_e600",
-        "notes": "V4P5_02 clean-nohard raw-coordinate long-schedule control: V4P5_01 unchanged except epochs=600 and identity/output paths.",
-        "status": "planned",
+        "notes": "V4 closeout frozen clean baseline. V4P5_02 preserves V4P5_01 raw-coordinate plain-MSE semantics with epochs=600; valid_base_mse selected params_best at epoch 405. See docs/v4_closeout.md.",
+        "status": "registered",
         "launch_policy": "explicit_user_instruction_only",
         "dry_run_required": "true"
       }
@@ -1509,8 +1509,8 @@
         "log_path": "output/heat3d_v4_logs/V4P5_03_clean_fourier_freq4_B_safe.log",
         "final_probe_output_dir": "output/heat3d_v4_final_probe/V4P5_03_clean_fourier_freq4_B_safe",
         "post_training_diagnostics_output_dir": "output/heat3d_v4_post_training_diagnostics/V4P5_03_clean_fourier_freq4_B_safe",
-        "notes": "V4P5_03 clean-nohard Fourier coordinate ablation: V4P5_01 unchanged except raw_plus_fourier coordinates with four frequencies and identity/output paths.",
-        "status": "planned",
+        "notes": "V4 closeout completed negative ablation. V4P5_03 changes V4P5_01 only to raw_plus_fourier coordinates with four frequencies; it is not a V5 default. See docs/v4_closeout.md.",
+        "status": "registered",
         "launch_policy": "explicit_user_instruction_only",
         "dry_run_required": "true"
       }

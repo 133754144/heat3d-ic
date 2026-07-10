@@ -35,6 +35,9 @@ V4 P5 clean-nohard configs use
 `candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json`;
 its regular train/valid/test keys contain no `physical_hard_keep`, while the
 original hard samples remain under three explicit holdout/challenge keys.
+`V4P5_02_clean_baseline_raw_B28_e600` is the frozen completed clean baseline;
+`V4P5_03_clean_fourier_freq4_B_safe` is a completed negative Fourier ablation.
+See `docs/v4_closeout.md` for their separate clean/hard/all-IID reporting.
 Overrides may only use resolved configuration column names. To add another
 controlled field, first extend the resolved audit CSV configuration columns and
 checker; do not add arbitrary dotted YAML overrides.
