@@ -1,0 +1,1567 @@
+{
+  "audit_id": "V5-P0-1",
+  "audit_pass": true,
+  "audit_schema_version": "heat3d_v5_p0_1_physics_scale_audit_v1",
+  "contract_id": "V5-P0-0",
+  "dataset": {
+    "dataset_id": "heat3d_v4_p5_clean_nohard_v0",
+    "path": "data/heat3d_v4_p5_clean_nohard_v0",
+    "role_counts": {
+      "hard_challenge_test": 12,
+      "hard_challenge_valid": 12,
+      "hard_train_holdout": 121,
+      "test_iid": 128,
+      "train": 672,
+      "valid_iid": 128
+    },
+    "roles": [
+      "train",
+      "valid_iid",
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test"
+    ],
+    "sample_count": 1073,
+    "split_map_path": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json"
+  },
+  "duplicate_leakage": {
+    "cross_role_full_sample_duplicate_groups": {
+      "group_count": 0,
+      "groups": []
+    },
+    "cross_role_model_input_duplicate_groups": {
+      "group_count": 0,
+      "groups": []
+    },
+    "cross_role_provenance_duplicate_groups": {
+      "group_count": 0,
+      "groups": []
+    },
+    "method": {
+      "full_sample_fingerprint": "SHA256 over coords/k/q/BC/temperature arrays including dtype and shape",
+      "geometry_note": "coords alone are intentionally shared by the fixed P5 grid and are not treated as leakage.",
+      "model_input_fingerprint": "SHA256 over coords/k/q/BC arrays including dtype and shape",
+      "provenance_key": "sample_meta.p5_provenance.source_sample_id"
+    },
+    "pass": true
+  },
+  "integrity": {
+    "all_dataset_samples_assigned_once": true,
+    "all_split_map_samples_present": true,
+    "control_volume_and_power_metadata_validated_for_all_samples": true,
+    "declared_role_counts_match": true
+  },
+  "interpretation_limit": "All q/BC linear relations are descriptive statistics across heterogeneous P5 scenes, not causal response laws or model metrics.",
+  "mode": "read_only",
+  "read_only_guardrails": {
+    "permitted_writes": [
+      "explicit audit JSON",
+      "explicit audit Markdown"
+    ],
+    "sample_array_writes": 0,
+    "sample_metadata_writes": 0,
+    "solver_calls": 0,
+    "training_runs": 0
+  },
+  "split_summaries": {
+    "all_samples": {
+      "control_volume_weights": {
+        "cv_weight_max_m3": {
+          "count": 1073,
+          "max": 2.962962962962966e-10,
+          "mean": 2.9629629629629665e-10,
+          "median": 2.962962962962966e-10,
+          "min": 2.962962962962966e-10,
+          "std": 5.169878828456423e-26
+        },
+        "cv_weight_min_m3": {
+          "count": 1073,
+          "max": 3.7037037037037036e-11,
+          "mean": 3.7037037037037036e-11,
+          "median": 3.7037037037037036e-11,
+          "min": 3.7037037037037036e-11,
+          "std": 0.0
+        },
+        "cv_weight_sum_m3": {
+          "count": 1073,
+          "max": 2.0000000000000004e-07,
+          "mean": 2.0000000000000007e-07,
+          "median": 2.0000000000000004e-07,
+          "min": 2.0000000000000004e-07,
+          "std": 2.6469779601696886e-23
+        },
+        "grid_shapes": {
+          "16x16x4": 1073
+        },
+        "k_field_width_counts": {
+          "1": 235,
+          "3": 838
+        },
+        "metadata_cv_weight_sum_abs_error_m3": {
+          "count": 1073,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "std": 0.0
+        }
+      },
+      "effective_source_power": {
+        "effective_source_power_W": {
+          "count": 1073,
+          "max": 9.006414722165925,
+          "mean": 1.321666589428408,
+          "median": 0.9292330497437594,
+          "min": 0.050482087634834936,
+          "std": 1.3653779241082333
+        },
+        "metadata_q_integral_error_W": {
+          "count": 1073,
+          "max": 1.7763568394002505e-15,
+          "mean": 4.552638684390204e-18,
+          "median": 0.0,
+          "min": -1.7763568394002505e-15,
+          "std": 2.3509471975917223e-16
+        },
+        "metadata_q_target_error_W": {
+          "count": 1073,
+          "max": 1.7763568394002505e-15,
+          "mean": 3.2528086054662963e-18,
+          "median": 0.0,
+          "min": -1.7763568394002505e-15,
+          "std": 2.2238316798414997e-16
+        }
+      },
+      "physics_scale_proxies": {
+        "harmonic_kz_W_mK": {
+          "count": 1073,
+          "max": 151.51073256614458,
+          "mean": 17.465066950487365,
+          "median": 11.310674594292356,
+          "min": 0.5656117198262007,
+          "std": 18.536935583162755
+        },
+        "positive_q_cv_volume_fraction": {
+          "count": 1073,
+          "max": 0.5807407407407406,
+          "mean": 0.16121362742052392,
+          "median": 0.08,
+          "min": 0.0059259259259259265,
+          "std": 0.17742173754845686
+        },
+        "q_cv_rms_W_m3": {
+          "count": 1073,
+          "max": 152927454.70616865,
+          "mean": 27403970.484055538,
+          "median": 22257049.45081712,
+          "min": 932087.3981102573,
+          "std": 22860353.588490978
+        },
+        "series_deltaT_proxy_K": {
+          "count": 1073,
+          "max": 416.2868882985465,
+          "mean": 25.932732287364942,
+          "median": 14.107856534621433,
+          "min": 0.3894661126979225,
+          "std": 36.74221126296097
+        },
+        "series_thermal_resistance_proxy_K_W": {
+          "count": 1073,
+          "max": 81.28617046786601,
+          "mean": 20.082084904804443,
+          "median": 15.781903193411505,
+          "min": 3.62520884859699,
+          "std": 14.02668373007934
+        },
+        "target_cv_mean_to_series_proxy_ratio": {
+          "count": 1073,
+          "max": 0.23794938509906424,
+          "mean": 0.032240186300450904,
+          "median": 0.01989083504007473,
+          "min": 0.0005483532495206105,
+          "std": 0.033027099188102496
+        },
+        "top_h_W_m2K": {
+          "count": 1073,
+          "max": 2998.6456173616893,
+          "mean": 1126.698008406487,
+          "median": 874.1035809691415,
+          "min": 200.15242877070014,
+          "std": 824.1654244880423
+        },
+        "top_robin_deltaT_proxy_K": {
+          "count": 1073,
+          "max": 411.305462334199,
+          "mean": 21.93219563154257,
+          "median": 10.32244617906375,
+          "min": 0.2911456239872069,
+          "std": 34.467275358490305
+        },
+        "top_robin_resistance_K_W": {
+          "count": 1073,
+          "max": 49.96192182836942,
+          "mean": 16.829444853966237,
+          "median": 11.440291766008713,
+          "min": 3.334838882628065,
+          "std": 13.30542102161123
+        },
+        "z_conduction_resistance_proxy_K_W": {
+          "count": 1073,
+          "max": 35.35994622980148,
+          "mean": 3.252640050838207,
+          "median": 1.7682411277301258,
+          "min": 0.13200384990065742,
+          "std": 4.112513958389066
+        }
+      },
+      "q_bc_linear_relations": {
+        "effective_source_power_vs_top_h": {
+          "intercept": 1118.1090855183254,
+          "pearson_r": 0.010766022369540681,
+          "r_squared": 0.00011590723766141675,
+          "sample_count": 1073,
+          "slope": 6.498554897930804
+        },
+        "target_cv_mean_vs_effective_source_power": {
+          "intercept": 0.19186010016357746,
+          "pearson_r": 0.3966146822083253,
+          "r_squared": 0.15730320614321092,
+          "sample_count": 1073,
+          "slope": 0.35715997859462495
+        },
+        "target_cv_mean_vs_q_bc_predictors": {
+          "coefficients": {
+            "effective_source_power_W": 0.3827513695628177,
+            "top_robin_deltaT_proxy_K": -0.0014785176783493846
+          },
+          "intercept": 0.1904639527101685,
+          "predictors": [
+            "effective_source_power_W",
+            "top_robin_deltaT_proxy_K"
+          ],
+          "r_squared": 0.15821340204919698,
+          "sample_count": 1073
+        },
+        "target_cv_mean_vs_top_robin_deltaT_proxy": {
+          "intercept": 0.4683214522486446,
+          "pearson_r": 0.2499848212231944,
+          "r_squared": 0.06249241084199231,
+          "sample_count": 1073,
+          "slope": 0.008917714486511635
+        }
+      },
+      "sample_count": 1073,
+      "target_statistics": {
+        "target_deltaT_cv_mean_K": {
+          "count": 1073,
+          "max": 19.625613389866654,
+          "mean": 0.6639065109530591,
+          "median": 0.2532868522479021,
+          "min": 0.0032415559179444307,
+          "std": 1.2295519354775761
+        },
+        "target_deltaT_cv_rms_K": {
+          "count": 1073,
+          "max": 41.706279218275874,
+          "mean": 1.4347776765822873,
+          "median": 0.5154797453607746,
+          "min": 0.007519900362994328,
+          "std": 2.8573399519032288
+        },
+        "target_deltaT_max_K": {
+          "count": 1073,
+          "max": 277.00027357228225,
+          "mean": 8.828384908516469,
+          "median": 2.597317004352135,
+          "min": 0.02281018791779843,
+          "std": 19.631362943877487
+        }
+      }
+    },
+    "hard_challenge_test": {
+      "control_volume_weights": {
+        "cv_weight_max_m3": {
+          "count": 12,
+          "max": 2.962962962962966e-10,
+          "mean": 2.9629629629629665e-10,
+          "median": 2.962962962962966e-10,
+          "min": 2.962962962962966e-10,
+          "std": 5.169878828456423e-26
+        },
+        "cv_weight_min_m3": {
+          "count": 12,
+          "max": 3.7037037037037036e-11,
+          "mean": 3.7037037037037036e-11,
+          "median": 3.7037037037037036e-11,
+          "min": 3.7037037037037036e-11,
+          "std": 0.0
+        },
+        "cv_weight_sum_m3": {
+          "count": 12,
+          "max": 2.0000000000000004e-07,
+          "mean": 2.0000000000000007e-07,
+          "median": 2.0000000000000004e-07,
+          "min": 2.0000000000000004e-07,
+          "std": 2.6469779601696886e-23
+        },
+        "grid_shapes": {
+          "16x16x4": 12
+        },
+        "k_field_width_counts": {
+          "1": 1,
+          "3": 11
+        },
+        "metadata_cv_weight_sum_abs_error_m3": {
+          "count": 12,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "std": 0.0
+        }
+      },
+      "effective_source_power": {
+        "effective_source_power_W": {
+          "count": 12,
+          "max": 7.986365327020032,
+          "mean": 2.2714326759549714,
+          "median": 1.5953090499785803,
+          "min": 0.7044967045563517,
+          "std": 1.898864069748914
+        },
+        "metadata_q_integral_error_W": {
+          "count": 12,
+          "max": 2.220446049250313e-16,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": -4.440892098500626e-16,
+          "std": 1.5032490816276445e-16
+        },
+        "metadata_q_target_error_W": {
+          "count": 12,
+          "max": 4.440892098500626e-16,
+          "mean": -1.6653345369377348e-16,
+          "median": 0.0,
+          "min": -1.7763568394002505e-15,
+          "std": 5.391539912426197e-16
+        }
+      },
+      "physics_scale_proxies": {
+        "harmonic_kz_W_mK": {
+          "count": 12,
+          "max": 9.406433812567437,
+          "mean": 4.387673429971705,
+          "median": 3.026922728954232,
+          "min": 1.473821023883037,
+          "std": 2.6796244014120063
+        },
+        "positive_q_cv_volume_fraction": {
+          "count": 12,
+          "max": 0.31703703703703695,
+          "mean": 0.1224691358024691,
+          "median": 0.09037037037037035,
+          "min": 0.013333333333333326,
+          "std": 0.10312418913326116
+        },
+        "q_cv_rms_W_m3": {
+          "count": 12,
+          "max": 98906585.881175,
+          "mean": 49278485.05494297,
+          "median": 46005618.57002804,
+          "min": 19585936.645685405,
+          "std": 22411194.277722087
+        },
+        "series_deltaT_proxy_K": {
+          "count": 12,
+          "max": 98.42826789926939,
+          "mean": 40.83812605864197,
+          "median": 30.60468483826436,
+          "min": 7.617621433184015,
+          "std": 30.74306175100676
+        },
+        "series_thermal_resistance_proxy_K_W": {
+          "count": 12,
+          "max": 43.03626404470674,
+          "mean": 18.992737629682395,
+          "median": 15.584977151131962,
+          "min": 6.101805833140021,
+          "std": 10.918623083588972
+        },
+        "target_cv_mean_to_series_proxy_ratio": {
+          "count": 12,
+          "max": 0.23794938509906424,
+          "mean": 0.09004139115631675,
+          "median": 0.07831196023476628,
+          "min": 0.026026322921582964,
+          "std": 0.05899641952014774
+        },
+        "top_h_W_m2K": {
+          "count": 12,
+          "max": 2694.130679866428,
+          "mean": 1395.6121570037394,
+          "median": 1205.881286489373,
+          "min": 286.6407361755791,
+          "std": 865.9924610072954
+        },
+        "top_robin_deltaT_proxy_K": {
+          "count": 12,
+          "max": 79.78979856403011,
+          "mean": 27.726881601338146,
+          "median": 18.318084046154496,
+          "min": 2.6302501485875758,
+          "std": 24.897601363945707
+        },
+        "top_robin_resistance_K_W": {
+          "count": 12,
+          "max": 34.8868766296867,
+          "mean": 12.311000767982712,
+          "median": 8.381857721352013,
+          "min": 3.7117724372953536,
+          "std": 9.840141618520553
+        },
+        "z_conduction_resistance_proxy_K_W": {
+          "count": 12,
+          "max": 13.570168749056473,
+          "mean": 6.681736861699687,
+          "median": 6.636869331562925,
+          "min": 2.126204297879507,
+          "std": 3.838529108725735
+        }
+      },
+      "q_bc_linear_relations": {
+        "effective_source_power_vs_top_h": {
+          "intercept": 1499.3619030764423,
+          "pearson_r": -0.10015368635494708,
+          "r_squared": 0.010030760890485046,
+          "sample_count": 12,
+          "slope": -45.67590629957083
+        },
+        "target_cv_mean_vs_effective_source_power": {
+          "intercept": 2.389944886039461,
+          "pearson_r": 0.07741510818601878,
+          "r_squared": 0.005993098975452971,
+          "sample_count": 12,
+          "slope": 0.05606601690133895
+        },
+        "target_cv_mean_vs_q_bc_predictors": {
+          "coefficients": {
+            "effective_source_power_W": -0.1227491032473001,
+            "top_robin_deltaT_proxy_K": 0.028127507862261935
+          },
+          "intercept": 2.0162233126622504,
+          "predictors": [
+            "effective_source_power_W",
+            "top_robin_deltaT_proxy_K"
+          ],
+          "r_squared": 0.2043543801889106,
+          "sample_count": 12
+        },
+        "target_cv_mean_vs_top_robin_deltaT_proxy": {
+          "intercept": 1.8632604241559667,
+          "pearson_r": 0.42706047586392204,
+          "r_squared": 0.18238065004511972,
+          "sample_count": 12,
+          "slope": 0.02358846746949983
+        }
+      },
+      "sample_count": 12,
+      "target_statistics": {
+        "target_deltaT_cv_mean_K": {
+          "count": 12,
+          "max": 5.147596320482278,
+          "mean": 2.5172950688398052,
+          "median": 2.078518515133911,
+          "min": 0.8274238676673392,
+          "std": 1.3752063069145801
+        },
+        "target_deltaT_cv_rms_K": {
+          "count": 12,
+          "max": 11.077973024747473,
+          "mean": 6.375688088407858,
+          "median": 5.626577164381357,
+          "min": 2.310677087917692,
+          "std": 2.9272070574417963
+        },
+        "target_deltaT_max_K": {
+          "count": 12,
+          "max": 118.3262717661512,
+          "mean": 49.523076576214045,
+          "median": 42.52968264934759,
+          "min": 18.873014040955468,
+          "std": 28.131515371727694
+        }
+      }
+    },
+    "hard_challenge_valid": {
+      "control_volume_weights": {
+        "cv_weight_max_m3": {
+          "count": 12,
+          "max": 2.962962962962966e-10,
+          "mean": 2.9629629629629665e-10,
+          "median": 2.962962962962966e-10,
+          "min": 2.962962962962966e-10,
+          "std": 5.169878828456423e-26
+        },
+        "cv_weight_min_m3": {
+          "count": 12,
+          "max": 3.7037037037037036e-11,
+          "mean": 3.7037037037037036e-11,
+          "median": 3.7037037037037036e-11,
+          "min": 3.7037037037037036e-11,
+          "std": 0.0
+        },
+        "cv_weight_sum_m3": {
+          "count": 12,
+          "max": 2.0000000000000004e-07,
+          "mean": 2.0000000000000007e-07,
+          "median": 2.0000000000000004e-07,
+          "min": 2.0000000000000004e-07,
+          "std": 2.6469779601696886e-23
+        },
+        "grid_shapes": {
+          "16x16x4": 12
+        },
+        "k_field_width_counts": {
+          "1": 3,
+          "3": 9
+        },
+        "metadata_cv_weight_sum_abs_error_m3": {
+          "count": 12,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "std": 0.0
+        }
+      },
+      "effective_source_power": {
+        "effective_source_power_W": {
+          "count": 12,
+          "max": 3.874292937437715,
+          "mean": 1.9637273301140423,
+          "median": 1.5077286000831869,
+          "min": 0.9334451955682999,
+          "std": 1.0263635549258339
+        },
+        "metadata_q_integral_error_W": {
+          "count": 12,
+          "max": 8.881784197001252e-16,
+          "mean": 7.401486830834377e-17,
+          "median": 0.0,
+          "min": -2.220446049250313e-16,
+          "std": 2.9139682792692303e-16
+        },
+        "metadata_q_target_error_W": {
+          "count": 12,
+          "max": 4.440892098500626e-16,
+          "mean": 5.551115123125783e-17,
+          "median": 0.0,
+          "min": -4.440892098500626e-16,
+          "std": 2.884444029575346e-16
+        }
+      },
+      "physics_scale_proxies": {
+        "harmonic_kz_W_mK": {
+          "count": 12,
+          "max": 5.733936830356113,
+          "mean": 2.7943647760746892,
+          "median": 2.5642811600639734,
+          "min": 0.8997171912897088,
+          "std": 1.4089307458714513
+        },
+        "positive_q_cv_volume_fraction": {
+          "count": 12,
+          "max": 0.2888888888888888,
+          "mean": 0.11604938271604935,
+          "median": 0.09407407407407403,
+          "min": 0.013333333333333332,
+          "std": 0.0895537549131915
+        },
+        "q_cv_rms_W_m3": {
+          "count": 12,
+          "max": 73224567.6620196,
+          "mean": 41571046.22428438,
+          "median": 35658136.262418196,
+          "min": 19864476.15711383,
+          "std": 15826301.964224622
+        },
+        "series_deltaT_proxy_K": {
+          "count": 12,
+          "max": 81.79012377810194,
+          "mean": 39.01050576083931,
+          "median": 30.960575485153463,
+          "min": 15.40085088696478,
+          "std": 22.001912257700177
+        },
+        "series_thermal_resistance_proxy_K_W": {
+          "count": 12,
+          "max": 55.88580170252007,
+          "mean": 24.130301295138494,
+          "median": 16.35568258593211,
+          "min": 7.541477520512915,
+          "std": 17.438704954903354
+        },
+        "target_cv_mean_to_series_proxy_ratio": {
+          "count": 12,
+          "max": 0.20117410785913623,
+          "mean": 0.08049187631155036,
+          "median": 0.06602213323471037,
+          "min": 0.010815192172983615,
+          "std": 0.05555391501475907
+        },
+        "top_h_W_m2K": {
+          "count": 12,
+          "max": 2766.0595034967378,
+          "mean": 1367.2365762937459,
+          "median": 1443.6342590355482,
+          "min": 243.08882912089507,
+          "std": 849.679859357384
+        },
+        "top_robin_deltaT_proxy_K": {
+          "count": 12,
+          "max": 68.66115325894417,
+          "mean": 23.820571907977172,
+          "median": 14.248128205349953,
+          "min": 6.612010083266827,
+          "std": 20.452035265961996
+        },
+        "top_robin_resistance_K_W": {
+          "count": 12,
+          "max": 41.137225581956756,
+          "mean": 14.820883890742953,
+          "median": 6.970166845096928,
+          "min": 3.6152512219489186,
+          "std": 14.018253667591848
+        },
+        "z_conduction_resistance_proxy_K_W": {
+          "count": 12,
+          "max": 22.22920734828996,
+          "mean": 9.30941740439554,
+          "median": 7.79990902951165,
+          "min": 3.4880049417561994,
+          "std": 5.060166060063915
+        }
+      },
+      "q_bc_linear_relations": {
+        "effective_source_power_vs_top_h": {
+          "intercept": 681.9504207315398,
+          "pearson_r": 0.4215379430748096,
+          "r_squared": 0.1776942374517415,
+          "sample_count": 12,
+          "slope": 348.9721536453881
+        },
+        "target_cv_mean_vs_effective_source_power": {
+          "intercept": 1.1080308012214852,
+          "pearson_r": 0.39147226519387496,
+          "r_squared": 0.15325053441602365,
+          "sample_count": 12,
+          "slope": 0.7666015396142607
+        },
+        "target_cv_mean_vs_q_bc_predictors": {
+          "coefficients": {
+            "effective_source_power_W": 0.8438602694939613,
+            "top_robin_deltaT_proxy_K": -0.01908263129156298
+          },
+          "intercept": 1.4108749127409046,
+          "predictors": [
+            "effective_source_power_W",
+            "top_robin_deltaT_proxy_K"
+          ],
+          "r_squared": 0.18939994268672744,
+          "sample_count": 12
+        },
+        "target_cv_mean_vs_top_robin_deltaT_proxy": {
+          "intercept": 2.863030022682323,
+          "pearson_r": -0.10662620140415209,
+          "r_squared": 0.011369146825878862,
+          "sample_count": 12,
+          "slope": -0.010478456511332673
+        }
+      },
+      "sample_count": 12,
+      "target_statistics": {
+        "target_deltaT_cv_mean_K": {
+          "count": 12,
+          "max": 8.043411552262652,
+          "mean": 2.613427195869512,
+          "median": 2.2813188317741173,
+          "min": 0.652342940919536,
+          "std": 2.0098789910964574
+        },
+        "target_deltaT_cv_rms_K": {
+          "count": 12,
+          "max": 27.29704343606002,
+          "mean": 7.621741399936966,
+          "median": 4.3671164344576185,
+          "min": 2.2538616836785206,
+          "std": 7.153318799353337
+        },
+        "target_deltaT_max_K": {
+          "count": 12,
+          "max": 277.00027357228225,
+          "mean": 61.24829642696833,
+          "median": 32.511756158556466,
+          "min": 16.386223092052944,
+          "std": 71.07618843119741
+        }
+      }
+    },
+    "hard_train_holdout": {
+      "control_volume_weights": {
+        "cv_weight_max_m3": {
+          "count": 121,
+          "max": 2.962962962962966e-10,
+          "mean": 2.962962962962966e-10,
+          "median": 2.962962962962966e-10,
+          "min": 2.962962962962966e-10,
+          "std": 0.0
+        },
+        "cv_weight_min_m3": {
+          "count": 121,
+          "max": 3.7037037037037036e-11,
+          "mean": 3.7037037037037036e-11,
+          "median": 3.7037037037037036e-11,
+          "min": 3.7037037037037036e-11,
+          "std": 0.0
+        },
+        "cv_weight_sum_m3": {
+          "count": 121,
+          "max": 2.0000000000000004e-07,
+          "mean": 2.000000000000001e-07,
+          "median": 2.0000000000000004e-07,
+          "min": 2.0000000000000004e-07,
+          "std": 5.293955920339377e-23
+        },
+        "grid_shapes": {
+          "16x16x4": 121
+        },
+        "k_field_width_counts": {
+          "1": 30,
+          "3": 91
+        },
+        "metadata_cv_weight_sum_abs_error_m3": {
+          "count": 121,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "std": 0.0
+        }
+      },
+      "effective_source_power": {
+        "effective_source_power_W": {
+          "count": 121,
+          "max": 7.290852002788432,
+          "mean": 2.302963821401111,
+          "median": 1.662199751888373,
+          "min": 0.31438524267226076,
+          "std": 1.7604542460027808
+        },
+        "metadata_q_integral_error_W": {
+          "count": 121,
+          "max": 1.7763568394002505e-15,
+          "mean": 3.624281774602784e-17,
+          "median": 0.0,
+          "min": -8.881784197001252e-16,
+          "std": 3.588823695378834e-16
+        },
+        "metadata_q_target_error_W": {
+          "count": 121,
+          "max": 8.881784197001252e-16,
+          "mean": -5.3217302006825687e-17,
+          "median": 0.0,
+          "min": -8.881784197001252e-16,
+          "std": 3.280900492296317e-16
+        }
+      },
+      "physics_scale_proxies": {
+        "harmonic_kz_W_mK": {
+          "count": 121,
+          "max": 21.394426447942276,
+          "mean": 4.13575860927113,
+          "median": 3.051912731182434,
+          "min": 0.5656117198262007,
+          "std": 3.3618307879878366
+        },
+        "positive_q_cv_volume_fraction": {
+          "count": 121,
+          "max": 0.4296296296296295,
+          "mean": 0.11588613406795222,
+          "median": 0.07407407407407406,
+          "min": 0.008888888888888887,
+          "std": 0.10118189433350881
+        },
+        "q_cv_rms_W_m3": {
+          "count": 121,
+          "max": 113694798.41926491,
+          "mean": 46452340.365561076,
+          "median": 41619022.95680998,
+          "min": 10109323.922640478,
+          "std": 23019261.040643096
+        },
+        "series_deltaT_proxy_K": {
+          "count": 121,
+          "max": 293.5859566164125,
+          "mean": 54.295365925982786,
+          "median": 37.26523097506553,
+          "min": 4.99976675453096,
+          "std": 52.07266338719128
+        },
+        "series_thermal_resistance_proxy_K_W": {
+          "count": 121,
+          "max": 64.16955336116246,
+          "mean": 25.982908902273174,
+          "median": 23.304129707131473,
+          "min": 5.611376268080643,
+          "std": 14.328715286793281
+        },
+        "target_cv_mean_to_series_proxy_ratio": {
+          "count": 121,
+          "max": 0.1902996162457641,
+          "mean": 0.06842219760526791,
+          "median": 0.062298392490954715,
+          "min": 0.002950803675314306,
+          "std": 0.04437241947501684
+        },
+        "top_h_W_m2K": {
+          "count": 121,
+          "max": 2871.396236677223,
+          "mean": 1117.4164975057683,
+          "median": 874.1035809691415,
+          "min": 200.21922626657215,
+          "std": 837.4291225802397
+        },
+        "top_robin_deltaT_proxy_K": {
+          "count": 121,
+          "max": 287.8827866888066,
+          "mean": 38.78237129301479,
+          "median": 20.934908153080347,
+          "min": 1.2034979221660895,
+          "std": 48.709164981055444
+        },
+        "top_robin_resistance_K_W": {
+          "count": 121,
+          "max": 49.9452534427737,
+          "mean": 17.631600961276277,
+          "median": 11.440291766008713,
+          "min": 3.482626282039009,
+          "std": 14.060529006885172
+        },
+        "z_conduction_resistance_proxy_K_W": {
+          "count": 121,
+          "max": 35.35994622980148,
+          "mean": 8.351307940996897,
+          "median": 6.553267331550202,
+          "min": 0.9348229104745926,
+          "std": 6.261375400036928
+        }
+      },
+      "q_bc_linear_relations": {
+        "effective_source_power_vs_top_h": {
+          "intercept": 1049.7484905949887,
+          "pearson_r": 0.0617693387150042,
+          "r_squared": 0.0038154512052889222,
+          "sample_count": 121,
+          "slope": 29.38300909547503
+        },
+        "target_cv_mean_vs_effective_source_power": {
+          "intercept": 1.7339802891435392,
+          "pearson_r": 0.30964698811416463,
+          "r_squared": 0.09588125724817387,
+          "sample_count": 121,
+          "slope": 0.4255491748801466
+        },
+        "target_cv_mean_vs_q_bc_predictors": {
+          "coefficients": {
+            "effective_source_power_W": 0.5233934962136609,
+            "top_robin_deltaT_proxy_K": -0.005775426542621705
+          },
+          "intercept": 1.7326330935344079,
+          "predictors": [
+            "effective_source_power_W",
+            "top_robin_deltaT_proxy_K"
+          ],
+          "r_squared": 0.10433237694136599,
+          "sample_count": 121
+        },
+        "target_cv_mean_vs_top_robin_deltaT_proxy": {
+          "intercept": 2.488786679801518,
+          "pearson_r": 0.11691539907911978,
+          "r_squared": 0.013669210541829901,
+          "sample_count": 121,
+          "slope": 0.005807225185290788
+        }
+      },
+      "sample_count": 121,
+      "target_statistics": {
+        "target_deltaT_cv_mean_K": {
+          "count": 121,
+          "max": 19.625613389866654,
+          "mean": 2.7140046431196128,
+          "median": 2.072846986642329,
+          "min": 0.5232557491544159,
+          "std": 2.419399769922918
+        },
+        "target_deltaT_cv_rms_K": {
+          "count": 121,
+          "max": 41.706279218275874,
+          "mean": 6.490487090724755,
+          "median": 5.09407105999485,
+          "min": 1.320599902706811,
+          "std": 5.128874517448924
+        },
+        "target_deltaT_max_K": {
+          "count": 121,
+          "max": 200.00407403080902,
+          "mean": 42.26632644727778,
+          "median": 35.18120103308149,
+          "min": 15.103077966100159,
+          "std": 30.89461828392661
+        }
+      }
+    },
+    "test_iid": {
+      "control_volume_weights": {
+        "cv_weight_max_m3": {
+          "count": 128,
+          "max": 2.962962962962966e-10,
+          "mean": 2.962962962962966e-10,
+          "median": 2.962962962962966e-10,
+          "min": 2.962962962962966e-10,
+          "std": 0.0
+        },
+        "cv_weight_min_m3": {
+          "count": 128,
+          "max": 3.7037037037037036e-11,
+          "mean": 3.7037037037037036e-11,
+          "median": 3.7037037037037036e-11,
+          "min": 3.7037037037037036e-11,
+          "std": 0.0
+        },
+        "cv_weight_sum_m3": {
+          "count": 128,
+          "max": 2.0000000000000004e-07,
+          "mean": 2.000000000000001e-07,
+          "median": 2.0000000000000004e-07,
+          "min": 2.0000000000000004e-07,
+          "std": 5.293955920339377e-23
+        },
+        "grid_shapes": {
+          "16x16x4": 128
+        },
+        "k_field_width_counts": {
+          "1": 26,
+          "3": 102
+        },
+        "metadata_cv_weight_sum_abs_error_m3": {
+          "count": 128,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "std": 0.0
+        }
+      },
+      "effective_source_power": {
+        "effective_source_power_W": {
+          "count": 128,
+          "max": 6.728280494331573,
+          "mean": 1.1202567190474837,
+          "median": 0.8470794686163297,
+          "min": 0.06299403395813766,
+          "std": 1.0868980525172467
+        },
+        "metadata_q_integral_error_W": {
+          "count": 128,
+          "max": 1.7763568394002505e-15,
+          "mean": -1.1600963245594897e-17,
+          "median": 0.0,
+          "min": -8.881784197001252e-16,
+          "std": 2.3464196609598664e-16
+        },
+        "metadata_q_target_error_W": {
+          "count": 128,
+          "max": 8.881784197001252e-16,
+          "mean": 1.0299920638612292e-17,
+          "median": 0.0,
+          "min": -8.881784197001252e-16,
+          "std": 2.0155102594708163e-16
+        }
+      },
+      "physics_scale_proxies": {
+        "harmonic_kz_W_mK": {
+          "count": 128,
+          "max": 91.58593103458468,
+          "mean": 18.966459125898346,
+          "median": 12.982393818533133,
+          "min": 1.46367835609383,
+          "std": 17.308627590813305
+        },
+        "positive_q_cv_volume_fraction": {
+          "count": 128,
+          "max": 0.5807407407407406,
+          "mean": 0.17016203703703697,
+          "median": 0.08814814814814814,
+          "min": 0.013333333333333327,
+          "std": 0.18538033554216854
+        },
+        "q_cv_rms_W_m3": {
+          "count": 128,
+          "max": 96859616.14253147,
+          "mean": 23462272.2469375,
+          "median": 18521505.62940052,
+          "min": 1195884.1124707228,
+          "std": 19711161.66093483
+        },
+        "series_deltaT_proxy_K": {
+          "count": 128,
+          "max": 205.35861200854742,
+          "mean": 20.289849186303794,
+          "median": 10.546836617191072,
+          "min": 0.43798878965518917,
+          "std": 26.597365713729776
+        },
+        "series_thermal_resistance_proxy_K_W": {
+          "count": 128,
+          "max": 57.340697381368216,
+          "mean": 19.077524171527532,
+          "median": 13.330817910295206,
+          "min": 3.941986289202993,
+          "std": 14.072327687440078
+        },
+        "target_cv_mean_to_series_proxy_ratio": {
+          "count": 128,
+          "max": 0.11677698664133394,
+          "mean": 0.027060941510858673,
+          "median": 0.01738059335546492,
+          "min": 0.0006676257164639583,
+          "std": 0.024863668834703492
+        },
+        "top_h_W_m2K": {
+          "count": 128,
+          "max": 2998.6456173616893,
+          "mean": 1150.2199914193593,
+          "median": 864.6152697934428,
+          "min": 206.83496014081607,
+          "std": 849.5042026840413
+        },
+        "top_robin_deltaT_proxy_K": {
+          "count": 128,
+          "max": 202.1966682741754,
+          "mean": 17.93347845615417,
+          "median": 8.43265567022231,
+          "min": 0.4005653195675886,
+          "std": 25.602199618954472
+        },
+        "top_robin_resistance_K_W": {
+          "count": 128,
+          "max": 48.347726096167996,
+          "mean": 16.621860662204266,
+          "median": 11.566543453489667,
+          "min": 3.334838882628065,
+          "std": 13.294354479054991
+        },
+        "z_conduction_resistance_proxy_K_W": {
+          "count": 128,
+          "max": 13.66420424045533,
+          "mean": 2.455663509323263,
+          "median": 1.5406759640847485,
+          "min": 0.2183741517291297,
+          "std": 2.658346654122702
+        }
+      },
+      "q_bc_linear_relations": {
+        "effective_source_power_vs_top_h": {
+          "intercept": 1111.9353635291084,
+          "pearson_r": 0.04372503358591508,
+          "r_squared": 0.0019118785620892975,
+          "sample_count": 128,
+          "slope": 34.17487013405608
+        },
+        "target_cv_mean_vs_effective_source_power": {
+          "intercept": 0.1271905793586139,
+          "pearson_r": 0.5445465801644653,
+          "r_squared": 0.29653097796881434,
+          "sample_count": 128,
+          "slope": 0.2032458420981281
+        },
+        "target_cv_mean_vs_q_bc_predictors": {
+          "coefficients": {
+            "effective_source_power_W": 0.2024964052563213,
+            "top_robin_deltaT_proxy_K": 4.7300088026408216e-05
+          },
+          "intercept": 0.12718188590655474,
+          "predictors": [
+            "effective_source_power_W",
+            "top_robin_deltaT_proxy_K"
+          ],
+          "r_squared": 0.29653585721200904,
+          "sample_count": 128
+        },
+        "target_cv_mean_vs_top_robin_deltaT_proxy": {
+          "intercept": 0.25033002374210633,
+          "pearson_r": 0.36791995450781223,
+          "r_squared": 0.13536509292503074,
+          "sample_count": 128,
+          "slope": 0.0058297711791390925
+        }
+      },
+      "sample_count": 128,
+      "target_statistics": {
+        "target_deltaT_cv_mean_K": {
+          "count": 128,
+          "max": 1.8585956480028623,
+          "mean": 0.3548780995875057,
+          "median": 0.19228054240160464,
+          "min": 0.008724941983669151,
+          "std": 0.40567238507303505
+        },
+        "target_deltaT_cv_rms_K": {
+          "count": 128,
+          "max": 2.7730314169018473,
+          "mean": 0.6281076567688076,
+          "median": 0.3766356563367999,
+          "min": 0.015395043652729173,
+          "std": 0.6470166736879802
+        },
+        "target_deltaT_max_K": {
+          "count": 128,
+          "max": 13.772237434202225,
+          "mean": 3.215700525340378,
+          "median": 1.658524516230102,
+          "min": 0.09977585035426273,
+          "std": 3.4370678920341264
+        }
+      }
+    },
+    "train": {
+      "control_volume_weights": {
+        "cv_weight_max_m3": {
+          "count": 672,
+          "max": 2.962962962962966e-10,
+          "mean": 2.9629629629629665e-10,
+          "median": 2.962962962962966e-10,
+          "min": 2.962962962962966e-10,
+          "std": 5.169878828456423e-26
+        },
+        "cv_weight_min_m3": {
+          "count": 672,
+          "max": 3.7037037037037036e-11,
+          "mean": 3.7037037037037036e-11,
+          "median": 3.7037037037037036e-11,
+          "min": 3.7037037037037036e-11,
+          "std": 0.0
+        },
+        "cv_weight_sum_m3": {
+          "count": 672,
+          "max": 2.0000000000000004e-07,
+          "mean": 2.0000000000000002e-07,
+          "median": 2.0000000000000004e-07,
+          "min": 2.0000000000000004e-07,
+          "std": 2.6469779601696886e-23
+        },
+        "grid_shapes": {
+          "16x16x4": 672
+        },
+        "k_field_width_counts": {
+          "1": 147,
+          "3": 525
+        },
+        "metadata_cv_weight_sum_abs_error_m3": {
+          "count": 672,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "std": 0.0
+        }
+      },
+      "effective_source_power": {
+        "effective_source_power_W": {
+          "count": 672,
+          "max": 9.006414722165925,
+          "mean": 1.1940814764267582,
+          "median": 0.8368764001687321,
+          "min": 0.050482087634834936,
+          "std": 1.313210461447544
+        },
+        "metadata_q_integral_error_W": {
+          "count": 672,
+          "max": 1.7763568394002505e-15,
+          "mean": -6.814985084194599e-19,
+          "median": 0.0,
+          "min": -1.7763568394002505e-15,
+          "std": 2.1980806752210666e-16
+        },
+        "metadata_q_target_error_W": {
+          "count": 672,
+          "max": 1.7763568394002505e-15,
+          "mean": 1.2587070935807905e-17,
+          "median": 0.0,
+          "min": -1.7763568394002505e-15,
+          "std": 1.9830006192045636e-16
+        }
+      },
+      "physics_scale_proxies": {
+        "harmonic_kz_W_mK": {
+          "count": 672,
+          "max": 127.87880246282744,
+          "mean": 20.050844840252452,
+          "median": 13.54108350507694,
+          "min": 0.625553459934575,
+          "std": 19.598476273258264
+        },
+        "positive_q_cv_volume_fraction": {
+          "count": 672,
+          "max": 0.5807407407407406,
+          "mean": 0.16641754850088178,
+          "median": 0.07999999999999999,
+          "min": 0.0059259259259259265,
+          "std": 0.1838542560824362
+        },
+        "q_cv_rms_W_m3": {
+          "count": 672,
+          "max": 152927454.70616865,
+          "mean": 24856699.354077812,
+          "median": 19344624.329298336,
+          "min": 932087.3981102573,
+          "std": 22295081.234202456
+        },
+        "series_deltaT_proxy_K": {
+          "count": 672,
+          "max": 416.2868882985465,
+          "mean": 22.59130441390369,
+          "median": 12.086379947430611,
+          "min": 0.3894661126979225,
+          "std": 35.41630845133539
+        },
+        "series_thermal_resistance_proxy_K_W": {
+          "count": 672,
+          "max": 81.28617046786601,
+          "mean": 19.405175721922234,
+          "median": 14.692738575437456,
+          "min": 3.62520884859699,
+          "std": 13.822311263780108
+        },
+        "target_cv_mean_to_series_proxy_ratio": {
+          "count": 672,
+          "max": 0.14141301851521199,
+          "mean": 0.026374537085015956,
+          "median": 0.017104134173989677,
+          "min": 0.0005483532495206105,
+          "std": 0.025687409339461665
+        },
+        "top_h_W_m2K": {
+          "count": 672,
+          "max": 2992.0152652133665,
+          "mean": 1113.2116688731778,
+          "median": 857.7570270915687,
+          "min": 200.15242877070014,
+          "std": 817.5870969342296
+        },
+        "top_robin_deltaT_proxy_K": {
+          "count": 672,
+          "max": 411.305462334199,
+          "mean": 20.377423222709343,
+          "median": 9.58839864522319,
+          "min": 0.2911456239872069,
+          "std": 34.58897911158389
+        },
+        "top_robin_resistance_K_W": {
+          "count": 672,
+          "max": 49.96192182836942,
+          "mean": 16.938212077911693,
+          "median": 11.658456343627403,
+          "min": 3.3422289372199705,
+          "std": 13.28829326123316
+        },
+        "z_conduction_resistance_proxy_K_W": {
+          "count": 672,
+          "max": 31.97168792271047,
+          "mean": 2.466963644010542,
+          "median": 1.4769867045894158,
+          "min": 0.15639808642885686,
+          "std": 3.0773967009696035
+        }
+      },
+      "q_bc_linear_relations": {
+        "effective_source_power_vs_top_h": {
+          "intercept": 1126.3506879431234,
+          "pearson_r": -0.01767377356909474,
+          "r_squared": 0.00031236227217157353,
+          "sample_count": 672,
+          "slope": -11.003452720214028
+        },
+        "target_cv_mean_vs_effective_source_power": {
+          "intercept": 0.17508377375145553,
+          "pearson_r": 0.46434312423601637,
+          "r_squared": 0.21561453702526434,
+          "sample_count": 672,
+          "slope": 0.15070464586836416
+        },
+        "target_cv_mean_vs_q_bc_predictors": {
+          "coefficients": {
+            "effective_source_power_W": 0.12714905452396671,
+            "top_robin_deltaT_proxy_K": 0.0012511362266451407
+          },
+          "intercept": 0.17771613664246652,
+          "predictors": [
+            "effective_source_power_W",
+            "top_robin_deltaT_proxy_K"
+          ],
+          "r_squared": 0.22065651245959184,
+          "sample_count": 672
+        },
+        "target_cv_mean_vs_top_robin_deltaT_proxy": {
+          "intercept": 0.25922795132469606,
+          "pearson_r": 0.38157056335320116,
+          "r_squared": 0.14559609481767932,
+          "sample_count": 672,
+          "slope": 0.004701745035302305
+        }
+      },
+      "sample_count": 672,
+      "target_statistics": {
+        "target_deltaT_cv_mean_K": {
+          "count": 672,
+          "max": 3.7387594469486776,
+          "mean": 0.3550373997943237,
+          "median": 0.2044955873332076,
+          "min": 0.0032415559179444307,
+          "std": 0.4262083515691106
+        },
+        "target_deltaT_cv_rms_K": {
+          "count": 672,
+          "max": 5.525800900678917,
+          "mean": 0.6508888340358034,
+          "median": 0.386586198048142,
+          "min": 0.007519900362994328,
+          "std": 0.702434336129987
+        },
+        "target_deltaT_max_K": {
+          "count": 672,
+          "max": 14.886104932703176,
+          "mean": 3.3513901033464712,
+          "median": 1.9594636934094751,
+          "min": 0.02281018791779843,
+          "std": 3.5033845257565854
+        }
+      }
+    },
+    "valid_iid": {
+      "control_volume_weights": {
+        "cv_weight_max_m3": {
+          "count": 128,
+          "max": 2.962962962962966e-10,
+          "mean": 2.962962962962966e-10,
+          "median": 2.962962962962966e-10,
+          "min": 2.962962962962966e-10,
+          "std": 0.0
+        },
+        "cv_weight_min_m3": {
+          "count": 128,
+          "max": 3.7037037037037036e-11,
+          "mean": 3.7037037037037036e-11,
+          "median": 3.7037037037037036e-11,
+          "min": 3.7037037037037036e-11,
+          "std": 0.0
+        },
+        "cv_weight_sum_m3": {
+          "count": 128,
+          "max": 2.0000000000000004e-07,
+          "mean": 2.000000000000001e-07,
+          "median": 2.0000000000000004e-07,
+          "min": 2.0000000000000004e-07,
+          "std": 5.293955920339377e-23
+        },
+        "grid_shapes": {
+          "16x16x4": 128
+        },
+        "k_field_width_counts": {
+          "1": 28,
+          "3": 100
+        },
+        "metadata_cv_weight_sum_abs_error_m3": {
+          "count": 128,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "std": 0.0
+        }
+      },
+      "effective_source_power": {
+        "effective_source_power_W": {
+          "count": 128,
+          "max": 5.357220615790253,
+          "mean": 1.116031998417652,
+          "median": 0.9004189302053293,
+          "min": 0.08353949202471203,
+          "std": 0.9079190617044388
+        },
+        "metadata_q_integral_error_W": {
+          "count": 128,
+          "max": 8.881784197001252e-16,
+          "mean": 1.214306433183765e-17,
+          "median": 0.0,
+          "min": -4.440892098500626e-16,
+          "std": 1.4457647951059577e-16
+        },
+        "metadata_q_target_error_W": {
+          "count": 128,
+          "max": 4.440892098500626e-16,
+          "mean": 1.1600963245594897e-17,
+          "median": 0.0,
+          "min": -4.440892098500626e-16,
+          "std": 1.5536942464622436e-16
+        }
+      },
+      "physics_scale_proxies": {
+        "harmonic_kz_W_mK": {
+          "count": 128,
+          "max": 151.51073256614458,
+          "mean": 17.590086616515197,
+          "median": 12.455387751677112,
+          "min": 0.6458948338360426,
+          "std": 17.643399668876903
+        },
+        "positive_q_cv_volume_fraction": {
+          "count": 128,
+          "max": 0.5807407407407406,
+          "mean": 0.17565972222222218,
+          "median": 0.0748148148148148,
+          "min": 0.008888888888888882,
+          "std": 0.19472507822651047
+        },
+        "q_cv_rms_W_m3": {
+          "count": 128,
+          "max": 107847736.60020663,
+          "mean": 23333280.908278786,
+          "median": 19283982.134806775,
+          "min": 1287459.0097679691,
+          "std": 18394274.970939677
+        },
+        "series_deltaT_proxy_K": {
+          "count": 128,
+          "max": 102.61171870412159,
+          "mean": 19.68313768339629,
+          "median": 11.205964557946674,
+          "min": 0.6232633927545369,
+          "std": 20.001310362918904
+        },
+        "series_thermal_resistance_proxy_K_W": {
+          "count": 128,
+          "max": 53.94732007317083,
+          "mean": 18.784902183554667,
+          "median": 14.352040064094613,
+          "min": 3.6362100552894265,
+          "std": 13.220935533406974
+        },
+        "target_cv_mean_to_series_proxy_ratio": {
+          "count": 128,
+          "max": 0.13437955145573444,
+          "mean": 0.02406832301571369,
+          "median": 0.015270894729202986,
+          "min": 0.000832038338471083,
+          "std": 0.023267178131568023
+        },
+        "top_h_W_m2K": {
+          "count": 128,
+          "max": 2989.083235961284,
+          "mean": 1134.9920440464007,
+          "median": 871.2486854845715,
+          "min": 200.43077861020723,
+          "std": 805.1165359797385
+        },
+        "top_robin_deltaT_proxy_K": {
+          "count": 128,
+          "max": 98.19903198926735,
+          "mean": 17.444499187735858,
+          "median": 8.369460222873434,
+          "min": 0.3189968645924633,
+          "std": 19.00787166090368
+        },
+        "top_robin_resistance_K_W": {
+          "count": 128,
+          "max": 49.892536811662794,
+          "mean": 16.319619648186176,
+          "median": 11.477896295350536,
+          "min": 3.345507371521562,
+          "std": 12.751996876292353
+        },
+        "z_conduction_resistance_proxy_K_W": {
+          "count": 128,
+          "max": 30.96479326397106,
+          "mean": 2.4652825353684897,
+          "median": 1.6057475981384302,
+          "min": 0.13200384990065742,
+          "std": 3.2458495522960114
+        }
+      },
+      "q_bc_linear_relations": {
+        "effective_source_power_vs_top_h": {
+          "intercept": 1103.4514783786017,
+          "pearson_r": 0.03186993802297184,
+          "r_squared": 0.0010156929495882538,
+          "sample_count": 128,
+          "slope": 28.26134529522294
+        },
+        "target_cv_mean_vs_effective_source_power": {
+          "intercept": 0.1543420823138871,
+          "pearson_r": 0.405728873514533,
+          "r_squared": 0.16461591880337179,
+          "sample_count": 128,
+          "slope": 0.13050659991657726
+        },
+        "target_cv_mean_vs_q_bc_predictors": {
+          "coefficients": {
+            "effective_source_power_W": 0.09151890168478562,
+            "top_robin_deltaT_proxy_K": 0.0031791309784097487
+          },
+          "intercept": 0.14239525331464273,
+          "predictors": [
+            "effective_source_power_W",
+            "top_robin_deltaT_proxy_K"
+          ],
+          "r_squared": 0.19273960443919036,
+          "sample_count": 128
+        },
+        "target_cv_mean_vs_top_robin_deltaT_proxy": {
+          "intercept": 0.19986329516388343,
+          "pearson_r": 0.37358399153896404,
+          "r_squared": 0.13956499873418493,
+          "sample_count": 128,
+          "slope": 0.005739822484097929
+        }
+      },
+      "sample_count": 128,
+      "target_statistics": {
+        "target_deltaT_cv_mean_K": {
+          "count": 128,
+          "max": 1.2769768644129056,
+          "mean": 0.2999916238254779,
+          "median": 0.174055021269642,
+          "min": 0.006386257022334719,
+          "std": 0.2920409107592174
+        },
+        "target_deltaT_cv_rms_K": {
+          "count": 128,
+          "max": 2.0236222692071117,
+          "mean": 0.5344006140351069,
+          "median": 0.35687152139829703,
+          "min": 0.009529631065595099,
+          "std": 0.48698444825444553
+        },
+        "target_deltaT_max_K": {
+          "count": 128,
+          "max": 13.620948507497985,
+          "mean": 2.856493859273233,
+          "median": 1.7308924508331245,
+          "min": 0.027971987013188482,
+          "std": 3.139505544717821
+        }
+      }
+    }
+  }
+}

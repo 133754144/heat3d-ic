@@ -1,0 +1,93 @@
+{
+  "schema_version": "heat3d_v5_p0_contract_v1",
+  "contract_id": "V5-P0-0",
+  "branch": "research/v5",
+  "phase": "physics-scale preflight",
+  "status": "frozen_for_p0",
+  "scope": {
+    "allowed_work": [
+      "define the V5 experiment contract",
+      "read the P5 arrays and metadata",
+      "produce the tracked P0-1 JSON and Markdown audit",
+      "run fixture tests and a read-only dry-run"
+    ],
+    "prohibited_work": [
+      "modify model code or model configuration",
+      "start training, evaluation, or data generation",
+      "write to data/, output/, checkpoints/, or logs/",
+      "modify P5 arrays, labels, metadata, or split membership"
+    ]
+  },
+  "dataset_contract": {
+    "dataset_id": "heat3d_v4_p5_clean_nohard_v0",
+    "dataset_path": "data/heat3d_v4_p5_clean_nohard_v0",
+    "split_map_path": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+    "required_split_roles": [
+      "train",
+      "valid_iid",
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test"
+    ],
+    "expected_role_counts": {
+      "train": 672,
+      "valid_iid": 128,
+      "test_iid": 128,
+      "hard_train_holdout": 121,
+      "hard_challenge_valid": 12,
+      "hard_challenge_test": 12
+    },
+    "expected_total_sample_count": 1073,
+    "temperature_reference": "sample_meta.boundary_params.bottom.T_fixed_K",
+    "power_integration_policy": "solver_control_volume_weighted"
+  },
+  "audit_contract": {
+    "mode": "read_only",
+    "control_volume_weights": "derive rectilinear control-volume weights from coords.npy and compare their sum to sample_meta.q_power_audit.control_volume_weight_sum_m3",
+    "effective_source_power": "sum(q_field * control_volume_weight) and compare it to q_integral_from_array_W and q_total_target_power_W",
+    "target_statistics": {
+      "field": "temperature.npy - temperature_reference",
+      "metrics": [
+        "control-volume RMS DeltaT",
+        "control-volume mean DeltaT",
+        "nodewise maximum DeltaT"
+      ]
+    },
+    "physics_scale_proxies": [
+      "control-volume harmonic kz",
+      "top Robin resistance 1/(top_h * top_area)",
+      "through-plane conduction resistance depth/(top_area * harmonic_kz)",
+      "series resistance and source-power DeltaT proxies",
+      "target mean to series-proxy ratio"
+    ],
+    "q_bc_linear_relations": [
+      "effective source power versus top_h",
+      "target CV mean versus effective source power",
+      "target CV mean versus top-Robin DeltaT proxy",
+      "two-predictor least-squares relation using source power and top-Robin DeltaT proxy"
+    ],
+    "duplicate_leakage": [
+      "all sample IDs are assigned exactly once",
+      "cross-role model-input fingerprints over coords/k/q/BC",
+      "cross-role full-sample fingerprints including temperature",
+      "cross-role P5 provenance source IDs"
+    ],
+    "interpretation_limit": "The linear statistics are descriptive across heterogeneous samples; they do not claim a causal response law or model performance."
+  },
+  "outputs": {
+    "audit_script": "scripts/audit_heat3d_v5_p5_physics_scale.py",
+    "fixture_test": "scripts/check_heat3d_v5_p0_physics_scale_audit.py",
+    "audit_json": "configs/heat3d_v5/v5_p0_1_p5_physics_scale_audit.json",
+    "audit_markdown": "docs/v5_p0_1_p5_physics_scale_audit.md",
+    "contract_markdown": "docs/v5_p0_experiment_contract.md"
+  },
+  "acceptance_gates": {
+    "dataset_membership_complete": true,
+    "control_volume_and_declared_power_consistent": true,
+    "cross_role_model_input_duplicate_groups": 0,
+    "cross_role_full_sample_duplicate_groups": 0,
+    "cross_role_provenance_duplicate_groups": 0,
+    "no_model_or_training_change": true
+  }
+}
