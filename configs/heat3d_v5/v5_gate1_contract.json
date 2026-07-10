@@ -1,0 +1,118 @@
+{
+  "schema_version": "heat3d_v5_gate1_contract_v1",
+  "contract_id": "V5-Gate-1",
+  "branch": "research/v5",
+  "base_commit": "e1889ac",
+  "scope": {
+    "allowed_work": [
+      "read the frozen P5 arrays and metadata",
+      "derive deterministic operator-consistent physics-scale proxies",
+      "fit scalar calibrations on train only",
+      "write the tracked Gate 1 table, summary, closeout, and fixture results"
+    ],
+    "prohibited_work": [
+      "modify model, loss, or training configuration",
+      "train or evaluate a learned model",
+      "generate data or relabel P5 samples",
+      "write data/, output/, checkpoints/, or logs/",
+      "enter Gate 2"
+    ]
+  },
+  "p0_backward_traceability": {
+    "contract": "configs/heat3d_v5/v5_p0_experiment_contract.json",
+    "audit": "configs/heat3d_v5/v5_p0_1_p5_physics_scale_audit.json",
+    "audit_sha256": "cf231c690884b18d6cd331887caa2c0411e01bbe2928f432d6f1b983dfea9c4e",
+    "legacy_effective_source_power_term": "P_array = sum_all_nodes(q * CV_volume)",
+    "note": "Gate 1 retains P0 files unchanged and introduces operator-consistent P_operator explicitly."
+  },
+  "dataset_contract": {
+    "dataset_id": "heat3d_v4_p5_clean_nohard_v0",
+    "dataset_path": "data/heat3d_v4_p5_clean_nohard_v0",
+    "split_map_path": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+    "role_counts": {
+      "train": 672,
+      "valid_iid": 128,
+      "test_iid": 128,
+      "hard_train_holdout": 121,
+      "hard_challenge_valid": 12,
+      "hard_challenge_test": 12
+    },
+    "total_sample_count": 1073
+  },
+  "operator_semantics": {
+    "implementation_source": "rigno/heat3d_v4_reference_solver.py",
+    "bottom_mask": "coords[:,2] == min(coords[:,2]); cross-check bc_features is_bottom and sample_meta bottom boundary indices",
+    "P_array_W": "sum_all_nodes(q * CV_volume)",
+    "P_bottom_W": "sum_bottom_mask(q * CV_volume)",
+    "P_operator_W": "sum_non_bottom_nodes(q * CV_volume) = P_array_W - P_bottom_W",
+    "operator_reason": "_assemble_triplets replaces every bottom Dirichlet row with T=T_bottom before adding q*CV; _source_power_total iterates iz=1..end",
+    "bottom_temperature_label": "max(abs(temperature[bottom_mask] - T_bottom))",
+    "bc_offset_K": "T_inf - T_bottom",
+    "driver_categories": [
+      "source_driven: abs(P_operator)>power_tolerance and abs(T_inf-T_bottom)<=offset_tolerance",
+      "bc_driven: abs(P_operator)<=power_tolerance and abs(T_inf-T_bottom)>offset_tolerance",
+      "mixed_source_bc: both terms are active",
+      "zero_drive: neither term is active"
+    ]
+  },
+  "target_scale": {
+    "name": "s_y",
+    "definition": "sqrt(sum(CV_volume * (temperature - T_bottom)^2) / sum(CV_volume))",
+    "unit": "K",
+    "reason": "CV-weighted RMS DeltaT is non-negative and retains both source-driven and BC-driven amplitude."
+  },
+  "candidates": {
+    "constant": "unit raw base; train-only log-space constant calibration",
+    "power_only": "P_operator_W",
+    "q_rms_lz2_over_kz": "q_operator_CV_RMS * Lz^2 / harmonic_kz",
+    "legacy_p_array_r_series": "P_array * (1/(top_h*A) + Lz/(A*harmonic_kz)); retained exactly as the P0-style legacy comparator",
+    "source_centroid_two_path": "P_operator times the parallel equivalent of centroid-to-bottom and centroid-to-top-plus-Robin paths",
+    "z_collapsed_1d": "CV-collapsed z-only finite-volume thermal network with bottom Dirichlet, top Robin, P_operator source, and T_inf-T_bottom offset"
+  },
+  "calibration_and_selection": {
+    "fit_role": "train",
+    "selection_role": "valid_iid",
+    "ood_inspection_role": "hard_challenge_valid",
+    "test_roles": [
+      "test_iid",
+      "hard_challenge_test"
+    ],
+    "test_role_policy": "report_only_after_selection; never used to fit calibration, select a candidate, set a threshold, or choose a formula",
+    "calibration": "log(s_y) = intercept + slope * log(raw_proxy), fitted only on train; constant uses intercept only",
+    "primary_selection_metric": "valid_iid log_RMSE",
+    "physics_decision_gate": "best physical candidate must have paired-bootstrap valid_iid log-RMSE delta versus constant with 95% upper bound below 0; otherwise reject all single deterministic proxies and require a learned global scale in a later gate",
+    "bootstrap": {
+      "seed": 1701,
+      "resamples": 2000,
+      "confidence_level": 0.95
+    }
+  },
+  "required_metrics": [
+    "log_RMSE",
+    "log_MAE",
+    "Spearman_rho",
+    "log_R2",
+    "log_slope",
+    "prediction_to_target_ratio_quantiles",
+    "factor_2_accuracy",
+    "paired_bootstrap_CI"
+  ],
+  "residual_features": [
+    "q_active_CV_fraction",
+    "q_RMS_to_mean_concentration",
+    "source_z_centroid",
+    "harmonic_kz",
+    "anisotropy_xy_over_z",
+    "top_h",
+    "T_inf_minus_T_bottom",
+    "clean_or_hard_role"
+  ],
+  "outputs": {
+    "audit_script": "scripts/audit_heat3d_v5_gate1.py",
+    "fixture_test": "scripts/check_heat3d_v5_gate1.py",
+    "per_sample_table": "configs/heat3d_v5/v5_gate1_p5_per_sample_audit.csv",
+    "summary_json": "configs/heat3d_v5/v5_gate1_closeout.json",
+    "closeout_markdown": "docs/v5_gate1_closeout.md",
+    "contract_markdown": "docs/v5_gate1_contract.md"
+  }
+}
