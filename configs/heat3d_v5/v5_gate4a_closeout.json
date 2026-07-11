@@ -1,0 +1,4432 @@
+{
+  "audit_id": "V5-Gate-4A-offline-learned-scale-correction-feasibility",
+  "contract_id": "V5-Gate-4A-offline-learned-scale-correction-feasibility",
+  "dataset": {
+    "dataset_id": "heat3d_v4_p5_clean_nohard_v0",
+    "dataset_path": "data/heat3d_v4_p5_clean_nohard_v0",
+    "role_counts": {
+      "hard_challenge_test": 12,
+      "hard_challenge_valid": 12,
+      "hard_train_holdout": 121,
+      "test_iid": 128,
+      "train": 672,
+      "valid_iid": 128
+    },
+    "roles": [
+      "train",
+      "valid_iid",
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test"
+    ],
+    "sample_count": 1073,
+    "split_map_path": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json"
+  },
+  "frozen_definitions": {
+    "corrected_scale": "s_phys_K * exp(delta_s_hat)",
+    "field_reconstruction": "frozen V4 shape with corrected scale, followed by raw-space Dirichlet projection",
+    "s_phys": "raw_z_collapsed_1d_operator_K",
+    "shape_model_training": false,
+    "target_delta_s": "log(s_true_K / s_phys_K)"
+  },
+  "frozen_prediction_archives": {
+    "best": [
+      {
+        "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/best_train_clean/predictions.npz",
+        "sample_count": 672,
+        "sha256": "1f020d2aeebef05a85f0c3c8dc07503dfcc2a393a8dbee7cadfe48d627e6d9cb"
+      },
+      {
+        "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/best_hard_train_clean/predictions.npz",
+        "sample_count": 121,
+        "sha256": "51e21d3d96111298f6ceeb1a58520811d71c7e9e6e0c12d0b28045f8ce25a0da"
+      },
+      {
+        "path": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/best_predictions.npz",
+        "sample_count": 128,
+        "sha256": "bec1ff99c6888136ca8d435cb85b388d659241c6dfcb531b9b4665b954d21010"
+      },
+      {
+        "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/best_test_iid/predictions.npz",
+        "sample_count": 128,
+        "sha256": "336c979e96f95e84608cdff092f898bb7147ce2afc7aa942f1290807750be3ec"
+      },
+      {
+        "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/best_hard_challenge_valid/predictions.npz",
+        "sample_count": 12,
+        "sha256": "a8de5366a60fb94f8be180dcb1330cc4e19bf9874983573d1226b83353c30f71"
+      },
+      {
+        "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/best_hard_challenge_test/predictions.npz",
+        "sample_count": 12,
+        "sha256": "33748cc181bdefb5d466f828375c8b6fd33bea8484b02263e4a79d0a2b87cd1c"
+      }
+    ],
+    "final": [
+      {
+        "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/final_train_clean/predictions.npz",
+        "sample_count": 672,
+        "sha256": "289ee3ad0fa07d577717dbbbbfe69c9620758d75826525004f2beae496e285fe"
+      },
+      {
+        "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/final_hard_train_clean/predictions.npz",
+        "sample_count": 121,
+        "sha256": "38562e78493610f2c3e404a0815573091a4c2ad006d13c27d2a12e1e94461dd3"
+      },
+      {
+        "path": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/predictions.npz",
+        "sample_count": 128,
+        "sha256": "72a6d72ac07fb077f9bc80d678bc1aa465f1dfd827646d285e678733d7d860df"
+      },
+      {
+        "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/final_test_iid/predictions.npz",
+        "sample_count": 128,
+        "sha256": "4cf805f819adc025c4afbcb0f28e00e1cdf0244f036c4568f9b2b94eed9e95a8"
+      },
+      {
+        "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/final_hard_challenge_valid/predictions.npz",
+        "sample_count": 12,
+        "sha256": "b2101533aa454a99d8e911f8b029c55554d8b8042a03879508de967e28804319"
+      },
+      {
+        "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/final_hard_challenge_test/predictions.npz",
+        "sample_count": 12,
+        "sha256": "c97184c6afd0c7d89e05e68af1c779b679e9d6053c7d2ed30eedaa38083be515"
+      }
+    ]
+  },
+  "input_leakage_guard": {
+    "forbidden_feature_tokens": [
+      "target",
+      "residual",
+      "oracle",
+      "prediction",
+      "pred_"
+    ],
+    "global_feature_allowlist": [
+      "P_operator_W",
+      "raw_z_collapsed_1d_operator_K",
+      "q_weighted_local_kz_W_mK",
+      "q_weighted_inverse_kz_mK_W",
+      "q_low_k_overlap_fraction",
+      "source_concentration",
+      "source_z_centroid_normalized",
+      "source_layer_kz_heterogeneity_cv",
+      "harmonic_kx_W_mK",
+      "harmonic_ky_W_mK",
+      "harmonic_kz_W_mK",
+      "anisotropy_xy_over_z",
+      "Lx_m",
+      "Ly_m",
+      "Lz_m",
+      "top_area_m2",
+      "top_h_W_m2K",
+      "T_bottom_K",
+      "T_inf_K",
+      "T_inf_minus_T_bottom_K"
+    ],
+    "target_or_oracle_inputs_used": false,
+    "test_roles_used_for_fit_or_selection": false
+  },
+  "mode": "offline_scalar_models_with_frozen_v4_shapes",
+  "model_parameters": {
+    "model_count": 48,
+    "path": "/tmp/heat3d_v5_gate4a_019f4c7b/v5_gate4a_model_parameters.json",
+    "sha256": "c400f9cfc35d51c4a9700b2cd56d215f9fa9d3172218b97b633c5264819f6d07"
+  },
+  "per_sample_table": {
+    "columns": [
+      "sample_id",
+      "role",
+      "is_clean_role",
+      "is_hard_role",
+      "input_fingerprint",
+      "full_fingerprint",
+      "provenance_source_id",
+      "reference_temperature_K",
+      "s_phys_K",
+      "s_true_K",
+      "target_delta_s",
+      "feature_P_operator_W",
+      "feature_raw_z_collapsed_1d_operator_K",
+      "feature_q_weighted_local_kz_W_mK",
+      "feature_q_weighted_inverse_kz_mK_W",
+      "feature_q_low_k_overlap_fraction",
+      "feature_source_concentration",
+      "feature_source_z_centroid_normalized",
+      "feature_source_layer_kz_heterogeneity_cv",
+      "feature_harmonic_kx_W_mK",
+      "feature_harmonic_ky_W_mK",
+      "feature_harmonic_kz_W_mK",
+      "feature_anisotropy_xy_over_z",
+      "feature_Lx_m",
+      "feature_Ly_m",
+      "feature_Lz_m",
+      "feature_top_area_m2",
+      "feature_top_h_W_m2K",
+      "feature_T_bottom_K",
+      "feature_T_inf_K",
+      "feature_T_inf_minus_T_bottom_K",
+      "best_pooled_latent_000",
+      "best_pooled_latent_001",
+      "best_pooled_latent_002",
+      "best_pooled_latent_003",
+      "best_pooled_latent_004",
+      "best_pooled_latent_005",
+      "best_pooled_latent_006",
+      "best_pooled_latent_007",
+      "best_pooled_latent_008",
+      "best_pooled_latent_009",
+      "best_pooled_latent_010",
+      "best_pooled_latent_011",
+      "best_pooled_latent_012",
+      "best_pooled_latent_013",
+      "best_pooled_latent_014",
+      "best_pooled_latent_015",
+      "best_pooled_latent_016",
+      "best_pooled_latent_017",
+      "best_pooled_latent_018",
+      "best_pooled_latent_019",
+      "best_pooled_latent_020",
+      "best_pooled_latent_021",
+      "best_pooled_latent_022",
+      "best_pooled_latent_023",
+      "best_pooled_latent_024",
+      "best_pooled_latent_025",
+      "best_pooled_latent_026",
+      "best_pooled_latent_027",
+      "best_pooled_latent_028",
+      "best_pooled_latent_029",
+      "best_pooled_latent_030",
+      "best_pooled_latent_031",
+      "best_pooled_latent_032",
+      "best_pooled_latent_033",
+      "best_pooled_latent_034",
+      "best_pooled_latent_035",
+      "best_pooled_latent_036",
+      "best_pooled_latent_037",
+      "best_pooled_latent_038",
+      "best_pooled_latent_039",
+      "best_pooled_latent_040",
+      "best_pooled_latent_041",
+      "best_pooled_latent_042",
+      "best_pooled_latent_043",
+      "best_pooled_latent_044",
+      "best_pooled_latent_045",
+      "best_pooled_latent_046",
+      "best_pooled_latent_047",
+      "best_pooled_latent_048",
+      "best_pooled_latent_049",
+      "best_pooled_latent_050",
+      "best_pooled_latent_051",
+      "best_pooled_latent_052",
+      "best_pooled_latent_053",
+      "best_pooled_latent_054",
+      "best_pooled_latent_055",
+      "best_pooled_latent_056",
+      "best_pooled_latent_057",
+      "best_pooled_latent_058",
+      "best_pooled_latent_059",
+      "best_pooled_latent_060",
+      "best_pooled_latent_061",
+      "best_pooled_latent_062",
+      "best_pooled_latent_063",
+      "best_pooled_latent_064",
+      "best_pooled_latent_065",
+      "best_pooled_latent_066",
+      "best_pooled_latent_067",
+      "best_pooled_latent_068",
+      "best_pooled_latent_069",
+      "best_pooled_latent_070",
+      "best_pooled_latent_071",
+      "best_pooled_latent_072",
+      "best_pooled_latent_073",
+      "best_pooled_latent_074",
+      "best_pooled_latent_075",
+      "best_pooled_latent_076",
+      "best_pooled_latent_077",
+      "best_pooled_latent_078",
+      "best_pooled_latent_079",
+      "best_pooled_latent_080",
+      "best_pooled_latent_081",
+      "best_pooled_latent_082",
+      "best_pooled_latent_083",
+      "best_pooled_latent_084",
+      "best_pooled_latent_085",
+      "best_pooled_latent_086",
+      "best_pooled_latent_087",
+      "best_pooled_latent_088",
+      "best_pooled_latent_089",
+      "best_pooled_latent_090",
+      "best_pooled_latent_091",
+      "best_pooled_latent_092",
+      "best_pooled_latent_093",
+      "best_pooled_latent_094",
+      "best_pooled_latent_095",
+      "best_v4_uncorrected_delta_s",
+      "best_v4_uncorrected_scale_K",
+      "best_v4_uncorrected_scale_log_error",
+      "best_v4_uncorrected_frozen_shape_field_cv_rmse_K",
+      "final_pooled_latent_000",
+      "final_pooled_latent_001",
+      "final_pooled_latent_002",
+      "final_pooled_latent_003",
+      "final_pooled_latent_004",
+      "final_pooled_latent_005",
+      "final_pooled_latent_006",
+      "final_pooled_latent_007",
+      "final_pooled_latent_008",
+      "final_pooled_latent_009",
+      "final_pooled_latent_010",
+      "final_pooled_latent_011",
+      "final_pooled_latent_012",
+      "final_pooled_latent_013",
+      "final_pooled_latent_014",
+      "final_pooled_latent_015",
+      "final_pooled_latent_016",
+      "final_pooled_latent_017",
+      "final_pooled_latent_018",
+      "final_pooled_latent_019",
+      "final_pooled_latent_020",
+      "final_pooled_latent_021",
+      "final_pooled_latent_022",
+      "final_pooled_latent_023",
+      "final_pooled_latent_024",
+      "final_pooled_latent_025",
+      "final_pooled_latent_026",
+      "final_pooled_latent_027",
+      "final_pooled_latent_028",
+      "final_pooled_latent_029",
+      "final_pooled_latent_030",
+      "final_pooled_latent_031",
+      "final_pooled_latent_032",
+      "final_pooled_latent_033",
+      "final_pooled_latent_034",
+      "final_pooled_latent_035",
+      "final_pooled_latent_036",
+      "final_pooled_latent_037",
+      "final_pooled_latent_038",
+      "final_pooled_latent_039",
+      "final_pooled_latent_040",
+      "final_pooled_latent_041",
+      "final_pooled_latent_042",
+      "final_pooled_latent_043",
+      "final_pooled_latent_044",
+      "final_pooled_latent_045",
+      "final_pooled_latent_046",
+      "final_pooled_latent_047",
+      "final_pooled_latent_048",
+      "final_pooled_latent_049",
+      "final_pooled_latent_050",
+      "final_pooled_latent_051",
+      "final_pooled_latent_052",
+      "final_pooled_latent_053",
+      "final_pooled_latent_054",
+      "final_pooled_latent_055",
+      "final_pooled_latent_056",
+      "final_pooled_latent_057",
+      "final_pooled_latent_058",
+      "final_pooled_latent_059",
+      "final_pooled_latent_060",
+      "final_pooled_latent_061",
+      "final_pooled_latent_062",
+      "final_pooled_latent_063",
+      "final_pooled_latent_064",
+      "final_pooled_latent_065",
+      "final_pooled_latent_066",
+      "final_pooled_latent_067",
+      "final_pooled_latent_068",
+      "final_pooled_latent_069",
+      "final_pooled_latent_070",
+      "final_pooled_latent_071",
+      "final_pooled_latent_072",
+      "final_pooled_latent_073",
+      "final_pooled_latent_074",
+      "final_pooled_latent_075",
+      "final_pooled_latent_076",
+      "final_pooled_latent_077",
+      "final_pooled_latent_078",
+      "final_pooled_latent_079",
+      "final_pooled_latent_080",
+      "final_pooled_latent_081",
+      "final_pooled_latent_082",
+      "final_pooled_latent_083",
+      "final_pooled_latent_084",
+      "final_pooled_latent_085",
+      "final_pooled_latent_086",
+      "final_pooled_latent_087",
+      "final_pooled_latent_088",
+      "final_pooled_latent_089",
+      "final_pooled_latent_090",
+      "final_pooled_latent_091",
+      "final_pooled_latent_092",
+      "final_pooled_latent_093",
+      "final_pooled_latent_094",
+      "final_pooled_latent_095",
+      "final_v4_uncorrected_delta_s",
+      "final_v4_uncorrected_scale_K",
+      "final_v4_uncorrected_scale_log_error",
+      "final_v4_uncorrected_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_physics_only_delta_s_hat",
+      "clean_only_zero_shot_best_physics_only_scale_hat_K",
+      "clean_only_zero_shot_best_physics_only_scale_log_error",
+      "clean_only_zero_shot_best_physics_only_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_v4_uncorrected_scale_delta_s_hat",
+      "clean_only_zero_shot_best_v4_uncorrected_scale_scale_hat_K",
+      "clean_only_zero_shot_best_v4_uncorrected_scale_scale_log_error",
+      "clean_only_zero_shot_best_v4_uncorrected_scale_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_l0_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_l0_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_l0_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_l0_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_l0.0001_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_l0.0001_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_l0.0001_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_l0.0001_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_l0.01_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_l0.01_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_l0.01_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_l0.01_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_l1_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_l1_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_l1_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_l1_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_l10_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_l10_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_l10_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_l10_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_mlp_global_delta_s_hat",
+      "clean_only_zero_shot_best_mlp_global_scale_hat_K",
+      "clean_only_zero_shot_best_mlp_global_scale_log_error",
+      "clean_only_zero_shot_best_mlp_global_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l0_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_latent_l0_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l0_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_latent_l0_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.0001_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.0001_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.0001_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.0001_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.01_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.01_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.01_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_latent_l0.01_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l1_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_latent_l1_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l1_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_latent_l1_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l10_delta_s_hat",
+      "clean_only_zero_shot_best_ridge_global_latent_l10_scale_hat_K",
+      "clean_only_zero_shot_best_ridge_global_latent_l10_scale_log_error",
+      "clean_only_zero_shot_best_ridge_global_latent_l10_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_best_mlp_global_latent_delta_s_hat",
+      "clean_only_zero_shot_best_mlp_global_latent_scale_hat_K",
+      "clean_only_zero_shot_best_mlp_global_latent_scale_log_error",
+      "clean_only_zero_shot_best_mlp_global_latent_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_physics_only_delta_s_hat",
+      "clean_only_zero_shot_final_physics_only_scale_hat_K",
+      "clean_only_zero_shot_final_physics_only_scale_log_error",
+      "clean_only_zero_shot_final_physics_only_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_v4_uncorrected_scale_delta_s_hat",
+      "clean_only_zero_shot_final_v4_uncorrected_scale_scale_hat_K",
+      "clean_only_zero_shot_final_v4_uncorrected_scale_scale_log_error",
+      "clean_only_zero_shot_final_v4_uncorrected_scale_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_l0_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_l0_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_l0_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_l0_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_l0.0001_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_l0.0001_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_l0.0001_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_l0.0001_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_l0.01_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_l0.01_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_l0.01_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_l0.01_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_l1_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_l1_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_l1_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_l1_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_l10_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_l10_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_l10_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_l10_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_mlp_global_delta_s_hat",
+      "clean_only_zero_shot_final_mlp_global_scale_hat_K",
+      "clean_only_zero_shot_final_mlp_global_scale_log_error",
+      "clean_only_zero_shot_final_mlp_global_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l0_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_latent_l0_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l0_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_latent_l0_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.0001_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.0001_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.0001_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.0001_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.01_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.01_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.01_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_latent_l0.01_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l1_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_latent_l1_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l1_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_latent_l1_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l10_delta_s_hat",
+      "clean_only_zero_shot_final_ridge_global_latent_l10_scale_hat_K",
+      "clean_only_zero_shot_final_ridge_global_latent_l10_scale_log_error",
+      "clean_only_zero_shot_final_ridge_global_latent_l10_frozen_shape_field_cv_rmse_K",
+      "clean_only_zero_shot_final_mlp_global_latent_delta_s_hat",
+      "clean_only_zero_shot_final_mlp_global_latent_scale_hat_K",
+      "clean_only_zero_shot_final_mlp_global_latent_scale_log_error",
+      "clean_only_zero_shot_final_mlp_global_latent_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_physics_only_delta_s_hat",
+      "hard_adapted_best_physics_only_scale_hat_K",
+      "hard_adapted_best_physics_only_scale_log_error",
+      "hard_adapted_best_physics_only_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_v4_uncorrected_scale_delta_s_hat",
+      "hard_adapted_best_v4_uncorrected_scale_scale_hat_K",
+      "hard_adapted_best_v4_uncorrected_scale_scale_log_error",
+      "hard_adapted_best_v4_uncorrected_scale_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_l0_delta_s_hat",
+      "hard_adapted_best_ridge_global_l0_scale_hat_K",
+      "hard_adapted_best_ridge_global_l0_scale_log_error",
+      "hard_adapted_best_ridge_global_l0_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_l0.0001_delta_s_hat",
+      "hard_adapted_best_ridge_global_l0.0001_scale_hat_K",
+      "hard_adapted_best_ridge_global_l0.0001_scale_log_error",
+      "hard_adapted_best_ridge_global_l0.0001_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_l0.01_delta_s_hat",
+      "hard_adapted_best_ridge_global_l0.01_scale_hat_K",
+      "hard_adapted_best_ridge_global_l0.01_scale_log_error",
+      "hard_adapted_best_ridge_global_l0.01_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_l1_delta_s_hat",
+      "hard_adapted_best_ridge_global_l1_scale_hat_K",
+      "hard_adapted_best_ridge_global_l1_scale_log_error",
+      "hard_adapted_best_ridge_global_l1_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_l10_delta_s_hat",
+      "hard_adapted_best_ridge_global_l10_scale_hat_K",
+      "hard_adapted_best_ridge_global_l10_scale_log_error",
+      "hard_adapted_best_ridge_global_l10_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_mlp_global_delta_s_hat",
+      "hard_adapted_best_mlp_global_scale_hat_K",
+      "hard_adapted_best_mlp_global_scale_log_error",
+      "hard_adapted_best_mlp_global_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_latent_l0_delta_s_hat",
+      "hard_adapted_best_ridge_global_latent_l0_scale_hat_K",
+      "hard_adapted_best_ridge_global_latent_l0_scale_log_error",
+      "hard_adapted_best_ridge_global_latent_l0_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_latent_l0.0001_delta_s_hat",
+      "hard_adapted_best_ridge_global_latent_l0.0001_scale_hat_K",
+      "hard_adapted_best_ridge_global_latent_l0.0001_scale_log_error",
+      "hard_adapted_best_ridge_global_latent_l0.0001_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_latent_l0.01_delta_s_hat",
+      "hard_adapted_best_ridge_global_latent_l0.01_scale_hat_K",
+      "hard_adapted_best_ridge_global_latent_l0.01_scale_log_error",
+      "hard_adapted_best_ridge_global_latent_l0.01_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_latent_l1_delta_s_hat",
+      "hard_adapted_best_ridge_global_latent_l1_scale_hat_K",
+      "hard_adapted_best_ridge_global_latent_l1_scale_log_error",
+      "hard_adapted_best_ridge_global_latent_l1_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_ridge_global_latent_l10_delta_s_hat",
+      "hard_adapted_best_ridge_global_latent_l10_scale_hat_K",
+      "hard_adapted_best_ridge_global_latent_l10_scale_log_error",
+      "hard_adapted_best_ridge_global_latent_l10_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_best_mlp_global_latent_delta_s_hat",
+      "hard_adapted_best_mlp_global_latent_scale_hat_K",
+      "hard_adapted_best_mlp_global_latent_scale_log_error",
+      "hard_adapted_best_mlp_global_latent_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_physics_only_delta_s_hat",
+      "hard_adapted_final_physics_only_scale_hat_K",
+      "hard_adapted_final_physics_only_scale_log_error",
+      "hard_adapted_final_physics_only_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_v4_uncorrected_scale_delta_s_hat",
+      "hard_adapted_final_v4_uncorrected_scale_scale_hat_K",
+      "hard_adapted_final_v4_uncorrected_scale_scale_log_error",
+      "hard_adapted_final_v4_uncorrected_scale_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_l0_delta_s_hat",
+      "hard_adapted_final_ridge_global_l0_scale_hat_K",
+      "hard_adapted_final_ridge_global_l0_scale_log_error",
+      "hard_adapted_final_ridge_global_l0_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_l0.0001_delta_s_hat",
+      "hard_adapted_final_ridge_global_l0.0001_scale_hat_K",
+      "hard_adapted_final_ridge_global_l0.0001_scale_log_error",
+      "hard_adapted_final_ridge_global_l0.0001_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_l0.01_delta_s_hat",
+      "hard_adapted_final_ridge_global_l0.01_scale_hat_K",
+      "hard_adapted_final_ridge_global_l0.01_scale_log_error",
+      "hard_adapted_final_ridge_global_l0.01_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_l1_delta_s_hat",
+      "hard_adapted_final_ridge_global_l1_scale_hat_K",
+      "hard_adapted_final_ridge_global_l1_scale_log_error",
+      "hard_adapted_final_ridge_global_l1_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_l10_delta_s_hat",
+      "hard_adapted_final_ridge_global_l10_scale_hat_K",
+      "hard_adapted_final_ridge_global_l10_scale_log_error",
+      "hard_adapted_final_ridge_global_l10_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_mlp_global_delta_s_hat",
+      "hard_adapted_final_mlp_global_scale_hat_K",
+      "hard_adapted_final_mlp_global_scale_log_error",
+      "hard_adapted_final_mlp_global_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_latent_l0_delta_s_hat",
+      "hard_adapted_final_ridge_global_latent_l0_scale_hat_K",
+      "hard_adapted_final_ridge_global_latent_l0_scale_log_error",
+      "hard_adapted_final_ridge_global_latent_l0_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_latent_l0.0001_delta_s_hat",
+      "hard_adapted_final_ridge_global_latent_l0.0001_scale_hat_K",
+      "hard_adapted_final_ridge_global_latent_l0.0001_scale_log_error",
+      "hard_adapted_final_ridge_global_latent_l0.0001_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_latent_l0.01_delta_s_hat",
+      "hard_adapted_final_ridge_global_latent_l0.01_scale_hat_K",
+      "hard_adapted_final_ridge_global_latent_l0.01_scale_log_error",
+      "hard_adapted_final_ridge_global_latent_l0.01_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_latent_l1_delta_s_hat",
+      "hard_adapted_final_ridge_global_latent_l1_scale_hat_K",
+      "hard_adapted_final_ridge_global_latent_l1_scale_log_error",
+      "hard_adapted_final_ridge_global_latent_l1_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_ridge_global_latent_l10_delta_s_hat",
+      "hard_adapted_final_ridge_global_latent_l10_scale_hat_K",
+      "hard_adapted_final_ridge_global_latent_l10_scale_log_error",
+      "hard_adapted_final_ridge_global_latent_l10_frozen_shape_field_cv_rmse_K",
+      "hard_adapted_final_mlp_global_latent_delta_s_hat",
+      "hard_adapted_final_mlp_global_latent_scale_hat_K",
+      "hard_adapted_final_mlp_global_latent_scale_log_error",
+      "hard_adapted_final_mlp_global_latent_frozen_shape_field_cv_rmse_K"
+    ],
+    "path": "configs/heat3d_v5/v5_gate4a_per_sample_scale_correction.csv",
+    "row_count": 1073,
+    "sha256": "414dd8e71098cbcae5733cd4e6354b2c8666f4f51fc95bc46858e145ea34805d"
+  },
+  "pooled_latent_provenance": {
+    "best": {
+      "dimension": 96,
+      "manifest": {
+        "checkpoint": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/params_best.pkl",
+        "checkpoint_sha256": "4c043d8cdfda885e4eb279c330a2180c49aa0444f0409248d1b635f8825c75a6",
+        "frozen_prediction_archives": [
+          {
+            "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/best_train_clean/predictions.npz",
+            "sample_count": 672,
+            "sha256": "1f020d2aeebef05a85f0c3c8dc07503dfcc2a393a8dbee7cadfe48d627e6d9cb"
+          },
+          {
+            "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/best_hard_train_clean/predictions.npz",
+            "sample_count": 121,
+            "sha256": "51e21d3d96111298f6ceeb1a58520811d71c7e9e6e0c12d0b28045f8ce25a0da"
+          },
+          {
+            "path": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/best_predictions.npz",
+            "sample_count": 128,
+            "sha256": "bec1ff99c6888136ca8d435cb85b388d659241c6dfcb531b9b4665b954d21010"
+          },
+          {
+            "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/best_test_iid/predictions.npz",
+            "sample_count": 128,
+            "sha256": "336c979e96f95e84608cdff092f898bb7147ce2afc7aa942f1290807750be3ec"
+          },
+          {
+            "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/best_hard_challenge_valid/predictions.npz",
+            "sample_count": 12,
+            "sha256": "a8de5366a60fb94f8be180dcb1330cc4e19bf9874983573d1226b83353c30f71"
+          },
+          {
+            "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/best_hard_challenge_test/predictions.npz",
+            "sample_count": 12,
+            "sha256": "33748cc181bdefb5d466f828375c8b6fd33bea8484b02263e4a79d0a2b87cd1c"
+          }
+        ],
+        "latent_archive": "/tmp/heat3d_v5_gate4a_019f4c7b/best_pooled_latents.npz",
+        "latent_archive_sha256": "d7dd6135a8168f8a4bd8dc97f42d33c70cb8295b817aea1b70daad897fa2a8cf",
+        "latent_dimension": 96,
+        "max_prediction_abs_error_K": 0.00677490234375,
+        "model_config": {
+          "concatenate_t": false,
+          "concatenate_tau": false,
+          "cond_norm_hidden_size": 16,
+          "conditioned_normalization": false,
+          "decoder_bypass_feature_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "decoder_bypass_feature_names": [
+            "k_x",
+            "k_y",
+            "k_z",
+            "q",
+            "is_top",
+            "is_bottom",
+            "is_side",
+            "is_interior",
+            "top_h",
+            "top_T_inf_minus_T_ref",
+            "bottom_T_fixed_minus_T_ref",
+            "log_Lx",
+            "log_Ly",
+            "log_Lz",
+            "log_Lx_over_Lz",
+            "log_Ly_over_Lz"
+          ],
+          "decoder_bypass_feature_source": "normalized_c",
+          "decoder_bypass_features": "full_condition",
+          "decoder_bypass_hidden_size": 64,
+          "decoder_bypass_init": "zero_residual",
+          "decoder_bypass_layers": 2,
+          "decoder_bypass_mode": "post_decoder_residual",
+          "decoder_bypass_num_features": 16,
+          "decoder_bypass_output_space": "normalized_deltaT",
+          "decoder_bypass_residual_scale": 0.5,
+          "edge_latent_size": 96,
+          "mlp_hidden_layers": 2,
+          "node_latent_size": 96,
+          "num_outputs": 1,
+          "p_edge_masking": 0.0,
+          "processor_steps": 6
+        },
+        "model_parameter_changes": 0,
+        "pooling": "mean over frozen rnodes_processed regional nodes",
+        "prediction_tolerance_K": 0.01,
+        "read_only": true,
+        "run_config": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/run_config.json",
+        "run_config_sha256": "6e821ee88152fb0876f536eae9ca1ca5ab8e1dff2c450d18ac2527fbd4a5568c",
+        "sample_count": 1073,
+        "split_map": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+        "subset": "data/heat3d_v4_p5_clean_nohard_v0",
+        "training_runs": 0
+      },
+      "manifest_path": "/tmp/heat3d_v5_gate4a_019f4c7b/best_pooled_latents_manifest.json",
+      "manifest_sha256": "fc232901efa5cc2d144aaf11be9d96f7d18d0346f3ccfc6ab08d2c01ab54be51",
+      "path": "/tmp/heat3d_v5_gate4a_019f4c7b/best_pooled_latents.npz",
+      "sample_count": 1073,
+      "sha256": "d7dd6135a8168f8a4bd8dc97f42d33c70cb8295b817aea1b70daad897fa2a8cf"
+    },
+    "final": {
+      "dimension": 96,
+      "manifest": {
+        "checkpoint": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/params_final.pkl",
+        "checkpoint_sha256": "a42535d120c2ed693c2236979b2ede50f0b221083c8cceecb150eca4faba78ac",
+        "frozen_prediction_archives": [
+          {
+            "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/final_train_clean/predictions.npz",
+            "sample_count": 672,
+            "sha256": "289ee3ad0fa07d577717dbbbbfe69c9620758d75826525004f2beae496e285fe"
+          },
+          {
+            "path": "/tmp/output/heat3d_v5_gate3_019f4c7b/final_hard_train_clean/predictions.npz",
+            "sample_count": 121,
+            "sha256": "38562e78493610f2c3e404a0815573091a4c2ad006d13c27d2a12e1e94461dd3"
+          },
+          {
+            "path": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/predictions.npz",
+            "sample_count": 128,
+            "sha256": "72a6d72ac07fb077f9bc80d678bc1aa465f1dfd827646d285e678733d7d860df"
+          },
+          {
+            "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/final_test_iid/predictions.npz",
+            "sample_count": 128,
+            "sha256": "4cf805f819adc025c4afbcb0f28e00e1cdf0244f036c4568f9b2b94eed9e95a8"
+          },
+          {
+            "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/final_hard_challenge_valid/predictions.npz",
+            "sample_count": 12,
+            "sha256": "b2101533aa454a99d8e911f8b029c55554d8b8042a03879508de967e28804319"
+          },
+          {
+            "path": "output/heat3d_v4_offline_diagnostics/V4P5_02_clean_baseline_raw_B28_e600/final_hard_challenge_test/predictions.npz",
+            "sample_count": 12,
+            "sha256": "c97184c6afd0c7d89e05e68af1c779b679e9d6053c7d2ed30eedaa38083be515"
+          }
+        ],
+        "latent_archive": "/tmp/heat3d_v5_gate4a_019f4c7b/final_pooled_latents.npz",
+        "latent_archive_sha256": "82f07e1a620bb89e0044f208098596d687ba281e70555f999190ff852db714d1",
+        "latent_dimension": 96,
+        "max_prediction_abs_error_K": 0.01287841796875,
+        "model_config": {
+          "concatenate_t": false,
+          "concatenate_tau": false,
+          "cond_norm_hidden_size": 16,
+          "conditioned_normalization": false,
+          "decoder_bypass_feature_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "decoder_bypass_feature_names": [
+            "k_x",
+            "k_y",
+            "k_z",
+            "q",
+            "is_top",
+            "is_bottom",
+            "is_side",
+            "is_interior",
+            "top_h",
+            "top_T_inf_minus_T_ref",
+            "bottom_T_fixed_minus_T_ref",
+            "log_Lx",
+            "log_Ly",
+            "log_Lz",
+            "log_Lx_over_Lz",
+            "log_Ly_over_Lz"
+          ],
+          "decoder_bypass_feature_source": "normalized_c",
+          "decoder_bypass_features": "full_condition",
+          "decoder_bypass_hidden_size": 64,
+          "decoder_bypass_init": "zero_residual",
+          "decoder_bypass_layers": 2,
+          "decoder_bypass_mode": "post_decoder_residual",
+          "decoder_bypass_num_features": 16,
+          "decoder_bypass_output_space": "normalized_deltaT",
+          "decoder_bypass_residual_scale": 0.5,
+          "edge_latent_size": 96,
+          "mlp_hidden_layers": 2,
+          "node_latent_size": 96,
+          "num_outputs": 1,
+          "p_edge_masking": 0.0,
+          "processor_steps": 6
+        },
+        "model_parameter_changes": 0,
+        "pooling": "mean over frozen rnodes_processed regional nodes",
+        "prediction_tolerance_K": 0.02,
+        "read_only": true,
+        "run_config": "output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/run_config.json",
+        "run_config_sha256": "6e821ee88152fb0876f536eae9ca1ca5ab8e1dff2c450d18ac2527fbd4a5568c",
+        "sample_count": 1073,
+        "split_map": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+        "subset": "data/heat3d_v4_p5_clean_nohard_v0",
+        "training_runs": 0
+      },
+      "manifest_path": "/tmp/heat3d_v5_gate4a_019f4c7b/final_pooled_latents_manifest.json",
+      "manifest_sha256": "49fef3996000c381d024224a1294d52331e663924ee3a728a8a958fb75ca9076",
+      "path": "/tmp/heat3d_v5_gate4a_019f4c7b/final_pooled_latents.npz",
+      "sample_count": 1073,
+      "sha256": "82f07e1a620bb89e0044f208098596d687ba281e70555f999190ff852db714d1"
+    }
+  },
+  "predecessor_provenance": {
+    "gate1_table": {
+      "columns": [
+        "sample_id",
+        "role",
+        "driver_category",
+        "input_fingerprint",
+        "full_fingerprint",
+        "provenance_source_id",
+        "grid_shape",
+        "bottom_node_count",
+        "bottom_q_nonzero_count",
+        "bottom_mask_matches_bc",
+        "bottom_mask_matches_metadata",
+        "bottom_temperature_label_pass",
+        "is_clean_role",
+        "is_hard_role",
+        "P_array_W",
+        "P_bottom_W",
+        "P_operator_W",
+        "P_identity_error_W",
+        "bottom_q_abs_max_W_m3",
+        "bottom_temperature_label_max_abs_error_K",
+        "T_bottom_K",
+        "T_inf_K",
+        "T_inf_minus_T_bottom_K",
+        "cv_weight_sum_m3",
+        "Lx_m",
+        "Ly_m",
+        "Lz_m",
+        "top_area_m2",
+        "s_y_cv_rms_deltaT_K",
+        "target_cv_mean_deltaT_K",
+        "target_max_deltaT_K",
+        "q_operator_cv_rms_W_m3",
+        "q_active_cv_fraction",
+        "q_rms_to_mean_concentration",
+        "source_z_centroid_m",
+        "source_z_centroid_normalized",
+        "harmonic_kx_W_mK",
+        "harmonic_ky_W_mK",
+        "harmonic_kz_W_mK",
+        "anisotropy_xy_over_z",
+        "top_h_W_m2K",
+        "R_top_K_W",
+        "R_z_K_W",
+        "R_series_K_W",
+        "R_centroid_bottom_K_W",
+        "R_centroid_top_K_W",
+        "operator_1d_face_conductance_min_W_K",
+        "operator_1d_face_conductance_max_W_K",
+        "operator_1d_top_robin_conductance_W_K",
+        "raw_constant_unitless",
+        "pred_constant_K",
+        "log_residual_constant",
+        "raw_power_only_W",
+        "pred_power_only_K",
+        "log_residual_power_only",
+        "raw_q_rms_lz2_over_kz_K",
+        "pred_q_rms_lz2_over_kz_K",
+        "log_residual_q_rms_lz2_over_kz",
+        "raw_legacy_p_array_r_series_K",
+        "pred_legacy_p_array_r_series_K",
+        "log_residual_legacy_p_array_r_series",
+        "raw_source_centroid_two_path_K",
+        "pred_source_centroid_two_path_K",
+        "log_residual_source_centroid_two_path",
+        "raw_legacy_z_collapsed_1d_K",
+        "pred_legacy_z_collapsed_1d_K",
+        "log_residual_legacy_z_collapsed_1d",
+        "raw_z_collapsed_1d_operator_K",
+        "pred_z_collapsed_1d_operator_K",
+        "log_residual_z_collapsed_1d_operator",
+        "selected_or_best_physics_candidate",
+        "selected_or_best_physics_prediction_K",
+        "selected_or_best_physics_log_residual"
+      ],
+      "path": "/tmp/heat3d_v5_gate4a_019f4c7b/v5_gate1_final_p5_per_sample_audit.csv",
+      "sha256": "79b7f79c32ac5c3da100e27ebafeeea25cb185088687785c6140f0359bde7de9"
+    },
+    "gate3_table": {
+      "columns": [
+        "sample_id",
+        "role",
+        "is_clean_role",
+        "is_hard_role",
+        "input_fingerprint",
+        "full_fingerprint",
+        "provenance_source_id",
+        "grid_shape",
+        "boundary_signature",
+        "reference_dirichlet_region",
+        "dirichlet_mask_source",
+        "coordinate_fallback_used",
+        "dirichlet_region_count",
+        "dirichlet_node_count",
+        "reference_temperature_K",
+        "cv_weight_sum_m3",
+        "target_is_nonzero",
+        "target_scale_cv_rms_K",
+        "target_cv_mean_deltaT_K",
+        "target_max_deltaT_K",
+        "target_shape_cv_rms",
+        "target_shape_cv_rms_abs_error",
+        "target_raw_reconstruction_max_abs_error_K",
+        "target_delta_reconstruction_max_abs_error_K",
+        "target_projected_dirichlet_max_abs_error_K",
+        "target_projection_non_dirichlet_max_abs_change_K",
+        "target_dirichlet_label_max_abs_error_K",
+        "target_decomposition_pass",
+        "gate1_operator_scale_K",
+        "gate1_operator_prediction_K",
+        "gate1_operator_scale_log_residual",
+        "source_power_positive_W",
+        "low_k_q20_threshold_W_mK",
+        "q_weighted_local_kz_W_mK",
+        "q_weighted_inverse_kz_mK_W",
+        "q_low_k_overlap_fraction",
+        "source_layer_kz_heterogeneity_cv",
+        "source_concentration",
+        "source_z_centroid_m",
+        "source_z_centroid_normalized",
+        "best_prediction_available",
+        "best_prediction_shape_reconstruction_max_abs_error_K",
+        "best_predicted_scale_K",
+        "best_predicted_shape_cv_rms",
+        "best_predicted_scale_ratio",
+        "best_predicted_scale_log_ratio",
+        "best_original_dirichlet_max_abs_error_K",
+        "best_boundary_projection_dirichlet_max_abs_error_K",
+        "best_boundary_projection_non_dirichlet_max_abs_change_K",
+        "best_original_cv_rmse_K",
+        "best_original_cv_mae_K",
+        "best_original_spatial_correlation",
+        "best_original_amplitude_ratio",
+        "best_original_cv_rms_ratio",
+        "best_original_hotspot_cv_weight_fraction",
+        "best_original_hotspot_cv_rmse_K",
+        "best_original_hotspot_cv_mae_K",
+        "best_original_hotspot_mean_bias_K",
+        "best_original_hotspot_peak_abs_error_K",
+        "best_original_hotspot_pred_to_true_mean_ratio",
+        "best_predicted_shape_true_scale_cv_rmse_K",
+        "best_predicted_shape_true_scale_cv_mae_K",
+        "best_predicted_shape_true_scale_spatial_correlation",
+        "best_predicted_shape_true_scale_amplitude_ratio",
+        "best_predicted_shape_true_scale_cv_rms_ratio",
+        "best_predicted_shape_true_scale_hotspot_cv_weight_fraction",
+        "best_predicted_shape_true_scale_hotspot_cv_rmse_K",
+        "best_predicted_shape_true_scale_hotspot_cv_mae_K",
+        "best_predicted_shape_true_scale_hotspot_mean_bias_K",
+        "best_predicted_shape_true_scale_hotspot_peak_abs_error_K",
+        "best_predicted_shape_true_scale_hotspot_pred_to_true_mean_ratio",
+        "best_true_shape_predicted_scale_cv_rmse_K",
+        "best_true_shape_predicted_scale_cv_mae_K",
+        "best_true_shape_predicted_scale_spatial_correlation",
+        "best_true_shape_predicted_scale_amplitude_ratio",
+        "best_true_shape_predicted_scale_cv_rms_ratio",
+        "best_true_shape_predicted_scale_hotspot_cv_weight_fraction",
+        "best_true_shape_predicted_scale_hotspot_cv_rmse_K",
+        "best_true_shape_predicted_scale_hotspot_cv_mae_K",
+        "best_true_shape_predicted_scale_hotspot_mean_bias_K",
+        "best_true_shape_predicted_scale_hotspot_peak_abs_error_K",
+        "best_true_shape_predicted_scale_hotspot_pred_to_true_mean_ratio",
+        "best_boundary_projected_original_cv_rmse_K",
+        "best_boundary_projected_original_cv_mae_K",
+        "best_boundary_projected_original_spatial_correlation",
+        "best_boundary_projected_original_amplitude_ratio",
+        "best_boundary_projected_original_cv_rms_ratio",
+        "best_boundary_projected_original_hotspot_cv_weight_fraction",
+        "best_boundary_projected_original_hotspot_cv_rmse_K",
+        "best_boundary_projected_original_hotspot_cv_mae_K",
+        "best_boundary_projected_original_hotspot_mean_bias_K",
+        "best_boundary_projected_original_hotspot_peak_abs_error_K",
+        "best_boundary_projected_original_hotspot_pred_to_true_mean_ratio",
+        "final_prediction_available",
+        "final_prediction_shape_reconstruction_max_abs_error_K",
+        "final_predicted_scale_K",
+        "final_predicted_shape_cv_rms",
+        "final_predicted_scale_ratio",
+        "final_predicted_scale_log_ratio",
+        "final_original_dirichlet_max_abs_error_K",
+        "final_boundary_projection_dirichlet_max_abs_error_K",
+        "final_boundary_projection_non_dirichlet_max_abs_change_K",
+        "final_original_cv_rmse_K",
+        "final_original_cv_mae_K",
+        "final_original_spatial_correlation",
+        "final_original_amplitude_ratio",
+        "final_original_cv_rms_ratio",
+        "final_original_hotspot_cv_weight_fraction",
+        "final_original_hotspot_cv_rmse_K",
+        "final_original_hotspot_cv_mae_K",
+        "final_original_hotspot_mean_bias_K",
+        "final_original_hotspot_peak_abs_error_K",
+        "final_original_hotspot_pred_to_true_mean_ratio",
+        "final_predicted_shape_true_scale_cv_rmse_K",
+        "final_predicted_shape_true_scale_cv_mae_K",
+        "final_predicted_shape_true_scale_spatial_correlation",
+        "final_predicted_shape_true_scale_amplitude_ratio",
+        "final_predicted_shape_true_scale_cv_rms_ratio",
+        "final_predicted_shape_true_scale_hotspot_cv_weight_fraction",
+        "final_predicted_shape_true_scale_hotspot_cv_rmse_K",
+        "final_predicted_shape_true_scale_hotspot_cv_mae_K",
+        "final_predicted_shape_true_scale_hotspot_mean_bias_K",
+        "final_predicted_shape_true_scale_hotspot_peak_abs_error_K",
+        "final_predicted_shape_true_scale_hotspot_pred_to_true_mean_ratio",
+        "final_true_shape_predicted_scale_cv_rmse_K",
+        "final_true_shape_predicted_scale_cv_mae_K",
+        "final_true_shape_predicted_scale_spatial_correlation",
+        "final_true_shape_predicted_scale_amplitude_ratio",
+        "final_true_shape_predicted_scale_cv_rms_ratio",
+        "final_true_shape_predicted_scale_hotspot_cv_weight_fraction",
+        "final_true_shape_predicted_scale_hotspot_cv_rmse_K",
+        "final_true_shape_predicted_scale_hotspot_cv_mae_K",
+        "final_true_shape_predicted_scale_hotspot_mean_bias_K",
+        "final_true_shape_predicted_scale_hotspot_peak_abs_error_K",
+        "final_true_shape_predicted_scale_hotspot_pred_to_true_mean_ratio",
+        "final_boundary_projected_original_cv_rmse_K",
+        "final_boundary_projected_original_cv_mae_K",
+        "final_boundary_projected_original_spatial_correlation",
+        "final_boundary_projected_original_amplitude_ratio",
+        "final_boundary_projected_original_cv_rms_ratio",
+        "final_boundary_projected_original_hotspot_cv_weight_fraction",
+        "final_boundary_projected_original_hotspot_cv_rmse_K",
+        "final_boundary_projected_original_hotspot_cv_mae_K",
+        "final_boundary_projected_original_hotspot_mean_bias_K",
+        "final_boundary_projected_original_hotspot_peak_abs_error_K",
+        "final_boundary_projected_original_hotspot_pred_to_true_mean_ratio"
+      ],
+      "path": "/tmp/heat3d_v5_gate4a_019f4c7b/v5_gate3_per_sample_decomposition_oracle.csv",
+      "sha256": "ff5ab6eaf49401079d0ddd034601ad470f22b158e85ada651d24d013344d5bd8"
+    }
+  },
+  "read_only_guardrails": {
+    "RIGNO_parameter_changes": 0,
+    "data_or_label_writes": 0,
+    "formal_training_runs": 0,
+    "permitted_writes": [
+      "explicit Gate 4A CSV",
+      "model parameters JSON",
+      "summary JSON",
+      "closeout Markdown"
+    ],
+    "shape_model_training_runs": 0
+  },
+  "reconstructed_from_table": {
+    "duplicate_leakage": {
+      "cross_role_full_sample_duplicate_groups": {
+        "group_count": 0,
+        "groups": []
+      },
+      "cross_role_model_input_duplicate_groups": {
+        "group_count": 0,
+        "groups": []
+      },
+      "cross_role_provenance_duplicate_groups": {
+        "group_count": 0,
+        "groups": []
+      },
+      "pass": true,
+      "unique_sample_ids": true
+    },
+    "overall_gate4a_passed": true,
+    "protocol_results": {
+      "clean_only_zero_shot": {
+        "best": {
+          "checkpoint": "best",
+          "clean_guard": null,
+          "eligible_trained_candidates": [
+            "ridge_global_l0",
+            "ridge_global_l0.0001",
+            "ridge_global_l0.01",
+            "ridge_global_l1",
+            "ridge_global_l10",
+            "mlp_global",
+            "ridge_global_latent_l0",
+            "ridge_global_latent_l0.0001",
+            "ridge_global_latent_l0.01",
+            "ridge_global_latent_l1",
+            "ridge_global_latent_l10",
+            "mlp_global_latent"
+          ],
+          "family_winners": {
+            "global_only": "mlp_global",
+            "global_plus_latent": "ridge_global_latent_l1"
+          },
+          "fit_roles": [
+            "train"
+          ],
+          "global_physics_features_adequate": true,
+          "metrics_by_group": {
+            "all_samples": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.6141076563847517,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3364799813898649
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.5387016916356456,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3103170797215822
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 1.1280302404697466,
+                "sample_count": 1073,
+                "scale_log_RMSE": 1.4309988667829958
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.9032262240562016,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443569585847577
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.9032260124170024,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443569538206968
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.9032050671316273,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443564840162267
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.9011683831452862,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443232169869447
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.8847044852250978,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5442967315902565
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.7090590263131507,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.37248506107581664
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.7093079902087568,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.37246960349865427
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.7178566074044573,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3722762624760376
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.727417255778368,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.37078980970980796
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.6940292334176891,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.380590453106249
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.6609429157887632,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.4078065913332074
+              }
+            },
+            "clean": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.14407260430747268,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.25888327016580265
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.09179072387062893,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.20210941767775578
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3935357116042666,
+                "sample_count": 928,
+                "scale_log_RMSE": 1.1826787044460472
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.27362460072387806,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001590817626703
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2736245722500816,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001590810117426
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2736217555798835,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001590087606663
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2733574850308156,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001672648283013
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.2713657845975193,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5005039003129396
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.1808559150566661,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.315711789093015
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.1808619954586153,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.31572900263762516
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.18122404430991804,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.316506177348093
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.1808850255146497,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3156420804194237
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.18793714693243105,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3255190193976485
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.06794379812099535,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.1498369616244944
+              }
+            },
+            "hard": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.6223319896793384,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6394430794247292
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.3989318853317516,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6716896000277374
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.828795225208818,
+                "sample_count": 145,
+                "scale_log_RMSE": 2.4902896066425804
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.932676613383073,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.769274335081742
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.932675229485296,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7692743132598063
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.932538261062788,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7692721538085647
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.919158131077899,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7690635758636917
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.810072169241601,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7675216673714229
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.089558938354651,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6235388658453027
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.091362356609663,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6234147424013762
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.152305011209508,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6200288134807355
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.225223529466166,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6162451681958174
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.93301858692334,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6274730619190794
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.456137268862477,
+                "sample_count": 145,
+                "scale_log_RMSE": 1.0425827839921806
+              }
+            },
+            "hard_challenge_test": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.431363470638278,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6783788623291201
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.3664170389771466,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7856386514864909
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.592788187521834,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.369164428993808
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.1010931398744632,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6275237901219394
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.101093146679876,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.627523752568397
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.101093871772625,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6275200390824126
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.101588937409288,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6271846316808579
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.1178519641282847,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6255065033980616
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.3959348175696995,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7475449012042609
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.396395361475051,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7476153507804862
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.413030190415475,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7503991109576874
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.45477466049864,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7800645374283998
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.439095504527609,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8348516028271586
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.3621480554807155,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.1851654129103981
+              }
+            },
+            "hard_challenge_valid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 4.27446740365841,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7179060936633646
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.643248323945407,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.49774175311543445
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 7.035224484651375,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.635846751220204
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 11.277469511004524,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8028037247450108
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 11.277461377403354,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.802803557752652
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 11.276656248712213,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8027870339423553
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 11.197037859729212,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8012056794314983
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 10.527101509701058,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7893671089067336
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.645812395483574,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5831579191756905
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.642944939273624,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5829117081077854
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.551565578500413,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5748191187262472
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.9791351138218283,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5078111872065899
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.031879933837669,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.44526049605012824
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 5.71134793036583,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.2746659025643683
+              }
+            },
+            "hard_train_holdout": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.576596429850775,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6270858485286918
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.377926768744078,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6744419419587194
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.732555004869423,
+                "sample_count": 121,
+                "scale_log_RMSE": 2.487150613143576
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.485085596115683,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785830329750904
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.4850847436890025,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785830272156429
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.485000383539554,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785824568978086
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.476813284633333,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785238755650119
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.410917544248594,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7780335091907467
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.103182475246158,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6138171150672214
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.10558229834229,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6136806999823365
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.18602543304453,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6099789363960252
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.3260371444689945,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6075860034977713
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.071371816888439,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6188962783159583
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.340974811197526,
+                "sample_count": 121,
+                "scale_log_RMSE": 1.0010707172150364
+              }
+            },
+            "test_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.24780650034992024,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3851684046352093
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.26962651670480453,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.4083171031379172
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.39822484988216533,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.1487221465916875
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.34181356529056584,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5192969563200844
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.3418135505052209,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5192969571868898
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.34181208710568745,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5192970439274921
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.34166733760221524,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5193121821292049
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.340236286412814,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5195465902543837
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2574907399116738,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.40530126112912335
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.25760852128329564,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.40539158679328297
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.26146700058868944,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.40830388407670687
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2572784417000313,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3971980541947123
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.24288183066518781,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.38386488837104954
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.16556870645483024,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.24257131067314322
+              }
+            },
+            "train": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.11289756780841197,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.2094760269308565
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.041712320578905976,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.04506150778127407
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.40695444168858813,
+                "sample_count": 672,
+                "scale_log_RMSE": 1.21572096077395
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.26371010126143685,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5034984247428979
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.26371007203639757,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5034984247430639
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.26370718000995186,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5034984263975136
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.26342720892720645,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5035102827146181
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.26106809395419667,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5037662497747719
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.16783843018438122,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.29733248839078885
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.16781684803805114,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.2973327550401134
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.1673200399881179,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.2976018100713946
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.16826339017592037,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.30010197771010755
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.18061435016887806,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.3172079634321235
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.03763694234211913,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.10418389718614213
+              }
+            },
+            "valid_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.20400764988509382,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3273731650693342
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.17686654831799886,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.34462498773793393
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3183982403836798,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.0304564275730572
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2574867583350062,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.46157687646730683
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2574867201167834,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.46157686959185995
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2574829457962209,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.4615761949238636
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.257181582003364,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.46155612349725783
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.2565581586596684,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.4624707320984653
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.172562885781154,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3069726570070199
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.17260249359189694,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3069803836991078
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.1739771107205972,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.30755357954505025
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.17075519485759716,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.30286855666007073
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.1714371462083275,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3043306525155887
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.12942988262626065,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.21666737228956176
+              }
+            }
+          },
+          "paired_bootstrap": {
+            "global_only_vs_global_plus_latent": {
+              "candidate": "ridge_global_latent_l1",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -0.0017529640935889787,
+                  "low": -0.06931648314824111,
+                  "median": -0.03255068934489756
+                },
+                "point_estimate": -0.03325245502749666
+              },
+              "reference": "mlp_global",
+              "resamples": 2000,
+              "role": "valid_iid",
+              "sample_count": 128,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": 0.0337835901173687,
+                  "low": -0.08233123918725588,
+                  "median": -0.024313308352917506
+                },
+                "point_estimate": -0.024504608409263495
+              },
+              "seed": 20260715
+            },
+            "selected_vs_physics_only": {
+              "candidate": "ridge_global_latent_l1",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -0.10668965371335332,
+                  "low": -0.19239652706108504,
+                  "median": -0.1468397196692509
+                },
+                "point_estimate": -0.14764304552608265
+              },
+              "reference": "physics_only",
+              "resamples": 2000,
+              "role": "valid_iid",
+              "sample_count": 128,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": -0.5950689645831696,
+                  "low": -0.8552872796547387,
+                  "median": -0.7237857795448835
+                },
+                "point_estimate": -0.7275878709129865
+              },
+              "seed": 20260713
+            },
+            "selected_vs_v4_uncorrected_scale": {
+              "candidate": "ridge_global_latent_l1",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": 0.06683555136292486,
+                  "low": 0.019130896912426178,
+                  "median": 0.04040963691473587
+                },
+                "point_estimate": 0.04132531223133651
+              },
+              "reference": "v4_uncorrected_scale",
+              "resamples": 2000,
+              "role": "valid_iid",
+              "sample_count": 128,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": 0.13584038839507195,
+                  "low": 0.03594282111178405,
+                  "median": 0.08704767162843358
+                },
+                "point_estimate": 0.08620118437050897
+              },
+              "seed": 20260714
+            }
+          },
+          "pooled_latent_stable_incremental_gain": false,
+          "protocol": "clean_only_zero_shot",
+          "selected_candidate": "ridge_global_latent_l1",
+          "selection_metrics": {
+            "mlp_global": {
+              "frozen_shape_field_CV_RMSE_K": 0.20400764988509382,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3273731650693342
+            },
+            "mlp_global_latent": {
+              "frozen_shape_field_CV_RMSE_K": 0.17686654831799886,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.34462498773793393
+            },
+            "physics_only": {
+              "frozen_shape_field_CV_RMSE_K": 0.3183982403836798,
+              "sample_count": 128,
+              "scale_log_RMSE": 1.0304564275730572
+            },
+            "ridge_global_l0": {
+              "frozen_shape_field_CV_RMSE_K": 0.2574867583350062,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.46157687646730683
+            },
+            "ridge_global_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 0.2574867201167834,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.46157686959185995
+            },
+            "ridge_global_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 0.2574829457962209,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.4615761949238636
+            },
+            "ridge_global_l1": {
+              "frozen_shape_field_CV_RMSE_K": 0.257181582003364,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.46155612349725783
+            },
+            "ridge_global_l10": {
+              "frozen_shape_field_CV_RMSE_K": 0.2565581586596684,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.4624707320984653
+            },
+            "ridge_global_latent_l0": {
+              "frozen_shape_field_CV_RMSE_K": 0.172562885781154,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3069726570070199
+            },
+            "ridge_global_latent_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 0.17260249359189694,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3069803836991078
+            },
+            "ridge_global_latent_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 0.1739771107205972,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.30755357954505025
+            },
+            "ridge_global_latent_l1": {
+              "frozen_shape_field_CV_RMSE_K": 0.17075519485759716,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.30286855666007073
+            },
+            "ridge_global_latent_l10": {
+              "frozen_shape_field_CV_RMSE_K": 0.1714371462083275,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3043306525155887
+            },
+            "v4_uncorrected_scale": {
+              "frozen_shape_field_CV_RMSE_K": 0.12942988262626065,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.21666737228956176
+            }
+          },
+          "selection_passed": true,
+          "selection_role": "valid_iid",
+          "test_roles_used_for_selection": false
+        },
+        "best_final_direction_consistent": true,
+        "final": {
+          "checkpoint": "final",
+          "clean_guard": null,
+          "eligible_trained_candidates": [
+            "ridge_global_l0",
+            "ridge_global_l0.0001",
+            "ridge_global_l0.01",
+            "ridge_global_l1",
+            "ridge_global_l10",
+            "mlp_global",
+            "ridge_global_latent_l0",
+            "ridge_global_latent_l0.0001",
+            "ridge_global_latent_l0.01",
+            "ridge_global_latent_l1",
+            "ridge_global_latent_l10",
+            "mlp_global_latent"
+          ],
+          "family_winners": {
+            "global_only": "mlp_global",
+            "global_plus_latent": "ridge_global_latent_l1"
+          },
+          "fit_roles": [
+            "train"
+          ],
+          "global_physics_features_adequate": true,
+          "metrics_by_group": {
+            "all_samples": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.6141523787022011,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3364799813898649
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.5096322397959794,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.28284816562202064
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 1.1279351094416192,
+                "sample_count": 1073,
+                "scale_log_RMSE": 1.4309988667829958
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.9041359675867238,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443569585847577
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.9041357552015511,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443569538206968
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.9041147361325222,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443564840162267
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.9020712051955475,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5443232169869447
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.8855588981598982,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5442967315902565
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.7013642921380506,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3691324118011111
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.7014855715867,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3691167314156183
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.7060412102581937,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.36872132039145517
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.700041362375129,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3677470476582588
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.6673995971406685,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3775731274645068
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.6555516511322991,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.39952192917097207
+              }
+            },
+            "clean": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.14213354329357034,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.25888327016580265
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.08832150749964131,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.19850317320185762
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3931734765104408,
+                "sample_count": 928,
+                "scale_log_RMSE": 1.1826787044460472
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2723324590129675,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001590817626703
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2723324299776278,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001590810117426
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2723295578075689,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001590087606663
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.27206047198311273,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5001672648283013
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.27004366464245444,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5005039003129396
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.17887442463946363,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.31376849319924693
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.17888039728744387,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3137701020077582
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.17918218772761546,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.31395147908313603
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.17876938493036915,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.31307266287512237
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.1843796414456684,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3220930033113925
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.06342417042794771,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.12912057601255078
+              }
+            },
+            "hard": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.635072925317438,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6394430794247292
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.2060209264925437,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.5829582874895666
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.830409560201161,
+                "sample_count": 145,
+                "scale_log_RMSE": 2.4902896066425804
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.947678422458764,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.769274335081742
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.94767703663466,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7692743132598063
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.947539877412224,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7692721538085647
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.934139897755129,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7690635758636917
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.824856392671538,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.7675216673714229
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.045299444129008,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6150043790044194
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.04615868710194,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6149294774132155
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.077938954453894,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6125770562343043
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.036182018021592,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6111199910982276
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.7587273135886696,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6252950302943843
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.445167527640147,
+                "sample_count": 145,
+                "scale_log_RMSE": 1.0365664107118568
+              }
+            },
+            "hard_challenge_test": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.437892154711561,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6783788623291201
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.133929060314532,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7689883281357899
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.594671676265265,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.369164428993808
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.104419849847043,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6275237901219394
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.104419855411924,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.627523752568397
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.104420458298339,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6275200390824126
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.1049083515015474,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6271846316808579
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.121254945465877,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6255065033980616
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.4542696753883533,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7686559105787749
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.4548343551292824,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.768739851283049
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.475932174255196,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7720502052975796
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.49731754087704,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7938106873322932
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.4659342278765988,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8414142582847888
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.346449915295518,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.1818504649759842
+              }
+            },
+            "hard_challenge_valid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 4.291266924138815,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7179060936633646
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.3119162010215173,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.4374498596094624
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 7.036363143083544,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.635846751220204
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 11.30415595260289,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8028037247450108
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 11.30414782149188,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.802803557752652
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 11.303342938814962,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8027870339423553
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 11.223744935737011,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.8012056794314983
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 10.553878733843726,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7893671089067336
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.368986210535925,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5724816242002341
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.367687533560567,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5723818894662076
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.318482410509487,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.568512516760418
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.816476128610624,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5222711208703679
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.1010756722107247,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.4772512117831433
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 5.707807020618213,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.2705622174338471
+              }
+            },
+            "hard_train_holdout": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.5895509522712725,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6270858485286918
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.202668522358564,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.5741280688785111
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.7341898214626665,
+                "sample_count": 121,
+                "scale_log_RMSE": 2.487150613143576
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.500086459728277,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785830329750904
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.500085604869257,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785830272156429
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.5000010037968,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785824568978086
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.491788807666372,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7785238755650119
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.4256410974021305,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.7780335091907467
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.071812799732354,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6017920934419815
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.072915264177712,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6016991380594522
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.11378655684825,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.5987599320939536
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.111412137018834,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.5983308597012225
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.852986294787679,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.612980469561693
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.329737258486419,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.994467973191416
+              }
+            },
+            "test_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.24873139256702106,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3851684046352093
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.2670447861825165,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.39636540092033345
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3981096220517198,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.1487221465916875
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.34265197660690727,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5192969563200844
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.3426519619408374,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5192969571868898
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.3426505103261281,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5192970439274921
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.3425067440456924,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5193121821292049
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.34107873055121646,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5195465902543837
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2581156994095567,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.4004669245505438
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2581787748022486,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.40049958717049283
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2605036195920458,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.4016701589157735
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2560972468233937,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3896630092944647
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.2381749773556523,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.37444879647595736
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.16410117837197824,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.2276078288859824
+              }
+            },
+            "train": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.10999754307332307,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.2094760269308565
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.036208774429227354,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.042257676185245105
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.4064899749902245,
+                "sample_count": 672,
+                "scale_log_RMSE": 1.21572096077395
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.26168630076753974,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5034984247428979
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.26168627076041107,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5034984247430639
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2616833014368325,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5034984263975136
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.26139662863483876,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5035102827146181
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.25900292237809114,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5037662497747719
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.165539684247877,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.29647444970763254
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.165534458647893,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.29647456268719324
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.16544040498805593,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.29661891068305923
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.16587867795653724,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.29884042281776585
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.17669875200546029,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.3147685475839987
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.031231189887932692,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.06793312569951146
+              }
+            },
+            "valid_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.2042496951764176,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3273731650693342
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.18319007743643934,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.34524618899052667
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3183257139502975,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.0304564275730572
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.25790527220752363,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.46157687646730683
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.25790523390480613,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.46157686959185995
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.257901451235376,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.4615761949238636
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2575993774989713,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.46155612349725783
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.25697249562159974,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.4624707320984653
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.16964053692520042,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.30320588543803567
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.16964819763028116,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3031742322815616
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.1700051152458728,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3022442710009513
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.16911773464996233,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.29985565994086455
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.17090897509677694,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3029280304141215
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.13176031031899602,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.2117529075068354
+              }
+            }
+          },
+          "paired_bootstrap": {
+            "global_only_vs_global_plus_latent": {
+              "candidate": "ridge_global_latent_l1",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -0.002012916726917013,
+                  "low": -0.07322116832348789,
+                  "median": -0.03403626232226693
+                },
+                "point_estimate": -0.035131960526455286
+              },
+              "reference": "mlp_global",
+              "resamples": 2000,
+              "role": "valid_iid",
+              "sample_count": 128,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": 0.03047779237125816,
+                  "low": -0.0836397540285734,
+                  "median": -0.027966891595961746
+                },
+                "point_estimate": -0.027517505128469677
+              },
+              "seed": 20260735
+            },
+            "selected_vs_physics_only": {
+              "candidate": "ridge_global_latent_l1",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -0.10870073142056802,
+                  "low": -0.19120784813691655,
+                  "median": -0.1487772892641862
+                },
+                "point_estimate": -0.1492079793003352
+              },
+              "reference": "physics_only",
+              "resamples": 2000,
+              "role": "valid_iid",
+              "sample_count": 128,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": -0.6018499907362044,
+                  "low": -0.8487306370559385,
+                  "median": -0.7285881339888115
+                },
+                "point_estimate": -0.7306007676321926
+              },
+              "seed": 20260733
+            },
+            "selected_vs_v4_uncorrected_scale": {
+              "candidate": "ridge_global_latent_l1",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": 0.06205537444141968,
+                  "low": 0.01595094461651068,
+                  "median": 0.03665267706962021
+                },
+                "point_estimate": 0.03735742433096631
+              },
+              "reference": "v4_uncorrected_scale",
+              "resamples": 2000,
+              "role": "valid_iid",
+              "sample_count": 128,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": 0.14249558600893342,
+                  "low": 0.033499711242918624,
+                  "median": 0.08862081070417573
+                },
+                "point_estimate": 0.08810275243402915
+              },
+              "seed": 20260734
+            }
+          },
+          "pooled_latent_stable_incremental_gain": false,
+          "protocol": "clean_only_zero_shot",
+          "selected_candidate": "ridge_global_latent_l1",
+          "selection_metrics": {
+            "mlp_global": {
+              "frozen_shape_field_CV_RMSE_K": 0.2042496951764176,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3273731650693342
+            },
+            "mlp_global_latent": {
+              "frozen_shape_field_CV_RMSE_K": 0.18319007743643934,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.34524618899052667
+            },
+            "physics_only": {
+              "frozen_shape_field_CV_RMSE_K": 0.3183257139502975,
+              "sample_count": 128,
+              "scale_log_RMSE": 1.0304564275730572
+            },
+            "ridge_global_l0": {
+              "frozen_shape_field_CV_RMSE_K": 0.25790527220752363,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.46157687646730683
+            },
+            "ridge_global_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 0.25790523390480613,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.46157686959185995
+            },
+            "ridge_global_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 0.257901451235376,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.4615761949238636
+            },
+            "ridge_global_l1": {
+              "frozen_shape_field_CV_RMSE_K": 0.2575993774989713,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.46155612349725783
+            },
+            "ridge_global_l10": {
+              "frozen_shape_field_CV_RMSE_K": 0.25697249562159974,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.4624707320984653
+            },
+            "ridge_global_latent_l0": {
+              "frozen_shape_field_CV_RMSE_K": 0.16964053692520042,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.30320588543803567
+            },
+            "ridge_global_latent_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 0.16964819763028116,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3031742322815616
+            },
+            "ridge_global_latent_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 0.1700051152458728,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3022442710009513
+            },
+            "ridge_global_latent_l1": {
+              "frozen_shape_field_CV_RMSE_K": 0.16911773464996233,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.29985565994086455
+            },
+            "ridge_global_latent_l10": {
+              "frozen_shape_field_CV_RMSE_K": 0.17090897509677694,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.3029280304141215
+            },
+            "v4_uncorrected_scale": {
+              "frozen_shape_field_CV_RMSE_K": 0.13176031031899602,
+              "sample_count": 128,
+              "scale_log_RMSE": 0.2117529075068354
+            }
+          },
+          "selection_passed": true,
+          "selection_role": "valid_iid",
+          "test_roles_used_for_selection": false
+        },
+        "protocol_passed": true
+      },
+      "hard_adapted": {
+        "best": {
+          "checkpoint": "best",
+          "clean_guard": {
+            "field_CV_RMSE_ratio_to_physics": 0.5918145639381477,
+            "maximum_allowed_ratio": 1.05,
+            "passed": true,
+            "role": "valid_iid",
+            "scale_log_RMSE_ratio_to_physics": 0.3251701893609627
+          },
+          "eligible_trained_candidates": [
+            "mlp_global",
+            "ridge_global_latent_l0",
+            "ridge_global_latent_l0.0001",
+            "ridge_global_latent_l0.01",
+            "ridge_global_latent_l1",
+            "ridge_global_latent_l10",
+            "mlp_global_latent"
+          ],
+          "family_winners": {
+            "global_only": "mlp_global",
+            "global_plus_latent": "ridge_global_latent_l10"
+          },
+          "fit_roles": [
+            "train",
+            "hard_train_holdout"
+          ],
+          "global_physics_features_adequate": true,
+          "metrics_by_group": {
+            "all_samples": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.4571917403324987,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.284021112039971
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.3899336424593528,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.20832668318043068
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 1.1280302404697466,
+                "sample_count": 1073,
+                "scale_log_RMSE": 1.4309988667829958
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.9157944557257403,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5350087976081198
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.9157942735084399,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5350087955029709
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.9157762410771004,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5350085884429596
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.9140328271628148,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5349985757682484
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.9003201379292812,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5351862723499082
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.6443976971408094,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3482136833918115
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.6444263397519339,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.34822082515552905
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.6457790952808533,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.34874050620508024
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.6436860942920946,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3489940715265129
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.6386003504015494,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3583839114833148
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.6609429157887632,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.4078065913332074
+              }
+            },
+            "clean": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.15388119683508075,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.29137835869112855
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.10072621131604317,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.20898331990688224
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3935357116042666,
+                "sample_count": 928,
+                "scale_log_RMSE": 1.1826787044460472
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.29253476347918617,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5093925265503533
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.29253474561217496,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.509392527447297
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2925329794671153,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5093926174562299
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2923781940958109,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5094109622353671
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.29157879364502537,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5097789273382495
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.18412651568752658,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3260669539570294
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.18411241982234522,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3260739202331648
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.1838019535346386,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.32659747210799295
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.18361915359869246,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3270154639759778
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.18886702497234725,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3365850614999413
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.06794379812099535,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.1498369616244944
+              }
+            },
+            "hard": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 2.398379218715974,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.23146169181549403
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 2.240861201776535,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.2040741827110085
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.828795225208818,
+                "sample_count": 145,
+                "scale_log_RMSE": 2.4902896066425804
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.904656486103687,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6763563298732278
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.9046552520445355,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6763563132273287
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.904533115381004,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6763546673426386
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.8926224787916395,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6762076167098383
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.796264741348519,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6755316504614537
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.59013325844182,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.4656443693072506
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.590435427301301,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.46565267035951374
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.6024328024566277,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.4661820939349556
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.5881145147298685,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.46571069448802344
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.5168936331484435,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.4747588694012064
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.456137268862477,
+                "sample_count": 145,
+                "scale_log_RMSE": 1.0425827839921806
+              }
+            },
+            "hard_challenge_test": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 2.673733782350659,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.3136540648349805
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 2.9310978917558477,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5029440327393324
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.592788187521834,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.369164428993808
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 2.7716074121474574,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.45369363168596566
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 2.771607397356547,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.45369359431154266
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 2.7716059550391834,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.4536898992748079
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 2.7716464315378175,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.45336390212518624
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 2.777654249230146,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.4521630814650189
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.100836052517455,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6404371566138698
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.101143237797004,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6405016624772738
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.1130144987308346,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6431246554471389
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.1016425917824133,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6476115879684924
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.0737478680393786,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6529916884255783
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.3621480554807155,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.1851654129103981
+              }
+            },
+            "hard_challenge_valid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.0349202734359433,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.30895875911454085
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.6368228792898036,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.43949785759545856
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 7.035224484651375,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.635846751220204
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 11.317355882213434,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7632950421814894
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 11.317348094549791,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7632948908274996
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 11.316577352420081,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7632799138370528
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 11.241563699422267,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7618428536060997
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 10.645178950795176,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7510436294030648
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.678166102932587,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5324332544883547
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.677189805286969,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.53230426603497
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.641865913830252,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.527693415590984
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.298490526185955,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.49224055650044773
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.336675128538299,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.424521367718788
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 5.71134793036583,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.2746659025643683
+              }
+            },
+            "hard_train_holdout": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 2.307943289622951,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.21207927716553823
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 2.033965495909502,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.07526134325092025
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.732555004869423,
+                "sample_count": 121,
+                "scale_log_RMSE": 2.487150613143576
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.480228354981024,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855648966208198
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.480227649946955,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855648961063165
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.480157868105245,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855648464809955
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.473320147547658,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855709275076498
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.416399909877946,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6860325555265564
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.53075451742697,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.4370812219289719
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.5311829788568674,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.43709802623890015
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.5478858793841153,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.4379459665403479
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.5659091505802527,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.44077427158321775
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.578714883037952,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.4581946178700839
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.340974811197526,
+                "sample_count": 121,
+                "scale_log_RMSE": 1.0010707172150364
+              }
+            },
+            "test_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.25590931116375615,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.405993541113786
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.25922668290144274,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3834967012235312
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.39822484988216533,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.1487221465916875
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.3580518268119029,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5275847873187497
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.35805184139909146,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5275847929753299
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.3580532843875654,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5275853532387556
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.3581870278000546,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5276431201165422
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.35890637758920463,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.528212669837921
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2575002824688594,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3981142012132645
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2575709437546778,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.398171536083387
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.260281146333874,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.40043755891192595
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.25816948011405966,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.39536695953740253
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.25103912960711117,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.38856062583256196
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.16556870645483024,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.24257131067314322
+              }
+            },
+            "train": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.12786602859033108,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.2538952257420072
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.051020862463666876,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.07032838953799772
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.40695444168858813,
+                "sample_count": 672,
+                "scale_log_RMSE": 1.21572096077395
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.28434208906196984,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122836558101956
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2843420655237348,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122836559342968
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2843397379887407,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122836691269698
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2841292131541593,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122917087112315
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.2828452823594671,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5124767052200823
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.1726145380257388,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.31284133665447694
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.17257637662207145,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.31283735173371574
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.17138786198618222,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.3129549423717776
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.1716880811714639,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.31460102945634855
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.17950649778384772,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.32867033867685974
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.03763694234211913,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.10418389718614213
+              }
+            },
+            "valid_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.188432715791341,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.33507371168215216
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.2031788212056192,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3789459732954255
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3183982403836798,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.0304564275730572
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.27002924083685514,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47445584135910246
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.27002922028956894,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47445584134731
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2700271923081319,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.474455844178915
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2698765103352383,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47448882626366956
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.27010214395002696,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47566998760140394
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.17119063163057952,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.31385772504273024
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.17121812269144987,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3138583168435377
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.17249674136479926,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3143062540858284
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.1717069573262753,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.31524760248613154
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.1758376880772059,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.32131376537891043
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.12942988262626065,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.21666737228956176
+              }
+            }
+          },
+          "paired_bootstrap": {
+            "global_only_vs_global_plus_latent": {
+              "candidate": "ridge_global_latent_l10",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": 1.3520534064179333,
+                  "low": -0.5937525193492751,
+                  "median": 0.2814135230709769
+                },
+                "point_estimate": 0.3017548551023559
+              },
+              "reference": "mlp_global",
+              "resamples": 2000,
+              "role": "hard_challenge_valid",
+              "sample_count": 12,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": 0.34406732453647854,
+                  "low": -0.13336014889640607,
+                  "median": 0.11032858876891449
+                },
+                "point_estimate": 0.11556260860424716
+              },
+              "seed": 20260815
+            },
+            "selected_vs_physics_only": {
+              "candidate": "mlp_global",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -1.4430201998498016,
+                  "low": -7.211464539863737,
+                  "median": -3.805971939341065
+                },
+                "point_estimate": -4.000304211215433
+              },
+              "reference": "physics_only",
+              "resamples": 2000,
+              "role": "hard_challenge_valid",
+              "sample_count": 12,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": -1.8015057185686747,
+                  "low": -2.819158699943187,
+                  "median": -2.317408038833104
+                },
+                "point_estimate": -2.3268879921056635
+              },
+              "seed": 20260813
+            },
+            "selected_vs_v4_uncorrected_scale": {
+              "candidate": "mlp_global",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -0.15255114028893452,
+                  "low": -5.734160241739874,
+                  "median": -2.598272356278108
+                },
+                "point_estimate": -2.6764276569298864
+              },
+              "reference": "v4_uncorrected_scale",
+              "resamples": 2000,
+              "role": "hard_challenge_valid",
+              "sample_count": 12,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": -0.41079764985190476,
+                  "low": -1.4912635904373828,
+                  "median": -0.9355504584985274
+                },
+                "point_estimate": -0.9657071434498274
+              },
+              "seed": 20260814
+            }
+          },
+          "pooled_latent_stable_incremental_gain": false,
+          "protocol": "hard_adapted",
+          "selected_candidate": "mlp_global",
+          "selection_metrics": {
+            "mlp_global": {
+              "frozen_shape_field_CV_RMSE_K": 3.0349202734359433,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.30895875911454085
+            },
+            "mlp_global_latent": {
+              "frozen_shape_field_CV_RMSE_K": 3.6368228792898036,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.43949785759545856
+            },
+            "physics_only": {
+              "frozen_shape_field_CV_RMSE_K": 7.035224484651375,
+              "sample_count": 12,
+              "scale_log_RMSE": 2.635846751220204
+            },
+            "ridge_global_l0": {
+              "frozen_shape_field_CV_RMSE_K": 11.317355882213434,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7632950421814894
+            },
+            "ridge_global_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 11.317348094549791,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7632948908274996
+            },
+            "ridge_global_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 11.316577352420081,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7632799138370528
+            },
+            "ridge_global_l1": {
+              "frozen_shape_field_CV_RMSE_K": 11.241563699422267,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7618428536060997
+            },
+            "ridge_global_l10": {
+              "frozen_shape_field_CV_RMSE_K": 10.645178950795176,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7510436294030648
+            },
+            "ridge_global_latent_l0": {
+              "frozen_shape_field_CV_RMSE_K": 4.678166102932587,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.5324332544883547
+            },
+            "ridge_global_latent_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 4.677189805286969,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.53230426603497
+            },
+            "ridge_global_latent_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 4.641865913830252,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.527693415590984
+            },
+            "ridge_global_latent_l1": {
+              "frozen_shape_field_CV_RMSE_K": 4.298490526185955,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.49224055650044773
+            },
+            "ridge_global_latent_l10": {
+              "frozen_shape_field_CV_RMSE_K": 3.336675128538299,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.424521367718788
+            },
+            "v4_uncorrected_scale": {
+              "frozen_shape_field_CV_RMSE_K": 5.71134793036583,
+              "sample_count": 12,
+              "scale_log_RMSE": 1.2746659025643683
+            }
+          },
+          "selection_passed": true,
+          "selection_role": "hard_challenge_valid",
+          "test_roles_used_for_selection": false
+        },
+        "best_final_direction_consistent": true,
+        "final": {
+          "checkpoint": "final",
+          "clean_guard": {
+            "field_CV_RMSE_ratio_to_physics": 0.5931862746972326,
+            "maximum_allowed_ratio": 1.05,
+            "passed": true,
+            "role": "valid_iid",
+            "scale_log_RMSE_ratio_to_physics": 0.3251701893609627
+          },
+          "eligible_trained_candidates": [
+            "mlp_global",
+            "ridge_global_latent_l0",
+            "ridge_global_latent_l0.0001",
+            "ridge_global_latent_l0.01",
+            "ridge_global_latent_l1",
+            "ridge_global_latent_l10",
+            "mlp_global_latent"
+          ],
+          "family_winners": {
+            "global_only": "mlp_global",
+            "global_plus_latent": "mlp_global_latent"
+          },
+          "fit_roles": [
+            "train",
+            "hard_train_holdout"
+          ],
+          "global_physics_features_adequate": true,
+          "metrics_by_group": {
+            "all_samples": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.45913661076609474,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.284021112039971
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.38816299457678877,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.2080260269680939
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 1.1279351094416192,
+                "sample_count": 1073,
+                "scale_log_RMSE": 1.4309988667829958
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.9170219728436209,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5350087976081198
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.9170217904879414,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5350087955029709
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.9170037443522191,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5350085884429596
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.9152588981741724,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5349985757682484
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.9015357091911486,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.5351862723499082
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.6381364530258049,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.34598548134195833
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.6381475819406247,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.3459848916455945
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.6387674302021407,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.34611831048624303
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.6345583748212938,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.34622722131058814
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.6275052261121927,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.354844612230589
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.6555516511322991,
+                "sample_count": 1073,
+                "scale_log_RMSE": 0.39952192917097207
+              }
+            },
+            "clean": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.15204278185926368,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.29137835869112855
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.09863825592167949,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.2046987379751254
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3931734765104408,
+                "sample_count": 928,
+                "scale_log_RMSE": 1.1826787044460472
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2912638752154717,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5093925265503533
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.29126385753192646,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.509392527447297
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2912621095465716,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5093926174562299
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2911090832975192,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5094109622353671
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.29032813271208063,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.5097789273382495
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.18085200296229226,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3227075976088803
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.18083394323665594,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3227031256688274
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.18022513449903044,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.32268773853294214
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.18057041909523686,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.3231498734622944
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.18619727137888198,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.33240854305772
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.06342417042794771,
+                "sample_count": 928,
+                "scale_log_RMSE": 0.12912057601255078
+              }
+            },
+            "hard": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 2.4245371157698132,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.23146169181549403
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 2.2411213219694877,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.22817461981619505
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.830409560201161,
+                "sample_count": 145,
+                "scale_log_RMSE": 2.4902896066425804
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.9218737976637765,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6763563298732278
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.921872561406437,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6763563132273287
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.921750207108363,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6763546673426386
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.9098177133847525,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6762076167098383
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.813264198657184,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.6755316504614537
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.564756933432285,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.46832340926649046
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.5649548696460256,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.46833990648111895
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.573438122702046,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.46913658744727177
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.540081291468058,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.46769322888628306
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.4518761364053816,
+                "sample_count": 145,
+                "scale_log_RMSE": 0.47391767064494555
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.445167527640147,
+                "sample_count": 145,
+                "scale_log_RMSE": 1.0365664107118568
+              }
+            },
+            "hard_challenge_test": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 2.677044220041379,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.3136540648349805
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 2.9416377265830485,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6577598421598343
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.594671676265265,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.369164428993808
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 2.777189638348171,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.45369363168596566
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 2.7771896234596247,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.45369359431154266
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 2.7771881716050753,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.4536898992748079
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 2.777228826553866,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.45336390212518624
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 2.7832833346160046,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.4521630814650189
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.1161149006016196,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6615686363553515
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.116369255868875,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6616205636914844
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.1275078920528494,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.663935133143926
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.1309622198954408,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6671366296987471
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.0996198285679974,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.6699172624951971
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.346449915295518,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.1818504649759842
+              }
+            },
+            "hard_challenge_valid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 3.0798858084379934,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.30895875911454085
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 3.4617881009190037,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.3810434939372541
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 7.036363143083544,
+                "sample_count": 12,
+                "scale_log_RMSE": 2.635846751220204
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 11.345975728248355,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7632950421814894
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 11.345967940409201,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7632948908274996
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 11.345197180699195,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7632799138370528
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 11.270180054060944,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7618428536060997
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 10.673717924205514,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.7510436294030648
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.3237766480508775,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.530710969757465
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.323347231915229,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5306664654243478
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.304573582194387,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5287707155338687
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.007823383147462,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.5010771054113785
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.2181516924385885,
+                "sample_count": 12,
+                "scale_log_RMSE": 0.44370016654280287
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 5.707807020618213,
+                "sample_count": 12,
+                "scale_log_RMSE": 1.2705622174338471
+              }
+            },
+            "hard_train_holdout": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 2.334501830122896,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.21207927716553823
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 2.05059075831034,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.07129988077592325
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 5.7341898214626665,
+                "sample_count": 121,
+                "scale_log_RMSE": 2.487150613143576
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 4.4974687294387525,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855648966208198
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 4.497468021797581,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855648961063165
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 4.497397981843482,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855648464809955
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 4.490534395648029,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6855709275076498
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 4.433382592557301,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.6860325555265564
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 3.533975675734309,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.43759732748207053
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 3.534230233431937,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.4376160516351079
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 3.5451533066184275,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.4385176475834219
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 3.5342674382343273,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.43941230559346006
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 3.509989929972738,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.45289515208954784
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 4.329737258486419,
+                "sample_count": 121,
+                "scale_log_RMSE": 0.994467973191416
+              }
+            },
+            "test_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.25667302714343254,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.405993541113786
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.27353880420351073,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.38946611464512937
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3981096220517198,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.1487221465916875
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.35901082093840025,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5275847873187497
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.3590108357007935,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5275847929753299
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.35901229601452517,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5275853532387556
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.35914759952736897,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.5276431201165422
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.35987509295062753,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.528212669837921
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2496058467011054,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.38873457727574734
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.24963989904289646,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.38875144578244925
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2511498597841478,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3895602326316403
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2504810171719451,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3839966814778917
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.2447028967278241,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.37740003826484253
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.16410117837197824,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.2276078288859824
+              }
+            },
+            "train": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.12510679941670766,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.2538952257420072
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.04683739921109807,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.0684295110588197
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.4064899749902245,
+                "sample_count": 672,
+                "scale_log_RMSE": 1.21572096077395
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.2823530764416012,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122836558101956
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2823530531772887,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122836559342968
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.2823507527520204,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122836691269698
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.28214282880743224,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5122917087112315
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.28088506574170385,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.5124767052200823
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.17010244287016427,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.3106461030985267
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.17007177579590432,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.3106414703089828
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.16895092082760482,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.310615284550963
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.16952889592305784,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.3123557905885739
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.17740937297088916,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.3255412241015228
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.031231189887932692,
+                "sample_count": 672,
+                "scale_log_RMSE": 0.06793312569951146
+              }
+            },
+            "valid_iid": {
+              "mlp_global": {
+                "frozen_shape_field_CV_RMSE_K": 0.18882644439851387,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.33507371168215216
+              },
+              "mlp_global_latent": {
+                "frozen_shape_field_CV_RMSE_K": 0.19569220537040072,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.35709790360762345
+              },
+              "physics_only": {
+                "frozen_shape_field_CV_RMSE_K": 0.3183257139502975,
+                "sample_count": 128,
+                "scale_log_RMSE": 1.0304564275730572
+              },
+              "ridge_global_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.27029862305536356,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47445584135910246
+              },
+              "ridge_global_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.2702986022249074,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47445584134731
+              },
+              "ridge_global_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.27029654625001176,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.474455844178915
+              },
+              "ridge_global_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.2701434031406259,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47448882626366956
+              },
+              "ridge_global_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.27035727406801136,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.47566998760140394
+              },
+              "ridge_global_latent_l0": {
+                "frozen_shape_field_CV_RMSE_K": 0.16853334970715123,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3118839119067498
+              },
+              "ridge_global_latent_l0.0001": {
+                "frozen_shape_field_CV_RMSE_K": 0.1685293664943614,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3118535638703128
+              },
+              "ridge_global_latent_l0.01": {
+                "frozen_shape_field_CV_RMSE_K": 0.16849003098889767,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.31086422561279375
+              },
+              "ridge_global_latent_l1": {
+                "frozen_shape_field_CV_RMSE_K": 0.16862781767246868,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3121084094908383
+              },
+              "ridge_global_latent_l10": {
+                "frozen_shape_field_CV_RMSE_K": 0.1738281126719022,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.3198146844368754
+              },
+              "v4_uncorrected_scale": {
+                "frozen_shape_field_CV_RMSE_K": 0.13176031031899602,
+                "sample_count": 128,
+                "scale_log_RMSE": 0.2117529075068354
+              }
+            }
+          },
+          "paired_bootstrap": {
+            "global_only_vs_global_plus_latent": {
+              "candidate": "mlp_global_latent",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": 1.4191001219127373,
+                  "low": -0.45001456860530575,
+                  "median": 0.38051104689670523
+                },
+                "point_estimate": 0.38190229248101026
+              },
+              "reference": "mlp_global",
+              "resamples": 2000,
+              "role": "hard_challenge_valid",
+              "sample_count": 12,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": 0.22511141829283318,
+                  "low": -0.06770233532052945,
+                  "median": 0.07536057823047818
+                },
+                "point_estimate": 0.07208473482271327
+              },
+              "seed": 20260835
+            },
+            "selected_vs_physics_only": {
+              "candidate": "mlp_global",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -1.4667362407587734,
+                  "low": -7.152757794873516,
+                  "median": -3.879433596264594
+                },
+                "point_estimate": -3.9564773346455504
+              },
+              "reference": "physics_only",
+              "resamples": 2000,
+              "role": "hard_challenge_valid",
+              "sample_count": 12,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": -1.7787445176795946,
+                  "low": -2.8339889039156754,
+                  "median": -2.326155948262761
+                },
+                "point_estimate": -2.3268879921056635
+              },
+              "seed": 20260833
+            },
+            "selected_vs_v4_uncorrected_scale": {
+              "candidate": "mlp_global",
+              "frozen_shape_field_CV_RMSE_delta": {
+                "ci95": {
+                  "high": -0.1012036259412142,
+                  "low": -5.92255287688131,
+                  "median": -2.566902377551453
+                },
+                "point_estimate": -2.6279212121802193
+              },
+              "reference": "v4_uncorrected_scale",
+              "resamples": 2000,
+              "role": "hard_challenge_valid",
+              "sample_count": 12,
+              "scale_log_RMSE_delta": {
+                "ci95": {
+                  "high": -0.3906648827081629,
+                  "low": -1.5125363244879875,
+                  "median": -0.9391145120463722
+                },
+                "point_estimate": -0.9616034583193063
+              },
+              "seed": 20260834
+            }
+          },
+          "pooled_latent_stable_incremental_gain": false,
+          "protocol": "hard_adapted",
+          "selected_candidate": "mlp_global",
+          "selection_metrics": {
+            "mlp_global": {
+              "frozen_shape_field_CV_RMSE_K": 3.0798858084379934,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.30895875911454085
+            },
+            "mlp_global_latent": {
+              "frozen_shape_field_CV_RMSE_K": 3.4617881009190037,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.3810434939372541
+            },
+            "physics_only": {
+              "frozen_shape_field_CV_RMSE_K": 7.036363143083544,
+              "sample_count": 12,
+              "scale_log_RMSE": 2.635846751220204
+            },
+            "ridge_global_l0": {
+              "frozen_shape_field_CV_RMSE_K": 11.345975728248355,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7632950421814894
+            },
+            "ridge_global_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 11.345967940409201,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7632948908274996
+            },
+            "ridge_global_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 11.345197180699195,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7632799138370528
+            },
+            "ridge_global_l1": {
+              "frozen_shape_field_CV_RMSE_K": 11.270180054060944,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7618428536060997
+            },
+            "ridge_global_l10": {
+              "frozen_shape_field_CV_RMSE_K": 10.673717924205514,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.7510436294030648
+            },
+            "ridge_global_latent_l0": {
+              "frozen_shape_field_CV_RMSE_K": 4.3237766480508775,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.530710969757465
+            },
+            "ridge_global_latent_l0.0001": {
+              "frozen_shape_field_CV_RMSE_K": 4.323347231915229,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.5306664654243478
+            },
+            "ridge_global_latent_l0.01": {
+              "frozen_shape_field_CV_RMSE_K": 4.304573582194387,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.5287707155338687
+            },
+            "ridge_global_latent_l1": {
+              "frozen_shape_field_CV_RMSE_K": 4.007823383147462,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.5010771054113785
+            },
+            "ridge_global_latent_l10": {
+              "frozen_shape_field_CV_RMSE_K": 3.2181516924385885,
+              "sample_count": 12,
+              "scale_log_RMSE": 0.44370016654280287
+            },
+            "v4_uncorrected_scale": {
+              "frozen_shape_field_CV_RMSE_K": 5.707807020618213,
+              "sample_count": 12,
+              "scale_log_RMSE": 1.2705622174338471
+            }
+          },
+          "selection_passed": true,
+          "selection_role": "hard_challenge_valid",
+          "test_roles_used_for_selection": false
+        },
+        "protocol_passed": true
+      }
+    },
+    "role_counts": {
+      "hard_challenge_test": 12,
+      "hard_challenge_valid": 12,
+      "hard_train_holdout": 121,
+      "test_iid": 128,
+      "train": 672,
+      "valid_iid": 128
+    },
+    "row_count": 1073
+  },
+  "schema_version": "heat3d_v5_gate4a_offline_scale_correction_v1"
+}

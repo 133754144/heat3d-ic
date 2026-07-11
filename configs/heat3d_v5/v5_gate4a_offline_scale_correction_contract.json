@@ -1,0 +1,167 @@
+{
+  "schema_version": "heat3d_v5_gate4a_offline_scale_correction_contract_v1",
+  "contract_id": "V5-Gate-4A-offline-learned-scale-correction-feasibility",
+  "branch": "research/v5",
+  "scope": {
+    "allowed_work": [
+      "read frozen Gate 1/3 tables, P5 arrays, frozen V4 predictions, and frozen V4 pooled latents",
+      "fit deterministic offline ridge and small MLP scale-correction models under the two declared protocols",
+      "write explicit Gate 4A CSV, model-parameter JSON, summary JSON, Markdown, and fixture artifacts"
+    ],
+    "prohibited_work": [
+      "modify RIGNO, V4 model parameters, loss, formal training configuration, P5 data, labels, or split assignments",
+      "jointly train a shape model or enter Gate 4B",
+      "use target scale, oracle fields, residuals, or any label-derived value as a model input",
+      "write data/, output/, checkpoints/, or logs/ in the repository"
+    ]
+  },
+  "dataset_contract": {
+    "dataset_id": "heat3d_v4_p5_clean_nohard_v0",
+    "dataset_path": "data/heat3d_v4_p5_clean_nohard_v0",
+    "split_map_path": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+    "role_counts": {
+      "train": 672,
+      "valid_iid": 128,
+      "test_iid": 128,
+      "hard_train_holdout": 121,
+      "hard_challenge_valid": 12,
+      "hard_challenge_test": 12
+    },
+    "total_sample_count": 1073
+  },
+  "frozen_predecessors": {
+    "gate1_table": {
+      "path": "configs/heat3d_v5/v5_gate1_final_p5_per_sample_audit.csv",
+      "sha256": "79b7f79c32ac5c3da100e27ebafeeea25cb185088687785c6140f0359bde7de9",
+      "s_phys_column": "raw_z_collapsed_1d_operator_K",
+      "definition": "s_phys = z_collapsed_1d_operator before any label-fitted Gate 1 calibration"
+    },
+    "gate3_table": {
+      "path": "configs/heat3d_v5/v5_gate3_per_sample_decomposition_oracle.csv",
+      "sha256": "ff5ab6eaf49401079d0ddd034601ad470f22b158e85ada651d24d013344d5bd8",
+      "target_scale_column": "target_scale_cv_rms_K",
+      "boundary_projection": "raw physical temperature projection to prescribed Dirichlet values only"
+    },
+    "v4": {
+      "config_id": "V4P5_02_clean_baseline_raw_B28_e600",
+      "checkpoints": {
+        "best": "params_best.pkl epoch 405",
+        "final": "params_final.pkl epoch 600"
+      },
+      "latent": "mean pool frozen rnodes_processed regional features; validate recovered raw predictions against frozen archives at <=0.02 K before accepting each export, while all field reconstruction continues to use the exact archived predictions"
+    }
+  },
+  "target_and_reconstruction": {
+    "target_delta_s": "log(s_true / s_phys)",
+    "corrected_scale": "s_hat = s_phys * exp(delta_s_hat)",
+    "physics_only": "delta_s_hat = 0",
+    "v4_uncorrected_scale": "frozen V4 prediction CV-RMS scale combined with its own frozen shape",
+    "field_reconstruction": "frozen V4 predicted shape * (s_hat + eps) + reference_temperature_K, then raw-space Dirichlet projection",
+    "shape_training": false,
+    "eps_K": 1e-12
+  },
+  "input_feature_contract": {
+    "global_physics_features": [
+      "P_operator_W",
+      "raw_z_collapsed_1d_operator_K",
+      "q_weighted_local_kz_W_mK",
+      "q_weighted_inverse_kz_mK_W",
+      "q_low_k_overlap_fraction",
+      "source_concentration",
+      "source_z_centroid_normalized",
+      "source_layer_kz_heterogeneity_cv",
+      "harmonic_kx_W_mK",
+      "harmonic_ky_W_mK",
+      "harmonic_kz_W_mK",
+      "anisotropy_xy_over_z",
+      "Lx_m",
+      "Ly_m",
+      "Lz_m",
+      "top_area_m2",
+      "top_h_W_m2K",
+      "T_bottom_K",
+      "T_inf_K",
+      "T_inf_minus_T_bottom_K"
+    ],
+    "latent_features": "all dimensions of the corresponding frozen best/final mean-pooled rnodes_processed latent",
+    "input_provenance": "physical input arrays, BC metadata/features, or frozen V4 model input-only latent only",
+    "forbidden_input_categories": [
+      "s_true or target_scale_cv_rms_K",
+      "target_delta_s",
+      "oracle scale/shape/field metrics",
+      "Gate 1 calibrated prediction or residual columns",
+      "any label-derived residual or target statistic"
+    ],
+    "normalization": "Each model stores feature mean/std (and MLP target mean/std) fitted only on its protocol fit-role rows. Near-constant inputs are recorded and dropped."
+  },
+  "candidate_catalog": {
+    "physics_only": {
+      "kind": "fixed",
+      "feature_set": "none"
+    },
+    "ridge_global": {
+      "kind": "ridge",
+      "feature_set": "global_physics",
+      "ridge_lambdas": [0.0, 0.0001, 0.01, 1.0, 10.0]
+    },
+    "mlp_global": {
+      "kind": "mlp",
+      "feature_set": "global_physics",
+      "hidden_sizes": [16],
+      "epochs": 800,
+      "learning_rate": 0.01,
+      "weight_decay": 0.0001,
+      "seed": 20260711
+    },
+    "ridge_global_latent": {
+      "kind": "ridge",
+      "feature_set": "global_physics_plus_frozen_latent",
+      "ridge_lambdas": [0.0, 0.0001, 0.01, 1.0, 10.0]
+    },
+    "mlp_global_latent": {
+      "kind": "mlp",
+      "feature_set": "global_physics_plus_frozen_latent",
+      "hidden_sizes": [16],
+      "epochs": 800,
+      "learning_rate": 0.01,
+      "weight_decay": 0.0001,
+      "seed": 20260711
+    }
+  },
+  "protocols": {
+    "clean_only_zero_shot": {
+      "fit_roles": ["train"],
+      "selection_role": "valid_iid",
+      "hard_roles_policy": "frozen descriptive reports after selection",
+      "test_roles": ["test_iid", "hard_challenge_test"]
+    },
+    "hard_adapted": {
+      "fit_roles": ["train", "hard_train_holdout"],
+      "selection_role": "hard_challenge_valid",
+      "clean_guard_role": "valid_iid",
+      "test_roles": ["test_iid", "hard_challenge_test"]
+    }
+  },
+  "selection_and_pass_contract": {
+    "selection_primary": "minimum selection-role scale log-RMSE among trained candidates that improve both scale log-RMSE and frozen-shape field CV-RMSE versus physics_only",
+    "selection_tie_break": "lower selection-role frozen-shape field CV-RMSE, then catalog order",
+    "hard_adapt_clean_guard": "selected candidate must not exceed physics_only valid_iid scale log-RMSE or frozen-shape field CV-RMSE by more than 5 percent",
+    "bootstrap": {
+      "resamples": 2000,
+      "seed": 20260712,
+      "metrics": ["scale_log_RMSE", "frozen_shape_field_CV_RMSE"],
+      "required_comparisons": ["selected_vs_physics_only", "selected_vs_v4_uncorrected_scale", "global_only_vs_global_plus_latent"]
+    },
+    "pass": "both best and final must pass the corresponding validation improvement criteria and agree on the direction of global-physics adequacy and latent incremental value; any hard-adapt clean-guard failure rejects that protocol"
+  },
+  "outputs": {
+    "latent_export_script": "scripts/export_heat3d_v5_gate4a_pooled_latents.py",
+    "audit_script": "scripts/audit_heat3d_v5_gate4a.py",
+    "fixture_test": "scripts/check_heat3d_v5_gate4a.py",
+    "contract_markdown": "docs/v5_gate4a_offline_scale_correction_contract.md",
+    "per_sample_table": "configs/heat3d_v5/v5_gate4a_per_sample_scale_correction.csv",
+    "model_parameters": "configs/heat3d_v5/v5_gate4a_model_parameters.json",
+    "summary_json": "configs/heat3d_v5/v5_gate4a_closeout.json",
+    "closeout_markdown": "docs/v5_gate4a_closeout.md"
+  }
+}
