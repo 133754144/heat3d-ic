@@ -22,9 +22,10 @@ from typing import Any, Iterable, Mapping, Sequence
 import numpy as np
 
 
-AUDIT_ID = "V5-Gate-1"
-SCHEMA_VERSION = "heat3d_v5_gate1_closeout_v1"
+AUDIT_ID = "V5-Gate-1-final-correction"
+SCHEMA_VERSION = "heat3d_v5_gate1_final_correction_v1"
 P0_AUDIT_SHA256 = "cf231c690884b18d6cd331887caa2c0411e01bbe2928f432d6f1b983dfea9c4e"
+GATE1_BASELINE_COMMIT = "6f9a4b2"
 ROLE_ORDER = (
     "train",
     "valid_iid",
@@ -45,9 +46,19 @@ CANDIDATES = (
     "q_rms_lz2_over_kz",
     "legacy_p_array_r_series",
     "source_centroid_two_path",
-    "z_collapsed_1d",
+    "legacy_z_collapsed_1d",
+    "z_collapsed_1d_operator",
 )
 PHYSICS_CANDIDATES = CANDIDATES[1:]
+CANDIDATE_RAW_COLUMNS = {
+    "constant": "raw_constant_unitless",
+    "power_only": "raw_power_only_W",
+    "q_rms_lz2_over_kz": "raw_q_rms_lz2_over_kz_K",
+    "legacy_p_array_r_series": "raw_legacy_p_array_r_series_K",
+    "source_centroid_two_path": "raw_source_centroid_two_path_K",
+    "legacy_z_collapsed_1d": "raw_legacy_z_collapsed_1d_K",
+    "z_collapsed_1d_operator": "raw_z_collapsed_1d_operator_K",
+}
 INPUT_ARRAYS = ("coords", "k_field", "q_field", "bc_features")
 FULL_ARRAYS = INPUT_ARRAYS + ("temperature",)
 EPS = 1.0e-30
@@ -58,6 +69,13 @@ BOOTSTRAP_RESAMPLES = 2000
 
 class AuditError(RuntimeError):
     """Raised for a Gate 1 contract, schema, or reconstruction violation."""
+
+
+def _raw_column(candidate: str) -> str:
+    try:
+        return CANDIDATE_RAW_COLUMNS[candidate]
+    except KeyError as exc:
+        raise AuditError(f"unknown candidate: {candidate}") from exc
 
 
 STRING_COLUMNS = {
@@ -319,7 +337,7 @@ def _two_path_proxy(
     return p_operator * r_equivalent, r_bottom, r_top
 
 
-def _z_collapsed_1d_proxy(
+def _legacy_z_collapsed_1d_proxy(
     *,
     axes: Sequence[np.ndarray],
     inverse: Sequence[np.ndarray],
@@ -381,6 +399,105 @@ def _z_collapsed_1d_proxy(
         raise AuditError(f"z-collapsed 1D proxy matrix is singular: {exc}") from exc
     total_volume = float(layer_volumes.sum())
     return float(math.sqrt(np.dot(layer_volumes, delta * delta) / total_volume))
+
+
+def z_collapsed_1d_operator(
+    *,
+    axes: Sequence[np.ndarray],
+    inverse: Sequence[np.ndarray],
+    volumes: np.ndarray,
+    q_operator: np.ndarray,
+    k_z: np.ndarray,
+    top_h: float,
+    bc_offset: float,
+    return_details: bool = False,
+) -> float | tuple[float, dict[str, Any]]:
+    """Collapse the V4 operator's z terms without averaging column conductance.
+
+    For every adjacent z pair, this sums the V4 reference operator conductance
+    over x-y columns: ``harmonic(kz_lower, kz_upper) * dx_cv * dy_cv / dz``.
+    Source deposition, the bottom row replacement, and top Robin RHS use the
+    same semantics as ``rigno/heat3d_v4_reference_solver._assemble_triplets``.
+    The result is a scalar CV-RMS temperature-rise proxy, not a label solve.
+    """
+
+    x_axis, y_axis, z_axis = [np.asarray(axis, dtype=np.float64) for axis in axes]
+    ix_values, iy_values, iz_values = [np.asarray(value, dtype=np.int64) for value in inverse]
+    shape = (int(x_axis.size), int(y_axis.size), int(z_axis.size))
+    node_count = int(volumes.size)
+    if q_operator.shape != (node_count,) or k_z.shape != (node_count,):
+        raise AuditError("operator 1D proxy arrays must share the control-volume node count")
+    if int(np.prod(shape)) != node_count:
+        raise AuditError("operator 1D proxy requires a complete rectilinear grid")
+    grid = -np.ones(shape, dtype=np.int64)
+    grid[ix_values, iy_values, iz_values] = np.arange(node_count, dtype=np.int64)
+    if np.any(grid < 0):
+        raise AuditError("operator 1D proxy grid mapping is incomplete")
+
+    dx_cv = _control_widths(x_axis, "x")
+    dy_cv = _control_widths(y_axis, "y")
+    layer_volumes = np.zeros(shape[2], dtype=np.float64)
+    layer_power = np.zeros(shape[2], dtype=np.float64)
+    for iz in range(shape[2]):
+        nodes = grid[:, :, iz].reshape(-1)
+        layer_volumes[iz] = float(volumes[nodes].sum())
+        layer_power[iz] = float(np.dot(q_operator[nodes], volumes[nodes]))
+    if np.any(layer_volumes <= 0.0):
+        raise AuditError("operator 1D proxy found an empty z layer")
+
+    matrix = np.zeros((shape[2], shape[2]), dtype=np.float64)
+    rhs = np.zeros(shape[2], dtype=np.float64)
+    face_totals: list[float] = []
+    face_columns: list[np.ndarray] = []
+    for iz in range(shape[2] - 1):
+        distance = float(z_axis[iz + 1] - z_axis[iz])
+        if distance <= 0.0:
+            raise AuditError("operator 1D proxy z coordinates must increase")
+        column_conductance = np.zeros((shape[0], shape[1]), dtype=np.float64)
+        for ix in range(shape[0]):
+            for iy in range(shape[1]):
+                lower = int(grid[ix, iy, iz])
+                upper = int(grid[ix, iy, iz + 1])
+                harmonic_k = 2.0 * float(k_z[lower]) * float(k_z[upper]) / (
+                    float(k_z[lower]) + float(k_z[upper])
+                )
+                area = float(dx_cv[ix] * dy_cv[iy])
+                column_conductance[ix, iy] = harmonic_k * area / distance
+        total_conductance = float(column_conductance.sum())
+        face_totals.append(total_conductance)
+        face_columns.append(column_conductance)
+        matrix[iz, iz] += total_conductance
+        matrix[iz, iz + 1] -= total_conductance
+        matrix[iz + 1, iz] -= total_conductance
+        matrix[iz + 1, iz + 1] += total_conductance
+
+    # V4 source policy: bottom nodes use a row-replacement Dirichlet equation,
+    # so their q*CV is deliberately absent from the RHS.
+    matrix[0, :] = 0.0
+    matrix[0, 0] = 1.0
+    rhs[0] = 0.0
+    for iz in range(1, shape[2]):
+        rhs[iz] += layer_power[iz]
+    top_area = float(np.sum(np.outer(dx_cv, dy_cv)))
+    robin = top_h * top_area
+    matrix[-1, -1] += robin
+    rhs[-1] += robin * bc_offset
+    try:
+        delta = np.linalg.solve(matrix, rhs)
+    except np.linalg.LinAlgError as exc:
+        raise AuditError(f"operator 1D proxy matrix is singular: {exc}") from exc
+    scale = float(math.sqrt(np.dot(layer_volumes, delta * delta) / float(layer_volumes.sum())))
+    if not return_details:
+        return scale
+    return scale, {
+        "face_conductance_W_K": face_totals,
+        "face_column_conductance_W_K": [value.tolist() for value in face_columns],
+        "layer_power_W": layer_power.tolist(),
+        "layer_volume_m3": layer_volumes.tolist(),
+        "layer_deltaT_K": delta.tolist(),
+        "top_robin_conductance_W_K": robin,
+        "top_area_m2": top_area,
+    }
 
 
 def _sample_row(sample_dir: Path, role: str) -> dict[str, Any]:
@@ -482,7 +599,7 @@ def _sample_row(sample_dir: Path, role: str) -> dict[str, Any]:
         area=top_area,
         coords=coords,
     )
-    raw_1d = _z_collapsed_1d_proxy(
+    raw_legacy_1d = _legacy_z_collapsed_1d_proxy(
         axes=axes,
         inverse=inverse,
         volumes=volumes,
@@ -492,13 +609,26 @@ def _sample_row(sample_dir: Path, role: str) -> dict[str, Any]:
         top_area=top_area,
         bc_offset=bc_offset,
     )
+    operator_1d = z_collapsed_1d_operator(
+        axes=axes,
+        inverse=inverse,
+        volumes=volumes,
+        q_operator=q_operator,
+        k_z=k_diag[:, 2],
+        top_h=top_h,
+        bc_offset=bc_offset,
+        return_details=True,
+    )
+    raw_operator_1d, operator_1d_details = operator_1d
+    operator_face_values = [float(value) for value in operator_1d_details["face_conductance_W_K"]]
     raw_candidates: dict[str, float | None] = {
         "constant": 1.0,
         "power_only": p_operator if p_operator > EPS else None,
         "q_rms_lz2_over_kz": q_rms_operator * lengths[2] ** 2 / kz_h if q_rms_operator > EPS else None,
         "legacy_p_array_r_series": p_array * r_series if p_array > EPS else None,
         "source_centroid_two_path": raw_centroid,
-        "z_collapsed_1d": raw_1d if raw_1d > EPS else None,
+        "legacy_z_collapsed_1d": raw_legacy_1d if raw_legacy_1d > EPS else None,
+        "z_collapsed_1d_operator": raw_operator_1d if raw_operator_1d > EPS else None,
     }
     provenance = meta.get("p5_provenance")
     provenance_id = ""
@@ -552,9 +682,12 @@ def _sample_row(sample_dir: Path, role: str) -> dict[str, Any]:
         "R_series_K_W": r_series,
         "R_centroid_bottom_K_W": r_centroid_bottom,
         "R_centroid_top_K_W": r_centroid_top,
+        "operator_1d_face_conductance_min_W_K": min(operator_face_values),
+        "operator_1d_face_conductance_max_W_K": max(operator_face_values),
+        "operator_1d_top_robin_conductance_W_K": float(operator_1d_details["top_robin_conductance_W_K"]),
     }
     for candidate, raw in raw_candidates.items():
-        row[f"raw_{candidate}_K"] = raw
+        row[_raw_column(candidate)] = raw
         row[f"pred_{candidate}_K"] = None
         row[f"log_residual_{candidate}"] = None
     row["selected_or_best_physics_candidate"] = ""
@@ -646,8 +779,9 @@ def _fit_calibrations(rows: Sequence[dict[str, Any]]) -> dict[str, dict[str, Any
     calibrations: dict[str, dict[str, Any]] = {}
     log_target = np.log(np.asarray([float(row["s_y_cv_rms_deltaT_K"]) for row in train_rows], dtype=np.float64))
     for candidate in CANDIDATES:
+        raw_key = _raw_column(candidate)
         raw = np.asarray(
-            [float(row[f"raw_{candidate}_K"]) if row[f"raw_{candidate}_K"] is not None else np.nan for row in train_rows],
+            [float(row[raw_key]) if row[raw_key] is not None else np.nan for row in train_rows],
             dtype=np.float64,
         )
         if candidate == "constant":
@@ -673,7 +807,7 @@ def _apply_calibrations(rows: Sequence[dict[str, Any]], calibrations: Mapping[st
     for row in rows:
         target = float(row["s_y_cv_rms_deltaT_K"])
         for candidate in CANDIDATES:
-            raw = row[f"raw_{candidate}_K"]
+            raw = row[_raw_column(candidate)]
             calibration = calibrations[candidate]
             prediction: float | None = None
             if candidate == "constant":
@@ -700,7 +834,8 @@ def _paired_bootstrap_delta(
         raise AuditError("paired bootstrap needs positive calibrated predictions")
     log_error_candidate = np.log(pred_candidate / target)
     log_error_reference = np.log(pred_reference / target)
-    rng = np.random.default_rng(BOOTSTRAP_SEED + CANDIDATES.index(candidate))
+    seed = BOOTSTRAP_SEED + 97 * CANDIDATES.index(candidate) + CANDIDATES.index(reference)
+    rng = np.random.default_rng(seed)
     deltas = np.empty(BOOTSTRAP_RESAMPLES, dtype=np.float64)
     for index in range(BOOTSTRAP_RESAMPLES):
         draw = rng.integers(0, target.size, size=target.size)
@@ -708,9 +843,11 @@ def _paired_bootstrap_delta(
         reference_rmse = math.sqrt(float(np.mean(log_error_reference[draw] ** 2)))
         deltas[index] = candidate_rmse - reference_rmse
     return {
-        "metric": "candidate_log_RMSE_minus_constant_log_RMSE",
+        "metric": f"{candidate}_log_RMSE_minus_{reference}_log_RMSE",
+        "candidate": candidate,
+        "reference": reference,
         "paired_role": SELECTION_ROLE,
-        "seed": BOOTSTRAP_SEED + CANDIDATES.index(candidate),
+        "seed": seed,
         "resamples": BOOTSTRAP_RESAMPLES,
         "point_estimate": float(math.sqrt(np.mean(log_error_candidate ** 2)) - math.sqrt(np.mean(log_error_reference ** 2))),
         "ci95": {
@@ -729,10 +866,50 @@ def _select_candidate(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     available = [candidate for candidate in PHYSICS_CANDIDATES if metrics[candidate]["available"]]
     if not available:
         raise AuditError("no physical proxy is available on valid_iid")
-    best_physics = min(available, key=lambda candidate: float(metrics[candidate]["log_RMSE"]))
+    ranking = sorted(available, key=lambda candidate: float(metrics[candidate]["log_RMSE"]))
+    best_physics = ranking[0]
+    runner_up = ranking[1] if len(ranking) > 1 else None
     bootstrap = {candidate: _paired_bootstrap_delta(valid_rows, candidate) for candidate in available}
-    ci_high = float(bootstrap[best_physics]["ci95"]["high"])
-    accepted = ci_high < 0.0
+    winner_runner_up = (
+        _paired_bootstrap_delta(valid_rows, best_physics, runner_up)
+        if runner_up is not None
+        else None
+    )
+    selected = best_physics
+    tie_break_applied = False
+    tie_break_rationale: str | None = None
+    operator_tie_comparison: dict[str, Any] | None = None
+    corrected_operator = "z_collapsed_1d_operator"
+    if (
+        runner_up is not None
+        and winner_runner_up is not None
+        and float(winner_runner_up["ci95"]["high"]) >= 0.0
+        and corrected_operator in available
+        and corrected_operator != best_physics
+    ):
+        operator_tie_comparison = _paired_bootstrap_delta(valid_rows, corrected_operator, best_physics)
+        interval = _mapping(operator_tie_comparison["ci95"], "operator tie CI")
+        if float(interval["low"]) <= 0.0 <= float(interval["high"]):
+            selected = corrected_operator
+            tie_break_applied = True
+            tie_break_rationale = (
+                "valid_iid comparison is statistically tied; choose z_collapsed_1d_operator "
+                "because it preserves per-column V4 face conductance on nonuniform z and kz grids, "
+                "rather than relying on layer-averaged conductivity."
+            )
+
+    selected_vs_constant = _paired_bootstrap_delta(valid_rows, selected, "constant")
+    selected_vs_power_only = (
+        _paired_bootstrap_delta(valid_rows, selected, "power_only")
+        if selected != "power_only"
+        else None
+    )
+    significant_vs_constant = float(selected_vs_constant["ci95"]["high"]) < 0.0
+    significant_vs_power_only = (
+        selected_vs_power_only is not None
+        and float(selected_vs_power_only["ci95"]["high"]) < 0.0
+    )
+    accepted = bool(significant_vs_constant and significant_vs_power_only)
     return {
         "fit_role": CALIBRATION_ROLE,
         "selection_role": SELECTION_ROLE,
@@ -742,11 +919,20 @@ def _select_candidate(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "constant_metrics_valid_iid": metrics["constant"],
         "physical_metrics_valid_iid": {candidate: metrics[candidate] for candidate in available},
         "best_physics_candidate": best_physics,
+        "runner_up_candidate": runner_up,
         "paired_bootstrap_vs_constant": bootstrap,
-        "decision_rule": "accept only when best physical candidate CI95 upper endpoint is below zero",
+        "winner_vs_runner_up_paired_bootstrap": winner_runner_up,
+        "operator_tie_comparison": operator_tie_comparison,
+        "selected_vs_constant_paired_bootstrap": selected_vs_constant,
+        "selected_vs_power_only_paired_bootstrap": selected_vs_power_only,
+        "decision_rule": "accept only when the selected candidate CI95 upper endpoint is below zero versus both constant and power_only",
+        "significant_vs_constant": significant_vs_constant,
+        "significant_vs_power_only": significant_vs_power_only,
+        "tie_break_applied": tie_break_applied,
+        "tie_break_rationale": tie_break_rationale,
         "decision": "select_deterministic_physics_base" if accepted else "reject_all_single_proxy_require_later_global_scale_learning",
-        "selected_candidate": best_physics if accepted else None,
-        "residual_analysis_candidate": best_physics,
+        "selected_candidate": selected if accepted else None,
+        "residual_analysis_candidate": selected,
         "test_roles_used_for_selection": False,
     }
 
@@ -882,6 +1068,16 @@ def _residual_analysis(rows: Sequence[Mapping[str, Any]], decision: Mapping[str,
     }
     clean_rows = [row for row in rows if int(row["is_clean_role"]) == 1]
     hard_rows = [row for row in rows if int(row["is_hard_role"]) == 1]
+    hard_ood_rows = [row for row in rows if row["role"] == OOD_ROLE]
+    hard_ood_residual = _summary(row[residual_key] for row in hard_ood_rows)
+    hard_ood_metrics = _evaluation_metrics(hard_ood_rows, candidate)
+    hard_mean = hard_ood_residual["mean"]
+    if hard_mean is None or abs(float(hard_mean)) < 0.05:
+        hard_direction = "no_material_systematic_log_bias"
+    elif float(hard_mean) < 0.0:
+        hard_direction = "systematic_underprediction"
+    else:
+        hard_direction = "systematic_overprediction"
     return {
         "candidate": candidate,
         "selection_decision": decision["decision"],
@@ -895,6 +1091,14 @@ def _residual_analysis(rows: Sequence[Mapping[str, Any]], decision: Mapping[str,
             "clean": _summary(row[residual_key] for row in clean_rows),
             "hard": _summary(row[residual_key] for row in hard_rows),
         },
+        "hard_ood_systematic_bias": {
+            "role": OOD_ROLE,
+            "candidate": candidate,
+            "log_residual": hard_ood_residual,
+            "metrics": hard_ood_metrics,
+            "direction": hard_direction,
+            "interpretation": "negative log residual means calibrated proxy under-predicts s_y",
+        },
     }
 
 
@@ -906,9 +1110,10 @@ def _table_columns() -> list[str]:
         "cv_weight_sum_m3", "Lx_m", "Ly_m", "Lz_m", "top_area_m2", "s_y_cv_rms_deltaT_K", "target_cv_mean_deltaT_K", "target_max_deltaT_K",
         "q_operator_cv_rms_W_m3", "q_active_cv_fraction", "q_rms_to_mean_concentration", "source_z_centroid_m", "source_z_centroid_normalized",
         "harmonic_kx_W_mK", "harmonic_ky_W_mK", "harmonic_kz_W_mK", "anisotropy_xy_over_z", "top_h_W_m2K", "R_top_K_W", "R_z_K_W", "R_series_K_W", "R_centroid_bottom_K_W", "R_centroid_top_K_W",
+        "operator_1d_face_conductance_min_W_K", "operator_1d_face_conductance_max_W_K", "operator_1d_top_robin_conductance_W_K",
     ]
     for candidate in CANDIDATES:
-        base.extend((f"raw_{candidate}_K", f"pred_{candidate}_K", f"log_residual_{candidate}"))
+        base.extend((_raw_column(candidate), f"pred_{candidate}_K", f"log_residual_{candidate}"))
     base.extend(("selected_or_best_physics_candidate", "selected_or_best_physics_prediction_K", "selected_or_best_physics_log_residual"))
     return base
 
@@ -1061,17 +1266,17 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
     summaries = _mapping(reconstructed["split_summaries"], "split_summaries")
     selected = selection.get("selected_candidate") or selection["best_physics_candidate"]
     lines = [
-        "# V5 Gate 1 Closeout: Operator-Consistent Physics Scale",
+        "# V5 Gate 1 Final Correction And Closeout",
         "",
         "## Scope",
         "",
         f"- Dataset: `{dataset['dataset_id']}`; samples: `{dataset['sample_count']}`.",
         "- Read-only audit: no model/loss/config/data change, no training, and no reference-label solver call.",
-        "- P0 remains intact; its historical effective source power is preserved here as `P_array`.",
+        "- P0 and the previous Gate 1 layer-averaged result remain intact for backward traceability; this closeout adds corrected per-column z conductance.",
         "",
         "## Frozen Operator Semantics",
         "",
-        "`P_array = sum_all(q*CV)`, `P_bottom = sum_bottom(q*CV)`, and `P_operator = sum_non_bottom(q*CV)`. The latter matches V4 bottom-row replacement: bottom Dirichlet rows receive `T_bottom`, not `q*CV`.",
+        "`P_array = sum_all(q*CV)`, `P_bottom = sum_bottom(q*CV)`, and `P_operator = sum_non_bottom(q*CV)`. The latter matches V4 bottom-row replacement: bottom Dirichlet rows receive `T_bottom`, not `q*CV`. `z_collapsed_1d_operator` sums every x-y column's local harmonic-kz face conductance at its actual z spacing.",
         "",
             "| role | n | P_array mean W | P_bottom mean W | P_operator mean W | BC offset range K | bottom label max error K | driver categories |",
             "| --- | ---: | ---: | ---: | ---: | --- | ---: | --- |",
@@ -1100,8 +1305,10 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
             "",
             "All calibrations fit only `train`; candidate selection uses only `valid_iid`; `hard_challenge_valid` is OOD inspection; test roles are report-only after selection.",
             f"- Best physical valid candidate: `{selection['best_physics_candidate']}`.",
+            f"- Runner-up physical valid candidate: `{selection.get('runner_up_candidate') or 'none'}`.",
             f"- Decision: `{selection['decision']}`.",
             f"- Selected deterministic base: `{selection.get('selected_candidate') or 'none'}`.",
+            f"- Significant improvement versus constant / power-only: `{selection['significant_vs_constant']}` / `{selection['significant_vs_power_only']}`.",
             "",
             "| candidate | valid log-RMSE | valid log-MAE | valid Spearman | valid factor-2 | paired delta CI95 vs constant | hard-challenge-valid log-RMSE | test_iid log-RMSE |",
             "| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: |",
@@ -1131,6 +1338,20 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
                 test=_fmt(_mapping(test, "test").get("log_RMSE")),
             )
         )
+    winner_runner = selection.get("winner_vs_runner_up_paired_bootstrap")
+    if winner_runner is not None:
+        winner_ci = _mapping(_mapping(winner_runner, "winner runner")["ci95"], "winner runner CI")
+        lines.extend(
+            [
+                "",
+                "### Winner Versus Runner-Up",
+                "",
+                f"- Direct paired valid_iid log-RMSE delta (`{winner_runner['candidate']}` minus `{winner_runner['reference']}`): `[{_fmt(winner_ci['low'])}, {_fmt(winner_ci['high'])}]`.",
+                f"- Tie-break applied: `{selection['tie_break_applied']}`.",
+            ]
+        )
+        if selection.get("tie_break_rationale"):
+            lines.append(f"- Tie-break rationale: {selection['tie_break_rationale']}")
     lines.extend(
         [
             "",
@@ -1192,6 +1413,20 @@ def render_markdown(payload: Mapping[str, Any]) -> str:
                 std=_fmt(stats["std"]),
             )
         )
+    hard_ood = _mapping(residual["hard_ood_systematic_bias"], "hard OOD")
+    hard_ood_stats = _mapping(hard_ood["log_residual"], "hard OOD residual")
+    hard_ood_metrics = _mapping(hard_ood["metrics"], "hard OOD metrics")
+    hard_ratios = _mapping(hard_ood_metrics["ratio_quantiles"], "hard OOD ratios")
+    lines.extend(
+        [
+            "",
+            "### Hard OOD Systematic Bias",
+            "",
+            f"- Role: `{hard_ood['role']}`; candidate: `{hard_ood['candidate']}`.",
+            f"- Direction: `{hard_ood['direction']}`; mean/median log residual: `{_fmt(hard_ood_stats['mean'])}` / `{_fmt(hard_ood_stats['median'])}`.",
+            f"- Hard OOD log-RMSE: `{_fmt(hard_ood_metrics.get('log_RMSE'))}`; prediction/target median ratio: `{_fmt(hard_ratios.get('q50'))}`.",
+        ]
+    )
     leakage = _mapping(reconstructed["duplicate_leakage"], "leakage")
     lines.extend(
         [
@@ -1246,6 +1481,15 @@ def _run_audit(
             "historical_effective_source_power_term": "P_array_W",
             "p0_files_modified": False,
         },
+        "prior_gate1_backward_traceability": {
+            "commit": GATE1_BASELINE_COMMIT,
+            "table": "configs/heat3d_v5/v5_gate1_p5_per_sample_audit.csv",
+            "table_sha256": "7d17589b909157670b5c052ae9ff901e1cff39bbff77e0e7cf7e60055b89e8c7",
+            "summary": "configs/heat3d_v5/v5_gate1_closeout.json",
+            "legacy_1d_candidate": "legacy_z_collapsed_1d",
+            "legacy_1d_semantics": "layer-harmonic kz plus half-control-volume face distance",
+            "prior_files_modified": False,
+        },
         "dataset": {
             "dataset_id": split_payload.get("dataset_id"),
             "dataset_path": dataset.as_posix(),
@@ -1261,7 +1505,9 @@ def _run_audit(
             "bottom_row_policy": "V4 _assemble_triplets replaces bottom rows with T=T_bottom before source RHS deposition",
             "source_total_policy": "V4 _source_power_total iterates iz=1..end",
             "target": "s_y = CV-weighted RMS(temperature-T_bottom)",
+            "z_collapsed_1d_operator": "sum per-column harmonic-kz face conductance using actual node spacing, then apply V4 source, bottom Dirichlet, and top Robin semantics",
         },
+        "raw_proxy_columns": CANDIDATE_RAW_COLUMNS,
         "read_only_guardrails": {
             "sample_array_writes": 0,
             "sample_metadata_writes": 0,
@@ -1281,6 +1527,7 @@ def _run_audit(
         },
         "reconstructed_from_table": reconstructed,
         "gate1_closeout": {
+            "final_correction": True,
             "decision": selection["decision"],
             "selected_deterministic_physics_base": selection["selected_candidate"],
             "next_gate_authorized": False,

@@ -22,12 +22,20 @@ GATE1 = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GATE1)
 
 
-def _coords() -> np.ndarray:
-    x = np.array([0.0, 1.0], dtype=np.float64)
-    y = np.array([0.0, 1.0], dtype=np.float64)
-    z = np.array([0.0, 1.0, 2.0], dtype=np.float64)
+def _grid_coords(
+    x: np.ndarray | None = None,
+    y: np.ndarray | None = None,
+    z: np.ndarray | None = None,
+) -> np.ndarray:
+    x = np.array([0.0, 1.0], dtype=np.float64) if x is None else np.asarray(x, dtype=np.float64)
+    y = np.array([0.0, 1.0], dtype=np.float64) if y is None else np.asarray(y, dtype=np.float64)
+    z = np.array([0.0, 1.0, 2.0], dtype=np.float64) if z is None else np.asarray(z, dtype=np.float64)
     xx, yy, zz = np.meshgrid(x, y, z, indexing="ij")
     return np.column_stack([xx.reshape(-1), yy.reshape(-1), zz.reshape(-1)])
+
+
+def _coords() -> np.ndarray:
+    return _grid_coords()
 
 
 def _boundary_features(coords: np.ndarray) -> tuple[np.ndarray, list[int]]:
@@ -135,8 +143,8 @@ def _check_operator_semantics(root: Path) -> None:
     _assert_close(bc_only["P_operator_W"], 0.0, "BC-only P_operator")
     _assert_close(bc_only["T_inf_minus_T_bottom_K"], 20.0, "BC offset")
     assert bc_only["driver_category"] == "bc_driven"
-    assert bc_only["raw_z_collapsed_1d_K"] > 0.0
-    assert bc_only["raw_power_only_K"] is None
+    assert bc_only["raw_z_collapsed_1d_operator_K"] > 0.0
+    assert bc_only["raw_power_only_W"] is None
 
 
 def _check_q_linearity_and_1d(root: Path) -> None:
@@ -151,33 +159,99 @@ def _check_q_linearity_and_1d(root: Path) -> None:
         "q_rms_lz2_over_kz",
         "legacy_p_array_r_series",
         "source_centroid_two_path",
-        "z_collapsed_1d",
+        "legacy_z_collapsed_1d",
+        "z_collapsed_1d_operator",
     ):
         _assert_close(
-            float(two[f"raw_{candidate}_K"]) / float(one[f"raw_{candidate}_K"]),
+            float(two[GATE1._raw_column(candidate)]) / float(one[GATE1._raw_column(candidate)]),
             2.0,
             f"q scaling {candidate}",
         )
 
     axes = [np.array([0.0, 1.0]), np.array([0.0, 1.0]), np.array([0.0, 1.0, 2.0])]
     coords = _coords()
-    _, _, inverse, _ = GATE1._control_volumes(coords)
-    volumes, _, _, _ = GATE1._control_volumes(coords)
+    volumes, _, inverse, _ = GATE1._control_volumes(coords)
     q_operator = np.zeros(coords.shape[0], dtype=np.float64)
     q_operator[np.isclose(coords[:, 2], 1.0)] = 1.0
-    value = GATE1._z_collapsed_1d_proxy(
+    value, details = GATE1.z_collapsed_1d_operator(
         axes=axes,
         inverse=inverse,
         volumes=volumes,
         q_operator=q_operator,
         k_z=np.ones(coords.shape[0]),
         top_h=1.0,
-        top_area=1.0,
         bc_offset=0.0,
+        return_details=True,
     )
-    # Independent three-node network: T=[0, 21/40, 3/10], layer volumes=.5,1,.5.
-    expected = math.sqrt((1.0 * (21.0 / 40.0) ** 2 + 0.5 * (3.0 / 10.0) ** 2) / 2.0)
-    _assert_close(value, expected, "z-collapsed 1D proxy")
+    # Independent V4-z network uses actual node distance, so G=1 per face:
+    # T=[0, 2/3, 1/3], layer volumes=.5,1,.5.
+    expected = math.sqrt((1.0 * (2.0 / 3.0) ** 2 + 0.5 * (1.0 / 3.0) ** 2) / 2.0)
+    _assert_close(value, expected, "uniform operator 1D proxy")
+    _assert_close(details["face_conductance_W_K"][0], 1.0, "uniform lower face")
+    _assert_close(details["face_conductance_W_K"][1], 1.0, "uniform upper face")
+
+
+def _check_nonuniform_operator_1d() -> None:
+    axes = [np.array([0.0, 1.0]), np.array([0.0, 1.0]), np.array([0.0, 0.5, 2.0])]
+    coords = _grid_coords(*axes)
+    volumes, _, inverse, _ = GATE1._control_volumes(coords)
+    q_operator = np.zeros(coords.shape[0], dtype=np.float64)
+    q_operator[np.isclose(coords[:, 2], 0.5)] = 1.0
+    value, details = GATE1.z_collapsed_1d_operator(
+        axes=axes,
+        inverse=inverse,
+        volumes=volumes,
+        q_operator=q_operator,
+        k_z=np.ones(coords.shape[0]),
+        top_h=1.0,
+        bc_offset=0.0,
+        return_details=True,
+    )
+    g_bottom, g_top = 2.0, 2.0 / 3.0
+    matrix = np.array([[1.0, 0.0, 0.0], [-g_bottom, g_bottom + g_top, -g_top], [0.0, -g_top, g_top + 1.0]])
+    delta = np.linalg.solve(matrix, np.array([0.0, 1.0, 0.0]))
+    expected = math.sqrt((1.0 * delta[1] ** 2 + 0.75 * delta[2] ** 2) / 2.0)
+    _assert_close(value, expected, "nonuniform-z operator 1D proxy")
+    _assert_close(details["face_conductance_W_K"][0], g_bottom, "nonuniform-z lower face")
+    _assert_close(details["face_conductance_W_K"][1], g_top, "nonuniform-z upper face")
+
+
+def _check_xy_local_kz_operator_1d() -> None:
+    axes = [np.array([0.0, 1.0]), np.array([0.0, 1.0]), np.array([0.0, 1.0, 2.0])]
+    coords = _grid_coords(*axes)
+    volumes, _, inverse, shape = GATE1._control_volumes(coords)
+    grid = -np.ones(tuple(shape), dtype=np.int64)
+    grid[inverse[0], inverse[1], inverse[2]] = np.arange(coords.shape[0])
+    k_z = np.ones(coords.shape[0], dtype=np.float64)
+    lower = np.array([[1.0, 2.0], [4.0, 8.0]])
+    middle = np.array([[2.0, 4.0], [8.0, 16.0]])
+    top = np.array([[3.0, 6.0], [12.0, 24.0]])
+    for ix in range(2):
+        for iy in range(2):
+            k_z[grid[ix, iy, 0]] = lower[ix, iy]
+            k_z[grid[ix, iy, 1]] = middle[ix, iy]
+            k_z[grid[ix, iy, 2]] = top[ix, iy]
+    q_operator = np.zeros(coords.shape[0], dtype=np.float64)
+    q_operator[grid[:, :, 1].reshape(-1)] = 1.0
+    value, details = GATE1.z_collapsed_1d_operator(
+        axes=axes,
+        inverse=inverse,
+        volumes=volumes,
+        q_operator=q_operator,
+        k_z=k_z,
+        top_h=1.0,
+        bc_offset=0.0,
+        return_details=True,
+    )
+    harmonic = lambda left, right: 2.0 * left * right / (left + right)
+    g_bottom = sum(0.25 * harmonic(lower[ix, iy], middle[ix, iy]) for ix in range(2) for iy in range(2))
+    g_top = sum(0.25 * harmonic(middle[ix, iy], top[ix, iy]) for ix in range(2) for iy in range(2))
+    matrix = np.array([[1.0, 0.0, 0.0], [-g_bottom, g_bottom + g_top, -g_top], [0.0, -g_top, g_top + 1.0]])
+    delta = np.linalg.solve(matrix, np.array([0.0, 1.0, 0.0]))
+    expected = math.sqrt((delta[1] ** 2 + 0.5 * delta[2] ** 2) / 2.0)
+    _assert_close(value, expected, "x-y local-kz operator 1D proxy")
+    _assert_close(details["face_conductance_W_K"][0], g_bottom, "x-y lower face sum")
+    _assert_close(details["face_conductance_W_K"][1], g_top, "x-y upper face sum")
 
 
 def _check_full_fixture_and_reconstruction(root: Path) -> None:
@@ -229,7 +303,9 @@ def _check_full_fixture_and_reconstruction(root: Path) -> None:
         rows = list(csv.DictReader(handle))
     assert len(rows) == len(assignments)
     assert "P_operator_W" in rows[0]
-    assert "pred_z_collapsed_1d_K" in rows[0]
+    assert "raw_power_only_W" in rows[0]
+    assert "pred_z_collapsed_1d_operator_K" in rows[0]
+    assert payload["selection"]["winner_vs_runner_up_paired_bootstrap"] is not None
     rendered = markdown.read_text()
     assert "Split" not in rendered
     assert "BC offset range K" in rendered
@@ -253,6 +329,8 @@ def main() -> int:
         root = Path(temporary)
         _check_operator_semantics(root)
         _check_q_linearity_and_1d(root)
+        _check_nonuniform_operator_1d()
+        _check_xy_local_kz_operator_1d()
         _check_full_fixture_and_reconstruction(root)
         _check_role_leakage_guard()
     print("V5 Gate 1 analytic fixture checks passed")

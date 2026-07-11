@@ -1,0 +1,80 @@
+{
+  "schema_version": "heat3d_v5_gate1_final_correction_contract_v1",
+  "contract_id": "V5-Gate-1-final-correction",
+  "branch": "research/v5",
+  "predecessor_gate1": {
+    "commit": "6f9a4b2",
+    "table": "configs/heat3d_v5/v5_gate1_p5_per_sample_audit.csv",
+    "table_sha256": "7d17589b909157670b5c052ae9ff901e1cff39bbff77e0e7cf7e60055b89e8c7",
+    "summary": "configs/heat3d_v5/v5_gate1_closeout.json",
+    "legacy_z_collapsed_definition": "layer-harmonic kz plus half-control-volume face distance"
+  },
+  "scope": {
+    "allowed_work": [
+      "read frozen P5 arrays and metadata",
+      "derive deterministic scalar proxies and train-only scalar calibrations",
+      "write final-correction CSV, JSON, Markdown, and fixture artifacts"
+    ],
+    "prohibited_work": [
+      "modify model, loss, training configuration, split, label, or P5 data",
+      "train or evaluate a learned model",
+      "generate data or enter Gate 2",
+      "write data/, output/, checkpoints/, or logs/"
+    ]
+  },
+  "dataset_contract": {
+    "dataset_id": "heat3d_v4_p5_clean_nohard_v0",
+    "dataset_path": "data/heat3d_v4_p5_clean_nohard_v0",
+    "split_map_path": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+    "role_counts": {
+      "train": 672,
+      "valid_iid": 128,
+      "test_iid": 128,
+      "hard_train_holdout": 121,
+      "hard_challenge_valid": 12,
+      "hard_challenge_test": 12
+    },
+    "total_sample_count": 1073
+  },
+  "operator_1d_definition": {
+    "name": "z_collapsed_1d_operator",
+    "source": "rigno/heat3d_v4_reference_solver.py::_assemble_triplets",
+    "face_conductance": "for each adjacent z pair, sum over x-y columns harmonic_mean(kz_lower,kz_upper) * dx_cv * dy_cv / (z_upper-z_lower)",
+    "source_policy": "sum q*CV for iz>=1 only; bottom q is excluded by the same bottom-row replacement as the V4 operator",
+    "bottom_dirichlet": "relative bottom row is deltaT=0",
+    "top_robin": "sum h*dx_cv*dy_cv over top nodes and add h*A*(T_inf-T_bottom) to the relative RHS",
+    "target": "CV-weighted RMS(temperature-T_bottom) in K"
+  },
+  "candidates": {
+    "constant": {"raw_column": "raw_constant_unitless", "unit": "unitless"},
+    "power_only": {"raw_column": "raw_power_only_W", "unit": "W"},
+    "q_rms_lz2_over_kz": {"raw_column": "raw_q_rms_lz2_over_kz_K", "unit": "K"},
+    "legacy_p_array_r_series": {"raw_column": "raw_legacy_p_array_r_series_K", "unit": "K"},
+    "source_centroid_two_path": {"raw_column": "raw_source_centroid_two_path_K", "unit": "K"},
+    "legacy_z_collapsed_1d": {"raw_column": "raw_legacy_z_collapsed_1d_K", "unit": "K"},
+    "z_collapsed_1d_operator": {"raw_column": "raw_z_collapsed_1d_operator_K", "unit": "K"}
+  },
+  "calibration_and_selection": {
+    "fit_role": "train",
+    "selection_role": "valid_iid",
+    "ood_inspection_role": "hard_challenge_valid",
+    "test_roles": ["test_iid", "hard_challenge_test"],
+    "test_role_policy": "report_only_after_selection; never used to fit or select",
+    "calibration": "log(s_y)=intercept+slope*log(raw); constant uses intercept only",
+    "selection": "minimum valid_iid log_RMSE among physical candidates",
+    "required_bootstraps": [
+      "all physical candidates versus constant",
+      "selected candidate versus power_only",
+      "winner versus runner_up"
+    ],
+    "tie_break": "only if winner-runner-up CI includes zero and corrected z_collapsed_1d_operator is statistically tied with winner; prefer exact operator face semantics and nonuniform-grid generalizability"
+  },
+  "outputs": {
+    "audit_script": "scripts/audit_heat3d_v5_gate1.py",
+    "fixture_test": "scripts/check_heat3d_v5_gate1.py",
+    "per_sample_table": "configs/heat3d_v5/v5_gate1_final_p5_per_sample_audit.csv",
+    "summary_json": "configs/heat3d_v5/v5_gate1_final_closeout.json",
+    "closeout_markdown": "docs/v5_gate1_final_closeout.md",
+    "contract_markdown": "docs/v5_gate1_final_correction_contract.md"
+  }
+}
