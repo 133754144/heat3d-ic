@@ -1,0 +1,130 @@
+{
+  "schema_version": "heat3d_v5_gate3_boundary_general_contract_v1",
+  "contract_id": "V5-Gate-3-boundary-general-shape-scale-oracle",
+  "branch": "research/v5",
+  "scope": {
+    "allowed_work": [
+      "read frozen P5 arrays, metadata, Gate 1 final scale records, and frozen V4 best/final raw-temperature predictions",
+      "derive deterministic boundary-aware shape/scale and lateral-spreading diagnostics",
+      "write the explicit Gate 3 CSV, JSON, Markdown, and fixture artifacts"
+    ],
+    "prohibited_work": [
+      "modify model parameters, loss, training configuration, split assignment, labels, or P5 data",
+      "train or implement a learned scale branch",
+      "call the V4 reference solver or generate new labels",
+      "write data/, output/, checkpoints/, or logs/"
+    ]
+  },
+  "dataset_contract": {
+    "dataset_id": "heat3d_v4_p5_clean_nohard_v0",
+    "dataset_path": "data/heat3d_v4_p5_clean_nohard_v0",
+    "split_map_path": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+    "role_counts": {
+      "train": 672,
+      "valid_iid": 128,
+      "test_iid": 128,
+      "hard_train_holdout": 121,
+      "hard_challenge_valid": 12,
+      "hard_challenge_test": 12
+    },
+    "total_sample_count": 1073
+  },
+  "current_v5_semantics": {
+    "reference_dirichlet_region": "bottom",
+    "expected_region_types": {
+      "bottom": "dirichlet",
+      "top": "robin",
+      "side": "adiabatic"
+    },
+    "deltaT": "raw_temperature_K - prescribed_temperature_K(reference_dirichlet_region)",
+    "scale": "sqrt(sum(CV_volume * DeltaT^2) / sum(CV_volume))",
+    "shape": "DeltaT / (scale + 1e-12 K)",
+    "target_reconstruction": "raw_temperature_K = shape * (scale + eps) + reference_temperature_K",
+    "current_data_coverage": "The frozen P5 data instantiate only bottom Dirichlet, top Robin, and sides adiabatic. Gate 3 does not claim arbitrary-boundary generalization."
+  },
+  "boundary_interface": {
+    "metadata_source": "sample_meta.boundary_params and sample_meta.boundary_regions[{name, point_indices}]",
+    "bc_feature_source": "sample_meta.bc_feature_names paired with bc_features.npy",
+    "required_mask_policy": "metadata point-index mask and matched binary BC-feature mask must agree exactly",
+    "dirichlet_value_keys": [
+      "fixed_temperature_K",
+      "T_fixed_K",
+      "prescribed_value_K",
+      "value_K"
+    ],
+    "supported_region_types": [
+      "dirichlet",
+      "robin",
+      "neumann",
+      "adiabatic"
+    ],
+    "mixed_bc_extension": "Represent future mixed boundaries as multiple explicit region entries. A literal type=mixed must be expanded before the audit and otherwise raises an error.",
+    "allow_coordinate_fallback": false,
+    "coordinate_fallback_contract": "Only an explicit per-region coordinate_fallback {axis, extremum, tolerance} can enable it. There is no implicit lowest-z or bottom fallback.",
+    "projection_contract": "Apply only in raw physical temperature space. Assign all Dirichlet nodes their prescribed values and preserve every non-Dirichlet node exactly."
+  },
+  "frozen_v4_prediction_contract": {
+    "config_id": "V4P5_02_clean_baseline_raw_B28_e600",
+    "checkpoint_names": {
+      "best": "params_best.pkl at epoch 405",
+      "final": "params_final.pkl at epoch 600"
+    },
+    "prediction_space": "raw temperature K",
+    "coverage": "best and final archives must each contain all 1,073 split-map sample IDs before Gate 3 runs",
+    "original_archives": "Existing V4 split-aware exports are frozen evidence; missing train and hard_train_holdout coverage may be generated only by read-only inference from those fixed checkpoints into a temporary non-repository path.",
+    "oracle_variants": [
+      "original",
+      "predicted_shape_true_scale",
+      "true_shape_predicted_scale",
+      "boundary_projected_original"
+    ]
+  },
+  "metrics_contract": {
+    "aggregation": "sample-first CV-weighted metrics, then cohort mean/median summaries",
+    "cohorts": [
+      "clean",
+      "hard",
+      "train",
+      "valid_iid",
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test"
+    ],
+    "metrics": [
+      "CV-weighted RMSE and MAE",
+      "weighted spatial correlation",
+      "weighted target-projection amplitude ratio",
+      "CV-RMS ratio",
+      "target-p95 hotspot CV-weighted RMSE/MAE/bias/peak error"
+    ],
+    "lateral_spreading_features": [
+      "q-weighted local kz",
+      "q-weighted inverse kz",
+      "q overlap with the CV-weighted lowest-kz quintile",
+      "source-layer kz heterogeneity",
+      "source concentration",
+      "source z centroid"
+    ],
+    "gate1_residual_relation": "Correlate each lateral feature descriptively with log(pred_z_collapsed_1d_operator_K / target_scale_cv_rms_K) from the frozen Gate 1 final-correction CSV.",
+    "causal_limit": "Lateral relations are mechanism evidence only and do not establish causality."
+  },
+  "protocol": {
+    "test_role_policy": "No test role can select a threshold, formula, or method. All test-role figures are frozen descriptive reporting.",
+    "leakage_guard": "Report cross-role input, full-sample, and provenance duplicate groups.",
+    "summary_reconstruction": "--verify-summary reconstructs target, oracle, hard-failure, lateral, and leakage summaries from CSV only."
+  },
+  "predecessor_gate1": {
+    "table": "configs/heat3d_v5/v5_gate1_final_p5_per_sample_audit.csv",
+    "table_sha256": "79b7f79c32ac5c3da100e27ebafeeea25cb185088687785c6140f0359bde7de9",
+    "candidate": "z_collapsed_1d_operator"
+  },
+  "outputs": {
+    "audit_script": "scripts/audit_heat3d_v5_gate3.py",
+    "fixture_test": "scripts/check_heat3d_v5_gate3.py",
+    "contract_markdown": "docs/v5_gate3_boundary_general_contract.md",
+    "per_sample_table": "configs/heat3d_v5/v5_gate3_per_sample_decomposition_oracle.csv",
+    "summary_json": "configs/heat3d_v5/v5_gate3_closeout.json",
+    "closeout_markdown": "docs/v5_gate3_closeout.md"
+  }
+}
