@@ -54,7 +54,6 @@ P4b-time-2 的 e5 对照 profile：
 SSH WSL 检查结果：
 
 - remote HEAD: `5ab3752`；
-- `nvidia-smi`: command not found；
 - `jax_version`: `0.9.1`；
 - `jax_default_backend`: `gpu`；
 - `jax_devices`: `[CudaDevice(id=0)]`；

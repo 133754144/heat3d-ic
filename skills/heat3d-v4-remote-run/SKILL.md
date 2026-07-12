@@ -24,9 +24,9 @@ git status --short
 ```
 
 3. Commit and push local file changes before launch; remotes pull from GitHub.
-4. Run remote preflight with the helper. `nvidia-smi` is optional on WSL-backed
-   remotes; CUDA usability is checked with `jax.devices()` after `rigno` is
-   active.
+4. Run remote preflight with the helper after `rigno` is active. The preflight
+   checks repository/environment state only; it does not probe accelerator
+   availability.
 
 ```bash
 python3 -B scripts/heat3d_v4_remote_run.py --host devbox check

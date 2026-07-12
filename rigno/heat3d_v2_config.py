@@ -55,9 +55,12 @@ CONDITION_FEATURE_TRANSFORMS = {
     "semantic_v1_k_log_only",
 }
 DECODER_BYPASS_MODES = {"none", "post_decoder_residual"}
-DECODER_BYPASS_FEATURES = {"none", "full_condition"}
+DECODER_BYPASS_FEATURES = {"none", "full_condition", "explicit_local_condition"}
 DECODER_BYPASS_FEATURE_SOURCES = {"normalized_c"}
 DECODER_BYPASS_INITS = {"zero_residual"}
+GLOBAL_CONTEXT_MODES = {"none", "film"}
+FILM_TARGETS = {"rnodes_processed"}
+FILM_INITS = {"identity"}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -608,10 +611,73 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
                 f"{label}: model.decoder_bypass_mode='none' requires "
                 "model.decoder_bypass_features='none'"
             )
-    elif features != "full_condition":
+    elif features not in {"full_condition", "explicit_local_condition"}:
         raise ValueError(
             f"{label}: model.decoder_bypass_mode='post_decoder_residual' requires "
-            "model.decoder_bypass_features='full_condition'"
+            "model.decoder_bypass_features='full_condition' or 'explicit_local_condition'"
+        )
+    local_names = model.get("decoder_bypass_local_feature_names")
+    if local_names is not None:
+        if isinstance(local_names, (str, bytes)) or not isinstance(local_names, (list, tuple)):
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_local_feature_names' must be a list of strings"
+            )
+        if any(not isinstance(name, str) or not name for name in local_names):
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_local_feature_names' must contain nonempty strings"
+            )
+        if len(set(local_names)) != len(local_names):
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_local_feature_names' must not contain duplicates"
+            )
+    if features == "explicit_local_condition" and not local_names:
+        raise ValueError(
+            f"{label}: explicit_local_condition requires model.decoder_bypass_local_feature_names"
+        )
+
+    global_mode = model.get("global_context_mode")
+    if global_mode is not None and global_mode not in GLOBAL_CONTEXT_MODES:
+        raise ValueError(
+            f"{label}: field 'model.global_context_mode' must be one of "
+            f"{sorted(GLOBAL_CONTEXT_MODES)}, got {global_mode!r}"
+        )
+    for field, allowed in (("film_target", FILM_TARGETS), ("film_init", FILM_INITS)):
+        value = model.get(field)
+        if value is not None and value not in allowed:
+            raise ValueError(
+                f"{label}: field 'model.{field}' must be one of {sorted(allowed)}, got {value!r}"
+            )
+    film_hidden = model.get("film_hidden_size")
+    if film_hidden is not None and (
+        isinstance(film_hidden, bool) or not isinstance(film_hidden, int) or film_hidden < 1
+    ):
+        raise ValueError(f"{label}: field 'model.film_hidden_size' must be an int >= 1")
+    global_names = model.get("global_context_feature_names")
+    if global_names is not None:
+        if isinstance(global_names, (str, bytes)) or not isinstance(global_names, (list, tuple)):
+            raise ValueError(
+                f"{label}: field 'model.global_context_feature_names' must be a list of strings"
+            )
+        if any(not isinstance(name, str) or not name for name in global_names):
+            raise ValueError(
+                f"{label}: field 'model.global_context_feature_names' must contain nonempty strings"
+            )
+        if len(set(global_names)) != len(global_names):
+            raise ValueError(
+                f"{label}: field 'model.global_context_feature_names' must not contain duplicates"
+            )
+    global_dim = model.get("global_context_feature_dim")
+    if global_dim is not None and (
+        isinstance(global_dim, bool) or not isinstance(global_dim, int) or global_dim < 0
+    ):
+        raise ValueError(f"{label}: field 'model.global_context_feature_dim' must be an int >= 0")
+    if global_dim is not None and global_names is not None and global_dim != len(global_names):
+        raise ValueError(
+            f"{label}: model.global_context_feature_dim must match global_context_feature_names"
+        )
+    if global_mode == "film" and not global_names:
+        raise ValueError(
+            f"{label}: model.global_context_mode='film' requires global_context_feature_names"
         )
 
 

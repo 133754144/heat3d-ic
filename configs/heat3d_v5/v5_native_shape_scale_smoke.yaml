@@ -1,0 +1,54 @@
+schema_version: heat3d_v5_native_shape_scale_smoke_v1
+config_role: checkpoint_partial_load_smoke
+description: >-
+  Native V5 DeltaT=s*phi smoke. It initializes a new shape decoder and scale
+  head, warm-loads frozen V4 encoder/processor only, and performs no training.
+
+frozen_reference:
+  config_id: V4P5_02_clean_baseline_raw_B28_e600
+  checkpoint: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/params_best.pkl
+  checkpoint_epoch: 405
+  run_config: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/run_config.json
+
+dataset:
+  subset_path: data/heat3d_v4_p5_clean_nohard_v0
+  split_map_path: configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json
+  context_standardizer_fit_roles: [train]
+  smoke_roles: [valid_iid]
+  hard_roles: []
+  graph_topology_change_allowed: false
+
+model:
+  native_output_mode: native_shape_scale
+  decoder_initialization: new
+  warm_start_load_policy: encoder_processor_only
+  decoder_bypass_mode: none
+  global_context_mode: none
+  global_context_feature_schema: heat3d_v5_global_physics_context_v1
+  scale_head:
+    input: standardized_global_context
+    formula: log_s_hat_equals_log_s_phys_plus_residual_scale_g
+    output_initialization: zero_residual
+    positivity: exp
+  shape_normalization:
+    input: unnormalized_psi
+    formula: phi_hat_equals_psi_over_CV_RMS_psi
+    required_cv_rms: 1.0
+  reconstruction:
+    before_projection: DeltaT_hat_equals_s_hat_times_phi_hat
+    after_projection: raw_temperature_Dirichlet_projection
+
+loss:
+  shape_cv_weight: 1.0
+  log_scale_weight: 1.0
+  relative_field_weight: 1.0
+  raw_absolute_field_weight: 1.0
+
+checks:
+  target_decomposition_reconstruction_tolerance_K: 1.0e-10
+  predicted_shape_cv_rms_tolerance: 1.0e-5
+  projected_dirichlet_tolerance_K: 1.0e-6
+  batching: [1, 4]
+  finite_gradient_required: true
+  target_or_label_derived_inference_inputs: false
+  training_runs_started: 0

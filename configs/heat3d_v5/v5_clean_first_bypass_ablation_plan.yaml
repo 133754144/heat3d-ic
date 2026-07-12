@@ -1,0 +1,105 @@
+schema_version: heat3d_v5_clean_first_bypass_ablation_plan_v1
+config_role: prepare_only_no_training
+description: >-
+  V5 clean-first decoder-bypass ablation plan derived from frozen
+  V4P5_02_clean_baseline_raw_B28_e600 best epoch 405. This YAML is not a
+  formal V4 registry run and must not launch training before Tasks 3--5 pass.
+
+extends: ../heat3d_v4/generated/V4P5_02_clean_baseline_raw_B28_e600.yaml
+
+frozen_reference:
+  config_id: V4P5_02_clean_baseline_raw_B28_e600
+  checkpoint: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/params_best.pkl
+  checkpoint_epoch: 405
+  decoder_bypass_audit_json: configs/heat3d_v5/v5_decoder_bypass_audit.json
+  decoder_bypass_audit_csv: configs/heat3d_v5/v5_decoder_bypass_audit.csv
+  valid_archive_replay_tolerance_K: 0.02
+
+dataset:
+  name: heat3d_v4_p5_clean_nohard_v0
+  subset_path: data/heat3d_v4_p5_clean_nohard_v0
+  split_map_path: configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json
+  fit_roles: [train]
+  selection_roles: [valid_iid]
+  report_only_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+  normalization_fit_roles: [train]
+
+model:
+  backbone: V4P5_02_RIGNO_latent96_edge96_steps6_mlp2
+  global_context_mode: none
+  native_output_mode: legacy_normalized_deltaT
+  decoder_bypass:
+    mode: post_decoder_residual
+    feature_source: normalized_c
+    feature_mode: explicit_local_condition
+    independently_switchable: true
+    valid_modes: [none, explicit_local_condition]
+    retained_node_local_feature_names:
+      - k_x
+      - k_y
+      - k_z
+      - q
+      - is_top
+      - is_bottom
+      - is_side
+      - is_interior
+    removed_sample_global_broadcast_feature_names:
+      - top_h
+      - top_T_inf_minus_T_ref
+      - bottom_T_fixed_minus_T_ref
+      - log_Lx
+      - log_Ly
+      - log_Lz
+      - log_Lx_over_Lz
+      - log_Ly_over_Lz
+    initialization: zero_residual
+    residual_scale: 0.5
+
+ablation_matrix:
+  frozen_v4_full_condition_reference:
+    decoder_bypass_feature_mode: full_condition
+    global_context_mode: none
+    training_allowed: false
+  local_only_bypass_control:
+    decoder_bypass_feature_mode: explicit_local_condition
+    global_context_mode: none
+    training_allowed: false
+  bypass_disabled_control:
+    decoder_bypass_feature_mode: none
+    global_context_mode: none
+    training_allowed: false
+  local_only_bypass_plus_global_film_smoke:
+    decoder_bypass_feature_mode: explicit_local_condition
+    global_context_mode: film
+    training_allowed: false
+
+runner_support:
+  adapter: scripts/run_heat3d_v5_config.py
+  dry_run_example: >-
+    python3 scripts/run_heat3d_v5_config.py --config
+    configs/heat3d_v5/v5_clean_first_bypass_ablation_plan.yaml --variant
+    local_only_bypass_control --dry-run
+  mapped_options:
+    - decoder_bypass_features: explicit_local_condition
+    - decoder_bypass_local_feature_names
+    - global_context_mode: none|film
+    - global_context_feature_names
+    - film_target: rnodes_processed
+    - film_init: identity
+  execute_guard: training_allowed_must_be_true
+
+selection_and_reporting:
+  primary_checkpoint_metric: valid_sample_first_cv_relative_rmse_pct
+  tie_break_metric: valid_raw_cv_weighted_rmse_K
+  legacy_control_checkpoint_metric: valid_base_mse
+  required_metric_contract: configs/heat3d_v5/v5_clean_first_performance_contract.json
+  test_roles_must_not_select: true
+  hard_roles_must_not_select: true
+
+guardrails:
+  model_implementation_status: global_film_runner_plumbed_smoke_pending
+  runner_support_status: implemented_with_prepare_only_execution_guard
+  training_runs_started: 0
+  scratch_runs_started: 0
+  formal_config_status: not_ready
+  no_git_pull_before_all_v5_tasks_complete: true

@@ -1,0 +1,67 @@
+schema_version: heat3d_v5_global_film_smoke_v1
+config_role: checkpoint_read_only_smoke
+description: >-
+  V5 Global FiLM identity smoke over frozen V4P5_02 best epoch 405. This is
+  not a training configuration and must not update checkpoint/data/output.
+
+frozen_reference:
+  config_id: V4P5_02_clean_baseline_raw_B28_e600
+  checkpoint: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/params_best.pkl
+  checkpoint_epoch: 405
+  run_config: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/run_config.json
+  valid_archive: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/best_predictions.npz
+  valid_archive_replay_tolerance_K: 0.02
+
+dataset:
+  subset_path: data/heat3d_v4_p5_clean_nohard_v0
+  split_map_path: configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json
+  normalization_fit_roles: [train]
+  context_standardizer_fit_roles: [train]
+  smoke_roles: [valid_iid]
+  hard_roles: []
+  graph_topology_change_allowed: false
+
+model:
+  inherited_backbone: V4P5_02_RIGNO_latent96_edge96_steps6_mlp2
+  decoder_bypass_feature_mode: full_condition
+  global_context_mode: film
+  film_target: rnodes_processed
+  film_init: identity
+  film_hidden_size: 64
+  global_context_feature_schema:
+    - log_s_phys_K
+    - P_operator_W
+    - log_P_operator_W
+    - q_weighted_local_kz_W_mK
+    - q_weighted_inverse_kz_mK_W
+    - q_low_k_overlap_fraction
+    - source_concentration
+    - source_z_centroid_normalized
+    - source_layer_kz_heterogeneity_cv
+    - harmonic_kx_W_mK
+    - harmonic_ky_W_mK
+    - harmonic_kz_W_mK
+    - anisotropy_xy_over_z
+    - log_Lx_m
+    - log_Ly_m
+    - log_Lz_m
+    - log_top_area_m2
+    - log_top_h_W_m2K
+    - T_bottom_K
+    - T_inf_K
+    - T_inf_minus_T_bottom_K
+    - bc_top_cv_fraction
+    - bc_bottom_cv_fraction
+    - bc_side_cv_fraction
+  permitted_inputs: [coords, k, q, boundary_conditions, control_volume_weights]
+  forbidden_inputs: [target_temperature, target_shape, target_scale, residual, oracle_metric]
+
+checks:
+  fiLM_disabled_replays_v4: true
+  identity_initialization_prediction_tolerance_raw_K: 0.02
+  jit_prediction_tolerance_raw_K: 0.03
+  finite_gradient_required: true
+  checkpoint_partial_load: matching
+  gate1_operator_crosscheck: configs/heat3d_v5/v5_gate1_final_p5_per_sample_audit.csv
+  gate1_operator_tolerance_K: 1.0e-8
+  training_runs_started: 0

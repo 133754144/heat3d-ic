@@ -134,6 +134,11 @@ def build_training_command(
     )
     _append_option(
         command,
+        "--decoder-bypass-local-feature-names",
+        _csv_names(model.get("decoder_bypass_local_feature_names")),
+    )
+    _append_option(
+        command,
         "--decoder-bypass-hidden-size",
         model.get("decoder_bypass_hidden_size"),
     )
@@ -144,6 +149,15 @@ def build_training_command(
         "--decoder-bypass-residual-scale",
         model.get("decoder_bypass_residual_scale"),
     )
+    _append_option(command, "--global-context-mode", model.get("global_context_mode"))
+    _append_option(
+        command,
+        "--global-context-feature-names",
+        _csv_names(model.get("global_context_feature_names")),
+    )
+    _append_option(command, "--film-target", model.get("film_target"))
+    _append_option(command, "--film-init", model.get("film_init"))
+    _append_option(command, "--film-hidden-size", model.get("film_hidden_size"))
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
@@ -500,6 +514,15 @@ def build_v2_command_plan(
         "decoder_bypass_feature_source": model.get(
             "decoder_bypass_feature_source", "normalized_c"
         ),
+        "decoder_bypass_local_feature_names": list(
+            model.get("decoder_bypass_local_feature_names") or ()
+        ),
+        "global_context_mode": model.get("global_context_mode", "none"),
+        "global_context_feature_names": list(
+            model.get("global_context_feature_names") or ()
+        ),
+        "film_target": model.get("film_target", "rnodes_processed"),
+        "film_init": model.get("film_init", "identity"),
         "diagnostics_commands": [],
         "mapped_fields": _mapped_fields(config),
         "unmapped_fields": _unmapped_fields(config),
@@ -597,6 +620,11 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
         f"decoder_bypass_mode: {plan.get('decoder_bypass_mode')}",
         f"decoder_bypass_features: {plan.get('decoder_bypass_features')}",
         f"decoder_bypass_feature_source: {plan.get('decoder_bypass_feature_source')}",
+        f"decoder_bypass_local_feature_names: {','.join(plan.get('decoder_bypass_local_feature_names', [])) or 'none'}",
+        f"global_context_mode: {plan.get('global_context_mode')}",
+        f"global_context_feature_count: {len(plan.get('global_context_feature_names', []))}",
+        f"film_target: {plan.get('film_target')}",
+        f"film_init: {plan.get('film_init')}",
         f"training_script: {plan.get('training_script')}",
         f"training: {shlex.join(plan['training_command'])}",
     ]
@@ -646,6 +674,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
             "model.decoder_bypass_feature_source",
             "training --decoder-bypass-feature-source",
         ),
+        (
+            "model.decoder_bypass_local_feature_names",
+            "training --decoder-bypass-local-feature-names",
+        ),
         ("model.decoder_bypass_hidden_size", "training --decoder-bypass-hidden-size"),
         ("model.decoder_bypass_layers", "training --decoder-bypass-layers"),
         ("model.decoder_bypass_init", "training --decoder-bypass-init"),
@@ -653,6 +685,14 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
             "model.decoder_bypass_residual_scale",
             "training --decoder-bypass-residual-scale",
         ),
+        ("model.global_context_mode", "training --global-context-mode"),
+        (
+            "model.global_context_feature_names",
+            "training --global-context-feature-names",
+        ),
+        ("model.film_target", "training --film-target"),
+        ("model.film_init", "training --film-init"),
+        ("model.film_hidden_size", "training --film-hidden-size"),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
         ("run.train_metrics_schedule", "training --train-metrics-schedule"),
@@ -995,6 +1035,16 @@ def _config_name(config: Mapping[str, Any]) -> str:
     if isinstance(dataset, Mapping) and dataset.get("name"):
         return str(dataset["name"])
     return str(config.get("config_role", "unknown_config"))
+
+
+def _csv_names(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple)):
+        return ",".join(str(item) for item in value)
+    raise ValueError(f"feature-name configuration must be a string or sequence, got {value!r}")
 
 
 def _append_option(command: list[str], flag: str, value: Any) -> None:

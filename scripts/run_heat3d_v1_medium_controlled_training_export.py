@@ -13,14 +13,13 @@ import gc
 import hashlib
 import json
 import math
-import os
 import pickle
 from pathlib import Path
 import resource
 import subprocess
 import sys
 import time
-from typing import Any
+from typing import Any, Mapping
 
 import jax
 import jax.numpy as jnp
@@ -59,6 +58,13 @@ from rigno.heat3d_v1_training_semantics import (  # noqa: E402
     build_legacy_zero_delta_bridge as _bridge_for,
     decoder_bypass_required_full_condition_features,
 )
+from rigno.heat3d_v5_global_context import (  # noqa: E402
+    GLOBAL_CONTEXT_FEATURES,
+    fit_train_only_standardizer,
+    global_context_from_raw_condition,
+    standardize_contexts,
+    validate_global_context_schema,
+)
 from rigno.heat3d_v4_split_map import (  # noqa: E402
     load_sample_split_map,
     split_ids_from_sample_splits,
@@ -85,9 +91,11 @@ DECODER_BYPASS_MODES = (
 )
 DECODER_BYPASS_FEATURES_NONE = "none"
 DECODER_BYPASS_FEATURES_FULL_CONDITION = "full_condition"
+DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION = "explicit_local_condition"
 DECODER_BYPASS_FEATURES = (
     DECODER_BYPASS_FEATURES_NONE,
     DECODER_BYPASS_FEATURES_FULL_CONDITION,
+    DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION,
 )
 DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
 DECODER_BYPASS_FEATURE_SOURCES = (DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,)
@@ -107,6 +115,23 @@ DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES = (
     "top_T_inf_minus_T_ref",
     "bottom_T_fixed_minus_T_ref",
 )
+DECODER_BYPASS_LOCAL_FEATURE_ALLOWLIST = (
+    "k_x",
+    "k_y",
+    "k_z",
+    "q",
+    "is_top",
+    "is_bottom",
+    "is_side",
+    "is_interior",
+)
+GLOBAL_CONTEXT_MODE_NONE = "none"
+GLOBAL_CONTEXT_MODE_FILM = "film"
+GLOBAL_CONTEXT_MODES = (GLOBAL_CONTEXT_MODE_NONE, GLOBAL_CONTEXT_MODE_FILM)
+FILM_TARGET_RNODES_PROCESSED = "rnodes_processed"
+FILM_TARGETS = (FILM_TARGET_RNODES_PROCESSED,)
+FILM_INIT_IDENTITY = "identity"
+FILM_INITS = (FILM_INIT_IDENTITY,)
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -203,10 +228,38 @@ def parse_args() -> argparse.Namespace:
         choices=DECODER_BYPASS_FEATURE_SOURCES,
         default=DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
     )
+    parser.add_argument(
+        "--decoder-bypass-local-feature-names",
+        type=str,
+        default="",
+        help=(
+            "Comma-separated, node-varying condition feature names for "
+            "--decoder-bypass-features explicit_local_condition. The V5 "
+            "allowlist excludes sample-global BC/extent broadcasts."
+        ),
+    )
     parser.add_argument("--decoder-bypass-hidden-size", type=int, default=64)
     parser.add_argument("--decoder-bypass-layers", type=int, default=2)
     parser.add_argument("--decoder-bypass-init", choices=DECODER_BYPASS_INITS, default=DECODER_BYPASS_INIT_ZERO_RESIDUAL)
     parser.add_argument("--decoder-bypass-residual-scale", type=float, default=1.0)
+    parser.add_argument(
+        "--global-context-mode",
+        choices=GLOBAL_CONTEXT_MODES,
+        default=GLOBAL_CONTEXT_MODE_NONE,
+        help="Sample-global inference context mode. none preserves the V4 call path exactly.",
+    )
+    parser.add_argument(
+        "--global-context-feature-names",
+        type=str,
+        default="",
+        help=(
+            "Comma-separated V5 Global FiLM schema. film requires the exact "
+            "inference-only V5 global physics feature order."
+        ),
+    )
+    parser.add_argument("--film-target", choices=FILM_TARGETS, default=FILM_TARGET_RNODES_PROCESSED)
+    parser.add_argument("--film-init", choices=FILM_INITS, default=FILM_INIT_IDENTITY)
+    parser.add_argument("--film-hidden-size", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=88)
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
@@ -316,6 +369,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample-weight-default", type=float, default=1.0)
     parser.add_argument("--sample-weight-normalize", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate runner options and print the resolved model/batch settings without data or output writes.",
+    )
     parser.add_argument("--save-predictions", dest="save_predictions", action="store_true", default=True)
     parser.add_argument(
         "--no-save-predictions",
@@ -1320,28 +1378,10 @@ def _current_rss_mb() -> float | None:
     return float(usage) / 1024.0
 
 
-def _run_text_command(command: list[str]) -> str | None:
-    try:
-        completed = subprocess.run(
-            command,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
-    except OSError:
-        return None
-    if completed.returncode != 0:
-        return None
-    return completed.stdout.strip()
+def _jax_memory_snapshot() -> dict[str, Any]:
+    """Return optional JAX device memory statistics without probing hardware."""
 
-
-def _gpu_memory_snapshot() -> dict[str, Any]:
-    snapshot: dict[str, Any] = {
-        "gpus": [],
-        "jax_devices": [],
-        "process_gpu_memory_mb": None,
-    }
+    snapshot: dict[str, Any] = {"jax_devices": []}
     for device in jax.devices():
         memory_stats = getattr(device, "memory_stats", None)
         if memory_stats is None:
@@ -1373,53 +1413,6 @@ def _gpu_memory_snapshot() -> dict[str, Any]:
                 converted[key] = value
         snapshot["jax_devices"].append(converted)
 
-    gpu_output = _run_text_command(
-        [
-            "nvidia-smi",
-            "--query-gpu=memory.used,memory.total",
-            "--format=csv,noheader,nounits",
-        ]
-    )
-    if gpu_output:
-        for index, line in enumerate(gpu_output.splitlines()):
-            parts = [part.strip() for part in line.split(",")]
-            if len(parts) >= 2:
-                try:
-                    snapshot["gpus"].append(
-                        {
-                            "index": int(index),
-                            "memory_used_mb": int(float(parts[0])),
-                            "memory_total_mb": int(float(parts[1])),
-                        }
-                    )
-                except ValueError:
-                    continue
-
-    process_output = _run_text_command(
-        [
-            "nvidia-smi",
-            "--query-compute-apps=pid,used_memory",
-            "--format=csv,noheader,nounits",
-        ]
-    )
-    if process_output:
-        current_pid = os.getpid()
-        total = 0
-        found = False
-        for line in process_output.splitlines():
-            parts = [part.strip() for part in line.split(",")]
-            if len(parts) < 2:
-                continue
-            try:
-                pid = int(parts[0])
-                used = int(float(parts[1]))
-            except ValueError:
-                continue
-            if pid == current_pid:
-                total += used
-                found = True
-        if found:
-            snapshot["process_gpu_memory_mb"] = int(total)
     return snapshot
 
 
@@ -1442,7 +1435,7 @@ class MemoryAudit:
         detail: dict[str, Any] | None = None,
     ) -> None:
         self.event_index += 1
-        gpu = _gpu_memory_snapshot()
+        jax_memory = _jax_memory_snapshot()
         payload = {
             "event_index": self.event_index,
             "time_unix": time.time(),
@@ -1451,7 +1444,7 @@ class MemoryAudit:
             "batch_index": batch_index,
             "split": split,
             "rss_mb": _current_rss_mb(),
-            "gpu_memory": gpu,
+            "jax_memory": jax_memory,
             "detail": detail or {},
         }
         with self.path.open("a", encoding="utf-8") as file:
@@ -1655,6 +1648,14 @@ def _seed_config_from_args(args: argparse.Namespace) -> dict[str, int]:
 
 
 def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    local_feature_names = _parse_csv_feature_names(
+        args.decoder_bypass_local_feature_names,
+        "--decoder-bypass-local-feature-names",
+    )
+    global_feature_names = _parse_csv_feature_names(
+        args.global_context_feature_names,
+        "--global-context-feature-names",
+    )
     model_config = dict(RUNNER_MODEL_CONFIG)
     model_config.update(
         {
@@ -1669,14 +1670,28 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "decoder_bypass_feature_indices": (),
             "decoder_bypass_feature_names": (),
             "decoder_bypass_num_features": 0,
+            "decoder_bypass_local_feature_names": local_feature_names,
             "decoder_bypass_output_space": DECODER_BYPASS_OUTPUT_SPACE,
             "decoder_bypass_hidden_size": int(args.decoder_bypass_hidden_size),
             "decoder_bypass_layers": int(args.decoder_bypass_layers),
             "decoder_bypass_init": args.decoder_bypass_init,
             "decoder_bypass_residual_scale": float(args.decoder_bypass_residual_scale),
+            "global_context_mode": args.global_context_mode,
+            "global_context_feature_dim": len(global_feature_names),
+            "global_context_feature_names": global_feature_names,
+            "film_target": args.film_target,
+            "film_init": args.film_init,
+            "film_hidden_size": int(args.film_hidden_size),
         }
     )
     return model_config
+
+
+def _parse_csv_feature_names(value: str, flag_name: str) -> tuple[str, ...]:
+    names = tuple(name.strip() for name in str(value or "").split(",") if name.strip())
+    if len(names) != len(set(names)):
+        raise ValueError(f"{flag_name} must not contain duplicate feature names")
+    return names
 
 
 def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
@@ -1816,6 +1831,7 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     if p_edge_masking < 0.0 or p_edge_masking >= 1.0:
         raise ValueError("--p-edge-masking must be in [0, 1)")
     _validate_decoder_bypass_config(config)
+    _validate_global_context_config(config)
 
 
 def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
@@ -1853,10 +1869,13 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         return
     if mode != DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL:
         raise ValueError(f"unsupported decoder_bypass_mode: {mode}")
-    if features != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+    if features not in {
+        DECODER_BYPASS_FEATURES_FULL_CONDITION,
+        DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION,
+    }:
         raise ValueError(
             "--decoder-bypass-mode post_decoder_residual requires "
-            "--decoder-bypass-features full_condition"
+            "--decoder-bypass-features full_condition or explicit_local_condition"
         )
     indices = tuple(config.get("decoder_bypass_feature_indices") or ())
     names = tuple(config.get("decoder_bypass_feature_names") or ())
@@ -1864,6 +1883,30 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         raise ValueError("decoder_bypass_num_features must match feature_indices")
     if names and len(names) != int(config.get("decoder_bypass_num_features", 0)):
         raise ValueError("decoder_bypass_num_features must match feature_names")
+
+
+def _validate_global_context_config(config: dict[str, Any]) -> None:
+    mode = config.get("global_context_mode", GLOBAL_CONTEXT_MODE_NONE)
+    names = tuple(config.get("global_context_feature_names") or ())
+    feature_dim = int(config.get("global_context_feature_dim", 0))
+    target = config.get("film_target", FILM_TARGET_RNODES_PROCESSED)
+    init = config.get("film_init", FILM_INIT_IDENTITY)
+    hidden = int(config.get("film_hidden_size", 64))
+    if mode not in GLOBAL_CONTEXT_MODES:
+        raise ValueError(f"--global-context-mode must be one of {GLOBAL_CONTEXT_MODES}")
+    if target not in FILM_TARGETS:
+        raise ValueError(f"--film-target must be one of {FILM_TARGETS}")
+    if init not in FILM_INITS:
+        raise ValueError(f"--film-init must be one of {FILM_INITS}")
+    if hidden < 1:
+        raise ValueError("--film-hidden-size must be >= 1")
+    if feature_dim != len(names):
+        raise ValueError("global_context_feature_dim must match global_context_feature_names")
+    if mode == GLOBAL_CONTEXT_MODE_NONE:
+        if names or feature_dim:
+            raise ValueError("--global-context-mode none requires no global context feature names")
+        return
+    validate_global_context_schema(names)
 
 
 def _resolve_decoder_bypass_model_config(
@@ -1879,23 +1922,44 @@ def _resolve_decoder_bypass_model_config(
         return resolved
 
     feature_names = tuple(stats.get("feature_names") or ())
-    required_full_condition_features = decoder_bypass_required_full_condition_features(
-        input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
-        extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
-    )
-    missing = [
-        name
-        for name in required_full_condition_features
-        if name not in feature_names
-    ]
-    if missing:
-        raise ValueError(
-            "decoder_bypass_features=full_condition missing required condition "
-            f"features: {missing}; available={feature_names}"
+    feature_mode = resolved["decoder_bypass_features"]
+    if feature_mode == DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        required_feature_names = decoder_bypass_required_full_condition_features(
+            input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
+            extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
         )
-    indices = tuple(range(len(feature_names)))
+        missing = [name for name in required_feature_names if name not in feature_names]
+        if missing:
+            raise ValueError(f"decoder bypass missing condition features: {missing}; available={feature_names}")
+        # Preserve the checkpoint's original normalized-c column order exactly.
+        selected_feature_names = feature_names
+    elif feature_mode == DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION:
+        selected_feature_names = tuple(resolved.get("decoder_bypass_local_feature_names") or ())
+        if not selected_feature_names:
+            raise ValueError(
+                "decoder_bypass_features=explicit_local_condition requires "
+                "--decoder-bypass-local-feature-names"
+            )
+        disallowed = [
+            name for name in selected_feature_names
+            if name not in DECODER_BYPASS_LOCAL_FEATURE_ALLOWLIST
+        ]
+        if disallowed:
+            raise ValueError(
+                "explicit_local_condition only accepts audited node-local features; "
+                f"disallowed={disallowed} allowlist={DECODER_BYPASS_LOCAL_FEATURE_ALLOWLIST}"
+            )
+        if len(selected_feature_names) != len(set(selected_feature_names)):
+            raise ValueError("explicit local bypass feature names must be unique")
+    else:
+        raise ValueError(f"unsupported decoder_bypass_features: {feature_mode}")
+    if feature_mode != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        missing = [name for name in selected_feature_names if name not in feature_names]
+        if missing:
+            raise ValueError(f"decoder bypass missing condition features: {missing}; available={feature_names}")
+    indices = tuple(feature_names.index(name) for name in selected_feature_names)
     resolved["decoder_bypass_feature_indices"] = indices
-    resolved["decoder_bypass_feature_names"] = feature_names
+    resolved["decoder_bypass_feature_names"] = selected_feature_names
     resolved["decoder_bypass_num_features"] = len(indices)
     resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
     _validate_decoder_bypass_config(resolved)
@@ -1915,6 +1979,9 @@ def _decoder_bypass_payload(model_config: dict[str, Any]) -> dict[str, Any]:
         ),
         "decoder_bypass_feature_names": list(
             model_config.get("decoder_bypass_feature_names") or ()
+        ),
+        "decoder_bypass_local_feature_names": list(
+            model_config.get("decoder_bypass_local_feature_names") or ()
         ),
         "decoder_bypass_feature_indices": [
             int(index) for index in model_config.get("decoder_bypass_feature_indices") or ()
@@ -2321,7 +2388,7 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
     pseudo_negative_count = jnp.asarray(0.0)
     for group in groups:
         sample_weights = _sample_weights_for_group(group)
-        pred = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
+        pred = _model_apply(model, params, group)
         target = group["target_normalized"]
         target_raw = group["target_delta_raw"]
         pred_raw_delta = _normalized_delta_to_raw(pred, stats)
@@ -2501,7 +2568,7 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     finite_ok = True
     shape_ok = True
     for group in groups:
-        pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
+        pred_normalized = _model_apply(model, params, group)
         pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
         recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         n = pred_normalized.shape[0]
@@ -3083,6 +3150,7 @@ def _fit_once(
         jax.random.PRNGKey(model_seed),
         inputs=init_inputs,
         graphs=train_groups[0]["graphs"],
+        global_context=train_groups[0].get("global_context"),
     )["params"]
     params, checkpoint_load_info = _load_init_checkpoint_params(
         params,
@@ -3799,7 +3867,7 @@ def _fit_once(
 def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dict[str, np.ndarray]:
     predictions: dict[str, np.ndarray] = {}
     for group in groups:
-        pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
+        pred_normalized = _model_apply(model, params, group)
         recovered = np.asarray(
             recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         )
@@ -5132,6 +5200,97 @@ def _attach_sample_weights_to_groups(groups: list[dict], sample_weights: dict[st
         )
 
 
+def _global_context_row_for_example(example: Any) -> dict[str, float]:
+    """Build one inference-only FiLM context from the active bridge view."""
+
+    relative_view = example.get_relative_bc_feature_view()
+    feature_names = tuple(relative_view.condition_feature_names)
+    raw_condition = np.asarray(relative_view.condition_features, dtype=np.float64)
+    raw_coords = np.asarray(example.condition.coords, dtype=np.float64).reshape(-1, 3)
+    reference_temperature = float(relative_view.t_ref_value)
+    if not math.isfinite(reference_temperature):
+        raise ValueError(f"{example.sample_id}: global context has invalid reference temperature")
+    return global_context_from_raw_condition(
+        coords=raw_coords,
+        raw_condition=raw_condition,
+        condition_feature_names=feature_names,
+        reference_temperature_K=reference_temperature,
+    )
+
+
+def _prepare_global_context_lookup(
+    model_config: Mapping[str, Any],
+    *,
+    train_examples: list[Any],
+    required_examples: list[Any],
+) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+    """Fit V5 context standardization on train only and encode requested groups."""
+
+    if model_config.get("global_context_mode", GLOBAL_CONTEXT_MODE_NONE) == GLOBAL_CONTEXT_MODE_NONE:
+        return {}, {
+            "enabled": False,
+            "mode": GLOBAL_CONTEXT_MODE_NONE,
+            "target_or_label_derived_inputs": False,
+        }
+    feature_names = tuple(model_config.get("global_context_feature_names") or ())
+    validate_global_context_schema(feature_names)
+    rows: dict[str, dict[str, float]] = {}
+    for example in [*train_examples, *required_examples]:
+        sample_id = str(example.sample_id)
+        if sample_id not in rows:
+            rows[sample_id] = _global_context_row_for_example(example)
+    train_ids = [str(example.sample_id) for example in train_examples]
+    standardizer = fit_train_only_standardizer(
+        [rows[sample_id] for sample_id in train_ids],
+        fit_sample_ids=train_ids,
+    )
+    encoded = {
+        sample_id: standardize_contexts([row], standardizer)[0]
+        for sample_id, row in rows.items()
+    }
+    return encoded, {
+        "enabled": True,
+        "mode": GLOBAL_CONTEXT_MODE_FILM,
+        "feature_names": list(GLOBAL_CONTEXT_FEATURES),
+        "standardizer": standardizer,
+        "target_or_label_derived_inputs": False,
+    }
+
+
+def _attach_global_context_to_groups(
+    groups: list[dict],
+    encoded_context_by_id: Mapping[str, np.ndarray],
+    *,
+    expected_feature_dim: int,
+) -> None:
+    if not encoded_context_by_id:
+        return
+    for group in groups:
+        missing = [sample_id for sample_id in group["sample_ids"] if sample_id not in encoded_context_by_id]
+        if missing:
+            raise ValueError(f"{group['name']}: global context missing samples {missing[:5]}")
+        context = np.stack([encoded_context_by_id[sample_id] for sample_id in group["sample_ids"]])
+        if context.shape != (len(group["sample_ids"]), expected_feature_dim):
+            raise ValueError(
+                f"{group['name']}: global context shape {context.shape} does not match "
+                f"batch/feature dimensions {len(group['sample_ids'])}/{expected_feature_dim}"
+            )
+        if not np.all(np.isfinite(context)):
+            raise ValueError(f"{group['name']}: global context contains non-finite values")
+        group["global_context"] = jnp.asarray(context, dtype=jnp.float32)
+
+
+def _model_apply(model, params, group: Mapping[str, Any]):
+    """Use the V4 call path unless a group explicitly carries Global FiLM data."""
+
+    return model.apply(
+        {"params": params},
+        inputs=group["inputs"],
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+    )
+
+
 def _metadata_key(graph_seed: int):
     return jax.random.PRNGKey(int(graph_seed))
 
@@ -5537,6 +5696,23 @@ def main() -> int:
     checkpoint_load_strict = args.checkpoint_load_strict == "true"
     if args.init_checkpoint is not None and not args.init_checkpoint.is_file():
         raise FileNotFoundError(f"--init-checkpoint not found: {args.init_checkpoint}")
+    if args.dry_run:
+        print(
+            json.dumps(
+                {
+                    "mode": "dry_run",
+                    "model_config": _json_safe(model_config),
+                    "batch_config": _json_safe(batch_config),
+                    "graph_config": _json_safe(graph_config),
+                    "loss_config": _json_safe(loss_config),
+                    "optimizer_config": _json_safe(optimizer_config),
+                    "training_runs": 0,
+                    "output_writes": 0,
+                },
+                sort_keys=True,
+            )
+        )
+        return 0
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
@@ -5700,6 +5876,8 @@ def main() -> int:
     build_test_iid_groups = args.prediction_split == "test_iid"
     all_groups: list[dict[str, Any]] = []
     test_iid_groups: list[dict[str, Any]] = []
+    all_examples: list[Any] = []
+    test_iid_examples: list[Any] = []
     if build_all_groups:
         all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
         all_groups = _make_groups_with_progress(
@@ -5727,6 +5905,22 @@ def main() -> int:
             batch_size=batch_config["prediction_batch_size"],
             drop_last=False,
             profile_counts=profile_counts if profile_enabled else None,
+        )
+    global_context_lookup, global_context_payload = _prepare_global_context_lookup(
+        model_config,
+        train_examples=train_examples,
+        required_examples=[
+            *valid_examples,
+            *valid_stress_examples,
+            *all_examples,
+            *test_iid_examples,
+        ],
+    )
+    for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
+        _attach_global_context_to_groups(
+            groups,
+            global_context_lookup,
+            expected_feature_dim=int(model_config.get("global_context_feature_dim", 0)),
         )
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")

@@ -22,7 +22,7 @@ For B96, the training split has 704 samples and 8 mini-batch groups. The e400 co
 
 ## Memory audit method
 
-`nvidia-smi` is unavailable on the WSL devbox, so the audit uses:
+The audit uses:
 
 - process RSS from Python `resource`
 - JAX device `memory_stats()` from `jax.devices()`

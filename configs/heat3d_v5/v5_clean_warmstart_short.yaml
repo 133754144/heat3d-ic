@@ -1,0 +1,77 @@
+schema_version: heat3d_v5_clean_warmstart_short_v1
+config_role: controlled_short_warm_start
+description: >-
+  Short clean-only feasibility run for V5 Global FiLM and native shape--scale.
+  This is 12 epochs (not a V4-scale long run) and may create scratch YAML only
+  after the locked valid-IID direction gate passes. Attempt r2 supersedes a
+  pre-training r1 compatibility failure; the retained r1 output is not used.
+
+frozen_reference:
+  config_id: V4P5_02_clean_baseline_raw_B28_e600
+  checkpoint: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/params_best.pkl
+  checkpoint_epoch: 405
+  run_config: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/run_config.json
+  valid_archive: output/heat3d_v4_runs/V4P5_02_clean_baseline_raw_B28_e600/best_predictions.npz
+
+dataset:
+  subset_path: data/heat3d_v4_p5_clean_nohard_v0
+  split_map_path: configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json
+  fit_roles: [train]
+  normalization_fit_roles: [train]
+  context_standardizer_fit_roles: [train]
+  selection_roles: [valid_iid]
+  report_only_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+
+run:
+  run_id: V5WS_clean_short_e12_seed20260712_r2
+  epochs: 12
+  train_batch_size: 28
+  evaluation_batch_size: 28
+  seed: 20260712
+  output_dir: output/heat3d_v5_warmstart/V5WS_clean_short_e12_seed20260712_r2
+  training_allowed: true
+  full_long_training_started: false
+  scratch_training_started: false
+
+optimizer:
+  name: adamw
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+
+native_loss_weights:
+  shape_cv: 1.0
+  log_scale: 1.0
+  relative_field: 1.0
+  raw_absolute: 1.0
+
+variants:
+  - id: v4_global_film_legacy_target
+    family: legacy_target
+    global_context_mode: film
+    decoder_bypass: full_condition
+    partial_load_policy: matching
+  - id: native_shape_scale
+    family: native_shape_scale
+    global_context_mode: none
+    decoder_bypass: explicit_local_condition
+    partial_load_policy: encoder_processor_only
+  - id: native_shape_scale_global_film
+    family: native_shape_scale
+    global_context_mode: film
+    decoder_bypass: explicit_local_condition
+    partial_load_policy: encoder_processor_only
+
+selection:
+  primary_metric: valid_sample_first_cv_relative_rmse_pct
+  primary_tie_break_metric: valid_raw_cv_weighted_rmse_K
+  legacy_control_metric: valid_base_mse
+  test_and_hard_are_report_only: true
+
+direction_gate:
+  valid_sample_first_cv_relative_rmse_improves: true
+  valid_point_global_relative_rmse_improves: true
+  raw_hotspot_strong_q_no_material_degradation: true
+  shape_and_scale_losses_stable: true
+  finite_gradients_required: true
+  no_late_immediate_rollback: true
