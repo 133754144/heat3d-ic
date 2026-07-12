@@ -532,13 +532,32 @@ def build_inherited_yaml(row: Mapping[str, str]) -> dict[str, Any]:
 def resolve_inherited_yaml(
     inherited: Mapping[str, Any], generated_path: Path
 ) -> dict[str, Any]:
+    return _resolve_inherited_yaml(inherited, generated_path.resolve(), stack=())
+
+
+def _resolve_inherited_yaml(
+    inherited: Mapping[str, Any], generated_path: Path, *, stack: tuple[Path, ...]
+) -> dict[str, Any]:
     if inherited.get("schema_version") != INHERITED_SCHEMA_VERSION:
         raise ValueError("inherited YAML has wrong schema_version")
+    if generated_path in stack:
+        chain = " -> ".join(str(path) for path in (*stack, generated_path))
+        raise ValueError(f"inherited YAML cycle: {chain}")
     extends = inherited.get("extends")
     if not isinstance(extends, str) or not extends:
         raise ValueError("inherited YAML requires a non-empty extends field")
     base_path = (generated_path.parent / extends).resolve()
-    base_config = load_v2_config(base_path)
+    with base_path.open("r", encoding="utf-8") as file:
+        base_payload = yaml.safe_load(file)
+    if (
+        isinstance(base_payload, Mapping)
+        and base_payload.get("schema_version") == INHERITED_SCHEMA_VERSION
+    ):
+        base_config = _resolve_inherited_yaml(
+            base_payload, base_path, stack=(*stack, generated_path)
+        )
+    else:
+        base_config = load_v2_config(base_path)
     overrides = inherited.get("overrides") or {}
     if not isinstance(overrides, Mapping):
         raise ValueError("inherited YAML overrides field must be a mapping")

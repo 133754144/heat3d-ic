@@ -32,6 +32,13 @@ run:
   training_allowed: true
   full_long_training_started: false
   scratch_training_started: false
+  status: incomplete_closeout
+  interruption_reason: KeyboardInterrupt
+  performance_conclusion: inconclusive
+  scratch_yaml_allowed: false
+  resume_incomplete_variant: false
+  partial_closeout_json: configs/heat3d_v5/v5_clean_warmstart_partial_closeout.json
+  partial_closeout_markdown: docs/v5_clean_warmstart_partial_closeout.md
 
 optimizer:
   name: adamw
@@ -47,16 +54,19 @@ native_loss_weights:
 
 variants:
   - id: v4_global_film_legacy_target
+    closeout_status: completed
     family: legacy_target
     global_context_mode: film
     decoder_bypass: full_condition
     partial_load_policy: matching
   - id: native_shape_scale
+    closeout_status: completed
     family: native_shape_scale
     global_context_mode: none
     decoder_bypass: explicit_local_condition
     partial_load_policy: encoder_processor_only
   - id: native_shape_scale_global_film
+    closeout_status: incomplete
     family: native_shape_scale
     global_context_mode: film
     decoder_bypass: explicit_local_condition

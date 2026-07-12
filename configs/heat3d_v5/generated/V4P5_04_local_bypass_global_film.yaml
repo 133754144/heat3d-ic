@@ -1,0 +1,87 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_04_local_bypass_global_film
+extends: ../../heat3d_v4/generated/V4P5_02_clean_baseline_raw_B28_e600.yaml
+overrides:
+  description: >-
+    V5 Scratch A2 from frozen V4P5_02: random-initialized local-only decoder
+    bypass plus identity-initialized Global FiLM; prepare only, no training run.
+  model:
+    decoder_bypass_mode: post_decoder_residual
+    decoder_bypass_features: explicit_local_condition
+    decoder_bypass_feature_source: normalized_c
+    decoder_bypass_local_feature_names:
+      - k_x
+      - k_y
+      - k_z
+      - q
+      - is_top
+      - is_bottom
+      - is_side
+      - is_interior
+    global_context_mode: film
+    global_context_feature_dim: 24
+    global_context_feature_names:
+      - log_s_phys_K
+      - P_operator_W
+      - log_P_operator_W
+      - q_weighted_local_kz_W_mK
+      - q_weighted_inverse_kz_mK_W
+      - q_low_k_overlap_fraction
+      - source_concentration
+      - source_z_centroid_normalized
+      - source_layer_kz_heterogeneity_cv
+      - harmonic_kx_W_mK
+      - harmonic_ky_W_mK
+      - harmonic_kz_W_mK
+      - anisotropy_xy_over_z
+      - log_Lx_m
+      - log_Ly_m
+      - log_Lz_m
+      - log_top_area_m2
+      - log_top_h_W_m2K
+      - T_bottom_K
+      - T_inf_K
+      - T_inf_minus_T_bottom_K
+      - bc_top_cv_fraction
+      - bc_bottom_cv_fraction
+      - bc_side_cv_fraction
+    film_target: rnodes_processed
+    film_init: identity
+    film_hidden_size: 64
+  run:
+    init_checkpoint: null
+    checkpoint_load_strict: null
+    partial_load_policy: null
+    final_probe_output_dir: output/heat3d_v5_final_probe/V4P5_04_local_bypass_global_film
+    post_training_diagnostics_output_dir: output/heat3d_v5_post_training_diagnostics/V4P5_04_local_bypass_global_film
+  export:
+    output_dir: output/heat3d_v5_runs/V4P5_04_local_bypass_global_film
+    run_name: V4P5_04_local_bypass_global_film
+  metadata:
+    registry_config_id: V4P5_04_local_bypass_global_film
+    registry_status: prepared_not_started
+    phase: v5
+    candidate: A2_local_only_decoder_bypass_plus_global_film
+    inherited_from: V4P5_02_clean_baseline_raw_B28_e600
+    initialization: random
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v5_logs/V4P5_04_local_bypass_global_film.log
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    report_only_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+    checkpoint_contract:
+      primary: valid_sample_first_cv_relative_rmse
+      tie_break: valid_raw_cv_weighted_rmse_K
+      secondary: valid_point_global_relative_rmse
+      legacy_control: valid_base_mse
+      retain_best_final_predictions: true
+    removed_bypass_broadcast_features:
+      - top_h
+      - T_bottom
+      - T_inf
+      - geometry_extent
+    notes: >-
+      Scratch candidate only. Plain normalized-DeltaT MSE, capacity, graph,
+      batching, optimizer, LR schedule, clean split, and 600-epoch budget inherit
+      unchanged from V4P5_02. Hard roles are report-only.
