@@ -20,6 +20,11 @@ from rigno.heat3d_v2_config import validate_v2_config  # noqa: E402
 from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
 from rigno.heat3d_v5_global_context import GLOBAL_CONTEXT_FEATURES  # noqa: E402
 from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E402
+from heat3d_v5_result_contract import (  # noqa: E402
+    V5_FROZEN_METRICS,
+    V5_REGISTRY_RESULT_FIELDS,
+    V5_REPORT_ROLES,
+)
 
 
 REGISTRY = ROOT / "configs/heat3d_v5/v5_scratch_bypass_film_registry.csv"
@@ -62,7 +67,16 @@ def _assert_same(base: dict, candidate: dict, section: str, keys: tuple[str, ...
 
 
 def main() -> int:
-    rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
+    reader = csv.DictReader(REGISTRY.open(encoding="utf-8", newline=""))
+    fieldnames = tuple(reader.fieldnames or ())
+    missing_result_columns = [
+        field for field in V5_REGISTRY_RESULT_FIELDS if field not in fieldnames
+    ]
+    assert not missing_result_columns, (
+        "V5 registry must expose result columns: "
+        + ", ".join(missing_result_columns)
+    )
+    rows = list(reader)
     assert rows, "V5 registry is empty"
     assert len({row["config_id"] for row in rows}) == len(rows), "duplicate config_id"
     v4_json = json.loads(V4_JSON.read_text(encoding="utf-8"))
@@ -127,6 +141,25 @@ def main() -> int:
         assert _parts(row["decoder_bypass_local_feature_names"]) == EXPECTED_LOCAL
         assert _parts(row["report_only_roles"]) == EXPECTED_REPORT
         assert _parts(row["checkpoint_metrics"]) == EXPECTED_CHECKPOINTS
+        result_status = row.get("result_v5_status", "")
+        result_complete = row.get("result_v5_required_metrics_complete", "")
+        if result_status == "completed":
+            assert result_complete == "true", (
+                f"{config_id}: completed result must include all frozen V5 metrics"
+            )
+        if result_complete == "true":
+            payload = json.loads(row.get("result_v5_metrics_json") or "{}")
+            reports = payload.get("reports", payload)
+            for checkpoint in ("primary_relative", "legacy_metric"):
+                for role in V5_REPORT_ROLES:
+                    metric_row = reports.get(checkpoint, {}).get(role, {})
+                    missing = [
+                        metric for metric in V5_FROZEN_METRICS
+                        if metric not in metric_row
+                    ]
+                    assert not missing, (
+                        f"{config_id}: {checkpoint}.{role} missing {missing}"
+                    )
         contract = metadata["checkpoint_contract"]
         assert contract["primary"] == EXPECTED_CHECKPOINTS[0]
         assert contract["tie_break"] == EXPECTED_CHECKPOINTS[1]
