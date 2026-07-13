@@ -4205,7 +4205,8 @@ def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> 
         "scale_head_mode": str(getattr(model, "scale_head_mode")),
         "node_latent_width": int(getattr(model, "node_latent_size")),
         "pooled_latent_width": int(pooled.shape[-1]),
-        "scale_head_input_width": int(np.asarray(prediction["scale_features"]).shape[-1]),
+        "scale_head_input_width": int(getattr(model, "global_context_feature_dim"))
+        + int(pooled.shape[-1]),
         "s_hat_positive": bool(np.all(s_hat > 0.0)),
         "finite": bool(
             np.all(np.isfinite(s_hat))
