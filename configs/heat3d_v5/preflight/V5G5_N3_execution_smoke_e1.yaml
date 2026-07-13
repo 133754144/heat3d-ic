@@ -1,0 +1,29 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V5G5_N3_execution_smoke_e1
+extends: ../generated/V4P5_07_native_pooled_latent_global_film.yaml
+overrides:
+  description: Gate-5 N3 real-P5 e1 execution smoke; diagnostic only.
+  run:
+    epochs: 1
+    report_every: 1
+    train_metrics_schedule: every_epoch
+    grad_norm_report_every: 1
+    profile_timing: true
+    profile_timing_json: output/heat3d_v5_gate5_preflight/N3_smoke_e1/profile_timing.json
+    memory_audit_jsonl: output/heat3d_v5_gate5_preflight/N3_smoke_e1/memory_audit.jsonl
+    memory_audit_every_batch: true
+    memory_audit_gc: false
+    final_probe_eval_after_training: false
+    post_training_diagnostics: false
+    final_probe_output_dir: output/heat3d_v5_gate5_preflight/N3_smoke_e1/final_probe
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate5_preflight/N3_smoke_e1/diagnostics
+  export:
+    output_dir: output/heat3d_v5_gate5_preflight/N3_smoke_e1
+    run_name: V5G5_N3_execution_smoke_e1
+    selection_metric: valid_base_mse
+  metadata:
+    registry_status: execution_smoke
+    launch_policy: explicit_user_instruction_only
+    formal_performance_result: false
+    log_path: output/heat3d_v5_gate5_preflight/N3_smoke_e1/run.log
+

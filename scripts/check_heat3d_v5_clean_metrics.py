@@ -73,6 +73,16 @@ def main() -> int:
     assert 0.0 < summary["sample_first_cv_relative_rmse_pct"] < 100.0
     assert 0.0 <= summary["low_deltaT_background_over_ratio"] <= 1.0
     assert summary["strong_q_sample_count"] == 2
+    expected_true_rms_relative_pct = 100.0 * np.sqrt(
+        np.sum(np.square(prediction - target))
+        / (2.0 * np.sum(np.square(target)))
+    )
+    assert np.isclose(
+        summary["point_global_relative_rmse_pct"],
+        expected_true_rms_relative_pct,
+        rtol=1.0e-12,
+        atol=1.0e-12,
+    )
 
     raw_temperature = target + 300.0
     projected = project_raw_dirichlet(

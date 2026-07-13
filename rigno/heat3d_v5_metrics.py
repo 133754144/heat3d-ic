@@ -2,9 +2,8 @@
 
 The V5 metric contract deliberately distinguishes two relative-error views:
 
-* point-global relative RMSE preserves the V4 reporting denominator: the
-  point-global raw-DeltaT RMSE divided by the point-global mean absolute true
-  DeltaT;
+* point-global relative RMSE is the point-global raw-DeltaT RMSE divided by
+  the point-global true-DeltaT RMS;
 * sample-first CV-relative RMSE first evaluates every sample with its own
   control-volume (CV) weights, then takes an unweighted sample mean.
 
@@ -23,7 +22,7 @@ import numpy as np
 
 
 EPS = 1.0e-12
-METRIC_SCHEMA_VERSION = "heat3d_v5_clean_metrics_v1"
+METRIC_SCHEMA_VERSION = "heat3d_v5_clean_metrics_v2_true_rms"
 BACKGROUND_QUANTILE = 0.50
 HOTSPOT_FRACTION = 0.05
 TOP_K = 5
@@ -160,7 +159,7 @@ def compute_sample_metrics(sample: Mapping[str, Any]) -> dict[str, Any]:
         "point_count": int(target.size),
         "cv_volume_m3": float(np.sum(weights)),
         "point_error_squared_sum": float(np.sum(np.square(error))),
-        "point_true_abs_sum": float(np.sum(np.abs(target))),
+        "point_true_squared_sum": float(np.sum(np.square(target))),
         "point_count_for_global": int(target.size),
         "raw_cv_error_squared_integral_K2_m3": float(np.sum(np.square(error) * weights)),
         "raw_cv_volume_m3": float(np.sum(weights)),
@@ -197,11 +196,11 @@ def summarize_metric_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     if not rows:
         raise V5MetricError("at least one metric row is required")
     point_error_squared_sum = _sum_finite(rows, "point_error_squared_sum")
-    point_true_abs_sum = _sum_finite(rows, "point_true_abs_sum")
+    point_true_squared_sum = _sum_finite(rows, "point_true_squared_sum")
     point_count = _sum_finite(rows, "point_count_for_global")
     cv_error_squared_integral = _sum_finite(rows, "raw_cv_error_squared_integral_K2_m3")
     cv_volume = _sum_finite(rows, "raw_cv_volume_m3")
-    if point_count <= 0.0 or point_true_abs_sum <= EPS or cv_volume <= EPS:
+    if point_count <= 0.0 or point_true_squared_sum <= EPS or cv_volume <= EPS:
         raise V5MetricError("invalid aggregate metric denominator")
 
     summary: dict[str, Any] = {
@@ -210,8 +209,7 @@ def summarize_metric_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "metric_schema_version": METRIC_SCHEMA_VERSION,
         "aggregation": {
             "point_global_relative_rmse_pct": (
-                "sqrt(sum_point_error_squared / N_points) / "
-                "(sum_abs_true_deltaT / N_points) * 100"
+                "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100"
             ),
             "sample_first_cv_relative_rmse_pct": (
                 "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100"
@@ -221,7 +219,7 @@ def summarize_metric_rows(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
             "spatial_correlation": "mean_samples(CV-weighted centered correlation)",
         },
         "point_global_relative_rmse_pct": float(
-            math.sqrt(point_error_squared_sum / point_count) / (point_true_abs_sum / point_count) * 100.0
+            math.sqrt(point_error_squared_sum / point_true_squared_sum) * 100.0
         ),
         "sample_first_cv_relative_rmse_pct": _mean_finite(rows, "sample_cv_relative_rmse", required=True) * 100.0,
         "raw_cv_weighted_rmse_K": float(math.sqrt(cv_error_squared_integral / cv_volume)),

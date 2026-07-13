@@ -1,0 +1,31 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_07_native_pooled_latent_global_film
+extends: V4P5_06_native_pooled_latent.yaml
+overrides:
+  description: >-
+    Gate-5 N3 e600 candidate: N1 native shape-scale pooled-latent scale head
+    plus the B0 identity-initialized Global FiLM; random initialization.
+  model:
+    global_context_mode: film
+    film_target: rnodes_processed
+    film_init: identity
+  run:
+    init_checkpoint: null
+    final_probe_output_dir: output/heat3d_v5_final_probe/V4P5_07_native_pooled_latent_global_film
+    post_training_diagnostics_output_dir: output/heat3d_v5_post_training_diagnostics/V4P5_07_native_pooled_latent_global_film
+  export:
+    output_dir: output/heat3d_v5_runs/V4P5_07_native_pooled_latent_global_film
+    run_name: V4P5_07_native_pooled_latent_global_film
+  metadata:
+    registry_config_id: V4P5_07_native_pooled_latent_global_film
+    registry_status: registered_not_started
+    candidate: N3_native_pooled_latent_global_film
+    inherited_from: V4P5_06_native_pooled_latent
+    initialization: random
+    launch_policy: explicit_user_instruction_only
+    execution_smoke_config: configs/heat3d_v5/preflight/V5G5_N3_execution_smoke_e1.yaml
+    e600_started: false
+    log_path: output/heat3d_v5_logs/V4P5_07_native_pooled_latent_global_film.log
+    gate5_single_variable: global_film_enabled
+    global_film_enabled: true
+

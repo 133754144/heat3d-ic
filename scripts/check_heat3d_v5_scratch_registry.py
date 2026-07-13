@@ -33,6 +33,7 @@ V4_CSV = ROOT / "configs/heat3d_v4/run_registry.csv"
 ALLOWED_BASELINES = {
     "V4P5_02_clean_baseline_raw_B28_e600",
     "V4P5_04_local_bypass_global_film",
+    "V4P5_06_native_pooled_latent",
 }
 EXPECTED_LOCAL = (
     "k_x", "k_y", "k_z", "q", "is_top", "is_bottom", "is_side", "is_interior"
@@ -134,7 +135,11 @@ def main() -> int:
         assert tuple(model["decoder_bypass_local_feature_names"]) == EXPECTED_LOCAL
         assert tuple(model["global_context_feature_names"]) == GLOBAL_CONTEXT_FEATURES
         native = row["candidate"].startswith("N")
-        assert model["global_context_mode"] == ("none" if native else "film")
+        expected_global_mode = (
+            "film" if config_id == "V4P5_07_native_pooled_latent_global_film"
+            else ("none" if native else "film")
+        )
+        assert model["global_context_mode"] == expected_global_mode
         assert model["film_target"] == "rnodes_processed"
         assert model["film_init"] == "identity"
         metadata = candidate["metadata"]
@@ -192,7 +197,7 @@ def main() -> int:
         assert "--init-checkpoint" not in command
         fragments = [
             "--decoder-bypass-features explicit_local_condition",
-            f"--global-context-mode {'none' if native else 'film'}",
+            f"--global-context-mode {expected_global_mode}",
             "--film-target rnodes_processed",
             "--film-init identity",
             "--epochs 600",
