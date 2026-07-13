@@ -53,6 +53,8 @@ def main() -> int:
                 "epoch": 1,
                 "lr": 1.0e-3,
                 "train_loss": 1.0,
+                "train_base_mse": float("nan"),
+                "epoch_mean_train_batch_base_mse": 1.25,
                 "valid_loss": 2.0,
                 "valid_base_mse": 3.0,
                 "valid_bg_signed_bias": 4.0,
@@ -80,12 +82,14 @@ def main() -> int:
                 "epoch": 1,
                 "lr": 1.0e-3,
                 "train_loss": 1.0,
+                "train_base_mse": 1.25,
                 "valid_loss": 2.0,
                 "valid_base_mse": 3.0,
                 "valid_raw_rmse_K": 2.0,
                 "valid_rel_rmse_v4_pct": 25.0,
                 "best_epoch": 1,
                 "best_valid_iid_loss": 2.0,
+                "best_valid_iid_base_mse": 4.0,
             },
             epochs=2,
             log_mode="compact",
@@ -127,6 +131,9 @@ def main() -> int:
         "startup_line_printed": "[startup] loading dataset from fake_subset ..." in output,
         "elapsed_printed": "elapsed=" in output,
         "disabled_line_suppressed": "this should not print" not in output,
+        "compact_report_uses_online_batch_base_mse_fallback": (
+            "train=1.25 valid=3" in output
+        ),
         "legacy_compact_stress_placeholders_preserved": (
             "epoch 1/2" in output
             and "stress=skipped" in output
@@ -135,6 +142,12 @@ def main() -> int:
         "v4_compact_stress_placeholders_suppressed": (
             "stress=" not in v4_buffer.getvalue()
             and "stress_raw_rmse_K=" not in v4_buffer.getvalue()
+        ),
+        "compact_report_uses_base_mse_not_total_loss": (
+            "train=1.25 valid=3" in v4_buffer.getvalue()
+            and "best=e1/4" in v4_buffer.getvalue()
+            and "train=1 valid=2" not in v4_buffer.getvalue()
+            and "best=e1/2" not in v4_buffer.getvalue()
         ),
     }
     ok = all(checks.values())

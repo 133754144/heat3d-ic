@@ -3183,13 +3183,18 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
     if log_mode == "quiet":
         return
     if log_mode == "compact":
-        train_loss = _first_progress_numeric(
-            record.get("train_loss"),
-            record.get("epoch_mean_train_batch_loss"),
+        train_base_mse = _first_progress_numeric(
+            record.get("train_base_mse"),
+            record.get("epoch_mean_train_batch_base_mse"),
         )
-        valid_iid_loss = record.get("valid_iid_loss")
-        if valid_iid_loss is None:
-            valid_iid_loss = record.get("valid_loss")
+        valid_iid_base_mse = _first_progress_numeric(
+            record.get("valid_iid_base_mse"),
+            record.get("valid_base_mse"),
+        )
+        best_valid_iid_base_mse = _first_progress_numeric(
+            record.get("best_valid_iid_base_mse"),
+            record.get("best_valid_base_mse"),
+        )
         valid_raw_rmse = _first_progress_numeric(
             record.get("valid_iid_raw_rmse_K"),
             record.get("valid_raw_rmse_K"),
@@ -3209,13 +3214,13 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         _emit(
             f"epoch {record['epoch']}/{epochs} "
             f"lr={record['lr']:.2e} "
-            f"train={_format_progress_loss(train_loss)} "
-            f"valid={_format_progress_loss(valid_iid_loss)} "
+            f"train={_format_progress_loss(train_base_mse)} "
+            f"valid={_format_progress_loss(valid_iid_base_mse)} "
             f"raw_rmse_K={_format_progress_sigfig_decimal(valid_raw_rmse)} "
             f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)} "
             f"{stress_progress}"
             f"best=e{_format_progress_int(record.get('best_epoch'))}/"
-            f"{_format_progress_loss(record.get('best_valid_iid_loss'))}"
+            f"{_format_progress_loss(best_valid_iid_base_mse)}"
         )
         return
     _emit(
@@ -3487,6 +3492,7 @@ def _fit_once(
         train_step_start = time.perf_counter()
         epoch_train_batch_records: list[dict[str, Any]] = []
         epoch_train_batch_losses: list[float] = []
+        epoch_train_batch_base_mses: list[tuple[int, float]] = []
         epoch_grad_norms: list[float] = []
         epoch_native_group_grad_norms: dict[str, list[float]] = {
             "backbone": [],
@@ -3521,18 +3527,27 @@ def _fit_once(
                         detail=_batch_shape_signature(batch_group),
                     )
                 def loss_fn(current_params, group=batch_group):
-                    return _loss_components(model, current_params, [group], stats, current_loss_config)["total_loss"]
+                    components = _loss_components(
+                        model, current_params, [group], stats, current_loss_config
+                    )
+                    return components["total_loss"], components["base_mse"]
 
                 batch_start = time.perf_counter()
                 loss_grad_start = time.perf_counter()
-                loss_value, grads = jax.value_and_grad(loss_fn)(params)
+                (loss_value, batch_base_mse), grads = jax.value_and_grad(
+                    loss_fn, has_aux=True
+                )(params)
                 if native_enabled:
                     grads = mask_branch_gradients(grads, model_config["native_branch_mode"])
                 if profile_enabled:
                     _block_until_ready_tree((loss_value, grads))
                 loss_grad_time = time.perf_counter() - loss_grad_start
                 batch_loss_value = float(loss_value)
+                batch_base_mse_value = float(batch_base_mse)
                 epoch_train_batch_losses.append(batch_loss_value)
+                epoch_train_batch_base_mses.append(
+                    (_sample_count(batch_group), batch_base_mse_value)
+                )
 
                 grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
                 compute_batch_norms = bool(grad_norm_reported or profile_enabled)
@@ -3603,6 +3618,7 @@ def _fit_once(
                         "batch_size": _sample_count(batch_group),
                         "group_count": 1,
                         "train_batch_loss": float(batch_loss_value),
+                        "train_batch_base_mse": float(batch_base_mse_value),
                         "total_batch_time": float(total_batch_time),
                         "loss_grad_time": float(loss_grad_time),
                         "grad_norm_time": float(grad_norm_time),
@@ -3637,14 +3653,17 @@ def _fit_once(
                             "param_norm": float(param_norm) if param_norm is not None else None,
                         },
                     )
-                del grads, updates, loss_value
+                del grads, updates, loss_value, batch_base_mse
             epoch_batch_counts.append(len(train_epoch_groups))
             if batch_grad_norms:
                 grad_norms.append(float(np.mean(batch_grad_norms)))
         else:
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_groups))
             def loss_fn(current_params):
-                return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
+                components = _loss_components(
+                    model, current_params, train_groups, stats, current_loss_config
+                )
+                return components["total_loss"], components["base_mse"]
 
             batch_start = time.perf_counter()
             if memory_audit is not None:
@@ -3656,14 +3675,20 @@ def _fit_once(
                     detail=_groups_memory_signature(train_groups),
                 )
             loss_grad_start = time.perf_counter()
-            loss_value, grads = jax.value_and_grad(loss_fn)(params)
+            (loss_value, batch_base_mse), grads = jax.value_and_grad(
+                loss_fn, has_aux=True
+            )(params)
             if native_enabled:
                 grads = mask_branch_gradients(grads, model_config["native_branch_mode"])
             if profile_enabled:
                 _block_until_ready_tree((loss_value, grads))
             loss_grad_time = time.perf_counter() - loss_grad_start
             batch_loss_value = float(loss_value)
+            batch_base_mse_value = float(batch_base_mse)
             epoch_train_batch_losses.append(batch_loss_value)
+            epoch_train_batch_base_mses.append(
+                (sum(_sample_count(group) for group in train_groups), batch_base_mse_value)
+            )
 
             grad_norm_reported = should_report_grad_norm(grad_norm_report_every, 1)
             compute_batch_norms = bool(grad_norm_reported or profile_enabled)
@@ -3737,6 +3762,7 @@ def _fit_once(
                     "batch_size": sum(_sample_count(group) for group in train_groups),
                     "group_count": len(train_groups),
                     "train_batch_loss": float(batch_loss_value),
+                    "train_batch_base_mse": float(batch_base_mse_value),
                     "total_batch_time": float(total_batch_time),
                     "loss_grad_time": float(loss_grad_time),
                     "grad_norm_time": float(grad_norm_time),
@@ -3769,7 +3795,7 @@ def _fit_once(
                         "param_norm": float(param_norm) if param_norm is not None else None,
                     },
                 )
-            del grads, updates, loss_value
+            del grads, updates, loss_value, batch_base_mse
             epoch_batch_counts.append(1)
         train_step_time = time.perf_counter() - train_step_start
 
@@ -3897,6 +3923,15 @@ def _fit_once(
         param_norm_summary = _epoch_monitor_summary(epoch_param_norms)
         update_param_ratio_summary = _epoch_monitor_summary(epoch_update_to_param_ratios)
         record["epoch_mean_train_batch_loss"] = batch_loss_summary["mean"]
+        train_batch_base_mse_count = sum(
+            count for count, _ in epoch_train_batch_base_mses
+        )
+        record["epoch_mean_train_batch_base_mse"] = (
+            sum(count * value for count, value in epoch_train_batch_base_mses)
+            / train_batch_base_mse_count
+            if train_batch_base_mse_count > 0
+            else None
+        )
         record["epoch_min_train_batch_loss"] = batch_loss_summary["min"]
         record["epoch_max_train_batch_loss"] = batch_loss_summary["max"]
         record["epoch_mean_grad_norm"] = grad_norm_summary["mean"]
