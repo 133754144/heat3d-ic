@@ -4140,19 +4140,36 @@ def _prediction_max_abs_difference(
     )
 
 
+def _tree_max_abs_difference(expected: Any, actual: Any) -> float:
+    expected_items = _param_leaf_items(expected)
+    actual_items = _param_leaf_items(actual)
+    if [path for path, _ in expected_items] != [path for path, _ in actual_items]:
+        raise ValueError("checkpoint parameter paths differ after serialization")
+    return max(
+        (
+            float(np.max(np.abs(np.asarray(expected_leaf) - np.asarray(actual_leaf))))
+            for (_, expected_leaf), (_, actual_leaf) in zip(expected_items, actual_items)
+        ),
+        default=0.0,
+    )
+
+
 def _checkpoint_prediction_reload_audit(
     *,
     model: Any,
     groups: list[dict],
     stats: dict,
-    entries: list[tuple[str, Path, Path, Mapping[str, np.ndarray]]],
-    tolerance: float = 1.0e-7,
+    entries: list[tuple[str, Path, Path, Mapping[str, np.ndarray], Any]],
+    tolerance: float = 5.0e-3,
 ) -> dict[str, Any]:
     """Reload saved params and NPZ predictions, then reproduce predictions."""
 
     reports = []
-    for label, checkpoint_path, predictions_path, expected in entries:
+    for label, checkpoint_path, predictions_path, expected, reference_params in entries:
         checkpoint_payload = _load_params_checkpoint(checkpoint_path)
+        parameter_max_abs = _tree_max_abs_difference(
+            _host_params(reference_params), checkpoint_payload["params"]
+        )
         checkpoint_context = (
             checkpoint_payload.get("run_config_metadata", {}).get("global_context") or {}
         )
@@ -4170,13 +4187,18 @@ def _checkpoint_prediction_reload_audit(
             saved_predictions = {key: np.asarray(saved_payload[key]) for key in saved_payload.files}
         checkpoint_max_abs = _prediction_max_abs_difference(expected, reloaded_predictions)
         npz_max_abs = _prediction_max_abs_difference(expected, saved_predictions)
-        passed = bool(checkpoint_max_abs <= tolerance and npz_max_abs <= tolerance)
+        passed = bool(
+            parameter_max_abs == 0.0
+            and checkpoint_max_abs <= tolerance
+            and npz_max_abs == 0.0
+        )
         reports.append(
             {
                 "label": label,
                 "checkpoint_path": str(checkpoint_path),
                 "predictions_path": str(predictions_path),
                 "sample_count": len(expected),
+                "parameter_reload_max_abs_error": parameter_max_abs,
                 "checkpoint_reload_max_abs_error_K": checkpoint_max_abs,
                 "npz_reload_max_abs_error_K": npz_max_abs,
                 "tolerance_K": float(tolerance),
@@ -6615,9 +6637,13 @@ def main() -> int:
     )
     reload_entries = []
     if final_checkpoint_saved and args.save_predictions:
-        reload_entries.append(("final", final_checkpoint_path, predictions_path, predictions))
+        reload_entries.append(
+            ("final", final_checkpoint_path, predictions_path, predictions, result["params"])
+        )
     if best_checkpoint_saved and best_predictions_saved:
-        reload_entries.append(("best", best_checkpoint_path, best_predictions_path, best_predictions))
+        reload_entries.append(
+            ("best", best_checkpoint_path, best_predictions_path, best_predictions, result["best_params"])
+        )
     checkpoint_prediction_reload_audit = _checkpoint_prediction_reload_audit(
         model=result["model"],
         groups=prediction_groups,

@@ -9,20 +9,20 @@ overrides:
     train_metrics_schedule: every_epoch
     grad_norm_report_every: 1
     profile_timing: true
-    profile_timing_json: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r3/profile_timing.json
-    memory_audit_jsonl: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r3/memory_audit.jsonl
+    profile_timing_json: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r4/profile_timing.json
+    memory_audit_jsonl: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r4/memory_audit.jsonl
     memory_audit_every_batch: true
     memory_audit_gc: false
     final_probe_eval_after_training: false
     post_training_diagnostics: false
-    final_probe_output_dir: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r3/final_probe
-    post_training_diagnostics_output_dir: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r3/diagnostics
+    final_probe_output_dir: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r4/final_probe
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r4/diagnostics
   export:
-    output_dir: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r3
-    run_name: V5G5_N0_execution_smoke_e1_r3
+    output_dir: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r4
+    run_name: V5G5_N0_execution_smoke_e1_r4
     selection_metric: valid_base_mse
   metadata:
     registry_status: execution_smoke
     launch_policy: explicit_user_instruction_only
     formal_performance_result: false
-    log_path: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r3/run.log
+    log_path: output/heat3d_v5_gate5_preflight/N0_smoke_e1_r4/run.log
