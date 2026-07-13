@@ -78,3 +78,59 @@ ssh devbox 'source ~/miniconda3/etc/profile.d/conda.sh && conda activate rigno &
   and use `python` from that environment rather than assuming `python3` exists.
 - The server shows an unexpected branch or commit: inspect `git status --short`
   first, then use the clean-worktree update sequence above.
+
+## WF-EVAL: Checkpoint Evaluation And Diagnostics
+
+Use this after a completed run or when comparing checkpoints.
+
+Required outputs when available:
+
+- `loss_summary.json`
+- `run_config.json`
+- `params_best.pkl` and `params_final.pkl`
+- `best_predictions.npz` and `predictions.npz`
+- post-training diagnostics
+- final-probe metrics and figures
+
+Metric rules:
+
+- Report normalized validation metrics separately from raw DeltaT metrics.
+- For scalar splits, include `valid_base_mse`, raw DeltaT MSE/RMSE, stress
+  metrics, best epoch, final epoch, and checkpoint availability.
+- For final probe, do not rank only by absolute RMSE. Include
+  `relRMSE_DeltaT`, `Tmax_error`, `q_region_RMSE` or `strong_q_RMSE` when
+  available, and probe family.
+- State whether the evaluation is diagnostic, benchmark-candidate, or formal
+  benchmark. V5 results with incomplete frozen metric payloads remain partial.
+
+## WF-SYNC: Remote Result Synchronization
+
+Use this when copying ignored output artifacts between devbox and WSL2.
+V5 `output_dir` artifacts should stay on servers, not on the Codex host.
+
+Rules:
+
+- Synchronize ignored artifacts only; do not commit them.
+- Prefer non-overwriting sync when copying between remote machines.
+- Record source machine, destination machine, source path, destination path,
+  file counts, checkpoint counts, and whether existing files were skipped.
+- Do not treat copied artifacts as new tracked data unless the user explicitly
+  asks for packaging or upload work.
+
+## WF-REPORT: Standard Final Report
+
+Every non-trivial Heat3D task should end with:
+
+- current path, branch, HEAD, and `git status --short`
+- files changed and whether they were committed or pushed
+- checks run and their result
+- whether training/evaluation/data generation happened
+- remote machine status if SSH was used
+- artifact paths for any generated output
+- tracked-file confirmation for `AGENTS.md`
+- ignored-artifact confirmation for `data/`, `output/`, checkpoints, logs, and
+  predictions
+- next recommended task, scoped to one research question
+
+Do not claim benchmark, publication-ready, production-ready, or solved OOD
+behavior unless the current task explicitly produced that level of evidence.
