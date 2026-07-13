@@ -1,0 +1,250 @@
+{
+  "actual_rigno": {
+    "B1_joint": {
+      "batch_size": 1,
+      "branch_mode": "joint",
+      "finite_gradient": true,
+      "legacy_call_shape": [
+        1,
+        1,
+        27,
+        1
+      ],
+      "loss": 11.801199913024902,
+      "masked_gradient_norms": {
+        "backbone": 7.244446311458952,
+        "scale_head": 8.75691908704041,
+        "shape_decoder": 41.9787387716496
+      },
+      "pooled_latent_width": 0,
+      "positive_scale": true,
+      "prediction_shape": [
+        1,
+        1,
+        27,
+        1
+      ],
+      "save_reload_max_abs_error": 0.0,
+      "scale_head_mode": "physics_only"
+    },
+    "B1_scale_only": {
+      "batch_size": 1,
+      "branch_mode": "scale_only",
+      "finite_gradient": true,
+      "legacy_call_shape": [
+        1,
+        1,
+        27,
+        1
+      ],
+      "loss": 11.801199913024902,
+      "masked_gradient_norms": {
+        "backbone": 0.0,
+        "scale_head": 12.490568646572745,
+        "shape_decoder": 0.0
+      },
+      "pooled_latent_width": 8,
+      "positive_scale": true,
+      "prediction_shape": [
+        1,
+        1,
+        27,
+        1
+      ],
+      "save_reload_max_abs_error": 0.0,
+      "scale_head_mode": "physics_plus_pooled_latent"
+    },
+    "B1_shape_only": {
+      "batch_size": 1,
+      "branch_mode": "shape_only",
+      "finite_gradient": true,
+      "legacy_call_shape": [
+        1,
+        1,
+        27,
+        1
+      ],
+      "loss": 11.801199913024902,
+      "masked_gradient_norms": {
+        "backbone": 7.244446311458952,
+        "scale_head": 0.0,
+        "shape_decoder": 41.9787387716496
+      },
+      "pooled_latent_width": 8,
+      "positive_scale": true,
+      "prediction_shape": [
+        1,
+        1,
+        27,
+        1
+      ],
+      "save_reload_max_abs_error": 0.0,
+      "scale_head_mode": "physics_plus_pooled_latent"
+    },
+    "B28_joint": {
+      "batch_size": 28,
+      "branch_mode": "joint",
+      "finite_gradient": true,
+      "legacy_call_shape": [
+        28,
+        1,
+        27,
+        1
+      ],
+      "loss": 12.510086059570312,
+      "masked_gradient_norms": {
+        "backbone": 8.404022666197742,
+        "scale_head": 13.732678965067857,
+        "shape_decoder": 45.3563063598423
+      },
+      "pooled_latent_width": 8,
+      "positive_scale": true,
+      "prediction_shape": [
+        28,
+        1,
+        27,
+        1
+      ],
+      "save_reload_max_abs_error": 0.0,
+      "scale_head_mode": "physics_plus_pooled_latent"
+    }
+  },
+  "batches": {
+    "B1": {
+      "physics_only": {
+        "diagnostics": {
+          "amplitude_ratio": 0.9139649271965027,
+          "correlation": 0.00766107439994812,
+          "hotspot_rmse": 0.43214187026023865,
+          "joint_relative_rmse": 0.5829418301582336,
+          "oracle_scale_relative_rmse": 0.6030846238136292,
+          "oracle_shape_relative_rmse": 0.08603508770465851,
+          "physics_scale_relative_rmse": 0.5808097124099731,
+          "scale_log_abs_error": 0.08996307849884033,
+          "shape_cv_rmse": 0.6030846238136292,
+          "top5_rmse": 0.38766518235206604
+        },
+        "field_scale_max_abs_error": 0.0,
+        "finite_backward": true,
+        "jit": true,
+        "positive_scale": true,
+        "shape_cv_rms_max": 1.0,
+        "shape_cv_rms_min": 1.0
+      },
+      "physics_plus_pooled_latent": {
+        "diagnostics": {
+          "amplitude_ratio": 0.9237972497940063,
+          "correlation": 0.0076610250398516655,
+          "hotspot_rmse": 0.426140159368515,
+          "joint_relative_rmse": 0.5846384763717651,
+          "oracle_scale_relative_rmse": 0.6030846238136292,
+          "oracle_shape_relative_rmse": 0.07620273530483246,
+          "physics_scale_relative_rmse": 0.5808097124099731,
+          "scale_log_abs_error": 0.0792626440525055,
+          "shape_cv_rmse": 0.6030846238136292,
+          "top5_rmse": 0.38160422444343567
+        },
+        "field_scale_max_abs_error": 0.0,
+        "finite_backward": true,
+        "jit": true,
+        "positive_scale": true,
+        "shape_cv_rms_max": 1.0,
+        "shape_cv_rms_min": 1.0
+      }
+    },
+    "B28": {
+      "physics_only": {
+        "diagnostics": {
+          "amplitude_ratio": 0.9122406244277954,
+          "correlation": 0.03729574382305145,
+          "hotspot_rmse": 1.21744966506958,
+          "joint_relative_rmse": 0.564675509929657,
+          "oracle_scale_relative_rmse": 0.5840173959732056,
+          "oracle_shape_relative_rmse": 0.08775950968265533,
+          "physics_scale_relative_rmse": 0.5630025267601013,
+          "scale_log_abs_error": 0.09185227751731873,
+          "shape_cv_rmse": 0.5840173959732056,
+          "top5_rmse": 1.1405481100082397
+        },
+        "field_scale_max_abs_error": 2.384185791015625e-07,
+        "finite_backward": true,
+        "jit": true,
+        "positive_scale": true,
+        "shape_cv_rms_max": 1.0000001192092896,
+        "shape_cv_rms_min": 0.9999998807907104
+      },
+      "physics_plus_pooled_latent": {
+        "diagnostics": {
+          "amplitude_ratio": 0.923535943031311,
+          "correlation": 0.03729575127363205,
+          "hotspot_rmse": 1.1949148178100586,
+          "joint_relative_rmse": 0.5664328932762146,
+          "oracle_scale_relative_rmse": 0.5840173959732056,
+          "oracle_shape_relative_rmse": 0.07646425813436508,
+          "physics_scale_relative_rmse": 0.5630025267601013,
+          "scale_log_abs_error": 0.079545758664608,
+          "shape_cv_rmse": 0.5840173959732056,
+          "top5_rmse": 1.1182830333709717
+        },
+        "field_scale_max_abs_error": 2.384185791015625e-07,
+        "finite_backward": true,
+        "jit": true,
+        "positive_scale": true,
+        "shape_cv_rms_max": 1.0000001192092896,
+        "shape_cv_rms_min": 0.9999998807907104
+      }
+    }
+  },
+  "branch_modes": [
+    "scale_only",
+    "shape_only",
+    "joint"
+  ],
+  "formal_output_writes": 0,
+  "loss_gradient_norms": {
+    "branch_joint": {
+      "backbone": 0.047388434410095215,
+      "scale_head": 1.1441696882247925,
+      "shape_decoder": 0.9801548719406128
+    },
+    "branch_scale_only": {
+      "backbone": 0.0,
+      "scale_head": 1.1441696882247925,
+      "shape_decoder": 0.0
+    },
+    "branch_shape_only": {
+      "backbone": 0.047388434410095215,
+      "scale_head": 0.0,
+      "shape_decoder": 0.9801548719406128
+    },
+    "log_scale_loss": {
+      "backbone": 0.0023024871479719877,
+      "scale_head": 0.20754726231098175,
+      "shape_decoder": 0.0
+    },
+    "raw_absolute_field_loss": {
+      "backbone": 0.03609141707420349,
+      "scale_head": 1.125939965248108,
+      "shape_decoder": 0.6656290888786316
+    },
+    "relative_field_loss": {
+      "backbone": 0.007830655202269554,
+      "scale_head": 0.22587162256240845,
+      "shape_decoder": 0.15101374685764313
+    },
+    "shape_cv_loss": {
+      "backbone": 0.005768879316747189,
+      "scale_head": 0.0,
+      "shape_decoder": 0.16351212561130524
+    }
+  },
+  "save_reload_max_abs_error": 0.0,
+  "scale_head_modes": [
+    "physics_only",
+    "physics_plus_pooled_latent"
+  ],
+  "schema_version": "heat3d_v5_gate5_native_smoke_v1",
+  "status": "passed",
+  "target_or_label_derived_inference_inputs": false,
+  "training_runs": 0
+}

@@ -1049,6 +1049,9 @@ class RIGNO(AbstractOperator):
   shape_scale_epsilon: float = 1.0e-12
   scale_head_hidden_size: int = 64
   scale_head_init: str = 'identity'
+  scale_head_mode: str = 'physics_only'
+  scale_pooling: str = 'mean'
+  native_branch_mode: str = 'joint'
 
   def _check_coordinates(self, x: Array) -> None:
     assert x is not None
@@ -1266,6 +1269,17 @@ class RIGNO(AbstractOperator):
       raise ValueError("scale_head_hidden_size must be >= 1")
     if self.scale_head_init != 'identity':
       raise ValueError("scale_head_init must be 'identity'")
+    if self.scale_head_mode not in {'physics_only', 'physics_plus_pooled_latent'}:
+      raise ValueError(
+        "scale_head_mode must be one of {'physics_only', "
+        "'physics_plus_pooled_latent'}"
+      )
+    if self.scale_pooling not in {'mean'}:
+      raise ValueError("scale_pooling must currently be 'mean'")
+    if self.native_branch_mode not in {'scale_only', 'shape_only', 'joint'}:
+      raise ValueError(
+        "native_branch_mode must be one of {'scale_only', 'shape_only', 'joint'}"
+      )
     if not self._native_shape_scale_enabled():
       if self.decoder_bypass_output_space != 'normalized_deltaT':
         raise ValueError(
@@ -1300,7 +1314,7 @@ class RIGNO(AbstractOperator):
     tau: Union[None, float],
     global_context: Union[None, Array] = None,
     key: flax.typing.PRNGKey = None,
-  ) -> Array:
+  ) -> Tuple[Array, Array]:
 
     # Add dummy node features
     dummy_pnode_features = jnp.zeros(shape=(pnode_features.shape[0], 1, pnode_features.shape[2]))
@@ -1346,7 +1360,7 @@ class RIGNO(AbstractOperator):
     # Remove dummy node features
     output_pnodes = output_pnodes[:, :-1, :]
 
-    return output_pnodes
+    return output_pnodes, updated_latent_rnodes[:, :-1]
 
   def _apply_global_film(
     self,
@@ -1448,25 +1462,45 @@ class RIGNO(AbstractOperator):
 
     if not self._native_shape_scale_enabled():
       raise ValueError("predict_native_shape_scale requires native_output_mode='native_shape_scale'")
-    psi = self.call(inputs, graphs, key=key, global_context=global_context)
+    psi, processed_rnodes = self._call_with_processed_rnodes(
+      inputs, graphs, key=key, global_context=global_context)
     volumes = self._prediction_field(control_volumes, psi, 'control_volumes')
     volume_sum = jnp.sum(volumes, axis=2, keepdims=True)
     if volumes.shape != psi.shape:
       raise ValueError("control_volumes must align with native psi")
+    dirichlet = self._prediction_field(dirichlet_mask, psi, 'dirichlet_mask') > 0.5
+    psi_free = jnp.where(dirichlet, jnp.zeros_like(psi), psi)
     psi_rms = jnp.sqrt(
-      jnp.sum(jnp.square(psi) * volumes, axis=2, keepdims=True)
+      jnp.sum(jnp.square(psi_free) * volumes, axis=2, keepdims=True)
       / jnp.maximum(volume_sum, self.shape_scale_epsilon)
     )
-    phi_hat = psi / jnp.maximum(psi_rms, self.shape_scale_epsilon)
+    phi_hat = psi_free / jnp.maximum(psi_rms, self.shape_scale_epsilon)
     context = self._global_context_array(
       global_context, batch_size=psi.shape[0], dtype=psi.dtype)
-    scale_hidden = nn.gelu(self.global_scale_hidden(context))
+    if self.scale_head_mode == 'physics_plus_pooled_latent':
+      if self.scale_pooling != 'mean':
+        raise ValueError(f"unsupported scale pooling {self.scale_pooling!r}")
+      pooled_rnodes = jnp.mean(processed_rnodes, axis=1)
+      scale_features = jnp.concatenate([context, pooled_rnodes], axis=-1)
+    else:
+      pooled_rnodes = jnp.zeros((psi.shape[0], 0), dtype=psi.dtype)
+      scale_features = context
+    scale_hidden = nn.gelu(self.global_scale_hidden(scale_features))
     residual_scale = self.global_scale_output(scale_hidden)[:, :, None, None]
     log_s_hat = self._sample_scalar(log_s_phys, psi, 'log_s_phys') + residual_scale
     s_hat = jnp.exp(log_s_hat)
-    delta_unprojected = s_hat * phi_hat
+    reconstruction_shape = (
+      jax.lax.stop_gradient(phi_hat)
+      if self.native_branch_mode == 'scale_only'
+      else phi_hat
+    )
+    reconstruction_scale = (
+      jax.lax.stop_gradient(s_hat)
+      if self.native_branch_mode == 'shape_only'
+      else s_hat
+    )
+    delta_unprojected = reconstruction_scale * reconstruction_shape
     reference = self._prediction_field(reference_temperature, psi, 'reference_temperature')
-    dirichlet = self._prediction_field(dirichlet_mask, psi, 'dirichlet_mask') > 0.5
     prescribed = self._prediction_field(prescribed_temperature, psi, 'prescribed_temperature')
     raw_temperature_unprojected = reference + delta_unprojected
     raw_temperature = jnp.where(dirichlet, prescribed, raw_temperature_unprojected)
@@ -1476,23 +1510,25 @@ class RIGNO(AbstractOperator):
     self.sow(col='intermediates', name='native_scale_log_s_hat', value=log_s_hat)
     return {
       'psi': psi,
+      'psi_free': psi_free,
       'phi_hat': phi_hat,
       'psi_cv_rms': psi_rms,
       'residual_scale': residual_scale,
       'log_s_hat': log_s_hat,
       's_hat': s_hat,
+      'pooled_rnodes': pooled_rnodes,
       'deltaT_hat_unprojected': delta_unprojected,
       'raw_temperature_unprojected': raw_temperature_unprojected,
       'raw_temperature': raw_temperature,
       'deltaT_hat': delta_hat,
     }
 
-  def call(self,
+  def _call_with_processed_rnodes(self,
     inputs: Inputs,
     graphs: RegionInteractionGraphSet,
     key: flax.typing.PRNGKey = None,
     global_context: Union[None, Array] = None,
-  ) -> Array:
+  ) -> Tuple[Array, Array]:
     """Inputs must be of shape [batch_size, 1, num_physical_nodes, num_inputs]"""
 
     # Check input functions
@@ -1547,7 +1583,7 @@ class RIGNO(AbstractOperator):
 
     # Run the GNNs
     subkey, key = jax.random.split(key) if (key is not None) else (None, None)
-    output_pnodes = self._encode_process_decode(
+    output_pnodes, processed_rnodes = self._encode_process_decode(
       graphs=graphs, pnode_features=pnode_features, tau=tau,
       global_context=global_context, key=subkey)
 
@@ -1557,6 +1593,16 @@ class RIGNO(AbstractOperator):
     output = self._apply_decoder_bypass(output, inputs)
     self._check_function(output, x=inputs.x_out)
 
+    return output, processed_rnodes
+
+  def call(self,
+    inputs: Inputs,
+    graphs: RegionInteractionGraphSet,
+    key: flax.typing.PRNGKey = None,
+    global_context: Union[None, Array] = None,
+  ) -> Array:
+    output, _ = self._call_with_processed_rnodes(
+      inputs, graphs, key=key, global_context=global_context)
     return output
 
   def _apply_decoder_bypass(self, base_output: Array, inputs: Inputs) -> Array:

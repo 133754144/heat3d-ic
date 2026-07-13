@@ -1,0 +1,51 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_05_native_physics_only
+extends: V4P5_04_local_bypass_global_film.yaml
+overrides:
+  description: >-
+    Gate-5 N0 scratch candidate: native shape-scale with audited local bypass,
+    physics-only scale head, and no Global FiLM. Prepared only; not started.
+  model:
+    global_context_mode: none
+    native_output_mode: native_shape_scale
+    native_branch_mode: joint
+    decoder_bypass_output_space: native_psi
+    scale_head_mode: physics_only
+    scale_pooling: mean
+    scale_head_hidden_size: 64
+    scale_head_init: identity
+    shape_scale_epsilon: 1.0e-12
+  loss:
+    mode: mse
+    native_shape_cv_weight: 1.0
+    native_log_scale_weight: 1.0
+    native_relative_field_weight: 1.0
+    native_raw_field_weight: 1.0
+  run:
+    init_checkpoint: null
+    final_probe_eval_after_training: false
+    final_probe_output_dir: output/heat3d_v5_final_probe/V4P5_05_native_physics_only
+    post_training_diagnostics_output_dir: output/heat3d_v5_post_training_diagnostics/V4P5_05_native_physics_only
+  export:
+    selection_metric: valid_base_mse
+    output_dir: output/heat3d_v5_runs/V4P5_05_native_physics_only
+    run_name: V4P5_05_native_physics_only
+  metadata:
+    registry_config_id: V4P5_05_native_physics_only
+    registry_status: prepared_not_started
+    phase: v5
+    candidate: N0_native_physics_only
+    inherited_from: V4P5_04_local_bypass_global_film
+    initialization: random
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v5_logs/V4P5_05_native_physics_only.log
+    gate5_single_variable: physics_only_scale_head
+    global_film_enabled: false
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    report_only_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+    checkpoint_contract:
+      primary: valid_base_mse
+      reconstructed_field: normalized_deltaT_mse
+      retain_best_final_predictions: true

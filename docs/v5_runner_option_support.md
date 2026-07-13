@@ -59,3 +59,19 @@ python3 -B scripts/check_heat3d_v5_clean_warmstart_config.py
 For a FiLM variant, the legacy V4 final-probe helper is disabled in the command
 plan because it cannot reconstruct V5 global context; the dedicated V5 path
 will own that evaluation after its smoke is complete.
+
+## Gate-5 native scratch runner
+
+Registry-generated N0/N1 configs use the controlled runner with these mapped
+options: `native_output_mode`, `native_branch_mode`, `scale_head_mode`,
+`scale_pooling`, `scale_head_hidden_size`, `decoder_bypass_output_space` and
+the four native loss weights. Native mode also makes the runner attach
+inference-only control volumes, physics scale, raw reference temperature and
+Dirichlet data to each batch even when Global FiLM is off.
+
+The runner selects joint best by reconstructed normalized-DeltaT
+`valid_base_mse`, exports projected raw-temperature predictions, emits the four
+native loss components and oracle/physics-scale diagnostics, and masks both
+gradients and optimizer updates for `scale_only` or `shape_only`. See
+`docs/v5_gate5_native_shape_scale.md` for the frozen semantics and N0/N1
+comparison contract.

@@ -421,6 +421,7 @@ def _loss_for_group(
         prediction,
         target_deltaT=group["target_delta_raw"],
         control_volumes=group["v5_physics"]["control_volumes"],
+        dirichlet_mask=group["v5_physics"]["dirichlet_mask"],
         loss_weights=native_loss_weights,
     )
     return components["total_loss"], components

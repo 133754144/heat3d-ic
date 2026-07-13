@@ -34,10 +34,12 @@ from rigno.heat3d_v5_global_context import (  # noqa: E402
 )
 from rigno.heat3d_v5_metrics import (  # noqa: E402
     control_volume_weights,
-    decompose_shape_scale,
-    reconstruct_shape_scale,
 )
-from rigno.heat3d_v5_shape_scale import native_shape_scale_losses  # noqa: E402
+from rigno.heat3d_v5_shape_scale import (  # noqa: E402
+    native_shape_scale_losses,
+    reconstruct_shape_scale as reconstruct_native_shape_scale,
+    target_shape_scale,
+)
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
     Heat3DGraphBuilder,
@@ -184,11 +186,17 @@ def _batch_physics(
 def _target_reconstruction_error(group: Mapping[str, Any], physics: Mapping[str, jnp.ndarray]) -> float:
     target = np.asarray(group["target_delta_raw"], dtype=np.float64)
     volumes = np.asarray(physics["control_volumes"], dtype=np.float64)
+    masks = np.asarray(physics["dirichlet_mask"], dtype=np.float64)
     maximum = 0.0
     for index in range(target.shape[0]):
-        scale, shape = decompose_shape_scale(target[index].reshape(-1), volumes[index])
-        reconstructed = reconstruct_shape_scale(scale, shape)
-        maximum = max(maximum, float(np.max(np.abs(reconstructed - target[index].reshape(-1)))))
+        scale, shape = target_shape_scale(
+            target[index : index + 1],
+            volumes[index : index + 1],
+            dirichlet_mask=masks[index : index + 1],
+        )
+        reconstructed = np.asarray(reconstruct_native_shape_scale(scale, shape)).reshape(-1)
+        target_free = (1.0 - masks[index].reshape(-1)) * target[index].reshape(-1)
+        maximum = max(maximum, float(np.max(np.abs(reconstructed - target_free))))
     return maximum
 
 
@@ -374,6 +382,7 @@ def _run(args: argparse.Namespace, output_json: Path, output_md: Path) -> dict[s
         prediction4,
         target_deltaT=group4["target_delta_raw"],
         control_volumes=physics4["control_volumes"],
+        dirichlet_mask=physics4["dirichlet_mask"],
         loss_weights=LOSS_WEIGHTS,
     )
 
@@ -394,6 +403,7 @@ def _run(args: argparse.Namespace, output_json: Path, output_md: Path) -> dict[s
             predicted,
             target_deltaT=group4["target_delta_raw"],
             control_volumes=physics4["control_volumes"],
+            dirichlet_mask=physics4["dirichlet_mask"],
             loss_weights=LOSS_WEIGHTS,
         )["total_loss"]
 

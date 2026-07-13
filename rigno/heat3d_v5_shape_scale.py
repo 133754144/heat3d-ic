@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from jax import tree_util
 import jax.numpy as jnp
 
 
@@ -22,6 +23,9 @@ REQUIRED_LOSS_WEIGHTS = (
     "relative_field",
     "raw_absolute",
 )
+BRANCH_MODES = ("scale_only", "shape_only", "joint")
+SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
+SCALE_POOLING_MODES = ("mean",)
 
 
 class ShapeScaleError(ValueError):
@@ -90,18 +94,47 @@ def cv_rms(field: Any, control_volumes: Any, *, eps: float = EPS) -> jnp.ndarray
     )
 
 
-def normalize_shape(psi: Any, control_volumes: Any, *, eps: float = EPS) -> tuple[jnp.ndarray, jnp.ndarray]:
-    """Normalize an unnormalized decoder field to positive unit CV-RMS shape."""
+def free_field(field: Any, dirichlet_mask: Any | None) -> jnp.ndarray:
+    """Zero Dirichlet nodes before any native shape/scale decomposition."""
 
-    values = field_layout(psi, name="psi")
+    values = field_layout(field, name="field")
+    if dirichlet_mask is None:
+        return values
+    mask = field_layout(
+        dirichlet_mask,
+        batch_size=values.shape[0],
+        node_count=values.shape[2],
+        name="dirichlet_mask",
+    ).astype(values.dtype)
+    return (1.0 - jnp.clip(mask, 0.0, 1.0)) * values
+
+
+def normalize_shape(
+    psi: Any,
+    control_volumes: Any,
+    *,
+    dirichlet_mask: Any | None = None,
+    eps: float = EPS,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """Mask Dirichlet nodes, then normalize the free field to unit CV-RMS."""
+
+    values = free_field(psi, dirichlet_mask)
     scale = cv_rms(values, control_volumes, eps=eps)
     return scale, values / jnp.maximum(scale, eps)
 
 
-def target_shape_scale(target_deltaT: Any, control_volumes: Any, *, eps: float = EPS) -> tuple[jnp.ndarray, jnp.ndarray]:
+def target_shape_scale(
+    target_deltaT: Any,
+    control_volumes: Any,
+    *,
+    dirichlet_mask: Any | None = None,
+    eps: float = EPS,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
     """Decompose target DeltaT only for loss/evaluation, never model input."""
 
-    scale, shape = normalize_shape(target_deltaT, control_volumes, eps=eps)
+    scale, shape = normalize_shape(
+        target_deltaT, control_volumes, dirichlet_mask=dirichlet_mask, eps=eps
+    )
     return scale, shape
 
 
@@ -140,6 +173,7 @@ def native_shape_scale_losses(
     *,
     target_deltaT: Any,
     control_volumes: Any,
+    dirichlet_mask: Any | None = None,
     loss_weights: Mapping[str, float],
     eps: float = EPS,
 ) -> dict[str, jnp.ndarray]:
@@ -160,7 +194,9 @@ def native_shape_scale_losses(
         name="target_deltaT",
     ).astype(phi_hat.dtype)
     weights = control_volume_layout(control_volumes, phi_hat)
-    target_scale, target_shape = target_shape_scale(target, weights, eps=eps)
+    target_scale, target_shape = target_shape_scale(
+        target, weights, dirichlet_mask=dirichlet_mask, eps=eps
+    )
     s_hat = sample_scalar_layout(prediction["s_hat"], phi_hat, name="s_hat")
     delta_hat = field_layout(
         prediction["deltaT_hat"],
@@ -192,6 +228,128 @@ def native_shape_scale_losses(
         "target_shape": target_shape,
         "s_hat_positive": jnp.all(s_hat > 0.0),
     }
+
+
+def native_shape_scale_diagnostics(
+    prediction: Mapping[str, Any],
+    *,
+    target_deltaT: Any,
+    control_volumes: Any,
+    dirichlet_mask: Any | None = None,
+    s_phys: Any,
+    top_k: int = 5,
+    hotspot_quantile: float = 0.9,
+    eps: float = EPS,
+) -> dict[str, Any]:
+    """Return joint and oracle fields plus decomposed Gate-5 diagnostics."""
+
+    phi_hat = field_layout(prediction["phi_hat"], name="phi_hat")
+    target = field_layout(
+        target_deltaT,
+        batch_size=phi_hat.shape[0],
+        node_count=phi_hat.shape[2],
+        name="target_deltaT",
+    ).astype(phi_hat.dtype)
+    weights = control_volume_layout(control_volumes, phi_hat)
+    s_true, phi_true = target_shape_scale(
+        target, weights, dirichlet_mask=dirichlet_mask, eps=eps
+    )
+    s_hat = sample_scalar_layout(prediction["s_hat"], phi_hat, name="s_hat")
+    s_phys_value = sample_scalar_layout(s_phys, phi_hat, name="s_phys")
+    fields = {
+        "joint": s_hat * phi_hat,
+        "oracle_scale": s_true * phi_hat,
+        "oracle_shape": s_hat * phi_true,
+        "physics_scale": s_phys_value * phi_hat,
+    }
+    target_free = free_field(target, dirichlet_mask)
+    volume_sum = jnp.sum(weights, axis=2, keepdims=True)
+
+    def cv_mse(value):
+        return jnp.sum(jnp.square(value) * weights, axis=2, keepdims=True) / jnp.maximum(
+            volume_sum, eps
+        )
+
+    def field_metrics(field):
+        error = field - target_free
+        relative = jnp.sqrt(cv_mse(error)) / jnp.maximum(s_true, eps)
+        amplitude = cv_rms(field, weights, eps=eps) / jnp.maximum(s_true, eps)
+        flat_field = field.reshape((field.shape[0], -1))
+        flat_target = target_free.reshape((target_free.shape[0], -1))
+        flat_weights = weights.reshape((weights.shape[0], -1))
+        weight_sum = jnp.sum(flat_weights, axis=1, keepdims=True)
+        mean_field = jnp.sum(flat_field * flat_weights, axis=1, keepdims=True) / jnp.maximum(weight_sum, eps)
+        mean_target = jnp.sum(flat_target * flat_weights, axis=1, keepdims=True) / jnp.maximum(weight_sum, eps)
+        centered_field = flat_field - mean_field
+        centered_target = flat_target - mean_target
+        covariance = jnp.sum(centered_field * centered_target * flat_weights, axis=1)
+        variance = jnp.sqrt(
+            jnp.sum(jnp.square(centered_field) * flat_weights, axis=1)
+            * jnp.sum(jnp.square(centered_target) * flat_weights, axis=1)
+        )
+        correlation = covariance / jnp.maximum(variance, eps)
+        threshold = jnp.quantile(flat_target, hotspot_quantile, axis=1, keepdims=True)
+        hotspot = flat_target >= threshold
+        hotspot_rmse = jnp.sqrt(
+            jnp.sum(jnp.square(flat_field - flat_target) * flat_weights * hotspot, axis=1)
+            / jnp.maximum(jnp.sum(flat_weights * hotspot, axis=1), eps)
+        )
+        k = min(max(int(top_k), 1), flat_target.shape[1])
+        indices = jnp.argsort(flat_target, axis=1)[:, -k:]
+        top_error = jnp.take_along_axis(flat_field - flat_target, indices, axis=1)
+        top_weight = jnp.take_along_axis(flat_weights, indices, axis=1)
+        topk_rmse = jnp.sqrt(
+            jnp.sum(jnp.square(top_error) * top_weight, axis=1)
+            / jnp.maximum(jnp.sum(top_weight, axis=1), eps)
+        )
+        return {
+            "relative_rmse": jnp.mean(relative),
+            "amplitude_ratio": jnp.mean(amplitude),
+            "spatial_correlation": jnp.mean(correlation),
+            "hotspot_rmse": jnp.mean(hotspot_rmse),
+            "topk_rmse": jnp.mean(topk_rmse),
+        }
+
+    scale_error = jnp.mean(
+        jnp.abs(jnp.log(jnp.maximum(s_hat, eps)) - jnp.log(jnp.maximum(s_true, eps)))
+    )
+    shape_error = jnp.mean(jnp.sqrt(cv_mse(phi_hat - phi_true)))
+    return {
+        "fields": fields,
+        "scale_log_abs_error": scale_error,
+        "shape_cv_rmse": shape_error,
+        "metrics": {name: field_metrics(field) for name, field in fields.items()},
+        "s_true": s_true,
+        "phi_true": phi_true,
+    }
+
+
+def parameter_group(path: Any) -> str:
+    """Map a JAX tree path to Gate-5 backbone/shape-decoder/scale-head groups."""
+
+    names = tuple(str(getattr(item, "key", getattr(item, "name", item))) for item in path)
+    joined = "/".join(names)
+    if "global_scale_" in joined:
+        return "scale_head"
+    if "decoder" in joined:
+        return "shape_decoder"
+    return "backbone"
+
+
+def mask_branch_gradients(gradients: Any, branch_mode: str) -> Any:
+    """Zero gradients outside the selected native branch training contract."""
+
+    if branch_mode not in BRANCH_MODES:
+        raise ShapeScaleError(f"unsupported branch mode {branch_mode!r}")
+    allowed = {
+        "scale_only": {"scale_head"},
+        "shape_only": {"backbone", "shape_decoder"},
+        "joint": {"backbone", "shape_decoder", "scale_head"},
+    }[branch_mode]
+    return tree_util.tree_map_with_path(
+        lambda path, value: value if parameter_group(path) in allowed else jnp.zeros_like(value),
+        gradients,
+    )
 
 
 def _validate_loss_weights(loss_weights: Mapping[str, float]) -> None:

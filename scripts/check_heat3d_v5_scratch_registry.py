@@ -30,7 +30,10 @@ from heat3d_v5_result_contract import (  # noqa: E402
 REGISTRY = ROOT / "configs/heat3d_v5/v5_scratch_bypass_film_registry.csv"
 V4_JSON = ROOT / "configs/heat3d_v4/v4_run_registry.json"
 V4_CSV = ROOT / "configs/heat3d_v4/run_registry.csv"
-BASELINE_ID = "V4P5_02_clean_baseline_raw_B28_e600"
+ALLOWED_BASELINES = {
+    "V4P5_02_clean_baseline_raw_B28_e600",
+    "V4P5_04_local_bypass_global_film",
+}
 EXPECTED_LOCAL = (
     "k_x", "k_y", "k_z", "q", "is_top", "is_bottom", "is_side", "is_interior"
 )
@@ -87,7 +90,7 @@ def main() -> int:
     for row in rows:
         config_id = row["config_id"]
         assert row["phase"] == "v5"
-        assert row["baseline_config_id"] == BASELINE_ID
+        assert row["baseline_config_id"] in ALLOWED_BASELINES
         assert config_id not in v4_ids and config_id not in v4_csv_ids, (
             f"V5 config leaked into V4 registry: {config_id}"
         )
@@ -130,7 +133,8 @@ def main() -> int:
         assert model["decoder_bypass_features"] == "explicit_local_condition"
         assert tuple(model["decoder_bypass_local_feature_names"]) == EXPECTED_LOCAL
         assert tuple(model["global_context_feature_names"]) == GLOBAL_CONTEXT_FEATURES
-        assert model["global_context_mode"] == "film"
+        native = row["candidate"].startswith("N")
+        assert model["global_context_mode"] == ("none" if native else "film")
         assert model["film_target"] == "rnodes_processed"
         assert model["film_init"] == "identity"
         metadata = candidate["metadata"]
@@ -140,7 +144,8 @@ def main() -> int:
         assert tuple(metadata["report_only_roles"]) == EXPECTED_REPORT
         assert _parts(row["decoder_bypass_local_feature_names"]) == EXPECTED_LOCAL
         assert _parts(row["report_only_roles"]) == EXPECTED_REPORT
-        assert _parts(row["checkpoint_metrics"]) == EXPECTED_CHECKPOINTS
+        expected_checkpoints = ("valid_base_mse",) if native else EXPECTED_CHECKPOINTS
+        assert _parts(row["checkpoint_metrics"]) == expected_checkpoints
         result_status = row.get("result_v5_status", "")
         result_complete = row.get("result_v5_required_metrics_complete", "")
         if result_status == "completed":
@@ -161,21 +166,52 @@ def main() -> int:
                         f"{config_id}: {checkpoint}.{role} missing {missing}"
                     )
         contract = metadata["checkpoint_contract"]
-        assert contract["primary"] == EXPECTED_CHECKPOINTS[0]
-        assert contract["tie_break"] == EXPECTED_CHECKPOINTS[1]
-        assert contract["secondary"] == EXPECTED_CHECKPOINTS[2]
-        assert contract["legacy_control"] == EXPECTED_CHECKPOINTS[3]
+        if native:
+            assert contract["primary"] == "valid_base_mse"
+            assert candidate["export"]["selection_metric"] == "valid_base_mse"
+            assert model["native_output_mode"] == "native_shape_scale"
+            assert model["native_branch_mode"] == "joint"
+            assert model["decoder_bypass_output_space"] == "native_psi"
+            assert model["scale_pooling"] == "mean"
+            assert model["scale_head_mode"] == (
+                "physics_only" if row["candidate"].startswith("N0")
+                else "physics_plus_pooled_latent"
+            )
+            for key in (
+                "native_shape_cv_weight", "native_log_scale_weight",
+                "native_relative_field_weight", "native_raw_field_weight",
+            ):
+                assert candidate["loss"][key] == 1.0
+        else:
+            assert contract["primary"] == EXPECTED_CHECKPOINTS[0]
+            assert contract["tie_break"] == EXPECTED_CHECKPOINTS[1]
+            assert contract["secondary"] == EXPECTED_CHECKPOINTS[2]
+            assert contract["legacy_control"] == EXPECTED_CHECKPOINTS[3]
         command = build_training_command(candidate, python_executable="python")
         joined = shlex.join(command)
         assert "--init-checkpoint" not in command
-        for fragment in (
+        fragments = [
             "--decoder-bypass-features explicit_local_condition",
-            "--global-context-mode film",
+            f"--global-context-mode {'none' if native else 'film'}",
             "--film-target rnodes_processed",
             "--film-init identity",
             "--epochs 600",
             "--loss-mode mse",
-        ):
+        ]
+        if native:
+            fragments.extend((
+                "--native-output-mode native_shape_scale",
+                "--native-branch-mode joint",
+                f"--scale-head-mode {model['scale_head_mode']}",
+                "--scale-pooling mean",
+                "--decoder-bypass-output-space native_psi",
+                "--native-shape-cv-weight 1.0",
+                "--native-log-scale-weight 1.0",
+                "--native-relative-field-weight 1.0",
+                "--native-raw-field-weight 1.0",
+                "--selection-metric valid_base_mse",
+            ))
+        for fragment in fragments:
             assert fragment in joined, f"dry-run missing {fragment}"
         plans.append({"config_id": config_id, "training_started": False, "command": joined})
     print(json.dumps({"status": "ok", "registry": str(REGISTRY.relative_to(ROOT)), "plans": plans}, indent=2))

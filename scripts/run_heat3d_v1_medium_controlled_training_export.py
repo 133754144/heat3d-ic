@@ -48,6 +48,7 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
     normalize_condition,
     normalize_coords as _normalize_coords,
     normalize_target_delta,
+    normalize_target_delta,
     normalized_delta_to_raw as _normalized_delta_to_raw,
     recover_raw_condition,
     recover_temperature_from_normalized_delta,
@@ -64,6 +65,12 @@ from rigno.heat3d_v5_global_context import (  # noqa: E402
     global_context_from_raw_condition,
     standardize_contexts,
     validate_global_context_schema,
+)
+from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
+from rigno.heat3d_v5_shape_scale import (  # noqa: E402
+    mask_branch_gradients,
+    native_shape_scale_diagnostics,
+    native_shape_scale_losses,
 )
 from rigno.heat3d_v4_split_map import (  # noqa: E402
     load_sample_split_map,
@@ -101,7 +108,7 @@ DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
 DECODER_BYPASS_FEATURE_SOURCES = (DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,)
 DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
 DECODER_BYPASS_INITS = (DECODER_BYPASS_INIT_ZERO_RESIDUAL,)
-DECODER_BYPASS_OUTPUT_SPACE = "normalized_deltaT"
+DECODER_BYPASS_OUTPUT_SPACES = ("normalized_deltaT", "native_psi")
 DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES = (
     "k_x",
     "k_y",
@@ -132,6 +139,10 @@ FILM_TARGET_RNODES_PROCESSED = "rnodes_processed"
 FILM_TARGETS = (FILM_TARGET_RNODES_PROCESSED,)
 FILM_INIT_IDENTITY = "identity"
 FILM_INITS = (FILM_INIT_IDENTITY,)
+NATIVE_OUTPUT_MODES = ("legacy_normalized_deltaT", "native_shape_scale")
+NATIVE_BRANCH_MODES = ("scale_only", "shape_only", "joint")
+SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
+SCALE_POOLING_MODES = ("mean",)
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -243,6 +254,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--decoder-bypass-init", choices=DECODER_BYPASS_INITS, default=DECODER_BYPASS_INIT_ZERO_RESIDUAL)
     parser.add_argument("--decoder-bypass-residual-scale", type=float, default=1.0)
     parser.add_argument(
+        "--decoder-bypass-output-space",
+        choices=DECODER_BYPASS_OUTPUT_SPACES,
+        default="normalized_deltaT",
+    )
+    parser.add_argument(
         "--global-context-mode",
         choices=GLOBAL_CONTEXT_MODES,
         default=GLOBAL_CONTEXT_MODE_NONE,
@@ -260,6 +276,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--film-target", choices=FILM_TARGETS, default=FILM_TARGET_RNODES_PROCESSED)
     parser.add_argument("--film-init", choices=FILM_INITS, default=FILM_INIT_IDENTITY)
     parser.add_argument("--film-hidden-size", type=int, default=64)
+    parser.add_argument("--native-output-mode", choices=NATIVE_OUTPUT_MODES, default="legacy_normalized_deltaT")
+    parser.add_argument("--native-branch-mode", choices=NATIVE_BRANCH_MODES, default="joint")
+    parser.add_argument("--scale-head-mode", choices=SCALE_HEAD_MODES, default="physics_only")
+    parser.add_argument("--scale-pooling", choices=SCALE_POOLING_MODES, default="mean")
+    parser.add_argument("--scale-head-hidden-size", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=88)
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
@@ -555,6 +576,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hotspot-weight", type=float, default=0.1)
     parser.add_argument("--strong-q-quantile", type=float, default=0.90)
     parser.add_argument("--strong-q-weight", type=float, default=0.05)
+    parser.add_argument("--native-shape-cv-weight", type=float, default=1.0)
+    parser.add_argument("--native-log-scale-weight", type=float, default=1.0)
+    parser.add_argument("--native-relative-field-weight", type=float, default=1.0)
+    parser.add_argument("--native-raw-field-weight", type=float, default=1.0)
     parser.add_argument("--background-l1-weight", type=float, default=1.0)
     parser.add_argument("--background-bias-weight", type=float, default=1.0)
     parser.add_argument("--background-over-weight", type=float, default=1.0)
@@ -1556,6 +1581,10 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "hotspot_weight": float(args.hotspot_weight),
         "strong_q_quantile": float(args.strong_q_quantile),
         "strong_q_weight": float(args.strong_q_weight),
+        "native_shape_cv_weight": float(args.native_shape_cv_weight),
+        "native_log_scale_weight": float(args.native_log_scale_weight),
+        "native_relative_field_weight": float(args.native_relative_field_weight),
+        "native_raw_field_weight": float(args.native_raw_field_weight),
         "background_l1_weight": float(args.background_l1_weight),
         "background_bias_weight": float(args.background_bias_weight),
         "background_over_weight": float(args.background_over_weight),
@@ -1671,7 +1700,7 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "decoder_bypass_feature_names": (),
             "decoder_bypass_num_features": 0,
             "decoder_bypass_local_feature_names": local_feature_names,
-            "decoder_bypass_output_space": DECODER_BYPASS_OUTPUT_SPACE,
+            "decoder_bypass_output_space": args.decoder_bypass_output_space,
             "decoder_bypass_hidden_size": int(args.decoder_bypass_hidden_size),
             "decoder_bypass_layers": int(args.decoder_bypass_layers),
             "decoder_bypass_init": args.decoder_bypass_init,
@@ -1682,6 +1711,13 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "film_target": args.film_target,
             "film_init": args.film_init,
             "film_hidden_size": int(args.film_hidden_size),
+            "native_output_mode": args.native_output_mode,
+            "native_branch_mode": args.native_branch_mode,
+            "scale_head_mode": args.scale_head_mode,
+            "scale_pooling": args.scale_pooling,
+            "scale_head_hidden_size": int(args.scale_head_hidden_size),
+            "scale_head_init": "identity",
+            "shape_scale_epsilon": 1.0e-12,
         }
     )
     return model_config
@@ -1740,6 +1776,12 @@ def _validate_loss_config(config: dict[str, Any]) -> None:
         raise ValueError("--strong-q-quantile must be in [0, 1]")
     if float(config["strong_q_weight"]) < 0.0:
         raise ValueError("--strong-q-weight must be >= 0")
+    for key in (
+        "native_shape_cv_weight", "native_log_scale_weight",
+        "native_relative_field_weight", "native_raw_field_weight",
+    ):
+        if float(config[key]) < 0.0:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 0")
     if float(config["background_l1_weight"]) < 0.0:
         raise ValueError("--background-l1-weight must be >= 0")
     if float(config["background_bias_weight"]) < 0.0:
@@ -1832,6 +1874,17 @@ def _validate_model_config(config: dict[str, Any]) -> None:
         raise ValueError("--p-edge-masking must be in [0, 1)")
     _validate_decoder_bypass_config(config)
     _validate_global_context_config(config)
+    native_mode = config.get("native_output_mode", "legacy_normalized_deltaT")
+    if native_mode not in NATIVE_OUTPUT_MODES:
+        raise ValueError(f"--native-output-mode must be one of {NATIVE_OUTPUT_MODES}")
+    if config.get("native_branch_mode") not in NATIVE_BRANCH_MODES:
+        raise ValueError(f"--native-branch-mode must be one of {NATIVE_BRANCH_MODES}")
+    if config.get("scale_head_mode") not in SCALE_HEAD_MODES:
+        raise ValueError(f"--scale-head-mode must be one of {SCALE_HEAD_MODES}")
+    if config.get("scale_pooling") not in SCALE_POOLING_MODES:
+        raise ValueError(f"--scale-pooling must be one of {SCALE_POOLING_MODES}")
+    if int(config.get("scale_head_hidden_size", 0)) < 1:
+        raise ValueError("--scale-head-hidden-size must be >= 1")
 
 
 def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
@@ -1842,6 +1895,7 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
     )
     init = config.get("decoder_bypass_init", DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    output_space = config.get("decoder_bypass_output_space", "normalized_deltaT")
     if mode not in DECODER_BYPASS_MODES:
         raise ValueError(f"--decoder-bypass-mode must be one of {DECODER_BYPASS_MODES}")
     if features not in DECODER_BYPASS_FEATURES:
@@ -1855,6 +1909,11 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         )
     if init not in DECODER_BYPASS_INITS:
         raise ValueError(f"--decoder-bypass-init must be one of {DECODER_BYPASS_INITS}")
+    if output_space not in DECODER_BYPASS_OUTPUT_SPACES:
+        raise ValueError(
+            "--decoder-bypass-output-space must be one of "
+            f"{DECODER_BYPASS_OUTPUT_SPACES}"
+        )
     if int(config.get("decoder_bypass_hidden_size", 0)) < 1:
         raise ValueError("--decoder-bypass-hidden-size must be >= 1")
     if int(config.get("decoder_bypass_layers", 0)) < 1:
@@ -1902,9 +1961,12 @@ def _validate_global_context_config(config: dict[str, Any]) -> None:
         raise ValueError("--film-hidden-size must be >= 1")
     if feature_dim != len(names):
         raise ValueError("global_context_feature_dim must match global_context_feature_names")
+    native_enabled = config.get("native_output_mode") == "native_shape_scale"
     if mode == GLOBAL_CONTEXT_MODE_NONE:
-        if names or feature_dim:
+        if (names or feature_dim) and not native_enabled:
             raise ValueError("--global-context-mode none requires no global context feature names")
+        if native_enabled:
+            validate_global_context_schema(names)
         return
     validate_global_context_schema(names)
 
@@ -1918,7 +1980,6 @@ def _resolve_decoder_bypass_model_config(
         resolved["decoder_bypass_feature_indices"] = ()
         resolved["decoder_bypass_feature_names"] = ()
         resolved["decoder_bypass_num_features"] = 0
-        resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
         return resolved
 
     feature_names = tuple(stats.get("feature_names") or ())
@@ -1961,7 +2022,6 @@ def _resolve_decoder_bypass_model_config(
     resolved["decoder_bypass_feature_indices"] = indices
     resolved["decoder_bypass_feature_names"] = selected_feature_names
     resolved["decoder_bypass_num_features"] = len(indices)
-    resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
     _validate_decoder_bypass_config(resolved)
     return resolved
 
@@ -2359,7 +2419,75 @@ def _sample_weighted_masked_mean(values, mask, sample_weights):
     )
 
 
+def _native_loss_components(
+    model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]
+) -> dict[str, Any]:
+    names = (
+        "shape_cv_loss", "log_scale_loss", "relative_field_loss",
+        "raw_absolute_field_loss", "total_loss",
+    )
+    weighted = {name: jnp.asarray(0.0) for name in names}
+    base_mse = jnp.asarray(0.0)
+    count = 0
+    native_weights = {
+        "shape_cv": loss_config["native_shape_cv_weight"],
+        "log_scale": loss_config["native_log_scale_weight"],
+        "relative_field": loss_config["native_relative_field_weight"],
+        "raw_absolute": loss_config["native_raw_field_weight"],
+    }
+    for group in groups:
+        prediction = _model_apply(model, params, group)
+        physics = group["native_physics"]
+        components = native_shape_scale_losses(
+            prediction,
+            target_deltaT=group["target_delta_raw"],
+            control_volumes=physics["control_volumes"],
+            dirichlet_mask=physics["dirichlet_mask"],
+            loss_weights=native_weights,
+        )
+        branch_mode = getattr(model, "native_branch_mode", "joint")
+        if branch_mode == "scale_only":
+            components = dict(components)
+            components["total_loss"] = (
+                native_weights["log_scale"] * components["log_scale_loss"]
+                + native_weights["relative_field"] * components["relative_field_loss"]
+                + native_weights["raw_absolute"] * components["raw_absolute_field_loss"]
+            )
+        elif branch_mode == "shape_only":
+            components = dict(components)
+            components["total_loss"] = (
+                native_weights["shape_cv"] * components["shape_cv_loss"]
+                + native_weights["relative_field"] * components["relative_field_loss"]
+                + native_weights["raw_absolute"] * components["raw_absolute_field_loss"]
+            )
+        predicted_normalized = normalize_target_delta(prediction["deltaT_hat"], stats)
+        group_base_mse = jnp.mean(jnp.square(predicted_normalized - group["target_normalized"]))
+        n = int(group["target_normalized"].shape[0])
+        for name in names:
+            weighted[name] = weighted[name] + components[name] * n
+        base_mse = base_mse + group_base_mse * n
+        count += n
+    divisor = max(count, 1)
+    result = {name: value / divisor for name, value in weighted.items()}
+    result["base_mse"] = base_mse / divisor
+    zero = jnp.asarray(0.0, dtype=result["total_loss"].dtype)
+    for name in (
+        "background_penalty", "background_l1", "background_signed_bias_loss",
+        "background_overprediction_loss", "background_relative_abs",
+        "pseudo_negative_over_loss", "pseudo_negative_unweighted_loss",
+        "pseudo_negative_weighted_loss", "pseudo_negative_weighted_fraction_of_total_loss",
+        "pseudo_negative_bias", "pseudo_negative_over_ratio", "hotspot_retention_loss",
+        "hotspot_mse", "strong_q_mse", "hotspot_mask_fraction", "strong_q_mask_fraction",
+        "bg_pred_raw_mean", "bg_signed_bias", "bg_abs_mean", "hotspot_raw_mae",
+        "pseudo_negative_count",
+    ):
+        result[name] = zero
+    return result
+
+
 def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
+    if groups and "native_physics" in groups[0]:
+        return _native_loss_components(model, params, groups, stats, loss_config)
     weighted = {
         "base_mse": 0.0,
         "background_penalty": 0.0,
@@ -2564,13 +2692,37 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     weighted_raw_delta_mse = 0.0
     weighted_recovered_mse = 0.0
     weighted_mean_abs_true_delta = 0.0
+    native_metric_sums: dict[str, Any] = {}
     count = 0
     finite_ok = True
     shape_ok = True
     for group in groups:
-        pred_normalized = _model_apply(model, params, group)
-        pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
-        recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
+        prediction = _model_apply(model, params, group)
+        if isinstance(prediction, Mapping):
+            pred_delta = prediction["deltaT_hat"]
+            pred_normalized = normalize_target_delta(pred_delta, stats)
+            recovered = prediction["raw_temperature"]
+            physics = group["native_physics"]
+            native_diagnostics = native_shape_scale_diagnostics(
+                prediction,
+                target_deltaT=group["target_delta_raw"],
+                control_volumes=physics["control_volumes"],
+                dirichlet_mask=physics["dirichlet_mask"],
+                s_phys=jnp.exp(physics["log_s_phys"]),
+            )
+            native_values = {
+                "scale_log_abs_error": native_diagnostics["scale_log_abs_error"],
+                "shape_cv_rmse": native_diagnostics["shape_cv_rmse"],
+            }
+            for field_name, metrics in native_diagnostics["metrics"].items():
+                for metric_name, value in metrics.items():
+                    native_values[f"{field_name}_{metric_name}"] = value
+            for name, value in native_values.items():
+                native_metric_sums[name] = native_metric_sums.get(name, 0.0) + value * prediction["deltaT_hat"].shape[0]
+        else:
+            pred_normalized = prediction
+            pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
+            recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         n = pred_normalized.shape[0]
         weighted_normalized_loss = weighted_normalized_loss + jnp.mean(
             jnp.square(pred_normalized - group["target_normalized"])
@@ -2598,7 +2750,7 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     raw_delta_mse = float(weighted_raw_delta_mse / divisor)
     recovered_temperature_mse = float(weighted_recovered_mse / divisor)
     relative_pct = _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta)
-    return {
+    result = {
         "normalized_loss": float(weighted_normalized_loss / divisor),
         "raw_delta_mse": raw_delta_mse,
         "raw_rmse_K": _rmse_from_mse(raw_delta_mse),
@@ -2611,6 +2763,8 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
         "finite_ok": finite_ok,
         "shape_ok": shape_ok,
     }
+    result.update({name: float(value / divisor) for name, value in native_metric_sums.items()})
+    return result
 
 
 def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
@@ -2949,6 +3103,19 @@ def _epoch_history_record(
         ),
         "train_full_metrics_computed": train_components is not None and train_metrics is not None,
     }
+    for component in (
+        "shape_cv_loss", "log_scale_loss", "relative_field_loss", "raw_absolute_field_loss"
+    ):
+        record[f"train_{component}"] = _maybe_float(train_components, component)
+        record[f"valid_{component}"] = _maybe_float(valid_components, component)
+    for metric in (
+        "scale_log_abs_error", "shape_cv_rmse", "joint_relative_rmse",
+        "joint_amplitude_ratio", "joint_spatial_correlation", "joint_hotspot_rmse",
+        "joint_topk_rmse", "oracle_scale_relative_rmse", "oracle_shape_relative_rmse",
+        "physics_scale_relative_rmse",
+    ):
+        record[f"train_native_{metric}"] = _maybe_float(train_metrics, metric)
+        record[f"valid_native_{metric}"] = _maybe_float(valid_metrics, metric)
     if valid_stress_components is not None and valid_stress_metrics is not None:
         record.update(
             {
@@ -3146,11 +3313,11 @@ def _fit_once(
     _progress(progress_enabled, "startup", "initializing model parameters ...")
     model = GraphNeuralOperator(**model_config)
     init_inputs = _init_inputs_for_mode(train_groups[0], init_mode)
-    params = model.init(
+    params = _model_init(
+        model,
         jax.random.PRNGKey(model_seed),
-        inputs=init_inputs,
-        graphs=train_groups[0]["graphs"],
-        global_context=train_groups[0].get("global_context"),
+        train_groups[0],
+        init_inputs,
     )["params"]
     params, checkpoint_load_info = _load_init_checkpoint_params(
         params,
@@ -3173,7 +3340,8 @@ def _fit_once(
     )
 
     batch_enabled = batch_config.get("batch_size") is not None
-    metrics_fn = _weighted_metrics if batch_enabled else _metrics
+    native_enabled = model_config.get("native_output_mode") == "native_shape_scale"
+    metrics_fn = _weighted_metrics if batch_enabled or native_enabled else _metrics
     updates_per_epoch = int(len(train_groups) if batch_enabled else 1)
 
     initial_start = time.perf_counter()
@@ -3318,6 +3486,8 @@ def _fit_once(
                 batch_start = time.perf_counter()
                 loss_grad_start = time.perf_counter()
                 loss_value, grads = jax.value_and_grad(loss_fn)(params)
+                if native_enabled:
+                    grads = mask_branch_gradients(grads, model_config["native_branch_mode"])
                 if profile_enabled:
                     _block_until_ready_tree((loss_value, grads))
                 loss_grad_time = time.perf_counter() - loss_grad_start
@@ -3348,6 +3518,10 @@ def _fit_once(
                 else:
                     updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                     optax_state["state"] = opt_state
+                    if native_enabled:
+                        updates = mask_branch_gradients(
+                            updates, model_config["native_branch_mode"]
+                        )
                     params = optax_state["apply_updates"](params, updates)
                 if profile_enabled:
                     _block_until_ready_tree(params)
@@ -3434,6 +3608,8 @@ def _fit_once(
                 )
             loss_grad_start = time.perf_counter()
             loss_value, grads = jax.value_and_grad(loss_fn)(params)
+            if native_enabled:
+                grads = mask_branch_gradients(grads, model_config["native_branch_mode"])
             if profile_enabled:
                 _block_until_ready_tree((loss_value, grads))
             loss_grad_time = time.perf_counter() - loss_grad_start
@@ -3464,6 +3640,10 @@ def _fit_once(
             else:
                 updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                 optax_state["state"] = opt_state
+                if native_enabled:
+                    updates = mask_branch_gradients(
+                        updates, model_config["native_branch_mode"]
+                    )
                 params = optax_state["apply_updates"](params, updates)
             if profile_enabled:
                 _block_until_ready_tree(params)
@@ -3867,10 +4047,13 @@ def _fit_once(
 def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dict[str, np.ndarray]:
     predictions: dict[str, np.ndarray] = {}
     for group in groups:
-        pred_normalized = _model_apply(model, params, group)
-        recovered = np.asarray(
-            recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
-        )
+        prediction = _model_apply(model, params, group)
+        if isinstance(prediction, Mapping):
+            recovered = np.asarray(prediction["raw_temperature"])
+        else:
+            recovered = np.asarray(
+                recover_temperature_from_normalized_delta(prediction, group["t_ref"], stats)
+            )
         if not np.all(np.isfinite(recovered)):
             raise ValueError(f"Non-finite recovered predictions in group {group['name']}")
         for batch_index, sample_id in enumerate(group["sample_ids"]):
@@ -5226,7 +5409,11 @@ def _prepare_global_context_lookup(
 ) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
     """Fit V5 context standardization on train only and encode requested groups."""
 
-    if model_config.get("global_context_mode", GLOBAL_CONTEXT_MODE_NONE) == GLOBAL_CONTEXT_MODE_NONE:
+    native_enabled = model_config.get("native_output_mode") == "native_shape_scale"
+    if (
+        model_config.get("global_context_mode", GLOBAL_CONTEXT_MODE_NONE) == GLOBAL_CONTEXT_MODE_NONE
+        and not native_enabled
+    ):
         return {}, {
             "enabled": False,
             "mode": GLOBAL_CONTEXT_MODE_NONE,
@@ -5250,7 +5437,11 @@ def _prepare_global_context_lookup(
     }
     return encoded, {
         "enabled": True,
-        "mode": GLOBAL_CONTEXT_MODE_FILM,
+        "mode": (
+            GLOBAL_CONTEXT_MODE_FILM
+            if model_config.get("global_context_mode") == GLOBAL_CONTEXT_MODE_FILM
+            else "native_scale_head"
+        ),
         "feature_names": list(GLOBAL_CONTEXT_FEATURES),
         "standardizer": standardizer,
         "target_or_label_derived_inputs": False,
@@ -5280,12 +5471,89 @@ def _attach_global_context_to_groups(
         group["global_context"] = jnp.asarray(context, dtype=jnp.float32)
 
 
+def _attach_native_physics_to_groups(
+    groups: list[dict],
+    examples_by_id: Mapping[str, Any],
+) -> None:
+    """Attach inference-only native physics tensors in each group's sample order."""
+
+    for group in groups:
+        volumes = []
+        log_s_phys = []
+        references = []
+        masks = []
+        prescribed = []
+        for sample_id in group["sample_ids"]:
+            example = examples_by_id[sample_id]
+            relative = example.get_relative_bc_feature_view()
+            names = tuple(relative.condition_feature_names)
+            values = np.asarray(relative.condition_features, dtype=np.float64)
+            coords = np.asarray(example.condition.coords, dtype=np.float64)
+            if "is_bottom" not in names or "bottom_T_fixed_minus_T_ref" not in names:
+                raise ValueError(f"{sample_id}: native branch lacks bottom Dirichlet features")
+            bottom = values[:, names.index("is_bottom")] > 0.5
+            if not np.any(bottom):
+                raise ValueError(f"{sample_id}: native branch has no Dirichlet nodes")
+            reference = float(relative.t_ref_value)
+            offset = values[:, names.index("bottom_T_fixed_minus_T_ref")]
+            context = _global_context_row_for_example(example)
+            volumes.append(control_volume_weights(coords))
+            log_s_phys.append(float(context["log_s_phys_K"]))
+            references.append(np.full(coords.shape[0], reference, dtype=np.float32))
+            masks.append(bottom.astype(np.float32))
+            prescribed.append((reference + offset).astype(np.float32))
+        group["native_physics"] = {
+            "control_volumes": jnp.asarray(np.stack(volumes), dtype=jnp.float32),
+            "log_s_phys": jnp.asarray(log_s_phys, dtype=jnp.float32),
+            "reference_temperature": jnp.asarray(np.stack(references), dtype=jnp.float32),
+            "dirichlet_mask": jnp.asarray(np.stack(masks), dtype=jnp.float32),
+            "prescribed_temperature": jnp.asarray(np.stack(prescribed), dtype=jnp.float32),
+        }
+
+
 def _model_apply(model, params, group: Mapping[str, Any]):
     """Use the V4 call path unless a group explicitly carries Global FiLM data."""
 
+    if "native_physics" in group:
+        physics = group["native_physics"]
+        return model.apply(
+            {"params": params},
+            inputs=group["inputs"],
+            graphs=group["graphs"],
+            global_context=group.get("global_context"),
+            control_volumes=physics["control_volumes"],
+            log_s_phys=physics["log_s_phys"],
+            reference_temperature=physics["reference_temperature"],
+            dirichlet_mask=physics["dirichlet_mask"],
+            prescribed_temperature=physics["prescribed_temperature"],
+            method=model.predict_native_shape_scale,
+        )
     return model.apply(
         {"params": params},
         inputs=group["inputs"],
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+    )
+
+
+def _model_init(model, key, group: Mapping[str, Any], inputs: Any):
+    if "native_physics" in group:
+        physics = group["native_physics"]
+        return model.init(
+            key,
+            inputs=inputs,
+            graphs=group["graphs"],
+            global_context=group.get("global_context"),
+            control_volumes=physics["control_volumes"],
+            log_s_phys=physics["log_s_phys"],
+            reference_temperature=physics["reference_temperature"],
+            dirichlet_mask=physics["dirichlet_mask"],
+            prescribed_temperature=physics["prescribed_temperature"],
+            method=model.predict_native_shape_scale,
+        )
+    return model.init(
+        key,
+        inputs=inputs,
         graphs=group["graphs"],
         global_context=group.get("global_context"),
     )
@@ -5922,6 +6190,19 @@ def main() -> int:
             global_context_lookup,
             expected_feature_dim=int(model_config.get("global_context_feature_dim", 0)),
         )
+    if model_config.get("native_output_mode") == "native_shape_scale":
+        native_examples_by_id = {
+            example.sample_id: example
+            for example in (
+                *train_examples,
+                *valid_examples,
+                *valid_stress_examples,
+                *all_examples,
+                *test_iid_examples,
+            )
+        }
+        for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
+            _attach_native_physics_to_groups(groups, native_examples_by_id)
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)

@@ -50,7 +50,17 @@ def main() -> int:
         ],
         dtype=jnp.float32,
     )
-    target_scale, target_shape = target_shape_scale(target, volumes)
+    bottom_mask = jnp.asarray(
+        [
+            [[[1.0], [0.0], [0.0], [0.0]]],
+            [[[0.0], [1.0], [0.0], [0.0]]],
+        ],
+        dtype=jnp.float32,
+    )
+    target = (1.0 - bottom_mask) * target
+    target_scale, target_shape = target_shape_scale(
+        target, volumes, dirichlet_mask=bottom_mask
+    )
     reconstructed = reconstruct_shape_scale(target_scale, target_shape)
     recon_error = float(jnp.max(jnp.abs(reconstructed - target)))
     if recon_error > 1.0e-6:
@@ -63,7 +73,7 @@ def main() -> int:
         raise AssertionError("target shape is not unit CV-RMS")
 
     psi = target * 3.7
-    psi_scale, phi_hat = normalize_shape(psi, volumes)
+    psi_scale, phi_hat = normalize_shape(psi, volumes, dirichlet_mask=bottom_mask)
     if not np.allclose(np.asarray(phi_hat), np.asarray(target_shape), rtol=0.0, atol=1.0e-6):
         raise AssertionError("native psi normalization changed target shape")
     prediction = {
@@ -76,6 +86,7 @@ def main() -> int:
         prediction,
         target_deltaT=target,
         control_volumes=volumes,
+        dirichlet_mask=bottom_mask,
         loss_weights=LOSS_WEIGHTS,
     )
     if float(losses["total_loss"]) > 1.0e-10 or not bool(losses["s_hat_positive"]):
@@ -83,13 +94,6 @@ def main() -> int:
 
     reference = jnp.full_like(target, 300.0)
     prescribed = jnp.full_like(target, 301.25)
-    bottom_mask = jnp.asarray(
-        [
-            [[[1.0], [0.0], [0.0], [0.0]]],
-            [[[0.0], [1.0], [0.0], [0.0]]],
-        ],
-        dtype=jnp.float32,
-    )
     projected = project_raw_dirichlet(reference + target, bottom_mask, prescribed)
     if not np.allclose(
         np.asarray(projected)[np.asarray(bottom_mask, dtype=bool)],
@@ -100,11 +104,12 @@ def main() -> int:
         raise AssertionError("raw Dirichlet projection failed")
 
     def _loss_for_grad(raw_psi):
-        _, shape = normalize_shape(raw_psi, volumes)
+        _, shape = normalize_shape(raw_psi, volumes, dirichlet_mask=bottom_mask)
         value = native_shape_scale_losses(
             {"phi_hat": shape, "s_hat": target_scale, "deltaT_hat": target},
             target_deltaT=target,
             control_volumes=volumes,
+            dirichlet_mask=bottom_mask,
             loss_weights=LOSS_WEIGHTS,
         )["total_loss"]
         return value

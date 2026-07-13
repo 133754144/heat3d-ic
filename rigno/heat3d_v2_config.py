@@ -58,9 +58,14 @@ DECODER_BYPASS_MODES = {"none", "post_decoder_residual"}
 DECODER_BYPASS_FEATURES = {"none", "full_condition", "explicit_local_condition"}
 DECODER_BYPASS_FEATURE_SOURCES = {"normalized_c"}
 DECODER_BYPASS_INITS = {"zero_residual"}
+DECODER_BYPASS_OUTPUT_SPACES = {"normalized_deltaT", "native_psi"}
 GLOBAL_CONTEXT_MODES = {"none", "film"}
 FILM_TARGETS = {"rnodes_processed"}
 FILM_INITS = {"identity"}
+NATIVE_OUTPUT_MODES = {"legacy_normalized_deltaT", "native_shape_scale"}
+NATIVE_BRANCH_MODES = {"scale_only", "shape_only", "joint"}
+SCALE_HEAD_MODES = {"physics_only", "physics_plus_pooled_latent"}
+SCALE_POOLING_MODES = {"mean"}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -589,6 +594,12 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
             f"{label}: field 'model.decoder_bypass_init' must be one of "
             f"{sorted(DECODER_BYPASS_INITS)}, got {init!r}"
         )
+    output_space = model.get("decoder_bypass_output_space")
+    if output_space is not None and output_space not in DECODER_BYPASS_OUTPUT_SPACES:
+        raise ValueError(
+            f"{label}: field 'model.decoder_bypass_output_space' must be one of "
+            f"{sorted(DECODER_BYPASS_OUTPUT_SPACES)}, got {output_space!r}"
+        )
     for field in ("decoder_bypass_hidden_size", "decoder_bypass_layers"):
         value = model.get(field)
         if value is None:
@@ -679,6 +690,39 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
         raise ValueError(
             f"{label}: model.global_context_mode='film' requires global_context_feature_names"
         )
+    native_mode = model.get("native_output_mode")
+    if native_mode is not None and native_mode not in NATIVE_OUTPUT_MODES:
+        raise ValueError(
+            f"{label}: field 'model.native_output_mode' must be one of "
+            f"{sorted(NATIVE_OUTPUT_MODES)}, got {native_mode!r}"
+        )
+    for field, allowed in (
+        ("native_branch_mode", NATIVE_BRANCH_MODES),
+        ("scale_head_mode", SCALE_HEAD_MODES),
+        ("scale_pooling", SCALE_POOLING_MODES),
+    ):
+        value = model.get(field)
+        if value is not None and value not in allowed:
+            raise ValueError(
+                f"{label}: field 'model.{field}' must be one of {sorted(allowed)}, got {value!r}"
+            )
+    scale_hidden = model.get("scale_head_hidden_size")
+    if scale_hidden is not None and (
+        isinstance(scale_hidden, bool) or not isinstance(scale_hidden, int) or scale_hidden < 1
+    ):
+        raise ValueError(f"{label}: field 'model.scale_head_hidden_size' must be an int >= 1")
+    if native_mode == "native_shape_scale":
+        if not global_names:
+            raise ValueError(
+                f"{label}: native_shape_scale requires inference-only global_context_feature_names"
+            )
+        if model.get("decoder_bypass_mode") != "none" and model.get(
+            "decoder_bypass_output_space"
+        ) != "native_psi":
+            raise ValueError(
+                f"{label}: native_shape_scale local bypass requires "
+                "model.decoder_bypass_output_space='native_psi'"
+            )
 
 
 def _validate_loss_fields(loss: Mapping[str, Any], label: str) -> None:
@@ -707,6 +751,10 @@ def _validate_loss_fields(loss: Mapping[str, Any], label: str) -> None:
         "background_over_weight",
         "background_relative_weight",
         "pseudo_negative_weight",
+        "native_shape_cv_weight",
+        "native_log_scale_weight",
+        "native_relative_field_weight",
+        "native_raw_field_weight",
     )
     for field in weight_fields:
         if field not in loss or loss[field] is None:

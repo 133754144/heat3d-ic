@@ -139,6 +139,11 @@ def build_training_command(
     )
     _append_option(
         command,
+        "--decoder-bypass-output-space",
+        model.get("decoder_bypass_output_space"),
+    )
+    _append_option(
+        command,
         "--decoder-bypass-hidden-size",
         model.get("decoder_bypass_hidden_size"),
     )
@@ -158,6 +163,11 @@ def build_training_command(
     _append_option(command, "--film-target", model.get("film_target"))
     _append_option(command, "--film-init", model.get("film_init"))
     _append_option(command, "--film-hidden-size", model.get("film_hidden_size"))
+    _append_option(command, "--native-output-mode", model.get("native_output_mode"))
+    _append_option(command, "--native-branch-mode", model.get("native_branch_mode"))
+    _append_option(command, "--scale-head-mode", model.get("scale_head_mode"))
+    _append_option(command, "--scale-pooling", model.get("scale_pooling"))
+    _append_option(command, "--scale-head-hidden-size", model.get("scale_head_hidden_size"))
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
@@ -260,6 +270,10 @@ def build_training_command(
     _append_option(command, "--background-weight", loss.get("background_weight"))
     _append_option(command, "--hotspot-weight", loss.get("hotspot_weight"))
     _append_option(command, "--strong-q-weight", loss.get("strong_q_weight"))
+    _append_option(command, "--native-shape-cv-weight", loss.get("native_shape_cv_weight"))
+    _append_option(command, "--native-log-scale-weight", loss.get("native_log_scale_weight"))
+    _append_option(command, "--native-relative-field-weight", loss.get("native_relative_field_weight"))
+    _append_option(command, "--native-raw-field-weight", loss.get("native_raw_field_weight"))
     _append_option(command, "--background-l1-weight", loss.get("background_l1_weight"))
     _append_option(
         command, "--background-bias-weight", loss.get("background_bias_weight")
@@ -678,6 +692,7 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
             "model.decoder_bypass_local_feature_names",
             "training --decoder-bypass-local-feature-names",
         ),
+        ("model.decoder_bypass_output_space", "training --decoder-bypass-output-space"),
         ("model.decoder_bypass_hidden_size", "training --decoder-bypass-hidden-size"),
         ("model.decoder_bypass_layers", "training --decoder-bypass-layers"),
         ("model.decoder_bypass_init", "training --decoder-bypass-init"),
@@ -693,6 +708,11 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("model.film_target", "training --film-target"),
         ("model.film_init", "training --film-init"),
         ("model.film_hidden_size", "training --film-hidden-size"),
+        ("model.native_output_mode", "training --native-output-mode"),
+        ("model.native_branch_mode", "training --native-branch-mode"),
+        ("model.scale_head_mode", "training --scale-head-mode"),
+        ("model.scale_pooling", "training --scale-pooling"),
+        ("model.scale_head_hidden_size", "training --scale-head-hidden-size"),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
         ("run.train_metrics_schedule", "training --train-metrics-schedule"),
