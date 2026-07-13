@@ -77,7 +77,8 @@ def main() -> int:
         assert run["train_metrics_schedule"] == "every_epoch"
         assert run["grad_norm_report_every"] == 1
         assert run["profile_timing"] is True
-        assert run["memory_audit_every_batch"] is True
+        expected_memory_every_batch = label.endswith("smoke")
+        assert run["memory_audit_every_batch"] is expected_memory_every_batch
         assert run["final_probe_eval_after_training"] is False
         assert run["post_training_diagnostics"] is False
         assert dataset["subset_path"] == "data/heat3d_v4_p5_clean_nohard_v0"
@@ -98,12 +99,12 @@ def main() -> int:
             "--validation-batch-size 128",
             "--profile-timing",
             "--memory-audit-jsonl",
-            "--memory-audit-every-batch",
             "--no-final-probe-eval-after-training",
             "--no-post-training-diagnostics",
             f"--scale-head-mode {scale_mode}",
         ):
             assert fragment in joined, f"{label}: dry-run missing {fragment}"
+        assert ("--memory-audit-every-batch" in joined) is expected_memory_every_batch
         reports[label] = {
             "config": str(path.relative_to(ROOT)),
             "epochs": epochs,
