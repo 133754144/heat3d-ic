@@ -158,7 +158,16 @@ def _evaluate_role(
     samples: list[dict[str, Any]] = []
     native_rows: list[dict[str, float]] = []
     for group in groups:
-        prediction = _model_apply(model, params, group)
+        prediction = (
+            _model_apply(model, params, group)
+            if native_mode
+            else model.apply(
+                {"params": params},
+                inputs=group["inputs"],
+                graphs=group["graphs"],
+                global_context=group.get("global_context"),
+            )
+        )
         native = prediction if native_mode else None
         if native_mode:
             raw = np.asarray(prediction["deltaT_hat"], dtype=np.float64)
