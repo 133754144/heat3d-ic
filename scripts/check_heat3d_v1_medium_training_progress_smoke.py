@@ -112,6 +112,21 @@ def main() -> int:
         best_predictions_path=Path("best_predictions_smoke.npz"),
         best_predictions_saved=True,
     )
+    combined_metrics = runner._combine_metric_payloads(
+        [
+            (
+                1,
+                {
+                    "raw_delta_mse": 4.0,
+                    "recovered_temperature_mse": 4.0,
+                    "mean_abs_true_deltaT": 2.0,
+                    "mean_square_true_deltaT": 100.0,
+                    "finite_ok": True,
+                    "shape_ok": True,
+                },
+            )
+        ]
+    )
 
     output = buffer.getvalue()
     checks = {
@@ -128,6 +143,13 @@ def main() -> int:
         "best_predictions_name_parsed": best_args.best_predictions_name == "best_predictions_smoke.npz",
         "best_payload_epoch": best_payload["best_epoch"] == 2,
         "best_payload_saved": best_payload["best_predictions_saved"],
+        "relative_rmse_uses_true_rms_denominator": (
+            runner._deltaT_error_pct(4.0, 100.0) == 20.0
+            and not (runner._deltaT_error_pct(4.0, 100.0) < 20.0)
+        ),
+        "combined_metrics_recompute_relative_rmse": (
+            combined_metrics["rel_rmse_v4_pct"] == 20.0
+        ),
         "startup_line_printed": "[startup] loading dataset from fake_subset ..." in output,
         "elapsed_printed": "elapsed=" in output,
         "disabled_line_suppressed": "this should not print" not in output,

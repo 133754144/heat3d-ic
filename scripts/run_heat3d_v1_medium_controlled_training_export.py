@@ -913,17 +913,21 @@ def _format_progress_int(value: Any) -> str:
     return str(int(numeric))
 
 
-def _deltaT_error_pct(raw_delta_mse: Any, mean_abs_true_deltaT: Any) -> float | None:
-    if raw_delta_mse is None or mean_abs_true_deltaT is None:
+def _deltaT_error_pct(raw_delta_mse: Any, mean_square_true_deltaT: Any) -> float | None:
+    if raw_delta_mse is None or mean_square_true_deltaT is None:
         return None
     try:
         mse = float(raw_delta_mse)
-        denominator = float(mean_abs_true_deltaT)
+        target_mean_square = float(mean_square_true_deltaT)
     except (TypeError, ValueError):
         return None
-    if not math.isfinite(mse) or not math.isfinite(denominator) or denominator <= 0.0:
+    if (
+        not math.isfinite(mse)
+        or not math.isfinite(target_mean_square)
+        or target_mean_square <= 0.0
+    ):
         return None
-    return 100.0 * math.sqrt(max(mse, 0.0)) / denominator
+    return 100.0 * math.sqrt(max(mse, 0.0) / target_mean_square)
 
 
 def _rmse_from_mse(mse: Any) -> float | None:
@@ -948,7 +952,9 @@ def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
     ):
         if metrics.get(key) is not None:
             return float(metrics[key])
-    return _deltaT_error_pct(metrics.get("raw_delta_mse"), metrics.get("mean_abs_true_deltaT"))
+    return _deltaT_error_pct(
+        metrics.get("raw_delta_mse"), metrics.get("mean_square_true_deltaT")
+    )
 
 
 def _progress_numeric_or_none(value: Any) -> float | None:
@@ -1157,7 +1163,9 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
     }
     combined["raw_rmse_K"] = _rmse_from_mse(combined["raw_delta_mse"])
     combined["recovered_T_rmse_K"] = _rmse_from_mse(combined["recovered_temperature_mse"])
-    relative_pct = _deltaT_error_pct(combined["raw_delta_mse"], combined["mean_abs_true_deltaT"])
+    relative_pct = _deltaT_error_pct(
+        combined["raw_delta_mse"], combined["mean_square_true_deltaT"]
+    )
     combined["rel_rmse_v4_pct"] = relative_pct
     combined["raw_deltaT_relative_rmse_pct_v4"] = relative_pct
     combined["raw_deltaT_relative_rmse_pct"] = relative_pct
@@ -2727,6 +2735,7 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     weighted_raw_delta_mse = 0.0
     weighted_recovered_mse = 0.0
     weighted_mean_abs_true_delta = 0.0
+    weighted_mean_square_true_delta = 0.0
     native_metric_sums: dict[str, Any] = {}
     count = 0
     finite_ok = True
@@ -2771,6 +2780,9 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
         weighted_mean_abs_true_delta = weighted_mean_abs_true_delta + jnp.mean(
             jnp.abs(group["target_delta_raw"])
         ) * n
+        weighted_mean_square_true_delta = weighted_mean_square_true_delta + jnp.mean(
+            jnp.square(group["target_delta_raw"])
+        ) * n
         finite_ok = (
             finite_ok
             and bool(jnp.all(jnp.isfinite(pred_normalized)))
@@ -2782,9 +2794,10 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
 
     divisor = max(count, 1)
     mean_abs_true_delta = float(weighted_mean_abs_true_delta / divisor)
+    mean_square_true_delta = float(weighted_mean_square_true_delta / divisor)
     raw_delta_mse = float(weighted_raw_delta_mse / divisor)
     recovered_temperature_mse = float(weighted_recovered_mse / divisor)
-    relative_pct = _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta)
+    relative_pct = _deltaT_error_pct(raw_delta_mse, mean_square_true_delta)
     result = {
         "normalized_loss": float(weighted_normalized_loss / divisor),
         "raw_delta_mse": raw_delta_mse,
@@ -2792,6 +2805,7 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
         "recovered_temperature_mse": recovered_temperature_mse,
         "recovered_T_rmse_K": _rmse_from_mse(recovered_temperature_mse),
         "mean_abs_true_deltaT": mean_abs_true_delta,
+        "mean_square_true_deltaT": mean_square_true_delta,
         "rel_rmse_v4_pct": relative_pct,
         "raw_deltaT_relative_rmse_pct_v4": relative_pct,
         "raw_deltaT_relative_rmse_pct": relative_pct,
@@ -2800,6 +2814,27 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     }
     result.update({name: float(value / divisor) for name, value in native_metric_sums.items()})
     return result
+
+
+def _legacy_full_batch_metrics_with_true_rms_denominator(
+    model, params, groups: list[dict], stats: dict
+) -> dict[str, Any]:
+    metrics = dict(_metrics(model, params, groups, stats))
+    weighted_mean_square = 0.0
+    count = 0
+    for group in groups:
+        n = int(group["target_delta_raw"].shape[0])
+        weighted_mean_square += float(jnp.mean(jnp.square(group["target_delta_raw"]))) * n
+        count += n
+    mean_square_true_delta = weighted_mean_square / max(count, 1)
+    metrics["mean_square_true_deltaT"] = mean_square_true_delta
+    relative_pct = _deltaT_error_pct(
+        metrics.get("raw_delta_mse"), mean_square_true_delta
+    )
+    metrics["rel_rmse_v4_pct"] = relative_pct
+    metrics["raw_deltaT_relative_rmse_pct_v4"] = relative_pct
+    metrics["raw_deltaT_relative_rmse_pct"] = relative_pct
+    return metrics
 
 
 def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
@@ -3381,7 +3416,11 @@ def _fit_once(
 
     batch_enabled = batch_config.get("batch_size") is not None
     native_enabled = model_config.get("native_output_mode") == "native_shape_scale"
-    metrics_fn = _weighted_metrics if batch_enabled or native_enabled else _metrics
+    metrics_fn = (
+        _weighted_metrics
+        if batch_enabled or native_enabled
+        else _legacy_full_batch_metrics_with_true_rms_denominator
+    )
     updates_per_epoch = int(len(train_groups) if batch_enabled else 1)
 
     initial_start = time.perf_counter()
