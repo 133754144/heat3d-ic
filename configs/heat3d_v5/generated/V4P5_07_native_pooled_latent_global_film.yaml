@@ -18,14 +18,16 @@ overrides:
     run_name: V4P5_07_native_pooled_latent_global_film
   metadata:
     registry_config_id: V4P5_07_native_pooled_latent_global_film
-    registry_status: registered_not_started
+    registry_status: running_e600
     candidate: N3_native_pooled_latent_global_film
     inherited_from: V4P5_06_native_pooled_latent
     initialization: random
     launch_policy: explicit_user_instruction_only
     execution_smoke_config: configs/heat3d_v5/preflight/V5G5_N3_execution_smoke_e1.yaml
-    e600_started: false
+    e600_started: true
+    launch_host: wsl2
+    launch_commit: 83a11132c49aa8c0beb740b7a5fca2f0b80344e4
+    launch_tmux_session: v5g5_n3_e600
     log_path: output/heat3d_v5_logs/V4P5_07_native_pooled_latent_global_film.log
     gate5_single_variable: global_film_enabled
     global_film_enabled: true
-
