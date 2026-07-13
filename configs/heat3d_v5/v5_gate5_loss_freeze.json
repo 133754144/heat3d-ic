@@ -1,0 +1,49 @@
+{
+  "schema_version": "heat3d_v5_gate5_loss_freeze_v1",
+  "status": "frozen",
+  "frozen_at": "2026-07-13",
+  "formal_performance_result": false,
+  "calibration_epochs": 10,
+  "initial_weights": {
+    "shape_cv": 1.0,
+    "log_scale": 1.0,
+    "relative_field": 1.0,
+    "raw_absolute_field": 1.0
+  },
+  "frozen_weights": {
+    "shape_cv": 1.0,
+    "log_scale": 1.0,
+    "relative_field": 1.0,
+    "raw_absolute_field": 1.0
+  },
+  "shared_by": [
+    "V4P5_05_native_physics_only",
+    "V4P5_06_native_pooled_latent"
+  ],
+  "audit": {
+    "dominance_threshold_ratio": 10.0,
+    "combined_median_valid_components": {
+      "shape_cv_loss": 0.2768281623721123,
+      "log_scale_loss": 0.5148819833993912,
+      "relative_field_loss": 0.385858416557312,
+      "raw_absolute_field_loss": 0.2166358157992363
+    },
+    "largest_observed_median_component_ratio": 2.9543688744890537,
+    "n0_median_gradient_norms": {
+      "backbone": 3.0907394240299864,
+      "shape_decoder": 2.2582150573531785,
+      "scale_head": 4.371991927425067
+    },
+    "n1_median_gradient_norms": {
+      "backbone": 6.880052700638771,
+      "shape_decoder": 2.438237729171912,
+      "scale_head": 24.803741849958897
+    },
+    "all_components_finite": true,
+    "all_core_gradient_groups_finite_and_nonzero": true,
+    "reason": "No loss component persistently dominates by 10x and no core branch has a weak or zero gradient. N1 scale-head gradients are larger but finite while its four loss components remain balanced; changing common weights would be unsupported and would also alter N0."
+  },
+  "e600_started": false,
+  "e600_selection_metric": "valid_base_mse",
+  "preflight_report": "configs/heat3d_v5/v5_gate5_e600_preflight.json"
+}

@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     for label in ("n0_smoke", "n1_smoke", "n0_e10", "n1_e10"):
         parser.add_argument(f"--{label.replace('_', '-')}-run-dir", type=Path, required=True)
+        parser.add_argument(f"--{label.replace('_', '-')}-source", type=str, default=None)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
     return parser.parse_args()
@@ -115,7 +116,7 @@ def _execution_checks(summary: dict[str, Any], *, expected_mode: str) -> dict[st
             for record in (summary.get("train_batch_records") or [])
         ),
         "scale_head_mode": runtime.get("scale_head_mode") == expected_mode,
-        "pooled_latent_width": runtime.get("pooled_latent_width") == expected_width,
+        "pooled_latent_width_expected": runtime.get("pooled_latent_width") == expected_width,
         "checkpoint_prediction_reload": reload_audit.get("status") == "passed"
         and all(entry.get("passed") for entry in reload_audit.get("entries", [])),
         "context_fit_train_only": standardizer.get("fit_population") == "train_only"
@@ -129,11 +130,13 @@ def _execution_checks(summary: dict[str, Any], *, expected_mode: str) -> dict[st
     return checks
 
 
-def _run_payload(run: dict[str, Any], *, expected_mode: str) -> dict[str, Any]:
+def _run_payload(
+    run: dict[str, Any], *, expected_mode: str, source_location: str | None = None
+) -> dict[str, Any]:
     summary = run["summary"]
     history = _history_rows(summary)
     return {
-        "run_dir": run["dir"],
+        "run_dir": source_location or run["dir"],
         "epochs": len(history),
         "execution_checks": _execution_checks(summary, expected_mode=expected_mode),
         "history": history,
@@ -174,8 +177,8 @@ def _markdown(payload: dict[str, Any]) -> str:
         "",
         "Smoke 与 e10 均为真实 P5 execution/calibration，不是正式性能结果；未启动 e600。",
         "",
-        "| run | epochs | valid_base_mse(final) | joint rel | oracle-scale rel | oracle-shape rel | peak GPU MiB |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| run | epochs | best epoch/MSE | final MSE | joint rel | oracle-scale rel | oracle-shape rel | peak GPU MiB |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for label in ("n0_smoke", "n1_smoke", "n0_e10", "n1_e10"):
         run = payload["runs"][label]
@@ -183,15 +186,68 @@ def _markdown(payload: dict[str, Any]) -> str:
         native = last["valid_native"]
         peak = (run["timing"].get("peak_memory") or {}).get("peak_device_memory_all_mb")
         lines.append(
-            f"| {label} | {run['epochs']} | {last['valid_base_mse']:.6g} | "
+            f"| {label} | {run['epochs']} | {run['best_epoch']}/{run['best_valid_base_mse']:.6g} | "
+            f"{last['valid_base_mse']:.6g} | "
             f"{native['joint_relative_rmse']:.6g} | {native['oracle_scale_relative_rmse']:.6g} | "
             f"{native['oracle_shape_relative_rmse']:.6g} | {peak if peak is not None else 'n/a'} |"
         )
     lines.extend(["", "## Execution checks", ""])
     for label in ("n0_smoke", "n1_smoke"):
         checks = payload["runs"][label]["execution_checks"]
-        lines.append(f"- {label}: passed={str(checks['passed']).lower()}, checkpoint/prediction reload passed, context fit train-only.")
-    lines.extend(["", "## Loss freeze", "", "最终冻结权重与依据见同目录 loss-freeze JSON；N0/N1 必须共用同一组权重。", ""])
+        run = payload["runs"][label]
+        timing = run["timing"]
+        lines.append(
+            f"- {label}: passed={str(checks['passed']).lower()}；真实 train/valid=`672/128`、"
+            f"1024 nodes、B28；checkpoint/NPZ reload 通过；global-context standardizer 仅由 train 拟合；"
+            f"首 batch `{timing['first_batch_compile_time_s']:.2f}s`，稳态 batch 中位数 "
+            f"`{timing['steady_batch_median_time_s']:.2f}s`。"
+        )
+    lines.extend([
+        "",
+        "N1 runtime audit 确认 pooled latent width=`96`；N0 pooled width=`0`。两者均无 OOM/NaN/Inf。",
+        "N0 最终接受的是 `N0_smoke_e1_r4`；此前三次尝试暴露并修复了 native metric 聚合、"
+        "runtime audit 字段和 GPU graph-reduction replay 容差问题，失败产物未作为通过结果。",
+        "",
+        "## e10 calibration",
+        "",
+        "完整逐 epoch 四项 train/valid loss、native 指标、三组梯度和 timing 均在 machine-readable JSON。",
+    ])
+    for label in ("n0_e10", "n1_e10"):
+        run = payload["runs"][label]
+        first = run["history"][0]["valid_native"]
+        last = run["history"][-1]["valid_native"]
+        timing = run["timing"]
+        gradients = payload["loss_audit"]["per_run"][label]["median_gradient_norms"]
+        lines.append(
+            f"- {label}: joint `{first['joint_relative_rmse']:.4f}->{last['joint_relative_rmse']:.4f}`，"
+            f"shape CV-RMSE `{first['shape_cv_rmse']:.4f}->{last['shape_cv_rmse']:.4f}`，"
+            f"scale error `{first['scale_log_abs_error']:.4f}->{last['scale_log_abs_error']:.4f}`，"
+            f"amplitude `{first['joint_amplitude_ratio']:.4f}->{last['joint_amplitude_ratio']:.4f}`；"
+            f"backbone/shape/scale gradient 中位数 "
+            f"`{gradients['backbone']:.2f}/{gradients['shape_decoder']:.2f}/{gradients['scale_head']:.2f}`；"
+            f"稳态 epoch 中位数 `{timing['steady_epoch_median_time_s']:.2f}s`。"
+        )
+    lines.extend([
+        "",
+        "这些 e10 数值仅用于校准和 loss/gradient audit，不用于 N0/N1 正式性能排序。",
+        "",
+        "## Loss freeze",
+        "",
+        "四项权重冻结为 `shape/log-scale/relative/raw = 1/1/1/1`，N0/N1 共用。"
+        "最大 loss 中位数比为 `2.95x`，低于 `10x` 主导阈值；三组核心梯度均有限且非零。"
+        "详细依据见 `configs/heat3d_v5/v5_gate5_loss_freeze.json`。",
+        "",
+        "## Frozen e600 candidates",
+        "",
+        "- N0: `configs/heat3d_v5/generated/V4P5_05_native_physics_only.yaml`",
+        "- N1: `configs/heat3d_v5/generated/V4P5_06_native_pooled_latent.yaml`",
+        "- Registry: `configs/heat3d_v5/v5_gate5_native_preflight_registry.csv`",
+        "",
+        "解析后严格 diff 仅允许 identity/output 标识和 `model.scale_head_mode` 不同；"
+        "dataset、split、model 其余字段、optimizer、LR、B28、seed、loss 和 checkpoint selection 均一致。"
+        "正式 best 仍按最低 `valid_base_mse`。本轮未启动 e600。",
+        "",
+    ])
     return "\n".join(lines)
 
 
@@ -207,6 +263,7 @@ def main() -> int:
         label: _run_payload(
             run,
             expected_mode="physics_plus_pooled_latent" if label.startswith("n1") else "physics_only",
+            source_location=getattr(args, f"{label}_source"),
         )
         for label, run in raw_runs.items()
     }
@@ -221,6 +278,21 @@ def main() -> int:
         "e600_started": False,
         "runs": runs,
         "loss_audit": _loss_audit(runs),
+        "loss_freeze": {
+            "status": "frozen",
+            "shared_weights": {
+                "shape_cv": 1.0,
+                "log_scale": 1.0,
+                "relative_field": 1.0,
+                "raw_absolute_field": 1.0,
+            },
+            "path": "configs/heat3d_v5/v5_gate5_loss_freeze.json",
+        },
+        "final_e600_configs": {
+            "N0": "configs/heat3d_v5/generated/V4P5_05_native_physics_only.yaml",
+            "N1": "configs/heat3d_v5/generated/V4P5_06_native_pooled_latent.yaml",
+        },
+        "registry": "configs/heat3d_v5/v5_gate5_native_preflight_registry.csv",
     }
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_md.parent.mkdir(parents=True, exist_ok=True)

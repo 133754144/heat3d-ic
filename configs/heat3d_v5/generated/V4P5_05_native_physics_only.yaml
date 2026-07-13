@@ -3,8 +3,9 @@ config_id: V4P5_05_native_physics_only
 extends: V4P5_04_local_bypass_global_film.yaml
 overrides:
   description: >-
-    Gate-5 N0 scratch candidate: native shape-scale with audited local bypass,
-    physics-only scale head, and no Global FiLM. Prepared only; not started.
+    Gate-5 N0 frozen e600 candidate: native shape-scale with audited local
+    bypass, physics-only scale head, no Global FiLM, and shared frozen loss.
+    Execution smoke and e10 calibration passed; e600 not started.
   model:
     global_context_mode: none
     native_output_mode: native_shape_scale
@@ -32,12 +33,17 @@ overrides:
     run_name: V4P5_05_native_physics_only
   metadata:
     registry_config_id: V4P5_05_native_physics_only
-    registry_status: prepared_not_started
+    registry_status: preflight_complete_e600_not_started
     phase: v5
     candidate: N0_native_physics_only
     inherited_from: V4P5_04_local_bypass_global_film
     initialization: random
     launch_policy: explicit_user_instruction_only
+    execution_smoke_config: configs/heat3d_v5/preflight/V5G5_N0_execution_smoke_e1.yaml
+    calibration_config: configs/heat3d_v5/preflight/V5G5_N0_calibration_e10.yaml
+    loss_freeze: configs/heat3d_v5/v5_gate5_loss_freeze.json
+    preflight_report: configs/heat3d_v5/v5_gate5_e600_preflight.json
+    e600_started: false
     log_path: output/heat3d_v5_logs/V4P5_05_native_physics_only.log
     gate5_single_variable: physics_only_scale_head
     global_film_enabled: false
