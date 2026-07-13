@@ -1138,11 +1138,15 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
     total_count = sum(count for count, _ in weighted_entries)
     if total_count <= 0:
         return {}
-    numeric_keys = (
-        "normalized_loss",
-        "raw_delta_mse",
-        "recovered_temperature_mse",
-        "mean_abs_true_deltaT",
+    numeric_keys = sorted(
+        {
+            key
+            for _, metrics in weighted_entries
+            for key, value in metrics.items()
+            if key not in {"finite_ok", "shape_ok"}
+            and not isinstance(value, (bool, np.bool_))
+            and np.asarray(value).ndim == 0
+        }
     )
     combined = {
         key: float(
