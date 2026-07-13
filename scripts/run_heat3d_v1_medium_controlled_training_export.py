@@ -69,6 +69,7 @@ from rigno.heat3d_v5_global_context import (  # noqa: E402
 from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
 from rigno.heat3d_v5_shape_scale import (  # noqa: E402
     mask_branch_gradients,
+    native_gradient_group_norms,
     native_shape_scale_diagnostics,
     native_shape_scale_losses,
 )
@@ -1447,6 +1448,8 @@ class MemoryAudit:
         self.every_batch = bool(every_batch)
         self.gc_enabled = bool(gc_enabled)
         self.event_index = 0
+        self.peak_rss_mb = 0.0
+        self.peak_device_memory_mb: dict[str, float] = {}
         with self.path.open("w", encoding="utf-8") as file:
             file.write("")
 
@@ -1461,6 +1464,22 @@ class MemoryAudit:
     ) -> None:
         self.event_index += 1
         jax_memory = _jax_memory_snapshot()
+        rss_mb = _current_rss_mb()
+        if rss_mb is not None:
+            self.peak_rss_mb = max(self.peak_rss_mb, float(rss_mb))
+        for device in jax_memory.get("jax_devices", []):
+            device_name = str(device.get("device", "unknown"))
+            candidates = [
+                float(value)
+                for key, value in device.items()
+                if key in {"bytes_in_use_mb", "peak_bytes_in_use_mb", "peak_pool_bytes_mb"}
+                and value is not None
+            ]
+            if candidates:
+                self.peak_device_memory_mb[device_name] = max(
+                    self.peak_device_memory_mb.get(device_name, 0.0),
+                    *candidates,
+                )
         payload = {
             "event_index": self.event_index,
             "time_unix": time.time(),
@@ -1468,13 +1487,25 @@ class MemoryAudit:
             "epoch": epoch,
             "batch_index": batch_index,
             "split": split,
-            "rss_mb": _current_rss_mb(),
+            "rss_mb": rss_mb,
             "jax_memory": jax_memory,
             "detail": detail or {},
         }
         with self.path.open("a", encoding="utf-8") as file:
             file.write(json.dumps(_json_safe(payload), sort_keys=True) + "\n")
             file.flush()
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "event_count": int(self.event_index),
+            "peak_rss_mb": float(self.peak_rss_mb),
+            "peak_device_memory_mb": dict(sorted(self.peak_device_memory_mb.items())),
+            "peak_device_memory_all_mb": (
+                max(self.peak_device_memory_mb.values())
+                if self.peak_device_memory_mb
+                else None
+            ),
+        }
 
     def collect(self, stage: str, *, epoch: int | None = None) -> None:
         if self.gc_enabled:
@@ -3453,6 +3484,11 @@ def _fit_once(
         epoch_train_batch_records: list[dict[str, Any]] = []
         epoch_train_batch_losses: list[float] = []
         epoch_grad_norms: list[float] = []
+        epoch_native_group_grad_norms: dict[str, list[float]] = {
+            "backbone": [],
+            "shape_decoder": [],
+            "scale_head": [],
+        }
         epoch_update_norms: list[float] = []
         epoch_param_norms: list[float] = []
         epoch_update_to_param_ratios: list[float] = []
@@ -3497,10 +3533,18 @@ def _fit_once(
                 grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
                 compute_batch_norms = bool(grad_norm_reported or profile_enabled)
                 grad_norm = None
+                native_group_grad_norms: dict[str, float] = {}
                 grad_norm_time = 0.0
                 if compute_batch_norms:
                     grad_norm_start = time.perf_counter()
                     grad_norm = _global_norm(grads)
+                    if native_enabled:
+                        native_group_grad_norms = {
+                            name: float(value)
+                            for name, value in native_gradient_group_norms(grads).items()
+                        }
+                        for name, value in native_group_grad_norms.items():
+                            epoch_native_group_grad_norms[name].append(value)
                     grad_norm_time = time.perf_counter() - grad_norm_start
                     epoch_grad_norms.append(grad_norm)
                     grad_finite = grad_finite and bool(np.isfinite(grad_norm))
@@ -3559,6 +3603,7 @@ def _fit_once(
                         "loss_grad_time": float(loss_grad_time),
                         "grad_norm_time": float(grad_norm_time),
                         "grad_norm": float(grad_norm) if grad_norm is not None else None,
+                        "native_gradient_group_norms": native_group_grad_norms,
                         "grad_norm_reported": bool(grad_norm_reported),
                         "update_norm": float(update_norm) if update_norm is not None else None,
                         "param_norm": float(param_norm) if param_norm is not None else None,
@@ -3619,10 +3664,18 @@ def _fit_once(
             grad_norm_reported = should_report_grad_norm(grad_norm_report_every, 1)
             compute_batch_norms = bool(grad_norm_reported or profile_enabled)
             grad_norm = None
+            native_group_grad_norms: dict[str, float] = {}
             grad_norm_time = 0.0
             if compute_batch_norms:
                 grad_norm_start = time.perf_counter()
                 grad_norm = _global_norm(grads)
+                if native_enabled:
+                    native_group_grad_norms = {
+                        name: float(value)
+                        for name, value in native_gradient_group_norms(grads).items()
+                    }
+                    for name, value in native_group_grad_norms.items():
+                        epoch_native_group_grad_norms[name].append(value)
                 grad_norm_time = time.perf_counter() - grad_norm_start
                 epoch_grad_norms.append(grad_norm)
                 grad_finite = grad_finite and bool(np.isfinite(grad_norm))
@@ -3684,6 +3737,7 @@ def _fit_once(
                     "loss_grad_time": float(loss_grad_time),
                     "grad_norm_time": float(grad_norm_time),
                     "grad_norm": float(grad_norm) if grad_norm is not None else None,
+                    "native_gradient_group_norms": native_group_grad_norms,
                     "grad_norm_reported": bool(grad_norm_reported),
                     "update_norm": float(update_norm) if update_norm is not None else None,
                     "param_norm": float(param_norm) if param_norm is not None else None,
@@ -3843,6 +3897,10 @@ def _fit_once(
         record["epoch_max_train_batch_loss"] = batch_loss_summary["max"]
         record["epoch_mean_grad_norm"] = grad_norm_summary["mean"]
         record["epoch_max_grad_norm"] = grad_norm_summary["max"]
+        for group_name, values in epoch_native_group_grad_norms.items():
+            group_summary = _epoch_monitor_summary(values)
+            record[f"epoch_mean_{group_name}_grad_norm"] = group_summary["mean"]
+            record[f"epoch_max_{group_name}_grad_norm"] = group_summary["max"]
         record["epoch_mean_update_norm"] = update_norm_summary["mean"]
         record["epoch_max_update_norm"] = update_norm_summary["max"]
         record["epoch_mean_param_norm"] = param_norm_summary["mean"]
@@ -4059,6 +4117,111 @@ def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dic
         for batch_index, sample_id in enumerate(group["sample_ids"]):
             predictions[sample_id] = recovered[batch_index, 0, :, :].astype(np.float64)
     return predictions
+
+
+def _prediction_max_abs_difference(
+    expected: Mapping[str, np.ndarray], actual: Mapping[str, np.ndarray]
+) -> float:
+    if set(expected) != set(actual):
+        raise ValueError(
+            "prediction sample ids differ after reload: "
+            f"expected={len(expected)} actual={len(actual)}"
+        )
+    return max(
+        (
+            float(np.max(np.abs(np.asarray(expected[key]) - np.asarray(actual[key]))))
+            for key in expected
+        ),
+        default=0.0,
+    )
+
+
+def _checkpoint_prediction_reload_audit(
+    *,
+    model: Any,
+    groups: list[dict],
+    stats: dict,
+    entries: list[tuple[str, Path, Path, Mapping[str, np.ndarray]]],
+    tolerance: float = 1.0e-7,
+) -> dict[str, Any]:
+    """Reload saved params and NPZ predictions, then reproduce predictions."""
+
+    reports = []
+    for label, checkpoint_path, predictions_path, expected in entries:
+        checkpoint_payload = _load_params_checkpoint(checkpoint_path)
+        checkpoint_context = (
+            checkpoint_payload.get("run_config_metadata", {}).get("global_context") or {}
+        )
+        standardizer = checkpoint_context.get("standardizer") or {}
+        if checkpoint_context.get("enabled") and standardizer.get("fit_population") != "train_only":
+            raise RuntimeError(
+                f"{label}: checkpoint global-context standardizer is not train-only"
+            )
+        loaded_params = _device_params(checkpoint_payload["params"])
+        try:
+            reloaded_predictions = _predict_temperatures(model, loaded_params, groups, stats)
+        finally:
+            del loaded_params
+        with np.load(predictions_path) as saved_payload:
+            saved_predictions = {key: np.asarray(saved_payload[key]) for key in saved_payload.files}
+        checkpoint_max_abs = _prediction_max_abs_difference(expected, reloaded_predictions)
+        npz_max_abs = _prediction_max_abs_difference(expected, saved_predictions)
+        passed = bool(checkpoint_max_abs <= tolerance and npz_max_abs <= tolerance)
+        reports.append(
+            {
+                "label": label,
+                "checkpoint_path": str(checkpoint_path),
+                "predictions_path": str(predictions_path),
+                "sample_count": len(expected),
+                "checkpoint_reload_max_abs_error_K": checkpoint_max_abs,
+                "npz_reload_max_abs_error_K": npz_max_abs,
+                "tolerance_K": float(tolerance),
+                "global_context_fit_population": standardizer.get("fit_population"),
+                "global_context_fit_sample_count": standardizer.get("fit_sample_count"),
+                "passed": passed,
+            }
+        )
+        if not passed:
+            raise RuntimeError(f"{label}: checkpoint/predictions reload audit failed: {reports[-1]}")
+    return {
+        "enabled": bool(entries),
+        "status": "passed" if entries else "skipped",
+        "entries": reports,
+    }
+
+
+def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> dict[str, Any]:
+    if getattr(model, "native_output_mode", None) != "native_shape_scale":
+        return {"enabled": False}
+    prediction = _model_apply(model, params, group)
+    pooled = np.asarray(prediction["pooled_rnodes"])
+    s_hat = np.asarray(prediction["s_hat"])
+    payload = {
+        "enabled": True,
+        "scale_head_mode": str(getattr(model, "scale_head_mode")),
+        "node_latent_width": int(getattr(model, "node_latent_size")),
+        "pooled_latent_width": int(pooled.shape[-1]),
+        "scale_head_input_width": int(np.asarray(prediction["scale_features"]).shape[-1]),
+        "s_hat_positive": bool(np.all(s_hat > 0.0)),
+        "finite": bool(
+            np.all(np.isfinite(s_hat))
+            and np.all(np.isfinite(np.asarray(prediction["deltaT_hat"])))
+        ),
+    }
+    expected_pooled_width = (
+        int(getattr(model, "node_latent_size"))
+        if getattr(model, "scale_head_mode") == "physics_plus_pooled_latent"
+        else 0
+    )
+    payload["expected_pooled_latent_width"] = expected_pooled_width
+    payload["passed"] = bool(
+        payload["pooled_latent_width"] == expected_pooled_width
+        and payload["s_hat_positive"]
+        and payload["finite"]
+    )
+    if not payload["passed"]:
+        raise RuntimeError(f"native runtime architecture audit failed: {payload}")
+    return payload
 
 
 def _json_safe(value: Any) -> Any:
@@ -4342,6 +4505,7 @@ def _checkpoint_run_metadata(
     seed_config: dict[str, Any],
     batch_config: dict[str, Any],
     graph_config: dict[str, Any],
+    global_context_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "subset": str(sample_root),
@@ -4357,6 +4521,7 @@ def _checkpoint_run_metadata(
         "seed_config": seed_config,
         "batch_config": batch_config,
         "graph_config": graph_config,
+        "global_context": global_context_payload,
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "prediction_split": args.prediction_split,
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
@@ -6401,6 +6566,7 @@ def main() -> int:
         seed_config=seed_config,
         batch_config=batch_config,
         graph_config=graph_config,
+        global_context_payload=global_context_payload,
     )
     final_checkpoint_path = output_dir / args.final_checkpoint_name if args.save_final_checkpoint else None
     best_checkpoint_path = output_dir / args.best_checkpoint_name if args.save_best_checkpoint else None
@@ -6439,6 +6605,21 @@ def main() -> int:
         best_checkpoint_saved = True
         _progress(progress_enabled, "export", f"best params checkpoint saved: {best_checkpoint_path}", best_checkpoint_start)
     _record_timing(timings, "checkpoint_save", checkpoint_start)
+    native_runtime_audit = _native_runtime_architecture_audit(
+        result["model"], result["params"], train_groups[0]
+    )
+    reload_entries = []
+    if final_checkpoint_saved and args.save_predictions:
+        reload_entries.append(("final", final_checkpoint_path, predictions_path, predictions))
+    if best_checkpoint_saved and best_predictions_saved:
+        reload_entries.append(("best", best_checkpoint_path, best_predictions_path, best_predictions))
+    checkpoint_prediction_reload_audit = _checkpoint_prediction_reload_audit(
+        model=result["model"],
+        groups=prediction_groups,
+        stats=stats,
+        entries=reload_entries,
+    )
+    memory_audit_summary = memory_audit.summary() if memory_audit is not None else None
 
     run_config = {
         "diagnostic_scope": "controlled training export smoke; not formal model performance",
@@ -6473,6 +6654,10 @@ def main() -> int:
         "graph_seed": seed_config["graph_seed"],
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "graph_config": graph_config,
+        "global_context": global_context_payload,
+        "native_runtime_architecture_audit": native_runtime_audit,
+        "checkpoint_prediction_reload_audit": checkpoint_prediction_reload_audit,
+        "memory_audit_summary": memory_audit_summary,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         **_decoder_bypass_payload(model_config),
         "output_dir": str(output_dir),
@@ -6615,6 +6800,10 @@ def main() -> int:
         "stress_validation_split": stress_validation_split,
         "prediction_split": args.prediction_split,
         "split_counts": split_counts,
+        "global_context": global_context_payload,
+        "native_runtime_architecture_audit": native_runtime_audit,
+        "checkpoint_prediction_reload_audit": checkpoint_prediction_reload_audit,
+        "memory_audit_summary": memory_audit_summary,
         **_decoder_bypass_payload(model_config),
         "memory_audit_jsonl": str(memory_audit_jsonl_path) if memory_audit_jsonl_path is not None else None,
         "memory_audit_every_batch": bool(args.memory_audit_every_batch),
@@ -6672,6 +6861,19 @@ def main() -> int:
         "epoch_max_grad_norm": [
             record.get("epoch_max_grad_norm") for record in result["epoch_history"]
         ],
+        "native_gradient_group_norms": {
+            group_name: {
+                "epoch_mean": [
+                    record.get(f"epoch_mean_{group_name}_grad_norm")
+                    for record in result["epoch_history"]
+                ],
+                "epoch_max": [
+                    record.get(f"epoch_max_{group_name}_grad_norm")
+                    for record in result["epoch_history"]
+                ],
+            }
+            for group_name in ("backbone", "shape_decoder", "scale_head")
+        },
         "epoch_mean_update_norm": [
             record.get("epoch_mean_update_norm") for record in result["epoch_history"]
         ],

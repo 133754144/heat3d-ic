@@ -314,6 +314,17 @@ def _validate_run_config(
             raise ValueError(f"{label}: field 'run.grad_norm_report_every' must be an int or null")
         if grad_norm_report_every < 0:
             raise ValueError(f"{label}: field 'run.grad_norm_report_every' must be >= 0")
+    for field in ("profile_timing", "memory_audit_every_batch", "memory_audit_gc"):
+        value = run.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"{label}: field 'run.{field}' must be a bool or null")
+    for field in ("profile_timing_json", "memory_audit_jsonl"):
+        value = run.get(field)
+        if value is not None:
+            if not isinstance(value, str) or not _is_output_relative_path(value):
+                raise ValueError(
+                    f"{label}: field 'run.{field}' must be a path under output/ or null"
+                )
 
     export = _required_mapping(config, "export", label)
     dataset = _required_mapping(config, "dataset", label)

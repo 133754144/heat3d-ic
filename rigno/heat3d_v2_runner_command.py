@@ -261,6 +261,11 @@ def build_training_command(
     if run.get("profile_timing") is True:
         command.append("--profile-timing")
     _append_option(command, "--profile-timing-json", run.get("profile_timing_json"))
+    _append_option(command, "--memory-audit-jsonl", run.get("memory_audit_jsonl"))
+    if run.get("memory_audit_every_batch") is True:
+        command.append("--memory-audit-every-batch")
+    if run.get("memory_audit_gc") is True:
+        command.append("--memory-audit-gc")
     _append_option(command, "--selection-metric", export.get("selection_metric"))
 
     _append_option(command, "--loss-mode", loss.get("mode"))
@@ -722,6 +727,9 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.progress_detail", "training --progress-detail"),
         ("run.profile_timing", "training --profile-timing"),
         ("run.profile_timing_json", "training --profile-timing-json"),
+        ("run.memory_audit_jsonl", "training --memory-audit-jsonl"),
+        ("run.memory_audit_every_batch", "training --memory-audit-every-batch"),
+        ("run.memory_audit_gc", "training --memory-audit-gc"),
         ("run.batch_size", "training --batch-size"),
         ("run.validation_batch_size", "training --validation-batch-size"),
         ("run.prediction_batch_size", "training --prediction-batch-size"),

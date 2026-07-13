@@ -336,6 +336,20 @@ def parameter_group(path: Any) -> str:
     return "backbone"
 
 
+def native_gradient_group_norms(gradients: Any) -> dict[str, jnp.ndarray]:
+    """Return L2 norms for the Gate-5 backbone, shape, and scale branches."""
+
+    squared = {
+        "backbone": jnp.asarray(0.0),
+        "shape_decoder": jnp.asarray(0.0),
+        "scale_head": jnp.asarray(0.0),
+    }
+    for path, value in tree_util.tree_flatten_with_path(gradients)[0]:
+        group = parameter_group(path)
+        squared[group] = squared[group] + jnp.sum(jnp.square(value))
+    return {name: jnp.sqrt(value) for name, value in squared.items()}
+
+
 def mask_branch_gradients(gradients: Any, branch_mode: str) -> Any:
     """Zero gradients outside the selected native branch training contract."""
 
