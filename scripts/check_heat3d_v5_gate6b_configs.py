@@ -64,6 +64,15 @@ def _weights(config: dict) -> list[float]:
 
 
 def main() -> int:
+    runner_source = (
+        ROOT / "scripts/run_heat3d_v1_medium_controlled_training_export.py"
+    ).read_text(encoding="utf-8")
+    epoch0_anchor = 'initial_best_record = _epoch_history_record(\n        0,'
+    loop_anchor = "for epoch in range(1, epochs + 1):"
+    assert epoch0_anchor in runner_source
+    assert runner_source.index(epoch0_anchor) < runner_source.index(loop_anchor)
+    assert 'best_score: float | None = float(initial_best_record[selection_metric])' in runner_source
+    assert 'float(initial_best_record["valid_rel_rmse_v4_pct"])' in runner_source
     freeze = json.loads(FREEZE.read_text(encoding="utf-8"))
     rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
     assert [row["variant"] for row in rows] == ["FT-L0", "FT-L1", "FT-L2"]
@@ -149,6 +158,10 @@ def main() -> int:
         }
     print(json.dumps({
         "status": "passed",
+        "epoch0_best_selection": {
+            "valid_base_mse": True,
+            "valid_point_global_true_rms": True,
+        },
         "optimizer_state_loaded": False,
         "all_parameters_trainable": True,
         "test_or_hard_evaluation_configured": False,

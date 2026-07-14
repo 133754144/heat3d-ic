@@ -76,6 +76,8 @@ test/hard 必须等候选权重冻结后再评估。
 - e100，B28，相同 seed、batch order、graph seed 与 split。
 - LR `7.5e-5`，为 N3 `5e-4` 的 0.15 倍；warmup-cosine 与 min-LR 同比例缩放。
 - 每 epoch 报告核心指标。
+- epoch 0（加载 N3 e402 后、首次 optimizer update 前）同时参与
+  `valid_base_mse` 与 true-RMS point-global best 选择。
 - `params_best.pkl` 按 `valid_base_mse` 保存；
   `params_best_valid_point_global.pkl` 按 true-RMS point-global relative RMSE 保存；
   同时保存 `params_final.pkl`。

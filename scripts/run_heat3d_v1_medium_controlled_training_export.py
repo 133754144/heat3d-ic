@@ -3478,13 +3478,33 @@ def _fit_once(
     epoch_history = []
     train_batch_records: list[dict[str, Any]] = []
     validation_batch_records: list[dict[str, Any]] = []
-    best_score: float | None = None
-    best_record: dict[str, Any] | None = None
-    best_params = None
-    best_params_storage: str | None = None
-    point_global_best_score: float | None = None
-    point_global_best_record: dict[str, Any] | None = None
-    point_global_best_params = None
+    initial_best_record = _epoch_history_record(
+        0,
+        0.0,
+        initial_loss_config,
+        train_initial_components,
+        valid_initial_components,
+        valid_initial_metrics,
+        None,
+        primary_validation_split=primary_validation_split,
+        valid_stress_components=valid_stress_initial_components,
+        valid_stress_metrics=valid_stress_initial_metrics,
+        stress_validation_split=stress_validation_split,
+    )
+    initial_best_params = _host_params(params)
+    best_score: float | None = float(initial_best_record[selection_metric])
+    best_record: dict[str, Any] | None = dict(initial_best_record)
+    best_params = initial_best_params
+    best_params_storage: str | None = "cpu"
+    point_global_best_score: float | None = (
+        float(initial_best_record["valid_rel_rmse_v4_pct"])
+        if track_point_global_best
+        else None
+    )
+    point_global_best_record: dict[str, Any] | None = (
+        dict(initial_best_record) if track_point_global_best else None
+    )
+    point_global_best_params = initial_best_params if track_point_global_best else None
     final_epoch_train_components = None
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
