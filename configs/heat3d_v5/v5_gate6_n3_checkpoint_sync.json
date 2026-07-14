@@ -1,0 +1,26 @@
+{
+  "schema_version": "heat3d_v5_gate6_n3_checkpoint_sync_v1",
+  "status": "verified",
+  "source_host": "wsl2",
+  "destination_host": "devbox",
+  "source_run_directory": "output/heat3d_v5_runs/V4P5_07_native_pooled_latent_global_film",
+  "shared_relative_input_directory": "output/heat3d_v5_gate6_inputs/N3_best_e402",
+  "copy_policy": "non_overwriting_new_directory",
+  "gate5_run_directory_modified": false,
+  "file_count_including_manifest": 5,
+  "content_files": {
+    "params_best.pkl": "3baebb9b751bf6054f36308444cdefe7a7b4f343665164b0aabdfe2610b5a228",
+    "run_config.json": "b8df6bbdf97e85c9164f62610b95ce78749a2e7055e9b2fb43c1c0cfe6d14e40",
+    "loss_summary.json": "d10ede0e3c60899d2589a8920b3eaeacabe2e9413d5b11460dcd6a7282cb8330",
+    "normalization_context_metadata.json": "1cd1f60a22eaa0a5867b088d1052b084bb0108d5354423fc581ca5cd1218b396"
+  },
+  "verification": {
+    "wsl2_sha256sum_check": "passed",
+    "devbox_sha256sum_check": "passed",
+    "all_content_sha256_equal": true,
+    "checkpoint_kind": "best",
+    "checkpoint_epoch": 402,
+    "normalization_fit": "train_only",
+    "global_context_fit": "train_only"
+  }
+}
