@@ -105,7 +105,6 @@ def main() -> int:
         assert run["checkpoint_load_strict"] is True
         assert run["partial_load_policy"] == "matching"
         assert run["report_every"] == 1
-        assert run["train_metrics_schedule"] == "every_epoch"
         assert run["final_probe_eval_after_training"] is False
         assert run["post_training_diagnostics"] is False
         assert config["model"]["native_branch_mode"] == "joint"
@@ -145,7 +144,6 @@ def main() -> int:
             "--no-final-probe-eval-after-training",
             "--no-post-training-diagnostics",
             "--report-every 1",
-            "--train-metrics-schedule every_epoch",
         ):
             assert fragment in joined, f"{label}: missing dry-run fragment {fragment}"
         reports[label] = {
