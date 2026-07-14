@@ -53,6 +53,10 @@ def main() -> int:
     assert set(contract["split_hashes"]) == {"train", *ROLES}
     rows = {row["config_id"]: row for row in csv.DictReader(REGISTRY.open(encoding="utf-8"))}
     assert set(contract["configs"]).issubset(rows)
+    b0_context_audit = contract["configs"]["V4P5_04_local_bypass_global_film"]["context_fit_audit"]
+    assert b0_context_audit["training_metadata"] == "historical_not_persisted"
+    assert len(b0_context_audit["training_git_commit"]) == 40
+    assert b0_context_audit["required_source_fragments"]
     assert rows["V4P5_07_native_pooled_latent_global_film"]["loss_mode"] == "native_shape_scale_four_term"
     source = EVALUATOR.read_text(encoding="utf-8")
     for fragment in (
@@ -77,11 +81,14 @@ def main() -> int:
             assert standardizer["fit_sample_ids_sha256"] == contract["train_context_fit_sample_ids_sha256"]
             assert standardizer["train_split_ordered_ids_sha256"] == contract["split_hashes"]["train"]
             assert standardizer["target_or_label_features"] == []
+            fit_audit = standardizer["training_fit_audit"]
+            assert fit_audit["training_metadata_persisted"] or fit_audit["training_source_audited"]
             assert payload["validation_audit"] == {
                 "checkpoint_best_final_normalization_equal": True,
                 "checkpoint_kind_epoch_and_run_bound": True,
                 "config_id_bound": True,
                 "global_context_recomputed_from_train_only": True,
+                "global_context_training_source_or_metadata_verified": True,
                 "nodes_per_sample": 1024,
                 "normalization_recomputed_from_train_only": True,
                 "run_directory_bound": True,

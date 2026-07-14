@@ -121,6 +121,34 @@ def _path_commit(path: Path) -> str:
     ).strip()
 
 
+def _resolve_commit(commit: str) -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", commit], cwd=ROOT, text=True
+    ).strip()
+
+
+def _audit_historical_context_fit(
+    audit: Mapping[str, Any], training_commit: str | None
+) -> dict[str, Any]:
+    expected_commit = str(audit.get("training_git_commit") or "")
+    if not expected_commit or _resolve_commit(str(training_commit)) != expected_commit:
+        raise EvaluationError("historical context audit training commit mismatch")
+    source_path = str(audit.get("training_source") or "")
+    source = subprocess.check_output(
+        ["git", "show", f"{expected_commit}:{source_path}"], cwd=ROOT, text=True
+    )
+    fragments = list(audit.get("required_source_fragments") or ())
+    if not fragments or any(fragment not in source for fragment in fragments):
+        raise EvaluationError("historical training source does not prove train-only context fit")
+    return {
+        "training_metadata_persisted": False,
+        "training_source_audited": True,
+        "training_git_commit": expected_commit,
+        "training_source": source_path,
+        "required_source_fragments_verified": fragments,
+    }
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -531,22 +559,40 @@ def main() -> int:
     stored_context = loss_summary.get("global_context") or {}
     stored_standardizer = stored_context.get("standardizer") or {}
     if (
-        stored_standardizer.get("fit_population") != "train_only"
-        or int(stored_standardizer.get("fit_sample_count", -1)) != 672
-        or stored_standardizer.get("fit_sample_ids_sha256")
-        != contract.get("train_context_fit_sample_ids_sha256")
+        standardizer.get("fit_population") != "train_only"
+        or int(standardizer.get("fit_sample_count", -1)) != 672
         or standardizer.get("fit_sample_ids_sha256")
         != contract.get("train_context_fit_sample_ids_sha256")
     ):
-        raise EvaluationError("training summary global-context fit is not the frozen train split")
-    for field in ("mean", "std"):
-        if not np.allclose(
-            np.asarray(standardizer[field], dtype=np.float64),
-            np.asarray(stored_standardizer[field], dtype=np.float64),
-            rtol=1.0e-9,
-            atol=1.0e-10,
+        raise EvaluationError("recomputed global-context fit is not the frozen train split")
+    if stored_standardizer:
+        if (
+            stored_standardizer.get("fit_population") != "train_only"
+            or int(stored_standardizer.get("fit_sample_count", -1)) != 672
+            or stored_standardizer.get("fit_sample_ids_sha256")
+            != contract.get("train_context_fit_sample_ids_sha256")
         ):
-            raise EvaluationError(f"recomputed global-context {field} differs from training summary")
+            raise EvaluationError("training summary global-context fit is not the frozen train split")
+        for field in ("mean", "std"):
+            if not np.allclose(
+                np.asarray(standardizer[field], dtype=np.float64),
+                np.asarray(stored_standardizer[field], dtype=np.float64),
+                rtol=1.0e-9,
+                atol=1.0e-10,
+            ):
+                raise EvaluationError(f"recomputed global-context {field} differs from training summary")
+        context_fit_audit = {
+            "training_metadata_persisted": True,
+            "training_source_audited": False,
+            "training_git_commit": loss_summary.get("code_version_or_git_commit"),
+        }
+    else:
+        historical_audit = expected.get("context_fit_audit") or {}
+        if historical_audit.get("training_metadata") != "historical_not_persisted":
+            raise EvaluationError("missing global-context training metadata is not frozen in contract")
+        context_fit_audit = _audit_historical_context_fit(
+            historical_audit, loss_summary.get("code_version_or_git_commit")
+        )
 
     builder = Heat3DGraphBuilder(**dict(run_config["graph_config"]))
     examples_by_id = {example.sample_id: example for example in evaluation_examples}
@@ -596,6 +642,7 @@ def main() -> int:
             "checkpoint_best_final_normalization_equal": True,
             "normalization_recomputed_from_train_only": True,
             "global_context_recomputed_from_train_only": True,
+            "global_context_training_source_or_metadata_verified": True,
             "nodes_per_sample": 1024,
             "split_hashes_match_contract": True,
         },
@@ -621,6 +668,7 @@ def main() -> int:
             "fit_sample_ids_sha256": standardizer["fit_sample_ids_sha256"],
             "train_split_ordered_ids_sha256": split_hashes["train"],
             "target_or_label_features": [],
+            "training_fit_audit": context_fit_audit,
         },
         "checkpoint_metadata": {
             "best": {

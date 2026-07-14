@@ -30,6 +30,16 @@
   "configs": {
     "V4P5_04_local_bypass_global_film": {
       "run_dir": "output/heat3d_v5_runs/V4P5_04_local_bypass_global_film",
+      "context_fit_audit": {
+        "training_metadata": "historical_not_persisted",
+        "training_git_commit": "349c3aab33e6fa430fcea176356ffdd0f8564b99",
+        "training_source": "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+        "required_source_fragments": [
+          "train_ids = [str(example.sample_id) for example in train_examples]",
+          "[rows[sample_id] for sample_id in train_ids]",
+          "fit_sample_ids=train_ids"
+        ]
+      },
       "model": {
         "global_context_mode": "film",
         "native_output_mode": "legacy_normalized_deltaT"
