@@ -119,6 +119,7 @@ def _native_clean(payload: Mapping[str, Any], checkpoint: str = "best") -> dict[
         _finite(payload["reports"][checkpoint][role]["amplitude_ratio"])
         for role in CLEAN_ROLES
     ]))
+    values["amplitude_ratio_absolute_error"] = abs(values["amplitude_ratio"] - 1.0)
     values["scale_replacement_gain_pp"] = (
         values["joint_relative_rmse_pct"] - values["oracle_scale_relative_rmse_pct"]
     )
@@ -309,12 +310,51 @@ def _tail(payloads: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
                 "total_squared_error_contribution"
             ),
         }
+    strongest_relations = {}
+    for label, model in models.items():
+        ranked = sorted(
+            (
+                {
+                    "feature": feature,
+                    "spearman_with_sample_squared_error": values[
+                        "spearman_with_sample_squared_error"
+                    ],
+                    "spearman_with_sample_cv_relative_rmse": values[
+                        "spearman_with_sample_cv_relative_rmse"
+                    ],
+                }
+                for feature, values in model["feature_correlations"].items()
+            ),
+            key=lambda row: abs(row["spearman_with_sample_squared_error"]),
+            reverse=True,
+        )
+        strongest_relations[label] = ranked
+    compared_labels = ("B0", "N1", "N3")
+    mean_high_tail_share = float(np.mean([
+        gaps[label]["highest_true_scale_quartile_error_contribution"]
+        for label in compared_labels
+    ]))
+    mean_gap = float(np.mean([
+        gaps[label]["point_minus_sample_first_pp"] for label in compared_labels
+    ]))
+    point_sample_conclusion = (
+        "point-global 偏高主要来自高温升样本的误差集中；这些样本在 true-energy 加权的 "
+        "point-global 中权重大于不加权的 sample-first 均值"
+        if mean_gap > 0.0 and mean_high_tail_share > 0.25
+        else "point-global 与 sample-first 的差异不能主要由高温升尾部解释"
+    )
     return {
         "population": "MSE-best valid_iid + test_iid; hard roles remain separately reported",
         "sample_count": len(ids),
         "squared_error_concentration": models,
         "true_cv_rms_deltaT_bins": bins,
         "point_global_vs_sample_first": gaps,
+        "interpretation": {
+            "strongest_relations_by_model": strongest_relations,
+            "mean_highest_scale_quartile_error_contribution_B0_N1_N3": mean_high_tail_share,
+            "mean_point_minus_sample_first_pp_B0_N1_N3": mean_gap,
+            "point_global_vs_sample_first_conclusion": point_sample_conclusion,
+        },
     }
 
 
@@ -370,6 +410,8 @@ def _improvements(runs: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def _fmt(value: Any) -> str:
+    if value is None:
+        return "n/a"
     return f"{value:.4f}" if isinstance(value, float) else str(value)
 
 
@@ -399,6 +441,41 @@ def _closeout_markdown(closeout: Mapping[str, Any]) -> str:
         "",
         "全部角色、全部指标、best/final checkpoint SHA 与三类 commit 见 JSON。hard roles 仅作冻结后的描述性报告。",
         "",
+        "## Hard report-only",
+        "",
+        "| Model | Role | best point/sample % | best raw K | final point/sample % | final raw K |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for label, run in closeout["runs"].items():
+        for role in HARD_ROLES:
+            best = run["reports"]["best"][role]
+            final = run["reports"]["final"][role]
+            lines.append(
+                f"| {label} | {role} | {best['point_global_relative_rmse_pct']:.3f}/"
+                f"{best['sample_first_cv_relative_rmse_pct']:.3f} | {best['raw_cv_weighted_rmse_K']:.4f} | "
+                f"{final['point_global_relative_rmse_pct']:.3f}/"
+                f"{final['sample_first_cv_relative_rmse_pct']:.3f} | {final['raw_cv_weighted_rmse_K']:.4f} |"
+            )
+    lines += [
+        "",
+        "## N3 improvement (reference minus N3; positive is better)",
+        "",
+        "| Reference | checkpoint | population | point pp | sample-first pp | raw K |",
+        "|---|---|---|---:|---:|---:|",
+    ]
+    for reference in ("B0", "N1"):
+        comparison = closeout["n3_improvements"][f"N3_vs_{reference}"]
+        for checkpoint in ("best", "final"):
+            for population in ("clean", "hard"):
+                row = comparison[checkpoint][population]
+                lines.append(
+                    f"| {reference} | {checkpoint} | {population} | "
+                    f"{row['point_global_relative_rmse_pct_improvement']:.4f} | "
+                    f"{row['sample_first_cv_relative_rmse_pct_improvement']:.4f} | "
+                    f"{row['raw_cv_weighted_rmse_K_improvement']:.4f} |"
+                )
+    lines += [
+        "",
         f"最终候选结论：{closeout['final_candidate_conclusion']}",
     ]
     return "\n".join(lines) + "\n"
@@ -425,6 +502,12 @@ def _diagnostic_markdown(diagnostic: Mapping[str, Any]) -> str:
         )
     lines += [
         "",
+        f"N3 FiLM 幅值：valid gamma/beta mean-abs="
+        f"{mechanism['n3_film_modulation']['valid_iid']['film_gamma_mean_abs']:.4f}/"
+        f"{mechanism['n3_film_modulation']['valid_iid']['film_beta_mean_abs']:.4f}；"
+        f"test={mechanism['n3_film_modulation']['test_iid']['film_gamma_mean_abs']:.4f}/"
+        f"{mechanism['n3_film_modulation']['test_iid']['film_beta_mean_abs']:.4f}。",
+        "",
         "## High DeltaT tail",
         "",
         "| model | top-5 error share | top-10 error share | point minus sample-first pp | high-scale quartile error share |",
@@ -443,7 +526,18 @@ def _diagnostic_markdown(diagnostic: Mapping[str, Any]) -> str:
     lines += [
         "",
         "分箱、top-10 样本及 power/source/conductivity/top-h/anisotropy 相关系数见 diagnostic JSON。",
+        "",
+        f"point-global 与 sample-first：{tail['interpretation']['point_global_vs_sample_first_conclusion']}。",
+        "",
+        "| model | strongest squared-error relation | Spearman rho |",
+        "|---|---|---:|",
     ]
+    for label in CONFIGS:
+        strongest = tail["interpretation"]["strongest_relations_by_model"][label][0]
+        lines.append(
+            f"| {label} | {strongest['feature']} | "
+            f"{strongest['spearman_with_sample_squared_error']:.4f} |"
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -473,9 +567,9 @@ def main() -> int:
     }
     winner = min(clean_score, key=clean_score.get)
     conclusion = (
-        f"{winner} has the lowest MSE-best clean point-global mean; "
-        + ("it clears" if threshold[winner] else "it does not clear")
-        + " the frozen <20% valid/test credibility gate."
+        f"{winner} 的 MSE-best clean point-global 均值最低；"
+        + ("通过" if threshold[winner] else "未通过")
+        + "冻结的 valid/test 均 <20% 可信门槛。"
     )
     closeout = {
         "schema_version": "heat3d_v5_gate5_final_closeout_v1",
