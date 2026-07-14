@@ -246,12 +246,20 @@ def _per_sample_rows(
     for group in groups:
         prediction = _model_apply(model, params, group)
         physics = group["native_physics"]
-        phi_hat = np.asarray(prediction["phi_hat"], dtype=np.float64)
+        phi_hat = np.asarray(field_layout(prediction["phi_hat"], name="phi_hat"), dtype=np.float64)
         s_hat = np.asarray(prediction["s_hat"], dtype=np.float64).reshape(-1)
-        delta_hat = np.asarray(prediction["deltaT_hat"], dtype=np.float64)
-        target = np.asarray(group["target_delta_raw"], dtype=np.float64)
-        weights = np.asarray(physics["control_volumes"], dtype=np.float64)
-        mask = np.asarray(physics["dirichlet_mask"], dtype=np.float64)
+        delta_hat = np.asarray(
+            field_layout(prediction["deltaT_hat"], name="deltaT_hat"), dtype=np.float64
+        )
+        target = np.asarray(
+            field_layout(group["target_delta_raw"], name="target_delta_raw"), dtype=np.float64
+        )
+        weights = np.asarray(
+            field_layout(physics["control_volumes"], name="control_volumes"), dtype=np.float64
+        )
+        mask = np.asarray(
+            field_layout(physics["dirichlet_mask"], name="dirichlet_mask"), dtype=np.float64
+        )
         log_s_phys = np.asarray(physics["log_s_phys"], dtype=np.float64).reshape(-1)
         free_target = target * (1.0 - np.clip(mask, 0.0, 1.0))
         volume_sum = np.sum(weights, axis=2, keepdims=True)
