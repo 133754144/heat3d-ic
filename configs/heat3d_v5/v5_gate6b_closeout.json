@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v5_gate6b_closeout_v1",
+  "status": "closed_negative_result",
+  "scope": "post_hoc_warm_start_loss_reweighting",
+  "data_roles_accessed": [
+    "train",
+    "valid_iid"
+  ],
+  "forbidden_roles_accessed": [],
+  "baseline": {
+    "config_id": "V4P5_07_native_pooled_latent_global_film",
+    "checkpoint_epoch": 402,
+    "train_point_global_relative_rmse_pct": 4.3067336377334255
+  },
+  "variants": {
+    "FT-L1": {
+      "config_id": "V4P5_09_gate6b_ft_l1_tail_balanced",
+      "host": "devbox",
+      "training_commit": "ccc6e03",
+      "epochs_completed": 100,
+      "best_base_mse_epoch": 0,
+      "best_point_global_epoch": 0,
+      "initial_train_point_global_relative_rmse_pct": 4.3067336377334255,
+      "final_train_point_global_relative_rmse_pct": 3.223408379612283,
+      "initial_valid_point_global_relative_rmse_pct": 24.075326436821236,
+      "final_valid_point_global_relative_rmse_pct": 24.356520028192318,
+      "initial_valid_base_mse": 0.037726037204265594,
+      "final_valid_base_mse": 0.03861043602228165,
+      "result": "negative"
+    },
+    "FT-L2": {
+      "config_id": "V4P5_10_gate6b_ft_l2_shape_balanced",
+      "host": "wsl2",
+      "training_commit": "ccc6e03",
+      "epochs_completed": 100,
+      "best_base_mse_epoch": 0,
+      "best_point_global_epoch": 0,
+      "initial_train_point_global_relative_rmse_pct": 4.3067336377334255,
+      "final_train_point_global_relative_rmse_pct": 3.224739520634915,
+      "initial_valid_point_global_relative_rmse_pct": 24.075882784320896,
+      "final_valid_point_global_relative_rmse_pct": 24.35306188399991,
+      "initial_valid_base_mse": 0.03772555664181709,
+      "final_valid_base_mse": 0.03860006108880043,
+      "result": "negative"
+    }
+  },
+  "conclusion": "post-hoc loss reweighting failed",
+  "scope_limit": "This result does not reject scratch training with the same loss weights.",
+  "gate6b_route_closed": true,
+  "existing_output_directories_modified": false,
+  "test_or_hard_evaluated": false
+}

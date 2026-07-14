@@ -77,7 +77,12 @@ def main() -> int:
     rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
     assert [row["variant"] for row in rows] == ["FT-L0", "FT-L1", "FT-L2"]
     assert all(row["launch_policy"] == "explicit_user_instruction_only" for row in rows)
-    assert all(row["status"] == "prepared_not_started" for row in rows)
+    expected_status = {
+        "FT-L0": "closed_not_run",
+        "FT-L1": "completed_negative_result",
+        "FT-L2": "completed_negative_result",
+    }
+    assert {row["variant"]: row["status"] for row in rows} == expected_status
     n3 = _resolved(N3)
     reports = {}
     scientific_payload = None
@@ -146,13 +151,30 @@ def main() -> int:
             "--report-every 1",
         ):
             assert fragment in joined, f"{label}: missing dry-run fragment {fragment}"
+        if label == "FT-L0":
+            assert row["result_conclusion"] == "route_closed_without_execution"
+            assert row["result_host"] == ""
+        else:
+            assert int(row["result_best_base_epoch"]) == 0
+            assert int(row["result_best_point_global_epoch"]) == 0
+            assert float(row["result_final_train_point_global_relative_rmse_pct"]) < float(
+                row["result_initial_train_point_global_relative_rmse_pct"]
+            )
+            assert float(row["result_final_valid_point_global_relative_rmse_pct"]) > float(
+                row["result_initial_valid_point_global_relative_rmse_pct"]
+            )
+            assert row["result_conclusion"] == (
+                "post_hoc_loss_reweighting_failed_does_not_reject_scratch_training"
+            )
+        assert row["result_output_preserved"] == "true"
         reports[label] = {
             "config_id": row["config_id"],
             "yaml": row["yaml_path"],
             "weights": _weights(config),
             "lr": optimizer["lr"],
             "output_dir": export["output_dir"],
-            "training_started": False,
+            "training_started_by_checker": False,
+            "status": row["status"],
         }
     print(json.dumps({
         "status": "passed",

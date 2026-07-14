@@ -1,6 +1,7 @@
 # V5 Gate 6A/6B preflight
 
-状态：Gate 6A 完成；Gate 6B 三个 e100 配置已准备但均未启动。未启动正式 e600 或 multi-seed。
+状态：Gate 6A 完成；Gate 6B warm-start 路线已关闭。FT-L1/FT-L2 为
+negative result，FT-L0 未运行。完整结论见 `docs/v5_gate6b_closeout.md`。
 
 ## 数据与 checkpoint 合同
 
@@ -62,9 +63,9 @@ raw 梯度范数分别为全体的 1.443×/1.416×。
 
 | variant | weights | 依据 |
 |---|---|---|
-| FT-L0 | `1/1/1/1` | 继续训练控制组 |
-| FT-L1 | `1/1/0.5/1.5` | 优先候选；减弱与 scale/raw 冲突的 relative 梯度，并加强有明确尾部集中证据的 raw loss |
-| FT-L2 | `1.5/0.5/0.5/1.5` | 诊断支持的 shape-balanced 候选；提高最弱 shape 梯度、抑制占主导的 log-scale 梯度，同时保留尾部修正 |
+| FT-L0 | `1/1/1/1` | 路线关闭，未运行 |
+| FT-L1 | `1/1/0.5/1.5` | e100 negative：point-global best=e0 |
+| FT-L2 | `1.5/0.5/0.5/1.5` | e100 negative：point-global best=e0 |
 
 未主观增加其他 shape/scale 候选。Gate 6B 只能使用 train 优化、valid_iid 选择；
 test/hard 必须等候选权重冻结后再评估。
@@ -83,12 +84,8 @@ test/hard 必须等候选权重冻结后再评估。
   同时保存 `params_final.pkl`。
 - prediction export、final probe 与 post-training diagnostics 均关闭，避免触及 test/hard。
 
-## 手动启动命令
+## Gate 6B closeout
 
-以下命令仅供用户手动执行，本次未执行：
-
-```bash
-python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_08_gate6b_ft_l0_unit.yaml
-python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_09_gate6b_ft_l1_tail_balanced.yaml
-python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_10_gate6b_ft_l2_shape_balanced.yaml
-```
+FT-L1/FT-L2 都出现 train error 下降但 valid point-global 退化。结论仅为
+`post-hoc loss reweighting failed`，不否定 scratch training。Gate 6B 配置与既有
+输出目录均保留用于 provenance，但不再继续该 warm-start 路线。

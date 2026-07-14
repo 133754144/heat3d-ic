@@ -1,0 +1,31 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_12_gate6c_scratch_l2_shape_balanced
+extends: V4P5_07_native_pooled_latent_global_film.yaml
+overrides:
+  description: >-
+    Gate 6C Scratch-L2 e600 loss ablation. Random initialization and all N3
+    architecture, data, optimizer, schedule, seed, batching, selection, and
+    export semantics are retained; only native loss weights change.
+  loss:
+    native_shape_cv_weight: 1.5
+    native_log_scale_weight: 0.5
+    native_relative_field_weight: 0.5
+    native_raw_field_weight: 1.5
+  run:
+    final_probe_output_dir: output/heat3d_v5_gate6c_final_probe/V4P5_12_gate6c_scratch_l2_shape_balanced
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6c_diagnostics/V4P5_12_gate6c_scratch_l2_shape_balanced
+  export:
+    output_dir: output/heat3d_v5_gate6c_runs/V4P5_12_gate6c_scratch_l2_shape_balanced
+    run_name: V4P5_12_gate6c_scratch_l2_shape_balanced
+  metadata:
+    phase: v5_gate6c
+    variant: Scratch-L2
+    baseline_config_id: V4P5_07_native_pooled_latent_global_film
+    initialization: random
+    loss_weights: [1.5, 0.5, 0.5, 1.5]
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+    launch_policy: explicit_user_instruction_only
+    status: prepared_not_started
