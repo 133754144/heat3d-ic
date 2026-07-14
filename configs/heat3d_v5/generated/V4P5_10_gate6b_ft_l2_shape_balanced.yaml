@@ -1,0 +1,33 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_10_gate6b_ft_l2_shape_balanced
+extends: V4P5_08_gate6b_ft_l0_unit.yaml
+overrides:
+  description: >-
+    Gate 6B FT-L2 evidence-selected shape-balanced candidate. It retains the
+    FT-L1 tail correction while increasing the weakest shape gradient and
+    damping the dominant log-scale gradient.
+  loss:
+    native_shape_cv_weight: 1.5
+    native_log_scale_weight: 0.5
+    native_relative_field_weight: 0.5
+    native_raw_field_weight: 1.5
+  run:
+    final_probe_output_dir: output/heat3d_v5_gate6b_final_probe/V4P5_10_gate6b_ft_l2_shape_balanced
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6b_diagnostics/V4P5_10_gate6b_ft_l2_shape_balanced
+  export:
+    output_dir: output/heat3d_v5_gate6b_runs/V4P5_10_gate6b_ft_l2_shape_balanced
+    run_name: V4P5_10_gate6b_ft_l2_shape_balanced
+  metadata:
+    phase: v5_gate6b
+    variant: FT-L2
+    baseline_config_id: V4P5_07_native_pooled_latent_global_film
+    initialization: N3_best_e402_params_only
+    optimizer_state: reset
+    trainable_parameters: all
+    diagnostic_candidate: shape_gradient_balanced
+    loss_weights: [1.5, 0.5, 0.5, 1.5]
+    fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_evaluation_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+    launch_policy: explicit_user_instruction_only
+    status: prepared_not_started

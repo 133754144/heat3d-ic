@@ -1,0 +1,50 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_08_gate6b_ft_l0_unit
+extends: V4P5_07_native_pooled_latent_global_film.yaml
+overrides:
+  description: >-
+    Gate 6B FT-L0 continued-training control from frozen N3 best e402.
+    Params-only strict load, fresh optimizer state, all parameters trainable,
+    train-only optimization and valid_iid-only selection; no test/hard evaluation.
+  run:
+    epochs: 100
+    init_checkpoint: output/heat3d_v5_gate6_inputs/N3_best_e402/params_best.pkl
+    checkpoint_load_strict: true
+    partial_load_policy: matching
+    report_every: 1
+    train_metrics_schedule: every_epoch
+    grad_norm_report_every: 1
+    final_probe_eval_after_training: false
+    final_probe_output_dir: output/heat3d_v5_gate6b_final_probe/V4P5_08_gate6b_ft_l0_unit
+    post_training_diagnostics: false
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6b_diagnostics/V4P5_08_gate6b_ft_l0_unit
+  optimizer:
+    lr: 7.5e-5
+    min_lr: 7.5e-6
+    multi_seed: []
+  loss:
+    native_shape_cv_weight: 1.0
+    native_log_scale_weight: 1.0
+    native_relative_field_weight: 1.0
+    native_raw_field_weight: 1.0
+  export:
+    output_dir: output/heat3d_v5_gate6b_runs/V4P5_08_gate6b_ft_l0_unit
+    run_name: V4P5_08_gate6b_ft_l0_unit
+    prediction_split: valid_iid
+    save_final_predictions: false
+    save_best_predictions: false
+    selection_metric: valid_base_mse
+    save_point_global_best_checkpoint: true
+    point_global_best_checkpoint_name: params_best_valid_point_global.pkl
+  metadata:
+    phase: v5_gate6b
+    variant: FT-L0
+    baseline_config_id: V4P5_07_native_pooled_latent_global_film
+    initialization: N3_best_e402_params_only
+    optimizer_state: reset
+    trainable_parameters: all
+    fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_evaluation_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+    launch_policy: explicit_user_instruction_only
+    status: prepared_not_started

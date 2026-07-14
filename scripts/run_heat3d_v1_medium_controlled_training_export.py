@@ -434,6 +434,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--final-checkpoint-name", type=str, default="params_final.pkl")
     parser.add_argument("--best-checkpoint-name", type=str, default="params_best.pkl")
     parser.add_argument(
+        "--save-point-global-best-checkpoint",
+        action="store_true",
+        help=(
+            "Also track and save the checkpoint with the lowest valid true-RMS "
+            "point-global relative RMSE. Disabled by default."
+        ),
+    )
+    parser.add_argument(
+        "--point-global-best-checkpoint-name",
+        type=str,
+        default="params_best_valid_point_global.pkl",
+    )
+    parser.add_argument(
         "--final-probe-eval-after-training",
         dest="final_probe_eval_after_training",
         action="store_true",
@@ -3380,6 +3393,7 @@ def _fit_once(
     memory_audit: MemoryAudit | None = None,
     primary_validation_split: str = "valid",
     stress_validation_split: str | None = None,
+    track_point_global_best: bool = False,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
@@ -3468,6 +3482,9 @@ def _fit_once(
     best_record: dict[str, Any] | None = None
     best_params = None
     best_params_storage: str | None = None
+    point_global_best_score: float | None = None
+    point_global_best_record: dict[str, Any] | None = None
+    point_global_best_params = None
     final_epoch_train_components = None
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
@@ -3998,6 +4015,12 @@ def _fit_once(
             best_params_storage = "cpu"
             if memory_audit is not None:
                 memory_audit.record("best_params_copy_end", epoch=epoch)
+        if track_point_global_best:
+            point_global_score = float(record["valid_rel_rmse_v4_pct"])
+            if point_global_best_score is None or point_global_score < point_global_best_score:
+                point_global_best_score = point_global_score
+                point_global_best_record = dict(record)
+                point_global_best_params = _host_params(params)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
         record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
         record["best_valid_base_mse"] = best_record.get("valid_base_mse") if best_record is not None else None
@@ -4139,6 +4162,9 @@ def _fit_once(
         "best_params": best_params,
         "best_params_storage": best_params_storage,
         "best_score": best_score,
+        "point_global_best_score": point_global_best_score,
+        "point_global_best_record": point_global_best_record,
+        "point_global_best_params": point_global_best_params,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
         "final_valid_iid_loss": float(valid_losses[-1]) if primary_validation_split == "valid_iid" else None,
@@ -4556,6 +4582,8 @@ def _load_init_checkpoint_params(
 def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict[str, Any]:
     if kind == "best":
         return dict(result.get("best_record") or {})
+    if kind == "point_global_best":
+        return dict(result.get("point_global_best_record") or {})
     if kind == "final":
         return {
             "epoch": result.get("final_epoch"),
@@ -6198,6 +6226,10 @@ def main() -> int:
     _output_filename(args.best_predictions_name, "best-predictions-name")
     _output_filename(args.final_checkpoint_name, "final-checkpoint-name")
     _output_filename(args.best_checkpoint_name, "best-checkpoint-name")
+    _output_filename(
+        args.point_global_best_checkpoint_name,
+        "point-global-best-checkpoint-name",
+    )
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
     profile_enabled = _profile_timing_enabled(args)
@@ -6555,6 +6587,7 @@ def main() -> int:
         memory_audit=memory_audit,
         primary_validation_split=primary_validation_split,
         stress_validation_split=stress_validation_split,
+        track_point_global_best=bool(args.save_point_global_best_checkpoint),
     )
     prediction_groups = _prediction_groups_for_split(
         args.prediction_split,
@@ -6671,8 +6704,14 @@ def main() -> int:
     )
     final_checkpoint_path = output_dir / args.final_checkpoint_name if args.save_final_checkpoint else None
     best_checkpoint_path = output_dir / args.best_checkpoint_name if args.save_best_checkpoint else None
+    point_global_best_checkpoint_path = (
+        output_dir / args.point_global_best_checkpoint_name
+        if args.save_point_global_best_checkpoint
+        else None
+    )
     final_checkpoint_saved = False
     best_checkpoint_saved = False
+    point_global_best_checkpoint_saved = False
     checkpoint_start = time.perf_counter()
     if args.save_final_checkpoint:
         _progress(progress_enabled, "export", f"saving final params checkpoint to {final_checkpoint_path} ...")
@@ -6705,6 +6744,32 @@ def main() -> int:
         )
         best_checkpoint_saved = True
         _progress(progress_enabled, "export", f"best params checkpoint saved: {best_checkpoint_path}", best_checkpoint_start)
+    if args.save_point_global_best_checkpoint:
+        if result.get("point_global_best_params") is None:
+            raise RuntimeError("point-global best params are unavailable")
+        point_global_start = time.perf_counter()
+        _progress(
+            progress_enabled,
+            "export",
+            f"saving point-global best params checkpoint to {point_global_best_checkpoint_path} ...",
+        )
+        _write_params_checkpoint(
+            point_global_best_checkpoint_path,
+            params=result["point_global_best_params"],
+            model_config=model_config,
+            stats=stats,
+            kind="point_global_best",
+            epoch=(result.get("point_global_best_record") or {}).get("epoch"),
+            record=_checkpoint_record_from_result(result, kind="point_global_best"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        point_global_best_checkpoint_saved = True
+        _progress(
+            progress_enabled,
+            "export",
+            f"point-global best params checkpoint saved: {point_global_best_checkpoint_path}",
+            point_global_start,
+        )
     _record_timing(timings, "checkpoint_save", checkpoint_start)
     native_runtime_audit = _native_runtime_architecture_audit(
         result["model"], result["params"], train_groups[0]
@@ -6779,6 +6844,16 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "save_point_global_best_checkpoint": bool(args.save_point_global_best_checkpoint),
+        "point_global_best_checkpoint_name": args.point_global_best_checkpoint_name,
+        "point_global_best_checkpoint_saved": bool(point_global_best_checkpoint_saved),
+        "point_global_best_checkpoint_path": (
+            str(point_global_best_checkpoint_path)
+            if point_global_best_checkpoint_path is not None
+            else None
+        ),
+        "point_global_best_epoch": (result.get("point_global_best_record") or {}).get("epoch"),
+        "point_global_best_relative_rmse_pct": result.get("point_global_best_score"),
         "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
         "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
         "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),
@@ -6849,7 +6924,11 @@ def main() -> int:
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
-        "checkpoint_saved": bool(final_checkpoint_saved or best_checkpoint_saved),
+        "checkpoint_saved": bool(
+            final_checkpoint_saved
+            or best_checkpoint_saved
+            or point_global_best_checkpoint_saved
+        ),
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
@@ -7043,7 +7122,11 @@ def main() -> int:
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
-        "checkpoint_saved": bool(final_checkpoint_saved or best_checkpoint_saved),
+        "checkpoint_saved": bool(
+            final_checkpoint_saved
+            or best_checkpoint_saved
+            or point_global_best_checkpoint_saved
+        ),
         "save_final_checkpoint": bool(args.save_final_checkpoint),
         "final_checkpoint_name": args.final_checkpoint_name,
         "final_checkpoint_saved": bool(final_checkpoint_saved),
@@ -7052,6 +7135,16 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "save_point_global_best_checkpoint": bool(args.save_point_global_best_checkpoint),
+        "point_global_best_checkpoint_name": args.point_global_best_checkpoint_name,
+        "point_global_best_checkpoint_saved": bool(point_global_best_checkpoint_saved),
+        "point_global_best_checkpoint_path": (
+            str(point_global_best_checkpoint_path)
+            if point_global_best_checkpoint_path is not None
+            else None
+        ),
+        "point_global_best_epoch": (result.get("point_global_best_record") or {}).get("epoch"),
+        "point_global_best_relative_rmse_pct": result.get("point_global_best_score"),
         "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
         "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
         "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),

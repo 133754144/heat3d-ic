@@ -417,6 +417,23 @@ def _validate_run_config(
             f"{label}: field 'export.prediction_split' must be one of "
             f"{sorted(PREDICTION_SPLITS)}, got {prediction_split!r}"
         )
+    save_point_global_best = export.get("save_point_global_best_checkpoint")
+    if save_point_global_best is not None and not isinstance(save_point_global_best, bool):
+        raise ValueError(
+            f"{label}: field 'export.save_point_global_best_checkpoint' must be a bool or null"
+        )
+    point_global_name = export.get("point_global_best_checkpoint_name")
+    if point_global_name is not None:
+        if (
+            not isinstance(point_global_name, str)
+            or not point_global_name
+            or "/" in point_global_name
+            or "\\" in point_global_name
+        ):
+            raise ValueError(
+                f"{label}: field 'export.point_global_best_checkpoint_name' "
+                "must be a filename"
+            )
 
     if role == "controlled":
         baseline_reference = config.get("baseline_reference")

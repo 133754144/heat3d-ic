@@ -1,0 +1,84 @@
+{
+  "schema_version": "heat3d_v5_gate6_loss_screening_freeze_v1",
+  "status": "diagnostic_candidates_frozen_training_not_started",
+  "baseline_config_id": "V4P5_07_native_pooled_latent_global_film",
+  "checkpoint_epoch": 402,
+  "checkpoint_sha256": "3baebb9b751bf6054f36308444cdefe7a7b4f343665164b0aabdfe2610b5a228",
+  "diagnostic_git_commit": "cb236abe15b122dd7d7de9aa93c52b173d8aae7d",
+  "diagnostic_json": "configs/heat3d_v5/gate6a/V4P5_07_N3_best_e402_diagnostic.json",
+  "diagnostic_markdown": "docs/v5_gate6a_n3_best_e402_diagnostic.md",
+  "selection_data_roles": [
+    "train",
+    "valid_iid"
+  ],
+  "forbidden_roles_accessed": [],
+  "unit_weight_assessment": {
+    "verdict": "imbalanced",
+    "valid_loss_mean_max_to_min": 1.8855865570278056,
+    "valid_gradient_norm_max_to_min": 6.481582250120578,
+    "valid_global_gradient_norms": {
+      "shape_cv": 0.17505742536282104,
+      "log_scale": 1.1346491009834687,
+      "relative_field": 0.533597438990846,
+      "raw_absolute": 0.32883646576626085
+    },
+    "valid_point_global_relative_rmse_pct": {
+      "joint": 24.075649721492397,
+      "oracle_scale": 17.526067745210646,
+      "oracle_shape": 17.644324006333,
+      "physics_scale": 65.15650732036173
+    },
+    "tail_evidence": {
+      "true_deltaT_Q4_raw_loss_contribution": 0.8553100372229194,
+      "true_deltaT_Q4_raw_gradient_norm_ratio": 1.223276978822306,
+      "top5_raw_loss_contribution": 0.47780937566883747,
+      "top5_raw_gradient_norm_ratio": 1.4429560295375223,
+      "top10_raw_loss_contribution": 0.4961859122802124,
+      "top10_raw_gradient_norm_ratio": 1.4155943911312088
+    },
+    "gradient_conflict_evidence": {
+      "log_scale_vs_relative_global_cosine": -0.5813721709685079,
+      "raw_absolute_vs_relative_global_cosine": -0.5479845565476771,
+      "shape_vs_relative_global_cosine": 0.26943900430967943
+    }
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "name": "tail_balanced",
+      "weights": [
+        1.0,
+        1.0,
+        0.5,
+        1.5
+      ],
+      "weight_order": [
+        "shape_cv",
+        "log_scale",
+        "relative_field",
+        "raw_absolute"
+      ],
+      "reason": "Prioritized requested candidate; reduces the relative branch that conflicts with log-scale/raw gradients and increases raw tail pressure supported by Q4/top-k concentration."
+    },
+    {
+      "rank": 2,
+      "name": "shape_gradient_balanced",
+      "weights": [
+        1.5,
+        0.5,
+        0.5,
+        1.5
+      ],
+      "weight_order": [
+        "shape_cv",
+        "log_scale",
+        "relative_field",
+        "raw_absolute"
+      ],
+      "reason": "Evidence-selected shape candidate: valid log-scale gradient is 6.48x the shape gradient, while shape-decoder receives no log-scale gradient; increase shape and damp log-scale while retaining tail balancing."
+    }
+  ],
+  "candidate_count": 2,
+  "formal_e600_started": false,
+  "multi_seed_started": false
+}

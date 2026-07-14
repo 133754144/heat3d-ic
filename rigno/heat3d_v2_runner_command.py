@@ -252,6 +252,13 @@ def build_training_command(
     elif export.get("save_best_predictions") is True:
         command.append("--save-best-predictions")
     _append_option(command, "--best-predictions-name", export.get("best_predictions_name"))
+    if export.get("save_point_global_best_checkpoint") is True:
+        command.append("--save-point-global-best-checkpoint")
+    _append_option(
+        command,
+        "--point-global-best-checkpoint-name",
+        export.get("point_global_best_checkpoint_name"),
+    )
     _append_option(command, "--report-every", run.get("report_every"))
     _append_option(command, "--train-metrics-schedule", run.get("train_metrics_schedule"))
     _append_option(command, "--grad-norm-report-every", run.get("grad_norm_report_every"))
