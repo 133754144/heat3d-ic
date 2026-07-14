@@ -214,9 +214,11 @@ def _validate_checkpoint_binding(
         raise EvaluationError(f"{path}: checkpoint output_dir binding mismatch")
     model_config = checkpoint.get("model_config") or {}
     for field, value in expected_model.items():
-        if model_config.get(field) != value:
+        defaults = {"native_output_mode": "legacy_normalized_deltaT"}
+        actual = model_config.get(field, defaults.get(field))
+        if actual != value:
             raise EvaluationError(
-                f"{path}: model_config.{field}={model_config.get(field)!r} != {value!r}"
+                f"{path}: model_config.{field}={actual!r} != {value!r}"
             )
 
 
@@ -531,7 +533,10 @@ def main() -> int:
     if (
         stored_standardizer.get("fit_population") != "train_only"
         or int(stored_standardizer.get("fit_sample_count", -1)) != 672
-        or stored_standardizer.get("fit_sample_ids_sha256") != split_hashes["train"]
+        or stored_standardizer.get("fit_sample_ids_sha256")
+        != contract.get("train_context_fit_sample_ids_sha256")
+        or standardizer.get("fit_sample_ids_sha256")
+        != contract.get("train_context_fit_sample_ids_sha256")
     ):
         raise EvaluationError("training summary global-context fit is not the frozen train split")
     for field in ("mean", "std"):
