@@ -71,6 +71,12 @@ def main() -> int:
         commits = {payload["evaluator_git_commit"] for payload in payloads}
         assert len(commits) == 1, f"evaluator commits differ: {commits}"
         for payload in payloads:
+            standardizer = payload["global_context_standardizer"]
+            assert standardizer["fit_roles"] == ["train"]
+            assert standardizer["fit_sample_count"] == 672
+            assert standardizer["fit_sample_ids_sha256"] == contract["train_context_fit_sample_ids_sha256"]
+            assert standardizer["train_split_ordered_ids_sha256"] == contract["split_hashes"]["train"]
+            assert standardizer["target_or_label_features"] == []
             assert payload["validation_audit"] == {
                 "checkpoint_best_final_normalization_equal": True,
                 "checkpoint_kind_epoch_and_run_bound": True,

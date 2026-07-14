@@ -618,7 +618,8 @@ def main() -> int:
             "schema": list(GLOBAL_CONTEXT_FEATURES),
             "fit_roles": ["train"],
             "fit_sample_count": int(standardizer["fit_sample_count"]),
-            "fit_sample_ids_sha256": _ids_hash(train_ids),
+            "fit_sample_ids_sha256": standardizer["fit_sample_ids_sha256"],
+            "train_split_ordered_ids_sha256": split_hashes["train"],
             "target_or_label_features": [],
         },
         "checkpoint_metadata": {
