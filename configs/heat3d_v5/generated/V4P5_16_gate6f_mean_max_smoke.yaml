@@ -1,0 +1,17 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_16_gate6f_mean_max_smoke
+extends: V4P5_14_gate6f_mean_pool_smoke.yaml
+overrides:
+  description: Gate 6F full-model e1 compile/memory smoke for post-FiLM mean+max scale pooling.
+  model:
+    scale_pooling: mean_max
+  run:
+    memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_16_gate6f_mean_max_smoke.jsonl
+    final_probe_output_dir: output/heat3d_v5_gate6f_smoke_final_probe/V4P5_16_gate6f_mean_max_smoke
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6f_smoke_diagnostics/V4P5_16_gate6f_mean_max_smoke
+  export:
+    output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_16_gate6f_mean_max_smoke
+    run_name: V4P5_16_gate6f_mean_max_smoke
+  metadata:
+    registry_config_id: V4P5_16_gate6f_mean_max_smoke
+    candidate: mean_plus_max

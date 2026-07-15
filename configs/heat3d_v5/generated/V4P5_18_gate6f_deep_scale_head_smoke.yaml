@@ -1,0 +1,17 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_18_gate6f_deep_scale_head_smoke
+extends: V4P5_14_gate6f_mean_pool_smoke.yaml
+overrides:
+  description: Gate 6F full-model e1 compile/memory smoke for a three-layer mean-pool scale head.
+  model:
+    scale_head_depth: 3
+  run:
+    memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_18_gate6f_deep_scale_head_smoke.jsonl
+    final_probe_output_dir: output/heat3d_v5_gate6f_smoke_final_probe/V4P5_18_gate6f_deep_scale_head_smoke
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6f_smoke_diagnostics/V4P5_18_gate6f_deep_scale_head_smoke
+  export:
+    output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_18_gate6f_deep_scale_head_smoke
+    run_name: V4P5_18_gate6f_deep_scale_head_smoke
+  metadata:
+    registry_config_id: V4P5_18_gate6f_deep_scale_head_smoke
+    candidate: deep_scale_head

@@ -1,0 +1,23 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_21_gate6f_mean_decoupled_smoke
+extends: V4P5_14_gate6f_mean_pool_smoke.yaml
+overrides:
+  description: >-
+    Gate 6F e1 low-memory decoupling smoke: mean pooled latent is detached
+    before scale head and scale-head updates use 1.5x LR; no long training.
+  model:
+    pooled_latent_stop_gradient: true
+  optimizer:
+    scale_head_lr_multiplier: 1.5
+  run:
+    memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_21_gate6f_mean_decoupled_smoke.jsonl
+    final_probe_output_dir: output/heat3d_v5_gate6f_smoke_final_probe/V4P5_21_gate6f_mean_decoupled_smoke
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6f_smoke_diagnostics/V4P5_21_gate6f_mean_decoupled_smoke
+  export:
+    output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_21_gate6f_mean_decoupled_smoke
+    run_name: V4P5_21_gate6f_mean_decoupled_smoke
+  metadata:
+    registry_config_id: V4P5_21_gate6f_mean_decoupled_smoke
+    candidate: mean_pool_stop_gradient_lr_multiplier
+    pooled_latent_stop_gradient: true
+    scale_head_lr_multiplier: 1.5

@@ -16,6 +16,8 @@ try:
 except ImportError as exc:  # pragma: no cover - exercised only without PyYAML.
     raise ImportError("PyYAML is required to load Heat3D v2 configs.") from exc
 
+from rigno.heat3d_v5_scale_pooling import SCALE_POOLING_MODES as _SCALE_POOLING_MODES
+
 
 CONFIG_SCHEMA_VERSION = "heat3d_v2_config_draft_v0"
 REFERENCE_SCHEMA_VERSION = "heat3d_v2_reference_draft_v0"
@@ -65,7 +67,7 @@ FILM_INITS = {"identity"}
 NATIVE_OUTPUT_MODES = {"legacy_normalized_deltaT", "native_shape_scale"}
 NATIVE_BRANCH_MODES = {"scale_only", "shape_only", "joint"}
 SCALE_HEAD_MODES = {"physics_only", "physics_plus_pooled_latent"}
-SCALE_POOLING_MODES = {"mean"}
+SCALE_POOLING_MODES = set(_SCALE_POOLING_MODES)
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -739,6 +741,16 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
         isinstance(scale_hidden, bool) or not isinstance(scale_hidden, int) or scale_hidden < 1
     ):
         raise ValueError(f"{label}: field 'model.scale_head_hidden_size' must be an int >= 1")
+    scale_depth = model.get("scale_head_depth")
+    if scale_depth is not None and (
+        isinstance(scale_depth, bool) or not isinstance(scale_depth, int) or scale_depth < 1
+    ):
+        raise ValueError(f"{label}: field 'model.scale_head_depth' must be an int >= 1")
+    pooled_stop_gradient = model.get("pooled_latent_stop_gradient")
+    if pooled_stop_gradient is not None and not isinstance(pooled_stop_gradient, bool):
+        raise ValueError(
+            f"{label}: field 'model.pooled_latent_stop_gradient' must be a bool or null"
+        )
     if native_mode == "native_shape_scale":
         if not global_names:
             raise ValueError(
@@ -834,6 +846,19 @@ def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str
             raise ValueError(f"{label}: field 'optimizer.{field}' must be numeric or null")
         if float(value) < 0.0:
             raise ValueError(f"{label}: field 'optimizer.{field}' must be >= 0")
+
+    scale_head_lr_multiplier = optimizer.get("scale_head_lr_multiplier")
+    if scale_head_lr_multiplier is not None:
+        if isinstance(scale_head_lr_multiplier, bool) or not isinstance(
+            scale_head_lr_multiplier, (int, float)
+        ):
+            raise ValueError(
+                f"{label}: field 'optimizer.scale_head_lr_multiplier' must be numeric or null"
+            )
+        if float(scale_head_lr_multiplier) <= 0.0:
+            raise ValueError(
+                f"{label}: field 'optimizer.scale_head_lr_multiplier' must be > 0"
+            )
 
     for field in ("warmup_epochs", "second_stage_epoch"):
         if field not in optimizer or optimizer[field] is None:

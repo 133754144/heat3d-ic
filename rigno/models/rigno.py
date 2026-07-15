@@ -10,6 +10,7 @@ from scipy.spatial import Delaunay
 
 from rigno.graph.entities import (TypedGraph, EdgeSet, EdgeSetKey,
   EdgesIndices, NodeSet, Context)
+from rigno.heat3d_v5_scale_pooling import SCALE_POOLING_MODES
 from rigno.models.graphnet import DeepTypedGraphNet
 from rigno.models.operator import AbstractOperator, Inputs
 from rigno.utils import Array, shuffle_arrays
@@ -1051,6 +1052,8 @@ class RIGNO(AbstractOperator):
   scale_head_init: str = 'identity'
   scale_head_mode: str = 'physics_only'
   scale_pooling: str = 'mean'
+  scale_head_depth: int = 1
+  pooled_latent_stop_gradient: bool = False
   native_branch_mode: str = 'joint'
 
   def _check_coordinates(self, x: Array) -> None:
@@ -1150,6 +1153,15 @@ class RIGNO(AbstractOperator):
         self.scale_head_hidden_size,
         name='global_scale_hidden',
       )
+      # Keep the original single-hidden-layer N3 parameter path untouched by
+      # creating extra layers only for explicitly deeper scale probes.
+      self.global_scale_extra_hidden = [
+        nn.Dense(
+          self.scale_head_hidden_size,
+          name=f'global_scale_extra_hidden_{index}',
+        )
+        for index in range(self.scale_head_depth - 1)
+      ]
       # residual_scale(g)=0 at initialization, so s_hat=s_phys exactly.
       self.global_scale_output = nn.Dense(
         1,
@@ -1157,9 +1169,53 @@ class RIGNO(AbstractOperator):
         bias_init=nn.initializers.zeros,
         name='global_scale_output',
       )
+      if self.scale_pooling == 'latent_attention':
+        self.latent_attention_hidden = nn.Dense(
+          self.scale_head_hidden_size,
+          name='latent_attention_hidden',
+        )
+        self.latent_attention_logits = nn.Dense(
+          1,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='latent_attention_logits',
+        )
+      else:
+        self.latent_attention_hidden = None
+        self.latent_attention_logits = None
+      if self.scale_pooling == 'qk_gated':
+        self.qk_attention_hidden = nn.Dense(
+          self.scale_head_hidden_size,
+          name='qk_attention_hidden',
+        )
+        self.qk_attention_logits = nn.Dense(
+          1,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='qk_attention_logits',
+        )
+        # This branch is an exact mean pool at initialization.  Its residual
+        # projection starts at zero and can only consume raw input-derived
+        # regional q--k/BC features supplied by the runner.
+        self.qk_attention_residual = nn.Dense(
+          self.node_latent_size,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='qk_attention_residual',
+        )
+      else:
+        self.qk_attention_hidden = None
+        self.qk_attention_logits = None
+        self.qk_attention_residual = None
     else:
       self.global_scale_hidden = None
+      self.global_scale_extra_hidden = ()
       self.global_scale_output = None
+      self.latent_attention_hidden = None
+      self.latent_attention_logits = None
+      self.qk_attention_hidden = None
+      self.qk_attention_logits = None
+      self.qk_attention_residual = None
 
   def _decoder_bypass_enabled(self) -> bool:
     return self.decoder_bypass_mode != 'none'
@@ -1274,8 +1330,15 @@ class RIGNO(AbstractOperator):
         "scale_head_mode must be one of {'physics_only', "
         "'physics_plus_pooled_latent'}"
       )
-    if self.scale_pooling not in {'mean'}:
-      raise ValueError("scale_pooling must currently be 'mean'")
+    if self.scale_pooling not in SCALE_POOLING_MODES:
+      raise ValueError(
+        "scale_pooling must be one of "
+        f"{set(SCALE_POOLING_MODES)}, found {self.scale_pooling!r}"
+      )
+    if self.scale_head_depth < 1:
+      raise ValueError("scale_head_depth must be >= 1")
+    if not isinstance(self.pooled_latent_stop_gradient, bool):
+      raise ValueError("pooled_latent_stop_gradient must be a bool")
     if self.native_branch_mode not in {'scale_only', 'shape_only', 'joint'}:
       raise ValueError(
         "native_branch_mode must be one of {'scale_only', 'shape_only', 'joint'}"
@@ -1314,7 +1377,7 @@ class RIGNO(AbstractOperator):
     tau: Union[None, float],
     global_context: Union[None, Array] = None,
     key: flax.typing.PRNGKey = None,
-  ) -> Tuple[Array, Array]:
+  ) -> Tuple[Array, Array, Array]:
 
     # Add dummy node features
     dummy_pnode_features = jnp.zeros(shape=(pnode_features.shape[0], 1, pnode_features.shape[2]))
@@ -1337,6 +1400,7 @@ class RIGNO(AbstractOperator):
     # -> [batch_size, num_rnodes, latent_size]
     subkey, key = jax.random.split(key) if (key is not None) else (None, None)
     updated_latent_rnodes = self.processor(graphs.r2r, latent_rnodes, tau, key=subkey)
+    processed_rnodes_pre_film = updated_latent_rnodes[:, :-1]
     if self._global_film_enabled():
       self.sow(
         col='intermediates', name='rnodes_processed_pre_film',
@@ -1360,7 +1424,7 @@ class RIGNO(AbstractOperator):
     # Remove dummy node features
     output_pnodes = output_pnodes[:, :-1, :]
 
-    return output_pnodes, updated_latent_rnodes[:, :-1]
+    return output_pnodes, updated_latent_rnodes[:, :-1], processed_rnodes_pre_film
 
   def _apply_global_film(
     self,
@@ -1451,6 +1515,7 @@ class RIGNO(AbstractOperator):
     dirichlet_mask: Array,
     prescribed_temperature: Array,
     global_context: Union[None, Array] = None,
+    qk_region_features: Union[None, Array] = None,
     key: flax.typing.PRNGKey = None,
   ) -> dict:
     """Predict native ``DeltaT=s*phi`` and project raw Dirichlet nodes.
@@ -1462,7 +1527,7 @@ class RIGNO(AbstractOperator):
 
     if not self._native_shape_scale_enabled():
       raise ValueError("predict_native_shape_scale requires native_output_mode='native_shape_scale'")
-    psi, processed_rnodes = self._call_with_processed_rnodes(
+    psi, processed_rnodes, processed_rnodes_pre_film = self._call_with_processed_rnodes(
       inputs, graphs, key=key, global_context=global_context)
     volumes = self._prediction_field(control_volumes, psi, 'control_volumes')
     volume_sum = jnp.sum(volumes, axis=2, keepdims=True)
@@ -1478,14 +1543,18 @@ class RIGNO(AbstractOperator):
     context = self._global_context_array(
       global_context, batch_size=psi.shape[0], dtype=psi.dtype)
     if self.scale_head_mode == 'physics_plus_pooled_latent':
-      if self.scale_pooling != 'mean':
-        raise ValueError(f"unsupported scale pooling {self.scale_pooling!r}")
-      pooled_rnodes = jnp.mean(processed_rnodes, axis=1)
+      pooled_rnodes = self._pooled_scale_features(
+        processed_rnodes,
+        processed_rnodes_pre_film,
+        qk_region_features=qk_region_features,
+      )
       scale_features = jnp.concatenate([context, pooled_rnodes], axis=-1)
     else:
       pooled_rnodes = jnp.zeros((psi.shape[0], 0), dtype=psi.dtype)
       scale_features = context
     scale_hidden = nn.gelu(self.global_scale_hidden(scale_features))
+    for layer in self.global_scale_extra_hidden:
+      scale_hidden = nn.gelu(layer(scale_hidden))
     residual_scale = self.global_scale_output(scale_hidden)[:, :, None, None]
     log_s_hat = self._sample_scalar(log_s_phys, psi, 'log_s_phys') + residual_scale
     s_hat = jnp.exp(log_s_hat)
@@ -1517,18 +1586,78 @@ class RIGNO(AbstractOperator):
       'log_s_hat': log_s_hat,
       's_hat': s_hat,
       'pooled_rnodes': pooled_rnodes,
+      'rnodes_processed': processed_rnodes,
+      'rnodes_processed_pre_film': processed_rnodes_pre_film,
       'deltaT_hat_unprojected': delta_unprojected,
       'raw_temperature_unprojected': raw_temperature_unprojected,
       'raw_temperature': raw_temperature,
       'deltaT_hat': delta_hat,
     }
 
+  def _pooled_scale_features(
+    self,
+    processed_rnodes: Array,
+    processed_rnodes_pre_film: Array,
+    *,
+    qk_region_features: Union[None, Array],
+  ) -> Array:
+    """Pool frozen regional latents for the configured native scale head."""
+
+    post = (
+      jax.lax.stop_gradient(processed_rnodes)
+      if self.pooled_latent_stop_gradient
+      else processed_rnodes
+    )
+    pre = (
+      jax.lax.stop_gradient(processed_rnodes_pre_film)
+      if self.pooled_latent_stop_gradient
+      else processed_rnodes_pre_film
+    )
+    if self.scale_pooling == 'mean':
+      return jnp.mean(post, axis=1)
+    if self.scale_pooling == 'mean_std':
+      return jnp.concatenate([jnp.mean(post, axis=1), jnp.std(post, axis=1)], axis=-1)
+    if self.scale_pooling == 'mean_max':
+      return jnp.concatenate([jnp.mean(post, axis=1), jnp.max(post, axis=1)], axis=-1)
+    if self.scale_pooling == 'pre_film_mean_std':
+      return jnp.concatenate([jnp.mean(pre, axis=1), jnp.std(pre, axis=1)], axis=-1)
+    if self.scale_pooling == 'latent_attention':
+      latent_hidden = nn.gelu(self.latent_attention_hidden(post))
+      logits = self.latent_attention_logits(latent_hidden)[..., 0]
+      weights = nn.softmax(logits, axis=1)
+      self.sow(col='intermediates', name='latent_attention_weights', value=weights)
+      return jnp.sum(weights[..., None] * post, axis=1)
+    if self.scale_pooling == 'qk_gated':
+      if qk_region_features is None:
+        raise ValueError("qk_gated scale pooling requires qk_region_features")
+      qk = jnp.asarray(qk_region_features, dtype=post.dtype)
+      if qk.ndim != 3 or qk.shape[:2] != post.shape[:2]:
+        raise ValueError(
+          "qk_region_features must have shape [batch, rnodes, features], "
+          f"got {qk.shape} for regional latents {post.shape}"
+        )
+      # Finite input validation is performed by the runner before JIT; keeping
+      # this path tensor-only avoids a traced Python boolean conversion.
+      mean_pool = jnp.mean(post, axis=1)
+      qk_hidden = nn.gelu(self.qk_attention_hidden(qk))
+      logits = self.qk_attention_logits(qk_hidden)[..., 0]
+      weights = nn.softmax(logits, axis=1)
+      attention_pool = jnp.sum(weights[..., None] * post, axis=1)
+      residual_input = jnp.concatenate(
+        [attention_pool - mean_pool, mean_pool, jnp.mean(qk, axis=1)], axis=-1
+      )
+      residual = self.qk_attention_residual(residual_input)
+      self.sow(col='intermediates', name='qk_attention_weights', value=weights)
+      self.sow(col='intermediates', name='qk_attention_residual', value=residual)
+      return mean_pool + residual
+    raise ValueError(f"unsupported scale pooling {self.scale_pooling!r}")
+
   def _call_with_processed_rnodes(self,
     inputs: Inputs,
     graphs: RegionInteractionGraphSet,
     key: flax.typing.PRNGKey = None,
     global_context: Union[None, Array] = None,
-  ) -> Tuple[Array, Array]:
+  ) -> Tuple[Array, Array, Array]:
     """Inputs must be of shape [batch_size, 1, num_physical_nodes, num_inputs]"""
 
     # Check input functions
@@ -1583,7 +1712,7 @@ class RIGNO(AbstractOperator):
 
     # Run the GNNs
     subkey, key = jax.random.split(key) if (key is not None) else (None, None)
-    output_pnodes, processed_rnodes = self._encode_process_decode(
+    output_pnodes, processed_rnodes, processed_rnodes_pre_film = self._encode_process_decode(
       graphs=graphs, pnode_features=pnode_features, tau=tau,
       global_context=global_context, key=subkey)
 
@@ -1593,7 +1722,7 @@ class RIGNO(AbstractOperator):
     output = self._apply_decoder_bypass(output, inputs)
     self._check_function(output, x=inputs.x_out)
 
-    return output, processed_rnodes
+    return output, processed_rnodes, processed_rnodes_pre_film
 
   def call(self,
     inputs: Inputs,
@@ -1601,7 +1730,7 @@ class RIGNO(AbstractOperator):
     key: flax.typing.PRNGKey = None,
     global_context: Union[None, Array] = None,
   ) -> Array:
-    output, _ = self._call_with_processed_rnodes(
+    output, _, _ = self._call_with_processed_rnodes(
       inputs, graphs, key=key, global_context=global_context)
     return output
 

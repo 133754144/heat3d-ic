@@ -1,0 +1,44 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_14_gate6f_mean_pool_smoke
+extends: V4P5_07_native_pooled_latent_global_film.yaml
+overrides:
+  description: >-
+    Gate 6F full-model e1 compile/memory control: N3 mean pooled latent scale
+    head with all new low-memory controls explicitly disabled.
+  model:
+    scale_pooling: mean
+    scale_head_depth: 1
+    pooled_latent_stop_gradient: false
+  optimizer:
+    scale_head_lr_multiplier: 1.0
+  run:
+    epochs: 1
+    report_every: 1
+    train_metrics_schedule: final_only
+    final_probe_eval_after_training: false
+    post_training_diagnostics: false
+    profile_timing: true
+    memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_14_gate6f_mean_pool_smoke.jsonl
+    memory_audit_every_batch: true
+    final_probe_output_dir: output/heat3d_v5_gate6f_smoke_final_probe/V4P5_14_gate6f_mean_pool_smoke
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6f_smoke_diagnostics/V4P5_14_gate6f_mean_pool_smoke
+  export:
+    output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_14_gate6f_mean_pool_smoke
+    run_name: V4P5_14_gate6f_mean_pool_smoke
+  metadata:
+    phase: v5_gate6f
+    registry_config_id: V4P5_14_gate6f_mean_pool_smoke
+    candidate: mean_pool_control
+    mode: full_model_e1_compile_memory_smoke_only
+    baseline_config_id: V4P5_07_native_pooled_latent_global_film
+    fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test]
+    launch_policy: explicit_user_instruction_only
+    e600_started: false
+    e600_completed: false
+    completed_best_epoch: null
+    launch_host: null
+    launch_commit: null
+    launch_tmux_session: null
+    long_training_started: false

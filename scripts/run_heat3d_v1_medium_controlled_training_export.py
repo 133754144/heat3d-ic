@@ -68,10 +68,16 @@ from rigno.heat3d_v5_global_context import (  # noqa: E402
 )
 from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
 from rigno.heat3d_v5_shape_scale import (  # noqa: E402
+    apply_scale_head_lr_multiplier,
     mask_branch_gradients,
     native_gradient_group_norms,
     native_shape_scale_diagnostics,
     native_shape_scale_losses,
+)
+from rigno.heat3d_v5_scale_pooling import (  # noqa: E402
+    QK_REGION_FEATURES,
+    SCALE_POOLING_MODES as V5_SCALE_POOLING_MODES,
+    qk_region_features_from_raw,
 )
 from rigno.heat3d_v4_split_map import (  # noqa: E402
     load_sample_split_map,
@@ -143,7 +149,7 @@ FILM_INITS = (FILM_INIT_IDENTITY,)
 NATIVE_OUTPUT_MODES = ("legacy_normalized_deltaT", "native_shape_scale")
 NATIVE_BRANCH_MODES = ("scale_only", "shape_only", "joint")
 SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
-SCALE_POOLING_MODES = ("mean",)
+SCALE_POOLING_MODES = V5_SCALE_POOLING_MODES
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -282,6 +288,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scale-head-mode", choices=SCALE_HEAD_MODES, default="physics_only")
     parser.add_argument("--scale-pooling", choices=SCALE_POOLING_MODES, default="mean")
     parser.add_argument("--scale-head-hidden-size", type=int, default=64)
+    parser.add_argument("--scale-head-depth", type=int, default=1)
+    parser.add_argument(
+        "--pooled-latent-stop-gradient",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Detach pooled regional latent inputs before the native scale head. "
+            "Default false preserves the N3/V13 gradient path."
+        ),
+    )
+    parser.add_argument(
+        "--scale-head-lr-multiplier",
+        type=float,
+        default=1.0,
+        help="Multiplier applied only to native scale-head optimizer updates; default 1 preserves N3/V13.",
+    )
     parser.add_argument("--batch-size", type=int, default=88)
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
@@ -1718,6 +1740,7 @@ def _optimizer_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             None if args.gradient_clip_norm is None else float(args.gradient_clip_norm)
         ),
         "weight_decay": float(args.weight_decay),
+        "scale_head_lr_multiplier": float(args.scale_head_lr_multiplier),
     }
 
 
@@ -1772,6 +1795,8 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "scale_head_mode": args.scale_head_mode,
             "scale_pooling": args.scale_pooling,
             "scale_head_hidden_size": int(args.scale_head_hidden_size),
+            "scale_head_depth": int(args.scale_head_depth),
+            "pooled_latent_stop_gradient": bool(args.pooled_latent_stop_gradient),
             "scale_head_init": "identity",
             "shape_scale_epsilon": 1.0e-12,
         }
@@ -1913,6 +1938,8 @@ def _validate_optimizer_config(config: dict[str, Any]) -> None:
         raise ValueError("--gradient-clip-norm must be > 0 when provided")
     if float(config["weight_decay"]) < 0.0:
         raise ValueError("--weight-decay must be >= 0")
+    if float(config.get("scale_head_lr_multiplier", 1.0)) <= 0.0:
+        raise ValueError("--scale-head-lr-multiplier must be > 0")
 
 
 def _validate_seed_config(config: dict[str, int]) -> None:
@@ -1941,6 +1968,10 @@ def _validate_model_config(config: dict[str, Any]) -> None:
         raise ValueError(f"--scale-pooling must be one of {SCALE_POOLING_MODES}")
     if int(config.get("scale_head_hidden_size", 0)) < 1:
         raise ValueError("--scale-head-hidden-size must be >= 1")
+    if int(config.get("scale_head_depth", 0)) < 1:
+        raise ValueError("--scale-head-depth must be >= 1")
+    if not isinstance(config.get("pooled_latent_stop_gradient", False), bool):
+        raise ValueError("--pooled-latent-stop-gradient must be a bool")
 
 
 def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
@@ -2975,6 +3006,24 @@ def _build_optax_state(
     }
 
 
+def _apply_native_update_controls(
+    updates: Any,
+    *,
+    native_enabled: bool,
+    model_config: Mapping[str, Any],
+    optimizer_config: Mapping[str, Any],
+) -> Any:
+    """Apply native branch masking and optional scale-head LR multiplier."""
+
+    if not native_enabled:
+        return updates
+    updates = mask_branch_gradients(updates, model_config["native_branch_mode"])
+    return apply_scale_head_lr_multiplier(
+        updates,
+        float(optimizer_config.get("scale_head_lr_multiplier", 1.0)),
+    )
+
+
 def _copy_params(params):
     return tree.tree_map(lambda value: value.copy() if hasattr(value, "copy") else value, params)
 
@@ -3653,14 +3702,18 @@ def _fit_once(
                 optimizer_update_start = time.perf_counter()
                 if optax_state is None:
                     updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
-                    params = tree.tree_map(lambda param, update: param + update, params, updates)
                 else:
                     updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                     optax_state["state"] = opt_state
-                    if native_enabled:
-                        updates = mask_branch_gradients(
-                            updates, model_config["native_branch_mode"]
-                        )
+                updates = _apply_native_update_controls(
+                    updates,
+                    native_enabled=native_enabled,
+                    model_config=model_config,
+                    optimizer_config=optimizer_config,
+                )
+                if optax_state is None:
+                    params = tree.tree_map(lambda param, update: param + update, params, updates)
+                else:
                     params = optax_state["apply_updates"](params, updates)
                 if profile_enabled:
                     _block_until_ready_tree(params)
@@ -3794,14 +3847,18 @@ def _fit_once(
             optimizer_update_start = time.perf_counter()
             if optax_state is None:
                 updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
-                params = tree.tree_map(lambda param, update: param + update, params, updates)
             else:
                 updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                 optax_state["state"] = opt_state
-                if native_enabled:
-                    updates = mask_branch_gradients(
-                        updates, model_config["native_branch_mode"]
-                    )
+            updates = _apply_native_update_controls(
+                updates,
+                native_enabled=native_enabled,
+                model_config=model_config,
+                optimizer_config=optimizer_config,
+            )
+            if optax_state is None:
+                params = tree.tree_map(lambda param, update: param + update, params, updates)
+            else:
                 params = optax_state["apply_updates"](params, updates)
             if profile_enabled:
                 _block_until_ready_tree(params)
@@ -4345,6 +4402,11 @@ def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> 
     payload = {
         "enabled": True,
         "scale_head_mode": str(getattr(model, "scale_head_mode")),
+        "scale_pooling": str(getattr(model, "scale_pooling")),
+        "scale_head_depth": int(getattr(model, "scale_head_depth", 1)),
+        "pooled_latent_stop_gradient": bool(
+            getattr(model, "pooled_latent_stop_gradient", False)
+        ),
         "node_latent_width": int(getattr(model, "node_latent_size")),
         "pooled_latent_width": int(pooled.shape[-1]),
         "scale_head_input_width": int(getattr(model, "global_context_feature_dim"))
@@ -4355,11 +4417,12 @@ def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> 
             and np.all(np.isfinite(np.asarray(prediction["deltaT_hat"])))
         ),
     }
-    expected_pooled_width = (
-        int(getattr(model, "node_latent_size"))
-        if getattr(model, "scale_head_mode") == "physics_plus_pooled_latent"
-        else 0
-    )
+    if getattr(model, "scale_head_mode") != "physics_plus_pooled_latent":
+        expected_pooled_width = 0
+    elif getattr(model, "scale_pooling") in {"mean_std", "mean_max", "pre_film_mean_std"}:
+        expected_pooled_width = 2 * int(getattr(model, "node_latent_size"))
+    else:
+        expected_pooled_width = int(getattr(model, "node_latent_size"))
     payload["expected_pooled_latent_width"] = expected_pooled_width
     payload["passed"] = bool(
         payload["pooled_latent_width"] == expected_pooled_width
@@ -5825,6 +5888,40 @@ def _attach_native_physics_to_groups(
         }
 
 
+def _attach_qk_region_features_to_groups(
+    groups: list[dict],
+    examples_by_id: Mapping[str, Any],
+) -> None:
+    """Attach raw-input-only P2R regional features for q--k gated pooling."""
+
+    for group in groups:
+        regional_features = []
+        metadata = group["metadata"]
+        p2r_indices = np.asarray(metadata.p2r_edge_indices)
+        rnode_count = int(np.asarray(metadata.x_rnodes).shape[1] - 1)
+        for row, sample_id in enumerate(group["sample_ids"]):
+            example = examples_by_id[sample_id]
+            relative = example.get_relative_bc_feature_view()
+            regional_features.append(
+                qk_region_features_from_raw(
+                    coords=np.asarray(example.condition.coords, dtype=np.float64),
+                    raw_condition=np.asarray(relative.condition_features, dtype=np.float64),
+                    condition_feature_names=tuple(relative.condition_feature_names),
+                    p2r_edge_indices=p2r_indices[row],
+                    rnode_count=rnode_count,
+                )
+            )
+        packed = np.stack(regional_features)
+        expected = (len(group["sample_ids"]), rnode_count, len(QK_REGION_FEATURES))
+        if packed.shape != expected or not np.all(np.isfinite(packed)):
+            raise ValueError(
+                f"{group['name']}: qk regional feature shape/finite failure "
+                f"got={packed.shape} expected={expected}"
+            )
+        group["qk_region_features"] = jnp.asarray(packed, dtype=jnp.float32)
+        group["qk_region_feature_names"] = QK_REGION_FEATURES
+
+
 def _model_apply(model, params, group: Mapping[str, Any]):
     """Use the V4 call path unless a group explicitly carries Global FiLM data."""
 
@@ -5840,6 +5937,7 @@ def _model_apply(model, params, group: Mapping[str, Any]):
             reference_temperature=physics["reference_temperature"],
             dirichlet_mask=physics["dirichlet_mask"],
             prescribed_temperature=physics["prescribed_temperature"],
+            qk_region_features=group.get("qk_region_features"),
             method=model.predict_native_shape_scale,
         )
     return model.apply(
@@ -5863,6 +5961,7 @@ def _model_init(model, key, group: Mapping[str, Any], inputs: Any):
             reference_temperature=physics["reference_temperature"],
             dirichlet_mask=physics["dirichlet_mask"],
             prescribed_temperature=physics["prescribed_temperature"],
+            qk_region_features=group.get("qk_region_features"),
             method=model.predict_native_shape_scale,
         )
     return model.init(
@@ -6521,6 +6620,9 @@ def main() -> int:
         }
         for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
             _attach_native_physics_to_groups(groups, native_examples_by_id)
+        if model_config.get("scale_pooling") == "qk_gated":
+            for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
+                _attach_qk_region_features_to_groups(groups, native_examples_by_id)
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)

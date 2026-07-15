@@ -14,6 +14,8 @@ from typing import Any
 from jax import tree_util
 import jax.numpy as jnp
 
+from rigno.heat3d_v5_scale_pooling import SCALE_POOLING_MODES
+
 
 EPS = 1.0e-12
 LOSS_SCHEMA_VERSION = "heat3d_v5_native_shape_scale_loss_v1"
@@ -25,7 +27,6 @@ REQUIRED_LOSS_WEIGHTS = (
 )
 BRANCH_MODES = ("scale_only", "shape_only", "joint")
 SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
-SCALE_POOLING_MODES = ("mean",)
 
 
 class ShapeScaleError(ValueError):
@@ -329,7 +330,10 @@ def parameter_group(path: Any) -> str:
 
     names = tuple(str(getattr(item, "key", getattr(item, "name", item))) for item in path)
     joined = "/".join(names)
-    if "global_scale_" in joined:
+    if any(
+        token in joined
+        for token in ("global_scale_", "latent_attention", "qk_attention")
+    ):
         return "scale_head"
     if "decoder" in joined:
         return "shape_decoder"
@@ -348,6 +352,28 @@ def native_gradient_group_norms(gradients: Any) -> dict[str, jnp.ndarray]:
         group = parameter_group(path)
         squared[group] = squared[group] + jnp.sum(jnp.square(value))
     return {name: jnp.sqrt(value) for name, value in squared.items()}
+
+
+def apply_scale_head_lr_multiplier(updates: Any, multiplier: float) -> Any:
+    """Scale only native scale-head optimizer updates.
+
+    The default multiplier is exactly one and returns the input tree without a
+    transformation, preserving the established N3/V13 optimizer path.  This
+    acts after Optax (or manual-GD) produces updates, so its semantics are an
+    explicit scale-head learning-rate multiplier rather than a loss reweight.
+    """
+
+    value = float(multiplier)
+    if value <= 0.0:
+        raise ShapeScaleError("scale_head_lr_multiplier must be > 0")
+    if value == 1.0:
+        return updates
+    path_leaves, treedef = tree_util.tree_flatten_with_path(updates)
+    leaves = [
+        leaf * value if parameter_group(path) == "scale_head" else leaf
+        for path, leaf in path_leaves
+    ]
+    return tree_util.tree_unflatten(treedef, leaves)
 
 
 def mask_branch_gradients(gradients: Any, branch_mode: str) -> Any:

@@ -168,6 +168,11 @@ def build_training_command(
     _append_option(command, "--scale-head-mode", model.get("scale_head_mode"))
     _append_option(command, "--scale-pooling", model.get("scale_pooling"))
     _append_option(command, "--scale-head-hidden-size", model.get("scale_head_hidden_size"))
+    _append_option(command, "--scale-head-depth", model.get("scale_head_depth"))
+    if model.get("pooled_latent_stop_gradient") is True:
+        command.append("--pooled-latent-stop-gradient")
+    elif model.get("pooled_latent_stop_gradient") is False:
+        command.append("--no-pooled-latent-stop-gradient")
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
@@ -210,6 +215,11 @@ def build_training_command(
         command.append("--drop-last")
     _append_option(command, "--optimizer", _runner_optimizer_name(optimizer.get("name")))
     _append_option(command, "--lr", optimizer.get("lr"))
+    _append_option(
+        command,
+        "--scale-head-lr-multiplier",
+        optimizer.get("scale_head_lr_multiplier"),
+    )
     _append_option(command, "--lr-schedule", optimizer.get("lr_schedule"))
     _append_option(command, "--warmup-epochs", optimizer.get("warmup_epochs"))
     _append_option(command, "--min-lr", optimizer.get("min_lr"))

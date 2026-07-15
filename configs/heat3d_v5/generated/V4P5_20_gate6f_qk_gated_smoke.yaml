@@ -1,0 +1,21 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_20_gate6f_qk_gated_smoke
+extends: V4P5_14_gate6f_mean_pool_smoke.yaml
+overrides:
+  description: >-
+    Gate 6F full-model e1 compile/memory smoke for raw coords/k/q/BC-derived
+    q-k gated pooling: mean plus a zero-initialized attention residual.
+  model:
+    scale_pooling: qk_gated
+  run:
+    memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_20_gate6f_qk_gated_smoke.jsonl
+    final_probe_output_dir: output/heat3d_v5_gate6f_smoke_final_probe/V4P5_20_gate6f_qk_gated_smoke
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6f_smoke_diagnostics/V4P5_20_gate6f_qk_gated_smoke
+  export:
+    output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_20_gate6f_qk_gated_smoke
+    run_name: V4P5_20_gate6f_qk_gated_smoke
+  metadata:
+    registry_config_id: V4P5_20_gate6f_qk_gated_smoke
+    candidate: qk_gated_pooling
+    qk_region_feature_schema: heat3d_v5_qk_region_features_v1
+    qk_region_input_provenance: raw_coords_k_q_bc_only
