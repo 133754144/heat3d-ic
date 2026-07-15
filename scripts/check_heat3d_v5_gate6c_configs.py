@@ -64,7 +64,10 @@ def main() -> int:
     csv.field_size_limit(sys.maxsize)
     rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
     assert [row["candidate"] for row in rows] == ["Scratch-L1", "Scratch-L2"]
-    assert all(row["status"] == "prepared_not_started" for row in rows)
+    assert all(row["plan_status"] == "frozen" for row in rows)
+    assert all(row["execution_status"] == "completed_e600" for row in rows)
+    assert all(row["evaluation_status"] == "completed_evaluated" for row in rows)
+    assert all(row["threshold_status"] == "failed" for row in rows)
     assert all(row["launch_policy"] == "explicit_user_instruction_only" for row in rows)
     n3 = _resolved(N3_PATH)
     expected_science = _scientific_payload(n3)
@@ -133,7 +136,8 @@ def main() -> int:
     print(json.dumps({
         "status": "passed",
         "scientific_differences_from_n3": ["loss.native_*_weight"],
-        "test_or_hard_accessed": False,
+        "test_or_hard_accessed_after_training": True,
+        "test_or_hard_used_for_selection": False,
         "e600_started": False,
         "multi_seed_started": False,
         "configs": reports,

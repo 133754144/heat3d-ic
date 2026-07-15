@@ -1,0 +1,124 @@
+{
+  "authoritative_evaluator_commit": "639872abcb0f7afd3b6c2d319a7d395bde75c9a4",
+  "collector_equivalence": "not_equivalent_frozen_evaluator_authoritative",
+  "coverage_summary": {
+    "correlations": {
+      "l2_minus_n3_point_sse_K2": {
+        "pearson": -0.005109596150572223,
+        "spearman": -0.1179614539461637
+      },
+      "l2_minus_n3_sample_relative_rmse_pct": {
+        "pearson": 0.12538539120988865,
+        "spearman": -0.14296259842519685
+      },
+      "l2_point_sse_K2": {
+        "pearson": -0.023213541620029005,
+        "spearman": -0.0074620032960996145
+      },
+      "l2_sample_relative_rmse_pct": {
+        "pearson": 0.4326505226937945,
+        "spearman": 0.29738143197216627
+      },
+      "n3_point_sse_K2": {
+        "pearson": -0.021395670662180438,
+        "spearman": 0.020743682475737046
+      },
+      "n3_sample_relative_rmse_pct": {
+        "pearson": 0.3908274940333358,
+        "spearman": 0.3469259293169749
+      }
+    },
+    "distance_summary": {
+      "max": 4.873136504531314,
+      "mean": 1.52256349161045,
+      "median": 1.4492547776931646,
+      "min": 0.6590226920153434,
+      "quartile_edges": [
+        0.6590226920153434,
+        1.1335634662108403,
+        1.4492547776931646,
+        1.7031444266500821,
+        4.873136504531314
+      ]
+    },
+    "feature_count": 24,
+    "fit_roles": [
+      "train"
+    ],
+    "query_roles": [
+      "valid_iid"
+    ]
+  },
+  "gate6c_runs": [
+    {
+      "best_epoch": 346,
+      "best_sha256": "6f398b2a971c2a40e7c71dabaa1b7012a36044862ea8ca481f02f9a54083e817",
+      "best_valid_point_global_relative_rmse_pct": 24.43325655620981,
+      "config_id": "V4P5_11_gate6c_scratch_l1_tail_balanced",
+      "evaluation": "configs/heat3d_v5/gate6d/V4P5_11_frozen_gate5_evaluation.json",
+      "evaluator_commit": "639872abcb0f7afd3b6c2d319a7d395bde75c9a4",
+      "final_epoch": 600,
+      "final_sha256": "dbb5b3f8b93b606bcf180afab1b0ab4fa45694ef823fd9b61590af4738989755",
+      "host": "devbox",
+      "registry_source_commit": "2cb20af5be8f9e8f2d6d2e409baf4305ffd458bf",
+      "threshold_status": "failed",
+      "training_commit": "62bee1f3591568bdd97f17ded0128e4f4bb8569c"
+    },
+    {
+      "best_epoch": 353,
+      "best_sha256": "7d144eeee9f111d933d40f1975dfd3ea3c6c4af3945a4e6ab7660fa886f99091",
+      "best_valid_point_global_relative_rmse_pct": 23.729025112119352,
+      "config_id": "V4P5_12_gate6c_scratch_l2_shape_balanced",
+      "evaluation": "configs/heat3d_v5/gate6d/V4P5_12_frozen_gate5_evaluation.json",
+      "evaluator_commit": "639872abcb0f7afd3b6c2d319a7d395bde75c9a4",
+      "final_epoch": 600,
+      "final_sha256": "625e67906ccde07b5c7b2959842cde956d3830813cd706804c2bd758184afc46",
+      "host": "wsl2",
+      "registry_source_commit": "2cb20af5be8f9e8f2d6d2e409baf4305ffd458bf",
+      "threshold_status": "failed",
+      "training_commit": "62bee1f3591568bdd97f17ded0128e4f4bb8569c"
+    }
+  ],
+  "multi_seed_started": false,
+  "new_loss_config_created": false,
+  "paired_analysis": {
+    "conclusion": "L2 improvement is not concentrated in only a small top-improvement subset.",
+    "improved_sample_count": 65,
+    "improvement_concentrated_in_top10_samples": false,
+    "improvement_concentrated_in_true_cv_rms_q4": false,
+    "l2_point_global_relative_rmse_pct": 23.729025112119352,
+    "l2_sample_first_relative_rmse_pct": 20.835687452630733,
+    "mean_l2_minus_n3_sample_relative_rmse_pct": 0.17680393572229092,
+    "n3_point_global_relative_rmse_pct": 24.076221235370856,
+    "n3_sample_first_relative_rmse_pct": 20.65888351690844,
+    "q4_positive_improvement_share": 0.2549625166604723,
+    "regressed_sample_count": 63,
+    "sample_count": 128,
+    "top_10_positive_improvement_share": 0.40460845478245056,
+    "top_5_positive_improvement_share": 0.2514751064771149,
+    "true_cv_rms_q4_threshold_K": 0.7066787411697314
+  },
+  "schema_version": "heat3d_v5_gate6d_preflight_closeout_v1",
+  "sealed_iid": {
+    "artifacts": {
+      "planned_manifest": "configs/heat3d_v5/gate6d/sealed_iid_manifest.json",
+      "planned_provenance": "configs/heat3d_v5/gate6d/sealed_iid_provenance.json",
+      "planned_split_map": "configs/heat3d_v5/gate6d/sealed_iid_split_map.json"
+    },
+    "audit_output_dir": "output/heat3d_v5_gate6d_sealed_iid_seed2026071501",
+    "data_dir": "data/heat3d_v5_gate6d_sealed_iid_seed2026071501",
+    "first_open_condition": "candidate and complete training plan are fully frozen",
+    "generation_command": "python scripts/generate_heat3d_v5_gate6d_sealed_iid.py --contract configs/heat3d_v5/gate6d/sealed_iid_contract.json",
+    "label_statistics_may_change_seed": false,
+    "model_inference_run": false,
+    "role": "sealed_iid_test",
+    "sample_count": 128,
+    "schema_version": "heat3d_v5_gate6d_sealed_iid_contract_v1",
+    "seed": 2026071501,
+    "selection_or_tuning_use_allowed": false,
+    "status": "frozen_not_generated",
+    "training_started": false
+  },
+  "status": "completed_no_training",
+  "training_started": false
+}

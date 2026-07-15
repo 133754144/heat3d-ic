@@ -103,6 +103,49 @@ Metric rules:
 - State whether the evaluation is diagnostic, benchmark-candidate, or formal
   benchmark. V5 results with incomplete frozen metric payloads remain partial.
 
+### Frozen evaluator replay
+
+When an audit names an exact evaluator commit, treat the evaluator source at
+that commit as immutable. Use the following sequence before a full replay:
+
+1. Create a detached temporary worktree at the named commit and verify both
+   `git rev-parse HEAD` and the SHA256 of the evaluator source.
+2. Activate `rigno` in the same remote shell. Do not assume that a
+   non-interactive SSH shell has initialized conda.
+3. Copy only the required read-only run inputs (`run_config.json`,
+   `loss_summary.json`, and the requested checkpoints) into the exact relative
+   run directory inside the temporary worktree. Verify copied checkpoint
+   SHA256 values against the originals.
+4. Do not symlink a top-level `output/` directory. A pre-existing directory can
+   turn that command into `output/output`, and evaluators that call
+   `Path.resolve()` can reject a run reached through a symlink outside the
+   temporary repository root.
+5. If the stored temporary `run_config.json` contains an absolute output path,
+   rewrite only that temporary copy to the contract-relative run directory.
+   Never edit the original run directory or checkpoint.
+6. If a later config ID is absent from the old evaluator allowlist, use a
+   compatibility adapter that changes only config/run provenance bindings and
+   the allowlist. Record the adapter path and SHA256; it must not change metric
+   formulas, split handling, normalization, inference, or aggregation.
+7. Run a binding preflight before full inference: config ID, run directory,
+   checkpoint kind/epoch/hash, 1024 nodes, split hashes, train-only
+   normalization/context fitting, and expected roles must all pass.
+8. Use the frozen evaluator JSON, not a closeout summary or registry aggregate,
+   as the source for per-sample paired analysis. If the historical artifact has
+   no per-sample payload, produce the minimum role-only replay required by the
+   analysis and record that scope explicitly.
+9. Write replay outputs outside the original run directory, then compare every
+   numeric metric leaf against the existing collector. If they disagree and
+   the task names the old evaluator as authoritative, retain the frozen replay
+   and record the disagreement instead of averaging or silently replacing it.
+
+Common failures encountered during Gate 6D were: a nested `output/output`
+symlink, repository-root rejection after symlink resolution, an absolute
+`output_dir` retained in the copied config, and attempting to read per-sample
+rows from aggregate-only closeout/registry data. The sequence above prevents
+all four. Prefer checked repository scripts over brittle multiline `python -c`
+commands or assuming `jq` is installed on a server.
+
 ## WF-SYNC: Remote Result Synchronization
 
 Use this when copying ignored output artifacts between devbox and WSL2.
