@@ -18,8 +18,8 @@ overrides:
     epochs: 200
     report_every: 1
     train_metrics_schedule: final_only
-    final_probe_eval_after_training: false
-    post_training_diagnostics: false
+    final_probe_eval_after_training: true
+    post_training_diagnostics: true
     profile_timing: true
     memory_audit_jsonl: output/heat3d_v5_gate6g_memory/V4P5_22_gate6g_control_constlr.jsonl
     final_probe_output_dir: output/heat3d_v5_gate6g_final_probe/V4P5_22_gate6g_control_constlr

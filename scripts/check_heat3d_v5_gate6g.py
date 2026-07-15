@@ -350,6 +350,10 @@ def main() -> int:
         assert resolved["export"]["save_point_global_best_checkpoint"] is True
         assert resolved["export"]["save_base_mse_best_checkpoint"] is True
         assert resolved["export"]["save_sample_first_best_checkpoint"] is True
+        assert resolved["run"]["final_probe_eval_after_training"] is True
+        assert resolved["run"]["post_training_diagnostics"] is True
+        assert row["final_probe_eval_after_training"] == "true"
+        assert row["post_training_diagnostics"] == "true"
         assert row["fit_roles"] == row["normalization_fit_roles"] == "train"
         assert row["selection_roles"] == "valid_iid"
         assert row["forbidden_access_roles"] == FORBIDDEN
@@ -361,6 +365,8 @@ def main() -> int:
         assert "--epochs 200" in text and "--batch-size 28" in text
         assert "--lr 0.0001" in text and "--lr-schedule constant" in text
         assert "--prediction-split valid_iid" in text
+        assert "--final-probe-eval-after-training" in text
+        assert "--post-training-diagnostics" in text
         assert "--init-checkpoint" not in command
         commands[row["config_id"]] = text
 
