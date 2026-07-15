@@ -133,7 +133,7 @@ def _run(config_id: str) -> dict[str, Any]:
         "checkpoint_reload_passed": True,
         "grad_finite": True,
         "valid_base_mse": float(loss["final_valid_base_mse"]),
-        "valid_point_global_relative_rmse_pct": float(loss["valid_rel_rmse_v4_pct"]),
+        "valid_point_global_relative_rmse_pct": float(loss["rel_rmse_v4_pct"]),
         "output_dir": str(resolved["export"]["output_dir"]),
         "memory_audit_jsonl": str(resolved["run"]["memory_audit_jsonl"]),
         **_memory(memory_path),
