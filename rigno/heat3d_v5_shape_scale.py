@@ -332,10 +332,15 @@ def parameter_group(path: Any) -> str:
     joined = "/".join(names)
     if any(
         token in joined
-        for token in ("global_scale_", "latent_attention", "qk_attention")
+        for token in (
+            "global_scale_",
+            "latent_attention",
+            "qk_attention",
+            "scale_attention",
+        )
     ):
         return "scale_head"
-    if "decoder" in joined:
+    if "decoder" in joined or "shape_attention" in joined:
         return "shape_decoder"
     return "backbone"
 

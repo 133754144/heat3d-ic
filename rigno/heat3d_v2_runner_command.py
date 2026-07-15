@@ -169,6 +169,13 @@ def build_training_command(
     _append_option(command, "--scale-pooling", model.get("scale_pooling"))
     _append_option(command, "--scale-head-hidden-size", model.get("scale_head_hidden_size"))
     _append_option(command, "--scale-head-depth", model.get("scale_head_depth"))
+    _append_option(command, "--shape-attention-mode", model.get("shape_attention_mode"))
+    _append_option(command, "--scale-attention-mode", model.get("scale_attention_mode"))
+    _append_option(
+        command,
+        "--regional-attention-hidden-size",
+        model.get("regional_attention_hidden_size"),
+    )
     if model.get("pooled_latent_stop_gradient") is True:
         command.append("--pooled-latent-stop-gradient")
     elif model.get("pooled_latent_stop_gradient") is False:
@@ -268,6 +275,20 @@ def build_training_command(
         command,
         "--point-global-best-checkpoint-name",
         export.get("point_global_best_checkpoint_name"),
+    )
+    if export.get("save_base_mse_best_checkpoint") is True:
+        command.append("--save-base-mse-best-checkpoint")
+    _append_option(
+        command,
+        "--base-mse-best-checkpoint-name",
+        export.get("base_mse_best_checkpoint_name"),
+    )
+    if export.get("save_sample_first_best_checkpoint") is True:
+        command.append("--save-sample-first-best-checkpoint")
+    _append_option(
+        command,
+        "--sample-first-best-checkpoint-name",
+        export.get("sample_first_best_checkpoint_name"),
     )
     _append_option(command, "--report-every", run.get("report_every"))
     _append_option(command, "--train-metrics-schedule", run.get("train_metrics_schedule"))
@@ -735,6 +756,14 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("model.scale_head_mode", "training --scale-head-mode"),
         ("model.scale_pooling", "training --scale-pooling"),
         ("model.scale_head_hidden_size", "training --scale-head-hidden-size"),
+        ("model.scale_head_depth", "training --scale-head-depth"),
+        ("model.pooled_latent_stop_gradient", "training --pooled-latent-stop-gradient"),
+        ("model.shape_attention_mode", "training --shape-attention-mode"),
+        ("model.scale_attention_mode", "training --scale-attention-mode"),
+        (
+            "model.regional_attention_hidden_size",
+            "training --regional-attention-hidden-size",
+        ),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
         ("run.train_metrics_schedule", "training --train-metrics-schedule"),

@@ -16,7 +16,10 @@ try:
 except ImportError as exc:  # pragma: no cover - exercised only without PyYAML.
     raise ImportError("PyYAML is required to load Heat3D v2 configs.") from exc
 
-from rigno.heat3d_v5_scale_pooling import SCALE_POOLING_MODES as _SCALE_POOLING_MODES
+from rigno.heat3d_v5_scale_pooling import (
+    REGIONAL_ATTENTION_MODES as _REGIONAL_ATTENTION_MODES,
+    SCALE_POOLING_MODES as _SCALE_POOLING_MODES,
+)
 
 
 CONFIG_SCHEMA_VERSION = "heat3d_v2_config_draft_v0"
@@ -68,6 +71,7 @@ NATIVE_OUTPUT_MODES = {"legacy_normalized_deltaT", "native_shape_scale"}
 NATIVE_BRANCH_MODES = {"scale_only", "shape_only", "joint"}
 SCALE_HEAD_MODES = {"physics_only", "physics_plus_pooled_latent"}
 SCALE_POOLING_MODES = set(_SCALE_POOLING_MODES)
+REGIONAL_ATTENTION_MODES = set(_REGIONAL_ATTENTION_MODES)
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -436,6 +440,22 @@ def _validate_run_config(
                 f"{label}: field 'export.point_global_best_checkpoint_name' "
                 "must be a filename"
             )
+    for field in (
+        "save_base_mse_best_checkpoint",
+        "save_sample_first_best_checkpoint",
+    ):
+        value = export.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"{label}: field 'export.{field}' must be a bool or null")
+    for field in (
+        "base_mse_best_checkpoint_name",
+        "sample_first_best_checkpoint_name",
+    ):
+        value = export.get(field)
+        if value is not None and (
+            not isinstance(value, str) or not value or "/" in value or "\\" in value
+        ):
+            raise ValueError(f"{label}: field 'export.{field}' must be a filename")
 
     if role == "controlled":
         baseline_reference = config.get("baseline_reference")
@@ -751,6 +771,26 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
         raise ValueError(
             f"{label}: field 'model.pooled_latent_stop_gradient' must be a bool or null"
         )
+    for field in ("shape_attention_mode", "scale_attention_mode"):
+        value = model.get(field)
+        if value is not None and value not in REGIONAL_ATTENTION_MODES:
+            raise ValueError(
+                f"{label}: field 'model.{field}' must be one of "
+                f"{sorted(REGIONAL_ATTENTION_MODES)}, got {value!r}"
+            )
+    attention_hidden = model.get("regional_attention_hidden_size")
+    if attention_hidden is not None and (
+        isinstance(attention_hidden, bool)
+        or not isinstance(attention_hidden, int)
+        or attention_hidden < 1
+    ):
+        raise ValueError(
+            f"{label}: field 'model.regional_attention_hidden_size' must be an int >= 1"
+        )
+    if model.get("scale_attention_mode") not in {None, "none"} and model.get(
+        "scale_pooling", "mean"
+    ) != "mean":
+        raise ValueError(f"{label}: scale attention requires model.scale_pooling='mean'")
     if native_mode == "native_shape_scale":
         if not global_names:
             raise ValueError(

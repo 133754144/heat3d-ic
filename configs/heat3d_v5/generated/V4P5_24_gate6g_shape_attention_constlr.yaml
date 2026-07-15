@@ -1,0 +1,17 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_24_gate6g_shape_attention_constlr
+extends: V4P5_22_gate6g_control_constlr.yaml
+overrides:
+  description: Gate 6G matched e200 shape-only physics regional attention ablation.
+  model:
+    shape_attention_mode: physics_gate
+  run:
+    memory_audit_jsonl: output/heat3d_v5_gate6g_memory/V4P5_24_gate6g_shape_attention_constlr.jsonl
+    final_probe_output_dir: output/heat3d_v5_gate6g_final_probe/V4P5_24_gate6g_shape_attention_constlr
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6g_diagnostics/V4P5_24_gate6g_shape_attention_constlr
+  export:
+    output_dir: output/heat3d_v5_gate6g_runs/V4P5_24_gate6g_shape_attention_constlr
+    run_name: V4P5_24_gate6g_shape_attention_constlr
+  metadata:
+    registry_config_id: V4P5_24_gate6g_shape_attention_constlr
+    candidate: shape_attention_constlr

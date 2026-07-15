@@ -1,0 +1,50 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_22_gate6g_control_constlr
+extends: V4P5_13_gate6e_scratch_branch_rebalance.yaml
+overrides:
+  description: Gate 6G matched e200 constant-LR control; V13 architecture with mean pooling.
+  model:
+    scale_pooling: mean
+    scale_head_depth: 1
+    pooled_latent_stop_gradient: false
+    shape_attention_mode: none
+    scale_attention_mode: none
+    regional_attention_hidden_size: 64
+  optimizer:
+    lr: 0.0001
+    lr_schedule: constant
+    scale_head_lr_multiplier: 1.0
+  run:
+    epochs: 200
+    report_every: 1
+    train_metrics_schedule: final_only
+    final_probe_eval_after_training: false
+    post_training_diagnostics: false
+    profile_timing: true
+    memory_audit_jsonl: output/heat3d_v5_gate6g_memory/V4P5_22_gate6g_control_constlr.jsonl
+    final_probe_output_dir: output/heat3d_v5_gate6g_final_probe/V4P5_22_gate6g_control_constlr
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6g_diagnostics/V4P5_22_gate6g_control_constlr
+  export:
+    output_dir: output/heat3d_v5_gate6g_runs/V4P5_22_gate6g_control_constlr
+    run_name: V4P5_22_gate6g_control_constlr
+    prediction_split: valid_iid
+    selection_metric: valid_rel_rmse_v4_pct
+    save_point_global_best_checkpoint: true
+    point_global_best_checkpoint_name: params_best_valid_point_global.pkl
+    save_base_mse_best_checkpoint: true
+    base_mse_best_checkpoint_name: params_best_valid_base_mse.pkl
+    save_sample_first_best_checkpoint: true
+    sample_first_best_checkpoint_name: params_best_valid_sample_first.pkl
+  metadata:
+    phase: v5_gate6g
+    registry_config_id: V4P5_22_gate6g_control_constlr
+    candidate: control_constlr
+    baseline_config_id: V4P5_13_gate6e_scratch_branch_rebalance
+    initialization: random
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    constant_lr_basis: 0.5_x_v13_run_config_lr_peak_0.0002
+    launch_policy: explicit_user_instruction_only
+    long_training_started: false

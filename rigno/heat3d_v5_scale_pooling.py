@@ -22,6 +22,8 @@ SCALE_POOLING_MODES = (
     "qk_gated",
 )
 
+REGIONAL_ATTENTION_MODES = ("none", "physics_gate")
+
 # The feature names are a frozen provenance schema.  Every member is derived
 # exclusively from raw coords/k/q/BC before model inference; no temperature or
 # target-derived quantity may enter this list.

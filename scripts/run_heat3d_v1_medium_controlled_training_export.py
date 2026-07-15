@@ -76,6 +76,7 @@ from rigno.heat3d_v5_shape_scale import (  # noqa: E402
 )
 from rigno.heat3d_v5_scale_pooling import (  # noqa: E402
     QK_REGION_FEATURES,
+    REGIONAL_ATTENTION_MODES,
     SCALE_POOLING_MODES as V5_SCALE_POOLING_MODES,
     qk_region_features_from_raw,
 )
@@ -290,6 +291,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scale-head-hidden-size", type=int, default=64)
     parser.add_argument("--scale-head-depth", type=int, default=1)
     parser.add_argument(
+        "--shape-attention-mode", choices=REGIONAL_ATTENTION_MODES, default="none"
+    )
+    parser.add_argument(
+        "--scale-attention-mode", choices=REGIONAL_ATTENTION_MODES, default="none"
+    )
+    parser.add_argument("--regional-attention-hidden-size", type=int, default=64)
+    parser.add_argument(
         "--pooled-latent-stop-gradient",
         action=argparse.BooleanOptionalAction,
         default=False,
@@ -427,7 +435,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--selection-metric",
-        choices=("valid_loss", "valid_raw_deltaT_mse", "valid_base_mse"),
+        choices=(
+            "valid_loss",
+            "valid_raw_deltaT_mse",
+            "valid_base_mse",
+            "valid_rel_rmse_v4_pct",
+            "valid_native_joint_relative_rmse",
+        ),
         default="valid_base_mse",
         help="Validation metric used to track the best epoch for optional best prediction export.",
     )
@@ -467,6 +481,26 @@ def parse_args() -> argparse.Namespace:
         "--point-global-best-checkpoint-name",
         type=str,
         default="params_best_valid_point_global.pkl",
+    )
+    parser.add_argument(
+        "--save-base-mse-best-checkpoint",
+        action="store_true",
+        help="Track and save the lowest valid normalized base-MSE checkpoint.",
+    )
+    parser.add_argument(
+        "--base-mse-best-checkpoint-name",
+        type=str,
+        default="params_best_valid_base_mse.pkl",
+    )
+    parser.add_argument(
+        "--save-sample-first-best-checkpoint",
+        action="store_true",
+        help="Track and save the lowest valid sample-first CV-relative checkpoint.",
+    )
+    parser.add_argument(
+        "--sample-first-best-checkpoint-name",
+        type=str,
+        default="params_best_valid_sample_first.pkl",
     )
     parser.add_argument(
         "--final-probe-eval-after-training",
@@ -1797,6 +1831,9 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "scale_head_hidden_size": int(args.scale_head_hidden_size),
             "scale_head_depth": int(args.scale_head_depth),
             "pooled_latent_stop_gradient": bool(args.pooled_latent_stop_gradient),
+            "shape_attention_mode": args.shape_attention_mode,
+            "scale_attention_mode": args.scale_attention_mode,
+            "regional_attention_hidden_size": int(args.regional_attention_hidden_size),
             "scale_head_init": "identity",
             "shape_scale_epsilon": 1.0e-12,
         }
@@ -1972,6 +2009,13 @@ def _validate_model_config(config: dict[str, Any]) -> None:
         raise ValueError("--scale-head-depth must be >= 1")
     if not isinstance(config.get("pooled_latent_stop_gradient", False), bool):
         raise ValueError("--pooled-latent-stop-gradient must be a bool")
+    for key in ("shape_attention_mode", "scale_attention_mode"):
+        if config.get(key, "none") not in REGIONAL_ATTENTION_MODES:
+            raise ValueError(f"--{key.replace('_', '-')} must be one of {REGIONAL_ATTENTION_MODES}")
+    if int(config.get("regional_attention_hidden_size", 0)) < 1:
+        raise ValueError("--regional-attention-hidden-size must be >= 1")
+    if config.get("scale_attention_mode") != "none" and config.get("scale_pooling") != "mean":
+        raise ValueError("--scale-attention-mode requires --scale-pooling mean")
 
 
 def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
@@ -3443,6 +3487,8 @@ def _fit_once(
     primary_validation_split: str = "valid",
     stress_validation_split: str | None = None,
     track_point_global_best: bool = False,
+    track_base_mse_best: bool = False,
+    track_sample_first_best: bool = False,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
@@ -3554,6 +3600,22 @@ def _fit_once(
         dict(initial_best_record) if track_point_global_best else None
     )
     point_global_best_params = initial_best_params if track_point_global_best else None
+    base_mse_best_score: float | None = (
+        float(initial_best_record["valid_base_mse"]) if track_base_mse_best else None
+    )
+    base_mse_best_record: dict[str, Any] | None = (
+        dict(initial_best_record) if track_base_mse_best else None
+    )
+    base_mse_best_params = initial_best_params if track_base_mse_best else None
+    sample_first_best_score: float | None = (
+        float(initial_best_record["valid_native_joint_relative_rmse"])
+        if track_sample_first_best
+        else None
+    )
+    sample_first_best_record: dict[str, Any] | None = (
+        dict(initial_best_record) if track_sample_first_best else None
+    )
+    sample_first_best_params = initial_best_params if track_sample_first_best else None
     final_epoch_train_components = None
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
@@ -4098,6 +4160,18 @@ def _fit_once(
                 point_global_best_score = point_global_score
                 point_global_best_record = dict(record)
                 point_global_best_params = _host_params(params)
+        if track_base_mse_best:
+            base_score = float(record["valid_base_mse"])
+            if base_mse_best_score is None or base_score < base_mse_best_score:
+                base_mse_best_score = base_score
+                base_mse_best_record = dict(record)
+                base_mse_best_params = _host_params(params)
+        if track_sample_first_best:
+            sample_score = float(record["valid_native_joint_relative_rmse"])
+            if sample_first_best_score is None or sample_score < sample_first_best_score:
+                sample_first_best_score = sample_score
+                sample_first_best_record = dict(record)
+                sample_first_best_params = _host_params(params)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
         record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
         record["best_valid_base_mse"] = best_record.get("valid_base_mse") if best_record is not None else None
@@ -4242,6 +4316,12 @@ def _fit_once(
         "point_global_best_score": point_global_best_score,
         "point_global_best_record": point_global_best_record,
         "point_global_best_params": point_global_best_params,
+        "base_mse_best_score": base_mse_best_score,
+        "base_mse_best_record": base_mse_best_record,
+        "base_mse_best_params": base_mse_best_params,
+        "sample_first_best_score": sample_first_best_score,
+        "sample_first_best_record": sample_first_best_record,
+        "sample_first_best_params": sample_first_best_params,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
         "final_valid_iid_loss": float(valid_losses[-1]) if primary_validation_split == "valid_iid" else None,
@@ -4406,6 +4486,11 @@ def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> 
         "scale_head_depth": int(getattr(model, "scale_head_depth", 1)),
         "pooled_latent_stop_gradient": bool(
             getattr(model, "pooled_latent_stop_gradient", False)
+        ),
+        "shape_attention_mode": str(getattr(model, "shape_attention_mode", "none")),
+        "scale_attention_mode": str(getattr(model, "scale_attention_mode", "none")),
+        "regional_attention_hidden_size": int(
+            getattr(model, "regional_attention_hidden_size", 64)
         ),
         "node_latent_width": int(getattr(model, "node_latent_size")),
         "pooled_latent_width": int(pooled.shape[-1]),
@@ -4664,11 +4749,23 @@ def _load_init_checkpoint_params(
 
 def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict[str, Any]:
     if kind == "best":
-        return dict(result.get("best_record") or {})
+        record = dict(result.get("best_record") or {})
+        record["checkpoint_selection_metric"] = result.get("selection_metric")
+        return record
     if kind == "point_global_best":
-        return dict(result.get("point_global_best_record") or {})
+        record = dict(result.get("point_global_best_record") or {})
+        record["checkpoint_selection_metric"] = "valid_rel_rmse_v4_pct"
+        return record
+    if kind == "base_mse_best":
+        record = dict(result.get("base_mse_best_record") or {})
+        record["checkpoint_selection_metric"] = "valid_base_mse"
+        return record
+    if kind == "sample_first_best":
+        record = dict(result.get("sample_first_best_record") or {})
+        record["checkpoint_selection_metric"] = "valid_native_joint_relative_rmse"
+        return record
     if kind == "final":
-        return {
+        record = {
             "epoch": result.get("final_epoch"),
             "valid_loss": result.get("final_valid_loss"),
             "valid_iid_loss": result.get("final_valid_iid_loss"),
@@ -4701,6 +4798,8 @@ def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict
             "valid_iid_base_mse": (result.get("final_valid_iid_loss_components", {}) or {}).get("base_mse"),
             "valid_stress_base_mse": (result.get("final_valid_stress_loss_components", {}) or {}).get("base_mse"),
         }
+        record["checkpoint_selection_metric"] = "final"
+        return record
     raise ValueError(f"unsupported checkpoint kind: {kind}")
 
 
@@ -4769,6 +4868,8 @@ def _write_params_checkpoint(
         "epoch": int(epoch) if epoch is not None else None,
         "record": _json_safe(record),
         "run_config_metadata": _json_safe(run_metadata),
+        "selection_metric": record.get("checkpoint_selection_metric"),
+        "configuration_hash": _stable_json_hash(run_metadata),
         "param_tree_summary": param_tree_summary,
         "param_count": param_tree_summary["param_count"],
         "param_shapes": param_tree_summary["param_shapes"],
@@ -4779,6 +4880,17 @@ def _write_params_checkpoint(
         "warm_start_supported": True,
         "warm_start_mode": "params_only",
     }
+    tmp_path = path.with_name(path.name + ".tmp")
+    with tmp_path.open("wb") as handle:
+        pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    tmp_path.replace(path)
+
+
+def _attach_checkpoint_prediction_reload_audit(path: Path, audit_entry: Mapping[str, Any]) -> None:
+    """Persist the completed reload audit alongside the checkpoint metadata."""
+
+    payload = _load_params_checkpoint(path)
+    payload["prediction_reload_audit"] = _json_safe(dict(audit_entry))
     tmp_path = path.with_name(path.name + ".tmp")
     with tmp_path.open("wb") as handle:
         pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -6349,6 +6461,11 @@ def main() -> int:
         args.point_global_best_checkpoint_name,
         "point-global-best-checkpoint-name",
     )
+    _output_filename(args.base_mse_best_checkpoint_name, "base-mse-best-checkpoint-name")
+    _output_filename(
+        args.sample_first_best_checkpoint_name,
+        "sample-first-best-checkpoint-name",
+    )
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
     profile_enabled = _profile_timing_enabled(args)
@@ -6620,7 +6737,11 @@ def main() -> int:
         }
         for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
             _attach_native_physics_to_groups(groups, native_examples_by_id)
-        if model_config.get("scale_pooling") == "qk_gated":
+        if (
+            model_config.get("scale_pooling") == "qk_gated"
+            or model_config.get("shape_attention_mode") != "none"
+            or model_config.get("scale_attention_mode") != "none"
+        ):
             for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
                 _attach_qk_region_features_to_groups(groups, native_examples_by_id)
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
@@ -6710,6 +6831,8 @@ def main() -> int:
         primary_validation_split=primary_validation_split,
         stress_validation_split=stress_validation_split,
         track_point_global_best=bool(args.save_point_global_best_checkpoint),
+        track_base_mse_best=bool(args.save_base_mse_best_checkpoint),
+        track_sample_first_best=bool(args.save_sample_first_best_checkpoint),
     )
     prediction_groups = _prediction_groups_for_split(
         args.prediction_split,
@@ -6831,9 +6954,21 @@ def main() -> int:
         if args.save_point_global_best_checkpoint
         else None
     )
+    base_mse_best_checkpoint_path = (
+        output_dir / args.base_mse_best_checkpoint_name
+        if args.save_base_mse_best_checkpoint
+        else None
+    )
+    sample_first_best_checkpoint_path = (
+        output_dir / args.sample_first_best_checkpoint_name
+        if args.save_sample_first_best_checkpoint
+        else None
+    )
     final_checkpoint_saved = False
     best_checkpoint_saved = False
     point_global_best_checkpoint_saved = False
+    base_mse_best_checkpoint_saved = False
+    sample_first_best_checkpoint_saved = False
     checkpoint_start = time.perf_counter()
     if args.save_final_checkpoint:
         _progress(progress_enabled, "export", f"saving final params checkpoint to {final_checkpoint_path} ...")
@@ -6892,6 +7027,34 @@ def main() -> int:
             f"point-global best params checkpoint saved: {point_global_best_checkpoint_path}",
             point_global_start,
         )
+    if args.save_base_mse_best_checkpoint:
+        if result.get("base_mse_best_params") is None:
+            raise RuntimeError("base-MSE best params are unavailable")
+        _write_params_checkpoint(
+            base_mse_best_checkpoint_path,
+            params=result["base_mse_best_params"],
+            model_config=model_config,
+            stats=stats,
+            kind="base_mse_best",
+            epoch=(result.get("base_mse_best_record") or {}).get("epoch"),
+            record=_checkpoint_record_from_result(result, kind="base_mse_best"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        base_mse_best_checkpoint_saved = True
+    if args.save_sample_first_best_checkpoint:
+        if result.get("sample_first_best_params") is None:
+            raise RuntimeError("sample-first best params are unavailable")
+        _write_params_checkpoint(
+            sample_first_best_checkpoint_path,
+            params=result["sample_first_best_params"],
+            model_config=model_config,
+            stats=stats,
+            kind="sample_first_best",
+            epoch=(result.get("sample_first_best_record") or {}).get("epoch"),
+            record=_checkpoint_record_from_result(result, kind="sample_first_best"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        sample_first_best_checkpoint_saved = True
     _record_timing(timings, "checkpoint_save", checkpoint_start)
     native_runtime_audit = _native_runtime_architecture_audit(
         result["model"], result["params"], train_groups[0]
@@ -6905,12 +7068,53 @@ def main() -> int:
         reload_entries.append(
             ("best", best_checkpoint_path, best_predictions_path, best_predictions, result["best_params"])
         )
+    auxiliary_reload_specs = (
+        (
+            "point_global_best",
+            point_global_best_checkpoint_saved,
+            point_global_best_checkpoint_path,
+            result.get("point_global_best_params"),
+        ),
+        (
+            "base_mse_best",
+            base_mse_best_checkpoint_saved,
+            base_mse_best_checkpoint_path,
+            result.get("base_mse_best_params"),
+        ),
+        (
+            "sample_first_best",
+            sample_first_best_checkpoint_saved,
+            sample_first_best_checkpoint_path,
+            result.get("sample_first_best_params"),
+        ),
+    )
+    auxiliary_prediction_paths: dict[str, str] = {}
+    for label, saved, checkpoint_path, host_params in auxiliary_reload_specs:
+        if not saved:
+            continue
+        prediction_path = output_dir / f"{label}_predictions.npz"
+        device_params = _device_params(host_params)
+        try:
+            expected = _predict_temperatures(
+                result["model"], device_params, prediction_groups, stats
+            )
+        finally:
+            del device_params
+        np.savez_compressed(prediction_path, **expected)
+        auxiliary_prediction_paths[label] = str(prediction_path)
+        reload_entries.append(
+            (label, checkpoint_path, prediction_path, expected, host_params)
+        )
     checkpoint_prediction_reload_audit = _checkpoint_prediction_reload_audit(
         model=result["model"],
         groups=prediction_groups,
         stats=stats,
         entries=reload_entries,
     )
+    for audit_entry in checkpoint_prediction_reload_audit["entries"]:
+        _attach_checkpoint_prediction_reload_audit(
+            Path(audit_entry["checkpoint_path"]), audit_entry
+        )
     memory_audit_summary = memory_audit.summary() if memory_audit is not None else None
 
     run_config = {
@@ -6976,6 +7180,27 @@ def main() -> int:
         ),
         "point_global_best_epoch": (result.get("point_global_best_record") or {}).get("epoch"),
         "point_global_best_relative_rmse_pct": result.get("point_global_best_score"),
+        "save_base_mse_best_checkpoint": bool(args.save_base_mse_best_checkpoint),
+        "base_mse_best_checkpoint_name": args.base_mse_best_checkpoint_name,
+        "base_mse_best_checkpoint_saved": bool(base_mse_best_checkpoint_saved),
+        "base_mse_best_checkpoint_path": (
+            str(base_mse_best_checkpoint_path) if base_mse_best_checkpoint_path else None
+        ),
+        "base_mse_best_epoch": (result.get("base_mse_best_record") or {}).get("epoch"),
+        "base_mse_best_value": result.get("base_mse_best_score"),
+        "save_sample_first_best_checkpoint": bool(args.save_sample_first_best_checkpoint),
+        "sample_first_best_checkpoint_name": args.sample_first_best_checkpoint_name,
+        "sample_first_best_checkpoint_saved": bool(sample_first_best_checkpoint_saved),
+        "sample_first_best_checkpoint_path": (
+            str(sample_first_best_checkpoint_path) if sample_first_best_checkpoint_path else None
+        ),
+        "sample_first_best_epoch": (result.get("sample_first_best_record") or {}).get("epoch"),
+        "sample_first_best_relative_rmse_pct": (
+            100.0 * float(result["sample_first_best_score"])
+            if result.get("sample_first_best_score") is not None
+            else None
+        ),
+        "auxiliary_checkpoint_prediction_paths": auxiliary_prediction_paths,
         "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
         "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
         "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),
@@ -7050,6 +7275,8 @@ def main() -> int:
             final_checkpoint_saved
             or best_checkpoint_saved
             or point_global_best_checkpoint_saved
+            or base_mse_best_checkpoint_saved
+            or sample_first_best_checkpoint_saved
         ),
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
@@ -7248,6 +7475,8 @@ def main() -> int:
             final_checkpoint_saved
             or best_checkpoint_saved
             or point_global_best_checkpoint_saved
+            or base_mse_best_checkpoint_saved
+            or sample_first_best_checkpoint_saved
         ),
         "save_final_checkpoint": bool(args.save_final_checkpoint),
         "final_checkpoint_name": args.final_checkpoint_name,
@@ -7267,6 +7496,27 @@ def main() -> int:
         ),
         "point_global_best_epoch": (result.get("point_global_best_record") or {}).get("epoch"),
         "point_global_best_relative_rmse_pct": result.get("point_global_best_score"),
+        "save_base_mse_best_checkpoint": bool(args.save_base_mse_best_checkpoint),
+        "base_mse_best_checkpoint_name": args.base_mse_best_checkpoint_name,
+        "base_mse_best_checkpoint_saved": bool(base_mse_best_checkpoint_saved),
+        "base_mse_best_checkpoint_path": (
+            str(base_mse_best_checkpoint_path) if base_mse_best_checkpoint_path else None
+        ),
+        "base_mse_best_epoch": (result.get("base_mse_best_record") or {}).get("epoch"),
+        "base_mse_best_value": result.get("base_mse_best_score"),
+        "save_sample_first_best_checkpoint": bool(args.save_sample_first_best_checkpoint),
+        "sample_first_best_checkpoint_name": args.sample_first_best_checkpoint_name,
+        "sample_first_best_checkpoint_saved": bool(sample_first_best_checkpoint_saved),
+        "sample_first_best_checkpoint_path": (
+            str(sample_first_best_checkpoint_path) if sample_first_best_checkpoint_path else None
+        ),
+        "sample_first_best_epoch": (result.get("sample_first_best_record") or {}).get("epoch"),
+        "sample_first_best_relative_rmse_pct": (
+            100.0 * float(result["sample_first_best_score"])
+            if result.get("sample_first_best_score") is not None
+            else None
+        ),
+        "auxiliary_checkpoint_prediction_paths": auxiliary_prediction_paths,
         "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
         "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
         "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),
