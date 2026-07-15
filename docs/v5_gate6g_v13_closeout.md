@@ -1,6 +1,7 @@
 # Gate 6E V13 closeout
 
 状态：`completed`。本 closeout 只读取 WSL2 已有 V13 工件和 `valid_iid=128`；未读取 test/hard/sealed，未训练或运行模型推理。
+JSON 明确区分既有 V13 运行已完成（`run_training_completed=true`）与本次只读 closeout 未启动训练（`closeout_training_started=false`）。
 
 ## 运行合同
 
