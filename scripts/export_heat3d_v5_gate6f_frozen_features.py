@@ -145,7 +145,14 @@ def _build_train_valid_groups(config: dict[str, Any]):
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
     stats = runner._train_only_stats(train_examples)
-    model_config = runner._resolve_decoder_bypass_model_config(config["model"], stats)
+    model_source = dict(config["model"])
+    # N3 predates the Gate 6F switches, so these fields are intentionally
+    # absent from its YAML and supplied by argparse in the normal runner path.
+    # The cache exporter bypasses argparse; mirror the exact disabled defaults
+    # before validating or constructing the frozen model.
+    model_source.setdefault("scale_head_depth", 1)
+    model_source.setdefault("pooled_latent_stop_gradient", False)
+    model_config = runner._resolve_decoder_bypass_model_config(model_source, stats)
     runner._validate_model_config(model_config)
     graph_config = config["graph"]
     builder = runner.Heat3DGraphBuilder(**graph_config)
