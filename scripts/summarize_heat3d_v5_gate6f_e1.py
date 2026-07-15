@@ -25,6 +25,12 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
     parser.add_argument("--output-json", type=Path, required=True)
+    parser.add_argument(
+        "--v16-recovery-json",
+        type=Path,
+        default=None,
+        help="Read-only recovery audit for V16 when its post-output summary was interrupted.",
+    )
     return parser.parse_args()
 
 
@@ -60,11 +66,67 @@ def _memory(payload: dict[str, Any]) -> tuple[float | None, float | None]:
     )
 
 
-def _row_result(row: dict[str, str]) -> dict[str, Any]:
+def _recovered_row_result(row: dict[str, str], recovery_path: Path) -> dict[str, Any]:
+    recovery = _read_json(recovery_path)
+    if row["config_id"] != "V4P5_16_gate6f_mean_max_smoke":
+        raise ValueError("the recovery fallback is restricted to V16")
+    if recovery.get("config_id") != row["config_id"]:
+        raise ValueError("V16 recovery config_id mismatch")
+    if recovery.get("status") != "passed_recovered_post_interrupt":
+        raise ValueError("V16 recovery did not pass")
+    if recovery.get("training_restarted") is not False or recovery.get("inference_only") is not True:
+        raise ValueError("V16 recovery was not inference-only")
+    if recovery.get("roles_materialized") != ["train", "valid_iid"]:
+        raise ValueError("V16 recovery materialized unexpected roles")
+    if recovery.get("forbidden_roles_materialized") != []:
+        raise ValueError("V16 recovery materialized a forbidden role")
+    if recovery.get("sealed_iid_accessed") is not False:
+        raise ValueError("V16 recovery accessed sealed IID")
+    memory = recovery.get("memory_audit_summary") or {}
+    reload_audit = recovery.get("checkpoint_prediction_reload_audit") or {}
+    native = recovery.get("native_runtime_architecture_audit") or {}
+    record = recovery.get("record") or {}
+    if not (
+        memory.get("train_batch_end_count") == 24
+        and memory.get("train_batch_details_finite") is True
+        and reload_audit.get("status") == "passed"
+        and all(entry.get("passed") for entry in reload_audit.get("entries") or [])
+        and native.get("passed") is True
+    ):
+        raise ValueError("V16 recovered e1 evidence is incomplete")
+    return {
+        "config_id": row["config_id"],
+        "candidate": row["candidate"],
+        "output_dir": row["output_dir"],
+        "memory_audit_jsonl": row["memory_audit_jsonl"],
+        "status": "passed_recovered_post_interrupt",
+        "status_ok": True,
+        "grad_finite": True,
+        "checkpoint_reload_passed": True,
+        "native_runtime_passed": True,
+        "scale_pooling": native.get("scale_pooling"),
+        "scale_head_depth": native.get("scale_head_depth"),
+        "pooled_latent_stop_gradient": native.get("pooled_latent_stop_gradient"),
+        "pooled_latent_width": int(native.get("pooled_latent_width", -1)),
+        "peak_rss_mb": float(memory["peak_rss_mb"]),
+        "peak_device_memory_mb": float(memory["peak_device_memory_all_mb"]),
+        "valid_base_mse": record.get("valid_base_mse"),
+        "valid_point_global_relative_rmse_pct": record.get("valid_relative_rmse_pct_v4"),
+        "roles_accessed": ["train", "valid_iid"],
+        "forbidden_roles_accessed": [],
+        "sealed_iid_accessed": False,
+        "recovery_json": str(recovery_path),
+        "training_restarted": False,
+    }
+
+
+def _row_result(row: dict[str, str], recovery_path: Path | None) -> dict[str, Any]:
     output_dir = ROOT / row["output_dir"]
     summary_path = output_dir / "loss_summary.json"
     run_config_path = output_dir / "run_config.json"
     if not summary_path.is_file() or not run_config_path.is_file():
+        if recovery_path is not None and row["config_id"] == "V4P5_16_gate6f_mean_max_smoke":
+            return _recovered_row_result(row, recovery_path)
         raise FileNotFoundError(f"{row['config_id']}: missing e1 output summary")
     summary = _read_json(summary_path)
     run_config = _read_json(run_config_path)
@@ -124,10 +186,13 @@ def main() -> int:
     rows = list(csv.DictReader(registry.open(encoding="utf-8", newline="")))
     if len(rows) != 8:
         raise ValueError(f"expected eight Gate 6F smoke rows, got {len(rows)}")
-    results = [_row_result(row) for row in rows]
+    recovery_path = args.v16_recovery_json.resolve() if args.v16_recovery_json else None
+    if recovery_path is not None and not recovery_path.is_file():
+        raise FileNotFoundError(recovery_path)
+    results = [_row_result(row, recovery_path) for row in rows]
     payload = {
         "schema_version": "heat3d_v5_gate6f_e1_smoke_summary_v1",
-        "registry": str(registry),
+        "registry": str(registry.relative_to(ROOT)),
         "config_count": len(results),
         "roles_accessed": ["train", "valid_iid"],
         "forbidden_roles_accessed": [],
