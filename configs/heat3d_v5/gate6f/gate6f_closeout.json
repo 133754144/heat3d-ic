@@ -1,0 +1,75 @@
+{
+  "schema_version": "heat3d_v5_gate6f_closeout_v1",
+  "gate": "6F",
+  "status": "completed_low_memory_pre_research",
+  "branch": "research/v5-model-lab",
+  "execution_host": "devbox",
+  "wsl2_connected": false,
+  "v13_modified_or_interfered": false,
+  "roles_materialized": [
+    "train",
+    "valid_iid"
+  ],
+  "forbidden_roles_materialized": [],
+  "sealed_iid_accessed": false,
+  "long_training_started": false,
+  "e600_started": false,
+  "multi_seed_started": false,
+  "amplitude_diagnosis": {
+    "report": "configs/heat3d_v5/gate6f/amplitude_valid_only.json",
+    "high_temperature_underestimation_concentrated_in_high_q_low_k": false,
+    "n3_true_cv_rms_q4_amplitude_ratio": 0.9531052626065561,
+    "n3_true_cv_rms_q4_signed_log_scale_bias": -0.06492654273367096,
+    "n3_q_low_k_q4_amplitude_ratio": 1.0043560188639424,
+    "q_low_k_underestimation_spearman": -0.04213971800036623
+  },
+  "frozen_feature_cache": {
+    "manifest": "configs/heat3d_v5/gate6f/frozen_feature_cache_manifest.json",
+    "checkpoint_epoch": 402,
+    "gnn_backward": false,
+    "train_sample_count": 672,
+    "valid_iid_sample_count": 128,
+    "node_count": 1024,
+    "global_context_fit_population": "train_only",
+    "default_disabled_control_replay": "exact"
+  },
+  "frozen_probe_screen": {
+    "report": "configs/heat3d_v5/gate6f/frozen_probe_screen_lowmem.json",
+    "ranking": [
+      "mean",
+      "deep_scale_head",
+      "mean_plus_max",
+      "mean_plus_std",
+      "qk_gated_pooling",
+      "latent_attention_pooling",
+      "pre_film_mean_plus_std"
+    ],
+    "best_scale_log_rmse": 0.17209920332811154,
+    "best_probe": "mean"
+  },
+  "qk_gated_pooling": {
+    "design": "mean(post_film_rnodes) + zero_initialized_attention_residual",
+    "regional_feature_count": 11,
+    "input_provenance": "raw_coords_k_q_bc_only",
+    "target_derived_inputs": false
+  },
+  "decoupling_controls": {
+    "default_pooled_latent_stop_gradient": false,
+    "default_scale_head_lr_multiplier": 1.0,
+    "default_n3_v13_replay": "exact",
+    "v21_smoke_pooled_latent_stop_gradient": true,
+    "v21_smoke_scale_head_lr_multiplier": 1.5
+  },
+  "e1_smoke": {
+    "summary": "configs/heat3d_v5/gate6f/e1_smoke_summary.json",
+    "config_count": 8,
+    "passed_count": 8,
+    "v16_status": "passed_recovered_post_interrupt",
+    "v16_training_restarted": false,
+    "oom_count": 0,
+    "nan_or_inf_count": 0,
+    "checkpoint_reload_passed_count": 8,
+    "peak_device_memory_max_mb": 8190.0,
+    "peak_rss_max_mb": 4552.49609375
+  }
+}

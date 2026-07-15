@@ -35,6 +35,8 @@ N3 = ROOT / "configs/heat3d_v5/generated/V4P5_07_native_pooled_latent_global_fil
 AMPLITUDE_REPORT = ROOT / "configs/heat3d_v5/gate6f/amplitude_valid_only.json"
 FROZEN_CACHE_MANIFEST = ROOT / "configs/heat3d_v5/gate6f/frozen_feature_cache_manifest.json"
 FROZEN_PROBE_REPORT = ROOT / "configs/heat3d_v5/gate6f/frozen_probe_screen_lowmem.json"
+E1_SMOKE_SUMMARY = ROOT / "configs/heat3d_v5/gate6f/e1_smoke_summary.json"
+GATE6F_CLOSEOUT = ROOT / "configs/heat3d_v5/gate6f/gate6f_closeout.json"
 EXPECTED_IDS = tuple(f"V4P5_{index:02d}_gate6f_{suffix}_smoke" for index, suffix in (
     (14, "mean_pool"),
     (15, "mean_std"),
@@ -46,6 +48,16 @@ EXPECTED_IDS = tuple(f"V4P5_{index:02d}_gate6f_{suffix}_smoke" for index, suffix
     (21, "mean_decoupled"),
 ))
 FORBIDDEN = "test_iid|hard_train_holdout|hard_challenge_valid|hard_challenge_test"
+EXPECTED_FROZEN_RANKS = {
+    "V4P5_14_gate6f_mean_pool_smoke": "1",
+    "V4P5_15_gate6f_mean_std_smoke": "4",
+    "V4P5_16_gate6f_mean_max_smoke": "3",
+    "V4P5_17_gate6f_pre_film_mean_std_smoke": "7",
+    "V4P5_18_gate6f_deep_scale_head_smoke": "2",
+    "V4P5_19_gate6f_latent_attention_smoke": "6",
+    "V4P5_20_gate6f_qk_gated_smoke": "5",
+    "V4P5_21_gate6f_mean_decoupled_smoke": "",
+}
 
 
 def _resolved(path: Path) -> dict[str, Any]:
@@ -141,6 +153,48 @@ def _assert_frozen_result_contracts() -> None:
         )
 
 
+def _assert_e1_closeout(rows: list[dict[str, str]]) -> None:
+    summary = json.loads(E1_SMOKE_SUMMARY.read_text(encoding="utf-8"))
+    assert summary["config_count"] == 8
+    assert summary["roles_accessed"] == ["train", "valid_iid"]
+    assert summary["forbidden_roles_accessed"] == []
+    assert summary["sealed_iid_accessed"] is False
+    assert summary["long_training_started"] is False
+    results = {result["config_id"]: result for result in summary["results"]}
+    assert tuple(results) == EXPECTED_IDS
+    for row in rows:
+        result = results[row["config_id"]]
+        assert result["status"] == row["e1_status"]
+        assert result["status_ok"] is True
+        assert result["grad_finite"] is True
+        assert result["checkpoint_reload_passed"] is True
+        assert result["native_runtime_passed"] is True
+        assert result["roles_accessed"] == ["train", "valid_iid"]
+        assert result["forbidden_roles_accessed"] == []
+        assert result["sealed_iid_accessed"] is False
+        assert np.isfinite(float(result["valid_base_mse"]))
+        assert np.isfinite(float(result["valid_point_global_relative_rmse_pct"]))
+        assert float(result["peak_rss_mb"]) == float(row["e1_peak_rss_mb"])
+        assert float(result["peak_device_memory_mb"]) == float(
+            row["e1_peak_device_memory_mb"]
+        )
+    assert results["V4P5_16_gate6f_mean_max_smoke"]["training_restarted"] is False
+
+    closeout = json.loads(GATE6F_CLOSEOUT.read_text(encoding="utf-8"))
+    assert closeout["status"] == "completed_low_memory_pre_research"
+    assert closeout["execution_host"] == "devbox"
+    assert closeout["wsl2_connected"] is False
+    assert closeout["v13_modified_or_interfered"] is False
+    assert closeout["roles_materialized"] == ["train", "valid_iid"]
+    assert closeout["forbidden_roles_materialized"] == []
+    assert closeout["sealed_iid_accessed"] is False
+    assert closeout["long_training_started"] is False
+    assert closeout["e600_started"] is False
+    assert closeout["multi_seed_started"] is False
+    assert closeout["e1_smoke"]["passed_count"] == 8
+    assert closeout["e1_smoke"]["v16_training_restarted"] is False
+
+
 def main() -> int:
     rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
     assert tuple(row["config_id"] for row in rows) == EXPECTED_IDS
@@ -166,6 +220,7 @@ def main() -> int:
         assert row["forbidden_access_roles"] == FORBIDDEN
         assert row["launch_policy"] == "explicit_user_instruction_only"
         assert row["long_training_started"] == "false"
+        assert row["frozen_probe_rank"] == EXPECTED_FROZEN_RANKS[row["config_id"]]
         assert row["plan_status"] == "frozen_prepared"
         assert row["execution_status"] in {"not_started", "completed_e1_smoke"}
         assert row["evaluation_status"] in {"not_evaluated", "completed_smoke"}
@@ -176,7 +231,9 @@ def main() -> int:
             assert row["e1_peak_device_memory_mb"] == ""
         else:
             assert row["evaluation_status"] == "completed_smoke"
-            assert row["e1_status"] == "passed"
+            assert row["e1_status"] in {"passed", "passed_recovered_post_interrupt"}
+            if row["e1_status"] == "passed_recovered_post_interrupt":
+                assert row["config_id"] == "V4P5_16_gate6f_mean_max_smoke"
             assert float(row["e1_peak_rss_mb"]) > 0.0
             # JAX exposes no allocator stats on some GPU builds.  Preserve that
             # explicit unavailability instead of treating it as a failed smoke.
@@ -228,6 +285,7 @@ def main() -> int:
     assert "scale_head_lr_multiplier" not in n3["optimizer"]
     _assert_qk_input_only()
     _assert_frozen_result_contracts()
+    _assert_e1_closeout(rows)
     v4_registry = (ROOT / "configs/heat3d_v4/run_registry.csv").read_text(encoding="utf-8")
     assert not any(config_id in v4_registry for config_id in EXPECTED_IDS)
     print(json.dumps({
@@ -236,7 +294,7 @@ def main() -> int:
         "config_count": len(rows),
         "pooling_modes": list(SCALE_POOLING_MODES),
         "qk_region_feature_count": len(QK_REGION_FEATURES),
-        "training_started": False,
+        "e1_training_completed": True,
         "long_training_started": False,
         "commands": commands,
     }, indent=2, sort_keys=True))

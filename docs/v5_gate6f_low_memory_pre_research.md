@@ -96,16 +96,33 @@ any existing N3/V13 YAML.
 ## Full-model e1 smoke
 
 The registered low-memory sequential devbox run used
-`XLA_PYTHON_CLIENT_PREALLOCATE=false`. At the external SSH interruption:
+`XLA_PYTHON_CLIENT_PREALLOCATE=false`. All eight candidates completed their
+24 training batches with finite loss/gradient/update values, native runtime
+checks, train-only context fitting, checkpoint saves, prediction saves, and
+checkpoint reload verification.
 
-- V14 and V15 had written complete `loss_summary.json` files.
-- V14 passed finite gradients, native runtime width/positivity, train-only
-  context, and final/best checkpoint reload. Its peak device memory was
-  `8190.0 MB` and peak host RSS was `4327.4 MB`.
-- V16 had started; V16--V21 final status had not yet been collected.
+| ID | candidate | e1 status | valid base MSE | point-global RMSE | peak RSS MB | peak device MB |
+|---|---|---|---:|---:|---:|---:|
+| V14 | mean | passed | 0.338122 | 72.0769% | 4327.402 | 8190.0 |
+| V15 | mean+std | passed | 0.343178 | 72.6140% | 4359.609 | 8190.0 |
+| V16 | mean+max | recovered pass | 0.329428 | 71.1441% | 4334.875 | 8190.0 |
+| V17 | pre-FiLM mean+std | passed | 0.343440 | 72.6417% | 4335.070 | 8190.0 |
+| V18 | deep scale head | passed | 0.346385 | 72.9524% | 4332.941 | 8190.0 |
+| V19 | latent attention | passed | 0.338087 | 72.0732% | 4480.691 | 8190.0 |
+| V20 | q--k gated | passed | 0.333786 | 71.6134% | 4552.496 | 8190.0 |
+| V21 | mean + stop-gradient/LR 1.5 | passed | 0.345619 | 72.8716% | 4308.980 | 8190.0 |
 
-This section is explicitly partial and must be replaced by the eight-row
-collector output after devbox connectivity is restored. It is not an e1
-closeout and does not authorize a longer run.
+V16's original e1 optimization, final/best checkpoints, and both prediction
+files were complete before an external `KeyboardInterrupt` stopped the final
+reload audit. It was not retrained. A separate inference-only recovery rebuilt
+only train-fitted preprocessing and `valid_iid`, then verified exact parameter
+serialization and final/best prediction replay within the existing `0.005 K`
+tolerance (maximum errors `0.002167 K` and `0.002045 K`). Its registry status is
+therefore `passed_recovered_post_interrupt`, not an ordinary uninterrupted pass.
+
+The tracked collector output is
+`configs/heat3d_v5/gate6f/e1_smoke_summary.json`; the machine-readable closeout
+is `configs/heat3d_v5/gate6f/gate6f_closeout.json`. These e1 metrics are runtime
+smoke evidence only and do not authorize or rank a long-training candidate.
 
 `long_training_started=false`.
