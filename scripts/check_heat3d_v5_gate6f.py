@@ -229,6 +229,8 @@ def main() -> int:
             assert row["e1_status"] == ""
             assert row["e1_peak_rss_mb"] == ""
             assert row["e1_peak_device_memory_mb"] == ""
+            assert not (ROOT / row["output_dir"]).exists()
+            assert not (ROOT / row["memory_audit_jsonl"]).exists()
         else:
             assert row["evaluation_status"] == "completed_smoke"
             assert row["e1_status"] in {"passed", "passed_recovered_post_interrupt"}
@@ -240,14 +242,22 @@ def main() -> int:
             assert row["e1_peak_device_memory_mb"] in {"", "unavailable"} or float(
                 row["e1_peak_device_memory_mb"]
             ) >= 0.0
+            output_dir = ROOT / row["output_dir"]
+            memory_jsonl = ROOT / row["memory_audit_jsonl"]
+            if output_dir.exists() or memory_jsonl.exists():
+                assert output_dir.is_dir() and memory_jsonl.is_file()
+                assert (output_dir / "params_final.pkl").is_file()
+                assert (output_dir / "params_best.pkl").is_file()
+                assert (output_dir / "predictions.npz").is_file()
+                assert (output_dir / "best_predictions.npz").is_file()
+                if row["e1_status"] == "passed":
+                    assert (output_dir / "loss_summary.json").is_file()
         assert bool(resolved["metadata"]["long_training_started"]) is False
         assert bool(resolved["metadata"]["e600_started"]) is False
         assert bool(resolved["metadata"]["e600_completed"]) is False
         assert resolved["metadata"]["registry_config_id"] == row["config_id"]
         assert str(resolved["export"]["output_dir"]) == row["output_dir"]
         assert str(resolved["run"]["memory_audit_jsonl"]) == row["memory_audit_jsonl"]
-        assert not (ROOT / row["output_dir"]).exists()
-        assert not (ROOT / row["memory_audit_jsonl"]).exists()
         assert resolved["model"]["scale_pooling"] == row["scale_pooling"]
         assert int(resolved["model"]["scale_head_depth"]) == int(row["scale_head_depth"])
         assert bool(resolved["model"]["pooled_latent_stop_gradient"]) == (
