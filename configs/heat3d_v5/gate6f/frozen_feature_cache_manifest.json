@@ -1,0 +1,403 @@
+{
+  "checkpoint": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6_inputs/N3_best_e402/params_best.pkl",
+  "checkpoint_epoch": 402,
+  "checkpoint_git_commit": "f1053d1",
+  "checkpoint_kind": "best",
+  "checkpoint_sha256": "3baebb9b751bf6054f36308444cdefe7a7b4f343665164b0aabdfe2610b5a228",
+  "checkpoint_strict_load": {
+    "checkpoint_epoch": 402,
+    "checkpoint_format_version": 1,
+    "checkpoint_git_commit": "f1053d1",
+    "checkpoint_kind": "best",
+    "checkpoint_load_mode": "params_only",
+    "checkpoint_load_strict": true,
+    "checkpoint_model_config_hash": "a97a485698ffc2b6a425fde4e2b7847df093ac2b34c8bd3e062e11d35e6c005e",
+    "checkpoint_schema_version": "heat3d_v3_params_checkpoint_v1",
+    "checkpoint_train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+    "init_checkpoint": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6_inputs/N3_best_e402/params_best.pkl",
+    "loaded": true,
+    "loaded_key_count": 204,
+    "loaded_keys": [
+      "decoder/gnn/decoder_nodes_pnodes/layers_0/bias",
+      "decoder/gnn/decoder_nodes_pnodes/layers_0/kernel",
+      "decoder/gnn/decoder_nodes_pnodes/layers_1/bias",
+      "decoder/gnn/decoder_nodes_pnodes/layers_1/kernel",
+      "decoder/gnn/decoder_nodes_pnodes/layers_2/bias",
+      "decoder/gnn/decoder_nodes_pnodes/layers_2/kernel",
+      "decoder/gnn/encoder_edges_r2p/layernorm/bias",
+      "decoder/gnn/encoder_edges_r2p/layernorm/scale",
+      "decoder/gnn/encoder_edges_r2p/layers_0/bias",
+      "decoder/gnn/encoder_edges_r2p/layers_0/kernel",
+      "decoder/gnn/encoder_edges_r2p/layers_1/bias",
+      "decoder/gnn/encoder_edges_r2p/layers_1/kernel",
+      "decoder/gnn/encoder_edges_r2p/layers_2/bias",
+      "decoder/gnn/encoder_edges_r2p/layers_2/kernel",
+      "decoder/gnn/processor_0_edges_r2p/layernorm/bias",
+      "decoder/gnn/processor_0_edges_r2p/layernorm/scale",
+      "decoder/gnn/processor_0_edges_r2p/layers_0/bias",
+      "decoder/gnn/processor_0_edges_r2p/layers_0/kernel",
+      "decoder/gnn/processor_0_edges_r2p/layers_1/bias",
+      "decoder/gnn/processor_0_edges_r2p/layers_1/kernel",
+      "decoder/gnn/processor_0_edges_r2p/layers_2/bias",
+      "decoder/gnn/processor_0_edges_r2p/layers_2/kernel",
+      "decoder/gnn/processor_0_nodes_pnodes/layernorm/bias",
+      "decoder/gnn/processor_0_nodes_pnodes/layernorm/scale",
+      "decoder/gnn/processor_0_nodes_pnodes/layers_0/bias",
+      "decoder/gnn/processor_0_nodes_pnodes/layers_0/kernel",
+      "decoder/gnn/processor_0_nodes_pnodes/layers_1/bias",
+      "decoder/gnn/processor_0_nodes_pnodes/layers_1/kernel",
+      "decoder/gnn/processor_0_nodes_pnodes/layers_2/bias",
+      "decoder/gnn/processor_0_nodes_pnodes/layers_2/kernel",
+      "decoder/gnn/processor_0_nodes_rnodes/layernorm/bias",
+      "decoder/gnn/processor_0_nodes_rnodes/layernorm/scale",
+      "decoder/gnn/processor_0_nodes_rnodes/layers_0/bias",
+      "decoder/gnn/processor_0_nodes_rnodes/layers_0/kernel",
+      "decoder/gnn/processor_0_nodes_rnodes/layers_1/bias",
+      "decoder/gnn/processor_0_nodes_rnodes/layers_1/kernel",
+      "decoder/gnn/processor_0_nodes_rnodes/layers_2/bias",
+      "decoder/gnn/processor_0_nodes_rnodes/layers_2/kernel",
+      "decoder_bypass_hidden_0/bias",
+      "decoder_bypass_hidden_0/kernel",
+      "decoder_bypass_hidden_1/bias",
+      "decoder_bypass_hidden_1/kernel",
+      "decoder_bypass_output/bias",
+      "decoder_bypass_output/kernel",
+      "encoder/gnn/encoder_edges_p2r/layernorm/bias",
+      "encoder/gnn/encoder_edges_p2r/layernorm/scale",
+      "encoder/gnn/encoder_edges_p2r/layers_0/bias",
+      "encoder/gnn/encoder_edges_p2r/layers_0/kernel",
+      "encoder/gnn/encoder_edges_p2r/layers_1/bias",
+      "encoder/gnn/encoder_edges_p2r/layers_1/kernel"
+    ],
+    "missing_key_count": 0,
+    "missing_keys": [],
+    "optimizer_state_loaded": false,
+    "partial_load_policy": "matching",
+    "shape_mismatch_count": 0,
+    "shape_mismatch_keys": [],
+    "skipped_key_count": 0,
+    "skipped_keys": [],
+    "unused_key_count": 0,
+    "unused_keys": []
+  },
+  "config_id": "V4P5_07_native_pooled_latent_global_film",
+  "config_path": "/home/xyh/myCodeGitOnly/heat3d-ic/configs/heat3d_v5/generated/V4P5_07_native_pooled_latent_global_film.yaml",
+  "config_sha256": "7e53824141e9de83c623ef7039eb7361dd7df4944a8306d0a4aad1e39e8387e4",
+  "default_disabled_control_replay": {
+    "execution_device": "TFRT_CPU_0",
+    "explicit_disabled_fields": {
+      "pooled_latent_stop_gradient": false,
+      "scale_head_depth": 1,
+      "scale_head_lr_multiplier": 1.0,
+      "scale_pooling": "mean"
+    },
+    "output_max_abs_difference": {
+      "deltaT_hat": 0.0,
+      "phi_hat": 0.0,
+      "pooled_rnodes": 0.0,
+      "s_hat": 0.0
+    },
+    "parameter_leaf_keys_identical": true,
+    "parameter_max_abs_difference": 0.0,
+    "passed": true,
+    "strict_output_comparison": "bitwise_equal_on_cpu"
+  },
+  "forbidden_roles_materialized": [],
+  "global_context_feature_names": [
+    "log_s_phys_K",
+    "P_operator_W",
+    "log_P_operator_W",
+    "q_weighted_local_kz_W_mK",
+    "q_weighted_inverse_kz_mK_W",
+    "q_low_k_overlap_fraction",
+    "source_concentration",
+    "source_z_centroid_normalized",
+    "source_layer_kz_heterogeneity_cv",
+    "harmonic_kx_W_mK",
+    "harmonic_ky_W_mK",
+    "harmonic_kz_W_mK",
+    "anisotropy_xy_over_z",
+    "log_Lx_m",
+    "log_Ly_m",
+    "log_Lz_m",
+    "log_top_area_m2",
+    "log_top_h_W_m2K",
+    "T_bottom_K",
+    "T_inf_K",
+    "T_inf_minus_T_bottom_K",
+    "bc_top_cv_fraction",
+    "bc_bottom_cv_fraction",
+    "bc_side_cv_fraction"
+  ],
+  "global_context_fit_roles": [
+    "train"
+  ],
+  "global_context_standardizer": {
+    "feature_names": [
+      "log_s_phys_K",
+      "P_operator_W",
+      "log_P_operator_W",
+      "q_weighted_local_kz_W_mK",
+      "q_weighted_inverse_kz_mK_W",
+      "q_low_k_overlap_fraction",
+      "source_concentration",
+      "source_z_centroid_normalized",
+      "source_layer_kz_heterogeneity_cv",
+      "harmonic_kx_W_mK",
+      "harmonic_ky_W_mK",
+      "harmonic_kz_W_mK",
+      "anisotropy_xy_over_z",
+      "log_Lx_m",
+      "log_Ly_m",
+      "log_Lz_m",
+      "log_top_area_m2",
+      "log_top_h_W_m2K",
+      "T_bottom_K",
+      "T_inf_K",
+      "T_inf_minus_T_bottom_K",
+      "bc_top_cv_fraction",
+      "bc_bottom_cv_fraction",
+      "bc_side_cv_fraction"
+    ],
+    "fit_population": "train_only",
+    "fit_sample_count": 672,
+    "fit_sample_ids_sha256": "6ca6d00ab3c17ccbb5085da8114066094d9332582d4cdb2b939faee9262201a8",
+    "input_provenance": {
+      "P_operator_W": "q+control_volume+bottom_BC_mask",
+      "T_bottom_K": "reference Dirichlet temperature plus bottom BC feature",
+      "T_inf_K": "reference Dirichlet temperature plus top ambient BC feature",
+      "T_inf_minus_T_bottom_K": "top/bottom BC features",
+      "anisotropy_xy_over_z": "harmonic conductivity features",
+      "bc_bottom_cv_fraction": "bottom BC mask+control_volume",
+      "bc_side_cv_fraction": "side BC mask+control_volume",
+      "bc_top_cv_fraction": "top BC mask+control_volume",
+      "harmonic_kx_W_mK": "k_x+control_volume",
+      "harmonic_ky_W_mK": "k_y+control_volume",
+      "harmonic_kz_W_mK": "k_z+control_volume",
+      "log_Lx_m": "coords",
+      "log_Ly_m": "coords",
+      "log_Lz_m": "coords",
+      "log_P_operator_W": "P_operator_W",
+      "log_s_phys_K": "coords+k_z+q+bottom_mask+top_h+BC_temperature_offset via z_collapsed_1d_operator",
+      "log_top_area_m2": "coords",
+      "log_top_h_W_m2K": "top_h BC feature",
+      "q_low_k_overlap_fraction": "q+k_z+control_volume",
+      "q_weighted_inverse_kz_mK_W": "q+k_z+control_volume",
+      "q_weighted_local_kz_W_mK": "q+k_z+control_volume",
+      "source_concentration": "q+control_volume",
+      "source_layer_kz_heterogeneity_cv": "coords+k_z+q+control_volume",
+      "source_z_centroid_normalized": "coords+q+control_volume"
+    },
+    "mean": [
+      -2.010659642286235,
+      1.1940814764267582,
+      -0.23612863840946505,
+      83.10796908042974,
+      0.12035751891461748,
+      0.448840824639509,
+      4.5997841670628965,
+      0.49190644577756515,
+      0.056508102429338285,
+      22.31938335174356,
+      23.23954059789914,
+      20.050844840252466,
+      1.239316218258406,
+      -4.605170185988151,
+      -4.605170185988151,
+      -6.214608098422131,
+      -9.210340371976303,
+      6.704720281961651,
+      300.0,
+      300.0,
+      0.0,
+      0.16666666666666816,
+      0.16666666666666816,
+      0.08592592592592704
+    ],
+    "schema_version": "heat3d_v5_global_physics_context_v1",
+    "std": [
+      1.1591289768250952,
+      1.3132104614475442,
+      0.91890414484431,
+      88.0498657394844,
+      0.2149181151621914,
+      0.36805619860508965,
+      2.4480302774659646,
+      0.12547710340255658,
+      0.15126048285435845,
+      20.268313970091143,
+      20.543314162100387,
+      19.598476273258257,
+      0.4991785332614678,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.8241136916073568,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "target_or_label_derived_inputs": false,
+    "zero_variance_feature_names": [
+      "log_Lx_m",
+      "log_Ly_m",
+      "log_Lz_m",
+      "log_top_area_m2",
+      "T_bottom_K",
+      "T_inf_K",
+      "T_inf_minus_T_bottom_K",
+      "bc_top_cv_fraction",
+      "bc_bottom_cv_fraction",
+      "bc_side_cv_fraction"
+    ]
+  },
+  "gnn_backward": false,
+  "peak_rss_mb": 3680.84375,
+  "qk_region_feature_names": [
+    "log1p_q_relative",
+    "log_inverse_kz_relative",
+    "log1p_q_inverse_kz_relative",
+    "q_high_inverse_kz_overlap",
+    "source_z_normalized",
+    "is_top_fraction",
+    "is_bottom_fraction",
+    "is_side_fraction",
+    "is_interior_fraction",
+    "log1p_top_h_relative",
+    "bottom_bc_offset_relative"
+  ],
+  "roles_materialized": [
+    "train",
+    "valid_iid"
+  ],
+  "schema_version": "heat3d_v5_gate6f_frozen_feature_cache_v1",
+  "sealed_iid_accessed": false,
+  "split_source": "split_map_v4",
+  "splits": {
+    "train": {
+      "array_shapes": {
+        "control_volumes": [
+          672,
+          1024
+        ],
+        "dirichlet_delta": [
+          672,
+          1024
+        ],
+        "dirichlet_mask": [
+          672,
+          1024
+        ],
+        "global_context": [
+          672,
+          24
+        ],
+        "global_context_raw": [
+          672,
+          24
+        ],
+        "phi_hat": [
+          672,
+          1024
+        ],
+        "qk_region_features": [
+          672,
+          256,
+          11
+        ],
+        "rnodes_processed": [
+          672,
+          256,
+          96
+        ],
+        "rnodes_processed_pre_film": [
+          672,
+          256,
+          96
+        ],
+        "s_hat_n3": [
+          672
+        ],
+        "s_phys": [
+          672
+        ],
+        "s_true": [
+          672
+        ],
+        "target_deltaT": [
+          672,
+          1024
+        ]
+      },
+      "artifact": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6f_frozen_features/N3_e402_model_lab_023208a_r7/train_n3_e402_frozen_features.npz",
+      "artifact_sha256": "ff41392ecc6ac508b7964bb8e3df56d9cfc88ca1a748a57c93a781dcdcfdf9bf",
+      "sample_count": 672,
+      "sample_ids_sha256": "04699043e96ab4b62d71e337d01940074d393d70384f9724090bfc41f2e2af83"
+    },
+    "valid_iid": {
+      "array_shapes": {
+        "control_volumes": [
+          128,
+          1024
+        ],
+        "dirichlet_delta": [
+          128,
+          1024
+        ],
+        "dirichlet_mask": [
+          128,
+          1024
+        ],
+        "global_context": [
+          128,
+          24
+        ],
+        "global_context_raw": [
+          128,
+          24
+        ],
+        "phi_hat": [
+          128,
+          1024
+        ],
+        "qk_region_features": [
+          128,
+          256,
+          11
+        ],
+        "rnodes_processed": [
+          128,
+          256,
+          96
+        ],
+        "rnodes_processed_pre_film": [
+          128,
+          256,
+          96
+        ],
+        "s_hat_n3": [
+          128
+        ],
+        "s_phys": [
+          128
+        ],
+        "s_true": [
+          128
+        ],
+        "target_deltaT": [
+          128,
+          1024
+        ]
+      },
+      "artifact": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6f_frozen_features/N3_e402_model_lab_023208a_r7/valid_iid_n3_e402_frozen_features.npz",
+      "artifact_sha256": "445bcb77fcee12abc5a6233e15f1068dfadaa64f5046727b4e681cf19aa7cb8b",
+      "sample_count": 128,
+      "sample_ids_sha256": "6f0745ad63db16d9594316eea52665a13f84328823dba9f359de62afe823e119"
+    }
+  },
+  "training_started": false
+}

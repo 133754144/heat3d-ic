@@ -32,6 +32,9 @@ from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E40
 
 REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6f_scale_probe_registry.csv"
 N3 = ROOT / "configs/heat3d_v5/generated/V4P5_07_native_pooled_latent_global_film.yaml"
+AMPLITUDE_REPORT = ROOT / "configs/heat3d_v5/gate6f/amplitude_valid_only.json"
+FROZEN_CACHE_MANIFEST = ROOT / "configs/heat3d_v5/gate6f/frozen_feature_cache_manifest.json"
+FROZEN_PROBE_REPORT = ROOT / "configs/heat3d_v5/gate6f/frozen_probe_screen_lowmem.json"
 EXPECTED_IDS = tuple(f"V4P5_{index:02d}_gate6f_{suffix}_smoke" for index, suffix in (
     (14, "mean_pool"),
     (15, "mean_std"),
@@ -73,6 +76,69 @@ def _assert_qk_input_only() -> None:
     )
     assert region.shape == (2, len(QK_REGION_FEATURES))
     assert np.all(np.isfinite(region))
+
+
+def _assert_frozen_result_contracts() -> None:
+    amplitude = json.loads(AMPLITUDE_REPORT.read_text(encoding="utf-8"))
+    assert amplitude["roles_accessed"] == ["valid_iid"]
+    assert amplitude["forbidden_roles_accessed"] == []
+    assert amplitude["sealed_iid_accessed"] is False
+    assert amplitude["training_started"] is False
+    assert amplitude["checkpoint_inference_run"] is False
+    assert amplitude["models"]["n3"]["checkpoint_epoch"] == 402
+    assert amplitude["models"]["l2"]["checkpoint_epoch"] == 353
+    assert set(amplitude["bins"]) == {
+        "true_cv_rms_deltaT_K",
+        "q_low_k_overlap_fraction",
+        "q_weighted_inverse_conductivity_mK_W",
+        "total_power_W",
+        "source_concentration",
+    }
+
+    cache = json.loads(FROZEN_CACHE_MANIFEST.read_text(encoding="utf-8"))
+    assert cache["config_id"] == "V4P5_07_native_pooled_latent_global_film"
+    assert cache["checkpoint_kind"] == "best" and cache["checkpoint_epoch"] == 402
+    assert cache["roles_materialized"] == ["train", "valid_iid"]
+    assert cache["forbidden_roles_materialized"] == []
+    assert cache["sealed_iid_accessed"] is False
+    assert cache["training_started"] is False and cache["gnn_backward"] is False
+    assert cache["global_context_standardizer"]["fit_population"] == "train_only"
+    assert cache["default_disabled_control_replay"]["passed"] is True
+    assert cache["default_disabled_control_replay"]["parameter_max_abs_difference"] == 0.0
+    assert max(
+        cache["default_disabled_control_replay"]["output_max_abs_difference"].values()
+    ) == 0.0
+    required_arrays = {
+        "global_context", "global_context_raw", "rnodes_processed_pre_film",
+        "rnodes_processed", "qk_region_features", "phi_hat", "s_phys", "s_true",
+    }
+    assert cache["splits"]["train"]["sample_count"] == 672
+    assert cache["splits"]["valid_iid"]["sample_count"] == 128
+    for split in ("train", "valid_iid"):
+        record = cache["splits"][split]
+        assert required_arrays <= set(record["array_shapes"])
+        assert len(record["artifact_sha256"]) == 64
+        assert len(record["sample_ids_sha256"]) == 64
+
+    probes = json.loads(FROZEN_PROBE_REPORT.read_text(encoding="utf-8"))
+    assert probes["roles_accessed"] == ["train", "valid_iid"]
+    assert probes["forbidden_roles_accessed"] == []
+    assert probes["sealed_iid_accessed"] is False
+    assert probes["gnn_backward"] is False
+    assert probes["frozen_probe_short_training"] is True
+    assert probes["xla_python_client_preallocate"] == "false"
+    assert probes["ranking"] == [
+        "mean", "deep_scale_head", "mean_plus_max", "mean_plus_std",
+        "qk_gated_pooling", "latent_attention_pooling", "pre_film_mean_plus_std",
+    ]
+    assert len(probes["results"]) == 7
+    for result in probes["results"]:
+        assert result["finite"] is True and result["gnn_backward"] is False
+        assert int(result["parameter_count"]) > 0
+        assert np.isfinite(float(result["valid"]["scale_log_rmse"]))
+        assert np.isfinite(
+            float(result["valid"]["fixed_shape_joint_point_global_relative_rmse_pct"])
+        )
 
 
 def main() -> int:
@@ -161,6 +227,7 @@ def main() -> int:
     assert "pooled_latent_stop_gradient" not in n3["model"]
     assert "scale_head_lr_multiplier" not in n3["optimizer"]
     _assert_qk_input_only()
+    _assert_frozen_result_contracts()
     v4_registry = (ROOT / "configs/heat3d_v4/run_registry.csv").read_text(encoding="utf-8")
     assert not any(config_id in v4_registry for config_id in EXPECTED_IDS)
     print(json.dumps({
