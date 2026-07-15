@@ -388,6 +388,8 @@ def main() -> int:
         assert closeout["selection_records"][name]["trajectory_only"] is True
         assert closeout["selection_records"][name]["checkpoint_saved"] is False
     assert closeout["model_inference_run"] is False
+    assert closeout["run_training_completed"] is True
+    assert closeout["closeout_training_started"] is False
     assert closeout["large_artifacts_tracked"] is False
     assert all(len(row["sha256"]) == 64 for row in closeout["artifacts"].values())
 

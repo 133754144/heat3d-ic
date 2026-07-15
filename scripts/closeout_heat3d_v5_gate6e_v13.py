@@ -296,7 +296,8 @@ def main() -> int:
         "artifacts": artifacts,
         "large_artifacts_tracked": False,
         "model_inference_run": False,
-        "training_started": False,
+        "run_training_completed": True,
+        "closeout_training_started": False,
     }
     best = source_metrics["v13_best_e318"]
     final = source_metrics["v13_final_e600"]
