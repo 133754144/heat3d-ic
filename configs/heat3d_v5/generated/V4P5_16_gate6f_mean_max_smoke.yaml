@@ -6,12 +6,15 @@ overrides:
   model:
     scale_pooling: mean_max
   run:
-    memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_16_gate6f_mean_max_smoke.jsonl
-    final_probe_output_dir: output/heat3d_v5_gate6f_smoke_final_probe/V4P5_16_gate6f_mean_max_smoke
-    post_training_diagnostics_output_dir: output/heat3d_v5_gate6f_smoke_diagnostics/V4P5_16_gate6f_mean_max_smoke
+    memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_16_gate6f_mean_max_smoke_r2.jsonl
+    final_probe_output_dir: output/heat3d_v5_gate6f_smoke_final_probe/V4P5_16_gate6f_mean_max_smoke_r2
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6f_smoke_diagnostics/V4P5_16_gate6f_mean_max_smoke_r2
   export:
-    output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_16_gate6f_mean_max_smoke
-    run_name: V4P5_16_gate6f_mean_max_smoke
+    output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_16_gate6f_mean_max_smoke_r2
+    run_name: V4P5_16_gate6f_mean_max_smoke_r2
   metadata:
     registry_config_id: V4P5_16_gate6f_mean_max_smoke
     candidate: mean_plus_max
+    interrupted_attempt_output_dir: output/heat3d_v5_gate6f_smoke_runs/V4P5_16_gate6f_mean_max_smoke
+    interrupted_attempt_memory_audit_jsonl: output/heat3d_v5_gate6f_smoke_memory/V4P5_16_gate6f_mean_max_smoke.jsonl
+    retry_reason: devbox_connectivity_loss_or_reboot
