@@ -35,6 +35,11 @@ from scripts import run_heat3d_v4_controlled_training as v4_wrapper  # noqa: E40
 
 
 N3_ID = "V4P5_07_native_pooled_latent_global_film"
+MODEL_METADATA_ONLY_FIELDS = {
+    "architecture",
+    "report_memory_estimate",
+    "report_parameter_count",
+}
 
 
 def _parse_args() -> argparse.Namespace:
@@ -117,6 +122,27 @@ def _install_n3_semantics(config: dict[str, Any]) -> Any:
     return v4_wrapper.legacy_runner
 
 
+def _runtime_model_source(runner: Any, declared: dict[str, Any]) -> dict[str, Any]:
+    """Mirror the runner's CLI whitelist before constructing RIGNO."""
+
+    accepted = set(runner.GraphNeuralOperator.__dataclass_fields__)
+    unsupported = set(declared) - accepted - MODEL_METADATA_ONLY_FIELDS
+    if unsupported:
+        raise ValueError(
+            "Gate 6F cache model fields are neither RIGNO inputs nor known metadata: "
+            f"{sorted(unsupported)}"
+        )
+    model_source = dict(runner.RUNNER_MODEL_CONFIG)
+    model_source.update({key: value for key, value in declared.items() if key in accepted})
+    # N3 predates the Gate 6F switches, so these fields are intentionally
+    # absent from its YAML and supplied by argparse in the normal runner path.
+    # The cache exporter bypasses argparse; mirror the exact disabled defaults
+    # before validating or constructing the frozen model.
+    model_source.setdefault("scale_head_depth", 1)
+    model_source.setdefault("pooled_latent_stop_gradient", False)
+    return model_source
+
+
 def _build_train_valid_groups(config: dict[str, Any]):
     """Build only train/valid groups; forbidden roles are never materialized."""
 
@@ -145,13 +171,7 @@ def _build_train_valid_groups(config: dict[str, Any]):
     train_examples = [dataset[index_by_id[sample_id]] for sample_id in train_ids]
     valid_examples = [dataset[index_by_id[sample_id]] for sample_id in valid_ids]
     stats = runner._train_only_stats(train_examples)
-    model_source = dict(config["model"])
-    # N3 predates the Gate 6F switches, so these fields are intentionally
-    # absent from its YAML and supplied by argparse in the normal runner path.
-    # The cache exporter bypasses argparse; mirror the exact disabled defaults
-    # before validating or constructing the frozen model.
-    model_source.setdefault("scale_head_depth", 1)
-    model_source.setdefault("pooled_latent_stop_gradient", False)
+    model_source = _runtime_model_source(runner, config["model"])
     model_config = runner._resolve_decoder_bypass_model_config(model_source, stats)
     runner._validate_model_config(model_config)
     graph_config = config["graph"]
