@@ -172,8 +172,10 @@ def _row_result(row: dict[str, str], recovery_path: Path | None) -> dict[str, An
         "pooled_latent_width": actual_width,
         "peak_rss_mb": peak_rss,
         "peak_device_memory_mb": peak_device,
-        "valid_base_mse": summary.get("valid_base_mse"),
-        "valid_point_global_relative_rmse_pct": summary.get("valid_point_global_relative_rmse_pct"),
+        "valid_base_mse": summary.get("final_valid_base_mse"),
+        "valid_point_global_relative_rmse_pct": summary.get(
+            "final_valid_relative_rmse_pct_v4"
+        ),
         "roles_accessed": ["train", "valid_iid"],
         "forbidden_roles_accessed": [],
         "sealed_iid_accessed": False,
