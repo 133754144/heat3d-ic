@@ -71,6 +71,7 @@ def _assert_same(base: dict, candidate: dict, section: str, keys: tuple[str, ...
 
 
 def main() -> int:
+    csv.field_size_limit(sys.maxsize)
     reader = csv.DictReader(REGISTRY.open(encoding="utf-8", newline=""))
     fieldnames = tuple(reader.fieldnames or ())
     missing_result_columns = [

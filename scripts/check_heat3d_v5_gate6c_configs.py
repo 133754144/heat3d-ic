@@ -61,6 +61,7 @@ def _weights(config: dict) -> list[float]:
 
 
 def main() -> int:
+    csv.field_size_limit(sys.maxsize)
     rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
     assert [row["candidate"] for row in rows] == ["Scratch-L1", "Scratch-L2"]
     assert all(row["status"] == "prepared_not_started" for row in rows)
