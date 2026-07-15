@@ -218,7 +218,9 @@ def _write_closeouts(sealed: dict[str, Any]) -> None:
         },
     }
     _write_json(ROOT / "configs/heat3d_v5/v5_gate6c_closeout.json", gate6c)
-    paired = json.loads((GATE6D / "n3_l2_valid_paired.json").read_text(encoding="utf-8"))["aggregate"]
+    paired_payload = json.loads(
+        (GATE6D / "n3_l2_valid_paired.json").read_text(encoding="utf-8")
+    )
     coverage = json.loads((GATE6D / "global_context_coverage.json").read_text(encoding="utf-8"))
     closeout = {
         "schema_version": "heat3d_v5_gate6d_preflight_closeout_v1",
@@ -226,7 +228,9 @@ def _write_closeouts(sealed: dict[str, Any]) -> None:
         "authoritative_evaluator_commit": EVALUATOR_COMMIT,
         "collector_equivalence": "not_equivalent_frozen_evaluator_authoritative",
         "gate6c_runs": run_rows,
-        "paired_analysis": paired,
+        "paired_analysis": paired_payload["aggregate"],
+        "true_delta_point_sse_attribution": paired_payload["true_delta_point_sse_attribution"],
+        "paired_inference": paired_payload["paired_inference"],
         "coverage_summary": {
             "fit_roles": coverage["fit_roles"], "query_roles": coverage["query_roles"],
             "feature_count": coverage["feature_count"], "distance_summary": coverage["distance_summary"],
@@ -252,7 +256,7 @@ def _write_closeouts(sealed: dict[str, Any]) -> None:
         "# Gate 6D preflight closeout\n\n"
         f"冻结 evaluator `{EVALUATOR_COMMIT}` 与 collector 不等价，故冻结 evaluator 结果为权威。\n\n"
         "N3-L2 成对归因只使用 valid_iid；24D coverage 只用 train 拟合、valid 查询。"
-        "L2 的 point-global 改善不集中于少数 top-10，也不主要集中在 true CV-RMS Q4。\n\n"
+        "sample-relative 改善不集中于少数 top-10；但 point-global SSE 的 true-DeltaT Q1-Q3 总体退化，Q4 提供全部净改善。\n\n"
         f"sealed IID seed 固定为 `{SEALED_SEED}`，当前仅冻结可执行合同，未生成标签、未推理。"
         "首次开启条件是候选与完整训练方案完全冻结。\n\n"
         "本轮 training_started=false，未启动 multi-seed，未新增 loss 配置。\n",

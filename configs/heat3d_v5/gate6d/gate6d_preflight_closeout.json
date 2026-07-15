@@ -82,21 +82,47 @@
   "multi_seed_started": false,
   "new_loss_config_created": false,
   "paired_analysis": {
-    "conclusion": "L2 improvement is not concentrated in only a small top-improvement subset.",
-    "improved_sample_count": 65,
-    "improvement_concentrated_in_top10_samples": false,
-    "improvement_concentrated_in_true_cv_rms_q4": false,
     "l2_point_global_relative_rmse_pct": 23.729025112119352,
     "l2_sample_first_relative_rmse_pct": 20.835687452630733,
     "mean_l2_minus_n3_sample_relative_rmse_pct": 0.17680393572229092,
     "n3_point_global_relative_rmse_pct": 24.076221235370856,
     "n3_sample_first_relative_rmse_pct": 20.65888351690844,
-    "q4_positive_improvement_share": 0.2549625166604723,
-    "regressed_sample_count": 63,
+    "point_global_sse_conclusion": "True-DeltaT Q1-Q3 regress in aggregate SSE; Q4 supplies all net point-global improvement.",
     "sample_count": 128,
-    "top_10_positive_improvement_share": 0.40460845478245056,
-    "top_5_positive_improvement_share": 0.2514751064771149,
+    "sample_relative_conclusion": "Sample-relative improvement is not concentrated in only a small top-improvement subset.",
+    "sample_relative_improved_sample_count": 65,
+    "sample_relative_improvement_concentrated_in_top10_samples": false,
+    "sample_relative_improvement_concentrated_in_true_cv_rms_q4": false,
+    "sample_relative_regressed_sample_count": 63,
+    "sample_relative_top_10_positive_improvement_share": 0.40460845478245056,
+    "sample_relative_top_5_positive_improvement_share": 0.2514751064771149,
+    "sample_relative_true_cv_rms_q4_positive_improvement_share": 0.2549625166604723,
     "true_cv_rms_q4_threshold_K": 0.7066787411697314
+  },
+  "paired_inference": {
+    "bootstrap_method": "paired sample bootstrap with replacement; percentile 95% CI",
+    "bootstrap_resamples": 20000,
+    "permutation_method": "paired sample-wise model-label swap (Rademacher sign flip); two-sided",
+    "permutation_resamples": 20000,
+    "point_global_relative_rmse_delta_pct_points": {
+      "bootstrap_95pct_ci": [
+        -1.3903407097788194,
+        0.711600337361716
+      ],
+      "bootstrap_probability_l2_improves": 0.741,
+      "observed_l2_minus_n3": -0.3471961232515035,
+      "paired_permutation_two_sided_p": 0.5288235588220589
+    },
+    "sample_relative_mean_delta_pct_points": {
+      "bootstrap_95pct_ci": [
+        -0.7055435526211262,
+        1.1180777596633893
+      ],
+      "bootstrap_probability_l2_improves": 0.3632,
+      "observed_l2_minus_n3": 0.17680393572229092,
+      "paired_permutation_two_sided_p": 0.7048647567621619
+    },
+    "seed": 2026071502
   },
   "schema_version": "heat3d_v5_gate6d_preflight_closeout_v1",
   "sealed_iid": {
@@ -120,5 +146,54 @@
     "training_started": false
   },
   "status": "completed_no_training",
-  "training_started": false
+  "training_started": false,
+  "true_delta_point_sse_attribution": {
+    "feature": "true_cv_rms_deltaT_K",
+    "q1_q3_l2_minus_n3_point_sse_K2": 18.370504332706332,
+    "q1_q3_overall_regressed": true,
+    "q4_l2_minus_n3_point_sse_K2": -108.2216481929645,
+    "q4_provides_all_net_point_global_improvement": true,
+    "quartile_edges_K": [
+      0.009529477900274584,
+      0.1676211553699708,
+      0.3568712607914819,
+      0.7066787411697314,
+      2.023622509342634
+    ],
+    "quartiles": [
+      {
+        "l2_minus_n3_point_sse_K2": 0.21882177516818047,
+        "l2_point_sse_K2": 11.724790746346116,
+        "n3_minus_l2_point_sse_improvement_K2": -0.21882177516818047,
+        "n3_point_sse_K2": 11.505968971177936,
+        "quartile": "Q1",
+        "sample_count": 32
+      },
+      {
+        "l2_minus_n3_point_sse_K2": 2.429392885416746,
+        "l2_point_sse_K2": 115.36610433924943,
+        "n3_minus_l2_point_sse_improvement_K2": -2.429392885416746,
+        "n3_point_sse_K2": 112.93671145383269,
+        "quartile": "Q2",
+        "sample_count": 32
+      },
+      {
+        "l2_minus_n3_point_sse_K2": 15.722289672121406,
+        "l2_point_sse_K2": 344.1825385913253,
+        "n3_minus_l2_point_sse_improvement_K2": -15.722289672121406,
+        "n3_point_sse_K2": 328.4602489192039,
+        "quartile": "Q3",
+        "sample_count": 32
+      },
+      {
+        "l2_minus_n3_point_sse_K2": -108.2216481929645,
+        "l2_point_sse_K2": 2576.8529805475846,
+        "n3_minus_l2_point_sse_improvement_K2": 108.2216481929645,
+        "n3_point_sse_K2": 2685.074628740549,
+        "quartile": "Q4",
+        "sample_count": 32
+      }
+    ],
+    "total_l2_minus_n3_point_sse_K2": -89.85114386025816
+  }
 }

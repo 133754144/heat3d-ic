@@ -17,6 +17,8 @@ DEFAULT_N3 = ROOT / "configs/heat3d_v5/gate6d/V4P5_07_frozen_gate5_valid_only_ev
 DEFAULT_L2 = ROOT / "configs/heat3d_v5/gate6d/V4P5_12_frozen_gate5_evaluation.json"
 DEFAULT_JSON = ROOT / "configs/heat3d_v5/gate6d/n3_l2_valid_paired.json"
 DEFAULT_MD = ROOT / "docs/v5_gate6d_n3_l2_valid_paired.md"
+INFERENCE_SEED = 2026071502
+RESAMPLE_COUNT = 20000
 
 
 def _args() -> argparse.Namespace:
@@ -104,6 +106,98 @@ def _compact(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _paired_inference(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    rng = np.random.default_rng(INFERENCE_SEED)
+    count = len(rows)
+    sample_delta = np.asarray(
+        [row["delta_sample_relative_rmse_pct"] for row in rows], dtype=np.float64
+    )
+    n3_sse = np.asarray([row["n3_point_global_sse_K2"] for row in rows], dtype=np.float64)
+    l2_sse = np.asarray([row["l2_point_global_sse_K2"] for row in rows], dtype=np.float64)
+    truth = np.asarray([row["true_point_sse_K2"] for row in rows], dtype=np.float64)
+
+    indices = rng.integers(0, count, size=(RESAMPLE_COUNT, count))
+    sample_bootstrap = np.mean(sample_delta[indices], axis=1)
+    n3_bootstrap = 100.0 * np.sqrt(np.sum(n3_sse[indices], axis=1) / np.sum(truth[indices], axis=1))
+    l2_bootstrap = 100.0 * np.sqrt(np.sum(l2_sse[indices], axis=1) / np.sum(truth[indices], axis=1))
+    point_bootstrap = l2_bootstrap - n3_bootstrap
+
+    signs = rng.choice(np.asarray([-1.0, 1.0]), size=(RESAMPLE_COUNT, count))
+    sample_permuted = np.mean(signs * sample_delta, axis=1)
+    midpoint = 0.5 * (n3_sse + l2_sse)
+    half_delta = 0.5 * (l2_sse - n3_sse)
+    perm_l2 = midpoint[None, :] + signs * half_delta[None, :]
+    perm_n3 = midpoint[None, :] - signs * half_delta[None, :]
+    perm_truth = float(np.sum(truth))
+    point_permuted = 100.0 * (
+        np.sqrt(np.sum(perm_l2, axis=1) / perm_truth)
+        - np.sqrt(np.sum(perm_n3, axis=1) / perm_truth)
+    )
+    sample_observed = float(np.mean(sample_delta))
+    point_observed = float(
+        100.0 * math.sqrt(float(np.sum(l2_sse)) / float(np.sum(truth)))
+        - 100.0 * math.sqrt(float(np.sum(n3_sse)) / float(np.sum(truth)))
+    )
+
+    def result(observed: float, bootstrap: np.ndarray, permuted: np.ndarray) -> dict[str, Any]:
+        return {
+            "observed_l2_minus_n3": observed,
+            "bootstrap_95pct_ci": np.quantile(bootstrap, [0.025, 0.975]).tolist(),
+            "bootstrap_probability_l2_improves": float(np.mean(bootstrap < 0.0)),
+            "paired_permutation_two_sided_p": float(
+                (1 + np.sum(np.abs(permuted) >= abs(observed))) / (RESAMPLE_COUNT + 1)
+            ),
+        }
+
+    return {
+        "seed": INFERENCE_SEED,
+        "bootstrap_method": "paired sample bootstrap with replacement; percentile 95% CI",
+        "permutation_method": "paired sample-wise model-label swap (Rademacher sign flip); two-sided",
+        "bootstrap_resamples": RESAMPLE_COUNT,
+        "permutation_resamples": RESAMPLE_COUNT,
+        "sample_relative_mean_delta_pct_points": result(
+            sample_observed, sample_bootstrap, sample_permuted
+        ),
+        "point_global_relative_rmse_delta_pct_points": result(
+            point_observed, point_bootstrap, point_permuted
+        ),
+    }
+
+
+def _true_delta_sse_attribution(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    values = np.asarray(
+        [row["features"]["true_cv_rms_deltaT_K"] for row in rows], dtype=np.float64
+    )
+    edges = np.quantile(values, [0.0, 0.25, 0.5, 0.75, 1.0])
+    bins = np.searchsorted(edges[1:-1], values, side="right")
+    quartiles = []
+    for index in range(4):
+        selected = [row for row, bin_index in zip(rows, bins, strict=True) if bin_index == index]
+        n3_sse = float(sum(row["n3_point_global_sse_K2"] for row in selected))
+        l2_sse = float(sum(row["l2_point_global_sse_K2"] for row in selected))
+        quartiles.append({
+            "quartile": f"Q{index + 1}",
+            "sample_count": len(selected),
+            "n3_point_sse_K2": n3_sse,
+            "l2_point_sse_K2": l2_sse,
+            "l2_minus_n3_point_sse_K2": l2_sse - n3_sse,
+            "n3_minus_l2_point_sse_improvement_K2": n3_sse - l2_sse,
+        })
+    q1_q3_delta = float(sum(row["l2_minus_n3_point_sse_K2"] for row in quartiles[:3]))
+    q4_delta = float(quartiles[3]["l2_minus_n3_point_sse_K2"])
+    total_delta = q1_q3_delta + q4_delta
+    return {
+        "feature": "true_cv_rms_deltaT_K",
+        "quartile_edges_K": edges.tolist(),
+        "quartiles": quartiles,
+        "q1_q3_l2_minus_n3_point_sse_K2": q1_q3_delta,
+        "q4_l2_minus_n3_point_sse_K2": q4_delta,
+        "total_l2_minus_n3_point_sse_K2": total_delta,
+        "q1_q3_overall_regressed": q1_q3_delta > 0.0,
+        "q4_provides_all_net_point_global_improvement": q4_delta < 0.0 and total_delta < 0.0,
+    }
+
+
 def main() -> int:
     args = _args()
     n3_payload = _read(args.n3_evaluation)
@@ -145,7 +239,7 @@ def main() -> int:
     total_improvement = float(positive_improvements.sum())
     top_shares = {}
     for count in (5, 10):
-        top_shares[f"top_{count}_positive_improvement_share"] = (
+        top_shares[f"sample_relative_top_{count}_positive_improvement_share"] = (
             float(np.sort(positive_improvements)[-count:].sum() / total_improvement)
             if total_improvement > 0.0 else 0.0
         )
@@ -156,7 +250,7 @@ def main() -> int:
         float(positive_improvements[q4_mask].sum() / total_improvement)
         if total_improvement > 0.0 else 0.0
     )
-    top10_concentrated = top_shares["top_10_positive_improvement_share"] > 0.5
+    top10_concentrated = top_shares["sample_relative_top_10_positive_improvement_share"] > 0.5
     q4_concentrated = q4_positive_share > 0.5
 
     aggregate = {
@@ -170,21 +264,27 @@ def main() -> int:
         "n3_sample_first_relative_rmse_pct": _mean(rows, "n3_sample_relative_rmse_pct"),
         "l2_sample_first_relative_rmse_pct": _mean(rows, "l2_sample_relative_rmse_pct"),
         "mean_l2_minus_n3_sample_relative_rmse_pct": _mean(rows, "delta_sample_relative_rmse_pct"),
-        "improved_sample_count": sum(row["delta_sample_relative_rmse_pct"] < 0.0 for row in rows),
-        "regressed_sample_count": sum(row["delta_sample_relative_rmse_pct"] > 0.0 for row in rows),
+        "sample_relative_improved_sample_count": sum(row["delta_sample_relative_rmse_pct"] < 0.0 for row in rows),
+        "sample_relative_regressed_sample_count": sum(row["delta_sample_relative_rmse_pct"] > 0.0 for row in rows),
         **top_shares,
         "true_cv_rms_q4_threshold_K": q4_threshold,
-        "q4_positive_improvement_share": q4_positive_share,
-        "improvement_concentrated_in_top10_samples": top10_concentrated,
-        "improvement_concentrated_in_true_cv_rms_q4": q4_concentrated,
-        "conclusion": (
-            "L2 improvement is concentrated in a small top-improvement subset and true-CV-RMS Q4."
-            if top10_concentrated and q4_concentrated else
-            "L2 improvement is concentrated in a small top-improvement subset, but not predominantly in true-CV-RMS Q4."
+        "sample_relative_true_cv_rms_q4_positive_improvement_share": q4_positive_share,
+        "sample_relative_improvement_concentrated_in_top10_samples": top10_concentrated,
+        "sample_relative_improvement_concentrated_in_true_cv_rms_q4": q4_concentrated,
+        "sample_relative_conclusion": (
+            "Sample-relative improvement is concentrated in a small top-improvement subset."
             if top10_concentrated else
-            "L2 improvement is not concentrated in only a small top-improvement subset."
+            "Sample-relative improvement is not concentrated in only a small top-improvement subset."
         ),
     }
+    sse_attribution = _true_delta_sse_attribution(rows)
+    paired_inference = _paired_inference(rows)
+    aggregate["point_global_sse_conclusion"] = (
+        "True-DeltaT Q1-Q3 regress in aggregate SSE; Q4 supplies all net point-global improvement."
+        if sse_attribution["q1_q3_overall_regressed"]
+        and sse_attribution["q4_provides_all_net_point_global_improvement"]
+        else "Point-global SSE quartile attribution does not match the Gate 6D correction contract."
+    )
     payload = {
         "schema_version": "heat3d_v5_gate6d_valid_paired_v1",
         "data_roles": ["valid_iid"],
@@ -192,6 +292,8 @@ def main() -> int:
         "n3": {"config_id": n3_payload["config_id"], "checkpoint_epoch": 402},
         "l2": {"config_id": l2_payload["config_id"], "checkpoint_epoch": 353},
         "aggregate": aggregate,
+        "true_delta_point_sse_attribution": sse_attribution,
+        "paired_inference": paired_inference,
         "quartiles": quartiles,
         "top_improvement": [_compact(row) for row in sorted_delta[:10]],
         "top_regression": [_compact(row) for row in reversed(sorted_delta[-10:])],
@@ -211,10 +313,15 @@ def main() -> int:
         f"| point-global relative RMSE | {aggregate['n3_point_global_relative_rmse_pct']:.6f}% | {aggregate['l2_point_global_relative_rmse_pct']:.6f}% | {aggregate['l2_point_global_relative_rmse_pct'] - aggregate['n3_point_global_relative_rmse_pct']:.6f} pp |",
         f"| sample-first relative RMSE | {aggregate['n3_sample_first_relative_rmse_pct']:.6f}% | {aggregate['l2_sample_first_relative_rmse_pct']:.6f}% | {aggregate['mean_l2_minus_n3_sample_relative_rmse_pct']:.6f} pp |",
         "",
-        f"改善样本 {aggregate['improved_sample_count']}/128，退化样本 {aggregate['regressed_sample_count']}/128。",
-        f"top-10 改善样本占全部正向改善 {100.0 * aggregate['top_10_positive_improvement_share']:.2f}%；true CV-RMS Q4 占 {100.0 * aggregate['q4_positive_improvement_share']:.2f}%。",
+        f"sample-relative 改善样本 {aggregate['sample_relative_improved_sample_count']}/128，退化样本 {aggregate['sample_relative_regressed_sample_count']}/128。",
+        f"sample-relative top-10 改善样本占全部正向改善 {100.0 * aggregate['sample_relative_top_10_positive_improvement_share']:.2f}%；true CV-RMS Q4 占 {100.0 * aggregate['sample_relative_true_cv_rms_q4_positive_improvement_share']:.2f}%。",
         "",
-        f"结论：{aggregate['conclusion']}",
+        f"sample-relative 结论：{aggregate['sample_relative_conclusion']}",
+        f"point-global SSE 结论：{aggregate['point_global_sse_conclusion']}",
+        "",
+        f"true-DeltaT Q1-Q3 合计 L2-N3 SSE = {sse_attribution['q1_q3_l2_minus_n3_point_sse_K2']:.6f} K²；Q4 = {sse_attribution['q4_l2_minus_n3_point_sse_K2']:.6f} K²。",
+        f"sample-relative delta bootstrap 95% CI = [{paired_inference['sample_relative_mean_delta_pct_points']['bootstrap_95pct_ci'][0]:.6f}, {paired_inference['sample_relative_mean_delta_pct_points']['bootstrap_95pct_ci'][1]:.6f}] pp，paired permutation p={paired_inference['sample_relative_mean_delta_pct_points']['paired_permutation_two_sided_p']:.6g}。",
+        f"point-global delta bootstrap 95% CI = [{paired_inference['point_global_relative_rmse_delta_pct_points']['bootstrap_95pct_ci'][0]:.6f}, {paired_inference['point_global_relative_rmse_delta_pct_points']['bootstrap_95pct_ci'][1]:.6f}] pp，paired permutation p={paired_inference['point_global_relative_rmse_delta_pct_points']['paired_permutation_two_sided_p']:.6g}。",
         "",
         "六个变量的四分位统计、逐样本 SSE/shape/scale/amplitude/oracle 指标和 top improvement/regression 均保存在 JSON。",
         "",

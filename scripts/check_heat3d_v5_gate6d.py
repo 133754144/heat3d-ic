@@ -85,6 +85,14 @@ def main() -> int:
     paired = _read(GATE6D / "n3_l2_valid_paired.json")
     coverage = _read(GATE6D / "global_context_coverage.json")
     assert paired["data_roles"] == ["valid_iid"] and paired["forbidden_roles_accessed"] == []
+    sse = paired["true_delta_point_sse_attribution"]
+    assert all(row["l2_minus_n3_point_sse_K2"] > 0.0 for row in sse["quartiles"][:3])
+    assert sse["quartiles"][3]["l2_minus_n3_point_sse_K2"] < 0.0
+    assert sse["q1_q3_overall_regressed"] is True
+    assert sse["q4_provides_all_net_point_global_improvement"] is True
+    inference = paired["paired_inference"]
+    assert inference["seed"] == 2026071502
+    assert inference["bootstrap_resamples"] == inference["permutation_resamples"] == 20000
     assert coverage["fit_roles"] == ["train"] and coverage["query_roles"] == ["valid_iid"]
     assert coverage["forbidden_roles_accessed"] == [] and coverage["feature_count"] == 24
     assert coverage["target_or_label_features"] == []

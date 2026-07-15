@@ -1,0 +1,181 @@
+{
+  "alphas": [
+    0.25,
+    0.5,
+    0.75
+  ],
+  "checkpoint_metadata": {
+    "l2_best_e353": {
+      "checkpoint_sha256": "7d144eeee9f111d933d40f1975dfd3ea3c6c4af3945a4e6ab7660fa886f99091",
+      "epoch": 353,
+      "target_delta_mean": 0.29822078347206116,
+      "target_delta_std": 0.7966020107269287,
+      "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+      "training_commit": "62bee1f"
+    },
+    "l2_final_e600": {
+      "checkpoint_sha256": "625e67906ccde07b5c7b2959842cde956d3830813cd706804c2bd758184afc46",
+      "epoch": 600,
+      "target_delta_mean": 0.29822078347206116,
+      "target_delta_std": 0.7966020107269287,
+      "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+      "training_commit": "62bee1f"
+    },
+    "n3_best_e402": {
+      "checkpoint_sha256": "3baebb9b751bf6054f36308444cdefe7a7b4f343665164b0aabdfe2610b5a228",
+      "epoch": 402,
+      "target_delta_mean": 0.29822078347206116,
+      "target_delta_std": 0.7966020107269287,
+      "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+      "training_commit": "f1053d1"
+    }
+  },
+  "ensembles": [
+    {
+      "alpha": 0.25,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "n3_best_e402",
+      "point_global_relative_rmse_pct": 23.274037322158218,
+      "raw_cv_weighted_rmse_K": 0.16577879522979128,
+      "right": "l2_best_e353",
+      "sample_first_cv_relative_rmse_pct": 19.965276841263595,
+      "valid_base_mse": 0.035255262603923206
+    },
+    {
+      "alpha": 0.5,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "n3_best_e402",
+      "point_global_relative_rmse_pct": 23.180050999075384,
+      "raw_cv_weighted_rmse_K": 0.16523661246636193,
+      "right": "l2_best_e353",
+      "sample_first_cv_relative_rmse_pct": 19.62228009144269,
+      "valid_base_mse": 0.034971098574803676
+    },
+    {
+      "alpha": 0.75,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "n3_best_e402",
+      "point_global_relative_rmse_pct": 23.45134462109831,
+      "raw_cv_weighted_rmse_K": 0.16730275954573132,
+      "right": "l2_best_e353",
+      "sample_first_cv_relative_rmse_pct": 19.853186258399557,
+      "valid_base_mse": 0.035794475133283835
+    },
+    {
+      "alpha": 0.25,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "n3_best_e402",
+      "point_global_relative_rmse_pct": 23.500984362370094,
+      "raw_cv_weighted_rmse_K": 0.16765298893820113,
+      "right": "l2_final_e600",
+      "sample_first_cv_relative_rmse_pct": 19.766330616476406,
+      "valid_base_mse": 0.03594616869545285
+    },
+    {
+      "alpha": 0.5,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "n3_best_e402",
+      "point_global_relative_rmse_pct": 23.331138819303384,
+      "raw_cv_weighted_rmse_K": 0.1665174290437286,
+      "right": "l2_final_e600",
+      "sample_first_cv_relative_rmse_pct": 19.499789172443293,
+      "valid_base_mse": 0.03542846829192742
+    },
+    {
+      "alpha": 0.75,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "n3_best_e402",
+      "point_global_relative_rmse_pct": 23.52561061016277,
+      "raw_cv_weighted_rmse_K": 0.16794887369941128,
+      "right": "l2_final_e600",
+      "sample_first_cv_relative_rmse_pct": 19.805037249849164,
+      "valid_base_mse": 0.036021542819897695
+    },
+    {
+      "alpha": 0.25,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "l2_best_e353",
+      "point_global_relative_rmse_pct": 23.86268270905107,
+      "raw_cv_weighted_rmse_K": 0.1700460437846366,
+      "right": "l2_final_e600",
+      "sample_first_cv_relative_rmse_pct": 20.48327990221145,
+      "valid_base_mse": 0.037061162218055395
+    },
+    {
+      "alpha": 0.5,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "l2_best_e353",
+      "point_global_relative_rmse_pct": 23.757572861738492,
+      "raw_cv_weighted_rmse_K": 0.16922281893980273,
+      "right": "l2_final_e600",
+      "sample_first_cv_relative_rmse_pct": 20.50005815335532,
+      "valid_base_mse": 0.03673538881227727
+    },
+    {
+      "alpha": 0.75,
+      "formula": "prediction = alpha * left + (1 - alpha) * right",
+      "left": "l2_best_e353",
+      "point_global_relative_rmse_pct": 23.71288601982437,
+      "raw_cv_weighted_rmse_K": 0.16884120373895428,
+      "right": "l2_final_e600",
+      "sample_first_cv_relative_rmse_pct": 20.618561143080544,
+      "valid_base_mse": 0.03659732381313959
+    }
+  ],
+  "forbidden_roles_accessed": [],
+  "formulas": {
+    "ensemble": "prediction = alpha * left + (1 - alpha) * right",
+    "point_global_relative_rmse_pct": "100*sqrt(sum(error_deltaT^2)/sum(target_deltaT^2))",
+    "raw_cv_weighted_rmse_K": "sqrt(sum(error_deltaT^2*CV)/sum(CV))",
+    "sample_first_cv_relative_rmse_pct": "100*mean_samples(CV_RMS(error)/CV_RMS(target))",
+    "valid_base_mse": "mean(((prediction_deltaT-target_deltaT)/train_target_delta_std)^2)"
+  },
+  "gate6e_config_frozen_before_audit": true,
+  "gate6e_config_not_modified_from_ensemble": true,
+  "gate6e_config_sha256": "38ec7070a27cd71739ba71cbbcc198e08ab688cc3092babe2f394588d84d6452",
+  "model_inference_run": false,
+  "nodes_per_sample": 1024,
+  "prediction_artifacts": {
+    "l2_best_e353": {
+      "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6c_runs/V4P5_12_gate6c_scratch_l2_shape_balanced/best_predictions.npz",
+      "sha256": "2e38c4f72626bcaf0b23e021fc2e187c2e0ae0bad0137e9dda1757ab92c47806"
+    },
+    "l2_final_e600": {
+      "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6c_runs/V4P5_12_gate6c_scratch_l2_shape_balanced/predictions.npz",
+      "sha256": "70200f52acb7c0f7c5f53a8e6cdab4651a134ac6a8892ec9b1b43d4cdfd264cb"
+    },
+    "n3_best_e402": {
+      "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_runs/V4P5_07_native_pooled_latent_global_film/best_predictions.npz",
+      "sha256": "142427c31764179079d04b722626d7289101a5c898a5c26cbdae9fbf5b495ba4"
+    }
+  },
+  "roles_accessed": [
+    "valid_iid"
+  ],
+  "sample_count": 128,
+  "schema_version": "heat3d_v5_gate6e_valid_only_ensemble_v1",
+  "selection_or_tuning_use": "valid-only diagnostic; Gate 6E configuration frozen independently",
+  "source_metrics": {
+    "l2_best_e353": {
+      "point_global_relative_rmse_pct": 23.728963555072337,
+      "raw_cv_weighted_rmse_K": 0.16890419147275176,
+      "sample_first_cv_relative_rmse_pct": 20.83538929231391,
+      "valid_base_mse": 0.03664696722064241
+    },
+    "l2_final_e600": {
+      "point_global_relative_rmse_pct": 24.027422599298458,
+      "raw_cv_weighted_rmse_K": 0.17130451176381484,
+      "sample_first_cv_relative_rmse_pct": 20.569955345015146,
+      "valid_base_mse": 0.037574644030473996
+    },
+    "n3_best_e402": {
+      "point_global_relative_rmse_pct": 24.075572971926483,
+      "raw_cv_weighted_rmse_K": 0.1718832007632375,
+      "sample_first_cv_relative_rmse_pct": 20.65837455991344,
+      "valid_base_mse": 0.0377253922793637
+    }
+  },
+  "status": "completed_no_training",
+  "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+  "training_started": false
+}
