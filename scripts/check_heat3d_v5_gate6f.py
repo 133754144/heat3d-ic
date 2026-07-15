@@ -103,6 +103,20 @@ def main() -> int:
         assert row["plan_status"] == "frozen_prepared"
         assert row["execution_status"] in {"not_started", "completed_e1_smoke"}
         assert row["evaluation_status"] in {"not_evaluated", "completed_smoke"}
+        if row["execution_status"] == "not_started":
+            assert row["evaluation_status"] == "not_evaluated"
+            assert row["e1_status"] == ""
+            assert row["e1_peak_rss_mb"] == ""
+            assert row["e1_peak_device_memory_mb"] == ""
+        else:
+            assert row["evaluation_status"] == "completed_smoke"
+            assert row["e1_status"] == "passed"
+            assert float(row["e1_peak_rss_mb"]) > 0.0
+            # JAX exposes no allocator stats on some GPU builds.  Preserve that
+            # explicit unavailability instead of treating it as a failed smoke.
+            assert row["e1_peak_device_memory_mb"] in {"", "unavailable"} or float(
+                row["e1_peak_device_memory_mb"]
+            ) >= 0.0
         assert bool(resolved["metadata"]["long_training_started"]) is False
         assert bool(resolved["metadata"]["e600_started"]) is False
         assert bool(resolved["metadata"]["e600_completed"]) is False
