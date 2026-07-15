@@ -32,7 +32,10 @@ from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E40
 
 
 REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6g_attention_registry.csv"
+GATE6E_REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6e_scratch_loss_registry.csv"
 V13 = ROOT / "configs/heat3d_v5/generated/V4P5_13_gate6e_scratch_branch_rebalance.yaml"
+V13_CLOSEOUT = ROOT / "configs/heat3d_v5/gate6g/v13_closeout.json"
+E1_SUMMARY = ROOT / "configs/heat3d_v5/gate6g/e1_smoke_summary.json"
 IDS = (
     "V4P5_22_gate6g_control_constlr",
     "V4P5_23_gate6g_stopgrad_constlr",
@@ -366,6 +369,45 @@ def main() -> int:
         diff = _scientific_diff(control, resolved_by_id[config_id])
         assert diff == EXPECTED_VARIANTS[config_id], (config_id, diff)
 
+    with GATE6E_REGISTRY.open(encoding="utf-8", newline="") as handle:
+        gate6e_rows = list(csv.DictReader(handle))
+    assert len(gate6e_rows) == 1
+    gate6e = gate6e_rows[0]
+    assert gate6e["plan_status"] == "completed"
+    assert gate6e["execution_status"] == "completed_e600"
+    assert gate6e["evaluation_status"] == "completed_valid_only_closeout"
+    assert gate6e["training_started"] == "true"
+    closeout = json.loads(V13_CLOSEOUT.read_text(encoding="utf-8"))
+    assert closeout["status"] == "completed"
+    assert closeout["split"]["roles_read_for_closeout"] == ["valid_iid"]
+    assert closeout["split"]["forbidden_roles_read"] == []
+    assert closeout["train_only_standardizer"]["fit_population"] == "train_only"
+    assert closeout["train_only_standardizer"]["fit_sample_count"] == 672
+    assert closeout["selection_records"]["base_mse_best"]["checkpoint_saved"] is True
+    for name in ("point_global_best", "sample_first_best"):
+        assert closeout["selection_records"][name]["trajectory_only"] is True
+        assert closeout["selection_records"][name]["checkpoint_saved"] is False
+    assert closeout["model_inference_run"] is False
+    assert closeout["large_artifacts_tracked"] is False
+    assert all(len(row["sha256"]) == 64 for row in closeout["artifacts"].values())
+
+    e1 = None
+    if E1_SUMMARY.is_file():
+        e1 = json.loads(E1_SUMMARY.read_text(encoding="utf-8"))
+        assert e1["status"] == "completed"
+        assert [row["config_id"] for row in e1["results"]] == list(IDS)
+        assert e1["roles_accessed"] == ["train", "valid_iid"]
+        assert e1["forbidden_roles_accessed"] == []
+        assert e1["sealed_iid_accessed"] is False
+        assert e1["long_training_started"] is False
+        for row in e1["results"]:
+            assert row["status"] == "passed"
+            assert row["nodes_per_sample"] == 1024 and row["batch_size"] == 28
+            assert row["checkpoint_reload_passed"] is True
+            assert row["checkpoint_reload_entry_count"] >= 5
+            assert row["grad_finite"] is True
+            assert row["parameter_count"] > 0 and row["peak_rss_mb"] > 0.0
+
     runtime = None if args.skip_runtime else _runtime_checks()
     payload = {
         "status": "passed",
@@ -378,6 +420,8 @@ def main() -> int:
         "sealed_iid_accessed": False,
         "long_training_started": False,
         "runtime": runtime,
+        "v13_closeout_checked": True,
+        "e1_smoke_checked": e1 is not None,
         "commands": commands,
     }
     if args.output_json is not None:

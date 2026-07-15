@@ -98,12 +98,15 @@ def _memory(path: Path) -> dict[str, Any]:
 
 def _run(config_id: str) -> dict[str, Any]:
     resolved = _resolved(config_id)
-    command = build_training_command(resolved, python_executable=sys.executable)
-    environment = dict(os.environ)
-    environment["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-    subprocess.run(command, cwd=ROOT, env=environment, check=True)
     output_dir = ROOT / resolved["export"]["output_dir"]
     memory_path = ROOT / resolved["run"]["memory_audit_jsonl"]
+    # A complete loss summary is the atomic resume marker. This lets a failed
+    # collector resume without retraining a successful e1 model smoke.
+    if not (output_dir / "loss_summary.json").is_file():
+        command = build_training_command(resolved, python_executable=sys.executable)
+        environment = dict(os.environ)
+        environment["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+        subprocess.run(command, cwd=ROOT, env=environment, check=True)
     loss = json.loads((output_dir / "loss_summary.json").read_text(encoding="utf-8"))
     run_config = json.loads((output_dir / "run_config.json").read_text(encoding="utf-8"))
     with (output_dir / "params_final.pkl").open("rb") as handle:
@@ -129,7 +132,7 @@ def _run(config_id: str) -> dict[str, Any]:
         "checkpoint_reload_entry_count": len(reload_entries),
         "checkpoint_reload_passed": True,
         "grad_finite": True,
-        "valid_base_mse": float(loss["valid_base_mse"]),
+        "valid_base_mse": float(loss["final_valid_base_mse"]),
         "valid_point_global_relative_rmse_pct": float(loss["valid_rel_rmse_v4_pct"]),
         "output_dir": str(resolved["export"]["output_dir"]),
         "memory_audit_jsonl": str(resolved["run"]["memory_audit_jsonl"]),
