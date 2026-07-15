@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import resource
 import sys
@@ -344,6 +345,9 @@ def main() -> int:
         "model_inference_run": False,
         "gnn_backward": False,
         "frozen_probe_short_training": True,
+        "xla_python_client_preallocate": os.environ.get(
+            "XLA_PYTHON_CLIENT_PREALLOCATE", "unset"
+        ),
         "probe_input_fields": [
             "global_context_train_standardized", "rnodes_processed", "rnodes_processed_pre_film",
             "qk_region_features_raw_coords_k_q_bc", "s_phys",
