@@ -342,8 +342,28 @@ def _default_path_replay_audit(
         ]
         or [0.0]
     ) if same_keys else float("inf")
-    base_prediction = runner._model_apply(base_model, base_params, train_group)
-    explicit_prediction = runner._model_apply(explicit_model, explicit_params, train_group)
+    # GPU graph aggregation uses atomic reductions and can vary by a few ULPs
+    # between otherwise identical launches.  That would turn a hardware
+    # scheduling artifact into a false path-drift failure.  Pin this strict
+    # bitwise replay audit to the deterministic CPU backend; the production
+    # cache inference below remains on the configured accelerator.
+    cpu_device = jax.devices(backend="cpu")[0]
+
+    def to_cpu(value: Any) -> Any:
+        if isinstance(value, jax.Array):
+            return jax.device_put(value, cpu_device)
+        if isinstance(value, np.ndarray) and value.dtype.kind in "biufc":
+            return jax.device_put(value, cpu_device)
+        return value
+
+    cpu_group = jax.tree_util.tree_map(to_cpu, train_group)
+    cpu_base_params = jax.tree_util.tree_map(to_cpu, base_params)
+    cpu_explicit_params = jax.tree_util.tree_map(to_cpu, explicit_params)
+    with jax.default_device(cpu_device):
+        base_prediction = runner._model_apply(base_model, cpu_base_params, cpu_group)
+        explicit_prediction = runner._model_apply(
+            explicit_model, cpu_explicit_params, cpu_group
+        )
     output_fields = ("deltaT_hat", "phi_hat", "s_hat", "pooled_rnodes")
     output_max_abs = {
         field: float(
@@ -357,6 +377,8 @@ def _default_path_replay_audit(
     }
     passed = bool(same_keys and parameter_max_abs == 0.0 and max(output_max_abs.values()) == 0.0)
     evidence = {
+        "execution_device": str(cpu_device),
+        "strict_output_comparison": "bitwise_equal_on_cpu",
         "parameter_leaf_keys_identical": same_keys,
         "parameter_max_abs_difference": parameter_max_abs,
         "output_max_abs_difference": output_max_abs,
