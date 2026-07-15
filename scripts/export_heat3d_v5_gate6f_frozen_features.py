@@ -75,7 +75,16 @@ def _resolved_config(path: Path) -> dict[str, Any]:
     payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError(f"{path}: YAML root must be a mapping")
-    return resolve_inherited_yaml(payload, path)
+    config_id = payload.get("config_id")
+    if not isinstance(config_id, str) or not config_id:
+        raise ValueError(f"{path}: inherited Gate 6F source YAML needs a config_id")
+    resolved = resolve_inherited_yaml(payload, path)
+    # The generic V4 inheritance resolver intentionally produces the runnable
+    # payload only and drops source-only identity fields.  Gate 6F binds a
+    # frozen cache to its source config, so retain that declared identity as
+    # provenance after resolution rather than inferring it from a path.
+    resolved["config_id"] = config_id
+    return resolved
 
 
 def _root_path(path_text: str) -> Path:
