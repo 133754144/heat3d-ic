@@ -356,8 +356,16 @@ def _default_path_replay_audit(
         for field in output_fields
     }
     passed = bool(same_keys and parameter_max_abs == 0.0 and max(output_max_abs.values()) == 0.0)
+    evidence = {
+        "parameter_leaf_keys_identical": same_keys,
+        "parameter_max_abs_difference": parameter_max_abs,
+        "output_max_abs_difference": output_max_abs,
+    }
     if not passed:
-        raise AssertionError("disabled Gate 6F controls failed exact N3 replay")
+        raise AssertionError(
+            "disabled Gate 6F controls failed exact N3 replay: "
+            + json.dumps(evidence, sort_keys=True)
+        )
     return {
         "passed": True,
         "explicit_disabled_fields": {
@@ -366,9 +374,7 @@ def _default_path_replay_audit(
             "pooled_latent_stop_gradient": False,
             "scale_head_lr_multiplier": 1.0,
         },
-        "parameter_leaf_keys_identical": same_keys,
-        "parameter_max_abs_difference": parameter_max_abs,
-        "output_max_abs_difference": output_max_abs,
+        **evidence,
     }
 
 
