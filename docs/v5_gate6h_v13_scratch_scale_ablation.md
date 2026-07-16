@@ -36,3 +36,25 @@
 三组均为 random initialization，继承 V13 的数据、模型、loss、B28、seeds 和实际 LR 合同。primary selection 为 point-global；同时保存 point-global、sample-first、base-MSE 与 final checkpoint。post-training valid diagnostics 开启，final probe 关闭。
 
 本阶段明确不准备 V22 e600，且 `long_training_started=false`。
+
+## E1 execution smoke
+
+三组配置均在 devbox 正式 P5 train=672、valid_iid=128、1024 nodes、B28 上完成 e1；这不是正式性能结果。
+
+| config | params | peak RSS MiB | live device bytes | replay | valid diagnostics |
+|---|---:|---:|---:|---|---|
+| V28 stop-gradient | 853927 | 4322.66 | 7193244416 | 5/5 passed | completed / valid_iid_only |
+| V29 scale attention | 893736 | 4611.16 | 7360296960 | 5/5 passed | completed / valid_iid_only |
+| V30 deep scale head | 862247 | 4337.45 | 7186432768 | 5/5 passed | completed / valid_iid_only |
+
+全部 smoke 均满足 finite loss/gradient、train-only context fit、summary-before-replay、forbidden roles 为空。正式 e600 仍为 `not_started`。
+
+## 手动启动顺序
+
+仅在明确决定启动正式 e600 后执行：
+
+```bash
+python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_28_gate6h_v13_stopgrad_scratch_e600.yaml
+python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_29_gate6h_v13_scale_attention_scratch_e600.yaml
+python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_30_gate6h_v13_deep_scale_head_scratch_e600.yaml
+```
