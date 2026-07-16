@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import copy
 import csv
+import hashlib
 import json
 from pathlib import Path
 import shlex
@@ -33,7 +34,9 @@ IDS = (
     "V4P5_28_gate6h_v13_stopgrad_scratch_e600",
     "V4P5_29_gate6h_v13_scale_attention_scratch_e600",
     "V4P5_30_gate6h_v13_deep_scale_head_scratch_e600",
+    "V4P5_31_gate6h_v29_validation_b32_retry_e600",
 )
+E1_IDS = IDS[:3]
 FORBIDDEN = "test_iid|hard_train_holdout|hard_challenge_valid|hard_challenge_test|sealed_iid"
 EXPECTED_MODEL_DIFFS = {
     IDS[0]: {"model.pooled_latent_stop_gradient": True},
@@ -42,6 +45,12 @@ EXPECTED_MODEL_DIFFS = {
         "model.scale_attention_mode": "physics_gate",
     },
     IDS[2]: {"model.scale_head_depth": 3},
+    IDS[3]: {
+        "model.pooled_latent_stop_gradient": True,
+        "model.scale_attention_mode": "physics_gate",
+        "run.prediction_batch_size": 32,
+        "run.validation_batch_size": 32,
+    },
 }
 
 
@@ -56,6 +65,10 @@ def _resolved(path: Path) -> dict[str, Any]:
     resolved = resolve_inherited_yaml(payload, path)
     validate_v2_config(resolved, config_path=path)
     return resolved
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _flatten(payload: Any, prefix: str = "") -> dict[str, Any]:
@@ -143,11 +156,14 @@ def main() -> int:
         path = ROOT / row["generated_yaml"]
         resolved = _resolved(path)
         config_id = row["config_id"]
+        assert row["generated_yaml_sha256"] == _sha256(path)
         assert resolved["dataset"] == v13["dataset"]
         assert resolved["graph"] == v13["graph"]
         assert resolved["loss"] == v13["loss"]
         assert resolved["run"]["epochs"] == int(row["epochs"]) == 600
         assert resolved["run"]["batch_size"] == int(row["batch_size"]) == 28
+        assert resolved["run"]["validation_batch_size"] == int(row["validation_batch_size"])
+        assert resolved["run"]["prediction_batch_size"] == int(row["prediction_batch_size"])
         assert resolved["run"]["init_checkpoint"] is None
         assert resolved["optimizer"]["multi_seed"] == []
         for seed in ("seed", "model_seed", "batch_order_seed", "graph_seed"):
@@ -182,8 +198,20 @@ def main() -> int:
         if execution_status == "not_started":
             assert row["long_training_started"] == "false"
         else:
-            assert execution_status in {"running_e600", "completed_e600"}
+            assert execution_status in {"completed_e600", "failed_oom_validation_e18"}
             assert row["long_training_started"] == "true"
+        if config_id == IDS[1]:
+            assert row["failure_epoch"] == "18"
+            assert row["failure_stage"] == "validation"
+            assert row["failure_reason"] == "RESOURCE_EXHAUSTED_OOM"
+            assert row["failure_log_path"] == row["log_path"]
+            assert row["failure_log_sha256"] == ""
+            assert row["failure_log_status"].startswith("missing_not_persisted_")
+        else:
+            assert not any(row[field] for field in (
+                "failure_epoch", "failure_stage", "failure_reason",
+                "failure_log_path", "failure_log_sha256", "failure_log_status",
+            ))
         diffs[config_id] = _scientific_diff(baseline, resolved)
         assert diffs[config_id] == EXPECTED_MODEL_DIFFS[config_id], (config_id, diffs[config_id])
 
@@ -200,6 +228,9 @@ def main() -> int:
             "--save-base-mse-best-checkpoint", "--save-sample-first-best-checkpoint",
         ):
             assert flag in text, (config_id, flag)
+        validation_batch = 32 if config_id == IDS[3] else 128
+        assert f"--validation-batch-size {validation_batch}" in text
+        assert f"--prediction-batch-size {validation_batch}" in text
         assert "--init-checkpoint" not in command
         commands[config_id] = text
         assert row["output_dir"] not in output_paths
@@ -219,7 +250,7 @@ def main() -> int:
     if E1_SUMMARY.is_file():
         e1 = json.loads(E1_SUMMARY.read_text(encoding="utf-8"))
         assert e1["status"] == "completed"
-        assert [row["config_id"] for row in e1["results"]] == list(IDS)
+        assert [row["config_id"] for row in e1["results"]] == list(E1_IDS)
         assert e1["roles_accessed"] == ["train", "valid_iid"]
         assert e1["forbidden_roles_accessed"] == []
         assert e1["sealed_iid_accessed"] is False
@@ -229,6 +260,15 @@ def main() -> int:
             assert result["checkpoint_reload_passed"] is True
             assert result["summary_persisted_before_replay"] is True
             assert result["post_training_diagnostics_status"] == "completed"
+
+    v29 = _resolved(ROOT / rows[1]["generated_yaml"])
+    v31 = _resolved(ROOT / rows[3]["generated_yaml"])
+    assert _scientific_diff(v29, v31) == {
+        "run.prediction_batch_size": 32,
+        "run.validation_batch_size": 32,
+    }
+    assert rows[3]["baseline_config_id"] == IDS[1]
+    assert rows[3]["long_training_started"] == "false"
 
     lifecycle_statuses = {row["config_id"]: row["execution_status"] for row in rows}
     payload = {

@@ -1,0 +1,19 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_31_gate6h_v29_validation_b32_retry_e600
+extends: V4P5_29_gate6h_v13_scale_attention_scratch_e600.yaml
+overrides:
+  description: Gate 6H V29 retry with validation and prediction batch size reduced to 32.
+  run:
+    validation_batch_size: 32
+    prediction_batch_size: 32
+    final_probe_output_dir: output/heat3d_v5_gate6h_final_probe/V4P5_31_gate6h_v29_validation_b32_retry_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6h_diagnostics/V4P5_31_gate6h_v29_validation_b32_retry_e600
+  export:
+    output_dir: output/heat3d_v5_gate6h_runs/V4P5_31_gate6h_v29_validation_b32_retry_e600
+    run_name: V4P5_31_gate6h_v29_validation_b32_retry_e600
+  metadata:
+    registry_config_id: V4P5_31_gate6h_v29_validation_b32_retry_e600
+    candidate: v29_validation_prediction_b32_retry
+    baseline_config_id: V4P5_29_gate6h_v13_scale_attention_scratch_e600
+    launch_policy: explicit_user_instruction_only
+    long_training_started: false
