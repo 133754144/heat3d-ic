@@ -178,7 +178,12 @@ def main() -> int:
         assert row["forbidden_access_roles"] == FORBIDDEN
         assert row["summary_persisted_before_replay"] == "true"
         assert row["launch_policy"] == "explicit_user_instruction_only"
-        assert row["long_training_started"] == "false"
+        execution_status = row["execution_status"]
+        if execution_status == "not_started":
+            assert row["long_training_started"] == "false"
+        else:
+            assert execution_status in {"running_e600", "completed_e600"}
+            assert row["long_training_started"] == "true"
         diffs[config_id] = _scientific_diff(baseline, resolved)
         assert diffs[config_id] == EXPECTED_MODEL_DIFFS[config_id], (config_id, diffs[config_id])
 
@@ -225,6 +230,7 @@ def main() -> int:
             assert result["summary_persisted_before_replay"] is True
             assert result["post_training_diagnostics_status"] == "completed"
 
+    lifecycle_statuses = {row["config_id"]: row["execution_status"] for row in rows}
     payload = {
         "status": "passed",
         "config_count": len(rows),
@@ -236,7 +242,10 @@ def main() -> int:
         "roles_accessed": [],
         "forbidden_roles_accessed": [],
         "sealed_iid_accessed": False,
-        "long_training_started": False,
+        "long_training_started": any(
+            row["long_training_started"] == "true" for row in rows
+        ),
+        "lifecycle_statuses": lifecycle_statuses,
         "commands": commands,
     }
     if args.output_json is not None:

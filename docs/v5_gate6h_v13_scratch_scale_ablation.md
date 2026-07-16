@@ -1,6 +1,18 @@
 # Gate 6H V13 scratch scale-path ablation
 
-状态：`frozen_prepared`，正式 e600 未启动。本阶段只使用 train/valid_iid；test、hard roles 和 sealed IID 禁止访问。
+状态：V28/V30 已完成 e600 摘要收集，V29 仍在 WSL2 运行。本阶段只使用 train/valid_iid；test、hard roles 和 sealed IID 禁止访问。
+
+## e600 结果收集（2026-07-17）
+
+结果已写入 `configs/heat3d_v5/v5_gate6h_v13_scale_ablation_registry.csv`。下表是训练摘要中的 legacy `valid_rel_rmse_v4_pct`、normalized base MSE 与 raw DeltaT RMSE；它不是 Gate 5 true-RMS evaluator 结果。
+
+| config | host | status | best epoch | best base MSE | best raw RMSE K | best legacy relative RMSE |
+|---|---|---|---:|---:|---:|---:|
+| V4P5_28_gate6h_v13_stopgrad_scratch_e600 | wsl2 | completed_e600 | 554 | 0.04082419 | 0.16094990 | 25.0443% |
+| V4P5_29_gate6h_v13_scale_attention_scratch_e600 | wsl2 | running_e600 | — | — | — | — |
+| V4P5_30_gate6h_v13_deep_scale_head_scratch_e600 | devbox | completed_e600 | 275 | 0.03817912 | 0.15565122 | 24.2198% |
+
+V28/V30 的 `result_v5_required_metrics_complete=false` 是有意的：当前 run 只有 `loss_summary.json` 与 valid-only persisted diagnostics，尚未运行统一 true-RMS V5 evaluator；test/hard 未访问。V29 的结果收集留到训练自然结束后。
 
 ## 历史基线审计
 
