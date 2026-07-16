@@ -1,0 +1,16 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_29_gate6h_v13_scale_attention_scratch_e600
+extends: V4P5_28_gate6h_v13_stopgrad_scratch_e600.yaml
+overrides:
+  description: Gate 6H V13 scratch e600 with stop-gradient plus independent scale attention.
+  model:
+    scale_attention_mode: physics_gate
+  run:
+    final_probe_output_dir: output/heat3d_v5_gate6h_final_probe/V4P5_29_gate6h_v13_scale_attention_scratch_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6h_diagnostics/V4P5_29_gate6h_v13_scale_attention_scratch_e600
+  export:
+    output_dir: output/heat3d_v5_gate6h_runs/V4P5_29_gate6h_v13_scale_attention_scratch_e600
+    run_name: V4P5_29_gate6h_v13_scale_attention_scratch_e600
+  metadata:
+    registry_config_id: V4P5_29_gate6h_v13_scale_attention_scratch_e600
+    candidate: v13_stopgrad_scale_attention

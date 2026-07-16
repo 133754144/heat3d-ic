@@ -1,0 +1,86 @@
+{
+  "schema_version": "heat3d_v5_gate6h_v13_scratch_scale_ablation_v1",
+  "status": "frozen_prepared",
+  "baseline": {
+    "config_id": "V4P5_13_gate6e_scratch_branch_rebalance",
+    "training_commit": "21a1d9e",
+    "run_config_sha256": "5c4d02d2af9389beeda94db56fb075366798eaf2d419784cc061730a43614afa",
+    "run_config_source": "output/heat3d_v5_gate6e_runs/V4P5_13_gate6e_scratch_branch_rebalance/run_config.json",
+    "completed_epochs": 600,
+    "best_epoch": 318
+  },
+  "historical_audit": {
+    "conclusion": "V13 is the best completed e600 single model under the common valid_iid point-global comparison; it also has the lowest sample-first and raw CV RMSE among V13, N3, and L2.",
+    "selection_scope": "valid_iid only",
+    "eligible_completed_e600_models_reviewed": [
+      "B0",
+      "N0",
+      "N1",
+      "N3",
+      "L1",
+      "L2",
+      "V13"
+    ],
+    "metric_source": "configs/heat3d_v5/gate6g/v13_closeout.json:metrics.source_metrics",
+    "models": {
+      "V13": {
+        "checkpoint": "best e318",
+        "point_global_relative_rmse_pct": 23.700678385162995,
+        "sample_first_cv_relative_rmse_pct": 20.316459239384017,
+        "raw_cv_weighted_rmse_K": 0.16798237383943038
+      },
+      "N3": {
+        "checkpoint": "best e402",
+        "point_global_relative_rmse_pct": 24.075572971926483,
+        "sample_first_cv_relative_rmse_pct": 20.658374559913433,
+        "raw_cv_weighted_rmse_K": 0.1718832007632375
+      },
+      "L2": {
+        "checkpoint": "best e353",
+        "point_global_relative_rmse_pct": 23.72896355507234,
+        "sample_first_cv_relative_rmse_pct": 20.835389292313906,
+        "raw_cv_weighted_rmse_K": 0.16890419147275174
+      }
+    }
+  },
+  "actual_lr_contract": {
+    "source_policy": "V13 runtime artifact only; do not infer from the historical YAML",
+    "optimizer": "adamw",
+    "lr": 0.0005,
+    "lr_schedule": "warmup_cosine",
+    "warmup_epochs": 10,
+    "min_lr": 0.00005,
+    "second_stage_epoch": 0,
+    "second_stage_lr": 0.0001,
+    "lr_init": 0.00001,
+    "lr_peak": 0.0002,
+    "lr_base": 0.00001,
+    "lr_lowr": 0.000001,
+    "pct_start": 0.02,
+    "pct_final": 0.1,
+    "gradient_clip_norm": 1.0,
+    "weight_decay": 0.0001
+  },
+  "selection_and_role_contract": {
+    "fit_roles": ["train"],
+    "normalization_fit_roles": ["train"],
+    "selection_roles": ["valid_iid"],
+    "forbidden_roles": [
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test",
+      "sealed_iid"
+    ],
+    "primary_selection": "valid_rel_rmse_v4_pct",
+    "checkpoint_metrics": [
+      "valid_point_global_best",
+      "valid_sample_first_best",
+      "valid_base_mse_best",
+      "final"
+    ],
+    "post_training_diagnostics": true,
+    "final_probe_eval_after_training": false
+  },
+  "training_started": false
+}

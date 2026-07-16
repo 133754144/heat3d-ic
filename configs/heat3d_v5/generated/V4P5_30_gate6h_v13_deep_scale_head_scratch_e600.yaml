@@ -1,0 +1,53 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_30_gate6h_v13_deep_scale_head_scratch_e600
+extends: V4P5_13_gate6e_scratch_branch_rebalance.yaml
+overrides:
+  description: Gate 6H V13 scratch e600 with a three-layer scale head only.
+  model:
+    scale_head_depth: 3
+  optimizer:
+    name: adamw
+    lr: 0.0005
+    lr_schedule: warmup_cosine
+    warmup_epochs: 10
+    min_lr: 0.00005
+    second_stage_epoch: 0
+    second_stage_lr: 0.0001
+    lr_init: 0.00001
+    lr_peak: 0.0002
+    lr_base: 0.00001
+    lr_lowr: 0.000001
+    pct_start: 0.02
+    pct_final: 0.1
+    gradient_clip_norm: 1.0
+    weight_decay: 0.0001
+  run:
+    epochs: 600
+    final_probe_eval_after_training: false
+    post_training_diagnostics: true
+    final_probe_output_dir: output/heat3d_v5_gate6h_final_probe/V4P5_30_gate6h_v13_deep_scale_head_scratch_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6h_diagnostics/V4P5_30_gate6h_v13_deep_scale_head_scratch_e600
+  export:
+    output_dir: output/heat3d_v5_gate6h_runs/V4P5_30_gate6h_v13_deep_scale_head_scratch_e600
+    run_name: V4P5_30_gate6h_v13_deep_scale_head_scratch_e600
+    prediction_split: valid_iid
+    selection_metric: valid_rel_rmse_v4_pct
+    save_point_global_best_checkpoint: true
+    point_global_best_checkpoint_name: params_best_valid_point_global.pkl
+    save_base_mse_best_checkpoint: true
+    base_mse_best_checkpoint_name: params_best_valid_base_mse.pkl
+    save_sample_first_best_checkpoint: true
+    sample_first_best_checkpoint_name: params_best_valid_sample_first.pkl
+  metadata:
+    phase: v5_gate6h
+    registry_config_id: V4P5_30_gate6h_v13_deep_scale_head_scratch_e600
+    candidate: v13_deep_scale_head
+    baseline_config_id: V4P5_13_gate6e_scratch_branch_rebalance
+    initialization: random
+    lr_contract_source: v13_runtime_run_config_sha256_5c4d02d2af9389beeda94db56fb075366798eaf2d419784cc061730a43614afa
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    long_training_started: false

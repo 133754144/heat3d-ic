@@ -5326,6 +5326,59 @@ def _run_post_training_prediction_diagnostics(
         diagnostics_dir = args.post_training_diagnostics_output_dir or (
             output_dir / "post_training_diagnostics"
         )
+        if args.prediction_split == "valid_iid":
+            diagnostics_dir.mkdir(parents=True, exist_ok=True)
+            loss_summary_path = output_dir / "loss_summary.json"
+            summary = json.loads(loss_summary_path.read_text(encoding="utf-8"))
+            payload = {
+                "schema_version": "heat3d_v5_valid_only_post_training_diagnostics_v1",
+                "status": "completed",
+                "scope": "valid_iid_only",
+                "source": "persisted_training_summary",
+                "prediction_split": "valid_iid",
+                "roles_accessed": ["valid_iid"],
+                "forbidden_roles_accessed": [],
+                "valid_iid_metrics": summary.get("valid_iid_metrics", {}),
+                "final_valid_iid_loss_components": summary.get(
+                    "final_valid_iid_loss_components", {}
+                ),
+                "selection": {
+                    "selection_metric": summary.get("selection_metric"),
+                    "point_global_best_epoch": summary.get("point_global_best_epoch"),
+                    "point_global_best_relative_rmse_pct": summary.get(
+                        "point_global_best_relative_rmse_pct"
+                    ),
+                    "sample_first_best_epoch": summary.get("sample_first_best_epoch"),
+                    "sample_first_best_relative_rmse_pct": summary.get(
+                        "sample_first_best_relative_rmse_pct"
+                    ),
+                    "base_mse_best_epoch": summary.get("base_mse_best_epoch"),
+                    "base_mse_best_value": summary.get("base_mse_best_value"),
+                },
+            }
+            output_json = diagnostics_dir / "valid_iid_diagnostics.json"
+            output_md = diagnostics_dir / "valid_iid_diagnostics.md"
+            _write_json(output_json, payload)
+            output_md.write_text(
+                "# valid_iid post-training diagnostics\n\n"
+                "- status: `completed`\n"
+                "- scope: `valid_iid_only`\n"
+                "- source: persisted `loss_summary.json`\n"
+                "- forbidden roles accessed: none\n",
+                encoding="utf-8",
+            )
+            return {
+                "enabled": True,
+                "status": "completed",
+                "scope": "valid_iid_only",
+                "source": "persisted_training_summary",
+                "prediction_split": "valid_iid",
+                "roles_accessed": ["valid_iid"],
+                "forbidden_roles_accessed": [],
+                "output_dir": str(diagnostics_dir),
+                "output_json": str(output_json),
+                "output_md": str(output_md),
+            }
         return {
             "enabled": False,
             "reason": "non_all_prediction_split",
@@ -7108,16 +7161,13 @@ def main() -> int:
         reload_entries.append(
             (label, checkpoint_path, prediction_path, expected, host_params)
         )
-    checkpoint_prediction_reload_audit = _checkpoint_prediction_reload_audit(
-        model=result["model"],
-        groups=prediction_groups,
-        stats=stats,
-        entries=reload_entries,
-    )
-    for audit_entry in checkpoint_prediction_reload_audit["entries"]:
-        _attach_checkpoint_prediction_reload_audit(
-            Path(audit_entry["checkpoint_path"]), audit_entry
-        )
+    checkpoint_prediction_reload_audit = {
+        "enabled": bool(reload_entries),
+        "status": "pending" if reload_entries else "skipped",
+        "entries": [],
+        "requested_entry_count": len(reload_entries),
+        "summary_persisted_before_replay": True,
+    }
     memory_audit_summary = memory_audit.summary() if memory_audit is not None else None
 
     run_config = {
@@ -7615,6 +7665,25 @@ def main() -> int:
     _write_json(output_dir / "loss_summary.json", loss_summary)
     _record_timing(timings, "summary_write", summary_write_start)
     _progress(progress_enabled, "export", "run summary files written", summary_write_start)
+
+    checkpoint_prediction_reload_audit = _checkpoint_prediction_reload_audit(
+        model=result["model"],
+        groups=prediction_groups,
+        stats=stats,
+        entries=reload_entries,
+    )
+    checkpoint_prediction_reload_audit["requested_entry_count"] = len(reload_entries)
+    checkpoint_prediction_reload_audit["summary_persisted_before_replay"] = True
+    run_config["checkpoint_prediction_reload_audit"] = checkpoint_prediction_reload_audit
+    loss_summary["checkpoint_prediction_reload_audit"] = checkpoint_prediction_reload_audit
+    for audit_entry in checkpoint_prediction_reload_audit["entries"]:
+        _attach_checkpoint_prediction_reload_audit(
+            Path(audit_entry["checkpoint_path"]), audit_entry
+        )
+    replay_summary_write_start = time.perf_counter()
+    _write_json(output_dir / "run_config.json", run_config)
+    _write_json(output_dir / "loss_summary.json", loss_summary)
+    _record_timing(timings, "checkpoint_replay_summary_write", replay_summary_write_start)
 
     post_training_diagnostics_result = _run_post_training_prediction_diagnostics(
         args,
