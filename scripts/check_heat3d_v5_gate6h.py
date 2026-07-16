@@ -8,6 +8,7 @@ import copy
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 import shlex
 import sys
@@ -29,6 +30,8 @@ REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6h_v13_scale_ablation_registry.csv"
 CONTRACT = ROOT / "configs/heat3d_v5/gate6h/v13_scratch_scale_ablation_contract.json"
 V13 = ROOT / "configs/heat3d_v5/generated/V4P5_13_gate6e_scratch_branch_rebalance.yaml"
 E1_SUMMARY = ROOT / "configs/heat3d_v5/gate6h/e1_smoke_summary.json"
+VALID_ONLY_EVALUATION = ROOT / "configs/heat3d_v5/gate6h/valid_only_true_rms_evaluation.json"
+V29_OOM_AUDIT = ROOT / "configs/heat3d_v5/gate6h/v29_oom_validation_e18_audit.json"
 RUNNER = ROOT / "scripts/run_heat3d_v1_medium_controlled_training_export.py"
 IDS = (
     "V4P5_28_gate6h_v13_stopgrad_scratch_e600",
@@ -268,7 +271,60 @@ def main() -> int:
         "run.validation_batch_size": 32,
     }
     assert rows[3]["baseline_config_id"] == IDS[1]
+    assert rows[3]["baseline_run_commit"] == "da6f319"
+    assert rows[3]["baseline_run_config_sha256"] == ""
     assert rows[3]["long_training_started"] == "false"
+    assert rows[3]["e1_status"] == "not_run_not_required"
+    assert not any(rows[3][field] for field in (
+        "e1_param_count", "e1_peak_rss_mb", "e1_live_device_bytes",
+        "e1_reserved_device_bytes", "e1_pool_bytes", "e1_reload_audit",
+        "e1_post_diagnostics",
+    ))
+    assert not (ROOT / rows[3]["output_dir"]).exists()
+    assert not (ROOT / rows[3]["log_path"]).exists()
+
+    evaluation = json.loads(VALID_ONLY_EVALUATION.read_text(encoding="utf-8"))
+    assert evaluation["status"] == "completed"
+    assert evaluation["evaluator"]["commit"] == "4fdfb842244da1cc4c7353217b7b00d215a039bd"
+    assert evaluation["evaluator"]["source_sha256"] == _sha256(
+        ROOT / evaluation["evaluator"]["source"]
+    )
+    assert evaluation["scope"]["roles_accessed"] == ["valid_iid"]
+    assert evaluation["scope"]["forbidden_roles_accessed"] == []
+    assert evaluation["scope"]["sealed_iid_accessed"] is False
+    assert evaluation["scope"]["model_inference_run"] is False
+    assert evaluation["scope"]["training_started"] is False
+    for index in (0, 2):
+        row = rows[index]
+        model = evaluation["models"][row["config_id"]]
+        best = model["metrics"]["best"]
+        final = model["metrics"]["final"]
+        for metrics in (best, final):
+            assert all(math.isfinite(float(value)) for value in metrics.values())
+        assert row["execution_status"] == "completed_e600"
+        assert row["evaluation_status"] == "completed_valid_iid_true_rms"
+        assert row["evaluator_commit"] == evaluation["evaluator"]["commit"]
+        assert row["authoritative_evaluation_json"] == str(
+            VALID_ONLY_EVALUATION.relative_to(ROOT)
+        )
+        assert float(row["result_v5_primary_valid_point_global_relative_rmse_pct"]) == float(
+            best["point_global_relative_rmse_pct"]
+        )
+        assert row["test_role_status"] == row["hard_role_status"] == "not_accessed"
+    assert evaluation["models"][IDS[2]]["metrics"]["best"][
+        "point_global_relative_rmse_pct"
+    ] < evaluation["models"][IDS[0]]["metrics"]["best"][
+        "point_global_relative_rmse_pct"
+    ]
+
+    oom = json.loads(V29_OOM_AUDIT.read_text(encoding="utf-8"))
+    assert oom["config_id"] == IDS[1]
+    assert oom["status"] == rows[1]["execution_status"] == "failed_oom_validation_e18"
+    assert oom["failure"]["epoch"] == 18
+    assert oom["failure"]["stage"] == "validation"
+    assert oom["read_only_remote_audit"]["configured_log_exists"] is False
+    assert oom["read_only_remote_audit"]["log_sha256"] is None
+    assert oom["config_artifact"]["sha256"] == rows[1]["generated_yaml_sha256"]
 
     lifecycle_statuses = {row["config_id"]: row["execution_status"] for row in rows}
     payload = {

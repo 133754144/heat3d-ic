@@ -1,0 +1,45 @@
+{
+  "schema_version": "heat3d_v5_gate6h_v29_oom_audit_v1",
+  "status": "failed_oom_validation_e18",
+  "config_id": "V4P5_29_gate6h_v13_scale_attention_scratch_e600",
+  "host": "wsl2",
+  "training_commit": "da6f319",
+  "failure": {
+    "source": "explicit_user_status_update",
+    "epoch": 18,
+    "stage": "validation",
+    "reason": "RESOURCE_EXHAUSTED_OOM"
+  },
+  "read_only_remote_audit": {
+    "date": "2026-07-17",
+    "branch_after_alignment": "research/v5",
+    "audit_commit": "4fdfb842244da1cc4c7353217b7b00d215a039bd",
+    "run_directory": "output/heat3d_v5_gate6h_runs/V4P5_29_gate6h_v13_scale_attention_scratch_e600",
+    "run_directory_exists": true,
+    "run_directory_file_count": 0,
+    "configured_log_path": "output/heat3d_v5_gate6h_logs/V4P5_29_gate6h_v13_scale_attention_scratch_e600.log",
+    "configured_log_exists": false,
+    "matching_process_exists": false,
+    "log_sha256": null,
+    "log_status": "missing_not_persisted_at_audit",
+    "preservation_note": "No log artifact remained at the configured path, so no traceback or SHA256 was fabricated. The configured path and absence are frozen here."
+  },
+  "config_artifact": {
+    "path": "configs/heat3d_v5/generated/V4P5_29_gate6h_v13_scale_attention_scratch_e600.yaml",
+    "sha256": "c5e2deb54b6973102b796f87cdad118e1afd7abdd3fa895812d76575e8575a26"
+  },
+  "frozen_e1_memory_evidence": {
+    "source": "configs/heat3d_v5/gate6h/e1_smoke_summary.json",
+    "peak_rss_mib": 4611.16015625,
+    "live_device_bytes": 7360296960,
+    "live_device_mib": 7019.326171875,
+    "device_pool_bytes": 8587837440,
+    "device_pool_mib": 8190.0,
+    "observed_pool_headroom_mib": 1170.673828125,
+    "observed_live_fraction_of_pool": 0.8570605826465202,
+    "training_batch_size": 28,
+    "validation_batch_size": 128,
+    "prediction_batch_size": 128
+  },
+  "analysis": "The e1 smoke already occupied 85.7% of the recorded device pool before the failed long-run validation. Validation B128 is 4.57x the train sample batch B28. The exact failure-time peak and attempted allocation are unavailable because the terminal log was not persisted; the frozen e1 values are therefore a verified lower-bound context, not a reconstructed OOM peak."
+}

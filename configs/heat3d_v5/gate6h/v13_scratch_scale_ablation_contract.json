@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v5_gate6h_v13_scratch_scale_ablation_v1",
-  "status": "frozen_prepared",
+  "status": "gate6h_updated_v31_prepared",
   "baseline": {
     "config_id": "V4P5_13_gate6e_scratch_branch_rebalance",
     "training_commit": "21a1d9e",
@@ -82,5 +82,12 @@
     "post_training_diagnostics": true,
     "final_probe_eval_after_training": false
   },
-  "training_started": false
+  "preflight_training_started": false,
+  "current_lifecycle": {
+    "V4P5_28_gate6h_v13_stopgrad_scratch_e600": "completed_e600",
+    "V4P5_29_gate6h_v13_scale_attention_scratch_e600": "failed_oom_validation_e18",
+    "V4P5_30_gate6h_v13_deep_scale_head_scratch_e600": "completed_e600",
+    "V4P5_31_gate6h_v29_validation_b32_retry_e600": "not_started"
+  },
+  "training_started": true
 }
