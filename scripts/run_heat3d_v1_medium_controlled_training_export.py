@@ -4417,7 +4417,10 @@ def _checkpoint_prediction_reload_audit(
     groups: list[dict],
     stats: dict,
     entries: list[tuple[str, Path, Path, Mapping[str, np.ndarray], Any]],
-    tolerance: float = 5.0e-3,
+    # Raw-temperature replay is float32 and may take a different compiled
+    # reduction path after checkpoint reload; keep exact parameter/NPZ checks
+    # while allowing a small sub-0.02 K numerical difference.
+    tolerance: float = 2.0e-2,
 ) -> dict[str, Any]:
     """Reload saved params and NPZ predictions, then reproduce predictions."""
 
