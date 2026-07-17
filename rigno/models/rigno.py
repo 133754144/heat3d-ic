@@ -10,7 +10,11 @@ from scipy.spatial import Delaunay
 
 from rigno.graph.entities import (TypedGraph, EdgeSet, EdgeSetKey,
   EdgesIndices, NodeSet, Context)
-from rigno.heat3d_v5_scale_pooling import REGIONAL_ATTENTION_MODES, SCALE_POOLING_MODES
+from rigno.heat3d_v5_scale_pooling import (
+  QK_REGION_FEATURE_VERSIONS,
+  REGIONAL_ATTENTION_MODES,
+  SCALE_POOLING_MODES,
+)
 from rigno.models.graphnet import DeepTypedGraphNet
 from rigno.models.operator import AbstractOperator, Inputs
 from rigno.utils import Array, shuffle_arrays
@@ -1057,6 +1061,7 @@ class RIGNO(AbstractOperator):
   shape_attention_mode: str = 'none'
   scale_attention_mode: str = 'none'
   regional_attention_hidden_size: int = 64
+  qk_region_feature_version: str = 'bugged_v1'
   native_branch_mode: str = 'joint'
 
   def _check_coordinates(self, x: Array) -> None:
@@ -1390,6 +1395,10 @@ class RIGNO(AbstractOperator):
         f"scale_attention_mode must be one of {REGIONAL_ATTENTION_MODES}")
     if self.regional_attention_hidden_size < 1:
       raise ValueError("regional_attention_hidden_size must be >= 1")
+    if self.qk_region_feature_version not in QK_REGION_FEATURE_VERSIONS:
+      raise ValueError(
+        "qk_region_feature_version must be one of "
+        f"{QK_REGION_FEATURE_VERSIONS}")
     if self.scale_attention_mode != 'none' and self.scale_pooling != 'mean':
       raise ValueError("scale physics attention requires scale_pooling='mean'")
     if self.native_branch_mode not in {'scale_only', 'shape_only', 'joint'}:

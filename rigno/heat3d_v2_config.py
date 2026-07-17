@@ -17,6 +17,7 @@ except ImportError as exc:  # pragma: no cover - exercised only without PyYAML.
     raise ImportError("PyYAML is required to load Heat3D v2 configs.") from exc
 
 from rigno.heat3d_v5_scale_pooling import (
+    QK_REGION_FEATURE_VERSIONS as _QK_REGION_FEATURE_VERSIONS,
     REGIONAL_ATTENTION_MODES as _REGIONAL_ATTENTION_MODES,
     SCALE_POOLING_MODES as _SCALE_POOLING_MODES,
 )
@@ -72,6 +73,7 @@ NATIVE_BRANCH_MODES = {"scale_only", "shape_only", "joint"}
 SCALE_HEAD_MODES = {"physics_only", "physics_plus_pooled_latent"}
 SCALE_POOLING_MODES = set(_SCALE_POOLING_MODES)
 REGIONAL_ATTENTION_MODES = set(_REGIONAL_ATTENTION_MODES)
+QK_REGION_FEATURE_VERSIONS = set(_QK_REGION_FEATURE_VERSIONS)
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -786,6 +788,15 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
     ):
         raise ValueError(
             f"{label}: field 'model.regional_attention_hidden_size' must be an int >= 1"
+        )
+    qk_feature_version = model.get("qk_region_feature_version")
+    if (
+        qk_feature_version is not None
+        and qk_feature_version not in QK_REGION_FEATURE_VERSIONS
+    ):
+        raise ValueError(
+            f"{label}: field 'model.qk_region_feature_version' must be one of "
+            f"{sorted(QK_REGION_FEATURE_VERSIONS)}, got {qk_feature_version!r}"
         )
     if model.get("scale_attention_mode") not in {None, "none"} and model.get(
         "scale_pooling", "mean"

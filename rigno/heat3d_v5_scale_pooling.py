@@ -23,23 +23,41 @@ SCALE_POOLING_MODES = (
 )
 
 REGIONAL_ATTENTION_MODES = ("none", "physics_gate")
+QK_REGION_FEATURE_VERSIONS = ("bugged_v1", "sparse_safe_v2")
 
-# The feature names are a frozen provenance schema.  Every member is derived
-# exclusively from raw coords/k/q/BC before model inference; no temperature or
-# target-derived quantity may enter this list.
-QK_REGION_FEATURES = (
-    "log1p_q_relative",
-    "log_inverse_kz_relative",
-    "log1p_q_inverse_kz_relative",
-    "q_high_inverse_kz_overlap",
-    "source_z_normalized",
-    "is_top_fraction",
-    "is_bottom_fraction",
-    "is_side_fraction",
-    "is_interior_fraction",
-    "log1p_top_h_relative",
-    "bottom_bc_offset_relative",
-)
+# These versioned schemas are frozen provenance.  ``bugged_v1`` remains the
+# default so historical checkpoints replay exactly.  Both schemas are derived
+# exclusively from raw coords/k/q/BC before inference; no temperature or
+# target-derived quantity may enter either list.
+QK_REGION_FEATURE_SCHEMAS = {
+    "bugged_v1": (
+        "log1p_q_relative",
+        "log_inverse_kz_relative",
+        "log1p_q_inverse_kz_relative",
+        "q_high_inverse_kz_overlap",
+        "source_z_normalized",
+        "is_top_fraction",
+        "is_bottom_fraction",
+        "is_side_fraction",
+        "is_interior_fraction",
+        "log1p_top_h_relative",
+        "bottom_bc_offset_relative",
+    ),
+    "sparse_safe_v2": (
+        "log1p_q_relative",
+        "log_inverse_kz_relative",
+        "log1p_q_inverse_kz_relative",
+        "source_present_fraction",
+        "region_z_normalized",
+        "is_top_fraction",
+        "is_bottom_fraction",
+        "is_side_fraction",
+        "is_interior_fraction",
+        "log1p_top_h_relative",
+        "bottom_bc_offset_relative",
+    ),
+}
+QK_REGION_FEATURES = QK_REGION_FEATURE_SCHEMAS["bugged_v1"]
 
 _REQUIRED_RAW_FEATURES = (
     "k_z",
@@ -67,6 +85,24 @@ def validate_scale_pooling_mode(mode: str) -> str:
     return value
 
 
+def validate_qk_region_feature_version(version: str) -> str:
+    """Return a checked QK regional feature schema version."""
+
+    value = str(version)
+    if value not in QK_REGION_FEATURE_VERSIONS:
+        raise ValueError(
+            "qk_region_feature_version must be one of "
+            f"{list(QK_REGION_FEATURE_VERSIONS)}, got {value!r}"
+        )
+    return value
+
+
+def qk_region_feature_names(version: str = "bugged_v1") -> tuple[str, ...]:
+    """Return the frozen feature names for ``version``."""
+
+    return QK_REGION_FEATURE_SCHEMAS[validate_qk_region_feature_version(version)]
+
+
 def qk_region_features_from_raw(
     *,
     coords: np.ndarray,
@@ -74,6 +110,7 @@ def qk_region_features_from_raw(
     condition_feature_names: Sequence[str],
     p2r_edge_indices: np.ndarray,
     rnode_count: int,
+    feature_version: str = "bugged_v1",
 ) -> np.ndarray:
     """CV-free P2R regional aggregation for q--k gated pooling.
 
@@ -84,6 +121,8 @@ def qk_region_features_from_raw(
     inference time and cannot leak labels.
     """
 
+    version = validate_qk_region_feature_version(feature_version)
+    feature_names = qk_region_feature_names(version)
     points = np.asarray(coords, dtype=np.float64)
     values = np.asarray(raw_condition, dtype=np.float64)
     names = tuple(str(name) for name in condition_feature_names)
@@ -112,9 +151,12 @@ def qk_region_features_from_raw(
     q_relative = q / max(q_reference, EPS)
     inv_relative = inv_kz / inv_reference
     q_inv_relative = q_relative * inv_relative
-    q_high = q >= np.quantile(q, 0.75)
-    inv_high = inv_kz >= np.quantile(inv_kz, 0.75)
-    overlap = (q_high & inv_high).astype(np.float64)
+    if version == "bugged_v1":
+        q_high = q >= np.quantile(q, 0.75)
+        inv_high = inv_kz >= np.quantile(inv_kz, 0.75)
+        fourth_feature = (q_high & inv_high).astype(np.float64)
+    else:
+        fourth_feature = (q > EPS).astype(np.float64)
 
     z = points[:, 2]
     z_extent = max(float(np.max(z) - np.min(z)), EPS)
@@ -128,7 +170,7 @@ def qk_region_features_from_raw(
             np.log1p(q_relative),
             np.log(np.maximum(inv_relative, EPS)),
             np.log1p(q_inv_relative),
-            overlap,
+            fourth_feature,
             z_normalized,
             values[:, index["is_top"]],
             values[:, index["is_bottom"]],
@@ -139,7 +181,7 @@ def qk_region_features_from_raw(
         ],
         axis=-1,
     )
-    if physical_features.shape[1] != len(QK_REGION_FEATURES):
+    if physical_features.shape[1] != len(feature_names):
         raise AssertionError("qk regional feature schema width drifted")
 
     edges = np.asarray(p2r_edge_indices, dtype=np.int64)
@@ -156,7 +198,7 @@ def qk_region_features_from_raw(
         raise ValueError("qk_gated pooling found no non-dummy P2R edges")
     physical_indices = physical_indices[valid]
     regional_indices = regional_indices[valid]
-    regional_sum = np.zeros((int(rnode_count), len(QK_REGION_FEATURES)), dtype=np.float64)
+    regional_sum = np.zeros((int(rnode_count), len(feature_names)), dtype=np.float64)
     regional_count = np.zeros((int(rnode_count), 1), dtype=np.float64)
     np.add.at(regional_sum, regional_indices, physical_features[physical_indices])
     np.add.at(regional_count[:, 0], regional_indices, 1.0)

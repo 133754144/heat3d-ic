@@ -1,0 +1,62 @@
+{
+  "schema_version": "heat3d_v5_gate6h_attention_fix_contract_v1",
+  "status": "frozen_prepared_not_started",
+  "config_id": "V4P5_32_gate6h_attention_sparse_safe_v2_e600",
+  "baseline": {
+    "config_id": "V4P5_13_gate6e_scratch_branch_rebalance",
+    "training_commit": "21a1d9e",
+    "run_config_sha256": "5c4d02d2af9389beeda94db56fb075366798eaf2d419784cc061730a43614afa",
+    "comparison_limit": "historical_noncontemporaneous",
+    "valid_point_global_true_rms_pct": 23.700678385162995,
+    "valid_sample_first_cv_relative_rmse_pct": 20.316459239384017,
+    "valid_raw_cv_weighted_rmse_K": 0.16798237383943038
+  },
+  "scientific_contract": {
+    "scale_attention_mode": "physics_gate",
+    "pooled_latent_stop_gradient": false,
+    "qk_region_feature_version": "sparse_safe_v2",
+    "scale_pooling": "mean",
+    "scale_head_depth": 1,
+    "train_batch_size": 28,
+    "validation_batch_size": 32,
+    "prediction_batch_size": 32,
+    "epochs": 600,
+    "loss_weights": [1.5, 0.5, 1.0, 1.0]
+  },
+  "checkpoint_contract": {
+    "params_best.pkl": "legacy_valid_base_mse_best",
+    "params_best_valid_point_global.pkl": "true_rms_point_global_best_and_only_advancement_checkpoint",
+    "params_best_valid_sample_first.pkl": {
+      "primary": "sample_first_cv_relative_rmse",
+      "tie_break": "raw_cv_weighted_rmse_K"
+    },
+    "params_final.pkl": "final_e600_diagnostic",
+    "checkpoint_selection_roles": ["valid_iid"]
+  },
+  "access_contract": {
+    "fit_roles": ["train"],
+    "normalization_fit_roles": ["train"],
+    "selection_roles": ["valid_iid"],
+    "forbidden_until_all_checkpoints_frozen": [
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test",
+      "sealed_iid"
+    ],
+    "test_or_hard_may_select_checkpoint": false,
+    "sealed_iid_accessed": false
+  },
+  "attention_diagnostics": {
+    "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+    "fields": [
+      "normalized_entropy",
+      "maximum_weight",
+      "weight_source_present_fraction_pearson",
+      "weight_log1p_q_relative_pearson",
+      "weight_log_inverse_kz_relative_pearson",
+      "weight_log1p_q_inverse_kz_relative_pearson"
+    ]
+  },
+  "training_started": false
+}

@@ -1,0 +1,63 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_32_gate6h_attention_sparse_safe_v2_e600
+extends: V4P5_13_gate6e_scratch_branch_rebalance.yaml
+overrides:
+  description: >-
+    Post-freeze Gate 6H attention repair candidate. It retains the frozen V13
+    runtime contract, enables scale-only physics attention without pooled
+    latent stop-gradient, and uses sparse-safe V2 regional QK features.
+  model:
+    scale_attention_mode: physics_gate
+    pooled_latent_stop_gradient: false
+    qk_region_feature_version: sparse_safe_v2
+  optimizer:
+    name: adamw
+    lr: 0.0005
+    lr_schedule: warmup_cosine
+    warmup_epochs: 10
+    min_lr: 0.00005
+    second_stage_epoch: 0
+    second_stage_lr: 0.0001
+    lr_init: 0.00001
+    lr_peak: 0.0002
+    lr_base: 0.00001
+    lr_lowr: 0.000001
+    pct_start: 0.02
+    pct_final: 0.1
+    gradient_clip_norm: 1.0
+    weight_decay: 0.0001
+  run:
+    epochs: 600
+    validation_batch_size: 32
+    prediction_batch_size: 32
+    final_probe_eval_after_training: false
+    post_training_diagnostics: true
+    final_probe_output_dir: output/heat3d_v5_gate6h_attention_fix_final_probe/V4P5_32_gate6h_attention_sparse_safe_v2_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6h_attention_fix_diagnostics/V4P5_32_gate6h_attention_sparse_safe_v2_e600
+  export:
+    output_dir: output/heat3d_v5_gate6h_attention_fix_runs/V4P5_32_gate6h_attention_sparse_safe_v2_e600
+    run_name: V4P5_32_gate6h_attention_sparse_safe_v2_e600
+    prediction_split: valid_iid
+    selection_metric: valid_base_mse
+    save_point_global_best_checkpoint: true
+    point_global_best_checkpoint_name: params_best_valid_point_global.pkl
+    save_base_mse_best_checkpoint: true
+    base_mse_best_checkpoint_name: params_best_valid_base_mse.pkl
+    save_sample_first_best_checkpoint: true
+    sample_first_best_checkpoint_name: params_best_valid_sample_first.pkl
+  metadata:
+    phase: v5_gate6h_attention_fix
+    registry_config_id: V4P5_32_gate6h_attention_sparse_safe_v2_e600
+    candidate: sole_attention_sparse_safe_v2
+    baseline_config_id: V4P5_13_gate6e_scratch_branch_rebalance
+    baseline_limit: historical_noncontemporaneous
+    initialization: random
+    qk_region_feature_version: sparse_safe_v2
+    primary_advancement_checkpoint: valid_point_global_true_rms_best
+    sample_first_tie_break: valid_raw_cv_weighted_rmse_K
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    long_training_started: false

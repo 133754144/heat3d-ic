@@ -176,6 +176,11 @@ def build_training_command(
         "--regional-attention-hidden-size",
         model.get("regional_attention_hidden_size"),
     )
+    _append_option(
+        command,
+        "--qk-region-feature-version",
+        model.get("qk_region_feature_version"),
+    )
     if model.get("pooled_latent_stop_gradient") is True:
         command.append("--pooled-latent-stop-gradient")
     elif model.get("pooled_latent_stop_gradient") is False:
@@ -763,6 +768,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         (
             "model.regional_attention_hidden_size",
             "training --regional-attention-hidden-size",
+        ),
+        (
+            "model.qk_region_feature_version",
+            "training --qk-region-feature-version",
         ),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),

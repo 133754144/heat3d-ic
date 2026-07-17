@@ -1,0 +1,92 @@
+{
+  "schema_version": "heat3d_v5_qk_sparse_feature_audit_v1",
+  "status": "passed",
+  "roles_accessed": [
+    "train",
+    "valid_iid"
+  ],
+  "forbidden_roles_accessed": [],
+  "sealed_iid_accessed": false,
+  "target_or_label_files_read": [],
+  "feature_source_files": [
+    "coords.npy",
+    "k_field.npy",
+    "q_field.npy"
+  ],
+  "sample_count": 800,
+  "node_count": 819200,
+  "role_counts": {
+    "train": {
+      "samples": 672,
+      "nodes": 688128,
+      "q75_zero_sample_fraction": 0.8244047619047619,
+      "q_high_false_positive_fraction_among_zero_q_nodes": 0.8719527423074851,
+      "old_overlap_node_fraction": 0.40337989443824407,
+      "old_overlap_outside_source_fraction": 0.8877572709554465
+    },
+    "valid_iid": {
+      "samples": 128,
+      "nodes": 131072,
+      "q75_zero_sample_fraction": 0.8046875,
+      "q_high_false_positive_fraction_among_zero_q_nodes": 0.8593123085551577,
+      "old_overlap_node_fraction": 0.38336944580078125,
+      "old_overlap_outside_source_fraction": 0.8790423690023682
+    }
+  },
+  "combined": {
+    "old_bug_coverage": {
+      "q75_zero_sample_fraction": 0.82125,
+      "q_high_false_positive_fraction_among_zero_q_nodes": 0.8699419109007653,
+      "old_overlap_node_fraction": 0.40017822265625,
+      "old_overlap_outside_source_fraction": 0.8864214552842057
+    },
+    "features": {
+      "bugged_v1": {
+        "names": [
+          "log1p_q_relative",
+          "log_inverse_kz_relative",
+          "log1p_q_inverse_kz_relative",
+          "q_high_inverse_kz_overlap",
+          "source_z_normalized"
+        ],
+        "variance": [
+          0.0506952059912112,
+          1.8505658270916434,
+          0.058422315474959935,
+          0.24003561276793484,
+          0.1388888888888889
+        ],
+        "pearson_correlation": [
+          [1.0, -0.0007827560202265691, 0.7545738887926062, 0.015372745061601904, -0.004385436454689614],
+          [-0.0007827560202265691, 1.0, 0.20089361604970726, 0.6341543716676976, 0.003553157543429753],
+          [0.7545738887926062, 0.2008936160497073, 1.0, 0.15972744882561696, -0.0032194948153656303],
+          [0.015372745061601904, 0.6341543716676976, 0.15972744882561696, 1.0, -0.003293757668899484],
+          [-0.004385436454689613, 0.003553157543429753, -0.0032194948153656307, -0.0032937576688994836, 1.0]
+        ]
+      },
+      "sparse_safe_v2": {
+        "names": [
+          "log1p_q_relative",
+          "log_inverse_kz_relative",
+          "log1p_q_inverse_kz_relative",
+          "source_present_fraction",
+          "region_z_normalized"
+        ],
+        "variance": [
+          0.0506952059912112,
+          1.8505658270916434,
+          0.058422315474959935,
+          0.09842513189315795,
+          0.1388888888888889
+        ],
+        "pearson_correlation": [
+          [1.0, -0.0007827560202265691, 0.7545738887926062, 0.9102420666891323, -0.004385436454689614],
+          [-0.0007827560202265691, 1.0, 0.20089361604970726, -0.0002850574908416342, 0.003553157543429753],
+          [0.7545738887926062, 0.2008936160497073, 1.0, 0.6997573363641038, -0.0032194948153656303],
+          [0.9102420666891323, -0.00028505749084163423, 0.6997573363641038, 1.0, -0.0029442345868397955],
+          [-0.004385436454689613, 0.003553157543429753, -0.0032194948153656307, -0.002944234586839795, 1.0]
+        ]
+      }
+    }
+  }
+}

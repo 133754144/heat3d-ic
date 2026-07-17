@@ -75,9 +75,10 @@ from rigno.heat3d_v5_shape_scale import (  # noqa: E402
     native_shape_scale_losses,
 )
 from rigno.heat3d_v5_scale_pooling import (  # noqa: E402
-    QK_REGION_FEATURES,
+    QK_REGION_FEATURE_VERSIONS,
     REGIONAL_ATTENTION_MODES,
     SCALE_POOLING_MODES as V5_SCALE_POOLING_MODES,
+    qk_region_feature_names,
     qk_region_features_from_raw,
 )
 from rigno.heat3d_v4_split_map import (  # noqa: E402
@@ -297,6 +298,12 @@ def parse_args() -> argparse.Namespace:
         "--scale-attention-mode", choices=REGIONAL_ATTENTION_MODES, default="none"
     )
     parser.add_argument("--regional-attention-hidden-size", type=int, default=64)
+    parser.add_argument(
+        "--qk-region-feature-version",
+        choices=QK_REGION_FEATURE_VERSIONS,
+        default="bugged_v1",
+        help="Versioned raw-input-only regional QK feature schema.",
+    )
     parser.add_argument(
         "--pooled-latent-stop-gradient",
         action=argparse.BooleanOptionalAction,
@@ -1834,6 +1841,7 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "shape_attention_mode": args.shape_attention_mode,
             "scale_attention_mode": args.scale_attention_mode,
             "regional_attention_hidden_size": int(args.regional_attention_hidden_size),
+            "qk_region_feature_version": args.qk_region_feature_version,
             "scale_head_init": "identity",
             "shape_scale_epsilon": 1.0e-12,
         }
@@ -2014,6 +2022,11 @@ def _validate_model_config(config: dict[str, Any]) -> None:
             raise ValueError(f"--{key.replace('_', '-')} must be one of {REGIONAL_ATTENTION_MODES}")
     if int(config.get("regional_attention_hidden_size", 0)) < 1:
         raise ValueError("--regional-attention-hidden-size must be >= 1")
+    if config.get("qk_region_feature_version") not in QK_REGION_FEATURE_VERSIONS:
+        raise ValueError(
+            "--qk-region-feature-version must be one of "
+            f"{QK_REGION_FEATURE_VERSIONS}"
+        )
     if config.get("scale_attention_mode") != "none" and config.get("scale_pooling") != "mean":
         raise ValueError("--scale-attention-mode requires --scale-pooling mean")
 
@@ -3612,6 +3625,11 @@ def _fit_once(
         if track_sample_first_best
         else None
     )
+    sample_first_best_raw_cv_rmse_K: float | None = (
+        float(initial_best_record["valid_raw_deltaT_rmse_K"])
+        if track_sample_first_best
+        else None
+    )
     sample_first_best_record: dict[str, Any] | None = (
         dict(initial_best_record) if track_sample_first_best else None
     )
@@ -4168,8 +4186,21 @@ def _fit_once(
                 base_mse_best_params = _host_params(params)
         if track_sample_first_best:
             sample_score = float(record["valid_native_joint_relative_rmse"])
-            if sample_first_best_score is None or sample_score < sample_first_best_score:
+            sample_raw_cv_rmse_K = float(record["valid_raw_deltaT_rmse_K"])
+            sample_is_better = (
+                sample_first_best_score is None
+                or sample_score < sample_first_best_score
+                or (
+                    sample_score == sample_first_best_score
+                    and (
+                        sample_first_best_raw_cv_rmse_K is None
+                        or sample_raw_cv_rmse_K < sample_first_best_raw_cv_rmse_K
+                    )
+                )
+            )
+            if sample_is_better:
                 sample_first_best_score = sample_score
+                sample_first_best_raw_cv_rmse_K = sample_raw_cv_rmse_K
                 sample_first_best_record = dict(record)
                 sample_first_best_params = _host_params(params)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
@@ -4320,6 +4351,7 @@ def _fit_once(
         "base_mse_best_record": base_mse_best_record,
         "base_mse_best_params": base_mse_best_params,
         "sample_first_best_score": sample_first_best_score,
+        "sample_first_best_raw_cv_rmse_K": sample_first_best_raw_cv_rmse_K,
         "sample_first_best_record": sample_first_best_record,
         "sample_first_best_params": sample_first_best_params,
         "final_epoch": int(epochs),
@@ -4495,6 +4527,9 @@ def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> 
         "regional_attention_hidden_size": int(
             getattr(model, "regional_attention_hidden_size", 64)
         ),
+        "qk_region_feature_version": str(
+            getattr(model, "qk_region_feature_version", "bugged_v1")
+        ),
         "node_latent_width": int(getattr(model, "node_latent_size")),
         "pooled_latent_width": int(pooled.shape[-1]),
         "scale_head_input_width": int(getattr(model, "global_context_feature_dim"))
@@ -4520,6 +4555,118 @@ def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> 
     if not payload["passed"]:
         raise RuntimeError(f"native runtime architecture audit failed: {payload}")
     return payload
+
+
+def _scale_attention_intermediates(model: Any, params: Any, group: Mapping[str, Any]):
+    physics = group["native_physics"]
+    _, state = model.apply(
+        {"params": params},
+        inputs=group["inputs"],
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+        control_volumes=physics["control_volumes"],
+        log_s_phys=physics["log_s_phys"],
+        reference_temperature=physics["reference_temperature"],
+        dirichlet_mask=physics["dirichlet_mask"],
+        prescribed_temperature=physics["prescribed_temperature"],
+        qk_region_features=group.get("qk_region_features"),
+        method=model.predict_native_shape_scale,
+        mutable=["intermediates"],
+    )
+    value = state["intermediates"]["scale_attention_weights"]
+    while isinstance(value, (tuple, list)):
+        value = value[0]
+    return np.asarray(value, dtype=np.float64)
+
+
+def _finite_pearson(x: np.ndarray, y: np.ndarray) -> float | None:
+    left = np.asarray(x, dtype=np.float64).reshape(-1)
+    right = np.asarray(y, dtype=np.float64).reshape(-1)
+    finite = np.isfinite(left) & np.isfinite(right)
+    left, right = left[finite], right[finite]
+    if left.size < 2 or np.std(left) <= 1.0e-12 or np.std(right) <= 1.0e-12:
+        return None
+    return float(np.corrcoef(left, right)[0, 1])
+
+
+def _scale_attention_diagnostics(
+    model: Any,
+    params: Any,
+    groups: list[dict],
+) -> dict[str, Any]:
+    """Summarize valid-only attention after all checkpoint choices are frozen."""
+
+    if getattr(model, "scale_attention_mode", "none") != "physics_gate":
+        return {"enabled": False}
+    weights_rows: list[np.ndarray] = []
+    feature_rows: list[np.ndarray] = []
+    feature_names: tuple[str, ...] | None = None
+    for group in groups:
+        weights = _scale_attention_intermediates(model, params, group)
+        features = np.asarray(group["qk_region_features"], dtype=np.float64)
+        names = tuple(group["qk_region_feature_names"])
+        if weights.shape != features.shape[:2]:
+            raise RuntimeError(
+                f"attention diagnostic shape mismatch: {weights.shape} vs {features.shape}"
+            )
+        if feature_names is None:
+            feature_names = names
+        elif feature_names != names:
+            raise RuntimeError("attention diagnostic feature schema drifted across groups")
+        weights_rows.append(weights)
+        feature_rows.append(features)
+    packed_weights = np.concatenate(weights_rows, axis=0)
+    packed_features = np.concatenate(feature_rows, axis=0)
+    if not np.all(np.isfinite(packed_weights)) or not np.all(
+        np.isfinite(packed_features)
+    ):
+        raise RuntimeError("attention diagnostics contain non-finite values")
+    regional_count = packed_weights.shape[1]
+    entropy = -np.sum(
+        packed_weights * np.log(np.maximum(packed_weights, 1.0e-12)), axis=1
+    )
+    normalized_entropy = (
+        entropy / np.log(float(regional_count))
+        if regional_count > 1
+        else np.zeros_like(entropy)
+    )
+    names = feature_names or ()
+    source_feature = (
+        "source_present_fraction"
+        if "source_present_fraction" in names
+        else "q_high_inverse_kz_overlap"
+    )
+    required = (
+        source_feature,
+        "log1p_q_relative",
+        "log_inverse_kz_relative",
+        "log1p_q_inverse_kz_relative",
+    )
+    missing = [name for name in required if name not in names]
+    if missing:
+        raise RuntimeError(f"attention diagnostics missing sparse-safe features: {missing}")
+    correlations = {
+        name: _finite_pearson(
+            packed_weights, packed_features[..., names.index(name)]
+        )
+        for name in required
+    }
+    return {
+        "enabled": True,
+        "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+        "feature_version": str(
+            getattr(model, "qk_region_feature_version", "bugged_v1")
+        ),
+        "sample_count": int(packed_weights.shape[0]),
+        "regional_node_count": int(regional_count),
+        "normalized_entropy_mean": float(np.mean(normalized_entropy)),
+        "normalized_entropy_min": float(np.min(normalized_entropy)),
+        "normalized_entropy_max": float(np.max(normalized_entropy)),
+        "maximum_weight_mean": float(np.mean(np.max(packed_weights, axis=1))),
+        "maximum_weight_max": float(np.max(packed_weights)),
+        "weight_feature_pearson": correlations,
+        "finite": True,
+    }
 
 
 def _json_safe(value: Any) -> Any:
@@ -4766,6 +4913,7 @@ def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict
     if kind == "sample_first_best":
         record = dict(result.get("sample_first_best_record") or {})
         record["checkpoint_selection_metric"] = "valid_native_joint_relative_rmse"
+        record["checkpoint_tie_break_metric"] = "valid_raw_deltaT_rmse_K"
         return record
     if kind == "final":
         record = {
@@ -6059,9 +6207,12 @@ def _attach_native_physics_to_groups(
 def _attach_qk_region_features_to_groups(
     groups: list[dict],
     examples_by_id: Mapping[str, Any],
+    *,
+    feature_version: str = "bugged_v1",
 ) -> None:
     """Attach raw-input-only P2R regional features for q--k gated pooling."""
 
+    feature_names = qk_region_feature_names(feature_version)
     for group in groups:
         regional_features = []
         metadata = group["metadata"]
@@ -6077,17 +6228,18 @@ def _attach_qk_region_features_to_groups(
                     condition_feature_names=tuple(relative.condition_feature_names),
                     p2r_edge_indices=p2r_indices[row],
                     rnode_count=rnode_count,
+                    feature_version=feature_version,
                 )
             )
         packed = np.stack(regional_features)
-        expected = (len(group["sample_ids"]), rnode_count, len(QK_REGION_FEATURES))
+        expected = (len(group["sample_ids"]), rnode_count, len(feature_names))
         if packed.shape != expected or not np.all(np.isfinite(packed)):
             raise ValueError(
                 f"{group['name']}: qk regional feature shape/finite failure "
                 f"got={packed.shape} expected={expected}"
             )
         group["qk_region_features"] = jnp.asarray(packed, dtype=jnp.float32)
-        group["qk_region_feature_names"] = QK_REGION_FEATURES
+        group["qk_region_feature_names"] = feature_names
 
 
 def _model_apply(model, params, group: Mapping[str, Any]):
@@ -6799,7 +6951,13 @@ def main() -> int:
             or model_config.get("scale_attention_mode") != "none"
         ):
             for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
-                _attach_qk_region_features_to_groups(groups, native_examples_by_id)
+                _attach_qk_region_features_to_groups(
+                    groups,
+                    native_examples_by_id,
+                    feature_version=model_config.get(
+                        "qk_region_feature_version", "bugged_v1"
+                    ),
+                )
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
@@ -7168,6 +7326,18 @@ def main() -> int:
         "requested_entry_count": len(reload_entries),
         "summary_persisted_before_replay": True,
     }
+    attention_diagnostics_by_checkpoint = {
+        label: _scale_attention_diagnostics(
+            result["model"], _device_params(host_params), valid_groups
+        )
+        for label, host_params in (
+            ("legacy_valid_base_mse_best", result["best_params"]),
+            ("point_global_true_rms_best", result.get("point_global_best_params")),
+            ("sample_first_best", result.get("sample_first_best_params")),
+            ("final_e600", result["params"]),
+        )
+        if host_params is not None
+    }
     memory_audit_summary = memory_audit.summary() if memory_audit is not None else None
 
     run_config = {
@@ -7205,6 +7375,7 @@ def main() -> int:
         "graph_config": graph_config,
         "global_context": global_context_payload,
         "native_runtime_architecture_audit": native_runtime_audit,
+        "attention_diagnostics_by_checkpoint": attention_diagnostics_by_checkpoint,
         "checkpoint_prediction_reload_audit": checkpoint_prediction_reload_audit,
         "memory_audit_summary": memory_audit_summary,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
@@ -7356,6 +7527,7 @@ def main() -> int:
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
         "model_config": model_config,
+        "attention_diagnostics_by_checkpoint": attention_diagnostics_by_checkpoint,
         "batch_config": batch_config,
         "sample_weight_config": sample_weight_config,
         "sample_weight_summary": sample_weight_summary,
