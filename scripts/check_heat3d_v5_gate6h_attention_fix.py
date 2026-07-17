@@ -311,12 +311,31 @@ def main() -> int:
         assert audit["sealed_iid_accessed"] is False
         assert audit["target_or_label_files_read"] == []
 
-    tag_target = subprocess.check_output(
+    expected_tag_target = "96fa6fb5af451d8bafd6219f4372e36c792648d6"
+    local_tag = subprocess.run(
         ["git", "rev-list", "-n", "1", "v5-gate6h-frozen"],
         cwd=ROOT,
         text=True,
-    ).strip()
-    assert tag_target == "96fa6fb5af451d8bafd6219f4372e36c792648d6"
+        capture_output=True,
+    )
+    if local_tag.returncode == 0:
+        tag_target = local_tag.stdout.strip()
+        tag_verification_source = "local"
+    else:
+        remote_tag = subprocess.check_output(
+            [
+                "git",
+                "ls-remote",
+                "--tags",
+                "origin",
+                "refs/tags/v5-gate6h-frozen^{}",
+            ],
+            cwd=ROOT,
+            text=True,
+        ).strip()
+        tag_target = remote_tag.split()[0]
+        tag_verification_source = "origin"
+    assert tag_target == expected_tag_target
 
     print(
         json.dumps(
@@ -329,6 +348,7 @@ def main() -> int:
                 "fixture_checks": fixture,
                 "feature_audit_present": audit is not None,
                 "frozen_tag_target": tag_target,
+                "frozen_tag_verification_source": tag_verification_source,
                 "launch_command": text,
             },
             indent=2,
