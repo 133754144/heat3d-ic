@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import copy
 import csv
+import json
 import sys
 from pathlib import Path
 import tempfile
@@ -78,6 +79,45 @@ def main() -> int:
     assert incomplete["result_v5_status"] == "completed_with_missing_v5_metrics"
     assert incomplete["result_v5_required_metrics_complete"] == "false"
     assert "primary_relative.test_iid." in incomplete["result_v5_missing_metrics"]
+
+    valid_only_payload = {
+        "schema_version": "heat3d_v5_v32_valid_only_closeout_v1",
+        "training_commit": "fixture-commit",
+        "checkpoint_metadata": {
+            "point_global_best": {"epoch": 10},
+            "sample_first_best": {"epoch": 9},
+            "legacy_best": {"epoch": 8},
+            "final": {"epoch": 600},
+        },
+        "metrics": {
+            checkpoint: {
+                "summary": {metric: 1.0 for metric in V5_FROZEN_METRICS}
+            }
+            for checkpoint in (
+                "point_global_best",
+                "sample_first_best",
+                "legacy_best",
+                "final",
+            )
+        },
+    }
+    valid_only = _result_fields(
+        row, Path("/tmp/fixture"), valid_only_payload, "fixture"
+    )
+    assert valid_only["result_v5_status"] == "completed_valid_only"
+    assert valid_only["result_v5_required_metrics_complete"] == "true"
+    assert valid_only["result_v5_primary_checkpoint"] == "point_global_best"
+    assert valid_only["result_v5_primary_epoch"] == "10"
+    assert valid_only["result_v5_legacy_checkpoint"] == "legacy_best"
+    assert valid_only["result_v5_legacy_epoch"] == "8"
+    assert valid_only["result_v5_threshold_pass"] == "valid_only_pass"
+    embedded = json.loads(valid_only["result_v5_metrics_json"])
+    assert set(embedded["metrics"]) == {
+        "point_global_best",
+        "sample_first_best",
+        "legacy_best",
+        "final",
+    }
     print("V5 result collector fixture checks passed")
     return 0
 

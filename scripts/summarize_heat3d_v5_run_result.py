@@ -123,35 +123,70 @@ def _result_fields(
     loss = payload.get("loss_summary") if isinstance(payload.get("loss_summary"), dict) else {}
     run_config = payload.get("run_config") if isinstance(payload.get("run_config"), dict) else {}
     metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    valid_only_four = _is_valid_only_four_checkpoint_payload(payload, metrics)
     result = {field: "" for field in V5_REGISTRY_RESULT_FIELDS}
     result["result_v5_source"] = str(payload.get("source") or source)
     result["result_v5_updated_at"] = datetime.now(timezone.utc).isoformat()
-    result["result_v5_commit"] = _fmt(loss.get("code_version_or_git_commit") or run_config.get("code_version_or_git_commit"))
+    result["result_v5_commit"] = _fmt(
+        loss.get("code_version_or_git_commit")
+        or run_config.get("code_version_or_git_commit")
+        or payload.get("training_commit")
+    )
     result["result_v5_run_dir"] = str(payload.get("run_dir") or row.get("output_dir") or run_dir)
     result["result_v5_log_path"] = str(payload.get("log_path") or row.get("log_path") or "")
     result["result_v5_loss_summary"] = _relpath(run_dir / "loss_summary.json")
-    result["result_v5_metrics_json"] = json.dumps(metrics, sort_keys=True, separators=(",", ":")) if metrics else ""
+    metrics_for_csv = payload if valid_only_four else metrics
+    result["result_v5_metrics_json"] = (
+        json.dumps(metrics_for_csv, sort_keys=True, separators=(",", ":"))
+        if metrics_for_csv
+        else ""
+    )
 
     _fill_v4_values(result, loss, run_config)
-    reports = _normalize_reports(metrics)
+    reports = (
+        _normalize_valid_only_four_checkpoint_reports(metrics)
+        if valid_only_four
+        else _normalize_reports(metrics)
+    )
     _fill_v4_metric_values(result, reports)
-    missing = _missing_metric_paths(reports)
+    missing = (
+        _missing_valid_only_four_checkpoint_paths(metrics)
+        if valid_only_four
+        else _missing_metric_paths(reports)
+    )
     result["result_v5_required_metrics_complete"] = "true" if not missing else "false"
     result["result_v5_missing_metrics"] = "|".join(missing)
+    checkpoint_metadata = (
+        payload.get("checkpoint_metadata")
+        if isinstance(payload.get("checkpoint_metadata"), dict)
+        else {}
+    )
     result["result_v5_primary_checkpoint"] = _fmt(
-        _get_any(metrics, "primary_checkpoint", "primary_relative_checkpoint")
+        "point_global_best"
+        if valid_only_four
+        else _get_any(metrics, "primary_checkpoint", "primary_relative_checkpoint")
     )
     result["result_v5_primary_epoch"] = _fmt(
-        _get_any(metrics, "primary_epoch", "primary_relative_epoch")
-        or loss.get("primary_relative_epoch")
+        checkpoint_metadata.get("point_global_best", {}).get("epoch")
+        if valid_only_four
+        else (
+            _get_any(metrics, "primary_epoch", "primary_relative_epoch")
+            or loss.get("primary_relative_epoch")
+        )
     )
     result["result_v5_legacy_checkpoint"] = _fmt(
-        _get_any(metrics, "legacy_checkpoint", "legacy_metric_checkpoint")
+        "legacy_best"
+        if valid_only_four
+        else _get_any(metrics, "legacy_checkpoint", "legacy_metric_checkpoint")
     )
     result["result_v5_legacy_epoch"] = _fmt(
-        _get_any(metrics, "legacy_epoch", "legacy_metric_epoch")
-        or loss.get("legacy_metric_epoch")
-        or loss.get("best_epoch")
+        checkpoint_metadata.get("legacy_best", {}).get("epoch")
+        if valid_only_four
+        else (
+            _get_any(metrics, "legacy_epoch", "legacy_metric_epoch")
+            or loss.get("legacy_metric_epoch")
+            or loss.get("best_epoch")
+        )
     )
     primary_valid = reports.get("primary_relative", {}).get("valid_iid", {})
     primary_test = reports.get("primary_relative", {}).get("test_iid", {})
@@ -168,23 +203,90 @@ def _result_fields(
         ("result_v5_legacy_test_point_global_relative_rmse_pct", legacy_test.get("point_global_relative_rmse_pct")),
     ):
         result[field] = _fmt(source_value)
-    result["result_v5_threshold_pass"] = _threshold_status(primary_valid, primary_test)
+    result["result_v5_threshold_pass"] = (
+        _valid_only_threshold_status(primary_valid)
+        if valid_only_four
+        else _threshold_status(primary_valid, primary_test)
+    )
     result["result_v5_final_probe_status"] = _status(loss.get("final_probe_eval_result"), run_config.get("final_probe_eval_result"))
     result["result_v5_post_training_diagnostics_status"] = _status(loss.get("post_training_diagnostics_result"), run_config.get("post_training_diagnostics_result"))
     if not result["result_v5_final_probe_status"]:
         result["result_v5_final_probe_status"] = "disabled" if run_config.get("final_probe_eval_after_training") is False else "missing_or_failed"
     if not result["result_v5_post_training_diagnostics_status"]:
         result["result_v5_post_training_diagnostics_status"] = "disabled" if run_config.get("post_training_diagnostics") is False else "missing_or_skipped"
-    result["result_v5_status"] = _run_status(
-        loss, run_dir / "loss_summary.json", bool(missing)
+    result["result_v5_status"] = (
+        "completed_valid_only" if valid_only_four and not missing
+        else _run_status(loss, run_dir / "loss_summary.json", bool(missing))
     )
     notes = []
     if missing:
         notes.append("required V5 frozen metric payload incomplete")
+    if valid_only_four and not missing:
+        notes.append(
+            "four-checkpoint valid_iid metrics complete; test/hard/sealed not accessed"
+        )
     if result["result_v5_final_probe_status"] in {"missing_or_failed", "failed"}:
         notes.append("Global FiLM final-probe payload missing or failed")
     result["result_v5_notes"] = "; ".join(notes)
     return result
+
+
+def _is_valid_only_four_checkpoint_payload(
+    payload: dict[str, Any], metrics: dict[str, Any]
+) -> bool:
+    return (
+        str(payload.get("schema_version") or "").startswith(
+            "heat3d_v5_v32_valid_only_closeout"
+        )
+        and set(metrics) == {
+            "point_global_best",
+            "sample_first_best",
+            "legacy_best",
+            "final",
+        }
+    )
+
+
+def _valid_only_summary(
+    metrics: dict[str, Any], checkpoint: str
+) -> dict[str, Any]:
+    payload = metrics.get(checkpoint)
+    if not isinstance(payload, dict):
+        return {}
+    summary = payload.get("summary")
+    return summary if isinstance(summary, dict) else {}
+
+
+def _normalize_valid_only_four_checkpoint_reports(
+    metrics: dict[str, Any],
+) -> dict[str, dict[str, dict[str, Any]]]:
+    return {
+        "primary_relative": {
+            "valid_iid": _valid_only_summary(metrics, "point_global_best")
+        },
+        "legacy_metric": {
+            "valid_iid": _valid_only_summary(metrics, "legacy_best")
+        },
+        "best": {"valid_iid": _valid_only_summary(metrics, "legacy_best")},
+        "final": {"valid_iid": _valid_only_summary(metrics, "final")},
+    }
+
+
+def _missing_valid_only_four_checkpoint_paths(
+    metrics: dict[str, Any],
+) -> list[str]:
+    missing = []
+    for checkpoint in (
+        "point_global_best",
+        "sample_first_best",
+        "legacy_best",
+        "final",
+    ):
+        row = _valid_only_summary(metrics, checkpoint)
+        for metric in V5_FROZEN_METRICS:
+            if not _finite(row.get(metric)):
+                missing.append(f"{checkpoint}.valid_iid.{metric}")
+    return missing
 
 
 def _fill_v4_values(result: dict[str, str], loss: dict[str, Any], run_config: dict[str, Any]) -> None:
@@ -270,6 +372,13 @@ def _threshold_status(valid: dict[str, Any], test: dict[str, Any]) -> str:
     if not all(_finite(value) for value in values):
         return "unknown"
     return "pass" if all(float(value) < 20.0 for value in values) else "fail"
+
+
+def _valid_only_threshold_status(valid: dict[str, Any]) -> str:
+    value = valid.get("point_global_relative_rmse_pct")
+    if not _finite(value):
+        return "unknown"
+    return "valid_only_pass" if float(value) < 20.0 else "valid_only_fail"
 
 
 def _run_status(loss: dict[str, Any], loss_path: Path, incomplete: bool) -> str:
