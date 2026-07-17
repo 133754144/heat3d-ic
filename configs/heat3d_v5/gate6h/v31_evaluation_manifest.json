@@ -1,0 +1,91 @@
+{
+  "schema_version": "heat3d_v5_gate6h_v31_evaluation_manifest_v1",
+  "status": "frozen_complete",
+  "config_id": "V4P5_31_gate6h_v29_validation_b32_retry_e600",
+  "host": "wsl2",
+  "run": {
+    "directory": "output/heat3d_v5_gate6h_runs/V4P5_31_gate6h_v29_validation_b32_retry_e600",
+    "training_commit": "a61bb00",
+    "best_epoch": 330,
+    "final_epoch": 600,
+    "selection_metric": "valid_rel_rmse_v4_pct",
+    "status_ok": true,
+    "grad_finite": true
+  },
+  "artifacts": {
+    "params_best.pkl": "5ed80fa5ece328b0772b089e9015298d0ee39a60b7d315a0780c63c85ee4ab5c",
+    "params_final.pkl": "fe8c497df9d3c55bccb6a94ef417560349843e774d4400241077136acbdc0e5d",
+    "loss_summary.json": "0bb3ead58068d77048cd8631aab72a84f29766fadc92adcbc66347f614dfe1a3",
+    "run_config.json": "b102aebb61017ce19163927abe50ae0f546a5838ad3e11e7d51e6f01a392e41f",
+    "best_predictions.npz": "942a380d92331e0685c675685e33e0e240728c773012ee604f4a18ebd4152ded",
+    "predictions.npz": "6c97757a1b01c83738ca521b583d6f98b476273dbf585b7c997f30f0f48d9b5a"
+  },
+  "evaluation": {
+    "base_frozen_evaluator_commit": "639872abcb0f7afd3b6c2d319a7d395bde75c9a4",
+    "execution_evaluator_commit": "bcd5c581cb4a20e6257179f7a5c6f7528fe05a54",
+    "evaluator_source": "scripts/evaluate_heat3d_v5_gate5_checkpoints.py",
+    "evaluator_source_sha256": "aed63bbfa0e23aa69b944960f222feac05dc3682783ab601a3e90ae54581911d",
+    "adapter_repo_path": "configs/heat3d_v5/gate6h/v31_gate5_compat_adapter.txt",
+    "adapter_sha256": "8c58eceba227f72f79a6409ee8949948a3a58ecc60db979a7931a70662c5e121",
+    "contract_repo_path": "configs/heat3d_v5/gate6h/v31_gate5_compat_contract.json",
+    "contract_remote_sha256": "67f20eeda9c36c40c6a57cf685df0acd61cfa73eb6aafaf7309edfe0c3ed6768",
+    "contract_repo_sha256": "2e265fb9784e8830485e455e9981eaab066ad7c05a74d7eb5cee7932d5355777",
+    "remote_metrics_path": "output/heat3d_v5_gate6h_evaluations/V4P5_31_gate6h_v29_validation_b32_retry_e600/v5_metrics.json",
+    "remote_metrics_sha256": "16600db2e386524fc9ee729474efee8d417226f09cf138e81f51bf87ae0fabcf",
+    "registry_embedded_metrics_sha256": "27b65a5d1641fa97687b15e1e670847f040ea8cb83a5edae54c3481a0052b120",
+    "registry_embedded_metrics_bytes": 2950285,
+    "metric_schema": "heat3d_v5_clean_metrics_v2_true_rms",
+    "formulas_unchanged": true,
+    "split_handling_unchanged": true,
+    "normalization_context_unchanged": true
+  },
+  "role_access": {
+    "fit_roles": [
+      "train"
+    ],
+    "selection_roles": [
+      "valid_iid"
+    ],
+    "report_only_roles_accessed": [
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test"
+    ],
+    "sealed_iid_accessed": false
+  },
+  "metrics_complete": {
+    "checkpoints": [
+      "primary_relative",
+      "legacy_metric"
+    ],
+    "roles": [
+      "valid_iid",
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test"
+    ],
+    "frozen_metric_count_per_checkpoint_role": 14,
+    "required_paths_complete": true
+  },
+  "primary_relative": {
+    "checkpoint": "mse_best",
+    "epoch": 330,
+    "valid_iid": {
+      "point_global_relative_rmse_pct": 24.696514251289127,
+      "sample_first_cv_relative_rmse_pct": 22.394133587725772,
+      "raw_cv_weighted_rmse_K": 0.17986154174656413,
+      "legacy_normalized_valid_base_mse": 0.039696460990587386
+    },
+    "test_iid": {
+      "point_global_relative_rmse_pct": 26.599520456037396,
+      "sample_first_cv_relative_rmse_pct": 23.455856764605635,
+      "raw_cv_weighted_rmse_K": 0.23595931993977212
+    }
+  },
+  "threshold": {
+    "formula": "valid_iid and test_iid point-global true-RMS relative RMSE both <20%",
+    "passed": false
+  }
+}

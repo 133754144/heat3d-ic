@@ -1,6 +1,6 @@
 # Gate 6H V13 scratch scale-path ablation
 
-状态：V28/V30 已完成 e600 与 valid-only true-RMS 统一评估；V29 固定为 `failed_oom_validation_e18`；V31 已准备但未启动。本阶段只使用 train/valid_iid；test、hard roles 和 sealed IID 禁止访问。
+状态：Gate 6H 已冻结关闭。V28/V30/V31 完成 e600，V29 固定为 `failed_oom_validation_e18`；V31 的 test/hard 仅在训练与 checkpoint 选择结束后作 report-only 评估，sealed IID 从未访问。
 
 ## e600 结果收集（2026-07-17）
 
@@ -11,6 +11,7 @@
 | V4P5_28_gate6h_v13_stopgrad_scratch_e600 | wsl2 | completed_e600 | 554 | 0.04082419 | 0.16094990 | 25.0443% |
 | V4P5_29_gate6h_v13_scale_attention_scratch_e600 | wsl2 | failed_oom_validation_e18 | — | — | — | — |
 | V4P5_30_gate6h_v13_deep_scale_head_scratch_e600 | devbox | completed_e600 | 275 | 0.03817912 | 0.15565122 | 24.2198% |
+| V4P5_31_gate6h_v29_validation_b32_retry_e600 | wsl2 | completed_e600 | 330 | 0.03976189 | 0.15884005 | 24.7160% |
 
 V29 的状态来自用户明确确认；2026-07-17 远程复核时 run 目录为空、配置日志路径不存在且无存续进程，因此不能伪造 traceback 或日志 hash。缺口、配置 hash 与 e1 memory 证据冻结在 `configs/heat3d_v5/gate6h/v29_oom_validation_e18_audit.json`。
 
@@ -47,7 +48,37 @@ V31 `V4P5_31_gate6h_v29_validation_b32_retry_e600` 严格继承 V29，仅把 val
 - `run.validation_batch_size: 128 -> 32`
 - `run.prediction_batch_size: 128 -> 32`
 
-V31 状态为 `frozen_prepared / not_started`，启动策略仍为 `explicit_user_instruction_only`。
+V31 已完成 e600；该 diff 仍是其唯一工程差异，训练配置本轮未修改。
+
+## V31 冻结评估
+
+V31 training commit=`a61bb00`，best=`e330`，final=`e600`。冻结 Gate 5 evaluator 基线为 `639872abcb0f7afd3b6c2d319a7d395bde75c9a4`，执行 adapter commit 为 `bcd5c581cb4a20e6257179f7a5c6f7528fe05a54`。归档 adapter、contract 与 evaluation manifest：
+
+- `configs/heat3d_v5/gate6h/v31_gate5_compat_adapter.txt`
+- `configs/heat3d_v5/gate6h/v31_gate5_compat_contract.json`
+- `configs/heat3d_v5/gate6h/v31_evaluation_manifest.json`
+
+完整 V5 payload 覆盖 primary/legacy checkpoint 的 `valid_iid`、`test_iid` 与三类 hard report-only role；normalization/context 仅由 train 拟合，选择仅使用 `valid_iid`。sealed IID 未出现在 evaluator contract、reports 或访问清单中。
+
+| checkpoint | valid point-global | valid sample-first | valid raw CV RMSE K | test point-global | test sample-first | test raw CV RMSE K |
+|---|---:|---:|---:|---:|---:|---:|
+| V31 best e330 | 24.696514% | 22.394134% | 0.17986154 | 26.599520% | 23.455857% | 0.23595932 |
+| V31 final e600 | 25.474447% | 21.599450% | 0.18559069 | 25.142100% | 21.860021% | 0.22365817 |
+
+V31 clean valid/test point-global 均未达到 `<20%`，因此未晋级。
+
+## Gate 6H 最终结论
+
+同口径 valid point-global true-RMS 排序为：
+
+| model | checkpoint | valid point-global |
+|---|---|---:|
+| V13 | best e318 | 23.700678% |
+| V30 | best e275 | 24.219438% |
+| V31 | best e330 | 24.696514% |
+| V28 | best e554 | 25.045622% |
+
+V13 仍是冻结范围内最佳单模型。V28、V30、V31 均未超过 V13，且均未达到 `<20%` valid 门槛，因此 Gate 6H 不晋级任何候选。V29 仅保留为 validation OOM 工程负结果，不作模型质量结论。sealed IID 未访问。
 
 ## 历史基线审计
 
@@ -82,7 +113,7 @@ V31 状态为 `frozen_prepared / not_started`，启动策略仍为 `explicit_use
 
 三组均为 random initialization，继承 V13 的数据、模型、loss、B28、seeds 和实际 LR 合同。primary selection 为 point-global；同时保存 point-global、sample-first、base-MSE 与 final checkpoint。post-training valid diagnostics 开启，final probe 关闭。
 
-初始 preflight 明确不准备 V22 e600；当前生命周期以 registry 为准：V28/V30 completed、V29 failed、V31 not_started。
+初始 preflight 明确不准备 V22 e600；最终生命周期以 registry 为准：V28/V30/V31 completed、V29 failed。
 
 ## E1 execution smoke
 
@@ -96,10 +127,6 @@ V31 状态为 `frozen_prepared / not_started`，启动策略仍为 `explicit_use
 
 全部 smoke 均满足 finite loss/gradient、train-only context fit、summary-before-replay、forbidden roles 为空。该表只冻结启动前 e1 结论；当前 e600 状态见文首，不用 smoke 状态覆盖最终生命周期。
 
-## 手动启动
+## 冻结状态
 
-V28/V30 已完成，V29 不得续跑。仅在后续明确决定启动 V31 时执行（本轮未执行）：
-
-```bash
-python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_31_gate6h_v29_validation_b32_retry_e600.yaml
-```
+Gate 6H 不再包含待启动配置。本轮仅完成工程 closeout，没有训练、模型推理、模型/损失/YAML 配置修改。

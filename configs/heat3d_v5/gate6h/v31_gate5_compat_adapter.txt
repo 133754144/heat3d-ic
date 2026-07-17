@@ -1,0 +1,6 @@
+Compatibility binding for V31 Gate-5 metric replay
+- evaluator source: scripts/evaluate_heat3d_v5_gate5_checkpoints.py
+- allowed config binding: V4P5_31_gate6h_v29_validation_b32_retry_e600
+- qk regional features attached with runner_module._attach_qk_region_features_to_groups before model apply
+- metric formulas/split handling/normalization/context fitting unchanged
+- execution platform: CPU (JAX_PLATFORMS=cpu)

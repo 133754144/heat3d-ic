@@ -18,6 +18,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+csv.field_size_limit(sys.maxsize)
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -30,6 +31,7 @@ REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6h_v13_scale_ablation_registry.csv"
 CONTRACT = ROOT / "configs/heat3d_v5/gate6h/v13_scratch_scale_ablation_contract.json"
 V13 = ROOT / "configs/heat3d_v5/generated/V4P5_13_gate6e_scratch_branch_rebalance.yaml"
 E1_SUMMARY = ROOT / "configs/heat3d_v5/gate6h/e1_smoke_summary.json"
+PREFLIGHT_AUDIT = ROOT / "configs/heat3d_v5/gate6h/preflight_audit.json"
 VALID_ONLY_EVALUATION = ROOT / "configs/heat3d_v5/gate6h/valid_only_true_rms_evaluation.json"
 V29_OOM_AUDIT = ROOT / "configs/heat3d_v5/gate6h/v29_oom_validation_e18_audit.json"
 RUNNER = ROOT / "scripts/run_heat3d_v1_medium_controlled_training_export.py"
@@ -273,15 +275,19 @@ def main() -> int:
     assert rows[3]["baseline_config_id"] == IDS[1]
     assert rows[3]["baseline_run_commit"] == "da6f319"
     assert rows[3]["baseline_run_config_sha256"] == ""
-    assert rows[3]["long_training_started"] == "false"
+    assert rows[3]["long_training_started"] == "true"
     assert rows[3]["e1_status"] == "not_run_not_required"
     assert not any(rows[3][field] for field in (
         "e1_param_count", "e1_peak_rss_mb", "e1_live_device_bytes",
         "e1_reserved_device_bytes", "e1_pool_bytes", "e1_reload_audit",
         "e1_post_diagnostics",
     ))
-    assert not (ROOT / rows[3]["output_dir"]).exists()
-    assert not (ROOT / rows[3]["log_path"]).exists()
+    preflight = json.loads(PREFLIGHT_AUDIT.read_text(encoding="utf-8"))
+    assert preflight["status"] == "passed"
+    assert preflight["lifecycle_statuses"][IDS[3]] == "not_started"
+    assert preflight["scientific_diffs"][IDS[3]] == EXPECTED_MODEL_DIFFS[IDS[3]]
+    assert "--validation-batch-size 32" in preflight["commands"][IDS[3]]
+    assert "--prediction-batch-size 32" in preflight["commands"][IDS[3]]
 
     evaluation = json.loads(VALID_ONLY_EVALUATION.read_text(encoding="utf-8"))
     assert evaluation["status"] == "completed"

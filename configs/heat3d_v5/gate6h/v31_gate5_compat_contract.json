@@ -1,0 +1,63 @@
+{
+  "schema_version": "heat3d_v5_gate5_final_evaluator_contract_v1",
+  "status": "frozen",
+  "evaluator": "scripts/evaluate_heat3d_v5_gate5_checkpoints.py",
+  "metric_schema": "heat3d_v5_clean_metrics_v2_true_rms",
+  "dataset": "data/heat3d_v4_p5_clean_nohard_v0",
+  "split_map": "configs/heat3d_v4/candidate1024_p5_clean_nohard_train672_valid128_test128_hardchallenge_seed0.json",
+  "nodes_per_sample": 1024,
+  "fit_roles": [
+    "train"
+  ],
+  "selection_roles": [
+    "valid_iid"
+  ],
+  "report_only_roles": [
+    "test_iid",
+    "hard_train_holdout",
+    "hard_challenge_valid",
+    "hard_challenge_test"
+  ],
+  "split_hashes": {
+    "train": "b9b4e39ec9e3eea20bb4a258192a5d4ed4e5faa4e07f14c1ce72a45893e513ef",
+    "valid_iid": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63",
+    "test_iid": "0a474763a504f158b381ecf9b4bb1b74fb8985f9fdb2b67024f6ad5fe52cca1e",
+    "hard_train_holdout": "9bda0a7813c27219cf2614064304d1e6fcbde93e3aa4ba93038a2cebccdb566e",
+    "hard_challenge_valid": "faff7fa006e266fa09ed8f4713fc5feae9fb125416ad9aba81d8704d6e894836",
+    "hard_challenge_test": "4fb035d5a251992c66c39ad7bbcc2a325b501025d983d5a8108f943b25abc17f"
+  },
+  "train_context_fit_sample_ids_sha256": "6ca6d00ab3c17ccbb5085da8114066094d9332582d4cdb2b939faee9262201a8",
+  "configs": {
+    "V4P5_31_gate6h_v29_validation_b32_retry_e600": {
+      "run_dir": "output/heat3d_v5_gate6h_runs/V4P5_31_gate6h_v29_validation_b32_retry_e600",
+      "model": {
+        "global_context_mode": "film",
+        "native_output_mode": "native_shape_scale",
+        "scale_head_mode": "physics_plus_pooled_latent"
+      }
+    }
+  },
+  "checkpoint_contract": {
+    "best": "lowest valid_base_mse",
+    "final": "epoch 600",
+    "required_files": [
+      "loss_summary.json",
+      "run_config.json",
+      "params_best.pkl",
+      "params_final.pkl"
+    ]
+  },
+  "output_contract": {
+    "training_run_directory_is_read_only": true,
+    "required_roles": [
+      "valid_iid",
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test"
+    ],
+    "include_per_sample_attribution": true,
+    "include_native_oracles": true,
+    "include_film_gamma_beta": true
+  }
+}

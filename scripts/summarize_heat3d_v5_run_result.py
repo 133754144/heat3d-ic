@@ -342,8 +342,10 @@ def _update_csv(path: Path, config_id: str, result: dict[str, str]) -> None:
         if row.get("config_id") == config_id:
             found = True
             for field in V5_REGISTRY_RESULT_FIELDS:
-                if result.get(field, "") != "":
-                    row[field] = result[field]
+                # Result collection is an authoritative snapshot. Overwrite
+                # empty values as well so a later complete replay clears stale
+                # missing-metric paths and notes from an earlier partial run.
+                row[field] = result.get(field, "")
             break
     if not found:
         raise SystemExit(f"{path}: config_id not found: {config_id}")
