@@ -300,9 +300,10 @@ def main() -> int:
     assert dry.stdout.strip() == text
 
     source = RUNNER.read_text(encoding="utf-8")
-    assert 'sample_score == sample_first_best_score' in source
-    assert '"checkpoint_tie_break_metric" = "valid_raw_deltaT_rmse_K"' not in source
-    assert 'record["checkpoint_tie_break_metric"] = "valid_raw_deltaT_rmse_K"' in source
+    assert 'sample_score == sample_first_best_score' not in source
+    assert "valid_native_sample_first_cv_relative_rmse" in source
+    assert "valid_raw_cv_weighted_rmse_K" in source
+    assert "tolerance_aware_lexicographic" in source
     assert "attention_diagnostics_by_checkpoint" in source
     assert "valid_iid_only_after_all_checkpoint_selection_frozen" in source
     assert "target" not in qk_region_features_from_raw.__code__.co_varnames

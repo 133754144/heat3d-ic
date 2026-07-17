@@ -69,6 +69,7 @@ from rigno.heat3d_v5_global_context import (  # noqa: E402
 from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
 from rigno.heat3d_v5_shape_scale import (  # noqa: E402
     apply_scale_head_lr_multiplier,
+    control_volume_layout,
     mask_branch_gradients,
     native_gradient_group_norms,
     native_shape_scale_diagnostics,
@@ -1016,6 +1017,34 @@ def _rmse_from_mse(mse: Any) -> float | None:
     if not math.isfinite(value):
         return None
     return math.sqrt(max(value, 0.0))
+
+
+def _sample_first_candidate_is_better(
+    score: float,
+    raw_cv_rmse_K: float,
+    best_score: float | None,
+    best_raw_cv_rmse_K: float | None,
+    *,
+    rtol: float = 1.0e-9,
+    atol: float = 1.0e-12,
+) -> bool:
+    """Compare sample-first checkpoints with a tolerance-aware CV-RMSE tie-break."""
+
+    if best_score is None:
+        return True
+    tolerance = max(
+        float(atol),
+        float(rtol) * max(abs(float(score)), abs(float(best_score))),
+    )
+    if float(score) < float(best_score) - tolerance:
+        return True
+    return bool(
+        abs(float(score) - float(best_score)) <= tolerance
+        and (
+            best_raw_cv_rmse_K is None
+            or float(raw_cv_rmse_K) < float(best_raw_cv_rmse_K)
+        )
+    )
 
 
 def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
@@ -2837,6 +2866,8 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     weighted_recovered_mse = 0.0
     weighted_mean_abs_true_delta = 0.0
     weighted_mean_square_true_delta = 0.0
+    raw_cv_error_squared_integral = 0.0
+    raw_cv_volume = 0.0
     native_metric_sums: dict[str, Any] = {}
     count = 0
     finite_ok = True
@@ -2864,6 +2895,13 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
                     native_values[f"{field_name}_{metric_name}"] = value
             for name, value in native_values.items():
                 native_metric_sums[name] = native_metric_sums.get(name, 0.0) + value * prediction["deltaT_hat"].shape[0]
+            control_volumes = control_volume_layout(
+                physics["control_volumes"], pred_delta
+            )
+            raw_cv_error_squared_integral = raw_cv_error_squared_integral + jnp.sum(
+                jnp.square(pred_delta - group["target_delta_raw"]) * control_volumes
+            )
+            raw_cv_volume = raw_cv_volume + jnp.sum(control_volumes)
         else:
             pred_normalized = prediction
             pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
@@ -2914,6 +2952,12 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
         "shape_ok": shape_ok,
     }
     result.update({name: float(value / divisor) for name, value in native_metric_sums.items()})
+    if "joint_relative_rmse" in result:
+        result["sample_first_cv_relative_rmse"] = result["joint_relative_rmse"]
+    if float(raw_cv_volume) > 0.0:
+        result["raw_cv_weighted_rmse_K"] = float(
+            jnp.sqrt(raw_cv_error_squared_integral / raw_cv_volume)
+        )
     return result
 
 
@@ -3267,6 +3311,17 @@ def _epoch_history_record(
         "valid_iid_raw_deltaT_rmse_K": (
             float(valid_metrics["raw_rmse_K"]) if primary_validation_split == "valid_iid" else None
         ),
+        "train_raw_cv_weighted_rmse_K": _maybe_float(
+            train_metrics, "raw_cv_weighted_rmse_K"
+        ),
+        "valid_raw_cv_weighted_rmse_K": _maybe_float(
+            valid_metrics, "raw_cv_weighted_rmse_K"
+        ),
+        "valid_iid_raw_cv_weighted_rmse_K": (
+            _maybe_float(valid_metrics, "raw_cv_weighted_rmse_K")
+            if primary_validation_split == "valid_iid"
+            else None
+        ),
         "train_error_pct": _metric_error_pct(train_metrics),
         "valid_error_pct": _metric_error_pct(valid_metrics),
         "valid_iid_error_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
@@ -3299,6 +3354,7 @@ def _epoch_history_record(
         record[f"valid_{component}"] = _maybe_float(valid_components, component)
     for metric in (
         "scale_log_abs_error", "shape_cv_rmse", "joint_relative_rmse",
+        "sample_first_cv_relative_rmse",
         "joint_amplitude_ratio", "joint_spatial_correlation", "joint_hotspot_rmse",
         "joint_topk_rmse", "oracle_scale_relative_rmse", "oracle_shape_relative_rmse",
         "physics_scale_relative_rmse",
@@ -3621,12 +3677,12 @@ def _fit_once(
     )
     base_mse_best_params = initial_best_params if track_base_mse_best else None
     sample_first_best_score: float | None = (
-        float(initial_best_record["valid_native_joint_relative_rmse"])
+        float(initial_best_record["valid_native_sample_first_cv_relative_rmse"])
         if track_sample_first_best
         else None
     )
     sample_first_best_raw_cv_rmse_K: float | None = (
-        float(initial_best_record["valid_raw_deltaT_rmse_K"])
+        float(initial_best_record["valid_raw_cv_weighted_rmse_K"])
         if track_sample_first_best
         else None
     )
@@ -4185,18 +4241,17 @@ def _fit_once(
                 base_mse_best_record = dict(record)
                 base_mse_best_params = _host_params(params)
         if track_sample_first_best:
-            sample_score = float(record["valid_native_joint_relative_rmse"])
-            sample_raw_cv_rmse_K = float(record["valid_raw_deltaT_rmse_K"])
-            sample_is_better = (
-                sample_first_best_score is None
-                or sample_score < sample_first_best_score
-                or (
-                    sample_score == sample_first_best_score
-                    and (
-                        sample_first_best_raw_cv_rmse_K is None
-                        or sample_raw_cv_rmse_K < sample_first_best_raw_cv_rmse_K
-                    )
-                )
+            sample_score = float(
+                record["valid_native_sample_first_cv_relative_rmse"]
+            )
+            sample_raw_cv_rmse_K = float(
+                record["valid_raw_cv_weighted_rmse_K"]
+            )
+            sample_is_better = _sample_first_candidate_is_better(
+                sample_score,
+                sample_raw_cv_rmse_K,
+                sample_first_best_score,
+                sample_first_best_raw_cv_rmse_K,
             )
             if sample_is_better:
                 sample_first_best_score = sample_score
@@ -4579,6 +4634,36 @@ def _scale_attention_intermediates(model: Any, params: Any, group: Mapping[str, 
     return np.asarray(value, dtype=np.float64)
 
 
+def _shape_attention_intermediates(
+    model: Any, params: Any, group: Mapping[str, Any]
+) -> tuple[np.ndarray, np.ndarray]:
+    physics = group["native_physics"]
+    _, state = model.apply(
+        {"params": params},
+        inputs=group["inputs"],
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+        control_volumes=physics["control_volumes"],
+        log_s_phys=physics["log_s_phys"],
+        reference_temperature=physics["reference_temperature"],
+        dirichlet_mask=physics["dirichlet_mask"],
+        prescribed_temperature=physics["prescribed_temperature"],
+        qk_region_features=group.get("qk_region_features"),
+        method=model.predict_native_shape_scale,
+        mutable=["intermediates"],
+    )
+    gate = state["intermediates"]["shape_attention_gate"]
+    residual = state["intermediates"]["shape_attention_residual"]
+    while isinstance(gate, (tuple, list)):
+        gate = gate[0]
+    while isinstance(residual, (tuple, list)):
+        residual = residual[0]
+    return (
+        np.asarray(gate, dtype=np.float64).squeeze(-1),
+        np.asarray(residual, dtype=np.float64),
+    )
+
+
 def _finite_pearson(x: np.ndarray, y: np.ndarray) -> float | None:
     left = np.asarray(x, dtype=np.float64).reshape(-1)
     right = np.asarray(y, dtype=np.float64).reshape(-1)
@@ -4651,7 +4736,7 @@ def _scale_attention_diagnostics(
         )
         for name in required
     }
-    return {
+    payload = {
         "enabled": True,
         "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
         "feature_version": str(
@@ -4667,6 +4752,54 @@ def _scale_attention_diagnostics(
         "weight_feature_pearson": correlations,
         "finite": True,
     }
+    if getattr(model, "shape_attention_mode", "none") == "physics_gate":
+        shape_gate_rows: list[np.ndarray] = []
+        shape_residual_rows: list[np.ndarray] = []
+        shape_feature_rows: list[np.ndarray] = []
+        for group in groups:
+            gate, residual = _shape_attention_intermediates(model, params, group)
+            features = np.asarray(group["qk_region_features"], dtype=np.float64)
+            if gate.shape != features.shape[:2] or residual.shape[:2] != gate.shape:
+                raise RuntimeError(
+                    "shape attention diagnostic regional dimensions do not align"
+                )
+            shape_gate_rows.append(gate)
+            shape_residual_rows.append(residual)
+            shape_feature_rows.append(features)
+        shape_gates = np.concatenate(shape_gate_rows, axis=0)
+        shape_residuals = np.concatenate(shape_residual_rows, axis=0)
+        shape_features = np.concatenate(shape_feature_rows, axis=0)
+        shape_correlations = {
+            name: _finite_pearson(
+                shape_gates, shape_features[..., names.index(name)]
+            )
+            for name in required
+        }
+        residual_norm = np.linalg.norm(
+            shape_residuals.reshape(shape_residuals.shape[0], -1), axis=1
+        )
+        payload["shape_attention"] = {
+            "enabled": True,
+            "mode": "physics_gate",
+            "sample_count": int(shape_gates.shape[0]),
+            "regional_node_count": int(shape_gates.shape[1]),
+            "gate_mean": float(np.mean(shape_gates)),
+            "gate_min": float(np.min(shape_gates)),
+            "gate_max": float(np.max(shape_gates)),
+            "gate_saturated_fraction": float(
+                np.mean((shape_gates <= 0.01) | (shape_gates >= 0.99))
+            ),
+            "residual_l2_norm_mean": float(np.mean(residual_norm)),
+            "residual_l2_norm_max": float(np.max(residual_norm)),
+            "gate_feature_pearson": shape_correlations,
+            "finite": bool(
+                np.all(np.isfinite(shape_gates))
+                and np.all(np.isfinite(shape_residuals))
+            ),
+        }
+        if not payload["shape_attention"]["finite"]:
+            raise RuntimeError("shape attention diagnostics contain non-finite values")
+    return payload
 
 
 def _json_safe(value: Any) -> Any:
@@ -4912,8 +5045,15 @@ def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict
         return record
     if kind == "sample_first_best":
         record = dict(result.get("sample_first_best_record") or {})
-        record["checkpoint_selection_metric"] = "valid_native_joint_relative_rmse"
-        record["checkpoint_tie_break_metric"] = "valid_raw_deltaT_rmse_K"
+        record["checkpoint_selection_metric"] = (
+            "valid_native_sample_first_cv_relative_rmse"
+        )
+        record["checkpoint_tie_break_metric"] = (
+            "valid_raw_cv_weighted_rmse_K"
+        )
+        record["checkpoint_tie_break_comparison"] = (
+            "tolerance_aware_lexicographic"
+        )
         return record
     if kind == "final":
         record = {

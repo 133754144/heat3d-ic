@@ -1,0 +1,32 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_34_gate6k_dual_physics_attention
+extends: V4P5_32_gate6h_attention_sparse_safe_v2_e600.yaml
+overrides:
+  description: >-
+    Gate 6K Dual random-init seed-0 e600 single-variable ablation. Relative to
+    V32, only physics-gated shape attention is enabled; scale attention remains
+    unchanged.
+  model:
+    shape_attention_mode: physics_gate
+  run:
+    final_probe_output_dir: output/heat3d_v5_gate6k_dual_final_probe/V4P5_34_gate6k_dual_physics_attention
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6k_dual_diagnostics/V4P5_34_gate6k_dual_physics_attention
+  export:
+    output_dir: output/heat3d_v5_gate6k_dual_runs/V4P5_34_gate6k_dual_physics_attention
+    run_name: V4P5_34_gate6k_dual_physics_attention
+  metadata:
+    phase: v5_gate6k
+    registry_config_id: V4P5_34_gate6k_dual_physics_attention
+    candidate: Dual
+    baseline_config_id: V4P5_32_gate6h_attention_sparse_safe_v2_e600
+    initialization: random
+    loss_weights: [1.5, 0.5, 1.0, 1.0]
+    primary_advancement_checkpoint: valid_point_global_true_rms_best
+    sample_first_primary: valid_sample_first_cv_relative_rmse
+    sample_first_tie_break: valid_raw_cv_weighted_rmse_K
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    long_training_started: false
