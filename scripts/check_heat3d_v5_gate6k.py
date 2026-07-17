@@ -24,6 +24,13 @@ from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
 from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E402
 from scripts.run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     _sample_first_candidate_is_better,
+    _scale_attention_diagnostics,
+)
+from rigno.heat3d_v5_scale_pooling import QK_REGION_FEATURE_SCHEMAS  # noqa: E402
+from scripts.check_heat3d_v5_gate6g import (  # noqa: E402
+    _fixture as _attention_fixture,
+    _init_apply as _attention_init_apply,
+    _model as _attention_model,
 )
 
 
@@ -110,6 +117,36 @@ def _check_audit() -> None:
     assert REPORT.is_file()
 
 
+def _check_dual_attention_diagnostics() -> None:
+    fixture = _attention_fixture()
+    model = _attention_model(
+        shape_attention_mode="physics_gate",
+        scale_attention_mode="physics_gate",
+    )
+    params, _ = _attention_init_apply(model, fixture)
+    group = {
+        "inputs": fixture["inputs"],
+        "graphs": fixture["graphs"],
+        "global_context": fixture["context"],
+        "qk_region_features": fixture["qk"],
+        "qk_region_feature_names": tuple(
+            QK_REGION_FEATURE_SCHEMAS["sparse_safe_v2"]
+        ),
+        "native_physics": {
+            "control_volumes": fixture["volumes"],
+            "log_s_phys": fixture["log_s_phys"],
+            "reference_temperature": fixture["reference"],
+            "dirichlet_mask": fixture["mask"],
+            "prescribed_temperature": fixture["reference"],
+        },
+    }
+    payload = _scale_attention_diagnostics(model, params, [group])
+    assert payload["enabled"] is True and payload["finite"] is True
+    assert payload["shape_attention"]["enabled"] is True
+    assert payload["shape_attention"]["finite"] is True
+    assert payload["shape_attention"]["sample_count"] == 2
+
+
 def main() -> int:
     rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
     assert len(rows) == 2
@@ -129,13 +166,17 @@ def main() -> int:
         assert row["evaluation_status"] == "not_evaluated"
         assert row["training_started"] == "false"
         assert row["launch_policy"] == "explicit_user_instruction_only"
+        assert row["gate6k_audit_status"] == "completed_read_only"
         assert row["forbidden_access_roles"] == FORBIDDEN
         assert resolved["run"]["init_checkpoint"] is None
         assert resolved["run"]["epochs"] == 600
         assert resolved["run"]["batch_size"] == 28
         assert resolved["run"]["validation_batch_size"] == 32
         assert resolved["run"]["prediction_batch_size"] == 32
-        assert resolved["run"]["seed"] == 0
+        assert resolved["optimizer"]["seed"] == 0
+        assert resolved["optimizer"]["model_seed"] == 0
+        assert resolved["optimizer"]["batch_order_seed"] == 0
+        assert resolved["optimizer"]["graph_seed"] == 0
         assert resolved["optimizer"]["multi_seed"] == []
         assert resolved["export"]["prediction_split"] == "valid_iid"
         assert resolved["export"]["save_point_global_best_checkpoint"] is True
@@ -162,7 +203,7 @@ def main() -> int:
         assert "--init-checkpoint" not in command
         if candidate == "O075":
             assert "--native-log-scale-weight 0.75" in text
-            assert "--shape-attention-mode none" in text
+            assert "--shape-attention-mode" not in command
         else:
             assert "--native-log-scale-weight 0.5" in text
             assert "--shape-attention-mode physics_gate" in text
@@ -195,6 +236,7 @@ def main() -> int:
     assert "valid_raw_cv_weighted_rmse_K" in source
     assert "tolerance_aware_lexicographic" in source
     assert 'payload["shape_attention"]' in source
+    _check_dual_attention_diagnostics()
     _check_audit()
     print(
         json.dumps(

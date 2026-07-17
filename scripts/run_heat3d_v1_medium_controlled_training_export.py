@@ -4652,7 +4652,7 @@ def _shape_attention_intermediates(
         method=model.predict_native_shape_scale,
         mutable=["intermediates"],
     )
-    gate = state["intermediates"]["shape_attention_gate"]
+    gate = state["intermediates"]["shape_attention_gate_values"]
     residual = state["intermediates"]["shape_attention_residual"]
     while isinstance(gate, (tuple, list)):
         gate = gate[0]

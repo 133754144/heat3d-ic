@@ -1534,7 +1534,8 @@ class RIGNO(AbstractOperator):
     gate = nn.sigmoid(self.shape_attention_gate(hidden))
     residual = self.shape_attention_output(
       jnp.concatenate([gate * normalized, attention_inputs], axis=-1))
-    self.sow(col='intermediates', name='shape_attention_gate', value=gate)
+    self.sow(
+      col='intermediates', name='shape_attention_gate_values', value=gate)
     self.sow(col='intermediates', name='shape_attention_residual', value=residual)
     return jnp.concatenate([regional + residual, rnode_latents[:, -1:]], axis=1)
 
