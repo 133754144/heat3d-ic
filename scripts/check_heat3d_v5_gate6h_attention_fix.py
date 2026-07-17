@@ -140,8 +140,14 @@ def main() -> int:
     assert len(rows) == 1
     row = rows[0]
     assert row["config_id"] == CONFIG_ID
-    assert row["execution_status"] == "not_started"
-    assert row["long_training_started"] == "false"
+    if row["execution_status"] == "not_started":
+        assert row["long_training_started"] == "false"
+    else:
+        assert row["execution_status"] == "completed_e600"
+        assert row["long_training_started"] == "true"
+        assert row["evaluation_status"] == (
+            "completed_valid_iid_four_checkpoint"
+        )
     assert row["forbidden_access_roles"] == FORBIDDEN
     assert row["test_accessed"] == row["hard_accessed"] == "false"
     assert row["sealed_iid_accessed"] == "false"
@@ -342,7 +348,7 @@ def main() -> int:
             {
                 "status": "passed",
                 "config_id": CONFIG_ID,
-                "training_runs": 0,
+                "checker_training_runs": 0,
                 "output_writes": 0,
                 "resolved_diff": diff,
                 "fixture_checks": fixture,

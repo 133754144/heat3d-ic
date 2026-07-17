@@ -210,6 +210,9 @@ def _result_fields(
     )
     result["result_v5_final_probe_status"] = _status(loss.get("final_probe_eval_result"), run_config.get("final_probe_eval_result"))
     result["result_v5_post_training_diagnostics_status"] = _status(loss.get("post_training_diagnostics_result"), run_config.get("post_training_diagnostics_result"))
+    if valid_only_four:
+        result["result_v5_final_probe_status"] = "not_applicable_valid_only"
+        result["result_v5_post_training_diagnostics_status"] = "not_applicable_valid_only"
     if not result["result_v5_final_probe_status"]:
         result["result_v5_final_probe_status"] = "disabled" if run_config.get("final_probe_eval_after_training") is False else "missing_or_failed"
     if not result["result_v5_post_training_diagnostics_status"]:

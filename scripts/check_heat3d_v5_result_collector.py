@@ -111,6 +111,14 @@ def main() -> int:
     assert valid_only["result_v5_legacy_checkpoint"] == "legacy_best"
     assert valid_only["result_v5_legacy_epoch"] == "8"
     assert valid_only["result_v5_threshold_pass"] == "valid_only_pass"
+    assert (
+        valid_only["result_v5_final_probe_status"]
+        == "not_applicable_valid_only"
+    )
+    assert (
+        valid_only["result_v5_post_training_diagnostics_status"]
+        == "not_applicable_valid_only"
+    )
     embedded = json.loads(valid_only["result_v5_metrics_json"])
     assert set(embedded["metrics"]) == {
         "point_global_best",
