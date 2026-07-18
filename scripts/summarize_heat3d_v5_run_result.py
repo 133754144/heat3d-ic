@@ -239,7 +239,10 @@ def _is_valid_only_four_checkpoint_payload(
 ) -> bool:
     return (
         str(payload.get("schema_version") or "").startswith(
-            "heat3d_v5_v32_valid_only_closeout"
+            (
+                "heat3d_v5_v32_valid_only_closeout",
+                "heat3d_v5_valid_only_four_checkpoint",
+            )
         )
         and set(metrics) == {
             "point_global_best",
