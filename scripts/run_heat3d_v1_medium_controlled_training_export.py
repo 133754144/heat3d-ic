@@ -330,6 +330,15 @@ def parse_args() -> argparse.Namespace:
         help="Limit final/best prediction export to one split; training behavior is unchanged.",
     )
     parser.add_argument("--shuffle-train-batches", action="store_true")
+    parser.add_argument(
+        "--epoch-wise-batch-regrouping",
+        action="store_true",
+        help=(
+            "Rebuild sample-shuffle train batches at every epoch with "
+            "batch_build_seed + epoch. Default false preserves fixed batch "
+            "membership and only permits optional batch-order shuffling."
+        ),
+    )
     parser.add_argument("--drop-last", action="store_true")
     parser.add_argument(
         "--init-mode",
@@ -1895,6 +1904,9 @@ def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             args.prediction_batch_size, "prediction-batch-size"
         ),
         "shuffle_train_batches": bool(args.shuffle_train_batches),
+        "epoch_wise_batch_regrouping": bool(
+            args.epoch_wise_batch_regrouping
+        ),
         "drop_last": bool(args.drop_last),
         "batch_plan": args.batch_plan,
         "batch_build_seed": 0 if args.batch_build_seed is None else int(args.batch_build_seed),
@@ -2258,6 +2270,13 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
         raise ValueError("--batch-plan must be current_graph_shape or sample_shuffle")
     if config["batch_plan"] == "sample_shuffle" and config["batch_size"] is None:
         raise ValueError("--batch-plan sample_shuffle requires --batch-size >= 1")
+    if (
+        config["epoch_wise_batch_regrouping"]
+        and config["batch_plan"] != "sample_shuffle"
+    ):
+        raise ValueError(
+            "--epoch-wise-batch-regrouping requires --batch-plan sample_shuffle"
+        )
     if int(config["batch_build_seed"]) < 0:
         raise ValueError("--batch-build-seed must be >= 0")
 
@@ -2286,6 +2305,9 @@ def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
         "validation_batch_size": batch_config["validation_batch_size"],
         "prediction_batch_size": batch_config["prediction_batch_size"],
         "shuffle_train_batches": batch_config["shuffle_train_batches"],
+        "epoch_wise_batch_regrouping": batch_config[
+            "epoch_wise_batch_regrouping"
+        ],
         "drop_last": batch_config["drop_last"],
         "batch_plan": batch_config["batch_plan"],
         "batch_build_seed": batch_config["batch_build_seed"],
@@ -3558,6 +3580,7 @@ def _fit_once(
     track_point_global_best: bool = False,
     track_base_mse_best: bool = False,
     track_sample_first_best: bool = False,
+    epoch_regroup_fn: Any | None = None,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
@@ -3764,12 +3787,21 @@ def _fit_once(
         epoch_param_norms: list[float] = []
         epoch_update_to_param_ratios: list[float] = []
         if batch_enabled:
-            train_epoch_groups = _epoch_train_groups(
-                train_groups,
-                epoch=epoch,
-                seed=batch_order_seed,
-                shuffle=bool(batch_config.get("shuffle_train_batches")),
+            train_epoch_groups = (
+                epoch_regroup_fn(epoch)
+                if epoch_regroup_fn is not None
+                else _epoch_train_groups(
+                    train_groups,
+                    epoch=epoch,
+                    seed=batch_order_seed,
+                    shuffle=bool(batch_config.get("shuffle_train_batches")),
+                )
             )
+            if len(train_epoch_groups) != updates_per_epoch:
+                raise RuntimeError(
+                    "epoch-wise batch regrouping changed updates_per_epoch: "
+                    f"expected={updates_per_epoch} actual={len(train_epoch_groups)}"
+                )
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_epoch_groups))
             if memory_audit is not None:
                 memory_audit.record(
@@ -5281,6 +5313,8 @@ def _print_startup_summary(
         f"validation_batch_size={batch_config['validation_batch_size']} "
         f"prediction_batch_size={batch_config['prediction_batch_size']} "
         f"shuffle_train_batches={batch_config['shuffle_train_batches']} "
+        f"epoch_wise_batch_regrouping="
+        f"{batch_config['epoch_wise_batch_regrouping']} "
         f"drop_last={batch_config['drop_last']}"
     )
     _emit(
@@ -7156,6 +7190,52 @@ def main() -> int:
         batch_config=batch_config,
     )
 
+    epoch_regroup_fn = None
+    if batch_config["epoch_wise_batch_regrouping"]:
+        if batch_config["batch_plan"] != "sample_shuffle":
+            raise RuntimeError(
+                "epoch-wise batch regrouping requires sample_shuffle"
+            )
+
+        def epoch_regroup_fn(epoch: int) -> list[dict[str, Any]]:
+            groups = _make_sample_shuffle_groups_with_progress(
+                train_examples,
+                stats,
+                builder,
+                f"train_epoch_{epoch:04d}",
+                False,
+                "basic",
+                seed_config["graph_seed"],
+                batch_size=batch_config["batch_size"],
+                batch_build_seed=batch_config["batch_build_seed"] + int(epoch),
+                drop_last=batch_config["drop_last"],
+                profile_counts=profile_counts if profile_enabled else None,
+            )
+            _attach_global_context_to_groups(
+                groups,
+                global_context_lookup,
+                expected_feature_dim=int(
+                    model_config.get("global_context_feature_dim", 0)
+                ),
+            )
+            if model_config.get("native_output_mode") == "native_shape_scale":
+                _attach_native_physics_to_groups(groups, native_examples_by_id)
+                if (
+                    model_config.get("scale_pooling") == "qk_gated"
+                    or model_config.get("shape_attention_mode") != "none"
+                    or model_config.get("scale_attention_mode") != "none"
+                ):
+                    _attach_qk_region_features_to_groups(
+                        groups,
+                        native_examples_by_id,
+                        feature_version=model_config.get(
+                            "qk_region_feature_version", "bugged_v1"
+                        ),
+                    )
+            _attach_sample_weights_to_groups(groups, train_sample_weights)
+            _check_decoder_bypass_input_alignment(model_config, groups)
+            return groups
+
     result = _fit_once(
         train_groups,
         valid_groups,
@@ -7187,6 +7267,7 @@ def main() -> int:
         track_point_global_best=bool(args.save_point_global_best_checkpoint),
         track_base_mse_best=bool(args.save_base_mse_best_checkpoint),
         track_sample_first_best=bool(args.save_sample_first_best_checkpoint),
+        epoch_regroup_fn=epoch_regroup_fn,
     )
     prediction_groups = _prediction_groups_for_split(
         args.prediction_split,

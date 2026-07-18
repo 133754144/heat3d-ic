@@ -41,7 +41,11 @@ BATCH_SIZE_FIELDS = (
     "validation_batch_size",
     "prediction_batch_size",
 )
-BATCH_BOOL_FIELDS = ("shuffle_train_batches", "drop_last")
+BATCH_BOOL_FIELDS = (
+    "shuffle_train_batches",
+    "drop_last",
+    "epoch_wise_batch_regrouping",
+)
 TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"}
 PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress", "test_iid"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
@@ -223,6 +227,9 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "sample_weight_normalize": run.get("sample_weight_normalize"),
         "batch_plan": run.get("batch_plan"),
         "batch_build_seed": run.get("batch_build_seed"),
+        "epoch_wise_batch_regrouping": run.get(
+            "epoch_wise_batch_regrouping"
+        ),
         "export_output_dir": export.get("output_dir"),
         "diagnostics_enabled": _summarize_diagnostics(diagnostics),
         "graph_radius_policy": graph.get("radius_policy"),

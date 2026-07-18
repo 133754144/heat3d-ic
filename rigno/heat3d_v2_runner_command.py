@@ -223,6 +223,8 @@ def build_training_command(
         command.append("--sample-weight-normalize")
     if run.get("shuffle_train_batches") is True:
         command.append("--shuffle-train-batches")
+    if run.get("epoch_wise_batch_regrouping") is True:
+        command.append("--epoch-wise-batch-regrouping")
     if run.get("drop_last") is True:
         command.append("--drop-last")
     _append_option(command, "--optimizer", _runner_optimizer_name(optimizer.get("name")))
@@ -807,6 +809,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.sample_weight_default", "training --sample-weight-default"),
         ("run.sample_weight_normalize", "training --sample-weight-normalize"),
         ("run.shuffle_train_batches", "training --shuffle-train-batches"),
+        (
+            "run.epoch_wise_batch_regrouping",
+            "training --epoch-wise-batch-regrouping",
+        ),
         ("run.drop_last", "training --drop-last"),
         ("optimizer.name", "training --optimizer"),
         ("optimizer.lr", "training --lr"),

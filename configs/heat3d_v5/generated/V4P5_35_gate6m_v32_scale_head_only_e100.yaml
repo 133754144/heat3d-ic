@@ -1,0 +1,44 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_35_gate6m_v32_scale_head_only_e100
+extends: V4P5_32_gate6h_attention_sparse_safe_v2_e600.yaml
+overrides:
+  description: >-
+    Gate 6M A: initialize from the frozen V32 point-global best e474 and train
+    only the native scale head for e100. The backbone and shape decoder are
+    frozen by native_branch_mode=scale_only; optimizer state is fresh.
+  model:
+    native_branch_mode: scale_only
+  run:
+    epochs: 100
+    init_checkpoint: output/heat3d_v5_gate6m_inputs/V4P5_32_gate6h_attention_sparse_safe_v2_e600/params_best_valid_point_global.pkl
+    checkpoint_load_strict: true
+    partial_load_policy: matching
+    final_probe_output_dir: output/heat3d_v5_gate6m_a_final_probe/V4P5_35_gate6m_v32_scale_head_only_e100
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6m_a_diagnostics/V4P5_35_gate6m_v32_scale_head_only_e100
+  export:
+    output_dir: output/heat3d_v5_gate6m_a_runs/V4P5_35_gate6m_v32_scale_head_only_e100
+    run_name: V4P5_35_gate6m_v32_scale_head_only_e100
+    prediction_split: valid_iid
+    save_point_global_best_checkpoint: true
+    point_global_best_checkpoint_name: params_best_valid_point_global.pkl
+    save_base_mse_best_checkpoint: true
+    base_mse_best_checkpoint_name: params_best_valid_base_mse.pkl
+    save_sample_first_best_checkpoint: true
+    sample_first_best_checkpoint_name: params_best_valid_sample_first.pkl
+  metadata:
+    phase: v5_gate6m
+    candidate: A_scale_head_only
+    baseline_config_id: V4P5_32_gate6h_attention_sparse_safe_v2_e600
+    initialization: V32_point_global_best_e474_params_only
+    optimizer_state: reset
+    trainable_parameters: scale_head_only
+    frozen_parameters: [backbone, shape_decoder]
+    assigned_host: devbox
+    log_path: output/heat3d_v5_gate6m_a_logs/V4P5_35_gate6m_v32_scale_head_only_e100.log
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    status: prepared_not_started
+    training_started: false
