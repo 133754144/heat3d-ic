@@ -31,15 +31,15 @@ conda activate rigno
 cd ~/myCodeGitOnly/heat3d-ic
 mkdir -p output/heat3d_v5_gate6m_b_logs
 nohup python scripts/run_heat3d_v4_config.py \
-  --config configs/heat3d_v5/generated/V4P5_36_gate6m_v32_epoch_regroup_e200.yaml \
-  > output/heat3d_v5_gate6m_b_logs/V4P5_36_gate6m_v32_epoch_regroup_e200.log 2>&1 &
+  --config configs/heat3d_v5/generated/V4P5_36_gate6m_v32_epoch_regroup_e600.yaml \
+  > output/heat3d_v5_gate6m_b_logs/V4P5_36_gate6m_v32_epoch_regroup_e600.log 2>&1 &
 echo $!
 ```
 
 Monitor:
 
 ```bash
-tail -f output/heat3d_v5_gate6m_b_logs/V4P5_36_gate6m_v32_epoch_regroup_e200.log
+tail -f output/heat3d_v5_gate6m_b_logs/V4P5_36_gate6m_v32_epoch_regroup_e600.log
 ```
 
 Both configs are `explicit_user_instruction_only`; neither command was run

@@ -56,13 +56,18 @@ absolute point-SSE movement.
 
 | Candidate | Config | Host | Contract | Status |
 |---|---|---|---|---|
-| A | `V4P5_35_gate6m_v32_scale_head_only_e100` | devbox | V32 e474 params-only, fresh optimizer, scale head only, e100 | prepared_not_started |
-| B | `V4P5_36_gate6m_v32_epoch_regroup_e200` | WSL2 | V32 random-init, epoch-wise batch regrouping only, e200 | prepared_not_started |
+| A | `V4P5_35_gate6m_v32_scale_head_only_e100` | devbox | V32 e474 params-only, fresh optimizer, scale head only, e100 | started_user_managed |
+| B | `V4P5_36_gate6m_v32_epoch_regroup_e600` | WSL2 | V32 random-init, epoch-wise batch regrouping only, e600 | prepared_not_started |
 
 Both retain V32 B28, validation/prediction B32, architecture, loss, optimizer,
 LR schedule, seeds, split, and all four checkpoint classes except for the
-explicitly declared single-variable contract. Commands are in
+explicitly declared single-variable contract. B also retains V32's 600 epochs,
+so its complete warmup-cosine LR trajectory is identical to V32. Commands are in
 `docs/v5_gate6m_launch_commands.md`; Gate 6M did not execute them.
+
+A's YAML and run contract were not changed by this revision. Only the V5
+registry and this closeout record the user-reported started state. B remains
+not started.
 
 ## Remote synchronization
 

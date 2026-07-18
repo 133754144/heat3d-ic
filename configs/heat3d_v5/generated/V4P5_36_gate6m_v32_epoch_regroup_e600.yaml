@@ -1,19 +1,20 @@
 schema_version: heat3d_v4_inherited_config_v0
-config_id: V4P5_36_gate6m_v32_epoch_regroup_e200
+config_id: V4P5_36_gate6m_v32_epoch_regroup_e600
 extends: V4P5_32_gate6h_attention_sparse_safe_v2_e600.yaml
 overrides:
   description: >-
     Gate 6M B: random-initialized V32 with epoch-wise sample-shuffle batch
-    regrouping for e200. Batch membership is rebuilt from the same train split
-    using batch_build_seed + epoch; all other V32 science is retained.
+    regrouping for e600. Batch membership is rebuilt from the same train split
+    using batch_build_seed + epoch; the V32 epoch count and complete
+    warmup-cosine LR trajectory are retained.
   run:
-    epochs: 200
+    epochs: 600
     epoch_wise_batch_regrouping: true
-    final_probe_output_dir: output/heat3d_v5_gate6m_b_final_probe/V4P5_36_gate6m_v32_epoch_regroup_e200
-    post_training_diagnostics_output_dir: output/heat3d_v5_gate6m_b_diagnostics/V4P5_36_gate6m_v32_epoch_regroup_e200
+    final_probe_output_dir: output/heat3d_v5_gate6m_b_final_probe/V4P5_36_gate6m_v32_epoch_regroup_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6m_b_diagnostics/V4P5_36_gate6m_v32_epoch_regroup_e600
   export:
-    output_dir: output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e200
-    run_name: V4P5_36_gate6m_v32_epoch_regroup_e200
+    output_dir: output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600
+    run_name: V4P5_36_gate6m_v32_epoch_regroup_e600
     prediction_split: valid_iid
     save_point_global_best_checkpoint: true
     point_global_best_checkpoint_name: params_best_valid_point_global.pkl
@@ -28,7 +29,7 @@ overrides:
     initialization: random
     epoch_regroup_seed_formula: batch_build_seed_plus_epoch
     assigned_host: wsl2
-    log_path: output/heat3d_v5_gate6m_b_logs/V4P5_36_gate6m_v32_epoch_regroup_e200.log
+    log_path: output/heat3d_v5_gate6m_b_logs/V4P5_36_gate6m_v32_epoch_regroup_e600.log
     fit_roles: [train]
     normalization_fit_roles: [train]
     selection_roles: [valid_iid]

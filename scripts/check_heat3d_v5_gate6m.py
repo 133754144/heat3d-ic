@@ -32,7 +32,7 @@ CONFIGS = {
     "A_scale_head_only": ROOT
     / "configs/heat3d_v5/generated/V4P5_35_gate6m_v32_scale_head_only_e100.yaml",
     "B_epoch_wise_batch_regrouping": ROOT
-    / "configs/heat3d_v5/generated/V4P5_36_gate6m_v32_epoch_regroup_e200.yaml",
+    / "configs/heat3d_v5/generated/V4P5_36_gate6m_v32_epoch_regroup_e600.yaml",
 }
 RESULT_DIR = ROOT / "configs/heat3d_v5/gate6m"
 RESULT = RESULT_DIR / "gate6m_branch_swap_gradient_audit.json"
@@ -105,7 +105,6 @@ def _check_configs() -> None:
             "run.partial_load_policy",
         },
         "B_epoch_wise_batch_regrouping": {
-            "run.epochs",
             "run.epoch_wise_batch_regrouping",
         },
     }
@@ -138,8 +137,6 @@ def _check_configs() -> None:
         assert row["selection_roles"] == "valid_iid"
         assert row["forbidden_access_roles"] == FORBIDDEN
         assert row["launch_policy"] == "explicit_user_instruction_only"
-        assert row["plan_status"] == "prepared_not_started"
-        assert row["training_started"] == "false"
         assert row["test_accessed"] == "false"
         assert row["hard_accessed"] == "false"
         assert row["sealed_iid_accessed"] == "false"
@@ -171,16 +168,29 @@ def _check_configs() -> None:
         ):
             assert flag in text
         if candidate == "A_scale_head_only":
+            assert row["plan_status"] == "prepared"
+            assert row["execution_status"] == "started_user_managed"
+            assert row["training_started"] == "true"
             assert "--epochs 100" in text
             assert "--native-branch-mode scale_only" in text
             assert "--checkpoint-load-strict true" in text
             assert row["checkpoint_sha256"] == V32_SHA256
             assert "--epoch-wise-batch-regrouping" not in command
         else:
-            assert "--epochs 200" in text
+            assert row["plan_status"] == "prepared_not_started"
+            assert row["execution_status"] == "not_started"
+            assert row["training_started"] == "false"
+            assert "--epochs 600" in text
             assert "--native-branch-mode joint" in text
             assert "--epoch-wise-batch-regrouping" in command
             assert "--init-checkpoint" not in command
+            assert config["optimizer"] == baseline["optimizer"]
+            assert config["run"]["epochs"] == baseline["run"]["epochs"] == 600
+            assert (
+                config["optimizer"]["lr_schedule"]
+                == baseline["optimizer"]["lr_schedule"]
+                == "warmup_cosine"
+            )
     assert LAUNCH.is_file()
 
 
@@ -272,7 +282,9 @@ def main() -> int:
             {
                 "status": "passed",
                 "mode": "preflight_only" if args.preflight_only else "full",
-                "training_started": False,
+                "training_started_by_this_task": False,
+                "A_execution_status": "started_user_managed",
+                "B_execution_status": "not_started",
                 "roles": ["train", "valid_iid"],
             },
             sort_keys=True,
