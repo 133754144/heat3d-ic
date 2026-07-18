@@ -63,3 +63,19 @@ Both retain V32 B28, validation/prediction B32, architecture, loss, optimizer,
 LR schedule, seeds, split, and all four checkpoint classes except for the
 explicitly declared single-variable contract. Commands are in
 `docs/v5_gate6m_launch_commands.md`; Gate 6M did not execute them.
+
+## Remote synchronization
+
+The closeout content commit `73181153ad2d6c4c20b6eb942157e1c2b6cd23dc`
+and V32 point-global e474 checkpoint were verified on both servers before the
+sync-manifest commit:
+
+| Host | Assignment | Branch | Content HEAD | Checkpoint SHA256 | Dry-run |
+|---|---|---|---|---|---|
+| devbox | A | research/v5 | `7318115` | `f3063b53…f045d24` | passed |
+| WSL2 | B | research/v5 | `7318115` | `f3063b53…f045d24` | passed |
+
+Both worktrees were clean. The checkpoint uses the same relative input path
+on both hosts. After committing this manifest, both servers must be
+fast-forwarded once more to the final Git HEAD; that refresh does not alter
+the ignored checkpoint artifact.
