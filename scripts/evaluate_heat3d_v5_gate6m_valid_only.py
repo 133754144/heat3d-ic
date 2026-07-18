@@ -99,7 +99,9 @@ def _checkpoint_metadata(
 ) -> dict[str, Any]:
     payload = frozen._load_params_checkpoint(path)
     second = frozen._load_params_checkpoint(path)
-    parameter_reload = frozen._tree_max_abs_difference(payload["params"], second["params"])
+    parameter_reload = runner_module._tree_max_abs_difference(
+        payload["params"], second["params"]
+    )
     expected_epoch = int(
         summary[
             {
