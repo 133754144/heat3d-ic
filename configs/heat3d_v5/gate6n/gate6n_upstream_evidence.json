@@ -1,0 +1,43 @@
+{
+  "schema_version": "heat3d_v5_gate6n_upstream_evidence_v1",
+  "repository": "https://github.com/camlab-ethz/rigno",
+  "commit": "3e4b307c90f34237d0c1e5e497d4301116e9c3db",
+  "commit_date": "2025-12-19T19:30:17+01:00",
+  "commit_subject": "update citation",
+  "files": {
+    "rigno/models/rigno.py": {
+      "sha256": "d54175c4c5803d5552031c3e5d8cf1782fcd666b3f7b78f1a17f317f682d9800",
+      "evidence": [
+        "Encoder, Processor and Decoder independently shuffle edge features/senders/receivers and retain floor((1-p)*E).",
+        "RIGNO passes the same p_edge_masking value to p2r, r2r and r2p blocks.",
+        "A supplied PRNG key is split before each block."
+      ]
+    },
+    "rigno/train.py": {
+      "sha256": "039ca1dad733d2c6c70112eb583ccf4193f8d88b2dcf49694b90f8b9a0248439",
+      "evidence": [
+        "p_edge_masking CLI default is 0.5.",
+        "The training loss path supplies a split PRNG key to the model."
+      ]
+    },
+    "rigno/test.py": {
+      "sha256": "b94fc47392efad6ebac2efbcd5207f9338d5f55d444dca2062cfd7cbb5937944",
+      "evidence": [
+        "Inference profiling explicitly probes p_edge_masking 0.0, 0.5 and 0.8.",
+        "Optional 20-member ensemble inference uses p_edge_masking 0.5."
+      ]
+    }
+  },
+  "upstream_training_default": 0.5,
+  "upstream_training_edge_types": [
+    "p2r",
+    "r2r",
+    "r2p"
+  ],
+  "upstream_experimental_strengths": [
+    0.0,
+    0.5,
+    0.8
+  ],
+  "gate6n_interpretation": "The upstream 0.5 all-edge setting is evidence that edge masking is an intended regularizer, not evidence that 0.5 is safe for the sparser Heat3D graph."
+}

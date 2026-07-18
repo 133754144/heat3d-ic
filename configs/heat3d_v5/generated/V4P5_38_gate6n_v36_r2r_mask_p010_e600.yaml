@@ -1,0 +1,38 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_38_gate6n_v36_r2r_mask_p010_e600
+extends: V4P5_36_gate6m_v32_epoch_regroup_e600.yaml
+overrides:
+  description: >-
+    Gate 6N single-variable V36 candidate with deterministic training-only
+    random masking of 10 percent of r2r edges. Validation and prediction use
+    the complete p2r/r2r/r2p graphs.
+  model:
+    p_edge_masking: 0.1
+    edge_masking_scope: r2r_only
+  run:
+    final_probe_output_dir: output/heat3d_v5_gate6n_final_probe/V4P5_38_gate6n_v36_r2r_mask_p010_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6n_diagnostics/V4P5_38_gate6n_v36_r2r_mask_p010_e600
+  export:
+    output_dir: output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p010_e600
+    run_name: V4P5_38_gate6n_v36_r2r_mask_p010_e600
+    prediction_split: valid_iid
+  metadata:
+    phase: v5_gate6n
+    candidate: V36_r2r_only_edge_mask_p010
+    baseline_config_id: V4P5_36_gate6m_v32_epoch_regroup_e600
+    assigned_host: wsl2
+    initialization: random
+    edge_masking_algorithm: upstream_shuffle_then_prefix
+    edge_masking_scope: r2r_only
+    edge_masking_probability: 0.1
+    edge_masking_key_formula: fold_in(fold_in(PRNGKey(model_seed),epoch),batch_index)
+    edge_masking_training_only: true
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v5_gate6n_logs/V4P5_38_gate6n_v36_r2r_mask_p010_e600.log
+    status: prepared_not_started
+    training_started: false
+    formal_e600_started: false

@@ -48,6 +48,23 @@ class RegionInteractionGraphMetadata(NamedTuple):
   def __len__(self) -> int:
     return self.x_pnodes_inp.shape[0]
 
+
+def edge_masking_probabilities(
+  probability: float,
+  scope: str,
+) -> Tuple[float, float, float]:
+  """Return p2r/r2r/r2p masking probabilities for a configured scope."""
+
+  if scope == 'all':
+    return probability, probability, probability
+  if scope == 'r2r_only':
+    return 0.0, probability, 0.0
+  raise ValueError(
+    "edge_masking_scope must be 'all' or 'r2r_only', "
+    f"got {scope!r}"
+  )
+
+
 class RegionInteractionGraphBuilder:
   """Class for building the graphs that are used in RIGNO."""
 
@@ -1027,7 +1044,7 @@ class RIGNO(AbstractOperator):
   concatenate_tau: bool = True
   conditioned_normalization: bool = True
   cond_norm_hidden_size: int = 16
-  p_edge_masking: int = 0.5
+  p_edge_masking: float = 0.5
   edge_masking_scope: str = 'all'
   decoder_bypass_mode: str = 'none'
   decoder_bypass_features: str = 'none'
@@ -1079,14 +1096,10 @@ class RIGNO(AbstractOperator):
     assert u.shape[2] == x.shape[2], f'u: {u.shape}, x: {x.shape}'
 
   def setup(self):
-    if self.edge_masking_scope not in ('all', 'r2r_only'):
-      raise ValueError(
-        "edge_masking_scope must be 'all' or 'r2r_only', "
-        f"got {self.edge_masking_scope!r}"
-      )
-    p2r_masking = self.p_edge_masking if self.edge_masking_scope == 'all' else 0.0
-    r2r_masking = self.p_edge_masking
-    r2p_masking = self.p_edge_masking if self.edge_masking_scope == 'all' else 0.0
+    p2r_masking, r2r_masking, r2p_masking = edge_masking_probabilities(
+      self.p_edge_masking,
+      self.edge_masking_scope,
+    )
     self._validate_decoder_bypass_config()
     self._validate_global_context_config()
     self._validate_native_shape_scale_config()

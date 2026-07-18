@@ -1,0 +1,32 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3
+extends: V4P5_38_gate6n_v36_r2r_mask_p010_e600.yaml
+overrides:
+  description: >-
+    Gate 6N real-P5 e3 execution smoke for the V36 r2r-only edge-masking
+    candidate. This smoke uses a separate output directory and does not launch
+    the registered e600 run.
+  run:
+    epochs: 3
+    post_training_diagnostics: false
+    final_probe_output_dir: output/heat3d_v5_gate6n_smoke_final_probe/V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6n_smoke_diagnostics/V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3
+  export:
+    output_dir: output/heat3d_v5_gate6n_smoke_runs/V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3
+    run_name: V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3
+    prediction_split: valid_iid
+  metadata:
+    phase: v5_gate6n
+    candidate: execution_smoke_r2r_mask_p010
+    baseline_config_id: V4P5_38_gate6n_v36_r2r_mask_p010_e600
+    assigned_host: wsl2_isolated_worktree
+    initialization: random
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: codex_authorized_e3_smoke_only
+    log_path: output/heat3d_v5_gate6n_smoke_logs/V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3.log
+    status: prepared_for_e3_smoke
+    training_started: false
+    formal_e600_started: false
