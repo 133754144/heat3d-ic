@@ -45,7 +45,9 @@ def _args() -> argparse.Namespace:
 
 def _resolved(path: Path) -> dict[str, Any]:
     payload = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return resolve_inherited_yaml(payload, path)
+    resolved = resolve_inherited_yaml(payload, path)
+    resolved["config_id"] = payload["config_id"]
+    return resolved
 
 
 def _digest(array: np.ndarray) -> str:
