@@ -1,6 +1,6 @@
 {
-  "schema_version": "heat3d_v5_gate6n_closeout_v1",
-  "status": "completed_preflight_e3_only",
+  "schema_version": "heat3d_v5_gate6n_closeout_v2",
+  "status": "completed_revised_preflight_e3_only",
   "branch": "research/v5",
   "baseline_config_id": "V4P5_36_gate6m_v32_epoch_regroup_e600",
   "upstream_commit": "3e4b307c90f34237d0c1e5e497d4301116e9c3db",
@@ -16,9 +16,26 @@
   "rate_selection": {
     "scope": "r2r_only",
     "probability": 0.05,
-    "basis": "highest audited conservative rate with zero zero-degree regional nodes over the exact 14400-key e600 schedule",
+    "basis": "p=0.05 passed every degree and weak-connectivity criterion over the exact 14400-mask native Processor schedule",
     "same_seed_reproducible": true,
-    "p010_rejected_reason": "one zero-degree event over the exact e600 key schedule"
+    "exact_mask_count": 14400,
+    "zero_in_degree_events": 0,
+    "zero_out_degree_events": 0,
+    "isolated_node_events": 0,
+    "disconnected_mask_count": 0,
+    "maximum_weak_component_count": 1,
+    "processor_key_sha256": "f723e9d8f6faed9d3ff00629a0e9eb49d01d36f804f3512961a5bb43e8973ad7",
+    "mask_sequence_sha256": "b751e3bf23677a0cd26cda0b1731480745b8dcce33f02e4b42e1d100405fdb47",
+    "fallback_p002_required": false,
+    "e3_rerun_required": false
+  },
+  "p0_runner_regression": {
+    "path": "configs/heat3d_v5/gate6n/gate6n_p0_runner_regression.json",
+    "exact_match": true,
+    "loss_abs_difference": 0.0,
+    "gradient_max_abs_difference": 0.0,
+    "update_max_abs_difference": 0.0,
+    "updated_parameter_max_abs_difference": 0.0
   },
   "e3_smoke": "configs/heat3d_v5/gate6n/gate6n_e3_smoke.json",
   "formal_config": "configs/heat3d_v5/generated/V4P5_38_gate6n_v36_r2r_mask_p005_e600.yaml",

@@ -32,6 +32,9 @@ overrides:
     edge_masking_key_schedule: >-
       epoch_batch_fold_in_then_group_index_fold_in_then_native_processor_split
     edge_masking_training_only: true
+    exact_mask_audit_path: configs/heat3d_v5/gate6n/gate6n_graph_degree_audit.json
+    exact_mask_count: 14400
+    p0_runner_regression_path: configs/heat3d_v5/gate6n/gate6n_p0_runner_regression.json
     fit_roles: [train]
     normalization_fit_roles: [train]
     selection_roles: [valid_iid]

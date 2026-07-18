@@ -6,14 +6,15 @@
     0.2,
     0.5
   ],
-  "config_id": "V4P5_36_gate6m_v32_epoch_regroup_e600",
+  "config_id": "V4P5_38_gate6n_v36_r2r_mask_p005_e600",
   "coordinate_topology_count": 1,
   "dataset": "heat3d_v4_p5_clean_nohard_v0",
   "dummy_nodes_excluded_from_zero_degree_counts": true,
   "graph_seed": 0,
+  "key_schedule": "exact_native_processor_call_chain",
   "mask_algorithm": "upstream_shuffle_then_prefix",
   "node_count": 1024,
-  "schema_version": "heat3d_v5_gate6n_graph_degree_audit_v1",
+  "schema_version": "heat3d_v5_gate6n_graph_degree_audit_v2",
   "topologies": [
     {
       "coordinate_hash": "93b2d9aad02d784d94531b0158f28769c00b034076c5e87e8213647266c8ceb1",
@@ -50,31 +51,72 @@
       "physical_node_count": 1024,
       "planned_e600_key_schedules": [
         {
+          "all_masks_safe": true,
           "batches_per_epoch": 24,
+          "disconnected_mask_count": 0,
           "epochs": 600,
+          "first_failures": {
+            "isolated_nodes": null,
+            "weak_components": null,
+            "zero_in_degree": null,
+            "zero_out_degree": null
+          },
+          "group_index": 0,
+          "isolated_node_max": 0,
+          "isolated_node_sum": 0,
           "mask_count": 14400,
+          "mask_sequence_sha256": "502487879ef5dd23256000ebcece118e641c348d64b1298f7f60913ef1a20360",
           "model_seed": 0,
+          "processor_key_chain": [
+            "fold_in(PRNGKey(model_seed), epoch)",
+            "fold_in(epoch_key, batch_index)",
+            "fold_in(runner_key, group_index)",
+            "_call_with_processed_rnodes: split(group_key)[0]",
+            "_encode_process_decode: split(epd_key)[1]",
+            "_encode_process_decode: split(after_encoder_key)[0]"
+          ],
+          "processor_key_sha256": "f723e9d8f6faed9d3ff00629a0e9eb49d01d36f804f3512961a5bb43e8973ad7",
           "rate": 0.02,
+          "same_schedule_reproducible": true,
+          "weak_component_max": 1,
           "zero_in_degree_max": 0,
-          "zero_in_degree_sum": 0
+          "zero_in_degree_sum": 0,
+          "zero_out_degree_max": 0,
+          "zero_out_degree_sum": 0
         },
         {
+          "all_masks_safe": true,
           "batches_per_epoch": 24,
+          "disconnected_mask_count": 0,
           "epochs": 600,
+          "first_failures": {
+            "isolated_nodes": null,
+            "weak_components": null,
+            "zero_in_degree": null,
+            "zero_out_degree": null
+          },
+          "group_index": 0,
+          "isolated_node_max": 0,
+          "isolated_node_sum": 0,
           "mask_count": 14400,
+          "mask_sequence_sha256": "b751e3bf23677a0cd26cda0b1731480745b8dcce33f02e4b42e1d100405fdb47",
           "model_seed": 0,
+          "processor_key_chain": [
+            "fold_in(PRNGKey(model_seed), epoch)",
+            "fold_in(epoch_key, batch_index)",
+            "fold_in(runner_key, group_index)",
+            "_call_with_processed_rnodes: split(group_key)[0]",
+            "_encode_process_decode: split(epd_key)[1]",
+            "_encode_process_decode: split(after_encoder_key)[0]"
+          ],
+          "processor_key_sha256": "f723e9d8f6faed9d3ff00629a0e9eb49d01d36f804f3512961a5bb43e8973ad7",
           "rate": 0.05,
+          "same_schedule_reproducible": true,
+          "weak_component_max": 1,
           "zero_in_degree_max": 0,
-          "zero_in_degree_sum": 0
-        },
-        {
-          "batches_per_epoch": 24,
-          "epochs": 600,
-          "mask_count": 14400,
-          "model_seed": 0,
-          "rate": 0.1,
-          "zero_in_degree_max": 1,
-          "zero_in_degree_sum": 1
+          "zero_in_degree_sum": 0,
+          "zero_out_degree_max": 0,
+          "zero_out_degree_sum": 0
         }
       ],
       "r2r_mask_rate_audit": [

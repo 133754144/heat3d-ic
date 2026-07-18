@@ -1,7 +1,9 @@
 # Gate 6N launch commands
 
-The formal e600 run is not started by this closeout. After confirming the WSL2
-checkout is clean and no existing run would be disturbed:
+The formal e600 run is not started by this closeout. The revised exact
+Processor-key audit retained p=0.05, so this command still points to V38 and
+does not require an e3 rerun. After confirming the WSL2 checkout is clean and
+no existing run would be disturbed:
 
 ```bash
 ssh wsl2

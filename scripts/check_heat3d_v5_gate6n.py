@@ -445,6 +445,15 @@ def _check_configs_and_registry() -> None:
         assert row["sealed_iid_accessed"] == "false"
         assert row["edge_masking_scope"] == "r2r_only"
         assert float(row["p_edge_masking"]) == 0.05
+        assert row["mask_audit_path"] == (
+            "configs/heat3d_v5/gate6n/gate6n_graph_degree_audit.json"
+        )
+        assert int(row["exact_mask_count"]) == 14400
+        assert int(row["zero_in_degree_events"]) == 0
+        assert int(row["zero_out_degree_events"]) == 0
+        assert int(row["isolated_node_events"]) == 0
+        assert int(row["disconnected_mask_count"]) == 0
+        assert row["p0_regression_exact"] == "true"
     formal = by_id[e600["config_id"]]
     assert formal["execution_status"] == "not_started"
     assert formal["training_started"] == "false"
@@ -480,7 +489,7 @@ def _check_smoke() -> None:
     assert checkpoint["path"].endswith("/params_final.pkl")
     assert len(checkpoint["sha256"]) == 64
     closeout = json.loads(CLOSEOUT.read_text(encoding="utf-8"))
-    assert closeout["status"] == "completed_preflight_e3_only"
+    assert closeout["status"] == "completed_revised_preflight_e3_only"
     assert closeout["formal_e600_started"] is False
     assert closeout["devbox_connected"] is False
     assert closeout["v36_run_directory_modified"] is False
