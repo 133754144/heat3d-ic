@@ -11,6 +11,7 @@ import sys
 from typing import Any
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import yaml
 
@@ -33,6 +34,8 @@ from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E40
 
 RATES = (0.05, 0.10, 0.20, 0.50)
 SEED_COUNT = 128
+PLANNED_EPOCHS = 600
+PLANNED_BATCHES_PER_EPOCH = 24
 
 
 def _args() -> argparse.Namespace:
@@ -102,6 +105,57 @@ def _masked_r2r_summary(
     }
 
 
+def _planned_key_schedule_summary(
+    indices: np.ndarray,
+    receiver_count: int,
+    rate: float,
+    model_seed: int,
+) -> dict[str, Any]:
+    receivers = jnp.asarray(indices[:, 1], dtype=jnp.int32)
+    edge_count = len(indices)
+    kept = int((1.0 - rate) * edge_count)
+    keys = []
+    base = jax.random.PRNGKey(model_seed)
+    for epoch in range(1, PLANNED_EPOCHS + 1):
+        epoch_key = jax.random.fold_in(base, epoch)
+        for batch_index in range(1, PLANNED_BATCHES_PER_EPOCH + 1):
+            keys.append(jax.random.fold_in(epoch_key, batch_index))
+    packed_keys = jnp.stack(keys)
+
+    @jax.jit
+    def zero_counts(batch_keys):
+        orders = jax.vmap(
+            lambda key: jax.random.permutation(key, edge_count)
+        )(batch_keys)
+        selected_receivers = receivers[orders[:, :kept]]
+        degrees = jax.vmap(
+            lambda row: jnp.bincount(row, length=receiver_count)
+        )(selected_receivers)
+        return jnp.sum(degrees[:, :receiver_count] == 0, axis=1)
+
+    chunk_size = 128
+    rows: list[np.ndarray] = []
+    for start in range(0, len(keys), chunk_size):
+        chunk = packed_keys[start : start + chunk_size]
+        actual = int(chunk.shape[0])
+        if actual < chunk_size:
+            chunk = jnp.concatenate(
+                [chunk, jnp.repeat(chunk[-1:], chunk_size - actual, axis=0)],
+                axis=0,
+            )
+        rows.append(np.asarray(zero_counts(chunk))[:actual])
+    counts = np.concatenate(rows)
+    return {
+        "rate": rate,
+        "model_seed": model_seed,
+        "epochs": PLANNED_EPOCHS,
+        "batches_per_epoch": PLANNED_BATCHES_PER_EPOCH,
+        "mask_count": int(counts.size),
+        "zero_in_degree_max": int(counts.max()),
+        "zero_in_degree_sum": int(counts.sum()),
+    }
+
+
 def _main() -> dict[str, Any]:
     args = _args()
     config_path = (ROOT / args.config).resolve()
@@ -160,6 +214,12 @@ def _main() -> dict[str, Any]:
                     _masked_r2r_summary(r2r, regional_count, rate)
                     for rate in RATES
                 ],
+                "planned_e600_key_schedule": _planned_key_schedule_summary(
+                    r2r,
+                    regional_count,
+                    0.1,
+                    int(config["optimizer"]["model_seed"]),
+                ),
             }
         )
 
