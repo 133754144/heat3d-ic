@@ -161,10 +161,22 @@ def main() -> int:
         row = by_candidate[candidate]
         resolved = _resolved(path)
         assert ROOT / row["generated_yaml"] == path
-        assert row["plan_status"] == "frozen_prepared"
-        assert row["execution_status"] == "not_started"
-        assert row["evaluation_status"] == "not_evaluated"
-        assert row["training_started"] == "false"
+        if row.get("gate6l_status") == "completed_valid_iid_four_checkpoint":
+            assert row["plan_status"] == "completed"
+            assert row["execution_status"] == "completed_e600"
+            assert row["evaluation_status"] == "completed_valid_iid_four_checkpoint"
+            assert row["training_started"] == "true"
+            assert row["test_accessed"] == "false"
+            assert row["hard_accessed"] == "false"
+            assert row["sealed_iid_accessed"] == "false"
+            assert row["result_v5_status"] == "completed_valid_only"
+            assert row["result_v5_required_metrics_complete"] == "true"
+            assert row["result_v5_missing_metrics"] == ""
+        else:
+            assert row["plan_status"] == "frozen_prepared"
+            assert row["execution_status"] == "not_started"
+            assert row["evaluation_status"] == "not_evaluated"
+            assert row["training_started"] == "false"
         assert row["launch_policy"] == "explicit_user_instruction_only"
         assert row["gate6k_audit_status"] == "completed_read_only"
         assert row["forbidden_access_roles"] == FORBIDDEN
@@ -246,7 +258,9 @@ def main() -> int:
                 "scientific_diffs": {
                     key: sorted(value) for key, value in allowed.items()
                 },
-                "training_started": False,
+                "training_started": any(
+                    row["training_started"] == "true" for row in rows
+                ),
                 "roles_accessed": ["train", "valid_iid"],
             },
             sort_keys=True,
