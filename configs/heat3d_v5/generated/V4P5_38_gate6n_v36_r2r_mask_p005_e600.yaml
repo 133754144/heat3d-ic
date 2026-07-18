@@ -25,7 +25,12 @@ overrides:
     edge_masking_algorithm: upstream_shuffle_then_prefix
     edge_masking_scope: r2r_only
     edge_masking_probability: 0.05
-    edge_masking_key_formula: fold_in(fold_in(PRNGKey(model_seed),epoch),batch_index)
+    edge_masking_key_formula: >-
+      processor_split(encoder_split(call_split(
+      fold_in(fold_in(fold_in(PRNGKey(model_seed),epoch),batch_index),
+      group_index))))
+    edge_masking_key_schedule: >-
+      epoch_batch_fold_in_then_group_index_fold_in_then_native_processor_split
     edge_masking_training_only: true
     fit_roles: [train]
     normalization_fit_roles: [train]

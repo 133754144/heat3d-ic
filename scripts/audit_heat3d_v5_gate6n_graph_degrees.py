@@ -13,6 +13,8 @@ from typing import Any
 import jax
 import jax.numpy as jnp
 import numpy as np
+from scipy import sparse
+from scipy.sparse import csgraph
 import yaml
 
 
@@ -36,6 +38,7 @@ RATES = (0.02, 0.05, 0.10, 0.20, 0.50)
 SEED_COUNT = 128
 PLANNED_EPOCHS = 600
 PLANNED_BATCHES_PER_EPOCH = 24
+PLANNED_GROUP_INDEX = 0
 
 
 def _args() -> argparse.Namespace:
@@ -105,37 +108,91 @@ def _masked_r2r_summary(
     }
 
 
+def _processor_key_from_runner_key(
+    runner_key: jax.Array,
+    *,
+    group_index: int,
+) -> jax.Array:
+    """Reproduce loss -> native call -> encoder/processor key splitting."""
+
+    group_key = jax.random.fold_in(runner_key, group_index)
+    encode_process_decode_key, _ = jax.random.split(group_key)
+    _, after_encoder_key = jax.random.split(encode_process_decode_key)
+    processor_key, _ = jax.random.split(after_encoder_key)
+    return processor_key
+
+
+def _planned_processor_keys(
+    *,
+    model_seed: int,
+) -> jax.Array:
+    keys = []
+    base = jax.random.PRNGKey(model_seed)
+    for epoch in range(1, PLANNED_EPOCHS + 1):
+        epoch_key = jax.random.fold_in(base, epoch)
+        for batch_index in range(1, PLANNED_BATCHES_PER_EPOCH + 1):
+            runner_key = jax.random.fold_in(epoch_key, batch_index)
+            keys.append(
+                _processor_key_from_runner_key(
+                    runner_key,
+                    group_index=PLANNED_GROUP_INDEX,
+                )
+            )
+    return jnp.stack(keys)
+
+
+def _weak_component_count(
+    senders: np.ndarray,
+    receivers: np.ndarray,
+    node_count: int,
+) -> int:
+    adjacency = sparse.coo_matrix(
+        (
+            np.ones(senders.shape[0], dtype=np.uint8),
+            (senders, receivers),
+        ),
+        shape=(node_count, node_count),
+    )
+    return int(
+        csgraph.connected_components(
+            adjacency,
+            directed=False,
+            return_labels=False,
+        )
+    )
+
+
 def _planned_key_schedule_summary(
     indices: np.ndarray,
     receiver_count: int,
     rate: float,
     model_seed: int,
 ) -> dict[str, Any]:
-    receivers = jnp.asarray(indices[:, 1], dtype=jnp.int32)
     edge_count = len(indices)
     kept = int((1.0 - rate) * edge_count)
-    keys = []
-    base = jax.random.PRNGKey(model_seed)
-    for epoch in range(1, PLANNED_EPOCHS + 1):
-        epoch_key = jax.random.fold_in(base, epoch)
-        for batch_index in range(1, PLANNED_BATCHES_PER_EPOCH + 1):
-            keys.append(jax.random.fold_in(epoch_key, batch_index))
-    packed_keys = jnp.stack(keys)
+    packed_keys = _planned_processor_keys(model_seed=model_seed)
+    packed_keys_np = np.asarray(packed_keys, dtype=np.uint32)
+    key_digest = _digest(packed_keys_np)
 
     @jax.jit
-    def zero_counts(batch_keys):
-        orders = jax.vmap(
+    def permutations(batch_keys):
+        return jax.vmap(
             lambda key: jax.random.permutation(key, edge_count)
         )(batch_keys)
-        selected_receivers = receivers[orders[:, :kept]]
-        degrees = jax.vmap(
-            lambda row: jnp.bincount(row, length=receiver_count)
-        )(selected_receivers)
-        return jnp.sum(degrees[:, :receiver_count] == 0, axis=1)
 
     chunk_size = 128
-    rows: list[np.ndarray] = []
-    for start in range(0, len(keys), chunk_size):
+    zero_in_counts: list[int] = []
+    zero_out_counts: list[int] = []
+    isolated_counts: list[int] = []
+    component_counts: list[int] = []
+    mask_hasher = hashlib.sha256()
+    first_failures: dict[str, dict[str, int] | None] = {
+        "zero_in_degree": None,
+        "zero_out_degree": None,
+        "isolated_nodes": None,
+        "weak_components": None,
+    }
+    for start in range(0, packed_keys.shape[0], chunk_size):
         chunk = packed_keys[start : start + chunk_size]
         actual = int(chunk.shape[0])
         if actual < chunk_size:
@@ -143,16 +200,95 @@ def _planned_key_schedule_summary(
                 [chunk, jnp.repeat(chunk[-1:], chunk_size - actual, axis=0)],
                 axis=0,
             )
-        rows.append(np.asarray(zero_counts(chunk))[:actual])
-    counts = np.concatenate(rows)
+        orders = np.asarray(permutations(chunk))[:actual, :kept]
+        for offset, order in enumerate(orders):
+            selected = indices[order]
+            mask_hasher.update(np.ascontiguousarray(order).view(np.uint8))
+            senders = selected[:, 0].astype(np.int64)
+            receivers = selected[:, 1].astype(np.int64)
+            real_sender = senders < receiver_count
+            real_receiver = receivers < receiver_count
+            in_degree = np.bincount(
+                receivers[real_receiver],
+                minlength=receiver_count,
+            )[:receiver_count]
+            out_degree = np.bincount(
+                senders[real_sender],
+                minlength=receiver_count,
+            )[:receiver_count]
+            zero_in = int(np.count_nonzero(in_degree == 0))
+            zero_out = int(np.count_nonzero(out_degree == 0))
+            isolated = int(np.count_nonzero((in_degree == 0) & (out_degree == 0)))
+            real_edges = real_sender & real_receiver
+            components = _weak_component_count(
+                senders[real_edges],
+                receivers[real_edges],
+                receiver_count,
+            )
+            zero_in_counts.append(zero_in)
+            zero_out_counts.append(zero_out)
+            isolated_counts.append(isolated)
+            component_counts.append(components)
+            mask_index = start + offset
+            epoch = mask_index // PLANNED_BATCHES_PER_EPOCH + 1
+            batch = mask_index % PLANNED_BATCHES_PER_EPOCH + 1
+            for name, failed in (
+                ("zero_in_degree", zero_in > 0),
+                ("zero_out_degree", zero_out > 0),
+                ("isolated_nodes", isolated > 0),
+                ("weak_components", components > 1),
+            ):
+                if failed and first_failures[name] is None:
+                    first_failures[name] = {
+                        "epoch": epoch,
+                        "batch_index": batch,
+                        "mask_index": mask_index,
+                    }
+    repeat_keys = _planned_processor_keys(model_seed=model_seed)
+    repeat_first_order = np.asarray(
+        jax.random.permutation(repeat_keys[0], edge_count)
+    )[:kept]
+    first_order = np.asarray(
+        jax.random.permutation(packed_keys[0], edge_count)
+    )[:kept]
     return {
         "rate": rate,
         "model_seed": model_seed,
         "epochs": PLANNED_EPOCHS,
         "batches_per_epoch": PLANNED_BATCHES_PER_EPOCH,
-        "mask_count": int(counts.size),
-        "zero_in_degree_max": int(counts.max()),
-        "zero_in_degree_sum": int(counts.sum()),
+        "group_index": PLANNED_GROUP_INDEX,
+        "mask_count": int(len(zero_in_counts)),
+        "processor_key_chain": [
+            "fold_in(PRNGKey(model_seed), epoch)",
+            "fold_in(epoch_key, batch_index)",
+            "fold_in(runner_key, group_index)",
+            "_call_with_processed_rnodes: split(group_key)[0]",
+            "_encode_process_decode: split(epd_key)[1]",
+            "_encode_process_decode: split(after_encoder_key)[0]",
+        ],
+        "processor_key_sha256": key_digest,
+        "mask_sequence_sha256": mask_hasher.hexdigest(),
+        "same_schedule_reproducible": bool(
+            np.array_equal(np.asarray(repeat_keys), packed_keys_np)
+            and np.array_equal(repeat_first_order, first_order)
+        ),
+        "zero_in_degree_max": int(max(zero_in_counts)),
+        "zero_in_degree_sum": int(sum(zero_in_counts)),
+        "zero_out_degree_max": int(max(zero_out_counts)),
+        "zero_out_degree_sum": int(sum(zero_out_counts)),
+        "isolated_node_max": int(max(isolated_counts)),
+        "isolated_node_sum": int(sum(isolated_counts)),
+        "weak_component_max": int(max(component_counts)),
+        "disconnected_mask_count": int(
+            np.count_nonzero(np.asarray(component_counts) > 1)
+        ),
+        "first_failures": first_failures,
+        "all_masks_safe": bool(
+            max(zero_in_counts) == 0
+            and max(zero_out_counts) == 0
+            and max(isolated_counts) == 0
+            and max(component_counts) == 1
+        ),
     }
 
 
@@ -221,13 +357,13 @@ def _main() -> dict[str, Any]:
                         rate,
                         int(config["optimizer"]["model_seed"]),
                     )
-                    for rate in (0.02, 0.05, 0.10)
+                    for rate in (0.02, 0.05)
                 ],
             }
         )
 
     payload = {
-        "schema_version": "heat3d_v5_gate6n_graph_degree_audit_v1",
+        "schema_version": "heat3d_v5_gate6n_graph_degree_audit_v2",
         "config_id": config["config_id"],
         "dataset": dataset_cfg["name"],
         "train_sample_count": len(train_ids),
@@ -235,6 +371,7 @@ def _main() -> dict[str, Any]:
         "graph_seed": int(config["optimizer"]["graph_seed"]),
         "coordinate_topology_count": len(topologies),
         "mask_algorithm": "upstream_shuffle_then_prefix",
+        "key_schedule": "exact_native_processor_call_chain",
         "dummy_nodes_excluded_from_zero_degree_counts": True,
         "candidate_rates": list(RATES),
         "topologies": topologies,
@@ -263,6 +400,16 @@ def _main() -> dict[str, Any]:
                     f"  - p={audit['rate']:.2f}: "
                     f"max zero-degree={audit['zero_in_degree_max']}, "
                     f"same-seed reproducible={audit['same_seed_reproducible']}"
+                )
+            for audit in item["planned_e600_key_schedules"]:
+                lines.append(
+                    f"  - exact e600 p={audit['rate']:.2f}: "
+                    f"masks={audit['mask_count']}, "
+                    f"max zero-in/out={audit['zero_in_degree_max']}/"
+                    f"{audit['zero_out_degree_max']}, "
+                    f"max isolated={audit['isolated_node_max']}, "
+                    f"max weak components={audit['weak_component_max']}, "
+                    f"all safe={audit['all_masks_safe']}"
                 )
         Path(args.output_md).write_text("\n".join(lines) + "\n", encoding="utf-8")
     return payload

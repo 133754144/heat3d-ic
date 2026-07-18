@@ -15,6 +15,7 @@ import sys
 from typing import Any
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import yaml
 
@@ -28,6 +29,8 @@ from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
 from rigno.models.rigno import edge_masking_probabilities  # noqa: E402
 from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E402
 from scripts.run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
+    _build_optax_state,
+    _loss_components,
     _model_apply,
     _training_edge_masking_key,
 )
@@ -41,6 +44,7 @@ UPSTREAM = ROOT / "configs/heat3d_v5/gate6n/gate6n_upstream_evidence.json"
 DEGREES = ROOT / "configs/heat3d_v5/gate6n/gate6n_graph_degree_audit.json"
 SMOKE_RESULT = ROOT / "configs/heat3d_v5/gate6n/gate6n_e3_smoke.json"
 CLOSEOUT = ROOT / "configs/heat3d_v5/gate6n/gate6n_closeout.json"
+P0_REGRESSION = ROOT / "configs/heat3d_v5/gate6n/gate6n_p0_runner_regression.json"
 RUNNER = ROOT / "scripts/run_heat3d_v1_medium_controlled_training_export.py"
 FORBIDDEN = (
     "test_iid|hard_train_holdout|hard_challenge_valid|"
@@ -86,6 +90,169 @@ def _diff(left: Any, right: Any, prefix: str = "") -> set[str]:
     return set() if left == right else {prefix}
 
 
+def _tree_max_abs_difference(left: Any, right: Any) -> float:
+    leaves = [
+        float(np.max(np.abs(np.asarray(a) - np.asarray(b))))
+        for a, b in zip(
+            jax.tree_util.tree_leaves(left),
+            jax.tree_util.tree_leaves(right),
+            strict=True,
+        )
+    ]
+    return max(leaves, default=0.0)
+
+
+def _p0_runner_regression_payload() -> dict[str, Any]:
+    """Compare the legacy unkeyed update with the new runner at p=0."""
+
+    class ToyModel:
+        def apply(
+            self,
+            variables: dict[str, Any],
+            *,
+            inputs: Any,
+            graphs: Any,
+            global_context: Any,
+            key: Any,
+        ) -> Any:
+            del graphs, global_context, key
+            params = variables["params"]
+            return inputs * params["weight"] + params["bias"]
+
+    params = {
+        "weight": jnp.asarray(0.75, dtype=jnp.float32),
+        "bias": jnp.asarray(-0.125, dtype=jnp.float32),
+    }
+    inputs = jnp.asarray(
+        [
+            [[[-1.0], [0.5], [2.0]]],
+            [[[1.5], [-0.25], [0.75]]],
+        ],
+        dtype=jnp.float32,
+    )
+    target = jnp.asarray(
+        [
+            [[[-0.5], [0.25], [1.25]]],
+            [[[0.75], [0.0], [0.5]]],
+        ],
+        dtype=jnp.float32,
+    )
+    stats = {
+        "target_delta_mean": jnp.asarray(0.25, dtype=jnp.float32),
+        "target_delta_std": jnp.asarray(1.75, dtype=jnp.float32),
+    }
+    group = {
+        "inputs": inputs,
+        "graphs": None,
+        "global_context": None,
+        "target_normalized": target,
+        "target_delta_raw": (
+            target * stats["target_delta_std"] + stats["target_delta_mean"]
+        ),
+    }
+    loss_config = {
+        "loss_mode": "mse",
+        "background_quantile": 0.25,
+        "hotspot_quantile": 0.75,
+    }
+    p0_key = _training_edge_masking_key(
+        {"p_edge_masking": 0.0},
+        model_seed=0,
+        epoch=1,
+        batch_index=1,
+    )
+
+    def legacy_loss(current_params: Any) -> Any:
+        return _loss_components(
+            ToyModel(),
+            current_params,
+            [group],
+            stats,
+            loss_config,
+        )["total_loss"]
+
+    def revised_p0_loss(current_params: Any) -> Any:
+        return _loss_components(
+            ToyModel(),
+            current_params,
+            [group],
+            stats,
+            loss_config,
+            key=p0_key,
+        )["total_loss"]
+
+    old_loss, old_grad = jax.value_and_grad(legacy_loss)(params)
+    new_loss, new_grad = jax.value_and_grad(revised_p0_loss)(params)
+    lr_config = {
+        "lr": 0.0005,
+        "lr_schedule": "warmup_cosine",
+        "warmup_epochs": 10,
+        "min_lr": 5.0e-05,
+        "lr_init": 1.0e-05,
+        "lr_peak": 2.0e-04,
+        "lr_base": 1.0e-05,
+        "lr_lowr": 1.0e-06,
+        "pct_start": 0.02,
+        "pct_final": 0.1,
+        "updates_per_epoch": 24,
+    }
+    optimizer_config = {
+        "optimizer": "adamw",
+        "weight_decay": 0.0001,
+        "gradient_clip_norm": 1.0,
+    }
+    old_optimizer = _build_optax_state(
+        params,
+        epochs=600,
+        lr_config=lr_config,
+        optimizer_config=optimizer_config,
+    )
+    new_optimizer = _build_optax_state(
+        params,
+        epochs=600,
+        lr_config=lr_config,
+        optimizer_config=optimizer_config,
+    )
+    old_updates, _ = old_optimizer["tx"].update(
+        old_grad,
+        old_optimizer["state"],
+        params,
+    )
+    new_updates, _ = new_optimizer["tx"].update(
+        new_grad,
+        new_optimizer["state"],
+        params,
+    )
+    old_params = old_optimizer["apply_updates"](params, old_updates)
+    new_params = new_optimizer["apply_updates"](params, new_updates)
+    payload = {
+        "schema_version": "heat3d_v5_gate6n_p0_runner_regression_v1",
+        "comparison": "legacy_unkeyed_vs_revised_runner_p_edge_masking_zero",
+        "optimizer": "V36 AdamW first update",
+        "p0_training_key_is_none": p0_key is None,
+        "legacy_loss": float(old_loss),
+        "revised_loss": float(new_loss),
+        "loss_abs_difference": abs(float(old_loss) - float(new_loss)),
+        "gradient_max_abs_difference": _tree_max_abs_difference(old_grad, new_grad),
+        "update_max_abs_difference": _tree_max_abs_difference(
+            old_updates,
+            new_updates,
+        ),
+        "updated_parameter_max_abs_difference": _tree_max_abs_difference(
+            old_params,
+            new_params,
+        ),
+    }
+    payload["exact_match"] = bool(
+        payload["p0_training_key_is_none"]
+        and payload["loss_abs_difference"] == 0.0
+        and payload["gradient_max_abs_difference"] == 0.0
+        and payload["update_max_abs_difference"] == 0.0
+        and payload["updated_parameter_max_abs_difference"] == 0.0
+    )
+    return payload
+
+
 def _check_upstream_and_degrees() -> None:
     upstream = json.loads(UPSTREAM.read_text(encoding="utf-8"))
     assert upstream["commit"] == "3e4b307c90f34237d0c1e5e497d4301116e9c3db"
@@ -93,6 +260,8 @@ def _check_upstream_and_degrees() -> None:
     assert upstream["upstream_training_edge_types"] == ["p2r", "r2r", "r2p"]
     assert upstream["upstream_experimental_strengths"] == [0.0, 0.5, 0.8]
     degrees = json.loads(DEGREES.read_text(encoding="utf-8"))
+    assert degrees["schema_version"] == "heat3d_v5_gate6n_graph_degree_audit_v2"
+    assert degrees["key_schedule"] == "exact_native_processor_call_chain"
     assert degrees["train_sample_count"] == 672
     assert degrees["node_count"] == 1024
     assert degrees["coordinate_topology_count"] == 1
@@ -108,9 +277,22 @@ def _check_upstream_and_degrees() -> None:
     schedules = {
         row["rate"]: row for row in topology["planned_e600_key_schedules"]
     }
-    assert schedules[0.05]["mask_count"] == 14400
-    assert schedules[0.05]["zero_in_degree_sum"] == 0
-    assert schedules[0.1]["zero_in_degree_sum"] == 1
+    assert set(schedules) == {0.02, 0.05}
+    chosen_schedule = schedules[0.05]
+    assert chosen_schedule["mask_count"] == 14400
+    assert chosen_schedule["group_index"] == 0
+    assert chosen_schedule["same_schedule_reproducible"] is True
+    assert chosen_schedule["zero_in_degree_sum"] == 0
+    assert chosen_schedule["zero_out_degree_sum"] == 0
+    assert chosen_schedule["isolated_node_sum"] == 0
+    assert chosen_schedule["disconnected_mask_count"] == 0
+    assert chosen_schedule["weak_component_max"] == 1
+    assert chosen_schedule["all_masks_safe"] is True
+    assert all(
+        value is None for value in chosen_schedule["first_failures"].values()
+    )
+    assert len(chosen_schedule["processor_key_sha256"]) == 64
+    assert len(chosen_schedule["mask_sequence_sha256"]) == 64
     unsafe = {
         row["rate"]: row for row in topology["r2r_mask_rate_audit"]
     }[0.5]
@@ -196,6 +378,11 @@ def _check_runner_prng_and_scope() -> None:
     assert len(keyed) == 2
     assert len(unkeyed) >= 6
 
+    actual = _p0_runner_regression_payload()
+    frozen = json.loads(P0_REGRESSION.read_text(encoding="utf-8"))
+    assert frozen == actual
+    assert actual["exact_match"] is True
+
 
 def _check_configs_and_registry() -> None:
     baseline = _resolved(BASELINE)
@@ -217,6 +404,10 @@ def _check_configs_and_registry() -> None:
         assert config["run"]["epoch_wise_batch_regrouping"] is True
         assert config["model"]["p_edge_masking"] == 0.05
         assert config["model"]["edge_masking_scope"] == "r2r_only"
+        assert config["metadata"]["edge_masking_key_schedule"] == (
+            "epoch_batch_fold_in_then_group_index_fold_in_then_"
+            "native_processor_split"
+        )
         assert config["export"]["prediction_split"] == "valid_iid"
         command = build_training_command(config, python_executable="python")
         text = shlex.join(command)
@@ -293,6 +484,12 @@ def _check_smoke() -> None:
     assert closeout["formal_e600_started"] is False
     assert closeout["devbox_connected"] is False
     assert closeout["v36_run_directory_modified"] is False
+    assert closeout["rate_selection"]["exact_mask_count"] == 14400
+    assert closeout["rate_selection"]["zero_in_degree_events"] == 0
+    assert closeout["rate_selection"]["zero_out_degree_events"] == 0
+    assert closeout["rate_selection"]["isolated_node_events"] == 0
+    assert closeout["rate_selection"]["disconnected_mask_count"] == 0
+    assert closeout["p0_runner_regression"]["exact_match"] is True
 
 
 def main() -> int:
