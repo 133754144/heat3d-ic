@@ -76,6 +76,9 @@ def main() -> int:
         assert audit["passed"]
         assert audit["checkpoint_reload_max_abs_error_K"] <= audit["tolerance_K"]
         assert audit["npz_reload_max_abs_error_K"] == 0.0
+    for epoch in ("e18", "e25", "e100"):
+        native = payload["native_diagnostics_selected"][epoch]
+        assert all(math.isfinite(float(value)) for value in native.values())
 
     with CSV_RESULT.open(encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))

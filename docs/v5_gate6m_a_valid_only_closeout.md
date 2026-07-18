@@ -44,6 +44,7 @@
 - A 的 point-global、sample-first、raw CV、scale log-RMSE、hotspot、top-5 均有很小改善；shape 基本不变，strong-q 和 low-ΔT 三项略退化。
 - 由于 A 只训练 scale head，训练 epoch 1→100 的 backbone 与 shape-decoder gradient 始终为 0；scale-head gradient 从早期约 0.56 降至 e100 约 0.09。valid-base-MSE 在 e18 达到 0.0326278，e100 回升至 0.0332338；train error 继续下降而 valid 指标回退，表现为 scale-only 的轻微过拟合/尾部失配。
 - e100 相对 e18：point-global +0.2065 percentage point、raw CV +0.001420 K、scale log-RMSE +0.006285；因此 final 不应替代 point-global/legacy best。
+- native 分解（e18 → e100）：joint relative 20.9364% → 20.9399%；oracle-scale 14.5697% → 14.5696%；oracle-shape 13.1382% → 13.1628%；physics-scale proxy 约 51.324%。四项 valid loss 在 e100 为 shape=0.024678、log-scale=0.039346、relative=0.060633、raw-absolute=0.026033；scale-only 更新没有改变 shape 分支。
 
 ## Attention / native runtime
 
