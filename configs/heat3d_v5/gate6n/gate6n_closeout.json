@@ -1,0 +1,32 @@
+{
+  "schema_version": "heat3d_v5_gate6n_closeout_v1",
+  "status": "completed_preflight_e3_only",
+  "branch": "research/v5",
+  "baseline_config_id": "V4P5_36_gate6m_v32_epoch_regroup_e600",
+  "upstream_commit": "3e4b307c90f34237d0c1e5e497d4301116e9c3db",
+  "runner_audit": {
+    "prior_state": "p_edge_masking configured but inactive because _model_apply received no PRNG key",
+    "fixed_state": "deterministic PRNG key is supplied only to gradient-producing train updates",
+    "validation_graph": "complete",
+    "prediction_graph": "complete",
+    "p2r_training_graph": "complete",
+    "r2p_training_graph": "complete",
+    "r2r_training_graph": "randomly masked"
+  },
+  "rate_selection": {
+    "scope": "r2r_only",
+    "probability": 0.05,
+    "basis": "highest audited conservative rate with zero zero-degree regional nodes over the exact 14400-key e600 schedule",
+    "same_seed_reproducible": true,
+    "p010_rejected_reason": "one zero-degree event over the exact e600 key schedule"
+  },
+  "e3_smoke": "configs/heat3d_v5/gate6n/gate6n_e3_smoke.json",
+  "formal_config": "configs/heat3d_v5/generated/V4P5_38_gate6n_v36_r2r_mask_p005_e600.yaml",
+  "resolved_scientific_diff": [
+    "model.p_edge_masking",
+    "model.edge_masking_scope"
+  ],
+  "formal_e600_started": false,
+  "devbox_connected": false,
+  "v36_run_directory_modified": false
+}

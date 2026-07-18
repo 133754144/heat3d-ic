@@ -40,6 +40,7 @@ REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6n_edge_masking_registry.csv"
 UPSTREAM = ROOT / "configs/heat3d_v5/gate6n/gate6n_upstream_evidence.json"
 DEGREES = ROOT / "configs/heat3d_v5/gate6n/gate6n_graph_degree_audit.json"
 SMOKE_RESULT = ROOT / "configs/heat3d_v5/gate6n/gate6n_e3_smoke.json"
+CLOSEOUT = ROOT / "configs/heat3d_v5/gate6n/gate6n_closeout.json"
 RUNNER = ROOT / "scripts/run_heat3d_v1_medium_controlled_training_export.py"
 FORBIDDEN = (
     "test_iid|hard_train_holdout|hard_challenge_valid|"
@@ -258,6 +259,16 @@ def _check_configs_and_registry() -> None:
     assert formal["training_started"] == "false"
     assert formal["formal_e600_started"] == "false"
     assert formal["launch_policy"] == "explicit_user_instruction_only"
+    smoke_row = by_id[smoke["config_id"]]
+    assert smoke_row["execution_status"] == "completed_e3_smoke"
+    assert smoke_row["training_started"] == "true"
+    assert smoke_row["formal_e600_started"] == "false"
+    assert smoke_row["smoke_commit"] == "c792a61"
+    assert len(smoke_row["smoke_checkpoint_sha256"]) == 64
+    assert float(smoke_row["smoke_reload_max_abs_error_K"]) <= 0.02
+    assert smoke["metadata"]["status"] == "completed_e3_smoke"
+    assert smoke["metadata"]["training_started"] is True
+    assert smoke["metadata"]["formal_e600_started"] is False
 
 
 def _check_smoke() -> None:
@@ -277,6 +288,11 @@ def _check_smoke() -> None:
     assert checkpoint["host"] == "wsl2"
     assert checkpoint["path"].endswith("/params_final.pkl")
     assert len(checkpoint["sha256"]) == 64
+    closeout = json.loads(CLOSEOUT.read_text(encoding="utf-8"))
+    assert closeout["status"] == "completed_preflight_e3_only"
+    assert closeout["formal_e600_started"] is False
+    assert closeout["devbox_connected"] is False
+    assert closeout["v36_run_directory_modified"] is False
 
 
 def main() -> int:

@@ -1,0 +1,76 @@
+{
+  "schema_version": "heat3d_v5_gate6n_e3_smoke_v1",
+  "status": "completed_e3_smoke",
+  "config_id": "V4P5_37_gate6n_v36_r2r_mask_p005_smoke_e3",
+  "training_commit": "c792a61",
+  "host": "wsl2",
+  "worktree": "/tmp/heat3d-gate6n-p005-c792a61",
+  "epochs_completed": 3,
+  "node_count": 1024,
+  "train_sample_count": 672,
+  "valid_iid_sample_count": 128,
+  "train_batch_size": 28,
+  "validation_batch_size": 32,
+  "prediction_batch_size": 32,
+  "edge_masking": {
+    "probability": 0.05,
+    "scope": "r2r_only",
+    "training_only": true,
+    "key_formula": "fold_in(fold_in(PRNGKey(model_seed),epoch),batch_index)"
+  },
+  "roles_accessed": [
+    "train",
+    "valid_iid"
+  ],
+  "forbidden_roles_accessed": [],
+  "test_or_hard_graphs_built": false,
+  "test_or_hard_model_inference": false,
+  "finite": true,
+  "oom": false,
+  "nan": false,
+  "inf": false,
+  "best_epoch": 2,
+  "final_epoch": 3,
+  "best_valid_base_mse": 0.3042105734348297,
+  "final_valid_base_mse": 0.3082233667373657,
+  "best_valid_raw_rmse_K": 0.43936793879211045,
+  "final_valid_raw_rmse_K": 0.44225823204008363,
+  "best_valid_point_global_relative_rmse_pct": 68.36703026152276,
+  "final_valid_point_global_relative_rmse_pct": 68.8167689622848,
+  "checkpoint_reload": {
+    "status": "passed",
+    "passed": true,
+    "entry_count": 5,
+    "parameter_reload_max_abs_error": 0.0,
+    "prediction_reload_max_abs_error_K": 0.001434326171875,
+    "tolerance_K": 0.02,
+    "global_context_fit_population": "train_only",
+    "global_context_fit_sample_count": 672
+  },
+  "runtime_architecture": {
+    "passed": true,
+    "pooled_latent_width": 96,
+    "s_hat_positive": true,
+    "scale_attention_mode": "physics_gate",
+    "qk_region_feature_version": "sparse_safe_v2"
+  },
+  "artifacts": {
+    "params_final.pkl": "5928a789a5392def43be5d40bbe810f533688b5b686f5ceb9103c6b7ed39b759",
+    "params_best.pkl": "dea0bb53ff1847951172e0112f090e185420739f2364f6766a709da3d41953f5",
+    "params_best_valid_point_global.pkl": "4652a05ae92fb54381ac59aed201bd41b70e04da5c324e803eea78362a6ae123",
+    "params_best_valid_base_mse.pkl": "57d4e825b6f12d0cf719bb39ef409fcff977821909b9ccc37eb49b28a9f81750",
+    "params_best_valid_sample_first.pkl": "ce21729c1e321e8df74e53fc78dbd5261ce977b4dc3974c9a982b22106e315d6",
+    "predictions.npz": "dff2a04fd84ed23b3babefe6007a3ade4afaa1bf253d7f316a7d49bd2544ca76",
+    "best_predictions.npz": "8f2e0fac2a153ed8f809a32fe3c44fb56fcedfa5f566dccf487f83c0e7e5c3cd",
+    "run_config.json": "20281240cbf4d51368c3f3c7f22e0aaba4c03c26f7a808f03067e2b56397e1aa",
+    "loss_summary.json": "bffb920472876d444d667ee12a91c57dbd4ed5a32a453a51cb7264440def9ed9",
+    "log": "1529c43515dc93d00995bf8f4fadd5b46782050e793d15a38c79bfa9559260d0"
+  },
+  "remote_artifact": {
+    "host": "wsl2",
+    "path": "/tmp/heat3d-gate6n-p005-c792a61/output/heat3d_v5_gate6n_smoke_runs/V4P5_37_gate6n_v36_r2r_mask_p005_smoke_e3/params_final.pkl",
+    "sha256": "5928a789a5392def43be5d40bbe810f533688b5b686f5ceb9103c6b7ed39b759"
+  },
+  "formal_e600_started": false,
+  "performance_interpretation": "execution smoke only; not a formal performance result"
+}
