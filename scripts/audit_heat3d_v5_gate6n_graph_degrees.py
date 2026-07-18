@@ -32,7 +32,7 @@ from rigno.heat3d_v4_split_map import (  # noqa: E402
 from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E402
 
 
-RATES = (0.05, 0.10, 0.20, 0.50)
+RATES = (0.02, 0.05, 0.10, 0.20, 0.50)
 SEED_COUNT = 128
 PLANNED_EPOCHS = 600
 PLANNED_BATCHES_PER_EPOCH = 24
@@ -214,12 +214,15 @@ def _main() -> dict[str, Any]:
                     _masked_r2r_summary(r2r, regional_count, rate)
                     for rate in RATES
                 ],
-                "planned_e600_key_schedule": _planned_key_schedule_summary(
-                    r2r,
-                    regional_count,
-                    0.1,
-                    int(config["optimizer"]["model_seed"]),
-                ),
+                "planned_e600_key_schedules": [
+                    _planned_key_schedule_summary(
+                        r2r,
+                        regional_count,
+                        rate,
+                        int(config["optimizer"]["model_seed"]),
+                    )
+                    for rate in (0.02, 0.05, 0.10)
+                ],
             }
         )
 
