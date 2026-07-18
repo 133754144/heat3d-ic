@@ -16,6 +16,8 @@ from typing import Any
 
 import yaml
 
+csv.field_size_limit(sys.maxsize)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:

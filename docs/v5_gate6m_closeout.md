@@ -84,3 +84,29 @@ Both worktrees were clean. The checkpoint uses the same relative input path
 on both hosts. After committing this manifest, both servers must be
 fast-forwarded once more to the final Git HEAD; that refresh does not alter
 the ignored checkpoint artifact.
+
+## A completed-run recovery (valid_iid only)
+
+The user-reported completed run was found on WSL2 at
+`output/heat3d_v5_gate6m_a_runs/V4P5_35_gate6m_v32_scale_head_only_e100`.
+The plan assignment remains `devbox`; the result registry records the actual
+source as `wsl2` and the result columns as completed valid-only. The original
+user-managed lifecycle label is preserved. The evaluator and compact
+result artifacts are:
+
+- `configs/heat3d_v5/gate6m/gate6m_a_valid_only_metrics.json`
+- `configs/heat3d_v5/gate6m/gate6m_a_valid_only_metrics.csv`
+- `docs/v5_gate6m_a_valid_only_closeout.md`
+- `scripts/evaluate_heat3d_v5_gate6m_valid_only.py`
+
+The four checkpoint artifacts are complete and reloadable (point-global/legacy
+e18, sample-first e25, final e100; 893736 parameters each). The best
+point-global result is 22.390066%, sample-first is 20.936297%, and raw
+CV-weighted RMSE is 0.159923 K, so the `<20%` clean threshold is not met.
+Scale log-RMSE improves over V32 e474 while shape is unchanged to numerical
+precision; the final checkpoint regresses relative to e18. This is a
+scale-only diagnostic result, not a promotion.
+
+`V4P5_36_gate6m_v32_epoch_regroup_e600` remains `not_started`: no run config,
+loss summary, checkpoint, or prediction artifact was present on either host.
+No test, hard, or sealed role was opened.
