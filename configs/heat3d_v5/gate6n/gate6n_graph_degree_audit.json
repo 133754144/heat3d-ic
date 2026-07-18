@@ -1,5 +1,6 @@
 {
   "candidate_rates": [
+    0.02,
     0.05,
     0.1,
     0.2,
@@ -47,7 +48,45 @@
       },
       "first_sample_id": "sample_0000",
       "physical_node_count": 1024,
+      "planned_e600_key_schedules": [
+        {
+          "batches_per_epoch": 24,
+          "epochs": 600,
+          "mask_count": 14400,
+          "model_seed": 0,
+          "rate": 0.02,
+          "zero_in_degree_max": 0,
+          "zero_in_degree_sum": 0
+        },
+        {
+          "batches_per_epoch": 24,
+          "epochs": 600,
+          "mask_count": 14400,
+          "model_seed": 0,
+          "rate": 0.05,
+          "zero_in_degree_max": 0,
+          "zero_in_degree_sum": 0
+        },
+        {
+          "batches_per_epoch": 24,
+          "epochs": 600,
+          "mask_count": 14400,
+          "model_seed": 0,
+          "rate": 0.1,
+          "zero_in_degree_max": 1,
+          "zero_in_degree_sum": 1
+        }
+      ],
       "r2r_mask_rate_audit": [
+        {
+          "distinct_seed_changes_mask": true,
+          "kept_edge_count_including_dummy": 3595,
+          "rate": 0.02,
+          "same_seed_reproducible": true,
+          "seed_count": 128,
+          "zero_in_degree_max": 0,
+          "zero_in_degree_sum": 0
+        },
         {
           "distinct_seed_changes_mask": true,
           "kept_edge_count_including_dummy": 3485,

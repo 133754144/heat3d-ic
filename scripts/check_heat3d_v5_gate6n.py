@@ -34,8 +34,8 @@ from scripts.run_heat3d_v1_medium_controlled_training_export import (  # noqa: E
 
 
 BASELINE = ROOT / "configs/heat3d_v5/generated/V4P5_36_gate6m_v32_epoch_regroup_e600.yaml"
-SMOKE = ROOT / "configs/heat3d_v5/generated/V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3.yaml"
-E600 = ROOT / "configs/heat3d_v5/generated/V4P5_38_gate6n_v36_r2r_mask_p010_e600.yaml"
+SMOKE = ROOT / "configs/heat3d_v5/generated/V4P5_37_gate6n_v36_r2r_mask_p005_smoke_e3.yaml"
+E600 = ROOT / "configs/heat3d_v5/generated/V4P5_38_gate6n_v36_r2r_mask_p005_e600.yaml"
 REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6n_edge_masking_registry.csv"
 UPSTREAM = ROOT / "configs/heat3d_v5/gate6n/gate6n_upstream_evidence.json"
 DEGREES = ROOT / "configs/heat3d_v5/gate6n/gate6n_graph_degree_audit.json"
@@ -99,11 +99,17 @@ def _check_upstream_and_degrees() -> None:
     assert topology["degree"]["r2r"]["zero_in_degree_count"] == 0
     chosen = {
         row["rate"]: row for row in topology["r2r_mask_rate_audit"]
-    }[0.1]
+    }[0.05]
     assert chosen["seed_count"] == 128
     assert chosen["zero_in_degree_max"] == 0
     assert chosen["same_seed_reproducible"] is True
     assert chosen["distinct_seed_changes_mask"] is True
+    schedules = {
+        row["rate"]: row for row in topology["planned_e600_key_schedules"]
+    }
+    assert schedules[0.05]["mask_count"] == 14400
+    assert schedules[0.05]["zero_in_degree_sum"] == 0
+    assert schedules[0.1]["zero_in_degree_sum"] == 1
     unsafe = {
         row["rate"]: row for row in topology["r2r_mask_rate_audit"]
     }[0.5]
@@ -111,20 +117,20 @@ def _check_upstream_and_degrees() -> None:
 
 
 def _check_runner_prng_and_scope() -> None:
-    assert edge_masking_probabilities(0.1, "r2r_only") == (0.0, 0.1, 0.0)
+    assert edge_masking_probabilities(0.05, "r2r_only") == (0.0, 0.05, 0.0)
     left = np.asarray(
         _training_edge_masking_key(
-            {"p_edge_masking": 0.1}, model_seed=0, epoch=9, batch_index=4
+            {"p_edge_masking": 0.05}, model_seed=0, epoch=9, batch_index=4
         )
     )
     repeat = np.asarray(
         _training_edge_masking_key(
-            {"p_edge_masking": 0.1}, model_seed=0, epoch=9, batch_index=4
+            {"p_edge_masking": 0.05}, model_seed=0, epoch=9, batch_index=4
         )
     )
     changed = np.asarray(
         _training_edge_masking_key(
-            {"p_edge_masking": 0.1}, model_seed=0, epoch=9, batch_index=5
+            {"p_edge_masking": 0.05}, model_seed=0, epoch=9, batch_index=5
         )
     )
     assert np.array_equal(left, repeat)
@@ -208,12 +214,12 @@ def _check_configs_and_registry() -> None:
         assert config["run"]["validation_batch_size"] == 32
         assert config["run"]["prediction_batch_size"] == 32
         assert config["run"]["epoch_wise_batch_regrouping"] is True
-        assert config["model"]["p_edge_masking"] == 0.1
+        assert config["model"]["p_edge_masking"] == 0.05
         assert config["model"]["edge_masking_scope"] == "r2r_only"
         assert config["export"]["prediction_split"] == "valid_iid"
         command = build_training_command(config, python_executable="python")
         text = shlex.join(command)
-        assert "--p-edge-masking 0.1" in text
+        assert "--p-edge-masking 0.05" in text
         assert "--edge-masking-scope r2r_only" in text
         assert "--batch-size 28" in text
         assert "--validation-batch-size 32" in text
@@ -246,7 +252,7 @@ def _check_configs_and_registry() -> None:
         assert row["hard_accessed"] == "false"
         assert row["sealed_iid_accessed"] == "false"
         assert row["edge_masking_scope"] == "r2r_only"
-        assert float(row["p_edge_masking"]) == 0.1
+        assert float(row["p_edge_masking"]) == 0.05
     formal = by_id[e600["config_id"]]
     assert formal["execution_status"] == "not_started"
     assert formal["training_started"] == "false"
@@ -258,7 +264,7 @@ def _check_smoke() -> None:
     result = json.loads(SMOKE_RESULT.read_text(encoding="utf-8"))
     assert result["schema_version"] == "heat3d_v5_gate6n_e3_smoke_v1"
     assert result["status"] == "completed_e3_smoke"
-    assert result["config_id"] == "V4P5_37_gate6n_v36_r2r_mask_p010_smoke_e3"
+    assert result["config_id"] == "V4P5_37_gate6n_v36_r2r_mask_p005_smoke_e3"
     assert result["epochs_completed"] == 3
     assert result["node_count"] == 1024
     assert result["train_batch_size"] == 28
