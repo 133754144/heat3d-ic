@@ -280,7 +280,9 @@ def main() -> int:
     }
     metric_path = ROOT / "rigno/heat3d_v5_metrics.py"
     payload = {
-        "schema_version": "heat3d_v5_gate6m_valid_only_four_checkpoint_v1",
+        # Keep the shared collector's four-checkpoint prefix while retaining
+        # the Gate 6M phase identity in the suffix.
+        "schema_version": "heat3d_v5_valid_only_four_checkpoint_gate6m_v1",
         "metric_schema_version": frozen.METRIC_SCHEMA_VERSION,
         "status": "completed_valid_iid_only",
         "config_id": CONFIG_ID,
