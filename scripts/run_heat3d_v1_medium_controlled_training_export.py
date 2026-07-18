@@ -242,6 +242,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--processor-steps", type=int, default=RUNNER_MODEL_CONFIG["processor_steps"])
     parser.add_argument("--mlp-hidden-layers", type=int, default=RUNNER_MODEL_CONFIG["mlp_hidden_layers"])
     parser.add_argument("--p-edge-masking", type=float, default=float(RUNNER_MODEL_CONFIG.get("p_edge_masking", 0.0)))
+    parser.add_argument(
+        "--edge-masking-scope",
+        choices=("all", "r2r_only"),
+        default=str(RUNNER_MODEL_CONFIG.get("edge_masking_scope", "all")),
+    )
     parser.add_argument("--decoder-bypass-mode", choices=DECODER_BYPASS_MODES, default=DECODER_BYPASS_MODE_NONE)
     parser.add_argument("--decoder-bypass-features", choices=DECODER_BYPASS_FEATURES, default=DECODER_BYPASS_FEATURES_NONE)
     parser.add_argument(
@@ -1851,6 +1856,7 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "processor_steps": int(args.processor_steps),
             "mlp_hidden_layers": int(args.mlp_hidden_layers),
             "p_edge_masking": float(args.p_edge_masking),
+            "edge_masking_scope": str(args.edge_masking_scope),
             "decoder_bypass_mode": args.decoder_bypass_mode,
             "decoder_bypass_features": args.decoder_bypass_features,
             "decoder_bypass_feature_source": args.decoder_bypass_feature_source,
@@ -2041,6 +2047,8 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     p_edge_masking = float(config.get("p_edge_masking", 0.0))
     if p_edge_masking < 0.0 or p_edge_masking >= 1.0:
         raise ValueError("--p-edge-masking must be in [0, 1)")
+    if config.get("edge_masking_scope", "all") not in {"all", "r2r_only"}:
+        raise ValueError("--edge-masking-scope must be all or r2r_only")
     _validate_decoder_bypass_config(config)
     _validate_global_context_config(config)
     native_mode = config.get("native_output_mode", "legacy_normalized_deltaT")
@@ -2615,7 +2623,13 @@ def _sample_weighted_masked_mean(values, mask, sample_weights):
 
 
 def _native_loss_components(
-    model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]
+    model,
+    params,
+    groups: list[dict],
+    stats: dict,
+    loss_config: dict[str, Any],
+    *,
+    key=None,
 ) -> dict[str, Any]:
     names = (
         "shape_cv_loss", "log_scale_loss", "relative_field_loss",
@@ -2630,8 +2644,9 @@ def _native_loss_components(
         "relative_field": loss_config["native_relative_field_weight"],
         "raw_absolute": loss_config["native_raw_field_weight"],
     }
-    for group in groups:
-        prediction = _model_apply(model, params, group)
+    for group_index, group in enumerate(groups):
+        group_key = jax.random.fold_in(key, group_index) if key is not None else None
+        prediction = _model_apply(model, params, group, key=group_key)
         physics = group["native_physics"]
         components = native_shape_scale_losses(
             prediction,
@@ -2680,9 +2695,19 @@ def _native_loss_components(
     return result
 
 
-def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
+def _loss_components(
+    model,
+    params,
+    groups: list[dict],
+    stats: dict,
+    loss_config: dict[str, Any],
+    *,
+    key=None,
+) -> dict[str, Any]:
     if groups and "native_physics" in groups[0]:
-        return _native_loss_components(model, params, groups, stats, loss_config)
+        return _native_loss_components(
+            model, params, groups, stats, loss_config, key=key
+        )
     weighted = {
         "base_mse": 0.0,
         "background_penalty": 0.0,
@@ -2709,9 +2734,10 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
     }
     count = 0
     pseudo_negative_count = jnp.asarray(0.0)
-    for group in groups:
+    for group_index, group in enumerate(groups):
         sample_weights = _sample_weights_for_group(group)
-        pred = _model_apply(model, params, group)
+        group_key = jax.random.fold_in(key, group_index) if key is not None else None
+        pred = _model_apply(model, params, group, key=group_key)
         target = group["target_normalized"]
         target_raw = group["target_delta_raw"]
         pred_raw_delta = _normalized_delta_to_raw(pred, stats)
@@ -3819,9 +3845,21 @@ def _fit_once(
                         split="train",
                         detail=_batch_shape_signature(batch_group),
                     )
-                def loss_fn(current_params, group=batch_group):
+                edge_masking_key = _training_edge_masking_key(
+                    model_config,
+                    model_seed=model_seed,
+                    epoch=epoch,
+                    batch_index=batch_index,
+                )
+
+                def loss_fn(current_params, group=batch_group, key=edge_masking_key):
                     components = _loss_components(
-                        model, current_params, [group], stats, current_loss_config
+                        model,
+                        current_params,
+                        [group],
+                        stats,
+                        current_loss_config,
+                        key=key,
                     )
                     return components["total_loss"], components["base_mse"]
 
@@ -3956,9 +3994,21 @@ def _fit_once(
                 grad_norms.append(float(np.mean(batch_grad_norms)))
         else:
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_groups))
-            def loss_fn(current_params):
+            edge_masking_key = _training_edge_masking_key(
+                model_config,
+                model_seed=model_seed,
+                epoch=epoch,
+                batch_index=1,
+            )
+
+            def loss_fn(current_params, key=edge_masking_key):
                 components = _loss_components(
-                    model, current_params, train_groups, stats, current_loss_config
+                    model,
+                    current_params,
+                    train_groups,
+                    stats,
+                    current_loss_config,
+                    key=key,
                 )
                 return components["total_loss"], components["base_mse"]
 
@@ -6416,7 +6466,23 @@ def _attach_qk_region_features_to_groups(
         group["qk_region_feature_names"] = feature_names
 
 
-def _model_apply(model, params, group: Mapping[str, Any]):
+def _training_edge_masking_key(
+    model_config: Mapping[str, Any],
+    *,
+    model_seed: int,
+    epoch: int,
+    batch_index: int,
+):
+    """Return a deterministic key only for an enabled training masking update."""
+
+    if float(model_config.get("p_edge_masking", 0.0)) <= 0.0:
+        return None
+    key = jax.random.PRNGKey(int(model_seed))
+    key = jax.random.fold_in(key, int(epoch))
+    return jax.random.fold_in(key, int(batch_index))
+
+
+def _model_apply(model, params, group: Mapping[str, Any], *, key=None):
     """Use the V4 call path unless a group explicitly carries Global FiLM data."""
 
     if "native_physics" in group:
@@ -6432,6 +6498,7 @@ def _model_apply(model, params, group: Mapping[str, Any]):
             dirichlet_mask=physics["dirichlet_mask"],
             prescribed_temperature=physics["prescribed_temperature"],
             qk_region_features=group.get("qk_region_features"),
+            key=key,
             method=model.predict_native_shape_scale,
         )
     return model.apply(
@@ -6439,6 +6506,7 @@ def _model_apply(model, params, group: Mapping[str, Any]):
         inputs=group["inputs"],
         graphs=group["graphs"],
         global_context=group.get("global_context"),
+        key=key,
     )
 
 

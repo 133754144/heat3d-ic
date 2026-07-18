@@ -192,6 +192,7 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "model_edge_latent_size": model.get("edge_latent_size"),
         "model_processor_steps": model.get("processor_steps"),
         "model_p_edge_masking": model.get("p_edge_masking"),
+        "model_edge_masking_scope": model.get("edge_masking_scope"),
         "optimizer_name": optimizer.get("name"),
         "optimizer_lr": optimizer.get("lr"),
         "optimizer_lr_schedule": optimizer.get("lr_schedule"),
@@ -629,6 +630,12 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
             raise ValueError(
                 f"{label}: field 'model.p_edge_masking' must satisfy 0 <= value < 1"
             )
+    edge_masking_scope = model.get("edge_masking_scope")
+    if edge_masking_scope is not None and edge_masking_scope not in {"all", "r2r_only"}:
+        raise ValueError(
+            f"{label}: field 'model.edge_masking_scope' must be 'all' or "
+            f"'r2r_only', got {edge_masking_scope!r}"
+        )
     mode = model.get("decoder_bypass_mode")
     features = model.get("decoder_bypass_features")
     source = model.get("decoder_bypass_feature_source")

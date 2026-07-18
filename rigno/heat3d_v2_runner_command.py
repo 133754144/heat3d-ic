@@ -125,6 +125,7 @@ def build_training_command(
     _append_option(command, "--processor-steps", model.get("processor_steps"))
     _append_option(command, "--mlp-hidden-layers", model.get("mlp_hidden_layers"))
     _append_option(command, "--p-edge-masking", model.get("p_edge_masking"))
+    _append_option(command, "--edge-masking-scope", model.get("edge_masking_scope"))
     _append_option(command, "--decoder-bypass-mode", model.get("decoder_bypass_mode"))
     _append_option(command, "--decoder-bypass-features", model.get("decoder_bypass_features"))
     _append_option(

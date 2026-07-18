@@ -750,7 +750,7 @@ class Encoder(nn.Module):
     p2r_edges_key = graph.edge_key_by_name('p2r')
     edges = graph.edges[p2r_edges_key]
     # Drop out edges randomly with the given probability
-    if key is not None:
+    if key is not None and self.p_edge_masking > 0:
       n_edges_after = int((1 - self.p_edge_masking) * edges.features.shape[1])
       [new_edge_features, new_edge_senders, new_edge_receivers] = shuffle_arrays(
         key=key, arrays=[edges.features, edges.indices.senders, edges.indices.receivers], axis=1)
@@ -857,7 +857,7 @@ class Processor(nn.Module):
     # Drop out edges randomly with the given probability
     # NOTE: We need the structural edge features, because it is the first
     # time we are seeing this particular set of edges.
-    if key is not None:
+    if key is not None and self.p_edge_masking > 0:
       n_edges_after = int((1 - self.p_edge_masking) * edges.features.shape[1])
       [new_edge_features, new_edge_senders, new_edge_receivers] = shuffle_arrays(
         key=key, arrays=[edges.features, edges.indices.senders, edges.indices.receivers], axis=1)
@@ -962,7 +962,7 @@ class Decoder(nn.Module):
     r2p_edges_key = graph.edge_key_by_name('r2p')
     edges = graph.edges[r2p_edges_key]
     # Drop out edges randomly with the given probability
-    if key is not None:
+    if key is not None and self.p_edge_masking > 0:
       n_edges_after = int((1 - self.p_edge_masking) * edges.features.shape[1])
       [new_edge_features, new_edge_senders, new_edge_receivers] = shuffle_arrays(
         key=key, arrays=[edges.features, edges.indices.senders, edges.indices.receivers], axis=1)
@@ -1028,6 +1028,7 @@ class RIGNO(AbstractOperator):
   conditioned_normalization: bool = True
   cond_norm_hidden_size: int = 16
   p_edge_masking: int = 0.5
+  edge_masking_scope: str = 'all'
   decoder_bypass_mode: str = 'none'
   decoder_bypass_features: str = 'none'
   decoder_bypass_feature_source: str = 'normalized_c'
@@ -1078,6 +1079,14 @@ class RIGNO(AbstractOperator):
     assert u.shape[2] == x.shape[2], f'u: {u.shape}, x: {x.shape}'
 
   def setup(self):
+    if self.edge_masking_scope not in ('all', 'r2r_only'):
+      raise ValueError(
+        "edge_masking_scope must be 'all' or 'r2r_only', "
+        f"got {self.edge_masking_scope!r}"
+      )
+    p2r_masking = self.p_edge_masking if self.edge_masking_scope == 'all' else 0.0
+    r2r_masking = self.p_edge_masking
+    r2p_masking = self.p_edge_masking if self.edge_masking_scope == 'all' else 0.0
     self._validate_decoder_bypass_config()
     self._validate_global_context_config()
     self._validate_native_shape_scale_config()
@@ -1087,7 +1096,7 @@ class RIGNO(AbstractOperator):
       mlp_hidden_layers=self.mlp_hidden_layers,
       conditioned_normalization=self.conditioned_normalization,
       cond_norm_hidden_size=self.cond_norm_hidden_size,
-      p_edge_masking=self.p_edge_masking,
+      p_edge_masking=p2r_masking,
       name='encoder',
     )
 
@@ -1098,7 +1107,7 @@ class RIGNO(AbstractOperator):
       mlp_hidden_layers=self.mlp_hidden_layers,
       conditioned_normalization=self.conditioned_normalization,
       cond_norm_hidden_size=self.cond_norm_hidden_size,
-      p_edge_masking=self.p_edge_masking,
+      p_edge_masking=r2r_masking,
       name='processor',
     )
 
@@ -1109,7 +1118,7 @@ class RIGNO(AbstractOperator):
       mlp_hidden_layers=self.mlp_hidden_layers,
       conditioned_normalization=self.conditioned_normalization,
       cond_norm_hidden_size=self.cond_norm_hidden_size,
-      p_edge_masking=self.p_edge_masking,
+      p_edge_masking=r2p_masking,
       name='decoder',
     )
     if self._decoder_bypass_enabled():
