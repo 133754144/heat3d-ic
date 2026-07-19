@@ -73,6 +73,11 @@ def main() -> int:
     assert payload["split"]["valid_iid_count"] == 128
     assert payload["normalization_and_context"]["context_fit_roles"] == ["train"]
     assert payload["normalization_and_context"]["target_or_label_features"] == []
+    assert payload["checkpoint_replay"]["passed"] is True
+    assert (
+        payload["checkpoint_replay"]["e543_feature_export_max_abs_error_K"]
+        <= payload["checkpoint_replay"]["tolerance_K"]
+    )
     assert payload["decomposition_max_abs_closure_K2"] <= 1.0e-7
     assert set(payload["checkpoint_binding"]) == {"e231", "e543", "v39_e24"}
     assert set(payload["transplant_provenance"]) == {

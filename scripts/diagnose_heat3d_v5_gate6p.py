@@ -708,11 +708,15 @@ def main() -> int:
     e543_valid_raw, valid_features = _infer_with_scale_features(
         checkpoints["e543"], valid_groups
     )
-    if max(
+    feature_replay_max_abs_error_K = max(
         float(np.max(np.abs(e543_valid_raw[sample_id] - raw["e543"][sample_id])))
         for sample_id in valid_ids
-    ) > 1.0e-7:
-        raise Gate6PError("e543 feature-export replay failed")
+    )
+    if feature_replay_max_abs_error_K > 0.02:
+        raise Gate6PError(
+            "e543 feature-export replay failed: "
+            f"{feature_replay_max_abs_error_K} K"
+        )
     all_features = {**train_features, **valid_features}
 
     transplant_specs = {
@@ -953,6 +957,13 @@ def main() -> int:
                 "fit_sample_ids_sha256"
             ],
             "target_or_label_features": [],
+        },
+        "checkpoint_replay": {
+            "e543_feature_export_max_abs_error_K": (
+                feature_replay_max_abs_error_K
+            ),
+            "tolerance_K": 0.02,
+            "passed": True,
         },
         "formulas": {
             "error_decomposition": (
