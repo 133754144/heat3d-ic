@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Heat3D-IC V3 · RIGNO architecture</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172330;
+      --paper: #f1f5f8;
+      --line: #cfdce6;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      display: grid;
+      place-items: center;
+      padding: 2.5vw;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    figure {
+      width: min(1600px, 96vw);
+      margin: 0;
+      padding: 0;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgb(23 59 89 / 14%);
+      overflow: hidden;
+    }
+    img { display: block; width: 100%; height: auto; }
+    figcaption {
+      padding: 0.55rem 1rem 0.7rem;
+      border-top: 1px solid var(--line);
+      color: #516676;
+      font-size: clamp(11px, 1.1vw, 14px);
+      line-height: 1.35;
+      text-align: center;
+    }
+    @media print {
+      @page { size: A4 landscape; margin: 6mm; }
+      body { padding: 0; background: white; }
+      figure { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+      figcaption { padding-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+  <figure>
+    <img src="v3_algorithm_flowchart.svg" alt="Compact Heat3D-IC V3 RIGNO architecture: input fields, physical and regional nodes, p2r encoder, six-step r2r processor, r2p decoder, and recovered temperature field.">
+    <figcaption>Heat3D-IC V3: physical fields → regional interaction graph → RIGNO → predicted ΔT and recovered temperature.</figcaption>
+  </figure>
+</body>
+</html>

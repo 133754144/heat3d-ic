@@ -3,7 +3,7 @@
 审计日期：2026-07-20  
 审计对象：公开仓库 `main` 的 V3 控制训练路径  
 审计源：`11e9d2feb1b920b2fbd06b8e626a706b1eb4cd40`  
-配套图：[`docs/v3_algorithm_flowchart.svg`](v3_algorithm_flowchart.svg)
+配套图：[`docs/v3_algorithm_flowchart.html`](v3_algorithm_flowchart.html)（可打印 HTML）和 [`docs/v3_algorithm_flowchart.svg`](v3_algorithm_flowchart.svg)（矢量源）
 
 ## 1. 范围与结论
 
@@ -174,10 +174,12 @@ report raw errors, relative errors, field-shape and hotspot diagnostics
 
 ## 7. 图示说明
 
-[`v3_algorithm_flowchart.svg`](v3_algorithm_flowchart.svg) 是可缩放的静态 SVG，适合
-论文排版、矢量编辑和审稿补充材料。图中实线表示数据/模型流，虚线表示诊断或证据
-边界；颜色只用于区分输入、图构造、RIGNO、训练和审计结论。图的视觉层级、留白、
-字体大小和颜色克制遵循 Apple Design skill 的 purpose/hierarchy/craft 原则，但没有
+[`v3_algorithm_flowchart.html`](v3_algorithm_flowchart.html) 是面向浏览器和横向打印的
+轻量 HTML 外壳；[`v3_algorithm_flowchart.svg`](v3_algorithm_flowchart.svg) 是其中的
+矢量源。新版参考 upstream 配图，使用输入场缩略图、物理/区域节点平面和三色边，
+只保留 `Input embedding`、`Processor ×6`、`Output projection` 等短标签，去掉了上一版
+流程框中的长段落。图中实线表示主数据流，橙/紫/红分别表示 p2r/r2r/r2p；视觉层级、
+留白、字体和颜色克制遵循 Apple Design skill 的 purpose/hierarchy/craft 原则，但没有
 引入会影响论文阅读的动效或 UI 装饰。
 
 建议论文图注：
@@ -188,4 +190,3 @@ report raw errors, relative errors, field-shape and hotspot diagnostics
 > steps, and decodes back to the physical nodes. The normalized DeltaT prediction is
 > recovered to temperature before raw and relative diagnostics; graph coverage and
 > optimizer/seed audits are reported separately.
-
