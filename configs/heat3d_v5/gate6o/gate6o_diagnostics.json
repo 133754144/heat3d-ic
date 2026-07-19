@@ -1,0 +1,218 @@
+{
+  "schema_version": "heat3d_v5_gate6o_diagnostics_v1",
+  "status": "completed_train_valid_only",
+  "evaluator_commit": "ae0d002c9e1daeb8751e0f8f63cbbd364399a9a3",
+  "scope": {
+    "roles_accessed": [
+      "train",
+      "valid_iid"
+    ],
+    "evaluation_roles": [
+      "valid_iid"
+    ],
+    "calibration_fit_roles": [
+      "train"
+    ],
+    "forbidden_roles_accessed": [],
+    "test_accessed": false,
+    "hard_accessed": false,
+    "sealed_iid_accessed": false,
+    "training_started": false,
+    "model_parameters_modified": false
+  },
+  "checkpoint_binding": {
+    "e231": {
+      "epoch": 231,
+      "sha256": "18a3382252858cfd4daf3c5cf4b8a585b903fbaf254e8159922c1df0fcc874bf",
+      "training_commit": "0c49084"
+    },
+    "e543": {
+      "epoch": 543,
+      "sha256": "e26e50b432ebab2858fcf9c5597d2bb85715d181c48292c3cc85c7749b790869",
+      "training_commit": "0c49084"
+    }
+  },
+  "split": {
+    "train_count": 672,
+    "valid_iid_count": 128,
+    "train_ids_sha256": "b9b4e39ec9e3eea20bb4a258192a5d4ed4e5faa4e07f14c1ce72a45893e513ef",
+    "valid_iid_ids_sha256": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63"
+  },
+  "field_metrics": {
+    "e231": {
+      "point_global_relative_rmse_pct": 21.944593,
+      "sample_first_cv_relative_rmse_pct": 20.605934,
+      "raw_cv_weighted_rmse_K": 0.157326,
+      "shape_cv_rmse": 0.148426,
+      "scale_log_rmse": 0.178120
+    },
+    "e543": {
+      "point_global_relative_rmse_pct": 22.727811,
+      "sample_first_cv_relative_rmse_pct": 19.941592,
+      "raw_cv_weighted_rmse_K": 0.163248,
+      "shape_cv_rmse": 0.139847,
+      "scale_log_rmse": 0.175594
+    },
+    "shape_e231+scale_e543": {
+      "point_global_relative_rmse_pct": 22.839331,
+      "sample_first_cv_relative_rmse_pct": 20.598101,
+      "raw_cv_weighted_rmse_K": 0.163307,
+      "shape_cv_rmse": 0.148426,
+      "scale_log_rmse": 0.175594
+    },
+    "shape_e543+scale_e231": {
+      "point_global_relative_rmse_pct": 21.841259,
+      "sample_first_cv_relative_rmse_pct": 19.981103,
+      "raw_cv_weighted_rmse_K": 0.157351,
+      "shape_cv_rmse": 0.139847,
+      "scale_log_rmse": 0.178120
+    },
+    "ensemble_alpha_0.5": {
+      "point_global_relative_rmse_pct": 22.017989,
+      "sample_first_cv_relative_rmse_pct": 19.897675,
+      "raw_cv_weighted_rmse_K": 0.158013,
+      "shape_cv_rmse": 0.140173,
+      "scale_log_rmse": 0.175561
+    },
+    "e231_train_affine_scale": {
+      "point_global_relative_rmse_pct": 22.080700,
+      "sample_first_cv_relative_rmse_pct": 20.448275,
+      "raw_cv_weighted_rmse_K": 0.158024,
+      "shape_cv_rmse": 0.148426,
+      "scale_log_rmse": 0.173680
+    },
+    "e543_train_affine_scale": {
+      "point_global_relative_rmse_pct": 22.575918,
+      "sample_first_cv_relative_rmse_pct": 20.009046,
+      "raw_cv_weighted_rmse_K": 0.162236,
+      "shape_cv_rmse": 0.139847,
+      "scale_log_rmse": 0.174279
+    }
+  },
+  "paired_bootstrap": {
+    "seed": 2026071901,
+    "resamples": 20000,
+    "difference_direction": "e543_minus_e231",
+    "metrics": {
+      "point_global_relative_rmse_pct": {
+        "observed_difference": 0.7832178950875139,
+        "ci95": [
+          -0.37876610958693757,
+          1.7540391483597024
+        ],
+        "probability_e543_better": 0.0946
+      },
+      "sample_first_cv_relative_rmse_pct": {
+        "observed_difference": -0.6643420937570426,
+        "ci95": [
+          -1.2835523809300549,
+          -0.06554048341387012
+        ],
+        "probability_e543_better": 0.98545
+      },
+      "raw_cv_weighted_rmse_K": {
+        "observed_difference": 0.005921656762345073,
+        "ci95": [
+          -0.002336434701931923,
+          0.013902029401079487
+        ],
+        "probability_e543_better": 0.083
+      },
+      "shape_cv_rmse": {
+        "observed_difference": -0.00857865628141663,
+        "ci95": [
+          -0.012398923679931985,
+          -0.005049507882070804
+        ],
+        "probability_e543_better": 1.0
+      },
+      "scale_log_rmse": {
+        "observed_difference": -0.0025264143577259646,
+        "ci95": [
+          -0.012730708152165204,
+          0.0073793862684034366
+        ],
+        "probability_e543_better": 0.6871
+      }
+    }
+  },
+  "quartile_attribution": [
+    {
+      "deltaT_quartile": "Q1",
+      "sample_count": 32,
+      "e543_point_sse_win_rate": 0.59375,
+      "point_sse_net_delta_e543_minus_e231_K2": -0.11257215603931292,
+      "e543_sample_relative_win_rate": 0.625,
+      "sample_relative_mean_delta_e543_minus_e231": -0.007547907113826555,
+      "shape_mean_delta_e543_minus_e231": -0.011242702753913775,
+      "absolute_scale_log_error_mean_delta_e543_minus_e231": -0.00813815208565272
+    },
+    {
+      "deltaT_quartile": "Q2",
+      "sample_count": 32,
+      "e543_point_sse_win_rate": 0.6875,
+      "point_sse_net_delta_e543_minus_e231_K2": -20.892280623796275,
+      "e543_sample_relative_win_rate": 0.625,
+      "sample_relative_mean_delta_e543_minus_e231": -0.015263529192559949,
+      "shape_mean_delta_e543_minus_e231": -0.015141066111235104,
+      "absolute_scale_log_error_mean_delta_e543_minus_e231": -0.003881711245275645
+    },
+    {
+      "deltaT_quartile": "Q3",
+      "sample_count": 32,
+      "e543_point_sse_win_rate": 0.625,
+      "point_sse_net_delta_e543_minus_e231_K2": -5.6159547810180985,
+      "e543_sample_relative_win_rate": 0.65625,
+      "sample_relative_mean_delta_e543_minus_e231": -0.004777685528339322,
+      "shape_mean_delta_e543_minus_e231": -0.005740647413096857,
+      "absolute_scale_log_error_mean_delta_e543_minus_e231": -0.0009193834155619479
+    },
+    {
+      "deltaT_quartile": "Q4",
+      "sample_count": 32,
+      "e543_point_sse_win_rate": 0.46875,
+      "point_sse_net_delta_e543_minus_e231_K2": 216.02742235884864,
+      "e543_sample_relative_win_rate": 0.4375,
+      "sample_relative_mean_delta_e543_minus_e231": 0.0010154380844439297,
+      "shape_mean_delta_e543_minus_e231": -0.0021902088474206596,
+      "absolute_scale_log_error_mean_delta_e543_minus_e231": 0.010332105668306137
+    }
+  ],
+  "affine_scale_calibration": {
+    "formula": "log(s_true)=intercept+slope*log(s_pred)",
+    "fit_roles": [
+      "train"
+    ],
+    "e231": {
+      "intercept": -0.01478318787448347,
+      "slope": 0.9815283338401507,
+      "fit_log_rmse": 0.03394051888756921
+    },
+    "e543": {
+      "intercept": 0.010982937872062098,
+      "slope": 1.0012047897685568,
+      "fit_log_rmse": 0.007910435486143147
+    }
+  },
+  "stage2_selection": {
+    "selection_frozen_before_gate6o_diagnostic_execution": true,
+    "eligible_checkpoints": [
+      "e231",
+      "e543"
+    ],
+    "primary_metric": "shape_cv_rmse",
+    "tie_break_metrics": [
+      "sample_first_cv_relative_rmse_pct",
+      "raw_cv_weighted_rmse_K"
+    ],
+    "selected_checkpoint": "e543",
+    "selected_epoch": 543,
+    "selected_sha256": "e26e50b432ebab2858fcf9c5597d2bb85715d181c48292c3cc85c7749b790869",
+    "basis": "e543 has the lower valid shape CV-RMSE under the pre-registered frozen-shape rule",
+    "diagnostic_transforms_ineligible_for_initialization_selection": [
+      "branch_swap",
+      "ensemble",
+      "train_affine_scale"
+    ]
+  }
+}

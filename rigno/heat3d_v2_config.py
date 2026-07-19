@@ -317,6 +317,14 @@ def _validate_run_config(
     optimizer = _required_mapping(config, "optimizer", label)
     _validate_optimizer_seed_fields(optimizer, label)
     _validate_optimizer_schedule_fields(optimizer, label)
+    if (
+        optimizer.get("native_trainable_scope") == "global_scale_mlp_only"
+        and model.get("native_branch_mode") != "scale_only"
+    ):
+        raise ValueError(
+            f"{label}: optimizer.native_trainable_scope="
+            "'global_scale_mlp_only' requires model.native_branch_mode='scale_only'"
+        )
     loss = _required_mapping(config, "loss", label)
     _validate_loss_fields(loss, label)
     train_metrics_schedule = run.get("train_metrics_schedule")
@@ -934,14 +942,6 @@ def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str
             f"{label}: field 'optimizer.native_trainable_scope' must be one of "
             f"{sorted(NATIVE_TRAINABLE_SCOPES)}, got "
             f"{native_trainable_scope!r}"
-        )
-    if (
-        native_trainable_scope == "global_scale_mlp_only"
-        and model.get("native_branch_mode") != "scale_only"
-    ):
-        raise ValueError(
-            f"{label}: optimizer.native_trainable_scope="
-            "'global_scale_mlp_only' requires model.native_branch_mode='scale_only'"
         )
 
     for field in ("warmup_epochs", "second_stage_epoch"):

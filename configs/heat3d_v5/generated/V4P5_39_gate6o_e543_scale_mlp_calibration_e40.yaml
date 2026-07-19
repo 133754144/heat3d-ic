@@ -1,0 +1,50 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_39_gate6o_e543_scale_mlp_calibration_e40
+extends: V4P5_38_gate6n_v36_r2r_mask_p005_e600.yaml
+overrides:
+  description: >-
+    Gate 6O Stage 2 full-graph e40 calibration initialized from the
+    pre-registered V38 e543 checkpoint. Only global_scale_hidden and
+    global_scale_output are trainable; the optimizer state is reset.
+  model:
+    p_edge_masking: 0.0
+    native_branch_mode: scale_only
+  optimizer:
+    lr: 0.0001
+    lr_schedule: constant
+    native_trainable_scope: global_scale_mlp_only
+  run:
+    epochs: 40
+    init_checkpoint: output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_sample_first.pkl
+    checkpoint_load_strict: true
+    partial_load_policy: matching
+    final_probe_output_dir: output/heat3d_v5_gate6o_stage2_final_probe/V4P5_39_gate6o_e543_scale_mlp_calibration_e40
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6o_stage2_diagnostics/V4P5_39_gate6o_e543_scale_mlp_calibration_e40
+  export:
+    output_dir: output/heat3d_v5_gate6o_stage2_runs/V4P5_39_gate6o_e543_scale_mlp_calibration_e40
+    run_name: V4P5_39_gate6o_e543_scale_mlp_calibration_e40
+    prediction_split: valid_iid
+    save_point_global_best_checkpoint: true
+    point_global_best_checkpoint_name: params_best_valid_point_global.pkl
+    save_base_mse_best_checkpoint: true
+    base_mse_best_checkpoint_name: params_best_valid_base_mse.pkl
+    save_sample_first_best_checkpoint: true
+    sample_first_best_checkpoint_name: params_best_valid_sample_first.pkl
+  metadata:
+    phase: v5_gate6o
+    candidate: stage2_e543_global_scale_mlp_only
+    baseline_config_id: V4P5_38_gate6n_v36_r2r_mask_p005_e600
+    initialization: V38_sample_first_best_e543_params_only
+    initialization_checkpoint_sha256: e26e50b432ebab2858fcf9c5597d2bb85715d181c48292c3cc85c7749b790869
+    optimizer_state: reset
+    trainable_parameters: [global_scale_hidden, global_scale_output]
+    frozen_parameters: [backbone, processor, decoder, decoder_bypass, global_film, scale_attention]
+    assigned_host: wsl2
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: codex_authorized_gate6o_stage2
+    log_path: output/heat3d_v5_gate6o_stage2_logs/V4P5_39_gate6o_e543_scale_mlp_calibration_e40.log
+    status: prepared_not_started
+    training_started: false

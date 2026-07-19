@@ -1,0 +1,34 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_40_gate6o_seed1_full_graph_e600
+extends: V4P5_38_gate6n_v36_r2r_mask_p005_e600.yaml
+overrides:
+  description: >-
+    Gate 6O prepared seed1 full-graph member of the paired edge-mask
+    comparison. This e600 run is not started.
+  model:
+    p_edge_masking: 0.0
+  optimizer:
+    model_seed: 1
+  run:
+    final_probe_output_dir: output/heat3d_v5_gate6o_seed1_final_probe/V4P5_40_gate6o_seed1_full_graph_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6o_seed1_diagnostics/V4P5_40_gate6o_seed1_full_graph_e600
+  export:
+    output_dir: output/heat3d_v5_gate6o_seed1_runs/V4P5_40_gate6o_seed1_full_graph_e600
+    run_name: V4P5_40_gate6o_seed1_full_graph_e600
+    prediction_split: valid_iid
+  metadata:
+    phase: v5_gate6o
+    candidate: seed1_full_graph_p0
+    baseline_config_id: V4P5_38_gate6n_v36_r2r_mask_p005_e600
+    initialization: random
+    paired_config_id: V4P5_41_gate6o_seed1_r2r_mask_p005_e600
+    paired_commit_policy: same_research_v5_head
+    assigned_host: wsl2
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v5_gate6o_seed1_logs/V4P5_40_gate6o_seed1_full_graph_e600.log
+    status: prepared_not_started
+    training_started: false
