@@ -82,6 +82,16 @@ from rigno.heat3d_v5_scale_pooling import (  # noqa: E402
     qk_region_feature_names,
     qk_region_features_from_raw,
 )
+from rigno.heat3d_v5_scale_context import (  # noqa: E402
+    SCALE_CONTEXT_MODES,
+    SCALE_DEEPSETS_MODES,
+    XY_SCALE_CONTEXT_FEATURES,
+    fit_train_only_scale_context_standardizer,
+    regional_source_volume_weights_from_raw,
+    standardize_scale_contexts,
+    validate_scale_context_schema,
+    xy_scale_context_from_raw_condition,
+)
 from rigno.heat3d_v4_split_map import (  # noqa: E402
     load_sample_split_map,
     split_ids_from_sample_splits,
@@ -154,6 +164,11 @@ NATIVE_BRANCH_MODES = ("scale_only", "shape_only", "joint")
 NATIVE_TRAINABLE_SCOPES = ("branch", "global_scale_mlp_only")
 SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
 SCALE_POOLING_MODES = V5_SCALE_POOLING_MODES
+NATIVE_RAW_LOSS_MODES = ("per_sample_cv_mse", "batch_global_normalized_sse")
+NATIVE_LOG_SCALE_WEIGHT_MODES = (
+    "uniform",
+    "train_true_scale_squared_clipped",
+)
 DEFAULT_SUBSET = (
     REPO_DIR
     / "data"
@@ -316,6 +331,23 @@ def parse_args() -> argparse.Namespace:
         default="bugged_v1",
         help="Versioned raw-input-only regional QK feature schema.",
     )
+    parser.add_argument(
+        "--scale-context-mode",
+        choices=SCALE_CONTEXT_MODES,
+        default="none",
+    )
+    parser.add_argument(
+        "--scale-context-feature-names",
+        type=str,
+        default="",
+        help="Comma-separated scale-head-only raw-input global feature schema.",
+    )
+    parser.add_argument(
+        "--scale-deepsets-mode",
+        choices=SCALE_DEEPSETS_MODES,
+        default="none",
+    )
+    parser.add_argument("--scale-deepsets-hidden-size", type=int, default=64)
     parser.add_argument(
         "--pooled-latent-stop-gradient",
         action=argparse.BooleanOptionalAction,
@@ -678,6 +710,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--native-log-scale-weight", type=float, default=1.0)
     parser.add_argument("--native-relative-field-weight", type=float, default=1.0)
     parser.add_argument("--native-raw-field-weight", type=float, default=1.0)
+    parser.add_argument(
+        "--native-raw-loss-mode",
+        choices=NATIVE_RAW_LOSS_MODES,
+        default="per_sample_cv_mse",
+    )
+    parser.add_argument(
+        "--native-log-scale-weight-mode",
+        choices=NATIVE_LOG_SCALE_WEIGHT_MODES,
+        default="uniform",
+    )
+    parser.add_argument("--native-log-scale-weight-clip-min", type=float, default=0.25)
+    parser.add_argument("--native-log-scale-weight-clip-max", type=float, default=4.0)
     parser.add_argument("--background-l1-weight", type=float, default=1.0)
     parser.add_argument("--background-bias-weight", type=float, default=1.0)
     parser.add_argument("--background-over-weight", type=float, default=1.0)
@@ -1753,6 +1797,15 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "native_log_scale_weight": float(args.native_log_scale_weight),
         "native_relative_field_weight": float(args.native_relative_field_weight),
         "native_raw_field_weight": float(args.native_raw_field_weight),
+        "native_raw_loss_mode": str(args.native_raw_loss_mode),
+        "native_log_scale_weight_mode": str(args.native_log_scale_weight_mode),
+        "native_log_scale_weight_clip_min": float(
+            args.native_log_scale_weight_clip_min
+        ),
+        "native_log_scale_weight_clip_max": float(
+            args.native_log_scale_weight_clip_max
+        ),
+        "native_log_scale_train_true_scale_sq_mean": None,
         "background_l1_weight": float(args.background_l1_weight),
         "background_bias_weight": float(args.background_bias_weight),
         "background_over_weight": float(args.background_over_weight),
@@ -1855,6 +1908,10 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         args.global_context_feature_names,
         "--global-context-feature-names",
     )
+    scale_context_feature_names = _parse_csv_feature_names(
+        args.scale_context_feature_names,
+        "--scale-context-feature-names",
+    )
     model_config = dict(RUNNER_MODEL_CONFIG)
     model_config.update(
         {
@@ -1893,6 +1950,11 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "scale_attention_mode": args.scale_attention_mode,
             "regional_attention_hidden_size": int(args.regional_attention_hidden_size),
             "qk_region_feature_version": args.qk_region_feature_version,
+            "scale_context_mode": args.scale_context_mode,
+            "scale_context_feature_dim": len(scale_context_feature_names),
+            "scale_context_feature_names": scale_context_feature_names,
+            "scale_deepsets_mode": args.scale_deepsets_mode,
+            "scale_deepsets_hidden_size": int(args.scale_deepsets_hidden_size),
             "scale_head_init": "identity",
             "shape_scale_epsilon": 1.0e-12,
         }
@@ -1962,6 +2024,21 @@ def _validate_loss_config(config: dict[str, Any]) -> None:
     ):
         if float(config[key]) < 0.0:
             raise ValueError(f"--{key.replace('_', '-')} must be >= 0")
+    if config["native_raw_loss_mode"] not in NATIVE_RAW_LOSS_MODES:
+        raise ValueError(
+            f"--native-raw-loss-mode must be one of {NATIVE_RAW_LOSS_MODES}"
+        )
+    if config["native_log_scale_weight_mode"] not in NATIVE_LOG_SCALE_WEIGHT_MODES:
+        raise ValueError(
+            "--native-log-scale-weight-mode must be one of "
+            f"{NATIVE_LOG_SCALE_WEIGHT_MODES}"
+        )
+    clip_min = float(config["native_log_scale_weight_clip_min"])
+    clip_max = float(config["native_log_scale_weight_clip_max"])
+    if clip_min <= 0.0 or clip_max < clip_min:
+        raise ValueError(
+            "native log-scale weight clip must satisfy 0 < min <= max"
+        )
     if float(config["background_l1_weight"]) < 0.0:
         raise ValueError("--background-l1-weight must be >= 0")
     if float(config["background_bias_weight"]) < 0.0:
@@ -2083,6 +2160,34 @@ def _validate_model_config(config: dict[str, Any]) -> None:
             "--qk-region-feature-version must be one of "
             f"{QK_REGION_FEATURE_VERSIONS}"
         )
+    scale_context_mode = config.get("scale_context_mode", "none")
+    if scale_context_mode not in SCALE_CONTEXT_MODES:
+        raise ValueError(
+            f"--scale-context-mode must be one of {SCALE_CONTEXT_MODES}"
+        )
+    scale_context_names = tuple(config.get("scale_context_feature_names") or ())
+    if int(config.get("scale_context_feature_dim", 0)) != len(scale_context_names):
+        raise ValueError(
+            "scale_context_feature_dim must match scale_context_feature_names"
+        )
+    if scale_context_mode == "none":
+        if scale_context_names:
+            raise ValueError(
+                "--scale-context-mode none requires no scale context features"
+            )
+    else:
+        validate_scale_context_schema(scale_context_names)
+    if config.get("scale_deepsets_mode", "none") not in SCALE_DEEPSETS_MODES:
+        raise ValueError(
+            f"--scale-deepsets-mode must be one of {SCALE_DEEPSETS_MODES}"
+        )
+    if int(config.get("scale_deepsets_hidden_size", 0)) < 1:
+        raise ValueError("--scale-deepsets-hidden-size must be >= 1")
+    if (
+        config.get("scale_deepsets_mode", "none") != "none"
+        and config.get("scale_pooling") != "mean"
+    ):
+        raise ValueError("scale DeepSets requires --scale-pooling mean")
     if config.get("scale_attention_mode") != "none" and config.get("scale_pooling") != "mean":
         raise ValueError("--scale-attention-mode requires --scale-pooling mean")
 
@@ -2661,6 +2766,15 @@ def _native_loss_components(
             control_volumes=physics["control_volumes"],
             dirichlet_mask=physics["dirichlet_mask"],
             loss_weights=native_weights,
+            raw_loss_mode=loss_config["native_raw_loss_mode"],
+            log_scale_weight_mode=loss_config["native_log_scale_weight_mode"],
+            log_scale_train_true_scale_sq_mean=loss_config.get(
+                "native_log_scale_train_true_scale_sq_mean"
+            ),
+            log_scale_weight_clip=(
+                loss_config["native_log_scale_weight_clip_min"],
+                loss_config["native_log_scale_weight_clip_max"],
+            ),
         )
         branch_mode = getattr(model, "native_branch_mode", "joint")
         if branch_mode == "scale_only":
@@ -4634,6 +4748,20 @@ def _checkpoint_prediction_reload_audit(
             raise RuntimeError(
                 f"{label}: checkpoint global-context standardizer is not train-only"
             )
+        checkpoint_scale_context = (
+            checkpoint_payload.get("run_config_metadata", {}).get("scale_context")
+            or {}
+        )
+        scale_standardizer = (
+            checkpoint_scale_context.get("standardizer") or {}
+        )
+        if (
+            checkpoint_scale_context.get("enabled")
+            and scale_standardizer.get("fit_population") != "train_only"
+        ):
+            raise RuntimeError(
+                f"{label}: checkpoint scale-context standardizer is not train-only"
+            )
         loaded_params = _device_params(checkpoint_payload["params"])
         try:
             reloaded_predictions = _predict_temperatures(model, loaded_params, groups, stats)
@@ -4659,6 +4787,9 @@ def _checkpoint_prediction_reload_audit(
                 "npz_reload_max_abs_error_K": npz_max_abs,
                 "tolerance_K": float(tolerance),
                 "global_context_fit_population": standardizer.get("fit_population"),
+                "scale_context_fit_population": scale_standardizer.get(
+                    "fit_population"
+                ),
                 "global_context_fit_sample_count": standardizer.get("fit_sample_count"),
                 "passed": passed,
             }
@@ -4694,9 +4825,19 @@ def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> 
         "qk_region_feature_version": str(
             getattr(model, "qk_region_feature_version", "bugged_v1")
         ),
+        "scale_context_mode": str(
+            getattr(model, "scale_context_mode", "none")
+        ),
+        "scale_context_feature_dim": int(
+            getattr(model, "scale_context_feature_dim", 0)
+        ),
+        "scale_deepsets_mode": str(
+            getattr(model, "scale_deepsets_mode", "none")
+        ),
         "node_latent_width": int(getattr(model, "node_latent_size")),
         "pooled_latent_width": int(pooled.shape[-1]),
         "scale_head_input_width": int(getattr(model, "global_context_feature_dim"))
+        + int(getattr(model, "scale_context_feature_dim", 0))
         + int(pooled.shape[-1]),
         "s_hat_positive": bool(np.all(s_hat > 0.0)),
         "finite": bool(
@@ -4734,6 +4875,9 @@ def _scale_attention_intermediates(model: Any, params: Any, group: Mapping[str, 
         dirichlet_mask=physics["dirichlet_mask"],
         prescribed_temperature=physics["prescribed_temperature"],
         qk_region_features=group.get("qk_region_features"),
+        scale_context=group.get("scale_context"),
+        scale_region_source_weights=group.get("scale_region_source_weights"),
+        scale_region_volume_weights=group.get("scale_region_volume_weights"),
         method=model.predict_native_shape_scale,
         mutable=["intermediates"],
     )
@@ -4758,6 +4902,9 @@ def _shape_attention_intermediates(
         dirichlet_mask=physics["dirichlet_mask"],
         prescribed_temperature=physics["prescribed_temperature"],
         qk_region_features=group.get("qk_region_features"),
+        scale_context=group.get("scale_context"),
+        scale_region_source_weights=group.get("scale_region_source_weights"),
+        scale_region_volume_weights=group.get("scale_region_volume_weights"),
         method=model.predict_native_shape_scale,
         mutable=["intermediates"],
     )
@@ -5217,6 +5364,7 @@ def _checkpoint_run_metadata(
     batch_config: dict[str, Any],
     graph_config: dict[str, Any],
     global_context_payload: dict[str, Any] | None = None,
+    scale_context_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "subset": str(sample_root),
@@ -5233,6 +5381,7 @@ def _checkpoint_run_metadata(
         "batch_config": batch_config,
         "graph_config": graph_config,
         "global_context": global_context_payload,
+        "scale_context": scale_context_payload,
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "prediction_split": args.prediction_split,
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
@@ -6392,6 +6541,89 @@ def _prepare_global_context_lookup(
     }
 
 
+def _scale_context_row_for_example(example: Any) -> dict[str, float]:
+    """Build scale-head-only XY context from inference-time raw inputs."""
+
+    relative = example.get_relative_bc_feature_view()
+    return xy_scale_context_from_raw_condition(
+        coords=np.asarray(example.condition.coords, dtype=np.float64),
+        raw_condition=np.asarray(relative.condition_features, dtype=np.float64),
+        condition_feature_names=tuple(relative.condition_feature_names),
+    )
+
+
+def _prepare_scale_context_lookup(
+    model_config: Mapping[str, Any],
+    *,
+    train_examples: list[Any],
+    required_examples: list[Any],
+) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+    """Fit the independent scale context on train only."""
+
+    if model_config.get("scale_context_mode", "none") == "none":
+        return {}, {
+            "enabled": False,
+            "mode": "none",
+            "target_or_label_derived_inputs": False,
+        }
+    feature_names = tuple(model_config.get("scale_context_feature_names") or ())
+    validate_scale_context_schema(feature_names)
+    rows: dict[str, dict[str, float]] = {}
+    for example in [*train_examples, *required_examples]:
+        sample_id = str(example.sample_id)
+        if sample_id not in rows:
+            rows[sample_id] = _scale_context_row_for_example(example)
+    train_ids = [str(example.sample_id) for example in train_examples]
+    standardizer = fit_train_only_scale_context_standardizer(
+        [rows[sample_id] for sample_id in train_ids],
+        fit_sample_ids=train_ids,
+    )
+    encoded = {
+        sample_id: standardize_scale_contexts([row], standardizer)[0]
+        for sample_id, row in rows.items()
+    }
+    return encoded, {
+        "enabled": True,
+        "mode": "xy_raw_global",
+        "feature_names": list(XY_SCALE_CONTEXT_FEATURES),
+        "standardizer": standardizer,
+        "fit_roles": ["train"],
+        "target_or_label_derived_inputs": False,
+        "consumer_scope": ["global_scale_head"],
+        "forbidden_consumers": ["shape", "film", "decoder"],
+    }
+
+
+def _attach_scale_context_to_groups(
+    groups: list[dict],
+    encoded_context_by_id: Mapping[str, np.ndarray],
+    *,
+    expected_feature_dim: int,
+) -> None:
+    if not encoded_context_by_id:
+        return
+    for group in groups:
+        missing = [
+            sample_id
+            for sample_id in group["sample_ids"]
+            if sample_id not in encoded_context_by_id
+        ]
+        if missing:
+            raise ValueError(
+                f"{group['name']}: scale context missing samples {missing[:5]}"
+            )
+        context = np.stack(
+            [encoded_context_by_id[sample_id] for sample_id in group["sample_ids"]]
+        )
+        expected = (len(group["sample_ids"]), expected_feature_dim)
+        if context.shape != expected or not np.all(np.isfinite(context)):
+            raise ValueError(
+                f"{group['name']}: scale context shape/finite failure "
+                f"got={context.shape} expected={expected}"
+            )
+        group["scale_context"] = jnp.asarray(context, dtype=jnp.float32)
+
+
 def _attach_global_context_to_groups(
     groups: list[dict],
     encoded_context_by_id: Mapping[str, np.ndarray],
@@ -6493,6 +6725,81 @@ def _attach_qk_region_features_to_groups(
         group["qk_region_feature_names"] = feature_names
 
 
+def _attach_scale_deepsets_weights_to_groups(
+    groups: list[dict],
+    examples_by_id: Mapping[str, Any],
+) -> None:
+    """Attach raw-input-only regional source-power and volume weights."""
+
+    for group in groups:
+        source_rows = []
+        volume_rows = []
+        metadata = group["metadata"]
+        p2r_indices = np.asarray(metadata.p2r_edge_indices)
+        rnode_count = int(np.asarray(metadata.x_rnodes).shape[1] - 1)
+        for row, sample_id in enumerate(group["sample_ids"]):
+            example = examples_by_id[sample_id]
+            relative = example.get_relative_bc_feature_view()
+            source, volume = regional_source_volume_weights_from_raw(
+                coords=np.asarray(example.condition.coords, dtype=np.float64),
+                raw_condition=np.asarray(
+                    relative.condition_features, dtype=np.float64
+                ),
+                condition_feature_names=tuple(relative.condition_feature_names),
+                p2r_edge_indices=p2r_indices[row],
+                rnode_count=rnode_count,
+            )
+            source_rows.append(source)
+            volume_rows.append(volume)
+        source_packed = np.stack(source_rows)
+        volume_packed = np.stack(volume_rows)
+        expected = (len(group["sample_ids"]), rnode_count)
+        if (
+            source_packed.shape != expected
+            or volume_packed.shape != expected
+            or not np.all(np.isfinite(source_packed))
+            or not np.all(np.isfinite(volume_packed))
+        ):
+            raise ValueError(
+                f"{group['name']}: scale DeepSets regional weight failure"
+            )
+        group["scale_region_source_weights"] = jnp.asarray(
+            source_packed, dtype=jnp.float32
+        )
+        group["scale_region_volume_weights"] = jnp.asarray(
+            volume_packed, dtype=jnp.float32
+        )
+
+
+def _fit_native_loss_train_reference(
+    loss_config: dict[str, Any],
+    train_groups: list[dict],
+) -> None:
+    """Fit the V42 log-scale weighting reference from train targets only."""
+
+    if (
+        loss_config.get("native_log_scale_weight_mode")
+        != "train_true_scale_squared_clipped"
+    ):
+        loss_config["native_log_scale_train_true_scale_sq_mean"] = None
+        return
+    squared_scales: list[np.ndarray] = []
+    for group in train_groups:
+        target = np.asarray(group["target_delta_raw"], dtype=np.float64)
+        physics = group["native_physics"]
+        volume = np.asarray(physics["control_volumes"], dtype=np.float64)
+        mask = np.asarray(physics["dirichlet_mask"], dtype=np.float64)
+        free = target[:, 0, :, 0] * (1.0 - np.clip(mask, 0.0, 1.0))
+        numerator = np.sum(np.square(free) * volume, axis=1)
+        denominator = np.maximum(np.sum(volume, axis=1), 1.0e-12)
+        squared_scales.append(numerator / denominator)
+    values = np.concatenate(squared_scales)
+    reference = float(np.mean(values))
+    if not math.isfinite(reference) or reference <= 0.0:
+        raise ValueError("train-only true-scale-squared reference is invalid")
+    loss_config["native_log_scale_train_true_scale_sq_mean"] = reference
+
+
 def _training_edge_masking_key(
     model_config: Mapping[str, Any],
     *,
@@ -6525,6 +6832,13 @@ def _model_apply(model, params, group: Mapping[str, Any], *, key=None):
             dirichlet_mask=physics["dirichlet_mask"],
             prescribed_temperature=physics["prescribed_temperature"],
             qk_region_features=group.get("qk_region_features"),
+            scale_context=group.get("scale_context"),
+            scale_region_source_weights=group.get(
+                "scale_region_source_weights"
+            ),
+            scale_region_volume_weights=group.get(
+                "scale_region_volume_weights"
+            ),
             key=key,
             method=model.predict_native_shape_scale,
         )
@@ -6551,6 +6865,13 @@ def _model_init(model, key, group: Mapping[str, Any], inputs: Any):
             dirichlet_mask=physics["dirichlet_mask"],
             prescribed_temperature=physics["prescribed_temperature"],
             qk_region_features=group.get("qk_region_features"),
+            scale_context=group.get("scale_context"),
+            scale_region_source_weights=group.get(
+                "scale_region_source_weights"
+            ),
+            scale_region_volume_weights=group.get(
+                "scale_region_volume_weights"
+            ),
             method=model.predict_native_shape_scale,
         )
     return model.init(
@@ -7201,6 +7522,30 @@ def main() -> int:
             global_context_lookup,
             expected_feature_dim=int(model_config.get("global_context_feature_dim", 0)),
         )
+    scale_context_lookup, scale_context_payload = _prepare_scale_context_lookup(
+        model_config,
+        train_examples=train_examples,
+        required_examples=[
+            *valid_examples,
+            *valid_stress_examples,
+            *all_examples,
+            *test_iid_examples,
+        ],
+    )
+    for groups in (
+        train_groups,
+        valid_groups,
+        valid_stress_groups,
+        all_groups,
+        test_iid_groups,
+    ):
+        _attach_scale_context_to_groups(
+            groups,
+            scale_context_lookup,
+            expected_feature_dim=int(
+                model_config.get("scale_context_feature_dim", 0)
+            ),
+        )
     if model_config.get("native_output_mode") == "native_shape_scale":
         native_examples_by_id = {
             example.sample_id: example
@@ -7227,6 +7572,18 @@ def main() -> int:
                         "qk_region_feature_version", "bugged_v1"
                     ),
                 )
+        if model_config.get("scale_deepsets_mode", "none") != "none":
+            for groups in (
+                train_groups,
+                valid_groups,
+                valid_stress_groups,
+                all_groups,
+                test_iid_groups,
+            ):
+                _attach_scale_deepsets_weights_to_groups(
+                    groups, native_examples_by_id
+                )
+        _fit_native_loss_train_reference(loss_config, train_groups)
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
@@ -7313,6 +7670,13 @@ def main() -> int:
                     model_config.get("global_context_feature_dim", 0)
                 ),
             )
+            _attach_scale_context_to_groups(
+                groups,
+                scale_context_lookup,
+                expected_feature_dim=int(
+                    model_config.get("scale_context_feature_dim", 0)
+                ),
+            )
             if model_config.get("native_output_mode") == "native_shape_scale":
                 _attach_native_physics_to_groups(groups, native_examples_by_id)
                 if (
@@ -7326,6 +7690,10 @@ def main() -> int:
                         feature_version=model_config.get(
                             "qk_region_feature_version", "bugged_v1"
                         ),
+                    )
+                if model_config.get("scale_deepsets_mode", "none") != "none":
+                    _attach_scale_deepsets_weights_to_groups(
+                        groups, native_examples_by_id
                     )
             _attach_sample_weights_to_groups(groups, train_sample_weights)
             _check_decoder_bypass_input_alignment(model_config, groups)
@@ -7476,6 +7844,7 @@ def main() -> int:
         batch_config=batch_config,
         graph_config=graph_config,
         global_context_payload=global_context_payload,
+        scale_context_payload=scale_context_payload,
     )
     final_checkpoint_path = output_dir / args.final_checkpoint_name if args.save_final_checkpoint else None
     best_checkpoint_path = output_dir / args.best_checkpoint_name if args.save_best_checkpoint else None
@@ -7690,6 +8059,7 @@ def main() -> int:
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "graph_config": graph_config,
         "global_context": global_context_payload,
+        "scale_context": scale_context_payload,
         "native_runtime_architecture_audit": native_runtime_audit,
         "attention_diagnostics_by_checkpoint": attention_diagnostics_by_checkpoint,
         "checkpoint_prediction_reload_audit": checkpoint_prediction_reload_audit,

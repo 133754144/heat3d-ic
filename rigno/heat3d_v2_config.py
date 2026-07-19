@@ -21,6 +21,11 @@ from rigno.heat3d_v5_scale_pooling import (
     REGIONAL_ATTENTION_MODES as _REGIONAL_ATTENTION_MODES,
     SCALE_POOLING_MODES as _SCALE_POOLING_MODES,
 )
+from rigno.heat3d_v5_scale_context import (
+    SCALE_CONTEXT_MODES as _SCALE_CONTEXT_MODES,
+    SCALE_DEEPSETS_MODES as _SCALE_DEEPSETS_MODES,
+    XY_SCALE_CONTEXT_FEATURES,
+)
 
 
 CONFIG_SCHEMA_VERSION = "heat3d_v2_config_draft_v0"
@@ -79,6 +84,13 @@ SCALE_HEAD_MODES = {"physics_only", "physics_plus_pooled_latent"}
 SCALE_POOLING_MODES = set(_SCALE_POOLING_MODES)
 REGIONAL_ATTENTION_MODES = set(_REGIONAL_ATTENTION_MODES)
 QK_REGION_FEATURE_VERSIONS = set(_QK_REGION_FEATURE_VERSIONS)
+SCALE_CONTEXT_MODES = set(_SCALE_CONTEXT_MODES)
+SCALE_DEEPSETS_MODES = set(_SCALE_DEEPSETS_MODES)
+NATIVE_RAW_LOSS_MODES = {"per_sample_cv_mse", "batch_global_normalized_sse"}
+NATIVE_LOG_SCALE_WEIGHT_MODES = {
+    "uniform",
+    "train_true_scale_squared_clipped",
+}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -821,6 +833,63 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
             f"{label}: field 'model.qk_region_feature_version' must be one of "
             f"{sorted(QK_REGION_FEATURE_VERSIONS)}, got {qk_feature_version!r}"
         )
+    scale_context_mode = model.get("scale_context_mode")
+    if (
+        scale_context_mode is not None
+        and scale_context_mode not in SCALE_CONTEXT_MODES
+    ):
+        raise ValueError(
+            f"{label}: field 'model.scale_context_mode' must be one of "
+            f"{sorted(SCALE_CONTEXT_MODES)}, got {scale_context_mode!r}"
+        )
+    scale_context_names = model.get("scale_context_feature_names")
+    if scale_context_names is not None:
+        if (
+            isinstance(scale_context_names, (str, bytes))
+            or not isinstance(scale_context_names, (list, tuple))
+            or any(not isinstance(name, str) or not name for name in scale_context_names)
+        ):
+            raise ValueError(
+                f"{label}: field 'model.scale_context_feature_names' must be "
+                "a list of nonempty strings"
+            )
+        if tuple(scale_context_names) != XY_SCALE_CONTEXT_FEATURES:
+            raise ValueError(
+                f"{label}: model.scale_context_feature_names must match the "
+                "frozen XY scale schema"
+            )
+    if scale_context_mode == "xy_raw_global" and not scale_context_names:
+        raise ValueError(
+            f"{label}: xy_raw_global scale context requires feature names"
+        )
+    if scale_context_mode in {None, "none"} and scale_context_names:
+        raise ValueError(
+            f"{label}: disabled scale context cannot define feature names"
+        )
+    scale_deepsets_mode = model.get("scale_deepsets_mode")
+    if (
+        scale_deepsets_mode is not None
+        and scale_deepsets_mode not in SCALE_DEEPSETS_MODES
+    ):
+        raise ValueError(
+            f"{label}: field 'model.scale_deepsets_mode' must be one of "
+            f"{sorted(SCALE_DEEPSETS_MODES)}, got {scale_deepsets_mode!r}"
+        )
+    scale_deepsets_hidden = model.get("scale_deepsets_hidden_size")
+    if scale_deepsets_hidden is not None and (
+        isinstance(scale_deepsets_hidden, bool)
+        or not isinstance(scale_deepsets_hidden, int)
+        or scale_deepsets_hidden < 1
+    ):
+        raise ValueError(
+            f"{label}: model.scale_deepsets_hidden_size must be an int >= 1"
+        )
+    if scale_deepsets_mode not in {None, "none"} and model.get(
+        "scale_pooling", "mean"
+    ) != "mean":
+        raise ValueError(
+            f"{label}: scale DeepSets requires model.scale_pooling='mean'"
+        )
     if model.get("scale_attention_mode") not in {None, "none"} and model.get(
         "scale_pooling", "mean"
     ) != "mean":
@@ -845,6 +914,41 @@ def _validate_loss_fields(loss: Mapping[str, Any], label: str) -> None:
         raise ValueError(
             f"{label}: field 'loss.mode' must be one of {sorted(LOSS_MODES)}, "
             f"got {mode!r}"
+        )
+    raw_mode = loss.get("native_raw_loss_mode")
+    if raw_mode is not None and raw_mode not in NATIVE_RAW_LOSS_MODES:
+        raise ValueError(
+            f"{label}: field 'loss.native_raw_loss_mode' must be one of "
+            f"{sorted(NATIVE_RAW_LOSS_MODES)}, got {raw_mode!r}"
+        )
+    log_scale_mode = loss.get("native_log_scale_weight_mode")
+    if (
+        log_scale_mode is not None
+        and log_scale_mode not in NATIVE_LOG_SCALE_WEIGHT_MODES
+    ):
+        raise ValueError(
+            f"{label}: field 'loss.native_log_scale_weight_mode' must be one of "
+            f"{sorted(NATIVE_LOG_SCALE_WEIGHT_MODES)}, got {log_scale_mode!r}"
+        )
+    clip_min = loss.get("native_log_scale_weight_clip_min")
+    clip_max = loss.get("native_log_scale_weight_clip_max")
+    for field, value in (
+        ("native_log_scale_weight_clip_min", clip_min),
+        ("native_log_scale_weight_clip_max", clip_max),
+    ):
+        if value is not None and (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or float(value) <= 0.0
+        ):
+            raise ValueError(f"{label}: field 'loss.{field}' must be > 0")
+    if (
+        clip_min is not None
+        and clip_max is not None
+        and float(clip_max) < float(clip_min)
+    ):
+        raise ValueError(
+            f"{label}: native log-scale clip max must be >= min"
         )
 
     for field in ("background_quantile", "hotspot_quantile", "strong_q_quantile"):

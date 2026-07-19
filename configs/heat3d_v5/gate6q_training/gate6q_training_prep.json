@@ -1,0 +1,142 @@
+{
+  "schema_version": "heat3d_v5_gate6q_training_prep_v1",
+  "baseline_config_id": "V4P5_38_gate6n_v36_r2r_mask_p005_e600",
+  "training_started": false,
+  "formal_e600_started": false,
+  "formal_results_generated": false,
+  "roles": {
+    "fit": [
+      "train"
+    ],
+    "selection": [
+      "valid_iid"
+    ],
+    "forbidden": [
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test",
+      "sealed_iid"
+    ]
+  },
+  "objective_contract": {
+    "V42_raw_term": "sum_batch_nodes(CV*(prediction-target)^2)/sum_batch_nodes(CV*target^2)",
+    "V42_log_scale_weight": "clip(true_scale^2/mean_train(true_scale^2),0.25,4.0)",
+    "V42_log_scale_reduction": "sum(weight*log_scale_squared_error)/sum(weight)",
+    "four_scalar_loss_weights": {
+      "shape_cv": 1.5,
+      "log_scale": 0.5,
+      "relative_field": 1.0,
+      "raw_absolute": 1.0
+    },
+    "V43_V44_objective": "unchanged_from_V38"
+  },
+  "scale_context_contract": {
+    "feature_names": [
+      "q_weighted_kx",
+      "q_weighted_ky",
+      "q_weighted_inverse_kx",
+      "q_weighted_inverse_ky",
+      "source_x_centroid_normalized",
+      "source_y_centroid_normalized",
+      "source_x_spread_normalized",
+      "source_y_spread_normalized",
+      "q_low_kx_overlap",
+      "q_low_ky_overlap"
+    ],
+    "source": "raw_coords_k_q_control_volume",
+    "standardizer_fit_roles": [
+      "train"
+    ],
+    "consumer_scope": [
+      "global_scale_head"
+    ],
+    "forbidden_consumers": [
+      "shape",
+      "film",
+      "decoder"
+    ],
+    "target_or_label_derived_inputs": false
+  },
+  "deepsets_contract": {
+    "regional_shared_mlp_hidden_width": 64,
+    "aggregations": [
+      "mean",
+      "source_power_weighted",
+      "volume_weighted"
+    ],
+    "softmax_only_pooling": false,
+    "residual_output_init": "zero",
+    "consumer_scope": [
+      "global_scale_head"
+    ]
+  },
+  "resolved_config_diffs": {
+    "V42_vs_V38": {
+      "loss.native_log_scale_weight_mode": {
+        "left": "uniform",
+        "right": "train_true_scale_squared_clipped"
+      },
+      "loss.native_raw_loss_mode": {
+        "left": "per_sample_cv_mse",
+        "right": "batch_global_normalized_sse"
+      }
+    },
+    "V43_vs_V38": {
+      "model.scale_context_feature_names": {
+        "left": [],
+        "right": [
+          "q_weighted_kx",
+          "q_weighted_ky",
+          "q_weighted_inverse_kx",
+          "q_weighted_inverse_ky",
+          "source_x_centroid_normalized",
+          "source_y_centroid_normalized",
+          "source_x_spread_normalized",
+          "source_y_spread_normalized",
+          "q_low_kx_overlap",
+          "q_low_ky_overlap"
+        ]
+      },
+      "model.scale_context_mode": {
+        "left": "none",
+        "right": "xy_raw_global"
+      }
+    },
+    "V44_vs_V43": {
+      "model.scale_deepsets_mode": {
+        "left": "none",
+        "right": "source_volume_residual"
+      }
+    }
+  },
+  "expected_parameter_increment": {
+    "V42_vs_V38": 0,
+    "V43_vs_V38": 640,
+    "V44_vs_V43": 28896
+  },
+  "finite_fixture_smoke": {
+    "batch_size": 2,
+    "node_count": 27,
+    "optimizer_update_applied": false,
+    "V42": {
+      "parameter_count": 952488,
+      "finite_forward_backward": true
+    },
+    "V43": {
+      "parameter_count": 953128,
+      "finite_forward_backward": true
+    },
+    "V44": {
+      "parameter_count": 982024,
+      "finite_forward_backward": true,
+      "deepsets_output_init_max_abs": 0.0
+    }
+  },
+  "single_batch_memory_smoke_command": "XLA_PYTHON_CLIENT_PREALLOCATE=false python scripts/smoke_heat3d_v5_gate6q_single_batch.py --config configs/heat3d_v5/generated/V4P5_44_gate6q_xy_deepsets_e600.yaml --batch-size 28 --grid 8,8,16",
+  "manual_launch_commands": {
+    "V42": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_42_gate6q_objective_only_e600.yaml",
+    "V43": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_43_gate6q_xy_scale_features_e600.yaml",
+    "V44": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_44_gate6q_xy_deepsets_e600.yaml"
+  }
+}

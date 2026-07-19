@@ -1,0 +1,38 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_44_gate6q_xy_deepsets_e600
+extends: V4P5_43_gate6q_xy_scale_features_e600.yaml
+overrides:
+  description: >-
+    Gate 6Q V44 random-init e600 candidate. Relative to V43, only a full-3D
+    source/volume-aware DeepSets scale-pooling residual is enabled. A shared
+    regional MLP is aggregated by arithmetic mean, source-power weights, and
+    control-volume weights; the residual projection is zero initialized and
+    is not a softmax-only pool.
+  model:
+    scale_deepsets_mode: source_volume_residual
+  run:
+    init_checkpoint: null
+    final_probe_output_dir: output/heat3d_v5_gate6q_final_probe/V4P5_44_gate6q_xy_deepsets_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6q_diagnostics/V4P5_44_gate6q_xy_deepsets_e600
+  export:
+    output_dir: output/heat3d_v5_gate6q_runs/V4P5_44_gate6q_xy_deepsets_e600
+    run_name: V4P5_44_gate6q_xy_deepsets_e600
+    prediction_split: valid_iid
+  metadata:
+    phase: v5_gate6q_training_prep
+    candidate: V44_xy_deepsets
+    baseline_config_id: V4P5_43_gate6q_xy_scale_features_e600
+    initialization: random
+    deepsets_aggregations: [mean, source_power_weighted, volume_weighted]
+    deepsets_softmax_only_pooling: false
+    deepsets_output_init: zero
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    scale_context_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v5_gate6q_logs/V4P5_44_gate6q_xy_deepsets_e600.log
+    status: prepared_not_started
+    training_started: false
+    formal_e600_started: false

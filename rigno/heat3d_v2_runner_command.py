@@ -182,6 +182,18 @@ def build_training_command(
         "--qk-region-feature-version",
         model.get("qk_region_feature_version"),
     )
+    _append_option(command, "--scale-context-mode", model.get("scale_context_mode"))
+    _append_option(
+        command,
+        "--scale-context-feature-names",
+        _csv_names(model.get("scale_context_feature_names")),
+    )
+    _append_option(command, "--scale-deepsets-mode", model.get("scale_deepsets_mode"))
+    _append_option(
+        command,
+        "--scale-deepsets-hidden-size",
+        model.get("scale_deepsets_hidden_size"),
+    )
     if model.get("pooled_latent_stop_gradient") is True:
         command.append("--pooled-latent-stop-gradient")
     elif model.get("pooled_latent_stop_gradient") is False:
@@ -330,6 +342,22 @@ def build_training_command(
     _append_option(command, "--native-log-scale-weight", loss.get("native_log_scale_weight"))
     _append_option(command, "--native-relative-field-weight", loss.get("native_relative_field_weight"))
     _append_option(command, "--native-raw-field-weight", loss.get("native_raw_field_weight"))
+    _append_option(command, "--native-raw-loss-mode", loss.get("native_raw_loss_mode"))
+    _append_option(
+        command,
+        "--native-log-scale-weight-mode",
+        loss.get("native_log_scale_weight_mode"),
+    )
+    _append_option(
+        command,
+        "--native-log-scale-weight-clip-min",
+        loss.get("native_log_scale_weight_clip_min"),
+    )
+    _append_option(
+        command,
+        "--native-log-scale-weight-clip-max",
+        loss.get("native_log_scale_weight_clip_max"),
+    )
     _append_option(command, "--background-l1-weight", loss.get("background_l1_weight"))
     _append_option(
         command, "--background-bias-weight", loss.get("background_bias_weight")
@@ -781,6 +809,16 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
             "model.qk_region_feature_version",
             "training --qk-region-feature-version",
         ),
+        ("model.scale_context_mode", "training --scale-context-mode"),
+        (
+            "model.scale_context_feature_names",
+            "training --scale-context-feature-names",
+        ),
+        ("model.scale_deepsets_mode", "training --scale-deepsets-mode"),
+        (
+            "model.scale_deepsets_hidden_size",
+            "training --scale-deepsets-hidden-size",
+        ),
         (
             "optimizer.native_trainable_scope",
             "training --native-trainable-scope",
@@ -850,6 +888,26 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("loss.background_weight", "training --background-weight"),
         ("loss.hotspot_weight", "training --hotspot-weight"),
         ("loss.strong_q_weight", "training --strong-q-weight"),
+        ("loss.native_shape_cv_weight", "training --native-shape-cv-weight"),
+        ("loss.native_log_scale_weight", "training --native-log-scale-weight"),
+        (
+            "loss.native_relative_field_weight",
+            "training --native-relative-field-weight",
+        ),
+        ("loss.native_raw_field_weight", "training --native-raw-field-weight"),
+        ("loss.native_raw_loss_mode", "training --native-raw-loss-mode"),
+        (
+            "loss.native_log_scale_weight_mode",
+            "training --native-log-scale-weight-mode",
+        ),
+        (
+            "loss.native_log_scale_weight_clip_min",
+            "training --native-log-scale-weight-clip-min",
+        ),
+        (
+            "loss.native_log_scale_weight_clip_max",
+            "training --native-log-scale-weight-clip-max",
+        ),
         ("loss.background_l1_weight", "training --background-l1-weight"),
         ("loss.background_bias_weight", "training --background-bias-weight"),
         ("loss.background_over_weight", "training --background-over-weight"),

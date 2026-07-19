@@ -177,6 +177,10 @@ def native_shape_scale_losses(
     control_volumes: Any,
     dirichlet_mask: Any | None = None,
     loss_weights: Mapping[str, float],
+    raw_loss_mode: str = "per_sample_cv_mse",
+    log_scale_weight_mode: str = "uniform",
+    log_scale_train_true_scale_sq_mean: float | None = None,
+    log_scale_weight_clip: tuple[float, float] = (0.25, 4.0),
     eps: float = EPS,
 ) -> dict[str, jnp.ndarray]:
     """Compute the four required V5 native losses as per-sample CV losses.
@@ -211,11 +215,52 @@ def native_shape_scale_losses(
     raw_cv_mse = jnp.sum(jnp.square(delta_hat - target) * weights, axis=2, keepdims=True) / jnp.maximum(volume_sum, eps)
     relative_field_mse = raw_cv_mse / jnp.maximum(jnp.square(target_scale), eps)
     log_scale_mse = jnp.square(jnp.log(jnp.maximum(s_hat, eps)) - jnp.log(jnp.maximum(target_scale, eps)))
+    if raw_loss_mode == "per_sample_cv_mse":
+        raw_loss = jnp.mean(raw_cv_mse)
+    elif raw_loss_mode == "batch_global_normalized_sse":
+        raw_sse = jnp.sum(jnp.square(delta_hat - target) * weights)
+        target_sse = jnp.sum(jnp.square(target) * weights)
+        raw_loss = raw_sse / jnp.maximum(target_sse, eps)
+    else:
+        raise ShapeScaleError(
+            "raw_loss_mode must be 'per_sample_cv_mse' or "
+            f"'batch_global_normalized_sse', got {raw_loss_mode!r}"
+        )
+
+    if log_scale_weight_mode == "uniform":
+        log_scale_loss = jnp.mean(log_scale_mse)
+    elif log_scale_weight_mode == "train_true_scale_squared_clipped":
+        if (
+            log_scale_train_true_scale_sq_mean is None
+            or float(log_scale_train_true_scale_sq_mean) <= 0.0
+        ):
+            raise ShapeScaleError(
+                "train_true_scale_squared_clipped requires a positive train-only "
+                "true-scale-squared mean"
+            )
+        clip_min, clip_max = (float(value) for value in log_scale_weight_clip)
+        if clip_min <= 0.0 or clip_max < clip_min:
+            raise ShapeScaleError("invalid log-scale weight clip bounds")
+        scale_weights = jnp.clip(
+            jnp.square(target_scale) / float(log_scale_train_true_scale_sq_mean),
+            clip_min,
+            clip_max,
+        )
+        log_scale_loss = jnp.sum(scale_weights * log_scale_mse) / jnp.maximum(
+            jnp.sum(scale_weights), eps
+        )
+    else:
+        raise ShapeScaleError(
+            "log_scale_weight_mode must be 'uniform' or "
+            "'train_true_scale_squared_clipped', "
+            f"got {log_scale_weight_mode!r}"
+        )
+
     components = {
         "shape_cv_loss": jnp.mean(shape_cv_mse),
-        "log_scale_loss": jnp.mean(log_scale_mse),
+        "log_scale_loss": log_scale_loss,
         "relative_field_loss": jnp.mean(relative_field_mse),
-        "raw_absolute_field_loss": jnp.mean(raw_cv_mse),
+        "raw_absolute_field_loss": raw_loss,
     }
     total = (
         float(loss_weights["shape_cv"]) * components["shape_cv_loss"]
@@ -338,6 +383,7 @@ def parameter_group(path: Any) -> str:
             "latent_attention",
             "qk_attention",
             "scale_attention",
+            "scale_deepsets",
         )
     ):
         return "scale_head"

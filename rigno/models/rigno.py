@@ -15,6 +15,10 @@ from rigno.heat3d_v5_scale_pooling import (
   REGIONAL_ATTENTION_MODES,
   SCALE_POOLING_MODES,
 )
+from rigno.heat3d_v5_scale_context import (
+  SCALE_CONTEXT_MODES,
+  SCALE_DEEPSETS_MODES,
+)
 from rigno.models.graphnet import DeepTypedGraphNet
 from rigno.models.operator import AbstractOperator, Inputs
 from rigno.utils import Array, shuffle_arrays
@@ -1080,6 +1084,11 @@ class RIGNO(AbstractOperator):
   scale_attention_mode: str = 'none'
   regional_attention_hidden_size: int = 64
   qk_region_feature_version: str = 'bugged_v1'
+  scale_context_mode: str = 'none'
+  scale_context_feature_dim: int = 0
+  scale_context_feature_names: Tuple[str, ...] = ()
+  scale_deepsets_mode: str = 'none'
+  scale_deepsets_hidden_size: int = 64
   native_branch_mode: str = 'joint'
 
   def _check_coordinates(self, x: Array) -> None:
@@ -1269,6 +1278,21 @@ class RIGNO(AbstractOperator):
         self.scale_attention_hidden = None
         self.scale_attention_logits = None
         self.scale_attention_output = None
+      if self.scale_deepsets_mode == 'source_volume_residual':
+        self.scale_deepsets_hidden_0 = nn.Dense(
+          self.scale_deepsets_hidden_size, name='scale_deepsets_hidden_0')
+        self.scale_deepsets_hidden_1 = nn.Dense(
+          self.scale_deepsets_hidden_size, name='scale_deepsets_hidden_1')
+        self.scale_deepsets_output = nn.Dense(
+          self.node_latent_size,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='scale_deepsets_output',
+        )
+      else:
+        self.scale_deepsets_hidden_0 = None
+        self.scale_deepsets_hidden_1 = None
+        self.scale_deepsets_output = None
     else:
       self.global_scale_hidden = None
       self.global_scale_extra_hidden = ()
@@ -1286,6 +1310,9 @@ class RIGNO(AbstractOperator):
       self.scale_attention_hidden = None
       self.scale_attention_logits = None
       self.scale_attention_output = None
+      self.scale_deepsets_hidden_0 = None
+      self.scale_deepsets_hidden_1 = None
+      self.scale_deepsets_output = None
 
   def _decoder_bypass_enabled(self) -> bool:
     return self.decoder_bypass_mode != 'none'
@@ -1421,6 +1448,25 @@ class RIGNO(AbstractOperator):
       raise ValueError(
         "qk_region_feature_version must be one of "
         f"{QK_REGION_FEATURE_VERSIONS}")
+    if self.scale_context_mode not in SCALE_CONTEXT_MODES:
+      raise ValueError(
+        f"scale_context_mode must be one of {SCALE_CONTEXT_MODES}")
+    if self.scale_context_feature_dim < 0:
+      raise ValueError("scale_context_feature_dim must be >= 0")
+    if self.scale_context_feature_names and (
+      len(self.scale_context_feature_names) != self.scale_context_feature_dim
+    ):
+      raise ValueError(
+        "scale_context_feature_names must match scale_context_feature_dim")
+    if self.scale_context_mode == 'none' and self.scale_context_feature_dim != 0:
+      raise ValueError("scale_context_mode='none' requires feature_dim=0")
+    if self.scale_context_mode != 'none' and self.scale_context_feature_dim < 1:
+      raise ValueError("enabled scale context requires nonempty features")
+    if self.scale_deepsets_mode not in SCALE_DEEPSETS_MODES:
+      raise ValueError(
+        f"scale_deepsets_mode must be one of {SCALE_DEEPSETS_MODES}")
+    if self.scale_deepsets_hidden_size < 1:
+      raise ValueError("scale_deepsets_hidden_size must be >= 1")
     if self.scale_attention_mode != 'none' and self.scale_pooling != 'mean':
       raise ValueError("scale physics attention requires scale_pooling='mean'")
     if self.native_branch_mode not in {'scale_only', 'shape_only', 'joint'}:
@@ -1651,6 +1697,9 @@ class RIGNO(AbstractOperator):
     prescribed_temperature: Array,
     global_context: Union[None, Array] = None,
     qk_region_features: Union[None, Array] = None,
+    scale_context: Union[None, Array] = None,
+    scale_region_source_weights: Union[None, Array] = None,
+    scale_region_volume_weights: Union[None, Array] = None,
     key: flax.typing.PRNGKey = None,
   ) -> dict:
     """Predict native ``DeltaT=s*phi`` and project raw Dirichlet nodes.
@@ -1684,11 +1733,18 @@ class RIGNO(AbstractOperator):
         processed_rnodes_pre_film,
         qk_region_features=qk_region_features,
         global_context=global_context,
+        scale_region_source_weights=scale_region_source_weights,
+        scale_region_volume_weights=scale_region_volume_weights,
       )
-      scale_features = jnp.concatenate([context, pooled_rnodes], axis=-1)
+      scale_context_array = self._scale_context_array(
+        scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
+      scale_features = jnp.concatenate(
+        [context, scale_context_array, pooled_rnodes], axis=-1)
     else:
       pooled_rnodes = jnp.zeros((psi.shape[0], 0), dtype=psi.dtype)
-      scale_features = context
+      scale_context_array = self._scale_context_array(
+        scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
+      scale_features = jnp.concatenate([context, scale_context_array], axis=-1)
     scale_hidden = nn.gelu(self.global_scale_hidden(scale_features))
     for layer in self.global_scale_extra_hidden:
       scale_hidden = nn.gelu(layer(scale_hidden))
@@ -1723,6 +1779,7 @@ class RIGNO(AbstractOperator):
       'log_s_hat': log_s_hat,
       's_hat': s_hat,
       'pooled_rnodes': pooled_rnodes,
+      'scale_context': scale_context_array,
       'rnodes_processed': processed_rnodes,
       'rnodes_processed_pre_film': processed_rnodes_pre_film,
       'deltaT_hat_unprojected': delta_unprojected,
@@ -1738,6 +1795,8 @@ class RIGNO(AbstractOperator):
     *,
     qk_region_features: Union[None, Array],
     global_context: Union[None, Array],
+    scale_region_source_weights: Union[None, Array],
+    scale_region_volume_weights: Union[None, Array],
   ) -> Array:
     """Pool frozen regional latents for the configured native scale head."""
 
@@ -1764,9 +1823,13 @@ class RIGNO(AbstractOperator):
           [attended, mean_pool, jnp.mean(attention_inputs, axis=1)], axis=-1))
       self.sow(col='intermediates', name='scale_attention_weights', value=weights)
       self.sow(col='intermediates', name='scale_attention_residual', value=residual)
-      return mean_pool + residual
+      pooled = mean_pool + residual
+      return pooled + self._scale_deepsets_residual(
+        post, scale_region_source_weights, scale_region_volume_weights)
     if self.scale_pooling == 'mean':
-      return jnp.mean(post, axis=1)
+      pooled = jnp.mean(post, axis=1)
+      return pooled + self._scale_deepsets_residual(
+        post, scale_region_source_weights, scale_region_volume_weights)
     if self.scale_pooling == 'mean_std':
       return jnp.concatenate([jnp.mean(post, axis=1), jnp.std(post, axis=1)], axis=-1)
     if self.scale_pooling == 'mean_max':
@@ -1803,6 +1866,63 @@ class RIGNO(AbstractOperator):
       self.sow(col='intermediates', name='qk_attention_residual', value=residual)
       return mean_pool + residual
     raise ValueError(f"unsupported scale pooling {self.scale_pooling!r}")
+
+  def _scale_context_array(
+    self,
+    scale_context: Union[None, Array],
+    *,
+    batch_size: int,
+    dtype,
+  ) -> Array:
+    """Return scale-head-only context without exposing it to FiLM/decoder."""
+
+    if self.scale_context_mode == 'none':
+      if scale_context is not None:
+        raise ValueError("disabled scale context received unexpected features")
+      return jnp.zeros((batch_size, 0), dtype=dtype)
+    if scale_context is None:
+      raise ValueError("enabled scale context requires scale_context")
+    context = jnp.asarray(scale_context, dtype=dtype)
+    expected = (batch_size, self.scale_context_feature_dim)
+    if context.ndim != 2 or context.shape != expected:
+      raise ValueError(
+        f"scale_context must have shape {expected}, found {context.shape}")
+    return context
+
+  def _scale_deepsets_residual(
+    self,
+    regional_latents: Array,
+    source_weights: Union[None, Array],
+    volume_weights: Union[None, Array],
+  ) -> Array:
+    """Source/volume-aware DeepSets residual with no softmax-only pooling."""
+
+    if self.scale_deepsets_mode == 'none':
+      return jnp.zeros(
+        (regional_latents.shape[0], regional_latents.shape[-1]),
+        dtype=regional_latents.dtype,
+      )
+    if source_weights is None or volume_weights is None:
+      raise ValueError(
+        "source_volume_residual requires regional source and volume weights")
+    source = jnp.asarray(source_weights, dtype=regional_latents.dtype)
+    volume = jnp.asarray(volume_weights, dtype=regional_latents.dtype)
+    expected = regional_latents.shape[:2]
+    if source.shape != expected or volume.shape != expected:
+      raise ValueError(
+        "regional DeepSets weights must match [batch,rnodes]: "
+        f"source={source.shape} volume={volume.shape} expected={expected}")
+    encoded = nn.gelu(self.scale_deepsets_hidden_0(regional_latents))
+    encoded = nn.gelu(self.scale_deepsets_hidden_1(encoded))
+    mean_pool = jnp.mean(encoded, axis=1)
+    source_pool = jnp.sum(encoded * source[..., None], axis=1) / jnp.maximum(
+      jnp.sum(source, axis=1, keepdims=True), self.shape_scale_epsilon)
+    volume_pool = jnp.sum(encoded * volume[..., None], axis=1) / jnp.maximum(
+      jnp.sum(volume, axis=1, keepdims=True), self.shape_scale_epsilon)
+    residual = self.scale_deepsets_output(
+      jnp.concatenate([mean_pool, source_pool, volume_pool], axis=-1))
+    self.sow(col='intermediates', name='scale_deepsets_residual', value=residual)
+    return residual
 
   def _call_with_processed_rnodes(self,
     inputs: Inputs,
