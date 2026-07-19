@@ -14,6 +14,8 @@ import subprocess
 import sys
 from typing import Any
 
+csv.field_size_limit(sys.maxsize)
+
 import jax
 import jax.numpy as jnp
 import numpy as np

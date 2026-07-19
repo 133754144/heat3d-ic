@@ -1,0 +1,1089 @@
+{
+  "comparison": {
+    "final": {
+      "amplitude_ratio": -0.004513925347639058,
+      "hotspot_cv_weighted_rmse_K": -0.011205375259710992,
+      "legacy_normalized_valid_base_mse": -0.0021075898283383354,
+      "low_deltaT_background_bias_K": -0.000471725241538175,
+      "low_deltaT_background_over_ratio": -0.024750475969613328,
+      "low_deltaT_background_rmse_K": -0.0002365404914202486,
+      "point_global_relative_rmse_pct": -0.704099329371271,
+      "raw_cv_weighted_rmse_K": -0.004745523635643734,
+      "sample_first_cv_relative_rmse_pct": -0.20941735406702477,
+      "scale_log_rmse": 0.007963756960535057,
+      "shape_cv_rmse": -0.00577820046227881,
+      "spatial_correlation": 0.0011257991523367927,
+      "strong_q_cv_weighted_rmse_K": -0.030350747362569763,
+      "top5_cv_weighted_rmse_K": -0.01831811506685954
+    },
+    "legacy_best": {
+      "amplitude_ratio": -0.03201437128894313,
+      "hotspot_cv_weighted_rmse_K": -0.003593751642301468,
+      "legacy_normalized_valid_base_mse": -0.0024915436570361674,
+      "low_deltaT_background_bias_K": 0.0006755168430766061,
+      "low_deltaT_background_over_ratio": 0.00854743245099654,
+      "low_deltaT_background_rmse_K": -0.0007057770216926419,
+      "point_global_relative_rmse_pct": -0.8555419462446388,
+      "raw_cv_weighted_rmse_K": -0.004890001274808764,
+      "sample_first_cv_relative_rmse_pct": -0.2898121202942576,
+      "scale_log_rmse": 0.014919317482646827,
+      "shape_cv_rmse": -0.00441568755011526,
+      "spatial_correlation": 0.0010254654452550582,
+      "strong_q_cv_weighted_rmse_K": 0.004541494285063785,
+      "top5_cv_weighted_rmse_K": 0.0021524579191562476
+    },
+    "point_global_best": {
+      "amplitude_ratio": -0.032008053431996975,
+      "hotspot_cv_weighted_rmse_K": -0.003597529665531285,
+      "legacy_normalized_valid_base_mse": -0.002490745067429294,
+      "low_deltaT_background_bias_K": 0.000676393806222142,
+      "low_deltaT_background_over_ratio": 0.008501742458063344,
+      "low_deltaT_background_rmse_K": -0.0007049034799780744,
+      "point_global_relative_rmse_pct": -0.8552701162163032,
+      "raw_cv_weighted_rmse_K": -0.004889159629247464,
+      "sample_first_cv_relative_rmse_pct": -0.28949812109321726,
+      "scale_log_rmse": 0.014924838180723182,
+      "shape_cv_rmse": -0.004415496582611811,
+      "spatial_correlation": 0.0010251412001749394,
+      "strong_q_cv_weighted_rmse_K": 0.004520634594115003,
+      "top5_cv_weighted_rmse_K": 0.002155489405782862
+    },
+    "sample_first_best": {
+      "amplitude_ratio": 0.003055036020921942,
+      "hotspot_cv_weighted_rmse_K": -0.004957215402455639,
+      "legacy_normalized_valid_base_mse": -0.0025547729424730617,
+      "low_deltaT_background_bias_K": 0.0015779263459243208,
+      "low_deltaT_background_over_ratio": -0.005255885198758137,
+      "low_deltaT_background_rmse_K": -0.00045829994409256336,
+      "point_global_relative_rmse_pct": -0.8477140816875952,
+      "raw_cv_weighted_rmse_K": -0.005051010686140778,
+      "sample_first_cv_relative_rmse_pct": -0.01904540867136717,
+      "scale_log_rmse": 0.014572906165385091,
+      "shape_cv_rmse": -0.008424139273801451,
+      "spatial_correlation": 0.00160015421828974,
+      "strong_q_cv_weighted_rmse_K": -0.007753600858839027,
+      "top5_cv_weighted_rmse_K": -0.009499792283611475
+    }
+  },
+  "diagnosis": {
+    "attention": "Both runs pass native architecture and reload audits. Gate 6N attention has higher normalized entropy (~0.835-0.837 vs ~0.792-0.795) and lower maximum weight (~0.055 vs ~0.075-0.077), indicating a more diffuse/non-collapsed attention distribution. Its strongest listed association remains log_inverse_kz_relative (about -0.32), while q/source-fraction associations are weak (about -0.09 to -0.10).",
+    "final": {
+      "gate6n_minus_gate6m": {
+        "amplitude_ratio": -0.004513925347639058,
+        "hotspot_cv_weighted_rmse_K": -0.011205375259710992,
+        "legacy_normalized_valid_base_mse": -0.0021075898283383354,
+        "low_deltaT_background_bias_K": -0.000471725241538175,
+        "low_deltaT_background_over_ratio": -0.024750475969613328,
+        "low_deltaT_background_rmse_K": -0.0002365404914202486,
+        "point_global_relative_rmse_pct": -0.704099329371271,
+        "raw_cv_weighted_rmse_K": -0.004745523635643734,
+        "sample_first_cv_relative_rmse_pct": -0.20941735406702477,
+        "scale_log_rmse": 0.007963756960535057,
+        "shape_cv_rmse": -0.00577820046227881,
+        "spatial_correlation": 0.0011257991523367927,
+        "strong_q_cv_weighted_rmse_K": -0.030350747362569763,
+        "top5_cv_weighted_rmse_K": -0.01831811506685954
+      },
+      "interpretation": "Gate 6N final improves both relative metrics, raw RMSE, shape, hotspot/top5/strong-q and background RMSE, but scale log-RMSE is worse; final is not a checkpoint-selection replacement."
+    },
+    "limitations": "This closeout is valid_iid-only and uses non-contemporaneous training commits (devbox 414ab43; WSL2 0c49084) with one evaluator commit 1cf5bff; no test, hard, or sealed-IID data were opened. Declared log files were absent on both remotes, but loss_summary and all checkpoint/prediction artifacts were present.",
+    "point_global_best": {
+      "gate6n_minus_gate6m": {
+        "amplitude_ratio": -0.032008053431996975,
+        "hotspot_cv_weighted_rmse_K": -0.003597529665531285,
+        "legacy_normalized_valid_base_mse": -0.002490745067429294,
+        "low_deltaT_background_bias_K": 0.000676393806222142,
+        "low_deltaT_background_over_ratio": 0.008501742458063344,
+        "low_deltaT_background_rmse_K": -0.0007049034799780744,
+        "point_global_relative_rmse_pct": -0.8552701162163032,
+        "raw_cv_weighted_rmse_K": -0.004889159629247464,
+        "sample_first_cv_relative_rmse_pct": -0.28949812109321726,
+        "scale_log_rmse": 0.014924838180723182,
+        "shape_cv_rmse": -0.004415496582611811,
+        "spatial_correlation": 0.0010251412001749394,
+        "strong_q_cv_weighted_rmse_K": 0.004520634594115003,
+        "top5_cv_weighted_rmse_K": 0.002155489405782862
+      },
+      "interpretation": "Gate 6N improves point-global, raw CV-weighted, shape, hotspot and correlation, while scale log-RMSE worsens and amplitude shifts below 1.0; primary point-global remains above the 20% gate."
+    },
+    "sample_first_best": {
+      "gate6n_minus_gate6m": {
+        "amplitude_ratio": 0.003055036020921942,
+        "hotspot_cv_weighted_rmse_K": -0.004957215402455639,
+        "legacy_normalized_valid_base_mse": -0.0025547729424730617,
+        "low_deltaT_background_bias_K": 0.0015779263459243208,
+        "low_deltaT_background_over_ratio": -0.005255885198758137,
+        "low_deltaT_background_rmse_K": -0.00045829994409256336,
+        "point_global_relative_rmse_pct": -0.8477140816875952,
+        "raw_cv_weighted_rmse_K": -0.005051010686140778,
+        "sample_first_cv_relative_rmse_pct": -0.01904540867136717,
+        "scale_log_rmse": 0.014572906165385091,
+        "shape_cv_rmse": -0.008424139273801451,
+        "spatial_correlation": 0.00160015421828974,
+        "strong_q_cv_weighted_rmse_K": -0.007753600858839027,
+        "top5_cv_weighted_rmse_K": -0.009499792283611475
+      },
+      "interpretation": "Gate 6N slightly improves sample-first relative RMSE and raw/shape metrics, but scale log-RMSE is worse; both sample-first values are below 20% (diagnostic only, not primary selection)."
+    }
+  },
+  "generated_at": "2026-07-19T06:23:43.370398+00:00",
+  "runs": {
+    "gate6m_b": {
+      "artifacts": {
+        "base_mse_best_predictions.npz": {
+          "bytes": 322659,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/base_mse_best_predictions.npz",
+          "sha256": "483c48ea8ff5a8683b9c82b56feb7d18663bfea0934790404ad4ebc2030d3fd8"
+        },
+        "loss_summary.json": {
+          "bytes": 4908127,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/loss_summary.json",
+          "sha256": "c9f404c5e3df23a1dd20ba550c3554461ff1b1a961b00eda9e08dfd88550bd13"
+        },
+        "params_best_valid_base_mse.pkl": {
+          "bytes": 3614920,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_base_mse.pkl",
+          "sha256": "55d6eb7e3856f4ebf27fcd6746867729b389f5647991ffeae19f3ed9d169fae5"
+        },
+        "params_best_valid_point_global.pkl": {
+          "bytes": 3614936,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_point_global.pkl",
+          "sha256": "dabf0ec070bf72ca5518a00e1487214db488c4600e326bd1dd09b68ba083c7a0"
+        },
+        "params_best_valid_sample_first.pkl": {
+          "bytes": 3615077,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_sample_first.pkl",
+          "sha256": "fb87c4a2c035cce706ddee776ecb8f0f14ed7bddbb5b0bb18c833cd3781efeb4"
+        },
+        "params_final.pkl": {
+          "bytes": 3610614,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_final.pkl",
+          "sha256": "134c149edbeb25e34090ad0098d8e78033a419e0eea3dedc3de23b05e087a5a2"
+        },
+        "point_global_best_predictions.npz": {
+          "bytes": 322540,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/point_global_best_predictions.npz",
+          "sha256": "6d97c8b4b926fb0fdbb91cf23453feb23e7b5a92865783e869734ec8935f8e4a"
+        },
+        "predictions.npz": {
+          "bytes": 322779,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/predictions.npz",
+          "sha256": "6d5407480cc44525a5b9a4207c55d4bb3d10a7b9e9cb7ea4b13116cf392f770a"
+        },
+        "run_config.json": {
+          "bytes": 90635,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/run_config.json",
+          "sha256": "500de3d4560f01198d9ca73468128e948b13f83e1c221384ac1f0cd76b04ade0"
+        },
+        "sample_first_best_predictions.npz": {
+          "bytes": 321201,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/sample_first_best_predictions.npz",
+          "sha256": "d82384837511856259e057952fb662ac9d48642b6cb6423a3ae2d1f6477bf852"
+        }
+      },
+      "attention_diagnostics_by_checkpoint": {
+        "final_e600": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.3120730221271515,
+          "maximum_weight_mean": 0.07733748534519691,
+          "normalized_entropy_max": 0.9027253569749406,
+          "normalized_entropy_mean": 0.7915652365447132,
+          "normalized_entropy_min": 0.6000545829394885,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.10462147924397097,
+            "log1p_q_relative": -0.10549159071327935,
+            "log_inverse_kz_relative": -0.2686424811974489,
+            "source_present_fraction": -0.11503028791740662
+          }
+        },
+        "legacy_valid_base_mse_best": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.24608483910560608,
+          "maximum_weight_mean": 0.07590617007372202,
+          "normalized_entropy_max": 0.9141548342945797,
+          "normalized_entropy_mean": 0.7942360547152545,
+          "normalized_entropy_min": 0.6065607848587712,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.10563310171612385,
+            "log1p_q_relative": -0.10888921774092751,
+            "log_inverse_kz_relative": -0.27039050238373663,
+            "source_present_fraction": -0.11943772918656077
+          }
+        },
+        "point_global_true_rms_best": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.24607603251934052,
+          "maximum_weight_mean": 0.07590300601441413,
+          "normalized_entropy_max": 0.9141676329880217,
+          "normalized_entropy_mean": 0.7942368945417995,
+          "normalized_entropy_min": 0.606536156031962,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.10563347417447022,
+            "log1p_q_relative": -0.10888960431112535,
+            "log_inverse_kz_relative": -0.2703921036844512,
+            "source_present_fraction": -0.11943824927501606
+          }
+        },
+        "sample_first_best": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.27120301127433777,
+          "maximum_weight_mean": 0.0748447797523113,
+          "normalized_entropy_max": 0.9039228532042829,
+          "normalized_entropy_mean": 0.7948497483280113,
+          "normalized_entropy_min": 0.610377478008851,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.1083062118813024,
+            "log1p_q_relative": -0.11082028580087862,
+            "log_inverse_kz_relative": -0.2713600627660676,
+            "source_present_fraction": -0.12137289094967071
+          }
+        }
+      },
+      "checkpoint_metadata": {
+        "final": {
+          "bytes": 3610614,
+          "checkpoint_kind": "final",
+          "epoch": 600,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_final.pkl",
+          "sha256": "134c149edbeb25e34090ad0098d8e78033a419e0eea3dedc3de23b05e087a5a2",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "414ab43",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.00335693359375,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        },
+        "legacy_best": {
+          "bytes": 3614920,
+          "checkpoint_kind": "base_mse_best",
+          "epoch": 175,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_base_mse.pkl",
+          "sha256": "55d6eb7e3856f4ebf27fcd6746867729b389f5647991ffeae19f3ed9d169fae5",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "414ab43",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.00274658203125,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        },
+        "point_global_best": {
+          "bytes": 3614936,
+          "checkpoint_kind": "point_global_best",
+          "epoch": 175,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_point_global.pkl",
+          "sha256": "dabf0ec070bf72ca5518a00e1487214db488c4600e326bd1dd09b68ba083c7a0",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "414ab43",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.002655029296875,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        },
+        "sample_first_best": {
+          "bytes": 3615077,
+          "checkpoint_kind": "sample_first_best",
+          "epoch": 249,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_sample_first.pkl",
+          "sha256": "fb87c4a2c035cce706ddee776ecb8f0f14ed7bddbb5b0bb18c833cd3781efeb4",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "414ab43",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.002655029296875,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        }
+      },
+      "config_id": "V4P5_36_gate6m_v32_epoch_regroup_e600",
+      "description": "Gate 6M-B epoch-wise batch regrouping",
+      "evaluator_commit": "1cf5bff739ecb51c5728ee6dd81a8cfc87c670fd",
+      "evaluator_source_sha256": "075f170b4e8a92d8b6cb021abd399443eb5f034d7b2ed829e0c594d427dcf115",
+      "frozen_formula_source": {
+        "commit": "9c2c6f04f87a0c958c50d9ac9947dcbc655d0a51",
+        "path": "rigno/heat3d_v5_metrics.py",
+        "sha256": "df59fe9df738a6b2568a8eb6c67b3a8d303f8255b6122a54eccfe099b1bae265"
+      },
+      "host": "devbox",
+      "log_artifact_present": false,
+      "log_path_declared": "output/heat3d_v5_gate6m_b_logs/V4P5_36_gate6m_v32_epoch_regroup_e600.log",
+      "metrics": {
+        "final": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 0.9996898872081901,
+          "hotspot_cv_weighted_rmse_K": 0.3070303459658636,
+          "legacy_normalized_valid_base_mse": 0.0354781341613897,
+          "low_deltaT_background_bias_K": 0.005253072041703206,
+          "low_deltaT_background_over_ratio": 0.41447371580048575,
+          "low_deltaT_background_rmse_K": 0.01807935777616516,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 23.347486625587756,
+          "raw_cv_weighted_rmse_K": 0.16742514732877564,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 20.369497175500804,
+          "scale_log_rmse": 0.16562526152430312,
+          "shape_cv_rmse": 0.14698354919881002,
+          "spatial_correlation": 0.9810751993320479,
+          "strong_q_cv_weighted_rmse_K": 0.37226827678180174,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.4605159402047897
+        },
+        "legacy_best": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 1.0102115805734209,
+          "hotspot_cv_weighted_rmse_K": 0.2973900072044947,
+          "legacy_normalized_valid_base_mse": 0.033834892197213105,
+          "low_deltaT_background_bias_K": 0.009444058572932894,
+          "low_deltaT_background_over_ratio": 0.48756234080943006,
+          "low_deltaT_background_rmse_K": 0.02275347545930391,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 22.800383298004874,
+          "raw_cv_weighted_rmse_K": 0.1622171876856131,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 20.895838619233608,
+          "scale_log_rmse": 0.1632066138609255,
+          "shape_cv_rmse": 0.1528382191308313,
+          "spatial_correlation": 0.9798272351602311,
+          "strong_q_cv_weighted_rmse_K": 0.35018764538925706,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.4462364368602771
+        },
+        "point_global_best": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 1.0102047362352993,
+          "hotspot_cv_weighted_rmse_K": 0.2973867193213706,
+          "legacy_normalized_valid_base_mse": 0.033834303396107615,
+          "low_deltaT_background_bias_K": 0.009443837543948997,
+          "low_deltaT_background_over_ratio": 0.48752804284496226,
+          "low_deltaT_background_rmse_K": 0.022753163923435345,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 22.800184908880134,
+          "raw_cv_weighted_rmse_K": 0.1622167716573806,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 20.895415465547263,
+          "scale_log_rmse": 0.16320162875205618,
+          "shape_cv_rmse": 0.1528368770617758,
+          "spatial_correlation": 0.9798274160541853,
+          "strong_q_cv_weighted_rmse_K": 0.35018524150088526,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.4462004709372729
+        },
+        "sample_first_best": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 0.9810693775100063,
+          "hotspot_cv_weighted_rmse_K": 0.30040014293145756,
+          "legacy_normalized_valid_base_mse": 0.03617621611714976,
+          "low_deltaT_background_bias_K": 0.002399539355488158,
+          "low_deltaT_background_over_ratio": 0.3779343620674149,
+          "low_deltaT_background_rmse_K": 0.01761683573426656,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 23.57606494510965,
+          "raw_cv_weighted_rmse_K": 0.16830365625086133,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 19.96112749733285,
+          "scale_log_rmse": 0.16102469539366732,
+          "shape_cv_rmse": 0.1482735869076104,
+          "spatial_correlation": 0.9809749010488491,
+          "strong_q_cv_weighted_rmse_K": 0.3523094270836878,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.45365294278433127
+        }
+      },
+      "native_runtime_architecture_audit": {
+        "enabled": true,
+        "expected_pooled_latent_width": 96,
+        "finite": true,
+        "node_latent_width": 96,
+        "passed": true,
+        "pooled_latent_stop_gradient": false,
+        "pooled_latent_width": 96,
+        "qk_region_feature_version": "sparse_safe_v2",
+        "regional_attention_hidden_size": 64,
+        "s_hat_positive": true,
+        "scale_attention_mode": "physics_gate",
+        "scale_head_depth": 1,
+        "scale_head_input_width": 120,
+        "scale_head_mode": "physics_plus_pooled_latent",
+        "scale_pooling": "mean",
+        "shape_attention_mode": "none"
+      },
+      "normalization_and_context": {
+        "context_recomputed_from_train_only": true,
+        "fit_roles": [
+          "train"
+        ],
+        "fit_sample_count": 672,
+        "fit_sample_ids_sha256": "6ca6d00ab3c17ccbb5085da8114066094d9332582d4cdb2b939faee9262201a8",
+        "normalization_recomputed_from_train_only": true,
+        "target_or_label_features": []
+      },
+      "reload_audit": {
+        "enabled": true,
+        "entries": [
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_final.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.00335693359375,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "final",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.003509521484375,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_point_global.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.002655029296875,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "point_global_best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/point_global_best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_base_mse.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.00274658203125,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "base_mse_best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/base_mse_best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/params_best_valid_sample_first.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.002655029296875,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "sample_first_best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600/sample_first_best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          }
+        ],
+        "requested_entry_count": 5,
+        "status": "passed",
+        "summary_persisted_before_replay": true
+      },
+      "run_dir": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6m_b_runs/V4P5_36_gate6m_v32_epoch_regroup_e600",
+      "scope": {
+        "checkpoint_selection_modified": false,
+        "evaluation_roles": [
+          "valid_iid"
+        ],
+        "forbidden_roles_accessed": [],
+        "hard_accessed": false,
+        "model_parameters_modified": false,
+        "nodes_per_sample": 1024,
+        "roles_accessed": [
+          "train",
+          "valid_iid"
+        ],
+        "sample_count": 128,
+        "sealed_iid_accessed": false,
+        "test_accessed": false,
+        "training_started": false,
+        "valid_sample_ids_sha256": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63"
+      },
+      "split": {
+        "source": "split_map_v4",
+        "train_count": 672,
+        "train_ids_sha256": "b9b4e39ec9e3eea20bb4a258192a5d4ed4e5faa4e07f14c1ce72a45893e513ef",
+        "valid_iid_count": 128,
+        "valid_iid_ids_sha256": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63"
+      },
+      "training_commit": "414ab43",
+      "training_completion": {
+        "completion_evidence": "loss_summary_and_four_checkpoint_prediction_archives",
+        "epoch_history_contiguous_1_to_final": true,
+        "epoch_history_count": 600,
+        "final_epoch": 600,
+        "grad_finite": true,
+        "loss_summary_sha256": "c9f404c5e3df23a1dd20ba550c3554461ff1b1a961b00eda9e08dfd88550bd13",
+        "run_config_sha256": "500de3d4560f01198d9ca73468128e948b13f83e1c221384ac1f0cd76b04ade0"
+      }
+    },
+    "gate6n": {
+      "artifacts": {
+        "base_mse_best_predictions.npz": {
+          "bytes": 322982,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/base_mse_best_predictions.npz",
+          "sha256": "b73790bc906f4ca5b959e7cab9cb9de7a7bbdfccea8dac12872de87a7571133a"
+        },
+        "loss_summary.json": {
+          "bytes": 4907648,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/loss_summary.json",
+          "sha256": "c953d7e45d42fc61a6260d674d0ac7fc2156bc178e0c8deee0914193f0425a93"
+        },
+        "params_best_valid_base_mse.pkl": {
+          "bytes": 3614956,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_base_mse.pkl",
+          "sha256": "14d3c84c0cc434eaad28f45e19d8626b667c6632e1da0ffdb98c86dff9e378ff"
+        },
+        "params_best_valid_point_global.pkl": {
+          "bytes": 3614972,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_point_global.pkl",
+          "sha256": "18a3382252858cfd4daf3c5cf4b8a585b903fbaf254e8159922c1df0fcc874bf"
+        },
+        "params_best_valid_sample_first.pkl": {
+          "bytes": 3615115,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_sample_first.pkl",
+          "sha256": "e26e50b432ebab2858fcf9c5597d2bb85715d181c48292c3cc85c7749b790869"
+        },
+        "params_final.pkl": {
+          "bytes": 3610650,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_final.pkl",
+          "sha256": "c23d09e999c2593a256257bf86f502ec556eb7f26e021575c862272f2bf8bbb1"
+        },
+        "point_global_best_predictions.npz": {
+          "bytes": 323115,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/point_global_best_predictions.npz",
+          "sha256": "2cf4fd8609c01a82ca0d27167506eddcf4301a5359f8dd9502765c1b9d1da3d2"
+        },
+        "predictions.npz": {
+          "bytes": 322674,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/predictions.npz",
+          "sha256": "95f87abbdd7cf44fc4b53906aff5104da306cd1ce5a4b492db00e88b9ada3892"
+        },
+        "run_config.json": {
+          "bytes": 90624,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/run_config.json",
+          "sha256": "1ce0e8b6e5e1ef2a9057fa8e6e5dca7ec34a9edebc86d60acbb7a87ee9087c1f"
+        },
+        "sample_first_best_predictions.npz": {
+          "bytes": 322298,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/sample_first_best_predictions.npz",
+          "sha256": "5f36cf7e92d9286e7f97e9ffce1a24c00a63e476612d0bd43ae152640222e84c"
+        }
+      },
+      "attention_diagnostics_by_checkpoint": {
+        "final_e600": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.27312812209129333,
+          "maximum_weight_mean": 0.055264345843170304,
+          "normalized_entropy_max": 0.9601127162525032,
+          "normalized_entropy_mean": 0.8369352715906768,
+          "normalized_entropy_min": 0.5902723722128134,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.10154231753757559,
+            "log1p_q_relative": -0.09507420405904256,
+            "log_inverse_kz_relative": -0.3225533601436829,
+            "source_present_fraction": -0.10159659576130553
+          }
+        },
+        "legacy_valid_base_mse_best": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.2241276353597641,
+          "maximum_weight_mean": 0.05545723078830633,
+          "normalized_entropy_max": 0.9670654637813698,
+          "normalized_entropy_mean": 0.8354067714574231,
+          "normalized_entropy_min": 0.5801641671335815,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.10088073657129433,
+            "log1p_q_relative": -0.09329670681756934,
+            "log_inverse_kz_relative": -0.3221720090876698,
+            "source_present_fraction": -0.0991089207841527
+          }
+        },
+        "point_global_true_rms_best": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.2240021675825119,
+          "maximum_weight_mean": 0.05545902960875537,
+          "normalized_entropy_max": 0.9670632122426307,
+          "normalized_entropy_mean": 0.8354061845404899,
+          "normalized_entropy_min": 0.5802181878574638,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.10088113159816878,
+            "log1p_q_relative": -0.09329710496789388,
+            "log_inverse_kz_relative": -0.3221722548991997,
+            "source_present_fraction": -0.09910942290765835
+          }
+        },
+        "sample_first_best": {
+          "enabled": true,
+          "feature_version": "sparse_safe_v2",
+          "finite": true,
+          "maximum_weight_max": 0.2855145037174225,
+          "maximum_weight_mean": 0.05560350634914357,
+          "normalized_entropy_max": 0.9612711594286161,
+          "normalized_entropy_mean": 0.8365124643972898,
+          "normalized_entropy_min": 0.5853264723143479,
+          "regional_node_count": 256,
+          "sample_count": 128,
+          "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+          "weight_feature_pearson": {
+            "log1p_q_inverse_kz_relative": -0.10163806096530308,
+            "log1p_q_relative": -0.09630713459545999,
+            "log_inverse_kz_relative": -0.32018688002775075,
+            "source_present_fraction": -0.10284206266311106
+          }
+        }
+      },
+      "checkpoint_metadata": {
+        "final": {
+          "bytes": 3610650,
+          "checkpoint_kind": "final",
+          "epoch": 600,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_final.pkl",
+          "sha256": "c23d09e999c2593a256257bf86f502ec556eb7f26e021575c862272f2bf8bbb1",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "0c49084",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.0029296875,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        },
+        "legacy_best": {
+          "bytes": 3614956,
+          "checkpoint_kind": "base_mse_best",
+          "epoch": 231,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_base_mse.pkl",
+          "sha256": "14d3c84c0cc434eaad28f45e19d8626b667c6632e1da0ffdb98c86dff9e378ff",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "0c49084",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.002777099609375,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        },
+        "point_global_best": {
+          "bytes": 3614972,
+          "checkpoint_kind": "point_global_best",
+          "epoch": 231,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_point_global.pkl",
+          "sha256": "18a3382252858cfd4daf3c5cf4b8a585b903fbaf254e8159922c1df0fcc874bf",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "0c49084",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.0028076171875,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        },
+        "sample_first_best": {
+          "bytes": 3615115,
+          "checkpoint_kind": "sample_first_best",
+          "epoch": 543,
+          "parameter_count": 893736,
+          "parameter_leaf_count": 212,
+          "parameter_reload_max_abs_error": 0.0,
+          "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_sample_first.pkl",
+          "sha256": "e26e50b432ebab2858fcf9c5597d2bb85715d181c48292c3cc85c7749b790869",
+          "train_stats_hash": "ae446699774202e6bafdcf5d24e48bab528b5c5d135264f6655d66eec792aa2e",
+          "training_commit": "0c49084",
+          "training_reload_audit": {
+            "checkpoint_reload_max_abs_error_K": 0.00274658203125,
+            "npz_reload_max_abs_error_K": 0.0,
+            "passed": true,
+            "tolerance_K": 0.02
+          }
+        }
+      },
+      "config_id": "V4P5_38_gate6n_v36_r2r_mask_p005_e600",
+      "description": "Gate 6N r2r-only edge masking p=0.05",
+      "evaluator_commit": "1cf5bff739ecb51c5728ee6dd81a8cfc87c670fd",
+      "evaluator_source_sha256": "075f170b4e8a92d8b6cb021abd399443eb5f034d7b2ed829e0c594d427dcf115",
+      "frozen_formula_source": {
+        "commit": "9c2c6f04f87a0c958c50d9ac9947dcbc655d0a51",
+        "path": "rigno/heat3d_v5_metrics.py",
+        "sha256": "df59fe9df738a6b2568a8eb6c67b3a8d303f8255b6122a54eccfe099b1bae265"
+      },
+      "host": "wsl2",
+      "log_artifact_present": false,
+      "log_path_declared": "output/heat3d_v5_gate6n_logs/V4P5_38_gate6n_v36_r2r_mask_p005_e600.log",
+      "metrics": {
+        "final": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 0.995175961860551,
+          "hotspot_cv_weighted_rmse_K": 0.2958249707061526,
+          "legacy_normalized_valid_base_mse": 0.033370544333051366,
+          "low_deltaT_background_bias_K": 0.004781346800165031,
+          "low_deltaT_background_over_ratio": 0.3897232398308724,
+          "low_deltaT_background_rmse_K": 0.017842817284744912,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 22.643387296216485,
+          "raw_cv_weighted_rmse_K": 0.1626796236931319,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 20.16007982143378,
+          "scale_log_rmse": 0.17358901848483818,
+          "shape_cv_rmse": 0.1412053487365312,
+          "spatial_correlation": 0.9822009984843847,
+          "strong_q_cv_weighted_rmse_K": 0.341917529419232,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.44219782513793016
+        },
+        "legacy_best": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 0.9781972092844777,
+          "hotspot_cv_weighted_rmse_K": 0.29379625556219324,
+          "legacy_normalized_valid_base_mse": 0.03134334854017694,
+          "low_deltaT_background_bias_K": 0.0101195754160095,
+          "low_deltaT_background_over_ratio": 0.4961097732604266,
+          "low_deltaT_background_rmse_K": 0.022047698437611268,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 21.944841351760235,
+          "raw_cv_weighted_rmse_K": 0.15732718641080434,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 20.60602649893935,
+          "scale_log_rmse": 0.17812593134357232,
+          "shape_cv_rmse": 0.14842253158071603,
+          "spatial_correlation": 0.9808527006054861,
+          "strong_q_cv_weighted_rmse_K": 0.35472913967432085,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.44838889477943333
+        },
+        "point_global_best": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 0.9781966828033023,
+          "hotspot_cv_weighted_rmse_K": 0.29378918965583933,
+          "legacy_normalized_valid_base_mse": 0.03134355832867832,
+          "low_deltaT_background_bias_K": 0.010120231350171139,
+          "low_deltaT_background_over_ratio": 0.4960297853030256,
+          "low_deltaT_background_rmse_K": 0.02204826044345727,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 21.94491479266383,
+          "raw_cv_weighted_rmse_K": 0.15732761202813314,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 20.605917344454046,
+          "scale_log_rmse": 0.17812646693277936,
+          "shape_cv_rmse": 0.14842138047916398,
+          "spatial_correlation": 0.9808525572543603,
+          "strong_q_cv_weighted_rmse_K": 0.35470587609500026,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.44835596034305575
+        },
+        "sample_first_best": {
+          "aggregation": {
+            "amplitude_ratio": "mean_samples(CV_RMS(pred) / CV_RMS(target))",
+            "point_global_relative_rmse_pct": "sqrt(sum_point_error_squared / sum_point_true_deltaT_squared) * 100",
+            "raw_cv_weighted_rmse_K": "sqrt(sum(error^2 * CV) / sum(CV))",
+            "sample_first_cv_relative_rmse_pct": "mean_samples(CV_RMS(pred-target) / CV_RMS(target)) * 100",
+            "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+          },
+          "amplitude_ratio": 0.9841244135309283,
+          "hotspot_cv_weighted_rmse_K": 0.2954429275290019,
+          "legacy_normalized_valid_base_mse": 0.0336214431746767,
+          "low_deltaT_background_bias_K": 0.003977465701412479,
+          "low_deltaT_background_over_ratio": 0.37267847686865674,
+          "low_deltaT_background_rmse_K": 0.017158535790173998,
+          "metric_schema_version": "heat3d_v5_clean_metrics_v2_true_rms",
+          "point_count": 131072,
+          "point_global_relative_rmse_pct": 22.728350863422055,
+          "raw_cv_weighted_rmse_K": 0.16325264556472055,
+          "sample_count": 128,
+          "sample_first_cv_relative_rmse_pct": 19.942082088661483,
+          "scale_log_rmse": 0.1755976015590524,
+          "shape_cv_rmse": 0.13984944763380894,
+          "spatial_correlation": 0.9825750552671388,
+          "strong_q_cv_weighted_rmse_K": 0.34455582622484876,
+          "strong_q_sample_count": 128,
+          "top5_cv_weighted_rmse_K": 0.4441531505007198
+        }
+      },
+      "native_runtime_architecture_audit": {
+        "enabled": true,
+        "expected_pooled_latent_width": 96,
+        "finite": true,
+        "node_latent_width": 96,
+        "passed": true,
+        "pooled_latent_stop_gradient": false,
+        "pooled_latent_width": 96,
+        "qk_region_feature_version": "sparse_safe_v2",
+        "regional_attention_hidden_size": 64,
+        "s_hat_positive": true,
+        "scale_attention_mode": "physics_gate",
+        "scale_head_depth": 1,
+        "scale_head_input_width": 120,
+        "scale_head_mode": "physics_plus_pooled_latent",
+        "scale_pooling": "mean",
+        "shape_attention_mode": "none"
+      },
+      "normalization_and_context": {
+        "context_recomputed_from_train_only": true,
+        "fit_roles": [
+          "train"
+        ],
+        "fit_sample_count": 672,
+        "fit_sample_ids_sha256": "6ca6d00ab3c17ccbb5085da8114066094d9332582d4cdb2b939faee9262201a8",
+        "normalization_recomputed_from_train_only": true,
+        "target_or_label_features": []
+      },
+      "reload_audit": {
+        "enabled": true,
+        "entries": [
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_final.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.0029296875,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "final",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.00408935546875,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_point_global.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.0028076171875,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "point_global_best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/point_global_best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_base_mse.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.002777099609375,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "base_mse_best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/base_mse_best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          },
+          {
+            "checkpoint_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/params_best_valid_sample_first.pkl",
+            "checkpoint_reload_max_abs_error_K": 0.00274658203125,
+            "global_context_fit_population": "train_only",
+            "global_context_fit_sample_count": 672,
+            "label": "sample_first_best",
+            "npz_reload_max_abs_error_K": 0.0,
+            "parameter_reload_max_abs_error": 0.0,
+            "passed": true,
+            "predictions_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600/sample_first_best_predictions.npz",
+            "sample_count": 128,
+            "tolerance_K": 0.02
+          }
+        ],
+        "requested_entry_count": 5,
+        "status": "passed",
+        "summary_persisted_before_replay": true
+      },
+      "run_dir": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v5_gate6n_runs/V4P5_38_gate6n_v36_r2r_mask_p005_e600",
+      "scope": {
+        "checkpoint_selection_modified": false,
+        "evaluation_roles": [
+          "valid_iid"
+        ],
+        "forbidden_roles_accessed": [],
+        "hard_accessed": false,
+        "model_parameters_modified": false,
+        "nodes_per_sample": 1024,
+        "roles_accessed": [
+          "train",
+          "valid_iid"
+        ],
+        "sample_count": 128,
+        "sealed_iid_accessed": false,
+        "test_accessed": false,
+        "training_started": false,
+        "valid_sample_ids_sha256": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63"
+      },
+      "split": {
+        "source": "split_map_v4",
+        "train_count": 672,
+        "train_ids_sha256": "b9b4e39ec9e3eea20bb4a258192a5d4ed4e5faa4e07f14c1ce72a45893e513ef",
+        "valid_iid_count": 128,
+        "valid_iid_ids_sha256": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63"
+      },
+      "training_commit": "0c49084",
+      "training_completion": {
+        "completion_evidence": "loss_summary_and_four_checkpoint_prediction_archives",
+        "epoch_history_contiguous_1_to_final": true,
+        "epoch_history_count": 600,
+        "final_epoch": 600,
+        "grad_finite": true,
+        "loss_summary_sha256": "c953d7e45d42fc61a6260d674d0ac7fc2156bc178e0c8deee0914193f0425a93",
+        "run_config_sha256": "1ce0e8b6e5e1ef2a9057fa8e6e5dca7ec34a9edebc86d60acbb7a87ee9087c1f"
+      }
+    }
+  },
+  "schema_version": "heat3d_v5_remote_latest_valid_only_v1",
+  "scope": {
+    "evaluation_roles": [
+      "valid_iid"
+    ],
+    "formulas": {
+      "amplitude_ratio": "mean_samples(CV_RMS(pred)/CV_RMS(target))",
+      "point_global_relative_rmse_pct": "100*sqrt(sum_point(error^2)/sum_point(true_deltaT^2))",
+      "raw_cv_weighted_rmse_K": "sqrt(sum(error^2*control_volume)/sum(control_volume))",
+      "sample_first_cv_relative_rmse_pct": "100*mean_samples(CV_RMS(error)/CV_RMS(true_deltaT))",
+      "spatial_correlation": "mean_samples(CV-weighted centered correlation)"
+    },
+    "hard_accessed": false,
+    "nodes_per_sample": 1024,
+    "roles_accessed": [
+      "train",
+      "valid_iid"
+    ],
+    "sample_count": 128,
+    "sealed_iid_accessed": false,
+    "selection_unchanged": true,
+    "test_accessed": false,
+    "train_count": 672,
+    "training_started_by_evaluator": false
+  }
+}
