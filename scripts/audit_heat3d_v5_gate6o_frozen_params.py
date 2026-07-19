@@ -99,7 +99,10 @@ def main() -> int:
             "frozen_max_abs_difference": frozen_max,
             "passed": bool(
                 frozen_max == 0.0
-                and trainable_changed > 0
+                and (
+                    (int(payload["epoch"]) == 0 and trainable_changed == 0)
+                    or (int(payload["epoch"]) > 0 and trainable_changed > 0)
+                )
                 and set(trainable_names)
                 == {
                     "global_scale_hidden/bias",
