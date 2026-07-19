@@ -34,6 +34,9 @@ REGISTRY = ROOT / "configs/heat3d_v5/v5_gate6o_registry.csv"
 CONTRACT = ROOT / "configs/heat3d_v5/gate6o/gate6o_selection_contract.json"
 DIAGNOSTICS = ROOT / "configs/heat3d_v5/gate6o/gate6o_diagnostics.json"
 RESULT = ROOT / "configs/heat3d_v5/gate6o/gate6o_stage2_valid_only_metrics.json"
+FROZEN_AUDIT = (
+    ROOT / "configs/heat3d_v5/gate6o/gate6o_frozen_parameter_audit.json"
+)
 FORBIDDEN = (
     "test_iid|hard_train_holdout|hard_challenge_valid|"
     "hard_challenge_test|sealed_iid"
@@ -203,13 +206,52 @@ def _check_configs_and_registry() -> None:
         assert row["launch_policy"] == "explicit_user_instruction_only"
     stage_row = by_id[stage2["config_id"]]
     if stage_row["execution_status"] == "completed_e40":
+        assert stage2["metadata"]["status"] == "completed_e40"
+        assert stage2["metadata"]["training_started"] is True
+        assert stage2["metadata"]["training_commit"] == stage_row["training_commit"]
         assert stage_row["training_started"] == "true"
+        assert stage_row["plan_status"] == "completed"
         assert stage_row["evaluation_status"] == "completed_valid_iid_only"
+        assert stage_row["result_json"] == str(RESULT.relative_to(ROOT))
         assert RESULT.is_file()
         result = json.loads(RESULT.read_text(encoding="utf-8"))
+        assert result["status"] == "completed_valid_iid_only"
+        assert result["training_host"] == "wsl2"
+        assert result["training_commit"] == stage_row["training_commit"]
         assert result["scope"]["roles_accessed"] == ["train", "valid_iid"]
         assert result["scope"]["forbidden_roles_accessed"] == []
+        assert result["scope"]["test_accessed"] is False
+        assert result["scope"]["hard_accessed"] is False
+        assert result["scope"]["sealed_iid_accessed"] is False
         assert result["training_completion"]["final_epoch"] == 40
+        assert result["training_completion"]["epoch_history_count"] == 40
+        assert result["training_completion"]["grad_finite"] is True
+        expected_epochs = {
+            "point_global_best": 24,
+            "sample_first_best": 0,
+            "legacy_best": 24,
+            "final": 40,
+        }
+        for name, epoch in expected_epochs.items():
+            checkpoint = result["checkpoint_metadata"][name]
+            assert checkpoint["epoch"] == epoch
+            assert len(checkpoint["sha256"]) == 64
+            assert checkpoint["parameter_count"] == 893736
+            assert checkpoint["parameter_reload_max_abs_error"] == 0.0
+            metrics = result["metrics"][name]
+            assert metrics["epoch"] == epoch
+            for value in metrics.values():
+                if isinstance(value, (int, float)):
+                    assert bool(jnp.isfinite(value))
+        assert FROZEN_AUDIT.is_file()
+        audit = json.loads(FROZEN_AUDIT.read_text(encoding="utf-8"))
+        assert audit["status"] == "passed"
+        assert audit["trainable_scope"] == "global_scale_mlp_only"
+        for name, report in audit["reports"].items():
+            assert report["passed"] is True, name
+            assert report["frozen_max_abs_difference"] == 0.0, name
+            expected_changed = 0 if report["epoch"] == 0 else 4
+            assert report["trainable_changed_leaf_count"] == expected_changed
     else:
         assert stage_row["execution_status"] == "not_started"
         assert stage_row["training_started"] == "false"

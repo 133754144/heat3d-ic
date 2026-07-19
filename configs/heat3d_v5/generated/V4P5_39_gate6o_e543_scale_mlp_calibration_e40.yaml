@@ -46,5 +46,11 @@ overrides:
     forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
     launch_policy: codex_authorized_gate6o_stage2
     log_path: output/heat3d_v5_gate6o_stage2_logs/V4P5_39_gate6o_e543_scale_mlp_calibration_e40.log
-    status: prepared_not_started
-    training_started: false
+    status: completed_e40
+    training_started: true
+    training_commit: cd21cd2e4ec97b94700f6ebcd466040e427b6ae9
+    evaluator_commit: f28d0651e4aa3baa142b28c9cc66903b8696508b
+    final_epoch: 40
+    point_global_best_epoch: 24
+    sample_first_best_epoch: 0
+    base_mse_best_epoch: 24
