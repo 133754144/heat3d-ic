@@ -791,7 +791,9 @@ def main() -> int:
     else:
         classification = "representation"
         route = (
-            "scale-head representation ablation using the frozen e543 shape path"
+            "source-aware DeepSets scale pooling/readout over frozen e543 "
+            "regional latents with explicit q/k weighting; preserve the e543 "
+            "shape path and preregister valid-only selection"
         )
 
     payload = {
