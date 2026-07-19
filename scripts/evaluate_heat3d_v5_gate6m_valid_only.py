@@ -29,7 +29,6 @@ from rigno.heat3d_v5_global_context import fit_train_only_standardizer  # noqa: 
 from rigno.heat3d_v1_normalization import training_normalization_stats  # noqa: E402
 
 
-CONFIG_ID = "V4P5_35_gate6m_v32_scale_head_only_e100"
 CHECKPOINTS = {
     "point_global_best": (
         "params_best_valid_point_global.pkl",
@@ -55,6 +54,17 @@ def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, required=True)
+    parser.add_argument(
+        "--config-id",
+        default=None,
+        help="Expected config/run identifier; defaults to the run directory name.",
+    )
+    parser.add_argument(
+        "--expected-epochs",
+        type=int,
+        default=None,
+        help="Expected completed epoch count; defaults to run_config.epochs.",
+    )
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
@@ -193,24 +203,28 @@ def main() -> int:
     args = _args()
     run_dir = args.run_dir.resolve()
     output_json = args.output_json.resolve()
+    config_id = str(args.config_id or run_dir.name)
     if output_json.exists() and not args.overwrite:
         raise EvaluationError(f"output exists: {output_json}")
-    if run_dir.name != CONFIG_ID:
+    if run_dir.name != config_id:
         raise EvaluationError("run/config binding failed")
     if run_dir == output_json.parent or run_dir in output_json.parents:
         raise EvaluationError("evaluation output overlaps run directory")
     run_config = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
     summary = json.loads((run_dir / "loss_summary.json").read_text(encoding="utf-8"))
-    if Path(run_config["output_dir"]).name != CONFIG_ID:
+    if Path(run_config["output_dir"]).name != config_id:
         raise EvaluationError("run_config output binding failed")
+    expected_epochs = int(args.expected_epochs or run_config.get("epochs", 0))
+    if expected_epochs <= 0:
+        raise EvaluationError("run_config does not declare a positive epoch count")
     history = summary.get("epoch_history", ())
     if (
-        int(summary.get("final_epoch", -1)) != 100
-        or len(history) != 100
-        or [int(row["epoch"]) for row in history] != list(range(1, 101))
+        int(summary.get("final_epoch", -1)) != expected_epochs
+        or len(history) != expected_epochs
+        or [int(row["epoch"]) for row in history] != list(range(1, expected_epochs + 1))
         or not bool(summary.get("grad_finite"))
     ):
-        raise EvaluationError("e100 completion/history audit failed")
+        raise EvaluationError(f"e{expected_epochs} completion/history audit failed")
     _reload_rows(summary)
 
     checkpoint_paths = {
@@ -280,12 +294,11 @@ def main() -> int:
     }
     metric_path = ROOT / "rigno/heat3d_v5_metrics.py"
     payload = {
-        # Keep the shared collector's four-checkpoint prefix while retaining
-        # the Gate 6M phase identity in the suffix.
-        "schema_version": "heat3d_v5_valid_only_four_checkpoint_gate6m_v1",
+        # Keep the shared collector's four-checkpoint prefix for all V5 phases.
+        "schema_version": "heat3d_v5_valid_only_four_checkpoint_v2",
         "metric_schema_version": frozen.METRIC_SCHEMA_VERSION,
         "status": "completed_valid_iid_only",
-        "config_id": CONFIG_ID,
+        "config_id": config_id,
         "training_commit": str(summary["code_version_or_git_commit"]),
         "evaluator_commit": _git_commit(),
         "evaluator_source_sha256": _sha256(Path(__file__).resolve()),
@@ -317,9 +330,9 @@ def main() -> int:
         },
         "normalization_and_context": context_audit,
         "training_completion": {
-            "final_epoch": 100,
-            "epoch_history_count": 100,
-            "epoch_history_contiguous_1_to_100": True,
+            "final_epoch": expected_epochs,
+            "epoch_history_count": expected_epochs,
+            "epoch_history_contiguous_1_to_final": True,
             "grad_finite": bool(summary["grad_finite"]),
             "loss_summary_sha256": _sha256(run_dir / "loss_summary.json"),
             "run_config_sha256": _sha256(run_dir / "run_config.json"),
