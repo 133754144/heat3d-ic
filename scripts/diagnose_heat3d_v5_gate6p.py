@@ -912,6 +912,21 @@ def main() -> int:
         for name in transplant_specs
     )
     e543_point = suites["e543"]["summary"]["point_global_relative_rmse_pct"]
+    mlp_point = suites["e543_plus_e231_global_scale_mlp"]["summary"][
+        "point_global_relative_rmse_pct"
+    ]
+    mlp_sample = suites["e543_plus_e231_global_scale_mlp"]["summary"][
+        "sample_first_cv_relative_rmse_pct"
+    ]
+    e543_sample = suites["e543"]["summary"][
+        "sample_first_cv_relative_rmse_pct"
+    ]
+    attention_point = suites["e543_plus_e231_mlp_scale_attention"]["summary"][
+        "point_global_relative_rmse_pct"
+    ]
+    frozen_representation_is_predictive = bool(
+        combined_q4 < 0.5 * physics_q4
+    )
     if (
         coverage_corr is not None
         and coverage_corr > 0.5
@@ -919,14 +934,23 @@ def main() -> int:
     ):
         classification = "data_coverage"
         next_candidate = "coverage-targeted train augmentation before scale-head changes"
-    elif transplant_best[0] + 0.10 < e543_point:
-        classification = "scale_representation"
-        next_candidate = "full-graph scratch scale-head representation ablation"
-    else:
+    elif (
+        frozen_representation_is_predictive
+        and mlp_point < e543_point
+        and mlp_sample < e543_sample
+        and attention_point > mlp_point
+    ):
         classification = "objective"
         next_candidate = (
-            "full-graph scale-only calibration with Q4-aware train objective "
-            "and frozen e543 shape path"
+            "e543 frozen backbone/shape/scale-attention plus e231 global-scale-MLP "
+            "initialization; train only global scale MLP with a preregistered "
+            "sample-first and Q4-balanced scale objective"
+        )
+    else:
+        classification = "scale_representation"
+        next_candidate = (
+            "full-graph scratch scale-head representation ablation with frozen "
+            "selection metrics"
         )
     payload = {
         "schema_version": "heat3d_v5_gate6p_read_only_diagnostics_v1",
@@ -998,7 +1022,9 @@ def main() -> int:
                 f"best transplant point-global={transplant_best[0]:.6f}% "
                 f"({transplant_best[1]}); physics/combined Q4 readout "
                 f"RMSE={physics_q4:.6f}/{combined_q4:.6f}; "
-                f"coverage Spearman={coverage_corr}"
+                f"coverage Spearman={coverage_corr}; e231 MLP transplant "
+                f"point/sample={mlp_point:.6f}/{mlp_sample:.6f}%; "
+                f"MLP+attention point={attention_point:.6f}%"
             ),
             "next_training_candidate": next_candidate,
             "training_started": False,
