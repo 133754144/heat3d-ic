@@ -4,6 +4,7 @@
 审计对象：公开仓库 `main` 的 V3 控制训练路径  
 审计源：`11e9d2feb1b920b2fbd06b8e626a706b1eb4cd40`  
 配套图：[`docs/v3_algorithm_flowchart.html`](v3_algorithm_flowchart.html)（可打印 HTML）和 [`docs/v3_algorithm_flowchart.svg`](v3_algorithm_flowchart.svg)（矢量源）
+模型文字说明：[`docs/v3_algorithm_model_description.html`](v3_algorithm_model_description.html)
 
 ## 1. 范围与结论
 

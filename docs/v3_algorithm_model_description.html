@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Heat3D-IC V3 稳态 RIGNO 模型构成与计算链路。">
+  <title>Heat3D-IC V3 · 模型构成与计算链路</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f5f7;
+      --surface: rgb(255 255 255 / 88%);
+      --surface-strong: #fff;
+      --ink: #1d1d1f;
+      --muted: #6e6e73;
+      --hairline: rgb(29 29 31 / 12%);
+      --blue: #0071e3;
+      --blue-soft: #e8f2ff;
+      --green: #198754;
+      --green-soft: #eaf7ef;
+      --violet: #6956c8;
+      --violet-soft: #f0edff;
+      --orange: #bf6b00;
+      --orange-soft: #fff4df;
+      --red: #c83737;
+      --red-soft: #fff0f0;
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --shadow: 0 18px 48px rgb(0 0 0 / 8%);
+      font: 100%/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 13% 5%, rgb(0 113 227 / 8%), transparent 30rem),
+        radial-gradient(circle at 88% 28%, rgb(105 86 200 / 7%), transparent 28rem),
+        var(--bg);
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    .hero { padding: clamp(56px, 9vw, 112px) 0 48px; }
+    .eyebrow, .section-kicker {
+      margin: 0 0 12px;
+      color: var(--blue);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 850px;
+      margin-bottom: 20px;
+      font-size: clamp(2.4rem, 6vw, 5.8rem);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+      font-weight: 760;
+    }
+    .lede {
+      max-width: 720px;
+      margin-bottom: 26px;
+      color: var(--muted);
+      font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+      line-height: 1.55;
+    }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 11px;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      background: rgb(255 255 255 / 74%);
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    section { padding: 42px 0; }
+    .section-head { margin-bottom: 22px; }
+    .section-head h2 { margin-bottom: 0; font-size: clamp(1.65rem, 3vw, 2.45rem); line-height: 1.08; letter-spacing: -0.035em; }
+    .section-head p:last-child { margin-bottom: 0; color: var(--muted); }
+    .surface {
+      border: 1px solid rgb(255 255 255 / 90%);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px) saturate(135%);
+    }
+    .summary { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; }
+    .summary-card { padding: clamp(22px, 4vw, 36px); }
+    .summary-card h2 { margin-bottom: 12px; font-size: clamp(1.35rem, 2.2vw, 1.85rem); letter-spacing: -0.03em; }
+    .summary-card p { margin-bottom: 0; color: var(--muted); }
+    .summary-card strong { color: var(--ink); }
+    .summary-card.accent { background: linear-gradient(135deg, #0c6fd5, #004eaa); color: #fff; }
+    .summary-card.accent p, .summary-card.accent strong { color: #fff; }
+    .equation {
+      margin: 16px 0 0;
+      padding: 15px 18px;
+      overflow-x: auto;
+      border: 1px solid var(--hairline);
+      border-radius: 14px;
+      background: rgb(255 255 255 / 70%);
+      color: var(--ink);
+      font: 600 0.98rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: nowrap;
+    }
+    .accent .equation { border-color: rgb(255 255 255 / 28%); background: rgb(0 0 0 / 12%); color: #fff; }
+
+    .chain { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
+    .chain-step { min-height: 170px; padding: 19px 16px; border-radius: 19px; background: var(--surface-strong); border: 1px solid var(--hairline); box-shadow: 0 8px 24px rgb(0 0 0 / 5%); }
+    .chain-step .number { display: block; margin-bottom: 20px; color: var(--muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; }
+    .chain-step h3 { margin-bottom: 8px; font-size: 1.02rem; letter-spacing: -0.02em; }
+    .chain-step p { margin-bottom: 0; color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
+    .chain-step.input { border-top: 4px solid var(--green); }
+    .chain-step.graph { border-top: 4px solid var(--orange); }
+    .chain-step.model { border-top: 4px solid var(--violet); }
+    .chain-step.output { border-top: 4px solid var(--red); }
+    .chain-arrow { display: grid; place-items: center; color: #a1a1a6; font-size: 1.4rem; }
+
+    .architecture-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .arch-card { position: relative; padding: 25px 26px 26px 30px; overflow: hidden; }
+    .arch-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--blue); }
+    .arch-card.green::before { background: var(--green); }
+    .arch-card.orange::before { background: var(--orange); }
+    .arch-card.violet::before { background: var(--violet); }
+    .arch-card.red::before { background: var(--red); }
+    .arch-card h3 { margin-bottom: 8px; font-size: 1.24rem; letter-spacing: -0.025em; }
+    .arch-card p { margin-bottom: 11px; color: var(--muted); }
+    .arch-card ul { margin: 0; padding-left: 1.1rem; color: var(--muted); }
+    .arch-card li { margin: 5px 0; }
+    code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: 0.16em 0.38em; border-radius: 6px; background: rgb(0 0 0 / 6%); font-size: 0.88em; }
+
+    .logic { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 16px; align-items: start; }
+    .logic-card { padding: 27px; }
+    .logic-card h3 { margin-bottom: 13px; font-size: 1.25rem; letter-spacing: -0.025em; }
+    .logic-card p { color: var(--muted); }
+    .code-block { margin: 0; padding: 20px; overflow: auto; border-radius: 16px; background: #1d1d1f; color: #f5f5f7; font: 0.86rem/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .code-block .dim { color: #a1a1a6; }
+    .code-block .blue { color: #8fc8ff; }
+    .code-block .green { color: #a6e3b5; }
+    .code-block .orange { color: #ffd28a; }
+
+    .config { overflow: hidden; }
+    .config table { width: 100%; border-collapse: collapse; }
+    .config th, .config td { padding: 14px 20px; border-bottom: 1px solid var(--hairline); text-align: left; vertical-align: top; }
+    .config th { width: 28%; color: var(--muted); font-size: 0.82rem; font-weight: 650; }
+    .config td { font-weight: 600; }
+    .config tr:last-child th, .config tr:last-child td { border-bottom: 0; }
+
+    .boundary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .boundary-card { padding: 25px 27px; }
+    .boundary-card h3 { margin-bottom: 9px; font-size: 1.17rem; }
+    .boundary-card p { margin-bottom: 0; color: var(--muted); }
+    .boundary-card.warning { background: linear-gradient(135deg, #fff8eb, #fff); }
+    .boundary-card.warning h3 { color: var(--orange); }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; }
+    .link-button { display: inline-flex; align-items: center; min-height: 38px; padding: 8px 14px; border-radius: 999px; background: #fff; border: 1px solid var(--hairline); color: var(--ink); font-size: 0.88rem; font-weight: 650; }
+    .link-button:hover { text-decoration: none; border-color: var(--blue); color: var(--blue); }
+    footer { padding: 30px 0 52px; color: var(--muted); font-size: 0.82rem; }
+    footer p { margin: 0; }
+    @media (max-width: 900px) {
+      .summary, .logic, .boundary { grid-template-columns: 1fr; }
+      .chain { grid-template-columns: 1fr; }
+      .chain-arrow { min-height: 24px; transform: rotate(90deg); }
+    }
+    @media (max-width: 650px) {
+      .shell { width: min(100% - 28px, 1120px); }
+      .hero { padding-top: 54px; }
+      h1 { font-size: clamp(2.3rem, 13vw, 4rem); }
+      .architecture-grid { grid-template-columns: 1fr; }
+      .config th, .config td { display: block; width: 100%; padding: 10px 16px; }
+      .config th { padding-bottom: 0; border-bottom: 0; }
+      .config td { padding-top: 3px; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .surface { background: #fff; backdrop-filter: none; }
+    }
+    @media print {
+      body { background: #fff; }
+      .surface { box-shadow: none; border-color: #d8d8dc; backdrop-filter: none; }
+      .hero { padding-top: 30px; }
+      section { padding: 24px 0; }
+      a { color: inherit; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero shell">
+    <p class="eyebrow">Heat3D-IC · V3 controlled path</p>
+    <h1>稳态热场算子<br><span style="color:var(--blue)">模型构成与计算链路</span></h1>
+    <p class="lede">V3 使用多尺度 RIGNO，将坐标、导热系数、热源和边界条件映射为固定物理点云上的温升场，再恢复为绝对温度。</p>
+    <div class="meta-row">
+      <span class="chip">RIGNO</span>
+      <span class="chip">p2r · r2r · r2p</span>
+      <span class="chip">processor ×6</span>
+      <span class="chip">normalized-ΔT MSE</span>
+      <span class="chip">source 11e9d2f</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="summary" aria-label="model summary">
+      <article class="surface summary-card accent">
+        <h2>一句话定义</h2>
+        <p><strong>(x, k, q, BC) → T(x)</strong>。模型先预测归一化温升，再通过 train-only 统计量反归一化并加回参考温度。</p>
+        <div class="equation">ΔT = T − T_ref&nbsp;&nbsp; → &nbsp;&nbsp; ΔT̂_norm&nbsp;&nbsp; → &nbsp;&nbsp; T̂ = T_ref + ΔT̂</div>
+      </article>
+      <article class="surface summary-card">
+        <h2>它解决什么问题？</h2>
+        <p>在同一固定三维点云上，学习异质材料、局部热源与边界条件对稳态温度分布的联合影响。它是监督式算子回归，不是 PDE solver。</p>
+      </article>
+    </section>
+
+    <section id="chain">
+      <div class="section-head">
+        <p class="section-kicker">01 · Computation</p>
+        <h2>从输入到温度场</h2>
+      </div>
+      <div class="chain">
+        <article class="chain-step input"><span class="number">STEP 01</span><h3>Input</h3><p>x · k · q · BC<br>固定物理点云</p></article>
+        <div class="chain-arrow" aria-hidden="true">→</div>
+        <article class="chain-step graph"><span class="number">STEP 02</span><h3>Normalize</h3><p>train-only<br>condition + ΔT</p></article>
+        <div class="chain-arrow" aria-hidden="true">→</div>
+        <article class="chain-step graph"><span class="number">STEP 03</span><h3>Graph</h3><p>physical / regional<br>p2r · r2r · r2p</p></article>
+        <div class="chain-arrow" aria-hidden="true">→</div>
+        <article class="chain-step model"><span class="number">STEP 04</span><h3>RIGNO</h3><p>Encoder<br>Processor ×6<br>Decoder</p></article>
+        <div class="chain-arrow" aria-hidden="true">→</div>
+        <article class="chain-step output"><span class="number">STEP 05</span><h3>Recover</h3><p>inverse norm<br>T̂ = T_ref + ΔT̂</p></article>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="section-head">
+        <p class="section-kicker">02 · Architecture</p>
+        <h2>模型构成</h2>
+        <p>每一层只承担一个清晰的空间变换：物理节点 → 区域 latent → 区域传播 → 物理节点。</p>
+      </div>
+      <div class="architecture-grid">
+        <article class="surface arch-card green">
+          <h3>输入与归一化</h3>
+          <p>监督目标是温升，不把 target-derived feature 输入网络。</p>
+          <ul><li><code>x</code>：三维坐标</li><li><code>k=(k_x,k_y,k_z)</code>：diag3</li><li><code>q</code>：局部热源；<code>BC</code>：相对边界条件</li><li>μ / σ 只由 train 拟合</li></ul>
+        </article>
+        <article class="surface arch-card orange">
+          <h3>多尺度图</h3>
+          <p>物理节点保留输出分辨率，区域节点提供更大的 receptive field。</p>
+          <ul><li><code>V<sup>p</sup></code>：physical nodes（medium 数据为 1024 点）</li><li><code>V<sup>r</sup></code>：regional nodes</li><li><code>p2r / r2r / r2p</code> 三类 edge set</li><li>discrete physical coverage，最小覆盖 ≥ 1</li></ul>
+        </article>
+        <article class="surface arch-card violet">
+          <h3>Encoder · p2r</h3>
+          <p>把物理节点上的材料、热源和边界信息聚合到区域 latent。</p>
+          <div class="equation">(h_p⁰, h_r⁰) = Encoder(p2r, x, k, q, BC)</div>
+          <p>输出并保留 <code>latent_pnodes</code> 与 <code>latent_rnodes</code>。</p>
+        </article>
+        <article class="surface arch-card violet">
+          <h3>Processor · r2r × 6</h3>
+          <p>只在区域图上进行六次消息传播，让局部影响跨区域扩散。</p>
+          <div class="equation">h_r<sup>ℓ+1</sup> = Processor(h_r<sup>ℓ</sup>, E<sup>r→r</sup>)</div>
+          <p>每步包含 edge/node MLP、归一化和残差更新。</p>
+        </article>
+        <article class="surface arch-card red">
+          <h3>Decoder · r2p</h3>
+          <p>将处理后的 regional latent 与初始 physical latent 合并，恢复每个物理点的输出。</p>
+          <div class="equation">ŷ_norm = Decoder(h_r⁶, h_p⁰, E<sup>r→p</sup>)</div>
+          <p>结果是归一化温升场，不是绝对温度。</p>
+        </article>
+        <article class="surface arch-card red">
+          <h3>恢复与评估</h3>
+          <p>反归一化后加回参考温度，再计算 raw 与 relative 诊断。</p>
+          <div class="equation">ΔT̂ = σ_train · ŷ_norm + μ_train<br>T̂ = T_ref + ΔT̂</div>
+          <p>报告 RMSE、MAE、amplitude、correlation、hotspot 和 strong-q。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="logic">
+      <div class="section-head">
+        <p class="section-kicker">03 · Formal path</p>
+        <h2>计算逻辑</h2>
+      </div>
+      <div class="logic">
+        <article class="surface logic-card">
+          <h3>图上的一次前向传播</h3>
+          <p>对一个样本，先构造三类边，再按顺序执行 encoder、processor 和 decoder。聚合使用邻居消息的 segment mean，使不同节点的边数不会直接改变量纲。</p>
+          <div class="equation">G = (Vᵖ, Vʳ, Eᵖ→ʳ, Eʳ→ʳ, Eʳ→ᵖ)</div>
+          <div class="equation">ŷ_norm(xᵢ) = Decoder(Processor(Encoder(x, c)))ᵢ</div>
+        </article>
+        <pre class="code-block" aria-label="V3 computation pseudocode"><span class="dim"># train-only statistics</span>
+stats = fit_stats(train)
+<span class="blue">for</span> sample <span class="blue">in</span> dataset:
+    x, c, delta_t = load(sample)
+    x_n, c_n = normalize(x, c, stats)
+    y_n = normalize(delta_t, stats)
+
+    G = build_graph(x_n, policy=<span class="orange">"discrete_physical_coverage"</span>)
+    h_p, h_r = encoder(G.p2r, x_n, c_n)
+    <span class="blue">for</span> step <span class="blue">in</span> range(<span class="orange">6</span>):
+        h_r = processor(G.r2r, h_r)
+    y_hat_n = decoder(G.r2p, h_r, h_p)
+
+    loss = mse(y_hat_n, y_n)
+    update_adamw(loss)
+
+delta_t_hat = inverse_normalize(y_hat_n, stats)
+temperature_hat = t_ref + delta_t_hat</pre>
+      </div>
+    </section>
+
+    <section id="config">
+      <div class="section-head">
+        <p class="section-kicker">04 · V3 contract</p>
+        <h2>Canonical configuration</h2>
+      </div>
+      <div class="surface config">
+        <table>
+          <tbody>
+            <tr><th>Architecture</th><td>RIGNO · node latent 96 · edge latent 96</td></tr>
+            <tr><th>Message passing</th><td>p2r encoder · r2r processor × 6 · r2p decoder · MLP depth 2</td></tr>
+            <tr><th>Target</th><td><code>normalized_deltaT</code> · recovery <code>T_ref_plus_deltaT</code></td></tr>
+            <tr><th>Graph</th><td><code>discrete_physical_coverage</code> · min physical coverage = 1</td></tr>
+            <tr><th>Training</th><td>AdamW · warmup/cosine default · B88 · sample_shuffle · normalized-ΔT MSE</td></tr>
+            <tr><th>Selection</th><td><code>valid_base_mse</code>；同时保存 best / final / predictions</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="boundary">
+      <div class="section-head">
+        <p class="section-kicker">05 · Interpretation</p>
+        <h2>模型边界</h2>
+      </div>
+      <div class="boundary">
+        <article class="surface boundary-card warning">
+          <h3>这是监督式算子回归</h3>
+          <p>V3 没有 PDE residual、界面通量连续性、能量守恒或独立的 Dirichlet/Neumann penalty。它学习的是合成数据分布上的 coefficient-to-temperature 映射。</p>
+        </article>
+        <article class="surface boundary-card">
+          <h3>指标的正确读法</h3>
+          <p><code>valid_base_mse</code> 位于归一化空间，不能直接写成真实 relative RMSE。正式比较需要另外报告 raw RMSE、真实 RMS-relative、sample-first 与 point-global 聚合。</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="surface summary-card">
+        <div class="links">
+          <a class="link-button" href="v3_algorithm_flowchart.html">查看架构流程图 →</a>
+          <a class="link-button" href="v3_algorithm_flowchart.svg">打开 SVG 矢量源 →</a>
+          <a class="link-button" href="v3_algorithm_model_audit.md">阅读 V3 审计报告 →</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <p>Heat3D-IC V3 · controlled path · audited source commit 11e9d2f · 本页为模型说明，不启动训练或推理。</p>
+  </footer>
+</body>
+</html>
