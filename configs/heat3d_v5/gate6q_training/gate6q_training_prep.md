@@ -15,19 +15,25 @@ Training uses only `train`; selection uses only `valid_iid`.
 
 ## Single-variable candidates
 
-- V42 changes only two objective formulas. The raw term is batch-global
-  CV-weighted normalized SSE:
-  `Σ CV·(ŷ-y)² / Σ CV·y²`. The log-scale sample weight is
+- V42 changes only two objective formulas. The raw term is unweighted
+  point-level SSE, reduced as
+  `mean_batch_points((ŷ-y)²) / mean_train_points(y²)`. Its target-energy
+  denominator is fit once from all train points and is fixed across batches,
+  so it matches point-global weighting without batch-denominator drift.
+  The log-scale sample weight is
   `clip(s_true² / mean_train(s_true²), 0.25, 4.0)` and is reduced as a
   normalized weighted mean. The four scalar weights remain
   `1.5/0.5/1.0/1.0`.
 - V43 retains the V38 objective and adds ten raw-input-only XY features to the
   global scale-head input. Their standardizer is fit on train only. They do
   not enter shape, Global FiLM, or decoder paths.
-- V44 retains V43 and adds only a shared regional MLP followed by mean,
-  source-power-weighted, and control-volume-weighted aggregation. Its
-  scale-pooling residual output is zero initialized; pooling is not
-  softmax-only.
+- V44 retains V43 and adds only a source/volume-aware latent DeepSets module:
+  a shared regional-latent MLP followed by mean, source-power-weighted, and
+  control-volume-weighted aggregation. Every physical node's source and
+  volume are divided across its valid P2R degree; partition-of-unity and total
+  source/volume conservation are mandatory. The module does not claim
+  explicit regional XY physics. Its residual output is zero initialized and
+  pooling is not softmax-only.
 
 Resolved scientific differences are exactly:
 
@@ -45,16 +51,16 @@ V44 relative to V43. A no-update B2/N27 fixture reproduced these increments
 exactly, found finite forward/backward values in all trainable groups, and
 confirmed the V44 residual output parameters start at zero.
 
-## No-update B28/N1024 memory smoke
+## Real train-only B28/N1024 update smoke
 
-Use the largest candidate as the upper-bound single-batch smoke. This command
-does one forward/backward pass, applies no optimizer update, and writes no
-checkpoint or result:
+Each candidate is checked with one real-train B28 forward/backward/AdamW
+update at `MEM_FRACTION=0.85`. The smoke loads only train labels, writes no
+checkpoint, and does not start the e600 loop. Remote results and peak memory
+are recorded in the JSON closeout after execution.
 
 ```bash
-XLA_PYTHON_CLIENT_PREALLOCATE=false python scripts/smoke_heat3d_v5_gate6q_single_batch.py \
-  --config configs/heat3d_v5/generated/V4P5_44_gate6q_xy_deepsets_e600.yaml \
-  --batch-size 28 --grid 8,8,16
+MEM_FRACTION=0.85 XLA_PYTHON_CLIENT_MEM_FRACTION=0.85 \
+  python scripts/smoke_heat3d_v5_gate6q_real_train_update.py --config <CONFIG>
 ```
 
 ## Manual e600 launch commands

@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v5_gate6q_training_prep_v1",
+  "schema_version": "heat3d_v5_gate6q_training_prep_v2",
   "baseline_config_id": "V4P5_38_gate6n_v36_r2r_mask_p005_e600",
   "training_started": false,
   "formal_e600_started": false,
@@ -20,7 +20,11 @@
     ]
   },
   "objective_contract": {
-    "V42_raw_term": "sum_batch_nodes(CV*(prediction-target)^2)/sum_batch_nodes(CV*target^2)",
+    "V42_raw_term": "mean_batch_points((prediction-target)^2)/mean_train_points(target^2)",
+    "V42_raw_denominator_fit_roles": [
+      "train"
+    ],
+    "V42_raw_denominator_batch_dependent": false,
     "V42_log_scale_weight": "clip(true_scale^2/mean_train(true_scale^2),0.25,4.0)",
     "V42_log_scale_reduction": "sum(weight*log_scale_squared_error)/sum(weight)",
     "four_scalar_loss_weights": {
@@ -59,6 +63,8 @@
     "target_or_label_derived_inputs": false
   },
   "deepsets_contract": {
+    "module_claim": "source/volume-aware latent DeepSets",
+    "explicit_regional_XY_physics_claim": false,
     "regional_shared_mlp_hidden_width": 64,
     "aggregations": [
       "mean",
@@ -67,6 +73,9 @@
     ],
     "softmax_only_pooling": false,
     "residual_output_init": "zero",
+    "p2r_weight_partition": "each physical node source/volume divided by its effective valid P2R degree",
+    "partition_of_unity_required": true,
+    "regional_source_volume_conservation_required": true,
     "consumer_scope": [
       "global_scale_head"
     ]
@@ -79,7 +88,7 @@
       },
       "loss.native_raw_loss_mode": {
         "left": "per_sample_cv_mse",
-        "right": "batch_global_normalized_sse"
+        "right": "point_global_fixed_train_energy_sse"
       }
     },
     "V43_vs_V38": {
@@ -133,7 +142,15 @@
       "deepsets_output_init_max_abs": 0.0
     }
   },
-  "single_batch_memory_smoke_command": "XLA_PYTHON_CLIENT_PREALLOCATE=false python scripts/smoke_heat3d_v5_gate6q_single_batch.py --config configs/heat3d_v5/generated/V4P5_44_gate6q_xy_deepsets_e600.yaml --batch-size 28 --grid 8,8,16",
+  "real_train_update_smoke": {
+    "status": "pending_remote_execution",
+    "batch_size": 28,
+    "node_count": 1024,
+    "memory_fraction": 0.85,
+    "checkpoint_written": false,
+    "formal_e600_started": false
+  },
+  "real_train_update_smoke_command_template": "MEM_FRACTION=0.85 XLA_PYTHON_CLIENT_MEM_FRACTION=0.85 python scripts/smoke_heat3d_v5_gate6q_real_train_update.py --config <CONFIG>",
   "manual_launch_commands": {
     "V42": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_42_gate6q_objective_only_e600.yaml",
     "V43": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_43_gate6q_xy_scale_features_e600.yaml",

@@ -175,7 +175,47 @@ def regional_source_volume_weights_from_raw(
     p2r_edge_indices: np.ndarray,
     rnode_count: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Aggregate nonnegative source-power and control-volume weights per rnode."""
+    """Build conservative source/volume-aware latent DeepSets weights."""
+
+    source, volume, _ = _regional_source_volume_partition(
+        coords=coords,
+        raw_condition=raw_condition,
+        condition_feature_names=condition_feature_names,
+        p2r_edge_indices=p2r_edge_indices,
+        rnode_count=rnode_count,
+    )
+    return source, volume
+
+
+def p2r_partition_of_unity_audit(
+    *,
+    coords: np.ndarray,
+    raw_condition: np.ndarray,
+    condition_feature_names: Sequence[str],
+    p2r_edge_indices: np.ndarray,
+    rnode_count: int,
+) -> dict[str, Any]:
+    """Audit degree-normalized P2R partition and regional conservation."""
+
+    _, _, audit = _regional_source_volume_partition(
+        coords=coords,
+        raw_condition=raw_condition,
+        condition_feature_names=condition_feature_names,
+        p2r_edge_indices=p2r_edge_indices,
+        rnode_count=rnode_count,
+    )
+    return audit
+
+
+def _regional_source_volume_partition(
+    *,
+    coords: np.ndarray,
+    raw_condition: np.ndarray,
+    condition_feature_names: Sequence[str],
+    p2r_edge_indices: np.ndarray,
+    rnode_count: int,
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+    """Split each physical node's source and volume across its valid P2R degree."""
 
     points = np.asarray(coords, dtype=np.float64)
     values = np.asarray(raw_condition, dtype=np.float64)
@@ -198,12 +238,76 @@ def regional_source_volume_weights_from_raw(
         raise ValueError("regional DeepSets weights found no non-dummy P2R edges")
     physical = physical[valid]
     regional = regional[valid]
+    degree = np.bincount(physical, minlength=points.shape[0]).astype(np.int64)
+    zero_degree = np.flatnonzero(degree == 0)
+    if zero_degree.size:
+        raise ValueError(
+            "regional DeepSets P2R partition has zero-degree physical nodes: "
+            f"count={zero_degree.size} first={zero_degree[:8].tolist()}"
+        )
+    edge_partition = 1.0 / degree[physical].astype(np.float64)
+    physical_partition_sum = np.bincount(
+        physical,
+        weights=edge_partition,
+        minlength=points.shape[0],
+    )
     source = np.zeros(int(rnode_count), dtype=np.float64)
     volume = np.zeros(int(rnode_count), dtype=np.float64)
-    np.add.at(source, regional, q[physical] * volumes[physical])
-    np.add.at(volume, regional, volumes[physical])
+    np.add.at(
+        source,
+        regional,
+        q[physical] * volumes[physical] * edge_partition,
+    )
+    np.add.at(volume, regional, volumes[physical] * edge_partition)
     if not np.all(np.isfinite(source)) or not np.all(np.isfinite(volume)):
         raise ValueError("regional DeepSets weights are non-finite")
     if np.sum(volume) <= EPS:
         raise ValueError("regional DeepSets volume weights sum to zero")
-    return source.astype(np.float32), volume.astype(np.float32)
+    physical_source_total = float(np.sum(q * volumes))
+    physical_volume_total = float(np.sum(volumes))
+    regional_source_total = float(np.sum(source))
+    regional_volume_total = float(np.sum(volume))
+    partition_error = float(np.max(np.abs(physical_partition_sum - 1.0)))
+    source_conserved = bool(
+        np.isclose(
+            regional_source_total,
+            physical_source_total,
+            rtol=1.0e-12,
+            atol=1.0e-15,
+        )
+    )
+    volume_conserved = bool(
+        np.isclose(
+            regional_volume_total,
+            physical_volume_total,
+            rtol=1.0e-12,
+            atol=1.0e-15,
+        )
+    )
+    if partition_error > 1.0e-12 or not source_conserved or not volume_conserved:
+        raise ValueError(
+            "regional DeepSets P2R partition failed conservation: "
+            f"partition_error={partition_error:.3e} "
+            f"source_conserved={source_conserved} "
+            f"volume_conserved={volume_conserved}"
+        )
+    return source, volume, {
+        "physical_node_count": int(points.shape[0]),
+        "valid_edge_count": int(physical.size),
+        "zero_degree_node_count": int(zero_degree.size),
+        "minimum_degree": int(np.min(degree)),
+        "maximum_degree": int(np.max(degree)),
+        "maximum_partition_of_unity_error": partition_error,
+        "physical_source_total": physical_source_total,
+        "regional_source_total": regional_source_total,
+        "source_conservation_absolute_error": float(
+            abs(regional_source_total - physical_source_total)
+        ),
+        "physical_volume_total": physical_volume_total,
+        "regional_volume_total": regional_volume_total,
+        "volume_conservation_absolute_error": float(
+            abs(regional_volume_total - physical_volume_total)
+        ),
+        "source_conserved": source_conserved,
+        "volume_conserved": volume_conserved,
+    }

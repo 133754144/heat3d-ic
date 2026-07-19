@@ -178,6 +178,7 @@ def native_shape_scale_losses(
     dirichlet_mask: Any | None = None,
     loss_weights: Mapping[str, float],
     raw_loss_mode: str = "per_sample_cv_mse",
+    raw_train_target_energy_per_point: float | None = None,
     log_scale_weight_mode: str = "uniform",
     log_scale_train_true_scale_sq_mean: float | None = None,
     log_scale_weight_clip: tuple[float, float] = (0.25, 4.0),
@@ -217,14 +218,22 @@ def native_shape_scale_losses(
     log_scale_mse = jnp.square(jnp.log(jnp.maximum(s_hat, eps)) - jnp.log(jnp.maximum(target_scale, eps)))
     if raw_loss_mode == "per_sample_cv_mse":
         raw_loss = jnp.mean(raw_cv_mse)
-    elif raw_loss_mode == "batch_global_normalized_sse":
-        raw_sse = jnp.sum(jnp.square(delta_hat - target) * weights)
-        target_sse = jnp.sum(jnp.square(target) * weights)
-        raw_loss = raw_sse / jnp.maximum(target_sse, eps)
+    elif raw_loss_mode == "point_global_fixed_train_energy_sse":
+        if (
+            raw_train_target_energy_per_point is None
+            or float(raw_train_target_energy_per_point) <= 0.0
+        ):
+            raise ShapeScaleError(
+                "point_global_fixed_train_energy_sse requires a positive "
+                "train-only target energy per point"
+            )
+        raw_loss = jnp.mean(jnp.square(delta_hat - target)) / float(
+            raw_train_target_energy_per_point
+        )
     else:
         raise ShapeScaleError(
             "raw_loss_mode must be 'per_sample_cv_mse' or "
-            f"'batch_global_normalized_sse', got {raw_loss_mode!r}"
+            f"'point_global_fixed_train_energy_sse', got {raw_loss_mode!r}"
         )
 
     if log_scale_weight_mode == "uniform":

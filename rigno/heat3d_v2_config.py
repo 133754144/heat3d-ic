@@ -86,7 +86,10 @@ REGIONAL_ATTENTION_MODES = set(_REGIONAL_ATTENTION_MODES)
 QK_REGION_FEATURE_VERSIONS = set(_QK_REGION_FEATURE_VERSIONS)
 SCALE_CONTEXT_MODES = set(_SCALE_CONTEXT_MODES)
 SCALE_DEEPSETS_MODES = set(_SCALE_DEEPSETS_MODES)
-NATIVE_RAW_LOSS_MODES = {"per_sample_cv_mse", "batch_global_normalized_sse"}
+NATIVE_RAW_LOSS_MODES = {
+    "per_sample_cv_mse",
+    "point_global_fixed_train_energy_sse",
+}
 NATIVE_LOG_SCALE_WEIGHT_MODES = {
     "uniform",
     "train_true_scale_squared_clipped",

@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import shlex
 import sys
+from types import SimpleNamespace
 from typing import Any
 
 import jax.numpy as jnp
@@ -24,9 +25,12 @@ if str(ROOT) not in sys.path:
 
 from rigno.heat3d_v2_config import validate_v2_config  # noqa: E402
 from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
+from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
 from rigno.heat3d_v5_scale_context import (  # noqa: E402
     XY_SCALE_CONTEXT_FEATURES,
     fit_train_only_scale_context_standardizer,
+    p2r_partition_of_unity_audit,
+    regional_source_volume_weights_from_raw,
     standardize_scale_contexts,
     xy_scale_context_from_raw_condition,
 )
@@ -34,7 +38,7 @@ from rigno.heat3d_v5_shape_scale import native_shape_scale_losses  # noqa: E402
 from rigno.models.rigno import RIGNO  # noqa: E402
 from scripts.check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E402
 from scripts.run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
-    _fit_native_loss_train_reference,
+    _fit_native_loss_train_references,
 )
 from scripts.smoke_heat3d_v5_gate6q_single_batch import run_smoke  # noqa: E402
 
@@ -155,7 +159,8 @@ def _objective_and_feature_fixtures() -> None:
             "relative_field": 1.0,
             "raw_absolute": 1.0,
         },
-        raw_loss_mode="batch_global_normalized_sse",
+        raw_loss_mode="point_global_fixed_train_energy_sse",
+        raw_train_target_energy_per_point=float(jnp.mean(jnp.square(target))),
         log_scale_weight_mode="train_true_scale_squared_clipped",
         log_scale_train_true_scale_sq_mean=float(jnp.mean(jnp.square(scale))),
         log_scale_weight_clip=(0.25, 4.0),
@@ -166,23 +171,6 @@ def _objective_and_feature_fixtures() -> None:
     )
     assert np.isclose(float(losses["raw_absolute_field_loss"]), manual)
 
-    config = {
-        "native_log_scale_weight_mode": "train_true_scale_squared_clipped"
-    }
-    train_group = {
-        "target_delta_raw": target,
-        "native_physics": {
-            "control_volumes": volumes,
-            "dirichlet_mask": mask,
-        },
-    }
-    _fit_native_loss_train_reference(config, [train_group])
-    expected_reference = float(jnp.mean(jnp.square(scale)))
-    assert np.isclose(
-        config["native_log_scale_train_true_scale_sq_mean"],
-        expected_reference,
-    )
-
     coords = np.stack(
         np.meshgrid(
             np.asarray([0.0, 1.0]),
@@ -192,6 +180,64 @@ def _objective_and_feature_fixtures() -> None:
         ),
         axis=-1,
     ).reshape(-1, 3)
+    fit_mask = (coords[:, 2] == 0.0).astype(np.float32)
+    fit_targets = np.stack(
+        [
+            np.linspace(0.0, 2.0, coords.shape[0]),
+            np.linspace(0.0, 4.0, coords.shape[0]),
+        ]
+    )[:, None, :, None]
+    config = {
+        "native_raw_loss_mode": "point_global_fixed_train_energy_sse",
+        "native_log_scale_weight_mode": "train_true_scale_squared_clipped",
+        "native_log_scale_weight_clip_min": 0.25,
+        "native_log_scale_weight_clip_max": 4.0,
+    }
+    examples = []
+    for index in range(fit_targets.shape[0]):
+        target_row = fit_targets[index : index + 1]
+        relative = SimpleNamespace(
+            condition_feature_names=("is_bottom",),
+            condition_features=fit_mask[:, None],
+        )
+        example = SimpleNamespace(
+            sample_id=f"train_{index}",
+            condition=SimpleNamespace(coords=coords),
+            get_relative_bc_feature_view=lambda relative=relative: relative,
+            build_temperature_rise_legacy_inputs_from_relative_features=(
+                lambda bridge_policy, target_row=target_row: SimpleNamespace(
+                    target_delta_u=target_row
+                )
+            ),
+        )
+        examples.append(example)
+    _fit_native_loss_train_references(config, examples)
+    cv = np.asarray(control_volume_weights(coords))
+    expected_reference = float(
+        np.mean(
+            [
+                np.sum(
+                    np.square(fit_targets[index, 0, :, 0] * (1.0 - fit_mask))
+                    * cv
+                )
+                / np.sum(cv)
+                for index in range(fit_targets.shape[0])
+            ]
+        )
+    )
+    assert np.isclose(
+        config["native_log_scale_train_true_scale_sq_mean"],
+        expected_reference,
+    )
+    assert np.isclose(
+        config["native_raw_train_target_energy_per_point"],
+        float(np.mean(np.square(fit_targets))),
+    )
+    weight_diagnostics = config["native_log_scale_weight_diagnostics"]
+    assert weight_diagnostics["fit_roles"] == ["train"]
+    assert weight_diagnostics["sample_count"] == 2
+    assert 0.0 < weight_diagnostics["effective_sample_size"] <= 2.0
+
     raw = np.stack(
         [
             np.linspace(1.0, 4.0, coords.shape[0]),
@@ -218,6 +264,41 @@ def _objective_and_feature_fixtures() -> None:
     encoded = standardize_scale_contexts([row], standardizer)
     assert encoded.shape == (1, len(XY_SCALE_CONTEXT_FEATURES))
     assert standardizer["fit_roles"] == ["train"]
+
+    condition_names = ("q",)
+    condition = np.linspace(0.0, 2.0, coords.shape[0])[:, None]
+    edges = []
+    for physical in range(coords.shape[0]):
+        edges.append((physical, physical % 3))
+        if physical % 2 == 0:
+            edges.append((physical, (physical + 1) % 3))
+        if physical % 4 == 0:
+            edges.append((physical, (physical + 2) % 3))
+    edges.append((-1, -1))
+    edge_array = np.asarray(edges, dtype=np.int64)
+    source, regional_volume = regional_source_volume_weights_from_raw(
+        coords=coords,
+        raw_condition=condition,
+        condition_feature_names=condition_names,
+        p2r_edge_indices=edge_array,
+        rnode_count=3,
+    )
+    partition = p2r_partition_of_unity_audit(
+        coords=coords,
+        raw_condition=condition,
+        condition_feature_names=condition_names,
+        p2r_edge_indices=edge_array,
+        rnode_count=3,
+    )
+    assert partition["zero_degree_node_count"] == 0
+    assert partition["maximum_degree"] > partition["minimum_degree"]
+    assert partition["maximum_partition_of_unity_error"] <= 1.0e-12
+    assert partition["source_conserved"]
+    assert partition["volume_conserved"]
+    assert np.isclose(np.sum(source), partition["physical_source_total"])
+    assert np.isclose(
+        np.sum(regional_volume), partition["physical_volume_total"]
+    )
 
 
 def main() -> int:

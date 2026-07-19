@@ -164,7 +164,10 @@ NATIVE_BRANCH_MODES = ("scale_only", "shape_only", "joint")
 NATIVE_TRAINABLE_SCOPES = ("branch", "global_scale_mlp_only")
 SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
 SCALE_POOLING_MODES = V5_SCALE_POOLING_MODES
-NATIVE_RAW_LOSS_MODES = ("per_sample_cv_mse", "batch_global_normalized_sse")
+NATIVE_RAW_LOSS_MODES = (
+    "per_sample_cv_mse",
+    "point_global_fixed_train_energy_sse",
+)
 NATIVE_LOG_SCALE_WEIGHT_MODES = (
     "uniform",
     "train_true_scale_squared_clipped",
@@ -1798,6 +1801,7 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "native_relative_field_weight": float(args.native_relative_field_weight),
         "native_raw_field_weight": float(args.native_raw_field_weight),
         "native_raw_loss_mode": str(args.native_raw_loss_mode),
+        "native_raw_train_target_energy_per_point": None,
         "native_log_scale_weight_mode": str(args.native_log_scale_weight_mode),
         "native_log_scale_weight_clip_min": float(
             args.native_log_scale_weight_clip_min
@@ -2767,6 +2771,9 @@ def _native_loss_components(
             dirichlet_mask=physics["dirichlet_mask"],
             loss_weights=native_weights,
             raw_loss_mode=loss_config["native_raw_loss_mode"],
+            raw_train_target_energy_per_point=loss_config.get(
+                "native_raw_train_target_energy_per_point"
+            ),
             log_scale_weight_mode=loss_config["native_log_scale_weight_mode"],
             log_scale_train_true_scale_sq_mean=loss_config.get(
                 "native_log_scale_train_true_scale_sq_mean"
@@ -6771,33 +6778,108 @@ def _attach_scale_deepsets_weights_to_groups(
         )
 
 
-def _fit_native_loss_train_reference(
+def _fit_native_loss_train_references(
     loss_config: dict[str, Any],
-    train_groups: list[dict],
+    train_examples: list[Any],
 ) -> None:
-    """Fit the V42 log-scale weighting reference from train targets only."""
+    """Fit V42 fixed objective references from train targets only."""
 
-    if (
+    need_raw = (
+        loss_config.get("native_raw_loss_mode")
+        == "point_global_fixed_train_energy_sse"
+    )
+    need_scale = (
         loss_config.get("native_log_scale_weight_mode")
-        != "train_true_scale_squared_clipped"
-    ):
-        loss_config["native_log_scale_train_true_scale_sq_mean"] = None
+        == "train_true_scale_squared_clipped"
+    )
+    loss_config["native_raw_train_target_energy_per_point"] = None
+    loss_config["native_log_scale_train_true_scale_sq_mean"] = None
+    loss_config["native_log_scale_weight_diagnostics"] = None
+    if not need_raw and not need_scale:
         return
-    squared_scales: list[np.ndarray] = []
-    for group in train_groups:
-        target = np.asarray(group["target_delta_raw"], dtype=np.float64)
-        physics = group["native_physics"]
-        volume = np.asarray(physics["control_volumes"], dtype=np.float64)
-        mask = np.asarray(physics["dirichlet_mask"], dtype=np.float64)
-        free = target[:, 0, :, 0] * (1.0 - np.clip(mask, 0.0, 1.0))
-        numerator = np.sum(np.square(free) * volume, axis=1)
-        denominator = np.maximum(np.sum(volume, axis=1), 1.0e-12)
-        squared_scales.append(numerator / denominator)
-    values = np.concatenate(squared_scales)
-    reference = float(np.mean(values))
-    if not math.isfinite(reference) or reference <= 0.0:
-        raise ValueError("train-only true-scale-squared reference is invalid")
-    loss_config["native_log_scale_train_true_scale_sq_mean"] = reference
+
+    squared_scales: list[float] = []
+    raw_target_energy = 0.0
+    raw_target_count = 0
+    for example in train_examples:
+        target = np.asarray(_bridge_for(example).target_delta_u, dtype=np.float64)
+        if target.ndim != 4 or target.shape[0:2] != (1, 1) or target.shape[-1] != 1:
+            raise ValueError(
+                f"{example.sample_id}: unexpected native target shape {target.shape}"
+            )
+        target_vector = target[0, 0, :, 0]
+        if need_raw:
+            raw_target_energy += float(np.sum(np.square(target_vector)))
+            raw_target_count += int(target_vector.size)
+        if need_scale:
+            relative = example.get_relative_bc_feature_view()
+            names = tuple(relative.condition_feature_names)
+            if "is_bottom" not in names:
+                raise ValueError(
+                    f"{example.sample_id}: scale weighting lacks is_bottom"
+                )
+            mask = (
+                np.asarray(relative.condition_features, dtype=np.float64)[
+                    :, names.index("is_bottom")
+                ]
+                > 0.5
+            )
+            volume = np.asarray(
+                control_volume_weights(
+                    np.asarray(example.condition.coords, dtype=np.float64)
+                ),
+                dtype=np.float64,
+            )
+            free = target_vector * (~mask)
+            squared_scales.append(
+                float(
+                    np.sum(np.square(free) * volume)
+                    / max(float(np.sum(volume)), 1.0e-12)
+                )
+            )
+
+    if need_raw:
+        reference = raw_target_energy / max(raw_target_count, 1)
+        if not math.isfinite(reference) or reference <= 0.0:
+            raise ValueError(
+                "train-only point-global target energy per point is invalid"
+            )
+        loss_config["native_raw_train_target_energy_per_point"] = float(reference)
+
+    if need_scale:
+        values = np.asarray(squared_scales, dtype=np.float64)
+        reference = float(np.mean(values))
+        if not math.isfinite(reference) or reference <= 0.0:
+            raise ValueError("train-only true-scale-squared reference is invalid")
+        clip_min = float(loss_config["native_log_scale_weight_clip_min"])
+        clip_max = float(loss_config["native_log_scale_weight_clip_max"])
+        raw_weights = values / reference
+        clipped = np.clip(raw_weights, clip_min, clip_max)
+        effective_sample_size = float(
+            np.square(np.sum(clipped))
+            / max(float(np.sum(np.square(clipped))), 1.0e-12)
+        )
+        quantile_levels = (0.0, 0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99, 1.0)
+        loss_config["native_log_scale_train_true_scale_sq_mean"] = reference
+        loss_config["native_log_scale_weight_diagnostics"] = {
+            "fit_roles": ["train"],
+            "sample_count": int(values.size),
+            "clip_bounds": [clip_min, clip_max],
+            "raw_weight_quantiles": {
+                f"p{int(level * 100):02d}": float(
+                    np.quantile(raw_weights, level)
+                )
+                for level in quantile_levels
+            },
+            "lower_clip_fraction": float(np.mean(raw_weights < clip_min)),
+            "upper_clip_fraction": float(np.mean(raw_weights > clip_max)),
+            "effective_sample_size": effective_sample_size,
+            "effective_sample_size_fraction": float(
+                effective_sample_size / values.size
+            ),
+            "raw_weight_mean": float(np.mean(raw_weights)),
+            "clipped_weight_mean": float(np.mean(clipped)),
+        }
 
 
 def _training_edge_masking_key(
@@ -7583,7 +7665,7 @@ def main() -> int:
                 _attach_scale_deepsets_weights_to_groups(
                     groups, native_examples_by_id
                 )
-        _fit_native_loss_train_reference(loss_config, train_groups)
+        _fit_native_loss_train_references(loss_config, train_examples)
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)

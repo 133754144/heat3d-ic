@@ -4,12 +4,13 @@ extends: V4P5_38_gate6n_v36_r2r_mask_p005_e600.yaml
 overrides:
   description: >-
     Gate 6Q V42 objective-only random-init e600 candidate. The raw field term
-    is batch-global CV-weighted normalized SSE. The log-scale term uses
-    continuous true-scale-squared weights normalized by the train-only mean
-    and clipped to [0.25, 4.0]. Architecture and the four scalar loss weights
-    remain identical to V38.
+    is unweighted point SSE normalized by one fixed train-global target-energy
+    per point, matching the point-global metric without batch denominator
+    drift. The log-scale term uses continuous true-scale-squared weights
+    normalized by the train-only mean and clipped to [0.25, 4.0].
+    Architecture and the four scalar loss weights remain identical to V38.
   loss:
-    native_raw_loss_mode: batch_global_normalized_sse
+    native_raw_loss_mode: point_global_fixed_train_energy_sse
     native_log_scale_weight_mode: train_true_scale_squared_clipped
     native_log_scale_weight_clip_min: 0.25
     native_log_scale_weight_clip_max: 4.0

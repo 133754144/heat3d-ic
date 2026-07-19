@@ -4,10 +4,11 @@ extends: V4P5_43_gate6q_xy_scale_features_e600.yaml
 overrides:
   description: >-
     Gate 6Q V44 random-init e600 candidate. Relative to V43, only a full-3D
-    source/volume-aware DeepSets scale-pooling residual is enabled. A shared
-    regional MLP is aggregated by arithmetic mean, source-power weights, and
-    control-volume weights; the residual projection is zero initialized and
-    is not a softmax-only pool.
+    source/volume-aware latent DeepSets scale-pooling residual is enabled. A
+    shared regional-latent MLP is aggregated by arithmetic mean and by
+    degree-partitioned source-power/control-volume weights; the residual
+    projection is zero initialized and is not a softmax-only pool. This module
+    does not claim explicit regional XY physics.
   model:
     scale_deepsets_mode: source_volume_residual
   run:

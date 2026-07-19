@@ -234,6 +234,9 @@ def run_smoke(
             raw_loss_mode=str(
                 loss.get("native_raw_loss_mode", "per_sample_cv_mse")
             ),
+            raw_train_target_energy_per_point=float(
+                jnp.mean(jnp.square(fixture["target"]))
+            ),
             log_scale_weight_mode=str(
                 loss.get("native_log_scale_weight_mode", "uniform")
             ),
