@@ -56,7 +56,26 @@ confirmed the V44 residual output parameters start at zero.
 Each candidate is checked with one real-train B28 forward/backward/AdamW
 update at `MEM_FRACTION=0.85`. The smoke loads only train labels, writes no
 checkpoint, and does not start the e600 loop. Remote results and peak memory
-are recorded in the JSON closeout after execution.
+were recorded on WSL2 at clean commit `42d4abe8`:
+
+| candidate | finite loss/grad/update | params | peak memory |
+| --- | --- | ---: | ---: |
+| V42 | yes | 893,736 | 5.776 GiB |
+| V43 | yes | 894,376 | 5.776 GiB |
+| V44 | yes | 923,272 | 5.804 GiB |
+
+All three used random initialization, B28, 1024 nodes, AdamW, and only
+`train=672`; no checkpoint or output artifact was written. V44's first real
+graph had valid P2R degree 1--5, zero zero-degree physical nodes, exact
+partition-of-unity, zero source-total error, and volume-total error
+`2.65e-23`.
+
+V42's fixed train-global target energy per point is `0.7235104148 K²`.
+Its raw scale²-weight quantiles are
+`p00/p01/p05/p25/p50/p75/p95/p99/p100 =
+6.17e-5/2.05e-4/1.40e-3/0.0243/0.163/0.973/4.749/9.350/33.296`.
+The lower/upper clip fractions are `55.36%`/`6.70%`; clipped-weight effective
+sample size is `258.84/672` (`38.52%`).
 
 ```bash
 MEM_FRACTION=0.85 XLA_PYTHON_CLIENT_MEM_FRACTION=0.85 \

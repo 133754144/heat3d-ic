@@ -371,6 +371,12 @@ def main() -> int:
     assert configs["V44"]["loss"] == configs["V43"]["loss"]
     assert tuple(configs["V43"]["model"]["scale_context_feature_names"]) == XY_SCALE_CONTEXT_FEATURES
     assert configs["V44"]["model"]["scale_deepsets_mode"] == "source_volume_residual"
+    assert "source/volume-aware latent DeepSets" in CONFIGS["V44"].read_text(
+        encoding="utf-8"
+    )
+    assert "does not claim explicit regional XY physics" in CONFIGS[
+        "V44"
+    ].read_text(encoding="utf-8")
 
     feature_signature = set(
         inspect.signature(xy_scale_context_from_raw_condition).parameters
@@ -427,6 +433,12 @@ def main() -> int:
         assert row["execution_status"] == "not_started"
         assert row["training_started"] == "false"
         assert row["forbidden_access_roles"].split("|") == sorted(FORBIDDEN)
+        assert row["smoke_status"] == "passed_real_B28_update"
+        assert (
+            row["smoke_commit"]
+            == "42d4abe8dddf31fb25ab4764ccf1b31901b1025b"
+        )
+        assert float(row["smoke_peak_GiB"]) > 0.0
 
     committed = json.loads(REPORT.read_text(encoding="utf-8"))
     assert committed["training_started"] is False
@@ -434,6 +446,49 @@ def main() -> int:
     assert committed["resolved_config_diffs"] == diffs
     assert committed["expected_parameter_increment"]["V43_vs_V38"] == 640
     assert committed["expected_parameter_increment"]["V44_vs_V43"] == 28896
+    real_smoke = committed["real_train_update_smoke"]
+    assert real_smoke["status"] == "passed"
+    assert real_smoke["batch_size"] == 28
+    assert real_smoke["node_count"] == 1024
+    assert real_smoke["accessed_roles"] == ["train"]
+    assert real_smoke["forbidden_roles_accessed"] == []
+    assert real_smoke["random_initialization"] is True
+    assert real_smoke["checkpoint_written"] is False
+    assert real_smoke["formal_e600_started"] is False
+    smoke_results = real_smoke["results"]
+    assert set(smoke_results) == {"V42", "V43", "V44"}
+    for result in smoke_results.values():
+        assert result["finite_loss"]
+        assert result["finite_gradients"]
+        assert result["finite_updated_parameters"]
+        assert result["optimizer_update_applied"]
+        assert result["update_nonzero"]
+        assert result["peak_bytes_in_use"] > 0
+    assert (
+        smoke_results["V43"]["parameter_count"]
+        - smoke_results["V42"]["parameter_count"]
+        == 640
+    )
+    assert (
+        smoke_results["V44"]["parameter_count"]
+        - smoke_results["V43"]["parameter_count"]
+        == 28896
+    )
+    partition = smoke_results["V44"]["p2r_partition_of_unity"]
+    assert partition["zero_degree_node_count"] == 0
+    assert partition["maximum_partition_of_unity_error"] <= 1.0e-12
+    assert partition["source_conserved"]
+    assert partition["volume_conserved"]
+    reference = committed["V42_train_only_objective_reference"]
+    assert reference["fit_roles"] == ["train"]
+    assert reference["fit_sample_count"] == 672
+    assert reference["raw_train_target_energy_per_point_K2"] > 0.0
+    assert set(reference["raw_scale_weight_quantiles"]) == {
+        "p00", "p01", "p05", "p25", "p50", "p75", "p95", "p99", "p100"
+    }
+    assert 0.0 <= reference["lower_clip_fraction"] <= 1.0
+    assert 0.0 <= reference["upper_clip_fraction"] <= 1.0
+    assert 0.0 < reference["effective_sample_size"] <= 672.0
     print(
         json.dumps(
             {

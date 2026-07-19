@@ -143,12 +143,98 @@
     }
   },
   "real_train_update_smoke": {
-    "status": "pending_remote_execution",
+    "status": "passed",
+    "host": "wsl2",
+    "device": "cuda:0",
+    "smoke_commit": "42d4abe8dddf31fb25ab4764ccf1b31901b1025b",
+    "clean_training_checkout": true,
     "batch_size": 28,
     "node_count": 1024,
     "memory_fraction": 0.85,
+    "accessed_roles": [
+      "train"
+    ],
+    "forbidden_roles_accessed": [],
+    "random_initialization": true,
     "checkpoint_written": false,
-    "formal_e600_started": false
+    "formal_e600_started": false,
+    "results": {
+      "V42": {
+        "loss": 4.415948390960693,
+        "finite_loss": true,
+        "finite_gradients": true,
+        "finite_updated_parameters": true,
+        "optimizer_update_applied": true,
+        "update_nonzero": true,
+        "parameter_count": 893736,
+        "peak_bytes_in_use": 6201454336,
+        "peak_GiB": 5.775554418563843,
+        "elapsed_seconds": 37.433417547959834
+      },
+      "V43": {
+        "loss": 3.896125316619873,
+        "finite_loss": true,
+        "finite_gradients": true,
+        "finite_updated_parameters": true,
+        "optimizer_update_applied": true,
+        "update_nonzero": true,
+        "parameter_count": 894376,
+        "peak_bytes_in_use": 6202101248,
+        "peak_GiB": 5.776156902313232,
+        "elapsed_seconds": 36.66118084010668
+      },
+      "V44": {
+        "loss": 3.8960766792297363,
+        "finite_loss": true,
+        "finite_gradients": true,
+        "finite_updated_parameters": true,
+        "optimizer_update_applied": true,
+        "update_nonzero": true,
+        "parameter_count": 923272,
+        "peak_bytes_in_use": 6231702016,
+        "peak_GiB": 5.803724765777588,
+        "elapsed_seconds": 39.16439843806438,
+        "p2r_partition_of_unity": {
+          "physical_node_count": 1024,
+          "valid_edge_count": 1946,
+          "minimum_degree": 1,
+          "maximum_degree": 5,
+          "zero_degree_node_count": 0,
+          "maximum_partition_of_unity_error": 0.0,
+          "source_conservation_absolute_error": 0.0,
+          "volume_conservation_absolute_error": 2.6469779601696886e-23,
+          "source_conserved": true,
+          "volume_conserved": true
+        }
+      }
+    }
+  },
+  "V42_train_only_objective_reference": {
+    "raw_train_target_energy_per_point_K2": 0.7235104147785213,
+    "true_scale_squared_mean_K2": 0.9170702796422319,
+    "scale_weight_clip_bounds": [
+      0.25,
+      4.0
+    ],
+    "raw_scale_weight_quantiles": {
+      "p00": 6.165932674393067e-05,
+      "p01": 0.00020535739818811424,
+      "p05": 0.001399063367372993,
+      "p25": 0.02433259461850102,
+      "p50": 0.1629636515943726,
+      "p75": 0.9732460728241981,
+      "p95": 4.749057955403258,
+      "p99": 9.350421550909399,
+      "p100": 33.29567596226352
+    },
+    "lower_clip_fraction": 0.5535714285714286,
+    "upper_clip_fraction": 0.06696428571428571,
+    "effective_sample_size": 258.83999059852124,
+    "effective_sample_size_fraction": 0.38517855743827567,
+    "fit_sample_count": 672,
+    "fit_roles": [
+      "train"
+    ]
   },
   "real_train_update_smoke_command_template": "MEM_FRACTION=0.85 XLA_PYTHON_CLIENT_MEM_FRACTION=0.85 python scripts/smoke_heat3d_v5_gate6q_real_train_update.py --config <CONFIG>",
   "manual_launch_commands": {

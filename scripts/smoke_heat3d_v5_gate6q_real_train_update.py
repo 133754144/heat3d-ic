@@ -222,6 +222,12 @@ def run(config_path: Path) -> dict[str, Any]:
         train_examples=train_examples,
         required_examples=[],
     )
+    global_standardizer = global_payload.get("standardizer", {})
+    if (
+        global_standardizer.get("fit_population") != "train_only"
+        or global_standardizer.get("fit_sample_count") != len(train_examples)
+    ):
+        raise RuntimeError("global-context standardizer was not fit on train only")
     runner._attach_global_context_to_groups(
         [group],
         global_lookup,
@@ -374,9 +380,10 @@ def run(config_path: Path) -> dict[str, Any]:
                 "native_log_scale_weight_diagnostics"
             ),
         },
-        "global_context_fit_roles": global_payload.get(
-            "standardizer", {}
-        ).get("fit_roles"),
+        "global_context_fit_roles": ["train"],
+        "global_context_fit_sample_count": global_standardizer.get(
+            "fit_sample_count"
+        ),
         "scale_context_fit_roles": scale_payload.get("fit_roles"),
         "p2r_partition_of_unity": partition_audit,
         "peak_bytes_in_use": memory.get("peak_bytes_in_use"),
