@@ -291,18 +291,20 @@ def _quartile_summary(
 def _top_sse(
     rows: Sequence[Mapping[str, Any]], comparison: str
 ) -> dict[str, Any]:
-    ranked_v39 = sorted(rows, key=lambda row: row["v39_point_sse_K2"], reverse=True)
-    total_v39 = sum(row["v39_point_sse_K2"] for row in rows)
+    ranked_v39 = sorted(
+        rows, key=lambda row: row["v39_e24_point_sse_K2"], reverse=True
+    )
+    total_v39 = sum(row["v39_e24_point_sse_K2"] for row in rows)
     delta_name = f"{comparison}_point_sse_delta_K2"
     regression = sorted(rows, key=lambda row: row[delta_name], reverse=True)
     improvement = sorted(rows, key=lambda row: row[delta_name])
     return {
         "v39_top5_cumulative_sse_fraction": float(
-            sum(row["v39_point_sse_K2"] for row in ranked_v39[:5])
+            sum(row["v39_e24_point_sse_K2"] for row in ranked_v39[:5])
             / max(total_v39, EPS)
         ),
         "v39_top10_cumulative_sse_fraction": float(
-            sum(row["v39_point_sse_K2"] for row in ranked_v39[:10])
+            sum(row["v39_e24_point_sse_K2"] for row in ranked_v39[:10])
             / max(total_v39, EPS)
         ),
         "v39_top10_sample_ids": [row["sample_id"] for row in ranked_v39[:10]],
