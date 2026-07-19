@@ -70,7 +70,7 @@ from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
 from rigno.heat3d_v5_shape_scale import (  # noqa: E402
     apply_scale_head_lr_multiplier,
     control_volume_layout,
-    mask_branch_gradients,
+    mask_native_trainable_scope,
     native_gradient_group_norms,
     native_shape_scale_diagnostics,
     native_shape_scale_losses,
@@ -151,6 +151,7 @@ FILM_INIT_IDENTITY = "identity"
 FILM_INITS = (FILM_INIT_IDENTITY,)
 NATIVE_OUTPUT_MODES = ("legacy_normalized_deltaT", "native_shape_scale")
 NATIVE_BRANCH_MODES = ("scale_only", "shape_only", "joint")
+NATIVE_TRAINABLE_SCOPES = ("branch", "global_scale_mlp_only")
 SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
 SCALE_POOLING_MODES = V5_SCALE_POOLING_MODES
 DEFAULT_SUBSET = (
@@ -235,6 +236,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pct-start", type=float, default=0.02)
     parser.add_argument("--pct-final", type=float, default=0.10)
     parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="adamw")
+    parser.add_argument(
+        "--native-trainable-scope",
+        choices=NATIVE_TRAINABLE_SCOPES,
+        default="branch",
+    )
     parser.add_argument("--gradient-clip-norm", type=float, default=1.0)
     parser.add_argument("--weight-decay", type=float, default=1.0e-4)
     parser.add_argument("--node-latent-size", type=int, default=RUNNER_MODEL_CONFIG["node_latent_size"])
@@ -1825,6 +1831,7 @@ def _optimizer_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         ),
         "weight_decay": float(args.weight_decay),
         "scale_head_lr_multiplier": float(args.scale_head_lr_multiplier),
+        "native_trainable_scope": str(args.native_trainable_scope),
     }
 
 
@@ -3166,7 +3173,13 @@ def _apply_native_update_controls(
 
     if not native_enabled:
         return updates
-    updates = mask_branch_gradients(updates, model_config["native_branch_mode"])
+    updates = mask_native_trainable_scope(
+        updates,
+        branch_mode=model_config["native_branch_mode"],
+        trainable_scope=str(
+            optimizer_config.get("native_trainable_scope", "branch")
+        ),
+    )
     return apply_scale_head_lr_multiplier(
         updates,
         float(optimizer_config.get("scale_head_lr_multiplier", 1.0)),
@@ -3869,7 +3882,15 @@ def _fit_once(
                     loss_fn, has_aux=True
                 )(params)
                 if native_enabled:
-                    grads = mask_branch_gradients(grads, model_config["native_branch_mode"])
+                    grads = mask_native_trainable_scope(
+                        grads,
+                        branch_mode=model_config["native_branch_mode"],
+                        trainable_scope=str(
+                            optimizer_config.get(
+                                "native_trainable_scope", "branch"
+                            )
+                        ),
+                    )
                 if profile_enabled:
                     _block_until_ready_tree((loss_value, grads))
                 loss_grad_time = time.perf_counter() - loss_grad_start
@@ -4026,7 +4047,13 @@ def _fit_once(
                 loss_fn, has_aux=True
             )(params)
             if native_enabled:
-                grads = mask_branch_gradients(grads, model_config["native_branch_mode"])
+                grads = mask_native_trainable_scope(
+                    grads,
+                    branch_mode=model_config["native_branch_mode"],
+                    trainable_scope=str(
+                        optimizer_config.get("native_trainable_scope", "branch")
+                    ),
+                )
             if profile_enabled:
                 _block_until_ready_tree((loss_value, grads))
             loss_grad_time = time.perf_counter() - loss_grad_start

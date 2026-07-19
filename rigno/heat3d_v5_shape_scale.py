@@ -26,6 +26,7 @@ REQUIRED_LOSS_WEIGHTS = (
     "raw_absolute",
 )
 BRANCH_MODES = ("scale_only", "shape_only", "joint")
+TRAINABLE_SCOPES = ("branch", "global_scale_mlp_only")
 SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
 
 
@@ -395,6 +396,37 @@ def mask_branch_gradients(gradients: Any, branch_mode: str) -> Any:
         lambda path, value: value if parameter_group(path) in allowed else jnp.zeros_like(value),
         gradients,
     )
+
+
+def mask_native_trainable_scope(
+    values: Any,
+    *,
+    branch_mode: str,
+    trainable_scope: str,
+) -> Any:
+    """Freeze native parameters according to an optimizer-level scope."""
+
+    if trainable_scope not in TRAINABLE_SCOPES:
+        raise ShapeScaleError(f"unsupported trainable scope {trainable_scope!r}")
+    if trainable_scope == "branch":
+        return mask_branch_gradients(values, branch_mode)
+    if branch_mode != "scale_only":
+        raise ShapeScaleError(
+            "global_scale_mlp_only requires native branch mode 'scale_only'"
+        )
+
+    def keep(path: Any, value: Any) -> Any:
+        names = tuple(
+            str(getattr(item, "key", getattr(item, "name", item)))
+            for item in path
+        )
+        return (
+            value
+            if any(name.startswith("global_scale_") for name in names)
+            else jnp.zeros_like(value)
+        )
+
+    return tree_util.tree_map_with_path(keep, values)
 
 
 def _validate_loss_weights(loss_weights: Mapping[str, float]) -> None:

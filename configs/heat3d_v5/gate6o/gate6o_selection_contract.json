@@ -1,0 +1,63 @@
+{
+  "schema_version": "heat3d_v5_gate6o_selection_contract_v1",
+  "status": "frozen_before_gate6o_diagnostic_execution",
+  "scope": {
+    "fit_roles": [
+      "train"
+    ],
+    "selection_roles": [
+      "valid_iid"
+    ],
+    "forbidden_roles": [
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test",
+      "sealed_iid"
+    ]
+  },
+  "eligible_initializations": {
+    "e231": "V38 point-global-best checkpoint",
+    "e543": "V38 sample-first-best checkpoint"
+  },
+  "stage2_contract": {
+    "frozen_parameters": [
+      "backbone",
+      "processor",
+      "decoder",
+      "decoder_bypass",
+      "Global FiLM",
+      "scale attention"
+    ],
+    "trainable_parameters": [
+      "global_scale_hidden",
+      "global_scale_output"
+    ]
+  },
+  "selection_rule": {
+    "primary": "valid_iid shape_cv_rmse",
+    "tie_break_1": "valid_iid sample_first_cv_relative_rmse_pct",
+    "tie_break_2": "valid_iid raw_cv_weighted_rmse_K",
+    "lower_is_better": true,
+    "reason": "Stage 2 cannot change the frozen predicted shape; initialize from the checkpoint with the stronger immutable shape branch."
+  },
+  "diagnostic_only_not_selection_inputs": [
+    "paired bootstrap confidence intervals",
+    "Q1-Q4 attribution",
+    "branch-swapped fields",
+    "fixed-alpha ensemble",
+    "train-only affine scale calibration"
+  ],
+  "stage2": {
+    "epochs": 40,
+    "learning_rate": 0.0001,
+    "learning_rate_schedule": "constant",
+    "edge_masking_probability": 0.0,
+    "optimizer_state": "reset",
+    "checkpoint_selection": [
+      "valid_point_global",
+      "valid_sample_first",
+      "valid_base_mse"
+    ]
+  }
+}

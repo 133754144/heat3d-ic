@@ -235,6 +235,11 @@ def build_training_command(
         "--scale-head-lr-multiplier",
         optimizer.get("scale_head_lr_multiplier"),
     )
+    _append_option(
+        command,
+        "--native-trainable-scope",
+        optimizer.get("native_trainable_scope"),
+    )
     _append_option(command, "--lr-schedule", optimizer.get("lr_schedule"))
     _append_option(command, "--warmup-epochs", optimizer.get("warmup_epochs"))
     _append_option(command, "--min-lr", optimizer.get("min_lr"))
@@ -775,6 +780,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         (
             "model.qk_region_feature_version",
             "training --qk-region-feature-version",
+        ),
+        (
+            "optimizer.native_trainable_scope",
+            "training --native-trainable-scope",
         ),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),

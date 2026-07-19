@@ -74,6 +74,7 @@ FILM_TARGETS = {"rnodes_processed"}
 FILM_INITS = {"identity"}
 NATIVE_OUTPUT_MODES = {"legacy_normalized_deltaT", "native_shape_scale"}
 NATIVE_BRANCH_MODES = {"scale_only", "shape_only", "joint"}
+NATIVE_TRAINABLE_SCOPES = {"branch", "global_scale_mlp_only"}
 SCALE_HEAD_MODES = {"physics_only", "physics_plus_pooled_latent"}
 SCALE_POOLING_MODES = set(_SCALE_POOLING_MODES)
 REGIONAL_ATTENTION_MODES = set(_REGIONAL_ATTENTION_MODES)
@@ -924,6 +925,24 @@ def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str
             raise ValueError(
                 f"{label}: field 'optimizer.scale_head_lr_multiplier' must be > 0"
             )
+    native_trainable_scope = optimizer.get("native_trainable_scope")
+    if (
+        native_trainable_scope is not None
+        and native_trainable_scope not in NATIVE_TRAINABLE_SCOPES
+    ):
+        raise ValueError(
+            f"{label}: field 'optimizer.native_trainable_scope' must be one of "
+            f"{sorted(NATIVE_TRAINABLE_SCOPES)}, got "
+            f"{native_trainable_scope!r}"
+        )
+    if (
+        native_trainable_scope == "global_scale_mlp_only"
+        and model.get("native_branch_mode") != "scale_only"
+    ):
+        raise ValueError(
+            f"{label}: optimizer.native_trainable_scope="
+            "'global_scale_mlp_only' requires model.native_branch_mode='scale_only'"
+        )
 
     for field in ("warmup_epochs", "second_stage_epoch"):
         if field not in optimizer or optimizer[field] is None:
