@@ -23,6 +23,7 @@ for path in (ROOT, ROOT / "scripts"):
 
 from rigno.heat3d_v1_normalization import training_normalization_stats  # noqa: E402
 from rigno.heat3d_v5_global_context import fit_train_only_standardizer  # noqa: E402
+from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
 from diagnose_heat3d_v5_gate6m import (  # noqa: E402
     _decompose_fields,
     _suite_from_fields,
@@ -32,7 +33,6 @@ from evaluate_heat3d_v5_gate6l_valid_only import (  # noqa: E402
     _ids_hash,
     _normalization_equal,
     _prediction_fields,
-    _targets,
 )
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
@@ -153,6 +153,74 @@ def _delta_fields(
         - float(targets[sample_id]["bottom_temperature_K"])
         for sample_id in ids
     }
+
+
+def _targets_for_role(
+    *,
+    sample_root: Path,
+    sample_ids: Sequence[str],
+    expected_role: str,
+) -> dict[str, dict[str, Any]]:
+    if expected_role not in {"train", "valid_iid"}:
+        raise Gate6OError(f"forbidden target role {expected_role!r}")
+    result = {}
+    for sample_id in sample_ids:
+        sample_dir = sample_root / sample_id
+        meta = json.loads(
+            (sample_dir / "sample_meta.json").read_text(encoding="utf-8")
+        )
+        if meta.get("split") != expected_role:
+            raise Gate6OError(
+                f"{sample_id}: expected {expected_role}, found {meta.get('split')}"
+            )
+        categories = sorted(
+            {
+                str(item["DeltaT_target_bin"])
+                for item in meta.get("q_block_metadata", ())
+                if item.get("DeltaT_target_bin") is not None
+            }
+        )
+        if len(categories) != 1:
+            raise Gate6OError(f"{sample_id}: condition category is ambiguous")
+        bottom = float(meta["boundary_params"]["bottom"]["fixed_temperature_K"])
+        coords = np.load(sample_dir / "coords.npy").astype(np.float64)
+        target = (
+            np.load(sample_dir / "temperature.npy")
+            .astype(np.float64)
+            .reshape(-1)
+            - bottom
+        )
+        volumes = control_volume_weights(coords)
+        true_scale = float(
+            math.sqrt(np.sum(np.square(target) * volumes) / np.sum(volumes))
+        )
+        result[sample_id] = {
+            "bottom_temperature_K": bottom,
+            "target_deltaT_K": target,
+            "control_volumes_m3": volumes,
+            "q_W_m3": np.load(sample_dir / "q_field.npy")
+            .astype(np.float64)
+            .reshape(-1),
+            "true_scale_cv_rms_K": true_scale,
+            "generator_condition_category": categories[0],
+        }
+    scales = np.asarray(
+        [result[sample_id]["true_scale_cv_rms_K"] for sample_id in sample_ids],
+        dtype=np.float64,
+    )
+    q25, q50, q75 = np.quantile(scales, [0.25, 0.50, 0.75])
+    for sample_id in sample_ids:
+        value = float(result[sample_id]["true_scale_cv_rms_K"])
+        result[sample_id]["deltaT_quartile"] = (
+            "Q1"
+            if value <= q25
+            else "Q2"
+            if value <= q50
+            else "Q3"
+            if value <= q75
+            else "Q4"
+        )
+    return result
 
 
 def _paired_rows(
@@ -534,8 +602,16 @@ def main() -> int:
         standardizer=standardizer,
         batch_size=args.prediction_batch_size,
     )
-    train_targets = _targets(sample_root=sample_root, valid_ids=train_ids)
-    valid_targets = _targets(sample_root=sample_root, valid_ids=valid_ids)
+    train_targets = _targets_for_role(
+        sample_root=sample_root,
+        sample_ids=train_ids,
+        expected_role="train",
+    )
+    valid_targets = _targets_for_role(
+        sample_root=sample_root,
+        sample_ids=valid_ids,
+        expected_role="valid_iid",
+    )
 
     raw = {"train": {}, "valid_iid": {}}
     replay = {}
