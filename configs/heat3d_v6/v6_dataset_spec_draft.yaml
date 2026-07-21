@@ -1,0 +1,220 @@
+schema_version: heat3d_v6_dataset_spec_draft_v1
+config_id: V6_P0_pilot_spec_draft
+status: audit_and_design_only
+branch: research/v6-dataset
+training_started: false
+full_dataset_generation_started: false
+pilot_generation_started: false
+
+provenance:
+  v5_dataset_id: heat3d_v4_p5_clean_nohard_v0
+  v5_manifest_sha256: 248fd8c82eac352c9c224aa30800e26e3cc5f4b869262be5098f70d7acddf4cc
+  v5_split_map_sha256: 3b16913fef187f93a300221448425b5002f404ce8159407565311b44dbd00e08
+  literature_matrix: docs/v6_p0_literature_matrix.csv
+  parameter_audit: docs/v6_p0_parameter_audit.md
+  low_temperature_audit: docs/v6_p0_low_temperature_root_cause.md
+  primary_source_ids:
+    - L01
+    - L02
+    - L03
+    - L09
+    - L11
+    - L12
+    - L17
+    - L18
+    - L19
+    - L20
+    - L21
+    - L22
+
+pilot_contract:
+  purpose: validate_physics_generator_mesh_and_qc_before_full_generation
+  proposed_sample_count: 96
+  generation_allowed: false
+  activation_requirement: explicit_user_instruction_after_V6_P0_review
+  solver: steady_state_conservative_finite_volume
+  label_fields:
+    - temperature_K
+    - deltaT_K
+    - top_heat_flux_W
+    - bottom_heat_flux_W
+    - energy_balance_relative_error
+
+geometry:
+  footprint_m:
+    choices:
+      - [0.010, 0.010]
+      - [0.016, 0.016]
+    evidence: [L03, L20, L22]
+  stack_templates:
+    - id: logic_package
+      layers:
+        - {name: silicon_die, thickness_m: 0.00015, material: silicon_bulk}
+        - {name: tim, thickness_m: 0.00005, material: tim_effective}
+        - {name: spreader, thickness_m: 0.001, material: copper_bulk}
+      evidence: [L03, L17]
+    - id: hbm_like_anisotropic
+      layers:
+        - {name: memory_top, thickness_m: 0.00012, material: hbm_memory_bulk_like}
+        - {name: polymer_solder_interface, thickness_m: 0.000065, material: hbm_interface_effective}
+        - {name: memory_mid, thickness_m: 0.00008, material: hbm_memory_bulk_like}
+        - {name: polymer_solder_interface_2, thickness_m: 0.000065, material: hbm_interface_effective}
+        - {name: base_logic, thickness_m: 0.00015, material: silicon_bulk}
+      evidence: [L20]
+
+materials:
+  representation: diagonal_tensor_W_mK
+  require_property_class_metadata: true
+  entries:
+    silicon_bulk:
+      property_class: bulk
+      k_range_W_mK: [100.0, 140.0]
+      evidence: [L03, L20, L21]
+    copper_bulk:
+      property_class: bulk
+      k_range_W_mK: [380.0, 400.0]
+      evidence: [L03]
+    tim_effective:
+      property_class: effective
+      k_range_W_mK: [2.0, 8.0]
+      evidence: [L03, L20]
+    hbm_memory_bulk_like:
+      property_class: measured_layer
+      k_tensor_W_mK: [140.0, 140.0, 140.0]
+      evidence: [L20]
+    hbm_interface_effective:
+      property_class: effective
+      k_tensor_W_mK: [2.0, 2.0, 2.0]
+      evidence: [L20]
+    hbm_device_effective:
+      property_class: effective
+      k_tensor_W_mK: [100.0, 100.0, 7.0]
+      evidence: [L20]
+  forbidden:
+    - labeling_effective_k_as_bulk
+    - encoding_contact_resistance_by_silently_modifying_bulk_k
+    - unreferenced_k_above_400_W_mK_in_pilot
+
+power_generation:
+  primary_parameterization: source_total_power_and_geometry
+  source_families:
+    - compact_hotspot
+    - elongated
+    - multi_block
+    - distributed_background_plus_hotspot
+  total_power_W:
+    range: [0.5, 20.0]
+    sampling: log_stratified
+    evidence: [L02, L19, L21, L22]
+  local_areal_power_map:
+    resolution_m: [0.000005, 0.0002]
+    evidence: [L21]
+  volumetric_q_rule: q_W_m3 = allocated_source_power_W / realized_source_control_volume_m3
+  calibration: exact_discrete_control_volume_integral
+  clipping:
+    allowed: false
+    action_if_numeric_or_physical_limit_exceeded: reject_and_record_before_solve
+  required_metadata:
+    - target_total_power_W
+    - realized_total_power_W
+    - realized_source_volume_m3
+    - source_area_m2
+    - source_centroid_m
+    - source_power_density_W_m2
+    - q_min_nonzero_W_m3
+    - q_max_W_m3
+
+boundary_conditions:
+  ambient_temperature_K:
+    choices: [298.15, 300.0]
+    evidence: [L01, L02, L21]
+  top:
+    type: robin
+    h_W_m2K: [200.0, 500.0, 1000.0, 2500.0]
+    evidence: [L01, L02, L21]
+  bottom:
+    default_type: robin
+    h_W_m2K: [200.0, 500.0, 1000.0, 2500.0]
+    evidence: [L01, L02, L21]
+    dirichlet_300K_role: verification_or_OOD_only
+  sides:
+    choices: [adiabatic, symmetry_or_package_robin]
+    evidence: [L01, L02, L19]
+  contact_resistance:
+    representation: explicit_internal_face_m2K_W
+    pilot_values_m2K_W: [0.0, 0.000005, 0.00001]
+    status: sensitivity_grid_requires_source_review_before_production
+    evidence_for_nonzero_interface_need: [L17, L18, L20]
+
+mesh:
+  topology: structured_control_volume
+  base_grid_xyz: [32, 32, 12]
+  minimum_cells_per_physical_layer: 3
+  vertical_partitioning: layer_aligned
+  evidence: [L01, L02, L03, L11, L12]
+  convergence_subset:
+    fraction: 0.125
+    grids_xyz:
+      - [24, 24, 12]
+      - [32, 32, 16]
+      - [48, 48, 24]
+    compare:
+      - peak_deltaT_relative_change
+      - cv_mean_deltaT_relative_change
+      - top_bottom_flux_fraction_change
+      - energy_balance
+    acceptance:
+      peak_deltaT_relative_change_max: 0.03
+      cv_mean_deltaT_relative_change_max: 0.02
+
+quality_control:
+  all_arrays_finite: true
+  source_on_forbidden_boundary_nodes: 0
+  duplicate_scene_fingerprints: 0
+  integrated_power_relative_error_max: 1.0e-10
+  energy_balance_relative_error_max: 1.0e-8
+  linear_solver_relative_residual_max: 1.0e-10
+  temperature_K_min: 0.0
+  low_deltaT_policy:
+    threshold_peak_K: 0.2
+    action: flag_for_physics_review_not_automatic_rejection
+  q_clipping_count: 0
+  mesh_convergence_required_before_full_generation: true
+
+split_design:
+  assignment_stage: before_label_generation
+  grouping_key: physical_scene_fingerprint_without_solver_labels
+  proposed_counts:
+    train: 64
+    valid_iid: 16
+    test_iid_sealed: 16
+  selection_inputs_allowed:
+    - generator_seed
+    - geometry_template
+    - material_class
+    - source_family
+    - boundary_condition_class
+  selection_inputs_forbidden:
+    - temperature
+    - deltaT
+    - solver_error_conditioned_reselection
+  normalization_fit_roles: [train]
+  test_iid_sealed_until_contract_frozen: true
+
+ood_design:
+  report_only_and_never_used_for_selection: true
+  proposed_axes:
+    - held_out_footprint
+    - held_out_layer_template
+    - held_out_cooling_pair
+    - nonzero_contact_resistance
+    - high_source_concentration
+    - material_anisotropy_combination
+  generation_stage: after_pilot_QC_freeze
+  current_status: design_only_not_generated
+
+guardrails:
+  model_training_allowed: false
+  model_inference_allowed: false
+  full_data_generation_allowed: false
+  inspect_label_distribution_to_reselect_seed: false
