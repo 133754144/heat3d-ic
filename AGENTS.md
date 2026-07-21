@@ -6,6 +6,11 @@
   by default.
 - Keep this file short; put durable workflow rules in that document.
 - For V5 work, stay on `research/v5` unless the user directs otherwise.
+- This worktree is the V6 dataset worktree. Stay on `research/v6-dataset` and
+  restrict changes to dataset construction, manifests/provenance, split and
+  coverage/integrity checks, and related documentation. Do not train, modify
+  model architecture or model parameters, create training configurations, or
+  select/evaluate model checkpoints here.
 - After completing a file-changing task, commit and push to GitHub unless the
   user explicitly says not to; servers pull latest changes from GitHub.
 - Do not write to `data/`, `output/`, `checkpoints/`, or `logs/` without an
