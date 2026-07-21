@@ -1,0 +1,95 @@
+schema_version: heat3d_v6_p1d_dual_robin_dataset_v1
+dataset_id: heat3d_v6_p1d_asymmetric_dual_robin16_v0
+status: frozen_16_before_final_generation
+sample_count: 16
+seed: 6104
+scope:
+  layered_stacks_only: true
+  model_training: false
+  model_inference: false
+  peak_deltaT_filtering: false
+  peak_deltaT_resampling: false
+  sample_replacement: false
+  per_sample_Rth_power_back_calculation: false
+  material_parameter_tuning: false
+  expansion_beyond_16: false
+provenance:
+  literature_matrix: docs/v6_p1d_literature_matrix.csv
+  literature_matrix_sha256: 1769687bd5a6f7572153061f5202a07938063c105c71a20953bd2ed49f8fe8da
+  exploration_config: configs/heat3d_v6/v6_p1d_asymmetric_dual_robin_search.yaml
+  exploration_config_sha256: 327971a17be618dc4a2e12a30a62a089479f8294f96cec60f19102c7ac32f11f
+  exploration_json: configs/heat3d_v6/v6_p1d_asymmetric_dual_robin_exploration.json
+  exploration_json_sha256: 93eeb7f902ef8adf572260e9672fe79c396be42767828c3bacc0c0f8bb4bb35f
+  exploration_attempts_csv: configs/heat3d_v6/v6_p1d_asymmetric_dual_robin_exploration_attempts.csv
+  exploration_attempts_csv_sha256: ea29235ed4a8cd21af10ce651c06aa19b1ac3f554e6d49f6048e95a1f5f75e89
+physics:
+  footprint_m: [0.010, 0.010]
+  stack_source: configs/heat3d_v6/v6_p1c_package_path_calibration_cases.yaml#B_remote_dirichlet
+  retain_complete_package_path: true
+  solver_mesh_intervals_xyz: [64, 64, 56]
+  boundary_common:
+    top_ambient_K: 300.0
+    bottom_ambient_K: 300.0
+    sides: adiabatic
+    contact: {type: perfect, R_contact_m2K_W: 0.0}
+  top_h_allowed_W_m2K: [500.0, 2500.0]
+  bottom_h_literature_focus_W_m2K: [20.0, 200.0]
+  bottom_h_near_adiabatic_controls_W_m2K: [1.0, 2.0]
+source_contract:
+  topology: dual_layer_multi_source
+  active_layers: [silicon_die_lower, silicon_die_upper]
+  source_count: 8
+  sources_per_active_layer: 4
+  total_source_area_allowed_mm2: [16.0, 32.0, 48.0, 64.0]
+  final16_area_counts: {"16": 4, "32": 4, "48": 4, "64": 4}
+  power_allocation: equal_area_equal_power
+  source_geometry_generator: p1d_distributed_dual_layer_v1
+  layout_seed: 0
+  source_face_policy: preserve_p1b_source_z_node_policy
+operator_projection:
+  point_count: 1024
+  point_seed_stage: before_temperature_solve
+  strata: {volume: 512, source: 256, interface: 128, top: 64, bottom: 64}
+  require_every_layer_covered: true
+  require_every_interface_covered: true
+branch_resistance_contract:
+  junction_temperature: source_power_weighted_solver_temperature
+  top_branch_R_formula: (T_junction - T_inf_top) / Q_top
+  bottom_branch_R_formula: (T_junction - T_inf_bottom) / Q_bottom
+  effective_R_formula: (T_junction - 300 K) / P_total
+  parallel_closure_formula: R_effective == 1 / (1/R_top_branch + 1/R_bottom_branch)
+  forbidden_legacy_name: junction_to_surface_deltaT_divided_by_total_power
+mesh_convergence_contract:
+  representative_sample_ids: [p1d_f00_high, p1d_f07_high]
+  meshes:
+    coarse:
+      intervals_xy: [48, 48]
+      layer_z_intervals_bottom_to_top: [6, 6, 4, 4, 4, 4, 4, 4, 12]
+    base:
+      intervals_xy: [64, 64]
+      layer_z_intervals_bottom_to_top: [8, 8, 4, 4, 4, 4, 4, 4, 16]
+    fine:
+      intervals_xy: [80, 80]
+      layer_z_intervals_bottom_to_top: [10, 10, 5, 5, 5, 5, 5, 5, 20]
+  base_to_fine_relative_tolerance:
+    peak_deltaT: 0.02
+    mean_deltaT: 0.02
+    top_heat_fraction: 0.01
+    top_branch_R: 0.02
+cases:
+  - {id: p1d_f00_low, family_id: f00_near_adiabatic, selection_bin: low, exploration_attempt_id: x_f00_p0_a1, top_h_W_m2K: 500.0, bottom_h_W_m2K: 1.0, package_total_power_W: 2.0, total_source_area_mm2: 32.0, layout_seed: 0}
+  - {id: p1d_f00_high, family_id: f00_near_adiabatic, selection_bin: high, exploration_attempt_id: x_f00_p1_a1, top_h_W_m2K: 500.0, bottom_h_W_m2K: 1.0, package_total_power_W: 3.5, total_source_area_mm2: 32.0, layout_seed: 0}
+  - {id: p1d_f01_low, family_id: f01_low_low, selection_bin: low, exploration_attempt_id: x_f01_p0_a1, top_h_W_m2K: 500.0, bottom_h_W_m2K: 20.0, package_total_power_W: 2.0, total_source_area_mm2: 32.0, layout_seed: 0}
+  - {id: p1d_f01_high, family_id: f01_low_low, selection_bin: high, exploration_attempt_id: x_f01_p1_a1, top_h_W_m2K: 500.0, bottom_h_W_m2K: 20.0, package_total_power_W: 3.5, total_source_area_mm2: 32.0, layout_seed: 0}
+  - {id: p1d_f02_low, family_id: f02_750_50, selection_bin: low, exploration_attempt_id: x_f02_p0_a0, top_h_W_m2K: 750.0, bottom_h_W_m2K: 50.0, package_total_power_W: 3.0, total_source_area_mm2: 16.0, layout_seed: 0}
+  - {id: p1d_f02_high, family_id: f02_750_50, selection_bin: high, exploration_attempt_id: x_f02_p1_a0, top_h_W_m2K: 750.0, bottom_h_W_m2K: 50.0, package_total_power_W: 5.0, total_source_area_mm2: 16.0, layout_seed: 0}
+  - {id: p1d_f03_low, family_id: f03_1000_100, selection_bin: low, exploration_attempt_id: x_f03_p0_a0, top_h_W_m2K: 1000.0, bottom_h_W_m2K: 100.0, package_total_power_W: 4.0, total_source_area_mm2: 16.0, layout_seed: 0}
+  - {id: p1d_f03_high, family_id: f03_1000_100, selection_bin: high, exploration_attempt_id: x_f03_p1_a2, top_h_W_m2K: 1000.0, bottom_h_W_m2K: 100.0, package_total_power_W: 7.0, total_source_area_mm2: 48.0, layout_seed: 0}
+  - {id: p1d_f04_low, family_id: f04_1500_200, selection_bin: low, exploration_attempt_id: x_f04_p0_a0, top_h_W_m2K: 1500.0, bottom_h_W_m2K: 200.0, package_total_power_W: 6.0, total_source_area_mm2: 16.0, layout_seed: 0}
+  - {id: p1d_f04_high, family_id: f04_1500_200, selection_bin: high, exploration_attempt_id: x_f04_p1_a2, top_h_W_m2K: 1500.0, bottom_h_W_m2K: 200.0, package_total_power_W: 10.0, total_source_area_mm2: 48.0, layout_seed: 0}
+  - {id: p1d_f05_low, family_id: f05_2000_20, selection_bin: low, exploration_attempt_id: x_f05_p0_a2, top_h_W_m2K: 2000.0, bottom_h_W_m2K: 20.0, package_total_power_W: 8.0, total_source_area_mm2: 48.0, layout_seed: 0}
+  - {id: p1d_f05_high, family_id: f05_2000_20, selection_bin: high, exploration_attempt_id: x_f05_p1_a3, top_h_W_m2K: 2000.0, bottom_h_W_m2K: 20.0, package_total_power_W: 13.0, total_source_area_mm2: 64.0, layout_seed: 0}
+  - {id: p1d_f06_low, family_id: f06_2500_100, selection_bin: low, exploration_attempt_id: x_f06_p0_a3, top_h_W_m2K: 2500.0, bottom_h_W_m2K: 100.0, package_total_power_W: 10.0, total_source_area_mm2: 64.0, layout_seed: 0}
+  - {id: p1d_f06_high, family_id: f06_2500_100, selection_bin: high, exploration_attempt_id: x_f06_p1_a3, top_h_W_m2K: 2500.0, bottom_h_W_m2K: 100.0, package_total_power_W: 16.0, total_source_area_mm2: 64.0, layout_seed: 0}
+  - {id: p1d_f07_low, family_id: f07_2500_200, selection_bin: low, exploration_attempt_id: x_f07_p0_a2, top_h_W_m2K: 2500.0, bottom_h_W_m2K: 200.0, package_total_power_W: 10.0, total_source_area_mm2: 48.0, layout_seed: 0}
+  - {id: p1d_f07_high, family_id: f07_2500_200, selection_bin: high, exploration_attempt_id: x_f07_p1_a3, top_h_W_m2K: 2500.0, bottom_h_W_m2K: 200.0, package_total_power_W: 16.0, total_source_area_mm2: 64.0, layout_seed: 0}

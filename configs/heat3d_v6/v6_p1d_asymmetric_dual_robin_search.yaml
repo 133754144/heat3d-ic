@@ -1,0 +1,47 @@
+schema_version: heat3d_v6_p1d_dual_robin_search_v1
+status: preregistered_discrete_exploration
+seed: 6104
+scope:
+  solver_only: true
+  model_training: false
+  model_inference: false
+  attempts_must_all_be_recorded: true
+  result_dependent_attempt_deletion: false
+  per_sample_Rth_power_back_calculation: false
+  final_sample_generation: false
+literature_matrix:
+  path: docs/v6_p1d_literature_matrix.csv
+common:
+  ambient_top_K: 300.0
+  ambient_bottom_K: 300.0
+  sides: adiabatic
+  contact: perfect
+  stack_source: configs/heat3d_v6/v6_p1c_package_path_calibration_cases.yaml#paths.B_remote_dirichlet
+  mesh_intervals_xyz: [64, 64, 56]
+  topology: dual_layer_multi_source
+  source_count: 8
+  source_power_allocation: equal_area_equal_power
+  total_source_area_mm2: [16.0, 32.0, 48.0, 64.0]
+bc_power_families:
+  - {family_id: f00_near_adiabatic, top_h_W_m2K: 500.0, bottom_h_W_m2K: 1.0, powers_W: [2.0, 3.5], role: near_adiabatic_control}
+  - {family_id: f01_low_low, top_h_W_m2K: 500.0, bottom_h_W_m2K: 20.0, powers_W: [2.0, 3.5], role: literature_focus}
+  - {family_id: f02_750_50, top_h_W_m2K: 750.0, bottom_h_W_m2K: 50.0, powers_W: [3.0, 5.0], role: literature_focus}
+  - {family_id: f03_1000_100, top_h_W_m2K: 1000.0, bottom_h_W_m2K: 100.0, powers_W: [4.0, 7.0], role: literature_focus}
+  - {family_id: f04_1500_200, top_h_W_m2K: 1500.0, bottom_h_W_m2K: 200.0, powers_W: [6.0, 10.0], role: literature_focus}
+  - {family_id: f05_2000_20, top_h_W_m2K: 2000.0, bottom_h_W_m2K: 20.0, powers_W: [8.0, 13.0], role: literature_focus}
+  - {family_id: f06_2500_100, top_h_W_m2K: 2500.0, bottom_h_W_m2K: 100.0, powers_W: [10.0, 16.0], role: literature_focus}
+  - {family_id: f07_2500_200, top_h_W_m2K: 2500.0, bottom_h_W_m2K: 200.0, powers_W: [10.0, 16.0], role: literature_focus}
+selection_contract:
+  final_count: 16
+  per_family_count: 2
+  target_peak_bins_K:
+    low: [30.0, 55.0]
+    high: [55.0, 80.0]
+  target_centers_K: {low: 42.5, high: 67.5}
+  total_source_area_quota_in_final16: {"16": 4, "32": 4, "48": 4, "64": 4}
+  selection_rule: >-
+    Create one low-power and one high-power slot per family, then globally
+    minimize absolute peak-DeltaT distance to the respective bin centers while
+    assigning exactly four slots to each registered source area. Ties use
+    lexicographic attempt ID. No attempt is deleted.
+  final_generation_requires_separate_frozen_yaml: true
