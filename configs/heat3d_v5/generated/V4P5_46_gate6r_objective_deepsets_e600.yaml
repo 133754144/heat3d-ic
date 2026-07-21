@@ -1,0 +1,39 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_46_gate6r_objective_deepsets_e600
+extends: V4P5_45_gate6r_deepsets_only_e600.yaml
+overrides:
+  description: >-
+    Gate 6R V46 random-init e600 candidate. Relative to V45, only the two V42
+    objective modes are enabled: point-global fixed train-energy raw SSE and
+    train-only true-scale-squared clipped log-scale weighting. The V45
+    source/volume-aware latent DeepSets path is unchanged and no XY scale
+    context is added.
+  loss:
+    native_raw_loss_mode: point_global_fixed_train_energy_sse
+    native_log_scale_weight_mode: train_true_scale_squared_clipped
+    native_log_scale_weight_clip_min: 0.25
+    native_log_scale_weight_clip_max: 4.0
+  run:
+    init_checkpoint: null
+    final_probe_output_dir: output/heat3d_v5_gate6r_final_probe/V4P5_46_gate6r_objective_deepsets_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6r_diagnostics/V4P5_46_gate6r_objective_deepsets_e600
+  export:
+    output_dir: output/heat3d_v5_gate6r_runs/V4P5_46_gate6r_objective_deepsets_e600
+    run_name: V4P5_46_gate6r_objective_deepsets_e600
+    prediction_split: valid_iid
+  metadata:
+    phase: v5_gate6r_training_prep
+    candidate: V46_objective_deepsets
+    baseline_config_id: V4P5_45_gate6r_deepsets_only_e600
+    initialization: random
+    objective_source: V4P5_42_gate6q_objective_only_e600
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    objective_reference_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v5_gate6r_logs/V4P5_46_gate6r_objective_deepsets_e600.log
+    status: prepared_not_started
+    training_started: false
+    formal_e600_started: false

@@ -1,0 +1,41 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V4P5_45_gate6r_deepsets_only_e600
+extends: V4P5_38_gate6n_v36_r2r_mask_p005_e600.yaml
+overrides:
+  description: >-
+    Gate 6R V45 random-init e600 candidate. Relative to V38, only the
+    source/volume-aware latent DeepSets scale-pooling residual from V44 is
+    enabled. No XY scale context is added and the V38 objective is unchanged.
+    P2R degree partitioning conserves physical-node source and volume totals;
+    the DeepSets residual output projection is zero initialized.
+  model:
+    scale_deepsets_mode: source_volume_residual
+  run:
+    init_checkpoint: null
+    final_probe_output_dir: output/heat3d_v5_gate6r_final_probe/V4P5_45_gate6r_deepsets_only_e600
+    post_training_diagnostics_output_dir: output/heat3d_v5_gate6r_diagnostics/V4P5_45_gate6r_deepsets_only_e600
+  export:
+    output_dir: output/heat3d_v5_gate6r_runs/V4P5_45_gate6r_deepsets_only_e600
+    run_name: V4P5_45_gate6r_deepsets_only_e600
+    prediction_split: valid_iid
+  metadata:
+    phase: v5_gate6r_training_prep
+    candidate: V45_deepsets_only
+    baseline_config_id: V4P5_38_gate6n_v36_r2r_mask_p005_e600
+    initialization: random
+    deepsets_source: V4P5_44_gate6q_xy_deepsets_e600
+    deepsets_aggregations: [mean, source_power_weighted, volume_weighted]
+    deepsets_p2r_partition: per_physical_node_valid_degree
+    deepsets_partition_of_unity_required: true
+    deepsets_source_volume_conservation_required: true
+    deepsets_softmax_only_pooling: false
+    deepsets_output_init: zero
+    fit_roles: [train]
+    normalization_fit_roles: [train]
+    selection_roles: [valid_iid]
+    forbidden_access_roles: [test_iid, hard_train_holdout, hard_challenge_valid, hard_challenge_test, sealed_iid]
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v5_gate6r_logs/V4P5_45_gate6r_deepsets_only_e600.log
+    status: prepared_not_started
+    training_started: false
+    formal_e600_started: false
