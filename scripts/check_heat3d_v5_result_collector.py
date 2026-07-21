@@ -126,6 +126,11 @@ def main() -> int:
         "legacy_best",
         "final",
     }
+    gate6q_payload = copy.deepcopy(valid_only_payload)
+    gate6q_payload["schema_version"] = "heat3d_v5_gate6q_cpu_replay_v1"
+    gate6q = _result_fields(row, Path("/tmp/fixture"), gate6q_payload, "fixture")
+    assert gate6q["result_v5_status"] == "completed_valid_only"
+    assert gate6q["result_v5_required_metrics_complete"] == "true"
     print("V5 result collector fixture checks passed")
     return 0
 

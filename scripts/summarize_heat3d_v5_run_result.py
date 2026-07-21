@@ -242,6 +242,7 @@ def _is_valid_only_four_checkpoint_payload(
             (
                 "heat3d_v5_v32_valid_only_closeout",
                 "heat3d_v5_valid_only_four_checkpoint",
+                "heat3d_v5_gate6q_cpu_replay",
             )
         )
         and set(metrics) == {
