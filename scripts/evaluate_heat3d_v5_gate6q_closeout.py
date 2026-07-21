@@ -35,6 +35,10 @@ from rigno.heat3d_v5_metrics import (  # noqa: E402
     control_volume_weights,
     evaluate_metric_suite,
 )
+from rigno.heat3d_v5_global_context import standardize_contexts  # noqa: E402
+from rigno.heat3d_v5_scale_context import (  # noqa: E402
+    standardize_scale_contexts,
+)
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
     _attach_global_context_to_groups,
@@ -46,11 +50,13 @@ from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     _load_params_checkpoint,
     _make_groups_with_progress,
     _model_apply,
+    _global_context_row_for_example,
     _prepare_global_context_lookup,
     _prepare_scale_context_lookup,
     _resolve_decoder_bypass_model_config,
     _resolve_training_splits,
     _sample_root,
+    _scale_context_row_for_example,
     _tree_max_abs_difference,
 )
 from run_heat3d_v3_final_probe_checkpoint_smoke import (  # noqa: E402
@@ -305,9 +311,27 @@ def _build_groups(
         train_examples=train_examples,
         required_examples=valid_examples,
     )
+    stored_global = dict(run_config["global_context"]["standardizer"])
+    stored_global_lookup = {
+        str(example.sample_id): standardize_contexts(
+            [_global_context_row_for_example(example)], stored_global
+        )[0]
+        for example in valid_examples
+    }
+    global_recompute_max_abs = max(
+        float(
+            np.max(
+                np.abs(
+                    np.asarray(global_lookup[sample_id], dtype=np.float64)
+                    - np.asarray(stored_global_lookup[sample_id], dtype=np.float64)
+                )
+            )
+        )
+        for sample_id in stored_global_lookup
+    )
     _attach_global_context_to_groups(
         groups,
-        global_lookup,
+        stored_global_lookup,
         expected_feature_dim=int(model_config.get("global_context_feature_dim", 0)),
     )
     scale_lookup, scale_payload = _prepare_scale_context_lookup(
@@ -315,9 +339,32 @@ def _build_groups(
         train_examples=train_examples,
         required_examples=valid_examples,
     )
+    stored_scale = dict(
+        (run_config.get("scale_context") or {}).get("standardizer") or {}
+    )
+    stored_scale_lookup: dict[str, np.ndarray] = {}
+    scale_recompute_max_abs = None
+    if model_config.get("scale_context_mode", "none") != "none":
+        stored_scale_lookup = {
+            str(example.sample_id): standardize_scale_contexts(
+                [_scale_context_row_for_example(example)], stored_scale
+            )[0]
+            for example in valid_examples
+        }
+        scale_recompute_max_abs = max(
+            float(
+                np.max(
+                    np.abs(
+                        np.asarray(scale_lookup[sample_id], dtype=np.float64)
+                        - np.asarray(stored_scale_lookup[sample_id], dtype=np.float64)
+                    )
+                )
+            )
+            for sample_id in stored_scale_lookup
+        )
     _attach_scale_context_to_groups(
         groups,
-        scale_lookup,
+        stored_scale_lookup,
         expected_feature_dim=int(model_config.get("scale_context_feature_dim", 0)),
     )
     by_id = {str(example.sample_id): example for example in valid_examples}
@@ -339,6 +386,10 @@ def _build_groups(
     return groups, {
         "global_context": global_payload,
         "scale_context": scale_payload,
+        "stored_global_standardizer": stored_global,
+        "stored_scale_standardizer": stored_scale,
+        "global_context_recompute_max_abs": global_recompute_max_abs,
+        "scale_context_recompute_max_abs": scale_recompute_max_abs,
     }
 
 
@@ -613,6 +664,13 @@ def main() -> int:
                 if scale_standardizer
                 else None
             ),
+            "replay_context_source": "persisted_run_config_standardizers",
+            "global_context_recompute_max_abs": context_payload[
+                "global_context_recompute_max_abs"
+            ],
+            "scale_context_recompute_max_abs": context_payload[
+                "scale_context_recompute_max_abs"
+            ],
             "target_or_label_features": [],
         },
         "training_completion": {
