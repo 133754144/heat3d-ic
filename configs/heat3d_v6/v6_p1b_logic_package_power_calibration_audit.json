@@ -1,0 +1,528 @@
+{
+  "by_power": {
+    "0.5": {
+      "peak_deltaT_K": {
+        "max": 0.0967236589022491,
+        "median": 0.04964299388876725,
+        "min": 0.004881073370199829
+      },
+      "sample_count": 4,
+      "window_hit_count": 0
+    },
+    "1": {
+      "peak_deltaT_K": {
+        "max": 0.19344731779489166,
+        "median": 0.09928598777383968,
+        "min": 0.009762146743412359
+      },
+      "sample_count": 4,
+      "window_hit_count": 0
+    },
+    "2": {
+      "peak_deltaT_K": {
+        "max": 0.3868946355803473,
+        "median": 0.1985719755434161,
+        "min": 0.019524293487734212
+      },
+      "sample_count": 4,
+      "window_hit_count": 0
+    },
+    "4": {
+      "peak_deltaT_K": {
+        "max": 0.7737892711505765,
+        "median": 0.3971439510828816,
+        "min": 0.039048586977457944
+      },
+      "sample_count": 4,
+      "window_hit_count": 0
+    }
+  },
+  "by_topology": {
+    "dual_layer_few_source": {
+      "Rth_peak_K_W": {
+        "max": 0.1934473178044982,
+        "min": 0.19344731778764412
+      },
+      "peak_deltaT_K_by_power_W": {
+        "0.5": 0.0967236589022491,
+        "1": 0.19344731779489166,
+        "2": 0.3868946355803473,
+        "4": 0.7737892711505765
+      },
+      "sample_count": 4,
+      "window_hit_sample_ids": []
+    },
+    "dual_layer_multi_source": {
+      "Rth_peak_K_W": {
+        "max": 0.18844211400789845,
+        "min": 0.18844211399527921
+      },
+      "peak_deltaT_K_by_power_W": {
+        "0.5": 0.09422105700394923,
+        "1": 0.18844211400096356,
+        "2": 0.37688422799413956,
+        "4": 0.7537684559811169
+      },
+      "sample_count": 4,
+      "window_hit_sample_ids": []
+    },
+    "single_layer_multi_source": {
+      "Rth_peak_K_W": {
+        "max": 0.01012986154717055,
+        "min": 0.01012986154616158
+      },
+      "peak_deltaT_K_by_power_W": {
+        "0.5": 0.0050649307735852744,
+        "1": 0.010129861546715802,
+        "2": 0.02025972309269264,
+        "4": 0.04051944618464631
+      },
+      "sample_count": 4,
+      "window_hit_sample_ids": []
+    },
+    "single_layer_single_source": {
+      "Rth_peak_K_W": {
+        "max": 0.009762146744364486,
+        "min": 0.009762146740399658
+      },
+      "peak_deltaT_K_by_power_W": {
+        "0.5": 0.004881073370199829,
+        "1": 0.009762146743412359,
+        "2": 0.019524293487734212,
+        "4": 0.039048586977457944
+      },
+      "sample_count": 4,
+      "window_hit_sample_ids": []
+    }
+  },
+  "dataset_id": "heat3d_v6_p1b_logic_package_power_calibration16_v0",
+  "dataset_manifest_sha256": "74e5799f5104c729f9bf4c35d6f5979d95c18d5b6efd7328f1691c84dd3517cd",
+  "dataset_path": "data/heat3d_v6_p1b_logic_package_power_calibration16_v0",
+  "guardrails": {
+    "expanded_samples": 0,
+    "generated_samples": 16,
+    "model_inference_runs": 0,
+    "peak_deltaT_filtering": false,
+    "peak_deltaT_resampling": false,
+    "power_back_calculation": false,
+    "training_runs": 0
+  },
+  "integrity": {
+    "all_metrics_finite": true,
+    "max_abs_energy_balance_relative_error": 1.1909095931628144e-10,
+    "min_source_control_volume_count": 975,
+    "min_source_in_plane_interval_count": 12,
+    "point_coordinates_frozen_before_labels": true,
+    "point_count_per_sample": 1024,
+    "source_on_bottom_dirichlet_node_count": 0
+  },
+  "peak_deltaT_evaluation_window_K": [
+    30.0,
+    80.0
+  ],
+  "power_definition": {
+    "Rth_power_inference_used": false,
+    "active_layer_power": "sum of area-weighted source power in layer",
+    "package_total_power_provenance": "explicit_user_instruction",
+    "source_power": "package power times declared source-area fraction",
+    "surface_power_density": "source power divided by declared planform area",
+    "volumetric_q": "source power divided by realized source control-volume volume"
+  },
+  "sample_count": 16,
+  "samples": [
+    {
+      "Rth_peak_K_W": 0.009762146740399658,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 0.5}",
+      "bottom_heat_fraction": 0.9996930262178116,
+      "common_surface_power_density_W_m2": 7812.5,
+      "energy_balance_relative_error": 1.0624612301057823e-10,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.362455859430338e-16,
+      "mean_deltaT_K": 0.0029838732045908397,
+      "min_source_control_volume_count": 7803,
+      "min_source_in_plane_interval_count": 50,
+      "package_total_power_W": 0.5,
+      "peak_deltaT_K": 0.004881073370199829,
+      "sample_id": "p1b_ss_p0p5",
+      "solver_peak_minus_projected_peak_K": 5.521441494238388e-06,
+      "source_count": 1,
+      "top_heat_fraction": 0.0003069736759422133,
+      "topology": "single_layer_single_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.009762146743412359,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 1.0}",
+      "bottom_heat_fraction": 0.9996930262707227,
+      "common_surface_power_density_W_m2": 15625.0,
+      "energy_balance_relative_error": 5.4080073752516e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.175655419118404e-16,
+      "mean_deltaT_K": 0.005967746397451822,
+      "min_source_control_volume_count": 7803,
+      "min_source_in_plane_interval_count": 50,
+      "package_total_power_W": 1.0,
+      "peak_deltaT_K": 0.009762146743412359,
+      "sample_id": "p1b_ss_p1",
+      "solver_peak_minus_projected_peak_K": 2.2977573109983496e-05,
+      "source_count": 1,
+      "top_heat_fraction": 0.00030697367519731157,
+      "topology": "single_layer_single_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.009762146743867106,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 2.0}",
+      "bottom_heat_fraction": 0.9996930262946885,
+      "common_surface_power_density_W_m2": 31250.0,
+      "energy_balance_relative_error": 3.048894470225605e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.361596948189952e-16,
+      "mean_deltaT_K": 0.011935492783084317,
+      "min_source_control_volume_count": 7803,
+      "min_source_in_plane_interval_count": 50,
+      "package_total_power_W": 2.0,
+      "peak_deltaT_K": 0.019524293487734212,
+      "sample_id": "p1b_ss_p2",
+      "solver_peak_minus_projected_peak_K": 3.277045340155382e-05,
+      "source_count": 1,
+      "top_heat_fraction": 0.00030697367482258566,
+      "topology": "single_layer_single_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.009762146744364486,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 4.0}",
+      "bottom_heat_fraction": 0.9996930263124324,
+      "common_surface_power_density_W_m2": 62500.0,
+      "energy_balance_relative_error": 1.2930212456296886e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.246801752633647e-16,
+      "mean_deltaT_K": 0.023870985554493192,
+      "min_source_control_volume_count": 7803,
+      "min_source_in_plane_interval_count": 50,
+      "package_total_power_W": 4.0,
+      "peak_deltaT_K": 0.039048586977457944,
+      "sample_id": "p1b_ss_p4",
+      "solver_peak_minus_projected_peak_K": 3.8920091697036696e-05,
+      "source_count": 1,
+      "top_heat_fraction": 0.0003069736746373605,
+      "topology": "single_layer_single_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.01012986154717055,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 0.5}",
+      "bottom_heat_fraction": 0.9996930262090211,
+      "common_surface_power_density_W_m2": 7812.5,
+      "energy_balance_relative_error": 1.1502854224687556e-10,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.34120075421321e-16,
+      "mean_deltaT_K": 0.002983873204658054,
+      "min_source_control_volume_count": 1875,
+      "min_source_in_plane_interval_count": 24,
+      "package_total_power_W": 0.4999999999999999,
+      "peak_deltaT_K": 0.0050649307735852744,
+      "sample_id": "p1b_sm_p0p5",
+      "solver_peak_minus_projected_peak_K": 5.573804514824587e-06,
+      "source_count": 4,
+      "top_heat_fraction": 0.0003069736759502953,
+      "topology": "single_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.010129861546715803,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 1.0}",
+      "bottom_heat_fraction": 0.9996930262701289,
+      "common_surface_power_density_W_m2": 15625.0,
+      "energy_balance_relative_error": 5.467648556134465e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.261975767998264e-16,
+      "mean_deltaT_K": 0.0059677463974014446,
+      "min_source_control_volume_count": 1875,
+      "min_source_in_plane_interval_count": 24,
+      "package_total_power_W": 0.9999999999999998,
+      "peak_deltaT_K": 0.010129861546715802,
+      "sample_id": "p1b_sm_p1",
+      "solver_peak_minus_projected_peak_K": 4.960306853263319e-05,
+      "source_count": 4,
+      "top_heat_fraction": 0.00030697367519458215,
+      "topology": "single_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.010129861546346321,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 2.0}",
+      "bottom_heat_fraction": 0.999693026297718,
+      "common_surface_power_density_W_m2": 31250.0,
+      "energy_balance_relative_error": 2.7460589357986016e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.288979560552684e-16,
+      "mean_deltaT_K": 0.011935492783046965,
+      "min_source_control_volume_count": 1875,
+      "min_source_in_plane_interval_count": 24,
+      "package_total_power_W": 1.9999999999999996,
+      "peak_deltaT_K": 0.02025972309269264,
+      "sample_id": "p1b_sm_p2",
+      "solver_peak_minus_projected_peak_K": 4.2158331723385345e-05,
+      "source_count": 4,
+      "top_heat_fraction": 0.0003069736748215123,
+      "topology": "single_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.01012986154616158,
+      "active_layer_count": 1,
+      "active_layer_power_W": "{\"silicon_die_lower\": 4.0}",
+      "bottom_heat_fraction": 0.9996930263109908,
+      "common_surface_power_density_W_m2": 62500.0,
+      "energy_balance_relative_error": 1.437294727679728e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.322050494514902e-16,
+      "mean_deltaT_K": 0.02387098555441401,
+      "min_source_control_volume_count": 1875,
+      "min_source_in_plane_interval_count": 24,
+      "package_total_power_W": 3.999999999999999,
+      "peak_deltaT_K": 0.04051944618464631,
+      "sample_id": "p1b_sm_p4",
+      "solver_peak_minus_projected_peak_K": 0.00019367721881735633,
+      "source_count": 4,
+      "top_heat_fraction": 0.00030697367463623077,
+      "topology": "single_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.1934473178044982,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 0.24999999999999994, \"silicon_die_upper\": 0.25}",
+      "bottom_heat_fraction": 0.9956023694371097,
+      "common_surface_power_density_W_m2": 7812.5,
+      "energy_balance_relative_error": 1.1909095931628144e-10,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.305825569409897e-16,
+      "mean_deltaT_K": 0.03926074025502865,
+      "min_source_control_volume_count": 3978,
+      "min_source_in_plane_interval_count": 25,
+      "package_total_power_W": 0.5,
+      "peak_deltaT_K": 0.0967236589022491,
+      "sample_id": "p1b_df_p0p5",
+      "solver_peak_minus_projected_peak_K": 4.42045536601654e-05,
+      "source_count": 2,
+      "top_heat_fraction": 0.004397630443799393,
+      "topology": "dual_layer_few_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.19344731779489166,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 0.4999999999999999, \"silicon_die_upper\": 0.5}",
+      "bottom_heat_fraction": 0.9956023695060945,
+      "common_surface_power_density_W_m2": 15625.0,
+      "energy_balance_relative_error": 5.085709631202917e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.314295404691488e-16,
+      "mean_deltaT_K": 0.07852148049823354,
+      "min_source_control_volume_count": 3978,
+      "min_source_in_plane_interval_count": 25,
+      "package_total_power_W": 1.0,
+      "peak_deltaT_K": 0.19344731779489166,
+      "sample_id": "p1b_df_p1",
+      "solver_peak_minus_projected_peak_K": 4.808615392448701e-05,
+      "source_count": 2,
+      "top_heat_fraction": 0.004397630443048421,
+      "topology": "dual_layer_few_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.19344731779017366,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 0.9999999999999998, \"silicon_die_upper\": 1.0}",
+      "bottom_heat_fraction": 0.9956023695301669,
+      "common_surface_power_density_W_m2": 31250.0,
+      "energy_balance_relative_error": 2.7157942561473192e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.371087420959048e-16,
+      "mean_deltaT_K": 0.15704296098470105,
+      "min_source_control_volume_count": 3978,
+      "min_source_in_plane_interval_count": 25,
+      "package_total_power_W": 2.0,
+      "peak_deltaT_K": 0.3868946355803473,
+      "sample_id": "p1b_df_p2",
+      "solver_peak_minus_projected_peak_K": 0.0011481383390332667,
+      "source_count": 2,
+      "top_heat_fraction": 0.0043976304426751826,
+      "topology": "dual_layer_few_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.19344731778764412,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 1.9999999999999996, \"silicon_die_upper\": 2.0}",
+      "bottom_heat_fraction": 0.9956023695435854,
+      "common_surface_power_density_W_m2": 62500.0,
+      "energy_balance_relative_error": 1.3927081710107814e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.203594556577657e-16,
+      "mean_deltaT_K": 0.31408592195756085,
+      "min_source_control_volume_count": 3978,
+      "min_source_in_plane_interval_count": 25,
+      "package_total_power_W": 4.0,
+      "peak_deltaT_K": 0.7737892711505765,
+      "sample_id": "p1b_df_p4",
+      "solver_peak_minus_projected_peak_K": 0.002498372011700667,
+      "source_count": 2,
+      "top_heat_fraction": 0.004397630442487507,
+      "topology": "dual_layer_few_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.18844211400789845,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 0.25, \"silicon_die_upper\": 0.25}",
+      "bottom_heat_fraction": 0.9956023694456184,
+      "common_surface_power_density_W_m2": 7812.5,
+      "energy_balance_relative_error": 1.1058443050160349e-10,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.237089440308671e-16,
+      "mean_deltaT_K": 0.03926074025501194,
+      "min_source_control_volume_count": 975,
+      "min_source_in_plane_interval_count": 12,
+      "package_total_power_W": 0.5,
+      "peak_deltaT_K": 0.09422105700394923,
+      "sample_id": "p1b_dm_p0p5",
+      "solver_peak_minus_projected_peak_K": 0.00029587270682895905,
+      "source_count": 8,
+      "top_heat_fraction": 0.004397630443797179,
+      "topology": "dual_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.18844211400096356,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 0.5, \"silicon_die_upper\": 0.5}",
+      "bottom_heat_fraction": 0.9956023695003269,
+      "common_surface_power_density_W_m2": 15625.0,
+      "energy_balance_relative_error": 5.662614821488887e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.192084162025406e-16,
+      "mean_deltaT_K": 0.07852148049819979,
+      "min_source_control_volume_count": 975,
+      "min_source_in_plane_interval_count": 12,
+      "package_total_power_W": 1.0,
+      "peak_deltaT_K": 0.18844211400096356,
+      "sample_id": "p1b_dm_p1",
+      "solver_peak_minus_projected_peak_K": 0.0005063080301965783,
+      "source_count": 8,
+      "top_heat_fraction": 0.004397630443046931,
+      "topology": "dual_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.18844211399706978,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 1.0, \"silicon_die_upper\": 1.0}",
+      "bottom_heat_fraction": 0.9956023695284033,
+      "common_surface_power_density_W_m2": 31250.0,
+      "energy_balance_relative_error": 2.8922975126022266e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.306003794617566e-16,
+      "mean_deltaT_K": 0.15704296098464995,
+      "min_source_control_volume_count": 975,
+      "min_source_in_plane_interval_count": 12,
+      "package_total_power_W": 2.0,
+      "peak_deltaT_K": 0.37688422799413956,
+      "sample_id": "p1b_dm_p2",
+      "solver_peak_minus_projected_peak_K": 0.003542903053187274,
+      "source_count": 8,
+      "top_heat_fraction": 0.004397630442673693,
+      "topology": "dual_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    },
+    {
+      "Rth_peak_K_W": 0.18844211399527921,
+      "active_layer_count": 2,
+      "active_layer_power_W": "{\"silicon_die_lower\": 2.0, \"silicon_die_upper\": 2.0}",
+      "bottom_heat_fraction": 0.9956023695431575,
+      "common_surface_power_density_W_m2": 62500.0,
+      "energy_balance_relative_error": 1.4355183708403274e-11,
+      "in_30_80_K_window": false,
+      "linear_residual": 7.307085934307362e-16,
+      "mean_deltaT_K": 0.31408592195753526,
+      "min_source_control_volume_count": 975,
+      "min_source_in_plane_interval_count": 12,
+      "package_total_power_W": 4.0,
+      "peak_deltaT_K": 0.7537684559811169,
+      "sample_id": "p1b_dm_p4",
+      "solver_peak_minus_projected_peak_K": 0.002761188942827175,
+      "source_count": 8,
+      "top_heat_fraction": 0.004397630442487322,
+      "topology": "dual_layer_multi_source",
+      "topology_total_declared_source_area_m2": 6.4e-05
+    }
+  ],
+  "schema_version": "heat3d_v6_p1b_logic_package_power_calibration_v1",
+  "source_count": 60,
+  "summary": {
+    "Rth_peak_K_W": {
+      "max": 0.1934473178044982,
+      "median": 0.09928598777122488,
+      "min": 0.009762146740399658
+    },
+    "bottom_heat_fraction": {
+      "max": 0.9996930263124324,
+      "median": 0.9976476978763033,
+      "min": 0.9956023694371097
+    },
+    "common_surface_power_density_W_m2": {
+      "max": 62500.0,
+      "median": 23437.5,
+      "min": 7812.5
+    },
+    "energy_balance_relative_error": {
+      "max": 1.1909095931628144e-10,
+      "median": 4.067302050714261e-11,
+      "min": 1.2930212456296886e-11
+    },
+    "mean_deltaT_K": {
+      "max": 0.31408592195756085,
+      "median": 0.031565862904752565,
+      "min": 0.0029838732045908397
+    },
+    "package_total_power_W": {
+      "max": 4.0,
+      "median": 1.4999999999999998,
+      "min": 0.4999999999999999
+    },
+    "peak_deltaT_K": {
+      "max": 0.7737892711505765,
+      "median": 0.06737025159429777,
+      "min": 0.004881073370199829
+    },
+    "solver_peak_minus_projected_peak_K": {
+      "max": 0.003542903053187274,
+      "median": 4.88446112285601e-05,
+      "min": 5.521441494238388e-06
+    },
+    "top_heat_fraction": {
+      "max": 0.004397630443799393,
+      "median": 0.002352302059218809,
+      "min": 0.00030697367463623077
+    }
+  },
+  "topology_case_counts": {
+    "dual_layer_few_source": 4,
+    "dual_layer_multi_source": 4,
+    "single_layer_multi_source": 4,
+    "single_layer_single_source": 4
+  },
+  "tracked_manifest_sha256": "74e5799f5104c729f9bf4c35d6f5979d95c18d5b6efd7328f1691c84dd3517cd",
+  "window_hit_count": 0,
+  "window_hit_sample_ids": []
+}

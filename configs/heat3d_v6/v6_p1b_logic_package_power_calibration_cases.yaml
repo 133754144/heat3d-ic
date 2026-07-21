@@ -1,0 +1,97 @@
+schema_version: heat3d_v6_p1b_logic_package_power_cases_v1
+dataset_id: heat3d_v6_p1b_logic_package_power_calibration16_v0
+status: frozen_16_case_power_calibration
+sample_count: 16
+seed: 6102
+scope:
+  layered_stacks_only: true
+  stack_template_id: logic_package
+  peak_deltaT_filtering: false
+  peak_deltaT_resampling: false
+  peak_deltaT_30_80_K_role: result_evaluation_window_only
+  power_back_calculation: false
+  model_training: false
+  model_inference: false
+physics:
+  footprint_m: [0.010, 0.010]
+  stack_realization: repeated_active_die_logic_package
+  stack_realization_note: >-
+    The formal logic_package silicon-die/TIM/spreader template is instantiated
+    with two active silicon dies so the preregistered one- and two-active-layer
+    source topologies share one fixed material stack.
+  layers_bottom_to_top:
+    - {id: silicon_die_lower, thickness_m: 0.00015, material: silicon_bulk, property_class: bulk, k_W_mK: 120.0, role: active, z_intervals: 4, evidence: [L03, L20, L21]}
+    - {id: tim_between_dies, thickness_m: 0.00005, material: tim_effective, property_class: effective, k_W_mK: 4.0, role: interface, z_intervals: 4, evidence: [L03, L20]}
+    - {id: silicon_die_upper, thickness_m: 0.00015, material: silicon_bulk, property_class: bulk, k_W_mK: 120.0, role: active, z_intervals: 4, evidence: [L03, L20, L21]}
+    - {id: tim_to_spreader, thickness_m: 0.00005, material: tim_effective, property_class: effective, k_W_mK: 4.0, role: interface, z_intervals: 4, evidence: [L03, L20]}
+    - {id: spreader, thickness_m: 0.001, material: copper_bulk, property_class: bulk, k_W_mK: 400.0, role: passive, z_intervals: 16, evidence: [L03]}
+  solver_mesh_intervals_xyz: [64, 64, 32]
+  source_min_control_volume_count: 256
+  source_min_in_plane_intervals: 8
+  boundary_conditions:
+    top: {type: robin, h_W_m2K: 500.0, T_inf_K: 300.0}
+    bottom: {type: dirichlet, T_K: 300.0}
+    sides: {type: adiabatic}
+  contact: {type: perfect, R_contact_m2K_W: 0.0}
+  operator_projection:
+    point_count: 1024
+    point_seed_stage: before_temperature_solve
+    strata: {volume: 512, source: 256, interface: 128, top: 64, bottom: 64}
+power_contract:
+  package_total_power_W: [0.5, 1.0, 2.0, 4.0]
+  provenance: explicit_user_instruction
+  allocation_mode: proportional_to_declared_source_planform_area
+  topology_total_declared_source_area_m2: 0.000064
+  source_power_formula: package_total_power_W * source_area_m2 / topology_total_source_area_m2
+  surface_power_density_formula: source_power_W / source_area_m2
+  q_formula: source_power_W / realized_source_control_volume_m3
+  direct_package_power_to_local_small_source_forbidden: true
+topologies:
+  single_layer_single_source:
+    active_layer_count: 1
+    source_count: 1
+    sources:
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.10, 0.90, 0.10, 0.90]}
+  single_layer_multi_source:
+    active_layer_count: 1
+    source_count: 4
+    sources:
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.05, 0.45, 0.05, 0.45]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.55, 0.95, 0.05, 0.45]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.05, 0.45, 0.55, 0.95]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.55, 0.95, 0.55, 0.95]}
+  dual_layer_few_source:
+    active_layer_count: 2
+    source_count: 2
+    sources:
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.10, 0.50, 0.10, 0.90]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.50, 0.90, 0.10, 0.90]}
+  dual_layer_multi_source:
+    active_layer_count: 2
+    source_count: 8
+    sources:
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.05, 0.25, 0.30, 0.70]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.28, 0.48, 0.30, 0.70]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.52, 0.72, 0.30, 0.70]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.75, 0.95, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.05, 0.25, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.28, 0.48, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.52, 0.72, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.75, 0.95, 0.30, 0.70]}
+cases:
+  - {id: p1b_ss_p0p5, topology: single_layer_single_source, package_total_power_W: 0.5}
+  - {id: p1b_ss_p1, topology: single_layer_single_source, package_total_power_W: 1.0}
+  - {id: p1b_ss_p2, topology: single_layer_single_source, package_total_power_W: 2.0}
+  - {id: p1b_ss_p4, topology: single_layer_single_source, package_total_power_W: 4.0}
+  - {id: p1b_sm_p0p5, topology: single_layer_multi_source, package_total_power_W: 0.5}
+  - {id: p1b_sm_p1, topology: single_layer_multi_source, package_total_power_W: 1.0}
+  - {id: p1b_sm_p2, topology: single_layer_multi_source, package_total_power_W: 2.0}
+  - {id: p1b_sm_p4, topology: single_layer_multi_source, package_total_power_W: 4.0}
+  - {id: p1b_df_p0p5, topology: dual_layer_few_source, package_total_power_W: 0.5}
+  - {id: p1b_df_p1, topology: dual_layer_few_source, package_total_power_W: 1.0}
+  - {id: p1b_df_p2, topology: dual_layer_few_source, package_total_power_W: 2.0}
+  - {id: p1b_df_p4, topology: dual_layer_few_source, package_total_power_W: 4.0}
+  - {id: p1b_dm_p0p5, topology: dual_layer_multi_source, package_total_power_W: 0.5}
+  - {id: p1b_dm_p1, topology: dual_layer_multi_source, package_total_power_W: 1.0}
+  - {id: p1b_dm_p2, topology: dual_layer_multi_source, package_total_power_W: 2.0}
+  - {id: p1b_dm_p4, topology: dual_layer_multi_source, package_total_power_W: 4.0}
