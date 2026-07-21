@@ -1,0 +1,101 @@
+schema_version: heat3d_v6_p1a_power_cases_v1
+dataset_id: heat3d_v6_p1a_power_calibration16_v0
+status: frozen_16_case_power_calibration
+sample_count: 16
+seed: 6101
+literature_matrix:
+  path: docs/v6_p0_literature_matrix.csv
+  sha256: ef2bc1ee1fab5d63cb92e835a348361e10a773256c12429d609a4eeb23b6f852
+scope:
+  layered_stacks_only: true
+  peak_deltaT_filtering: false
+  peak_deltaT_resampling: false
+  peak_deltaT_30_80_K_role: result_evaluation_window_only
+  model_training: false
+  model_inference: false
+physics:
+  footprint_m: [0.001, 0.001]
+  layers_bottom_to_top:
+    - {id: bottom_substrate, thickness_m: 0.00010, k_W_mK: 20.0, role: passive, z_intervals: 6, evidence: L02}
+    - {id: active_lower, thickness_m: 0.00005, k_W_mK: 1.0, role: active, z_intervals: 4, evidence: L02}
+    - {id: interlayer, thickness_m: 0.00005, k_W_mK: 1.0, role: passive, z_intervals: 4, evidence: L02}
+    - {id: active_upper, thickness_m: 0.00005, k_W_mK: 1.0, role: active, z_intervals: 4, evidence: L02}
+    - {id: top_spreader, thickness_m: 0.00030, k_W_mK: 1.0, role: passive, z_intervals: 14, evidence: L02}
+  solver_mesh_intervals_xyz: [64, 64, 32]
+  source_patch_size_m: [0.00018, 0.00018]
+  source_min_control_volume_count: 256
+  boundary_conditions:
+    top: {type: robin, h_W_m2K: 500.0, T_inf_K: 300.0}
+    bottom: {type: dirichlet, T_K: 300.0}
+    sides: {type: adiabatic}
+  contact: {type: perfect, R_contact_m2K_W: 0.0}
+  operator_projection:
+    point_count: 1024
+    point_seed_stage: before_temperature_solve
+    strata: {volume: 512, source: 256, interface: 128, top: 64, bottom: 64}
+power_provenance:
+  L02:
+    citation: DeepOHeat-v1
+    cited_component_powers_W: [0.0005, 0.001, 0.002]
+    cited_full_component_schedule_W: [0.0005, 0.0005, 0.001, 0.001, 0.001, 0.001, 0.002, 0.002, 0.002, 0.002]
+    cited_package_total_W: 0.013
+  L19:
+    citation: Quasi-3D Thermal Simulation of Integrated Circuit Systems in Packages
+    cited_validation_total_W: 1.0
+    cited_active_die_power_W: 10.0
+    cited_package_total_W: 20.0
+    partition_note: source-level values below are explicit equal partitions of cited active-layer power and are not claimed as cited component powers
+cases:
+  - {id: p1a_00, literature_id: L02, power_basis: cited_component_power, sources: [{layer: active_lower, power_W: 0.0005}]}
+  - {id: p1a_01, literature_id: L02, power_basis: cited_component_power, sources: [{layer: active_lower, power_W: 0.001}]}
+  - {id: p1a_02, literature_id: L02, power_basis: cited_component_power, sources: [{layer: active_lower, power_W: 0.002}]}
+  - {id: p1a_03, literature_id: L02, power_basis: cited_two_component_schedule, sources: [{layer: active_lower, power_W: 0.0005}, {layer: active_lower, power_W: 0.0005}]}
+  - {id: p1a_04, literature_id: L02, power_basis: cited_component_power_repeated, sources: [{layer: active_lower, power_W: 0.001}, {layer: active_lower, power_W: 0.001}, {layer: active_lower, power_W: 0.001}, {layer: active_lower, power_W: 0.001}]}
+  - {id: p1a_05, literature_id: L02, power_basis: cited_component_power_repeated, sources: [{layer: active_lower, power_W: 0.002}, {layer: active_lower, power_W: 0.002}, {layer: active_lower, power_W: 0.002}, {layer: active_lower, power_W: 0.002}]}
+  - id: p1a_06
+    literature_id: L02
+    power_basis: cited_full_component_schedule
+    sources:
+      - {layer: active_lower, power_W: 0.0005}
+      - {layer: active_lower, power_W: 0.0005}
+      - {layer: active_lower, power_W: 0.001}
+      - {layer: active_lower, power_W: 0.001}
+      - {layer: active_lower, power_W: 0.001}
+      - {layer: active_lower, power_W: 0.001}
+      - {layer: active_lower, power_W: 0.002}
+      - {layer: active_lower, power_W: 0.002}
+      - {layer: active_lower, power_W: 0.002}
+      - {layer: active_lower, power_W: 0.002}
+  - id: p1a_07
+    literature_id: L02
+    power_basis: cited_full_component_schedule_pilot_two_layer_allocation
+    sources:
+      - {layer: active_lower, power_W: 0.0005}
+      - {layer: active_lower, power_W: 0.0005}
+      - {layer: active_lower, power_W: 0.001}
+      - {layer: active_lower, power_W: 0.001}
+      - {layer: active_lower, power_W: 0.001}
+      - {layer: active_upper, power_W: 0.001}
+      - {layer: active_upper, power_W: 0.002}
+      - {layer: active_upper, power_W: 0.002}
+      - {layer: active_upper, power_W: 0.002}
+      - {layer: active_upper, power_W: 0.002}
+  - {id: p1a_08, literature_id: L19, power_basis: cited_validation_total, sources: [{layer: active_lower, power_W: 1.0}]}
+  - {id: p1a_09, literature_id: L19, power_basis: equal_partition_of_cited_validation_total, sources: [{layer: active_lower, power_W: 0.25}, {layer: active_lower, power_W: 0.25}, {layer: active_lower, power_W: 0.25}, {layer: active_lower, power_W: 0.25}]}
+  - {id: p1a_10, literature_id: L19, power_basis: equal_layer_partition_of_cited_validation_total, sources: [{layer: active_lower, power_W: 0.5}, {layer: active_upper, power_W: 0.5}]}
+  - {id: p1a_11, literature_id: L19, power_basis: cited_active_layer_power, sources: [{layer: active_lower, power_W: 10.0}]}
+  - {id: p1a_12, literature_id: L19, power_basis: equal_source_partition_of_cited_active_layer_power, sources: [{layer: active_lower, power_W: 2.5}, {layer: active_lower, power_W: 2.5}, {layer: active_lower, power_W: 2.5}, {layer: active_lower, power_W: 2.5}]}
+  - {id: p1a_13, literature_id: L19, power_basis: equal_layer_partition_of_cited_active_layer_power, sources: [{layer: active_lower, power_W: 5.0}, {layer: active_upper, power_W: 5.0}]}
+  - {id: p1a_14, literature_id: L19, power_basis: cited_two_active_layer_package_total, sources: [{layer: active_lower, power_W: 10.0}, {layer: active_upper, power_W: 10.0}]}
+  - id: p1a_15
+    literature_id: L19
+    power_basis: equal_source_partition_of_cited_two_active_layer_package_total
+    sources:
+      - {layer: active_lower, power_W: 2.5}
+      - {layer: active_lower, power_W: 2.5}
+      - {layer: active_lower, power_W: 2.5}
+      - {layer: active_lower, power_W: 2.5}
+      - {layer: active_upper, power_W: 2.5}
+      - {layer: active_upper, power_W: 2.5}
+      - {layer: active_upper, power_W: 2.5}
+      - {layer: active_upper, power_W: 2.5}
