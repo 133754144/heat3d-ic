@@ -1,0 +1,108 @@
+schema_version: heat3d_v6_p1c_package_path_cases_v1
+dataset_id: heat3d_v6_p1c_package_path_calibration8_v0
+status: frozen_8_case_package_path_calibration
+sample_count: 8
+seed: 6103
+scope:
+  layered_stacks_only: true
+  stack_template_id: logic_package
+  baseline_A_regeneration: false
+  peak_deltaT_filtering: false
+  peak_deltaT_resampling: false
+  power_back_calculation: false
+  material_parameter_tuning: false
+  model_training: false
+  model_inference: false
+baseline_A:
+  dataset_path: data/heat3d_v6_p1b_logic_package_power_calibration16_v0
+  manifest_path: configs/heat3d_v6/v6_p1b_logic_package_power_calibration_manifest.json
+  manifest_sha256: 74e5799f5104c729f9bf4c35d6f5979d95c18d5b6efd7328f1691c84dd3517cd
+  case_registry_path: configs/heat3d_v6/v6_p1b_logic_package_power_calibration_cases.yaml
+  pairing:
+    single_layer_single_source:
+      "1": p1b_ss_p1
+      "4": p1b_ss_p4
+    dual_layer_multi_source:
+      "1": p1b_dm_p1
+      "4": p1b_dm_p4
+literature_evidence:
+  package_equivalent_layers:
+    title: Modeling, Analysis, Design, and Tests for Electronics Packaging beyond Moore
+    chapter_url: https://www.sciencedirect.com/science/article/pii/B9780081025321000032
+    table: 3.3.1-3.3.2
+    frozen_values_note: >-
+      The chapter models bump/underfill and routed package parts as anisotropic
+      homogeneous blocks. P1c uses the listed under-interposer bump/underfill,
+      Dv/P=0.1 silicon interposer, via-bearing BT substrate, and FR-4 PCB values.
+  remote_boundary_support:
+    title: Quasi-3D Thermal Simulation of Integrated Circuit Systems in Packages
+    doi: 10.3390/en13123054
+    url: https://doi.org/10.3390/en13123054
+    note: A package stack is resolved before a constant-temperature or convective PCB exterior boundary.
+common_physics:
+  footprint_m: [0.010, 0.010]
+  top: {type: robin, h_W_m2K: 500.0, T_inf_K: 300.0}
+  sides: {type: adiabatic}
+  contact: {type: perfect, R_contact_m2K_W: 0.0}
+  source_min_control_volume_count: 256
+  source_min_in_plane_intervals: 8
+  source_face_policy: preserve_p1b_source_z_node_policy
+  operator_projection:
+    point_count: 1024
+    point_seed_stage: before_temperature_solve
+    strata: {volume: 512, source: 256, interface: 128, top: 64, bottom: 64}
+base_stack_layers_bottom_to_top:
+  - {id: silicon_die_lower, thickness_m: 0.00015, material: silicon_bulk, property_class: bulk, k_W_mK: 120.0, role: active, z_intervals: 4, evidence: [L03, L20, L21]}
+  - {id: tim_between_dies, thickness_m: 0.00005, material: tim_effective, property_class: effective, k_W_mK: 4.0, role: interface, z_intervals: 4, evidence: [L03, L20]}
+  - {id: silicon_die_upper, thickness_m: 0.00015, material: silicon_bulk, property_class: bulk, k_W_mK: 120.0, role: active, z_intervals: 4, evidence: [L03, L20, L21]}
+  - {id: tim_to_spreader, thickness_m: 0.00005, material: tim_effective, property_class: effective, k_W_mK: 4.0, role: interface, z_intervals: 4, evidence: [L03, L20]}
+  - {id: spreader, thickness_m: 0.001, material: copper_bulk, property_class: bulk, k_W_mK: 400.0, role: passive, z_intervals: 16, evidence: [L03]}
+paths:
+  B_remote_dirichlet:
+    description: Explicit package/board path below the lower die; 300 K only at the PCB exterior bottom.
+    bottom: {type: dirichlet, T_K: 300.0, location: pcb_exterior_bottom}
+    prepended_layers_bottom_to_top:
+      - {id: pcb_fr4_equivalent, thickness_m: 0.0016, material: pcb_fr4_equivalent, property_class: effective, k_xyz_W_mK: [0.8, 0.8, 0.3], role: board, z_intervals: 8, evidence: package_equivalent_layers}
+      - {id: bt_substrate_with_vias, thickness_m: 0.001, material: bt_substrate_with_vias, property_class: effective, k_xyz_W_mK: [0.2, 0.2, 0.49], role: substrate, z_intervals: 8, evidence: package_equivalent_layers}
+      - {id: silicon_interposer_tsv_0p1, thickness_m: 0.0001, material: silicon_interposer_tsv_effective, property_class: effective, k_xyz_W_mK: [148.3, 148.3, 151.0], role: interposer, z_intervals: 4, evidence: package_equivalent_layers}
+      - {id: bump_underfill_under_interposer, thickness_m: 0.000075, material: bump_underfill_effective, property_class: effective, k_xyz_W_mK: [0.6, 0.6, 4.9], role: interface, z_intervals: 4, evidence: package_equivalent_layers}
+    solver_mesh_intervals_xyz: [64, 64, 56]
+  C0_bottom_adiabatic:
+    description: Frozen P1b stack with an adiabatic bottom and no board layer.
+    bottom: {type: adiabatic, location: lower_die_exterior_bottom}
+    prepended_layers_bottom_to_top: []
+    solver_mesh_intervals_xyz: [64, 64, 32]
+power_contract:
+  package_total_power_W: [1.0, 4.0]
+  provenance: explicit_user_instruction
+  allocation_mode: proportional_to_declared_source_planform_area
+  topology_total_declared_source_area_m2: 0.000064
+  source_power_formula: package_total_power_W * source_area_m2 / topology_total_source_area_m2
+  q_formula: source_power_W / realized_source_control_volume_m3
+topologies:
+  single_layer_single_source:
+    active_layer_count: 1
+    source_count: 1
+    sources:
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.10, 0.90, 0.10, 0.90]}
+  dual_layer_multi_source:
+    active_layer_count: 2
+    source_count: 8
+    sources:
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.05, 0.25, 0.30, 0.70]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.28, 0.48, 0.30, 0.70]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.52, 0.72, 0.30, 0.70]}
+      - {layer: silicon_die_lower, bbox_fraction_xy: [0.75, 0.95, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.05, 0.25, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.28, 0.48, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.52, 0.72, 0.30, 0.70]}
+      - {layer: silicon_die_upper, bbox_fraction_xy: [0.75, 0.95, 0.30, 0.70]}
+cases:
+  - {id: p1c_b_ss_p1, path: B_remote_dirichlet, topology: single_layer_single_source, package_total_power_W: 1.0}
+  - {id: p1c_b_ss_p4, path: B_remote_dirichlet, topology: single_layer_single_source, package_total_power_W: 4.0}
+  - {id: p1c_b_dm_p1, path: B_remote_dirichlet, topology: dual_layer_multi_source, package_total_power_W: 1.0}
+  - {id: p1c_b_dm_p4, path: B_remote_dirichlet, topology: dual_layer_multi_source, package_total_power_W: 4.0}
+  - {id: p1c_c0_ss_p1, path: C0_bottom_adiabatic, topology: single_layer_single_source, package_total_power_W: 1.0}
+  - {id: p1c_c0_ss_p4, path: C0_bottom_adiabatic, topology: single_layer_single_source, package_total_power_W: 4.0}
+  - {id: p1c_c0_dm_p1, path: C0_bottom_adiabatic, topology: dual_layer_multi_source, package_total_power_W: 1.0}
+  - {id: p1c_c0_dm_p4, path: C0_bottom_adiabatic, topology: dual_layer_multi_source, package_total_power_W: 4.0}
