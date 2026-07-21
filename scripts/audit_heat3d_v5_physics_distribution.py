@@ -20,7 +20,7 @@ from typing import Any, Iterable, Mapping, Sequence
 import numpy as np
 
 
-AUDIT_SCHEMA = "heat3d_v6_p0_v5_physics_distribution_v1"
+AUDIT_SCHEMA = "heat3d_v6_p1_v5_physics_distribution_v2"
 ROLE_ORDER = (
     "train",
     "valid_iid",
@@ -171,6 +171,112 @@ def _boundary_fluxes(
     return float(top_flux), float(bottom_flux)
 
 
+def _q_clipping_evidence(
+    meta: Mapping[str, Any],
+    q_audit: Mapping[str, Any],
+    delta_t_qc: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Separate explicit clipping events from limits and power calibration."""
+
+    containers = (meta, q_audit, delta_t_qc)
+    count_keys = ("q_clipped_node_count", "q_clip_count", "clipped_node_count")
+    fraction_keys = ("q_clipping_fraction", "q_clipped_fraction", "clipping_fraction")
+    boolean_keys = (
+        "q_clipping_applied",
+        "q_clipping_detected",
+        "q_was_clipped",
+        "clipping_applied",
+    )
+    limit_keys = (
+        "q_clip_min_W_m3",
+        "q_clip_max_W_m3",
+        "q_clipping_lower_W_m3",
+        "q_clipping_upper_W_m3",
+    )
+    events: list[str] = []
+    declarations: list[str] = []
+    for container in containers:
+        for key in count_keys:
+            if key not in container or container[key] is None:
+                continue
+            raw_value = float(container[key])
+            value = int(raw_value)
+            if not math.isfinite(raw_value) or raw_value != value or value < 0:
+                raise AuditError(f"{key} must be a nonnegative integer")
+            declarations.append(f"{key}={value}")
+            if value > 0:
+                events.append(f"{key}={value}")
+        for key in fraction_keys:
+            if key not in container or container[key] is None:
+                continue
+            value = float(container[key])
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise AuditError(f"{key} must be finite and within [0,1]")
+            declarations.append(f"{key}={value:.17g}")
+            if value > 0.0:
+                events.append(f"{key}={value:.17g}")
+        for key in boolean_keys:
+            if key not in container or container[key] is None:
+                continue
+            value = container[key]
+            if isinstance(value, str):
+                normalized = value.strip().lower()
+                if normalized not in {"true", "false"}:
+                    raise AuditError(f"{key} string must be true or false")
+                value = normalized == "true"
+            if not isinstance(value, (bool, np.bool_)):
+                raise AuditError(f"{key} must be boolean")
+            declarations.append(f"{key}={str(bool(value)).lower()}")
+            if bool(value):
+                events.append(f"{key}=true")
+        for key in limit_keys:
+            if key in container and container[key] is not None:
+                value = float(container[key])
+                if not math.isfinite(value):
+                    raise AuditError(f"{key} must be finite")
+                declarations.append(f"{key}={value:.17g}")
+    detected = bool(events)
+    if detected:
+        status = "detected_explicit_event"
+    elif declarations:
+        status = "declared_no_explicit_event"
+    else:
+        status = "not_reported_no_event_inference"
+    return {
+        "detected": detected,
+        "status": status,
+        "event_evidence": sorted(set(events)),
+        "declarations": sorted(set(declarations)),
+        "q_rescale_is_clipping_evidence": False,
+    }
+
+
+def _material_interface_mask(
+    coords: np.ndarray,
+    material_ids: np.ndarray,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Return z faces where adjacent saved material/layer IDs differ."""
+
+    info = _grid_contract(coords)
+    ids = np.asarray(material_ids).reshape(-1)
+    if ids.shape != (coords.shape[0],):
+        raise AuditError("material/layer IDs must have one value per node")
+    if not np.all(np.isfinite(ids.astype(np.float64))):
+        raise AuditError("material/layer IDs must be finite")
+    grid_ids = ids[np.asarray(info["grid"], dtype=np.int64)]
+    mask = np.asarray(grid_ids[:, :, :-1] != grid_ids[:, :, 1:], dtype=bool)
+    if not np.any(mask):
+        raise AuditError("no z-normal material interface is available for contact audit")
+    pair_counts: Counter[str] = Counter()
+    for lower, upper in zip(grid_ids[:, :, :-1][mask], grid_ids[:, :, 1:][mask]):
+        pair_counts[f"{lower}->{upper}"] += 1
+    return mask, {
+        "z_face_count": int(np.sum(mask)),
+        "material_pair_counts": dict(sorted(pair_counts.items())),
+        "same_material_faces_with_contact": 0,
+    }
+
+
 def _sample_record(
     sample_dir: Path,
     role: str,
@@ -212,14 +318,7 @@ def _sample_record(
     scale = max(abs(total_power), 1.0e-30)
     delta_t_qc = meta.get("deltaT_qc") or {}
     rescale = float(delta_t_qc.get("q_rescale_factor", 1.0))
-    clip_keys = (
-        "q_clip_min_W_m3",
-        "q_clip_max_W_m3",
-        "q_clipped_node_count",
-        "q_clipping_fraction",
-    )
-    clipping_declared = any(key in meta or key in q_audit for key in clip_keys)
-    clipping_detected = bool(clipping_declared or not np.isclose(rescale, 1.0))
+    clipping = _q_clipping_evidence(meta, q_audit, delta_t_qc)
     source_family = str(manifest_row.get("q_family") or "unreported")
     bc_regime = str(manifest_row.get("cooling_regime") or "unreported")
     return {
@@ -230,6 +329,9 @@ def _sample_record(
         "k_mode": str(manifest_row.get("k_mode") or f"width_{k_width}"),
         "deltaT_bin": str(manifest_row.get("DeltaT_bin") or "unreported"),
         "qc_class": str(manifest_row.get("qc_class") or "unreported"),
+        "q_clipping_status": clipping["status"],
+        "q_clipping_event_evidence": clipping["event_evidence"],
+        "q_clipping_declarations": clipping["declarations"],
         "grid_shape": list(grid_info["shape"]),
         "metrics": {
             "k_min_W_mK": float(np.min(k_diag)),
@@ -257,7 +359,7 @@ def _sample_record(
             "power_calibration_error_W": power_error,
             "power_calibration_relative_error": power_error / scale,
             "q_rescale_factor": rescale,
-            "q_clipping_detected": clipping_detected,
+            "q_clipping_detected": clipping["detected"],
         },
     }
 
@@ -291,6 +393,9 @@ def _summarize_group(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "q_clipping_detected_count": sum(
             bool(record["metrics"]["q_clipping_detected"]) for record in records
         ),
+        "q_clipping_status_counts": dict(
+            sorted(Counter(record["q_clipping_status"] for record in records).items())
+        ),
         "grid_shapes": dict(
             sorted(Counter("x".join(map(str, record["grid_shape"])) for record in records).items())
         ),
@@ -316,7 +421,7 @@ def _solve_fvm(
     bottom_t: float,
     bottom_h: float | None = None,
     contact_resistance_m2K_W: float = 0.0,
-    contact_lower_z_index: int | None = None,
+    contact_face_mask: np.ndarray | None = None,
 ) -> tuple[np.ndarray, dict[str, float]]:
     from scipy.sparse import csr_matrix
     from scipy.sparse.linalg import spsolve
@@ -328,6 +433,13 @@ def _solve_fvm(
     xs, ys, zs = axes
     dx, dy, dz = widths
     n = coords.shape[0]
+    if contact_face_mask is not None:
+        contact_face_mask = np.asarray(contact_face_mask, dtype=bool)
+        expected = (xs.size, ys.size, max(zs.size - 1, 0))
+        if contact_face_mask.shape != expected:
+            raise AuditError(
+                f"contact_face_mask shape {contact_face_mask.shape} != {expected}"
+            )
     rows: list[int] = []
     cols: list[int] = []
     data: list[float] = []
@@ -376,8 +488,8 @@ def _solve_fvm(
                     (ix + 1, iy, iz, 0, float(dy[iy] * dz[iz]), float(xs[ix + 1] - xs[ix]) if ix + 1 < xs.size else 0.0, False),
                     (ix, iy - 1, iz, 1, float(dx[ix] * dz[iz]), float(ys[iy] - ys[iy - 1]) if iy else 0.0, False),
                     (ix, iy + 1, iz, 1, float(dx[ix] * dz[iz]), float(ys[iy + 1] - ys[iy]) if iy + 1 < ys.size else 0.0, False),
-                    (ix, iy, iz - 1, 2, float(dx[ix] * dy[iy]), float(zs[iz] - zs[iz - 1]) if iz else 0.0, contact_lower_z_index is not None and iz - 1 == contact_lower_z_index),
-                    (ix, iy, iz + 1, 2, float(dx[ix] * dy[iy]), float(zs[iz + 1] - zs[iz]) if iz + 1 < zs.size else 0.0, contact_lower_z_index is not None and iz == contact_lower_z_index),
+                    (ix, iy, iz - 1, 2, float(dx[ix] * dy[iy]), float(zs[iz] - zs[iz - 1]) if iz else 0.0, contact_face_mask is not None and iz > 0 and bool(contact_face_mask[ix, iy, iz - 1])),
+                    (ix, iy, iz + 1, 2, float(dx[ix] * dy[iy]), float(zs[iz + 1] - zs[iz]) if iz + 1 < zs.size else 0.0, contact_face_mask is not None and iz + 1 < zs.size and bool(contact_face_mask[ix, iy, iz])),
                 )
                 for jx, jy, jz, axis, area, distance, crossing in neighbors:
                     if not (0 <= jx < xs.size and 0 <= jy < ys.size and 0 <= jz < zs.size):
@@ -471,11 +583,22 @@ def _counterfactual(sample_dir: Path, refined_shape: Sequence[int]) -> dict[str,
     q = np.asarray(np.load(sample_dir / "q_field.npy"), dtype=np.float64).reshape(-1)
     stored_temperature = np.asarray(np.load(sample_dir / "temperature.npy"), dtype=np.float64).reshape(-1)
     k_diag, _ = _expand_k(k_raw, coords.shape[0])
+    interface_source = None
+    for candidate in ("material_id.npy", "layer_id.npy"):
+        path = sample_dir / candidate
+        if path.is_file():
+            interface_source = candidate
+            material_ids = np.asarray(np.load(path))
+            break
+    if interface_source is None:
+        raise AuditError(
+            f"{sample_dir.name}: contact audit needs material_id.npy or layer_id.npy"
+        )
+    contact_mask, contact_binding = _material_interface_mask(coords, material_ids)
     top_h, top_t, bottom_t = _boundary(meta)
     info = _grid_contract(coords)
     weights = np.asarray(info["weights"], dtype=np.float64)
     original_power = float(np.dot(q, weights))
-    mid_face = max(0, int(info["shape"][2] // 2) - 1)
 
     def solve_case(
         name: str,
@@ -487,7 +610,7 @@ def _counterfactual(sample_dir: Path, refined_shape: Sequence[int]) -> dict[str,
         bottom_mode: str = "dirichlet",
         bottom_h: float | None = None,
         contact_r: float = 0.0,
-        contact_face: int | None = None,
+        contact_faces: np.ndarray | None = None,
     ) -> tuple[str, dict[str, Any]]:
         temperature, solver_audit = _solve_fvm(
             coords=case_coords,
@@ -499,7 +622,7 @@ def _counterfactual(sample_dir: Path, refined_shape: Sequence[int]) -> dict[str,
             bottom_t=bottom_t,
             bottom_h=bottom_h,
             contact_resistance_m2K_W=contact_r,
-            contact_lower_z_index=contact_face,
+            contact_face_mask=contact_faces,
         )
         return name, _case_metrics(
             temperature=temperature,
@@ -521,12 +644,12 @@ def _counterfactual(sample_dir: Path, refined_shape: Sequence[int]) -> dict[str,
             solve_case(
                 "contact_R_5e-6_m2K_W",
                 contact_r=5.0e-6,
-                contact_face=mid_face,
+                contact_faces=contact_mask,
             ),
             solve_case(
                 "contact_R_1e-5_m2K_W",
                 contact_r=1.0e-5,
-                contact_face=mid_face,
+                contact_faces=contact_mask,
             ),
         ]
     )
@@ -552,13 +675,11 @@ def _counterfactual(sample_dir: Path, refined_shape: Sequence[int]) -> dict[str,
     if projected_power <= 0.0:
         raise AuditError("refined q projection has zero power")
     new_q *= original_power / projected_power
-    new_contact_face = max(0, int(refined_shape[2] // 2) - 1)
     name, metrics = solve_case(
         "refined_nearest_projection_fixed_power",
         case_coords=new_coords,
         case_k=new_k,
         case_q=new_q,
-        contact_face=new_contact_face,
     )
     cases[name] = metrics
 
@@ -577,11 +698,15 @@ def _counterfactual(sample_dir: Path, refined_shape: Sequence[int]) -> dict[str,
         "refined_grid_shape": list(map(int, refined_shape)),
         "top_h_W_m2K": top_h,
         "bottom_T_K": bottom_t,
+        "contact_interface_binding": {
+            "source_array": interface_source,
+            **contact_binding,
+        },
         "baseline_replay_max_abs_error_K": float(np.max(np.abs(replay_temperature - stored_temperature))),
         "cases": cases,
         "interpretation_limits": [
             "The refined case is nearest-neighbor field projection with fixed integrated power, not a generator-native mesh convergence study.",
-            "Finite contact resistance is inserted on the middle z face in the audit-only FVM; V5 production samples use perfect contact.",
+            "Finite contact resistance is applied only to z-normal faces where adjacent saved material/layer IDs differ; V5 production samples use perfect contact.",
             "Bottom Robin/adiabatic cases change the audit-only boundary operator and do not alter the production solver.",
         ],
     }
@@ -609,15 +734,47 @@ def _self_check() -> dict[str, Any]:
     )
     linearity_error = float(np.max(np.abs((t2 - 300.0) - 2.0 * (t1 - 300.0))))
     m1 = _case_metrics(temperature=t1, q=q, coords=coords, bottom_t=300.0, solver_audit=a1)
+    limits_only = _q_clipping_evidence(
+        {"q_clip_max_W_m3": 1.0e9, "q_clipped_node_count": 0},
+        {},
+        {"q_rescale_factor": 2.0},
+    )
+    explicit_event = _q_clipping_evidence(
+        {}, {"q_clipped_node_count": 2, "q_clipping_fraction": 0.03125}, {}
+    )
+    rescale_only = _q_clipping_evidence({}, {}, {"q_rescale_factor": 0.5})
+    material_ids = (coords[:, 2] >= axes[2][2]).astype(np.int64)
+    interface_mask, interface_audit = _material_interface_mask(coords, material_ids)
+    clipping_check_passed = bool(
+        not limits_only["detected"]
+        and explicit_event["detected"]
+        and not rescale_only["detected"]
+    )
+    interface_check_passed = bool(
+        int(np.sum(interface_mask)) == axes[0].size * axes[1].size
+        and interface_audit["same_material_faces_with_contact"] == 0
+    )
     return {
         "passed": bool(
             linearity_error < 1.0e-9
             and abs(m1["energy_balance_relative_error"]) < 1.0e-9
             and m1["linear_residual"] < 1.0e-10
+            and clipping_check_passed
+            and interface_check_passed
         ),
         "power_linearity_max_abs_error_K": linearity_error,
         "energy_balance_relative_error": m1["energy_balance_relative_error"],
         "linear_residual": m1["linear_residual"],
+        "q_clipping_contract": {
+            "passed": clipping_check_passed,
+            "limits_with_zero_events_detected": limits_only["detected"],
+            "positive_event_detected": explicit_event["detected"],
+            "rescale_only_detected": rescale_only["detected"],
+        },
+        "contact_interface_contract": {
+            "passed": interface_check_passed,
+            **interface_audit,
+        },
     }
 
 
@@ -683,12 +840,19 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "k_mode": dict(sorted(Counter(record["k_mode"] for record in records).items())),
             "deltaT_bin": dict(sorted(Counter(record["deltaT_bin"] for record in records).items())),
             "qc_class": dict(sorted(Counter(record["qc_class"] for record in records).items())),
+            "q_clipping_status": dict(
+                sorted(Counter(record["q_clipping_status"] for record in records).items())
+            ),
         },
         "integrity": {
             "dataset_sample_ids_equal_manifest": True,
             "dataset_sample_ids_equal_split_map": True,
             "all_metrics_finite": True,
             "q_clipping_detected_count": sum(record["metrics"]["q_clipping_detected"] for record in records),
+            "q_clipping_detection_contract": (
+                "explicit positive count/fraction or true boolean only; declared limits and "
+                "q_rescale_factor are not clipping events"
+            ),
             "max_abs_power_calibration_error_W": max(abs(record["metrics"]["power_calibration_error_W"]) for record in records),
             "max_abs_energy_balance_relative_error": max(abs(record["metrics"]["energy_balance_relative_error"]) for record in records),
         },

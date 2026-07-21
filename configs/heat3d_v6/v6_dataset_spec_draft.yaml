@@ -1,5 +1,5 @@
-schema_version: heat3d_v6_dataset_spec_draft_v1
-config_id: V6_P0_pilot_spec_draft
+schema_version: heat3d_v6_dataset_spec_draft_v2
+config_id: V6_P1_layered_stack_pilot_spec_draft
 status: audit_and_design_only
 branch: research/v6-dataset
 training_started: false
@@ -13,6 +13,7 @@ provenance:
   literature_matrix: docs/v6_p0_literature_matrix.csv
   parameter_audit: docs/v6_p0_parameter_audit.md
   low_temperature_audit: docs/v6_p0_low_temperature_root_cause.md
+  layered_stack_pilot_plan: docs/v6_p1_layered_stack_pilot_plan.md
   primary_source_ids:
     - L01
     - L02
@@ -28,11 +29,22 @@ provenance:
     - L22
 
 pilot_contract:
-  purpose: validate_physics_generator_mesh_and_qc_before_full_generation
+  dataset_family: v6_layer_v0
+  purpose: validate_layered_stack_physics_mesh_sampling_and_qc_before_full_generation
   proposed_sample_count: 96
   generation_allowed: false
-  activation_requirement: explicit_user_instruction_after_V6_P0_review
+  activation_requirement: explicit_user_instruction_after_V6_P1_spec_review
   solver: steady_state_conservative_finite_volume
+  solver_linearity_contract:
+    temperature_independent_k: true
+    linear_robin_boundaries: true
+    temperature_independent_contact_resistance: true
+    radiation_enabled: false
+  scope:
+    layered_stacks_only: true
+    arbitrary_3d_material_blocks_allowed: false
+    active_layer_count: [1, 2]
+    multiple_sources_per_active_layer_allowed: true
   label_fields:
     - temperature_K
     - deltaT_K
@@ -49,18 +61,28 @@ geometry:
   stack_templates:
     - id: logic_package
       layers:
-        - {name: silicon_die, thickness_m: 0.00015, material: silicon_bulk}
-        - {name: tim, thickness_m: 0.00005, material: tim_effective}
-        - {name: spreader, thickness_m: 0.001, material: copper_bulk}
+        - {name: silicon_die, thickness_m: 0.00015, material: silicon_bulk, thermal_role: active_candidate}
+        - {name: tim, thickness_m: 0.00005, material: tim_effective, thermal_role: interface}
+        - {name: spreader, thickness_m: 0.001, material: copper_bulk, thermal_role: passive}
       evidence: [L03, L17]
     - id: hbm_like_anisotropic
       layers:
-        - {name: memory_top, thickness_m: 0.00012, material: hbm_memory_bulk_like}
-        - {name: polymer_solder_interface, thickness_m: 0.000065, material: hbm_interface_effective}
-        - {name: memory_mid, thickness_m: 0.00008, material: hbm_memory_bulk_like}
-        - {name: polymer_solder_interface_2, thickness_m: 0.000065, material: hbm_interface_effective}
-        - {name: base_logic, thickness_m: 0.00015, material: silicon_bulk}
+        - {name: memory_top, thickness_m: 0.00012, material: hbm_memory_bulk_like, thermal_role: active_candidate}
+        - {name: polymer_solder_interface, thickness_m: 0.000065, material: hbm_interface_effective, thermal_role: interface}
+        - {name: memory_mid, thickness_m: 0.00008, material: hbm_memory_bulk_like, thermal_role: active_candidate}
+        - {name: polymer_solder_interface_2, thickness_m: 0.000065, material: hbm_interface_effective, thermal_role: interface}
+        - {name: base_logic, thickness_m: 0.00015, material: silicon_bulk, thermal_role: active_candidate}
       evidence: [L20]
+  layering_contract:
+    layer_boundaries_are_planar_and_xy_spanning: true
+    material_assignment_is_layer_native: true
+    active_layers_must_be_explicitly_named: true
+    heat_sources_may_only_intersect_active_layers: true
+    interface_and_passive_layers_must_have_zero_q: true
+    active_layer_count_choices: [1, 2]
+    sources_per_active_layer: [1, 4]
+    source_overlap_within_layer: forbidden
+    cross_layer_source_alignment: allowed
 
 materials:
   representation: diagonal_tensor_W_mK
@@ -96,16 +118,44 @@ materials:
     - unreferenced_k_above_400_W_mK_in_pilot
 
 power_generation:
-  primary_parameterization: source_total_power_and_geometry
+  primary_parameterization: target_peak_deltaT_via_unit_power_Rth_peak
+  fixed_wide_power_sampling_allowed: false
   source_families:
     - compact_hotspot
     - elongated
     - multi_block
     - distributed_background_plus_hotspot
-  total_power_W:
-    range: [0.5, 20.0]
-    sampling: log_stratified
-    evidence: [L02, L19, L21, L22]
+  target_peak_deltaT_K:
+    definition: max_temperature_K - primary_cooling_ambient_temperature_K
+    frozen_range: [30.0, 80.0]
+    sampling: four_equal_width_bins_equal_count
+    bins:
+      - {id: T30_42p5, lower_K: 30.0, upper_K: 42.5, lower_inclusive: true, upper_inclusive: false, pilot_count: 24}
+      - {id: T42p5_55, lower_K: 42.5, upper_K: 55.0, lower_inclusive: true, upper_inclusive: false, pilot_count: 24}
+      - {id: T55_67p5, lower_K: 55.0, upper_K: 67.5, lower_inclusive: true, upper_inclusive: false, pilot_count: 24}
+      - {id: T67p5_80, lower_K: 67.5, upper_K: 80.0, lower_inclusive: true, upper_inclusive: true, pilot_count: 24}
+    within_bin_sampling: deterministic_uniform_from_preregistered_seed
+    realized_peak_acceptance_tolerance_K: 0.25
+  unit_power_solve:
+    normalized_total_power_W: 1.0
+    q_template_normalization: exact_discrete_control_volume_integral
+    Rth_peak_formula: Rth_peak_K_W = peak_deltaT_unit_power_K / 1.0_W
+    derived_power_formula: total_power_W = target_peak_deltaT_K / Rth_peak_K_W
+    second_solve_required: true
+    linearity_check:
+      predicted_peak_formula: derived_power_W * Rth_peak_K_W
+      relative_error_max: 1.0e-8
+  literature_admissibility:
+    role: rejection_constraints_not_sampling_distribution
+    total_power_W:
+      lower_exclusive: 0.0
+      upper_inclusive: 20.0
+      evidence: [L19]
+    active_layer_power_W:
+      upper_inclusive: 10.0
+      evidence: [L19]
+    reject_if_outside_constraints: true
+    replacement_policy: same_split_same_temperature_bin_next_preregistered_scene
   local_areal_power_map:
     resolution_m: [0.000005, 0.0002]
     evidence: [L21]
@@ -113,7 +163,16 @@ power_generation:
   calibration: exact_discrete_control_volume_integral
   clipping:
     allowed: false
-    action_if_numeric_or_physical_limit_exceeded: reject_and_record_before_solve
+    detection_contract:
+      detected_only_if:
+        - explicit_clipped_node_count_is_positive
+        - explicit_clipping_fraction_is_positive
+        - explicit_clipping_boolean_is_true
+      not_clipping:
+        - declared_clip_limits_without_events
+        - unit_power_normalization
+        - total_power_calibration_rescale
+    action_if_detected: reject_and_record_without_repair
   required_metadata:
     - target_total_power_W
     - realized_total_power_W
@@ -123,34 +182,47 @@ power_generation:
     - source_power_density_W_m2
     - q_min_nonzero_W_m3
     - q_max_W_m3
+    - unit_power_peak_deltaT_K
+    - Rth_peak_K_W
+    - target_peak_deltaT_K
+    - target_peak_deltaT_bin
+    - derived_total_power_W
+    - power_admissibility_checks
 
 boundary_conditions:
-  ambient_temperature_K:
-    choices: [298.15, 300.0]
-    evidence: [L01, L02, L21]
-  top:
-    type: robin
-    h_W_m2K: [200.0, 500.0, 1000.0, 2500.0]
-    evidence: [L01, L02, L21]
-  bottom:
-    default_type: robin
-    h_W_m2K: [200.0, 500.0, 1000.0, 2500.0]
-    evidence: [L01, L02, L21]
-    dirichlet_300K_role: verification_or_OOD_only
-  sides:
-    choices: [adiabatic, symmetry_or_package_robin]
-    evidence: [L01, L02, L19]
+  primary_cooling_condition:
+    id: dual_robin_h500_ambient298p15_side_adiabatic
+    sample_fraction: 1.0
+    ambient_temperature_K: 298.15
+    top: {type: robin, h_W_m2K: 500.0}
+    bottom: {type: robin, h_W_m2K: 500.0}
+    sides: {type: adiabatic}
+    evidence: [L01, L02]
+  verification_and_ood_only:
+    bottom_dirichlet:
+      allowed_in_primary_dataset: false
+      temperature_K: 300.0
+      may_be_used_for_power_or_split_selection: false
   contact_resistance:
     representation: explicit_internal_face_m2K_W
     pilot_values_m2K_W: [0.0, 0.000005, 0.00001]
-    status: sensitivity_grid_requires_source_review_before_production
+    status: sensitivity_grid_requires_source_review_before_generation
+    binding_contract:
+      material_pair_required: true
+      interface_id_required: true
+      planar_layer_boundary_required: true
+      arbitrary_midplane_insertion_forbidden: true
+      same_material_face_contact_forbidden: true
+      metadata_fields: [interface_id, lower_material_id, upper_material_id, contact_resistance_m2K_W, evidence_ids]
     evidence_for_nonzero_interface_need: [L17, L18, L20]
 
 mesh:
-  topology: structured_control_volume
-  base_grid_xyz: [32, 32, 12]
-  minimum_cells_per_physical_layer: 3
-  vertical_partitioning: layer_aligned
+  solver_mesh:
+    topology: high_fidelity_layer_aligned_control_volume
+    minimum_grid_xyz: [64, 64, 32]
+    minimum_cells_per_physical_layer: 4
+    vertical_partitioning: exact_layer_boundary_alignment
+    temperature_solution_used_for_unit_power_and_final_solve: true
   evidence: [L01, L02, L03, L11, L12]
   convergence_subset:
     fraction: 0.125
@@ -166,6 +238,37 @@ mesh:
     acceptance:
       peak_deltaT_relative_change_max: 0.03
       cv_mean_deltaT_relative_change_max: 0.02
+  operator_point_sampling:
+    point_count: 1024
+    geometry: irregular_3d_points
+    seed_stage: before_solver_labels
+    seed_inputs: [generator_seed, scene_fingerprint, point_sampling_schema_version]
+    strata:
+      volume_stratified_jittered: 512
+      active_source_input_aware: 256
+      material_interface_input_aware: 128
+      top_boundary_input_aware: 64
+      bottom_boundary_input_aware: 64
+    uniqueness_required: true
+    allowed_sampling_inputs: [geometry, layer_ids, material_ids, source_masks, q_template, boundary_masks, control_volume_geometry]
+    forbidden_sampling_inputs: [temperature, deltaT, temperature_gradient, interpolation_error, solver_residual, target_hotspot_location]
+  interpolation:
+    method: trilinear_or_solver_native_shape_function
+    source: high_fidelity_solver_mesh
+    destination: operator_point_sampling_1024
+    reference: independently_refined_solver_mesh_at_frozen_points
+    qc_subset_fraction: 0.125
+    acceptance:
+      point_rmse_over_peak_deltaT_max: 0.005
+      point_p95_abs_error_K_max: 0.5
+      peak_deltaT_abs_error_K_max: 1.0
+    failure_action: reject_scene_without_resampling_points_or_changing_seed
+  anti_label_leakage:
+    point_coordinates_frozen_before_any_temperature_solve: true
+    interpolation_QC_may_filter_physics_failures: true
+    interpolation_QC_may_relocate_points: false
+    split_assignment_may_use_interpolation_error: false
+    train_normalization_fit_roles: [train]
 
 quality_control:
   all_arrays_finite: true
@@ -175,29 +278,54 @@ quality_control:
   energy_balance_relative_error_max: 1.0e-8
   linear_solver_relative_residual_max: 1.0e-10
   temperature_K_min: 0.0
-  low_deltaT_policy:
-    threshold_peak_K: 0.2
-    action: flag_for_physics_review_not_automatic_rejection
+  primary_peak_deltaT_K:
+    minimum_inclusive: 30.0
+    maximum_inclusive: 80.0
+    target_match_abs_error_K_max: 0.25
+    bin_balance_exact_for_pilot: true
+    physical_filter_is_preregistered: true
   q_clipping_count: 0
+  q_clipping_reporting:
+    no_explicit_event_metadata_status: unknown_not_zero_by_inference
+    explicit_positive_event_action: reject
   mesh_convergence_required_before_full_generation: true
 
 split_design:
-  assignment_stage: before_label_generation
+  assignment_stage: before_unit_power_and_final_temperature_solves
   grouping_key: physical_scene_fingerprint_without_solver_labels
   proposed_counts:
     train: 64
     valid_iid: 16
     test_iid_sealed: 16
+  target_bin_counts_by_split:
+    train: {T30_42p5: 16, T42p5_55: 16, T55_67p5: 16, T67p5_80: 16}
+    valid_iid: {T30_42p5: 4, T42p5_55: 4, T55_67p5: 4, T67p5_80: 4}
+    test_iid_sealed: {T30_42p5: 4, T42p5_55: 4, T55_67p5: 4, T67p5_80: 4}
   selection_inputs_allowed:
     - generator_seed
     - geometry_template
     - material_class
     - source_family
     - boundary_condition_class
+    - target_peak_deltaT_bin
   selection_inputs_forbidden:
-    - temperature
-    - deltaT
-    - solver_error_conditioned_reselection
+    - model_error
+    - model_prediction
+    - test_aggregate_metrics
+    - test_sample_ranking
+    - posthoc_temperature_histogram_seed_selection
+  preregistered_label_aware_physics_QC_allowed:
+    - realized_peak_deltaT_must_be_30_to_80_K
+    - realized_peak_must_match_preregistered_target_within_0p25_K
+    - finite_solution
+    - energy_balance
+    - mesh_convergence
+    - interpolation_accuracy_at_frozen_points
+  deterministic_failure_replacement:
+    preserve_original_split: true
+    preserve_target_peak_deltaT_bin: true
+    use_next_preregistered_reserve_scene: true
+    inspecting_test_labels_beyond_pass_fail_QC: false
   normalization_fit_roles: [train]
   test_iid_sealed_until_contract_frozen: true
 
@@ -210,6 +338,7 @@ ood_design:
     - nonzero_contact_resistance
     - high_source_concentration
     - material_anisotropy_combination
+    - bottom_dirichlet_300K
   generation_stage: after_pilot_QC_freeze
   current_status: design_only_not_generated
 
@@ -218,3 +347,5 @@ guardrails:
   model_inference_allowed: false
   full_data_generation_allowed: false
   inspect_label_distribution_to_reselect_seed: false
+  pilot_generation_started: false
+  high_fidelity_solver_started: false
