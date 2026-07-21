@@ -41,8 +41,6 @@ from rigno.heat3d_v5_scale_context import (  # noqa: E402
 )
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
-    _attach_global_context_to_groups,
-    _attach_native_physics_to_groups,
     _attach_qk_region_features_to_groups,
     _attach_scale_context_to_groups,
     _attach_scale_deepsets_weights_to_groups,
@@ -62,6 +60,10 @@ from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
 from run_heat3d_v3_final_probe_checkpoint_smoke import (  # noqa: E402
     install_checkpoint_feature_hooks,
     stats_from_checkpoint_payload,
+)
+from run_heat3d_v5_clean_first import (  # noqa: E402
+    _attach_v5_physics,
+    _physics_cache,
 )
 
 
@@ -292,6 +294,7 @@ def _build_groups(
     stats: Mapping[str, Any],
     train_examples: list[Any],
     valid_examples: list[Any],
+    physics_cache: Mapping[str, Mapping[str, Any]],
     prediction_batch_size: int,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     builder = Heat3DGraphBuilder(**dict(run_config["graph_config"]))
@@ -329,11 +332,13 @@ def _build_groups(
         )
         for sample_id in stored_global_lookup
     )
-    _attach_global_context_to_groups(
-        groups,
-        stored_global_lookup,
-        expected_feature_dim=int(model_config.get("global_context_feature_dim", 0)),
-    )
+    # Replay the exact V5 physics attachment used by the established valid-only
+    # evaluators.  Besides the broadcast global context this preserves the
+    # native control-volume/q/Dirichlet payload consumed by shape-scale models.
+    _attach_v5_physics(groups, physics_cache, stored_global)
+    for group in groups:
+        group["native_physics"] = group["v5_physics"]
+        group["global_context"] = group["v5_physics"]["global_context"]
     scale_lookup, scale_payload = _prepare_scale_context_lookup(
         model_config,
         train_examples=train_examples,
@@ -368,7 +373,6 @@ def _build_groups(
         expected_feature_dim=int(model_config.get("scale_context_feature_dim", 0)),
     )
     by_id = {str(example.sample_id): example for example in valid_examples}
-    _attach_native_physics_to_groups(groups, by_id)
     if (
         model_config.get("scale_pooling") == "qk_gated"
         or model_config.get("shape_attention_mode", "none") != "none"
@@ -553,6 +557,7 @@ def main() -> int:
         role="valid_iid",
         boundary_mask_fallback=boundary_fallback,
     )
+    physics_cache = _physics_cache(train_examples + valid_examples)
     stats = stats_from_checkpoint_payload(stats_payload, train_examples)
     model_config = _resolve_decoder_bypass_model_config(
         dict(canonical["model_config"]), stats
@@ -563,6 +568,7 @@ def main() -> int:
         stats=stats,
         train_examples=train_examples,
         valid_examples=valid_examples,
+        physics_cache=physics_cache,
         prediction_batch_size=args.prediction_batch_size,
     )
     ordered = [str(value) for group in groups for value in group["sample_ids"]]
