@@ -1,0 +1,235 @@
+{
+  "schema_version": "heat3d_v5_gate6r_training_prep_v1",
+  "status": "prepared_not_started",
+  "training_started": false,
+  "formal_e600_started": false,
+  "multi_seed_prepared": false,
+  "roles_accessed": [
+    "train"
+  ],
+  "forbidden_roles_accessed": [],
+  "baseline_config_id": "V4P5_38_gate6n_v36_r2r_mask_p005_e600",
+  "candidate_config_ids": {
+    "V45": "V4P5_45_gate6r_deepsets_only_e600",
+    "V46": "V4P5_46_gate6r_objective_deepsets_e600"
+  },
+  "resolved_config_diffs": {
+    "V45_vs_V38": {
+      "model.scale_deepsets_mode": {
+        "left": "none",
+        "right": "source_volume_residual"
+      }
+    },
+    "V46_vs_V45": {
+      "loss.native_log_scale_weight_mode": {
+        "left": "uniform",
+        "right": "train_true_scale_squared_clipped"
+      },
+      "loss.native_raw_loss_mode": {
+        "left": "per_sample_cv_mse",
+        "right": "point_global_fixed_train_energy_sse"
+      }
+    }
+  },
+  "expected_parameter_increment": {
+    "V45_vs_V38": 28896,
+    "V46_vs_V45": 0
+  },
+  "static_fixture": {
+    "batch_size": 2,
+    "node_count": 27,
+    "V38_parameter_count": 952488,
+    "V45_parameter_count": 981384,
+    "V46_parameter_count": 981384,
+    "finite_forward_backward": {
+      "V38": true,
+      "V45": true,
+      "V46": true
+    },
+    "V45_deepsets_output_init_max_abs": 0.0,
+    "V46_deepsets_output_init_max_abs": 0.0,
+    "V45_initial_prediction_matches_V38": true,
+    "V46_initial_prediction_matches_V45": true
+  },
+  "frozen_common_contract": {
+    "initialization": "random",
+    "init_checkpoint": null,
+    "epochs": 600,
+    "batch_size": 28,
+    "validation_batch_size": 32,
+    "prediction_batch_size": 32,
+    "model_seed": 0,
+    "batch_order_seed": 0,
+    "graph_seed": 0,
+    "edge_masking_scope": "r2r_only",
+    "p_edge_masking": 0.05,
+    "train_roles": [
+      "train"
+    ],
+    "selection_roles": [
+      "valid_iid"
+    ],
+    "forbidden_roles": [
+      "test_iid",
+      "hard_train_holdout",
+      "hard_challenge_valid",
+      "hard_challenge_test",
+      "sealed_iid"
+    ]
+  },
+  "deepsets_contract": {
+    "implementation_source": "V4P5_44_gate6q_xy_deepsets_e600",
+    "mode": "source_volume_residual",
+    "aggregations": [
+      "mean",
+      "source_power_weighted",
+      "volume_weighted"
+    ],
+    "p2r_partition": "per_physical_node_valid_degree",
+    "partition_of_unity_required": true,
+    "source_volume_conservation_required": true,
+    "output_initialization": "zero",
+    "softmax_only_pooling": false,
+    "xy_scale_context_enabled": false
+  },
+  "objective_contract": {
+    "V45": "unchanged_from_V38",
+    "V46_raw": "point_global_fixed_train_energy_sse",
+    "V46_log_scale": "train_true_scale_squared_clipped",
+    "V46_clip_bounds": [
+      0.25,
+      4.0
+    ],
+    "scalar_loss_weights": [
+      1.5,
+      0.5,
+      1.0,
+      1.0
+    ]
+  },
+  "smoke_commit": "67df3e2ce0bcef1835f36b2fd24eced3878932a7",
+  "smoke_host": "wsl2",
+  "real_train_update_smoke": {
+    "status": "passed",
+    "memory_fraction": 0.85,
+    "batch_size": 28,
+    "node_count": 1024,
+    "results": {
+      "V45": {
+        "config_id": "V4P5_45_gate6r_deepsets_only_e600",
+        "device": "cuda:0",
+        "accessed_roles": [
+          "train"
+        ],
+        "forbidden_roles_accessed": [],
+        "train_split_count": 672,
+        "primary_validation_role_not_loaded": "valid_iid",
+        "random_initialization": true,
+        "checkpoint_loaded": false,
+        "checkpoint_written": false,
+        "output_artifacts_written": 0,
+        "optimizer": "adamw",
+        "optimizer_update_applied": true,
+        "update_nonzero": true,
+        "finite_loss": true,
+        "finite_gradients": true,
+        "finite_updated_parameters": true,
+        "loss": 3.8960964679718018,
+        "gradient_global_norm": 53.164274203635856,
+        "update_global_norm": 0.08534207708071412,
+        "parameter_count": 922632,
+        "parameter_count_by_trainable_group": {
+          "backbone": 709888,
+          "scale_head": 76514,
+          "shape_decoder": 136230
+        },
+        "peak_bytes_in_use": 6099819520,
+        "peak_GiB": 5.680899620056152,
+        "elapsed_seconds": 38.856949924025685,
+        "sample_id_hash": "6b822e4659ab4811a0941a536b5584ea840f53b15eb9ac360d4f633749c1fe09",
+        "global_context_fit_roles": [
+          "train"
+        ],
+        "global_context_fit_sample_count": 672,
+        "scale_context_fit_roles": null,
+        "p2r_partition_of_unity": {
+          "physical_node_count": 1024,
+          "valid_edge_count": 1946,
+          "minimum_degree": 1,
+          "maximum_degree": 5,
+          "zero_degree_node_count": 0,
+          "maximum_partition_of_unity_error": 0.0,
+          "source_conservation_absolute_error": 0.0,
+          "volume_conservation_absolute_error": 2.6469779601696886e-23,
+          "source_conserved": true,
+          "volume_conserved": true
+        },
+        "training_started": false,
+        "formal_e600_started": false
+      },
+      "V46": {
+        "config_id": "V4P5_46_gate6r_objective_deepsets_e600",
+        "device": "cuda:0",
+        "accessed_roles": [
+          "train"
+        ],
+        "forbidden_roles_accessed": [],
+        "train_split_count": 672,
+        "primary_validation_role_not_loaded": "valid_iid",
+        "random_initialization": true,
+        "checkpoint_loaded": false,
+        "checkpoint_written": false,
+        "output_artifacts_written": 0,
+        "optimizer": "adamw",
+        "optimizer_update_applied": true,
+        "update_nonzero": true,
+        "finite_loss": true,
+        "finite_gradients": true,
+        "finite_updated_parameters": true,
+        "loss": 4.415888786315918,
+        "gradient_global_norm": 54.97341207782803,
+        "update_global_norm": 0.08534136312166155,
+        "parameter_count": 922632,
+        "parameter_count_by_trainable_group": {
+          "backbone": 709888,
+          "scale_head": 76514,
+          "shape_decoder": 136230
+        },
+        "peak_bytes_in_use": 6099910912,
+        "peak_GiB": 5.680984735488892,
+        "elapsed_seconds": 39.3657263868954,
+        "sample_id_hash": "6b822e4659ab4811a0941a536b5584ea840f53b15eb9ac360d4f633749c1fe09",
+        "global_context_fit_roles": [
+          "train"
+        ],
+        "global_context_fit_sample_count": 672,
+        "scale_context_fit_roles": null,
+        "native_loss_train_references": {
+          "raw_train_target_energy_per_point": 0.7235104147785213,
+          "log_scale_train_true_scale_sq_mean": 0.9170702796422319,
+          "lower_clip_fraction": 0.5535714285714286,
+          "upper_clip_fraction": 0.06696428571428571,
+          "effective_sample_size": 258.83999059852124
+        },
+        "p2r_partition_of_unity": {
+          "physical_node_count": 1024,
+          "valid_edge_count": 1946,
+          "minimum_degree": 1,
+          "maximum_degree": 5,
+          "zero_degree_node_count": 0,
+          "maximum_partition_of_unity_error": 0.0,
+          "source_conservation_absolute_error": 0.0,
+          "volume_conservation_absolute_error": 2.6469779601696886e-23,
+          "source_conserved": true,
+          "volume_conserved": true
+        },
+        "training_started": false,
+        "formal_e600_started": false
+      }
+    }
+  },
+  "manual_launch_commands": {
+    "V45": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_45_gate6r_deepsets_only_e600.yaml",
+    "V46": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v5/generated/V4P5_46_gate6r_objective_deepsets_e600.yaml"
+  }
+}

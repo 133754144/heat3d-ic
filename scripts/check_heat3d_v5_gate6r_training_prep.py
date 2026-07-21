@@ -128,7 +128,16 @@ def main() -> int:
         assert semantic["model"]["scale_deepsets_mode"] == "source_volume_residual"
     assert configs["V45"]["loss"] == baseline["loss"]
     assert configs["V46"]["model"] == configs["V45"]["model"]
-    assert configs["V45"]["model"]["scale_deepsets_mode"] == deepsets_reference["model"]["scale_deepsets_mode"]
+    assert (
+        configs["V45"]["model"]["scale_deepsets_mode"]
+        == deepsets_reference["model"]["scale_deepsets_mode"]
+    )
+    assert (
+        _semantic_defaults(configs["V45"])["model"]["scale_deepsets_hidden_size"]
+        == _semantic_defaults(deepsets_reference)["model"][
+            "scale_deepsets_hidden_size"
+        ]
+    )
     for field in (
         "native_raw_loss_mode",
         "native_log_scale_weight_mode",
@@ -162,6 +171,11 @@ def main() -> int:
         configs[name]["config_id"] for name in ("V45", "V46")
     ]
     for row in rows:
+        config = (
+            configs["V45"]
+            if row["candidate"] == "V45_deepsets_only"
+            else configs["V46"]
+        )
         assert row["launch_policy"] == "explicit_user_instruction_only"
         assert row["execution_status"] == "not_started"
         assert row["evaluation_status"] == "not_evaluated"
@@ -170,6 +184,8 @@ def main() -> int:
         assert row["scale_context_mode"] == "none"
         assert row["scale_deepsets_mode"] == "source_volume_residual"
         assert row["expected_parameter_increment"] == "28896"
+        assert row["output_dir"] == config["export"]["output_dir"]
+        assert row["log_path"] == config["metadata"]["log_path"]
 
     if not args.skip_report:
         report = json.loads(REPORT.read_text(encoding="utf-8"))
