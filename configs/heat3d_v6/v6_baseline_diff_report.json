@@ -6,6 +6,10 @@
     "loader": "v6_dual_robin_manifest_v1",
     "bc_adapter": "dual_robin_top_bottom_v1",
     "batch_size": 28,
+    "effective_batch_size": 28,
+    "graph_compatible_micro_batch_size": 8,
+    "optimizer_updates_per_epoch": 28,
+    "final_partial_effective_batch_size": 12,
     "validation_batch_size": 32,
     "prediction_batch_size": 32,
     "drop_last": false,
@@ -28,8 +32,7 @@
     },
     {
       "config_id": "V6_02_V5best",
-      "requested_baseline_alias": "V4P5_42_canonical",
-      "baseline_config_id": "V4P5_42_gate6q_objective_only_e600",
+      "baseline_config_id": "V4P5_42_canonical",
       "model_diff_keys": ["global_context_feature_names"],
       "model_diff_class": "BC_adapter_dimension_preserving_24D_schema",
       "loss_equal": true,
@@ -38,6 +41,7 @@
       "graph_equal": true,
       "seeds_equal": true,
       "selection_metric_equal": true,
+      "selection_metric": "valid_rel_rmse_v4_pct",
       "parameter_count_smoke": 893736
     }
   ]

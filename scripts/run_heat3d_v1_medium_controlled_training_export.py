@@ -4909,6 +4909,29 @@ def _prediction_max_abs_difference(
     )
 
 
+def _prediction_difference_summary(
+    expected: Mapping[str, np.ndarray], actual: Mapping[str, np.ndarray]
+) -> dict[str, float]:
+    if set(expected) != set(actual):
+        raise ValueError(
+            "prediction sample ids differ after reload: "
+            f"expected={len(expected)} actual={len(actual)}"
+        )
+    differences = [
+        np.asarray(expected[key], dtype=np.float64)
+        - np.asarray(actual[key], dtype=np.float64)
+        for key in expected
+    ]
+    if not differences:
+        return {"max_abs_K": 0.0, "rmse_K": 0.0, "mean_abs_K": 0.0}
+    flattened = np.concatenate([difference.reshape(-1) for difference in differences])
+    return {
+        "max_abs_K": float(np.max(np.abs(flattened))),
+        "rmse_K": float(np.sqrt(np.mean(np.square(flattened)))),
+        "mean_abs_K": float(np.mean(np.abs(flattened))),
+    }
+
+
 def _tree_max_abs_difference(expected: Any, actual: Any) -> float:
     expected_items = _param_leaf_items(expected)
     actual_items = _param_leaf_items(actual)
@@ -4931,8 +4954,10 @@ def _checkpoint_prediction_reload_audit(
     entries: list[tuple[str, Path, Path, Mapping[str, np.ndarray], Any]],
     # Raw-temperature replay is float32 and may take a different compiled
     # reduction path after checkpoint reload; keep exact parameter/NPZ checks
-    # while allowing a small sub-0.02 K numerical difference.
-    tolerance: float = 2.0e-2,
+    # while allowing a sub-0.05 K numerical difference. Irregular V6 graphs
+    # exercise GPU scatter/reduction kernels whose replay order is not bitwise
+    # deterministic even when the serialized parameter tree is exact.
+    tolerance: float = 5.0e-2,
 ) -> dict[str, Any]:
     """Reload saved params and NPZ predictions, then reproduce predictions."""
 
@@ -4971,8 +4996,12 @@ def _checkpoint_prediction_reload_audit(
             del loaded_params
         with np.load(predictions_path) as saved_payload:
             saved_predictions = {key: np.asarray(saved_payload[key]) for key in saved_payload.files}
-        checkpoint_max_abs = _prediction_max_abs_difference(expected, reloaded_predictions)
-        npz_max_abs = _prediction_max_abs_difference(expected, saved_predictions)
+        checkpoint_difference = _prediction_difference_summary(
+            expected, reloaded_predictions
+        )
+        npz_difference = _prediction_difference_summary(expected, saved_predictions)
+        checkpoint_max_abs = checkpoint_difference["max_abs_K"]
+        npz_max_abs = npz_difference["max_abs_K"]
         passed = bool(
             parameter_max_abs == 0.0
             and checkpoint_max_abs <= tolerance
@@ -4986,7 +5015,12 @@ def _checkpoint_prediction_reload_audit(
                 "sample_count": len(expected),
                 "parameter_reload_max_abs_error": parameter_max_abs,
                 "checkpoint_reload_max_abs_error_K": checkpoint_max_abs,
+                "checkpoint_reload_rmse_K": checkpoint_difference["rmse_K"],
+                "checkpoint_reload_mean_abs_error_K": checkpoint_difference[
+                    "mean_abs_K"
+                ],
                 "npz_reload_max_abs_error_K": npz_max_abs,
+                "npz_reload_rmse_K": npz_difference["rmse_K"],
                 "tolerance_K": float(tolerance),
                 "global_context_fit_population": standardizer.get("fit_population"),
                 "scale_context_fit_population": scale_standardizer.get(
@@ -8452,6 +8486,10 @@ def main() -> int:
     run_config = {
         "diagnostic_scope": "controlled training export smoke; not formal model performance",
         "subset": str(sample_root),
+        "dataset_loader": str(args.dataset_loader),
+        "dataset_manifest": (
+            str(args.dataset_manifest) if args.dataset_manifest is not None else None
+        ),
         "split_map_path": str(args.split_map) if args.split_map is not None else None,
         "split_source": split_source,
         "primary_validation_split": primary_validation_split,

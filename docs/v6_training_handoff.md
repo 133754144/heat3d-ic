@@ -41,11 +41,11 @@ ambient, not a fixed bottom surface temperature. There is no Dirichlet
 projection; the native branch uses an all-zero projection mask.
 
 P1g's 1024 points are irregular and frozen per geometry group. The unpadded
-graph edge tensor shape therefore differs across groups. Runtime batching
-shuffles samples and then groups graph-shape-compatible examples with B28 as a
-maximum and `drop_last=false`; this increases the number of epoch batches as
-explicitly allowed. The real smoke realized B8 because each frozen geometry
-group contains eight BC/power cases.
+graph edge tensor shape therefore differs across groups. Runtime batching uses
+graph-compatible microbatches up to B8, then computes a sample-count-weighted
+gradient mean over an effective B28 window. Gradient clipping and one AdamW
+update occur only after accumulation. With train=768 and `drop_last=false`, an
+epoch has 27 full B28 updates plus one retained B12 update (28 updates total).
 
 V6's Global FiLM context retains 24 dimensions. V5 positions 18--20 are
 replaced by `log_bottom_h_W_m2K`, `top_T_inf_K`, and `bottom_T_inf_K`; all
@@ -57,15 +57,14 @@ fixed-temperature offset.
 
 `V6_01_V4best` resolves from `V4P5_02_clean_baseline_raw_B28_e600` with no
 model, loss, optimizer, graph, epoch, seed, or selection-metric change.
-`V6_02_V5best` resolves from the requested `V4P5_42_canonical`, whose repository
-config ID is `V4P5_42_gate6q_objective_only_e600`; its only model metadata
-difference is the dimension-preserving V6 Global Context schema.
+`V6_02_V5best` resolves directly from the frozen
+`configs/heat3d_v5/V4P5_42_canonical.yaml`; its only model metadata difference
+is the dimension-preserving V6 Global Context schema.
 
-Both use random initialization, B28/B32/B32, `drop_last=false`, 600 epochs,
-and `valid_base_mse` selection. Old final-probe, post-training legacy
-diagnostics, and baseline comparison are disabled. The one-batch real-data
-smokes performed forward, backward, and one AdamW update without saving state;
-both were finite. They are engineering checks, not training results.
+Both use random initialization, effective B28/B32/B32, `drop_last=false`, and
+600 epochs. V6_01 preserves `valid_base_mse`; V6_02 preserves canonical
+`valid_rel_rmse_v4_pct` (point-global true-RMS relative RMSE). Old final-probe,
+post-training legacy diagnostics, and baseline comparison are disabled.
 
 Resolved configs:
 
