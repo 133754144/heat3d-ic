@@ -1,8 +1,8 @@
-"""Controlled Heat3D v1 medium training export smoke.
+"""Controlled Heat3D training, checkpoint, prediction, and metric runner.
 
-This runner reuses the existing v1 train/valid smoke path and writes recovered
-temperature predictions to an ignored output directory for downstream
-diagnostic comparison. It is not a formal training experiment.
+The module retains the historical filename for CLI compatibility while serving
+the validated V1/V2/V4/V5 configuration paths, including native shape--scale,
+global context, regional pooling, and training-only edge masking.
 """
 
 from __future__ import annotations
@@ -47,7 +47,6 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
     legacy_train_only_stats as _train_only_stats,
     normalize_condition,
     normalize_coords as _normalize_coords,
-    normalize_target_delta,
     normalize_target_delta,
     normalized_delta_to_raw as _normalized_delta_to_raw,
     recover_raw_condition,

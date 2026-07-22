@@ -1,16 +1,23 @@
 {
   "schema_version": "heat3d_v5_core_integration_manifest_v1",
-  "status": "prepared_not_merged",
-  "base": {
-    "branch": "main",
-    "commit": "11e9d2feb1b920b2fbd06b8e626a706b1eb4cd40"
-  },
-  "integration_branch": "integration/v5-core",
+  "status": "durable_integration_scope",
+  "target_branch": "main",
   "source": {
     "branch": "research/v5",
-    "commit": "b7c048433142bd30df075df48cd48db3d85d8cca"
+    "closing_tag": "v5-final-threshold-unmet",
+    "closing_commit": "a43d3c58ce8cb90b22946a54eac7d4a1c0b0da6a"
+  },
+  "canonical_default_profile": {
+    "path": "configs/heat3d_v5/V4P5_42_canonical.yaml",
+    "source_contract": "V4P5_42_gate6q_objective_only_e600",
+    "selection_metric": "valid_rel_rmse_v4_pct",
+    "explicit_config_resolution_changed": false,
+    "runtime_paths_embedded": false
   },
   "included_files": [
+    "configs/heat3d_v5/V4P5_42_canonical.yaml",
+    "docs/v5_core_integration.md",
+    "docs/v5_core_integration_manifest.json",
     "rigno/heat3d_v2_config.py",
     "rigno/heat3d_v2_runner_command.py",
     "rigno/heat3d_v5_global_context.py",
@@ -25,7 +32,9 @@
     "scripts/check_heat3d_v5_gate5_native.py",
     "scripts/check_heat3d_v5_global_context.py",
     "scripts/check_heat3d_v5_native_shape_scale.py",
-    "scripts/check_heat3d_v5_scale_context_pooling.py"
+    "scripts/check_heat3d_v5_scale_context_pooling.py",
+    "scripts/check_heat3d_v5_canonical_profile.py",
+    "scripts/run_heat3d_v4_config.py"
   ],
   "excluded_categories": [
     "configs/heat3d_v5/generated YAML",
@@ -36,5 +45,5 @@
   ],
   "scientific_results_migrated": false,
   "generated_training_configs_migrated": false,
-  "merge_executed": false
+  "v5_scientific_conclusions_modified": false
 }
