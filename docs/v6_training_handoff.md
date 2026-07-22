@@ -111,6 +111,31 @@ one-epoch values must not be used to rank the migrated baselines. Earlier
 failed or superseded output and log directories remain on their source hosts;
 the JSON records their paths and reasons.
 
+## Effective-B24 two-host GPU preflight
+
+The formal migration now uses one exact `3 x B8 -> B24` update. The bounded e1
+preflights used the same scientific configurations as the formal YAMLs, with
+only the preflight runtime identity and `epochs=1`. Both runs consumed 96
+fixed-size B8 microbatches, produced 32 B24 updates, and used four B32
+validation batches. There was no B4/B12 tail and no geometry-based batch
+split. Test/all roles remained unmaterialized.
+
+Frozen evidence and checker:
+
+- `configs/heat3d_v6/v6_training_handoff_b24_gpu_preflight.json`
+- `scripts/check_heat3d_v6_b24_gpu_preflight.py`
+
+| Preflight | Host | Epoch time B24 / B28 | Peak GPU memory B24 / B28 | First / steady B24 update | Reload max / RMSE |
+|---|---|---:|---:|---:|---:|
+| V6_01 V4 baseline | devbox | 478.96 / 1270.82 s (-62.31%) | 2609.47 / 2569.29 MiB (+1.56%) | 42.83 / 8.82 s | 0.01611 / 0.00163 K |
+| V6_02 V5 baseline | wsl2 | 883.70 / 1989.06 s (-55.57%) | 2869.92 / 2894.99 MiB (-0.87%) | 70.15 / 11.46 s | 0.04019 / 0.00421 K |
+
+All recorded loss, gradient, parameter, and update norms were finite. The
+checkpoint parameter tree and saved NPZ reloads were exact; independent GPU
+prediction replay stayed within 0.1 K maximum and 0.01 K whole-field RMSE.
+V6_02's 24-dimensional context was fit on the 768 training samples only. The
+formal YAMLs remain at e600 and were not launched.
+
 Formal manual commands (prepared only, not executed):
 
 ```bash

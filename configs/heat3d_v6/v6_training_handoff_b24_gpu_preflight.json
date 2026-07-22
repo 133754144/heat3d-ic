@@ -1,0 +1,120 @@
+{
+  "schema_version": "heat3d_v6_two_host_b24_gpu_preflight_v1",
+  "status": "passed",
+  "formal_training_started": false,
+  "e600_started": false,
+  "preflight_commit": "37d6479b22db066b5942a6adad7cf80e7661fbc8",
+  "roles_materialized": ["train", "valid_iid"],
+  "forbidden_roles_materialized": [],
+  "dataset": {
+    "id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+    "manifest_sha256": "e5329d5cd6253510d87a4432d5f2ddae67259637810c29fdfb6ddf42621875a4",
+    "split_counts": {"train": 768, "valid_iid": 128, "test_iid": 128},
+    "group_locked": true,
+    "node_count": 1024,
+    "bottom_boundary_semantics": "robin_not_fixed_temperature"
+  },
+  "effective_batch": {
+    "configured": 24,
+    "effective": 24,
+    "micro_batch_size": 8,
+    "micro_batches_per_epoch": 96,
+    "micro_batch_sample_counts_unique": [8],
+    "micro_batches_per_update": 3,
+    "updates_per_epoch": 32,
+    "effective_batch_sample_counts_unique": [24],
+    "tail": null,
+    "geometry_split": false,
+    "padding_policy": "repeat_existing_dummy_edges_only"
+  },
+  "historical_b28_reference": "configs/heat3d_v6/v6_training_handoff_gpu_preflight.json",
+  "runs": {
+    "V6_01_V4best": {
+      "status": "passed",
+      "host": "devbox",
+      "config": "configs/heat3d_v6/preflight/V6_01_V4best_e1_gpu_preflight.yaml",
+      "run_dir": "output/heat3d_v6_preflight/V6_01_V4best_B24_e1",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_01_V4best_B24_e1.log",
+      "training_commit": "37d6479",
+      "epochs": 1,
+      "random_initialization": true,
+      "sample_counts": {"train": 768, "valid_iid": 128},
+      "group_counts": {"train_micro_batches": 96, "valid_iid_batches": 4, "test_iid": 0, "all": 0},
+      "optimizer_updates": 32,
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "device": {"platform": "gpu", "peak_memory_mb": 2609.468994140625, "memory_limit_mb": 9169.921875, "peak_rss_mb": 5929.55078125},
+      "timing": {"group_build_s": 246.3708140910603, "initial_loss_s": 142.8756490490632, "epoch_s": 478.956562250969, "first_update_s": 42.834043523995206, "steady_update_median_s": 8.824401207035407, "total_s": 893.571660276968},
+      "b28_relative_change_pct": {"epoch_s": -62.31110888435314, "peak_memory_mb": 1.5639698831106275, "first_update_s": -33.567877297352766, "steady_update_median_s": -70.57795600639665},
+      "global_context": {"enabled": false, "mode": "none", "target_or_label_derived_inputs": false},
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {"label": "final", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.015472412109375, "checkpoint_reload_rmse_K": 0.0016195280443832734, "passed": true},
+          {"label": "best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.01611328125, "checkpoint_reload_rmse_K": 0.0016334410859023193, "passed": true}
+        ]
+      },
+      "artifact_sha256": {
+        "params_final.pkl": "6e0f6c455545469a9400b02e1670fc3a21b405f394913d1fdc192d30310c78e1",
+        "predictions.npz": "6670c8b24dcaf530871cbef754f07fe20606067be7631f82ac302d033b5db249",
+        "params_best.pkl": "a2c7f07e35e43f2fb35e6b2a9fe9d7fcb173c9f33d11ad8dbc5b921ba6a10924",
+        "best_predictions.npz": "4a70c2fae1d1aadb29cc3569b6e5c89d26167fe2dca828b765462fa7f4d6cf82"
+      },
+      "evidence_sha256": {
+        "run_config.json": "23ed2d9ab6ce997a8ad3de1b55ffd302ae303034d1b4eece152ebe2c60bf3a76",
+        "loss_summary.json": "cabca54ace378b22db677c3f659d2056b2b12399fbfaeb77db6dd97747d32cae",
+        "profile_timing.json": "bc2f2302676fc5646d3607688a43fa6b9884363503e16edbe8a31ea51ec9223d",
+        "memory_audit.jsonl": "23f0e62417cbaca9ac7cd0f15e671e1703efb5024819355b5af3a843aca9049a",
+        "log": "00f4a934462cded417a59db16aa9b8d472ac925b7cffb49cc534d22134248479"
+      }
+    },
+    "V6_02_V5best": {
+      "status": "passed",
+      "host": "wsl2",
+      "config": "configs/heat3d_v6/preflight/V6_02_V5best_e1_gpu_preflight.yaml",
+      "run_dir": "output/heat3d_v6_preflight/V6_02_V5best_B24_e1",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_02_V5best_B24_e1.log",
+      "training_commit": "37d6479",
+      "epochs": 1,
+      "random_initialization": true,
+      "sample_counts": {"train": 768, "valid_iid": 128},
+      "group_counts": {"train_micro_batches": 96, "valid_iid_batches": 4, "test_iid": 0, "all": 0},
+      "optimizer_updates": 32,
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "device": {"platform": "gpu", "peak_memory_mb": 2869.917724609375, "memory_limit_mb": 9169.921875, "peak_rss_mb": 6189.66015625},
+      "timing": {"group_build_s": 264.75409367098473, "initial_loss_s": 166.81170354993083, "epoch_s": 883.6977866198868, "first_update_s": 70.14841411798261, "steady_update_median_s": 11.456802282016724, "total_s": 1361.6211124220863},
+      "b28_relative_change_pct": {"epoch_s": -55.572171418292115, "peak_memory_mb": -0.8662075577144934, "first_update_s": -33.18332752973075, "steady_update_median_s": -71.61166812646219},
+      "global_context": {"enabled": true, "mode": "film", "dimension": 24, "fit_population": "train_only", "fit_sample_count": 768, "fit_sample_ids_sha256": "906511e8645b10ad4e2029ed36274929d2b56d496acc1c26b16d6dc6eff4a0c6", "target_or_label_derived_inputs": false},
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {"label": "final", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.03619384765625, "checkpoint_reload_rmse_K": 0.004212727267944118, "passed": true},
+          {"label": "best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.03802490234375, "checkpoint_reload_rmse_K": 0.004207220988659999, "passed": true},
+          {"label": "point_global_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.034149169921875, "checkpoint_reload_rmse_K": 0.004197169959228591, "passed": true},
+          {"label": "base_mse_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.040191650390625, "checkpoint_reload_rmse_K": 0.004195315218862863, "passed": true},
+          {"label": "sample_first_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.036865234375, "checkpoint_reload_rmse_K": 0.004189291315869358, "passed": true}
+        ]
+      },
+      "artifact_sha256": {
+        "params_final.pkl": "6f7b19cfcaa5484f46f77f0e728d27aff335bf7b005cb3b66c79bb118f4e29bc",
+        "predictions.npz": "f5ab53f78882fd2852d044bf88391390e550104d19a30738a766d91b3b30ebf1",
+        "params_best.pkl": "6e8162d0b89abdca0632bdb36db4450aaa694c3e99a1e41d6ee91346f81c09d8",
+        "best_predictions.npz": "49ed62a7a9943b78777e69edc2d5fb85f6504e010e5b8eb9ed01f4435d5484c9",
+        "params_best_valid_point_global.pkl": "466c8c800f84f71ed09d7d57d86c40c6c915016319f61a8643c9864fa1e7f729",
+        "point_global_best_predictions.npz": "2ea014a3f4dfc889eb11e54c773dc1c17439c563fe46d88e8798d6b6269ca577",
+        "params_best_valid_base_mse.pkl": "23e696c00ca3be47073c1e95587af062c7c7ac8f07c00b274a99dee38a6a34b5",
+        "base_mse_best_predictions.npz": "cb6b17a24dd9c1db44934a36b7b193a19d79d308bf372e76997e8e8fcf9fbc5f",
+        "params_best_valid_sample_first.pkl": "4f50d7237f1743325cc782554ab4001603c5fcdae96004d5eb7b69cfbfd94931",
+        "sample_first_best_predictions.npz": "2ee01182012334f5e6e9bdcce96e0378367a17d43436c9954e830fbc2b4c3ce1"
+      },
+      "evidence_sha256": {
+        "run_config.json": "62b4e8791b8877858e14f7cdae5319f53eab47ac62fb8dc38c843d065fc58204",
+        "loss_summary.json": "bb417b5a6d296612bd9508fe4cfce0103273442e8afcdaf6e1e4e4db504c3387",
+        "profile_timing.json": "7262837c5a1fbc7fbaecd7df78ee032e9c81f4090d2c349c4545ac4ac58ffdee",
+        "memory_audit.jsonl": "3fd8036dc2083f007cea8d2cf7eca732227f815ba809a75ba4ad0b16f9c1af54",
+        "log": "d6ed15412aa6d6f49997be45c9ca26bbad5de27193e0c3e127dac3d3bcdc8195"
+      }
+    }
+  }
+}
