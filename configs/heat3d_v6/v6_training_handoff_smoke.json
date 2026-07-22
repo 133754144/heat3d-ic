@@ -1,0 +1,40 @@
+{
+  "schema_version": "heat3d_v6_training_handoff_smoke_v1",
+  "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+  "environment": "local JAX CPU",
+  "checkpoint_saved": false,
+  "training_started": false,
+  "graph_batching": {
+    "configured_max_batch_size": 28,
+    "policy": "shuffle_then_graph_shape_compatible_grouping",
+    "realized_smoke_batch_size": 8,
+    "reason": "P1g coordinates are frozen per geometry group; unpadded edge tensors differ across geometry groups",
+    "drop_last": false
+  },
+  "configs": [
+    {
+      "config_id": "V6_01_V4best",
+      "node_count": 1024,
+      "parameter_count": 832550,
+      "loss": 1.0415196418762207,
+      "global_gradient_norm": 7.358702876617099,
+      "finite_forward_backward": true,
+      "adamw_update_finite": true,
+      "global_context_fit_population": null,
+      "peak_bytes_in_use": null
+    },
+    {
+      "config_id": "V6_02_V5best",
+      "node_count": 1024,
+      "parameter_count": 893736,
+      "loss": 14.491493225097656,
+      "global_gradient_norm": 450.37639971015443,
+      "finite_forward_backward": true,
+      "adamw_update_finite": true,
+      "global_context_fit_population": "train_only",
+      "global_context_fit_sample_count": 768,
+      "peak_bytes_in_use": null
+    }
+  ],
+  "note": "The smoke verifies finiteness and one optimizer update only; its losses are not performance results. CPU backend did not expose peak memory telemetry."
+}

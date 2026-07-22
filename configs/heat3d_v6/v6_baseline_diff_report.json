@@ -1,0 +1,44 @@
+{
+  "schema_version": "heat3d_v6_baseline_diff_report_v1",
+  "training_started": false,
+  "common_runtime_overrides": {
+    "canonical_dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+    "loader": "v6_dual_robin_manifest_v1",
+    "bc_adapter": "dual_robin_top_bottom_v1",
+    "batch_size": 28,
+    "validation_batch_size": 32,
+    "prediction_batch_size": 32,
+    "drop_last": false,
+    "random_initialization": true,
+    "final_probe_enabled": false,
+    "legacy_baseline_comparison_enabled": false
+  },
+  "configs": [
+    {
+      "config_id": "V6_01_V4best",
+      "baseline_config_id": "V4P5_02_clean_baseline_raw_B28_e600",
+      "model_diff_keys": [],
+      "loss_equal": true,
+      "optimizer_equal": true,
+      "epochs_equal": true,
+      "graph_equal": true,
+      "seeds_equal": true,
+      "selection_metric_equal": true,
+      "parameter_count_smoke": 832550
+    },
+    {
+      "config_id": "V6_02_V5best",
+      "requested_baseline_alias": "V4P5_42_canonical",
+      "baseline_config_id": "V4P5_42_gate6q_objective_only_e600",
+      "model_diff_keys": ["global_context_feature_names"],
+      "model_diff_class": "BC_adapter_dimension_preserving_24D_schema",
+      "loss_equal": true,
+      "optimizer_equal": true,
+      "epochs_equal": true,
+      "graph_equal": true,
+      "seeds_equal": true,
+      "selection_metric_equal": true,
+      "parameter_count_smoke": 893736
+    }
+  ]
+}

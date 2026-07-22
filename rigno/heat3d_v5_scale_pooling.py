@@ -67,7 +67,6 @@ _REQUIRED_RAW_FEATURES = (
     "is_side",
     "is_interior",
     "top_h",
-    "bottom_T_fixed_minus_T_ref",
 )
 
 EPS = 1.0e-12
@@ -138,6 +137,11 @@ def qk_region_features_from_raw(
     missing = [name for name in _REQUIRED_RAW_FEATURES if name not in names]
     if missing:
         raise ValueError(f"qk_gated pooling lacks raw condition features: {missing}")
+    if "bottom_T_fixed_minus_T_ref" not in names and "bottom_h" not in names:
+        raise ValueError(
+            "qk_gated pooling requires either the legacy bottom Dirichlet offset "
+            "or the V6 bottom Robin coefficient"
+        )
     if not np.all(np.isfinite(points)) or not np.all(np.isfinite(values)):
         raise ValueError("qk_gated raw coords/condition must be finite")
 
@@ -163,8 +167,14 @@ def qk_region_features_from_raw(
     z_normalized = (z - float(np.min(z))) / z_extent
     top_h = np.maximum(values[:, index["top_h"]], 0.0)
     top_h_reference = max(float(np.mean(top_h)), EPS)
-    bottom_offset = values[:, index["bottom_T_fixed_minus_T_ref"]]
-    bottom_offset_reference = max(float(np.mean(np.abs(bottom_offset))), EPS)
+    if "bottom_h" in names:
+        bottom_h = np.maximum(values[:, names.index("bottom_h")], 0.0)
+        bottom_reference = max(float(np.mean(bottom_h)), EPS)
+        bottom_bc_feature = np.log1p(bottom_h / bottom_reference)
+    else:
+        bottom_offset = values[:, names.index("bottom_T_fixed_minus_T_ref")]
+        bottom_reference = max(float(np.mean(np.abs(bottom_offset))), EPS)
+        bottom_bc_feature = bottom_offset / bottom_reference
     physical_features = np.stack(
         [
             np.log1p(q_relative),
@@ -177,7 +187,7 @@ def qk_region_features_from_raw(
             values[:, index["is_side"]],
             values[:, index["is_interior"]],
             np.log1p(top_h / top_h_reference),
-            bottom_offset / bottom_offset_reference,
+            bottom_bc_feature,
         ],
         axis=-1,
     )

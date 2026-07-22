@@ -1,0 +1,30 @@
+{
+  "schema_version": "heat3d_v6_p1g_acceptance_amendment_v1",
+  "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+  "amendment_policy": "preserve_original_qualification_add_training_acceptance_gate",
+  "original_qualification_unchanged": true,
+  "original_qualification_path": "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_qualification.json",
+  "original_qualification_sha256": "31f33bfa535153981279293c55c74a0f19db6484a08f4fb50ce95b7cdaf1a141",
+  "new_gate": {
+    "peak_deltaT_below_29K_count": 0,
+    "peak_deltaT_below_30K_fraction_max": 0.02,
+    "peak_deltaT_30_to_80K_fraction_min": 0.95,
+    "peak_deltaT_above_80K_fraction_max": 0.05,
+    "peak_deltaT_above_100K_count": 0
+  },
+  "observed": {
+    "sample_count": 1024,
+    "peak_deltaT_K_min": 29.37756620841793,
+    "peak_deltaT_K_max": 76.16612845711336,
+    "peak_deltaT_below_29K_count": 0,
+    "peak_deltaT_below_30K_count": 18,
+    "peak_deltaT_below_30K_fraction": 0.017578125,
+    "peak_deltaT_30_to_80K_count": 1006,
+    "peak_deltaT_30_to_80K_fraction": 0.982421875,
+    "peak_deltaT_above_80K_count": 0,
+    "peak_deltaT_above_80K_fraction": 0.0,
+    "peak_deltaT_above_100K_count": 0
+  },
+  "passed": true,
+  "training_started": false
+}

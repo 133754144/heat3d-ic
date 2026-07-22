@@ -109,6 +109,8 @@ def build_training_command(
         _append_option(command, "--extent-feature-policy", extent_feature_policy)
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
+    _append_option(command, "--dataset-loader", dataset.get("loader"))
+    _append_option(command, "--dataset-manifest", dataset.get("manifest_path"))
     if dataset.get("boundary_mask_fallback") is True:
         command.append("--boundary-mask-fallback")
     elif dataset.get("boundary_mask_fallback") is False:

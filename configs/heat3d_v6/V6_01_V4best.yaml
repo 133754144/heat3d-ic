@@ -1,0 +1,53 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_01_V4best
+extends: ../heat3d_v4/generated/V4P5_02_clean_baseline_raw_B28_e600.yaml
+overrides:
+  description: >-
+    V6 canonical P1g-v0 random-init transfer of the frozen V4P5_02 scientific
+    baseline through the dual-Robin runtime adapter. No V4 checkpoint is loaded.
+  dataset:
+    name: heat3d_v6_p1g_geometry_deconfounded1024_v0
+    subset_path: data/heat3d_v6_p1g_geometry_deconfounded1024_v0
+    manifest_path: configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json
+    split_map_path: null
+    split_source: v6_manifest_group_locked
+    loader: v6_dual_robin_manifest_v1
+    bc_adapter: dual_robin_top_bottom_v1
+    feature_view: v6_dual_robin_relative_bc_features
+    input_feature_contract:
+      - k_x
+      - k_y
+      - k_z
+      - q
+      - is_top
+      - is_bottom
+      - is_side
+      - is_interior
+      - top_h
+      - bottom_h
+      - top_T_inf_minus_T_ref
+  run:
+    batch_size: 28
+    validation_batch_size: 32
+    prediction_batch_size: 32
+    drop_last: false
+    init_checkpoint: null
+    final_probe_eval_after_training: false
+    final_probe_output_dir: null
+    post_training_diagnostics: false
+    post_training_diagnostics_output_dir: null
+  export:
+    output_dir: output/heat3d_v6_runs/V6_01_V4best
+    run_name: V6_01_V4best
+    prediction_split: valid_iid
+  diagnostics:
+    run_baseline_comparison: false
+  metadata:
+    phase: v6_training_handoff
+    baseline_config_id: V4P5_02_clean_baseline_raw_B28_e600
+    canonical_dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
+    initialization: random
+    training_started: false
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v6_logs/V6_01_V4best.log
+    bottom_boundary_semantics: robin_not_fixed_temperature

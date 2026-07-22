@@ -54,6 +54,17 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
     recover_temperature_from_normalized_delta,
 )
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
+from rigno.heat3d_v6_dataset import (  # noqa: E402
+    Heat3DV6DualRobinDataset,
+    V6DualRobinExample,
+)
+from rigno.heat3d_v6_global_context import (  # noqa: E402
+    GLOBAL_CONTEXT_FEATURES_V6,
+    fit_train_only_v6_standardizer,
+    global_context_from_v6_inputs,
+    standardize_v6_contexts,
+    validate_v6_global_context_schema,
+)
 from rigno.heat3d_v1_training_semantics import (  # noqa: E402
     COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
     build_legacy_zero_delta_bridge as _bridge_for,
@@ -208,6 +219,7 @@ INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
 FINAL_PROBE_CHECKPOINT_KIND_CHOICES = ("best", "final", "both")
 SAMPLE_WEIGHT_POLICY_CHOICES = ("none", "hard_sample_list")
+DATASET_LOADER_CHOICES = ("v1_metadata", "v6_dual_robin_manifest_v1")
 
 
 def parse_args() -> argparse.Namespace:
@@ -218,6 +230,12 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument("--subset", type=Path, default=DEFAULT_SUBSET)
+    parser.add_argument(
+        "--dataset-loader",
+        choices=DATASET_LOADER_CHOICES,
+        default="v1_metadata",
+    )
+    parser.add_argument("--dataset-manifest", type=Path, default=None)
     parser.add_argument(
         "--split-map",
         type=Path,
@@ -1740,6 +1758,30 @@ def _resolve_training_splits(
     sample_root: Path,
     split_map_path: Path | None,
 ) -> tuple[dict[str, list[str]], str, str, str | None]:
+    if (
+        split_map_path is None
+        and sample_root.name == "heat3d_v6_p1g_geometry_deconfounded1024_v0"
+    ):
+        manifest_path = sample_root / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        role_map = {"train": "train", "valid": "valid_iid", "test": "test_iid"}
+        split_ids: dict[str, list[str]] = {name: [] for name in role_map.values()}
+        group_roles: dict[str, str] = {}
+        for row in manifest.get("samples", []):
+            role = role_map.get(str(row.get("split_role")))
+            group_id = str(row.get("group_id") or "")
+            if role is None or not group_id:
+                raise ValueError("canonical V6 manifest contains invalid split/group metadata")
+            previous = group_roles.setdefault(group_id, role)
+            if previous != role:
+                raise ValueError(f"canonical V6 group leakage: {group_id}")
+            split_ids[role].append(str(row["sample_id"]))
+        return (
+            {name: sorted(ids) for name, ids in split_ids.items()},
+            "v6_manifest_group_locked",
+            "valid_iid",
+            None,
+        )
     if split_map_path is None:
         split_ids = _subset_split_ids(sample_root)
         if _is_heat3d_v4_subset(sample_root):
@@ -2271,13 +2313,18 @@ def _validate_global_context_config(config: dict[str, Any]) -> None:
     if feature_dim != len(names):
         raise ValueError("global_context_feature_dim must match global_context_feature_names")
     native_enabled = config.get("native_output_mode") == "native_shape_scale"
+    schema_validator = (
+        validate_v6_global_context_schema
+        if names == GLOBAL_CONTEXT_FEATURES_V6
+        else validate_global_context_schema
+    )
     if mode == GLOBAL_CONTEXT_MODE_NONE:
         if (names or feature_dim) and not native_enabled:
             raise ValueError("--global-context-mode none requires no global context feature names")
         if native_enabled:
-            validate_global_context_schema(names)
+            schema_validator(names)
         return
-    validate_global_context_schema(names)
+    schema_validator(names)
 
 
 def _resolve_decoder_bypass_model_config(
@@ -2297,6 +2344,7 @@ def _resolve_decoder_bypass_model_config(
         required_feature_names = decoder_bypass_required_full_condition_features(
             input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
             extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
+            dual_robin="bottom_h" in feature_names,
         )
         missing = [name for name in required_feature_names if name not in feature_names]
         if missing:
@@ -5375,6 +5423,10 @@ def _checkpoint_run_metadata(
 ) -> dict[str, Any]:
     return {
         "subset": str(sample_root),
+        "dataset_loader": str(args.dataset_loader),
+        "dataset_manifest": (
+            str(args.dataset_manifest) if args.dataset_manifest is not None else None
+        ),
         "split_map_path": str(args.split_map) if args.split_map is not None else None,
         "split_source": split_source,
         "split_counts": split_counts,
@@ -6486,6 +6538,9 @@ def _attach_sample_weights_to_groups(groups: list[dict], sample_weights: dict[st
 def _global_context_row_for_example(example: Any) -> dict[str, float]:
     """Build one inference-only FiLM context from the active bridge view."""
 
+    if isinstance(example, V6DualRobinExample):
+        return global_context_from_v6_inputs(**example.v6_global_context_inputs())
+
     relative_view = example.get_relative_bc_feature_view()
     feature_names = tuple(relative_view.condition_feature_names)
     raw_condition = np.asarray(relative_view.condition_features, dtype=np.float64)
@@ -6520,19 +6575,32 @@ def _prepare_global_context_lookup(
             "target_or_label_derived_inputs": False,
         }
     feature_names = tuple(model_config.get("global_context_feature_names") or ())
-    validate_global_context_schema(feature_names)
+    is_v6 = feature_names == GLOBAL_CONTEXT_FEATURES_V6
+    if is_v6:
+        validate_v6_global_context_schema(feature_names)
+    else:
+        validate_global_context_schema(feature_names)
     rows: dict[str, dict[str, float]] = {}
     for example in [*train_examples, *required_examples]:
         sample_id = str(example.sample_id)
         if sample_id not in rows:
             rows[sample_id] = _global_context_row_for_example(example)
     train_ids = [str(example.sample_id) for example in train_examples]
-    standardizer = fit_train_only_standardizer(
-        [rows[sample_id] for sample_id in train_ids],
-        fit_sample_ids=train_ids,
+    standardizer = (
+        fit_train_only_v6_standardizer(
+            [rows[sample_id] for sample_id in train_ids], fit_sample_ids=train_ids
+        )
+        if is_v6
+        else fit_train_only_standardizer(
+            [rows[sample_id] for sample_id in train_ids], fit_sample_ids=train_ids
+        )
     )
     encoded = {
-        sample_id: standardize_contexts([row], standardizer)[0]
+        sample_id: (
+            standardize_v6_contexts([row], standardizer)[0]
+            if is_v6
+            else standardize_contexts([row], standardizer)[0]
+        )
         for sample_id, row in rows.items()
     }
     return encoded, {
@@ -6542,7 +6610,7 @@ def _prepare_global_context_lookup(
             if model_config.get("global_context_mode") == GLOBAL_CONTEXT_MODE_FILM
             else "native_scale_head"
         ),
-        "feature_names": list(GLOBAL_CONTEXT_FEATURES),
+        "feature_names": list(GLOBAL_CONTEXT_FEATURES_V6 if is_v6 else GLOBAL_CONTEXT_FEATURES),
         "standardizer": standardizer,
         "target_or_label_derived_inputs": False,
     }
@@ -6672,6 +6740,15 @@ def _attach_native_physics_to_groups(
             names = tuple(relative.condition_feature_names)
             values = np.asarray(relative.condition_features, dtype=np.float64)
             coords = np.asarray(example.condition.coords, dtype=np.float64)
+            if isinstance(example, V6DualRobinExample):
+                reference = float(relative.t_ref_value)
+                context = _global_context_row_for_example(example)
+                volumes.append(example.v6_operator_point_weights())
+                log_s_phys.append(float(context["log_s_phys_K"]))
+                references.append(np.full(coords.shape[0], reference, dtype=np.float32))
+                masks.append(np.zeros(coords.shape[0], dtype=np.float32))
+                prescribed.append(np.full(coords.shape[0], reference, dtype=np.float32))
+                continue
             if "is_bottom" not in names or "bottom_T_fixed_minus_T_ref" not in names:
                 raise ValueError(f"{sample_id}: native branch lacks bottom Dirichlet features")
             bottom = values[:, names.index("is_bottom")] > 0.5
@@ -6818,18 +6895,22 @@ def _fit_native_loss_train_references(
                 raise ValueError(
                     f"{example.sample_id}: scale weighting lacks is_bottom"
                 )
-            mask = (
-                np.asarray(relative.condition_features, dtype=np.float64)[
-                    :, names.index("is_bottom")
-                ]
-                > 0.5
-            )
-            volume = np.asarray(
-                control_volume_weights(
-                    np.asarray(example.condition.coords, dtype=np.float64)
-                ),
-                dtype=np.float64,
-            )
+            if isinstance(example, V6DualRobinExample):
+                mask = np.zeros(target_vector.shape, dtype=bool)
+                volume = example.v6_operator_point_weights()
+            else:
+                mask = (
+                    np.asarray(relative.condition_features, dtype=np.float64)[
+                        :, names.index("is_bottom")
+                    ]
+                    > 0.5
+                )
+                volume = np.asarray(
+                    control_volume_weights(
+                        np.asarray(example.condition.coords, dtype=np.float64)
+                    ),
+                    dtype=np.float64,
+                )
             free = target_vector * (~mask)
             squared_scales.append(
                 float(
@@ -7279,6 +7360,44 @@ def _make_sample_shuffle_groups_with_progress(
     return result
 
 
+def _make_graph_compatible_sample_shuffle_groups_with_progress(
+    examples,
+    stats: dict,
+    builder: Heat3DGraphBuilder,
+    label: str,
+    progress_enabled: bool,
+    progress_detail: str,
+    graph_seed: int,
+    batch_size: int,
+    batch_build_seed: int,
+    drop_last: bool = False,
+    profile_counts: dict[str, int] | None = None,
+) -> list[dict]:
+    """Shuffle V6 samples, then batch only graph-shape-compatible examples.
+
+    P1g freezes coordinates per geometry group rather than globally.  The
+    unpadded RIGNO graph tensors therefore cannot concatenate arbitrary
+    geometries.  This adapter preserves the configured maximum B28 while
+    allowing the explicitly permitted increase in batches.
+    """
+
+    rng = np.random.default_rng(int(batch_build_seed))
+    order = rng.permutation(len(examples))
+    shuffled = [examples[int(index)] for index in order]
+    return _make_groups_with_progress(
+        shuffled,
+        stats,
+        builder,
+        label,
+        progress_enabled,
+        progress_detail,
+        graph_seed,
+        batch_size=batch_size,
+        drop_last=drop_last,
+        profile_counts=profile_counts,
+    )
+
+
 def _chunk_examples(examples, *, batch_size: int | None, drop_last: bool) -> list:
     examples = list(examples)
     if batch_size is None:
@@ -7456,11 +7575,22 @@ def main() -> int:
         if not (sample_root / sample_id / "temperature.npy").is_file():
             raise FileNotFoundError(f"Missing temperature.npy for {sample_id}")
 
-    dataset = Heat3DV1NativeSupervisedDataset(
-        sample_root,
-        k_encoding_mode="diag3",
-        boundary_mask_fallback=args.boundary_mask_fallback,
-    )
+    if args.dataset_loader == "v6_dual_robin_manifest_v1":
+        if args.dataset_manifest is None:
+            raise ValueError("V6 dual-Robin loader requires --dataset-manifest")
+        dataset = Heat3DV6DualRobinDataset(sample_root, args.dataset_manifest)
+        configured_splits = {
+            key: split_ids.get(key, []) for key in ("train", "valid_iid", "test_iid")
+        }
+        if dataset.split_ids != configured_splits:
+            raise ValueError("V6 manifest splits differ from configured split map")
+        split_source = "v6_manifest_group_locked+verified_split_map"
+    else:
+        dataset = Heat3DV1NativeSupervisedDataset(
+            sample_root,
+            k_encoding_mode="diag3",
+            boundary_mask_fallback=args.boundary_mask_fallback,
+        )
     index_by_id = dataset.sample_index_by_id()
     missing = [sample_id for sample_id in all_ids if sample_id not in index_by_id]
     if missing:
@@ -7500,7 +7630,12 @@ def main() -> int:
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
     if batch_config["batch_plan"] == "sample_shuffle":
-        train_groups = _make_sample_shuffle_groups_with_progress(
+        group_builder = (
+            _make_graph_compatible_sample_shuffle_groups_with_progress
+            if train_examples and isinstance(train_examples[0], V6DualRobinExample)
+            else _make_sample_shuffle_groups_with_progress
+        )
+        train_groups = group_builder(
             train_examples,
             stats,
             builder,
@@ -7732,7 +7867,12 @@ def main() -> int:
             )
 
         def epoch_regroup_fn(epoch: int) -> list[dict[str, Any]]:
-            groups = _make_sample_shuffle_groups_with_progress(
+            group_builder = (
+                _make_graph_compatible_sample_shuffle_groups_with_progress
+                if train_examples and isinstance(train_examples[0], V6DualRobinExample)
+                else _make_sample_shuffle_groups_with_progress
+            )
+            groups = group_builder(
                 train_examples,
                 stats,
                 builder,
