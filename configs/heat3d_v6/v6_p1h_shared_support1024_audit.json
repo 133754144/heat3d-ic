@@ -1,0 +1,296 @@
+{
+  "archive": {
+    "exact_q_dataset": "/samples/q_W_m3",
+    "path": "full_fields.h5",
+    "sha256": "f58141b3f365c5c90a57ec3802ae57c7e7afbf83ba0ab988060a617164b14c00",
+    "size_bytes": 1284507133
+  },
+  "archive_public_k_sha256": "b354f319a3302cc83f9eeb42f7855950ddd875cb248cbc917292a104c41ab00a",
+  "archive_public_mesh_coordinate_sha256": "e71315f8ef22a094844d6f0d86b3e777bc8a12d00267e8fe0b7e2c76fab7f4bf",
+  "coverage": {
+    "all_interfaces_covered": true,
+    "all_layers_covered": true,
+    "interface_point_counts": [
+      {
+        "interface_index": 0,
+        "lower_layer": "pcb_fr4_equivalent",
+        "point_count": 16,
+        "upper_layer": "bt_substrate_with_vias"
+      },
+      {
+        "interface_index": 1,
+        "lower_layer": "bt_substrate_with_vias",
+        "point_count": 16,
+        "upper_layer": "silicon_interposer_tsv_0p1"
+      },
+      {
+        "interface_index": 2,
+        "lower_layer": "silicon_interposer_tsv_0p1",
+        "point_count": 16,
+        "upper_layer": "bump_underfill_under_interposer"
+      },
+      {
+        "interface_index": 3,
+        "lower_layer": "bump_underfill_under_interposer",
+        "point_count": 16,
+        "upper_layer": "silicon_die_lower"
+      },
+      {
+        "interface_index": 4,
+        "lower_layer": "silicon_die_lower",
+        "point_count": 16,
+        "upper_layer": "tim_between_dies"
+      },
+      {
+        "interface_index": 5,
+        "lower_layer": "tim_between_dies",
+        "point_count": 16,
+        "upper_layer": "silicon_die_upper"
+      },
+      {
+        "interface_index": 6,
+        "lower_layer": "silicon_die_upper",
+        "point_count": 16,
+        "upper_layer": "tim_to_spreader"
+      },
+      {
+        "interface_index": 7,
+        "lower_layer": "tim_to_spreader",
+        "point_count": 16,
+        "upper_layer": "spreader"
+      }
+    ],
+    "layer_point_counts": {
+      "bt_substrate_with_vias": 45,
+      "bump_underfill_under_interposer": 45,
+      "pcb_fr4_equivalent": 93,
+      "silicon_die_lower": 300,
+      "silicon_die_upper": 300,
+      "silicon_interposer_tsv_0p1": 45,
+      "spreader": 108,
+      "tim_between_dies": 44,
+      "tim_to_spreader": 44
+    }
+  },
+  "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+  "dataset_manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5",
+  "dataset_path": "/private/tmp/heat3d-v6-p1h/data/heat3d_v6_p1h_shared_support1024_v0",
+  "elapsed_seconds": 1603.0770895830356,
+  "exact_full_q_archive": true,
+  "group_count": 128,
+  "guardrails": {
+    "canonical_dataset_changed": false,
+    "model_inference_runs": 0,
+    "parent_dataset_overwritten": false,
+    "parent_projected_point_interpolation": false,
+    "post_solve_sample_filtering": false,
+    "training_runs": 0
+  },
+  "leakage": {
+    "groups_crossing_split": 0,
+    "same_support_all_splits": true,
+    "support_uses_temperature": false,
+    "support_uses_test_labels": false
+  },
+  "physical_metric_max_abs_difference_vs_P1g": 0.0,
+  "reconstruction": {
+    "energy_balance_relative_error": {
+      "max": -8.214628051857649e-11,
+      "mean": -1.0134804045107354e-10,
+      "median": -1.0158610411203917e-10,
+      "min": -1.2029429535820313e-10,
+      "p05": -1.2017235487965515e-10,
+      "p95": -8.227891423739919e-11
+    },
+    "full_field_cv_relative_rmse": {
+      "max": 0.048450444184627704,
+      "mean": 0.030067200391763062,
+      "median": 0.0330812179359605,
+      "min": 0.012800293630838152,
+      "p05": 0.01319338742637404,
+      "p95": 0.04584975157255147
+    },
+    "full_field_cv_rmse_K": {
+      "max": 2.318221871287206,
+      "mean": 1.1360904758899613,
+      "median": 1.075331670176368,
+      "min": 0.4147989902537196,
+      "p05": 0.46322561569344856,
+      "p95": 2.209429540688465
+    },
+    "full_field_max_abs_error_K": {
+      "max": 12.018592703784009,
+      "mean": 5.481080300420258,
+      "median": 5.020730996888432,
+      "min": 1.3709688882516389,
+      "p05": 1.9813586715523201,
+      "p95": 10.089028406485761
+    },
+    "max_abs_layer_average_error_K": {
+      "max": 2.5406424863492703,
+      "mean": 1.2297625601184452,
+      "median": 1.0090903217746359,
+      "min": 0.5013791198240938,
+      "p05": 0.5157140676738123,
+      "p95": 2.5097283617269084
+    },
+    "max_abs_layer_drop_error_K": {
+      "max": 3.9961867054008735,
+      "mean": 1.8668594637388252,
+      "median": 1.593948949616248,
+      "min": 0.5746336691021838,
+      "p05": 0.6053978872967889,
+      "p95": 3.9241578136482187
+    },
+    "solver_peak_minus_projected_peak_K": {
+      "max": 0.3753631607888792,
+      "mean": 0.06714967540449207,
+      "median": 0.05065702672615657,
+      "min": 0.0,
+      "p05": 0.002855471578982361,
+      "p95": 0.19227576302288787
+    }
+  },
+  "sample_count": 1024,
+  "schema_version": "heat3d_v6_p1h_shared_support_audit_v1",
+  "selected_support_proposal": "source_dense_16x16_v1",
+  "shared_coordinate_sha256": "2bda8e710c8c9f15b180783dc12132280253124688d3e3177296e97527798745",
+  "shared_graph_sha256": "6d3d62830755872194766aad2a8ac7b0f1fabec57840dac78fcb2642a6ed771c",
+  "shared_support_index_sha256": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304",
+  "solver_node_count": 240825,
+  "solver_seconds": 1527.9007282289676,
+  "solver_shape": [
+    65,
+    65,
+    57
+  ],
+  "source_metadata_max_abs_difference_vs_P1g": 0.0,
+  "source_support_point_count": {
+    "max": 20.0,
+    "mean": 10.55889423076923,
+    "median": 10.0,
+    "min": 4.0,
+    "p05": 5.0,
+    "p95": 17.0
+  },
+  "sources_with_zero_support": 0,
+  "split_role_counts": {
+    "test": 128,
+    "train": 768,
+    "valid": 128
+  },
+  "status": "passed",
+  "support_proposals": {
+    "source_dense_16x16_v1": {
+      "all_layers_covered": true,
+      "coordinate_sha256": "2bda8e710c8c9f15b180783dc12132280253124688d3e3177296e97527798745",
+      "layer_point_counts": {
+        "bt_substrate_with_vias": 45,
+        "bump_underfill_under_interposer": 45,
+        "pcb_fr4_equivalent": 93,
+        "silicon_die_lower": 300,
+        "silicon_die_upper": 300,
+        "silicon_interposer_tsv_0p1": 45,
+        "spreader": 108,
+        "tim_between_dies": 44,
+        "tim_to_spreader": 44
+      },
+      "source_allowed_domain_covering": {
+        "silicon_die_lower": {
+          "normalized_xy_covering_radius": 0.04419417382415922,
+          "normalized_xy_mean_nearest_distance": 0.025186435230922597,
+          "source_support_count": 256
+        },
+        "silicon_die_upper": {
+          "normalized_xy_covering_radius": 0.04419417382415922,
+          "normalized_xy_mean_nearest_distance": 0.025186435230922597,
+          "source_support_count": 256
+        }
+      },
+      "source_side": 16,
+      "strata_counts": {
+        "bottom": 64,
+        "interface": 128,
+        "source": 512,
+        "top": 64,
+        "volume": 256
+      },
+      "support_index_sha256": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304"
+    },
+    "source_grid_12x12_v1": {
+      "all_layers_covered": true,
+      "coordinate_sha256": "a1f3a9b1fb85361976f2ec531eb735f23ddb4b68dd28adb5894bfd7d65ca9c49",
+      "layer_point_counts": {
+        "bt_substrate_with_vias": 70,
+        "bump_underfill_under_interposer": 69,
+        "pcb_fr4_equivalent": 118,
+        "silicon_die_lower": 213,
+        "silicon_die_upper": 213,
+        "silicon_interposer_tsv_0p1": 70,
+        "spreader": 133,
+        "tim_between_dies": 69,
+        "tim_to_spreader": 69
+      },
+      "source_allowed_domain_covering": {
+        "silicon_die_lower": {
+          "normalized_xy_covering_radius": 0.06629126073623882,
+          "normalized_xy_mean_nearest_distance": 0.03351241865707161,
+          "source_support_count": 144
+        },
+        "silicon_die_upper": {
+          "normalized_xy_covering_radius": 0.06629126073623882,
+          "normalized_xy_mean_nearest_distance": 0.03351241865707161,
+          "source_support_count": 144
+        }
+      },
+      "source_side": 12,
+      "strata_counts": {
+        "bottom": 64,
+        "interface": 128,
+        "source": 288,
+        "top": 64,
+        "volume": 480
+      },
+      "support_index_sha256": "35746bc28e41fffee79e1b4f75e8778ad349501bb2281c29135c0a828d956073"
+    },
+    "source_grid_14x14_v1": {
+      "all_layers_covered": true,
+      "coordinate_sha256": "75c393819801da57cb88897f1546dc0fb5989ba681a09ebc71ee527acffa6301",
+      "layer_point_counts": {
+        "bt_substrate_with_vias": 58,
+        "bump_underfill_under_interposer": 58,
+        "pcb_fr4_equivalent": 106,
+        "silicon_die_lower": 254,
+        "silicon_die_upper": 254,
+        "silicon_interposer_tsv_0p1": 58,
+        "spreader": 121,
+        "tim_between_dies": 58,
+        "tim_to_spreader": 57
+      },
+      "source_allowed_domain_covering": {
+        "silicon_die_lower": {
+          "normalized_xy_covering_radius": 0.044194173824159376,
+          "normalized_xy_mean_nearest_distance": 0.027947621808102695,
+          "source_support_count": 196
+        },
+        "silicon_die_upper": {
+          "normalized_xy_covering_radius": 0.044194173824159376,
+          "normalized_xy_mean_nearest_distance": 0.027947621808102695,
+          "source_support_count": 196
+        }
+      },
+      "source_side": 14,
+      "strata_counts": {
+        "bottom": 64,
+        "interface": 128,
+        "source": 392,
+        "top": 64,
+        "volume": 376
+      },
+      "support_index_sha256": "38589f9df081e956c115e18f9bea295980c43a94daa74daf5696b847db0db89d"
+    }
+  },
+  "support_selection_label_inputs": [],
+  "unique_coordinate_hash_count": 1,
+  "unique_graph_hash_count": 1
+}

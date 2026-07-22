@@ -1,4 +1,4 @@
-"""Canonical V6 P1g dual-Robin dataset adapter.
+"""V6 P1g/P1h dual-Robin dataset adapter.
 
 The adapter deliberately does not reuse the V1 bottom-Dirichlet metadata
 loader.  P1g has Robin conditions on both package faces; treating the bottom
@@ -25,6 +25,11 @@ from rigno.models.operator import Inputs
 
 
 CANONICAL_V6_DATASET_ID = "heat3d_v6_p1g_geometry_deconfounded1024_v0"
+SHARED_SUPPORT_V6_DATASET_ID = "heat3d_v6_p1h_shared_support1024_v0"
+SUPPORTED_V6_DATASET_IDS = {
+    CANONICAL_V6_DATASET_ID,
+    SHARED_SUPPORT_V6_DATASET_ID,
+}
 V6_DUAL_ROBIN_CONDITION_FEATURES = (
     "k_x",
     "k_y",
@@ -124,20 +129,35 @@ class V6DualRobinExample:
 
 
 class Heat3DV6DualRobinDataset:
-    """Read canonical P1g samples and its manifest-locked split contract."""
+    """Read P1g/P1h samples under the immutable manifest split contract."""
 
-    def __init__(self, datadir: str | Path, manifest_path: str | Path) -> None:
+    def __init__(
+        self,
+        datadir: str | Path,
+        manifest_path: str | Path,
+        *,
+        include_roles: set[str] | None = None,
+    ) -> None:
         self.datadir = Path(datadir).resolve()
         self.manifest_path = Path(manifest_path).resolve()
         self.manifest = json.loads(self.manifest_path.read_text(encoding="utf-8"))
         self._validate_manifest()
         self.split_ids = self._split_ids_from_manifest()
-        self.samples = [self._load_sample(row) for row in self.manifest["samples"]]
+        allowed = None if include_roles is None else set(include_roles)
+        if allowed is not None and not allowed <= {"train", "valid", "test"}:
+            raise ValueError(f"unsupported V6 materialized roles: {sorted(allowed)}")
+        rows = self.manifest["samples"]
+        self.materialized_roles = {str(row["split_role"]) for row in rows} if allowed is None else allowed
+        self.samples = [
+            self._load_sample(row)
+            for row in rows
+            if allowed is None or str(row["split_role"]) in allowed
+        ]
 
     def _validate_manifest(self) -> None:
-        if self.manifest.get("dataset_id") != CANONICAL_V6_DATASET_ID:
+        if self.manifest.get("dataset_id") not in SUPPORTED_V6_DATASET_IDS:
             raise ValueError(
-                "V6 training loader accepts only canonical P1g-v0; found "
+                "V6 training loader accepts only frozen P1g-v0 or P1h-v0; found "
                 f"{self.manifest.get('dataset_id')!r}"
             )
         rows = self.manifest.get("samples")
@@ -171,8 +191,9 @@ class Heat3DV6DualRobinDataset:
         sample_id = str(row["sample_id"])
         sample_dir = self.datadir / str(row.get("sample_dir") or sample_id)
         meta = json.loads((sample_dir / "sample_meta.json").read_text(encoding="utf-8"))
-        if meta.get("dataset_id") != CANONICAL_V6_DATASET_ID:
-            raise ValueError(f"{sample_id}: sample dataset_id is not canonical P1g-v0")
+        dataset_id = str(self.manifest["dataset_id"])
+        if meta.get("dataset_id") != dataset_id:
+            raise ValueError(f"{sample_id}: sample/manifest dataset_id mismatch")
         bc = meta.get("boundary_conditions") or {}
         top = bc.get("top") or {}
         bottom = bc.get("bottom") or {}
@@ -211,7 +232,7 @@ class Heat3DV6DualRobinDataset:
             raise AssertionError("V6 condition width invariant failed")
         enriched_meta = dict(meta)
         enriched_meta["v6_adapter"] = {
-            "dataset_id": CANONICAL_V6_DATASET_ID,
+            "dataset_id": dataset_id,
             "manifest_split_role": str(row["split_role"]),
             "group_id": str(row["group_id"]),
             "reference_temperature_K": bottom_tinf,

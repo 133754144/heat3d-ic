@@ -101,7 +101,9 @@ def _supplemental_scan(
     }
 
 
-def audit(source_root: Path, search_roots: list[Path]) -> dict[str, Any]:
+def audit(
+    source_root: Path, search_roots: list[Path], *, decision_mode: str = "stop"
+) -> dict[str, Any]:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     samples = manifest["samples"]
     missing_dirs: list[str] = []
@@ -148,10 +150,16 @@ def audit(source_root: Path, search_roots: list[Path]) -> dict[str, Any]:
     p1h_root = source_root.parent / "heat3d_v6_p1h_shared_support1024_v0"
     blocked = full_field_complete != len(samples)
     supplemental = _supplemental_scan(search_roots, source_root, solver_node_counts)
+    if blocked and decision_mode == "rebuild":
+        status = "original_full_fields_missing_rebuild_required"
+        decision = "deterministic_rebuild_from_frozen_P1g"
+    else:
+        status = "blocked_missing_original_solver_full_fields" if blocked else "passed_full_fields_available"
+        decision = "stop_without_generating_P1h" if blocked else "eligible_to_generate_P1h"
     return {
         "schema_version": "heat3d_v6_p1h_full_field_availability_audit_v1",
-        "status": "blocked_missing_original_solver_full_fields" if blocked else "passed_full_fields_available",
-        "decision": "stop_without_generating_P1h" if blocked else "eligible_to_generate_P1h",
+        "status": status,
+        "decision": decision,
         "parent_dataset_id": manifest["dataset_id"],
         "proposed_dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
         "parent_manifest": str(MANIFEST.relative_to(ROOT)),
@@ -185,6 +193,22 @@ def audit(source_root: Path, search_roots: list[Path]) -> dict[str, Any]:
 
 
 def _markdown(payload: dict[str, Any]) -> str:
+    if payload["decision"] == "deterministic_rebuild_from_frozen_P1g":
+        downstream = """The original full fields were unavailable, so the frozen decision is to rebuild
+the public mesh, conductivity, exact source field, and temperature deterministically
+from the verified P1g config/manifest. The existing 1024-point P1g arrays remain
+forbidden as interpolation input. Replay, generation, and final acceptance are
+documented separately; this file preserves the pre-generation search evidence."""
+        absent_heading = "## Downstream disposition"
+        absent_body = """This search result is not a stop condition. It establishes why deterministic
+solver replay was required; it does not claim that the later P1h dataset is absent."""
+    else:
+        downstream = """The requested P1h dataset therefore was not generated. Existing 1024-point P1g
+arrays were not interpolated, P1g was not modified, no P1h manifest was fabricated,
+and construction remains blocked until original full fields are restored."""
+        absent_heading = "## Deliberately absent downstream artifacts"
+        absent_body = """Because the prerequisite full fields are absent, there is no eligible P1h
+generation under this decision mode."""
     return f"""# V6-P1h shared-support full-field availability audit
 
 Status: `{payload['status']}`. Decision: `{payload['decision']}`.
@@ -197,10 +221,7 @@ Each sample metadata record declares a {payload['declared_solver_node_counts']}-
 mesh, but no sample directory contains solver-sized coordinate, conductivity, source,
 and temperature arrays.
 
-The requested P1h dataset therefore was not generated. Existing 1024-point P1g arrays
-were not interpolated, P1g was not modified, no P1h manifest was fabricated, and the
-canonical dataset designation remains P1g-v0. Construction can resume only after the
-original per-sample solver-full coordinates/k/q/T files are restored with provenance.
+{downstream}
 
 Audit source manifest SHA256: `{payload['parent_manifest_sha256']}`.
 
@@ -212,13 +233,9 @@ the P1g projected source root. It found
 and
 `solver_or_full_field_name_candidate_count={payload['supplemental_local_search']['solver_or_full_field_name_candidate_count']}`.
 
-## Deliberately absent downstream artifacts
+{absent_heading}
 
-Because the prerequisite full fields are absent, there is no P1h dataset directory or
-manifest, no shared coordinate/graph hash, and no source/layer/interface coverage,
-projection-error, distribution, leakage, loader, or B24 trainability result. Producing
-any of those would require either fabricating a dataset or interpolating from P1g's
-already projected 1024 points, both of which are forbidden by the task contract.
+{absent_body}
 """
 
 
@@ -226,10 +243,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", type=Path, required=True)
     parser.add_argument("--search-root", type=Path, action="append", default=[])
+    parser.add_argument("--decision-mode", choices=("stop", "rebuild"), default="stop")
     parser.add_argument("--write-json", type=Path)
     parser.add_argument("--write-md", type=Path)
     args = parser.parse_args()
-    payload = audit(args.source_root, args.search_root)
+    payload = audit(args.source_root, args.search_root, decision_mode=args.decision_mode)
     if args.write_json:
         args.write_json.parent.mkdir(parents=True, exist_ok=True)
         args.write_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

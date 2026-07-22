@@ -1,0 +1,80 @@
+schema_version: heat3d_v6_p1h_shared_support_dataset_v1
+dataset_id: heat3d_v6_p1h_shared_support1024_v0
+status: frozen_before_replay_and_generation
+parent:
+  dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
+  config: configs/heat3d_v6/v6_p1g_geometry_deconfounded1024.yaml
+  config_sha256: ab162724af61c745f82571e9c8f07102d5262c70a4817ace0900e894bfc4af83
+  manifest: configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json
+  manifest_sha256: e5329d5cd6253510d87a4432d5f2ddae67259637810c29fdfb6ddf42621875a4
+  invariant_contract:
+    - sample_ids_and_order
+    - 128_geometry_groups
+    - group_locked_train_valid_test_split
+    - stack_materials_and_mesh
+    - source_geometry_power_and_q
+    - top_bottom_robin_BC
+    - package_power
+scope:
+  model_training: false
+  model_inference: false
+  modifies_parent_dataset: false
+  modifies_canonical_dataset: false
+  interpolation_from_parent_1024_points: false
+  support_uses_temperature_or_test_labels: false
+replay:
+  representative_selection: deterministic_factor_set_cover_without_labels
+  required_factors:
+    - split_role
+    - source_count_3_to_10
+    - layout_kind
+    - alignment_relation
+    - top_h
+    - bottom_h
+    - package_power
+  absolute_tolerances:
+    coordinates_m: 0.0
+    k_W_mK: 0.0
+    q_W_m3: 0.0
+    projected_temperature_K: 1.0e-10
+    field_metric: 1.0e-10
+support:
+  source: common_solver_mesh_nodes_only
+  node_count: 1024
+  point_order: stratum_then_layer_then_lexicographic_v1
+  proposals:
+    - id: source_grid_12x12_v1
+      source_nodes_per_active_layer: 144
+    - id: source_grid_14x14_v1
+      source_nodes_per_active_layer: 196
+    - id: source_dense_16x16_v1
+      source_nodes_per_active_layer: 256
+  selected_proposal_id: source_dense_16x16_v1
+  selection_basis: preregistered_source_allowed_domain_max_then_mean_nearest_distance
+  fixed_counts:
+    source_allowed_domain: 512
+    volume: 256
+    interfaces: 128
+    top_robin: 64
+    bottom_robin: 64
+  label_inputs_used: []
+archive:
+  format: HDF5
+  file: full_fields.h5
+  temperature_dtype: float64
+  temperature_layout: sample_by_solver_node
+  q_storage: unit_power_per_geometry_group_plus_exact_sample_power
+  compression: gzip_shuffle_per_sample_row
+  reusable_public_fields:
+    - solver_coords
+    - k_diag
+    - control_volume
+    - layer_id
+    - axes_and_boundaries
+    - support_indices
+generation:
+  overwrite_parent: false
+  overwrite_existing_output: false
+  post_solve_filtering: false
+  sample_replacement: false
+  full_field_source: deterministic_replay_of_frozen_P1g_solver

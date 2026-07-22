@@ -1767,7 +1767,10 @@ def _resolve_training_splits(
 ) -> tuple[dict[str, list[str]], str, str, str | None]:
     if (
         split_map_path is None
-        and sample_root.name == "heat3d_v6_p1g_geometry_deconfounded1024_v0"
+        and sample_root.name in {
+            "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+            "heat3d_v6_p1h_shared_support1024_v0",
+        }
     ):
         manifest_path = sample_root / "manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

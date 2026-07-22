@@ -1,0 +1,267 @@
+{
+  "data_paths": {
+    "durable_copy": "/Users/xuyihua/.codex/worktrees/5c97/3D IC Heat/data/heat3d_v6_p1h_shared_support1024_v0",
+    "durable_copy_hash_verified": true,
+    "generation_worktree": "/private/tmp/heat3d-v6-p1h/data/heat3d_v6_p1h_shared_support1024_v0"
+  },
+  "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+  "energy_balance_absolute_max": 1.2029429535820313e-10,
+  "factor_distribution": {
+    "alignment_relation": {
+      "offset": 512,
+      "partly_aligned": 512
+    },
+    "bottom_h_W_m2K": {
+      "120.0": 512,
+      "20.0": 512
+    },
+    "layout_kind": {
+      "clustered": 256,
+      "distributed": 256,
+      "edge_balanced": 256,
+      "mixed": 256
+    },
+    "package_power_W": {
+      "4.0": 512,
+      "6.0": 512
+    },
+    "source_count": {
+      "10": 128,
+      "3": 128,
+      "4": 128,
+      "5": 128,
+      "6": 128,
+      "7": 128,
+      "8": 128,
+      "9": 128
+    },
+    "split_role": {
+      "test": 128,
+      "train": 768,
+      "valid": 128
+    },
+    "top_h_W_m2K": {
+      "1000.0": 512,
+      "1400.0": 512
+    }
+  },
+  "full_field_archive_sha256": "f58141b3f365c5c90a57ec3802ae57c7e7afbf83ba0ab988060a617164b14c00",
+  "full_field_archive_size_bytes": 1284507133,
+  "full_field_q_storage": "/samples/q_W_m3 exact per sample",
+  "group_count": 128,
+  "guardrails": {
+    "canonical_dataset_changed": false,
+    "formal_training_started": false,
+    "interpolation_from_parent_projected_points": false,
+    "parent_dataset_overwritten": false,
+    "test_materialized_by_smoke": false,
+    "test_used_for_support_selection": false
+  },
+  "hash_checks": {
+    "archive_sha256_checked": true,
+    "full_q_rows_checked": 1024,
+    "full_temperature_rows_checked": 1024,
+    "sample_file_failures": 0,
+    "sample_files_checked": 10240
+  },
+  "leakage": {
+    "groups_crossing_split": 0,
+    "same_support_all_splits": true,
+    "support_uses_temperature": false,
+    "support_uses_test_labels": false
+  },
+  "p1g_invariance": {
+    "factor_distribution": "exact",
+    "physical_metadata": "exact",
+    "sample_group_split_order": "exact",
+    "solver_metrics": "exact"
+  },
+  "parent_dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+  "projection_and_reconstruction": {
+    "energy_balance_relative_error": {
+      "max": -8.214628051857649e-11,
+      "mean": -1.0134804045107354e-10,
+      "median": -1.0158610411203917e-10,
+      "min": -1.2029429535820313e-10,
+      "p05": -1.2017235487965515e-10,
+      "p95": -8.227891423739919e-11
+    },
+    "full_field_cv_relative_rmse": {
+      "max": 0.048450444184627704,
+      "mean": 0.030067200391763062,
+      "median": 0.0330812179359605,
+      "min": 0.012800293630838152,
+      "p05": 0.01319338742637404,
+      "p95": 0.04584975157255147
+    },
+    "full_field_cv_rmse_K": {
+      "max": 2.318221871287206,
+      "mean": 1.1360904758899613,
+      "median": 1.075331670176368,
+      "min": 0.4147989902537196,
+      "p05": 0.46322561569344856,
+      "p95": 2.209429540688465
+    },
+    "full_field_max_abs_error_K": {
+      "max": 12.018592703784009,
+      "mean": 5.481080300420258,
+      "median": 5.020730996888432,
+      "min": 1.3709688882516389,
+      "p05": 1.9813586715523201,
+      "p95": 10.089028406485761
+    },
+    "max_abs_layer_average_error_K": {
+      "max": 2.5406424863492703,
+      "mean": 1.2297625601184452,
+      "median": 1.0090903217746359,
+      "min": 0.5013791198240938,
+      "p05": 0.5157140676738123,
+      "p95": 2.5097283617269084
+    },
+    "max_abs_layer_drop_error_K": {
+      "max": 3.9961867054008735,
+      "mean": 1.8668594637388252,
+      "median": 1.593948949616248,
+      "min": 0.5746336691021838,
+      "p05": 0.6053978872967889,
+      "p95": 3.9241578136482187
+    },
+    "solver_peak_minus_projected_peak_K": {
+      "max": 0.3753631607888792,
+      "mean": 0.06714967540449207,
+      "median": 0.05065702672615657,
+      "min": 0.0,
+      "p05": 0.002855471578982361,
+      "p95": 0.19227576302288787
+    }
+  },
+  "replay": {
+    "max_abs_error": {
+      "coordinates_m": 0.0,
+      "field_metric": 0.0,
+      "k_W_mK": 0.0,
+      "projected_temperature_K": 0.0,
+      "q_W_m3": 0.0
+    },
+    "parent_file_hashes_checked": 10240,
+    "representative_count": 8
+  },
+  "sample_count": 1024,
+  "schema_version": "heat3d_v6_p1h_shared_support_acceptance_v1",
+  "shared_coordinate_sha256": "2bda8e710c8c9f15b180783dc12132280253124688d3e3177296e97527798745",
+  "shared_graph_sha256": "6d3d62830755872194766aad2a8ac7b0f1fabec57840dac78fcb2642a6ed771c",
+  "shared_support_index_sha256": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304",
+  "solver_node_count": 240825,
+  "split_counts": {
+    "test": 128,
+    "train": 768,
+    "valid": 128
+  },
+  "status": "passed",
+  "support": {
+    "bottom_point_count": 64,
+    "interface_point_counts": [
+      {
+        "interface_index": 0,
+        "lower_layer": "pcb_fr4_equivalent",
+        "point_count": 16,
+        "upper_layer": "bt_substrate_with_vias"
+      },
+      {
+        "interface_index": 1,
+        "lower_layer": "bt_substrate_with_vias",
+        "point_count": 16,
+        "upper_layer": "silicon_interposer_tsv_0p1"
+      },
+      {
+        "interface_index": 2,
+        "lower_layer": "silicon_interposer_tsv_0p1",
+        "point_count": 16,
+        "upper_layer": "bump_underfill_under_interposer"
+      },
+      {
+        "interface_index": 3,
+        "lower_layer": "bump_underfill_under_interposer",
+        "point_count": 16,
+        "upper_layer": "silicon_die_lower"
+      },
+      {
+        "interface_index": 4,
+        "lower_layer": "silicon_die_lower",
+        "point_count": 16,
+        "upper_layer": "tim_between_dies"
+      },
+      {
+        "interface_index": 5,
+        "lower_layer": "tim_between_dies",
+        "point_count": 16,
+        "upper_layer": "silicon_die_upper"
+      },
+      {
+        "interface_index": 6,
+        "lower_layer": "silicon_die_upper",
+        "point_count": 16,
+        "upper_layer": "tim_to_spreader"
+      },
+      {
+        "interface_index": 7,
+        "lower_layer": "tim_to_spreader",
+        "point_count": 16,
+        "upper_layer": "spreader"
+      }
+    ],
+    "layer_point_counts": {
+      "bt_substrate_with_vias": 45,
+      "bump_underfill_under_interposer": 45,
+      "pcb_fr4_equivalent": 93,
+      "silicon_die_lower": 300,
+      "silicon_die_upper": 300,
+      "silicon_interposer_tsv_0p1": 45,
+      "spreader": 108,
+      "tim_between_dies": 44,
+      "tim_to_spreader": 44
+    },
+    "proposal": "source_dense_16x16_v1",
+    "selection_inputs": [],
+    "source_point_count": {
+      "max": 20.0,
+      "mean": 10.55889423076923,
+      "median": 10.0,
+      "min": 4.0,
+      "p05": 5.0,
+      "p95": 17.0
+    },
+    "sources_with_zero_support": 0,
+    "top_point_count": 64
+  },
+  "trainability": {
+    "baseline_config": "configs/heat3d_v6/V6_02_V5best.yaml",
+    "batch_size": 24,
+    "checkpoint_persisted": false,
+    "checkpoint_reload_loss_abs_error": 0.0,
+    "checkpoint_reload_parameter_max_abs_error": 0.0,
+    "checkpoint_sha256": "df570c0d1ccc7fff109c54b939233b478d2a3334010af2e2616d70705ec1dd4d",
+    "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+    "distinct_coordinate_hashes_in_batch": 1,
+    "finite_forward_backward_update": true,
+    "global_context_fit_population": "train_only",
+    "global_context_fit_sample_count": 768,
+    "gradient_norm": 195.2143083781794,
+    "loss_after_one_update": 4.051064491271973,
+    "loss_before": 7.789470672607422,
+    "materialized_roles": [
+      "train",
+      "valid"
+    ],
+    "micro_batch_size": 24,
+    "model_inference_runs_on_test": 0,
+    "node_count": 1024,
+    "normalization_fit_population": "train_only",
+    "normalization_fit_sample_count": 768,
+    "schema_version": "heat3d_v6_p1h_trainability_smoke_v1",
+    "status": "passed",
+    "test_samples_materialized": 0,
+    "train_sample_count": 768,
+    "training_started": false
+  }
+}
