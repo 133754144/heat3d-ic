@@ -1,0 +1,175 @@
+{
+  "config_declared_sample_count": 1024,
+  "correlations": {
+    "bottom_h_W_m2K__package_total_power_W": {
+      "pearson": 0.5286229624278082,
+      "spearman": 0.6037582034296758
+    },
+    "top_h_W_m2K__bottom_h_W_m2K": {
+      "pearson": 0.5706539765861571,
+      "spearman": 0.6687242412310153
+    },
+    "top_h_W_m2K__package_total_power_W": {
+      "pearson": 0.8858610395230885,
+      "spearman": 0.9120695678062978
+    }
+  },
+  "decision": {
+    "p1d_formal_training_allowed": false,
+    "reason": "P1d ties family-specific powers to BC, has no fixed-P/fixed-geometry BC pairs, and fixes every sample to eight equal-power sources under one nominal equal-area rule.",
+    "selected_policy": "rebuild_new_p1e1024_keep_p1d_as_provenance"
+  },
+  "guardrails": {
+    "data_generation_runs": 0,
+    "model_inference_runs": 0,
+    "training_runs": 0
+  },
+  "inputs": {
+    "config": "configs/heat3d_v6/v6_p1d_asymmetric_dual_robin1024.yaml",
+    "config_sha256": "58cff515dc6af27b2b262535101318c01069ff84788a9c45c17efd6339502fcc",
+    "samples_csv": "configs/heat3d_v6/v6_p1d_asymmetric_dual_robin1024_samples.csv",
+    "samples_csv_sha256": "cda49993eecd4e4f1081a3d77e085e743d446771a8828d9eaefb1ab21aa62267",
+    "sources_csv": "configs/heat3d_v6/v6_p1d_asymmetric_dual_robin1024_sources.csv",
+    "sources_csv_sha256": "2a52a91b01c5db7ec68500a8f07696697a4dd8dcd57bd23981858d3b61096df5"
+  },
+  "mode": "read_only_tracked_artifact_audit",
+  "numeric_factor_effective_rank": {
+    "algebraic_rank": 5,
+    "effective_rank": 3.7711059761383066,
+    "singular_values": [
+      48.92628709197703,
+      31.999999999999996,
+      31.999999999999986,
+      23.727503658805592,
+      10.7342443383225
+    ]
+  },
+  "per_BC_pair_power_levels_W": {
+    "top=1000|bottom=100": [
+      3.7,
+      5.0,
+      6.2,
+      7.3
+    ],
+    "top=1500|bottom=200": [
+      5.5,
+      7.2,
+      8.9,
+      10.7
+    ],
+    "top=2000|bottom=20": [
+      6.8,
+      9.0,
+      11.2,
+      13.4
+    ],
+    "top=2500|bottom=100": [
+      8.5,
+      11.0,
+      13.8,
+      16.5
+    ],
+    "top=2500|bottom=200": [
+      8.5,
+      11.0,
+      13.8,
+      16.5
+    ],
+    "top=500|bottom=1": [
+      1.8,
+      2.4,
+      3.0,
+      3.6
+    ],
+    "top=500|bottom=20": [
+      1.8,
+      2.5,
+      3.1,
+      3.7
+    ],
+    "top=750|bottom=50": [
+      2.8,
+      3.7,
+      4.6,
+      5.5
+    ]
+  },
+  "per_family_power_levels_W": {
+    "f00_near_adiabatic": [
+      1.8,
+      2.4,
+      3.0,
+      3.6
+    ],
+    "f01_low_low": [
+      1.8,
+      2.5,
+      3.1,
+      3.7
+    ],
+    "f02_750_50": [
+      2.8,
+      3.7,
+      4.6,
+      5.5
+    ],
+    "f03_1000_100": [
+      3.7,
+      5.0,
+      6.2,
+      7.3
+    ],
+    "f04_1500_200": [
+      5.5,
+      7.2,
+      8.9,
+      10.7
+    ],
+    "f05_2000_20": [
+      6.8,
+      9.0,
+      11.2,
+      13.4
+    ],
+    "f06_2500_100": [
+      8.5,
+      11.0,
+      13.8,
+      16.5
+    ],
+    "f07_2500_200": [
+      8.5,
+      11.0,
+      13.8,
+      16.5
+    ]
+  },
+  "power_from_top_bottom_area_linear_R2": 0.7855412663374658,
+  "qualification_gaps": {
+    "bottom_BC_learnability_qualifiable": false,
+    "fixed_power_geometry_BC_pairs_available": false,
+    "group_locked_split_map_present": false,
+    "independent_bottom_sensitivity_identifiable": false,
+    "independent_top_sensitivity_identifiable": false,
+    "layout_BC_source_count_power_density_OOD_present": false
+  },
+  "sample_count": 1024,
+  "schema_version": "heat3d_v6_p1e_p1d_baseline_deconfounding_audit_v1",
+  "source_design": {
+    "all_samples_have_eight_sources": true,
+    "equal_power_within_every_sample": true,
+    "nominal_equal_area_rule_in_config": true,
+    "realized_declared_area_equal_within_every_sample": true,
+    "source_area_m2": {
+      "max": 8.000000000000008e-06,
+      "min": 1.9999999999999965e-06
+    },
+    "source_count_distribution": {
+      "8": 1024
+    },
+    "source_power_W": {
+      "max": 2.0625,
+      "min": 0.225
+    }
+  }
+}
