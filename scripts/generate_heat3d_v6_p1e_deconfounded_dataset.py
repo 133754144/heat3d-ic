@@ -15,6 +15,7 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+from scipy.spatial import cKDTree
 import yaml
 
 import generate_heat3d_v6_p1a_power_calibration_pilot as p1a
@@ -79,8 +80,9 @@ def _load(path: Path) -> dict[str, Any]:
     if config.get("schema_version") not in {
         "heat3d_v6_p1e_deconfounded_dataset_v1",
         "heat3d_v6_p1f_unified_layered_dataset_v1",
+        "heat3d_v6_p1g_geometry_deconfounded_dataset_v1",
     }:
-        raise P1eError("unexpected P1e/P1f schema")
+        raise P1eError("unexpected P1e/P1f/P1g schema")
     if int(config["sample_count"]) != len(config["cases"]):
         raise P1eError("sample count mismatch")
     if len({case["id"] for case in config["cases"]}) != len(config["cases"]):
@@ -195,9 +197,78 @@ def _write_sample(target: Path, arrays: Mapping[str, np.ndarray], meta: Mapping[
     return hashes
 
 
+def _idw8_map(points: np.ndarray, mesh_coords: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Map frozen operator points back to the solver mesh for representation QC."""
+    distances, indices = cKDTree(points).query(mesh_coords, k=8)
+    weights = np.zeros_like(distances, dtype=np.float64)
+    exact = distances[:, 0] <= 1e-15
+    weights[exact, 0] = 1.0
+    nonexact = ~exact
+    inverse = 1.0 / np.maximum(distances[nonexact], 1e-15)
+    weights[nonexact] = inverse / np.sum(inverse, axis=1, keepdims=True)
+    return np.asarray(indices, dtype=np.int32), weights
+
+
+def _projection_reconstruction_metrics(
+    temperature: np.ndarray,
+    point_temperature: np.ndarray,
+    indices: np.ndarray,
+    idw_weights: np.ndarray,
+    mesh: Mapping[str, Any],
+    physics: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Quantify 1024-point representation error; this is not model inference."""
+    reconstructed = np.sum(point_temperature[indices] * idw_weights, axis=1)
+    cv = np.asarray(mesh["info"]["weights"], dtype=np.float64)
+    error = reconstructed - temperature
+    cv_total = float(np.sum(cv))
+    rmse = float(np.sqrt(np.dot(cv, error**2) / cv_total))
+    true_rms = float(np.sqrt(np.dot(cv, (temperature - 300.0) ** 2) / cv_total))
+    layer_ids = np.asarray(mesh["layer_ids"], dtype=np.int32)
+    coords = np.asarray(mesh["coords"], dtype=np.float64)
+    layers: list[dict[str, Any]] = []
+    for layer_index, layer in enumerate(physics["layers_bottom_to_top"]):
+        mask = layer_ids == layer_index
+        layer_cv = cv[mask]
+        true_mean = float(np.dot(layer_cv, temperature[mask]) / np.sum(layer_cv))
+        reconstructed_mean = float(np.dot(layer_cv, reconstructed[mask]) / np.sum(layer_cv))
+        z_bottom = float(mesh["boundaries"][layer_index])
+        z_top = float(mesh["boundaries"][layer_index + 1])
+        bottom_mask = np.isclose(coords[:, 2], z_bottom, atol=1e-15)
+        top_mask = np.isclose(coords[:, 2], z_top, atol=1e-15)
+        true_drop = float(np.mean(temperature[top_mask]) - np.mean(temperature[bottom_mask]))
+        reconstructed_drop = float(np.mean(reconstructed[top_mask]) - np.mean(reconstructed[bottom_mask]))
+        layers.append({
+            "layer_index": layer_index,
+            "layer_name": str(layer["id"]),
+            "solver_node_count": int(np.sum(mask)),
+            "true_cv_mean_temperature_K": true_mean,
+            "reconstructed_cv_mean_temperature_K": reconstructed_mean,
+            "layer_average_signed_error_K": reconstructed_mean - true_mean,
+            "true_top_minus_bottom_drop_K": true_drop,
+            "reconstructed_top_minus_bottom_drop_K": reconstructed_drop,
+            "layer_drop_signed_error_K": reconstructed_drop - true_drop,
+        })
+    return {
+        "method": "inverse_distance_weighted_8_nearest_points",
+        "purpose": "representation_QC_only_not_model_inference",
+        "full_field_cv_rmse_K": rmse,
+        "full_field_cv_relative_rmse": rmse / max(true_rms, 1e-15),
+        "full_field_max_abs_error_K": float(np.max(np.abs(error))),
+        "max_abs_layer_average_error_K": max(abs(float(row["layer_average_signed_error_K"])) for row in layers),
+        "max_abs_layer_drop_error_K": max(abs(float(row["layer_drop_signed_error_K"])) for row in layers),
+        "per_layer": layers,
+    }
+
+
 def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool) -> dict[str, Any]:
     config = _load(config_path)
-    phase = "p1f_unified_layered" if config["schema_version"].startswith("heat3d_v6_p1f") else "p1e_deconfounded"
+    if config["schema_version"].startswith("heat3d_v6_p1g"):
+        phase = "p1g_geometry_deconfounded"
+    elif config["schema_version"].startswith("heat3d_v6_p1f"):
+        phase = "p1f_unified_layered"
+    else:
+        phase = "p1e_deconfounded"
     cases = config["cases"]
     if dry_run:
         return {
@@ -215,6 +286,8 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
     solver_cache: dict[tuple[float, float], tuple[dict[str, Any], core.DualRobinSolver]] = {}
     using_bc_ood_domain = False
     group_projection: dict[str, tuple[np.ndarray, list[str], int, str]] = {}
+    reconstruction_group_id: str | None = None
+    reconstruction_map: tuple[np.ndarray, np.ndarray] | None = None
     sample_rows: list[dict[str, Any]] = []
     source_rows: list[dict[str, Any]] = []
     manifest_rows: list[dict[str, Any]] = []
@@ -261,6 +334,15 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
             coverage = core.point_coverage(points, strata, point_layer, mesh, physics)
             metrics["solver_peak_minus_projected_peak_K"] = float(metrics["peak_deltaT_K"] - np.max(point_temperature - 300.0))
             metrics["projected_field_cv_rms_deltaT_K"] = float(np.sqrt(np.mean((point_temperature - 300.0) ** 2)))
+            reconstruction = None
+            if phase == "p1g_geometry_deconfounded":
+                if reconstruction_group_id != str(group["group_id"]):
+                    reconstruction_map = _idw8_map(points, np.asarray(mesh["coords"], dtype=np.float64))
+                    reconstruction_group_id = str(group["group_id"])
+                assert reconstruction_map is not None
+                reconstruction = _projection_reconstruction_metrics(
+                    temperature, point_temperature, reconstruction_map[0], reconstruction_map[1], mesh, physics,
+                )
             meta = {
                 "schema_version": f"heat3d_v6_{phase}_sample_v1",
                 "sample_id": sample_id, "dataset_id": config["dataset_id"],
@@ -285,6 +367,7 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
                     "point_coordinates_frozen_before_temperature_solve": True,
                     "label_inputs_used_for_point_selection": [], "strata_counts": dict(sorted(Counter(strata).items())),
                     "coverage": coverage,
+                    **({"full_field_reconstruction": reconstruction} if reconstruction is not None else {}),
                 },
                 "metrics": metrics,
                 "guardrails": {
@@ -323,6 +406,13 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
                 "minimum_source_in_plane_interval_count": meta["solver_mesh"]["minimum_source_in_plane_interval_count"],
                 "all_layers_covered_by_1024_points": coverage["all_layers_covered"],
                 "all_interfaces_covered_by_1024_points": coverage["all_interfaces_covered"],
+                **({
+                    "full_field_idw8_cv_rmse_K": reconstruction["full_field_cv_rmse_K"],
+                    "full_field_idw8_cv_relative_rmse": reconstruction["full_field_cv_relative_rmse"],
+                    "full_field_idw8_max_abs_error_K": reconstruction["full_field_max_abs_error_K"],
+                    "max_abs_layer_average_error_K": reconstruction["max_abs_layer_average_error_K"],
+                    "max_abs_layer_drop_error_K": reconstruction["max_abs_layer_drop_error_K"],
+                } if reconstruction is not None else {}),
             })
             if (index + 1) % 16 == 0:
                 print(f"generated {index + 1}/{len(cases)}", flush=True)
@@ -366,7 +456,16 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
             "min": float(np.min([float(row[key]) for row in sample_rows])),
             "median": float(np.median([float(row[key]) for row in sample_rows])),
             "max": float(np.max([float(row[key]) for row in sample_rows])),
-        } for key in ("package_total_power_W", "peak_deltaT_K", "mean_deltaT_K", "Rth_peak_K_W", "top_heat_fraction", "bottom_heat_fraction", "energy_balance_relative_error", "solver_peak_minus_projected_peak_K")},
+        } for key in (
+            "package_total_power_W", "peak_deltaT_K", "mean_deltaT_K", "Rth_peak_K_W",
+            "top_heat_fraction", "bottom_heat_fraction", "energy_balance_relative_error",
+            "solver_peak_minus_projected_peak_K",
+            *((
+                "full_field_idw8_cv_rmse_K", "full_field_idw8_cv_relative_rmse",
+                "full_field_idw8_max_abs_error_K", "max_abs_layer_average_error_K",
+                "max_abs_layer_drop_error_K",
+            ) if phase == "p1g_geometry_deconfounded" else ()),
+        )},
         "integrity": {
             "minimum_source_control_volume_count": min(int(row["minimum_source_control_volume_count"]) for row in sample_rows),
             "minimum_source_in_plane_interval_count": min(int(row["minimum_source_in_plane_interval_count"]) for row in sample_rows),

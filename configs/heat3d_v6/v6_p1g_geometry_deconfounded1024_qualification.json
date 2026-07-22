@@ -1,0 +1,29 @@
+{
+  "audit": "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_geometry_audit.json",
+  "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+  "decision": "rejected_for_formal_training_failed_frozen_temperature_gate",
+  "formal_training_qualified": false,
+  "gate": {
+    "peak_deltaT_30_80_fraction_min": 0.8,
+    "peak_deltaT_above_100_fraction_max": 0.05,
+    "peak_deltaT_above_120_count_max": 0,
+    "peak_deltaT_below_30_count_max": 0
+  },
+  "gate_checks": {
+    "above_100": true,
+    "above_120": true,
+    "below_30": false,
+    "in_30_80": true
+  },
+  "gate_counts": {
+    "above_100": 0,
+    "above_120": 0,
+    "below_30": 18,
+    "in_30_80": 1006
+  },
+  "integrity_passed": true,
+  "model_inference_runs": 0,
+  "sample_filtering_or_replacement_performed": false,
+  "schema_version": "heat3d_v6_p1g_geometry_deconfounded_qualification_v1",
+  "training_runs": 0
+}
