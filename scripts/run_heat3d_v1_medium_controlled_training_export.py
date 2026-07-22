@@ -1000,10 +1000,11 @@ def should_reuse_final_metrics(final_epoch_train_metrics_computed: bool) -> bool
     return bool(final_epoch_train_metrics_computed)
 
 
-def _maybe_float(payload: dict[str, Any] | None, key: str) -> float:
+def _maybe_float(payload: dict[str, Any] | None, key: str) -> float | None:
     if payload is None:
         return float("nan")
-    return float(payload[key])
+    value = payload.get(key)
+    return None if value is None else float(value)
 
 
 def _format_progress_value(value: Any, *, precision: int = 6) -> str:
