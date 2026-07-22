@@ -385,6 +385,12 @@ def parse_args() -> argparse.Namespace:
         help="Multiplier applied only to native scale-head optimizer updates; default 1 preserves N3/V13.",
     )
     parser.add_argument("--batch-size", type=int, default=88)
+    parser.add_argument(
+        "--micro-batch-size",
+        type=int,
+        default=None,
+        help="Maximum graph-compatible micro-batch size used for sample-weighted gradient accumulation.",
+    )
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
     parser.add_argument(
@@ -2018,6 +2024,9 @@ def _parse_csv_feature_names(value: str, flag_name: str) -> tuple[str, ...]:
 def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return {
         "batch_size": _optional_batch_size(args.batch_size, "batch-size"),
+        "micro_batch_size": _optional_batch_size(
+            args.micro_batch_size, "micro-batch-size"
+        ),
         "validation_batch_size": _optional_batch_size(
             args.validation_batch_size, "validation-batch-size"
         ),
@@ -2434,7 +2443,7 @@ def _check_decoder_bypass_input_alignment(
 
 
 def _validate_batch_config(config: dict[str, Any]) -> None:
-    for key in ("batch_size", "validation_batch_size", "prediction_batch_size"):
+    for key in ("batch_size", "micro_batch_size", "validation_batch_size", "prediction_batch_size"):
         value = config.get(key)
         if value is not None and int(value) < 1:
             raise ValueError(f"--{key.replace('_', '-')} must be >= 1 or 0 for legacy full-batch")
@@ -2442,6 +2451,12 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
         raise ValueError("--batch-plan must be current_graph_shape or sample_shuffle")
     if config["batch_plan"] == "sample_shuffle" and config["batch_size"] is None:
         raise ValueError("--batch-plan sample_shuffle requires --batch-size >= 1")
+    if (
+        config.get("micro_batch_size") is not None
+        and config["batch_size"] is not None
+        and config["micro_batch_size"] > config["batch_size"]
+    ):
+        raise ValueError("--micro-batch-size must be <= --batch-size")
     if (
         config["epoch_wise_batch_regrouping"]
         and config["batch_plan"] != "sample_shuffle"
@@ -2474,6 +2489,14 @@ def _validate_graph_config(config: dict[str, Any]) -> None:
 def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
     return {
         "batch_size": batch_config["batch_size"],
+        "configured_batch_size": batch_config["batch_size"],
+        "effective_batch_size": batch_config["batch_size"],
+        "micro_batch_size": batch_config.get("micro_batch_size"),
+        "gradient_accumulation_enabled": batch_config.get("micro_batch_size") is not None,
+        "gradient_accumulation_weighting": (
+            "sample_count_weighted_mean"
+            if batch_config.get("micro_batch_size") is not None else "none"
+        ),
         "validation_batch_size": batch_config["validation_batch_size"],
         "prediction_batch_size": batch_config["prediction_batch_size"],
         "shuffle_train_batches": batch_config["shuffle_train_batches"],
@@ -3757,6 +3780,38 @@ def _print_epoch_light_progress(record: dict[str, Any], epochs: int, log_mode: s
     )
 
 
+def _gradient_accumulation_windows(
+    groups: list[dict[str, Any]], effective_batch_size: int
+) -> list[list[dict[str, Any]]]:
+    """Pack ordered micro-batches into exact effective-size update windows."""
+
+    if effective_batch_size < 1:
+        raise ValueError("effective_batch_size must be >= 1")
+    windows: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    current_count = 0
+    for group in groups:
+        count = _sample_count(group)
+        if count < 1 or count > effective_batch_size:
+            raise ValueError(
+                f"micro-batch sample count {count} is incompatible with effective batch {effective_batch_size}"
+            )
+        if current_count + count > effective_batch_size:
+            raise ValueError(
+                "micro-batch boundaries do not tile the effective batch; "
+                f"current={current_count} next={count} effective={effective_batch_size}"
+            )
+        current.append(group)
+        current_count += count
+        if current_count == effective_batch_size:
+            windows.append(current)
+            current = []
+            current_count = 0
+    if current:
+        windows.append(current)
+    return windows
+
+
 def _fit_once(
     train_groups: list[dict],
     valid_groups: list[dict],
@@ -3830,7 +3885,15 @@ def _fit_once(
         if batch_enabled or native_enabled
         else _legacy_full_batch_metrics_with_true_rms_denominator
     )
-    updates_per_epoch = int(len(train_groups) if batch_enabled else 1)
+    effective_batch_size = int(batch_config.get("batch_size") or 0)
+    accumulation_enabled = bool(
+        batch_enabled and batch_config.get("micro_batch_size") is not None
+    )
+    initial_update_windows = (
+        _gradient_accumulation_windows(train_groups, effective_batch_size)
+        if accumulation_enabled else [[group] for group in train_groups]
+    )
+    updates_per_epoch = int(len(initial_update_windows) if batch_enabled else 1)
 
     initial_start = time.perf_counter()
     if memory_audit is not None:
@@ -3866,6 +3929,8 @@ def _fit_once(
     grad_norm_reported_batch_count = 0
     grad_norm_skipped_batch_count = 0
     epoch_batch_counts = []
+    epoch_micro_batch_counts = []
+    epoch_effective_batch_sample_counts: list[list[int]] = []
     epoch_train_batch_order_hashes = []
     lr_history = []
     loss_weight_history = []
@@ -3944,6 +4009,8 @@ def _fit_once(
             (
                 f"epoch loop start epochs={epochs} report_every={report_every} "
                 f"mini_batch_groups={len(train_groups)} batch_size={batch_config['batch_size']} "
+                f"micro_batch_size={batch_config.get('micro_batch_size')} "
+                f"optimizer_updates_per_epoch={updates_per_epoch} "
                 f"train_metrics_schedule={train_metrics_schedule} "
                 f"train_metrics_epochs={train_metrics_epoch_values}"
             ),
@@ -3998,17 +4065,34 @@ def _fit_once(
             train_epoch_groups = (
                 epoch_regroup_fn(epoch)
                 if epoch_regroup_fn is not None
-                else _epoch_train_groups(
+                else (
+                    list(train_groups)
+                    if accumulation_enabled
+                    else _epoch_train_groups(
                     train_groups,
                     epoch=epoch,
                     seed=batch_order_seed,
                     shuffle=bool(batch_config.get("shuffle_train_batches")),
+                    )
                 )
             )
-            if len(train_epoch_groups) != updates_per_epoch:
+            train_update_windows = (
+                _gradient_accumulation_windows(train_epoch_groups, effective_batch_size)
+                if accumulation_enabled else [[group] for group in train_epoch_groups]
+            )
+            if (
+                accumulation_enabled
+                and epoch_regroup_fn is None
+                and bool(batch_config.get("shuffle_train_batches"))
+            ):
+                rng = np.random.default_rng(int(batch_order_seed) + int(epoch))
+                order = rng.permutation(len(train_update_windows))
+                train_update_windows = [train_update_windows[int(index)] for index in order]
+                train_epoch_groups = [group for window in train_update_windows for group in window]
+            if len(train_update_windows) != updates_per_epoch:
                 raise RuntimeError(
                     "epoch-wise batch regrouping changed updates_per_epoch: "
-                    f"expected={updates_per_epoch} actual={len(train_epoch_groups)}"
+                    f"expected={updates_per_epoch} actual={len(train_update_windows)}"
                 )
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_epoch_groups))
             if memory_audit is not None:
@@ -4018,48 +4102,78 @@ def _fit_once(
                     detail=_groups_memory_signature(train_epoch_groups),
                 )
             batch_grad_norms = []
-            for batch_index, batch_group in enumerate(train_epoch_groups, start=1):
+            for batch_index, micro_groups in enumerate(train_update_windows, start=1):
+                window_sample_count = sum(_sample_count(group) for group in micro_groups)
                 if memory_audit is not None and memory_audit.every_batch:
                     memory_audit.record(
                         "train_batch_start",
                         epoch=epoch,
                         batch_index=batch_index,
                         split="train",
-                        detail=_batch_shape_signature(batch_group),
+                        detail={
+                            "effective_sample_count": window_sample_count,
+                            "micro_batch_count": len(micro_groups),
+                            "micro_batch_shapes": [
+                                _batch_shape_signature(group) for group in micro_groups
+                            ],
+                        },
                     )
-                edge_masking_key = _training_edge_masking_key(
-                    model_config,
-                    model_seed=model_seed,
-                    epoch=epoch,
-                    batch_index=batch_index,
-                )
-
-                def loss_fn(current_params, group=batch_group, key=edge_masking_key):
-                    components = _loss_components(
-                        model,
-                        current_params,
-                        [group],
-                        stats,
-                        current_loss_config,
-                        key=key,
-                    )
-                    return components["total_loss"], components["base_mse"]
-
                 batch_start = time.perf_counter()
                 loss_grad_start = time.perf_counter()
-                (loss_value, batch_base_mse), grads = jax.value_and_grad(
-                    loss_fn, has_aux=True
-                )(params)
-                if native_enabled:
-                    grads = mask_native_trainable_scope(
-                        grads,
-                        branch_mode=model_config["native_branch_mode"],
-                        trainable_scope=str(
-                            optimizer_config.get(
-                                "native_trainable_scope", "branch"
-                            )
-                        ),
+                weighted_grads = None
+                weighted_loss = jnp.asarray(0.0)
+                weighted_base_mse = jnp.asarray(0.0)
+                accumulated_samples = 0
+                for micro_index, batch_group in enumerate(micro_groups, start=1):
+                    micro_key_index = (batch_index - 1) * 1000 + micro_index
+                    edge_masking_key = _training_edge_masking_key(
+                        model_config,
+                        model_seed=model_seed,
+                        epoch=epoch,
+                        batch_index=micro_key_index,
                     )
+
+                    def loss_fn(current_params, group=batch_group, key=edge_masking_key):
+                        components = _loss_components(
+                            model,
+                            current_params,
+                            [group],
+                            stats,
+                            current_loss_config,
+                            key=key,
+                        )
+                        return components["total_loss"], components["base_mse"]
+
+                    (micro_loss, micro_base_mse), micro_grads = jax.value_and_grad(
+                        loss_fn, has_aux=True
+                    )(params)
+                    if native_enabled:
+                        micro_grads = mask_native_trainable_scope(
+                            micro_grads,
+                            branch_mode=model_config["native_branch_mode"],
+                            trainable_scope=str(
+                                optimizer_config.get("native_trainable_scope", "branch")
+                            ),
+                        )
+                    sample_count = _sample_count(batch_group)
+                    weighted_grads = (
+                        tree.tree_map(lambda grad: grad * sample_count, micro_grads)
+                        if weighted_grads is None
+                        else tree.tree_map(
+                            lambda total, grad: total + grad * sample_count,
+                            weighted_grads,
+                            micro_grads,
+                        )
+                    )
+                    weighted_loss = weighted_loss + micro_loss * sample_count
+                    weighted_base_mse = weighted_base_mse + micro_base_mse * sample_count
+                    accumulated_samples += sample_count
+                assert weighted_grads is not None and accumulated_samples == window_sample_count
+                grads = tree.tree_map(
+                    lambda value: value / float(accumulated_samples), weighted_grads
+                )
+                loss_value = weighted_loss / float(accumulated_samples)
+                batch_base_mse = weighted_base_mse / float(accumulated_samples)
                 if profile_enabled:
                     _block_until_ready_tree((loss_value, grads))
                 loss_grad_time = time.perf_counter() - loss_grad_start
@@ -4067,7 +4181,7 @@ def _fit_once(
                 batch_base_mse_value = float(batch_base_mse)
                 epoch_train_batch_losses.append(batch_loss_value)
                 epoch_train_batch_base_mses.append(
-                    (_sample_count(batch_group), batch_base_mse_value)
+                    (window_sample_count, batch_base_mse_value)
                 )
 
                 grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
@@ -4140,8 +4254,13 @@ def _fit_once(
                         "epoch_index": int(epoch),
                         "batch_index": int(batch_index),
                         "split": "train",
-                        "batch_size": _sample_count(batch_group),
-                        "group_count": 1,
+                        "batch_size": window_sample_count,
+                        "effective_batch_size": effective_batch_size,
+                        "micro_batch_count": len(micro_groups),
+                        "micro_batch_sample_counts": [
+                            _sample_count(group) for group in micro_groups
+                        ],
+                        "group_count": len(micro_groups),
                         "train_batch_loss": float(batch_loss_value),
                         "train_batch_base_mse": float(batch_base_mse_value),
                         "total_batch_time": float(total_batch_time),
@@ -4158,7 +4277,12 @@ def _fit_once(
                         "optimizer_update_time": float(optimizer_update_time),
                         "output_scalar_extraction_time": float(output_scalar_extraction_time),
                         "other_time": float(other_time),
-                        "batch_shape_signature": _batch_shape_signature(batch_group),
+                        "batch_shape_signature": {
+                            "group_count": len(micro_groups),
+                            "group_signatures": [
+                                _batch_shape_signature(group) for group in micro_groups
+                            ],
+                        },
                     }
                     batch_record["batch_shape_signature_key"] = _shape_signature_key(
                         batch_record["batch_shape_signature"]
@@ -4179,7 +4303,11 @@ def _fit_once(
                         },
                     )
                 del grads, updates, loss_value, batch_base_mse
-            epoch_batch_counts.append(len(train_epoch_groups))
+            epoch_batch_counts.append(len(train_update_windows))
+            epoch_micro_batch_counts.append(len(train_epoch_groups))
+            epoch_effective_batch_sample_counts.append(
+                [sum(_sample_count(group) for group in window) for window in train_update_windows]
+            )
             if batch_grad_norms:
                 grad_norms.append(float(np.mean(batch_grad_norms)))
         else:
@@ -4344,6 +4472,10 @@ def _fit_once(
                 )
             del grads, updates, loss_value, batch_base_mse
             epoch_batch_counts.append(1)
+            epoch_micro_batch_counts.append(1)
+            epoch_effective_batch_sample_counts.append(
+                [sum(_sample_count(group) for group in train_groups)]
+            )
         train_step_time = time.perf_counter() - train_step_start
 
         train_metrics_computed = epoch in train_metrics_epoch_lookup
@@ -4642,6 +4774,8 @@ def _fit_once(
         "grad_norm_reported_batch_count": int(grad_norm_reported_batch_count),
         "grad_norm_skipped_batch_count": int(grad_norm_skipped_batch_count),
         "epoch_batch_counts": np.asarray(epoch_batch_counts, dtype=np.int64),
+        "epoch_micro_batch_counts": np.asarray(epoch_micro_batch_counts, dtype=np.int64),
+        "epoch_effective_batch_sample_counts": epoch_effective_batch_sample_counts,
         "epoch_train_batch_order_hashes": epoch_train_batch_order_hashes,
         "lr_history": np.asarray(lr_history, dtype=np.float64),
         "epoch_lrs": [float(value) for value in lr_history],
@@ -4649,6 +4783,18 @@ def _fit_once(
         "batch_order_seed": int(batch_order_seed),
         "updates_per_epoch": int(updates_per_epoch),
         "total_update_count": int(sum(epoch_batch_counts)),
+        "configured_batch_size": int(effective_batch_size) if batch_enabled else None,
+        "effective_batch_size": int(effective_batch_size) if batch_enabled else None,
+        "micro_batch_size": batch_config.get("micro_batch_size"),
+        "gradient_accumulation_enabled": bool(accumulation_enabled),
+        "gradient_accumulation_weighting": (
+            "sample_count_weighted_mean" if accumulation_enabled else "none"
+        ),
+        "gradient_clipping_stage": (
+            "after_accumulation_before_optimizer_update"
+            if accumulation_enabled else "per_optimizer_update"
+        ),
+        "tail_batch_policy": "keep" if not batch_config.get("drop_last") else "drop",
         "train_group_count": int(len(train_groups)),
         "train_group_sample_counts": [int(_sample_count(group)) for group in train_groups],
         "train_group_names": [str(group["name"]) for group in train_groups],
@@ -5595,6 +5741,8 @@ def _print_startup_summary(
         f"batch_plan={batch_config['batch_plan']} "
         f"batch_build_seed={batch_config['batch_build_seed']} "
         f"batch_size={batch_config['batch_size']} "
+        f"effective_batch_size={batch_config['batch_size']} "
+        f"micro_batch_size={batch_config['micro_batch_size']} "
         f"validation_batch_size={batch_config['validation_batch_size']} "
         f"prediction_batch_size={batch_config['prediction_batch_size']} "
         f"shuffle_train_batches={batch_config['shuffle_train_batches']} "
@@ -7370,6 +7518,7 @@ def _make_graph_compatible_sample_shuffle_groups_with_progress(
     graph_seed: int,
     batch_size: int,
     batch_build_seed: int,
+    micro_batch_size: int | None = None,
     drop_last: bool = False,
     profile_counts: dict[str, int] | None = None,
 ) -> list[dict]:
@@ -7377,25 +7526,65 @@ def _make_graph_compatible_sample_shuffle_groups_with_progress(
 
     P1g freezes coordinates per geometry group rather than globally.  The
     unpadded RIGNO graph tensors therefore cannot concatenate arbitrary
-    geometries.  This adapter preserves the configured maximum B28 while
-    allowing the explicitly permitted increase in batches.
+    geometries. This adapter emits graph-compatible micro-batches whose sample
+    counts exactly tile effective-B28 accumulation windows. The final partial
+    window is retained when ``drop_last`` is false.
     """
 
+    effective_batch_size = int(batch_size)
+    micro_limit = int(micro_batch_size or batch_size)
+    if effective_batch_size < 1 or micro_limit < 1 or micro_limit > effective_batch_size:
+        raise ValueError("invalid effective/micro batch sizes")
     rng = np.random.default_rng(int(batch_build_seed))
     order = rng.permutation(len(examples))
-    shuffled = [examples[int(index)] for index in order]
-    return _make_groups_with_progress(
-        shuffled,
-        stats,
-        builder,
-        label,
+    grouped: dict[tuple[Any, ...], list[Any]] = {}
+    for raw_index in order:
+        example = examples[int(raw_index)]
+        bridge = _bridge_for(example)
+        signature = _metadata_shape_signature(
+            builder.build_metadata(
+                _graph_coords_for_example(example, stats),
+                key=_metadata_key(graph_seed),
+            )
+        )
+        key = (example.condition.coords.shape[0], bridge.condition_feature_names, signature)
+        grouped.setdefault(key, []).append(example)
+
+    pending: list[list[Any]] = []
+    remaining = effective_batch_size
+    for group_examples in grouped.values():
+        cursor = 0
+        while cursor < len(group_examples):
+            take = min(micro_limit, remaining, len(group_examples) - cursor)
+            pending.append(group_examples[cursor : cursor + take])
+            cursor += take
+            remaining -= take
+            if remaining == 0:
+                remaining = effective_batch_size
+    if drop_last and remaining != effective_batch_size:
+        tail_count = effective_batch_size - remaining
+        while pending and tail_count > 0:
+            tail_count -= len(pending.pop())
+
+    result = [
+        _make_batch_group_with_seed(
+            f"{label}_graph_compatible_micro_{index:04d}_B{len(batch_examples)}",
+            batch_examples,
+            stats,
+            builder,
+            graph_seed=graph_seed,
+        )
+        for index, batch_examples in enumerate(pending, start=1)
+    ]
+    _progress(
         progress_enabled,
-        progress_detail,
-        graph_seed,
-        batch_size=batch_size,
-        drop_last=drop_last,
-        profile_counts=profile_counts,
+        "startup",
+        (
+            f"group build {label}: graph-compatible groups={len(result)} "
+            f"micro_max={micro_limit} effective_batch={effective_batch_size}"
+        ),
     )
+    return result
 
 
 def _chunk_examples(examples, *, batch_size: int | None, drop_last: bool) -> list:
@@ -7630,11 +7819,16 @@ def main() -> int:
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
     if batch_config["batch_plan"] == "sample_shuffle":
+        v6_graph_compatible = bool(
+            train_examples and isinstance(train_examples[0], V6DualRobinExample)
+        )
         group_builder = (
             _make_graph_compatible_sample_shuffle_groups_with_progress
-            if train_examples and isinstance(train_examples[0], V6DualRobinExample)
-            else _make_sample_shuffle_groups_with_progress
+            if v6_graph_compatible else _make_sample_shuffle_groups_with_progress
         )
+        group_kwargs = {
+            "micro_batch_size": batch_config.get("micro_batch_size")
+        } if v6_graph_compatible else {}
         train_groups = group_builder(
             train_examples,
             stats,
@@ -7647,6 +7841,7 @@ def main() -> int:
             batch_build_seed=batch_config["batch_build_seed"],
             drop_last=batch_config["drop_last"],
             profile_counts=profile_counts if profile_enabled else None,
+            **group_kwargs,
         )
     else:
         train_groups = _make_groups_with_progress(
@@ -7867,11 +8062,16 @@ def main() -> int:
             )
 
         def epoch_regroup_fn(epoch: int) -> list[dict[str, Any]]:
+            v6_graph_compatible = bool(
+                train_examples and isinstance(train_examples[0], V6DualRobinExample)
+            )
             group_builder = (
                 _make_graph_compatible_sample_shuffle_groups_with_progress
-                if train_examples and isinstance(train_examples[0], V6DualRobinExample)
-                else _make_sample_shuffle_groups_with_progress
+                if v6_graph_compatible else _make_sample_shuffle_groups_with_progress
             )
+            group_kwargs = {
+                "micro_batch_size": batch_config.get("micro_batch_size")
+            } if v6_graph_compatible else {}
             groups = group_builder(
                 train_examples,
                 stats,
@@ -7884,6 +8084,7 @@ def main() -> int:
                 batch_build_seed=batch_config["batch_build_seed"] + int(epoch),
                 drop_last=batch_config["drop_last"],
                 profile_counts=profile_counts if profile_enabled else None,
+                **group_kwargs,
             )
             _attach_global_context_to_groups(
                 groups,
@@ -8374,6 +8575,15 @@ def main() -> int:
         "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
+        "configured_batch_size": result["configured_batch_size"],
+        "effective_batch_size": result["effective_batch_size"],
+        "micro_batch_size": result["micro_batch_size"],
+        "gradient_accumulation_enabled": result["gradient_accumulation_enabled"],
+        "gradient_accumulation_weighting": result["gradient_accumulation_weighting"],
+        "gradient_clipping_stage": result["gradient_clipping_stage"],
+        "tail_batch_policy": result["tail_batch_policy"],
+        "epoch_micro_batch_counts": result["epoch_micro_batch_counts"].tolist(),
+        "epoch_effective_batch_sample_counts": result["epoch_effective_batch_sample_counts"],
         "train_group_count": result["train_group_count"],
         "train_group_sample_counts": result["train_group_sample_counts"],
         "train_group_names": result["train_group_names"],
@@ -8489,6 +8699,15 @@ def main() -> int:
         "initial_valid_stress_raw_deltaT_mse": result["initial_valid_stress_raw_deltaT_mse"],
         "updates_per_epoch": result["updates_per_epoch"],
         "total_update_count": result["total_update_count"],
+        "configured_batch_size": result["configured_batch_size"],
+        "effective_batch_size": result["effective_batch_size"],
+        "micro_batch_size": result["micro_batch_size"],
+        "gradient_accumulation_enabled": result["gradient_accumulation_enabled"],
+        "gradient_accumulation_weighting": result["gradient_accumulation_weighting"],
+        "gradient_clipping_stage": result["gradient_clipping_stage"],
+        "tail_batch_policy": result["tail_batch_policy"],
+        "epoch_micro_batch_counts": result["epoch_micro_batch_counts"].tolist(),
+        "epoch_effective_batch_sample_counts": result["epoch_effective_batch_sample_counts"],
         "train_group_count": result["train_group_count"],
         "train_group_sample_counts": result["train_group_sample_counts"],
         "train_group_names": result["train_group_names"],

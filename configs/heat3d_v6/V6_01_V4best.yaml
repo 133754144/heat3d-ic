@@ -28,6 +28,7 @@ overrides:
       - top_T_inf_minus_T_ref
   run:
     batch_size: 28
+    micro_batch_size: 8
     validation_batch_size: 32
     prediction_batch_size: 32
     drop_last: false
@@ -51,3 +52,8 @@ overrides:
     launch_policy: explicit_user_instruction_only
     log_path: output/heat3d_v6_logs/V6_01_V4best.log
     bottom_boundary_semantics: robin_not_fixed_temperature
+    configured_batch_size: 28
+    effective_batch_size: 28
+    graph_compatible_micro_batch_size: 8
+    optimizer_updates_per_epoch: 28
+    final_partial_effective_batch_size: 12

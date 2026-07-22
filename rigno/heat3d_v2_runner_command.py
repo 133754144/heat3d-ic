@@ -201,6 +201,7 @@ def build_training_command(
     elif model.get("pooled_latent_stop_gradient") is False:
         command.append("--no-pooled-latent-stop-gradient")
     _append_option(command, "--batch-size", run.get("batch_size"))
+    _append_option(command, "--micro-batch-size", run.get("micro_batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
     _append_option(command, "--init-mode", run.get("init_mode"))
@@ -838,6 +839,7 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.memory_audit_every_batch", "training --memory-audit-every-batch"),
         ("run.memory_audit_gc", "training --memory-audit-gc"),
         ("run.batch_size", "training --batch-size"),
+        ("run.micro_batch_size", "training --micro-batch-size"),
         ("run.validation_batch_size", "training --validation-batch-size"),
         ("run.prediction_batch_size", "training --prediction-batch-size"),
         ("run.init_mode", "training --init-mode"),
@@ -971,7 +973,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         "model.report_parameter_count",
         "model.report_memory_estimate",
         "optimizer.multi_seed",
-        "run.micro_batch_size",
         "diagnostics.p_quantiles",
         "baseline_reference.path",
         "dataset.k_encoding_mode",
@@ -998,11 +999,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
 
 def _warnings(config: Mapping[str, Any]) -> list[str]:
     warnings: list[str] = []
-    if _get_dotted(config, "run.micro_batch_size") is not None:
-        warnings.append(
-            "run.micro_batch_size is a future gradient-accumulation field and "
-            "is not passed to the current v1 runner command."
-        )
     if _get_dotted(config, "baseline_reference.path") is not None:
         warnings.append(
             "baseline_reference.path is checked by config validation only; it "
@@ -1023,8 +1019,6 @@ def _unmapped_reason(field: str) -> str:
         return "model reporting field is not a runner CLI parameter."
     if field == "optimizer.multi_seed":
         return "multi-seed execution is outside this dry-run command builder."
-    if field == "run.micro_batch_size":
-        return "future micro-batch gradient accumulation field; not passed to current runner CLI."
     if field.startswith("diagnostics."):
         return "draft v2 diagnostics field is not implemented by current v1 scripts."
     if field == "baseline_reference.path":

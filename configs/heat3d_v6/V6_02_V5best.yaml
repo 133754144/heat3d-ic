@@ -1,10 +1,9 @@
 schema_version: heat3d_v4_inherited_config_v0
 config_id: V6_02_V5best
-extends: ../heat3d_v5/generated/V4P5_42_gate6q_objective_only_e600.yaml
+extends: ../heat3d_v5/V4P5_42_canonical.yaml
 overrides:
   description: >-
-    V6 canonical P1g-v0 random-init transfer of V4P5_42_canonical, resolved in
-    this repository as V4P5_42_gate6q_objective_only_e600, through the
+    V6 canonical P1g-v0 random-init transfer of V4P5_42_canonical through the
     dual-Robin runtime adapter. No V5 checkpoint is loaded.
   dataset:
     name: heat3d_v6_p1g_geometry_deconfounded1024_v0
@@ -55,6 +54,7 @@ overrides:
       - bc_side_cv_fraction
   run:
     batch_size: 28
+    micro_batch_size: 8
     validation_batch_size: 32
     prediction_batch_size: 32
     drop_last: false
@@ -69,13 +69,18 @@ overrides:
     prediction_split: valid_iid
   diagnostics:
     run_baseline_comparison: false
+  baseline_reference: null
   metadata:
     phase: v6_training_handoff
-    requested_baseline_alias: V4P5_42_canonical
-    baseline_config_id: V4P5_42_gate6q_objective_only_e600
+    baseline_config_id: V4P5_42_canonical
     canonical_dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
     initialization: random
     training_started: false
     launch_policy: explicit_user_instruction_only
     log_path: output/heat3d_v6_logs/V6_02_V5best.log
     bottom_boundary_semantics: robin_not_fixed_temperature
+    configured_batch_size: 28
+    effective_batch_size: 28
+    graph_compatible_micro_batch_size: 8
+    optimizer_updates_per_epoch: 28
+    final_partial_effective_batch_size: 12
