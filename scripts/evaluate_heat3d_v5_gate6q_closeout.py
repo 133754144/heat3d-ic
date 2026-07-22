@@ -72,6 +72,8 @@ EXPECTED_CONFIGS = {
     "V4P5_42_gate6q_objective_only_e600",
     "V4P5_43_gate6q_xy_scale_features_e600",
     "V4P5_44_gate6q_xy_deepsets_e600",
+    "V4P5_45_gate6r_deepsets_only_e600",
+    "V4P5_46_gate6r_objective_deepsets_e600",
 }
 CHECKPOINTS = {
     "point_global_best": (
