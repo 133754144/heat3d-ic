@@ -1,0 +1,582 @@
+{
+  "coverage": {
+    "V38": {
+      "Q4_mean_nn_distance": 1.4602775045858265,
+      "rest_mean_nn_distance": 1.5125221511933704,
+      "top10_mean_nn_distance": 1.6410513085319927
+    },
+    "V42": {
+      "Q4_mean_nn_distance": 1.4602775045858265,
+      "rest_mean_nn_distance": 1.5171328132394581,
+      "top10_mean_nn_distance": 1.5866454963881569
+    },
+    "V44": {
+      "Q4_mean_nn_distance": 1.4602775045858265,
+      "rest_mean_nn_distance": 1.5210289732844664,
+      "top10_mean_nn_distance": 1.5406708078570608
+    },
+    "V45": {
+      "Q4_mean_nn_distance": 1.4602775045858265,
+      "rest_mean_nn_distance": 1.5210289732844664,
+      "top10_mean_nn_distance": 1.5406708078570608
+    },
+    "V46": {
+      "Q4_mean_nn_distance": 1.4602775045858265,
+      "rest_mean_nn_distance": 1.5151922803332953,
+      "top10_mean_nn_distance": 1.609543784680877
+    },
+    "distance_quantiles": {
+      "max": 4.873136504531314,
+      "median": 1.4492547776931646,
+      "min": 0.6590226920153434,
+      "q25": 1.1335634662108403,
+      "q75": 1.7031444266500821
+    },
+    "feature_count": 24,
+    "train_fit_count": 672,
+    "valid_query_count": 128
+  },
+  "difficult_sample_overlap": {
+    "V38_V42": {
+      "top10": {
+        "intersection_count": 8,
+        "jaccard": 0.6666666666666666
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V38_V44": {
+      "top10": {
+        "intersection_count": 8,
+        "jaccard": 0.6666666666666666
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V38_V45": {
+      "top10": {
+        "intersection_count": 8,
+        "jaccard": 0.6666666666666666
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V38_V46": {
+      "top10": {
+        "intersection_count": 8,
+        "jaccard": 0.6666666666666666
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V42_V44": {
+      "top10": {
+        "intersection_count": 8,
+        "jaccard": 0.6666666666666666
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V42_V45": {
+      "top10": {
+        "intersection_count": 8,
+        "jaccard": 0.6666666666666666
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V42_V46": {
+      "top10": {
+        "intersection_count": 8,
+        "jaccard": 0.6666666666666666
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V44_V45": {
+      "top10": {
+        "intersection_count": 10,
+        "jaccard": 1.0
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V44_V46": {
+      "top10": {
+        "intersection_count": 9,
+        "jaccard": 0.8181818181818182
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    },
+    "V45_V46": {
+      "top10": {
+        "intersection_count": 9,
+        "jaccard": 0.8181818181818182
+      },
+      "top5": {
+        "intersection_count": 5,
+        "jaccard": 1.0
+      }
+    }
+  },
+  "inputs": {
+    "evaluator_artifacts": {
+      "configs/heat3d_v5/gate6q/gate6q_final_closeout.json": {
+        "bytes": 3769415,
+        "sha256": "afeabbc2b82bcb6758ce9d03014635897e9c862502559466f3f70dbdff6246dd"
+      },
+      "configs/heat3d_v5/gate6r_closeout/evaluator/V38_gate6r_cpu_replay.json": {
+        "bytes": 867351,
+        "sha256": "873f770fbd81806f44df75a1ab0216d76d3a9464166e045f45dc074433c91492"
+      },
+      "configs/heat3d_v5/gate6r_closeout/evaluator/V45_gate6r_cpu_replay.json": {
+        "bytes": 867619,
+        "sha256": "7cde8e7f7dabe87940f972cd680d0a679b6b043a12e885b60c3618088fb228db"
+      },
+      "configs/heat3d_v5/gate6r_closeout/evaluator/V46_gate6r_cpu_replay.json": {
+        "bytes": 867318,
+        "sha256": "1666f157e5b1fa51234fbfccd32d95cea0c3e5760dcbc22501cf49f011610fd2"
+      }
+    },
+    "metric_source_sha256": "df59fe9df738a6b2568a8eb6c67b3a8d303f8255b6122a54eccfe099b1bae265",
+    "models": {
+      "V38": "V4P5_38_gate6n_v36_r2r_mask_p005_e600",
+      "V42": "V4P5_42_gate6q_objective_only_e600",
+      "V44": "V4P5_44_gate6q_xy_deepsets_e600",
+      "V45": "V4P5_45_gate6r_deepsets_only_e600",
+      "V46": "V4P5_46_gate6r_objective_deepsets_e600"
+    }
+  },
+  "physical_feature_error_correlations": {
+    "V38": {
+      "anisotropy_xy_over_z": {
+        "pearson": -0.046567285948847216,
+        "spearman": 0.05400784017859585
+      },
+      "q_low_k_overlap_fraction": {
+        "pearson": -0.04080929015909361,
+        "spearman": 0.21832346047830556
+      },
+      "q_weighted_inverse_kz_mK_W": {
+        "pearson": 0.25488897490203416,
+        "spearman": 0.4161096868705365
+      },
+      "source_active_z_layer_fraction": {
+        "pearson": -0.04335785356583254,
+        "spearman": 0.044065344032513803
+      },
+      "source_concentration": {
+        "pearson": -0.013644967100437186,
+        "spearman": 0.1426135323200879
+      },
+      "source_present_volume_fraction": {
+        "pearson": -0.0023994152940458847,
+        "spearman": -0.07643171378877024
+      },
+      "stack_conductivity_transition_fraction": {
+        "pearson": 0.11568588924533582,
+        "spearman": 0.022107550513801064
+      },
+      "stack_unique_conductivity_triplets": {
+        "pearson": 0.11900472837273207,
+        "spearman": 0.01122089193788168
+      },
+      "top_h_W_m2K": {
+        "pearson": 0.06104783371487385,
+        "spearman": -0.0506718091924556
+      },
+      "train_nn_distance_24d": {
+        "pearson": 0.014016053913761853,
+        "spearman": -0.011095724226332173
+      }
+    },
+    "V42": {
+      "anisotropy_xy_over_z": {
+        "pearson": -0.0617399110377157,
+        "spearman": 0.04674961930411973
+      },
+      "q_low_k_overlap_fraction": {
+        "pearson": -0.07517623815068553,
+        "spearman": 0.23739202601642279
+      },
+      "q_weighted_inverse_kz_mK_W": {
+        "pearson": 0.16197315749742766,
+        "spearman": 0.40271355978758466
+      },
+      "source_active_z_layer_fraction": {
+        "pearson": -0.06796581953526885,
+        "spearman": 0.007202988928391679
+      },
+      "source_concentration": {
+        "pearson": -0.0006285433115195953,
+        "spearman": 0.16790651895257278
+      },
+      "source_present_volume_fraction": {
+        "pearson": -0.03152931294563008,
+        "spearman": -0.12034948262721724
+      },
+      "stack_conductivity_transition_fraction": {
+        "pearson": 0.09501830100796906,
+        "spearman": -0.02529858022164332
+      },
+      "stack_unique_conductivity_triplets": {
+        "pearson": 0.10117877438918196,
+        "spearman": -0.026122083245150494
+      },
+      "top_h_W_m2K": {
+        "pearson": 0.0800161238687236,
+        "spearman": -0.0718217817249588
+      },
+      "train_nn_distance_24d": {
+        "pearson": -0.010460606264843485,
+        "spearman": -0.012760941219556858
+      }
+    },
+    "V44": {
+      "anisotropy_xy_over_z": {
+        "pearson": -0.07059931594008496,
+        "spearman": 0.062417245965756506
+      },
+      "q_low_k_overlap_fraction": {
+        "pearson": -0.08497283535437519,
+        "spearman": 0.216843631960082
+      },
+      "q_weighted_inverse_kz_mK_W": {
+        "pearson": 0.17509117824755416,
+        "spearman": 0.4260265976927302
+      },
+      "source_active_z_layer_fraction": {
+        "pearson": -0.061585207178642715,
+        "spearman": 0.01694820924327454
+      },
+      "source_concentration": {
+        "pearson": 0.003973278349844528,
+        "spearman": 0.17365752609412194
+      },
+      "source_present_volume_fraction": {
+        "pearson": -0.021632740987827772,
+        "spearman": -0.12201833490352802
+      },
+      "stack_conductivity_transition_fraction": {
+        "pearson": 0.11126113855608363,
+        "spearman": 0.013235520947300254
+      },
+      "stack_unique_conductivity_triplets": {
+        "pearson": 0.11165477360952882,
+        "spearman": -0.0075252739446885685
+      },
+      "top_h_W_m2K": {
+        "pearson": 0.10291666292223005,
+        "spearman": -0.06857718366599523
+      },
+      "train_nn_distance_24d": {
+        "pearson": 0.011201442554891717,
+        "spearman": 0.008858267716535433
+      }
+    },
+    "V45": {
+      "anisotropy_xy_over_z": {
+        "pearson": -0.07431051344771115,
+        "spearman": 0.05367399655391732
+      },
+      "q_low_k_overlap_fraction": {
+        "pearson": -0.09606923653852703,
+        "spearman": 0.2521444250430547
+      },
+      "q_weighted_inverse_kz_mK_W": {
+        "pearson": 0.13658488700635885,
+        "spearman": 0.42657594762863943
+      },
+      "source_active_z_layer_fraction": {
+        "pearson": -0.1073193569954607,
+        "spearman": -0.02160896678517504
+      },
+      "source_concentration": {
+        "pearson": 0.03308146090605299,
+        "spearman": 0.18074757370444972
+      },
+      "source_present_volume_fraction": {
+        "pearson": -0.03564612741018892,
+        "spearman": -0.13475838759020994
+      },
+      "stack_conductivity_transition_fraction": {
+        "pearson": 0.1001141085177151,
+        "spearman": 0.0030459829029403328
+      },
+      "stack_unique_conductivity_triplets": {
+        "pearson": 0.10360012942621358,
+        "spearman": -0.005426622483269059
+      },
+      "top_h_W_m2K": {
+        "pearson": 0.0963965427223801,
+        "spearman": -0.06402215711408166
+      },
+      "train_nn_distance_24d": {
+        "pearson": -0.004321256022829846,
+        "spearman": -0.042448727339315144
+      }
+    },
+    "V46": {
+      "anisotropy_xy_over_z": {
+        "pearson": -0.07600351468135927,
+        "spearman": 0.0694682535559494
+      },
+      "q_low_k_overlap_fraction": {
+        "pearson": -0.08990634717045806,
+        "spearman": 0.23965191917991155
+      },
+      "q_weighted_inverse_kz_mK_W": {
+        "pearson": 0.1223708372506667,
+        "spearman": 0.4263813861930049
+      },
+      "source_active_z_layer_fraction": {
+        "pearson": -0.09295115007611363,
+        "spearman": -0.023727492940584356
+      },
+      "source_concentration": {
+        "pearson": 0.021567945852702535,
+        "spearman": 0.2120490752609412
+      },
+      "source_present_volume_fraction": {
+        "pearson": -0.029525898152671735,
+        "spearman": -0.1607718375054875
+      },
+      "stack_conductivity_transition_fraction": {
+        "pearson": 0.09938023763613632,
+        "spearman": -0.0032796694219489825
+      },
+      "stack_unique_conductivity_triplets": {
+        "pearson": 0.10199375203356749,
+        "spearman": -0.02204732931275933
+      },
+      "top_h_W_m2K": {
+        "pearson": 0.0994785440481717,
+        "spearman": -0.07321232375022889
+      },
+      "train_nn_distance_24d": {
+        "pearson": -0.0019294491585650209,
+        "spearman": 0.0016308826222303607
+      }
+    }
+  },
+  "sample_csv": "/tmp/v5_final_q4_samples.csv",
+  "schema_version": "heat3d_v5_final_q4_root_audit_v1",
+  "scope": {
+    "forbidden_roles_accessed": [],
+    "hard_accessed": false,
+    "roles_accessed": [
+      "train",
+      "valid_iid"
+    ],
+    "sealed_iid_accessed": false,
+    "target_used_for_coverage_features": false,
+    "test_accessed": false,
+    "training_started": false
+  },
+  "shape_scale_cross_decomposition": {
+    "V38": {
+      "Q4": {
+        "cross_point_sse_K2": -131.80597763663758,
+        "point_error_squared_sum": 2060.561001911056,
+        "scale_point_sse_K2": 941.2098125681954,
+        "shape_point_sse_K2": 1251.157166979498
+      },
+      "all": {
+        "cross_point_sse_K2": -135.22762263715452,
+        "point_error_squared_sum": 2606.999943707003,
+        "scale_point_sse_K2": 1253.218159697301,
+        "shape_point_sse_K2": 1489.0094066468562
+      }
+    },
+    "V42": {
+      "Q4": {
+        "cross_point_sse_K2": -95.8399786843806,
+        "point_error_squared_sum": 2151.2757886090894,
+        "scale_point_sse_K2": 1175.5395334379664,
+        "shape_point_sse_K2": 1071.5762338555037
+      },
+      "all": {
+        "cross_point_sse_K2": -88.77814304016368,
+        "point_error_squared_sum": 2605.075913525087,
+        "scale_point_sse_K2": 1394.7126632619186,
+        "shape_point_sse_K2": 1299.141393303332
+      }
+    },
+    "V44": {
+      "Q4": {
+        "cross_point_sse_K2": -187.81765896081816,
+        "point_error_squared_sum": 2225.70028104413,
+        "scale_point_sse_K2": 1267.1059374094243,
+        "shape_point_sse_K2": 1146.4120025955237
+      },
+      "all": {
+        "cross_point_sse_K2": -178.9205831233534,
+        "point_error_squared_sum": 2634.4676208412525,
+        "scale_point_sse_K2": 1459.9854697667438,
+        "shape_point_sse_K2": 1353.402734197862
+      }
+    },
+    "V45": {
+      "Q4": {
+        "cross_point_sse_K2": -217.4967957805475,
+        "point_error_squared_sum": 2408.174403379085,
+        "scale_point_sse_K2": 1425.718288113718,
+        "shape_point_sse_K2": 1199.9529110459148
+      },
+      "all": {
+        "cross_point_sse_K2": -213.18359103767875,
+        "point_error_squared_sum": 2895.0953037819672,
+        "scale_point_sse_K2": 1691.9596759204894,
+        "shape_point_sse_K2": 1416.3192188991563
+      }
+    },
+    "V46": {
+      "Q4": {
+        "cross_point_sse_K2": -206.22084712012378,
+        "point_error_squared_sum": 2539.105069610823,
+        "scale_point_sse_K2": 1599.2584236133712,
+        "shape_point_sse_K2": 1146.0674931175756
+      },
+      "all": {
+        "cross_point_sse_K2": -196.6623682094068,
+        "point_error_squared_sum": 3019.0124284203616,
+        "scale_point_sse_K2": 1846.0850331571735,
+        "shape_point_sse_K2": 1369.589763472595
+      }
+    }
+  },
+  "split": {
+    "source": "split_map_v4",
+    "train_count": 672,
+    "train_ids_sha256": "b9b4e39ec9e3eea20bb4a258192a5d4ed4e5faa4e07f14c1ce72a45893e513ef",
+    "valid_iid_count": 128,
+    "valid_iid_ids_sha256": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63"
+  },
+  "status": "completed_train_valid_read_only",
+  "top_sample_ids": {
+    "V38": {
+      "top10": [
+        "sample_1055",
+        "sample_0787",
+        "sample_0617",
+        "sample_1049",
+        "sample_0426",
+        "sample_0348",
+        "sample_0325",
+        "sample_0271",
+        "sample_0153",
+        "sample_0229"
+      ],
+      "top5": [
+        "sample_1055",
+        "sample_0787",
+        "sample_0617",
+        "sample_1049",
+        "sample_0426"
+      ]
+    },
+    "V42": {
+      "top10": [
+        "sample_1055",
+        "sample_1049",
+        "sample_0787",
+        "sample_0617",
+        "sample_0426",
+        "sample_0348",
+        "sample_0153",
+        "sample_0281",
+        "sample_0325",
+        "sample_0971"
+      ],
+      "top5": [
+        "sample_1055",
+        "sample_1049",
+        "sample_0787",
+        "sample_0617",
+        "sample_0426"
+      ]
+    },
+    "V44": {
+      "top10": [
+        "sample_1055",
+        "sample_0787",
+        "sample_1049",
+        "sample_0617",
+        "sample_0426",
+        "sample_0348",
+        "sample_0971",
+        "sample_0325",
+        "sample_0915",
+        "sample_0271"
+      ],
+      "top5": [
+        "sample_1055",
+        "sample_0787",
+        "sample_1049",
+        "sample_0617",
+        "sample_0426"
+      ]
+    },
+    "V45": {
+      "top10": [
+        "sample_1049",
+        "sample_1055",
+        "sample_0787",
+        "sample_0617",
+        "sample_0426",
+        "sample_0348",
+        "sample_0971",
+        "sample_0271",
+        "sample_0325",
+        "sample_0915"
+      ],
+      "top5": [
+        "sample_1049",
+        "sample_1055",
+        "sample_0787",
+        "sample_0617",
+        "sample_0426"
+      ]
+    },
+    "V46": {
+      "top10": [
+        "sample_1055",
+        "sample_0787",
+        "sample_1049",
+        "sample_0617",
+        "sample_0426",
+        "sample_0348",
+        "sample_0325",
+        "sample_0271",
+        "sample_0971",
+        "sample_0518"
+      ],
+      "top5": [
+        "sample_1055",
+        "sample_0787",
+        "sample_1049",
+        "sample_0617",
+        "sample_0426"
+      ]
+    }
+  }
+}
