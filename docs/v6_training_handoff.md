@@ -161,3 +161,24 @@ Formal manual commands (prepared only, not executed):
 python scripts/run_heat3d_v4_config.py --config configs/heat3d_v6/V6_01_V4best.yaml
 python scripts/run_heat3d_v4_config.py --config configs/heat3d_v6/V6_02_V5best.yaml
 ```
+
+### B32 e5 gate closeout
+
+Both assigned e5 runs completed with exact `4 x B8 -> B32` accumulation, 96
+pure B8 microbatches, 24 optimizer updates per epoch, no tail batch, and no
+geometry split. All recorded losses, gradients, parameters, and updates were
+finite; checkpoint/export/reload passed. Only `train` and `valid_iid` were
+materialized.
+
+| Run | Host | Epoch 2--5 mean | B24 steady reference | Speedup | Allocator peak | Change from B24 | Gate |
+|---|---|---:|---:|---:|---:|---:|---|
+| V6_01 V4 baseline B32 | devbox | 336.24 s | 444.95 s | +24.43% | 2592.83 MiB | +0.92% | fail: memory growth |
+| V6_02 V5 baseline B32 | wsl2 | 862.16 s | 825.01 s | -4.50% | 3020.62 MiB | +4.34% | fail: memory growth and no speedup |
+
+B32 is numerically executable, but it does not pass the pre-registered joint
+selection gate. The unified formal choice therefore remains the two B24 YAMLs.
+The user deferred formal launch after the e5 closeout, so no e600 process was
+started. Frozen evidence and its checker are:
+
+- `configs/heat3d_v6/v6_b32_e5_gate_closeout.json`
+- `scripts/check_heat3d_v6_b32_e5_gate_closeout.py`

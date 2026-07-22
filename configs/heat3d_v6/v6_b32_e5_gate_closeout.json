@@ -1,0 +1,226 @@
+{
+  "schema_version": "heat3d_v6_b32_e5_gate_closeout_v1",
+  "status": "completed",
+  "formal_training_started": false,
+  "e600_started": false,
+  "preflight_commit": "f5f2130bddff4da18e07b971485f566ff77b99c8",
+  "pre_registered_gate": "configs/heat3d_v6/v6_b32_selective_launch_gate.json",
+  "roles_materialized": ["train", "valid_iid"],
+  "forbidden_roles_materialized": [],
+  "dataset": {
+    "id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+    "manifest_sha256": "e5329d5cd6253510d87a4432d5f2ddae67259637810c29fdfb6ddf42621875a4",
+    "sample_counts": {"train": 768, "valid_iid": 128, "test_iid_manifest_only": 128},
+    "group_locked": true,
+    "node_count": 1024
+  },
+  "effective_batch": {
+    "configured": 32,
+    "effective": 32,
+    "micro_batch_size": 8,
+    "micro_batches_per_epoch": 96,
+    "micro_batch_sample_counts_unique": [8],
+    "micro_batches_per_update": 4,
+    "updates_per_epoch": 24,
+    "effective_batch_sample_counts_unique": [32],
+    "tail": null,
+    "geometry_split": false,
+    "padding_policy": "repeat_existing_dummy_edges_only"
+  },
+  "runs": {
+    "V6_01_V4best_B32": {
+      "status": "completed_e5",
+      "host": "devbox",
+      "config": "configs/heat3d_v6/preflight/V6_01_V4best_B32_e5_gpu_preflight.yaml",
+      "run_dir": "output/heat3d_v6_preflight/V6_01_V4best_B32_e5",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_01_V4best_B32_e5.log",
+      "runner_pid": 321684,
+      "training_commit": "f5f2130",
+      "epochs": 5,
+      "random_initialization": true,
+      "sample_counts": {"train": 768, "valid_iid": 128},
+      "group_counts": {"train_micro_batches_per_epoch": 96, "valid_iid_batches": 4, "test_iid": 0, "all": 0},
+      "optimizer_updates_per_epoch": 24,
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "timing": {
+        "epoch_s": [
+          {"epoch": 1, "seconds": 473.88063697400503},
+          {"epoch": 2, "seconds": 330.49727186502423},
+          {"epoch": 3, "seconds": 331.52123692189343},
+          {"epoch": 4, "seconds": 336.45140132994857},
+          {"epoch": 5, "seconds": 346.48929187702015}
+        ],
+        "mean_epoch_2_to_5_s": 336.2398004984716,
+        "b24_steady_reference_s": 444.9469199340092,
+        "speedup_vs_b24_pct": 24.431480377852743
+      },
+      "training_numerics": [
+        {"epoch": 1, "loss_mean": 0.8833342964450518, "loss_max": 1.0973845720291138, "gradient_norm_mean": 3.581776858456268, "gradient_norm_max": 7.731706114969755},
+        {"epoch": 2, "loss_mean": 0.7773662259181341, "loss_max": 0.9048115015029907, "gradient_norm_mean": 4.366789493695982, "gradient_norm_max": 14.369911278730507},
+        {"epoch": 3, "loss_mean": 0.7350997676452001, "loss_max": 0.9299391508102417, "gradient_norm_mean": 3.873658423068085, "gradient_norm_max": 9.299860428845255},
+        {"epoch": 4, "loss_mean": 0.697728897134463, "loss_max": 1.0237959623336792, "gradient_norm_mean": 3.588396040153704, "gradient_norm_max": 9.723637254260122},
+        {"epoch": 5, "loss_mean": 0.6245739559332529, "loss_max": 0.7452006340026855, "gradient_norm_mean": 3.3588975464323014, "gradient_norm_max": 9.922591302587929}
+      ],
+      "device": {
+        "platform": "gpu",
+        "peak_allocator_memory_mb": 2592.8330078125,
+        "allocator_memory_limit_mb": 9169.921875,
+        "peak_rss_mb": 5958.21875,
+        "b24_peak_allocator_memory_mb": 2569.2861328125,
+        "allocator_memory_change_pct": 0.9164753858778685,
+        "nvml": {
+          "sample_count": 449,
+          "gpu_utilization_mean_pct": 1.4543429844097995,
+          "gpu_utilization_p95_pct": 5.0,
+          "gpu_utilization_max_pct": 16.0,
+          "device_memory_used_max_mb": 12118.8359375,
+          "device_memory_total_mb": 12227.0,
+          "return_code": 0
+        }
+      },
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {"label": "final", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.013092041015625, "checkpoint_reload_rmse_K": 0.0012082053011499372, "passed": true},
+          {"label": "best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.01361083984375, "checkpoint_reload_rmse_K": 0.001204367620471861, "passed": true}
+        ]
+      },
+      "gate_checks": {
+        "e5_completed": true,
+        "epochs_2_to_5_finite": true,
+        "no_oom_nan_inf": true,
+        "checkpoint_export_reload_passed": true,
+        "test_and_all_group_counts_zero": true,
+        "peak_gpu_memory_mb_not_above_B24_reference": false,
+        "mean_epoch_2_to_5_s_strictly_below_B24_steady_reference": true
+      },
+      "artifact_sha256": {
+        "params_best.pkl": "ec273fa14c894af81970b27be11d257a12a94c7fb4ec4a6102afa11f4c350c7f",
+        "params_final.pkl": "8195159b6cdaa64051c5edfe3fca7b75965f056e764305b81fbc5d08c86edafa",
+        "best_predictions.npz": "d32a9d1d907488ac32fe112461d190b06ead53e9632e22968089578c19d573e8",
+        "predictions.npz": "d5e8c17125ec91f1c297591b52f5b9f7678f67dc94c6cac9001f070af0a83401"
+      },
+      "evidence_sha256": {
+        "run_config.json": "cd1af9455bc7005c12290a1a4b8f2286d5a22dec93ac87d62d4b8100a7cdd06d",
+        "loss_summary.json": "651ea3d8af0ed462f72e45f24d38c6cd7a6cdea288b799d5624d598aecead7d2",
+        "profile_timing.json": "c77c8064bde450d3955389232aaec3c07b39497c1750e2a88bc5fc0de6cca33a",
+        "memory_audit.jsonl": "4ad5ce3276f61f9833345b9d1aa00312903f1e3c84e3e1bd10f15beddea49eae",
+        "gpu_monitor.jsonl": "23821d5b90b0198722fb7eadd5395b6ac9364e2195ac8464da07583d6f7763c6",
+        "log": "0b8e004ab0d7ededb5d0982135d04b4f92492972c682a3a1816e58f9f2c85189"
+      }
+    },
+    "V6_02_V5best_B32": {
+      "status": "completed_e5",
+      "host": "wsl2",
+      "config": "configs/heat3d_v6/preflight/V6_02_V5best_B32_e5_gpu_preflight.yaml",
+      "run_dir": "output/heat3d_v6_preflight/V6_02_V5best_B32_e5",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_02_V5best_B32_e5.log",
+      "runner_pid": 442585,
+      "training_commit": "f5f2130",
+      "epochs": 5,
+      "random_initialization": true,
+      "sample_counts": {"train": 768, "valid_iid": 128},
+      "group_counts": {"train_micro_batches_per_epoch": 96, "valid_iid_batches": 4, "test_iid": 0, "all": 0},
+      "optimizer_updates_per_epoch": 24,
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "global_context": {"dimension": 24, "fit_population": "train_only", "fit_sample_count": 768, "target_or_label_derived_inputs": false},
+      "timing": {
+        "epoch_s": [
+          {"epoch": 1, "seconds": 877.0035353768617},
+          {"epoch": 2, "seconds": 842.2770866269711},
+          {"epoch": 3, "seconds": 862.0545162819326},
+          {"epoch": 4, "seconds": 873.3286735210568},
+          {"epoch": 5, "seconds": 870.9684011840727}
+        ],
+        "mean_epoch_2_to_5_s": 862.1571694035083,
+        "b24_steady_reference_s": 825.0061747839209,
+        "speedup_vs_b24_pct": -4.503117159010084
+      },
+      "training_numerics": [
+        {"epoch": 1, "loss_mean": 4.823255732655525, "loss_max": 17.341106414794922, "gradient_norm_mean": 237.39847622042635, "gradient_norm_max": 468.2230913386276},
+        {"epoch": 2, "loss_mean": 0.1777513651177287, "loss_max": 0.9706562161445618, "gradient_norm_mean": 43.250813165776684, "gradient_norm_max": 165.97837113863895},
+        {"epoch": 3, "loss_mean": 0.02804348908830434, "loss_max": 0.053989604115486145, "gradient_norm_mean": 10.209230432212873, "gradient_norm_max": 28.43890582887689},
+        {"epoch": 4, "loss_mean": 0.012221701307377467, "loss_max": 0.01956954598426819, "gradient_norm_mean": 5.91038730125774, "gradient_norm_max": 14.473166289758511},
+        {"epoch": 5, "loss_mean": 0.009197772422339767, "loss_max": 0.01674114726483822, "gradient_norm_mean": 3.815248326814204, "gradient_norm_max": 10.565656169124379}
+      ],
+      "device": {
+        "platform": "gpu",
+        "peak_allocator_memory_mb": 3020.615478515625,
+        "allocator_memory_limit_mb": 9169.921875,
+        "peak_rss_mb": 6305.79296875,
+        "b24_peak_allocator_memory_mb": 2894.994384765625,
+        "allocator_memory_change_pct": 4.339251723977711,
+        "nvml": {
+          "sample_count": 963,
+          "gpu_utilization_mean_pct": 1.0155763239875388,
+          "gpu_utilization_p95_pct": 4.0,
+          "gpu_utilization_max_pct": 17.0,
+          "device_memory_used_max_mb": 10261.49609375,
+          "device_memory_total_mb": 12227.0,
+          "return_code": 0
+        }
+      },
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {"label": "final", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.01544189453125, "checkpoint_reload_rmse_K": 0.0015957654855511517, "passed": true},
+          {"label": "best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.014678955078125, "checkpoint_reload_rmse_K": 0.0016010564876172766, "passed": true},
+          {"label": "point_global_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.016082763671875, "checkpoint_reload_rmse_K": 0.001614698440902647, "passed": true},
+          {"label": "base_mse_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.013916015625, "checkpoint_reload_rmse_K": 0.0016084792133290306, "passed": true},
+          {"label": "sample_first_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.018951416015625, "checkpoint_reload_rmse_K": 0.0019272124378081792, "passed": true}
+        ]
+      },
+      "gate_checks": {
+        "e5_completed": true,
+        "epochs_2_to_5_finite": true,
+        "no_oom_nan_inf": true,
+        "checkpoint_export_reload_passed": true,
+        "test_and_all_group_counts_zero": true,
+        "peak_gpu_memory_mb_not_above_B24_reference": false,
+        "mean_epoch_2_to_5_s_strictly_below_B24_steady_reference": false
+      },
+      "artifact_sha256": {
+        "params_best.pkl": "47186eaeca0ed5d6a10c2eb55428c6e6477b668857ea9c597e78db5d118317fa",
+        "params_final.pkl": "453d75cd7d1a6fdffc0c0e29de939aea3fb4915b02592bb31fb497331bcfbf4d",
+        "params_best_valid_point_global.pkl": "d46236e75b66a676fb01342673f9030b1bbd2bc4d01de9e37b9f260fe278acce",
+        "params_best_valid_base_mse.pkl": "868762068dae42d4876565d2164b5f59a5a5b26f62cafc4208e09a7a5f908f02",
+        "params_best_valid_sample_first.pkl": "38b3c5805eff0051aa575e6957338cc96b6eb307e71acc864e6fc4b660298a56",
+        "best_predictions.npz": "0e2b837cf4b4f5f430b3da9f22e7098cfe996bf9c0c29f48e33bdd80da395fae",
+        "predictions.npz": "b605b214f2cd6d83764425138a16aa60576f7516ce9e55d877e3cc269044d303",
+        "point_global_best_predictions.npz": "efa3e32b7fe14cb50b4a693f7566ac6926838e30c4aacef16ea9c991c0d26d54",
+        "base_mse_best_predictions.npz": "985ab047ab4cd66f9b257cff79412a74ab56f274eebac270ff1fbe24bfcb8481",
+        "sample_first_best_predictions.npz": "4bd409412ad8555ab19537a87dea4d29ce544e83499aab982c40edd7fb6ba905"
+      },
+      "evidence_sha256": {
+        "run_config.json": "d59ab96bd45a28eb12cbb6c3bbfb22fd6675640e13074fd3e4431d7481d31656",
+        "loss_summary.json": "97a8885871c946d9b6294ddd487e56170642962da487d778fc9d0b91629b5d0d",
+        "profile_timing.json": "58061bed7136f525478174acd82badb58d548846343886a4bb198a0a1ba66847",
+        "memory_audit.jsonl": "c7196e4926ea1fc30502de4e030c9bd37ee9599ba74f82e6cb399371f6e768fe",
+        "gpu_monitor.jsonl": "bd9938ba234e20ec6a71ea88746716d91ca7322d32acadd0a92a99219bb83dea",
+        "log": "90e4a3792a41c5368e38ffd0f73babe8d3f8d6c4c744f717d1cdbcfa015b5b10"
+      }
+    }
+  },
+  "joint_gate": {
+    "per_run_pass": {"V6_01_V4best_B32": false, "V6_02_V5best_B32": false},
+    "passed": false,
+    "decision": "unified_B24_fallback",
+    "failure_reasons": [
+      "V6_01 allocator peak increased by 0.9165% versus B24",
+      "V6_02 allocator peak increased by 4.3393% versus B24",
+      "V6_02 epoch 2-5 mean was 4.5031% slower than the B24 steady reference"
+    ],
+    "selected_configs": [
+      "configs/heat3d_v6/V6_01_V4best.yaml",
+      "configs/heat3d_v6/V6_02_V5best.yaml"
+    ],
+    "formal_launch_deferred_by_user": true
+  },
+  "conclusion": {
+    "B32_numerically_feasible": true,
+    "B32_accepted_for_formal_training": false,
+    "reason": "Both e5 runs completed and reloaded successfully, but the pre-registered joint memory/time gate failed. B24 remains the unified fallback."
+  }
+}
