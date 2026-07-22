@@ -194,3 +194,9 @@ validation/prediction B32, and `drop_last=false` remain unchanged. Historical
 B8 and B32 preflight artifacts above remain immutable evidence; the native-B24
 preflight uses new output directories and is the only launch gate for the
 current formal configs.
+
+Both native-B24 gates passed and the formal e600 runs were launched with
+`nohup` from commit `ec72010250fcd210ae29c9d2dc48371de8b057c3` at
+`2026-07-22T19:29:32Z`. V6_01 runs on WSL2 as PID 536121; V6_02 runs on
+devbox as PID 389637. No test/all role was opened by the e1 gate, and no
+post-launch monitoring is part of this handoff.

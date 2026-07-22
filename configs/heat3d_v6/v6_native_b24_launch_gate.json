@@ -1,8 +1,10 @@
 {
   "schema_version": "heat3d_v6_native_b24_launch_gate_v1",
-  "status": "passed_ready_to_launch",
-  "formal_training_started": false,
-  "e600_started": false,
+  "status": "e600_started",
+  "formal_training_started": true,
+  "e600_started": true,
+  "formal_training_commit": "ec72010250fcd210ae29c9d2dc48371de8b057c3",
+  "formal_launch_timestamp_utc": "2026-07-22T19:29:32Z",
   "preflight_commit": "89a6c2450d843b87dee5fe2da4db3dea528ceca6",
   "dataset": {
     "id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
@@ -133,7 +135,7 @@
       "output_dir": "output/heat3d_v6_runs/V6_01_V4best",
       "log_path": "output/heat3d_v6_logs/V6_01_V4best.log",
       "launch_method": "nohup",
-      "pid": null
+      "pid": 536121
     },
     "V6_02_V5best": {
       "host": "devbox",
@@ -141,7 +143,7 @@
       "output_dir": "output/heat3d_v6_runs/V6_02_V5best",
       "log_path": "output/heat3d_v6_logs/V6_02_V5best.log",
       "launch_method": "nohup",
-      "pid": null
+      "pid": 389637
     }
   }
 }

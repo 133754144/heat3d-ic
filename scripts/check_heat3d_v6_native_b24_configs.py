@@ -82,7 +82,7 @@ def main() -> int:
         assert formal["run"]["prediction_batch_size"] == 32
         assert formal["run"]["drop_last"] is False
         assert formal["run"]["epochs"] == 600
-        assert formal["metadata"]["training_started"] is False
+        assert formal["metadata"]["training_started"] is True
         assert formal["metadata"]["micro_batches_per_epoch"] == 32
         assert formal["metadata"]["optimizer_updates_per_epoch"] == 32
         assert formal["metadata"]["final_partial_effective_batch_size"] is None

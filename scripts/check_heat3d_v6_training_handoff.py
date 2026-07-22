@@ -123,7 +123,7 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
     assert candidate["run"]["init_checkpoint"] is None
     assert candidate["run"]["final_probe_eval_after_training"] is False
     assert candidate["diagnostics"]["run_baseline_comparison"] is False
-    assert candidate["metadata"]["training_started"] is False
+    assert candidate["metadata"]["training_started"] is True
     assert candidate["metadata"]["configured_batch_size"] == 24
     assert candidate["metadata"]["effective_batch_size"] == 24
     assert candidate["metadata"]["micro_batches_per_epoch"] == 32
@@ -235,7 +235,7 @@ def main() -> int:
             "target_or_label_derived_global_inputs": False,
         },
         "baseline_diffs": reports,
-        "training_started": False,
+        "training_started": True,
     }
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0
