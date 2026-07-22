@@ -1,0 +1,285 @@
+{
+  "branch": "research/v5",
+  "contract_thresholds": {
+    "test_point_global_relative_rmse_pct_lt": 20.0,
+    "valid_and_test_required": true,
+    "valid_point_global_relative_rmse_pct_lt": 20.0,
+    "warm_start_direction_requirement": "For a feasibility pass, valid sample-first CV-relative RMSE and point-global relative RMSE must both improve versus frozen V4; raw CV-RMSE, hotspot RMSE, and strong-q RMSE may not materially degrade."
+  },
+  "evaluation_caveat": "Frozen metrics use checkpoint-bound saved prediction NPZ artifacts. Training-time checkpoint reload audits passed, while direct CPU parameter replay retains the documented cross-backend drift and is not used to replace metric fields.",
+  "evaluator_change_scope": "Gate 6R commit adds only V45/V46 config IDs to the evaluator allowlist.",
+  "formal_ranking": [
+    {
+      "amplitude_ratio": 1.0195547879160882,
+      "config_id": "V4P5_42_gate6q_objective_only_e600",
+      "epoch": 257,
+      "hotspot_cv_weighted_rmse_K": 0.2826226063207836,
+      "legacy_normalized_valid_base_mse": 0.031320426010483,
+      "low_deltaT_background_bias_K": 0.006000111604728589,
+      "low_deltaT_background_over_ratio": 0.4029945803084632,
+      "low_deltaT_background_rmse_K": 0.019727775286653614,
+      "model": "V42",
+      "point_global_relative_rmse_pct": 21.936815354126658,
+      "raw_cv_weighted_rmse_K": 0.15634710952501843,
+      "sample_first_cv_relative_rmse_pct": 19.250517211712364,
+      "scale_log_rmse": 0.14713299677865432,
+      "shape_cv_rmse": 0.14300772479942028,
+      "spatial_correlation": 0.9815720481126937,
+      "strong_q_cv_weighted_rmse_K": 0.3385304872997881,
+      "top5_cv_weighted_rmse_K": 0.426451120034416,
+      "valid_threshold_pass": false
+    },
+    {
+      "amplitude_ratio": 0.9781966828033023,
+      "config_id": "V4P5_38_gate6n_v36_r2r_mask_p005_e600",
+      "epoch": 231,
+      "hotspot_cv_weighted_rmse_K": 0.29378918965583933,
+      "legacy_normalized_valid_base_mse": 0.03134355832867832,
+      "low_deltaT_background_bias_K": 0.010120231350171139,
+      "low_deltaT_background_over_ratio": 0.4960297853030256,
+      "low_deltaT_background_rmse_K": 0.02204826044345727,
+      "model": "V38",
+      "point_global_relative_rmse_pct": 21.94491479266383,
+      "raw_cv_weighted_rmse_K": 0.15732761202813314,
+      "sample_first_cv_relative_rmse_pct": 20.605917344454046,
+      "scale_log_rmse": 0.17812646693277936,
+      "shape_cv_rmse": 0.14842138047916398,
+      "spatial_correlation": 0.9808525572543603,
+      "strong_q_cv_weighted_rmse_K": 0.35470587609500026,
+      "top5_cv_weighted_rmse_K": 0.44835596034305575,
+      "valid_threshold_pass": false
+    },
+    {
+      "amplitude_ratio": 1.0024176312501463,
+      "config_id": "V4P5_44_gate6q_xy_deepsets_e600",
+      "epoch": 329,
+      "hotspot_cv_weighted_rmse_K": 0.2826821605752513,
+      "legacy_normalized_valid_base_mse": 0.03167379797539901,
+      "low_deltaT_background_bias_K": 0.0033624435759257738,
+      "low_deltaT_background_over_ratio": 0.36298419823797845,
+      "low_deltaT_background_rmse_K": 0.01693586898841702,
+      "model": "V44",
+      "point_global_relative_rmse_pct": 22.06021905550541,
+      "raw_cv_weighted_rmse_K": 0.15894290606777328,
+      "sample_first_cv_relative_rmse_pct": 18.90783527599047,
+      "scale_log_rmse": 0.15325153044815895,
+      "shape_cv_rmse": 0.1403774720764634,
+      "spatial_correlation": 0.9829007837811938,
+      "strong_q_cv_weighted_rmse_K": 0.35128715237484437,
+      "top5_cv_weighted_rmse_K": 0.4593697841349666,
+      "valid_threshold_pass": false
+    },
+    {
+      "amplitude_ratio": 1.0086037332196522,
+      "config_id": "V4P5_43_gate6q_xy_scale_features_e600",
+      "epoch": 276,
+      "hotspot_cv_weighted_rmse_K": 0.2882424841752844,
+      "legacy_normalized_valid_base_mse": 0.032803255893466096,
+      "low_deltaT_background_bias_K": 0.00682243582439431,
+      "low_deltaT_background_over_ratio": 0.4369175563560569,
+      "low_deltaT_background_rmse_K": 0.019450182758615847,
+      "model": "V43",
+      "point_global_relative_rmse_pct": 22.450097184635005,
+      "raw_cv_weighted_rmse_K": 0.16138691070067995,
+      "sample_first_cv_relative_rmse_pct": 20.068498030972187,
+      "scale_log_rmse": 0.15871275779829946,
+      "shape_cv_rmse": 0.14397481190493877,
+      "spatial_correlation": 0.9818382574417781,
+      "strong_q_cv_weighted_rmse_K": 0.349340414140603,
+      "top5_cv_weighted_rmse_K": 0.4410561648925741,
+      "valid_threshold_pass": false
+    },
+    {
+      "amplitude_ratio": 1.004258976482003,
+      "config_id": "V4P5_45_gate6r_deepsets_only_e600",
+      "epoch": 358,
+      "hotspot_cv_weighted_rmse_K": 0.30285208056189167,
+      "legacy_normalized_valid_base_mse": 0.03480728441909441,
+      "low_deltaT_background_bias_K": 0.005957032027523474,
+      "low_deltaT_background_over_ratio": 0.4346404063831618,
+      "low_deltaT_background_rmse_K": 0.018279191299131952,
+      "model": "V45",
+      "point_global_relative_rmse_pct": 23.125696433617946,
+      "raw_cv_weighted_rmse_K": 0.1664205432492222,
+      "sample_first_cv_relative_rmse_pct": 19.993252721072142,
+      "scale_log_rmse": 0.1670923984055111,
+      "shape_cv_rmse": 0.14435497118185542,
+      "spatial_correlation": 0.9818470716550762,
+      "strong_q_cv_weighted_rmse_K": 0.3797979263043475,
+      "top5_cv_weighted_rmse_K": 0.47280079123429647,
+      "valid_threshold_pass": false
+    },
+    {
+      "amplitude_ratio": 1.0071933473177206,
+      "config_id": "V4P5_46_gate6r_objective_deepsets_e600",
+      "epoch": 484,
+      "hotspot_cv_weighted_rmse_K": 0.30166151796764235,
+      "legacy_normalized_valid_base_mse": 0.03629712090083319,
+      "low_deltaT_background_bias_K": 0.005231794007430532,
+      "low_deltaT_background_over_ratio": 0.42187535435664386,
+      "low_deltaT_background_rmse_K": 0.01723511517187456,
+      "model": "V46",
+      "point_global_relative_rmse_pct": 23.615428948241902,
+      "raw_cv_weighted_rmse_K": 0.1697228116233201,
+      "sample_first_cv_relative_rmse_pct": 19.797010976176754,
+      "scale_log_rmse": 0.16901502345641278,
+      "shape_cv_rmse": 0.14033169310325672,
+      "spatial_correlation": 0.9829661979410482,
+      "strong_q_cv_weighted_rmse_K": 0.3733959623231712,
+      "top5_cv_weighted_rmse_K": 0.4610158563923471,
+      "valid_threshold_pass": false
+    }
+  ],
+  "gate6q_evaluator_commit": "2a90eb66b46f71ea19563f35a729275d892fa9ec",
+  "gate6r_comparisons": [
+    {
+      "baseline": "V38",
+      "candidate": "V45",
+      "comparison": "V45_minus_V38",
+      "median_sample_relative_delta_pp": -0.579570148948292,
+      "point_global_delta_bootstrap_95_ci_pp": [
+        -0.7524262276019077,
+        2.9382597572927267
+      ],
+      "point_global_delta_pp": 1.180781640954116,
+      "point_sse_delta_K2": 288.09536007496445,
+      "point_sse_win_rate": 0.6015625,
+      "quartile_point_sse_delta_K2": {
+        "Q1": -2.9185373651436635,
+        "Q2": 12.753387075059976,
+        "Q3": -69.3528911029812,
+        "Q4": 347.61340146802934
+      },
+      "raw_cv_delta_K": 0.009092931221089062,
+      "sample_first_delta_bootstrap_95_ci_pp": [
+        -1.8052753842366083,
+        0.6167969448480842
+      ],
+      "sample_first_delta_pp": -0.6126646233819031,
+      "sample_relative_win_rate": 0.5859375
+    },
+    {
+      "baseline": "V38",
+      "candidate": "V46",
+      "comparison": "V46_minus_V38",
+      "median_sample_relative_delta_pp": -0.9035015553823356,
+      "point_global_delta_bootstrap_95_ci_pp": [
+        -0.5772484914034153,
+        3.4673798858712153
+      ],
+      "point_global_delta_pp": 1.670514155578072,
+      "point_sse_delta_K2": 412.01248471335884,
+      "point_sse_win_rate": 0.609375,
+      "quartile_point_sse_delta_K2": {
+        "Q1": -2.920994753521942,
+        "Q2": 12.509243037491485,
+        "Q3": -76.11983127037793,
+        "Q4": 478.54406769976725
+      },
+      "raw_cv_delta_K": 0.012395199595186951,
+      "sample_first_delta_bootstrap_95_ci_pp": [
+        -2.0196951880247873,
+        0.4010684041042071
+      ],
+      "sample_first_delta_pp": -0.8089063682772917,
+      "sample_relative_win_rate": 0.609375
+    },
+    {
+      "baseline": "V45",
+      "candidate": "V46",
+      "comparison": "V46_minus_V45",
+      "median_sample_relative_delta_pp": -0.4397190063999967,
+      "point_global_delta_bootstrap_95_ci_pp": [
+        -0.5491659077431759,
+        1.4028568594539108
+      ],
+      "point_global_delta_pp": 0.48973251462395595,
+      "point_sse_delta_K2": 123.91712463839437,
+      "point_sse_win_rate": 0.578125,
+      "quartile_point_sse_delta_K2": {
+        "Q1": -0.0024573883782787772,
+        "Q2": -0.244144037568491,
+        "Q3": -6.766940167396727,
+        "Q4": 130.9306662317379
+      },
+      "raw_cv_delta_K": 0.0033022683740978886,
+      "sample_first_delta_bootstrap_95_ci_pp": [
+        -0.9785026741839828,
+        0.5593737011826633
+      ],
+      "sample_first_delta_pp": -0.1962417448953886,
+      "sample_relative_win_rate": 0.6015625
+    }
+  ],
+  "gate6r_evaluator_commit": "5cceff72c60fb24eb33e9042f6a9b919ef2b093f",
+  "generated_at_utc": "2026-07-22T06:24:20.281146+00:00",
+  "head": "5cceff72c60fb24eb33e9042f6a9b919ef2b093f",
+  "input_artifacts": {
+    "configs/heat3d_v5/gate6q/gate6q_final_closeout.json": {
+      "bytes": 3769415,
+      "sha256": "afeabbc2b82bcb6758ce9d03014635897e9c862502559466f3f70dbdff6246dd"
+    },
+    "configs/heat3d_v5/gate6r_closeout/evaluator/V38_gate6r_cpu_replay.json": {
+      "bytes": 867351,
+      "sha256": "873f770fbd81806f44df75a1ab0216d76d3a9464166e045f45dc074433c91492"
+    },
+    "configs/heat3d_v5/gate6r_closeout/evaluator/V45_gate6r_cpu_replay.json": {
+      "bytes": 867619,
+      "sha256": "7cde8e7f7dabe87940f972cd680d0a679b6b043a12e885b60c3618088fb228db"
+    },
+    "configs/heat3d_v5/gate6r_closeout/evaluator/V46_gate6r_cpu_replay.json": {
+      "bytes": 867318,
+      "sha256": "1666f157e5b1fa51234fbfccd32d95cea0c3e5760dcbc22501cf49f011610fd2"
+    },
+    "configs/heat3d_v5/v5_clean_first_performance_contract.json": {
+      "bytes": 5636,
+      "sha256": "ab64a3ded1e408f85246dc5a0ddb44303a29f336f501904b0e082e4cfd3b5a6b"
+    }
+  },
+  "merge_assessment": {
+    "ahead_commits": 136,
+    "behind_commits": 0,
+    "changed_files": 375,
+    "deletions": 453,
+    "direct_fast_forward_recommended": false,
+    "insertions": 481394,
+    "main_commit": "11e9d2feb1b920b2fbd06b8e626a706b1eb4cd40",
+    "main_is_ancestor": true,
+    "merge_base": "11e9d2feb1b920b2fbd06b8e626a706b1eb4cd40",
+    "recommendation": "Do not fast-forward main with the full research branch; integrate reviewed runner/model/metric changes separately from generated experiment evidence.",
+    "research_v5_commit_at_assessment": "5cceff72c60fb24eb33e9042f6a9b919ef2b093f",
+    "technical_fast_forward_possible": true
+  },
+  "metric_source_sha256": "df59fe9df738a6b2568a8eb6c67b3a8d303f8255b6122a54eccfe099b1bae265",
+  "phase_closeout_assessment": {
+    "additional_v5_training_recommended": false,
+    "best_model": "V42",
+    "best_valid_point_global_relative_rmse_pct": 21.936815354126658,
+    "can_close_v5": true,
+    "closure_class": "completed_research_phase_threshold_unmet",
+    "recommended_close_action": "freeze research/v5 as threshold-unmet research history after review; do not open sealed/test/hard roles merely to seek a passing result",
+    "scientific_success": false,
+    "test_threshold_evaluated": false,
+    "valid_and_test_success_established": false,
+    "valid_threshold_pass": false
+  },
+  "schema_version": "heat3d_v5_final_phase_assessment_v1",
+  "scope": {
+    "evaluation_roles": [
+      "valid_iid"
+    ],
+    "forbidden_roles_accessed": [],
+    "hard_accessed": false,
+    "model_or_checkpoint_modified": false,
+    "roles_accessed": [
+      "train",
+      "valid_iid"
+    ],
+    "sealed_iid_accessed": false,
+    "test_accessed": false,
+    "training_started": false
+  },
+  "status": "ready_to_close_threshold_unmet",
+  "v38_cross_evaluator_max_abs_summary_diff": 0.0,
+  "valid_iid_ids_sha256": "cf682f92aba37a8f708ba66f12351c866d54131d2c33a1fa0ec421103fe02d63"
+}

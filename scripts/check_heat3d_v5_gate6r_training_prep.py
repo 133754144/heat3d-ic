@@ -166,6 +166,7 @@ def main() -> int:
         assert runtime["V45"]["initial_prediction_checksums"] == runtime["V38"]["initial_prediction_checksums"]
         assert runtime["V46"]["initial_prediction_checksums"] == runtime["V45"]["initial_prediction_checksums"]
 
+    csv.field_size_limit(sys.maxsize)
     rows = list(csv.DictReader(REGISTRY.open(encoding="utf-8", newline="")))
     assert [row["config_id"] for row in rows] == [
         configs[name]["config_id"] for name in ("V45", "V46")
@@ -177,9 +178,14 @@ def main() -> int:
             else configs["V46"]
         )
         assert row["launch_policy"] == "explicit_user_instruction_only"
-        assert row["execution_status"] == "not_started"
-        assert row["evaluation_status"] == "not_evaluated"
-        assert row["training_started"] == "false"
+        if row["execution_status"] == "not_started":
+            assert row["evaluation_status"] == "not_evaluated"
+            assert row["training_started"] == "false"
+        else:
+            assert row["plan_status"] == "completed"
+            assert row["execution_status"] == "completed_e600"
+            assert row["evaluation_status"] == "completed_valid_iid_four_checkpoint"
+            assert row["training_started"] == "true"
         assert row["forbidden_access_roles"].split("|") == sorted(FORBIDDEN)
         assert row["scale_context_mode"] == "none"
         assert row["scale_deepsets_mode"] == "source_volume_residual"
