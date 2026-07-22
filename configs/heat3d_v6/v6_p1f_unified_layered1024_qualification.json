@@ -1,0 +1,462 @@
+{
+  "config": "configs/heat3d_v6/v6_p1f_unified_layered1024.yaml",
+  "dataset": "data/heat3d_v6_p1f_unified_layered1024_v0",
+  "dataset_id": "heat3d_v6_p1f_unified_layered1024_v0",
+  "factor_correlations": {
+    "test": {
+      "BC_power_max_abs_pearson": 0.0,
+      "BC_power_max_abs_spearman": 0.0,
+      "factor_names": [
+        "top_h_W_m2K",
+        "bottom_h_W_m2K",
+        "package_total_power_W"
+      ],
+      "pearson": [
+        [
+          0.9999999999999999,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9999999999999999,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.9999999999999998
+        ]
+      ],
+      "spearman": [
+        [
+          0.9999999999999998,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9999999999999998,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.9999999999999998
+        ]
+      ]
+    },
+    "train": {
+      "BC_power_max_abs_pearson": 0.0,
+      "BC_power_max_abs_spearman": 0.0,
+      "factor_names": [
+        "top_h_W_m2K",
+        "bottom_h_W_m2K",
+        "package_total_power_W"
+      ],
+      "pearson": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "spearman": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "valid": {
+      "BC_power_max_abs_pearson": 0.0,
+      "BC_power_max_abs_spearman": 0.0,
+      "factor_names": [
+        "top_h_W_m2K",
+        "bottom_h_W_m2K",
+        "package_total_power_W"
+      ],
+      "pearson": [
+        [
+          0.9999999999999999,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9999999999999999,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.9999999999999998
+        ]
+      ],
+      "spearman": [
+        [
+          0.9999999999999998,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9999999999999998,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.9999999999999998
+        ]
+      ]
+    }
+  },
+  "gate": {
+    "peak_deltaT_30_80_fraction_min": 0.8,
+    "peak_deltaT_above_100_fraction_max": 0.05,
+    "peak_deltaT_above_120_count_max": 0,
+    "peak_deltaT_below_30_count_max": 0
+  },
+  "gate_checks": {
+    "peak_deltaT_30_80": true,
+    "peak_deltaT_above_100": true,
+    "peak_deltaT_above_120": true,
+    "peak_deltaT_below_30": true
+  },
+  "gate_counts": {
+    "above_100": 0,
+    "above_120": 0,
+    "below_30": 0,
+    "in_30_80": 1024
+  },
+  "gate_fractions": {
+    "above_100": 0.0,
+    "above_120": 0.0,
+    "below_30": 0.0,
+    "in_30_80": 1.0
+  },
+  "geometry_group_count": 128,
+  "guardrails": {
+    "model_inference_runs": 0,
+    "sample_replacement": false,
+    "temperature_filtering": false,
+    "training_runs": 0
+  },
+  "integrity": {
+    "checks": {
+      "BC_power_abs_correlation_le_1e_12": true,
+      "all_interfaces_covered": true,
+      "all_layers_covered": true,
+      "eight_orthogonal_cases_per_group": true,
+      "energy_balance_abs_le_1e_8": true,
+      "final_group_split_counts": true,
+      "final_sample_split_counts": true,
+      "geometry_group_count_exact": true,
+      "group_split_lock": true,
+      "no_OOD_roles": true,
+      "no_training_or_inference": true,
+      "one_coordinate_set_per_group": true,
+      "pilot_final_geometry_ids_disjoint": true,
+      "pilot_final_seed_independent": true,
+      "q_guardrail": true,
+      "same_discrete_factor_distribution": true,
+      "single_source_power_guardrail": true,
+      "source_control_volume_min_ge_128": true,
+      "source_in_plane_intervals_min_ge_7": true,
+      "surface_power_density_guardrail": true
+    },
+    "maximum_abs_energy_balance_relative_error": 1.2028527479612805e-10,
+    "maximum_q_W_m3": 5688888888.888902,
+    "maximum_single_source_power_W": 3.0,
+    "maximum_surface_power_density_W_cm2": 60.748565793853345,
+    "minimum_source_control_volume_count": 270,
+    "minimum_source_in_plane_interval_count": 7
+  },
+  "pairwise_continuous_distribution": {
+    "train__test": {
+      "total_source_area_mm2": {
+        "KS_pvalue": 0.9072559332628992,
+        "KS_statistic": 0.14583333333333334
+      },
+      "upper_layer_power_fraction": {
+        "KS_pvalue": 0.8594216207318264,
+        "KS_statistic": 0.15625
+      }
+    },
+    "train__valid": {
+      "total_source_area_mm2": {
+        "KS_pvalue": 0.7411351488389053,
+        "KS_statistic": 0.17708333333333334
+      },
+      "upper_layer_power_fraction": {
+        "KS_pvalue": 0.6760171890622422,
+        "KS_statistic": 0.1875
+      }
+    },
+    "valid__test": {
+      "total_source_area_mm2": {
+        "KS_pvalue": 0.9998909696588173,
+        "KS_statistic": 0.125
+      },
+      "upper_layer_power_fraction": {
+        "KS_pvalue": 0.9522562797299043,
+        "KS_statistic": 0.1875
+      }
+    }
+  },
+  "passed": true,
+  "peak_deltaT_K": {
+    "max": 77.81609761061134,
+    "median": 46.35269940801328,
+    "min": 30.05481225767187,
+    "q10": 32.23933321038445,
+    "q25": 40.39831786344533,
+    "q75": 60.49761291330341,
+    "q90": 65.42014386076485
+  },
+  "pilot_retention": {
+    "retained_in_final": false,
+    "role": "not_applicable"
+  },
+  "sample_count": 1024,
+  "schema_version": "heat3d_v6_p1f_qualification_v1",
+  "split_factor_distribution": {
+    "test": {
+      "aggregate_power_density_W_cm2": {
+        "max": 38.0006443810969,
+        "median": 19.133455151252793,
+        "min": 11.49708434648845,
+        "q10": 12.035312892993346,
+        "q25": 16.675129292585087,
+        "q75": 25.5396359913043,
+        "q90": 32.019229667089675
+      },
+      "bottom_h": {
+        "120.0": 0.5,
+        "20.0": 0.5
+      },
+      "geometry_group_count": 16,
+      "layout_kind": {
+        "clustered": 0.25,
+        "distributed": 0.25,
+        "edge_balanced": 0.25,
+        "mixed": 0.25
+      },
+      "material_profile": {
+        "logic_package_complete_B_fixed_materials_v1": 1.0
+      },
+      "peak_deltaT_K": {
+        "max": 72.5231962314054,
+        "median": 46.1016386382548,
+        "min": 30.076792043273883,
+        "q10": 32.31455317144058,
+        "q25": 39.539450345406735,
+        "q75": 57.03216460201139,
+        "q90": 64.98109072270191
+      },
+      "power": {
+        "4.0": 0.5,
+        "6.0": 0.5
+      },
+      "sample_count": 128,
+      "source_count": {
+        "10": 0.125,
+        "3": 0.125,
+        "4": 0.125,
+        "5": 0.125,
+        "6": 0.125,
+        "7": 0.125,
+        "8": 0.125,
+        "9": 0.125
+      },
+      "top_h": {
+        "1000.0": 0.5,
+        "1400.0": 0.5
+      },
+      "total_source_area_mm2": {
+        "max": 34.79142954380185,
+        "median": 24.83482728602545,
+        "min": 15.789205940372554,
+        "q10": 17.151463137735377,
+        "q25": 19.92575651846392,
+        "q75": 32.895527717206534,
+        "q90": 34.35419617609918
+      },
+      "upper_layer_power_fraction": {
+        "max": 0.5925740028849494,
+        "median": 0.5249036752299056,
+        "min": 0.4515512361979266,
+        "q10": 0.4813526793043679,
+        "q25": 0.5,
+        "q75": 0.5470300035983703,
+        "q90": 0.5762998040027565
+      }
+    },
+    "train": {
+      "aggregate_power_density_W_cm2": {
+        "max": 38.561760790213526,
+        "median": 19.776136259527405,
+        "min": 10.034781948154663,
+        "q10": 12.428811141445891,
+        "q25": 15.859472533868562,
+        "q75": 24.81463875645645,
+        "q90": 33.135425521103365
+      },
+      "bottom_h": {
+        "120.0": 0.5,
+        "20.0": 0.5
+      },
+      "geometry_group_count": 96,
+      "layout_kind": {
+        "clustered": 0.25,
+        "distributed": 0.25,
+        "edge_balanced": 0.25,
+        "mixed": 0.25
+      },
+      "material_profile": {
+        "logic_package_complete_B_fixed_materials_v1": 1.0
+      },
+      "peak_deltaT_K": {
+        "max": 77.43137988461763,
+        "median": 46.436397554844376,
+        "min": 30.05481225767187,
+        "q10": 32.25660768146063,
+        "q25": 40.39353962465228,
+        "q75": 60.47611083875438,
+        "q90": 65.4339808430368
+      },
+      "power": {
+        "4.0": 0.5,
+        "6.0": 0.5
+      },
+      "sample_count": 768,
+      "source_count": {
+        "10": 0.125,
+        "3": 0.125,
+        "4": 0.125,
+        "5": 0.125,
+        "6": 0.125,
+        "7": 0.125,
+        "8": 0.125,
+        "9": 0.125
+      },
+      "top_h": {
+        "1000.0": 0.5,
+        "1400.0": 0.5
+      },
+      "total_source_area_mm2": {
+        "max": 39.86135444363668,
+        "median": 24.590769751796714,
+        "min": 15.559455473627445,
+        "q10": 16.795163892066164,
+        "q25": 19.37947454141576,
+        "q75": 30.762612456436383,
+        "q90": 34.86951526344056
+      },
+      "upper_layer_power_fraction": {
+        "max": 0.62,
+        "median": 0.5198020554876766,
+        "min": 0.43285992224570546,
+        "q10": 0.46570806601425296,
+        "q25": 0.5,
+        "q75": 0.5662160270989687,
+        "q90": 0.5958552651516611
+      }
+    },
+    "valid": {
+      "aggregate_power_density_W_cm2": {
+        "max": 37.84700803503249,
+        "median": 20.07743168965449,
+        "min": 10.681854008714279,
+        "q10": 12.302496589992348,
+        "q25": 16.75691879018592,
+        "q75": 25.955032489553375,
+        "q90": 30.981037354914697
+      },
+      "bottom_h": {
+        "120.0": 0.5,
+        "20.0": 0.5
+      },
+      "geometry_group_count": 16,
+      "layout_kind": {
+        "clustered": 0.25,
+        "distributed": 0.25,
+        "edge_balanced": 0.25,
+        "mixed": 0.25
+      },
+      "material_profile": {
+        "logic_package_complete_B_fixed_materials_v1": 1.0
+      },
+      "peak_deltaT_K": {
+        "max": 77.81609761061134,
+        "median": 46.415053477212325,
+        "min": 30.55524413391015,
+        "q10": 32.07012359807398,
+        "q25": 40.7793256212578,
+        "q75": 61.16523459223329,
+        "q90": 65.01954693543382
+      },
+      "power": {
+        "4.0": 0.5,
+        "6.0": 0.5
+      },
+      "sample_count": 128,
+      "source_count": {
+        "10": 0.125,
+        "3": 0.125,
+        "4": 0.125,
+        "5": 0.125,
+        "6": 0.125,
+        "7": 0.125,
+        "8": 0.125,
+        "9": 0.125
+      },
+      "top_h": {
+        "1000.0": 0.5,
+        "1400.0": 0.5
+      },
+      "total_source_area_mm2": {
+        "max": 37.44668291419066,
+        "median": 23.0105212498907,
+        "min": 15.853300727091014,
+        "q10": 17.259043521170703,
+        "q25": 20.22562521269498,
+        "q75": 29.754565163670346,
+        "q90": 34.913506443431864
+      },
+      "upper_layer_power_fraction": {
+        "max": 0.6186064519282066,
+        "median": 0.5259338068910753,
+        "min": 0.430925449499508,
+        "q10": 0.45423089876698003,
+        "q25": 0.4964451796358602,
+        "q75": 0.5511396988389727,
+        "q90": 0.5687359930082063
+      }
+    }
+  },
+  "stage": "final",
+  "whole_version_policy": "pass_whole_version_or_fail_and_revise_global_contract_no_local_patch"
+}

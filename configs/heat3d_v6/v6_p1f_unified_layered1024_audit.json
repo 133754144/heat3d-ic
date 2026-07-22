@@ -1,0 +1,103 @@
+{
+  "dataset_id": "heat3d_v6_p1f_unified_layered1024_v0",
+  "dataset_manifest_sha256": "fd311b9b8c19b1f578f2cbc7c8322826766d22bfc75b5067820799abd34c2e03",
+  "dataset_path": "data/heat3d_v6_p1f_unified_layered1024_v0",
+  "factor_pearson_correlation": [
+    [
+      0.9999999999999999,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.9999999999999999,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "guardrails": {
+    "model_inference_runs": 0,
+    "peak_deltaT_filtering": false,
+    "peak_deltaT_resampling": false,
+    "per_sample_Rth_power_back_calculation": false,
+    "post_solve_factor_or_seed_selection": false,
+    "sample_replacement": false,
+    "training_runs": 0
+  },
+  "integrity": {
+    "all_interfaces_covered": true,
+    "all_layers_covered": true,
+    "max_abs_energy_balance_relative_error": 1.2028527479612805e-10,
+    "maximum_q_W_m3": 5688888888.888902,
+    "maximum_single_source_power_W": 3.0,
+    "maximum_surface_power_density_W_cm2": 60.748565793853345,
+    "minimum_source_control_volume_count": 270,
+    "minimum_source_in_plane_interval_count": 7
+  },
+  "sample_count": 1024,
+  "schema_version": "heat3d_v6_p1f_unified_layered_audit_v1",
+  "source_count": 6656,
+  "source_count_distribution": {
+    "10": 128,
+    "3": 128,
+    "4": 128,
+    "5": 128,
+    "6": 128,
+    "7": 128,
+    "8": 128,
+    "9": 128
+  },
+  "split_role_counts": {
+    "test": 128,
+    "train": 768,
+    "valid": 128
+  },
+  "summary": {
+    "Rth_peak_K_W": {
+      "max": 12.969349602112374,
+      "median": 10.091257475707831,
+      "min": 7.513703064175114
+    },
+    "bottom_heat_fraction": {
+      "max": 0.06230131090309355,
+      "median": 0.031631632758606726,
+      "min": 0.012772616214398402
+    },
+    "energy_balance_relative_error": {
+      "max": -8.216270256748241e-11,
+      "median": -1.0159142393069884e-10,
+      "min": -1.2028527479612805e-10
+    },
+    "mean_deltaT_K": {
+      "max": 58.120865862907195,
+      "median": 37.716363745477565,
+      "min": 24.44397210881852
+    },
+    "package_total_power_W": {
+      "max": 6.0,
+      "median": 5.0,
+      "min": 4.0
+    },
+    "peak_deltaT_K": {
+      "max": 77.81609761061134,
+      "median": 46.35269940801328,
+      "min": 30.05481225767187
+    },
+    "solver_peak_minus_projected_peak_K": {
+      "max": 0.3250137354243634,
+      "median": 0.04246904000225982,
+      "min": 0.0037757486320515454
+    },
+    "top_heat_fraction": {
+      "max": 0.9872273839037199,
+      "median": 0.9683683673424845,
+      "min": 0.9376986891833002
+    }
+  },
+  "window_hit_count": 1024,
+  "window_hit_fraction": 1.0
+}

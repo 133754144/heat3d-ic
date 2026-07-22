@@ -76,8 +76,11 @@ def _physics(top_h: float, bottom_h: float, intervals: Sequence[int]) -> dict[st
 
 def _load(path: Path) -> dict[str, Any]:
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if config.get("schema_version") != "heat3d_v6_p1e_deconfounded_dataset_v1":
-        raise P1eError("unexpected P1e schema")
+    if config.get("schema_version") not in {
+        "heat3d_v6_p1e_deconfounded_dataset_v1",
+        "heat3d_v6_p1f_unified_layered_dataset_v1",
+    }:
+        raise P1eError("unexpected P1e/P1f schema")
     if int(config["sample_count"]) != len(config["cases"]):
         raise P1eError("sample count mismatch")
     if len({case["id"] for case in config["cases"]}) != len(config["cases"]):
@@ -85,14 +88,24 @@ def _load(path: Path) -> dict[str, Any]:
     for key in (
         "model_training", "model_inference", "peak_deltaT_filtering",
         "peak_deltaT_resampling", "sample_replacement",
-        "per_sample_Rth_power_back_calculation", "post_solve_factor_or_seed_selection",
+        "per_sample_Rth_power_back_calculation",
     ):
         if config["scope"][key] is not False:
             raise P1eError(f"forbidden scope: {key}")
+    post_solve_key = (
+        "post_solve_case_or_seed_selection"
+        if "post_solve_case_or_seed_selection" in config["scope"]
+        else "post_solve_factor_or_seed_selection"
+    )
+    if config["scope"][post_solve_key] is not False:
+        raise P1eError(f"forbidden scope: {post_solve_key}")
     groups = {group["group_id"]: group for group in config["geometry_groups"]}
     if len(groups) != len(config["geometry_groups"]):
         raise P1eError("duplicate geometry group")
-    common = set(map(float, config["factor_contract"]["common_package_power_levels_W_for_every_BC_family"]))
+    common = set(map(float, config["factor_contract"].get(
+        "common_package_power_levels_W_for_every_BC_family",
+        config["factor_contract"].get("package_power_W", []),
+    )))
     by_group: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
     for case in config["cases"]:
         if case["group_id"] not in groups or case["split_role"] != groups[case["group_id"]]["split_role"]:
@@ -184,6 +197,7 @@ def _write_sample(target: Path, arrays: Mapping[str, np.ndarray], meta: Mapping[
 
 def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool) -> dict[str, Any]:
     config = _load(config_path)
+    phase = "p1f_unified_layered" if config["schema_version"].startswith("heat3d_v6_p1f") else "p1e_deconfounded"
     cases = config["cases"]
     if dry_run:
         return {
@@ -248,7 +262,7 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
             metrics["solver_peak_minus_projected_peak_K"] = float(metrics["peak_deltaT_K"] - np.max(point_temperature - 300.0))
             metrics["projected_field_cv_rms_deltaT_K"] = float(np.sqrt(np.mean((point_temperature - 300.0) ** 2)))
             meta = {
-                "schema_version": "heat3d_v6_p1e_deconfounded_sample_v1",
+                "schema_version": f"heat3d_v6_{phase}_sample_v1",
                 "sample_id": sample_id, "dataset_id": config["dataset_id"],
                 "group_id": group["group_id"], "split_role": case["split_role"],
                 "design_block": case["design_block"], "stack_template_id": "logic_package_complete_B_path",
@@ -313,7 +327,7 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
             if (index + 1) % 16 == 0:
                 print(f"generated {index + 1}/{len(cases)}", flush=True)
         manifest = {
-            "schema_version": "heat3d_v6_p1e_deconfounded_manifest_v1",
+            "schema_version": f"heat3d_v6_{phase}_manifest_v1",
             "dataset_id": config["dataset_id"], "config": str(config_path.relative_to(ROOT)),
             "config_sha256": core.sha256(config_path), "sample_count": len(cases), "samples": manifest_rows,
             "guardrails": {"temperature_filtered_samples": 0, "sample_replacements": 0, "training_runs": 0, "model_inference_runs": 0},
@@ -340,7 +354,7 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
     peaks = np.asarray([float(row["peak_deltaT_K"]) for row in sample_rows])
     factors = np.asarray([[float(row[key]) for key in ("top_h_W_m2K", "bottom_h_W_m2K", "package_total_power_W")] for row in sample_rows])
     audit = {
-        "schema_version": "heat3d_v6_p1e_deconfounded_audit_v1", "dataset_id": config["dataset_id"],
+        "schema_version": f"heat3d_v6_{phase}_audit_v1", "dataset_id": config["dataset_id"],
         "dataset_path": str(dataset.relative_to(ROOT)), "dataset_manifest_sha256": core.sha256(dataset / "manifest.json"),
         "sample_count": len(sample_rows), "source_count": len(source_rows),
         "window_hit_count": int(np.sum((peaks >= 30.0) & (peaks <= 80.0))),

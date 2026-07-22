@@ -1,0 +1,198 @@
+{
+  "config": "configs/heat3d_v6/v6_p1f_temperature_shaping_pilot128.yaml",
+  "dataset": "data/heat3d_v6_p1f_temperature_shaping_pilot128_v0",
+  "dataset_id": "heat3d_v6_p1f_temperature_shaping_pilot128_v0",
+  "factor_correlations": {
+    "pilot_only": {
+      "BC_power_max_abs_pearson": 0.0,
+      "BC_power_max_abs_spearman": 0.0,
+      "factor_names": [
+        "top_h_W_m2K",
+        "bottom_h_W_m2K",
+        "package_total_power_W"
+      ],
+      "pearson": [
+        [
+          0.9999999999999999,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9999999999999999,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.9999999999999998
+        ]
+      ],
+      "spearman": [
+        [
+          0.9999999999999998,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9999999999999998,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.9999999999999998
+        ]
+      ]
+    }
+  },
+  "gate": {
+    "peak_deltaT_30_80_fraction_min": 0.8,
+    "peak_deltaT_above_100_fraction_max": 0.05,
+    "peak_deltaT_above_120_count_max": 0,
+    "peak_deltaT_below_30_count_max": 0
+  },
+  "gate_checks": {
+    "peak_deltaT_30_80": true,
+    "peak_deltaT_above_100": true,
+    "peak_deltaT_above_120": true,
+    "peak_deltaT_below_30": true
+  },
+  "gate_counts": {
+    "above_100": 0,
+    "above_120": 0,
+    "below_30": 0,
+    "in_30_80": 128
+  },
+  "gate_fractions": {
+    "above_100": 0.0,
+    "above_120": 0.0,
+    "below_30": 0.0,
+    "in_30_80": 1.0
+  },
+  "geometry_group_count": 16,
+  "guardrails": {
+    "model_inference_runs": 0,
+    "sample_replacement": false,
+    "temperature_filtering": false,
+    "training_runs": 0
+  },
+  "integrity": {
+    "checks": {
+      "BC_power_abs_correlation_le_1e_12": true,
+      "all_interfaces_covered": true,
+      "all_layers_covered": true,
+      "eight_orthogonal_cases_per_group": true,
+      "energy_balance_abs_le_1e_8": true,
+      "geometry_group_count_exact": true,
+      "group_split_lock": true,
+      "no_OOD_roles": true,
+      "no_training_or_inference": true,
+      "one_coordinate_set_per_group": true,
+      "q_guardrail": true,
+      "single_source_power_guardrail": true,
+      "source_control_volume_min_ge_128": true,
+      "source_in_plane_intervals_min_ge_7": true,
+      "surface_power_density_guardrail": true
+    },
+    "maximum_abs_energy_balance_relative_error": 1.202606694783448e-10,
+    "maximum_q_W_m3": 4667806267.806278,
+    "maximum_single_source_power_W": 3.0,
+    "maximum_surface_power_density_W_cm2": 53.01035621042151,
+    "minimum_source_control_volume_count": 297,
+    "minimum_source_in_plane_interval_count": 8
+  },
+  "pairwise_continuous_distribution": {},
+  "passed": true,
+  "peak_deltaT_K": {
+    "max": 75.91959047062988,
+    "median": 46.04424444022587,
+    "min": 30.09752400955597,
+    "q10": 32.25278918563712,
+    "q25": 40.12080724201385,
+    "q75": 59.57660433571235,
+    "q90": 65.15314660914514
+  },
+  "pilot_retention": {
+    "retained_in_final": false,
+    "role": "temperature_shaping_contract_qualification_only"
+  },
+  "sample_count": 128,
+  "schema_version": "heat3d_v6_p1f_qualification_v1",
+  "split_factor_distribution": {
+    "pilot_only": {
+      "aggregate_power_density_W_cm2": {
+        "max": 36.061248776070514,
+        "median": 20.72295737456689,
+        "min": 9.831506882860975,
+        "q10": 13.029513835742412,
+        "q25": 15.65676182859287,
+        "q75": 24.285442939584673,
+        "q90": 32.47923778576448
+      },
+      "bottom_h": {
+        "120.0": 0.5,
+        "20.0": 0.5
+      },
+      "geometry_group_count": 16,
+      "layout_kind": {
+        "clustered": 0.25,
+        "distributed": 0.25,
+        "edge_balanced": 0.25,
+        "mixed": 0.25
+      },
+      "material_profile": {
+        "logic_package_complete_B_fixed_materials_v1": 1.0
+      },
+      "peak_deltaT_K": {
+        "max": 75.91959047062988,
+        "median": 46.04424444022587,
+        "min": 30.09752400955597,
+        "q10": 32.25278918563712,
+        "q25": 40.12080724201385,
+        "q75": 59.57660433571235,
+        "q90": 65.15314660914514
+      },
+      "power": {
+        "4.0": 0.5,
+        "6.0": 0.5
+      },
+      "sample_count": 128,
+      "source_count": {
+        "10": 0.125,
+        "3": 0.125,
+        "4": 0.125,
+        "5": 0.125,
+        "6": 0.125,
+        "7": 0.125,
+        "8": 0.125,
+        "9": 0.125
+      },
+      "top_h": {
+        "1000.0": 0.5,
+        "1400.0": 0.5
+      },
+      "total_source_area_mm2": {
+        "max": 40.68552306028593,
+        "median": 24.522139579018322,
+        "min": 16.638358913353755,
+        "q10": 17.204774739162495,
+        "q25": 18.72486570102696,
+        "q75": 29.576514931776373,
+        "q90": 35.88780386079276
+      },
+      "upper_layer_power_fraction": {
+        "max": 0.62,
+        "median": 0.536681989589219,
+        "min": 0.4408801223134854,
+        "q10": 0.4731481408052569,
+        "q25": 0.5,
+        "q75": 0.56625936775029,
+        "q90": 0.5892157061118181
+      }
+    }
+  },
+  "stage": "pilot",
+  "whole_version_policy": "pass_whole_version_or_fail_and_revise_global_contract_no_local_patch"
+}
