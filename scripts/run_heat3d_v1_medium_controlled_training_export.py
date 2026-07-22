@@ -2488,15 +2488,20 @@ def _validate_graph_config(config: dict[str, Any]) -> None:
 
 
 def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
+    accumulation_enabled = bool(
+        batch_config.get("micro_batch_size") is not None
+        and batch_config.get("batch_size") is not None
+        and int(batch_config["micro_batch_size"]) < int(batch_config["batch_size"])
+    )
     return {
         "batch_size": batch_config["batch_size"],
         "configured_batch_size": batch_config["batch_size"],
         "effective_batch_size": batch_config["batch_size"],
         "micro_batch_size": batch_config.get("micro_batch_size"),
-        "gradient_accumulation_enabled": batch_config.get("micro_batch_size") is not None,
+        "gradient_accumulation_enabled": accumulation_enabled,
         "gradient_accumulation_weighting": (
             "sample_count_weighted_mean"
-            if batch_config.get("micro_batch_size") is not None else "none"
+            if accumulation_enabled else "none"
         ),
         "validation_batch_size": batch_config["validation_batch_size"],
         "prediction_batch_size": batch_config["prediction_batch_size"],
@@ -3888,7 +3893,9 @@ def _fit_once(
     )
     effective_batch_size = int(batch_config.get("batch_size") or 0)
     accumulation_enabled = bool(
-        batch_enabled and batch_config.get("micro_batch_size") is not None
+        batch_enabled
+        and batch_config.get("micro_batch_size") is not None
+        and int(batch_config["micro_batch_size"]) < effective_batch_size
     )
     initial_update_windows = (
         _gradient_accumulation_windows(train_groups, effective_batch_size)

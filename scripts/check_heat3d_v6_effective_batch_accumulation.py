@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for the V6 padded-geometry effective-B24 contract."""
+"""Regression checks for the V6 padded-geometry native-B24 contract."""
 
 from __future__ import annotations
 
@@ -34,11 +34,11 @@ def _group(count: int) -> dict[str, np.ndarray]:
 
 
 def _effective_windows() -> list[list[dict[str, np.ndarray]]]:
-    micro_groups = [_group(8) for _ in range(96)]
-    return runner._gradient_accumulation_windows(micro_groups, 24)
+    batches = [_group(24) for _ in range(32)]
+    return runner._gradient_accumulation_windows(batches, 24)
 
 
-def _gradient_equivalence() -> dict[str, float]:
+def _single_batch_numerics() -> dict[str, float]:
     x = jnp.arange(24 * 3, dtype=jnp.float32).reshape(24, 3) / 50.0
     y = jnp.sin(jnp.arange(24, dtype=jnp.float32) / 7.0)
     params = jnp.asarray([0.2, -0.1, 0.05], dtype=jnp.float32)
@@ -48,17 +48,6 @@ def _gradient_equivalence() -> dict[str, float]:
         return jnp.mean(jnp.square(residual))
 
     full_loss, full_grad = jax.value_and_grad(loss_fn)(params, x, y)
-    weighted_loss = jnp.asarray(0.0)
-    weighted_grad = jnp.zeros_like(params)
-    for start in (0, 8, 16):
-        micro_loss, micro_grad = jax.value_and_grad(loss_fn)(
-            params, x[start : start + 8], y[start : start + 8]
-        )
-        weighted_loss += micro_loss * 8
-        weighted_grad += micro_grad * 8
-    accumulated_loss = weighted_loss / 24.0
-    accumulated_grad = weighted_grad / 24.0
-
     clip_norm = 0.25
 
     def clip_once(grad):
@@ -66,13 +55,10 @@ def _gradient_equivalence() -> dict[str, float]:
         return grad * jnp.minimum(1.0, clip_norm / jnp.maximum(norm, 1.0e-12))
 
     full_update = -1.0e-3 * clip_once(full_grad)
-    accumulated_update = -1.0e-3 * clip_once(accumulated_grad)
     return {
-        "loss_abs_error": float(jnp.abs(full_loss - accumulated_loss)),
-        "gradient_max_abs_error": float(jnp.max(jnp.abs(full_grad - accumulated_grad))),
-        "clipped_update_max_abs_error": float(
-            jnp.max(jnp.abs(full_update - accumulated_update))
-        ),
+        "loss": float(full_loss),
+        "gradient_norm": float(jnp.linalg.norm(full_grad)),
+        "clipped_update_norm": float(jnp.linalg.norm(full_update)),
     }
 
 
@@ -88,9 +74,9 @@ def _padding_contract() -> dict[str, object]:
             continue
         selected.append(example)
         groups.add(group_id)
-        if len(selected) == 8:
+        if len(selected) == 24:
             break
-    assert len(selected) == 8 and len(groups) == 8
+    assert len(selected) == 24 and len(groups) == 24
     builder = Heat3DGraphBuilder(
         node_coordinate_encoding="raw",
         node_coordinate_freqs=4,
@@ -107,7 +93,7 @@ def _padding_contract() -> dict[str, object]:
     padded, shared = runner._build_batch_metadata_with_seed(
         builder, coords, graph_seed=0
     )
-    assert shared is False and len(padded) == 8
+    assert shared is False and len(padded) == 24
     edge_fields = (
         "p2r_edge_indices",
         "r2r_edge_indices",
@@ -123,7 +109,7 @@ def _padding_contract() -> dict[str, object]:
         target = max(int(value.shape[1]) for value in source_values)
         target_lengths[field] = target
         packed = np.asarray(getattr(padded, field))
-        assert packed.shape[0] == 8 and packed.shape[1] == target
+        assert packed.shape[0] == 24 and packed.shape[1] == target
         for row, source in enumerate(source_values):
             raw = np.asarray(source)[0]
             assert np.array_equal(packed[row, : raw.shape[0]], raw)
@@ -137,8 +123,8 @@ def _padding_contract() -> dict[str, object]:
         if np.issubdtype(np.asarray(value).dtype, np.number)
     )
     return {
-        "sample_count": 8,
-        "distinct_geometry_groups": 8,
+        "sample_count": 24,
+        "distinct_geometry_groups": 24,
         "shared_metadata": shared,
         "real_edges_preserved_exactly": True,
         "padding_edges_are_repeated_dummy_edges": True,
@@ -148,6 +134,21 @@ def _padding_contract() -> dict[str, object]:
 
 
 def main() -> None:
+    payload = runner._batch_config_payload(
+        {
+            "batch_size": 24,
+            "micro_batch_size": 24,
+            "validation_batch_size": 32,
+            "prediction_batch_size": 32,
+            "shuffle_train_batches": True,
+            "epoch_wise_batch_regrouping": False,
+            "drop_last": False,
+            "batch_plan": "sample_shuffle",
+            "batch_build_seed": 0,
+        }
+    )
+    assert payload["gradient_accumulation_enabled"] is False
+    assert payload["gradient_accumulation_weighting"] == "none"
     windows = _effective_windows()
     window_counts = [
         sum(runner._sample_count(group) for group in window) for window in windows
@@ -157,14 +158,12 @@ def main() -> None:
     ]
     assert window_counts == [24] * 32
     assert sum(window_counts) == 768
-    assert micro_counts == [8] * 96
+    assert micro_counts == [24] * 32
     assert len(windows) == 32
-    assert all(len(window) == 3 for window in windows)
+    assert all(len(window) == 1 for window in windows)
 
-    numerical = _gradient_equivalence()
-    assert numerical["loss_abs_error"] <= 1.0e-6
-    assert numerical["gradient_max_abs_error"] <= 1.0e-6
-    assert numerical["clipped_update_max_abs_error"] <= 1.0e-9
+    numerical = _single_batch_numerics()
+    assert all(np.isfinite(value) and value > 0.0 for value in numerical.values())
     padding = _padding_contract()
 
     config_contract = {}
@@ -173,17 +172,18 @@ def main() -> None:
         run = payload["overrides"]["run"]
         metadata = payload["overrides"]["metadata"]
         assert run["batch_size"] == 24
-        assert run["micro_batch_size"] == 8
+        assert run["micro_batch_size"] == 24
         assert run["drop_last"] is False
-        assert metadata["micro_batches_per_epoch"] == 96
+        assert metadata["micro_batches_per_epoch"] == 32
         assert metadata["optimizer_updates_per_epoch"] == 32
         assert metadata["final_partial_effective_batch_size"] is None
         assert metadata["cross_geometry_dummy_edge_padding"] is True
+        assert metadata["b24_execution_mode"] == "one_real_B24_forward_backward_per_update"
         config_contract[path.stem] = {
             "configured_batch_size": 24,
             "effective_batch_size": 24,
-            "micro_batch_size": 8,
-            "micro_batches_per_epoch": 96,
+            "micro_batch_size": 24,
+            "micro_batches_per_epoch": 32,
             "optimizer_updates_per_epoch": 32,
             "tail_effective_batch_size": None,
         }
@@ -197,10 +197,11 @@ def main() -> None:
                 "window_sample_counts": window_counts,
                 "micro_batch_count": len(micro_counts),
                 "micro_batch_sample_counts_unique": sorted(set(micro_counts)),
-                "tail_policy": "none_exact_768_divisible_by_24_and_8",
-                "gradient_accumulation": "3xB8_sample_count_weighted_mean",
-                "gradient_clipping": "once_after_accumulation",
-                "numerical_equivalence": numerical,
+                "tail_policy": "none_exact_768_divisible_by_24",
+                "forward_backward": "one_real_B24_per_optimizer_update",
+                "gradient_accumulation": "disabled_micro_equals_effective_batch",
+                "gradient_clipping": "once_per_B24_optimizer_update",
+                "single_batch_numerics": numerical,
                 "cross_geometry_padding": padding,
                 "configs": config_contract,
             },

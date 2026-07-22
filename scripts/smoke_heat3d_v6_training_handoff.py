@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one real canonical V6 3xB8 -> B24 update without saving state."""
+"""Run one real canonical V6 B24 forward/backward/update without saving state."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import sys
 from unittest.mock import patch
 
 import jax
-import jax.numpy as jnp
 import numpy as np
 import yaml
 
@@ -92,13 +91,12 @@ def smoke(config_path: Path) -> dict:
     batch_examples = [train_examples[int(index)] for index in order]
     groups = [
         runner._make_batch_group_with_seed(
-            f"v6_real_B24_micro_{micro_index + 1}_B8",
-            batch_examples[micro_index * 8 : (micro_index + 1) * 8],
+            "v6_real_native_B24",
+            batch_examples,
             stats,
             builder,
             graph_seed=0,
         )
-        for micro_index in range(3)
     ]
     examples_by_id = {example.sample_id: example for example in batch_examples}
     global_lookup, context_payload = runner._prepare_global_context_lookup(
@@ -131,25 +129,12 @@ def smoke(config_path: Path) -> dict:
 
     key = jax.random.PRNGKey(1) if float(model_config.get("p_edge_masking", 0.0)) > 0 else None
 
-    weighted_loss = jnp.asarray(0.0)
-    weighted_gradients = jax.tree_util.tree_map(jnp.zeros_like, params)
-    for group in groups:
-        def objective(current_params):
-            return runner._loss_components(
-                model, current_params, [group], stats, loss_config, key=key
-            )["total_loss"]
+    def objective(current_params):
+        return runner._loss_components(
+            model, current_params, groups, stats, loss_config, key=key
+        )["total_loss"]
 
-        micro_loss, micro_gradients = jax.value_and_grad(objective)(params)
-        weighted_loss += micro_loss * 8
-        weighted_gradients = jax.tree_util.tree_map(
-            lambda total, value: total + value * 8,
-            weighted_gradients,
-            micro_gradients,
-        )
-    loss = weighted_loss / 24.0
-    gradients = jax.tree_util.tree_map(
-        lambda value: value / 24.0, weighted_gradients
-    )
+    loss, gradients = jax.value_and_grad(objective)(params)
     jax.block_until_ready(loss)
     import optax
 
@@ -179,8 +164,8 @@ def smoke(config_path: Path) -> dict:
         "config_id": config["config_id"],
         "canonical_dataset_id": config["dataset"]["name"],
         "configured_batch_size": 24,
-        "micro_batch_size": 8,
-        "micro_batch_count": 3,
+        "micro_batch_size": 24,
+        "micro_batch_count": 1,
         "realized_effective_batch_size": len(batch_examples),
         "distinct_geometry_group_count": len(
             {example.meta["group_id"] for example in batch_examples}

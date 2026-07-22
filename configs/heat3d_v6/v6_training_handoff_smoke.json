@@ -1,13 +1,13 @@
 {
-  "schema_version": "heat3d_v6_training_handoff_smoke_v2",
+  "schema_version": "heat3d_v6_training_handoff_smoke_v3",
   "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
   "environment": "local JAX CPU",
   "checkpoint_saved": false,
   "training_started": false,
   "graph_batching": {
     "configured_effective_batch_size": 24,
-    "micro_batch_size": 8,
-    "micro_batches_per_update": 3,
+    "micro_batch_size": 24,
+    "micro_batches_per_update": 1,
     "policy": "shuffle_then_cross_geometry_dummy_edge_padding",
     "realized_effective_batch_size": 24,
     "distinct_geometry_groups_in_smoke": 21,
@@ -20,8 +20,8 @@
       "config_id": "V6_01_V4best",
       "node_count": 1024,
       "parameter_count": 832550,
-      "loss": 1.12175714969635,
-      "global_gradient_norm": 6.742719482049481,
+      "loss": 1.1217572689056396,
+      "global_gradient_norm": 6.742719460138218,
       "finite_forward_backward": true,
       "adamw_update_finite": true,
       "global_context_fit_population": null,
@@ -32,8 +32,8 @@
       "config_id": "V6_02_V5best",
       "node_count": 1024,
       "parameter_count": 893736,
-      "loss": 16.25860023498535,
-      "global_gradient_norm": 416.7452396755006,
+      "loss": 16.25509262084961,
+      "global_gradient_norm": 416.61889702402635,
       "finite_forward_backward": true,
       "adamw_update_finite": true,
       "global_context_fit_population": "train_only",
@@ -41,5 +41,5 @@
       "peak_bytes_in_use": null
     }
   ],
-  "note": "One real 3xB8 to B24 optimizer update only; no epoch, checkpoint, or model-performance claim."
+  "note": "One real native-B24 forward/backward and optimizer update only; no epoch, checkpoint, or model-performance claim."
 }

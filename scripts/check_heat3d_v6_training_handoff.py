@@ -116,7 +116,7 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
     assert candidate["dataset"]["loader"] == "v6_dual_robin_manifest_v1"
     assert candidate["dataset"]["split_map_path"] is None
     assert candidate["run"]["batch_size"] == 24
-    assert candidate["run"]["micro_batch_size"] == 8
+    assert candidate["run"]["micro_batch_size"] == 24
     assert candidate["run"]["validation_batch_size"] == 32
     assert candidate["run"]["prediction_batch_size"] == 32
     assert candidate["run"]["drop_last"] is False
@@ -126,10 +126,11 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
     assert candidate["metadata"]["training_started"] is False
     assert candidate["metadata"]["configured_batch_size"] == 24
     assert candidate["metadata"]["effective_batch_size"] == 24
-    assert candidate["metadata"]["micro_batches_per_epoch"] == 96
+    assert candidate["metadata"]["micro_batches_per_epoch"] == 32
     assert candidate["metadata"]["optimizer_updates_per_epoch"] == 32
     assert candidate["metadata"]["final_partial_effective_batch_size"] is None
     assert candidate["metadata"]["cross_geometry_dummy_edge_padding"] is True
+    assert candidate["metadata"]["b24_execution_mode"] == "one_real_B24_forward_backward_per_update"
     if config_id == "V6_02_V5best":
         assert candidate["export"]["selection_metric"] == "valid_rel_rmse_v4_pct"
     validate_v2_config(candidate, config_path=CONFIGS[config_id][0])
@@ -143,8 +144,8 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
         "epochs_equal": True,
         "selection_metric_equal": True,
         "effective_batch_size": 24,
-        "micro_batch_size": 8,
-        "micro_batches_per_epoch": 96,
+        "micro_batch_size": 24,
+        "micro_batches_per_epoch": 32,
         "optimizer_updates_per_epoch": 32,
         "tail_effective_batch_size": None,
         "resolved_diff_paths": diff_paths,
@@ -205,15 +206,18 @@ def main() -> int:
 
     baseline_diff = json.loads(BASELINE_DIFF_REPORT.read_text(encoding="utf-8"))
     adaptation = baseline_diff["common_runtime_overrides"]
-    assert adaptation["unique_new_training_adaptation"] == "effective_B24_3xB8_no_geometry_split"
+    assert adaptation["unique_new_training_adaptation"] == "native_B24_single_forward_backward_no_geometry_split"
     assert adaptation["batch_adaptation_diff_paths"] == [
         "run.batch_size",
+        "run.micro_batch_size",
         "metadata.configured_batch_size",
         "metadata.effective_batch_size",
+        "metadata.graph_compatible_micro_batch_size",
         "metadata.micro_batches_per_epoch",
         "metadata.optimizer_updates_per_epoch",
         "metadata.final_partial_effective_batch_size",
         "metadata.cross_geometry_dummy_edge_padding",
+        "metadata.b24_execution_mode",
     ]
 
     report = {

@@ -72,7 +72,9 @@ def main() -> int:
         formal = _resolved(path)
         assert formal["run"]["epochs"] == 600
         assert formal["run"]["batch_size"] == 24
-        assert formal["run"]["micro_batch_size"] == 8
+        # The report is the immutable historical 3xB8 preflight.  The current
+        # formal contract has since moved to one native B24 forward/backward.
+        assert formal["run"]["micro_batch_size"] == 24
         assert formal["run"]["validation_batch_size"] == 32
         assert formal["run"]["prediction_batch_size"] == 32
         assert formal["run"]["drop_last"] is False

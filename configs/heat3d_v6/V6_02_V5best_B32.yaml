@@ -8,6 +8,7 @@ overrides:
     form each B32 optimizer update.
   run:
     batch_size: 32
+    micro_batch_size: 8
   export:
     output_dir: output/heat3d_v6_runs/V6_02_V5best_B32
     run_name: V6_02_V5best_B32
@@ -18,7 +19,9 @@ overrides:
     log_path: output/heat3d_v6_logs/V6_02_V5best_B32.log
     configured_batch_size: 32
     effective_batch_size: 32
+    graph_compatible_micro_batch_size: 8
     micro_batches_per_epoch: 96
     optimizer_updates_per_epoch: 24
     final_partial_effective_batch_size: null
     micro_batches_per_optimizer_update: 4
+    b24_execution_mode: null

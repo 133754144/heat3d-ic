@@ -41,12 +41,12 @@ ambient, not a fixed bottom surface temperature. There is no Dirichlet
 projection; the native branch uses an all-zero projection mask.
 
 P1g's 1024 points are irregular and frozen per geometry group. Runtime batching
-uses exact B8 microbatches across geometries. Within each B8, only the existing
-dummy graph edge is repeated to pad edge tensors to the batch maximum; all real
-nodes and edges remain unchanged. Three B8 gradients form one sample-weighted
-effective B24 gradient, followed by one clipping operation and one AdamW
-update. With train=768 and `drop_last=false`, every epoch is exactly 96 B8
-microbatches and 32 B24 updates, with no B4/B12 or geometry-based split.
+uses one real B24 graph batch per optimizer update. Within each B24, only the
+existing dummy graph edge is repeated to pad edge tensors to the batch maximum;
+all real nodes and edges remain unchanged. One B24 forward/backward is followed
+by one clipping operation and one AdamW update. With train=768 and
+`drop_last=false`, every epoch is exactly 32 B24 batches and 32 updates, with no
+tail batch or geometry-based split.
 
 V6's Global FiLM context retains 24 dimensions. V5 positions 18--20 are
 replaced by `log_bottom_h_W_m2K`, `top_T_inf_K`, and `bottom_T_inf_K`; all
@@ -62,7 +62,8 @@ model, loss, optimizer, graph, epoch, seed, or selection-metric change.
 `configs/heat3d_v5/V4P5_42_canonical.yaml`; its only model metadata difference
 is the dimension-preserving V6 Global Context schema.
 
-Both use random initialization, effective B24/B32/B32, `drop_last=false`, and
+Both use random initialization, train/validation/prediction B24/B32/B32,
+`drop_last=false`, and
 600 epochs. V6_01 preserves `valid_base_mse`; V6_02 preserves canonical
 `valid_rel_rmse_v4_pct` (point-global true-RMS relative RMSE). Old final-probe,
 post-training legacy diagnostics, and baseline comparison are disabled.
@@ -182,3 +183,14 @@ started. Frozen evidence and its checker are:
 
 - `configs/heat3d_v6/v6_b32_e5_gate_closeout.json`
 - `scripts/check_heat3d_v6_b32_e5_gate_closeout.py`
+
+## Native-B24 launch amendment
+
+The active formal configs now set `batch_size=24` and `micro_batch_size=24`.
+This replaces the historical `3 x B8` implementation with 32 real B24
+forward/backward passes and 32 optimizer updates per epoch. Model, loss,
+optimizer, LR schedule, epochs, graph settings, seeds, selection metric,
+validation/prediction B32, and `drop_last=false` remain unchanged. Historical
+B8 and B32 preflight artifacts above remain immutable evidence; the native-B24
+preflight uses new output directories and is the only launch gate for the
+current formal configs.

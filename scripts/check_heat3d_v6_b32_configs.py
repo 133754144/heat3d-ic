@@ -76,7 +76,7 @@ def main() -> int:
         validate_v2_config(e5, config_path=e5_path)
         left = _scientific_payload(b24)
         right = _scientific_payload(b32)
-        assert _leaf_diffs(left, right) == ["run.batch_size"]
+        assert _leaf_diffs(left, right) == ["run.batch_size", "run.micro_batch_size"]
         assert b32["run"]["batch_size"] == 32
         assert b32["run"]["micro_batch_size"] == 8
         assert b32["run"]["validation_batch_size"] == 32
@@ -99,7 +99,7 @@ def main() -> int:
         reports.append(
             {
                 "config_id": config_id,
-                "scientific_diff_paths": ["run.batch_size"],
+                "scientific_diff_paths": ["run.batch_size", "run.micro_batch_size"],
                 "micro_batch_size": 8,
                 "micro_batches_per_epoch": 96,
                 "micro_batches_per_update": 4,

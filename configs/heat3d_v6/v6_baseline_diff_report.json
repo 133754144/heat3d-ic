@@ -7,8 +7,8 @@
     "bc_adapter": "dual_robin_top_bottom_v1",
         "batch_size": 24,
         "effective_batch_size": 24,
-        "graph_compatible_micro_batch_size": 8,
-        "micro_batches_per_epoch": 96,
+        "graph_compatible_micro_batch_size": 24,
+        "micro_batches_per_epoch": 32,
         "optimizer_updates_per_epoch": 32,
         "final_partial_effective_batch_size": null,
         "cross_geometry_dummy_edge_padding": true,
@@ -18,15 +18,18 @@
     "random_initialization": true,
     "final_probe_enabled": false,
         "legacy_baseline_comparison_enabled": false,
-        "unique_new_training_adaptation": "effective_B24_3xB8_no_geometry_split",
+        "unique_new_training_adaptation": "native_B24_single_forward_backward_no_geometry_split",
         "batch_adaptation_diff_paths": [
             "run.batch_size",
+            "run.micro_batch_size",
             "metadata.configured_batch_size",
             "metadata.effective_batch_size",
+            "metadata.graph_compatible_micro_batch_size",
             "metadata.micro_batches_per_epoch",
             "metadata.optimizer_updates_per_epoch",
             "metadata.final_partial_effective_batch_size",
-            "metadata.cross_geometry_dummy_edge_padding"
+            "metadata.cross_geometry_dummy_edge_padding",
+            "metadata.b24_execution_mode"
         ]
   },
   "configs": [

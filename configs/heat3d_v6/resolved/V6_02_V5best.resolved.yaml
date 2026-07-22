@@ -177,7 +177,7 @@ run:
   epochs: 600
   batching: mini_batch
   batch_size: 24
-  micro_batch_size: 8
+  micro_batch_size: 24
   validation_batch_size: 32
   prediction_batch_size: 32
   batch_plan: sample_shuffle
@@ -280,9 +280,10 @@ metadata:
   bottom_boundary_semantics: robin_not_fixed_temperature
   configured_batch_size: 24
   effective_batch_size: 24
-  graph_compatible_micro_batch_size: 8
-  micro_batches_per_epoch: 96
+  graph_compatible_micro_batch_size: 24
+  micro_batches_per_epoch: 32
   optimizer_updates_per_epoch: 32
   final_partial_effective_batch_size: null
   cross_geometry_dummy_edge_padding: true
+  b24_execution_mode: one_real_B24_forward_backward_per_update
 config_id: V6_02_V5best

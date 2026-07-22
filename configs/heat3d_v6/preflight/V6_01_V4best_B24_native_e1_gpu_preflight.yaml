@@ -1,0 +1,23 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_01_V4best_B24_native_e1_gpu_preflight
+extends: ../V6_01_V4best.yaml
+overrides:
+  run:
+    epochs: 1
+    report_every: 1
+    train_metrics_schedule: final_only
+    grad_norm_report_every: 1
+    profile_timing: true
+    profile_timing_json: output/heat3d_v6_preflight/V6_01_V4best_B24_native_e1/profile_timing.json
+    memory_audit_jsonl: output/heat3d_v6_preflight/V6_01_V4best_B24_native_e1/memory_audit.jsonl
+    memory_audit_every_batch: true
+    memory_audit_gc: false
+  export:
+    output_dir: output/heat3d_v6_preflight/V6_01_V4best_B24_native_e1
+    run_name: V6_01_V4best_B24_native_e1_gpu_preflight
+  metadata:
+    phase: v6_training_handoff_gpu_preflight
+    formal_training_started: false
+    preflight_only: true
+    batching_adaptation: native_B24_single_forward_backward
+    assigned_host: wsl2
