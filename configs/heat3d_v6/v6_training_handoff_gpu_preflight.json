@@ -1,0 +1,307 @@
+{
+  "schema_version": "heat3d_v6_two_host_gpu_preflight_v1",
+  "status": "passed",
+  "formal_training_started": false,
+  "e600_started": false,
+  "roles_materialized": [
+    "train",
+    "valid_iid"
+  ],
+  "forbidden_roles_materialized": [],
+  "dataset": {
+    "id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+    "manifest_sha256": "e5329d5cd6253510d87a4432d5f2ddae67259637810c29fdfb6ddf42621875a4",
+    "split_counts": {
+      "test_iid": 128,
+      "train": 768,
+      "valid_iid": 128
+    },
+    "group_locked": true,
+    "node_count": 1024,
+    "bottom_boundary_semantics": "robin_not_fixed_temperature"
+  },
+  "effective_batch": {
+    "configured": 28,
+    "effective": 28,
+    "micro_max": 8,
+    "updates_per_epoch": 28,
+    "tail": 12
+  },
+  "runs": {
+    "V6_01_V4best": {
+      "status": "passed_recovered_post_export",
+      "host": "devbox",
+      "training_commit": "275cfc9",
+      "recovery_commit": "04b7c42",
+      "config": "configs/heat3d_v6/preflight/V6_01_V4best_e1_gpu_preflight.yaml",
+      "output_dir": "output/heat3d_v6_preflight/V6_01_V4best_e1_r2",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_01_V4best_e1_r2.log",
+      "recovery_output": "output/heat3d_v6_preflight_recovery/V6_01_V4best_e1_r2_legacy_r2/reload_recovery.json",
+      "epochs": 1,
+      "random_initialization": true,
+      "node_count": 1024,
+      "sample_counts": {
+        "train": 768,
+        "valid_iid": 128
+      },
+      "group_counts": {
+        "train": 110,
+        "valid_iid": 16,
+        "test_iid": 0,
+        "all": 0
+      },
+      "optimizer_updates": 28,
+      "effective_batch_sample_counts": [
+        28, 28, 28, 28, 28, 28, 28, 28, 12, 28, 28, 28, 28, 28,
+        28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28
+      ],
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "device": {
+        "platform": "gpu",
+        "peak_memory_mb": 2569.2861328125,
+        "memory_limit_mb": 9169.921875,
+        "peak_rss_mb": 5859.71484375
+      },
+      "timing": {
+        "group_build_s": 264.15730073000304,
+        "initial_loss_s": 340.74333018402103,
+        "epoch_s": 1270.816275228979,
+        "first_update_s": 64.47790885099676,
+        "steady_update_median_s": 29.992481858003885
+      },
+      "xla_graph_evidence": {
+        "train_shape_signature_count": 96,
+        "graph_metadata_build_calls": 256,
+        "graph_build_graphs_calls": 16
+      },
+      "engineering_metrics_not_for_model_selection": {
+        "valid_base_mse": 0.7617436721920967,
+        "valid_point_global_true_rms_relative_rmse_pct": 24.499512861838756,
+        "valid_raw_rmse_K": 10.303761311193623
+      },
+      "run_config_sha256": "693db3baa4fee4d2b9b017b5f5a53499c60680945d316ecee4964ed924f83d65",
+      "loss_summary_sha256": "3971c73e884922b8b548b13118d573a7540930ab78a1f08e93dfaaabdf8ece10",
+      "memory_audit_sha256": "d95d039f943812d41afc3e6b88c9eb5e0332b6cc9bfe1fc22c0fe0a23b0078b0",
+      "global_context": {
+        "enabled": false,
+        "mode": "none"
+      },
+      "artifacts": {
+        "final": {
+          "checkpoint": "output/heat3d_v6_preflight/V6_01_V4best_e1_r2/params_final.pkl",
+          "checkpoint_sha256": "da4668ceb75ede7f5b5864c00edef8ab6017df7320dd0a247b63f17051bcfc33",
+          "predictions": "output/heat3d_v6_preflight/V6_01_V4best_e1_r2/predictions.npz",
+          "predictions_sha256": "cdd3dc5d2a5c5edb95f21b7d2148e42d4638d6da30043ecd4c6bd35c6d9a92f7"
+        },
+        "legacy_best": {
+          "checkpoint": "output/heat3d_v6_preflight/V6_01_V4best_e1_r2/params_best.pkl",
+          "checkpoint_sha256": "316190aba995092f5ec4a84b435c7ca75bab7a5f6c7ab15a7ac1736d628c71cc",
+          "predictions": "output/heat3d_v6_preflight/V6_01_V4best_e1_r2/best_predictions.npz",
+          "predictions_sha256": "698b5225ffb0de1c5cd606c740b24e07dbb3ca32e1365733764224830991b875"
+        }
+      },
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {
+            "label": "final",
+            "parameter_reload_max_abs_error": 0.0,
+            "checkpoint_reload_max_abs_error_K": 0.017852783203125,
+            "checkpoint_reload_rmse_K": 0.0016761187910520165,
+            "npz_reload_max_abs_error_K": 0.0,
+            "max_abs_tolerance_K": 0.1,
+            "rmse_tolerance_K": 0.01,
+            "passed": true
+          },
+          {
+            "label": "legacy_best",
+            "parameter_reload_max_abs_error": 0.0,
+            "checkpoint_reload_max_abs_error_K": 0.015380859375,
+            "checkpoint_reload_rmse_K": 0.0016714567042612203,
+            "npz_reload_max_abs_error_K": 0.0,
+            "max_abs_tolerance_K": 0.1,
+            "rmse_tolerance_K": 0.01,
+            "passed": true
+          }
+        ]
+      },
+      "failed_attempts_preserved": [
+        {
+          "output_dir": "output/heat3d_v6_preflight/V6_01_V4best_e1",
+          "log_path": "output/heat3d_v6_preflight_logs/V6_01_V4best_e1.log",
+          "reason": "legacy baseline omitted optional native raw_cv_weighted_rmse_K",
+          "preserved": true
+        },
+        {
+          "output_dir": "output/heat3d_v6_preflight_recovery/V6_01_V4best_e1_r2",
+          "log_path": "output/heat3d_v6_preflight_logs/V6_01_V4best_e1_reload_recovery.log",
+          "reason": "recovery script attached native inputs to a legacy-output model",
+          "preserved": true
+        }
+      ]
+    },
+    "V6_02_V5best": {
+      "status": "passed_recovered_post_export",
+      "host": "wsl2",
+      "training_commit": "37c5a8a",
+      "recovery_commit": "26fea1d",
+      "config": "configs/heat3d_v6/preflight/V6_02_V5best_e1_gpu_preflight.yaml",
+      "output_dir": "output/heat3d_v6_preflight/V6_02_V5best_e1",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_02_V5best_e1.log",
+      "recovery_output": "output/heat3d_v6_preflight_recovery/V6_02_V5best_e1_r3/reload_recovery.json",
+      "epochs": 1,
+      "random_initialization": true,
+      "node_count": 1024,
+      "sample_counts": {
+        "train": 768,
+        "valid_iid": 128
+      },
+      "group_counts": {
+        "train": 110,
+        "valid_iid": 16,
+        "test_iid": 0,
+        "all": 0
+      },
+      "optimizer_updates": 28,
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "device": {
+        "platform": "gpu",
+        "peak_memory_mb": 2894.994384765625,
+        "memory_limit_mb": 9169.921875,
+        "peak_rss_mb": 6196.4296875
+      },
+      "timing": {
+        "group_build_s": 271.8224599000532,
+        "initial_loss_s": 392.326408714056,
+        "epoch_s": 1989.0636450860184,
+        "first_update_s": 104.98639265401289,
+        "steady_update_median_s": 40.35743393818848
+      },
+      "xla_graph_evidence": {
+        "train_shape_signature_count": 96,
+        "graph_metadata_build_calls": 256,
+        "graph_build_graphs_calls": 16
+      },
+      "engineering_metrics_not_for_model_selection": {
+        "valid_base_mse": 2.0971751734614372,
+        "valid_point_global_true_rms_relative_rmse_pct": 40.650925573075746,
+        "valid_sample_first_cv_relative_rmse_pct": 42.398970015347004,
+        "valid_raw_cv_weighted_rmse_K": 17.045240938663483
+      },
+      "run_config_sha256": "3885118b4f8312f50d79079a8db007d599d409b09b6b8587ea147b1e535077e5",
+      "loss_summary_sha256": "50d8d9317834ec1da14aeae8e55cf210191d04f3738175879bd1b88e3dd3ce8d",
+      "memory_audit_sha256": "9e98996cb6fea3fe3f99f1c3ae37264e45bf954d175955a702c4899a868c9f8d",
+      "global_context": {
+        "enabled": true,
+        "dimension": 24,
+        "fit_population": "train_only",
+        "fit_sample_count": 768,
+        "target_or_label_derived_inputs": false,
+        "qk_region_feature_version": "sparse_safe_v2"
+      },
+      "artifacts": {
+        "final": {
+          "checkpoint": "output/heat3d_v6_preflight/V6_02_V5best_e1/params_final.pkl",
+          "checkpoint_sha256": "01f37aa00ee7ac53bcd12bbc6be9be2463c0ed87bedaaf8254418150c9f231e4",
+          "predictions": "output/heat3d_v6_preflight/V6_02_V5best_e1/predictions.npz",
+          "predictions_sha256": "3eb88c6025b99f7dd1533cab5cab2df35267a9afa7c5534b8f69336f3a2c9711"
+        },
+        "legacy_best": {
+          "checkpoint": "output/heat3d_v6_preflight/V6_02_V5best_e1/params_best.pkl",
+          "checkpoint_sha256": "4a4122098fa8af03e4b5ae1eee2138cf9f7347b9ad273d7e67062fefc3dba496",
+          "predictions": "output/heat3d_v6_preflight/V6_02_V5best_e1/best_predictions.npz",
+          "predictions_sha256": "1af38b9286a7174cd3e1e068b9d81ff2de516fb3d6f544cf089cba4f48aa0a94"
+        },
+        "point_global_best": {
+          "checkpoint": "output/heat3d_v6_preflight/V6_02_V5best_e1/params_best_valid_point_global.pkl",
+          "checkpoint_sha256": "19db43f5aa52ca0d56559dc2e5627e374f8b9083cc39d3ce75f27e617864aeaa",
+          "predictions": "output/heat3d_v6_preflight/V6_02_V5best_e1/point_global_best_predictions.npz",
+          "predictions_sha256": "8a1ecb5ac50d5a7bf1206b9cffe927ebefc02b3cc78651c1321a1017592bcf5e"
+        },
+        "base_mse_best": {
+          "checkpoint": "output/heat3d_v6_preflight/V6_02_V5best_e1/params_best_valid_base_mse.pkl",
+          "checkpoint_sha256": "d9f468b1b93b63d2d1b17d226a7e24b031899912c77d826db3357dfae2693a27",
+          "predictions": "output/heat3d_v6_preflight/V6_02_V5best_e1/base_mse_best_predictions.npz",
+          "predictions_sha256": "77c2f45e3a3d1b9c4fa42e07e5912588e84327ffe9db356db8a0dbdd99371e73"
+        },
+        "sample_first_best": {
+          "checkpoint": "output/heat3d_v6_preflight/V6_02_V5best_e1/params_best_valid_sample_first.pkl",
+          "checkpoint_sha256": "3c487c08e7e5dace33a9ed66ffcdf368755df9570a4c7ee610ff9ac2f0cc46b9",
+          "predictions": "output/heat3d_v6_preflight/V6_02_V5best_e1/sample_first_best_predictions.npz",
+          "predictions_sha256": "4354a4f65a8c6e4a6cba7fe35b1ec3e9ffa4d90a49c5be816d48629b9c8305b6"
+        }
+      },
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {
+            "label": "final",
+            "parameter_reload_max_abs_error": 0.0,
+            "checkpoint_reload_max_abs_error_K": 0.0440673828125,
+            "checkpoint_reload_rmse_K": 0.00557827831318352,
+            "npz_reload_max_abs_error_K": 0.0,
+            "max_abs_tolerance_K": 0.1,
+            "rmse_tolerance_K": 0.01,
+            "passed": true
+          },
+          {
+            "label": "legacy_best",
+            "parameter_reload_max_abs_error": 0.0,
+            "checkpoint_reload_max_abs_error_K": 0.04095458984375,
+            "checkpoint_reload_rmse_K": 0.005573158327165518,
+            "npz_reload_max_abs_error_K": 0.0,
+            "max_abs_tolerance_K": 0.1,
+            "rmse_tolerance_K": 0.01,
+            "passed": true
+          },
+          {
+            "label": "point_global_best",
+            "parameter_reload_max_abs_error": 0.0,
+            "checkpoint_reload_max_abs_error_K": 0.0445556640625,
+            "checkpoint_reload_rmse_K": 0.0056156221176402185,
+            "npz_reload_max_abs_error_K": 0.0,
+            "max_abs_tolerance_K": 0.1,
+            "rmse_tolerance_K": 0.01,
+            "passed": true
+          },
+          {
+            "label": "base_mse_best",
+            "parameter_reload_max_abs_error": 0.0,
+            "checkpoint_reload_max_abs_error_K": 0.039581298828125,
+            "checkpoint_reload_rmse_K": 0.005606073497730423,
+            "npz_reload_max_abs_error_K": 0.0,
+            "max_abs_tolerance_K": 0.1,
+            "rmse_tolerance_K": 0.01,
+            "passed": true
+          },
+          {
+            "label": "sample_first_best",
+            "parameter_reload_max_abs_error": 0.0,
+            "checkpoint_reload_max_abs_error_K": 0.04620361328125,
+            "checkpoint_reload_rmse_K": 0.0055983439819592236,
+            "npz_reload_max_abs_error_K": 0.0,
+            "max_abs_tolerance_K": 0.1,
+            "rmse_tolerance_K": 0.01,
+            "passed": true
+          }
+        ]
+      },
+      "failed_attempts_preserved": [
+        {
+          "output_dir": "output/heat3d_v6_preflight/V6_02_V5best_e1",
+          "log_path": "output/heat3d_v6_preflight_logs/V6_02_V5best_e1.log",
+          "reason": "full e1/export completed; embedded replay used obsolete 0.02 K max-only tolerance",
+          "preserved": true
+        },
+        {
+          "output_dir": "output/heat3d_v6_preflight_recovery/V6_02_V5best_e1_r2",
+          "log_path": "output/heat3d_v6_preflight_logs/V6_02_V5best_e1_reload_recovery_r2.log",
+          "reason": "superseded recovery used bugged_v1 instead of frozen sparse_safe_v2 regional features",
+          "preserved": true
+        }
+      ]
+    }
+  }
+}

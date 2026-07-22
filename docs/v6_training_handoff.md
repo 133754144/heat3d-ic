@@ -71,6 +71,45 @@ Resolved configs:
 - `configs/heat3d_v6/resolved/V6_01_V4best.resolved.yaml`
 - `configs/heat3d_v6/resolved/V6_02_V5best.resolved.yaml`
 
+## Bounded two-host GPU preflight
+
+The preflight contract is one epoch only: V6_01 runs on `devbox` and V6_02
+runs on `wsl2`. It materializes only `train` and `valid_iid`; the manifest's
+test IDs are integrity-checked but are not graphed, predicted, or used for
+selection. These engineering results are not formal model-performance results
+and do not authorize an e600 launch.
+
+Checkpoint replay requires an exact deserialized parameter tree, an exact
+saved-prediction NPZ, a replay maximum absolute difference no greater than
+0.1 K, and a whole-field replay RMSE no greater than 0.01 K. The two floating
+point tolerances cover non-bitwise-deterministic GPU scatter/reduction order;
+the exact parameter and NPZ checks prevent a different checkpoint or saved
+prediction payload from being accepted. The recovery command is inference
+only and writes a new directory, leaving the original e1 outputs and failed
+attempt logs untouched.
+
+Frozen evidence and its checker:
+
+- `configs/heat3d_v6/v6_training_handoff_gpu_preflight.json`
+- `scripts/check_heat3d_v6_gpu_preflight.py`
+
+| Preflight | Host | Updates | Peak GPU memory | First / steady update | Reload max / RMSE |
+|---|---|---:|---:|---:|---:|
+| V6_01 V4 baseline | devbox | 28 | 2569.29 / 9169.92 MiB | 64.48 / 29.99 s | 0.01785 / 0.00168 K |
+| V6_02 V5 baseline | wsl2 | 28 | 2894.99 / 9169.92 MiB | 104.99 / 40.36 s | 0.04620 / 0.00562 K |
+
+Both runs used 1024 nodes, B28 effective updates from graph-compatible B8
+microbatches, and one retained B12 update; the B12 position may move under
+sample shuffling. Losses, gradients, updates, checkpoints, and prediction
+arrays were finite. V6_02's 24-dimensional context standardizer was fit on
+the 768 train samples only. No test graph or prediction was materialized.
+
+For engineering visibility only, the e1 valid point-global true-RMS relative
+RMSE was 24.4995% for V6_01 and 40.6509% for V6_02. These random-initialized
+one-epoch values must not be used to rank the migrated baselines. Earlier
+failed or superseded output and log directories remain on their source hosts;
+the JSON records their paths and reasons.
+
 Formal manual commands (prepared only, not executed):
 
 ```bash
