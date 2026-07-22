@@ -189,7 +189,13 @@ def main() -> int:
     )
     examples_by_id = {example.sample_id: example for example in valid_examples}
     runner._attach_native_physics_to_groups(groups, examples_by_id)
-    runner._attach_qk_region_features_to_groups(groups, examples_by_id)
+    runner._attach_qk_region_features_to_groups(
+        groups,
+        examples_by_id,
+        feature_version=str(
+            model_config.get("qk_region_feature_version", "bugged_v1")
+        ),
+    )
 
     model = runner.GraphNeuralOperator(**model_config)
     entries = []
