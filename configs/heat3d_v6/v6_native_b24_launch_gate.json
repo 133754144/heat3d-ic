@@ -1,0 +1,147 @@
+{
+  "schema_version": "heat3d_v6_native_b24_launch_gate_v1",
+  "status": "passed_ready_to_launch",
+  "formal_training_started": false,
+  "e600_started": false,
+  "preflight_commit": "89a6c2450d843b87dee5fe2da4db3dea528ceca6",
+  "dataset": {
+    "id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+    "manifest_sha256": "e5329d5cd6253510d87a4432d5f2ddae67259637810c29fdfb6ddf42621875a4",
+    "roles_materialized": ["train", "valid_iid"],
+    "forbidden_roles_materialized": [],
+    "node_count": 1024
+  },
+  "effective_batch": {
+    "batch_size": 24,
+    "micro_batch_size": 24,
+    "forward_backward_per_epoch": 32,
+    "optimizer_updates_per_epoch": 32,
+    "train_batch_start_count": 32,
+    "micro_batch_count_per_update_unique": [1],
+    "effective_sample_count_unique": [24],
+    "tail": null,
+    "geometry_split": false
+  },
+  "gate": {
+    "peak_allocator_fraction_limit": 0.9,
+    "both_passed": true,
+    "required": [
+      "completed_e1",
+      "32_real_B24_forward_backward",
+      "32_optimizer_updates",
+      "finite_loss_gradient_update",
+      "checkpoint_export_reload_passed",
+      "test_and_all_group_counts_zero",
+      "peak_allocator_fraction_at_most_0.9"
+    ]
+  },
+  "runs": {
+    "V6_01_V4best": {
+      "host": "wsl2",
+      "status": "passed_e1",
+      "config": "configs/heat3d_v6/preflight/V6_01_V4best_B24_native_e1_gpu_preflight.yaml",
+      "run_dir": "output/heat3d_v6_preflight/V6_01_V4best_B24_native_e1",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_01_V4best_B24_native_e1.log",
+      "runner_pid": 523565,
+      "epoch_time_s": 209.52772516198456,
+      "train_batch_count": 32,
+      "train_batch_start_count": 32,
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "test_iid_group_count": 0,
+      "all_groups_count": 0,
+      "device": {
+        "peak_allocator_memory_mb": 6887.658935546875,
+        "allocator_memory_limit_mb": 9169.921875,
+        "peak_allocator_fraction": 0.7511142438764643,
+        "peak_rss_mb": 5873.5859375
+      },
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {"label": "final", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.01708984375, "checkpoint_reload_rmse_K": 0.001610199470164482, "passed": true},
+          {"label": "best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.016998291015625, "checkpoint_reload_rmse_K": 0.0016280988481209813, "passed": true}
+        ]
+      },
+      "artifact_sha256": {
+        "params_final.pkl": "187e8f99fcc12f03dad8a6cc07c30478f770c3926d91b18e9f387d6b4a57d4ce",
+        "params_best.pkl": "338e3439e278bbfd37f544bf2391c6a3bbfc20d645ca223d4758250925b427db",
+        "predictions.npz": "bec6099967ae08cc04ed7e879549174969a559006537914b997b6470b2c91f7f",
+        "best_predictions.npz": "f3dbcc1e26de0631412e739d58e58642bc33fca06ee8cf94ff4bd8f4469ce68c"
+      },
+      "evidence_sha256": {
+        "run_config.json": "27e16147d135c76cd0055fc2c6ad539dd66d9d8342d16ffb06ade7295f95e157",
+        "loss_summary.json": "446940da59c26c09fc8a91df2d7809f7e0698dffd045af8110e880ed902e221d",
+        "profile_timing.json": "795152b3a28b9199e3b045b38508e71c2b33d83b774d0e18d363462d7220dc1e",
+        "memory_audit.jsonl": "90a1bc7bb7c51edc33dc87310988d1690486afe1b3d181111d2e04956f198a51",
+        "gpu_monitor.jsonl": "842ac3a1ebd986a78f9b390fa9d2a2c1989c711db5051ddc6bb0f53dfd60702f",
+        "log": "0c4a86da731253413fe397fa2a7886b3b93c719f711ba377be8eb301733aecae"
+      }
+    },
+    "V6_02_V5best": {
+      "host": "devbox",
+      "status": "passed_e1",
+      "config": "configs/heat3d_v6/preflight/V6_02_V5best_B24_native_e1_gpu_preflight.yaml",
+      "run_dir": "output/heat3d_v6_preflight/V6_02_V5best_B24_native_e1",
+      "log_path": "output/heat3d_v6_preflight_logs/V6_02_V5best_B24_native_e1.log",
+      "runner_pid": 374080,
+      "epoch_time_s": 347.81475225498434,
+      "train_batch_count": 32,
+      "train_batch_start_count": 32,
+      "finite_loss_gradient_update": true,
+      "oom_nan_inf": false,
+      "test_iid_group_count": 0,
+      "all_groups_count": 0,
+      "global_context": {"dimension": 24, "fit_population": "train_only", "fit_sample_count": 768, "target_or_label_derived_inputs": false},
+      "device": {
+        "peak_allocator_memory_mb": 6916.588623046875,
+        "allocator_memory_limit_mb": 9169.921875,
+        "peak_allocator_fraction": 0.754269089456869,
+        "peak_rss_mb": 6035.42578125
+      },
+      "checkpoint_prediction_reload_audit": {
+        "status": "passed",
+        "entries": [
+          {"label": "final", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.038116455078125, "checkpoint_reload_rmse_K": 0.004186961638242122, "passed": true},
+          {"label": "best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.03192138671875, "checkpoint_reload_rmse_K": 0.00419250043615092, "passed": true},
+          {"label": "point_global_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.037384033203125, "checkpoint_reload_rmse_K": 0.004194720553870318, "passed": true},
+          {"label": "base_mse_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.042877197265625, "checkpoint_reload_rmse_K": 0.00417737684795336, "passed": true},
+          {"label": "sample_first_best", "parameter_reload_max_abs_error": 0.0, "npz_reload_max_abs_error_K": 0.0, "checkpoint_reload_max_abs_error_K": 0.035400390625, "checkpoint_reload_rmse_K": 0.004176009300571366, "passed": true}
+        ]
+      },
+      "artifact_sha256": {
+        "params_final.pkl": "38344fb77b36742667b3f8e0c7782f9db072945d77ffbbde3aee5a3a85d8d873",
+        "params_best.pkl": "c7df645a56b96cf9048109b5a7f5cb78d5db9732dbec29164c735ea4f5da763c",
+        "params_best_valid_point_global.pkl": "a58f23fc49bffbf5d3115896dd25cb732496804c995fb177793e99d5fbb15f7b",
+        "params_best_valid_base_mse.pkl": "aefad1b735552e98a2837ce389993b272294a6bd503a94aea02081c42bbeb776",
+        "params_best_valid_sample_first.pkl": "3cccd3b8e4a89652c5497abab46fb15cabe377ba3b2e04d38192025b810b2d1d"
+      },
+      "evidence_sha256": {
+        "run_config.json": "967d725ca144f9ecdd8a6d0ca759f8fea28de741df9d5dda6b3d24821e0a517d",
+        "loss_summary.json": "2cf91f510f21862ffdd18978f85526b7a1c5cda60a0345943556ec110a334fa2",
+        "profile_timing.json": "6304b4c4a796e38459bb0e80f58fb08b68f3413fb360742bbfe65cc3f29dcfc5",
+        "memory_audit.jsonl": "8e3f5ce620807f5e3f5e5252bcb9328646def0382501cbae99230e4068cf8273",
+        "gpu_monitor.jsonl": "2e578584d7489d5d14e4a59097011443be8a5bce5265c00eda76116043ec3864",
+        "log": "5d2f57ebff26f62aad3d12f7004869ff23954ab020895562c1228bc77342e907"
+      }
+    }
+  },
+  "formal_runs": {
+    "V6_01_V4best": {
+      "host": "wsl2",
+      "config": "configs/heat3d_v6/V6_01_V4best.yaml",
+      "output_dir": "output/heat3d_v6_runs/V6_01_V4best",
+      "log_path": "output/heat3d_v6_logs/V6_01_V4best.log",
+      "launch_method": "nohup",
+      "pid": null
+    },
+    "V6_02_V5best": {
+      "host": "devbox",
+      "config": "configs/heat3d_v6/V6_02_V5best.yaml",
+      "output_dir": "output/heat3d_v6_runs/V6_02_V5best",
+      "log_path": "output/heat3d_v6_logs/V6_02_V5best.log",
+      "launch_method": "nohup",
+      "pid": null
+    }
+  }
+}
