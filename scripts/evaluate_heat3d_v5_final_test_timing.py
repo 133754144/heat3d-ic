@@ -9,7 +9,6 @@ import hashlib
 import json
 import math
 from pathlib import Path
-import statistics
 import subprocess
 import sys
 import time
@@ -32,18 +31,25 @@ from evaluate_heat3d_v5_gate6q_closeout import (  # noqa: E402
     _sample_root,
     _suite,
 )
+from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
+from rigno.heat3d_v5_scale_context import standardize_scale_contexts  # noqa: E402
 from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
 from run_heat3d_v1_medium_controlled_training_export import (  # noqa: E402
     GraphNeuralOperator,
+    _attach_qk_region_features_to_groups,
+    _attach_scale_context_to_groups,
+    _attach_scale_deepsets_weights_to_groups,
     _device_params,
+    _make_batch_group_with_seed,
     _model_apply,
     _resolve_decoder_bypass_model_config,
+    _scale_context_row_for_example,
 )
 from run_heat3d_v3_final_probe_checkpoint_smoke import (  # noqa: E402
     install_checkpoint_feature_hooks,
     stats_from_checkpoint_payload,
 )
-from run_heat3d_v5_clean_first import _physics_cache  # noqa: E402
+from run_heat3d_v5_clean_first import _attach_v5_physics, _physics_cache  # noqa: E402
 
 
 CONFIG_ID = "V4P5_42_gate6q_objective_only_e600"
@@ -126,22 +132,20 @@ def _block(raw: Any) -> None:
 def _metrics_summary(suite: Mapping[str, Any]) -> dict[str, Any]:
     summary = dict(suite["summary"])
     keep = (
-        "point_global_relative_rmse",
         "point_global_relative_rmse_pct",
-        "sample_first_cv_relative_rmse_mean",
         "sample_first_cv_relative_rmse_pct",
         "raw_cv_weighted_rmse_K",
-        "amplitude_ratio_mean",
-        "spatial_correlation_mean",
-        "hotspot_cv_rmse_K",
-        "top5_cv_rmse_K",
-        "strong_q_cv_rmse_K",
+        "amplitude_ratio",
+        "spatial_correlation",
+        "hotspot_cv_weighted_rmse_K",
+        "top5_cv_weighted_rmse_K",
+        "strong_q_cv_weighted_rmse_K",
         "low_deltaT_background_bias_K",
         "low_deltaT_background_rmse_K",
         "low_deltaT_background_over_ratio",
-        "shape_cv_rmse_mean",
+        "shape_cv_rmse",
         "scale_log_rmse",
-        "legacy_normalized_base_mse",
+        "legacy_normalized_valid_base_mse",
     )
     return {key: summary[key] for key in keep if key in summary}
 
@@ -151,7 +155,7 @@ def _valid_v42_metrics(path: Path) -> dict[str, Any]:
     model = payload["models"]["V42"] if "models" in payload else payload
     if model["config_id"] != CONFIG_ID:
         raise RuntimeError("frozen valid artifact is not V42")
-    checkpoint = model["checkpoints"]["point_global_best"]
+    checkpoint = model["checkpoint_metadata"]["point_global_best"]
     if int(checkpoint["epoch"]) != EXPECTED_EPOCH:
         raise RuntimeError("frozen valid point-global epoch is not e257")
     return {
@@ -160,6 +164,54 @@ def _valid_v42_metrics(path: Path) -> dict[str, Any]:
         "checkpoint_epoch": int(checkpoint["epoch"]),
         "summary": _metrics_summary(model["metrics"]["point_global_best"]),
     }
+
+
+def _build_single_group(
+    *,
+    example: Any,
+    stats: Mapping[str, Any],
+    builder: Heat3DGraphBuilder,
+    graph_seed: int,
+    model_config: Mapping[str, Any],
+    run_config: Mapping[str, Any],
+) -> dict[str, Any]:
+    group = _make_batch_group_with_seed(
+        "v5_final_timing_test_iid",
+        [example],
+        dict(stats),
+        builder,
+        graph_seed=graph_seed,
+    )
+    groups = [group]
+    _attach_v5_physics(
+        groups,
+        _physics_cache([example]),
+        dict(run_config["global_context"]["standardizer"]),
+    )
+    group["native_physics"] = group["v5_physics"]
+    group["global_context"] = group["v5_physics"]["global_context"]
+    if model_config.get("scale_context_mode", "none") != "none":
+        stored_scale = dict((run_config.get("scale_context") or {}).get("standardizer") or {})
+        encoded = standardize_scale_contexts([_scale_context_row_for_example(example)], stored_scale)[0]
+        _attach_scale_context_to_groups(
+            groups,
+            {str(example.sample_id): encoded},
+            expected_feature_dim=int(model_config.get("scale_context_feature_dim", 0)),
+        )
+    by_id = {str(example.sample_id): example}
+    if (
+        model_config.get("scale_pooling") == "qk_gated"
+        or model_config.get("shape_attention_mode", "none") != "none"
+        or model_config.get("scale_attention_mode", "none") != "none"
+    ):
+        _attach_qk_region_features_to_groups(
+            groups,
+            by_id,
+            feature_version=str(model_config.get("qk_region_feature_version", "bugged_v1")),
+        )
+    if model_config.get("scale_deepsets_mode", "none") != "none":
+        _attach_scale_deepsets_weights_to_groups(groups, by_id)
+    return group
 
 
 def main() -> int:
@@ -213,6 +265,8 @@ def main() -> int:
 
     model = GraphNeuralOperator(**model_config)
     params = _device_params(payload["params"])
+    builder = Heat3DGraphBuilder(**dict(run_config["graph_config"]))
+    graph_seed = int(run_config.get("graph_seed", 0))
     for _ in range(args.warmup):
         _block(_model_apply(model, params, groups[0])["raw_temperature"])
     raw_fields: dict[str, np.ndarray] = {}
@@ -227,29 +281,27 @@ def main() -> int:
     # End-to-end excludes checkpoint/data I/O but includes one-sample graph
     # construction, all context/physics attachments, and synchronized forward.
     for _ in range(args.warmup):
-        warm_groups, _ = _build_groups(
-            run_config=run_config,
-            model_config=model_config,
+        warm_group = _build_single_group(
+            example=test_examples[0],
             stats=stats,
-            train_examples=train_examples,
-            valid_examples=[test_examples[0]],
-            physics_cache=physics_cache,
-            prediction_batch_size=1,
+            builder=builder,
+            graph_seed=graph_seed,
+            model_config=model_config,
+            run_config=run_config,
         )
-        _block(_model_apply(model, params, warm_groups[0])["raw_temperature"])
+        _block(_model_apply(model, params, warm_group)["raw_temperature"])
     end_to_end_seconds: list[float] = []
     for example in test_examples:
         started = time.perf_counter()
-        one_group, _ = _build_groups(
-            run_config=run_config,
-            model_config=model_config,
+        one_group = _build_single_group(
+            example=example,
             stats=stats,
-            train_examples=train_examples,
-            valid_examples=[example],
-            physics_cache=physics_cache,
-            prediction_batch_size=1,
+            builder=builder,
+            graph_seed=graph_seed,
+            model_config=model_config,
+            run_config=run_config,
         )
-        raw = _model_apply(model, params, one_group[0])["raw_temperature"]
+        raw = _model_apply(model, params, one_group)["raw_temperature"]
         _block(raw)
         end_to_end_seconds.append(time.perf_counter() - started)
 
