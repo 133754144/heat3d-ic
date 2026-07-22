@@ -58,6 +58,10 @@ overrides:
     validation_batch_size: 32
     prediction_batch_size: 32
     drop_last: false
+    # Match the effective historical V5 runner behavior: no per-epoch graph
+    # regrouping.  Keep this explicit because the inherited V5 canonical YAML
+    # declares true, while historical V5 launches omitted the CLI flag.
+    epoch_wise_batch_regrouping: false
     init_checkpoint: null
     final_probe_eval_after_training: false
     final_probe_output_dir: null
