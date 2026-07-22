@@ -1,0 +1,24 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_01_V4best_B32_e5_gpu_preflight
+extends: ../V6_01_V4best_B32.yaml
+overrides:
+  run:
+    epochs: 5
+    report_every: 1
+    train_metrics_schedule: every_epoch
+    grad_norm_report_every: 1
+    profile_timing: true
+    profile_timing_json: output/heat3d_v6_preflight/V6_01_V4best_B32_e5/profile_timing.json
+    memory_audit_jsonl: output/heat3d_v6_preflight/V6_01_V4best_B32_e5/memory_audit.jsonl
+    memory_audit_every_batch: true
+    memory_audit_gc: false
+  export:
+    output_dir: output/heat3d_v6_preflight/V6_01_V4best_B32_e5
+    run_name: V6_01_V4best_B32_e5_gpu_preflight
+  metadata:
+    phase: v6_b32_e5_gpu_preflight
+    formal_training_started: false
+    preflight_only: true
+    batching_adaptation: effective_B32_4xB8
+    log_path: output/heat3d_v6_preflight_logs/V6_01_V4best_B32_e5.log
+    gpu_monitor_path: output/heat3d_v6_preflight/V6_01_V4best_B32_e5/gpu_monitor.jsonl

@@ -1,0 +1,54 @@
+{
+  "schema_version": "heat3d_v6_b32_selective_launch_gate_v1",
+  "status": "prepared_not_evaluated",
+  "formal_training_started": false,
+  "candidate": {
+    "effective_batch_size": 32,
+    "micro_batch_size": 8,
+    "micro_batches_per_update": 4,
+    "train_sample_count": 768,
+    "micro_batches_per_epoch": 96,
+    "updates_per_epoch": 24,
+    "tail_batch": null,
+    "geometry_split": false
+  },
+  "fallback": {
+    "policy": "unified_B24",
+    "configs": [
+      "configs/heat3d_v6/V6_01_V4best.yaml",
+      "configs/heat3d_v6/V6_02_V5best.yaml"
+    ]
+  },
+  "steady_reference": {
+    "source": "B24 e1 profile with first update replaced by later-update median",
+    "formula": "epoch_total_time - first_train_batch_time + later_train_batch_median_time",
+    "V6_01_V4best_s": 444.9469199340092,
+    "V6_02_V5best_s": 825.0061747839209
+  },
+  "joint_gate": {
+    "required_for_each": [
+      "e5_completed",
+      "epochs_2_to_5_finite",
+      "no_oom_nan_inf",
+      "checkpoint_export_reload_passed",
+      "test_and_all_group_counts_zero",
+      "peak_gpu_memory_mb_not_above_B24_reference",
+      "mean_epoch_2_to_5_s_strictly_below_B24_steady_reference"
+    ],
+    "preferred_speedup_pct": 5.0,
+    "decision": "B32 only if both pass; otherwise unified B24"
+  },
+  "dummy_padding_equivalence": {
+    "checker": "scripts/check_heat3d_v6_dummy_padding_equivalence.py",
+    "status": "passed",
+    "forward_max_abs_error": 1.0132789611816406e-06,
+    "loss_abs_error": 7.450580596923828e-09,
+    "gradient_max_abs_error": 1.3709068298339844e-06,
+    "target_or_label_used_for_padding": false
+  },
+  "host_assignment": {
+    "V6_01_V4best_B32": "devbox",
+    "V6_02_V5best_B32": "wsl2"
+  },
+  "forbidden_roles": ["test_iid", "all", "hard", "sealed"]
+}

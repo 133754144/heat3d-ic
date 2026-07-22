@@ -1,0 +1,239 @@
+schema_version: heat3d_v2_config_draft_v0
+config_role: controlled
+description: V6_01 effective-B32 candidate. Relative to V6_01_V4best, only the effective
+  batch contract and run identity change; four B8 microbatches form each B32 optimizer
+  update.
+non_claims:
+- inheritance_base
+- diagnostic
+- research_stage
+- not_formal_benchmark
+- not_model_performance_evidence
+- not_publication_ready_result
+dataset:
+  name: heat3d_v6_p1g_geometry_deconfounded1024_v0
+  subset_path: data/heat3d_v6_p1g_geometry_deconfounded1024_v0
+  manifest_path: configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json
+  split_map_path: null
+  k_encoding_mode: diag3
+  target: normalized_deltaT
+  recovery: T_ref_plus_deltaT
+  feature_view: v6_dual_robin_relative_bc_features
+  bridge: zero_delta_u_bridge
+  normalization_profile: semantic_normalization_v1
+  input_feature_schema: legacy_bc_flags
+  coord_policy: sample_local_isotropic
+  extent_feature_policy: log_extent_broadcast
+  condition_feature_transform: semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars
+  split_source: v6_manifest_group_locked
+  sample_limit: null
+  debug_only: false
+  loader: v6_dual_robin_manifest_v1
+  bc_adapter: dual_robin_top_bottom_v1
+  input_feature_contract:
+  - k_x
+  - k_y
+  - k_z
+  - q
+  - is_top
+  - is_bottom
+  - is_side
+  - is_interior
+  - top_h
+  - bottom_h
+  - top_T_inf_minus_T_ref
+model:
+  architecture: RIGNO
+  num_outputs: 1
+  node_latent_size: 96
+  edge_latent_size: 96
+  processor_steps: 6
+  mlp_hidden_layers: 2
+  concatenate_tau: false
+  concatenate_t: false
+  conditioned_normalization: false
+  cond_norm_hidden_size: 16
+  p_edge_masking: 0.0
+  decoder_bypass_mode: post_decoder_residual
+  decoder_bypass_features: full_condition
+  decoder_bypass_feature_source: normalized_c
+  decoder_bypass_hidden_size: 64
+  decoder_bypass_layers: 2
+  decoder_bypass_init: zero_residual
+  decoder_bypass_residual_scale: 0.5
+  report_parameter_count: false
+  report_memory_estimate: false
+optimizer:
+  name: adamw
+  lr: 0.0005
+  lr_schedule: warmup_cosine
+  warmup_epochs: 10
+  min_lr: 5.0e-05
+  second_stage_epoch: null
+  second_stage_lr: null
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  seed: 0
+  model_seed: 0
+  batch_order_seed: 0
+  graph_seed: 0
+  multi_seed: []
+loss:
+  mode: mse
+  base_space: normalized_deltaT
+  background_quantile: 0.5
+  hotspot_quantile: 0.9
+  strong_q_quantile: 0.9
+  background_weight: 0.0
+  hotspot_weight: 0.0
+  strong_q_weight: 0.0
+  background_l1_weight: 0.0
+  background_bias_weight: 0.0
+  background_over_weight: 0.0
+  background_relative_weight: 0.0
+  relative_floor: 0.02
+  relative_floor_mode: fixed
+  pseudo_negative_quantile: 0.25
+  pseudo_negative_delta_threshold: null
+  pseudo_negative_weight: 0.0
+  pseudo_negative_over_margin: 0.0
+  pseudo_negative_min_count: 1
+  pseudo_negative_loss_type: relative_l1
+  pseudo_negative_relative_floor: 0.02
+  weight_schedule: constant
+  transition_epoch: 0
+  draft_peak_loss_weight: null
+  draft_field_shape_loss_weight: null
+run:
+  mode: controlled
+  epochs: 600
+  batching: mini_batch
+  batch_size: 32
+  micro_batch_size: 8
+  validation_batch_size: 32
+  prediction_batch_size: 32
+  batch_plan: sample_shuffle
+  batch_build_seed: 0
+  shuffle_train_batches: true
+  drop_last: false
+  init_mode: real_first_batch
+  report_every: 5
+  train_metrics_schedule: half_and_final
+  grad_norm_report_every: 10
+  log_mode: compact
+  progress_log: true
+  progress_detail: basic
+  device_policy: ssh_required_for_training
+  allow_long_training_local: false
+  final_probe_eval_after_training: false
+  final_probe_checkpoint_kind: both
+  final_probe_output_dir: null
+  post_training_diagnostics: false
+  post_training_diagnostics_output_dir: null
+  sample_weight_policy: none
+  sample_weight_default: 1.0
+  sample_weight_normalize: false
+  init_checkpoint: null
+graph:
+  node_coordinate_encoding: raw
+  node_coordinate_freqs: 4
+  radius_policy: discrete_physical_coverage
+  coverage_repair_policy: none
+  repair_p2r: true
+  repair_r2p: true
+  min_physical_coverage: 1
+export:
+  output_dir: output/heat3d_v6_runs/V6_01_V4best_B32
+  run_name: V6_01_V4best_B32
+  prediction_split: valid_iid
+  save_final_predictions: true
+  final_predictions_name: predictions.npz
+  save_best_predictions: true
+  best_predictions_name: best_predictions.npz
+  selection_metric: valid_base_mse
+  save_run_config: true
+  save_loss_summary: true
+diagnostics:
+  prediction_labels:
+  - final
+  - best
+  run_baseline_comparison: false
+  run_error_bins: true
+  run_condition_diagnostics: true
+  run_summary: true
+  run_field_shape_diagnostics: true
+  top_k: 5
+  deltaT_bins: p50,p75,p90,p95
+  q_power_bins: p33,p66
+  metric_set:
+  - mean_T_rmse
+  - mean_T_mae
+  - mean_DeltaT_rmse
+  - mean_max_abs
+  - mean_p95_abs
+  - mean_peak_T_err
+  - mean_hotspot_dist
+  field_shape_metrics:
+  - field_variance_ratio
+  - centered_spatial_correlation
+  - amplitude_ratio
+  - peak_abs_error
+  - top_k_overlap
+  p_quantiles:
+  - 0.95
+  - 0.99
+baseline_reference:
+  path: configs/heat3d_v2/frozen_v1_reference.yaml
+  compare_against: frozen_v1_best_diagnostic
+metadata:
+  phase: v6_b32_selective_launch
+  inheritance_role: base
+  standard_task: coords+k(x)+q(x)+BC->T(x)
+  default_source: docs/v4_research_definition.md
+  variant_label: V4P5_02_clean_baseline_raw_B28_e600
+  model_label: latent96-edge96-s6-mlp2
+  batch_policy_label: B28_sample_shuffle
+  optimizer_label: adamw_warmup_cosine_lr0.0005_minlr0.00005
+  graph_policy_label: discrete_physical_coverage_repair_none
+  loss_label: plain_mse
+  metrics_profile: v4_metrics_v0
+  metrics_contract: configs/heat3d_v4/metrics_v0.json
+  selection_metric: valid_base_mse
+  runner_family: v4_controlled_semantic_wrapper
+  target_mode: normalized_deltaT
+  bridge_policy: zero_delta_u_bridge
+  input_feature_schema: legacy_bc_flags
+  normalization_profile: semantic_normalization_v1
+  coord_policy: sample_local_isotropic
+  extent_feature_policy: log_extent_broadcast
+  condition_feature_transform: semantic_v1_logk_signedlog1p_q_binary_bcflags_independent_bc_scalars
+  node_coordinate_encoding: raw
+  node_coordinate_freqs: 4
+  decoder_bypass_mode: post_decoder_residual
+  decoder_bypass_features: full_condition
+  decoder_bypass_feature_source: normalized_c
+  target_recovery_policy: deltaT_norm_to_K_plus_T_ref
+  feature_manifest_hash: planned
+  selection_metric_note: valid_base_mse is used by default so targeted-loss totals
+    do not control checkpoint selection.
+  registry_config_id: V4P5_02_clean_baseline_raw_B28_e600
+  registry_status: registered
+  launch_policy: gated_b32_or_unified_b24
+  log_path: output/heat3d_v6_logs/V6_01_V4best_B32.log
+  notes: V4 closeout frozen clean baseline. V4P5_02 preserves V4P5_01 raw-coordinate
+    plain-MSE semantics with epochs=600; valid_base_mse selected params_best at epoch
+    405. See docs/v4_closeout.md.
+  baseline_config_id: V4P5_02_clean_baseline_raw_B28_e600
+  canonical_dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
+  initialization: random
+  training_started: false
+  bottom_boundary_semantics: robin_not_fixed_temperature
+  configured_batch_size: 32
+  effective_batch_size: 32
+  graph_compatible_micro_batch_size: 8
+  micro_batches_per_epoch: 96
+  optimizer_updates_per_epoch: 24
+  final_partial_effective_batch_size: null
+  cross_geometry_dummy_edge_padding: true
+  micro_batches_per_optimizer_update: 4
+config_id: V6_01_V4best_B32

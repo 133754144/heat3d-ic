@@ -136,6 +136,25 @@ prediction replay stayed within 0.1 K maximum and 0.01 K whole-field RMSE.
 V6_02's 24-dimensional context was fit on the 768 training samples only. The
 formal YAMLs remain at e600 and were not launched.
 
+## B32 selective-launch gate
+
+The B24 YAMLs remain the unified fallback. `V6_01_V4best_B32` and
+`V6_02_V5best_B32` change only `run.batch_size` in the scientific payload;
+model, loss, optimizer, LR schedule, epochs, graph, seeds, and selection metric
+remain frozen. Each B32 update accumulates four pure B8 microbatches, so 768
+training samples produce 96 B8 microbatches and 24 B32 updates without a tail
+or geometry split.
+
+Before the e5 gate, padded/unpadded inference was checked on two different
+geometries. Maximum forward, loss, and gradient differences were respectively
+`1.01e-6`, `7.45e-9`, and `1.37e-6`; padding uses no target and repeats only
+dummy-to-dummy edges. The frozen gate and checkers are:
+
+- `configs/heat3d_v6/v6_b32_selective_launch_gate.json`
+- `scripts/check_heat3d_v6_b32_configs.py`
+- `scripts/check_heat3d_v6_dummy_padding_equivalence.py`
+- `scripts/run_heat3d_config_with_nvml_monitor.py`
+
 Formal manual commands (prepared only, not executed):
 
 ```bash

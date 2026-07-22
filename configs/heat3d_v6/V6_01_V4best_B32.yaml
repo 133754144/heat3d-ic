@@ -1,0 +1,24 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_01_V4best_B32
+extends: V6_01_V4best.yaml
+overrides:
+  description: >-
+    V6_01 effective-B32 candidate. Relative to V6_01_V4best, only the
+    effective batch contract and run identity change; four B8 microbatches
+    form each B32 optimizer update.
+  run:
+    batch_size: 32
+  export:
+    output_dir: output/heat3d_v6_runs/V6_01_V4best_B32
+    run_name: V6_01_V4best_B32
+  metadata:
+    phase: v6_b32_selective_launch
+    training_started: false
+    launch_policy: gated_b32_or_unified_b24
+    log_path: output/heat3d_v6_logs/V6_01_V4best_B32.log
+    configured_batch_size: 32
+    effective_batch_size: 32
+    micro_batches_per_epoch: 96
+    optimizer_updates_per_epoch: 24
+    final_partial_effective_batch_size: null
+    micro_batches_per_optimizer_update: 4
