@@ -106,7 +106,7 @@ def main() -> int:
     run_config_path = run_dir / "run_config.json"
     loss_summary_path = run_dir / "loss_summary.json"
     memory_path = run_dir / "memory_audit.jsonl"
-    artifacts = {
+    artifact_candidates = {
         "final": (run_dir / "params_final.pkl", run_dir / "predictions.npz"),
         "legacy_best": (run_dir / "params_best.pkl", run_dir / "best_predictions.npz"),
         "point_global_best": (
@@ -122,13 +122,20 @@ def main() -> int:
             run_dir / "sample_first_best_predictions.npz",
         ),
     }
+    artifacts = {}
+    for label, pair in artifact_candidates.items():
+        checkpoint_exists, predictions_exist = (path.is_file() for path in pair)
+        if checkpoint_exists != predictions_exist:
+            raise FileNotFoundError(
+                f"incomplete checkpoint/predictions pair for {label}: {pair}"
+            )
+        if checkpoint_exists:
+            artifacts[label] = pair
+    if not {"final", "legacy_best"}.issubset(artifacts):
+        raise FileNotFoundError("final and legacy-best artifact pairs are required")
     for path in [run_config_path, loss_summary_path, memory_path]:
         if not path.is_file():
             raise FileNotFoundError(path)
-    for checkpoint, predictions in artifacts.values():
-        if not checkpoint.is_file() or not predictions.is_file():
-            raise FileNotFoundError(f"missing checkpoint/predictions pair: {checkpoint}, {predictions}")
-
     run_config = json.loads(run_config_path.read_text(encoding="utf-8"))
     loss_summary = json.loads(loss_summary_path.read_text(encoding="utf-8"))
     final_payload = runner._load_params_checkpoint(artifacts["final"][0])
@@ -230,15 +237,25 @@ def main() -> int:
         for key, value in record.items()
         if value is not None and ("loss" in key or "grad_norm" in key)
     )
+    context_fit_ok = bool(
+        not context_meta.get("enabled")
+        or (
+            (metadata.get("global_context") or {}).get("standardizer", {}).get(
+                "fit_population"
+            )
+            == "train_only"
+            and (metadata.get("global_context") or {})
+            .get("standardizer", {})
+            .get("fit_sample_count")
+            == 768
+        )
+    )
     passed = bool(
         reload_audit.get("status") == "passed"
         and memory["train_batch_end_count"] == 28
         and memory["train_batch_details_finite"]
         and finite_history
-        and (metadata.get("global_context") or {}).get("standardizer", {}).get(
-            "fit_population"
-        )
-        == "train_only"
+        and context_fit_ok
     )
     if not passed:
         raise RuntimeError("V6 e1 recovery evidence did not pass")
@@ -267,7 +284,9 @@ def main() -> int:
             "tail": 12,
         },
         "checkpoint_prediction_reload_audit": reload_audit,
+        "checkpoint_pair_count": len(artifacts),
         "global_context": context_meta,
+        "global_context_fit_contract_passed": context_fit_ok,
         "memory_audit": memory,
         "finite_epoch_history": finite_history,
         "artifacts": artifact_hashes,
