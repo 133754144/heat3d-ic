@@ -1,0 +1,1422 @@
+{
+  "P1g_v1_parent_scientific_diff": {
+    "allowed_change": "upper_source_bbox_and_slot_alignment_metadata_only",
+    "changed_lower_source_bbox_count": 0,
+    "changed_upper_source_bbox_count": 384,
+    "groups_with_exact_factor_assignment": 128,
+    "groups_with_exact_source_size_area_power": 128,
+    "label_or_temperature_inputs": [],
+    "parent_config_sha256": "ab162724af61c745f82571e9c8f07102d5262c70a4817ace0900e894bfc4af83",
+    "same_BC_power_temperature_gate": true,
+    "same_operator_projection_contract": true,
+    "same_physics": true,
+    "same_seed": true,
+    "same_source_guardrails": true,
+    "same_split_contract": true,
+    "unchanged_upper_source_bbox_count": 64
+  },
+  "alignment_geometry_semantics": {
+    "metric": "paired_source_centroid_displacement_mm",
+    "offset": {
+      "max": 0.3125000000000018,
+      "median": 0.3125,
+      "min": 0.3124999999999988,
+      "p95": 0.31250000000000067
+    },
+    "partly_aligned": {
+      "max": 1.7763568394002505e-15,
+      "median": 0.0,
+      "min": 0.0,
+      "p95": 8.881784197001252e-16
+    },
+    "semantic_checks": {
+      "offset_is_exactly_two_mesh_intervals": true,
+      "partly_aligned_centroids_coincide": true
+    }
+  },
+  "association": {
+    "all": {
+      "layout_kind__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "layout_kind",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            16.0,
+            16.0
+          ],
+          [
+            16.0,
+            16.0
+          ],
+          [
+            16.0,
+            16.0
+          ],
+          [
+            16.0,
+            16.0
+          ]
+        ],
+        "levels_a": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            16,
+            16
+          ],
+          [
+            16,
+            16
+          ],
+          [
+            16,
+            16
+          ],
+          [
+            16,
+            16
+          ]
+        ],
+        "sample_size": 128,
+        "shape": [
+          4,
+          2
+        ]
+      },
+      "source_count__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "source_count",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            8.0,
+            8.0
+          ],
+          [
+            8.0,
+            8.0
+          ],
+          [
+            8.0,
+            8.0
+          ],
+          [
+            8.0,
+            8.0
+          ],
+          [
+            8.0,
+            8.0
+          ],
+          [
+            8.0,
+            8.0
+          ],
+          [
+            8.0,
+            8.0
+          ],
+          [
+            8.0,
+            8.0
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            8,
+            8
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            8,
+            8
+          ]
+        ],
+        "sample_size": 128,
+        "shape": [
+          8,
+          2
+        ]
+      },
+      "source_count__layout_kind": {
+        "cramers_v": 0.0,
+        "factor_a": "source_count",
+        "factor_b": "layout_kind",
+        "independence_expected_table": [
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ],
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ],
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ],
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ],
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ],
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ],
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ],
+          [
+            4.0,
+            4.0,
+            4.0,
+            4.0
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4
+          ]
+        ],
+        "sample_size": 128,
+        "shape": [
+          8,
+          4
+        ]
+      }
+    },
+    "test": {
+      "layout_kind__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "layout_kind",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0
+          ]
+        ],
+        "levels_a": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "sample_size": 16,
+        "shape": [
+          4,
+          2
+        ]
+      },
+      "source_count__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "source_count",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "sample_size": 16,
+        "shape": [
+          8,
+          2
+        ]
+      },
+      "source_count__layout_kind": {
+        "cramers_v": 0.5773502691896257,
+        "factor_a": "source_count",
+        "factor_b": "layout_kind",
+        "independence_expected_table": [
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "mutual_information_nats": 0.6931471805599453,
+        "observed_table": [
+          [
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            1
+          ]
+        ],
+        "sample_size": 16,
+        "shape": [
+          8,
+          4
+        ]
+      }
+    },
+    "train": {
+      "layout_kind__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "layout_kind",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            12.0,
+            12.0
+          ],
+          [
+            12.0,
+            12.0
+          ],
+          [
+            12.0,
+            12.0
+          ],
+          [
+            12.0,
+            12.0
+          ]
+        ],
+        "levels_a": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            12,
+            12
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "sample_size": 96,
+        "shape": [
+          4,
+          2
+        ]
+      },
+      "source_count__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "source_count",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            6.0,
+            6.0
+          ],
+          [
+            6.0,
+            6.0
+          ],
+          [
+            6.0,
+            6.0
+          ],
+          [
+            6.0,
+            6.0
+          ],
+          [
+            6.0,
+            6.0
+          ],
+          [
+            6.0,
+            6.0
+          ],
+          [
+            6.0,
+            6.0
+          ],
+          [
+            6.0,
+            6.0
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            6
+          ]
+        ],
+        "sample_size": 96,
+        "shape": [
+          8,
+          2
+        ]
+      },
+      "source_count__layout_kind": {
+        "cramers_v": 0.0,
+        "factor_a": "source_count",
+        "factor_b": "layout_kind",
+        "independence_expected_table": [
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ],
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ],
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ],
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ],
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ],
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ],
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ],
+          [
+            3.0,
+            3.0,
+            3.0,
+            3.0
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            3
+          ]
+        ],
+        "sample_size": 96,
+        "shape": [
+          8,
+          4
+        ]
+      }
+    },
+    "valid": {
+      "layout_kind__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "layout_kind",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0
+          ]
+        ],
+        "levels_a": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "sample_size": 16,
+        "shape": [
+          4,
+          2
+        ]
+      },
+      "source_count__alignment_relation": {
+        "cramers_v": 0.0,
+        "factor_a": "source_count",
+        "factor_b": "alignment_relation",
+        "independence_expected_table": [
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "offset",
+          "partly_aligned"
+        ],
+        "mutual_information_nats": 0.0,
+        "observed_table": [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "sample_size": 16,
+        "shape": [
+          8,
+          2
+        ]
+      },
+      "source_count__layout_kind": {
+        "cramers_v": 0.5773502691896257,
+        "factor_a": "source_count",
+        "factor_b": "layout_kind",
+        "independence_expected_table": [
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ]
+        ],
+        "levels_a": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "levels_b": [
+          "clustered",
+          "distributed",
+          "edge_balanced",
+          "mixed"
+        ],
+        "mutual_information_nats": 0.6931471805599453,
+        "observed_table": [
+          [
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            0
+          ]
+        ],
+        "sample_size": 16,
+        "shape": [
+          8,
+          4
+        ]
+      }
+    }
+  },
+  "coverage": {
+    "all_samples_cover_all_interfaces": true,
+    "all_samples_cover_all_layers": true,
+    "operator_points_per_sample": 1024,
+    "per_layer_point_count": {
+      "bt_substrate_with_vias": {
+        "max": 170.0,
+        "median": 137.5,
+        "min": 113.0,
+        "p95": 156.0
+      },
+      "bump_underfill_under_interposer": {
+        "max": 38.0,
+        "median": 25.0,
+        "min": 19.0,
+        "p95": 31.0
+      },
+      "pcb_fr4_equivalent": {
+        "max": 287.0,
+        "median": 260.0,
+        "min": 223.0,
+        "p95": 278.0
+      },
+      "silicon_die_lower": {
+        "max": 176.0,
+        "median": 155.0,
+        "min": 114.0,
+        "p95": 168.0
+      },
+      "silicon_die_upper": {
+        "max": 214.0,
+        "median": 170.0,
+        "min": 149.0,
+        "p95": 205.0
+      },
+      "silicon_interposer_tsv_0p1": {
+        "max": 39.0,
+        "median": 28.0,
+        "min": 19.0,
+        "p95": 35.0
+      },
+      "spreader": {
+        "max": 232.0,
+        "median": 204.0,
+        "min": 172.0,
+        "p95": 223.0
+      },
+      "tim_between_dies": {
+        "max": 32.0,
+        "median": 22.5,
+        "min": 18.0,
+        "p95": 27.0
+      },
+      "tim_to_spreader": {
+        "max": 33.0,
+        "median": 22.0,
+        "min": 17.0,
+        "p95": 26.0
+      }
+    }
+  },
+  "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v1",
+  "geometry_group_count": 128,
+  "guardrails": {
+    "Rth_power_back_calculation": false,
+    "local_patch": false,
+    "model_inference_runs": 0,
+    "sample_filtering": false,
+    "sample_replacement": false,
+    "training_runs": 0,
+    "whole_version_gate_only": true
+  },
+  "near_duplicate_geometry": {
+    "exact_signature_duplicate_count": 0,
+    "feature_definition": "count_upper_fraction_total_area_plus_sorted_padded_source_layer_slot_bbox_power_fraction",
+    "features_are_input_only": true,
+    "minimum_nonself_standardized_distance": 0.23272076705531927,
+    "near_duplicate_pair_count": 0,
+    "near_duplicate_threshold": 1e-06,
+    "nearest_pairs": [
+      {
+        "group_a": "p1g_v1_g048",
+        "group_b": "p1g_v1_g098",
+        "same_split": false,
+        "standardized_distance": 0.23272076705531927
+      },
+      {
+        "group_a": "p1g_v1_g048",
+        "group_b": "p1g_v1_g085",
+        "same_split": true,
+        "standardized_distance": 0.2467910748768477
+      },
+      {
+        "group_a": "p1g_v1_g085",
+        "group_b": "p1g_v1_g098",
+        "same_split": false,
+        "standardized_distance": 0.3457898982383066
+      },
+      {
+        "group_a": "p1g_v1_g051",
+        "group_b": "p1g_v1_g058",
+        "same_split": true,
+        "standardized_distance": 0.3650314595621593
+      },
+      {
+        "group_a": "p1g_v1_g064",
+        "group_b": "p1g_v1_g125",
+        "same_split": false,
+        "standardized_distance": 0.38302219729741843
+      }
+    ]
+  },
+  "p1f_v0_provenance": {
+    "BC_power_temperature_gate_unchanged": true,
+    "P1f_files_modified": false,
+    "config_sha256": "6b05c889760675954300428066f3ff6a12109725073bf0edb336fc9eb04e0fda",
+    "manifest_sha256": "fd311b9b8c19b1f578f2cbc7c8322826766d22bfc75b5067820799abd34c2e03",
+    "physics_unchanged": true,
+    "source_guardrails_unchanged": true,
+    "split_contract_unchanged": true
+  },
+  "parent_P1g_v0_provenance": {
+    "config_sha256": "ab162724af61c745f82571e9c8f07102d5262c70a4817ace0900e894bfc4af83",
+    "manifest_sha256": "e5329d5cd6253510d87a4432d5f2ddae67259637810c29fdfb6ddf42621875a4",
+    "parent_decision": "rejected_for_formal_training_failed_frozen_temperature_gate",
+    "per_sample_filtering_replacement_or_patch": false,
+    "qualification_sha256": "31f33bfa535153981279293c55c74a0f19db6484a08f4fb50ce95b7cdaf1a141",
+    "seed_changed_or_searched": false
+  },
+  "peak_deltaT_K": {
+    "max": 76.38450083475789,
+    "median": 46.513937738979934,
+    "min": 30.039183849753158,
+    "p95": 67.80973627009838
+  },
+  "projection_reconstruction": {
+    "full_field_cv_relative_rmse": {
+      "max": 0.04048586254122493,
+      "median": 0.025646107228098014,
+      "min": 0.010794552932564448,
+      "p95": 0.036957951164772
+    },
+    "full_field_cv_rmse_K": {
+      "max": 1.9233920935260072,
+      "median": 0.8340943625237863,
+      "min": 0.3719426838081157,
+      "p95": 1.7087629140288072
+    },
+    "full_field_max_abs_error_K": {
+      "max": 16.585668815127974,
+      "median": 5.7055803292059295,
+      "min": 2.030742114753366,
+      "p95": 11.055817939926456
+    },
+    "max_abs_layer_average_error_K": {
+      "max": 0.856354138321251,
+      "median": 0.5188789256876305,
+      "min": 0.33412776897017693,
+      "p95": 0.6921302975234283
+    },
+    "max_abs_layer_drop_error_K": {
+      "max": 4.7638353897503976,
+      "median": 1.3817141268754938,
+      "min": 0.496046120740516,
+      "p95": 4.028113735610927
+    }
+  },
+  "sample_count": 1024,
+  "schema_version": "heat3d_v6_p1g_geometry_deconfounding_audit_v1",
+  "split_group_counts": {
+    "test": 16,
+    "train": 96,
+    "valid": 16
+  },
+  "split_margins_identical": true,
+  "split_normalized_margins": {
+    "test": {
+      "alignment_relation": {
+        "offset": 0.5,
+        "partly_aligned": 0.5
+      },
+      "layout_kind": {
+        "clustered": 0.25,
+        "distributed": 0.25,
+        "edge_balanced": 0.25,
+        "mixed": 0.25
+      },
+      "source_count": {
+        "10": 0.125,
+        "3": 0.125,
+        "4": 0.125,
+        "5": 0.125,
+        "6": 0.125,
+        "7": 0.125,
+        "8": 0.125,
+        "9": 0.125
+      }
+    },
+    "train": {
+      "alignment_relation": {
+        "offset": 0.5,
+        "partly_aligned": 0.5
+      },
+      "layout_kind": {
+        "clustered": 0.25,
+        "distributed": 0.25,
+        "edge_balanced": 0.25,
+        "mixed": 0.25
+      },
+      "source_count": {
+        "10": 0.125,
+        "3": 0.125,
+        "4": 0.125,
+        "5": 0.125,
+        "6": 0.125,
+        "7": 0.125,
+        "8": 0.125,
+        "9": 0.125
+      }
+    },
+    "valid": {
+      "alignment_relation": {
+        "offset": 0.5,
+        "partly_aligned": 0.5
+      },
+      "layout_kind": {
+        "clustered": 0.25,
+        "distributed": 0.25,
+        "edge_balanced": 0.25,
+        "mixed": 0.25
+      },
+      "source_count": {
+        "10": 0.125,
+        "3": 0.125,
+        "4": 0.125,
+        "5": 0.125,
+        "6": 0.125,
+        "7": 0.125,
+        "8": 0.125,
+        "9": 0.125
+      }
+    }
+  },
+  "split_sample_counts": {
+    "test": 128,
+    "train": 768,
+    "valid": 128
+  },
+  "temperature_gate": {
+    "peak_deltaT_30_80_fraction_min": 0.8,
+    "peak_deltaT_above_100_fraction_max": 0.05,
+    "peak_deltaT_above_120_count_max": 0,
+    "peak_deltaT_below_30_count_max": 0
+  },
+  "temperature_gate_checks": {
+    "above_100": true,
+    "above_120": true,
+    "below_30": true,
+    "in_30_80": true
+  },
+  "temperature_gate_counts": {
+    "above_100": 0,
+    "above_120": 0,
+    "below_30": 0,
+    "in_30_80": 1024
+  },
+  "temperature_gate_passed": true
+}

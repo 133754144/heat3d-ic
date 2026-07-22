@@ -1,0 +1,128 @@
+{
+  "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v1",
+  "dataset_manifest_sha256": "b52bfbf674aa9426f1d670e02ad0e67ce2e64c5b7f76934213e62460294501ac",
+  "dataset_path": "data/heat3d_v6_p1g_geometry_deconfounded1024_v1",
+  "factor_pearson_correlation": [
+    [
+      0.9999999999999999,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.9999999999999999,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "guardrails": {
+    "model_inference_runs": 0,
+    "peak_deltaT_filtering": false,
+    "peak_deltaT_resampling": false,
+    "per_sample_Rth_power_back_calculation": false,
+    "post_solve_factor_or_seed_selection": false,
+    "sample_replacement": false,
+    "training_runs": 0
+  },
+  "integrity": {
+    "all_interfaces_covered": true,
+    "all_layers_covered": true,
+    "max_abs_energy_balance_relative_error": 1.203067472033137e-10,
+    "maximum_q_W_m3": 5354248366.013083,
+    "maximum_single_source_power_W": 3.0,
+    "maximum_surface_power_density_W_cm2": 59.30069759301236,
+    "minimum_source_control_volume_count": 264,
+    "minimum_source_in_plane_interval_count": 7
+  },
+  "sample_count": 1024,
+  "schema_version": "heat3d_v6_p1g_geometry_deconfounded_audit_v1",
+  "source_count": 6656,
+  "source_count_distribution": {
+    "10": 128,
+    "3": 128,
+    "4": 128,
+    "5": 128,
+    "6": 128,
+    "7": 128,
+    "8": 128,
+    "9": 128
+  },
+  "split_role_counts": {
+    "test": 128,
+    "train": 768,
+    "valid": 128
+  },
+  "summary": {
+    "Rth_peak_K_W": {
+      "max": 12.730750139467816,
+      "median": 10.010546678090574,
+      "min": 7.509795962193796
+    },
+    "bottom_heat_fraction": {
+      "max": 0.06230069087797428,
+      "median": 0.03163154480393007,
+      "min": 0.012772616214389547
+    },
+    "energy_balance_relative_error": {
+      "max": -8.211711866046301e-11,
+      "median": -1.0158086062121244e-10,
+      "min": -1.203067472033137e-10
+    },
+    "full_field_idw8_cv_relative_rmse": {
+      "max": 0.04048586254122493,
+      "median": 0.025646107228098014,
+      "min": 0.010794552932564448
+    },
+    "full_field_idw8_cv_rmse_K": {
+      "max": 1.9233920935260072,
+      "median": 0.8340943625237863,
+      "min": 0.3719426838081157
+    },
+    "full_field_idw8_max_abs_error_K": {
+      "max": 16.585668815127974,
+      "median": 5.7055803292059295,
+      "min": 2.030742114753366
+    },
+    "max_abs_layer_average_error_K": {
+      "max": 0.856354138321251,
+      "median": 0.5188789256876305,
+      "min": 0.33412776897017693
+    },
+    "max_abs_layer_drop_error_K": {
+      "max": 4.7638353897503976,
+      "median": 1.3817141268754938,
+      "min": 0.496046120740516
+    },
+    "mean_deltaT_K": {
+      "max": 58.120465377840226,
+      "median": 37.7161985309812,
+      "min": 24.443972108819395
+    },
+    "package_total_power_W": {
+      "max": 6.0,
+      "median": 5.0,
+      "min": 4.0
+    },
+    "peak_deltaT_K": {
+      "max": 76.38450083475789,
+      "median": 46.513937738979934,
+      "min": 30.039183849753158
+    },
+    "solver_peak_minus_projected_peak_K": {
+      "max": 0.2789750165310352,
+      "median": 0.04125706406608742,
+      "min": 0.0012512944085756317
+    },
+    "top_heat_fraction": {
+      "max": 0.9872273839037542,
+      "median": 0.9683684552972318,
+      "min": 0.9376993092085938
+    }
+  },
+  "window_hit_count": 1024,
+  "window_hit_fraction": 1.0
+}

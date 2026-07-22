@@ -81,6 +81,7 @@ def _load(path: Path) -> dict[str, Any]:
         "heat3d_v6_p1e_deconfounded_dataset_v1",
         "heat3d_v6_p1f_unified_layered_dataset_v1",
         "heat3d_v6_p1g_geometry_deconfounded_dataset_v1",
+        "heat3d_v6_p1g_geometry_deconfounded_dataset_v2",
     }:
         raise P1eError("unexpected P1e/P1f/P1g schema")
     if int(config["sample_count"]) != len(config["cases"]):
@@ -311,8 +312,9 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
             power = float(case["package_total_power_W"])
             q, sources, layer_power = _build_sources(sample_id, power, group, physics, mesh)
             if group["group_id"] not in group_projection:
+                projection_seed_key = str(group.get("projection_seed_key", group["group_id"]))
                 points, strata, point_seed = p1a._sample_points_before_labels(
-                    base_seed=int(config["seed"]), sample_id=str(group["group_id"]),
+                    base_seed=int(config["seed"]), sample_id=projection_seed_key,
                     physics=physics, mesh=mesh, sources=sources,
                 )
                 group_projection[str(group["group_id"])] = (
@@ -362,7 +364,8 @@ def generate(config_path: Path, dataset: Path, artifact_stem: str, dry_run: bool
                 },
                 "operator_projection": {
                     "point_count": 1024, "point_seed": point_seed,
-                    "point_seed_key": group["group_id"], "point_coordinates_sha256": point_sha,
+                    "point_seed_key": str(group.get("projection_seed_key", group["group_id"])),
+                    "point_coordinates_sha256": point_sha,
                     "coordinates_reused_within_geometry_group": True,
                     "point_coordinates_frozen_before_temperature_solve": True,
                     "label_inputs_used_for_point_selection": [], "strata_counts": dict(sorted(Counter(strata).items())),
