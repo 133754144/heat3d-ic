@@ -5,17 +5,29 @@
     "canonical_dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
     "loader": "v6_dual_robin_manifest_v1",
     "bc_adapter": "dual_robin_top_bottom_v1",
-    "batch_size": 28,
-    "effective_batch_size": 28,
-    "graph_compatible_micro_batch_size": 8,
-    "optimizer_updates_per_epoch": 28,
-    "final_partial_effective_batch_size": 12,
+        "batch_size": 24,
+        "effective_batch_size": 24,
+        "graph_compatible_micro_batch_size": 8,
+        "micro_batches_per_epoch": 96,
+        "optimizer_updates_per_epoch": 32,
+        "final_partial_effective_batch_size": null,
+        "cross_geometry_dummy_edge_padding": true,
     "validation_batch_size": 32,
     "prediction_batch_size": 32,
     "drop_last": false,
     "random_initialization": true,
     "final_probe_enabled": false,
-    "legacy_baseline_comparison_enabled": false
+        "legacy_baseline_comparison_enabled": false,
+        "unique_new_training_adaptation": "effective_B24_3xB8_no_geometry_split",
+        "batch_adaptation_diff_paths": [
+            "run.batch_size",
+            "metadata.configured_batch_size",
+            "metadata.effective_batch_size",
+            "metadata.micro_batches_per_epoch",
+            "metadata.optimizer_updates_per_epoch",
+            "metadata.final_partial_effective_batch_size",
+            "metadata.cross_geometry_dummy_edge_padding"
+        ]
   },
   "configs": [
     {

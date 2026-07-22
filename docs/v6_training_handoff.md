@@ -40,12 +40,13 @@ has 11 channels: `kxyz`, `q`, four mutually exclusive BC flags, `top_h`,
 ambient, not a fixed bottom surface temperature. There is no Dirichlet
 projection; the native branch uses an all-zero projection mask.
 
-P1g's 1024 points are irregular and frozen per geometry group. The unpadded
-graph edge tensor shape therefore differs across groups. Runtime batching uses
-graph-compatible microbatches up to B8, then computes a sample-count-weighted
-gradient mean over an effective B28 window. Gradient clipping and one AdamW
-update occur only after accumulation. With train=768 and `drop_last=false`, an
-epoch has 27 full B28 updates plus one retained B12 update (28 updates total).
+P1g's 1024 points are irregular and frozen per geometry group. Runtime batching
+uses exact B8 microbatches across geometries. Within each B8, only the existing
+dummy graph edge is repeated to pad edge tensors to the batch maximum; all real
+nodes and edges remain unchanged. Three B8 gradients form one sample-weighted
+effective B24 gradient, followed by one clipping operation and one AdamW
+update. With train=768 and `drop_last=false`, every epoch is exactly 96 B8
+microbatches and 32 B24 updates, with no B4/B12 or geometry-based split.
 
 V6's Global FiLM context retains 24 dimensions. V5 positions 18--20 are
 replaced by `log_bottom_h_W_m2K`, `top_T_inf_K`, and `bottom_T_inf_K`; all
@@ -61,7 +62,7 @@ model, loss, optimizer, graph, epoch, seed, or selection-metric change.
 `configs/heat3d_v5/V4P5_42_canonical.yaml`; its only model metadata difference
 is the dimension-preserving V6 Global Context schema.
 
-Both use random initialization, effective B28/B32/B32, `drop_last=false`, and
+Both use random initialization, effective B24/B32/B32, `drop_last=false`, and
 600 epochs. V6_01 preserves `valid_base_mse`; V6_02 preserves canonical
 `valid_rel_rmse_v4_pct` (point-global true-RMS relative RMSE). Old final-probe,
 post-training legacy diagnostics, and baseline comparison are disabled.
@@ -71,7 +72,7 @@ Resolved configs:
 - `configs/heat3d_v6/resolved/V6_01_V4best.resolved.yaml`
 - `configs/heat3d_v6/resolved/V6_02_V5best.resolved.yaml`
 
-## Bounded two-host GPU preflight
+## Prior B28 two-host GPU preflight reference
 
 The preflight contract is one epoch only: V6_01 runs on `devbox` and V6_02
 runs on `wsl2`. It materializes only `train` and `valid_iid`; the manifest's
@@ -98,7 +99,7 @@ Frozen evidence and its checker:
 | V6_01 V4 baseline | devbox | 28 | 2569.29 / 9169.92 MiB | 64.48 / 29.99 s | 0.01785 / 0.00168 K |
 | V6_02 V5 baseline | wsl2 | 28 | 2894.99 / 9169.92 MiB | 104.99 / 40.36 s | 0.04620 / 0.00562 K |
 
-Both runs used 1024 nodes, B28 effective updates from graph-compatible B8
+Both historical runs used 1024 nodes, B28 effective updates from graph-compatible B8
 microbatches, and one retained B12 update; the B12 position may move under
 sample shuffling. Losses, gradients, updates, checkpoints, and prediction
 arrays were finite. V6_02's 24-dimensional context standardizer was fit on

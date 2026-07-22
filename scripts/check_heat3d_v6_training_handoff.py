@@ -49,6 +49,7 @@ DATA_ROOT = ROOT / "data" / CANONICAL_V6_DATASET_ID
 MANIFEST = ROOT / "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json"
 AMENDMENT = ROOT / "configs/heat3d_v6/v6_p1g_v0_acceptance_amendment.json"
 LIFECYCLE = ROOT / "configs/heat3d_v6/v6_training_dataset_lifecycle.csv"
+BASELINE_DIFF_REPORT = ROOT / "configs/heat3d_v6/v6_baseline_diff_report.json"
 
 
 def resolved(path: Path) -> dict[str, Any]:
@@ -80,6 +81,7 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
         "dataset.",
         "metadata.",
         "model.global_context_feature_names",
+        "run.batch_size",
         "run.micro_batch_size",
         "run.validation_batch_size",
         "run.prediction_batch_size",
@@ -113,7 +115,7 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
     assert candidate["dataset"]["name"] == CANONICAL_V6_DATASET_ID
     assert candidate["dataset"]["loader"] == "v6_dual_robin_manifest_v1"
     assert candidate["dataset"]["split_map_path"] is None
-    assert candidate["run"]["batch_size"] == 28
+    assert candidate["run"]["batch_size"] == 24
     assert candidate["run"]["micro_batch_size"] == 8
     assert candidate["run"]["validation_batch_size"] == 32
     assert candidate["run"]["prediction_batch_size"] == 32
@@ -122,9 +124,12 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
     assert candidate["run"]["final_probe_eval_after_training"] is False
     assert candidate["diagnostics"]["run_baseline_comparison"] is False
     assert candidate["metadata"]["training_started"] is False
-    assert candidate["metadata"]["effective_batch_size"] == 28
-    assert candidate["metadata"]["optimizer_updates_per_epoch"] == 28
-    assert candidate["metadata"]["final_partial_effective_batch_size"] == 12
+    assert candidate["metadata"]["configured_batch_size"] == 24
+    assert candidate["metadata"]["effective_batch_size"] == 24
+    assert candidate["metadata"]["micro_batches_per_epoch"] == 96
+    assert candidate["metadata"]["optimizer_updates_per_epoch"] == 32
+    assert candidate["metadata"]["final_partial_effective_batch_size"] is None
+    assert candidate["metadata"]["cross_geometry_dummy_edge_padding"] is True
     if config_id == "V6_02_V5best":
         assert candidate["export"]["selection_metric"] == "valid_rel_rmse_v4_pct"
     validate_v2_config(candidate, config_path=CONFIGS[config_id][0])
@@ -137,10 +142,11 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
         "graph_equal": True,
         "epochs_equal": True,
         "selection_metric_equal": True,
-        "effective_batch_size": 28,
+        "effective_batch_size": 24,
         "micro_batch_size": 8,
-        "optimizer_updates_per_epoch": 28,
-        "tail_effective_batch_size": 12,
+        "micro_batches_per_epoch": 96,
+        "optimizer_updates_per_epoch": 32,
+        "tail_effective_batch_size": None,
         "resolved_diff_paths": diff_paths,
         "unexpected_scientific_diff_paths": unexpected,
     }
@@ -196,6 +202,19 @@ def main() -> int:
     smoke = json.loads((ROOT / "configs/heat3d_v6/v6_training_handoff_smoke.json").read_text(encoding="utf-8"))
     assert smoke["training_started"] is False and smoke["checkpoint_saved"] is False
     assert all(row["finite_forward_backward"] and row["adamw_update_finite"] for row in smoke["configs"])
+
+    baseline_diff = json.loads(BASELINE_DIFF_REPORT.read_text(encoding="utf-8"))
+    adaptation = baseline_diff["common_runtime_overrides"]
+    assert adaptation["unique_new_training_adaptation"] == "effective_B24_3xB8_no_geometry_split"
+    assert adaptation["batch_adaptation_diff_paths"] == [
+        "run.batch_size",
+        "metadata.configured_batch_size",
+        "metadata.effective_batch_size",
+        "metadata.micro_batches_per_epoch",
+        "metadata.optimizer_updates_per_epoch",
+        "metadata.final_partial_effective_batch_size",
+        "metadata.cross_geometry_dummy_edge_padding",
+    ]
 
     report = {
         "status": "passed",

@@ -138,6 +138,26 @@ def main() -> int:
             raise FileNotFoundError(path)
     run_config = json.loads(run_config_path.read_text(encoding="utf-8"))
     loss_summary = json.loads(loss_summary_path.read_text(encoding="utf-8"))
+    configured_batch_size = int(loss_summary["configured_batch_size"])
+    effective_batch_size = int(loss_summary["effective_batch_size"])
+    micro_batch_size = int(loss_summary["micro_batch_size"])
+    updates_per_epoch = int(loss_summary["updates_per_epoch"])
+    epoch_micro_batch_counts = [
+        int(value) for value in loss_summary.get("epoch_micro_batch_counts") or []
+    ]
+    epoch_effective_counts = loss_summary.get(
+        "epoch_effective_batch_sample_counts"
+    ) or []
+    if not epoch_micro_batch_counts or not epoch_effective_counts:
+        raise ValueError("missing effective-batch trajectory in loss_summary")
+    if len(epoch_effective_counts) != 1:
+        raise ValueError("recovery only accepts a single completed epoch")
+    effective_counts = [int(value) for value in epoch_effective_counts[0]]
+    tail = (
+        effective_counts[-1]
+        if effective_counts and effective_counts[-1] != effective_batch_size
+        else None
+    )
     final_payload = runner._load_params_checkpoint(artifacts["final"][0])
     metadata = dict(final_payload.get("run_config_metadata") or {})
     checkpoint_stats = dict(final_payload.get("train_only_normalization") or {})
@@ -169,7 +189,7 @@ def main() -> int:
     )
     stats = stats_from_checkpoint_payload(checkpoint_stats, train_examples)
     builder = runner.Heat3DGraphBuilder(**dict(metadata.get("graph_config") or {}))
-    groups = runner._make_groups_with_progress(
+    groups = runner._make_v6_padded_groups_with_progress(
         valid_examples,
         stats,
         builder,
@@ -259,7 +279,7 @@ def main() -> int:
     )
     passed = bool(
         reload_audit.get("status") == "passed"
-        and memory["train_batch_end_count"] == 28
+        and memory["train_batch_end_count"] == updates_per_epoch
         and memory["train_batch_details_finite"]
         and finite_history
         and context_fit_ok
@@ -284,11 +304,13 @@ def main() -> int:
             "bottom_boundary_semantics": "robin_not_fixed_temperature",
         },
         "effective_batch": {
-            "configured": 28,
-            "effective": 28,
-            "micro_max": 8,
-            "updates_per_epoch": 28,
-            "tail": 12,
+            "configured": configured_batch_size,
+            "effective": effective_batch_size,
+            "micro_max": micro_batch_size,
+            "micro_batches_per_epoch": epoch_micro_batch_counts[0],
+            "updates_per_epoch": updates_per_epoch,
+            "effective_batch_sample_counts": effective_counts,
+            "tail": tail,
         },
         "checkpoint_prediction_reload_audit": reload_audit,
         "checkpoint_pair_count": len(artifacts),

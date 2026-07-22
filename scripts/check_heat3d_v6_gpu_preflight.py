@@ -9,24 +9,12 @@ import math
 from pathlib import Path
 import sys
 
-import yaml
-
-
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
-for path in (ROOT, SCRIPTS):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
-
-from check_heat3d_v4_registry import resolve_inherited_yaml  # noqa: E402
 
 
 REPORT = ROOT / "configs/heat3d_v6/v6_training_handoff_gpu_preflight.json"
 MANIFEST = ROOT / "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json"
-FORMAL_CONFIGS = {
-    "V6_01_V4best": ROOT / "configs/heat3d_v6/V6_01_V4best.yaml",
-    "V6_02_V5best": ROOT / "configs/heat3d_v6/V6_02_V5best.yaml",
-}
+CONFIG_IDS = {"V6_01_V4best", "V6_02_V5best"}
 EXPECTED_HOSTS = {"V6_01_V4best": "devbox", "V6_02_V5best": "wsl2"}
 EXPECTED_CHECKPOINT_LABELS = {
     "V6_01_V4best": {"final", "legacy_best"},
@@ -42,11 +30,6 @@ EXPECTED_CHECKPOINT_LABELS = {
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _resolved(path: Path) -> dict:
-    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return resolve_inherited_yaml(payload, path)
 
 
 def _finite_positive(value: object) -> bool:
@@ -80,16 +63,8 @@ def main() -> int:
     }
 
     runs = payload["runs"]
-    assert set(runs) == set(FORMAL_CONFIGS)
-    for config_id, formal_path in FORMAL_CONFIGS.items():
-        formal = _resolved(formal_path)
-        assert formal["run"]["epochs"] == 600
-        assert formal["run"]["batch_size"] == 28
-        assert formal["run"]["micro_batch_size"] == 8
-        assert formal["run"]["validation_batch_size"] == 32
-        assert formal["run"]["prediction_batch_size"] == 32
-        assert formal["metadata"]["training_started"] is False
-
+    assert set(runs) == CONFIG_IDS
+    for config_id in sorted(CONFIG_IDS):
         run = runs[config_id]
         assert run["status"] in {"passed", "passed_recovered_post_export"}
         assert run["host"] == EXPECTED_HOSTS[config_id]

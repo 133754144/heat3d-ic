@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one real canonical V6 B28 forward/backward/update without saving state."""
+"""Run one real canonical V6 3xB8 -> B24 update without saving state."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import sys
 from unittest.mock import patch
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import yaml
 
@@ -87,24 +88,18 @@ def smoke(config_path: Path) -> dict:
     runner._validate_model_config(model_config)
     graph_config = runner._graph_config_from_args(args)
     builder = Heat3DGraphBuilder(**graph_config)
-    compatible: dict[tuple, list] = {}
-    batch_examples = []
-    for example in train_examples:
-        metadata = builder.build_metadata(
-            runner._graph_coords_for_example(example, stats),
-            key=runner._metadata_key(0),
+    order = np.random.default_rng(0).permutation(len(train_examples))[:24]
+    batch_examples = [train_examples[int(index)] for index in order]
+    groups = [
+        runner._make_batch_group_with_seed(
+            f"v6_real_B24_micro_{micro_index + 1}_B8",
+            batch_examples[micro_index * 8 : (micro_index + 1) * 8],
+            stats,
+            builder,
+            graph_seed=0,
         )
-        signature = runner._metadata_shape_signature(metadata)
-        bucket = compatible.setdefault(signature, [])
-        bucket.append(example)
-        if len(bucket) == 28:
-            batch_examples = bucket
-            break
-    if not batch_examples:
-        batch_examples = max(compatible.values(), key=len)[:28]
-    group = runner._make_batch_group_with_seed(
-        "v6_real_B28", batch_examples, stats, builder, graph_seed=0
-    )
+        for micro_index in range(3)
+    ]
     examples_by_id = {example.sample_id: example for example in batch_examples}
     global_lookup, context_payload = runner._prepare_global_context_lookup(
         model_config,
@@ -113,16 +108,16 @@ def smoke(config_path: Path) -> dict:
     )
     if global_lookup:
         runner._attach_global_context_to_groups(
-            [group],
+            groups,
             global_lookup,
             expected_feature_dim=int(model_config["global_context_feature_dim"]),
         )
     native = model_config.get("native_output_mode") == "native_shape_scale"
     if native:
-        runner._attach_native_physics_to_groups([group], examples_by_id)
+        runner._attach_native_physics_to_groups(groups, examples_by_id)
         if model_config.get("scale_attention_mode", "none") != "none":
             runner._attach_qk_region_features_to_groups(
-                [group],
+                groups,
                 examples_by_id,
                 feature_version=str(model_config["qk_region_feature_version"]),
             )
@@ -130,16 +125,31 @@ def smoke(config_path: Path) -> dict:
     if native:
         runner._fit_native_loss_train_references(loss_config, train_examples)
     model = RIGNO(**model_config)
-    params = runner._model_init(model, jax.random.PRNGKey(0), group, group["inputs"])["params"]
+    params = runner._model_init(
+        model, jax.random.PRNGKey(0), groups[0], groups[0]["inputs"]
+    )["params"]
 
     key = jax.random.PRNGKey(1) if float(model_config.get("p_edge_masking", 0.0)) > 0 else None
 
-    def objective(current_params):
-        return runner._loss_components(
-            model, current_params, [group], stats, loss_config, key=key
-        )["total_loss"]
+    weighted_loss = jnp.asarray(0.0)
+    weighted_gradients = jax.tree_util.tree_map(jnp.zeros_like, params)
+    for group in groups:
+        def objective(current_params):
+            return runner._loss_components(
+                model, current_params, [group], stats, loss_config, key=key
+            )["total_loss"]
 
-    loss, gradients = jax.value_and_grad(objective)(params)
+        micro_loss, micro_gradients = jax.value_and_grad(objective)(params)
+        weighted_loss += micro_loss * 8
+        weighted_gradients = jax.tree_util.tree_map(
+            lambda total, value: total + value * 8,
+            weighted_gradients,
+            micro_gradients,
+        )
+    loss = weighted_loss / 24.0
+    gradients = jax.tree_util.tree_map(
+        lambda value: value / 24.0, weighted_gradients
+    )
     jax.block_until_ready(loss)
     import optax
 
@@ -168,8 +178,13 @@ def smoke(config_path: Path) -> dict:
     return {
         "config_id": config["config_id"],
         "canonical_dataset_id": config["dataset"]["name"],
-        "configured_batch_size": 28,
-        "realized_graph_compatible_batch_size": len(batch_examples),
+        "configured_batch_size": 24,
+        "micro_batch_size": 8,
+        "micro_batch_count": 3,
+        "realized_effective_batch_size": len(batch_examples),
+        "distinct_geometry_group_count": len(
+            {example.meta["group_id"] for example in batch_examples}
+        ),
         "node_count": 1024,
         "loss": float(loss),
         "global_gradient_norm": gradient_norm,

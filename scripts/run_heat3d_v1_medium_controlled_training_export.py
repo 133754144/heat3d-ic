@@ -7253,7 +7253,57 @@ def _build_batch_metadata_with_seed(
             lambda value: jnp.repeat(value, repeats=len(coords_list), axis=0),
             metadata_list[0],
         ), True
-    return tree.tree_map(lambda *values: jnp.concatenate(values, axis=0), *metadata_list), False
+
+    # Every metadata payload already ends each edge array with a dummy edge
+    # connecting the corresponding dummy nodes.  Repeat only that edge to pad
+    # mixed V6 geometries to the largest edge count in the micro-batch.  This
+    # preserves every real edge while giving JAX one dense B8/B32 tensor shape.
+    edge_fields = (
+        "p2r_edge_indices",
+        "r2r_edge_indices",
+        "r2r_edge_domains",
+        "r2p_edge_indices",
+    )
+    edge_targets: dict[str, int | None] = {}
+    for field in edge_fields:
+        values = [getattr(metadata, field) for metadata in metadata_list]
+        if all(value is None for value in values):
+            edge_targets[field] = None
+            continue
+        if any(value is None for value in values):
+            raise ValueError(f"mixed None/non-None graph metadata for {field}")
+        edge_targets[field] = max(int(value.shape[1]) for value in values)
+
+    padded_metadata = []
+    for metadata in metadata_list:
+        replacements = {}
+        for field, target in edge_targets.items():
+            value = getattr(metadata, field)
+            if target is None:
+                replacements[field] = None
+                continue
+            pad_count = int(target) - int(value.shape[1])
+            if pad_count < 0:
+                raise AssertionError(f"negative graph metadata padding for {field}")
+            replacements[field] = (
+                value
+                if pad_count == 0
+                else jnp.concatenate(
+                    [value, jnp.repeat(value[:, -1:, :], pad_count, axis=1)],
+                    axis=1,
+                )
+            )
+        padded_metadata.append(
+            type(metadata)(
+                **{
+                    field: replacements.get(field, getattr(metadata, field))
+                    for field in metadata._fields
+                }
+            )
+        )
+    return tree.tree_map(
+        lambda *values: jnp.concatenate(values, axis=0), *padded_metadata
+    ), False
 
 
 def _graph_coords_for_example(example, stats: dict) -> np.ndarray:
@@ -7562,12 +7612,12 @@ def _make_graph_compatible_sample_shuffle_groups_with_progress(
     drop_last: bool = False,
     profile_counts: dict[str, int] | None = None,
 ) -> list[dict]:
-    """Shuffle V6 samples, then batch only graph-shape-compatible examples.
+    """Legacy V6 signature-grouped batching retained for artifact replay.
 
     P1g freezes coordinates per geometry group rather than globally.  The
     unpadded RIGNO graph tensors therefore cannot concatenate arbitrary
     geometries. This adapter emits graph-compatible micro-batches whose sample
-    counts exactly tile effective-B28 accumulation windows. The final partial
+    counts exactly tile configured accumulation windows. The final partial
     window is retained when ``drop_last`` is false.
     """
 
@@ -7623,6 +7673,59 @@ def _make_graph_compatible_sample_shuffle_groups_with_progress(
             f"group build {label}: graph-compatible groups={len(result)} "
             f"micro_max={micro_limit} effective_batch={effective_batch_size}"
         ),
+    )
+    return result
+
+
+def _make_v6_padded_groups_with_progress(
+    examples,
+    stats: dict,
+    builder: Heat3DGraphBuilder,
+    label: str,
+    progress_enabled: bool,
+    progress_detail: str,
+    graph_seed: int,
+    batch_size: int,
+    drop_last: bool = False,
+    profile_counts: dict[str, int] | None = None,
+    batch_build_seed: int | None = None,
+) -> list[dict]:
+    """Build fixed-size V6 batches across geometries using dummy-edge padding."""
+
+    start = time.perf_counter()
+    ordered = list(examples)
+    if batch_build_seed is not None:
+        rng = np.random.default_rng(int(batch_build_seed))
+        order = rng.permutation(len(ordered))
+        ordered = [ordered[int(index)] for index in order]
+    chunks = _chunk_examples(ordered, batch_size=batch_size, drop_last=drop_last)
+    result = []
+    for index, batch_examples in enumerate(chunks, start=1):
+        _bump_profile_count(profile_counts, "graph_metadata_build_calls", len(batch_examples))
+        _bump_profile_count(
+            profile_counts,
+            f"{label}_padded_batch_metadata_build_calls",
+            len(batch_examples),
+        )
+        _bump_profile_count(profile_counts, "graph_build_graphs_calls")
+        _bump_profile_count(profile_counts, f"{label}_padded_build_graphs_calls")
+        result.append(
+            _make_batch_group_with_seed(
+                f"{label}_padded_batch_{index:04d}_B{len(batch_examples)}",
+                batch_examples,
+                stats,
+                builder,
+                graph_seed=graph_seed,
+            )
+        )
+    _progress(
+        progress_enabled,
+        "startup",
+        (
+            f"group build {label}: padded cross-geometry groups={len(result)} "
+            f"batch_size={batch_size} shuffled={batch_build_seed is not None}"
+        ),
+        start,
     )
     return result
 
@@ -7859,30 +7962,41 @@ def main() -> int:
     group_start = time.perf_counter()
     _progress(progress_enabled, "startup", "building grouped JAX arrays and graphs ...")
     if batch_config["batch_plan"] == "sample_shuffle":
-        v6_graph_compatible = bool(
+        v6_padded = bool(
             train_examples and isinstance(train_examples[0], V6DualRobinExample)
         )
-        group_builder = (
-            _make_graph_compatible_sample_shuffle_groups_with_progress
-            if v6_graph_compatible else _make_sample_shuffle_groups_with_progress
-        )
-        group_kwargs = {
-            "micro_batch_size": batch_config.get("micro_batch_size")
-        } if v6_graph_compatible else {}
-        train_groups = group_builder(
-            train_examples,
-            stats,
-            builder,
-            "train",
-            progress_detail_enabled,
-            args.progress_detail,
-            seed_config["graph_seed"],
-            batch_size=batch_config["batch_size"],
-            batch_build_seed=batch_config["batch_build_seed"],
-            drop_last=batch_config["drop_last"],
-            profile_counts=profile_counts if profile_enabled else None,
-            **group_kwargs,
-        )
+        if v6_padded:
+            micro_batch_size = int(
+                batch_config.get("micro_batch_size")
+                or batch_config["batch_size"]
+            )
+            train_groups = _make_v6_padded_groups_with_progress(
+                train_examples,
+                stats,
+                builder,
+                "train",
+                progress_detail_enabled,
+                args.progress_detail,
+                seed_config["graph_seed"],
+                batch_size=micro_batch_size,
+                batch_build_seed=batch_config["batch_build_seed"],
+                drop_last=batch_config["drop_last"],
+                profile_counts=profile_counts if profile_enabled else None,
+            )
+        else:
+            train_groups = _make_sample_shuffle_groups_with_progress(
+                train_examples,
+                stats,
+                builder,
+                "train",
+                progress_detail_enabled,
+                args.progress_detail,
+                seed_config["graph_seed"],
+                batch_size=batch_config["batch_size"],
+                batch_build_seed=batch_config["batch_build_seed"],
+                drop_last=batch_config["drop_last"],
+                profile_counts=profile_counts if profile_enabled else None,
+            )
     else:
         train_groups = _make_groups_with_progress(
             train_examples,
@@ -7896,7 +8010,13 @@ def main() -> int:
             drop_last=batch_config["drop_last"],
             profile_counts=profile_counts if profile_enabled else None,
         )
-    valid_groups = _make_groups_with_progress(
+    v6_padded = bool(
+        train_examples and isinstance(train_examples[0], V6DualRobinExample)
+    )
+    validation_group_builder = (
+        _make_v6_padded_groups_with_progress if v6_padded else _make_groups_with_progress
+    )
+    valid_groups = validation_group_builder(
         valid_examples,
         stats,
         builder,
@@ -7909,7 +8029,7 @@ def main() -> int:
         profile_counts=profile_counts if profile_enabled else None,
     )
     valid_stress_groups = (
-        _make_groups_with_progress(
+        validation_group_builder(
             valid_stress_examples,
             stats,
             builder,
@@ -7932,7 +8052,10 @@ def main() -> int:
     test_iid_examples: list[Any] = []
     if build_all_groups:
         all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
-        all_groups = _make_groups_with_progress(
+        prediction_group_builder = (
+            _make_v6_padded_groups_with_progress if v6_padded else _make_groups_with_progress
+        )
+        all_groups = prediction_group_builder(
             all_examples,
             stats,
             builder,
@@ -7946,7 +8069,10 @@ def main() -> int:
         )
     if build_test_iid_groups:
         test_iid_examples = [dataset[index_by_id[sample_id]] for sample_id in test_iid_ids]
-        test_iid_groups = _make_groups_with_progress(
+        prediction_group_builder = (
+            _make_v6_padded_groups_with_progress if v6_padded else _make_groups_with_progress
+        )
+        test_iid_groups = prediction_group_builder(
             test_iid_examples,
             stats,
             builder,
@@ -8102,30 +8228,42 @@ def main() -> int:
             )
 
         def epoch_regroup_fn(epoch: int) -> list[dict[str, Any]]:
-            v6_graph_compatible = bool(
+            v6_padded = bool(
                 train_examples and isinstance(train_examples[0], V6DualRobinExample)
             )
-            group_builder = (
-                _make_graph_compatible_sample_shuffle_groups_with_progress
-                if v6_graph_compatible else _make_sample_shuffle_groups_with_progress
-            )
-            group_kwargs = {
-                "micro_batch_size": batch_config.get("micro_batch_size")
-            } if v6_graph_compatible else {}
-            groups = group_builder(
-                train_examples,
-                stats,
-                builder,
-                f"train_epoch_{epoch:04d}",
-                False,
-                "basic",
-                seed_config["graph_seed"],
-                batch_size=batch_config["batch_size"],
-                batch_build_seed=batch_config["batch_build_seed"] + int(epoch),
-                drop_last=batch_config["drop_last"],
-                profile_counts=profile_counts if profile_enabled else None,
-                **group_kwargs,
-            )
+            if v6_padded:
+                groups = _make_v6_padded_groups_with_progress(
+                    train_examples,
+                    stats,
+                    builder,
+                    f"train_epoch_{epoch:04d}",
+                    False,
+                    "basic",
+                    seed_config["graph_seed"],
+                    batch_size=int(
+                        batch_config.get("micro_batch_size")
+                        or batch_config["batch_size"]
+                    ),
+                    batch_build_seed=(
+                        batch_config["batch_build_seed"] + int(epoch)
+                    ),
+                    drop_last=batch_config["drop_last"],
+                    profile_counts=profile_counts if profile_enabled else None,
+                )
+            else:
+                groups = _make_sample_shuffle_groups_with_progress(
+                    train_examples,
+                    stats,
+                    builder,
+                    f"train_epoch_{epoch:04d}",
+                    False,
+                    "basic",
+                    seed_config["graph_seed"],
+                    batch_size=batch_config["batch_size"],
+                    batch_build_seed=batch_config["batch_build_seed"] + int(epoch),
+                    drop_last=batch_config["drop_last"],
+                    profile_counts=profile_counts if profile_enabled else None,
+                )
             _attach_global_context_to_groups(
                 groups,
                 global_context_lookup,
