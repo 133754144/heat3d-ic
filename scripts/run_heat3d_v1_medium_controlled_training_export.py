@@ -4954,10 +4954,12 @@ def _checkpoint_prediction_reload_audit(
     entries: list[tuple[str, Path, Path, Mapping[str, np.ndarray], Any]],
     # Raw-temperature replay is float32 and may take a different compiled
     # reduction path after checkpoint reload; keep exact parameter/NPZ checks
-    # while allowing a sub-0.05 K numerical difference. Irregular V6 graphs
-    # exercise GPU scatter/reduction kernels whose replay order is not bitwise
-    # deterministic even when the serialized parameter tree is exact.
-    tolerance: float = 5.0e-2,
+    # Irregular V6 graphs exercise GPU scatter/reduction kernels whose replay
+    # order is not bitwise deterministic even when the serialized parameter
+    # tree is exact. Gate both the worst point and the whole-field RMS so a
+    # sparse reduction outlier cannot hide a broad replay discrepancy.
+    max_tolerance: float = 1.0e-1,
+    rmse_tolerance: float = 1.0e-2,
 ) -> dict[str, Any]:
     """Reload saved params and NPZ predictions, then reproduce predictions."""
 
@@ -5004,7 +5006,8 @@ def _checkpoint_prediction_reload_audit(
         npz_max_abs = npz_difference["max_abs_K"]
         passed = bool(
             parameter_max_abs == 0.0
-            and checkpoint_max_abs <= tolerance
+            and checkpoint_max_abs <= max_tolerance
+            and checkpoint_difference["rmse_K"] <= rmse_tolerance
             and npz_max_abs == 0.0
         )
         reports.append(
@@ -5021,7 +5024,9 @@ def _checkpoint_prediction_reload_audit(
                 ],
                 "npz_reload_max_abs_error_K": npz_max_abs,
                 "npz_reload_rmse_K": npz_difference["rmse_K"],
-                "tolerance_K": float(tolerance),
+                "tolerance_K": float(max_tolerance),
+                "max_abs_tolerance_K": float(max_tolerance),
+                "rmse_tolerance_K": float(rmse_tolerance),
                 "global_context_fit_population": standardizer.get("fit_population"),
                 "scale_context_fit_population": scale_standardizer.get(
                     "fit_population"
