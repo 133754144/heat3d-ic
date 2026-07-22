@@ -125,12 +125,23 @@ def build_training_command(
     _append_option(command, "--processor-steps", model.get("processor_steps"))
     _append_option(command, "--mlp-hidden-layers", model.get("mlp_hidden_layers"))
     _append_option(command, "--p-edge-masking", model.get("p_edge_masking"))
+    _append_option(command, "--edge-masking-scope", model.get("edge_masking_scope"))
     _append_option(command, "--decoder-bypass-mode", model.get("decoder_bypass_mode"))
     _append_option(command, "--decoder-bypass-features", model.get("decoder_bypass_features"))
     _append_option(
         command,
         "--decoder-bypass-feature-source",
         model.get("decoder_bypass_feature_source"),
+    )
+    _append_option(
+        command,
+        "--decoder-bypass-local-feature-names",
+        _csv_names(model.get("decoder_bypass_local_feature_names")),
+    )
+    _append_option(
+        command,
+        "--decoder-bypass-output-space",
+        model.get("decoder_bypass_output_space"),
     )
     _append_option(
         command,
@@ -144,6 +155,49 @@ def build_training_command(
         "--decoder-bypass-residual-scale",
         model.get("decoder_bypass_residual_scale"),
     )
+    _append_option(command, "--global-context-mode", model.get("global_context_mode"))
+    _append_option(
+        command,
+        "--global-context-feature-names",
+        _csv_names(model.get("global_context_feature_names")),
+    )
+    _append_option(command, "--film-target", model.get("film_target"))
+    _append_option(command, "--film-init", model.get("film_init"))
+    _append_option(command, "--film-hidden-size", model.get("film_hidden_size"))
+    _append_option(command, "--native-output-mode", model.get("native_output_mode"))
+    _append_option(command, "--native-branch-mode", model.get("native_branch_mode"))
+    _append_option(command, "--scale-head-mode", model.get("scale_head_mode"))
+    _append_option(command, "--scale-pooling", model.get("scale_pooling"))
+    _append_option(command, "--scale-head-hidden-size", model.get("scale_head_hidden_size"))
+    _append_option(command, "--scale-head-depth", model.get("scale_head_depth"))
+    _append_option(command, "--shape-attention-mode", model.get("shape_attention_mode"))
+    _append_option(command, "--scale-attention-mode", model.get("scale_attention_mode"))
+    _append_option(
+        command,
+        "--regional-attention-hidden-size",
+        model.get("regional_attention_hidden_size"),
+    )
+    _append_option(
+        command,
+        "--qk-region-feature-version",
+        model.get("qk_region_feature_version"),
+    )
+    _append_option(command, "--scale-context-mode", model.get("scale_context_mode"))
+    _append_option(
+        command,
+        "--scale-context-feature-names",
+        _csv_names(model.get("scale_context_feature_names")),
+    )
+    _append_option(command, "--scale-deepsets-mode", model.get("scale_deepsets_mode"))
+    _append_option(
+        command,
+        "--scale-deepsets-hidden-size",
+        model.get("scale_deepsets_hidden_size"),
+    )
+    if model.get("pooled_latent_stop_gradient") is True:
+        command.append("--pooled-latent-stop-gradient")
+    elif model.get("pooled_latent_stop_gradient") is False:
+        command.append("--no-pooled-latent-stop-gradient")
     _append_option(command, "--batch-size", run.get("batch_size"))
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
@@ -182,10 +236,22 @@ def build_training_command(
         command.append("--sample-weight-normalize")
     if run.get("shuffle_train_batches") is True:
         command.append("--shuffle-train-batches")
+    if run.get("epoch_wise_batch_regrouping") is True:
+        command.append("--epoch-wise-batch-regrouping")
     if run.get("drop_last") is True:
         command.append("--drop-last")
     _append_option(command, "--optimizer", _runner_optimizer_name(optimizer.get("name")))
     _append_option(command, "--lr", optimizer.get("lr"))
+    _append_option(
+        command,
+        "--scale-head-lr-multiplier",
+        optimizer.get("scale_head_lr_multiplier"),
+    )
+    _append_option(
+        command,
+        "--native-trainable-scope",
+        optimizer.get("native_trainable_scope"),
+    )
     _append_option(command, "--lr-schedule", optimizer.get("lr_schedule"))
     _append_option(command, "--warmup-epochs", optimizer.get("warmup_epochs"))
     _append_option(command, "--min-lr", optimizer.get("min_lr"))
@@ -228,6 +294,27 @@ def build_training_command(
     elif export.get("save_best_predictions") is True:
         command.append("--save-best-predictions")
     _append_option(command, "--best-predictions-name", export.get("best_predictions_name"))
+    if export.get("save_point_global_best_checkpoint") is True:
+        command.append("--save-point-global-best-checkpoint")
+    _append_option(
+        command,
+        "--point-global-best-checkpoint-name",
+        export.get("point_global_best_checkpoint_name"),
+    )
+    if export.get("save_base_mse_best_checkpoint") is True:
+        command.append("--save-base-mse-best-checkpoint")
+    _append_option(
+        command,
+        "--base-mse-best-checkpoint-name",
+        export.get("base_mse_best_checkpoint_name"),
+    )
+    if export.get("save_sample_first_best_checkpoint") is True:
+        command.append("--save-sample-first-best-checkpoint")
+    _append_option(
+        command,
+        "--sample-first-best-checkpoint-name",
+        export.get("sample_first_best_checkpoint_name"),
+    )
     _append_option(command, "--report-every", run.get("report_every"))
     _append_option(command, "--train-metrics-schedule", run.get("train_metrics_schedule"))
     _append_option(command, "--grad-norm-report-every", run.get("grad_norm_report_every"))
@@ -237,6 +324,11 @@ def build_training_command(
     if run.get("profile_timing") is True:
         command.append("--profile-timing")
     _append_option(command, "--profile-timing-json", run.get("profile_timing_json"))
+    _append_option(command, "--memory-audit-jsonl", run.get("memory_audit_jsonl"))
+    if run.get("memory_audit_every_batch") is True:
+        command.append("--memory-audit-every-batch")
+    if run.get("memory_audit_gc") is True:
+        command.append("--memory-audit-gc")
     _append_option(command, "--selection-metric", export.get("selection_metric"))
 
     _append_option(command, "--loss-mode", loss.get("mode"))
@@ -246,6 +338,26 @@ def build_training_command(
     _append_option(command, "--background-weight", loss.get("background_weight"))
     _append_option(command, "--hotspot-weight", loss.get("hotspot_weight"))
     _append_option(command, "--strong-q-weight", loss.get("strong_q_weight"))
+    _append_option(command, "--native-shape-cv-weight", loss.get("native_shape_cv_weight"))
+    _append_option(command, "--native-log-scale-weight", loss.get("native_log_scale_weight"))
+    _append_option(command, "--native-relative-field-weight", loss.get("native_relative_field_weight"))
+    _append_option(command, "--native-raw-field-weight", loss.get("native_raw_field_weight"))
+    _append_option(command, "--native-raw-loss-mode", loss.get("native_raw_loss_mode"))
+    _append_option(
+        command,
+        "--native-log-scale-weight-mode",
+        loss.get("native_log_scale_weight_mode"),
+    )
+    _append_option(
+        command,
+        "--native-log-scale-weight-clip-min",
+        loss.get("native_log_scale_weight_clip_min"),
+    )
+    _append_option(
+        command,
+        "--native-log-scale-weight-clip-max",
+        loss.get("native_log_scale_weight_clip_max"),
+    )
     _append_option(command, "--background-l1-weight", loss.get("background_l1_weight"))
     _append_option(
         command, "--background-bias-weight", loss.get("background_bias_weight")
@@ -500,6 +612,15 @@ def build_v2_command_plan(
         "decoder_bypass_feature_source": model.get(
             "decoder_bypass_feature_source", "normalized_c"
         ),
+        "decoder_bypass_local_feature_names": list(
+            model.get("decoder_bypass_local_feature_names") or ()
+        ),
+        "global_context_mode": model.get("global_context_mode", "none"),
+        "global_context_feature_names": list(
+            model.get("global_context_feature_names") or ()
+        ),
+        "film_target": model.get("film_target", "rnodes_processed"),
+        "film_init": model.get("film_init", "identity"),
         "diagnostics_commands": [],
         "mapped_fields": _mapped_fields(config),
         "unmapped_fields": _unmapped_fields(config),
@@ -597,6 +718,11 @@ def summarize_command_plan(plan: Mapping[str, Any]) -> str:
         f"decoder_bypass_mode: {plan.get('decoder_bypass_mode')}",
         f"decoder_bypass_features: {plan.get('decoder_bypass_features')}",
         f"decoder_bypass_feature_source: {plan.get('decoder_bypass_feature_source')}",
+        f"decoder_bypass_local_feature_names: {','.join(plan.get('decoder_bypass_local_feature_names', [])) or 'none'}",
+        f"global_context_mode: {plan.get('global_context_mode')}",
+        f"global_context_feature_count: {len(plan.get('global_context_feature_names', []))}",
+        f"film_target: {plan.get('film_target')}",
+        f"film_init: {plan.get('film_init')}",
         f"training_script: {plan.get('training_script')}",
         f"training: {shlex.join(plan['training_command'])}",
     ]
@@ -646,12 +772,56 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
             "model.decoder_bypass_feature_source",
             "training --decoder-bypass-feature-source",
         ),
+        (
+            "model.decoder_bypass_local_feature_names",
+            "training --decoder-bypass-local-feature-names",
+        ),
+        ("model.decoder_bypass_output_space", "training --decoder-bypass-output-space"),
         ("model.decoder_bypass_hidden_size", "training --decoder-bypass-hidden-size"),
         ("model.decoder_bypass_layers", "training --decoder-bypass-layers"),
         ("model.decoder_bypass_init", "training --decoder-bypass-init"),
         (
             "model.decoder_bypass_residual_scale",
             "training --decoder-bypass-residual-scale",
+        ),
+        ("model.global_context_mode", "training --global-context-mode"),
+        (
+            "model.global_context_feature_names",
+            "training --global-context-feature-names",
+        ),
+        ("model.film_target", "training --film-target"),
+        ("model.film_init", "training --film-init"),
+        ("model.film_hidden_size", "training --film-hidden-size"),
+        ("model.native_output_mode", "training --native-output-mode"),
+        ("model.native_branch_mode", "training --native-branch-mode"),
+        ("model.scale_head_mode", "training --scale-head-mode"),
+        ("model.scale_pooling", "training --scale-pooling"),
+        ("model.scale_head_hidden_size", "training --scale-head-hidden-size"),
+        ("model.scale_head_depth", "training --scale-head-depth"),
+        ("model.pooled_latent_stop_gradient", "training --pooled-latent-stop-gradient"),
+        ("model.shape_attention_mode", "training --shape-attention-mode"),
+        ("model.scale_attention_mode", "training --scale-attention-mode"),
+        (
+            "model.regional_attention_hidden_size",
+            "training --regional-attention-hidden-size",
+        ),
+        (
+            "model.qk_region_feature_version",
+            "training --qk-region-feature-version",
+        ),
+        ("model.scale_context_mode", "training --scale-context-mode"),
+        (
+            "model.scale_context_feature_names",
+            "training --scale-context-feature-names",
+        ),
+        ("model.scale_deepsets_mode", "training --scale-deepsets-mode"),
+        (
+            "model.scale_deepsets_hidden_size",
+            "training --scale-deepsets-hidden-size",
+        ),
+        (
+            "optimizer.native_trainable_scope",
+            "training --native-trainable-scope",
         ),
         ("run.epochs", "training --epochs"),
         ("run.report_every", "training --report-every"),
@@ -662,6 +832,9 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.progress_detail", "training --progress-detail"),
         ("run.profile_timing", "training --profile-timing"),
         ("run.profile_timing_json", "training --profile-timing-json"),
+        ("run.memory_audit_jsonl", "training --memory-audit-jsonl"),
+        ("run.memory_audit_every_batch", "training --memory-audit-every-batch"),
+        ("run.memory_audit_gc", "training --memory-audit-gc"),
         ("run.batch_size", "training --batch-size"),
         ("run.validation_batch_size", "training --validation-batch-size"),
         ("run.prediction_batch_size", "training --prediction-batch-size"),
@@ -684,6 +857,10 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.sample_weight_default", "training --sample-weight-default"),
         ("run.sample_weight_normalize", "training --sample-weight-normalize"),
         ("run.shuffle_train_batches", "training --shuffle-train-batches"),
+        (
+            "run.epoch_wise_batch_regrouping",
+            "training --epoch-wise-batch-regrouping",
+        ),
         ("run.drop_last", "training --drop-last"),
         ("optimizer.name", "training --optimizer"),
         ("optimizer.lr", "training --lr"),
@@ -711,6 +888,26 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("loss.background_weight", "training --background-weight"),
         ("loss.hotspot_weight", "training --hotspot-weight"),
         ("loss.strong_q_weight", "training --strong-q-weight"),
+        ("loss.native_shape_cv_weight", "training --native-shape-cv-weight"),
+        ("loss.native_log_scale_weight", "training --native-log-scale-weight"),
+        (
+            "loss.native_relative_field_weight",
+            "training --native-relative-field-weight",
+        ),
+        ("loss.native_raw_field_weight", "training --native-raw-field-weight"),
+        ("loss.native_raw_loss_mode", "training --native-raw-loss-mode"),
+        (
+            "loss.native_log_scale_weight_mode",
+            "training --native-log-scale-weight-mode",
+        ),
+        (
+            "loss.native_log_scale_weight_clip_min",
+            "training --native-log-scale-weight-clip-min",
+        ),
+        (
+            "loss.native_log_scale_weight_clip_max",
+            "training --native-log-scale-weight-clip-max",
+        ),
         ("loss.background_l1_weight", "training --background-l1-weight"),
         ("loss.background_bias_weight", "training --background-bias-weight"),
         ("loss.background_over_weight", "training --background-over-weight"),
@@ -995,6 +1192,16 @@ def _config_name(config: Mapping[str, Any]) -> str:
     if isinstance(dataset, Mapping) and dataset.get("name"):
         return str(dataset["name"])
     return str(config.get("config_role", "unknown_config"))
+
+
+def _csv_names(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple)):
+        return ",".join(str(item) for item in value)
+    raise ValueError(f"feature-name configuration must be a string or sequence, got {value!r}")
 
 
 def _append_option(command: list[str], flag: str, value: Any) -> None:

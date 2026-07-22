@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one tracked Heat3D V4 YAML config through the v2 training runner."""
+"""Resolve a tracked Heat3D config and optionally run the training command."""
 
 from __future__ import annotations
 
@@ -24,9 +24,12 @@ from rigno.heat3d_v2_config import load_v2_config, validate_v2_config  # noqa: E
 from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
 
 
+DEFAULT_TRAINING_PROFILE = REPO_ROOT / "configs/heat3d_v5/V4P5_42_canonical.yaml"
+
+
 def main() -> int:
     args = _parse_args()
-    config_path = _repo_path(args.config)
+    config_path = _selected_config_path(args.config)
     if not config_path.is_file():
         raise SystemExit(f"config not found: {args.config}")
     command = build_training_command(
@@ -41,10 +44,23 @@ def main() -> int:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", required=True, help="Tracked YAML config path.")
+    parser.add_argument(
+        "--config",
+        default=None,
+        help=(
+            "Tracked YAML config path. When omitted, use the canonical V42 "
+            "training profile."
+        ),
+    )
     parser.add_argument("--python-executable", default="python")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
+
+
+def _selected_config_path(path_text: str | None) -> Path:
+    """Keep explicit config resolution unchanged and default only omission."""
+
+    return DEFAULT_TRAINING_PROFILE if path_text is None else _repo_path(path_text)
 
 
 def _repo_path(path_text: str) -> Path:
