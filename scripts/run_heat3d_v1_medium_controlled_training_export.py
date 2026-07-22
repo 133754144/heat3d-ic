@@ -13,14 +13,13 @@ import gc
 import hashlib
 import json
 import math
-import os
 import pickle
 from pathlib import Path
 import resource
 import subprocess
 import sys
 import time
-from typing import Any
+from typing import Any, Mapping
 
 import jax
 import jax.numpy as jnp
@@ -49,6 +48,7 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
     normalize_condition,
     normalize_coords as _normalize_coords,
     normalize_target_delta,
+    normalize_target_delta,
     normalized_delta_to_raw as _normalized_delta_to_raw,
     recover_raw_condition,
     recover_temperature_from_normalized_delta,
@@ -58,6 +58,39 @@ from rigno.heat3d_v1_training_semantics import (  # noqa: E402
     COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
     build_legacy_zero_delta_bridge as _bridge_for,
     decoder_bypass_required_full_condition_features,
+)
+from rigno.heat3d_v5_global_context import (  # noqa: E402
+    GLOBAL_CONTEXT_FEATURES,
+    fit_train_only_standardizer,
+    global_context_from_raw_condition,
+    standardize_contexts,
+    validate_global_context_schema,
+)
+from rigno.heat3d_v5_metrics import control_volume_weights  # noqa: E402
+from rigno.heat3d_v5_shape_scale import (  # noqa: E402
+    apply_scale_head_lr_multiplier,
+    control_volume_layout,
+    mask_native_trainable_scope,
+    native_gradient_group_norms,
+    native_shape_scale_diagnostics,
+    native_shape_scale_losses,
+)
+from rigno.heat3d_v5_scale_pooling import (  # noqa: E402
+    QK_REGION_FEATURE_VERSIONS,
+    REGIONAL_ATTENTION_MODES,
+    SCALE_POOLING_MODES as V5_SCALE_POOLING_MODES,
+    qk_region_feature_names,
+    qk_region_features_from_raw,
+)
+from rigno.heat3d_v5_scale_context import (  # noqa: E402
+    SCALE_CONTEXT_MODES,
+    SCALE_DEEPSETS_MODES,
+    XY_SCALE_CONTEXT_FEATURES,
+    fit_train_only_scale_context_standardizer,
+    regional_source_volume_weights_from_raw,
+    standardize_scale_contexts,
+    validate_scale_context_schema,
+    xy_scale_context_from_raw_condition,
 )
 from rigno.heat3d_v4_split_map import (  # noqa: E402
     load_sample_split_map,
@@ -85,15 +118,17 @@ DECODER_BYPASS_MODES = (
 )
 DECODER_BYPASS_FEATURES_NONE = "none"
 DECODER_BYPASS_FEATURES_FULL_CONDITION = "full_condition"
+DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION = "explicit_local_condition"
 DECODER_BYPASS_FEATURES = (
     DECODER_BYPASS_FEATURES_NONE,
     DECODER_BYPASS_FEATURES_FULL_CONDITION,
+    DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION,
 )
 DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C = "normalized_c"
 DECODER_BYPASS_FEATURE_SOURCES = (DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,)
 DECODER_BYPASS_INIT_ZERO_RESIDUAL = "zero_residual"
 DECODER_BYPASS_INITS = (DECODER_BYPASS_INIT_ZERO_RESIDUAL,)
-DECODER_BYPASS_OUTPUT_SPACE = "normalized_deltaT"
+DECODER_BYPASS_OUTPUT_SPACES = ("normalized_deltaT", "native_psi")
 DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES = (
     "k_x",
     "k_y",
@@ -106,6 +141,36 @@ DECODER_BYPASS_REQUIRED_FULL_CONDITION_FEATURES = (
     "top_h",
     "top_T_inf_minus_T_ref",
     "bottom_T_fixed_minus_T_ref",
+)
+DECODER_BYPASS_LOCAL_FEATURE_ALLOWLIST = (
+    "k_x",
+    "k_y",
+    "k_z",
+    "q",
+    "is_top",
+    "is_bottom",
+    "is_side",
+    "is_interior",
+)
+GLOBAL_CONTEXT_MODE_NONE = "none"
+GLOBAL_CONTEXT_MODE_FILM = "film"
+GLOBAL_CONTEXT_MODES = (GLOBAL_CONTEXT_MODE_NONE, GLOBAL_CONTEXT_MODE_FILM)
+FILM_TARGET_RNODES_PROCESSED = "rnodes_processed"
+FILM_TARGETS = (FILM_TARGET_RNODES_PROCESSED,)
+FILM_INIT_IDENTITY = "identity"
+FILM_INITS = (FILM_INIT_IDENTITY,)
+NATIVE_OUTPUT_MODES = ("legacy_normalized_deltaT", "native_shape_scale")
+NATIVE_BRANCH_MODES = ("scale_only", "shape_only", "joint")
+NATIVE_TRAINABLE_SCOPES = ("branch", "global_scale_mlp_only")
+SCALE_HEAD_MODES = ("physics_only", "physics_plus_pooled_latent")
+SCALE_POOLING_MODES = V5_SCALE_POOLING_MODES
+NATIVE_RAW_LOSS_MODES = (
+    "per_sample_cv_mse",
+    "point_global_fixed_train_energy_sse",
+)
+NATIVE_LOG_SCALE_WEIGHT_MODES = (
+    "uniform",
+    "train_true_scale_squared_clipped",
 )
 DEFAULT_SUBSET = (
     REPO_DIR
@@ -189,6 +254,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pct-start", type=float, default=0.02)
     parser.add_argument("--pct-final", type=float, default=0.10)
     parser.add_argument("--optimizer", choices=("manual_gd", "adam", "adamw"), default="adamw")
+    parser.add_argument(
+        "--native-trainable-scope",
+        choices=NATIVE_TRAINABLE_SCOPES,
+        default="branch",
+    )
     parser.add_argument("--gradient-clip-norm", type=float, default=1.0)
     parser.add_argument("--weight-decay", type=float, default=1.0e-4)
     parser.add_argument("--node-latent-size", type=int, default=RUNNER_MODEL_CONFIG["node_latent_size"])
@@ -196,6 +266,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--processor-steps", type=int, default=RUNNER_MODEL_CONFIG["processor_steps"])
     parser.add_argument("--mlp-hidden-layers", type=int, default=RUNNER_MODEL_CONFIG["mlp_hidden_layers"])
     parser.add_argument("--p-edge-masking", type=float, default=float(RUNNER_MODEL_CONFIG.get("p_edge_masking", 0.0)))
+    parser.add_argument(
+        "--edge-masking-scope",
+        choices=("all", "r2r_only"),
+        default=str(RUNNER_MODEL_CONFIG.get("edge_masking_scope", "all")),
+    )
     parser.add_argument("--decoder-bypass-mode", choices=DECODER_BYPASS_MODES, default=DECODER_BYPASS_MODE_NONE)
     parser.add_argument("--decoder-bypass-features", choices=DECODER_BYPASS_FEATURES, default=DECODER_BYPASS_FEATURES_NONE)
     parser.add_argument(
@@ -203,10 +278,94 @@ def parse_args() -> argparse.Namespace:
         choices=DECODER_BYPASS_FEATURE_SOURCES,
         default=DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
     )
+    parser.add_argument(
+        "--decoder-bypass-local-feature-names",
+        type=str,
+        default="",
+        help=(
+            "Comma-separated, node-varying condition feature names for "
+            "--decoder-bypass-features explicit_local_condition. The V5 "
+            "allowlist excludes sample-global BC/extent broadcasts."
+        ),
+    )
     parser.add_argument("--decoder-bypass-hidden-size", type=int, default=64)
     parser.add_argument("--decoder-bypass-layers", type=int, default=2)
     parser.add_argument("--decoder-bypass-init", choices=DECODER_BYPASS_INITS, default=DECODER_BYPASS_INIT_ZERO_RESIDUAL)
     parser.add_argument("--decoder-bypass-residual-scale", type=float, default=1.0)
+    parser.add_argument(
+        "--decoder-bypass-output-space",
+        choices=DECODER_BYPASS_OUTPUT_SPACES,
+        default="normalized_deltaT",
+    )
+    parser.add_argument(
+        "--global-context-mode",
+        choices=GLOBAL_CONTEXT_MODES,
+        default=GLOBAL_CONTEXT_MODE_NONE,
+        help="Sample-global inference context mode. none preserves the V4 call path exactly.",
+    )
+    parser.add_argument(
+        "--global-context-feature-names",
+        type=str,
+        default="",
+        help=(
+            "Comma-separated V5 Global FiLM schema. film requires the exact "
+            "inference-only V5 global physics feature order."
+        ),
+    )
+    parser.add_argument("--film-target", choices=FILM_TARGETS, default=FILM_TARGET_RNODES_PROCESSED)
+    parser.add_argument("--film-init", choices=FILM_INITS, default=FILM_INIT_IDENTITY)
+    parser.add_argument("--film-hidden-size", type=int, default=64)
+    parser.add_argument("--native-output-mode", choices=NATIVE_OUTPUT_MODES, default="legacy_normalized_deltaT")
+    parser.add_argument("--native-branch-mode", choices=NATIVE_BRANCH_MODES, default="joint")
+    parser.add_argument("--scale-head-mode", choices=SCALE_HEAD_MODES, default="physics_only")
+    parser.add_argument("--scale-pooling", choices=SCALE_POOLING_MODES, default="mean")
+    parser.add_argument("--scale-head-hidden-size", type=int, default=64)
+    parser.add_argument("--scale-head-depth", type=int, default=1)
+    parser.add_argument(
+        "--shape-attention-mode", choices=REGIONAL_ATTENTION_MODES, default="none"
+    )
+    parser.add_argument(
+        "--scale-attention-mode", choices=REGIONAL_ATTENTION_MODES, default="none"
+    )
+    parser.add_argument("--regional-attention-hidden-size", type=int, default=64)
+    parser.add_argument(
+        "--qk-region-feature-version",
+        choices=QK_REGION_FEATURE_VERSIONS,
+        default="bugged_v1",
+        help="Versioned raw-input-only regional QK feature schema.",
+    )
+    parser.add_argument(
+        "--scale-context-mode",
+        choices=SCALE_CONTEXT_MODES,
+        default="none",
+    )
+    parser.add_argument(
+        "--scale-context-feature-names",
+        type=str,
+        default="",
+        help="Comma-separated scale-head-only raw-input global feature schema.",
+    )
+    parser.add_argument(
+        "--scale-deepsets-mode",
+        choices=SCALE_DEEPSETS_MODES,
+        default="none",
+    )
+    parser.add_argument("--scale-deepsets-hidden-size", type=int, default=64)
+    parser.add_argument(
+        "--pooled-latent-stop-gradient",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Detach pooled regional latent inputs before the native scale head. "
+            "Default false preserves the N3/V13 gradient path."
+        ),
+    )
+    parser.add_argument(
+        "--scale-head-lr-multiplier",
+        type=float,
+        default=1.0,
+        help="Multiplier applied only to native scale-head optimizer updates; default 1 preserves N3/V13.",
+    )
     parser.add_argument("--batch-size", type=int, default=88)
     parser.add_argument("--validation-batch-size", type=int, default=88)
     parser.add_argument("--prediction-batch-size", type=int, default=88)
@@ -217,6 +376,15 @@ def parse_args() -> argparse.Namespace:
         help="Limit final/best prediction export to one split; training behavior is unchanged.",
     )
     parser.add_argument("--shuffle-train-batches", action="store_true")
+    parser.add_argument(
+        "--epoch-wise-batch-regrouping",
+        action="store_true",
+        help=(
+            "Rebuild sample-shuffle train batches at every epoch with "
+            "batch_build_seed + epoch. Default false preserves fixed batch "
+            "membership and only permits optional batch-order shuffling."
+        ),
+    )
     parser.add_argument("--drop-last", action="store_true")
     parser.add_argument(
         "--init-mode",
@@ -316,6 +484,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample-weight-default", type=float, default=1.0)
     parser.add_argument("--sample-weight-normalize", action="store_true")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate runner options and print the resolved model/batch settings without data or output writes.",
+    )
     parser.add_argument("--save-predictions", dest="save_predictions", action="store_true", default=True)
     parser.add_argument(
         "--no-save-predictions",
@@ -325,7 +498,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--selection-metric",
-        choices=("valid_loss", "valid_raw_deltaT_mse", "valid_base_mse"),
+        choices=(
+            "valid_loss",
+            "valid_raw_deltaT_mse",
+            "valid_base_mse",
+            "valid_rel_rmse_v4_pct",
+            "valid_native_joint_relative_rmse",
+        ),
         default="valid_base_mse",
         help="Validation metric used to track the best epoch for optional best prediction export.",
     )
@@ -353,6 +532,39 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--final-checkpoint-name", type=str, default="params_final.pkl")
     parser.add_argument("--best-checkpoint-name", type=str, default="params_best.pkl")
+    parser.add_argument(
+        "--save-point-global-best-checkpoint",
+        action="store_true",
+        help=(
+            "Also track and save the checkpoint with the lowest valid true-RMS "
+            "point-global relative RMSE. Disabled by default."
+        ),
+    )
+    parser.add_argument(
+        "--point-global-best-checkpoint-name",
+        type=str,
+        default="params_best_valid_point_global.pkl",
+    )
+    parser.add_argument(
+        "--save-base-mse-best-checkpoint",
+        action="store_true",
+        help="Track and save the lowest valid normalized base-MSE checkpoint.",
+    )
+    parser.add_argument(
+        "--base-mse-best-checkpoint-name",
+        type=str,
+        default="params_best_valid_base_mse.pkl",
+    )
+    parser.add_argument(
+        "--save-sample-first-best-checkpoint",
+        action="store_true",
+        help="Track and save the lowest valid sample-first CV-relative checkpoint.",
+    )
+    parser.add_argument(
+        "--sample-first-best-checkpoint-name",
+        type=str,
+        default="params_best_valid_sample_first.pkl",
+    )
     parser.add_argument(
         "--final-probe-eval-after-training",
         dest="final_probe_eval_after_training",
@@ -497,6 +709,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hotspot-weight", type=float, default=0.1)
     parser.add_argument("--strong-q-quantile", type=float, default=0.90)
     parser.add_argument("--strong-q-weight", type=float, default=0.05)
+    parser.add_argument("--native-shape-cv-weight", type=float, default=1.0)
+    parser.add_argument("--native-log-scale-weight", type=float, default=1.0)
+    parser.add_argument("--native-relative-field-weight", type=float, default=1.0)
+    parser.add_argument("--native-raw-field-weight", type=float, default=1.0)
+    parser.add_argument(
+        "--native-raw-loss-mode",
+        choices=NATIVE_RAW_LOSS_MODES,
+        default="per_sample_cv_mse",
+    )
+    parser.add_argument(
+        "--native-log-scale-weight-mode",
+        choices=NATIVE_LOG_SCALE_WEIGHT_MODES,
+        default="uniform",
+    )
+    parser.add_argument("--native-log-scale-weight-clip-min", type=float, default=0.25)
+    parser.add_argument("--native-log-scale-weight-clip-max", type=float, default=4.0)
     parser.add_argument("--background-l1-weight", type=float, default=1.0)
     parser.add_argument("--background-bias-weight", type=float, default=1.0)
     parser.add_argument("--background-over-weight", type=float, default=1.0)
@@ -829,17 +1057,21 @@ def _format_progress_int(value: Any) -> str:
     return str(int(numeric))
 
 
-def _deltaT_error_pct(raw_delta_mse: Any, mean_abs_true_deltaT: Any) -> float | None:
-    if raw_delta_mse is None or mean_abs_true_deltaT is None:
+def _deltaT_error_pct(raw_delta_mse: Any, mean_square_true_deltaT: Any) -> float | None:
+    if raw_delta_mse is None or mean_square_true_deltaT is None:
         return None
     try:
         mse = float(raw_delta_mse)
-        denominator = float(mean_abs_true_deltaT)
+        target_mean_square = float(mean_square_true_deltaT)
     except (TypeError, ValueError):
         return None
-    if not math.isfinite(mse) or not math.isfinite(denominator) or denominator <= 0.0:
+    if (
+        not math.isfinite(mse)
+        or not math.isfinite(target_mean_square)
+        or target_mean_square <= 0.0
+    ):
         return None
-    return 100.0 * math.sqrt(max(mse, 0.0)) / denominator
+    return 100.0 * math.sqrt(max(mse, 0.0) / target_mean_square)
 
 
 def _rmse_from_mse(mse: Any) -> float | None:
@@ -854,6 +1086,34 @@ def _rmse_from_mse(mse: Any) -> float | None:
     return math.sqrt(max(value, 0.0))
 
 
+def _sample_first_candidate_is_better(
+    score: float,
+    raw_cv_rmse_K: float,
+    best_score: float | None,
+    best_raw_cv_rmse_K: float | None,
+    *,
+    rtol: float = 1.0e-9,
+    atol: float = 1.0e-12,
+) -> bool:
+    """Compare sample-first checkpoints with a tolerance-aware CV-RMSE tie-break."""
+
+    if best_score is None:
+        return True
+    tolerance = max(
+        float(atol),
+        float(rtol) * max(abs(float(score)), abs(float(best_score))),
+    )
+    if float(score) < float(best_score) - tolerance:
+        return True
+    return bool(
+        abs(float(score) - float(best_score)) <= tolerance
+        and (
+            best_raw_cv_rmse_K is None
+            or float(raw_cv_rmse_K) < float(best_raw_cv_rmse_K)
+        )
+    )
+
+
 def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
     if metrics is None:
         return None
@@ -864,7 +1124,9 @@ def _metric_error_pct(metrics: dict[str, Any] | None) -> float | None:
     ):
         if metrics.get(key) is not None:
             return float(metrics[key])
-    return _deltaT_error_pct(metrics.get("raw_delta_mse"), metrics.get("mean_abs_true_deltaT"))
+    return _deltaT_error_pct(
+        metrics.get("raw_delta_mse"), metrics.get("mean_square_true_deltaT")
+    )
 
 
 def _progress_numeric_or_none(value: Any) -> float | None:
@@ -1054,11 +1316,15 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
     total_count = sum(count for count, _ in weighted_entries)
     if total_count <= 0:
         return {}
-    numeric_keys = (
-        "normalized_loss",
-        "raw_delta_mse",
-        "recovered_temperature_mse",
-        "mean_abs_true_deltaT",
+    numeric_keys = sorted(
+        {
+            key
+            for _, metrics in weighted_entries
+            for key, value in metrics.items()
+            if key not in {"finite_ok", "shape_ok"}
+            and not isinstance(value, (bool, np.bool_))
+            and np.asarray(value).ndim == 0
+        }
     )
     combined = {
         key: float(
@@ -1069,7 +1335,9 @@ def _combine_metric_payloads(weighted_entries: list[tuple[int, dict[str, Any]]])
     }
     combined["raw_rmse_K"] = _rmse_from_mse(combined["raw_delta_mse"])
     combined["recovered_T_rmse_K"] = _rmse_from_mse(combined["recovered_temperature_mse"])
-    relative_pct = _deltaT_error_pct(combined["raw_delta_mse"], combined["mean_abs_true_deltaT"])
+    relative_pct = _deltaT_error_pct(
+        combined["raw_delta_mse"], combined["mean_square_true_deltaT"]
+    )
     combined["rel_rmse_v4_pct"] = relative_pct
     combined["raw_deltaT_relative_rmse_pct_v4"] = relative_pct
     combined["raw_deltaT_relative_rmse_pct"] = relative_pct
@@ -1320,28 +1588,10 @@ def _current_rss_mb() -> float | None:
     return float(usage) / 1024.0
 
 
-def _run_text_command(command: list[str]) -> str | None:
-    try:
-        completed = subprocess.run(
-            command,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
-    except OSError:
-        return None
-    if completed.returncode != 0:
-        return None
-    return completed.stdout.strip()
+def _jax_memory_snapshot() -> dict[str, Any]:
+    """Return optional JAX device memory statistics without probing hardware."""
 
-
-def _gpu_memory_snapshot() -> dict[str, Any]:
-    snapshot: dict[str, Any] = {
-        "gpus": [],
-        "jax_devices": [],
-        "process_gpu_memory_mb": None,
-    }
+    snapshot: dict[str, Any] = {"jax_devices": []}
     for device in jax.devices():
         memory_stats = getattr(device, "memory_stats", None)
         if memory_stats is None:
@@ -1373,53 +1623,6 @@ def _gpu_memory_snapshot() -> dict[str, Any]:
                 converted[key] = value
         snapshot["jax_devices"].append(converted)
 
-    gpu_output = _run_text_command(
-        [
-            "nvidia-smi",
-            "--query-gpu=memory.used,memory.total",
-            "--format=csv,noheader,nounits",
-        ]
-    )
-    if gpu_output:
-        for index, line in enumerate(gpu_output.splitlines()):
-            parts = [part.strip() for part in line.split(",")]
-            if len(parts) >= 2:
-                try:
-                    snapshot["gpus"].append(
-                        {
-                            "index": int(index),
-                            "memory_used_mb": int(float(parts[0])),
-                            "memory_total_mb": int(float(parts[1])),
-                        }
-                    )
-                except ValueError:
-                    continue
-
-    process_output = _run_text_command(
-        [
-            "nvidia-smi",
-            "--query-compute-apps=pid,used_memory",
-            "--format=csv,noheader,nounits",
-        ]
-    )
-    if process_output:
-        current_pid = os.getpid()
-        total = 0
-        found = False
-        for line in process_output.splitlines():
-            parts = [part.strip() for part in line.split(",")]
-            if len(parts) < 2:
-                continue
-            try:
-                pid = int(parts[0])
-                used = int(float(parts[1]))
-            except ValueError:
-                continue
-            if pid == current_pid:
-                total += used
-                found = True
-        if found:
-            snapshot["process_gpu_memory_mb"] = int(total)
     return snapshot
 
 
@@ -1429,6 +1632,8 @@ class MemoryAudit:
         self.every_batch = bool(every_batch)
         self.gc_enabled = bool(gc_enabled)
         self.event_index = 0
+        self.peak_rss_mb = 0.0
+        self.peak_device_memory_mb: dict[str, float] = {}
         with self.path.open("w", encoding="utf-8") as file:
             file.write("")
 
@@ -1442,7 +1647,23 @@ class MemoryAudit:
         detail: dict[str, Any] | None = None,
     ) -> None:
         self.event_index += 1
-        gpu = _gpu_memory_snapshot()
+        jax_memory = _jax_memory_snapshot()
+        rss_mb = _current_rss_mb()
+        if rss_mb is not None:
+            self.peak_rss_mb = max(self.peak_rss_mb, float(rss_mb))
+        for device in jax_memory.get("jax_devices", []):
+            device_name = str(device.get("device", "unknown"))
+            candidates = [
+                float(value)
+                for key, value in device.items()
+                if key in {"bytes_in_use_mb", "peak_bytes_in_use_mb", "peak_pool_bytes_mb"}
+                and value is not None
+            ]
+            if candidates:
+                self.peak_device_memory_mb[device_name] = max(
+                    self.peak_device_memory_mb.get(device_name, 0.0),
+                    *candidates,
+                )
         payload = {
             "event_index": self.event_index,
             "time_unix": time.time(),
@@ -1450,13 +1671,25 @@ class MemoryAudit:
             "epoch": epoch,
             "batch_index": batch_index,
             "split": split,
-            "rss_mb": _current_rss_mb(),
-            "gpu_memory": gpu,
+            "rss_mb": rss_mb,
+            "jax_memory": jax_memory,
             "detail": detail or {},
         }
         with self.path.open("a", encoding="utf-8") as file:
             file.write(json.dumps(_json_safe(payload), sort_keys=True) + "\n")
             file.flush()
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "event_count": int(self.event_index),
+            "peak_rss_mb": float(self.peak_rss_mb),
+            "peak_device_memory_mb": dict(sorted(self.peak_device_memory_mb.items())),
+            "peak_device_memory_all_mb": (
+                max(self.peak_device_memory_mb.values())
+                if self.peak_device_memory_mb
+                else None
+            ),
+        }
 
     def collect(self, stage: str, *, epoch: int | None = None) -> None:
         if self.gc_enabled:
@@ -1563,6 +1796,20 @@ def _loss_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "hotspot_weight": float(args.hotspot_weight),
         "strong_q_quantile": float(args.strong_q_quantile),
         "strong_q_weight": float(args.strong_q_weight),
+        "native_shape_cv_weight": float(args.native_shape_cv_weight),
+        "native_log_scale_weight": float(args.native_log_scale_weight),
+        "native_relative_field_weight": float(args.native_relative_field_weight),
+        "native_raw_field_weight": float(args.native_raw_field_weight),
+        "native_raw_loss_mode": str(args.native_raw_loss_mode),
+        "native_raw_train_target_energy_per_point": None,
+        "native_log_scale_weight_mode": str(args.native_log_scale_weight_mode),
+        "native_log_scale_weight_clip_min": float(
+            args.native_log_scale_weight_clip_min
+        ),
+        "native_log_scale_weight_clip_max": float(
+            args.native_log_scale_weight_clip_max
+        ),
+        "native_log_scale_train_true_scale_sq_mean": None,
         "background_l1_weight": float(args.background_l1_weight),
         "background_bias_weight": float(args.background_bias_weight),
         "background_over_weight": float(args.background_over_weight),
@@ -1640,6 +1887,8 @@ def _optimizer_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             None if args.gradient_clip_norm is None else float(args.gradient_clip_norm)
         ),
         "weight_decay": float(args.weight_decay),
+        "scale_head_lr_multiplier": float(args.scale_head_lr_multiplier),
+        "native_trainable_scope": str(args.native_trainable_scope),
     }
 
 
@@ -1655,6 +1904,18 @@ def _seed_config_from_args(args: argparse.Namespace) -> dict[str, int]:
 
 
 def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    local_feature_names = _parse_csv_feature_names(
+        args.decoder_bypass_local_feature_names,
+        "--decoder-bypass-local-feature-names",
+    )
+    global_feature_names = _parse_csv_feature_names(
+        args.global_context_feature_names,
+        "--global-context-feature-names",
+    )
+    scale_context_feature_names = _parse_csv_feature_names(
+        args.scale_context_feature_names,
+        "--scale-context-feature-names",
+    )
     model_config = dict(RUNNER_MODEL_CONFIG)
     model_config.update(
         {
@@ -1663,20 +1924,53 @@ def _model_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             "processor_steps": int(args.processor_steps),
             "mlp_hidden_layers": int(args.mlp_hidden_layers),
             "p_edge_masking": float(args.p_edge_masking),
+            "edge_masking_scope": str(args.edge_masking_scope),
             "decoder_bypass_mode": args.decoder_bypass_mode,
             "decoder_bypass_features": args.decoder_bypass_features,
             "decoder_bypass_feature_source": args.decoder_bypass_feature_source,
             "decoder_bypass_feature_indices": (),
             "decoder_bypass_feature_names": (),
             "decoder_bypass_num_features": 0,
-            "decoder_bypass_output_space": DECODER_BYPASS_OUTPUT_SPACE,
+            "decoder_bypass_local_feature_names": local_feature_names,
+            "decoder_bypass_output_space": args.decoder_bypass_output_space,
             "decoder_bypass_hidden_size": int(args.decoder_bypass_hidden_size),
             "decoder_bypass_layers": int(args.decoder_bypass_layers),
             "decoder_bypass_init": args.decoder_bypass_init,
             "decoder_bypass_residual_scale": float(args.decoder_bypass_residual_scale),
+            "global_context_mode": args.global_context_mode,
+            "global_context_feature_dim": len(global_feature_names),
+            "global_context_feature_names": global_feature_names,
+            "film_target": args.film_target,
+            "film_init": args.film_init,
+            "film_hidden_size": int(args.film_hidden_size),
+            "native_output_mode": args.native_output_mode,
+            "native_branch_mode": args.native_branch_mode,
+            "scale_head_mode": args.scale_head_mode,
+            "scale_pooling": args.scale_pooling,
+            "scale_head_hidden_size": int(args.scale_head_hidden_size),
+            "scale_head_depth": int(args.scale_head_depth),
+            "pooled_latent_stop_gradient": bool(args.pooled_latent_stop_gradient),
+            "shape_attention_mode": args.shape_attention_mode,
+            "scale_attention_mode": args.scale_attention_mode,
+            "regional_attention_hidden_size": int(args.regional_attention_hidden_size),
+            "qk_region_feature_version": args.qk_region_feature_version,
+            "scale_context_mode": args.scale_context_mode,
+            "scale_context_feature_dim": len(scale_context_feature_names),
+            "scale_context_feature_names": scale_context_feature_names,
+            "scale_deepsets_mode": args.scale_deepsets_mode,
+            "scale_deepsets_hidden_size": int(args.scale_deepsets_hidden_size),
+            "scale_head_init": "identity",
+            "shape_scale_epsilon": 1.0e-12,
         }
     )
     return model_config
+
+
+def _parse_csv_feature_names(value: str, flag_name: str) -> tuple[str, ...]:
+    names = tuple(name.strip() for name in str(value or "").split(",") if name.strip())
+    if len(names) != len(set(names)):
+        raise ValueError(f"{flag_name} must not contain duplicate feature names")
+    return names
 
 
 def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
@@ -1689,6 +1983,9 @@ def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
             args.prediction_batch_size, "prediction-batch-size"
         ),
         "shuffle_train_batches": bool(args.shuffle_train_batches),
+        "epoch_wise_batch_regrouping": bool(
+            args.epoch_wise_batch_regrouping
+        ),
         "drop_last": bool(args.drop_last),
         "batch_plan": args.batch_plan,
         "batch_build_seed": 0 if args.batch_build_seed is None else int(args.batch_build_seed),
@@ -1725,6 +2022,27 @@ def _validate_loss_config(config: dict[str, Any]) -> None:
         raise ValueError("--strong-q-quantile must be in [0, 1]")
     if float(config["strong_q_weight"]) < 0.0:
         raise ValueError("--strong-q-weight must be >= 0")
+    for key in (
+        "native_shape_cv_weight", "native_log_scale_weight",
+        "native_relative_field_weight", "native_raw_field_weight",
+    ):
+        if float(config[key]) < 0.0:
+            raise ValueError(f"--{key.replace('_', '-')} must be >= 0")
+    if config["native_raw_loss_mode"] not in NATIVE_RAW_LOSS_MODES:
+        raise ValueError(
+            f"--native-raw-loss-mode must be one of {NATIVE_RAW_LOSS_MODES}"
+        )
+    if config["native_log_scale_weight_mode"] not in NATIVE_LOG_SCALE_WEIGHT_MODES:
+        raise ValueError(
+            "--native-log-scale-weight-mode must be one of "
+            f"{NATIVE_LOG_SCALE_WEIGHT_MODES}"
+        )
+    clip_min = float(config["native_log_scale_weight_clip_min"])
+    clip_max = float(config["native_log_scale_weight_clip_max"])
+    if clip_min <= 0.0 or clip_max < clip_min:
+        raise ValueError(
+            "native log-scale weight clip must satisfy 0 < min <= max"
+        )
     if float(config["background_l1_weight"]) < 0.0:
         raise ValueError("--background-l1-weight must be >= 0")
     if float(config["background_bias_weight"]) < 0.0:
@@ -1800,6 +2118,8 @@ def _validate_optimizer_config(config: dict[str, Any]) -> None:
         raise ValueError("--gradient-clip-norm must be > 0 when provided")
     if float(config["weight_decay"]) < 0.0:
         raise ValueError("--weight-decay must be >= 0")
+    if float(config.get("scale_head_lr_multiplier", 1.0)) <= 0.0:
+        raise ValueError("--scale-head-lr-multiplier must be > 0")
 
 
 def _validate_seed_config(config: dict[str, int]) -> None:
@@ -1815,7 +2135,65 @@ def _validate_model_config(config: dict[str, Any]) -> None:
     p_edge_masking = float(config.get("p_edge_masking", 0.0))
     if p_edge_masking < 0.0 or p_edge_masking >= 1.0:
         raise ValueError("--p-edge-masking must be in [0, 1)")
+    if config.get("edge_masking_scope", "all") not in {"all", "r2r_only"}:
+        raise ValueError("--edge-masking-scope must be all or r2r_only")
     _validate_decoder_bypass_config(config)
+    _validate_global_context_config(config)
+    native_mode = config.get("native_output_mode", "legacy_normalized_deltaT")
+    if native_mode not in NATIVE_OUTPUT_MODES:
+        raise ValueError(f"--native-output-mode must be one of {NATIVE_OUTPUT_MODES}")
+    if config.get("native_branch_mode") not in NATIVE_BRANCH_MODES:
+        raise ValueError(f"--native-branch-mode must be one of {NATIVE_BRANCH_MODES}")
+    if config.get("scale_head_mode") not in SCALE_HEAD_MODES:
+        raise ValueError(f"--scale-head-mode must be one of {SCALE_HEAD_MODES}")
+    if config.get("scale_pooling") not in SCALE_POOLING_MODES:
+        raise ValueError(f"--scale-pooling must be one of {SCALE_POOLING_MODES}")
+    if int(config.get("scale_head_hidden_size", 0)) < 1:
+        raise ValueError("--scale-head-hidden-size must be >= 1")
+    if int(config.get("scale_head_depth", 0)) < 1:
+        raise ValueError("--scale-head-depth must be >= 1")
+    if not isinstance(config.get("pooled_latent_stop_gradient", False), bool):
+        raise ValueError("--pooled-latent-stop-gradient must be a bool")
+    for key in ("shape_attention_mode", "scale_attention_mode"):
+        if config.get(key, "none") not in REGIONAL_ATTENTION_MODES:
+            raise ValueError(f"--{key.replace('_', '-')} must be one of {REGIONAL_ATTENTION_MODES}")
+    if int(config.get("regional_attention_hidden_size", 0)) < 1:
+        raise ValueError("--regional-attention-hidden-size must be >= 1")
+    if config.get("qk_region_feature_version") not in QK_REGION_FEATURE_VERSIONS:
+        raise ValueError(
+            "--qk-region-feature-version must be one of "
+            f"{QK_REGION_FEATURE_VERSIONS}"
+        )
+    scale_context_mode = config.get("scale_context_mode", "none")
+    if scale_context_mode not in SCALE_CONTEXT_MODES:
+        raise ValueError(
+            f"--scale-context-mode must be one of {SCALE_CONTEXT_MODES}"
+        )
+    scale_context_names = tuple(config.get("scale_context_feature_names") or ())
+    if int(config.get("scale_context_feature_dim", 0)) != len(scale_context_names):
+        raise ValueError(
+            "scale_context_feature_dim must match scale_context_feature_names"
+        )
+    if scale_context_mode == "none":
+        if scale_context_names:
+            raise ValueError(
+                "--scale-context-mode none requires no scale context features"
+            )
+    else:
+        validate_scale_context_schema(scale_context_names)
+    if config.get("scale_deepsets_mode", "none") not in SCALE_DEEPSETS_MODES:
+        raise ValueError(
+            f"--scale-deepsets-mode must be one of {SCALE_DEEPSETS_MODES}"
+        )
+    if int(config.get("scale_deepsets_hidden_size", 0)) < 1:
+        raise ValueError("--scale-deepsets-hidden-size must be >= 1")
+    if (
+        config.get("scale_deepsets_mode", "none") != "none"
+        and config.get("scale_pooling") != "mean"
+    ):
+        raise ValueError("scale DeepSets requires --scale-pooling mean")
+    if config.get("scale_attention_mode") != "none" and config.get("scale_pooling") != "mean":
+        raise ValueError("--scale-attention-mode requires --scale-pooling mean")
 
 
 def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
@@ -1826,6 +2204,7 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         DECODER_BYPASS_FEATURE_SOURCE_NORMALIZED_C,
     )
     init = config.get("decoder_bypass_init", DECODER_BYPASS_INIT_ZERO_RESIDUAL)
+    output_space = config.get("decoder_bypass_output_space", "normalized_deltaT")
     if mode not in DECODER_BYPASS_MODES:
         raise ValueError(f"--decoder-bypass-mode must be one of {DECODER_BYPASS_MODES}")
     if features not in DECODER_BYPASS_FEATURES:
@@ -1839,6 +2218,11 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         )
     if init not in DECODER_BYPASS_INITS:
         raise ValueError(f"--decoder-bypass-init must be one of {DECODER_BYPASS_INITS}")
+    if output_space not in DECODER_BYPASS_OUTPUT_SPACES:
+        raise ValueError(
+            "--decoder-bypass-output-space must be one of "
+            f"{DECODER_BYPASS_OUTPUT_SPACES}"
+        )
     if int(config.get("decoder_bypass_hidden_size", 0)) < 1:
         raise ValueError("--decoder-bypass-hidden-size must be >= 1")
     if int(config.get("decoder_bypass_layers", 0)) < 1:
@@ -1853,10 +2237,13 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         return
     if mode != DECODER_BYPASS_MODE_POST_DECODER_RESIDUAL:
         raise ValueError(f"unsupported decoder_bypass_mode: {mode}")
-    if features != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+    if features not in {
+        DECODER_BYPASS_FEATURES_FULL_CONDITION,
+        DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION,
+    }:
         raise ValueError(
             "--decoder-bypass-mode post_decoder_residual requires "
-            "--decoder-bypass-features full_condition"
+            "--decoder-bypass-features full_condition or explicit_local_condition"
         )
     indices = tuple(config.get("decoder_bypass_feature_indices") or ())
     names = tuple(config.get("decoder_bypass_feature_names") or ())
@@ -1864,6 +2251,33 @@ def _validate_decoder_bypass_config(config: dict[str, Any]) -> None:
         raise ValueError("decoder_bypass_num_features must match feature_indices")
     if names and len(names) != int(config.get("decoder_bypass_num_features", 0)):
         raise ValueError("decoder_bypass_num_features must match feature_names")
+
+
+def _validate_global_context_config(config: dict[str, Any]) -> None:
+    mode = config.get("global_context_mode", GLOBAL_CONTEXT_MODE_NONE)
+    names = tuple(config.get("global_context_feature_names") or ())
+    feature_dim = int(config.get("global_context_feature_dim", 0))
+    target = config.get("film_target", FILM_TARGET_RNODES_PROCESSED)
+    init = config.get("film_init", FILM_INIT_IDENTITY)
+    hidden = int(config.get("film_hidden_size", 64))
+    if mode not in GLOBAL_CONTEXT_MODES:
+        raise ValueError(f"--global-context-mode must be one of {GLOBAL_CONTEXT_MODES}")
+    if target not in FILM_TARGETS:
+        raise ValueError(f"--film-target must be one of {FILM_TARGETS}")
+    if init not in FILM_INITS:
+        raise ValueError(f"--film-init must be one of {FILM_INITS}")
+    if hidden < 1:
+        raise ValueError("--film-hidden-size must be >= 1")
+    if feature_dim != len(names):
+        raise ValueError("global_context_feature_dim must match global_context_feature_names")
+    native_enabled = config.get("native_output_mode") == "native_shape_scale"
+    if mode == GLOBAL_CONTEXT_MODE_NONE:
+        if (names or feature_dim) and not native_enabled:
+            raise ValueError("--global-context-mode none requires no global context feature names")
+        if native_enabled:
+            validate_global_context_schema(names)
+        return
+    validate_global_context_schema(names)
 
 
 def _resolve_decoder_bypass_model_config(
@@ -1875,29 +2289,48 @@ def _resolve_decoder_bypass_model_config(
         resolved["decoder_bypass_feature_indices"] = ()
         resolved["decoder_bypass_feature_names"] = ()
         resolved["decoder_bypass_num_features"] = 0
-        resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
         return resolved
 
     feature_names = tuple(stats.get("feature_names") or ())
-    required_full_condition_features = decoder_bypass_required_full_condition_features(
-        input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
-        extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
-    )
-    missing = [
-        name
-        for name in required_full_condition_features
-        if name not in feature_names
-    ]
-    if missing:
-        raise ValueError(
-            "decoder_bypass_features=full_condition missing required condition "
-            f"features: {missing}; available={feature_names}"
+    feature_mode = resolved["decoder_bypass_features"]
+    if feature_mode == DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        required_feature_names = decoder_bypass_required_full_condition_features(
+            input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
+            extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
         )
-    indices = tuple(range(len(feature_names)))
+        missing = [name for name in required_feature_names if name not in feature_names]
+        if missing:
+            raise ValueError(f"decoder bypass missing condition features: {missing}; available={feature_names}")
+        # Preserve the checkpoint's original normalized-c column order exactly.
+        selected_feature_names = feature_names
+    elif feature_mode == DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION:
+        selected_feature_names = tuple(resolved.get("decoder_bypass_local_feature_names") or ())
+        if not selected_feature_names:
+            raise ValueError(
+                "decoder_bypass_features=explicit_local_condition requires "
+                "--decoder-bypass-local-feature-names"
+            )
+        disallowed = [
+            name for name in selected_feature_names
+            if name not in DECODER_BYPASS_LOCAL_FEATURE_ALLOWLIST
+        ]
+        if disallowed:
+            raise ValueError(
+                "explicit_local_condition only accepts audited node-local features; "
+                f"disallowed={disallowed} allowlist={DECODER_BYPASS_LOCAL_FEATURE_ALLOWLIST}"
+            )
+        if len(selected_feature_names) != len(set(selected_feature_names)):
+            raise ValueError("explicit local bypass feature names must be unique")
+    else:
+        raise ValueError(f"unsupported decoder_bypass_features: {feature_mode}")
+    if feature_mode != DECODER_BYPASS_FEATURES_FULL_CONDITION:
+        missing = [name for name in selected_feature_names if name not in feature_names]
+        if missing:
+            raise ValueError(f"decoder bypass missing condition features: {missing}; available={feature_names}")
+    indices = tuple(feature_names.index(name) for name in selected_feature_names)
     resolved["decoder_bypass_feature_indices"] = indices
-    resolved["decoder_bypass_feature_names"] = feature_names
+    resolved["decoder_bypass_feature_names"] = selected_feature_names
     resolved["decoder_bypass_num_features"] = len(indices)
-    resolved["decoder_bypass_output_space"] = DECODER_BYPASS_OUTPUT_SPACE
     _validate_decoder_bypass_config(resolved)
     return resolved
 
@@ -1915,6 +2348,9 @@ def _decoder_bypass_payload(model_config: dict[str, Any]) -> dict[str, Any]:
         ),
         "decoder_bypass_feature_names": list(
             model_config.get("decoder_bypass_feature_names") or ()
+        ),
+        "decoder_bypass_local_feature_names": list(
+            model_config.get("decoder_bypass_local_feature_names") or ()
         ),
         "decoder_bypass_feature_indices": [
             int(index) for index in model_config.get("decoder_bypass_feature_indices") or ()
@@ -1958,6 +2394,13 @@ def _validate_batch_config(config: dict[str, Any]) -> None:
         raise ValueError("--batch-plan must be current_graph_shape or sample_shuffle")
     if config["batch_plan"] == "sample_shuffle" and config["batch_size"] is None:
         raise ValueError("--batch-plan sample_shuffle requires --batch-size >= 1")
+    if (
+        config["epoch_wise_batch_regrouping"]
+        and config["batch_plan"] != "sample_shuffle"
+    ):
+        raise ValueError(
+            "--epoch-wise-batch-regrouping requires --batch-plan sample_shuffle"
+        )
     if int(config["batch_build_seed"]) < 0:
         raise ValueError("--batch-build-seed must be >= 0")
 
@@ -1986,6 +2429,9 @@ def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
         "validation_batch_size": batch_config["validation_batch_size"],
         "prediction_batch_size": batch_config["prediction_batch_size"],
         "shuffle_train_batches": batch_config["shuffle_train_batches"],
+        "epoch_wise_batch_regrouping": batch_config[
+            "epoch_wise_batch_regrouping"
+        ],
         "drop_last": batch_config["drop_last"],
         "batch_plan": batch_config["batch_plan"],
         "batch_build_seed": batch_config["batch_build_seed"],
@@ -2292,7 +2738,104 @@ def _sample_weighted_masked_mean(values, mask, sample_weights):
     )
 
 
-def _loss_components(model, params, groups: list[dict], stats: dict, loss_config: dict[str, Any]) -> dict[str, Any]:
+def _native_loss_components(
+    model,
+    params,
+    groups: list[dict],
+    stats: dict,
+    loss_config: dict[str, Any],
+    *,
+    key=None,
+) -> dict[str, Any]:
+    names = (
+        "shape_cv_loss", "log_scale_loss", "relative_field_loss",
+        "raw_absolute_field_loss", "total_loss",
+    )
+    weighted = {name: jnp.asarray(0.0) for name in names}
+    base_mse = jnp.asarray(0.0)
+    count = 0
+    native_weights = {
+        "shape_cv": loss_config["native_shape_cv_weight"],
+        "log_scale": loss_config["native_log_scale_weight"],
+        "relative_field": loss_config["native_relative_field_weight"],
+        "raw_absolute": loss_config["native_raw_field_weight"],
+    }
+    for group_index, group in enumerate(groups):
+        group_key = jax.random.fold_in(key, group_index) if key is not None else None
+        prediction = _model_apply(model, params, group, key=group_key)
+        physics = group["native_physics"]
+        components = native_shape_scale_losses(
+            prediction,
+            target_deltaT=group["target_delta_raw"],
+            control_volumes=physics["control_volumes"],
+            dirichlet_mask=physics["dirichlet_mask"],
+            loss_weights=native_weights,
+            raw_loss_mode=loss_config["native_raw_loss_mode"],
+            raw_train_target_energy_per_point=loss_config.get(
+                "native_raw_train_target_energy_per_point"
+            ),
+            log_scale_weight_mode=loss_config["native_log_scale_weight_mode"],
+            log_scale_train_true_scale_sq_mean=loss_config.get(
+                "native_log_scale_train_true_scale_sq_mean"
+            ),
+            log_scale_weight_clip=(
+                loss_config["native_log_scale_weight_clip_min"],
+                loss_config["native_log_scale_weight_clip_max"],
+            ),
+        )
+        branch_mode = getattr(model, "native_branch_mode", "joint")
+        if branch_mode == "scale_only":
+            components = dict(components)
+            components["total_loss"] = (
+                native_weights["log_scale"] * components["log_scale_loss"]
+                + native_weights["relative_field"] * components["relative_field_loss"]
+                + native_weights["raw_absolute"] * components["raw_absolute_field_loss"]
+            )
+        elif branch_mode == "shape_only":
+            components = dict(components)
+            components["total_loss"] = (
+                native_weights["shape_cv"] * components["shape_cv_loss"]
+                + native_weights["relative_field"] * components["relative_field_loss"]
+                + native_weights["raw_absolute"] * components["raw_absolute_field_loss"]
+            )
+        predicted_normalized = normalize_target_delta(prediction["deltaT_hat"], stats)
+        group_base_mse = jnp.mean(jnp.square(predicted_normalized - group["target_normalized"]))
+        n = int(group["target_normalized"].shape[0])
+        for name in names:
+            weighted[name] = weighted[name] + components[name] * n
+        base_mse = base_mse + group_base_mse * n
+        count += n
+    divisor = max(count, 1)
+    result = {name: value / divisor for name, value in weighted.items()}
+    result["base_mse"] = base_mse / divisor
+    zero = jnp.asarray(0.0, dtype=result["total_loss"].dtype)
+    for name in (
+        "background_penalty", "background_l1", "background_signed_bias_loss",
+        "background_overprediction_loss", "background_relative_abs",
+        "pseudo_negative_over_loss", "pseudo_negative_unweighted_loss",
+        "pseudo_negative_weighted_loss", "pseudo_negative_weighted_fraction_of_total_loss",
+        "pseudo_negative_bias", "pseudo_negative_over_ratio", "hotspot_retention_loss",
+        "hotspot_mse", "strong_q_mse", "hotspot_mask_fraction", "strong_q_mask_fraction",
+        "bg_pred_raw_mean", "bg_signed_bias", "bg_abs_mean", "hotspot_raw_mae",
+        "pseudo_negative_count",
+    ):
+        result[name] = zero
+    return result
+
+
+def _loss_components(
+    model,
+    params,
+    groups: list[dict],
+    stats: dict,
+    loss_config: dict[str, Any],
+    *,
+    key=None,
+) -> dict[str, Any]:
+    if groups and "native_physics" in groups[0]:
+        return _native_loss_components(
+            model, params, groups, stats, loss_config, key=key
+        )
     weighted = {
         "base_mse": 0.0,
         "background_penalty": 0.0,
@@ -2319,9 +2862,10 @@ def _loss_components(model, params, groups: list[dict], stats: dict, loss_config
     }
     count = 0
     pseudo_negative_count = jnp.asarray(0.0)
-    for group in groups:
+    for group_index, group in enumerate(groups):
         sample_weights = _sample_weights_for_group(group)
-        pred = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
+        group_key = jax.random.fold_in(key, group_index) if key is not None else None
+        pred = _model_apply(model, params, group, key=group_key)
         target = group["target_normalized"]
         target_raw = group["target_delta_raw"]
         pred_raw_delta = _normalized_delta_to_raw(pred, stats)
@@ -2497,13 +3041,47 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
     weighted_raw_delta_mse = 0.0
     weighted_recovered_mse = 0.0
     weighted_mean_abs_true_delta = 0.0
+    weighted_mean_square_true_delta = 0.0
+    raw_cv_error_squared_integral = 0.0
+    raw_cv_volume = 0.0
+    native_metric_sums: dict[str, Any] = {}
     count = 0
     finite_ok = True
     shape_ok = True
     for group in groups:
-        pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
-        recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
+        prediction = _model_apply(model, params, group)
+        if isinstance(prediction, Mapping):
+            pred_delta = prediction["deltaT_hat"]
+            pred_normalized = normalize_target_delta(pred_delta, stats)
+            recovered = prediction["raw_temperature"]
+            physics = group["native_physics"]
+            native_diagnostics = native_shape_scale_diagnostics(
+                prediction,
+                target_deltaT=group["target_delta_raw"],
+                control_volumes=physics["control_volumes"],
+                dirichlet_mask=physics["dirichlet_mask"],
+                s_phys=jnp.exp(physics["log_s_phys"]),
+            )
+            native_values = {
+                "scale_log_abs_error": native_diagnostics["scale_log_abs_error"],
+                "shape_cv_rmse": native_diagnostics["shape_cv_rmse"],
+            }
+            for field_name, metrics in native_diagnostics["metrics"].items():
+                for metric_name, value in metrics.items():
+                    native_values[f"{field_name}_{metric_name}"] = value
+            for name, value in native_values.items():
+                native_metric_sums[name] = native_metric_sums.get(name, 0.0) + value * prediction["deltaT_hat"].shape[0]
+            control_volumes = control_volume_layout(
+                physics["control_volumes"], pred_delta
+            )
+            raw_cv_error_squared_integral = raw_cv_error_squared_integral + jnp.sum(
+                jnp.square(pred_delta - group["target_delta_raw"]) * control_volumes
+            )
+            raw_cv_volume = raw_cv_volume + jnp.sum(control_volumes)
+        else:
+            pred_normalized = prediction
+            pred_delta = _normalized_delta_to_raw(pred_normalized, stats)
+            recovered = recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
         n = pred_normalized.shape[0]
         weighted_normalized_loss = weighted_normalized_loss + jnp.mean(
             jnp.square(pred_normalized - group["target_normalized"])
@@ -2517,6 +3095,9 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
         weighted_mean_abs_true_delta = weighted_mean_abs_true_delta + jnp.mean(
             jnp.abs(group["target_delta_raw"])
         ) * n
+        weighted_mean_square_true_delta = weighted_mean_square_true_delta + jnp.mean(
+            jnp.square(group["target_delta_raw"])
+        ) * n
         finite_ok = (
             finite_ok
             and bool(jnp.all(jnp.isfinite(pred_normalized)))
@@ -2528,22 +3109,53 @@ def _weighted_metrics(model, params, groups: list[dict], stats: dict) -> dict[st
 
     divisor = max(count, 1)
     mean_abs_true_delta = float(weighted_mean_abs_true_delta / divisor)
+    mean_square_true_delta = float(weighted_mean_square_true_delta / divisor)
     raw_delta_mse = float(weighted_raw_delta_mse / divisor)
     recovered_temperature_mse = float(weighted_recovered_mse / divisor)
-    relative_pct = _deltaT_error_pct(raw_delta_mse, mean_abs_true_delta)
-    return {
+    relative_pct = _deltaT_error_pct(raw_delta_mse, mean_square_true_delta)
+    result = {
         "normalized_loss": float(weighted_normalized_loss / divisor),
         "raw_delta_mse": raw_delta_mse,
         "raw_rmse_K": _rmse_from_mse(raw_delta_mse),
         "recovered_temperature_mse": recovered_temperature_mse,
         "recovered_T_rmse_K": _rmse_from_mse(recovered_temperature_mse),
         "mean_abs_true_deltaT": mean_abs_true_delta,
+        "mean_square_true_deltaT": mean_square_true_delta,
         "rel_rmse_v4_pct": relative_pct,
         "raw_deltaT_relative_rmse_pct_v4": relative_pct,
         "raw_deltaT_relative_rmse_pct": relative_pct,
         "finite_ok": finite_ok,
         "shape_ok": shape_ok,
     }
+    result.update({name: float(value / divisor) for name, value in native_metric_sums.items()})
+    if "joint_relative_rmse" in result:
+        result["sample_first_cv_relative_rmse"] = result["joint_relative_rmse"]
+    if float(raw_cv_volume) > 0.0:
+        result["raw_cv_weighted_rmse_K"] = float(
+            jnp.sqrt(raw_cv_error_squared_integral / raw_cv_volume)
+        )
+    return result
+
+
+def _legacy_full_batch_metrics_with_true_rms_denominator(
+    model, params, groups: list[dict], stats: dict
+) -> dict[str, Any]:
+    metrics = dict(_metrics(model, params, groups, stats))
+    weighted_mean_square = 0.0
+    count = 0
+    for group in groups:
+        n = int(group["target_delta_raw"].shape[0])
+        weighted_mean_square += float(jnp.mean(jnp.square(group["target_delta_raw"]))) * n
+        count += n
+    mean_square_true_delta = weighted_mean_square / max(count, 1)
+    metrics["mean_square_true_deltaT"] = mean_square_true_delta
+    relative_pct = _deltaT_error_pct(
+        metrics.get("raw_delta_mse"), mean_square_true_delta
+    )
+    metrics["rel_rmse_v4_pct"] = relative_pct
+    metrics["raw_deltaT_relative_rmse_pct_v4"] = relative_pct
+    metrics["raw_deltaT_relative_rmse_pct"] = relative_pct
+    return metrics
 
 
 def _optax_learning_rate_schedule(epochs: int, lr_config: dict[str, Any]):
@@ -2669,6 +3281,30 @@ def _build_optax_state(
         "state": tx.init(params),
         "apply_updates": optax.apply_updates,
     }
+
+
+def _apply_native_update_controls(
+    updates: Any,
+    *,
+    native_enabled: bool,
+    model_config: Mapping[str, Any],
+    optimizer_config: Mapping[str, Any],
+) -> Any:
+    """Apply native branch masking and optional scale-head LR multiplier."""
+
+    if not native_enabled:
+        return updates
+    updates = mask_native_trainable_scope(
+        updates,
+        branch_mode=model_config["native_branch_mode"],
+        trainable_scope=str(
+            optimizer_config.get("native_trainable_scope", "branch")
+        ),
+    )
+    return apply_scale_head_lr_multiplier(
+        updates,
+        float(optimizer_config.get("scale_head_lr_multiplier", 1.0)),
+    )
 
 
 def _copy_params(params):
@@ -2857,6 +3493,17 @@ def _epoch_history_record(
         "valid_iid_raw_deltaT_rmse_K": (
             float(valid_metrics["raw_rmse_K"]) if primary_validation_split == "valid_iid" else None
         ),
+        "train_raw_cv_weighted_rmse_K": _maybe_float(
+            train_metrics, "raw_cv_weighted_rmse_K"
+        ),
+        "valid_raw_cv_weighted_rmse_K": _maybe_float(
+            valid_metrics, "raw_cv_weighted_rmse_K"
+        ),
+        "valid_iid_raw_cv_weighted_rmse_K": (
+            _maybe_float(valid_metrics, "raw_cv_weighted_rmse_K")
+            if primary_validation_split == "valid_iid"
+            else None
+        ),
         "train_error_pct": _metric_error_pct(train_metrics),
         "valid_error_pct": _metric_error_pct(valid_metrics),
         "valid_iid_error_pct": _metric_error_pct(valid_metrics) if primary_validation_split == "valid_iid" else None,
@@ -2882,6 +3529,20 @@ def _epoch_history_record(
         ),
         "train_full_metrics_computed": train_components is not None and train_metrics is not None,
     }
+    for component in (
+        "shape_cv_loss", "log_scale_loss", "relative_field_loss", "raw_absolute_field_loss"
+    ):
+        record[f"train_{component}"] = _maybe_float(train_components, component)
+        record[f"valid_{component}"] = _maybe_float(valid_components, component)
+    for metric in (
+        "scale_log_abs_error", "shape_cv_rmse", "joint_relative_rmse",
+        "sample_first_cv_relative_rmse",
+        "joint_amplitude_ratio", "joint_spatial_correlation", "joint_hotspot_rmse",
+        "joint_topk_rmse", "oracle_scale_relative_rmse", "oracle_shape_relative_rmse",
+        "physics_scale_relative_rmse",
+    ):
+        record[f"train_native_{metric}"] = _maybe_float(train_metrics, metric)
+        record[f"valid_native_{metric}"] = _maybe_float(valid_metrics, metric)
     if valid_stress_components is not None and valid_stress_metrics is not None:
         record.update(
             {
@@ -2914,13 +3575,18 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
     if log_mode == "quiet":
         return
     if log_mode == "compact":
-        train_loss = _first_progress_numeric(
-            record.get("train_loss"),
-            record.get("epoch_mean_train_batch_loss"),
+        train_base_mse = _first_progress_numeric(
+            record.get("train_base_mse"),
+            record.get("epoch_mean_train_batch_base_mse"),
         )
-        valid_iid_loss = record.get("valid_iid_loss")
-        if valid_iid_loss is None:
-            valid_iid_loss = record.get("valid_loss")
+        valid_iid_base_mse = _first_progress_numeric(
+            record.get("valid_iid_base_mse"),
+            record.get("valid_base_mse"),
+        )
+        best_valid_iid_base_mse = _first_progress_numeric(
+            record.get("best_valid_iid_base_mse"),
+            record.get("best_valid_base_mse"),
+        )
         valid_raw_rmse = _first_progress_numeric(
             record.get("valid_iid_raw_rmse_K"),
             record.get("valid_raw_rmse_K"),
@@ -2940,13 +3606,13 @@ def _print_epoch_progress(record: dict[str, Any], epochs: int, log_mode: str) ->
         _emit(
             f"epoch {record['epoch']}/{epochs} "
             f"lr={record['lr']:.2e} "
-            f"train={_format_progress_loss(train_loss)} "
-            f"valid={_format_progress_loss(valid_iid_loss)} "
+            f"train={_format_progress_loss(train_base_mse)} "
+            f"valid={_format_progress_loss(valid_iid_base_mse)} "
             f"raw_rmse_K={_format_progress_sigfig_decimal(valid_raw_rmse)} "
             f"rel_rmse_v4_pct={_format_progress_percent(valid_rel_rmse_pct)} "
             f"{stress_progress}"
             f"best=e{_format_progress_int(record.get('best_epoch'))}/"
-            f"{_format_progress_loss(record.get('best_valid_iid_loss'))}"
+            f"{_format_progress_loss(best_valid_iid_base_mse)}"
         )
         return
     _emit(
@@ -3071,6 +3737,10 @@ def _fit_once(
     memory_audit: MemoryAudit | None = None,
     primary_validation_split: str = "valid",
     stress_validation_split: str | None = None,
+    track_point_global_best: bool = False,
+    track_base_mse_best: bool = False,
+    track_sample_first_best: bool = False,
+    epoch_regroup_fn: Any | None = None,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
@@ -3079,10 +3749,11 @@ def _fit_once(
     _progress(progress_enabled, "startup", "initializing model parameters ...")
     model = GraphNeuralOperator(**model_config)
     init_inputs = _init_inputs_for_mode(train_groups[0], init_mode)
-    params = model.init(
+    params = _model_init(
+        model,
         jax.random.PRNGKey(model_seed),
-        inputs=init_inputs,
-        graphs=train_groups[0]["graphs"],
+        train_groups[0],
+        init_inputs,
     )["params"]
     params, checkpoint_load_info = _load_init_checkpoint_params(
         params,
@@ -3105,7 +3776,12 @@ def _fit_once(
     )
 
     batch_enabled = batch_config.get("batch_size") is not None
-    metrics_fn = _weighted_metrics if batch_enabled else _metrics
+    native_enabled = model_config.get("native_output_mode") == "native_shape_scale"
+    metrics_fn = (
+        _weighted_metrics
+        if batch_enabled or native_enabled
+        else _legacy_full_batch_metrics_with_true_rms_denominator
+    )
     updates_per_epoch = int(len(train_groups) if batch_enabled else 1)
 
     initial_start = time.perf_counter()
@@ -3149,10 +3825,54 @@ def _fit_once(
     epoch_history = []
     train_batch_records: list[dict[str, Any]] = []
     validation_batch_records: list[dict[str, Any]] = []
-    best_score: float | None = None
-    best_record: dict[str, Any] | None = None
-    best_params = None
-    best_params_storage: str | None = None
+    initial_best_record = _epoch_history_record(
+        0,
+        0.0,
+        initial_loss_config,
+        train_initial_components,
+        valid_initial_components,
+        valid_initial_metrics,
+        None,
+        primary_validation_split=primary_validation_split,
+        valid_stress_components=valid_stress_initial_components,
+        valid_stress_metrics=valid_stress_initial_metrics,
+        stress_validation_split=stress_validation_split,
+    )
+    initial_best_params = _host_params(params)
+    best_score: float | None = float(initial_best_record[selection_metric])
+    best_record: dict[str, Any] | None = dict(initial_best_record)
+    best_params = initial_best_params
+    best_params_storage: str | None = "cpu"
+    point_global_best_score: float | None = (
+        float(initial_best_record["valid_rel_rmse_v4_pct"])
+        if track_point_global_best
+        else None
+    )
+    point_global_best_record: dict[str, Any] | None = (
+        dict(initial_best_record) if track_point_global_best else None
+    )
+    point_global_best_params = initial_best_params if track_point_global_best else None
+    base_mse_best_score: float | None = (
+        float(initial_best_record["valid_base_mse"]) if track_base_mse_best else None
+    )
+    base_mse_best_record: dict[str, Any] | None = (
+        dict(initial_best_record) if track_base_mse_best else None
+    )
+    base_mse_best_params = initial_best_params if track_base_mse_best else None
+    sample_first_best_score: float | None = (
+        float(initial_best_record["valid_native_sample_first_cv_relative_rmse"])
+        if track_sample_first_best
+        else None
+    )
+    sample_first_best_raw_cv_rmse_K: float | None = (
+        float(initial_best_record["valid_raw_cv_weighted_rmse_K"])
+        if track_sample_first_best
+        else None
+    )
+    sample_first_best_record: dict[str, Any] | None = (
+        dict(initial_best_record) if track_sample_first_best else None
+    )
+    sample_first_best_params = initial_best_params if track_sample_first_best else None
     final_epoch_train_components = None
     final_epoch_train_metrics = None
     final_epoch_valid_components = None
@@ -3216,17 +3936,32 @@ def _fit_once(
         train_step_start = time.perf_counter()
         epoch_train_batch_records: list[dict[str, Any]] = []
         epoch_train_batch_losses: list[float] = []
+        epoch_train_batch_base_mses: list[tuple[int, float]] = []
         epoch_grad_norms: list[float] = []
+        epoch_native_group_grad_norms: dict[str, list[float]] = {
+            "backbone": [],
+            "shape_decoder": [],
+            "scale_head": [],
+        }
         epoch_update_norms: list[float] = []
         epoch_param_norms: list[float] = []
         epoch_update_to_param_ratios: list[float] = []
         if batch_enabled:
-            train_epoch_groups = _epoch_train_groups(
-                train_groups,
-                epoch=epoch,
-                seed=batch_order_seed,
-                shuffle=bool(batch_config.get("shuffle_train_batches")),
+            train_epoch_groups = (
+                epoch_regroup_fn(epoch)
+                if epoch_regroup_fn is not None
+                else _epoch_train_groups(
+                    train_groups,
+                    epoch=epoch,
+                    seed=batch_order_seed,
+                    shuffle=bool(batch_config.get("shuffle_train_batches")),
+                )
             )
+            if len(train_epoch_groups) != updates_per_epoch:
+                raise RuntimeError(
+                    "epoch-wise batch regrouping changed updates_per_epoch: "
+                    f"expected={updates_per_epoch} actual={len(train_epoch_groups)}"
+                )
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_epoch_groups))
             if memory_audit is not None:
                 memory_audit.record(
@@ -3244,25 +3979,64 @@ def _fit_once(
                         split="train",
                         detail=_batch_shape_signature(batch_group),
                     )
-                def loss_fn(current_params, group=batch_group):
-                    return _loss_components(model, current_params, [group], stats, current_loss_config)["total_loss"]
+                edge_masking_key = _training_edge_masking_key(
+                    model_config,
+                    model_seed=model_seed,
+                    epoch=epoch,
+                    batch_index=batch_index,
+                )
+
+                def loss_fn(current_params, group=batch_group, key=edge_masking_key):
+                    components = _loss_components(
+                        model,
+                        current_params,
+                        [group],
+                        stats,
+                        current_loss_config,
+                        key=key,
+                    )
+                    return components["total_loss"], components["base_mse"]
 
                 batch_start = time.perf_counter()
                 loss_grad_start = time.perf_counter()
-                loss_value, grads = jax.value_and_grad(loss_fn)(params)
+                (loss_value, batch_base_mse), grads = jax.value_and_grad(
+                    loss_fn, has_aux=True
+                )(params)
+                if native_enabled:
+                    grads = mask_native_trainable_scope(
+                        grads,
+                        branch_mode=model_config["native_branch_mode"],
+                        trainable_scope=str(
+                            optimizer_config.get(
+                                "native_trainable_scope", "branch"
+                            )
+                        ),
+                    )
                 if profile_enabled:
                     _block_until_ready_tree((loss_value, grads))
                 loss_grad_time = time.perf_counter() - loss_grad_start
                 batch_loss_value = float(loss_value)
+                batch_base_mse_value = float(batch_base_mse)
                 epoch_train_batch_losses.append(batch_loss_value)
+                epoch_train_batch_base_mses.append(
+                    (_sample_count(batch_group), batch_base_mse_value)
+                )
 
                 grad_norm_reported = should_report_grad_norm(grad_norm_report_every, batch_index)
                 compute_batch_norms = bool(grad_norm_reported or profile_enabled)
                 grad_norm = None
+                native_group_grad_norms: dict[str, float] = {}
                 grad_norm_time = 0.0
                 if compute_batch_norms:
                     grad_norm_start = time.perf_counter()
                     grad_norm = _global_norm(grads)
+                    if native_enabled:
+                        native_group_grad_norms = {
+                            name: float(value)
+                            for name, value in native_gradient_group_norms(grads).items()
+                        }
+                        for name, value in native_group_grad_norms.items():
+                            epoch_native_group_grad_norms[name].append(value)
                     grad_norm_time = time.perf_counter() - grad_norm_start
                     epoch_grad_norms.append(grad_norm)
                     grad_finite = grad_finite and bool(np.isfinite(grad_norm))
@@ -3276,10 +4050,18 @@ def _fit_once(
                 optimizer_update_start = time.perf_counter()
                 if optax_state is None:
                     updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
-                    params = tree.tree_map(lambda param, update: param + update, params, updates)
                 else:
                     updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                     optax_state["state"] = opt_state
+                updates = _apply_native_update_controls(
+                    updates,
+                    native_enabled=native_enabled,
+                    model_config=model_config,
+                    optimizer_config=optimizer_config,
+                )
+                if optax_state is None:
+                    params = tree.tree_map(lambda param, update: param + update, params, updates)
+                else:
                     params = optax_state["apply_updates"](params, updates)
                 if profile_enabled:
                     _block_until_ready_tree(params)
@@ -3313,10 +4095,12 @@ def _fit_once(
                         "batch_size": _sample_count(batch_group),
                         "group_count": 1,
                         "train_batch_loss": float(batch_loss_value),
+                        "train_batch_base_mse": float(batch_base_mse_value),
                         "total_batch_time": float(total_batch_time),
                         "loss_grad_time": float(loss_grad_time),
                         "grad_norm_time": float(grad_norm_time),
                         "grad_norm": float(grad_norm) if grad_norm is not None else None,
+                        "native_gradient_group_norms": native_group_grad_norms,
                         "grad_norm_reported": bool(grad_norm_reported),
                         "update_norm": float(update_norm) if update_norm is not None else None,
                         "param_norm": float(param_norm) if param_norm is not None else None,
@@ -3346,14 +4130,29 @@ def _fit_once(
                             "param_norm": float(param_norm) if param_norm is not None else None,
                         },
                     )
-                del grads, updates, loss_value
+                del grads, updates, loss_value, batch_base_mse
             epoch_batch_counts.append(len(train_epoch_groups))
             if batch_grad_norms:
                 grad_norms.append(float(np.mean(batch_grad_norms)))
         else:
             epoch_train_batch_order_hashes.append(_group_sample_id_hash(train_groups))
-            def loss_fn(current_params):
-                return _loss_components(model, current_params, train_groups, stats, current_loss_config)["total_loss"]
+            edge_masking_key = _training_edge_masking_key(
+                model_config,
+                model_seed=model_seed,
+                epoch=epoch,
+                batch_index=1,
+            )
+
+            def loss_fn(current_params, key=edge_masking_key):
+                components = _loss_components(
+                    model,
+                    current_params,
+                    train_groups,
+                    stats,
+                    current_loss_config,
+                    key=key,
+                )
+                return components["total_loss"], components["base_mse"]
 
             batch_start = time.perf_counter()
             if memory_audit is not None:
@@ -3365,20 +4164,42 @@ def _fit_once(
                     detail=_groups_memory_signature(train_groups),
                 )
             loss_grad_start = time.perf_counter()
-            loss_value, grads = jax.value_and_grad(loss_fn)(params)
+            (loss_value, batch_base_mse), grads = jax.value_and_grad(
+                loss_fn, has_aux=True
+            )(params)
+            if native_enabled:
+                grads = mask_native_trainable_scope(
+                    grads,
+                    branch_mode=model_config["native_branch_mode"],
+                    trainable_scope=str(
+                        optimizer_config.get("native_trainable_scope", "branch")
+                    ),
+                )
             if profile_enabled:
                 _block_until_ready_tree((loss_value, grads))
             loss_grad_time = time.perf_counter() - loss_grad_start
             batch_loss_value = float(loss_value)
+            batch_base_mse_value = float(batch_base_mse)
             epoch_train_batch_losses.append(batch_loss_value)
+            epoch_train_batch_base_mses.append(
+                (sum(_sample_count(group) for group in train_groups), batch_base_mse_value)
+            )
 
             grad_norm_reported = should_report_grad_norm(grad_norm_report_every, 1)
             compute_batch_norms = bool(grad_norm_reported or profile_enabled)
             grad_norm = None
+            native_group_grad_norms: dict[str, float] = {}
             grad_norm_time = 0.0
             if compute_batch_norms:
                 grad_norm_start = time.perf_counter()
                 grad_norm = _global_norm(grads)
+                if native_enabled:
+                    native_group_grad_norms = {
+                        name: float(value)
+                        for name, value in native_gradient_group_norms(grads).items()
+                    }
+                    for name, value in native_group_grad_norms.items():
+                        epoch_native_group_grad_norms[name].append(value)
                 grad_norm_time = time.perf_counter() - grad_norm_start
                 epoch_grad_norms.append(grad_norm)
                 grad_finite = grad_finite and bool(np.isfinite(grad_norm))
@@ -3392,10 +4213,18 @@ def _fit_once(
             optimizer_update_start = time.perf_counter()
             if optax_state is None:
                 updates = tree.tree_map(lambda grad: -lr_epoch * grad, grads)
-                params = tree.tree_map(lambda param, update: param + update, params, updates)
             else:
                 updates, opt_state = optax_state["tx"].update(grads, optax_state["state"], params)
                 optax_state["state"] = opt_state
+            updates = _apply_native_update_controls(
+                updates,
+                native_enabled=native_enabled,
+                model_config=model_config,
+                optimizer_config=optimizer_config,
+            )
+            if optax_state is None:
+                params = tree.tree_map(lambda param, update: param + update, params, updates)
+            else:
                 params = optax_state["apply_updates"](params, updates)
             if profile_enabled:
                 _block_until_ready_tree(params)
@@ -3432,10 +4261,12 @@ def _fit_once(
                     "batch_size": sum(_sample_count(group) for group in train_groups),
                     "group_count": len(train_groups),
                     "train_batch_loss": float(batch_loss_value),
+                    "train_batch_base_mse": float(batch_base_mse_value),
                     "total_batch_time": float(total_batch_time),
                     "loss_grad_time": float(loss_grad_time),
                     "grad_norm_time": float(grad_norm_time),
                     "grad_norm": float(grad_norm) if grad_norm is not None else None,
+                    "native_gradient_group_norms": native_group_grad_norms,
                     "grad_norm_reported": bool(grad_norm_reported),
                     "update_norm": float(update_norm) if update_norm is not None else None,
                     "param_norm": float(param_norm) if param_norm is not None else None,
@@ -3463,7 +4294,7 @@ def _fit_once(
                         "param_norm": float(param_norm) if param_norm is not None else None,
                     },
                 )
-            del grads, updates, loss_value
+            del grads, updates, loss_value, batch_base_mse
             epoch_batch_counts.append(1)
         train_step_time = time.perf_counter() - train_step_start
 
@@ -3591,10 +4422,23 @@ def _fit_once(
         param_norm_summary = _epoch_monitor_summary(epoch_param_norms)
         update_param_ratio_summary = _epoch_monitor_summary(epoch_update_to_param_ratios)
         record["epoch_mean_train_batch_loss"] = batch_loss_summary["mean"]
+        train_batch_base_mse_count = sum(
+            count for count, _ in epoch_train_batch_base_mses
+        )
+        record["epoch_mean_train_batch_base_mse"] = (
+            sum(count * value for count, value in epoch_train_batch_base_mses)
+            / train_batch_base_mse_count
+            if train_batch_base_mse_count > 0
+            else None
+        )
         record["epoch_min_train_batch_loss"] = batch_loss_summary["min"]
         record["epoch_max_train_batch_loss"] = batch_loss_summary["max"]
         record["epoch_mean_grad_norm"] = grad_norm_summary["mean"]
         record["epoch_max_grad_norm"] = grad_norm_summary["max"]
+        for group_name, values in epoch_native_group_grad_norms.items():
+            group_summary = _epoch_monitor_summary(values)
+            record[f"epoch_mean_{group_name}_grad_norm"] = group_summary["mean"]
+            record[f"epoch_max_{group_name}_grad_norm"] = group_summary["max"]
         record["epoch_mean_update_norm"] = update_norm_summary["mean"]
         record["epoch_max_update_norm"] = update_norm_summary["max"]
         record["epoch_mean_param_norm"] = param_norm_summary["mean"]
@@ -3614,6 +4458,36 @@ def _fit_once(
             best_params_storage = "cpu"
             if memory_audit is not None:
                 memory_audit.record("best_params_copy_end", epoch=epoch)
+        if track_point_global_best:
+            point_global_score = float(record["valid_rel_rmse_v4_pct"])
+            if point_global_best_score is None or point_global_score < point_global_best_score:
+                point_global_best_score = point_global_score
+                point_global_best_record = dict(record)
+                point_global_best_params = _host_params(params)
+        if track_base_mse_best:
+            base_score = float(record["valid_base_mse"])
+            if base_mse_best_score is None or base_score < base_mse_best_score:
+                base_mse_best_score = base_score
+                base_mse_best_record = dict(record)
+                base_mse_best_params = _host_params(params)
+        if track_sample_first_best:
+            sample_score = float(
+                record["valid_native_sample_first_cv_relative_rmse"]
+            )
+            sample_raw_cv_rmse_K = float(
+                record["valid_raw_cv_weighted_rmse_K"]
+            )
+            sample_is_better = _sample_first_candidate_is_better(
+                sample_score,
+                sample_raw_cv_rmse_K,
+                sample_first_best_score,
+                sample_first_best_raw_cv_rmse_K,
+            )
+            if sample_is_better:
+                sample_first_best_score = sample_score
+                sample_first_best_raw_cv_rmse_K = sample_raw_cv_rmse_K
+                sample_first_best_record = dict(record)
+                sample_first_best_params = _host_params(params)
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
         record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
         record["best_valid_base_mse"] = best_record.get("valid_base_mse") if best_record is not None else None
@@ -3755,6 +4629,16 @@ def _fit_once(
         "best_params": best_params,
         "best_params_storage": best_params_storage,
         "best_score": best_score,
+        "point_global_best_score": point_global_best_score,
+        "point_global_best_record": point_global_best_record,
+        "point_global_best_params": point_global_best_params,
+        "base_mse_best_score": base_mse_best_score,
+        "base_mse_best_record": base_mse_best_record,
+        "base_mse_best_params": base_mse_best_params,
+        "sample_first_best_score": sample_first_best_score,
+        "sample_first_best_raw_cv_rmse_K": sample_first_best_raw_cv_rmse_K,
+        "sample_first_best_record": sample_first_best_record,
+        "sample_first_best_params": sample_first_best_params,
         "final_epoch": int(epochs),
         "final_valid_loss": float(valid_losses[-1]),
         "final_valid_iid_loss": float(valid_losses[-1]) if primary_validation_split == "valid_iid" else None,
@@ -3799,15 +4683,386 @@ def _fit_once(
 def _predict_temperatures(model, params, groups: list[dict], stats: dict) -> dict[str, np.ndarray]:
     predictions: dict[str, np.ndarray] = {}
     for group in groups:
-        pred_normalized = model.apply({"params": params}, inputs=group["inputs"], graphs=group["graphs"])
-        recovered = np.asarray(
-            recover_temperature_from_normalized_delta(pred_normalized, group["t_ref"], stats)
-        )
+        prediction = _model_apply(model, params, group)
+        if isinstance(prediction, Mapping):
+            recovered = np.asarray(prediction["raw_temperature"])
+        else:
+            recovered = np.asarray(
+                recover_temperature_from_normalized_delta(prediction, group["t_ref"], stats)
+            )
         if not np.all(np.isfinite(recovered)):
             raise ValueError(f"Non-finite recovered predictions in group {group['name']}")
         for batch_index, sample_id in enumerate(group["sample_ids"]):
             predictions[sample_id] = recovered[batch_index, 0, :, :].astype(np.float64)
     return predictions
+
+
+def _prediction_max_abs_difference(
+    expected: Mapping[str, np.ndarray], actual: Mapping[str, np.ndarray]
+) -> float:
+    if set(expected) != set(actual):
+        raise ValueError(
+            "prediction sample ids differ after reload: "
+            f"expected={len(expected)} actual={len(actual)}"
+        )
+    return max(
+        (
+            float(np.max(np.abs(np.asarray(expected[key]) - np.asarray(actual[key]))))
+            for key in expected
+        ),
+        default=0.0,
+    )
+
+
+def _tree_max_abs_difference(expected: Any, actual: Any) -> float:
+    expected_items = _param_leaf_items(expected)
+    actual_items = _param_leaf_items(actual)
+    if [path for path, _ in expected_items] != [path for path, _ in actual_items]:
+        raise ValueError("checkpoint parameter paths differ after serialization")
+    return max(
+        (
+            float(np.max(np.abs(np.asarray(expected_leaf) - np.asarray(actual_leaf))))
+            for (_, expected_leaf), (_, actual_leaf) in zip(expected_items, actual_items)
+        ),
+        default=0.0,
+    )
+
+
+def _checkpoint_prediction_reload_audit(
+    *,
+    model: Any,
+    groups: list[dict],
+    stats: dict,
+    entries: list[tuple[str, Path, Path, Mapping[str, np.ndarray], Any]],
+    # Raw-temperature replay is float32 and may take a different compiled
+    # reduction path after checkpoint reload; keep exact parameter/NPZ checks
+    # while allowing a small sub-0.02 K numerical difference.
+    tolerance: float = 2.0e-2,
+) -> dict[str, Any]:
+    """Reload saved params and NPZ predictions, then reproduce predictions."""
+
+    reports = []
+    for label, checkpoint_path, predictions_path, expected, reference_params in entries:
+        checkpoint_payload = _load_params_checkpoint(checkpoint_path)
+        parameter_max_abs = _tree_max_abs_difference(
+            _host_params(reference_params), checkpoint_payload["params"]
+        )
+        checkpoint_context = (
+            checkpoint_payload.get("run_config_metadata", {}).get("global_context") or {}
+        )
+        standardizer = checkpoint_context.get("standardizer") or {}
+        if checkpoint_context.get("enabled") and standardizer.get("fit_population") != "train_only":
+            raise RuntimeError(
+                f"{label}: checkpoint global-context standardizer is not train-only"
+            )
+        checkpoint_scale_context = (
+            checkpoint_payload.get("run_config_metadata", {}).get("scale_context")
+            or {}
+        )
+        scale_standardizer = (
+            checkpoint_scale_context.get("standardizer") or {}
+        )
+        if (
+            checkpoint_scale_context.get("enabled")
+            and scale_standardizer.get("fit_population") != "train_only"
+        ):
+            raise RuntimeError(
+                f"{label}: checkpoint scale-context standardizer is not train-only"
+            )
+        loaded_params = _device_params(checkpoint_payload["params"])
+        try:
+            reloaded_predictions = _predict_temperatures(model, loaded_params, groups, stats)
+        finally:
+            del loaded_params
+        with np.load(predictions_path) as saved_payload:
+            saved_predictions = {key: np.asarray(saved_payload[key]) for key in saved_payload.files}
+        checkpoint_max_abs = _prediction_max_abs_difference(expected, reloaded_predictions)
+        npz_max_abs = _prediction_max_abs_difference(expected, saved_predictions)
+        passed = bool(
+            parameter_max_abs == 0.0
+            and checkpoint_max_abs <= tolerance
+            and npz_max_abs == 0.0
+        )
+        reports.append(
+            {
+                "label": label,
+                "checkpoint_path": str(checkpoint_path),
+                "predictions_path": str(predictions_path),
+                "sample_count": len(expected),
+                "parameter_reload_max_abs_error": parameter_max_abs,
+                "checkpoint_reload_max_abs_error_K": checkpoint_max_abs,
+                "npz_reload_max_abs_error_K": npz_max_abs,
+                "tolerance_K": float(tolerance),
+                "global_context_fit_population": standardizer.get("fit_population"),
+                "scale_context_fit_population": scale_standardizer.get(
+                    "fit_population"
+                ),
+                "global_context_fit_sample_count": standardizer.get("fit_sample_count"),
+                "passed": passed,
+            }
+        )
+        if not passed:
+            raise RuntimeError(f"{label}: checkpoint/predictions reload audit failed: {reports[-1]}")
+    return {
+        "enabled": bool(entries),
+        "status": "passed" if entries else "skipped",
+        "entries": reports,
+    }
+
+
+def _native_runtime_architecture_audit(model: Any, params: Any, group: dict) -> dict[str, Any]:
+    if getattr(model, "native_output_mode", None) != "native_shape_scale":
+        return {"enabled": False}
+    prediction = _model_apply(model, params, group)
+    pooled = np.asarray(prediction["pooled_rnodes"])
+    s_hat = np.asarray(prediction["s_hat"])
+    payload = {
+        "enabled": True,
+        "scale_head_mode": str(getattr(model, "scale_head_mode")),
+        "scale_pooling": str(getattr(model, "scale_pooling")),
+        "scale_head_depth": int(getattr(model, "scale_head_depth", 1)),
+        "pooled_latent_stop_gradient": bool(
+            getattr(model, "pooled_latent_stop_gradient", False)
+        ),
+        "shape_attention_mode": str(getattr(model, "shape_attention_mode", "none")),
+        "scale_attention_mode": str(getattr(model, "scale_attention_mode", "none")),
+        "regional_attention_hidden_size": int(
+            getattr(model, "regional_attention_hidden_size", 64)
+        ),
+        "qk_region_feature_version": str(
+            getattr(model, "qk_region_feature_version", "bugged_v1")
+        ),
+        "scale_context_mode": str(
+            getattr(model, "scale_context_mode", "none")
+        ),
+        "scale_context_feature_dim": int(
+            getattr(model, "scale_context_feature_dim", 0)
+        ),
+        "scale_deepsets_mode": str(
+            getattr(model, "scale_deepsets_mode", "none")
+        ),
+        "node_latent_width": int(getattr(model, "node_latent_size")),
+        "pooled_latent_width": int(pooled.shape[-1]),
+        "scale_head_input_width": int(getattr(model, "global_context_feature_dim"))
+        + int(getattr(model, "scale_context_feature_dim", 0))
+        + int(pooled.shape[-1]),
+        "s_hat_positive": bool(np.all(s_hat > 0.0)),
+        "finite": bool(
+            np.all(np.isfinite(s_hat))
+            and np.all(np.isfinite(np.asarray(prediction["deltaT_hat"])))
+        ),
+    }
+    if getattr(model, "scale_head_mode") != "physics_plus_pooled_latent":
+        expected_pooled_width = 0
+    elif getattr(model, "scale_pooling") in {"mean_std", "mean_max", "pre_film_mean_std"}:
+        expected_pooled_width = 2 * int(getattr(model, "node_latent_size"))
+    else:
+        expected_pooled_width = int(getattr(model, "node_latent_size"))
+    payload["expected_pooled_latent_width"] = expected_pooled_width
+    payload["passed"] = bool(
+        payload["pooled_latent_width"] == expected_pooled_width
+        and payload["s_hat_positive"]
+        and payload["finite"]
+    )
+    if not payload["passed"]:
+        raise RuntimeError(f"native runtime architecture audit failed: {payload}")
+    return payload
+
+
+def _scale_attention_intermediates(model: Any, params: Any, group: Mapping[str, Any]):
+    physics = group["native_physics"]
+    _, state = model.apply(
+        {"params": params},
+        inputs=group["inputs"],
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+        control_volumes=physics["control_volumes"],
+        log_s_phys=physics["log_s_phys"],
+        reference_temperature=physics["reference_temperature"],
+        dirichlet_mask=physics["dirichlet_mask"],
+        prescribed_temperature=physics["prescribed_temperature"],
+        qk_region_features=group.get("qk_region_features"),
+        scale_context=group.get("scale_context"),
+        scale_region_source_weights=group.get("scale_region_source_weights"),
+        scale_region_volume_weights=group.get("scale_region_volume_weights"),
+        method=model.predict_native_shape_scale,
+        mutable=["intermediates"],
+    )
+    value = state["intermediates"]["scale_attention_weights"]
+    while isinstance(value, (tuple, list)):
+        value = value[0]
+    return np.asarray(value, dtype=np.float64)
+
+
+def _shape_attention_intermediates(
+    model: Any, params: Any, group: Mapping[str, Any]
+) -> tuple[np.ndarray, np.ndarray]:
+    physics = group["native_physics"]
+    _, state = model.apply(
+        {"params": params},
+        inputs=group["inputs"],
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+        control_volumes=physics["control_volumes"],
+        log_s_phys=physics["log_s_phys"],
+        reference_temperature=physics["reference_temperature"],
+        dirichlet_mask=physics["dirichlet_mask"],
+        prescribed_temperature=physics["prescribed_temperature"],
+        qk_region_features=group.get("qk_region_features"),
+        scale_context=group.get("scale_context"),
+        scale_region_source_weights=group.get("scale_region_source_weights"),
+        scale_region_volume_weights=group.get("scale_region_volume_weights"),
+        method=model.predict_native_shape_scale,
+        mutable=["intermediates"],
+    )
+    gate = state["intermediates"]["shape_attention_gate_values"]
+    residual = state["intermediates"]["shape_attention_residual"]
+    while isinstance(gate, (tuple, list)):
+        gate = gate[0]
+    while isinstance(residual, (tuple, list)):
+        residual = residual[0]
+    return (
+        np.asarray(gate, dtype=np.float64).squeeze(-1),
+        np.asarray(residual, dtype=np.float64),
+    )
+
+
+def _finite_pearson(x: np.ndarray, y: np.ndarray) -> float | None:
+    left = np.asarray(x, dtype=np.float64).reshape(-1)
+    right = np.asarray(y, dtype=np.float64).reshape(-1)
+    finite = np.isfinite(left) & np.isfinite(right)
+    left, right = left[finite], right[finite]
+    if left.size < 2 or np.std(left) <= 1.0e-12 or np.std(right) <= 1.0e-12:
+        return None
+    return float(np.corrcoef(left, right)[0, 1])
+
+
+def _scale_attention_diagnostics(
+    model: Any,
+    params: Any,
+    groups: list[dict],
+) -> dict[str, Any]:
+    """Summarize valid-only attention after all checkpoint choices are frozen."""
+
+    if getattr(model, "scale_attention_mode", "none") != "physics_gate":
+        return {"enabled": False}
+    weights_rows: list[np.ndarray] = []
+    feature_rows: list[np.ndarray] = []
+    feature_names: tuple[str, ...] | None = None
+    for group in groups:
+        weights = _scale_attention_intermediates(model, params, group)
+        features = np.asarray(group["qk_region_features"], dtype=np.float64)
+        names = tuple(group["qk_region_feature_names"])
+        if weights.shape != features.shape[:2]:
+            raise RuntimeError(
+                f"attention diagnostic shape mismatch: {weights.shape} vs {features.shape}"
+            )
+        if feature_names is None:
+            feature_names = names
+        elif feature_names != names:
+            raise RuntimeError("attention diagnostic feature schema drifted across groups")
+        weights_rows.append(weights)
+        feature_rows.append(features)
+    packed_weights = np.concatenate(weights_rows, axis=0)
+    packed_features = np.concatenate(feature_rows, axis=0)
+    if not np.all(np.isfinite(packed_weights)) or not np.all(
+        np.isfinite(packed_features)
+    ):
+        raise RuntimeError("attention diagnostics contain non-finite values")
+    regional_count = packed_weights.shape[1]
+    entropy = -np.sum(
+        packed_weights * np.log(np.maximum(packed_weights, 1.0e-12)), axis=1
+    )
+    normalized_entropy = (
+        entropy / np.log(float(regional_count))
+        if regional_count > 1
+        else np.zeros_like(entropy)
+    )
+    names = feature_names or ()
+    source_feature = (
+        "source_present_fraction"
+        if "source_present_fraction" in names
+        else "q_high_inverse_kz_overlap"
+    )
+    required = (
+        source_feature,
+        "log1p_q_relative",
+        "log_inverse_kz_relative",
+        "log1p_q_inverse_kz_relative",
+    )
+    missing = [name for name in required if name not in names]
+    if missing:
+        raise RuntimeError(f"attention diagnostics missing sparse-safe features: {missing}")
+    correlations = {
+        name: _finite_pearson(
+            packed_weights, packed_features[..., names.index(name)]
+        )
+        for name in required
+    }
+    payload = {
+        "enabled": True,
+        "scope": "valid_iid_only_after_all_checkpoint_selection_frozen",
+        "feature_version": str(
+            getattr(model, "qk_region_feature_version", "bugged_v1")
+        ),
+        "sample_count": int(packed_weights.shape[0]),
+        "regional_node_count": int(regional_count),
+        "normalized_entropy_mean": float(np.mean(normalized_entropy)),
+        "normalized_entropy_min": float(np.min(normalized_entropy)),
+        "normalized_entropy_max": float(np.max(normalized_entropy)),
+        "maximum_weight_mean": float(np.mean(np.max(packed_weights, axis=1))),
+        "maximum_weight_max": float(np.max(packed_weights)),
+        "weight_feature_pearson": correlations,
+        "finite": True,
+    }
+    if getattr(model, "shape_attention_mode", "none") == "physics_gate":
+        shape_gate_rows: list[np.ndarray] = []
+        shape_residual_rows: list[np.ndarray] = []
+        shape_feature_rows: list[np.ndarray] = []
+        for group in groups:
+            gate, residual = _shape_attention_intermediates(model, params, group)
+            features = np.asarray(group["qk_region_features"], dtype=np.float64)
+            if gate.shape != features.shape[:2] or residual.shape[:2] != gate.shape:
+                raise RuntimeError(
+                    "shape attention diagnostic regional dimensions do not align"
+                )
+            shape_gate_rows.append(gate)
+            shape_residual_rows.append(residual)
+            shape_feature_rows.append(features)
+        shape_gates = np.concatenate(shape_gate_rows, axis=0)
+        shape_residuals = np.concatenate(shape_residual_rows, axis=0)
+        shape_features = np.concatenate(shape_feature_rows, axis=0)
+        shape_correlations = {
+            name: _finite_pearson(
+                shape_gates, shape_features[..., names.index(name)]
+            )
+            for name in required
+        }
+        residual_norm = np.linalg.norm(
+            shape_residuals.reshape(shape_residuals.shape[0], -1), axis=1
+        )
+        payload["shape_attention"] = {
+            "enabled": True,
+            "mode": "physics_gate",
+            "sample_count": int(shape_gates.shape[0]),
+            "regional_node_count": int(shape_gates.shape[1]),
+            "gate_mean": float(np.mean(shape_gates)),
+            "gate_min": float(np.min(shape_gates)),
+            "gate_max": float(np.max(shape_gates)),
+            "gate_saturated_fraction": float(
+                np.mean((shape_gates <= 0.01) | (shape_gates >= 0.99))
+            ),
+            "residual_l2_norm_mean": float(np.mean(residual_norm)),
+            "residual_l2_norm_max": float(np.max(residual_norm)),
+            "gate_feature_pearson": shape_correlations,
+            "finite": bool(
+                np.all(np.isfinite(shape_gates))
+                and np.all(np.isfinite(shape_residuals))
+            ),
+        }
+        if not payload["shape_attention"]["finite"]:
+            raise RuntimeError("shape attention diagnostics contain non-finite values")
+    return payload
 
 
 def _json_safe(value: Any) -> Any:
@@ -4040,9 +5295,31 @@ def _load_init_checkpoint_params(
 
 def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict[str, Any]:
     if kind == "best":
-        return dict(result.get("best_record") or {})
+        record = dict(result.get("best_record") or {})
+        record["checkpoint_selection_metric"] = result.get("selection_metric")
+        return record
+    if kind == "point_global_best":
+        record = dict(result.get("point_global_best_record") or {})
+        record["checkpoint_selection_metric"] = "valid_rel_rmse_v4_pct"
+        return record
+    if kind == "base_mse_best":
+        record = dict(result.get("base_mse_best_record") or {})
+        record["checkpoint_selection_metric"] = "valid_base_mse"
+        return record
+    if kind == "sample_first_best":
+        record = dict(result.get("sample_first_best_record") or {})
+        record["checkpoint_selection_metric"] = (
+            "valid_native_sample_first_cv_relative_rmse"
+        )
+        record["checkpoint_tie_break_metric"] = (
+            "valid_raw_cv_weighted_rmse_K"
+        )
+        record["checkpoint_tie_break_comparison"] = (
+            "tolerance_aware_lexicographic"
+        )
+        return record
     if kind == "final":
-        return {
+        record = {
             "epoch": result.get("final_epoch"),
             "valid_loss": result.get("final_valid_loss"),
             "valid_iid_loss": result.get("final_valid_iid_loss"),
@@ -4075,6 +5352,8 @@ def _checkpoint_record_from_result(result: dict[str, Any], *, kind: str) -> dict
             "valid_iid_base_mse": (result.get("final_valid_iid_loss_components", {}) or {}).get("base_mse"),
             "valid_stress_base_mse": (result.get("final_valid_stress_loss_components", {}) or {}).get("base_mse"),
         }
+        record["checkpoint_selection_metric"] = "final"
+        return record
     raise ValueError(f"unsupported checkpoint kind: {kind}")
 
 
@@ -4091,6 +5370,8 @@ def _checkpoint_run_metadata(
     seed_config: dict[str, Any],
     batch_config: dict[str, Any],
     graph_config: dict[str, Any],
+    global_context_payload: dict[str, Any] | None = None,
+    scale_context_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "subset": str(sample_root),
@@ -4106,6 +5387,8 @@ def _checkpoint_run_metadata(
         "seed_config": seed_config,
         "batch_config": batch_config,
         "graph_config": graph_config,
+        "global_context": global_context_payload,
+        "scale_context": scale_context_payload,
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "prediction_split": args.prediction_split,
         "init_checkpoint": str(args.init_checkpoint) if args.init_checkpoint is not None else None,
@@ -4141,6 +5424,8 @@ def _write_params_checkpoint(
         "epoch": int(epoch) if epoch is not None else None,
         "record": _json_safe(record),
         "run_config_metadata": _json_safe(run_metadata),
+        "selection_metric": record.get("checkpoint_selection_metric"),
+        "configuration_hash": _stable_json_hash(run_metadata),
         "param_tree_summary": param_tree_summary,
         "param_count": param_tree_summary["param_count"],
         "param_shapes": param_tree_summary["param_shapes"],
@@ -4151,6 +5436,17 @@ def _write_params_checkpoint(
         "warm_start_supported": True,
         "warm_start_mode": "params_only",
     }
+    tmp_path = path.with_name(path.name + ".tmp")
+    with tmp_path.open("wb") as handle:
+        pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    tmp_path.replace(path)
+
+
+def _attach_checkpoint_prediction_reload_audit(path: Path, audit_entry: Mapping[str, Any]) -> None:
+    """Persist the completed reload audit alongside the checkpoint metadata."""
+
+    payload = _load_params_checkpoint(path)
+    payload["prediction_reload_audit"] = _json_safe(dict(audit_entry))
     tmp_path = path.with_name(path.name + ".tmp")
     with tmp_path.open("wb") as handle:
         pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -4250,6 +5546,8 @@ def _print_startup_summary(
         f"validation_batch_size={batch_config['validation_batch_size']} "
         f"prediction_batch_size={batch_config['prediction_batch_size']} "
         f"shuffle_train_batches={batch_config['shuffle_train_batches']} "
+        f"epoch_wise_batch_regrouping="
+        f"{batch_config['epoch_wise_batch_regrouping']} "
         f"drop_last={batch_config['drop_last']}"
     )
     _emit(
@@ -4583,6 +5881,59 @@ def _run_post_training_prediction_diagnostics(
         diagnostics_dir = args.post_training_diagnostics_output_dir or (
             output_dir / "post_training_diagnostics"
         )
+        if args.prediction_split == "valid_iid":
+            diagnostics_dir.mkdir(parents=True, exist_ok=True)
+            loss_summary_path = output_dir / "loss_summary.json"
+            summary = json.loads(loss_summary_path.read_text(encoding="utf-8"))
+            payload = {
+                "schema_version": "heat3d_v5_valid_only_post_training_diagnostics_v1",
+                "status": "completed",
+                "scope": "valid_iid_only",
+                "source": "persisted_training_summary",
+                "prediction_split": "valid_iid",
+                "roles_accessed": ["valid_iid"],
+                "forbidden_roles_accessed": [],
+                "valid_iid_metrics": summary.get("valid_iid_metrics", {}),
+                "final_valid_iid_loss_components": summary.get(
+                    "final_valid_iid_loss_components", {}
+                ),
+                "selection": {
+                    "selection_metric": summary.get("selection_metric"),
+                    "point_global_best_epoch": summary.get("point_global_best_epoch"),
+                    "point_global_best_relative_rmse_pct": summary.get(
+                        "point_global_best_relative_rmse_pct"
+                    ),
+                    "sample_first_best_epoch": summary.get("sample_first_best_epoch"),
+                    "sample_first_best_relative_rmse_pct": summary.get(
+                        "sample_first_best_relative_rmse_pct"
+                    ),
+                    "base_mse_best_epoch": summary.get("base_mse_best_epoch"),
+                    "base_mse_best_value": summary.get("base_mse_best_value"),
+                },
+            }
+            output_json = diagnostics_dir / "valid_iid_diagnostics.json"
+            output_md = diagnostics_dir / "valid_iid_diagnostics.md"
+            _write_json(output_json, payload)
+            output_md.write_text(
+                "# valid_iid post-training diagnostics\n\n"
+                "- status: `completed`\n"
+                "- scope: `valid_iid_only`\n"
+                "- source: persisted `loss_summary.json`\n"
+                "- forbidden roles accessed: none\n",
+                encoding="utf-8",
+            )
+            return {
+                "enabled": True,
+                "status": "completed",
+                "scope": "valid_iid_only",
+                "source": "persisted_training_summary",
+                "prediction_split": "valid_iid",
+                "roles_accessed": ["valid_iid"],
+                "forbidden_roles_accessed": [],
+                "output_dir": str(diagnostics_dir),
+                "output_json": str(output_json),
+                "output_md": str(output_md),
+            }
         return {
             "enabled": False,
             "reason": "non_all_prediction_split",
@@ -5132,6 +6483,487 @@ def _attach_sample_weights_to_groups(groups: list[dict], sample_weights: dict[st
         )
 
 
+def _global_context_row_for_example(example: Any) -> dict[str, float]:
+    """Build one inference-only FiLM context from the active bridge view."""
+
+    relative_view = example.get_relative_bc_feature_view()
+    feature_names = tuple(relative_view.condition_feature_names)
+    raw_condition = np.asarray(relative_view.condition_features, dtype=np.float64)
+    raw_coords = np.asarray(example.condition.coords, dtype=np.float64).reshape(-1, 3)
+    reference_temperature = float(relative_view.t_ref_value)
+    if not math.isfinite(reference_temperature):
+        raise ValueError(f"{example.sample_id}: global context has invalid reference temperature")
+    return global_context_from_raw_condition(
+        coords=raw_coords,
+        raw_condition=raw_condition,
+        condition_feature_names=feature_names,
+        reference_temperature_K=reference_temperature,
+    )
+
+
+def _prepare_global_context_lookup(
+    model_config: Mapping[str, Any],
+    *,
+    train_examples: list[Any],
+    required_examples: list[Any],
+) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+    """Fit V5 context standardization on train only and encode requested groups."""
+
+    native_enabled = model_config.get("native_output_mode") == "native_shape_scale"
+    if (
+        model_config.get("global_context_mode", GLOBAL_CONTEXT_MODE_NONE) == GLOBAL_CONTEXT_MODE_NONE
+        and not native_enabled
+    ):
+        return {}, {
+            "enabled": False,
+            "mode": GLOBAL_CONTEXT_MODE_NONE,
+            "target_or_label_derived_inputs": False,
+        }
+    feature_names = tuple(model_config.get("global_context_feature_names") or ())
+    validate_global_context_schema(feature_names)
+    rows: dict[str, dict[str, float]] = {}
+    for example in [*train_examples, *required_examples]:
+        sample_id = str(example.sample_id)
+        if sample_id not in rows:
+            rows[sample_id] = _global_context_row_for_example(example)
+    train_ids = [str(example.sample_id) for example in train_examples]
+    standardizer = fit_train_only_standardizer(
+        [rows[sample_id] for sample_id in train_ids],
+        fit_sample_ids=train_ids,
+    )
+    encoded = {
+        sample_id: standardize_contexts([row], standardizer)[0]
+        for sample_id, row in rows.items()
+    }
+    return encoded, {
+        "enabled": True,
+        "mode": (
+            GLOBAL_CONTEXT_MODE_FILM
+            if model_config.get("global_context_mode") == GLOBAL_CONTEXT_MODE_FILM
+            else "native_scale_head"
+        ),
+        "feature_names": list(GLOBAL_CONTEXT_FEATURES),
+        "standardizer": standardizer,
+        "target_or_label_derived_inputs": False,
+    }
+
+
+def _scale_context_row_for_example(example: Any) -> dict[str, float]:
+    """Build scale-head-only XY context from inference-time raw inputs."""
+
+    relative = example.get_relative_bc_feature_view()
+    return xy_scale_context_from_raw_condition(
+        coords=np.asarray(example.condition.coords, dtype=np.float64),
+        raw_condition=np.asarray(relative.condition_features, dtype=np.float64),
+        condition_feature_names=tuple(relative.condition_feature_names),
+    )
+
+
+def _prepare_scale_context_lookup(
+    model_config: Mapping[str, Any],
+    *,
+    train_examples: list[Any],
+    required_examples: list[Any],
+) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
+    """Fit the independent scale context on train only."""
+
+    if model_config.get("scale_context_mode", "none") == "none":
+        return {}, {
+            "enabled": False,
+            "mode": "none",
+            "target_or_label_derived_inputs": False,
+        }
+    feature_names = tuple(model_config.get("scale_context_feature_names") or ())
+    validate_scale_context_schema(feature_names)
+    rows: dict[str, dict[str, float]] = {}
+    for example in [*train_examples, *required_examples]:
+        sample_id = str(example.sample_id)
+        if sample_id not in rows:
+            rows[sample_id] = _scale_context_row_for_example(example)
+    train_ids = [str(example.sample_id) for example in train_examples]
+    standardizer = fit_train_only_scale_context_standardizer(
+        [rows[sample_id] for sample_id in train_ids],
+        fit_sample_ids=train_ids,
+    )
+    encoded = {
+        sample_id: standardize_scale_contexts([row], standardizer)[0]
+        for sample_id, row in rows.items()
+    }
+    return encoded, {
+        "enabled": True,
+        "mode": "xy_raw_global",
+        "feature_names": list(XY_SCALE_CONTEXT_FEATURES),
+        "standardizer": standardizer,
+        "fit_roles": ["train"],
+        "target_or_label_derived_inputs": False,
+        "consumer_scope": ["global_scale_head"],
+        "forbidden_consumers": ["shape", "film", "decoder"],
+    }
+
+
+def _attach_scale_context_to_groups(
+    groups: list[dict],
+    encoded_context_by_id: Mapping[str, np.ndarray],
+    *,
+    expected_feature_dim: int,
+) -> None:
+    if not encoded_context_by_id:
+        return
+    for group in groups:
+        missing = [
+            sample_id
+            for sample_id in group["sample_ids"]
+            if sample_id not in encoded_context_by_id
+        ]
+        if missing:
+            raise ValueError(
+                f"{group['name']}: scale context missing samples {missing[:5]}"
+            )
+        context = np.stack(
+            [encoded_context_by_id[sample_id] for sample_id in group["sample_ids"]]
+        )
+        expected = (len(group["sample_ids"]), expected_feature_dim)
+        if context.shape != expected or not np.all(np.isfinite(context)):
+            raise ValueError(
+                f"{group['name']}: scale context shape/finite failure "
+                f"got={context.shape} expected={expected}"
+            )
+        group["scale_context"] = jnp.asarray(context, dtype=jnp.float32)
+
+
+def _attach_global_context_to_groups(
+    groups: list[dict],
+    encoded_context_by_id: Mapping[str, np.ndarray],
+    *,
+    expected_feature_dim: int,
+) -> None:
+    if not encoded_context_by_id:
+        return
+    for group in groups:
+        missing = [sample_id for sample_id in group["sample_ids"] if sample_id not in encoded_context_by_id]
+        if missing:
+            raise ValueError(f"{group['name']}: global context missing samples {missing[:5]}")
+        context = np.stack([encoded_context_by_id[sample_id] for sample_id in group["sample_ids"]])
+        if context.shape != (len(group["sample_ids"]), expected_feature_dim):
+            raise ValueError(
+                f"{group['name']}: global context shape {context.shape} does not match "
+                f"batch/feature dimensions {len(group['sample_ids'])}/{expected_feature_dim}"
+            )
+        if not np.all(np.isfinite(context)):
+            raise ValueError(f"{group['name']}: global context contains non-finite values")
+        group["global_context"] = jnp.asarray(context, dtype=jnp.float32)
+
+
+def _attach_native_physics_to_groups(
+    groups: list[dict],
+    examples_by_id: Mapping[str, Any],
+) -> None:
+    """Attach inference-only native physics tensors in each group's sample order."""
+
+    for group in groups:
+        volumes = []
+        log_s_phys = []
+        references = []
+        masks = []
+        prescribed = []
+        for sample_id in group["sample_ids"]:
+            example = examples_by_id[sample_id]
+            relative = example.get_relative_bc_feature_view()
+            names = tuple(relative.condition_feature_names)
+            values = np.asarray(relative.condition_features, dtype=np.float64)
+            coords = np.asarray(example.condition.coords, dtype=np.float64)
+            if "is_bottom" not in names or "bottom_T_fixed_minus_T_ref" not in names:
+                raise ValueError(f"{sample_id}: native branch lacks bottom Dirichlet features")
+            bottom = values[:, names.index("is_bottom")] > 0.5
+            if not np.any(bottom):
+                raise ValueError(f"{sample_id}: native branch has no Dirichlet nodes")
+            reference = float(relative.t_ref_value)
+            offset = values[:, names.index("bottom_T_fixed_minus_T_ref")]
+            context = _global_context_row_for_example(example)
+            volumes.append(control_volume_weights(coords))
+            log_s_phys.append(float(context["log_s_phys_K"]))
+            references.append(np.full(coords.shape[0], reference, dtype=np.float32))
+            masks.append(bottom.astype(np.float32))
+            prescribed.append((reference + offset).astype(np.float32))
+        group["native_physics"] = {
+            "control_volumes": jnp.asarray(np.stack(volumes), dtype=jnp.float32),
+            "log_s_phys": jnp.asarray(log_s_phys, dtype=jnp.float32),
+            "reference_temperature": jnp.asarray(np.stack(references), dtype=jnp.float32),
+            "dirichlet_mask": jnp.asarray(np.stack(masks), dtype=jnp.float32),
+            "prescribed_temperature": jnp.asarray(np.stack(prescribed), dtype=jnp.float32),
+        }
+
+
+def _attach_qk_region_features_to_groups(
+    groups: list[dict],
+    examples_by_id: Mapping[str, Any],
+    *,
+    feature_version: str = "bugged_v1",
+) -> None:
+    """Attach raw-input-only P2R regional features for q--k gated pooling."""
+
+    feature_names = qk_region_feature_names(feature_version)
+    for group in groups:
+        regional_features = []
+        metadata = group["metadata"]
+        p2r_indices = np.asarray(metadata.p2r_edge_indices)
+        rnode_count = int(np.asarray(metadata.x_rnodes).shape[1] - 1)
+        for row, sample_id in enumerate(group["sample_ids"]):
+            example = examples_by_id[sample_id]
+            relative = example.get_relative_bc_feature_view()
+            regional_features.append(
+                qk_region_features_from_raw(
+                    coords=np.asarray(example.condition.coords, dtype=np.float64),
+                    raw_condition=np.asarray(relative.condition_features, dtype=np.float64),
+                    condition_feature_names=tuple(relative.condition_feature_names),
+                    p2r_edge_indices=p2r_indices[row],
+                    rnode_count=rnode_count,
+                    feature_version=feature_version,
+                )
+            )
+        packed = np.stack(regional_features)
+        expected = (len(group["sample_ids"]), rnode_count, len(feature_names))
+        if packed.shape != expected or not np.all(np.isfinite(packed)):
+            raise ValueError(
+                f"{group['name']}: qk regional feature shape/finite failure "
+                f"got={packed.shape} expected={expected}"
+            )
+        group["qk_region_features"] = jnp.asarray(packed, dtype=jnp.float32)
+        group["qk_region_feature_names"] = feature_names
+
+
+def _attach_scale_deepsets_weights_to_groups(
+    groups: list[dict],
+    examples_by_id: Mapping[str, Any],
+) -> None:
+    """Attach raw-input-only regional source-power and volume weights."""
+
+    for group in groups:
+        source_rows = []
+        volume_rows = []
+        metadata = group["metadata"]
+        p2r_indices = np.asarray(metadata.p2r_edge_indices)
+        rnode_count = int(np.asarray(metadata.x_rnodes).shape[1] - 1)
+        for row, sample_id in enumerate(group["sample_ids"]):
+            example = examples_by_id[sample_id]
+            relative = example.get_relative_bc_feature_view()
+            source, volume = regional_source_volume_weights_from_raw(
+                coords=np.asarray(example.condition.coords, dtype=np.float64),
+                raw_condition=np.asarray(
+                    relative.condition_features, dtype=np.float64
+                ),
+                condition_feature_names=tuple(relative.condition_feature_names),
+                p2r_edge_indices=p2r_indices[row],
+                rnode_count=rnode_count,
+            )
+            source_rows.append(source)
+            volume_rows.append(volume)
+        source_packed = np.stack(source_rows)
+        volume_packed = np.stack(volume_rows)
+        expected = (len(group["sample_ids"]), rnode_count)
+        if (
+            source_packed.shape != expected
+            or volume_packed.shape != expected
+            or not np.all(np.isfinite(source_packed))
+            or not np.all(np.isfinite(volume_packed))
+        ):
+            raise ValueError(
+                f"{group['name']}: scale DeepSets regional weight failure"
+            )
+        group["scale_region_source_weights"] = jnp.asarray(
+            source_packed, dtype=jnp.float32
+        )
+        group["scale_region_volume_weights"] = jnp.asarray(
+            volume_packed, dtype=jnp.float32
+        )
+
+
+def _fit_native_loss_train_references(
+    loss_config: dict[str, Any],
+    train_examples: list[Any],
+) -> None:
+    """Fit V42 fixed objective references from train targets only."""
+
+    need_raw = (
+        loss_config.get("native_raw_loss_mode")
+        == "point_global_fixed_train_energy_sse"
+    )
+    need_scale = (
+        loss_config.get("native_log_scale_weight_mode")
+        == "train_true_scale_squared_clipped"
+    )
+    loss_config["native_raw_train_target_energy_per_point"] = None
+    loss_config["native_log_scale_train_true_scale_sq_mean"] = None
+    loss_config["native_log_scale_weight_diagnostics"] = None
+    if not need_raw and not need_scale:
+        return
+
+    squared_scales: list[float] = []
+    raw_target_energy = 0.0
+    raw_target_count = 0
+    for example in train_examples:
+        target = np.asarray(_bridge_for(example).target_delta_u, dtype=np.float64)
+        if target.ndim != 4 or target.shape[0:2] != (1, 1) or target.shape[-1] != 1:
+            raise ValueError(
+                f"{example.sample_id}: unexpected native target shape {target.shape}"
+            )
+        target_vector = target[0, 0, :, 0]
+        if need_raw:
+            raw_target_energy += float(np.sum(np.square(target_vector)))
+            raw_target_count += int(target_vector.size)
+        if need_scale:
+            relative = example.get_relative_bc_feature_view()
+            names = tuple(relative.condition_feature_names)
+            if "is_bottom" not in names:
+                raise ValueError(
+                    f"{example.sample_id}: scale weighting lacks is_bottom"
+                )
+            mask = (
+                np.asarray(relative.condition_features, dtype=np.float64)[
+                    :, names.index("is_bottom")
+                ]
+                > 0.5
+            )
+            volume = np.asarray(
+                control_volume_weights(
+                    np.asarray(example.condition.coords, dtype=np.float64)
+                ),
+                dtype=np.float64,
+            )
+            free = target_vector * (~mask)
+            squared_scales.append(
+                float(
+                    np.sum(np.square(free) * volume)
+                    / max(float(np.sum(volume)), 1.0e-12)
+                )
+            )
+
+    if need_raw:
+        reference = raw_target_energy / max(raw_target_count, 1)
+        if not math.isfinite(reference) or reference <= 0.0:
+            raise ValueError(
+                "train-only point-global target energy per point is invalid"
+            )
+        loss_config["native_raw_train_target_energy_per_point"] = float(reference)
+
+    if need_scale:
+        values = np.asarray(squared_scales, dtype=np.float64)
+        reference = float(np.mean(values))
+        if not math.isfinite(reference) or reference <= 0.0:
+            raise ValueError("train-only true-scale-squared reference is invalid")
+        clip_min = float(loss_config["native_log_scale_weight_clip_min"])
+        clip_max = float(loss_config["native_log_scale_weight_clip_max"])
+        raw_weights = values / reference
+        clipped = np.clip(raw_weights, clip_min, clip_max)
+        effective_sample_size = float(
+            np.square(np.sum(clipped))
+            / max(float(np.sum(np.square(clipped))), 1.0e-12)
+        )
+        quantile_levels = (0.0, 0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99, 1.0)
+        loss_config["native_log_scale_train_true_scale_sq_mean"] = reference
+        loss_config["native_log_scale_weight_diagnostics"] = {
+            "fit_roles": ["train"],
+            "sample_count": int(values.size),
+            "clip_bounds": [clip_min, clip_max],
+            "raw_weight_quantiles": {
+                f"p{int(level * 100):02d}": float(
+                    np.quantile(raw_weights, level)
+                )
+                for level in quantile_levels
+            },
+            "lower_clip_fraction": float(np.mean(raw_weights < clip_min)),
+            "upper_clip_fraction": float(np.mean(raw_weights > clip_max)),
+            "effective_sample_size": effective_sample_size,
+            "effective_sample_size_fraction": float(
+                effective_sample_size / values.size
+            ),
+            "raw_weight_mean": float(np.mean(raw_weights)),
+            "clipped_weight_mean": float(np.mean(clipped)),
+        }
+
+
+def _training_edge_masking_key(
+    model_config: Mapping[str, Any],
+    *,
+    model_seed: int,
+    epoch: int,
+    batch_index: int,
+):
+    """Return a deterministic key only for an enabled training masking update."""
+
+    if float(model_config.get("p_edge_masking", 0.0)) <= 0.0:
+        return None
+    key = jax.random.PRNGKey(int(model_seed))
+    key = jax.random.fold_in(key, int(epoch))
+    return jax.random.fold_in(key, int(batch_index))
+
+
+def _model_apply(model, params, group: Mapping[str, Any], *, key=None):
+    """Use the V4 call path unless a group explicitly carries Global FiLM data."""
+
+    if "native_physics" in group:
+        physics = group["native_physics"]
+        return model.apply(
+            {"params": params},
+            inputs=group["inputs"],
+            graphs=group["graphs"],
+            global_context=group.get("global_context"),
+            control_volumes=physics["control_volumes"],
+            log_s_phys=physics["log_s_phys"],
+            reference_temperature=physics["reference_temperature"],
+            dirichlet_mask=physics["dirichlet_mask"],
+            prescribed_temperature=physics["prescribed_temperature"],
+            qk_region_features=group.get("qk_region_features"),
+            scale_context=group.get("scale_context"),
+            scale_region_source_weights=group.get(
+                "scale_region_source_weights"
+            ),
+            scale_region_volume_weights=group.get(
+                "scale_region_volume_weights"
+            ),
+            key=key,
+            method=model.predict_native_shape_scale,
+        )
+    return model.apply(
+        {"params": params},
+        inputs=group["inputs"],
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+        key=key,
+    )
+
+
+def _model_init(model, key, group: Mapping[str, Any], inputs: Any):
+    if "native_physics" in group:
+        physics = group["native_physics"]
+        return model.init(
+            key,
+            inputs=inputs,
+            graphs=group["graphs"],
+            global_context=group.get("global_context"),
+            control_volumes=physics["control_volumes"],
+            log_s_phys=physics["log_s_phys"],
+            reference_temperature=physics["reference_temperature"],
+            dirichlet_mask=physics["dirichlet_mask"],
+            prescribed_temperature=physics["prescribed_temperature"],
+            qk_region_features=group.get("qk_region_features"),
+            scale_context=group.get("scale_context"),
+            scale_region_source_weights=group.get(
+                "scale_region_source_weights"
+            ),
+            scale_region_volume_weights=group.get(
+                "scale_region_volume_weights"
+            ),
+            method=model.predict_native_shape_scale,
+        )
+    return model.init(
+        key,
+        inputs=inputs,
+        graphs=group["graphs"],
+        global_context=group.get("global_context"),
+    )
+
+
 def _metadata_key(graph_seed: int):
     return jax.random.PRNGKey(int(graph_seed))
 
@@ -5505,6 +7337,15 @@ def main() -> int:
     _output_filename(args.best_predictions_name, "best-predictions-name")
     _output_filename(args.final_checkpoint_name, "final-checkpoint-name")
     _output_filename(args.best_checkpoint_name, "best-checkpoint-name")
+    _output_filename(
+        args.point_global_best_checkpoint_name,
+        "point-global-best-checkpoint-name",
+    )
+    _output_filename(args.base_mse_best_checkpoint_name, "base-mse-best-checkpoint-name")
+    _output_filename(
+        args.sample_first_best_checkpoint_name,
+        "sample-first-best-checkpoint-name",
+    )
     progress_enabled = _progress_enabled(args)
     progress_detail_enabled = _progress_detail_enabled(args)
     profile_enabled = _profile_timing_enabled(args)
@@ -5537,6 +7378,23 @@ def main() -> int:
     checkpoint_load_strict = args.checkpoint_load_strict == "true"
     if args.init_checkpoint is not None and not args.init_checkpoint.is_file():
         raise FileNotFoundError(f"--init-checkpoint not found: {args.init_checkpoint}")
+    if args.dry_run:
+        print(
+            json.dumps(
+                {
+                    "mode": "dry_run",
+                    "model_config": _json_safe(model_config),
+                    "batch_config": _json_safe(batch_config),
+                    "graph_config": _json_safe(graph_config),
+                    "loss_config": _json_safe(loss_config),
+                    "optimizer_config": _json_safe(optimizer_config),
+                    "training_runs": 0,
+                    "output_writes": 0,
+                },
+                sort_keys=True,
+            )
+        )
+        return 0
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
@@ -5700,6 +7558,8 @@ def main() -> int:
     build_test_iid_groups = args.prediction_split == "test_iid"
     all_groups: list[dict[str, Any]] = []
     test_iid_groups: list[dict[str, Any]] = []
+    all_examples: list[Any] = []
+    test_iid_examples: list[Any] = []
     if build_all_groups:
         all_examples = [dataset[index_by_id[sample_id]] for sample_id in all_ids]
         all_groups = _make_groups_with_progress(
@@ -5728,6 +7588,84 @@ def main() -> int:
             drop_last=False,
             profile_counts=profile_counts if profile_enabled else None,
         )
+    global_context_lookup, global_context_payload = _prepare_global_context_lookup(
+        model_config,
+        train_examples=train_examples,
+        required_examples=[
+            *valid_examples,
+            *valid_stress_examples,
+            *all_examples,
+            *test_iid_examples,
+        ],
+    )
+    for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
+        _attach_global_context_to_groups(
+            groups,
+            global_context_lookup,
+            expected_feature_dim=int(model_config.get("global_context_feature_dim", 0)),
+        )
+    scale_context_lookup, scale_context_payload = _prepare_scale_context_lookup(
+        model_config,
+        train_examples=train_examples,
+        required_examples=[
+            *valid_examples,
+            *valid_stress_examples,
+            *all_examples,
+            *test_iid_examples,
+        ],
+    )
+    for groups in (
+        train_groups,
+        valid_groups,
+        valid_stress_groups,
+        all_groups,
+        test_iid_groups,
+    ):
+        _attach_scale_context_to_groups(
+            groups,
+            scale_context_lookup,
+            expected_feature_dim=int(
+                model_config.get("scale_context_feature_dim", 0)
+            ),
+        )
+    if model_config.get("native_output_mode") == "native_shape_scale":
+        native_examples_by_id = {
+            example.sample_id: example
+            for example in (
+                *train_examples,
+                *valid_examples,
+                *valid_stress_examples,
+                *all_examples,
+                *test_iid_examples,
+            )
+        }
+        for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
+            _attach_native_physics_to_groups(groups, native_examples_by_id)
+        if (
+            model_config.get("scale_pooling") == "qk_gated"
+            or model_config.get("shape_attention_mode") != "none"
+            or model_config.get("scale_attention_mode") != "none"
+        ):
+            for groups in (train_groups, valid_groups, valid_stress_groups, all_groups, test_iid_groups):
+                _attach_qk_region_features_to_groups(
+                    groups,
+                    native_examples_by_id,
+                    feature_version=model_config.get(
+                        "qk_region_feature_version", "bugged_v1"
+                    ),
+                )
+        if model_config.get("scale_deepsets_mode", "none") != "none":
+            for groups in (
+                train_groups,
+                valid_groups,
+                valid_stress_groups,
+                all_groups,
+                test_iid_groups,
+            ):
+                _attach_scale_deepsets_weights_to_groups(
+                    groups, native_examples_by_id
+                )
+        _fit_native_loss_train_references(loss_config, train_examples)
     _attach_sample_weights_to_groups(train_groups, train_sample_weights)
     _require_nonempty_groups(train_groups, "train")
     _require_nonempty_groups(valid_groups, primary_validation_split)
@@ -5786,6 +7724,63 @@ def main() -> int:
         batch_config=batch_config,
     )
 
+    epoch_regroup_fn = None
+    if batch_config["epoch_wise_batch_regrouping"]:
+        if batch_config["batch_plan"] != "sample_shuffle":
+            raise RuntimeError(
+                "epoch-wise batch regrouping requires sample_shuffle"
+            )
+
+        def epoch_regroup_fn(epoch: int) -> list[dict[str, Any]]:
+            groups = _make_sample_shuffle_groups_with_progress(
+                train_examples,
+                stats,
+                builder,
+                f"train_epoch_{epoch:04d}",
+                False,
+                "basic",
+                seed_config["graph_seed"],
+                batch_size=batch_config["batch_size"],
+                batch_build_seed=batch_config["batch_build_seed"] + int(epoch),
+                drop_last=batch_config["drop_last"],
+                profile_counts=profile_counts if profile_enabled else None,
+            )
+            _attach_global_context_to_groups(
+                groups,
+                global_context_lookup,
+                expected_feature_dim=int(
+                    model_config.get("global_context_feature_dim", 0)
+                ),
+            )
+            _attach_scale_context_to_groups(
+                groups,
+                scale_context_lookup,
+                expected_feature_dim=int(
+                    model_config.get("scale_context_feature_dim", 0)
+                ),
+            )
+            if model_config.get("native_output_mode") == "native_shape_scale":
+                _attach_native_physics_to_groups(groups, native_examples_by_id)
+                if (
+                    model_config.get("scale_pooling") == "qk_gated"
+                    or model_config.get("shape_attention_mode") != "none"
+                    or model_config.get("scale_attention_mode") != "none"
+                ):
+                    _attach_qk_region_features_to_groups(
+                        groups,
+                        native_examples_by_id,
+                        feature_version=model_config.get(
+                            "qk_region_feature_version", "bugged_v1"
+                        ),
+                    )
+                if model_config.get("scale_deepsets_mode", "none") != "none":
+                    _attach_scale_deepsets_weights_to_groups(
+                        groups, native_examples_by_id
+                    )
+            _attach_sample_weights_to_groups(groups, train_sample_weights)
+            _check_decoder_bypass_input_alignment(model_config, groups)
+            return groups
+
     result = _fit_once(
         train_groups,
         valid_groups,
@@ -5814,6 +7809,10 @@ def main() -> int:
         memory_audit=memory_audit,
         primary_validation_split=primary_validation_split,
         stress_validation_split=stress_validation_split,
+        track_point_global_best=bool(args.save_point_global_best_checkpoint),
+        track_base_mse_best=bool(args.save_base_mse_best_checkpoint),
+        track_sample_first_best=bool(args.save_sample_first_best_checkpoint),
+        epoch_regroup_fn=epoch_regroup_fn,
     )
     prediction_groups = _prediction_groups_for_split(
         args.prediction_split,
@@ -5926,11 +7925,31 @@ def main() -> int:
         seed_config=seed_config,
         batch_config=batch_config,
         graph_config=graph_config,
+        global_context_payload=global_context_payload,
+        scale_context_payload=scale_context_payload,
     )
     final_checkpoint_path = output_dir / args.final_checkpoint_name if args.save_final_checkpoint else None
     best_checkpoint_path = output_dir / args.best_checkpoint_name if args.save_best_checkpoint else None
+    point_global_best_checkpoint_path = (
+        output_dir / args.point_global_best_checkpoint_name
+        if args.save_point_global_best_checkpoint
+        else None
+    )
+    base_mse_best_checkpoint_path = (
+        output_dir / args.base_mse_best_checkpoint_name
+        if args.save_base_mse_best_checkpoint
+        else None
+    )
+    sample_first_best_checkpoint_path = (
+        output_dir / args.sample_first_best_checkpoint_name
+        if args.save_sample_first_best_checkpoint
+        else None
+    )
     final_checkpoint_saved = False
     best_checkpoint_saved = False
+    point_global_best_checkpoint_saved = False
+    base_mse_best_checkpoint_saved = False
+    sample_first_best_checkpoint_saved = False
     checkpoint_start = time.perf_counter()
     if args.save_final_checkpoint:
         _progress(progress_enabled, "export", f"saving final params checkpoint to {final_checkpoint_path} ...")
@@ -5963,7 +7982,130 @@ def main() -> int:
         )
         best_checkpoint_saved = True
         _progress(progress_enabled, "export", f"best params checkpoint saved: {best_checkpoint_path}", best_checkpoint_start)
+    if args.save_point_global_best_checkpoint:
+        if result.get("point_global_best_params") is None:
+            raise RuntimeError("point-global best params are unavailable")
+        point_global_start = time.perf_counter()
+        _progress(
+            progress_enabled,
+            "export",
+            f"saving point-global best params checkpoint to {point_global_best_checkpoint_path} ...",
+        )
+        _write_params_checkpoint(
+            point_global_best_checkpoint_path,
+            params=result["point_global_best_params"],
+            model_config=model_config,
+            stats=stats,
+            kind="point_global_best",
+            epoch=(result.get("point_global_best_record") or {}).get("epoch"),
+            record=_checkpoint_record_from_result(result, kind="point_global_best"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        point_global_best_checkpoint_saved = True
+        _progress(
+            progress_enabled,
+            "export",
+            f"point-global best params checkpoint saved: {point_global_best_checkpoint_path}",
+            point_global_start,
+        )
+    if args.save_base_mse_best_checkpoint:
+        if result.get("base_mse_best_params") is None:
+            raise RuntimeError("base-MSE best params are unavailable")
+        _write_params_checkpoint(
+            base_mse_best_checkpoint_path,
+            params=result["base_mse_best_params"],
+            model_config=model_config,
+            stats=stats,
+            kind="base_mse_best",
+            epoch=(result.get("base_mse_best_record") or {}).get("epoch"),
+            record=_checkpoint_record_from_result(result, kind="base_mse_best"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        base_mse_best_checkpoint_saved = True
+    if args.save_sample_first_best_checkpoint:
+        if result.get("sample_first_best_params") is None:
+            raise RuntimeError("sample-first best params are unavailable")
+        _write_params_checkpoint(
+            sample_first_best_checkpoint_path,
+            params=result["sample_first_best_params"],
+            model_config=model_config,
+            stats=stats,
+            kind="sample_first_best",
+            epoch=(result.get("sample_first_best_record") or {}).get("epoch"),
+            record=_checkpoint_record_from_result(result, kind="sample_first_best"),
+            run_metadata=checkpoint_run_metadata,
+        )
+        sample_first_best_checkpoint_saved = True
     _record_timing(timings, "checkpoint_save", checkpoint_start)
+    native_runtime_audit = _native_runtime_architecture_audit(
+        result["model"], result["params"], train_groups[0]
+    )
+    reload_entries = []
+    if final_checkpoint_saved and args.save_predictions:
+        reload_entries.append(
+            ("final", final_checkpoint_path, predictions_path, predictions, result["params"])
+        )
+    if best_checkpoint_saved and best_predictions_saved:
+        reload_entries.append(
+            ("best", best_checkpoint_path, best_predictions_path, best_predictions, result["best_params"])
+        )
+    auxiliary_reload_specs = (
+        (
+            "point_global_best",
+            point_global_best_checkpoint_saved,
+            point_global_best_checkpoint_path,
+            result.get("point_global_best_params"),
+        ),
+        (
+            "base_mse_best",
+            base_mse_best_checkpoint_saved,
+            base_mse_best_checkpoint_path,
+            result.get("base_mse_best_params"),
+        ),
+        (
+            "sample_first_best",
+            sample_first_best_checkpoint_saved,
+            sample_first_best_checkpoint_path,
+            result.get("sample_first_best_params"),
+        ),
+    )
+    auxiliary_prediction_paths: dict[str, str] = {}
+    for label, saved, checkpoint_path, host_params in auxiliary_reload_specs:
+        if not saved:
+            continue
+        prediction_path = output_dir / f"{label}_predictions.npz"
+        device_params = _device_params(host_params)
+        try:
+            expected = _predict_temperatures(
+                result["model"], device_params, prediction_groups, stats
+            )
+        finally:
+            del device_params
+        np.savez_compressed(prediction_path, **expected)
+        auxiliary_prediction_paths[label] = str(prediction_path)
+        reload_entries.append(
+            (label, checkpoint_path, prediction_path, expected, host_params)
+        )
+    checkpoint_prediction_reload_audit = {
+        "enabled": bool(reload_entries),
+        "status": "pending" if reload_entries else "skipped",
+        "entries": [],
+        "requested_entry_count": len(reload_entries),
+        "summary_persisted_before_replay": True,
+    }
+    attention_diagnostics_by_checkpoint = {
+        label: _scale_attention_diagnostics(
+            result["model"], _device_params(host_params), valid_groups
+        )
+        for label, host_params in (
+            ("legacy_valid_base_mse_best", result["best_params"]),
+            ("point_global_true_rms_best", result.get("point_global_best_params")),
+            ("sample_first_best", result.get("sample_first_best_params")),
+            ("final_e600", result["params"]),
+        )
+        if host_params is not None
+    }
+    memory_audit_summary = memory_audit.summary() if memory_audit is not None else None
 
     run_config = {
         "diagnostic_scope": "controlled training export smoke; not formal model performance",
@@ -5998,6 +8140,12 @@ def main() -> int:
         "graph_seed": seed_config["graph_seed"],
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "graph_config": graph_config,
+        "global_context": global_context_payload,
+        "scale_context": scale_context_payload,
+        "native_runtime_architecture_audit": native_runtime_audit,
+        "attention_diagnostics_by_checkpoint": attention_diagnostics_by_checkpoint,
+        "checkpoint_prediction_reload_audit": checkpoint_prediction_reload_audit,
+        "memory_audit_summary": memory_audit_summary,
         "route": "relative BC features + zero_delta_u_bridge + normalized DeltaT target",
         **_decoder_bypass_payload(model_config),
         "output_dir": str(output_dir),
@@ -6014,6 +8162,37 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "save_point_global_best_checkpoint": bool(args.save_point_global_best_checkpoint),
+        "point_global_best_checkpoint_name": args.point_global_best_checkpoint_name,
+        "point_global_best_checkpoint_saved": bool(point_global_best_checkpoint_saved),
+        "point_global_best_checkpoint_path": (
+            str(point_global_best_checkpoint_path)
+            if point_global_best_checkpoint_path is not None
+            else None
+        ),
+        "point_global_best_epoch": (result.get("point_global_best_record") or {}).get("epoch"),
+        "point_global_best_relative_rmse_pct": result.get("point_global_best_score"),
+        "save_base_mse_best_checkpoint": bool(args.save_base_mse_best_checkpoint),
+        "base_mse_best_checkpoint_name": args.base_mse_best_checkpoint_name,
+        "base_mse_best_checkpoint_saved": bool(base_mse_best_checkpoint_saved),
+        "base_mse_best_checkpoint_path": (
+            str(base_mse_best_checkpoint_path) if base_mse_best_checkpoint_path else None
+        ),
+        "base_mse_best_epoch": (result.get("base_mse_best_record") or {}).get("epoch"),
+        "base_mse_best_value": result.get("base_mse_best_score"),
+        "save_sample_first_best_checkpoint": bool(args.save_sample_first_best_checkpoint),
+        "sample_first_best_checkpoint_name": args.sample_first_best_checkpoint_name,
+        "sample_first_best_checkpoint_saved": bool(sample_first_best_checkpoint_saved),
+        "sample_first_best_checkpoint_path": (
+            str(sample_first_best_checkpoint_path) if sample_first_best_checkpoint_path else None
+        ),
+        "sample_first_best_epoch": (result.get("sample_first_best_record") or {}).get("epoch"),
+        "sample_first_best_relative_rmse_pct": (
+            100.0 * float(result["sample_first_best_score"])
+            if result.get("sample_first_best_score") is not None
+            else None
+        ),
+        "auxiliary_checkpoint_prediction_paths": auxiliary_prediction_paths,
         "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
         "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
         "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),
@@ -6084,7 +8263,13 @@ def main() -> int:
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
-        "checkpoint_saved": bool(final_checkpoint_saved or best_checkpoint_saved),
+        "checkpoint_saved": bool(
+            final_checkpoint_saved
+            or best_checkpoint_saved
+            or point_global_best_checkpoint_saved
+            or base_mse_best_checkpoint_saved
+            or sample_first_best_checkpoint_saved
+        ),
         "loss_mode": loss_config["loss_mode"],
         "background_quantile": loss_config["background_quantile"],
         "hotspot_quantile": loss_config["hotspot_quantile"],
@@ -6110,6 +8295,7 @@ def main() -> int:
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
         "model_config": model_config,
+        "attention_diagnostics_by_checkpoint": attention_diagnostics_by_checkpoint,
         "batch_config": batch_config,
         "sample_weight_config": sample_weight_config,
         "sample_weight_summary": sample_weight_summary,
@@ -6140,6 +8326,10 @@ def main() -> int:
         "stress_validation_split": stress_validation_split,
         "prediction_split": args.prediction_split,
         "split_counts": split_counts,
+        "global_context": global_context_payload,
+        "native_runtime_architecture_audit": native_runtime_audit,
+        "checkpoint_prediction_reload_audit": checkpoint_prediction_reload_audit,
+        "memory_audit_summary": memory_audit_summary,
         **_decoder_bypass_payload(model_config),
         "memory_audit_jsonl": str(memory_audit_jsonl_path) if memory_audit_jsonl_path is not None else None,
         "memory_audit_every_batch": bool(args.memory_audit_every_batch),
@@ -6197,6 +8387,19 @@ def main() -> int:
         "epoch_max_grad_norm": [
             record.get("epoch_max_grad_norm") for record in result["epoch_history"]
         ],
+        "native_gradient_group_norms": {
+            group_name: {
+                "epoch_mean": [
+                    record.get(f"epoch_mean_{group_name}_grad_norm")
+                    for record in result["epoch_history"]
+                ],
+                "epoch_max": [
+                    record.get(f"epoch_max_{group_name}_grad_norm")
+                    for record in result["epoch_history"]
+                ],
+            }
+            for group_name in ("backbone", "shape_decoder", "scale_head")
+        },
         "epoch_mean_update_norm": [
             record.get("epoch_mean_update_norm") for record in result["epoch_history"]
         ],
@@ -6261,7 +8464,13 @@ def main() -> int:
         "final_prediction_export_skipped": bool(final_prediction_export_skipped),
         "final_prediction_export_skip_reason": final_prediction_export_skip_reason,
         **best_selection,
-        "checkpoint_saved": bool(final_checkpoint_saved or best_checkpoint_saved),
+        "checkpoint_saved": bool(
+            final_checkpoint_saved
+            or best_checkpoint_saved
+            or point_global_best_checkpoint_saved
+            or base_mse_best_checkpoint_saved
+            or sample_first_best_checkpoint_saved
+        ),
         "save_final_checkpoint": bool(args.save_final_checkpoint),
         "final_checkpoint_name": args.final_checkpoint_name,
         "final_checkpoint_saved": bool(final_checkpoint_saved),
@@ -6270,6 +8479,37 @@ def main() -> int:
         "best_checkpoint_name": args.best_checkpoint_name,
         "best_checkpoint_saved": bool(best_checkpoint_saved),
         "best_checkpoint_path": str(best_checkpoint_path) if best_checkpoint_path is not None else None,
+        "save_point_global_best_checkpoint": bool(args.save_point_global_best_checkpoint),
+        "point_global_best_checkpoint_name": args.point_global_best_checkpoint_name,
+        "point_global_best_checkpoint_saved": bool(point_global_best_checkpoint_saved),
+        "point_global_best_checkpoint_path": (
+            str(point_global_best_checkpoint_path)
+            if point_global_best_checkpoint_path is not None
+            else None
+        ),
+        "point_global_best_epoch": (result.get("point_global_best_record") or {}).get("epoch"),
+        "point_global_best_relative_rmse_pct": result.get("point_global_best_score"),
+        "save_base_mse_best_checkpoint": bool(args.save_base_mse_best_checkpoint),
+        "base_mse_best_checkpoint_name": args.base_mse_best_checkpoint_name,
+        "base_mse_best_checkpoint_saved": bool(base_mse_best_checkpoint_saved),
+        "base_mse_best_checkpoint_path": (
+            str(base_mse_best_checkpoint_path) if base_mse_best_checkpoint_path else None
+        ),
+        "base_mse_best_epoch": (result.get("base_mse_best_record") or {}).get("epoch"),
+        "base_mse_best_value": result.get("base_mse_best_score"),
+        "save_sample_first_best_checkpoint": bool(args.save_sample_first_best_checkpoint),
+        "sample_first_best_checkpoint_name": args.sample_first_best_checkpoint_name,
+        "sample_first_best_checkpoint_saved": bool(sample_first_best_checkpoint_saved),
+        "sample_first_best_checkpoint_path": (
+            str(sample_first_best_checkpoint_path) if sample_first_best_checkpoint_path else None
+        ),
+        "sample_first_best_epoch": (result.get("sample_first_best_record") or {}).get("epoch"),
+        "sample_first_best_relative_rmse_pct": (
+            100.0 * float(result["sample_first_best_score"])
+            if result.get("sample_first_best_score") is not None
+            else None
+        ),
+        "auxiliary_checkpoint_prediction_paths": auxiliary_prediction_paths,
         "final_probe_eval_after_training": bool(args.final_probe_eval_after_training),
         "final_probe_checkpoint_kind": args.final_probe_checkpoint_kind,
         "final_probe_output_dir": str(args.final_probe_output_dir) if args.final_probe_output_dir is not None else str(output_dir / "final_probe_eval"),
@@ -6365,6 +8605,25 @@ def main() -> int:
     _write_json(output_dir / "loss_summary.json", loss_summary)
     _record_timing(timings, "summary_write", summary_write_start)
     _progress(progress_enabled, "export", "run summary files written", summary_write_start)
+
+    checkpoint_prediction_reload_audit = _checkpoint_prediction_reload_audit(
+        model=result["model"],
+        groups=prediction_groups,
+        stats=stats,
+        entries=reload_entries,
+    )
+    checkpoint_prediction_reload_audit["requested_entry_count"] = len(reload_entries)
+    checkpoint_prediction_reload_audit["summary_persisted_before_replay"] = True
+    run_config["checkpoint_prediction_reload_audit"] = checkpoint_prediction_reload_audit
+    loss_summary["checkpoint_prediction_reload_audit"] = checkpoint_prediction_reload_audit
+    for audit_entry in checkpoint_prediction_reload_audit["entries"]:
+        _attach_checkpoint_prediction_reload_audit(
+            Path(audit_entry["checkpoint_path"]), audit_entry
+        )
+    replay_summary_write_start = time.perf_counter()
+    _write_json(output_dir / "run_config.json", run_config)
+    _write_json(output_dir / "loss_summary.json", loss_summary)
+    _record_timing(timings, "checkpoint_replay_summary_write", replay_summary_write_start)
 
     post_training_diagnostics_result = _run_post_training_prediction_diagnostics(
         args,

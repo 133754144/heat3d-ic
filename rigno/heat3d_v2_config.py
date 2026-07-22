@@ -16,6 +16,17 @@ try:
 except ImportError as exc:  # pragma: no cover - exercised only without PyYAML.
     raise ImportError("PyYAML is required to load Heat3D v2 configs.") from exc
 
+from rigno.heat3d_v5_scale_pooling import (
+    QK_REGION_FEATURE_VERSIONS as _QK_REGION_FEATURE_VERSIONS,
+    REGIONAL_ATTENTION_MODES as _REGIONAL_ATTENTION_MODES,
+    SCALE_POOLING_MODES as _SCALE_POOLING_MODES,
+)
+from rigno.heat3d_v5_scale_context import (
+    SCALE_CONTEXT_MODES as _SCALE_CONTEXT_MODES,
+    SCALE_DEEPSETS_MODES as _SCALE_DEEPSETS_MODES,
+    XY_SCALE_CONTEXT_FEATURES,
+)
+
 
 CONFIG_SCHEMA_VERSION = "heat3d_v2_config_draft_v0"
 REFERENCE_SCHEMA_VERSION = "heat3d_v2_reference_draft_v0"
@@ -35,7 +46,11 @@ BATCH_SIZE_FIELDS = (
     "validation_batch_size",
     "prediction_batch_size",
 )
-BATCH_BOOL_FIELDS = ("shuffle_train_batches", "drop_last")
+BATCH_BOOL_FIELDS = (
+    "shuffle_train_batches",
+    "drop_last",
+    "epoch_wise_batch_regrouping",
+)
 TRAIN_METRICS_SCHEDULES = {"every_epoch", "half_and_final", "final_only", "none"}
 PREDICTION_SPLITS = {"all", "train", "valid_iid", "valid_stress", "test_iid"}
 RADIUS_POLICIES = {"legacy_kdtree_mean4", "discrete_physical_coverage"}
@@ -55,9 +70,30 @@ CONDITION_FEATURE_TRANSFORMS = {
     "semantic_v1_k_log_only",
 }
 DECODER_BYPASS_MODES = {"none", "post_decoder_residual"}
-DECODER_BYPASS_FEATURES = {"none", "full_condition"}
+DECODER_BYPASS_FEATURES = {"none", "full_condition", "explicit_local_condition"}
 DECODER_BYPASS_FEATURE_SOURCES = {"normalized_c"}
 DECODER_BYPASS_INITS = {"zero_residual"}
+DECODER_BYPASS_OUTPUT_SPACES = {"normalized_deltaT", "native_psi"}
+GLOBAL_CONTEXT_MODES = {"none", "film"}
+FILM_TARGETS = {"rnodes_processed"}
+FILM_INITS = {"identity"}
+NATIVE_OUTPUT_MODES = {"legacy_normalized_deltaT", "native_shape_scale"}
+NATIVE_BRANCH_MODES = {"scale_only", "shape_only", "joint"}
+NATIVE_TRAINABLE_SCOPES = {"branch", "global_scale_mlp_only"}
+SCALE_HEAD_MODES = {"physics_only", "physics_plus_pooled_latent"}
+SCALE_POOLING_MODES = set(_SCALE_POOLING_MODES)
+REGIONAL_ATTENTION_MODES = set(_REGIONAL_ATTENTION_MODES)
+QK_REGION_FEATURE_VERSIONS = set(_QK_REGION_FEATURE_VERSIONS)
+SCALE_CONTEXT_MODES = set(_SCALE_CONTEXT_MODES)
+SCALE_DEEPSETS_MODES = set(_SCALE_DEEPSETS_MODES)
+NATIVE_RAW_LOSS_MODES = {
+    "per_sample_cv_mse",
+    "point_global_fixed_train_energy_sse",
+}
+NATIVE_LOG_SCALE_WEIGHT_MODES = {
+    "uniform",
+    "train_true_scale_squared_clipped",
+}
 INIT_MODES = {"real_first_batch", "upstream_dummy"}
 PARTIAL_LOAD_POLICIES = {"matching", "skip_decoder", "encoder_processor_only"}
 FINAL_PROBE_CHECKPOINT_KINDS = {"best", "final", "both"}
@@ -172,6 +208,7 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "model_edge_latent_size": model.get("edge_latent_size"),
         "model_processor_steps": model.get("processor_steps"),
         "model_p_edge_masking": model.get("p_edge_masking"),
+        "model_edge_masking_scope": model.get("edge_masking_scope"),
         "optimizer_name": optimizer.get("name"),
         "optimizer_lr": optimizer.get("lr"),
         "optimizer_lr_schedule": optimizer.get("lr_schedule"),
@@ -207,6 +244,9 @@ def summarize_v2_config(config: Mapping[str, Any]) -> dict[str, Any]:
         "sample_weight_normalize": run.get("sample_weight_normalize"),
         "batch_plan": run.get("batch_plan"),
         "batch_build_seed": run.get("batch_build_seed"),
+        "epoch_wise_batch_regrouping": run.get(
+            "epoch_wise_batch_regrouping"
+        ),
         "export_output_dir": export.get("output_dir"),
         "diagnostics_enabled": _summarize_diagnostics(diagnostics),
         "graph_radius_policy": graph.get("radius_policy"),
@@ -292,6 +332,14 @@ def _validate_run_config(
     optimizer = _required_mapping(config, "optimizer", label)
     _validate_optimizer_seed_fields(optimizer, label)
     _validate_optimizer_schedule_fields(optimizer, label)
+    if (
+        optimizer.get("native_trainable_scope") == "global_scale_mlp_only"
+        and model.get("native_branch_mode") != "scale_only"
+    ):
+        raise ValueError(
+            f"{label}: optimizer.native_trainable_scope="
+            "'global_scale_mlp_only' requires model.native_branch_mode='scale_only'"
+        )
     loss = _required_mapping(config, "loss", label)
     _validate_loss_fields(loss, label)
     train_metrics_schedule = run.get("train_metrics_schedule")
@@ -306,6 +354,17 @@ def _validate_run_config(
             raise ValueError(f"{label}: field 'run.grad_norm_report_every' must be an int or null")
         if grad_norm_report_every < 0:
             raise ValueError(f"{label}: field 'run.grad_norm_report_every' must be >= 0")
+    for field in ("profile_timing", "memory_audit_every_batch", "memory_audit_gc"):
+        value = run.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"{label}: field 'run.{field}' must be a bool or null")
+    for field in ("profile_timing_json", "memory_audit_jsonl"):
+        value = run.get(field)
+        if value is not None:
+            if not isinstance(value, str) or not _is_output_relative_path(value):
+                raise ValueError(
+                    f"{label}: field 'run.{field}' must be a path under output/ or null"
+                )
 
     export = _required_mapping(config, "export", label)
     dataset = _required_mapping(config, "dataset", label)
@@ -398,6 +457,39 @@ def _validate_run_config(
             f"{label}: field 'export.prediction_split' must be one of "
             f"{sorted(PREDICTION_SPLITS)}, got {prediction_split!r}"
         )
+    save_point_global_best = export.get("save_point_global_best_checkpoint")
+    if save_point_global_best is not None and not isinstance(save_point_global_best, bool):
+        raise ValueError(
+            f"{label}: field 'export.save_point_global_best_checkpoint' must be a bool or null"
+        )
+    point_global_name = export.get("point_global_best_checkpoint_name")
+    if point_global_name is not None:
+        if (
+            not isinstance(point_global_name, str)
+            or not point_global_name
+            or "/" in point_global_name
+            or "\\" in point_global_name
+        ):
+            raise ValueError(
+                f"{label}: field 'export.point_global_best_checkpoint_name' "
+                "must be a filename"
+            )
+    for field in (
+        "save_base_mse_best_checkpoint",
+        "save_sample_first_best_checkpoint",
+    ):
+        value = export.get(field)
+        if value is not None and not isinstance(value, bool):
+            raise ValueError(f"{label}: field 'export.{field}' must be a bool or null")
+    for field in (
+        "base_mse_best_checkpoint_name",
+        "sample_first_best_checkpoint_name",
+    ):
+        value = export.get(field)
+        if value is not None and (
+            not isinstance(value, str) or not value or "/" in value or "\\" in value
+        ):
+            raise ValueError(f"{label}: field 'export.{field}' must be a filename")
 
     if role == "controlled":
         baseline_reference = config.get("baseline_reference")
@@ -562,6 +654,12 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
             raise ValueError(
                 f"{label}: field 'model.p_edge_masking' must satisfy 0 <= value < 1"
             )
+    edge_masking_scope = model.get("edge_masking_scope")
+    if edge_masking_scope is not None and edge_masking_scope not in {"all", "r2r_only"}:
+        raise ValueError(
+            f"{label}: field 'model.edge_masking_scope' must be 'all' or "
+            f"'r2r_only', got {edge_masking_scope!r}"
+        )
     mode = model.get("decoder_bypass_mode")
     features = model.get("decoder_bypass_features")
     source = model.get("decoder_bypass_feature_source")
@@ -586,6 +684,12 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
             f"{label}: field 'model.decoder_bypass_init' must be one of "
             f"{sorted(DECODER_BYPASS_INITS)}, got {init!r}"
         )
+    output_space = model.get("decoder_bypass_output_space")
+    if output_space is not None and output_space not in DECODER_BYPASS_OUTPUT_SPACES:
+        raise ValueError(
+            f"{label}: field 'model.decoder_bypass_output_space' must be one of "
+            f"{sorted(DECODER_BYPASS_OUTPUT_SPACES)}, got {output_space!r}"
+        )
     for field in ("decoder_bypass_hidden_size", "decoder_bypass_layers"):
         value = model.get(field)
         if value is None:
@@ -608,11 +712,203 @@ def _validate_model_fields(model: Mapping[str, Any], label: str) -> None:
                 f"{label}: model.decoder_bypass_mode='none' requires "
                 "model.decoder_bypass_features='none'"
             )
-    elif features != "full_condition":
+    elif features not in {"full_condition", "explicit_local_condition"}:
         raise ValueError(
             f"{label}: model.decoder_bypass_mode='post_decoder_residual' requires "
-            "model.decoder_bypass_features='full_condition'"
+            "model.decoder_bypass_features='full_condition' or 'explicit_local_condition'"
         )
+    local_names = model.get("decoder_bypass_local_feature_names")
+    if local_names is not None:
+        if isinstance(local_names, (str, bytes)) or not isinstance(local_names, (list, tuple)):
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_local_feature_names' must be a list of strings"
+            )
+        if any(not isinstance(name, str) or not name for name in local_names):
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_local_feature_names' must contain nonempty strings"
+            )
+        if len(set(local_names)) != len(local_names):
+            raise ValueError(
+                f"{label}: field 'model.decoder_bypass_local_feature_names' must not contain duplicates"
+            )
+    if features == "explicit_local_condition" and not local_names:
+        raise ValueError(
+            f"{label}: explicit_local_condition requires model.decoder_bypass_local_feature_names"
+        )
+
+    global_mode = model.get("global_context_mode")
+    if global_mode is not None and global_mode not in GLOBAL_CONTEXT_MODES:
+        raise ValueError(
+            f"{label}: field 'model.global_context_mode' must be one of "
+            f"{sorted(GLOBAL_CONTEXT_MODES)}, got {global_mode!r}"
+        )
+    for field, allowed in (("film_target", FILM_TARGETS), ("film_init", FILM_INITS)):
+        value = model.get(field)
+        if value is not None and value not in allowed:
+            raise ValueError(
+                f"{label}: field 'model.{field}' must be one of {sorted(allowed)}, got {value!r}"
+            )
+    film_hidden = model.get("film_hidden_size")
+    if film_hidden is not None and (
+        isinstance(film_hidden, bool) or not isinstance(film_hidden, int) or film_hidden < 1
+    ):
+        raise ValueError(f"{label}: field 'model.film_hidden_size' must be an int >= 1")
+    global_names = model.get("global_context_feature_names")
+    if global_names is not None:
+        if isinstance(global_names, (str, bytes)) or not isinstance(global_names, (list, tuple)):
+            raise ValueError(
+                f"{label}: field 'model.global_context_feature_names' must be a list of strings"
+            )
+        if any(not isinstance(name, str) or not name for name in global_names):
+            raise ValueError(
+                f"{label}: field 'model.global_context_feature_names' must contain nonempty strings"
+            )
+        if len(set(global_names)) != len(global_names):
+            raise ValueError(
+                f"{label}: field 'model.global_context_feature_names' must not contain duplicates"
+            )
+    global_dim = model.get("global_context_feature_dim")
+    if global_dim is not None and (
+        isinstance(global_dim, bool) or not isinstance(global_dim, int) or global_dim < 0
+    ):
+        raise ValueError(f"{label}: field 'model.global_context_feature_dim' must be an int >= 0")
+    if global_dim is not None and global_names is not None and global_dim != len(global_names):
+        raise ValueError(
+            f"{label}: model.global_context_feature_dim must match global_context_feature_names"
+        )
+    if global_mode == "film" and not global_names:
+        raise ValueError(
+            f"{label}: model.global_context_mode='film' requires global_context_feature_names"
+        )
+    native_mode = model.get("native_output_mode")
+    if native_mode is not None and native_mode not in NATIVE_OUTPUT_MODES:
+        raise ValueError(
+            f"{label}: field 'model.native_output_mode' must be one of "
+            f"{sorted(NATIVE_OUTPUT_MODES)}, got {native_mode!r}"
+        )
+    for field, allowed in (
+        ("native_branch_mode", NATIVE_BRANCH_MODES),
+        ("scale_head_mode", SCALE_HEAD_MODES),
+        ("scale_pooling", SCALE_POOLING_MODES),
+    ):
+        value = model.get(field)
+        if value is not None and value not in allowed:
+            raise ValueError(
+                f"{label}: field 'model.{field}' must be one of {sorted(allowed)}, got {value!r}"
+            )
+    scale_hidden = model.get("scale_head_hidden_size")
+    if scale_hidden is not None and (
+        isinstance(scale_hidden, bool) or not isinstance(scale_hidden, int) or scale_hidden < 1
+    ):
+        raise ValueError(f"{label}: field 'model.scale_head_hidden_size' must be an int >= 1")
+    scale_depth = model.get("scale_head_depth")
+    if scale_depth is not None and (
+        isinstance(scale_depth, bool) or not isinstance(scale_depth, int) or scale_depth < 1
+    ):
+        raise ValueError(f"{label}: field 'model.scale_head_depth' must be an int >= 1")
+    pooled_stop_gradient = model.get("pooled_latent_stop_gradient")
+    if pooled_stop_gradient is not None and not isinstance(pooled_stop_gradient, bool):
+        raise ValueError(
+            f"{label}: field 'model.pooled_latent_stop_gradient' must be a bool or null"
+        )
+    for field in ("shape_attention_mode", "scale_attention_mode"):
+        value = model.get(field)
+        if value is not None and value not in REGIONAL_ATTENTION_MODES:
+            raise ValueError(
+                f"{label}: field 'model.{field}' must be one of "
+                f"{sorted(REGIONAL_ATTENTION_MODES)}, got {value!r}"
+            )
+    attention_hidden = model.get("regional_attention_hidden_size")
+    if attention_hidden is not None and (
+        isinstance(attention_hidden, bool)
+        or not isinstance(attention_hidden, int)
+        or attention_hidden < 1
+    ):
+        raise ValueError(
+            f"{label}: field 'model.regional_attention_hidden_size' must be an int >= 1"
+        )
+    qk_feature_version = model.get("qk_region_feature_version")
+    if (
+        qk_feature_version is not None
+        and qk_feature_version not in QK_REGION_FEATURE_VERSIONS
+    ):
+        raise ValueError(
+            f"{label}: field 'model.qk_region_feature_version' must be one of "
+            f"{sorted(QK_REGION_FEATURE_VERSIONS)}, got {qk_feature_version!r}"
+        )
+    scale_context_mode = model.get("scale_context_mode")
+    if (
+        scale_context_mode is not None
+        and scale_context_mode not in SCALE_CONTEXT_MODES
+    ):
+        raise ValueError(
+            f"{label}: field 'model.scale_context_mode' must be one of "
+            f"{sorted(SCALE_CONTEXT_MODES)}, got {scale_context_mode!r}"
+        )
+    scale_context_names = model.get("scale_context_feature_names")
+    if scale_context_names is not None:
+        if (
+            isinstance(scale_context_names, (str, bytes))
+            or not isinstance(scale_context_names, (list, tuple))
+            or any(not isinstance(name, str) or not name for name in scale_context_names)
+        ):
+            raise ValueError(
+                f"{label}: field 'model.scale_context_feature_names' must be "
+                "a list of nonempty strings"
+            )
+        if tuple(scale_context_names) != XY_SCALE_CONTEXT_FEATURES:
+            raise ValueError(
+                f"{label}: model.scale_context_feature_names must match the "
+                "frozen XY scale schema"
+            )
+    if scale_context_mode == "xy_raw_global" and not scale_context_names:
+        raise ValueError(
+            f"{label}: xy_raw_global scale context requires feature names"
+        )
+    if scale_context_mode in {None, "none"} and scale_context_names:
+        raise ValueError(
+            f"{label}: disabled scale context cannot define feature names"
+        )
+    scale_deepsets_mode = model.get("scale_deepsets_mode")
+    if (
+        scale_deepsets_mode is not None
+        and scale_deepsets_mode not in SCALE_DEEPSETS_MODES
+    ):
+        raise ValueError(
+            f"{label}: field 'model.scale_deepsets_mode' must be one of "
+            f"{sorted(SCALE_DEEPSETS_MODES)}, got {scale_deepsets_mode!r}"
+        )
+    scale_deepsets_hidden = model.get("scale_deepsets_hidden_size")
+    if scale_deepsets_hidden is not None and (
+        isinstance(scale_deepsets_hidden, bool)
+        or not isinstance(scale_deepsets_hidden, int)
+        or scale_deepsets_hidden < 1
+    ):
+        raise ValueError(
+            f"{label}: model.scale_deepsets_hidden_size must be an int >= 1"
+        )
+    if scale_deepsets_mode not in {None, "none"} and model.get(
+        "scale_pooling", "mean"
+    ) != "mean":
+        raise ValueError(
+            f"{label}: scale DeepSets requires model.scale_pooling='mean'"
+        )
+    if model.get("scale_attention_mode") not in {None, "none"} and model.get(
+        "scale_pooling", "mean"
+    ) != "mean":
+        raise ValueError(f"{label}: scale attention requires model.scale_pooling='mean'")
+    if native_mode == "native_shape_scale":
+        if not global_names:
+            raise ValueError(
+                f"{label}: native_shape_scale requires inference-only global_context_feature_names"
+            )
+        if model.get("decoder_bypass_mode") != "none" and model.get(
+            "decoder_bypass_output_space"
+        ) != "native_psi":
+            raise ValueError(
+                f"{label}: native_shape_scale local bypass requires "
+                "model.decoder_bypass_output_space='native_psi'"
+            )
 
 
 def _validate_loss_fields(loss: Mapping[str, Any], label: str) -> None:
@@ -621,6 +917,41 @@ def _validate_loss_fields(loss: Mapping[str, Any], label: str) -> None:
         raise ValueError(
             f"{label}: field 'loss.mode' must be one of {sorted(LOSS_MODES)}, "
             f"got {mode!r}"
+        )
+    raw_mode = loss.get("native_raw_loss_mode")
+    if raw_mode is not None and raw_mode not in NATIVE_RAW_LOSS_MODES:
+        raise ValueError(
+            f"{label}: field 'loss.native_raw_loss_mode' must be one of "
+            f"{sorted(NATIVE_RAW_LOSS_MODES)}, got {raw_mode!r}"
+        )
+    log_scale_mode = loss.get("native_log_scale_weight_mode")
+    if (
+        log_scale_mode is not None
+        and log_scale_mode not in NATIVE_LOG_SCALE_WEIGHT_MODES
+    ):
+        raise ValueError(
+            f"{label}: field 'loss.native_log_scale_weight_mode' must be one of "
+            f"{sorted(NATIVE_LOG_SCALE_WEIGHT_MODES)}, got {log_scale_mode!r}"
+        )
+    clip_min = loss.get("native_log_scale_weight_clip_min")
+    clip_max = loss.get("native_log_scale_weight_clip_max")
+    for field, value in (
+        ("native_log_scale_weight_clip_min", clip_min),
+        ("native_log_scale_weight_clip_max", clip_max),
+    ):
+        if value is not None and (
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or float(value) <= 0.0
+        ):
+            raise ValueError(f"{label}: field 'loss.{field}' must be > 0")
+    if (
+        clip_min is not None
+        and clip_max is not None
+        and float(clip_max) < float(clip_min)
+    ):
+        raise ValueError(
+            f"{label}: native log-scale clip max must be >= min"
         )
 
     for field in ("background_quantile", "hotspot_quantile", "strong_q_quantile"):
@@ -641,6 +972,10 @@ def _validate_loss_fields(loss: Mapping[str, Any], label: str) -> None:
         "background_over_weight",
         "background_relative_weight",
         "pseudo_negative_weight",
+        "native_shape_cv_weight",
+        "native_log_scale_weight",
+        "native_relative_field_weight",
+        "native_raw_field_weight",
     )
     for field in weight_fields:
         if field not in loss or loss[field] is None:
@@ -692,6 +1027,29 @@ def _validate_optimizer_schedule_fields(optimizer: Mapping[str, Any], label: str
             raise ValueError(f"{label}: field 'optimizer.{field}' must be numeric or null")
         if float(value) < 0.0:
             raise ValueError(f"{label}: field 'optimizer.{field}' must be >= 0")
+
+    scale_head_lr_multiplier = optimizer.get("scale_head_lr_multiplier")
+    if scale_head_lr_multiplier is not None:
+        if isinstance(scale_head_lr_multiplier, bool) or not isinstance(
+            scale_head_lr_multiplier, (int, float)
+        ):
+            raise ValueError(
+                f"{label}: field 'optimizer.scale_head_lr_multiplier' must be numeric or null"
+            )
+        if float(scale_head_lr_multiplier) <= 0.0:
+            raise ValueError(
+                f"{label}: field 'optimizer.scale_head_lr_multiplier' must be > 0"
+            )
+    native_trainable_scope = optimizer.get("native_trainable_scope")
+    if (
+        native_trainable_scope is not None
+        and native_trainable_scope not in NATIVE_TRAINABLE_SCOPES
+    ):
+        raise ValueError(
+            f"{label}: field 'optimizer.native_trainable_scope' must be one of "
+            f"{sorted(NATIVE_TRAINABLE_SCOPES)}, got "
+            f"{native_trainable_scope!r}"
+        )
 
     for field in ("warmup_epochs", "second_stage_epoch"):
         if field not in optimizer or optimizer[field] is None:

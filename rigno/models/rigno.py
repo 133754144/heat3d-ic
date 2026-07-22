@@ -10,6 +10,15 @@ from scipy.spatial import Delaunay
 
 from rigno.graph.entities import (TypedGraph, EdgeSet, EdgeSetKey,
   EdgesIndices, NodeSet, Context)
+from rigno.heat3d_v5_scale_pooling import (
+  QK_REGION_FEATURE_VERSIONS,
+  REGIONAL_ATTENTION_MODES,
+  SCALE_POOLING_MODES,
+)
+from rigno.heat3d_v5_scale_context import (
+  SCALE_CONTEXT_MODES,
+  SCALE_DEEPSETS_MODES,
+)
 from rigno.models.graphnet import DeepTypedGraphNet
 from rigno.models.operator import AbstractOperator, Inputs
 from rigno.utils import Array, shuffle_arrays
@@ -42,6 +51,23 @@ class RegionInteractionGraphMetadata(NamedTuple):
 
   def __len__(self) -> int:
     return self.x_pnodes_inp.shape[0]
+
+
+def edge_masking_probabilities(
+  probability: float,
+  scope: str,
+) -> Tuple[float, float, float]:
+  """Return p2r/r2r/r2p masking probabilities for a configured scope."""
+
+  if scope == 'all':
+    return probability, probability, probability
+  if scope == 'r2r_only':
+    return 0.0, probability, 0.0
+  raise ValueError(
+    "edge_masking_scope must be 'all' or 'r2r_only', "
+    f"got {scope!r}"
+  )
+
 
 class RegionInteractionGraphBuilder:
   """Class for building the graphs that are used in RIGNO."""
@@ -745,7 +771,7 @@ class Encoder(nn.Module):
     p2r_edges_key = graph.edge_key_by_name('p2r')
     edges = graph.edges[p2r_edges_key]
     # Drop out edges randomly with the given probability
-    if key is not None:
+    if key is not None and self.p_edge_masking > 0:
       n_edges_after = int((1 - self.p_edge_masking) * edges.features.shape[1])
       [new_edge_features, new_edge_senders, new_edge_receivers] = shuffle_arrays(
         key=key, arrays=[edges.features, edges.indices.senders, edges.indices.receivers], axis=1)
@@ -852,7 +878,7 @@ class Processor(nn.Module):
     # Drop out edges randomly with the given probability
     # NOTE: We need the structural edge features, because it is the first
     # time we are seeing this particular set of edges.
-    if key is not None:
+    if key is not None and self.p_edge_masking > 0:
       n_edges_after = int((1 - self.p_edge_masking) * edges.features.shape[1])
       [new_edge_features, new_edge_senders, new_edge_receivers] = shuffle_arrays(
         key=key, arrays=[edges.features, edges.indices.senders, edges.indices.receivers], axis=1)
@@ -957,7 +983,7 @@ class Decoder(nn.Module):
     r2p_edges_key = graph.edge_key_by_name('r2p')
     edges = graph.edges[r2p_edges_key]
     # Drop out edges randomly with the given probability
-    if key is not None:
+    if key is not None and self.p_edge_masking > 0:
       n_edges_after = int((1 - self.p_edge_masking) * edges.features.shape[1])
       [new_edge_features, new_edge_senders, new_edge_receivers] = shuffle_arrays(
         key=key, arrays=[edges.features, edges.indices.senders, edges.indices.receivers], axis=1)
@@ -1022,18 +1048,48 @@ class RIGNO(AbstractOperator):
   concatenate_tau: bool = True
   conditioned_normalization: bool = True
   cond_norm_hidden_size: int = 16
-  p_edge_masking: int = 0.5
+  p_edge_masking: float = 0.5
+  edge_masking_scope: str = 'all'
   decoder_bypass_mode: str = 'none'
   decoder_bypass_features: str = 'none'
   decoder_bypass_feature_source: str = 'normalized_c'
   decoder_bypass_feature_indices: Tuple[int, ...] = ()
   decoder_bypass_feature_names: Tuple[str, ...] = ()
+  # Audited source names are configuration provenance.  The decoder consumes
+  # only the corresponding resolved indices above, but retaining the names in
+  # the model config lets the V5 runner reconstruct and validate a local-only
+  # bypass without passing an unsupported keyword to RIGNO.
+  decoder_bypass_local_feature_names: Tuple[str, ...] = ()
   decoder_bypass_num_features: int = 0
   decoder_bypass_output_space: str = 'normalized_deltaT'
   decoder_bypass_hidden_size: int = 64
   decoder_bypass_layers: int = 2
   decoder_bypass_init: str = 'zero_residual'
   decoder_bypass_residual_scale: float = 1.0
+  global_context_mode: str = 'none'
+  global_context_feature_dim: int = 0
+  global_context_feature_names: Tuple[str, ...] = ()
+  film_target: str = 'rnodes_processed'
+  film_init: str = 'identity'
+  film_hidden_size: int = 64
+  native_output_mode: str = 'legacy_normalized_deltaT'
+  shape_scale_epsilon: float = 1.0e-12
+  scale_head_hidden_size: int = 64
+  scale_head_init: str = 'identity'
+  scale_head_mode: str = 'physics_only'
+  scale_pooling: str = 'mean'
+  scale_head_depth: int = 1
+  pooled_latent_stop_gradient: bool = False
+  shape_attention_mode: str = 'none'
+  scale_attention_mode: str = 'none'
+  regional_attention_hidden_size: int = 64
+  qk_region_feature_version: str = 'bugged_v1'
+  scale_context_mode: str = 'none'
+  scale_context_feature_dim: int = 0
+  scale_context_feature_names: Tuple[str, ...] = ()
+  scale_deepsets_mode: str = 'none'
+  scale_deepsets_hidden_size: int = 64
+  native_branch_mode: str = 'joint'
 
   def _check_coordinates(self, x: Array) -> None:
     assert x is not None
@@ -1049,14 +1105,20 @@ class RIGNO(AbstractOperator):
     assert u.shape[2] == x.shape[2], f'u: {u.shape}, x: {x.shape}'
 
   def setup(self):
+    p2r_masking, r2r_masking, r2p_masking = edge_masking_probabilities(
+      self.p_edge_masking,
+      self.edge_masking_scope,
+    )
     self._validate_decoder_bypass_config()
+    self._validate_global_context_config()
+    self._validate_native_shape_scale_config()
     self.encoder = Encoder(
       edge_latent_size=self.edge_latent_size,
       node_latent_size=self.node_latent_size,
       mlp_hidden_layers=self.mlp_hidden_layers,
       conditioned_normalization=self.conditioned_normalization,
       cond_norm_hidden_size=self.cond_norm_hidden_size,
-      p_edge_masking=self.p_edge_masking,
+      p_edge_masking=p2r_masking,
       name='encoder',
     )
 
@@ -1067,7 +1129,7 @@ class RIGNO(AbstractOperator):
       mlp_hidden_layers=self.mlp_hidden_layers,
       conditioned_normalization=self.conditioned_normalization,
       cond_norm_hidden_size=self.cond_norm_hidden_size,
-      p_edge_masking=self.p_edge_masking,
+      p_edge_masking=r2r_masking,
       name='processor',
     )
 
@@ -1078,7 +1140,7 @@ class RIGNO(AbstractOperator):
       mlp_hidden_layers=self.mlp_hidden_layers,
       conditioned_normalization=self.conditioned_normalization,
       cond_norm_hidden_size=self.cond_norm_hidden_size,
-      p_edge_masking=self.p_edge_masking,
+      p_edge_masking=r2p_masking,
       name='decoder',
     )
     if self._decoder_bypass_enabled():
@@ -1108,9 +1170,158 @@ class RIGNO(AbstractOperator):
     else:
       self.decoder_bypass_hidden = ()
       self.decoder_bypass_output = None
+    if self._global_film_enabled():
+      self.global_film_hidden = nn.Dense(
+        self.film_hidden_size,
+        name='global_film_hidden',
+      )
+      # Identity FiLM requires both gamma and beta to start identically zero.
+      # This leaves all pre-existing encoder/processor/decoder parameter paths
+      # unchanged for partial loading from a V4 checkpoint.
+      self.global_film_output = nn.Dense(
+        2 * self.node_latent_size,
+        kernel_init=nn.initializers.zeros,
+        bias_init=nn.initializers.zeros,
+        name='global_film_output',
+      )
+    else:
+      self.global_film_hidden = None
+      self.global_film_output = None
+    if self._native_shape_scale_enabled():
+      self.global_scale_hidden = nn.Dense(
+        self.scale_head_hidden_size,
+        name='global_scale_hidden',
+      )
+      # Keep the original single-hidden-layer N3 parameter path untouched by
+      # creating extra layers only for explicitly deeper scale probes.
+      self.global_scale_extra_hidden = [
+        nn.Dense(
+          self.scale_head_hidden_size,
+          name=f'global_scale_extra_hidden_{index}',
+        )
+        for index in range(self.scale_head_depth - 1)
+      ]
+      # residual_scale(g)=0 at initialization, so s_hat=s_phys exactly.
+      self.global_scale_output = nn.Dense(
+        1,
+        kernel_init=nn.initializers.zeros,
+        bias_init=nn.initializers.zeros,
+        name='global_scale_output',
+      )
+      if self.scale_pooling == 'latent_attention':
+        self.latent_attention_hidden = nn.Dense(
+          self.scale_head_hidden_size,
+          name='latent_attention_hidden',
+        )
+        self.latent_attention_logits = nn.Dense(
+          1,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='latent_attention_logits',
+        )
+      else:
+        self.latent_attention_hidden = None
+        self.latent_attention_logits = None
+      if self.scale_pooling == 'qk_gated':
+        self.qk_attention_hidden = nn.Dense(
+          self.scale_head_hidden_size,
+          name='qk_attention_hidden',
+        )
+        self.qk_attention_logits = nn.Dense(
+          1,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='qk_attention_logits',
+        )
+        # This branch is an exact mean pool at initialization.  Its residual
+        # projection starts at zero and can only consume raw input-derived
+        # regional q--k/BC features supplied by the runner.
+        self.qk_attention_residual = nn.Dense(
+          self.node_latent_size,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='qk_attention_residual',
+        )
+      else:
+        self.qk_attention_hidden = None
+        self.qk_attention_logits = None
+        self.qk_attention_residual = None
+      if self.shape_attention_mode == 'physics_gate':
+        self.shape_attention_norm = nn.LayerNorm(name='shape_attention_norm')
+        self.shape_attention_hidden = nn.Dense(
+          self.regional_attention_hidden_size, name='shape_attention_hidden')
+        self.shape_attention_gate = nn.Dense(1, name='shape_attention_gate')
+        self.shape_attention_output = nn.Dense(
+          self.node_latent_size,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='shape_attention_output',
+        )
+      else:
+        self.shape_attention_norm = None
+        self.shape_attention_hidden = None
+        self.shape_attention_gate = None
+        self.shape_attention_output = None
+      if self.scale_attention_mode == 'physics_gate':
+        self.scale_attention_norm = nn.LayerNorm(name='scale_attention_norm')
+        self.scale_attention_hidden = nn.Dense(
+          self.regional_attention_hidden_size, name='scale_attention_hidden')
+        self.scale_attention_logits = nn.Dense(1, name='scale_attention_logits')
+        self.scale_attention_output = nn.Dense(
+          self.node_latent_size,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='scale_attention_output',
+        )
+      else:
+        self.scale_attention_norm = None
+        self.scale_attention_hidden = None
+        self.scale_attention_logits = None
+        self.scale_attention_output = None
+      if self.scale_deepsets_mode == 'source_volume_residual':
+        self.scale_deepsets_hidden_0 = nn.Dense(
+          self.scale_deepsets_hidden_size, name='scale_deepsets_hidden_0')
+        self.scale_deepsets_hidden_1 = nn.Dense(
+          self.scale_deepsets_hidden_size, name='scale_deepsets_hidden_1')
+        self.scale_deepsets_output = nn.Dense(
+          self.node_latent_size,
+          kernel_init=nn.initializers.zeros,
+          bias_init=nn.initializers.zeros,
+          name='scale_deepsets_output',
+        )
+      else:
+        self.scale_deepsets_hidden_0 = None
+        self.scale_deepsets_hidden_1 = None
+        self.scale_deepsets_output = None
+    else:
+      self.global_scale_hidden = None
+      self.global_scale_extra_hidden = ()
+      self.global_scale_output = None
+      self.latent_attention_hidden = None
+      self.latent_attention_logits = None
+      self.qk_attention_hidden = None
+      self.qk_attention_logits = None
+      self.qk_attention_residual = None
+      self.shape_attention_norm = None
+      self.shape_attention_hidden = None
+      self.shape_attention_gate = None
+      self.shape_attention_output = None
+      self.scale_attention_norm = None
+      self.scale_attention_hidden = None
+      self.scale_attention_logits = None
+      self.scale_attention_output = None
+      self.scale_deepsets_hidden_0 = None
+      self.scale_deepsets_hidden_1 = None
+      self.scale_deepsets_output = None
 
   def _decoder_bypass_enabled(self) -> bool:
     return self.decoder_bypass_mode != 'none'
+
+  def _global_film_enabled(self) -> bool:
+    return self.global_context_mode == 'film'
+
+  def _native_shape_scale_enabled(self) -> bool:
+    return self.native_output_mode == 'native_shape_scale'
 
   def _validate_decoder_bypass_config(self) -> None:
     if self.decoder_bypass_mode not in {'none', 'post_decoder_residual'}:
@@ -1118,9 +1329,10 @@ class RIGNO(AbstractOperator):
         "decoder_bypass_mode must be one of {'none', 'post_decoder_residual'}, "
         f"found {self.decoder_bypass_mode!r}"
       )
-    if self.decoder_bypass_features not in {'none', 'full_condition'}:
+    if self.decoder_bypass_features not in {'none', 'full_condition', 'explicit_local_condition'}:
       raise ValueError(
-        "decoder_bypass_features must be one of {'none', 'full_condition'}, "
+        "decoder_bypass_features must be one of {'none', 'full_condition', "
+        "'explicit_local_condition'}, "
         f"found {self.decoder_bypass_features!r}"
       )
     if self.decoder_bypass_feature_source != 'normalized_c':
@@ -1133,9 +1345,11 @@ class RIGNO(AbstractOperator):
         "decoder_bypass_init must be 'zero_residual', "
         f"found {self.decoder_bypass_init!r}"
       )
-    if self.decoder_bypass_output_space != 'normalized_deltaT':
+    allowed_output_spaces = {'normalized_deltaT', 'native_psi'}
+    if self.decoder_bypass_output_space not in allowed_output_spaces:
       raise ValueError(
-        "decoder_bypass_output_space must be 'normalized_deltaT', "
+        "decoder_bypass_output_space must be one of "
+        f"{allowed_output_spaces}, "
         f"found {self.decoder_bypass_output_space!r}"
       )
     if self.decoder_bypass_hidden_size < 1:
@@ -1146,15 +1360,139 @@ class RIGNO(AbstractOperator):
       if self.decoder_bypass_features != 'none':
         raise ValueError("decoder_bypass_mode='none' requires decoder_bypass_features='none'")
       return
-    if self.decoder_bypass_features != 'full_condition':
+    if self.decoder_bypass_features not in {'full_condition', 'explicit_local_condition'}:
       raise ValueError(
-        "post_decoder_residual requires decoder_bypass_features='full_condition'"
+        "post_decoder_residual requires decoder_bypass_features='full_condition' "
+        "or 'explicit_local_condition'"
       )
     if not self.decoder_bypass_feature_indices:
       raise ValueError("decoder bypass requires resolved feature indices")
     if self.decoder_bypass_num_features != len(self.decoder_bypass_feature_indices):
       raise ValueError(
         "decoder_bypass_num_features must match decoder_bypass_feature_indices"
+      )
+
+  def _validate_global_context_config(self) -> None:
+    if self.global_context_mode not in {'none', 'film'}:
+      raise ValueError(
+        "global_context_mode must be one of {'none', 'film'}, "
+        f"found {self.global_context_mode!r}"
+      )
+    if self.film_target != 'rnodes_processed':
+      raise ValueError(
+        "film_target must be 'rnodes_processed', "
+        f"found {self.film_target!r}"
+      )
+    if self.film_init != 'identity':
+      raise ValueError(
+        "film_init must be 'identity', "
+        f"found {self.film_init!r}"
+      )
+    if self.film_hidden_size < 1:
+      raise ValueError("film_hidden_size must be >= 1")
+    if self.global_context_mode == 'none':
+      if self.global_context_feature_dim < 0:
+        raise ValueError("global_context_feature_dim must be >= 0")
+      if self.global_context_feature_names and (
+        len(self.global_context_feature_names) != self.global_context_feature_dim
+      ):
+        raise ValueError(
+          "global_context_feature_names must match global_context_feature_dim"
+        )
+      return
+    if self.global_context_feature_dim < 1:
+      raise ValueError("film global_context_feature_dim must be >= 1")
+    if self.global_context_feature_names and (
+      len(self.global_context_feature_names) != self.global_context_feature_dim
+    ):
+      raise ValueError(
+        "global_context_feature_names must match global_context_feature_dim"
+      )
+
+  def _validate_native_shape_scale_config(self) -> None:
+    if self.native_output_mode not in {'legacy_normalized_deltaT', 'native_shape_scale'}:
+      raise ValueError(
+        "native_output_mode must be one of "
+        "{'legacy_normalized_deltaT', 'native_shape_scale'}; "
+        f"found {self.native_output_mode!r}"
+      )
+    if self.shape_scale_epsilon <= 0.0:
+      raise ValueError("shape_scale_epsilon must be > 0")
+    if self.scale_head_hidden_size < 1:
+      raise ValueError("scale_head_hidden_size must be >= 1")
+    if self.scale_head_init != 'identity':
+      raise ValueError("scale_head_init must be 'identity'")
+    if self.scale_head_mode not in {'physics_only', 'physics_plus_pooled_latent'}:
+      raise ValueError(
+        "scale_head_mode must be one of {'physics_only', "
+        "'physics_plus_pooled_latent'}"
+      )
+    if self.scale_pooling not in SCALE_POOLING_MODES:
+      raise ValueError(
+        "scale_pooling must be one of "
+        f"{set(SCALE_POOLING_MODES)}, found {self.scale_pooling!r}"
+      )
+    if self.scale_head_depth < 1:
+      raise ValueError("scale_head_depth must be >= 1")
+    if not isinstance(self.pooled_latent_stop_gradient, bool):
+      raise ValueError("pooled_latent_stop_gradient must be a bool")
+    if self.shape_attention_mode not in REGIONAL_ATTENTION_MODES:
+      raise ValueError(
+        f"shape_attention_mode must be one of {REGIONAL_ATTENTION_MODES}")
+    if self.scale_attention_mode not in REGIONAL_ATTENTION_MODES:
+      raise ValueError(
+        f"scale_attention_mode must be one of {REGIONAL_ATTENTION_MODES}")
+    if self.regional_attention_hidden_size < 1:
+      raise ValueError("regional_attention_hidden_size must be >= 1")
+    if self.qk_region_feature_version not in QK_REGION_FEATURE_VERSIONS:
+      raise ValueError(
+        "qk_region_feature_version must be one of "
+        f"{QK_REGION_FEATURE_VERSIONS}")
+    if self.scale_context_mode not in SCALE_CONTEXT_MODES:
+      raise ValueError(
+        f"scale_context_mode must be one of {SCALE_CONTEXT_MODES}")
+    if self.scale_context_feature_dim < 0:
+      raise ValueError("scale_context_feature_dim must be >= 0")
+    if self.scale_context_feature_names and (
+      len(self.scale_context_feature_names) != self.scale_context_feature_dim
+    ):
+      raise ValueError(
+        "scale_context_feature_names must match scale_context_feature_dim")
+    if self.scale_context_mode == 'none' and self.scale_context_feature_dim != 0:
+      raise ValueError("scale_context_mode='none' requires feature_dim=0")
+    if self.scale_context_mode != 'none' and self.scale_context_feature_dim < 1:
+      raise ValueError("enabled scale context requires nonempty features")
+    if self.scale_deepsets_mode not in SCALE_DEEPSETS_MODES:
+      raise ValueError(
+        f"scale_deepsets_mode must be one of {SCALE_DEEPSETS_MODES}")
+    if self.scale_deepsets_hidden_size < 1:
+      raise ValueError("scale_deepsets_hidden_size must be >= 1")
+    if self.scale_attention_mode != 'none' and self.scale_pooling != 'mean':
+      raise ValueError("scale physics attention requires scale_pooling='mean'")
+    if self.native_branch_mode not in {'scale_only', 'shape_only', 'joint'}:
+      raise ValueError(
+        "native_branch_mode must be one of {'scale_only', 'shape_only', 'joint'}"
+      )
+    if not self._native_shape_scale_enabled():
+      if self.decoder_bypass_output_space != 'normalized_deltaT':
+        raise ValueError(
+          "legacy_normalized_deltaT requires decoder_bypass_output_space="
+          "'normalized_deltaT'"
+        )
+      return
+    if self.num_outputs != 1:
+      raise ValueError("native_shape_scale requires num_outputs=1")
+    if self.global_context_feature_dim < 1:
+      raise ValueError("native_shape_scale requires a nonempty global context")
+    if self.global_context_feature_names and (
+      len(self.global_context_feature_names) != self.global_context_feature_dim
+    ):
+      raise ValueError(
+        "native_shape_scale global_context_feature_names must match feature dimension"
+      )
+    if self._decoder_bypass_enabled() and self.decoder_bypass_output_space != 'native_psi':
+      raise ValueError(
+        "native_shape_scale decoder bypass must use decoder_bypass_output_space='native_psi'"
       )
 
   @staticmethod
@@ -1167,8 +1505,10 @@ class RIGNO(AbstractOperator):
     graphs: RegionInteractionGraphSet,
     pnode_features: Array,
     tau: Union[None, float],
+    global_context: Union[None, Array] = None,
+    qk_region_features: Union[None, Array] = None,
     key: flax.typing.PRNGKey = None,
-  ) -> Array:
+  ) -> Tuple[Array, Array, Array]:
 
     # Add dummy node features
     dummy_pnode_features = jnp.zeros(shape=(pnode_features.shape[0], 1, pnode_features.shape[2]))
@@ -1191,15 +1531,27 @@ class RIGNO(AbstractOperator):
     # -> [batch_size, num_rnodes, latent_size]
     subkey, key = jax.random.split(key) if (key is not None) else (None, None)
     updated_latent_rnodes = self.processor(graphs.r2r, latent_rnodes, tau, key=subkey)
+    processed_rnodes_pre_film = updated_latent_rnodes[:, :-1]
+    if self._global_film_enabled():
+      self.sow(
+        col='intermediates', name='rnodes_processed_pre_film',
+        value=self._prepare_features(updated_latent_rnodes[:, :-1])
+      )
+    updated_latent_rnodes = self._apply_global_film(updated_latent_rnodes, global_context)
     self.sow(
       col='intermediates', name='rnodes_processed',
       value=self._prepare_features(updated_latent_rnodes[:, :-1])
+    )
+    decoder_rnodes = self._apply_shape_attention(
+      updated_latent_rnodes,
+      qk_region_features=qk_region_features,
+      global_context=global_context,
     )
 
     # Transfer data from the regional mesh to the physical mesh
     # -> [batch_size, num_pnodes_out, latent_size]
     subkey, key = jax.random.split(key) if (key is not None) else (None, None)
-    output_pnodes = self.decoder(graphs.r2p, updated_latent_rnodes, latent_pnodes, tau, key=subkey)
+    output_pnodes = self.decoder(graphs.r2p, decoder_rnodes, latent_pnodes, tau, key=subkey)
     self.sow(
       col='intermediates', name='pnodes_decoded',
       value=self._prepare_features(output_pnodes[:, :-1])
@@ -1208,13 +1560,377 @@ class RIGNO(AbstractOperator):
     # Remove dummy node features
     output_pnodes = output_pnodes[:, :-1, :]
 
-    return output_pnodes
+    return output_pnodes, updated_latent_rnodes[:, :-1], processed_rnodes_pre_film
 
-  def call(self,
+  def _physics_attention_inputs(
+    self,
+    latents: Array,
+    qk_region_features: Union[None, Array],
+    global_context: Union[None, Array],
+    *,
+    norm: nn.LayerNorm,
+  ) -> Tuple[Array, Array]:
+    if qk_region_features is None:
+      raise ValueError("physics regional attention requires qk_region_features")
+    qk = jnp.asarray(qk_region_features, dtype=latents.dtype)
+    if qk.ndim != 3 or qk.shape[:2] != latents.shape[:2]:
+      raise ValueError(
+        "qk_region_features must align with regional latents: "
+        f"qk={qk.shape} latents={latents.shape}")
+    context = self._global_context_array(
+      global_context, batch_size=latents.shape[0], dtype=latents.dtype)
+    context_nodes = jnp.broadcast_to(
+      context[:, None, :],
+      (latents.shape[0], latents.shape[1], context.shape[-1]),
+    )
+    normalized = norm(latents)
+    return normalized, jnp.concatenate([normalized, qk, context_nodes], axis=-1)
+
+  def _apply_shape_attention(
+    self,
+    rnode_latents: Array,
+    *,
+    qk_region_features: Union[None, Array],
+    global_context: Union[None, Array],
+  ) -> Array:
+    if self.shape_attention_mode == 'none':
+      return rnode_latents
+    regional = rnode_latents[:, :-1]
+    normalized, attention_inputs = self._physics_attention_inputs(
+      regional, qk_region_features, global_context, norm=self.shape_attention_norm)
+    hidden = nn.gelu(self.shape_attention_hidden(attention_inputs))
+    gate = nn.sigmoid(self.shape_attention_gate(hidden))
+    residual = self.shape_attention_output(
+      jnp.concatenate([gate * normalized, attention_inputs], axis=-1))
+    self.sow(
+      col='intermediates', name='shape_attention_gate_values', value=gate)
+    self.sow(col='intermediates', name='shape_attention_residual', value=residual)
+    return jnp.concatenate([regional + residual, rnode_latents[:, -1:]], axis=1)
+
+  def _apply_global_film(
+    self,
+    rnode_latents: Array,
+    global_context: Union[None, Array],
+  ) -> Array:
+    """Apply sample-global identity-initialized FiLM at processed rnodes."""
+
+    if not self._global_film_enabled():
+      # Preserve the V4 path exactly when the feature is disabled.
+      return rnode_latents
+    context = self._global_context_array(
+      global_context, batch_size=rnode_latents.shape[0], dtype=rnode_latents.dtype)
+    film_hidden = nn.gelu(self.global_film_hidden(context))
+    gamma_beta = self.global_film_output(film_hidden)
+    gamma, beta = jnp.split(gamma_beta, 2, axis=-1)
+    self.sow(col='intermediates', name='global_film_gamma', value=gamma)
+    self.sow(col='intermediates', name='global_film_beta', value=beta)
+    return (1.0 + gamma[:, None, :]) * rnode_latents + beta[:, None, :]
+
+  def _global_context_array(
+    self,
+    global_context: Union[None, Array],
+    *,
+    batch_size: int,
+    dtype,
+  ) -> Array:
+    if global_context is None:
+      raise ValueError("native shape-scale or Global FiLM requires global_context")
+    context = jnp.asarray(global_context, dtype=dtype)
+    if context.ndim != 2:
+      raise ValueError(
+        "global_context must have shape [batch_size, feature_dim], "
+        f"found {context.shape}"
+      )
+    if context.shape[0] != batch_size:
+      raise ValueError(
+        "global_context batch size must match model batch: "
+        f"context={context.shape[0]} batch={batch_size}"
+      )
+    if context.shape[1] != self.global_context_feature_dim:
+      raise ValueError(
+        "global_context feature dimension mismatch: "
+        f"context={context.shape[1]} configured={self.global_context_feature_dim}"
+      )
+    return context
+
+  @staticmethod
+  def _prediction_field(value: Array, prediction: Array, name: str) -> Array:
+    """Coerce a per-node raw field to ``[B,1,N,1]`` prediction layout."""
+
+    array = jnp.asarray(value, dtype=prediction.dtype)
+    if array.shape == prediction.shape:
+      return array
+    if array.ndim == 2 and array.shape == (prediction.shape[0], prediction.shape[2]):
+      return array[:, None, :, None]
+    if array.ndim == 1 and array.shape[0] == prediction.shape[2]:
+      return jnp.broadcast_to(array[None, None, :, None], prediction.shape)
+    raise ValueError(
+      f"{name} must have shape [B,1,N,1], [B,N], or [N]; "
+      f"found {array.shape} for prediction {prediction.shape}"
+    )
+
+  @staticmethod
+  def _sample_scalar(value: Array, prediction: Array, name: str) -> Array:
+    """Coerce one scalar per sample to ``[B,1,1,1]``."""
+
+    array = jnp.asarray(value, dtype=prediction.dtype)
+    if array.ndim == 1 and array.shape[0] == prediction.shape[0]:
+      return array[:, None, None, None]
+    if array.ndim == 2 and array.shape == (prediction.shape[0], 1):
+      return array[:, :, None, None]
+    if array.ndim == 4 and array.shape == (prediction.shape[0], 1, 1, 1):
+      return array
+    raise ValueError(
+      f"{name} must have one scalar per batch item; found {array.shape} "
+      f"for prediction {prediction.shape}"
+    )
+
+  def predict_native_shape_scale(
+    self,
+    inputs: Inputs,
+    graphs: RegionInteractionGraphSet,
+    *,
+    control_volumes: Array,
+    log_s_phys: Array,
+    reference_temperature: Array,
+    dirichlet_mask: Array,
+    prescribed_temperature: Array,
+    global_context: Union[None, Array] = None,
+    qk_region_features: Union[None, Array] = None,
+    scale_context: Union[None, Array] = None,
+    scale_region_source_weights: Union[None, Array] = None,
+    scale_region_volume_weights: Union[None, Array] = None,
+    key: flax.typing.PRNGKey = None,
+  ) -> dict:
+    """Predict native ``DeltaT=s*phi`` and project raw Dirichlet nodes.
+
+    ``psi`` is the decoder's unnormalized field. ``phi_hat`` is normalized per
+    sample by physical control-volume RMS; the scale head predicts a residual
+    around inference-only ``log_s_phys``. Targets appear nowhere in this API.
+    """
+
+    if not self._native_shape_scale_enabled():
+      raise ValueError("predict_native_shape_scale requires native_output_mode='native_shape_scale'")
+    psi, processed_rnodes, processed_rnodes_pre_film = self._call_with_processed_rnodes(
+      inputs, graphs, key=key, global_context=global_context,
+      qk_region_features=qk_region_features)
+    volumes = self._prediction_field(control_volumes, psi, 'control_volumes')
+    volume_sum = jnp.sum(volumes, axis=2, keepdims=True)
+    if volumes.shape != psi.shape:
+      raise ValueError("control_volumes must align with native psi")
+    dirichlet = self._prediction_field(dirichlet_mask, psi, 'dirichlet_mask') > 0.5
+    psi_free = jnp.where(dirichlet, jnp.zeros_like(psi), psi)
+    psi_rms = jnp.sqrt(
+      jnp.sum(jnp.square(psi_free) * volumes, axis=2, keepdims=True)
+      / jnp.maximum(volume_sum, self.shape_scale_epsilon)
+    )
+    phi_hat = psi_free / jnp.maximum(psi_rms, self.shape_scale_epsilon)
+    context = self._global_context_array(
+      global_context, batch_size=psi.shape[0], dtype=psi.dtype)
+    if self.scale_head_mode == 'physics_plus_pooled_latent':
+      pooled_rnodes = self._pooled_scale_features(
+        processed_rnodes,
+        processed_rnodes_pre_film,
+        qk_region_features=qk_region_features,
+        global_context=global_context,
+        scale_region_source_weights=scale_region_source_weights,
+        scale_region_volume_weights=scale_region_volume_weights,
+      )
+      scale_context_array = self._scale_context_array(
+        scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
+      scale_features = jnp.concatenate(
+        [context, scale_context_array, pooled_rnodes], axis=-1)
+    else:
+      pooled_rnodes = jnp.zeros((psi.shape[0], 0), dtype=psi.dtype)
+      scale_context_array = self._scale_context_array(
+        scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
+      scale_features = jnp.concatenate([context, scale_context_array], axis=-1)
+    scale_hidden = nn.gelu(self.global_scale_hidden(scale_features))
+    for layer in self.global_scale_extra_hidden:
+      scale_hidden = nn.gelu(layer(scale_hidden))
+    residual_scale = self.global_scale_output(scale_hidden)[:, :, None, None]
+    log_s_hat = self._sample_scalar(log_s_phys, psi, 'log_s_phys') + residual_scale
+    s_hat = jnp.exp(log_s_hat)
+    reconstruction_shape = (
+      jax.lax.stop_gradient(phi_hat)
+      if self.native_branch_mode == 'scale_only'
+      else phi_hat
+    )
+    reconstruction_scale = (
+      jax.lax.stop_gradient(s_hat)
+      if self.native_branch_mode == 'shape_only'
+      else s_hat
+    )
+    delta_unprojected = reconstruction_scale * reconstruction_shape
+    reference = self._prediction_field(reference_temperature, psi, 'reference_temperature')
+    prescribed = self._prediction_field(prescribed_temperature, psi, 'prescribed_temperature')
+    raw_temperature_unprojected = reference + delta_unprojected
+    raw_temperature = jnp.where(dirichlet, prescribed, raw_temperature_unprojected)
+    delta_hat = raw_temperature - reference
+    self.sow(col='intermediates', name='native_shape_psi_rms', value=psi_rms)
+    self.sow(col='intermediates', name='native_scale_residual', value=residual_scale)
+    self.sow(col='intermediates', name='native_scale_log_s_hat', value=log_s_hat)
+    return {
+      'psi': psi,
+      'psi_free': psi_free,
+      'phi_hat': phi_hat,
+      'psi_cv_rms': psi_rms,
+      'residual_scale': residual_scale,
+      'log_s_hat': log_s_hat,
+      's_hat': s_hat,
+      'pooled_rnodes': pooled_rnodes,
+      'scale_context': scale_context_array,
+      'rnodes_processed': processed_rnodes,
+      'rnodes_processed_pre_film': processed_rnodes_pre_film,
+      'deltaT_hat_unprojected': delta_unprojected,
+      'raw_temperature_unprojected': raw_temperature_unprojected,
+      'raw_temperature': raw_temperature,
+      'deltaT_hat': delta_hat,
+    }
+
+  def _pooled_scale_features(
+    self,
+    processed_rnodes: Array,
+    processed_rnodes_pre_film: Array,
+    *,
+    qk_region_features: Union[None, Array],
+    global_context: Union[None, Array],
+    scale_region_source_weights: Union[None, Array],
+    scale_region_volume_weights: Union[None, Array],
+  ) -> Array:
+    """Pool frozen regional latents for the configured native scale head."""
+
+    post = (
+      jax.lax.stop_gradient(processed_rnodes)
+      if self.pooled_latent_stop_gradient
+      else processed_rnodes
+    )
+    pre = (
+      jax.lax.stop_gradient(processed_rnodes_pre_film)
+      if self.pooled_latent_stop_gradient
+      else processed_rnodes_pre_film
+    )
+    if self.scale_attention_mode == 'physics_gate':
+      normalized, attention_inputs = self._physics_attention_inputs(
+        post, qk_region_features, global_context, norm=self.scale_attention_norm)
+      hidden = nn.gelu(self.scale_attention_hidden(attention_inputs))
+      logits = self.scale_attention_logits(hidden)[..., 0]
+      weights = nn.softmax(logits, axis=1)
+      mean_pool = jnp.mean(post, axis=1)
+      attended = jnp.sum(weights[..., None] * normalized, axis=1)
+      residual = self.scale_attention_output(
+        jnp.concatenate(
+          [attended, mean_pool, jnp.mean(attention_inputs, axis=1)], axis=-1))
+      self.sow(col='intermediates', name='scale_attention_weights', value=weights)
+      self.sow(col='intermediates', name='scale_attention_residual', value=residual)
+      pooled = mean_pool + residual
+      return pooled + self._scale_deepsets_residual(
+        post, scale_region_source_weights, scale_region_volume_weights)
+    if self.scale_pooling == 'mean':
+      pooled = jnp.mean(post, axis=1)
+      return pooled + self._scale_deepsets_residual(
+        post, scale_region_source_weights, scale_region_volume_weights)
+    if self.scale_pooling == 'mean_std':
+      return jnp.concatenate([jnp.mean(post, axis=1), jnp.std(post, axis=1)], axis=-1)
+    if self.scale_pooling == 'mean_max':
+      return jnp.concatenate([jnp.mean(post, axis=1), jnp.max(post, axis=1)], axis=-1)
+    if self.scale_pooling == 'pre_film_mean_std':
+      return jnp.concatenate([jnp.mean(pre, axis=1), jnp.std(pre, axis=1)], axis=-1)
+    if self.scale_pooling == 'latent_attention':
+      latent_hidden = nn.gelu(self.latent_attention_hidden(post))
+      logits = self.latent_attention_logits(latent_hidden)[..., 0]
+      weights = nn.softmax(logits, axis=1)
+      self.sow(col='intermediates', name='latent_attention_weights', value=weights)
+      return jnp.sum(weights[..., None] * post, axis=1)
+    if self.scale_pooling == 'qk_gated':
+      if qk_region_features is None:
+        raise ValueError("qk_gated scale pooling requires qk_region_features")
+      qk = jnp.asarray(qk_region_features, dtype=post.dtype)
+      if qk.ndim != 3 or qk.shape[:2] != post.shape[:2]:
+        raise ValueError(
+          "qk_region_features must have shape [batch, rnodes, features], "
+          f"got {qk.shape} for regional latents {post.shape}"
+        )
+      # Finite input validation is performed by the runner before JIT; keeping
+      # this path tensor-only avoids a traced Python boolean conversion.
+      mean_pool = jnp.mean(post, axis=1)
+      qk_hidden = nn.gelu(self.qk_attention_hidden(qk))
+      logits = self.qk_attention_logits(qk_hidden)[..., 0]
+      weights = nn.softmax(logits, axis=1)
+      attention_pool = jnp.sum(weights[..., None] * post, axis=1)
+      residual_input = jnp.concatenate(
+        [attention_pool - mean_pool, mean_pool, jnp.mean(qk, axis=1)], axis=-1
+      )
+      residual = self.qk_attention_residual(residual_input)
+      self.sow(col='intermediates', name='qk_attention_weights', value=weights)
+      self.sow(col='intermediates', name='qk_attention_residual', value=residual)
+      return mean_pool + residual
+    raise ValueError(f"unsupported scale pooling {self.scale_pooling!r}")
+
+  def _scale_context_array(
+    self,
+    scale_context: Union[None, Array],
+    *,
+    batch_size: int,
+    dtype,
+  ) -> Array:
+    """Return scale-head-only context without exposing it to FiLM/decoder."""
+
+    if self.scale_context_mode == 'none':
+      if scale_context is not None:
+        raise ValueError("disabled scale context received unexpected features")
+      return jnp.zeros((batch_size, 0), dtype=dtype)
+    if scale_context is None:
+      raise ValueError("enabled scale context requires scale_context")
+    context = jnp.asarray(scale_context, dtype=dtype)
+    expected = (batch_size, self.scale_context_feature_dim)
+    if context.ndim != 2 or context.shape != expected:
+      raise ValueError(
+        f"scale_context must have shape {expected}, found {context.shape}")
+    return context
+
+  def _scale_deepsets_residual(
+    self,
+    regional_latents: Array,
+    source_weights: Union[None, Array],
+    volume_weights: Union[None, Array],
+  ) -> Array:
+    """Source/volume-aware DeepSets residual with no softmax-only pooling."""
+
+    if self.scale_deepsets_mode == 'none':
+      return jnp.zeros(
+        (regional_latents.shape[0], regional_latents.shape[-1]),
+        dtype=regional_latents.dtype,
+      )
+    if source_weights is None or volume_weights is None:
+      raise ValueError(
+        "source_volume_residual requires regional source and volume weights")
+    source = jnp.asarray(source_weights, dtype=regional_latents.dtype)
+    volume = jnp.asarray(volume_weights, dtype=regional_latents.dtype)
+    expected = regional_latents.shape[:2]
+    if source.shape != expected or volume.shape != expected:
+      raise ValueError(
+        "regional DeepSets weights must match [batch,rnodes]: "
+        f"source={source.shape} volume={volume.shape} expected={expected}")
+    encoded = nn.gelu(self.scale_deepsets_hidden_0(regional_latents))
+    encoded = nn.gelu(self.scale_deepsets_hidden_1(encoded))
+    mean_pool = jnp.mean(encoded, axis=1)
+    source_pool = jnp.sum(encoded * source[..., None], axis=1) / jnp.maximum(
+      jnp.sum(source, axis=1, keepdims=True), self.shape_scale_epsilon)
+    volume_pool = jnp.sum(encoded * volume[..., None], axis=1) / jnp.maximum(
+      jnp.sum(volume, axis=1, keepdims=True), self.shape_scale_epsilon)
+    residual = self.scale_deepsets_output(
+      jnp.concatenate([mean_pool, source_pool, volume_pool], axis=-1))
+    self.sow(col='intermediates', name='scale_deepsets_residual', value=residual)
+    return residual
+
+  def _call_with_processed_rnodes(self,
     inputs: Inputs,
     graphs: RegionInteractionGraphSet,
     key: flax.typing.PRNGKey = None,
-  ) -> Array:
+    global_context: Union[None, Array] = None,
+    qk_region_features: Union[None, Array] = None,
+  ) -> Tuple[Array, Array, Array]:
     """Inputs must be of shape [batch_size, 1, num_physical_nodes, num_inputs]"""
 
     # Check input functions
@@ -1269,8 +1985,9 @@ class RIGNO(AbstractOperator):
 
     # Run the GNNs
     subkey, key = jax.random.split(key) if (key is not None) else (None, None)
-    output_pnodes = self._encode_process_decode(
-      graphs=graphs, pnode_features=pnode_features, tau=tau, key=subkey)
+    output_pnodes, processed_rnodes, processed_rnodes_pre_film = self._encode_process_decode(
+      graphs=graphs, pnode_features=pnode_features, tau=tau,
+      global_context=global_context, qk_region_features=qk_region_features, key=subkey)
 
     # Reshape the output to u
     # [batch_size, num_pnodes_out, num_outputs] -> [batch_size, 1, num_pnodes_out, num_outputs]
@@ -1278,6 +1995,16 @@ class RIGNO(AbstractOperator):
     output = self._apply_decoder_bypass(output, inputs)
     self._check_function(output, x=inputs.x_out)
 
+    return output, processed_rnodes, processed_rnodes_pre_film
+
+  def call(self,
+    inputs: Inputs,
+    graphs: RegionInteractionGraphSet,
+    key: flax.typing.PRNGKey = None,
+    global_context: Union[None, Array] = None,
+  ) -> Array:
+    output, _, _ = self._call_with_processed_rnodes(
+      inputs, graphs, key=key, global_context=global_context)
     return output
 
   def _apply_decoder_bypass(self, base_output: Array, inputs: Inputs) -> Array:
