@@ -1,0 +1,24 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_04_V5best_P1h_DualAttention
+extends: V6_03_V5best_P1h.yaml
+overrides:
+  description: >-
+    V6 P1h shared-support single-variable DualAttention ablation of
+    V6_03_V5best_P1h. Shape attention changes from none to physics_gate while
+    scale attention remains physics_gate; all other scientific settings remain
+    frozen.
+  model:
+    shape_attention_mode: physics_gate
+  export:
+    output_dir: output/heat3d_v6_runs/V6_04_V5best_P1h_DualAttention
+    run_name: V6_04_V5best_P1h_DualAttention
+  metadata:
+    ablation_parent_config_id: V6_03_V5best_P1h
+    ablation_scientific_difference: model.shape_attention_mode:none_to_physics_gate
+    experiment_role: single_variable_dual_attention_ablation
+    training_started: false
+    execution_host: null
+    training_commit: null
+    runner_pid: null
+    launch_timestamp_utc: null
+    log_path: output/heat3d_v6_logs/V6_04_V5best_P1h_DualAttention.log
