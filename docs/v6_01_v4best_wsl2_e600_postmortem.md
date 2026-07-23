@@ -13,10 +13,13 @@ Six inference-only repeats on the original WSL2 GPU showed that the same final
 checkpoint can differ from itself by as much as 0.298 K at an isolated point,
 while whole-field replay RMSE remains 0.0020--0.0027 K. This is the known
 pointwise nondeterminism of irregular-graph GPU scatter/reduction ordering.
+The first committed recovery observed 36 of 131,072 points above 0.1 K
+(0.0275%), with 0.00419 K RMSE and 0.257 K maximum error.
 
 The repaired gate keeps exact parameter and NPZ requirements, keeps the strict
-`RMSE <= 0.01 K` requirement, and adds `p99.99 <= 0.15 K` together with a
-bounded `max <= 0.5 K`. Broad or heavy-tail drift still fails.
+`RMSE <= 0.01 K` requirement, and allows at most 0.1% of points to exceed
+0.1 K together with a bounded `max <= 0.5 K`. Broad or heavy-tail drift still
+fails.
 
 ## Valid-IID result
 

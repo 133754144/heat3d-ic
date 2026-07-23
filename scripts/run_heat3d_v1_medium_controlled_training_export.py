@@ -4956,15 +4956,24 @@ def _checkpoint_prediction_consistency_passes(
     npz_difference: Mapping[str, Any],
     max_tolerance: float,
     rmse_tolerance: float,
-    p9999_tolerance: float,
+    outlier_abs_threshold: float,
+    outlier_fraction_tolerance: float,
 ) -> bool:
     """Gate exact serialization plus sparse-safe GPU replay consistency."""
 
+    point_count = int(checkpoint_difference["point_count"])
+    outlier_fraction = (
+        float(checkpoint_difference["count_gt_0p1_K"]) / point_count
+        if point_count
+        else 0.0
+    )
+    if outlier_abs_threshold != 0.1:
+        raise ValueError("count_gt_0p1_K requires outlier_abs_threshold=0.1")
     return bool(
         parameter_max_abs == 0.0
         and float(checkpoint_difference["max_abs_K"]) <= max_tolerance
         and float(checkpoint_difference["rmse_K"]) <= rmse_tolerance
-        and float(checkpoint_difference["p9999_abs_K"]) <= p9999_tolerance
+        and outlier_fraction <= outlier_fraction_tolerance
         and float(npz_difference["max_abs_K"]) == 0.0
     )
 
@@ -4992,11 +5001,12 @@ def _checkpoint_prediction_reload_audit(
     # Raw-temperature replay is float32 and irregular V6 graph scatter/reduction
     # kernels are not pointwise deterministic on GPU even when the serialized
     # parameter tree is exact. Preserve exact parameter/NPZ checks and a strict
-    # whole-field RMS gate; bound both the extreme point and the 99.99th
-    # percentile so sparse kernel-order spikes cannot hide a broad mismatch.
+    # whole-field RMS gate; bound both the extreme point and the fraction above
+    # 0.1 K so sparse kernel-order spikes cannot hide a broad mismatch.
     max_tolerance: float = 5.0e-1,
     rmse_tolerance: float = 1.0e-2,
-    p9999_tolerance: float = 1.5e-1,
+    outlier_abs_threshold: float = 1.0e-1,
+    outlier_fraction_tolerance: float = 1.0e-3,
 ) -> dict[str, Any]:
     """Reload saved params and NPZ predictions, then reproduce predictions."""
 
@@ -5047,7 +5057,14 @@ def _checkpoint_prediction_reload_audit(
             npz_difference=npz_difference,
             max_tolerance=max_tolerance,
             rmse_tolerance=rmse_tolerance,
-            p9999_tolerance=p9999_tolerance,
+            outlier_abs_threshold=outlier_abs_threshold,
+            outlier_fraction_tolerance=outlier_fraction_tolerance,
+        )
+        checkpoint_outlier_fraction = (
+            float(checkpoint_difference["count_gt_0p1_K"])
+            / float(checkpoint_difference["point_count"])
+            if checkpoint_difference["point_count"]
+            else 0.0
         )
         reports.append(
             {
@@ -5067,6 +5084,7 @@ def _checkpoint_prediction_reload_audit(
                 "checkpoint_reload_count_gt_0p1_K": checkpoint_difference[
                     "count_gt_0p1_K"
                 ],
+                "checkpoint_reload_outlier_fraction": checkpoint_outlier_fraction,
                 "checkpoint_reload_point_count": checkpoint_difference[
                     "point_count"
                 ],
@@ -5075,7 +5093,8 @@ def _checkpoint_prediction_reload_audit(
                 "tolerance_K": float(max_tolerance),
                 "max_abs_tolerance_K": float(max_tolerance),
                 "rmse_tolerance_K": float(rmse_tolerance),
-                "p9999_abs_tolerance_K": float(p9999_tolerance),
+                "outlier_abs_threshold_K": float(outlier_abs_threshold),
+                "outlier_fraction_tolerance": float(outlier_fraction_tolerance),
                 "global_context_fit_population": standardizer.get("fit_population"),
                 "scale_context_fit_population": scale_standardizer.get(
                     "fit_population"

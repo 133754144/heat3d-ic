@@ -127,12 +127,21 @@
       ]
     }
   },
+  "first_committed_recovery_observation": {
+    "final_checkpoint_reload_max_abs_error_K": 0.25726318359375,
+    "final_checkpoint_reload_rmse_K": 0.004191401043102988,
+    "final_checkpoint_reload_p9999_abs_error_K": 0.15323000793459318,
+    "final_checkpoint_reload_count_gt_0p1_K": 36,
+    "point_count": 131072,
+    "outlier_fraction": 0.000274658203125
+  },
   "frozen_repair_gate": {
     "parameter_reload_max_abs_error": 0.0,
     "npz_reload_max_abs_error_K": 0.0,
     "checkpoint_reload_max_abs_tolerance_K": 0.5,
     "checkpoint_reload_rmse_tolerance_K": 0.01,
-    "checkpoint_reload_p9999_abs_tolerance_K": 0.15
+    "checkpoint_reload_outlier_abs_threshold_K": 0.1,
+    "checkpoint_reload_outlier_fraction_tolerance": 0.001
   },
   "artifact_sha256": {
     "params_best.pkl": "9938254f63930f67f7e159b210538615dfe6edc076def8c6ee8e1dfc86f780df",

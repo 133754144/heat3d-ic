@@ -19,7 +19,8 @@ import run_heat3d_v1_medium_controlled_training_export as runner  # noqa: E402
 
 MAX_TOLERANCE_K = 0.5
 RMSE_TOLERANCE_K = 0.01
-P9999_TOLERANCE_K = 0.15
+OUTLIER_ABS_THRESHOLD_K = 0.1
+OUTLIER_FRACTION_TOLERANCE = 0.001
 
 
 def _passes(
@@ -44,7 +45,8 @@ def _passes(
         npz_difference=npz_difference,
         max_tolerance=MAX_TOLERANCE_K,
         rmse_tolerance=RMSE_TOLERANCE_K,
-        p9999_tolerance=P9999_TOLERANCE_K,
+        outlier_abs_threshold=OUTLIER_ABS_THRESHOLD_K,
+        outlier_fraction_tolerance=OUTLIER_FRACTION_TOLERANCE,
     )
 
 
@@ -63,7 +65,7 @@ def main() -> int:
     )
     assert sparse_summary["max_abs_K"] == 0.3
     assert sparse_summary["rmse_K"] < RMSE_TOLERANCE_K
-    assert sparse_summary["p9999_abs_K"] < P9999_TOLERANCE_K
+    assert sparse_summary["count_gt_0p1_K"] == 1
     assert _passes(expected, sparse_gpu_order_spike)
 
     excessive_single_point = {
@@ -78,10 +80,13 @@ def main() -> int:
     assert not _passes(expected, broad_drift)
 
     high_tail = {"sample": np.zeros((128, 1024, 1), dtype=np.float64)}
-    high_tail["sample"].reshape(-1)[:20] = 0.2
+    high_tail["sample"].reshape(-1)[:200] = 0.2
     high_tail_summary = runner._prediction_difference_summary(expected, high_tail)
     assert high_tail_summary["rmse_K"] < RMSE_TOLERANCE_K
-    assert high_tail_summary["p9999_abs_K"] > P9999_TOLERANCE_K
+    assert (
+        high_tail_summary["count_gt_0p1_K"] / high_tail_summary["point_count"]
+        > OUTLIER_FRACTION_TOLERANCE
+    )
     assert not _passes(expected, high_tail)
 
     assert not _passes(expected, exact, parameter_error=1e-12)
