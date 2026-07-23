@@ -7,6 +7,7 @@ import argparse
 from collections import Counter, defaultdict
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -234,6 +235,10 @@ def main() -> int:
         _assert(_array_sha256(indices.astype(np.int32)) == manifest["shared_support_index_sha256"], "support-index hash mismatch")
         _assert(_array_sha256(support_coords) == manifest["shared_coordinate_sha256"], "support-coordinate hash mismatch")
         _assert(np.array_equal(support_coords, archive["mesh/coords"][:][indices]), "support is not direct solver-node indexing")
+        # The frozen graph identity was generated with the deterministic CPU
+        # graph-builder path. GPU scatter/reduction ordering can produce a
+        # different processor-node sample even for identical coordinates.
+        os.environ["JAX_PLATFORMS"] = "cpu"
         if str(ROOT / "scripts") not in sys.path:
             sys.path.insert(0, str(ROOT / "scripts"))
         from build_heat3d_v6_p1h_shared_support_dataset import _graph_metadata  # noqa: PLC0415
