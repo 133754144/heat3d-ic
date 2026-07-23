@@ -1,0 +1,152 @@
+{
+  "schema_version": "heat3d_v6_01_wsl2_e600_postmortem_v1",
+  "status": "completed_e600_exported_reload_audit_false_failure",
+  "host": "wsl2",
+  "branch": "research/v6-dataset",
+  "training_commit": "ec72010250fcd210ae29c9d2dc48371de8b057c3",
+  "run_dir": "output/heat3d_v6_runs/V6_01_V4best",
+  "selection_metric": "valid_base_mse",
+  "roles_used": [
+    "train",
+    "valid_iid"
+  ],
+  "test_iid_group_count": 0,
+  "all_groups_count": 0,
+  "training": {
+    "epochs_completed": 600,
+    "best_epoch": 407,
+    "finite_gradients": true,
+    "epoch_loop_seconds": 43248.9659685723,
+    "median_epoch_seconds": 72.05762446392328,
+    "final_train_base_mse": 0.0027391724288463593,
+    "final_train_point_global_relative_rmse_pct": 1.4692038682004287,
+    "final_train_raw_rmse_K": 0.6178769956198046
+  },
+  "valid_iid": {
+    "best_e407": {
+      "valid_base_mse": 0.24318042397499084,
+      "point_global_true_rms_relative_rmse_pct": 13.842561704216921,
+      "sample_first_relative_rmse_pct": 10.232678052619429,
+      "raw_rmse_K": 5.821766879380117,
+      "amplitude_ratio_mean": 1.0091863736895097,
+      "spatial_correlation_mean": 0.8796906824058939
+    },
+    "final_e600": {
+      "valid_base_mse": 0.36272698640823364,
+      "point_global_true_rms_relative_rmse_pct": 16.905951581525407,
+      "sample_first_relative_rmse_pct": 11.022813751321484,
+      "raw_rmse_K": 7.110136915752064,
+      "amplitude_ratio_mean": 1.031451248038423,
+      "spatial_correlation_mean": 0.8772531138096205
+    },
+    "final_over_best_base_mse_ratio": 1.4915961592596665,
+    "final_minus_best_sample_first_percentage_points": 0.7901356987020568,
+    "final_vs_best_sample_win_rate": 0.7109375,
+    "final_minus_best_sample_relative_median_percentage_points": -1.4141967706593213,
+    "top5_sse_share": {
+      "best": 0.32593690298943806,
+      "final": 0.3081243143437251
+    },
+    "top10_sse_share": {
+      "best": 0.5332806075881454,
+      "final": 0.5290170404090145
+    },
+    "true_deltaT_rms_quartiles_point_global_pct": {
+      "Q1": {
+        "best": 16.701464653553106,
+        "final": 21.903868753325952
+      },
+      "Q2": {
+        "best": 15.583956558302686,
+        "final": 19.386790783480457
+      },
+      "Q3": {
+        "best": 15.090368419280937,
+        "final": 17.93724815150795
+      },
+      "Q4": {
+        "best": 11.352460844644678,
+        "final": 13.445681361611536
+      }
+    }
+  },
+  "reload_failure": {
+    "parameter_reload_max_abs_error": 0.0,
+    "npz_reload_max_abs_error_K": 0.0,
+    "reported_checkpoint_reload_max_abs_error_K": 0.166290283203125,
+    "reported_checkpoint_reload_rmse_K": 0.001986649693968997,
+    "reported_checkpoint_reload_mean_abs_error_K": 0.0005617567803710699,
+    "old_max_abs_tolerance_K": 0.1,
+    "root_cause": "GPU irregular-graph scatter/reduction pointwise nondeterminism",
+    "checkpoint_or_serialization_corruption": false
+  },
+  "six_repeat_inference_only_audit": {
+    "best_saved_vs_repeat": {
+      "max_abs_K_range": [
+        0.14373779296875,
+        0.14825439453125
+      ],
+      "rmse_K_range": [
+        0.0019226857031177538,
+        0.002111907329234892
+      ],
+      "max_count_gt_0p1_K": 4,
+      "max_p9999_abs_K": 0.061497363281262096
+    },
+    "best_repeat_pairwise": {
+      "max_abs_K_range": [
+        0.02099609375,
+        0.0631103515625
+      ],
+      "rmse_K_range": [
+        0.0008934411541775084,
+        0.0012055447672306876
+      ]
+    },
+    "final_saved_vs_repeat": {
+      "max_abs_K_range": [
+        0.216766357421875,
+        0.308624267578125
+      ],
+      "rmse_K_range": [
+        0.003339290536975206,
+        0.0036851582101641834
+      ],
+      "max_count_gt_0p1_K": 20,
+      "point_count": 131072,
+      "max_p9999_abs_K": 0.11944311828621768
+    },
+    "final_repeat_pairwise": {
+      "max_abs_K_range": [
+        0.142608642578125,
+        0.298004150390625
+      ],
+      "rmse_K_range": [
+        0.0020395641006993627,
+        0.002712568411885562
+      ]
+    }
+  },
+  "frozen_repair_gate": {
+    "parameter_reload_max_abs_error": 0.0,
+    "npz_reload_max_abs_error_K": 0.0,
+    "checkpoint_reload_max_abs_tolerance_K": 0.5,
+    "checkpoint_reload_rmse_tolerance_K": 0.01,
+    "checkpoint_reload_p9999_abs_tolerance_K": 0.15
+  },
+  "artifact_sha256": {
+    "params_best.pkl": "9938254f63930f67f7e159b210538615dfe6edc076def8c6ee8e1dfc86f780df",
+    "params_final.pkl": "7751d9f1490d5e797896ce23f8f79f0fc57315f4a1279581fda577119d48293f",
+    "best_predictions.npz": "4c157dee1fceb0960713979fb3645ea60652e7ee1513d1ea06291a44d9fb1bda",
+    "predictions.npz": "e679d47a1312a001b7823c838cf5defb49ce1db0e1899050d8cce4ab57be2ed",
+    "run_config.json": "8da927deb257a44935764974f4ae39a15af82655ea5128e17b07791157ae394d",
+    "loss_summary.json": "2c3520e796ebf856d5c2b94ba860c392e595726a9ba08fffaa6ac09e66f1f1d5"
+  },
+  "conclusion": {
+    "training_result_valid": true,
+    "best_checkpoint_is_primary": true,
+    "valid_point_global_below_20_pct": true,
+    "test_or_all_evaluated": false,
+    "diagnosis": "strong late overfit with sparse geometry-group regressions; export artifacts are intact"
+  }
+}
