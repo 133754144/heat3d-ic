@@ -1,11 +1,12 @@
 schema_version: heat3d_v2_config_draft_v0
 config_role: controlled
-description: V6 canonical P1g-v0 random-init transfer of V4P5_42_canonical through
-  the dual-Robin runtime adapter. No V5 checkpoint is loaded.
+description: V6 canonical-candidate P1h shared-support transfer of V6_02_V5best. The
+  only scientific variable is the dataset binding; P1g remains the global canonical
+  V6-layer dataset and no prior checkpoint is loaded.
 dataset:
-  name: heat3d_v6_p1g_geometry_deconfounded1024_v0
-  subset_path: data/heat3d_v6_p1g_geometry_deconfounded1024_v0
-  manifest_path: configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json
+  name: heat3d_v6_p1h_shared_support1024_v0
+  subset_path: data/heat3d_v6_p1h_shared_support1024_v0
+  manifest_path: configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json
   split_source: v6_manifest_group_locked
   split_map_path: null
   sample_limit: null
@@ -219,8 +220,8 @@ export:
   final_predictions_name: predictions.npz
   save_loss_summary: true
   save_run_config: true
-  output_dir: output/heat3d_v6_runs/V6_02_V5best
-  run_name: V6_02_V5best
+  output_dir: output/heat3d_v6_runs/V6_03_V5best_P1h
+  run_name: V6_03_V5best_P1h
 diagnostics:
   metric_set:
   - mean_T_rmse
@@ -274,13 +275,13 @@ metadata:
   phase: v6_training_handoff
   baseline_config_id: V4P5_42_canonical
   canonical_dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
-  training_started: true
-  execution_host: devbox
-  training_commit: ec72010250fcd210ae29c9d2dc48371de8b057c3
-  runner_pid: 389637
-  launch_timestamp_utc: '2026-07-22T19:29:32Z'
+  training_started: false
+  execution_host: null
+  training_commit: null
+  runner_pid: null
+  launch_timestamp_utc: null
   launch_policy: explicit_user_instruction_only
-  log_path: output/heat3d_v6_logs/V6_02_V5best.log
+  log_path: output/heat3d_v6_logs/V6_03_V5best_P1h.log
   bottom_boundary_semantics: robin_not_fixed_temperature
   configured_batch_size: 24
   effective_batch_size: 24
@@ -290,4 +291,6 @@ metadata:
   final_partial_effective_batch_size: null
   cross_geometry_dummy_edge_padding: true
   b24_execution_mode: one_real_B24_forward_backward_per_update
-config_id: V6_02_V5best
+  candidate_dataset_id: heat3d_v6_p1h_shared_support1024_v0
+  dataset_lifecycle_status: canonical_candidate
+config_id: V6_03_V5best_P1h

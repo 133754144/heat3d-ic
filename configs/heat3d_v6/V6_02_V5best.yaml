@@ -58,6 +58,10 @@ overrides:
     validation_batch_size: 32
     prediction_batch_size: 32
     drop_last: false
+    # Preserve the effective frozen V6_02 runner behavior.  The inherited V5
+    # canonical profile enables epoch-wise regrouping, but the V6_02 formal
+    # run and its P1h single-variable comparison keep it disabled.
+    epoch_wise_batch_regrouping: false
     init_checkpoint: null
     final_probe_eval_after_training: false
     final_probe_output_dir: null

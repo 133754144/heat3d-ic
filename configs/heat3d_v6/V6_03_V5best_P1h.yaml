@@ -1,0 +1,25 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_03_V5best_P1h
+extends: V6_02_V5best.yaml
+overrides:
+  description: >-
+    V6 canonical-candidate P1h shared-support transfer of V6_02_V5best.
+    The only scientific variable is the dataset binding; P1g remains the
+    global canonical V6-layer dataset and no prior checkpoint is loaded.
+  dataset:
+    name: heat3d_v6_p1h_shared_support1024_v0
+    subset_path: data/heat3d_v6_p1h_shared_support1024_v0
+    manifest_path: configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json
+  export:
+    output_dir: output/heat3d_v6_runs/V6_03_V5best_P1h
+    run_name: V6_03_V5best_P1h
+  metadata:
+    canonical_dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
+    candidate_dataset_id: heat3d_v6_p1h_shared_support1024_v0
+    dataset_lifecycle_status: canonical_candidate
+    training_started: false
+    execution_host: null
+    training_commit: null
+    runner_pid: null
+    launch_timestamp_utc: null
+    log_path: output/heat3d_v6_logs/V6_03_V5best_P1h.log
