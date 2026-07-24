@@ -1,0 +1,136 @@
+{
+  "schema_version": "heat3d_v6_training_result_sources_v1",
+  "evaluation_role": "valid_iid",
+  "test_accessed": false,
+  "runs": [
+    {
+      "config_id": "V6_01_V4best",
+      "source_host": "wsl2",
+      "snapshot_path": "wsl2/V6_01_V4best",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_01_V4best",
+      "remote_log_path": "output/heat3d_v6_logs/V6_01_V4best.log",
+      "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+      "training_commit": "ec72010",
+      "checkpoints": {
+        "legacy_best": {
+          "epoch": 407,
+          "prediction_file": "best_predictions.npz",
+          "checkpoint_file": "params_best.pkl",
+          "checkpoint_sha256": "9938254f63930f67f7e159b210538615dfe6edc076def8c6ee8e1dfc86f780df"
+        },
+        "final": {
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_sha256": "7751d9f1490d5e797896ce23f8f79f0fc57315f4a1279581fda577119d48293f"
+        }
+      },
+      "reload_recovery_file": "reload_recovery.json"
+    },
+    {
+      "config_id": "V6_02_V5best",
+      "source_host": "devbox",
+      "snapshot_path": "devbox/V6_02_V5best",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_02_V5best",
+      "remote_log_path": "output/heat3d_v6_logs/V6_02_V5best.log",
+      "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+      "training_commit": "3c90d8a",
+      "checkpoints": {
+        "point_global_best": {
+          "epoch": 406,
+          "prediction_file": "point_global_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_sha256": "276dcb6a278602612f1b6d149fe9b0aea3795809be429c457ce8d8cb0297ee6b"
+        },
+        "sample_first_best": {
+          "epoch": 559,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_sha256": "033e8c52eecd66c23cd2f4603e12a715e8c2b46e47c60d05fa668ada5e96f04e"
+        },
+        "base_mse_best": {
+          "epoch": 406,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_sha256": "7daba5c5cdd6e5fe1b2ad5594f18b3955c70d0a4826472e6105d0253b016c0b5"
+        },
+        "final": {
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_sha256": "20c83a88df7cc42228f07810c62ed78d3ed0cceb62bd7730dc74ea83d9c57ff9"
+        }
+      }
+    },
+    {
+      "config_id": "V6_03_V5best_P1h",
+      "source_host": "wsl2",
+      "snapshot_path": "wsl2/V6_03_V5best_P1h",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_03_V5best_P1h",
+      "remote_log_path": null,
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "training_commit": "950a1ce",
+      "checkpoints": {
+        "point_global_best": {
+          "epoch": 111,
+          "prediction_file": "point_global_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
+        },
+        "sample_first_best": {
+          "epoch": 427,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_sha256": "e8cca4950e1b0f64048b82f8a65463befe21269538bbfd209f8b658241cfcd7b"
+        },
+        "base_mse_best": {
+          "epoch": 111,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_sha256": "973270def879e57eb49f93a43499995a5f89c69a77ad890aac3b960b1314d4d8"
+        },
+        "final": {
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_sha256": "b0338616f9695e80a2db8a93484480797ed9def2554070d3611b5d249545875e"
+        }
+      }
+    },
+    {
+      "config_id": "V6_04_V5best_P1h_DualAttention",
+      "source_host": "devbox",
+      "snapshot_path": "devbox/V6_04_V5best_P1h_DualAttention",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_04_V5best_P1h_DualAttention",
+      "remote_log_path": null,
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "training_commit": "950a1ce",
+      "checkpoints": {
+        "point_global_best": {
+          "epoch": 111,
+          "prediction_file": "point_global_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_sha256": "a127b020da14f3c7bdc544c0068ea755d9f58f1be0ee6cd627add914a6aec122"
+        },
+        "sample_first_best": {
+          "epoch": 415,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_sha256": "d8eee5c88344a1efa463d5b2435fd9b7c64e96c21422dae2f59b41e212448d01"
+        },
+        "base_mse_best": {
+          "epoch": 111,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_sha256": "68fd327cfd387f66fb9e359f4835d8876447063e96412f2ecc3a878f8b75abdf"
+        },
+        "final": {
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_sha256": "d1911f5c825f632cd8690669a8151cb101de288af8bb08fc064165245333fbcf"
+        }
+      }
+    }
+  ]
+}
