@@ -61,6 +61,7 @@ directory containing the frozen V6_03/V6_04 run artifacts and
 `<DATASET_ROOT>` with the canonical P1h directory.
 
 ```bash
+JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" \
 MPLCONFIGDIR=/tmp/heat3d-mpl XDG_CACHE_HOME=/tmp/heat3d-cache \
 python scripts/evaluate_heat3d_v6_volume_probe_ladder.py \
   --dataset <DATASET_ROOT> --input-root <RUN_INPUT_ROOT> \
@@ -69,6 +70,7 @@ python scripts/evaluate_heat3d_v6_volume_probe_ladder.py \
 ```
 
 ```bash
+JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" \
 MPLCONFIGDIR=/tmp/heat3d-mpl XDG_CACHE_HOME=/tmp/heat3d-cache \
 python scripts/evaluate_heat3d_v6_volume_probe_ladder.py \
   --dataset <DATASET_ROOT> --input-root <RUN_INPUT_ROOT> \
@@ -77,6 +79,7 @@ python scripts/evaluate_heat3d_v6_volume_probe_ladder.py \
 ```
 
 ```bash
+JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" \
 MPLCONFIGDIR=/tmp/heat3d-mpl XDG_CACHE_HOME=/tmp/heat3d-cache \
 python scripts/evaluate_heat3d_v6_volume_probe_ladder.py \
   --dataset <DATASET_ROOT> --input-root <RUN_INPUT_ROOT> \
@@ -85,6 +88,7 @@ python scripts/evaluate_heat3d_v6_volume_probe_ladder.py \
 ```
 
 ```bash
+JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" \
 MPLCONFIGDIR=/tmp/heat3d-mpl XDG_CACHE_HOME=/tmp/heat3d-cache \
 python scripts/evaluate_heat3d_v6_volume_probe_ladder.py \
   --dataset <DATASET_ROOT> --input-root <RUN_INPUT_ROOT> \

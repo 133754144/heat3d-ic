@@ -4,8 +4,12 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import json
+import os
 from pathlib import Path
+import resource
+import sys
 import time
 from typing import Any, Mapping, Sequence
 
@@ -15,7 +19,6 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[1]
-import sys
 
 for value in (ROOT, ROOT / "scripts"):
     if str(value) not in sys.path:
@@ -51,6 +54,28 @@ ALLOWED_MODELS = (
 
 class VolumeProbeError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class VolumeProbeV6Example(V6DualRobinExample):
+    """V6 example whose operator measure matches the frozen volume probe."""
+
+    operator_point_weights: np.ndarray
+
+    def v6_operator_point_weights(self) -> np.ndarray:
+        weights = np.asarray(self.operator_point_weights, dtype=np.float64)
+        if weights.shape != (self.condition.coords.shape[0],):
+            raise VolumeProbeError("operator-point weight shape drifted")
+        total = float(np.sum(weights))
+        if not np.all(np.isfinite(weights)) or np.any(weights <= 0.0) or total <= 0.0:
+            raise VolumeProbeError("operator-point weights are invalid")
+        return weights / total
+
+
+def _process_peak_rss_bytes() -> int:
+    value = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    # macOS reports bytes; Linux reports KiB.
+    return value if sys.platform == "darwin" else value * 1024
 
 
 def _memory_stats() -> dict[str, int | None]:
@@ -191,7 +216,7 @@ def _load_valid_examples(
                 ),
             }
             examples.append(
-                V6DualRobinExample(
+                VolumeProbeV6Example(
                     sample_id=sample_id,
                     condition=V1SteadyConditionInput(
                         coords=coords,
@@ -201,6 +226,7 @@ def _load_valid_examples(
                     ),
                     target=V1SteadyTarget(target_u=temperature[:, None]),
                     meta=enriched_meta,
+                    operator_point_weights=expansion,
                 )
             )
             targets[sample_id] = {
@@ -253,6 +279,7 @@ def _predict_timed(
     runtime_checkpoint = dict(checkpoint)
     runtime_checkpoint["train_only_normalization"] = checkpoint_stats
     install_checkpoint_feature_hooks(checkpoint_stats)
+    rss_before = _process_peak_rss_bytes()
     memory_before = _memory_stats()
     graph_started = time.perf_counter()
     groups = common._prepare_groups(
@@ -263,6 +290,7 @@ def _predict_timed(
     )
     graph_build_seconds = time.perf_counter() - graph_started
     memory_after_graph = _memory_stats()
+    rss_after_graph = _process_peak_rss_bytes()
 
     model_config = runner._resolve_decoder_bypass_model_config(
         dict(checkpoint["model_config"]), checkpoint_stats
@@ -280,6 +308,7 @@ def _predict_timed(
             predictions[str(sample_id)] = recovered[row, 0, :, 0]
     inference_seconds = time.perf_counter() - inference_started
     memory_after_inference = _memory_stats()
+    rss_after_inference = _process_peak_rss_bytes()
     if len(predictions) != len(examples):
         raise VolumeProbeError(f"{run_dir.name}: prediction count drifted")
     peak_candidates = [
@@ -292,6 +321,8 @@ def _predict_timed(
         "checkpoint_kind": "point_global_best",
         "checkpoint_epoch": int(checkpoint["epoch"]),
         "checkpoint_sha256": common._sha256(checkpoint_path),
+        "run_config_sha256": common._sha256(run_config_path),
+        "loss_summary_sha256": common._sha256(summary_path),
         "training_commit": str(checkpoint["git_commit"]),
         "parameter_count": int(checkpoint["param_count"]),
         "global_context_fit_population": "train_only",
@@ -302,6 +333,13 @@ def _predict_timed(
         "graph_build_seconds": float(graph_build_seconds),
         "inference_seconds": float(inference_seconds),
         "peak_memory_bytes": max(peak_candidates) if peak_candidates else None,
+        "gpu_memory": "N/A_CPU_only",
+        "process_peak_rss_bytes": max(
+            rss_before, rss_after_graph, rss_after_inference
+        ),
+        "process_peak_rss_before_bytes": rss_before,
+        "process_peak_rss_after_graph_bytes": rss_after_graph,
+        "process_peak_rss_after_inference_bytes": rss_after_inference,
         "memory_stats_before": memory_before,
         "memory_stats_after_graph": memory_after_graph,
         "memory_stats_after_inference": memory_after_inference,
@@ -391,6 +429,15 @@ def main() -> int:
         )
         return 0
 
+    if os.environ.get("JAX_PLATFORMS") != "cpu":
+        raise VolumeProbeError("formal evaluation requires JAX_PLATFORMS=cpu")
+    if os.environ.get("CUDA_VISIBLE_DEVICES") != "":
+        raise VolumeProbeError(
+            'formal evaluation requires CUDA_VISIBLE_DEVICES=""'
+        )
+    if any(device.platform != "cpu" for device in jax.devices()):
+        raise VolumeProbeError("formal evaluation resolved a non-CPU JAX device")
+
     probe = _probe_from_ladder(args.ladder, args.resolution)
     examples, targets, public = _load_valid_examples(
         dataset_root=args.dataset.resolve(),
@@ -425,6 +472,15 @@ def main() -> int:
         "evaluation_role": "valid_iid",
         "test_hard_accessed": False,
         "training_executed": False,
+        "formal_inference_executed": True,
+        "execution_environment": {
+            "jax_platforms": os.environ["JAX_PLATFORMS"],
+            "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"],
+            "device": str(jax.devices()[0]),
+            "gpu_used": False,
+            "gpu_memory": "N/A",
+            "batch_size": args.batch_size,
+        },
         "checkpoint_selection_modified": False,
         "models": output_models,
     }
