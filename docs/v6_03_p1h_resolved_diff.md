@@ -1,5 +1,10 @@
 # V6_03 P1h resolved-config diff
 
+> **2026-07-24 lifecycle amendment.** P1h-v0 is now the sole default V6-layer
+> canonical dataset and V6_03 is the canonical model candidate. The diff below
+> is frozen historical evidence from config preparation; neither V6_02 nor
+> V6_03 YAML metadata was retroactively changed.
+
 Status: **passed**. `V6_03_V5best_P1h` resolves from
 `V6_02_V5best`; the dataset binding is the only scientific variable.
 P1g-v0 remains the sole global canonical dataset and P1h-v0 is a

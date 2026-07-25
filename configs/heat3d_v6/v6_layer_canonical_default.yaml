@@ -1,0 +1,29 @@
+schema_version: heat3d_v6_layer_canonical_default_v1
+dataset_id: heat3d_v6_p1h_shared_support1024_v0
+lifecycle_status: canonical
+subset_path: data/heat3d_v6_p1h_shared_support1024_v0
+manifest_path: configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json
+manifest_sha256: 324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5
+full_field_archive: full_fields.h5
+full_field_archive_sha256: f58141b3f365c5c90a57ec3802ae57c7e7afbf83ba0ab988060a617164b14c00
+sample_count: 1024
+group_count: 128
+split_counts:
+  train: 768
+  valid_iid: 128
+  test_iid: 128
+operator_node_count: 1024
+shared_coordinate_sha256: 2bda8e710c8c9f15b180783dc12132280253124688d3e3177296e97527798745
+shared_graph_sha256: 6d3d62830755872194766aad2a8ac7b0f1fabec57840dac78fcb2642a6ed771c
+canonical_model_candidate: V6_03_V5best_P1h
+registered_ablation: V6_04_V5best_P1h_DualAttention
+archived_geometry_adaptive_baseline:
+  dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
+  lifecycle_status: archived_geometry_adaptive_baseline
+  historical_run_bindings:
+    - V6_01_V4best
+    - V6_02_V5best
+guardrails:
+  historical_configs_modified: false
+  historical_artifacts_overwritten: false
+  test_hard_accessed_for_closeout_selection: false

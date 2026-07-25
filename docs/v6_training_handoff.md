@@ -1,5 +1,14 @@
 # V6 canonical training handoff
 
+> **2026-07-24 canonical amendment.** The sole default V6-layer dataset is now
+> `heat3d_v6_p1h_shared_support1024_v0`. P1g-v0 is preserved as
+> `archived_geometry_adaptive_baseline` so the immutable V6_01/V6_02 configs
+> and artifacts remain replayable. The material below is the historical P1g
+> handoff record and is intentionally not rewritten. Current defaults and
+> lifecycle are frozen in
+> `configs/heat3d_v6/v6_layer_canonical_default.yaml` and
+> `configs/heat3d_v6/v6_training_dataset_lifecycle.csv`.
+
 ## Canonical dataset and physical scale
 
 Only `heat3d_v6_p1g_geometry_deconfounded1024_v0` is accepted for V6-layer

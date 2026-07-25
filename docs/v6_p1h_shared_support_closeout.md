@@ -1,5 +1,11 @@
 # V6-P1h shared solver-node support closeout
 
+> **2026-07-24 lifecycle amendment.** P1h-v0 has passed the downstream
+> training/runtime qualification and is now the sole default V6-layer
+> canonical dataset. P1g-v0 remains an immutable
+> `archived_geometry_adaptive_baseline`; no historical P1g data, manifest,
+> config, checkpoint, or prediction was removed or rewritten.
+
 Status: `passed`. The dataset contains 1024 cases in 128 frozen P1g groups. All samples share one ordered 1024-node support and one graph (`6d3d62830755872194766aad2a8ac7b0f1fabec57840dac78fcb2642a6ed771c`).
 
 The original-field search inspected 63,598 NumPy files across all configured local
@@ -10,7 +16,7 @@ difference. Full generation took 1603.077 s, including 1527.901 s in the solver.
 
 Source support points: min=4, p05=5.0, median=10.0; zero-covered sources=0. Full-field CV-RMSE median=1.075332 K and p95=2.209430 K.
 
-The support was selected from stack/layer/interface/Robin/source-allowed geometry only. No temperature or test label entered proposal selection. P1g and the canonical dataset designation remain unchanged.
+The support was selected from stack/layer/interface/Robin/source-allowed geometry only. No temperature or test label entered proposal selection. The original statement that the canonical designation remained unchanged records the P1h construction-time decision; the lifecycle amendment above supersedes only that later designation.
 
 The reusable dataset and full-field archive are stored at
 `/Users/xuyihua/.codex/worktrees/5c97/3D IC Heat/data/heat3d_v6_p1h_shared_support1024_v0`.

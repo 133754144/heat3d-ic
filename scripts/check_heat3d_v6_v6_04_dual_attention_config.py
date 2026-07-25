@@ -30,6 +30,7 @@ from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
 from rigno.heat3d_v6_dataset import (  # noqa: E402
     CANONICAL_V6_DATASET_ID,
     EXPECTED_SPLIT_COUNTS,
+    P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID,
     SHARED_SUPPORT_V6_DATASET_ID,
     Heat3DV6DualRobinDataset,
 )
@@ -211,7 +212,10 @@ def _report(dataset_root: Path) -> dict[str, Any]:
     assert candidate["run"]["batch_size"] == candidate["run"]["micro_batch_size"] == 24
     assert candidate["run"]["epoch_wise_batch_regrouping"] is False
     assert candidate["metadata"]["training_started"] is False
-    assert candidate["metadata"]["canonical_dataset_id"] == CANONICAL_V6_DATASET_ID
+    assert (
+        candidate["metadata"]["canonical_dataset_id"]
+        == P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID
+    )
     assert candidate["metadata"]["candidate_dataset_id"] == SHARED_SUPPORT_V6_DATASET_ID
     assert candidate["metadata"]["dataset_lifecycle_status"] == "canonical_candidate"
     for key in ("execution_host", "training_commit", "runner_pid", "launch_timestamp_utc"):

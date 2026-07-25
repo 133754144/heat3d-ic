@@ -24,11 +24,14 @@ from rigno.heat3d_v1_native_supervised import (
 from rigno.models.operator import Inputs
 
 
-CANONICAL_V6_DATASET_ID = "heat3d_v6_p1g_geometry_deconfounded1024_v0"
+P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID = (
+    "heat3d_v6_p1g_geometry_deconfounded1024_v0"
+)
 SHARED_SUPPORT_V6_DATASET_ID = "heat3d_v6_p1h_shared_support1024_v0"
+CANONICAL_V6_DATASET_ID = SHARED_SUPPORT_V6_DATASET_ID
 SUPPORTED_V6_DATASET_IDS = {
+    P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID,
     CANONICAL_V6_DATASET_ID,
-    SHARED_SUPPORT_V6_DATASET_ID,
 }
 V6_DUAL_ROBIN_CONDITION_FEATURES = (
     "k_x",

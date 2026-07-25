@@ -28,6 +28,7 @@ from rigno.heat3d_v2_runner_command import build_training_command  # noqa: E402
 from rigno.heat3d_v6_dataset import (  # noqa: E402
     CANONICAL_V6_DATASET_ID,
     EXPECTED_SPLIT_COUNTS,
+    P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID,
     SHARED_SUPPORT_V6_DATASET_ID,
     Heat3DV6DualRobinDataset,
 )
@@ -147,7 +148,10 @@ def _report(dataset_root: Path) -> dict[str, Any]:
     assert candidate["run"]["epoch_wise_batch_regrouping"] is False
     assert candidate["export"]["selection_metric"] == base["export"]["selection_metric"]
     assert candidate["metadata"]["training_started"] is False
-    assert candidate["metadata"]["canonical_dataset_id"] == CANONICAL_V6_DATASET_ID
+    assert (
+        candidate["metadata"]["canonical_dataset_id"]
+        == P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID
+    )
     assert candidate["metadata"]["candidate_dataset_id"] == SHARED_SUPPORT_V6_DATASET_ID
     assert candidate["metadata"]["dataset_lifecycle_status"] == "canonical_candidate"
     for key in ("execution_host", "training_commit", "runner_pid", "launch_timestamp_utc"):
@@ -196,9 +200,12 @@ def _report(dataset_root: Path) -> dict[str, Any]:
     with LIFECYCLE_PATH.open(newline="", encoding="utf-8") as handle:
         lifecycle = list(csv.DictReader(handle))
     canonical = [row for row in lifecycle if row["lifecycle_status"] == "canonical"]
-    candidates = [row for row in lifecycle if row["lifecycle_status"] == "canonical_candidate"]
+    candidates = [
+        row for row in lifecycle
+        if row["lifecycle_status"] == "canonical_candidate"
+    ]
     assert len(canonical) == 1 and canonical[0]["dataset_id"] == CANONICAL_V6_DATASET_ID
-    assert len(candidates) == 1 and candidates[0]["dataset_id"] == SHARED_SUPPORT_V6_DATASET_ID
+    assert not candidates
 
     command = _dry_run_command(candidate)
     return {
@@ -257,8 +264,11 @@ def _report(dataset_root: Path) -> dict[str, Any]:
         },
         "canonical": {
             "global_dataset_id": CANONICAL_V6_DATASET_ID,
+            "historical_config_canonical_dataset_id": (
+                P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID
+            ),
             "candidate_dataset_id": SHARED_SUPPORT_V6_DATASET_ID,
-            "global_canonical_changed": False,
+            "global_canonical_changed_after_training_closeout": True,
         },
     }
 
@@ -272,8 +282,10 @@ def _markdown(report: Mapping[str, Any]) -> str:
 
 Status: **{report['status']}**. `V6_03_V5best_P1h` resolves from
 `V6_02_V5best`; the dataset binding is the only scientific variable.
-P1g-v0 remains the sole global canonical dataset and P1h-v0 is a
-`canonical_candidate`.
+The resolved diff preserves the historical preparation-time metadata. Under
+the later dataset closeout, P1h-v0 is the sole global canonical dataset,
+P1g-v0 is the archived geometry-adaptive baseline, and V6_03 is the canonical
+model candidate.
 
 ## Resolved leaf differences
 

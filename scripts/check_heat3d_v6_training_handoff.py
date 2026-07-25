@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the canonical V6 P1g-v0 training handoff without training."""
+"""Check the historical V6 P1g-v0 training handoff without training."""
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ from rigno.heat3d_v6_dataset import (  # noqa: E402
     CANONICAL_V6_DATASET_ID,
     EXPECTED_SPLIT_COUNTS,
     Heat3DV6DualRobinDataset,
+    P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID,
     V6_DUAL_ROBIN_CONDITION_FEATURES,
 )
 from rigno.heat3d_v6_global_context import (  # noqa: E402
@@ -45,7 +46,7 @@ CONFIGS = {
         ROOT / "configs/heat3d_v5/V4P5_42_canonical.yaml",
     ),
 }
-DATA_ROOT = ROOT / "data" / CANONICAL_V6_DATASET_ID
+DATA_ROOT = ROOT / "data" / P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID
 MANIFEST = ROOT / "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json"
 AMENDMENT = ROOT / "configs/heat3d_v6/v6_p1g_v0_acceptance_amendment.json"
 LIFECYCLE = ROOT / "configs/heat3d_v6/v6_training_dataset_lifecycle.csv"
@@ -112,7 +113,7 @@ def _check_baseline_diff(config_id: str, candidate: Mapping[str, Any], base: Map
     }
     allowed_model = {"global_context_feature_names"} if config_id == "V6_02_V5best" else set()
     assert model_diffs == allowed_model, f"{config_id}: unexpected model diff {sorted(model_diffs)}"
-    assert candidate["dataset"]["name"] == CANONICAL_V6_DATASET_ID
+    assert candidate["dataset"]["name"] == P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID
     assert candidate["dataset"]["loader"] == "v6_dual_robin_manifest_v1"
     assert candidate["dataset"]["split_map_path"] is None
     assert candidate["run"]["batch_size"] == 24
@@ -223,6 +224,7 @@ def main() -> int:
     report = {
         "status": "passed",
         "canonical_dataset_id": CANONICAL_V6_DATASET_ID,
+        "historical_handoff_dataset_id": P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID,
         "manifest_sha256": hashlib.sha256(MANIFEST.read_bytes()).hexdigest(),
         "split_counts": EXPECTED_SPLIT_COUNTS,
         "group_locked": True,
