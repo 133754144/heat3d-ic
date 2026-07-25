@@ -1,0 +1,31 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_03_V5best_P1h_seed2
+extends: V6_03_V5best_P1h.yaml
+overrides:
+  description: >-
+    V6_03 canonical P1h seed2 replication. Relative to V6_03 seed0, the only
+    scientific changes are optimizer/model/batch-order/graph seeds from 0 to 2.
+    Training is not started by this preparation.
+  optimizer:
+    seed: 2
+    model_seed: 2
+    batch_order_seed: 2
+    graph_seed: 2
+  export:
+    output_dir: output/heat3d_v6_runs/V6_03_V5best_P1h_seed2
+    run_name: V6_03_V5best_P1h_seed2
+  metadata:
+    phase: v6_p1h_multiseed
+    experiment_role: canonical_model_seed_replication
+    seed_parent_config_id: V6_03_V5best_P1h
+    seed_index: 2
+    canonical_dataset_id: heat3d_v6_p1h_shared_support1024_v0
+    candidate_dataset_id: heat3d_v6_p1h_shared_support1024_v0
+    dataset_lifecycle_status: canonical
+    training_started: false
+    execution_host: null
+    training_commit: null
+    runner_pid: null
+    launch_timestamp_utc: null
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v6_logs/V6_03_V5best_P1h_seed2.log
