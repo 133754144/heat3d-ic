@@ -8,10 +8,14 @@
     "export.output_dir",
     "export.run_name",
     "metadata.candidate_dataset_id",
+    "metadata.canonical_dataset_id",
     "metadata.dataset_lifecycle_status",
     "metadata.execution_host",
     "metadata.launch_timestamp_utc",
     "metadata.log_path",
+    "metadata.model_applicability",
+    "metadata.model_lifecycle_status",
+    "metadata.model_run_role",
     "metadata.runner_pid",
     "metadata.training_commit",
     "metadata.training_started"
@@ -22,8 +26,9 @@
   "candidate_config_id": "V6_03_V5best_P1h",
   "canonical": {
     "candidate_dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
-    "global_canonical_changed": false,
-    "global_dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0"
+    "global_canonical_changed_after_training_closeout": true,
+    "global_dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+    "historical_config_canonical_dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0"
   },
   "dataset": {
     "archive_sha256": "f58141b3f365c5c90a57ec3802ae57c7e7afbf83ba0ab988060a617164b14c00",
@@ -319,10 +324,14 @@
     "export.output_dir",
     "export.run_name",
     "metadata.candidate_dataset_id",
+    "metadata.canonical_dataset_id",
     "metadata.dataset_lifecycle_status",
     "metadata.execution_host",
     "metadata.launch_timestamp_utc",
     "metadata.log_path",
+    "metadata.model_applicability",
+    "metadata.model_lifecycle_status",
+    "metadata.model_run_role",
     "metadata.runner_pid",
     "metadata.training_commit",
     "metadata.training_started"
@@ -351,7 +360,7 @@
     {
       "path": "description",
       "v6_02": "V6 canonical P1g-v0 random-init transfer of V4P5_42_canonical through the dual-Robin runtime adapter. No V5 checkpoint is loaded.",
-      "v6_03": "V6 canonical-candidate P1h shared-support transfer of V6_02_V5best. The only scientific variable is the dataset binding; P1g remains the global canonical V6-layer dataset and no prior checkpoint is loaded."
+      "v6_03": "Canonical V6 P1h shared-support model configuration transferred from V6_02_V5best. The only scientific variable versus V6_02 is the dataset binding. P1h is the sole canonical V6-layer dataset; P1g remains an immutable archived baseline, and no prior checkpoint is loaded. Model applicability is frozen to the P1h source-aware support family."
     },
     {
       "path": "export.output_dir",
@@ -369,9 +378,14 @@
       "v6_03": "heat3d_v6_p1h_shared_support1024_v0"
     },
     {
+      "path": "metadata.canonical_dataset_id",
+      "v6_02": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+      "v6_03": "heat3d_v6_p1h_shared_support1024_v0"
+    },
+    {
       "path": "metadata.dataset_lifecycle_status",
       "v6_02": null,
-      "v6_03": "canonical_candidate"
+      "v6_03": "canonical"
     },
     {
       "path": "metadata.execution_host",
@@ -387,6 +401,21 @@
       "path": "metadata.log_path",
       "v6_02": "output/heat3d_v6_logs/V6_02_V5best.log",
       "v6_03": "output/heat3d_v6_logs/V6_03_V5best_P1h.log"
+    },
+    {
+      "path": "metadata.model_applicability",
+      "v6_02": null,
+      "v6_03": "P1h_source_aware_support_family_only"
+    },
+    {
+      "path": "metadata.model_lifecycle_status",
+      "v6_02": null,
+      "v6_03": "canonical"
+    },
+    {
+      "path": "metadata.model_run_role",
+      "v6_02": null,
+      "v6_03": "reference_seed0"
     },
     {
       "path": "metadata.runner_pid",

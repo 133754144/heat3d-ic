@@ -1,14 +1,11 @@
 # V6_03 P1h resolved-config diff
 
-> **2026-07-24 lifecycle amendment.** P1h-v0 is now the sole default V6-layer
-> canonical dataset and V6_03 is the canonical model candidate. The diff below
-> is frozen historical evidence from config preparation; neither V6_02 nor
-> V6_03 YAML metadata was retroactively changed.
-
 Status: **passed**. `V6_03_V5best_P1h` resolves from
 `V6_02_V5best`; the dataset binding is the only scientific variable.
-P1g-v0 remains the sole global canonical dataset and P1h-v0 is a
-`canonical_candidate`.
+The resolved diff preserves the historical preparation-time metadata. Under
+the later dataset closeout, P1h-v0 is the sole global canonical dataset,
+P1g-v0 is the archived geometry-adaptive baseline, and V6_03 is the canonical
+model candidate.
 
 ## Resolved leaf differences
 
@@ -18,14 +15,18 @@ P1g-v0 remains the sole global canonical dataset and P1h-v0 is a
 | `dataset.manifest_path` | `configs/heat3d_v6/v6_p1g_geometry_deconfounded1024_manifest.json` | `configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json` |
 | `dataset.name` | `heat3d_v6_p1g_geometry_deconfounded1024_v0` | `heat3d_v6_p1h_shared_support1024_v0` |
 | `dataset.subset_path` | `data/heat3d_v6_p1g_geometry_deconfounded1024_v0` | `data/heat3d_v6_p1h_shared_support1024_v0` |
-| `description` | `V6 canonical P1g-v0 random-init transfer of V4P5_42_canonical through the dual-Robin runtime adapter. No V5 checkpoint is loaded.` | `V6 canonical-candidate P1h shared-support transfer of V6_02_V5best. The only scientific variable is the dataset binding; P1g remains the global canonical V6-layer dataset and no prior checkpoint is loaded.` |
+| `description` | `V6 canonical P1g-v0 random-init transfer of V4P5_42_canonical through the dual-Robin runtime adapter. No V5 checkpoint is loaded.` | `Canonical V6 P1h shared-support model configuration transferred from V6_02_V5best. The only scientific variable versus V6_02 is the dataset binding. P1h is the sole canonical V6-layer dataset; P1g remains an immutable archived baseline, and no prior checkpoint is loaded. Model applicability is frozen to the P1h source-aware support family.` |
 | `export.output_dir` | `output/heat3d_v6_runs/V6_02_V5best` | `output/heat3d_v6_runs/V6_03_V5best_P1h` |
 | `export.run_name` | `V6_02_V5best` | `V6_03_V5best_P1h` |
 | `metadata.candidate_dataset_id` | `None` | `heat3d_v6_p1h_shared_support1024_v0` |
-| `metadata.dataset_lifecycle_status` | `None` | `canonical_candidate` |
+| `metadata.canonical_dataset_id` | `heat3d_v6_p1g_geometry_deconfounded1024_v0` | `heat3d_v6_p1h_shared_support1024_v0` |
+| `metadata.dataset_lifecycle_status` | `None` | `canonical` |
 | `metadata.execution_host` | `devbox` | `None` |
 | `metadata.launch_timestamp_utc` | `2026-07-22T19:29:32Z` | `None` |
 | `metadata.log_path` | `output/heat3d_v6_logs/V6_02_V5best.log` | `output/heat3d_v6_logs/V6_03_V5best_P1h.log` |
+| `metadata.model_applicability` | `None` | `P1h_source_aware_support_family_only` |
+| `metadata.model_lifecycle_status` | `None` | `canonical` |
+| `metadata.model_run_role` | `None` | `reference_seed0` |
 | `metadata.runner_pid` | `389637` | `None` |
 | `metadata.training_commit` | `ec72010250fcd210ae29c9d2dc48371de8b057c3` | `None` |
 | `metadata.training_started` | `True` | `False` |

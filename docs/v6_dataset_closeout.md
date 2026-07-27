@@ -10,7 +10,7 @@ same ordered 1,024 solver-node coordinates and graph.
 `heat3d_v6_p1g_geometry_deconfounded1024_v0` is retained as
 `archived_geometry_adaptive_baseline`. Its data and manifest remain intact,
 and the immutable V6_01/V6_02 configs retain their historical P1g bindings.
-V6_03 is the canonical P1h model candidate; V6_04 is the DualAttention
+V6_03 is the canonical P1h model configuration; V6_04 is the DualAttention
 ablation. No historical configuration or run artifact was overwritten.
 
 The machine-readable default and lifecycle sources are:
@@ -57,7 +57,7 @@ Point-global checkpoint results on the common probe:
 | Model | Point-global CV | Sample-first CV | Raw CV RMSE | Role |
 |---|---:|---:|---:|---|
 | V6_02 | 216.636406% | 218.865342% | 89.415544 K | historical P1g adaptive-support baseline |
-| V6_03 | 1.851389% | 1.855461% | 0.764151 K | canonical P1h model candidate |
+| V6_03 | 1.851389% | 1.855461% | 0.764151 K | canonical P1h model configuration |
 | V6_04 | 1.834161% | 1.813109% | 0.757040 K | DualAttention ablation |
 
 V6_03 and V6_04 both transfer cleanly from the shared 1,024-node training

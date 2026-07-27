@@ -42,13 +42,12 @@ IDENTITY_PATHS = {
     "description",
     "export.output_dir",
     "export.run_name",
-    "metadata.canonical_dataset_id",
-    "metadata.dataset_lifecycle_status",
     "metadata.experiment_role",
     "metadata.log_path",
     "metadata.phase",
     "metadata.seed_index",
     "metadata.seed_parent_config_id",
+    "metadata.model_run_role",
 }
 
 

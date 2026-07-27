@@ -1,8 +1,10 @@
 schema_version: heat3d_v2_config_draft_v0
 config_role: controlled
-description: V6 canonical-candidate P1h shared-support transfer of V6_02_V5best. The
-  only scientific variable is the dataset binding; P1g remains the global canonical
-  V6-layer dataset and no prior checkpoint is loaded.
+description: Canonical V6 P1h shared-support model configuration transferred from
+  V6_02_V5best. The only scientific variable versus V6_02 is the dataset binding.
+  P1h is the sole canonical V6-layer dataset; P1g remains an immutable archived baseline,
+  and no prior checkpoint is loaded. Model applicability is frozen to the P1h source-aware
+  support family.
 dataset:
   name: heat3d_v6_p1h_shared_support1024_v0
   subset_path: data/heat3d_v6_p1h_shared_support1024_v0
@@ -274,7 +276,7 @@ metadata:
   scientific_conclusion_source: v5-final-threshold-unmet
   phase: v6_training_handoff
   baseline_config_id: V4P5_42_canonical
-  canonical_dataset_id: heat3d_v6_p1g_geometry_deconfounded1024_v0
+  canonical_dataset_id: heat3d_v6_p1h_shared_support1024_v0
   training_started: false
   execution_host: null
   training_commit: null
@@ -292,5 +294,8 @@ metadata:
   cross_geometry_dummy_edge_padding: true
   b24_execution_mode: one_real_B24_forward_backward_per_update
   candidate_dataset_id: heat3d_v6_p1h_shared_support1024_v0
-  dataset_lifecycle_status: canonical_candidate
+  dataset_lifecycle_status: canonical
+  model_lifecycle_status: canonical
+  model_run_role: reference_seed0
+  model_applicability: P1h_source_aware_support_family_only
 config_id: V6_03_V5best_P1h

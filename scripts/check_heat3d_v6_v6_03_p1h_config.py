@@ -56,10 +56,14 @@ ALLOWED_DIFF_PATHS = {
     "export.output_dir",
     "export.run_name",
     "metadata.candidate_dataset_id",
+    "metadata.canonical_dataset_id",
     "metadata.dataset_lifecycle_status",
     "metadata.execution_host",
     "metadata.launch_timestamp_utc",
     "metadata.log_path",
+    "metadata.model_applicability",
+    "metadata.model_lifecycle_status",
+    "metadata.model_run_role",
     "metadata.runner_pid",
     "metadata.training_commit",
     "metadata.training_started",
@@ -150,10 +154,12 @@ def _report(dataset_root: Path) -> dict[str, Any]:
     assert candidate["metadata"]["training_started"] is False
     assert (
         candidate["metadata"]["canonical_dataset_id"]
-        == P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID
+        == SHARED_SUPPORT_V6_DATASET_ID
     )
     assert candidate["metadata"]["candidate_dataset_id"] == SHARED_SUPPORT_V6_DATASET_ID
-    assert candidate["metadata"]["dataset_lifecycle_status"] == "canonical_candidate"
+    assert candidate["metadata"]["dataset_lifecycle_status"] == "canonical"
+    assert candidate["metadata"]["model_lifecycle_status"] == "canonical"
+    assert candidate["metadata"]["model_run_role"] == "reference_seed0"
     for key in ("execution_host", "training_commit", "runner_pid", "launch_timestamp_utc"):
         assert candidate["metadata"][key] is None, f"historical metadata retained: {key}"
     assert candidate["metadata"]["micro_batches_per_epoch"] == 32
