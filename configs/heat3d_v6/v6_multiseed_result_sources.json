@@ -1,0 +1,89 @@
+{
+  "schema_version": "heat3d_v6_multiseed_result_sources_v1",
+  "evaluation_role": "valid_iid",
+  "test_accessed": false,
+  "runs": [
+    {
+      "config_id": "V6_03_V5best_P1h_seed1",
+      "seed": 1,
+      "source_host": "wsl2",
+      "snapshot_path": "wsl2/V6_03_V5best_P1h_seed1",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_03_V5best_P1h_seed1",
+      "remote_log_path": "output/heat3d_v6_logs/V6_03_V5best_P1h_seed1.log",
+      "remote_log_available": false,
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "training_commit": "7d30b78",
+      "checkpoints": {
+        "point_global_best": {
+          "epoch": 254,
+          "prediction_file": "point_global_best_predictions.npz",
+          "prediction_sha256": "51c588bba80c5639b50ec5b4da821cc8b9fb9cb48b6a76b36f236bdd7a47a478",
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_sha256": "36937e4898fa633ba03abf1413a852c1e43130566e2c4a443f12f650536512ae"
+        },
+        "sample_first_best": {
+          "epoch": 379,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "prediction_sha256": "7d662a3e4237bde4e6add483b488ac713d0f9b139912bc0bca2f565ec7b4be6b",
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_sha256": "0680d7d174ce356081ab488d63df7170f775a35e12c57b74d2a906226333604d"
+        },
+        "base_mse_best": {
+          "epoch": 254,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "prediction_sha256": "a72592c1e54fcd7cff28174237fa40c003a7d81e89f57e4b3c8a8f8d09d73a09",
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_sha256": "b0d541f5635a1f5e8cbd62a5d4776b91bcee69020b91a963a54b56d9d74d3c4b"
+        },
+        "final": {
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "prediction_sha256": "709a9d88c19c13f808700b3c9cdf76f6974451c7a64355b34a2ac60791c0cd13",
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_sha256": "8f96dded12eb4c5eb9f980137431d4dedfd173b420793c662f7f50f31184bd92"
+        }
+      }
+    },
+    {
+      "config_id": "V6_03_V5best_P1h_seed2",
+      "seed": 2,
+      "source_host": "devbox",
+      "snapshot_path": "devbox/V6_03_V5best_P1h_seed2",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_03_V5best_P1h_seed2",
+      "remote_log_path": "output/heat3d_v6_logs/V6_03_V5best_P1h_seed2.log",
+      "remote_log_available": false,
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "training_commit": "7d30b78",
+      "checkpoints": {
+        "point_global_best": {
+          "epoch": 139,
+          "prediction_file": "point_global_best_predictions.npz",
+          "prediction_sha256": "a1e88d445907a641ae2f585cfbf53fd0e74f6aadb7f1f3f75b706bb01f142edc",
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_sha256": "88b77e0c4835f4dcfa767a0f6be89d173b29b46db21530b9c38a47325b3adc4d"
+        },
+        "sample_first_best": {
+          "epoch": 434,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "prediction_sha256": "8ea94e833c2cebd67405c575f999e96fd6b18f47f1b852c161460281ba9c9b44",
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_sha256": "d82c27d4c13c37fcac5a810e3f355962f28f0d629aed4cfaf25b1f61fb22e728"
+        },
+        "base_mse_best": {
+          "epoch": 139,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "prediction_sha256": "49171001b06ca82733a25fdf6feec8bce1bb3a1ad9011631986c6b8129e660f6",
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_sha256": "81eb93b44da1c762d812be275f6004ddeea016132a98e4d29220b27f7aa9992c"
+        },
+        "final": {
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "prediction_sha256": "1ddcbe11d92bf26ae7314a53ed59d1e0e91348352dc2bca7a25bba86e40cb706",
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_sha256": "1e56dbce6da8c4eec2a97aee332a4da9a986c851ac92d6d5711aac198724093e"
+        }
+      }
+    }
+  ]
+}
