@@ -287,6 +287,19 @@ def build_training_command(
     elif graph.get("repair_r2p") is False:
         command.append("--no-repair-r2p")
     _append_option(command, "--min-physical-coverage", graph.get("min_physical_coverage"))
+    _append_option(
+        command, "--discrete-graph-backend", graph.get("discrete_graph_backend")
+    )
+    _append_option(
+        command,
+        "--discrete-graph-chunk-size",
+        graph.get("discrete_graph_chunk_size"),
+    )
+    _append_option(
+        command,
+        "--discrete-coverage-multiplier",
+        graph.get("discrete_coverage_multiplier"),
+    )
 
     if export.get("save_final_predictions") is False:
         command.append("--no-save-predictions")

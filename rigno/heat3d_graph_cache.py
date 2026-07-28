@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 from pathlib import Path
 import time
@@ -13,6 +14,8 @@ import jax.numpy as jnp
 import numpy as np
 
 from rigno.models.rigno import RegionInteractionGraphMetadata
+from rigno.models.rigno import RegionInteractionGraphBuilder
+from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
 
 
 METADATA_FIELDS = RegionInteractionGraphMetadata._fields
@@ -56,17 +59,31 @@ def cache_key_payload(
     support_hash: str,
     graph_config: Mapping[str, Any],
     graph_seed: int,
-    commit: str,
+    graph_builder_fingerprint: str,
 ) -> dict[str, Any]:
-    if len(support_hash) != 64 or len(commit) != 40:
-        raise ValueError("cache support hash/commit must be full SHA values")
+    if len(support_hash) != 64 or len(graph_builder_fingerprint) != 64:
+        raise ValueError("cache support/code fingerprints must be full SHA256 values")
     return {
-        "schema_version": "heat3d_graph_cache_key_v1",
+        "schema_version": "heat3d_graph_cache_key_v2",
         "support_hash": support_hash,
         "graph_config": dict(sorted(graph_config.items())),
         "graph_seed": int(graph_seed),
-        "commit": commit,
+        "graph_builder_fingerprint": graph_builder_fingerprint,
     }
+
+
+def graph_builder_code_fingerprint() -> str:
+    """Hash only code that defines Heat3D graph metadata and edge construction."""
+
+    digest = hashlib.sha256()
+    for name, value in (
+        ("Heat3DGraphBuilder", Heat3DGraphBuilder),
+        ("RegionInteractionGraphBuilder", RegionInteractionGraphBuilder),
+        ("RegionInteractionGraphMetadata", RegionInteractionGraphMetadata),
+    ):
+        digest.update(name.encode("utf-8"))
+        digest.update(inspect.getsource(value).encode("utf-8"))
+    return digest.hexdigest()
 
 
 def cache_key(payload: Mapping[str, Any]) -> str:

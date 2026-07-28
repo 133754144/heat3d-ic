@@ -52,16 +52,17 @@ def main() -> int:
         coords = np.asarray(handle["mesh/coords"], dtype=np.float64)
         layer_id = np.asarray(handle["mesh/layer_id"], dtype=np.int32)
         boundaries = np.asarray(handle["mesh/boundaries"], dtype=np.float64)
-        for resolution in (1024, 4096):
+        for resolution in (1024, 4096, 8192, 16384):
             probe = ladder["probes"][str(resolution)]
             indices = np.asarray(probe["indices"], dtype=np.int32)
             support = np.asarray(coords[indices], dtype=np.float32)
             rows = []
-            for backend in (
-                "dense_reference",
-                "chunked_numpy_v1",
-                "sparse_kdtree_v1",
-            ):
+            backends = (
+                ("dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1")
+                if resolution <= 4096
+                else ("chunked_numpy_v1", "sparse_kdtree_v1")
+            )
+            for backend in backends:
                 builder = Heat3DGraphBuilder(
                     **BASE_GRAPH_CONFIG, discrete_graph_backend=backend
                 )
@@ -102,11 +103,12 @@ def main() -> int:
             graph_rows.append(
                 {
                     "resolution": resolution,
+                    "reference_backend": rows[0]["backend"],
                     "metadata_hash": rows[0]["metadata_hash"],
                     "graph_hash": rows[0]["graph_hash"],
-                    "dense_build_seconds": rows[0]["build_seconds"],
-                    "chunked_build_seconds": rows[1]["build_seconds"],
-                    "sparse_kdtree_build_seconds": rows[2]["build_seconds"],
+                    "build_seconds": {
+                        row["backend"]: row["build_seconds"] for row in rows
+                    },
                 }
             )
         indices = np.asarray(ladder["probes"]["1024"]["indices"], dtype=np.int32)

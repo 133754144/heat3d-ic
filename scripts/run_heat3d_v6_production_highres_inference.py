@@ -33,6 +33,7 @@ from rigno.heat3d_graph_cache import (  # noqa: E402
     cache_key,
     cache_key_payload,
     file_sha256,
+    graph_builder_code_fingerprint,
     graph_hash,
     load_metadata,
     metadata_hash,
@@ -87,6 +88,17 @@ def _block(output: Mapping[str, Any]) -> None:
 
 def _distribution(values: Sequence[float]) -> dict[str, Any]:
     array = np.asarray(values, dtype=np.float64)
+    if len(array) == 0:
+        return {
+            "count": 0,
+            "mean": None,
+            "median": None,
+            "p95": None,
+            "std": None,
+            "min": None,
+            "max": None,
+            "values": [],
+        }
     return {
         "count": int(len(array)),
         "mean": float(np.mean(array)),
@@ -119,7 +131,7 @@ def _build_or_load_graph(
     graph_config: Mapping[str, Any],
     graph_seed: int,
     support_hash: str,
-    cache_commit: str,
+    graph_builder_fingerprint: str,
     cache_dir: Path,
     rebuild: bool,
     audit_equivalence: bool,
@@ -128,7 +140,7 @@ def _build_or_load_graph(
         support_hash=support_hash,
         graph_config=graph_config,
         graph_seed=graph_seed,
-        commit=cache_commit,
+        graph_builder_fingerprint=graph_builder_fingerprint,
     )
     key = cache_key(key_payload)
     path = cache_dir / f"graph_{len(example.condition.coords)}_{key}.npz"
@@ -306,10 +318,22 @@ def _prediction_equivalence(
 ) -> dict[str, Any]:
     if fresh_metadata is None:
         return {"audited": False, "reason": "fresh_metadata_not_requested"}
+    batch_size = len(group["sample_ids"])
+
+    def repeat_metadata(metadata):
+        return jax.tree_util.tree_map(
+            lambda value: (
+                value
+                if value is None or int(value.shape[0]) == batch_size
+                else np.repeat(np.asarray(value), batch_size, axis=0)
+            ),
+            metadata,
+        )
+
     cached_group = dict(group)
     fresh_group = dict(group)
-    cached_group["graphs"] = builder.build_graphs(cached_metadata)
-    fresh_group["graphs"] = builder.build_graphs(fresh_metadata)
+    cached_group["graphs"] = builder.build_graphs(repeat_metadata(cached_metadata))
+    fresh_group["graphs"] = builder.build_graphs(repeat_metadata(fresh_metadata))
     cached = runner._model_apply(model, params, cached_group)
     fresh = runner._model_apply(model, params, fresh_group)
     _block(cached)
@@ -384,11 +408,15 @@ def _full_field_metrics(
             coords=coords,
         )
         started = time.perf_counter()
+        label_read_seconds = 0.0
+        field_reconstruction_seconds = 0.0
+        metric_seconds = 0.0
         for row in valid_rows:
             sample_id = str(row["sample_id"])
             archive_row = archive_index[sample_id]
             meta = example_by_id[sample_id].meta
             reference = float(meta["v6_adapter"]["reference_temperature_K"])
+            phase_started = time.perf_counter()
             truth = (
                 np.asarray(
                     handle["samples/temperature_K"][archive_row], dtype=np.float64
@@ -396,10 +424,14 @@ def _full_field_metrics(
                 - reference
             )
             q = np.asarray(handle["samples/q_W_m3"][archive_row], dtype=np.float64)
+            label_read_seconds += time.perf_counter() - phase_started
+            phase_started = time.perf_counter()
             model_full = mapping.reconstruct(
                 np.asarray(predictions[sample_id], dtype=np.float64)
             ) - reference
             floor_full = mapping.reconstruct(truth[support_indices])
+            field_reconstruction_seconds += time.perf_counter() - phase_started
+            phase_started = time.perf_counter()
             accumulator.add(
                 kind="model",
                 sample_id=sample_id,
@@ -407,6 +439,7 @@ def _full_field_metrics(
                 truth_delta=truth,
                 q=q,
             )
+            metric_seconds += time.perf_counter() - phase_started
             accumulator.add(
                 kind="sampling_floor",
                 sample_id=sample_id,
@@ -425,6 +458,11 @@ def _full_field_metrics(
         "cache_load_or_save": map_io,
         "build": map_build,
         "reconstruction_and_metric_seconds_valid128": float(reconstruction_seconds),
+        "label_read_seconds_valid128": float(label_read_seconds),
+        "field_reconstruction_seconds_valid128": float(
+            field_reconstruction_seconds
+        ),
+        "metric_seconds_valid128": float(metric_seconds),
         "label_independent": True,
         "test_hard_accessed": False,
     }
@@ -439,10 +477,12 @@ def main() -> int:
     parser.add_argument("--resolution", type=int, default=4096)
     parser.add_argument("--cache-dir", type=Path, required=True)
     parser.add_argument("--reconstruction-cache-dir", type=Path, required=True)
-    parser.add_argument("--cache-commit", required=True)
+    parser.add_argument("--graph-builder-fingerprint")
+    parser.add_argument("--seed", choices=tuple(anchored.SEED_SPECS), default="seed0")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--warm-repeats", type=int, default=10)
+    parser.add_argument("--persistent-workflow-repeats", type=int, default=1)
     parser.add_argument(
         "--graph-backend",
         choices=("dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1"),
@@ -463,13 +503,18 @@ def main() -> int:
     parser.add_argument("--audit-cache-equivalence", action="store_true")
     parser.add_argument("--platform", choices=("cpu", "gpu"), required=True)
     args = parser.parse_args()
-    if _git_head() != args.cache_commit:
-        raise ProductionInferenceError("cache commit does not match checked-out HEAD")
+    graph_fingerprint = graph_builder_code_fingerprint()
+    if (
+        args.graph_builder_fingerprint is not None
+        and args.graph_builder_fingerprint != graph_fingerprint
+    ):
+        raise ProductionInferenceError("graph-builder code fingerprint drifted")
     actual_platform = jax.devices()[0].platform
     if args.platform == "cpu" and actual_platform != "cpu":
         raise ProductionInferenceError("requested CPU but JAX selected another platform")
     if args.platform == "gpu" and actual_platform not in {"gpu", "cuda"}:
         raise ProductionInferenceError("requested GPU but JAX did not select CUDA")
+    input_started = time.perf_counter()
     ladder = json.loads(args.ladder.read_text(encoding="utf-8"))
     if args.resolution not in {1024, 2048, 4096, 8192, 16384, 32768}:
         raise ProductionInferenceError("resolution is outside registered ladder")
@@ -481,7 +526,7 @@ def main() -> int:
     anchor_examples, _, _ = anchored._load_examples(
         args.dataset.resolve(), args.manifest.resolve(), anchor_probe
     )
-    spec = anchored.SEED_SPECS["seed0"]
+    spec = anchored.SEED_SPECS[args.seed]
     checkpoint_path = args.run_dir / "params_best_valid_point_global.pkl"
     if common._sha256(checkpoint_path) != spec["sha256"]:
         raise ProductionInferenceError("seed0 checkpoint SHA256 drifted")
@@ -510,6 +555,7 @@ def main() -> int:
     )
     model = GraphNeuralOperator(**model_config)
     params = runner._device_params(checkpoint["params"])
+    input_seconds = time.perf_counter() - input_started
     started_total = time.perf_counter()
     anchor_builder, anchor_metadata, anchor_cache, anchor_fresh = _build_or_load_graph(
         example=anchor_examples[0],
@@ -517,11 +563,12 @@ def main() -> int:
         graph_config=anchor_graph_config,
         graph_seed=int(run_config["graph_seed"]),
         support_hash=anchor_probe["indices_sha256"],
-        cache_commit=args.cache_commit,
+        graph_builder_fingerprint=graph_fingerprint,
         cache_dir=args.cache_dir,
         rebuild=args.rebuild_cache,
         audit_equivalence=args.audit_cache_equivalence,
     )
+    phase_started = time.perf_counter()
     anchor_groups = _prepare_cached_groups(
         examples=anchor_examples,
         run_config=run_config,
@@ -530,6 +577,7 @@ def main() -> int:
         metadata=anchor_metadata,
         batch_size=args.batch_size,
     )
+    anchor_group_seconds = time.perf_counter() - phase_started
     anchor_predictions, anchor_scales, anchor_runtime = _predict_groups(
         model=model,
         params=params,
@@ -549,6 +597,9 @@ def main() -> int:
         query_runtime = anchor_runtime
         query_cache = anchor_cache
         query_prediction_equivalence = anchor_prediction_equivalence
+        query_groups = anchor_groups
+        query_group_seconds = anchor_group_seconds
+        scale_reconstruction_seconds = 0.0
     else:
         query_builder, query_metadata, query_cache, query_fresh = (
             _build_or_load_graph(
@@ -557,12 +608,13 @@ def main() -> int:
                 graph_config=query_graph_config,
                 graph_seed=int(run_config["graph_seed"]),
                 support_hash=probe["indices_sha256"],
-                cache_commit=args.cache_commit,
+                graph_builder_fingerprint=graph_fingerprint,
                 cache_dir=args.cache_dir,
                 rebuild=args.rebuild_cache,
                 audit_equivalence=args.audit_cache_equivalence,
             )
         )
+        phase_started = time.perf_counter()
         query_groups = _prepare_cached_groups(
             examples=examples,
             run_config=run_config,
@@ -571,6 +623,7 @@ def main() -> int:
             metadata=query_metadata,
             batch_size=args.batch_size,
         )
+        query_group_seconds = time.perf_counter() - phase_started
         joint_predictions, _, query_runtime = _predict_groups(
             model=model,
             params=params,
@@ -585,12 +638,40 @@ def main() -> int:
             cached_metadata=query_metadata,
             fresh_metadata=query_fresh,
         )
+        phase_started = time.perf_counter()
         query_predictions = anchored._anchor_scale_predictions(
             joint_predictions,
             anchor_scales,
             examples,
             np.asarray(public["control_volume"], dtype=np.float64),
         )
+        scale_reconstruction_seconds = time.perf_counter() - phase_started
+
+    persistent_workflow_seconds = []
+    for _ in range(args.persistent_workflow_repeats):
+        phase_started = time.perf_counter()
+        _, persistent_anchor_scales, _ = _predict_groups(
+            model=model,
+            params=params,
+            groups=anchor_groups,
+            warm_repeats=0,
+        )
+        if args.resolution > 1024:
+            persistent_joint, _, _ = _predict_groups(
+                model=model,
+                params=params,
+                groups=query_groups,
+                warm_repeats=0,
+            )
+            anchored._anchor_scale_predictions(
+                persistent_joint,
+                persistent_anchor_scales,
+                examples,
+                np.asarray(public["control_volume"], dtype=np.float64),
+            )
+        persistent_workflow_seconds.append(time.perf_counter() - phase_started)
+
+    phase_started = time.perf_counter()
     support_metrics = source_eval._metrics(
         predictions=query_predictions,
         examples=source_eval._query_context_examples(examples),
@@ -598,6 +679,7 @@ def main() -> int:
         public=public,
         resolution=args.resolution,
     )
+    support_metric_seconds = time.perf_counter() - phase_started
     full_field_metrics, reconstruction = _full_field_metrics(
         dataset=args.dataset.resolve(),
         manifest_path=args.manifest.resolve(),
@@ -606,7 +688,10 @@ def main() -> int:
         reconstruction_cache_dir=args.reconstruction_cache_dir,
         support_hash=probe["indices_sha256"],
     )
-    total_seconds = time.perf_counter() - started_total
+    persistent_benchmark_seconds = float(sum(persistent_workflow_seconds))
+    total_seconds = (
+        time.perf_counter() - started_total - persistent_benchmark_seconds
+    )
     device_memory = _device_memory()
     finite_values = [
         support_metrics["point_global_cv_relative_rmse_pct"],
@@ -636,6 +721,7 @@ def main() -> int:
         "training_executed": False,
         "checkpoint_modified": False,
         "checkpoint": {
+            "seed": args.seed,
             "config_id": spec["config_id"],
             "epoch": spec["epoch"],
             "sha256": spec["sha256"],
@@ -644,6 +730,8 @@ def main() -> int:
             "anchor": anchor_graph_config,
             "query": query_graph_config,
         },
+        "evaluator_commit": _git_head(),
+        "graph_builder_code_fingerprint": graph_fingerprint,
         "graph_cache": {
             "anchor": anchor_cache,
             "query": query_cache,
@@ -651,8 +739,27 @@ def main() -> int:
             "query_prediction_equivalence": query_prediction_equivalence,
         },
         "runtime": {
+            "input_seconds": float(input_seconds),
+            "anchor_group_prepare_seconds": float(anchor_group_seconds),
+            "query_group_prepare_seconds": float(query_group_seconds),
             "anchor": anchor_runtime,
             "query": query_runtime,
+            "checkpoint_pure_forward_cold_seconds": float(
+                anchor_runtime["formal_inference_seconds"]
+                + (
+                    0.0
+                    if args.resolution == 1024
+                    else query_runtime["formal_inference_seconds"]
+                )
+            ),
+            "scale_reconstruction_seconds": float(scale_reconstruction_seconds),
+            "support_metric_seconds": float(support_metric_seconds),
+            "persistent_compiled_workflow_seconds": _distribution(
+                persistent_workflow_seconds
+            ),
+            "persistent_benchmark_seconds_excluded_from_end_to_end": (
+                persistent_benchmark_seconds
+            ),
             "end_to_end_seconds_valid128": float(total_seconds),
             "process_peak_ram_bytes": _rss_bytes(),
             "device_memory": device_memory,
@@ -662,6 +769,18 @@ def main() -> int:
         "reconstruction": reconstruction,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    serialization_started = time.perf_counter()
+    serialized = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    serialization_encode_seconds = time.perf_counter() - serialization_started
+    serialization_started = time.perf_counter()
+    args.output.write_text(serialized)
+    serialization_write_seconds = time.perf_counter() - serialization_started
+    payload["runtime"]["serialization_encode_seconds"] = float(
+        serialization_encode_seconds
+    )
+    payload["runtime"]["serialization_write_seconds"] = float(
+        serialization_write_seconds
+    )
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     print(
         json.dumps(

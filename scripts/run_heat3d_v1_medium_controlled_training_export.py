@@ -483,6 +483,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-repair-r2p", dest="repair_r2p", action="store_false")
     parser.add_argument("--min-physical-coverage", type=int, default=1)
     parser.add_argument(
+        "--discrete-graph-backend",
+        choices=("dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1"),
+        default="dense_reference",
+    )
+    parser.add_argument("--discrete-graph-chunk-size", type=int, default=1024)
+    parser.add_argument("--discrete-coverage-multiplier", type=float, default=1.0)
+    parser.add_argument(
         "--node-coordinate-encoding",
         choices=NODE_COORDINATE_ENCODING_CHOICES,
         default="raw",
@@ -2056,6 +2063,11 @@ def _graph_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
         "repair_p2r": bool(args.repair_p2r),
         "repair_r2p": bool(args.repair_r2p),
         "min_physical_coverage": int(args.min_physical_coverage),
+        "discrete_graph_backend": args.discrete_graph_backend,
+        "discrete_graph_chunk_size": int(args.discrete_graph_chunk_size),
+        "discrete_coverage_multiplier": float(
+            args.discrete_coverage_multiplier
+        ),
     }
 
 
@@ -2488,6 +2500,16 @@ def _validate_graph_config(config: dict[str, Any]) -> None:
         )
     if int(config["min_physical_coverage"]) < 1:
         raise ValueError("--min-physical-coverage must be >= 1")
+    if config["discrete_graph_backend"] not in {
+        "dense_reference",
+        "chunked_numpy_v1",
+        "sparse_kdtree_v1",
+    }:
+        raise ValueError("invalid --discrete-graph-backend")
+    if int(config["discrete_graph_chunk_size"]) < 1:
+        raise ValueError("--discrete-graph-chunk-size must be >= 1")
+    if float(config["discrete_coverage_multiplier"]) <= 0.0:
+        raise ValueError("--discrete-coverage-multiplier must be > 0")
 
 
 def _batch_config_payload(batch_config: dict[str, Any]) -> dict[str, Any]:
@@ -7253,16 +7275,20 @@ def _build_batch_metadata_with_seed(
     *,
     graph_seed: int,
 ):
+    same_coords = all(np.array_equal(coords_list[0], coords) for coords in coords_list[1:])
+    if same_coords:
+        metadata = builder.build_metadata(
+            coords_list[0], key=_metadata_key(graph_seed)
+        )
+        return tree.tree_map(
+            lambda value: jnp.repeat(value, repeats=len(coords_list), axis=0),
+            metadata,
+        ), True
+
     metadata_list = [
         builder.build_metadata(coords, key=_metadata_key(graph_seed))
         for coords in coords_list
     ]
-    same_coords = all(np.array_equal(coords_list[0], coords) for coords in coords_list[1:])
-    if same_coords:
-        return tree.tree_map(
-            lambda value: jnp.repeat(value, repeats=len(coords_list), axis=0),
-            metadata_list[0],
-        ), True
 
     # Every metadata payload already ends each edge array with a dummy edge
     # connecting the corresponding dummy nodes.  Repeat only that edge to pad
