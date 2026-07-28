@@ -445,7 +445,7 @@ def main() -> int:
     parser.add_argument("--warm-repeats", type=int, default=10)
     parser.add_argument(
         "--graph-backend",
-        choices=("dense_reference", "chunked_numpy_v1"),
+        choices=("dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1"),
         default="chunked_numpy_v1",
     )
     parser.add_argument("--subsample-factor", type=int)

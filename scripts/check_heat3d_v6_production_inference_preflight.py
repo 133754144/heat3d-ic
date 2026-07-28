@@ -57,7 +57,11 @@ def main() -> int:
             indices = np.asarray(probe["indices"], dtype=np.int32)
             support = np.asarray(coords[indices], dtype=np.float32)
             rows = []
-            for backend in ("dense_reference", "chunked_numpy_v1"):
+            for backend in (
+                "dense_reference",
+                "chunked_numpy_v1",
+                "sparse_kdtree_v1",
+            ):
                 builder = Heat3DGraphBuilder(
                     **BASE_GRAPH_CONFIG, discrete_graph_backend=backend
                 )
@@ -75,19 +79,26 @@ def main() -> int:
                         "build_seconds": float(build_seconds),
                     }
                 )
-            if (
-                rows[0]["metadata_hash"] != rows[1]["metadata_hash"]
-                or rows[0]["graph_hash"] != rows[1]["graph_hash"]
-            ):
-                raise AssertionError(f"{resolution}: graph backend hash mismatch")
-            for field in rows[0]["metadata"]._fields:
-                left = getattr(rows[0]["metadata"], field)
-                right = getattr(rows[1]["metadata"], field)
-                if left is None or right is None:
-                    if left is not None or right is not None:
-                        raise AssertionError(f"{resolution}:{field}: None mismatch")
-                elif not np.array_equal(np.asarray(left), np.asarray(right)):
-                    raise AssertionError(f"{resolution}:{field}: array mismatch")
+            for candidate in rows[1:]:
+                if (
+                    rows[0]["metadata_hash"] != candidate["metadata_hash"]
+                    or rows[0]["graph_hash"] != candidate["graph_hash"]
+                ):
+                    raise AssertionError(
+                        f"{resolution}:{candidate['backend']}: graph hash mismatch"
+                    )
+                for field in rows[0]["metadata"]._fields:
+                    left = getattr(rows[0]["metadata"], field)
+                    right = getattr(candidate["metadata"], field)
+                    if left is None or right is None:
+                        if left is not None or right is not None:
+                            raise AssertionError(
+                                f"{resolution}:{candidate['backend']}:{field}: None mismatch"
+                            )
+                    elif not np.array_equal(np.asarray(left), np.asarray(right)):
+                        raise AssertionError(
+                            f"{resolution}:{candidate['backend']}:{field}: array mismatch"
+                        )
             graph_rows.append(
                 {
                     "resolution": resolution,
@@ -95,6 +106,7 @@ def main() -> int:
                     "graph_hash": rows[0]["graph_hash"],
                     "dense_build_seconds": rows[0]["build_seconds"],
                     "chunked_build_seconds": rows[1]["build_seconds"],
+                    "sparse_kdtree_build_seconds": rows[2]["build_seconds"],
                 }
             )
         indices = np.asarray(ladder["probes"]["1024"]["indices"], dtype=np.int32)

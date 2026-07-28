@@ -120,7 +120,9 @@ class RegionInteractionGraphBuilder:
         discrete_graph_backend: Distance-construction backend for the discrete
           coverage policy. ``dense_reference`` preserves the historical global
           distance matrix; ``chunked_numpy_v1`` preserves its ordering and
-          float32 comparisons without materializing the full N-by-R matrix.
+          float32 comparisons without materializing the full N-by-R matrix;
+          ``sparse_kdtree_v1`` uses spatial nearest/radius queries and then
+          reapplies the reference float32 distance predicate to candidate edges.
         discrete_graph_chunk_size: Physical-node block size for the chunked
           backend.
         discrete_coverage_multiplier: Inference-only multiplier applied after
@@ -147,10 +149,12 @@ class RegionInteractionGraphBuilder:
       )
     if int(node_coordinate_freqs) < 1:
       raise ValueError("node_coordinate_freqs must be at least 1")
-    if discrete_graph_backend not in {"dense_reference", "chunked_numpy_v1"}:
+    if discrete_graph_backend not in {
+      "dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1"
+    }:
       raise ValueError(
         "discrete_graph_backend must be one of "
-        "{'dense_reference', 'chunked_numpy_v1'}, "
+        "{'dense_reference', 'chunked_numpy_v1', 'sparse_kdtree_v1'}, "
         f"found {discrete_graph_backend!r}"
       )
     if int(discrete_graph_chunk_size) < 1:
@@ -283,7 +287,7 @@ class RegionInteractionGraphBuilder:
       nearest_distance = distance[np.arange(distance.shape[0]), nearest_rnodes]
       radii = np.zeros(shape=(centers_array.shape[0],), dtype=distance.dtype)
       np.maximum.at(radii, nearest_rnodes, nearest_distance)
-    else:
+    elif self.discrete_graph_backend == "chunked_numpy_v1":
       radii = np.zeros(shape=(centers_array.shape[0],), dtype=points_array.dtype)
       for start in range(0, len(points_array), self.discrete_graph_chunk_size):
         block = points_array[start : start + self.discrete_graph_chunk_size]
@@ -293,6 +297,34 @@ class RegionInteractionGraphBuilder:
         nearest_rnodes = np.argmin(distance, axis=1)
         nearest_distance = distance[np.arange(distance.shape[0]), nearest_rnodes]
         np.maximum.at(radii, nearest_rnodes, nearest_distance)
+    else:
+      from scipy.spatial import cKDTree
+
+      tree = cKDTree(np.asarray(centers_array, dtype=np.float64))
+      candidate_count = min(16, len(centers_array))
+      _, nearest_candidates = tree.query(
+        np.asarray(points_array, dtype=np.float64), k=candidate_count
+      )
+      nearest_candidates = np.asarray(nearest_candidates, dtype=np.int64)
+      if candidate_count == 1:
+        nearest_candidates = nearest_candidates[:, None]
+      # Recompute shortlisted candidates with the reference input dtype and
+      # reproduce np.argmin's lowest-index tie rule.
+      candidate_distance = np.linalg.norm(
+        points_array[:, None, :]
+        - centers_array[nearest_candidates],
+        axis=-1,
+      )
+      minimum = np.min(candidate_distance, axis=1, keepdims=True)
+      tied = candidate_distance == minimum
+      nearest_rnodes = np.min(
+        np.where(tied, nearest_candidates, len(centers_array)), axis=1
+      )
+      nearest_distance = np.linalg.norm(
+        points_array - centers_array[nearest_rnodes], axis=1
+      )
+      radii = np.zeros(shape=(centers_array.shape[0],), dtype=points_array.dtype)
+      np.maximum.at(radii, nearest_rnodes, nearest_distance)
     radii = np.nextafter(radii, np.asarray(np.inf, dtype=radii.dtype))
     return jnp.asarray(radii)
 
@@ -340,11 +372,49 @@ class RegionInteractionGraphBuilder:
 
     if (
       self.radius_policy == "discrete_physical_coverage"
-      and self.discrete_graph_backend == "chunked_numpy_v1"
+      and self.discrete_graph_backend
+      in {"chunked_numpy_v1", "sparse_kdtree_v1"}
     ):
       centers_array = np.asarray(centers)
       points_array = np.asarray(points)
       radii_array = np.asarray(radii)
+      if self.discrete_graph_backend == "sparse_kdtree_v1":
+        from scipy.spatial import cKDTree
+
+        point_tree = cKDTree(np.asarray(points_array, dtype=np.float64))
+        point_parts = []
+        center_parts = []
+        for center_index, (center, radius) in enumerate(
+          zip(centers_array, radii_array)
+        ):
+          query_radius = float(radius) + max(1.0e-7, abs(float(radius)) * 1.0e-6)
+          candidates = np.asarray(
+            point_tree.query_ball_point(
+              np.asarray(center, dtype=np.float64), query_radius
+            ),
+            dtype=np.int64,
+          )
+          if not len(candidates):
+            continue
+          reference_distance = np.linalg.norm(
+            points_array[candidates] - center, axis=1
+          )
+          candidates = candidates[reference_distance <= radius]
+          point_parts.append(candidates)
+          center_parts.append(
+            np.full(len(candidates), center_index, dtype=np.int64)
+          )
+        if point_parts:
+          point_index = np.concatenate(point_parts)
+          center_index = np.concatenate(center_parts)
+          order = np.lexsort((center_index, point_index))
+          edges = np.column_stack(
+            (point_index[order], center_index[order])
+          )
+        else:
+          edges = np.empty((0, 2), dtype=np.int64)
+        return jnp.asarray(edges, dtype=jnp.int32)
+
       edge_blocks = []
       for start in range(0, len(points_array), self.discrete_graph_chunk_size):
         block = points_array[start : start + self.discrete_graph_chunk_size]
