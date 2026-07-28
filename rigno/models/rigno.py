@@ -85,6 +85,9 @@ class RegionInteractionGraphBuilder:
     repair_p2r: bool = True,
     repair_r2p: bool = True,
     min_physical_coverage: int = 1,
+    discrete_graph_backend: str = "dense_reference",
+    discrete_graph_chunk_size: int = 1024,
+    discrete_coverage_multiplier: float = 1.0,
   ):
     """
     Class for building the graphs that are used in RIGNO.
@@ -114,6 +117,14 @@ class RegionInteractionGraphBuilder:
         repair_p2r: Apply nearest-rnode repair to p2r when repair is enabled.
         repair_r2p: Apply nearest-rnode repair to r2p when repair is enabled.
         min_physical_coverage: Minimum physical-node degree targeted by repair.
+        discrete_graph_backend: Distance-construction backend for the discrete
+          coverage policy. ``dense_reference`` preserves the historical global
+          distance matrix; ``chunked_numpy_v1`` preserves its ordering and
+          float32 comparisons without materializing the full N-by-R matrix.
+        discrete_graph_chunk_size: Physical-node block size for the chunked
+          backend.
+        discrete_coverage_multiplier: Inference-only multiplier applied after
+          computing the minimum discrete coverage radius.
     """
 
     if coverage_repair_policy not in {"none", "nearest_rnode"}:
@@ -136,6 +147,18 @@ class RegionInteractionGraphBuilder:
       )
     if int(node_coordinate_freqs) < 1:
       raise ValueError("node_coordinate_freqs must be at least 1")
+    if discrete_graph_backend not in {"dense_reference", "chunked_numpy_v1"}:
+      raise ValueError(
+        "discrete_graph_backend must be one of "
+        "{'dense_reference', 'chunked_numpy_v1'}, "
+        f"found {discrete_graph_backend!r}"
+      )
+    if int(discrete_graph_chunk_size) < 1:
+      raise ValueError("discrete_graph_chunk_size must be at least 1")
+    if not np.isfinite(discrete_coverage_multiplier) or float(
+      discrete_coverage_multiplier
+    ) < 1.0:
+      raise ValueError("discrete_coverage_multiplier must be finite and >= 1")
 
     # Set attributes
     self.periodic = periodic
@@ -150,6 +173,9 @@ class RegionInteractionGraphBuilder:
     self.repair_p2r = bool(repair_p2r)
     self.repair_r2p = bool(repair_r2p)
     self.min_physical_coverage = int(min_physical_coverage)
+    self.discrete_graph_backend = discrete_graph_backend
+    self.discrete_graph_chunk_size = int(discrete_graph_chunk_size)
+    self.discrete_coverage_multiplier = float(discrete_coverage_multiplier)
 
     # Domain shifts for periodic BC
     # self._domain_shifts = jnp.concatenate([
@@ -247,11 +273,26 @@ class RegionInteractionGraphBuilder:
   ) -> Array:
     """Returns radii covering each regional node's assigned physical nodes."""
 
-    distance = self._get_physical_to_regional_distance(centers=centers, points=points)
-    nearest_rnodes = np.argmin(distance, axis=1)
-    nearest_distance = distance[np.arange(distance.shape[0]), nearest_rnodes]
-    radii = np.zeros(shape=(np.asarray(centers).shape[0],), dtype=distance.dtype)
-    np.maximum.at(radii, nearest_rnodes, nearest_distance)
+    centers_array = np.asarray(centers)
+    points_array = np.asarray(points)
+    if self.discrete_graph_backend == "dense_reference":
+      distance = self._get_physical_to_regional_distance(
+        centers=centers_array, points=points_array
+      )
+      nearest_rnodes = np.argmin(distance, axis=1)
+      nearest_distance = distance[np.arange(distance.shape[0]), nearest_rnodes]
+      radii = np.zeros(shape=(centers_array.shape[0],), dtype=distance.dtype)
+      np.maximum.at(radii, nearest_rnodes, nearest_distance)
+    else:
+      radii = np.zeros(shape=(centers_array.shape[0],), dtype=points_array.dtype)
+      for start in range(0, len(points_array), self.discrete_graph_chunk_size):
+        block = points_array[start : start + self.discrete_graph_chunk_size]
+        distance = np.linalg.norm(
+          block[:, None, :] - centers_array[None, :, :], axis=-1
+        )
+        nearest_rnodes = np.argmin(distance, axis=1)
+        nearest_distance = distance[np.arange(distance.shape[0]), nearest_rnodes]
+        np.maximum.at(radii, nearest_rnodes, nearest_distance)
     radii = np.nextafter(radii, np.asarray(np.inf, dtype=radii.dtype))
     return jnp.asarray(radii)
 
@@ -265,7 +306,7 @@ class RegionInteractionGraphBuilder:
       # This monotone policy deliberately bypasses the legacy global clip and
       # non-monotone hard reset. It uses the minimal 1x coverage radius to
       # retain the guarantee without inheriting the legacy overlap edge cost.
-      return r_rnodes
+      return self.discrete_coverage_multiplier * r_rnodes
     return jnp.clip(overlap_factor * r_rnodes, a_min=0, a_max=r_rnodes.max())
 
   def _get_supported_pnodes_by_rnodes(self,
@@ -296,6 +337,29 @@ class RegionInteractionGraphBuilder:
       # NOTE: Makeshift solution for peculiar geometries
       # TODO: Instead, remove out-of-domain mesh edges in order to avoid large radiuses
       radii = np.where(radii < .5, radii, .2)
+
+    if (
+      self.radius_policy == "discrete_physical_coverage"
+      and self.discrete_graph_backend == "chunked_numpy_v1"
+    ):
+      centers_array = np.asarray(centers)
+      points_array = np.asarray(points)
+      radii_array = np.asarray(radii)
+      edge_blocks = []
+      for start in range(0, len(points_array), self.discrete_graph_chunk_size):
+        block = points_array[start : start + self.discrete_graph_chunk_size]
+        distance = np.linalg.norm(
+          block[:, None, :] - centers_array[None, :, :], axis=-1
+        )
+        point_index, center_index = np.where(distance <= radii_array[None, :])
+        edge_blocks.append(
+          np.column_stack((point_index + start, center_index))
+        )
+      if edge_blocks:
+        edges = np.concatenate(edge_blocks, axis=0)
+      else:
+        edges = np.empty((0, 2), dtype=np.int64)
+      return jnp.asarray(edges, dtype=jnp.int32)
 
     # Get relative coordinates
     rel = points[:, None] - centers
