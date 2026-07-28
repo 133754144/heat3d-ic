@@ -449,6 +449,14 @@ def main() -> int:
         default="chunked_numpy_v1",
     )
     parser.add_argument("--subsample-factor", type=int)
+    parser.add_argument(
+        "--query-subsample-factor",
+        type=int,
+        help=(
+            "Override only the high-resolution query graph. The 1024 "
+            "conditioning-anchor graph remains at the checkpoint/run-config value."
+        ),
+    )
     parser.add_argument("--coverage-multiplier", type=float, default=1.0)
     parser.add_argument("--graph-chunk-size", type=int, default=1024)
     parser.add_argument("--rebuild-cache", action="store_true")
@@ -485,14 +493,18 @@ def main() -> int:
     runtime_checkpoint = dict(checkpoint)
     runtime_checkpoint["train_only_normalization"] = stats
     install_checkpoint_feature_hooks(stats)
-    graph_config = dict(run_config["graph_config"])
-    graph_config["discrete_graph_backend"] = args.graph_backend
-    graph_config["discrete_graph_chunk_size"] = args.graph_chunk_size
-    graph_config["discrete_coverage_multiplier"] = args.coverage_multiplier
+    anchor_graph_config = dict(run_config["graph_config"])
+    anchor_graph_config["discrete_graph_backend"] = args.graph_backend
+    anchor_graph_config["discrete_graph_chunk_size"] = args.graph_chunk_size
+    anchor_graph_config["discrete_coverage_multiplier"] = args.coverage_multiplier
     if args.subsample_factor is not None:
-        graph_config["subsample_factor"] = args.subsample_factor
+        anchor_graph_config["subsample_factor"] = args.subsample_factor
     # Freeze every effective builder default into cache keys and result payloads.
-    graph_config = dict(Heat3DGraphBuilder(**graph_config).config)
+    anchor_graph_config = dict(Heat3DGraphBuilder(**anchor_graph_config).config)
+    query_graph_config = dict(anchor_graph_config)
+    if args.query_subsample_factor is not None:
+        query_graph_config["subsample_factor"] = args.query_subsample_factor
+    query_graph_config = dict(Heat3DGraphBuilder(**query_graph_config).config)
     model_config = runner._resolve_decoder_bypass_model_config(
         dict(checkpoint["model_config"]), stats
     )
@@ -502,7 +514,7 @@ def main() -> int:
     anchor_builder, anchor_metadata, anchor_cache, anchor_fresh = _build_or_load_graph(
         example=anchor_examples[0],
         stats=stats,
-        graph_config=graph_config,
+        graph_config=anchor_graph_config,
         graph_seed=int(run_config["graph_seed"]),
         support_hash=anchor_probe["indices_sha256"],
         cache_commit=args.cache_commit,
@@ -542,7 +554,7 @@ def main() -> int:
             _build_or_load_graph(
                 example=examples[0],
                 stats=stats,
-                graph_config=graph_config,
+                graph_config=query_graph_config,
                 graph_seed=int(run_config["graph_seed"]),
                 support_hash=probe["indices_sha256"],
                 cache_commit=args.cache_commit,
@@ -628,7 +640,10 @@ def main() -> int:
             "epoch": spec["epoch"],
             "sha256": spec["sha256"],
         },
-        "graph_config": graph_config,
+        "graph_config": {
+            "anchor": anchor_graph_config,
+            "query": query_graph_config,
+        },
         "graph_cache": {
             "anchor": anchor_cache,
             "query": query_cache,
