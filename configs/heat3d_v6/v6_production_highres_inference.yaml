@@ -1,0 +1,59 @@
+schema_version: heat3d_v6_production_highres_inference_v1
+status: frozen
+evaluation_commit: d5c06263ee5a5cf0b925b6e1d35ade205ada8bce
+training_executed: false
+checkpoint_modified: false
+role_policy:
+  allowed:
+  - valid_iid
+  forbidden:
+  - test_iid
+  - hard
+workflow:
+- 1024_anchor_forward
+- anchor_derived_global_context_and_scale
+- N_node_source_aware_forward
+- anchor_scale_reconstruction
+upstream_like_preforward: disabled
+dataset:
+  dataset_id: heat3d_v6_p1h_shared_support1024_v0
+  manifest: configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json
+checkpoint:
+  config_id: V6_03_V5best_P1h
+  seed: 0
+  epoch: 111
+  selection: valid_point_global_true_rms
+  sha256: 3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2
+resolution:
+  default: 4096
+  maximum_production_verified: 16384
+  experimental_verified:
+  - 32768
+graph:
+  backend: sparse_kdtree_v1
+  graph_seed: 0
+  anchor_subsample_factor: 4
+  query_subsample_factor: 8
+  discrete_coverage_multiplier: 1.0
+  fixed_regional_mesh_reuse: graph_cache
+  cache_key_fields:
+  - support_hash
+  - resolved_graph_config
+  - graph_seed
+  - commit
+inference:
+  equivalence_batch_size: 1
+  gpu_throughput_batch_size: 8
+  global_context_source: 1024_anchors
+  scale_pooling_source: 1024_anchors
+  reconstruction_scale_source: 1024_anchors
+full_field_reconstruction:
+  full_node_count: 240825
+  interpolation: layer_interface_aware_inverse_distance
+  sampling_floor_reported: true
+acceptance:
+  point_global_relative_rmse_pct_lt: 20.0
+  full_field_rmse_vs_unoptimized_4096_max_ratio: 1.10
+  cpu_cache_prediction_max_abs_error_K: 0.0
+  gpu_cache_prediction_max_abs_error_K_lt: 0.005
+  gpu_cache_prediction_rmse_K_lt: 0.001
