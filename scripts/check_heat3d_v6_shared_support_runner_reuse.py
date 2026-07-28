@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import json
 from pathlib import Path
 import sys
@@ -94,14 +96,15 @@ def main() -> int:
     runtime_checkpoint = dict(checkpoint)
     runtime_checkpoint["train_only_normalization"] = stats
     install_checkpoint_feature_hooks(stats)
-    groups = production._prepare_cached_groups(
-        examples=examples,
-        run_config=run_config,
-        checkpoint=runtime_checkpoint,
-        builder=builder,
-        metadata=legacy_rows[0],
-        batch_size=8,
-    )
+    with contextlib.redirect_stdout(io.StringIO()):
+        groups = production._prepare_cached_groups(
+            examples=examples,
+            run_config=run_config,
+            checkpoint=runtime_checkpoint,
+            builder=builder,
+            metadata=legacy_rows[0],
+            batch_size=8,
+        )
     model_config = runner._resolve_decoder_bypass_model_config(
         dict(checkpoint["model_config"]), stats
     )
