@@ -163,15 +163,20 @@ def _evaluate(
     full_predictions: np.ndarray,
     public: Mapping[str, Any],
     full_public: Mapping[str, np.ndarray],
+    parent_split_role: str,
+    role_sample_ids: tuple[str, ...] | None,
 ) -> tuple[dict[str, Any], dict[str, float]]:
-    split_role = "valid" if role == "valid_iid" else "test"
     manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
     rows = [
         row
         for row in manifest_payload["samples"]
-        if row["split_role"] == split_role
+        if row["split_role"] == parent_split_role
     ]
-    if len(rows) != 128:
+    if role_sample_ids is not None:
+        selected = set(role_sample_ids)
+        rows = [row for row in rows if str(row["sample_id"]) in selected]
+    expected_count = len(role_sample_ids) if role_sample_ids is not None else 128
+    if len(rows) != expected_count:
         raise FinalPerformanceError(f"{role} population drifted")
     example_by_id = {example.sample_id: example for example in examples}
     sample_order = [example.sample_id for example in examples]
@@ -270,7 +275,7 @@ def _cycle(
     rebuild: bool,
 ) -> dict[str, Any]:
     production_started = time.perf_counter()
-    split_role = "valid" if args.role == "valid_iid" else "test"
+    split_role = args.parent_split_role
     probe = ladder["probes"][str(args.resolution)]
     anchor_probe = ladder["probes"]["1024"]
     input_started = time.perf_counter()
@@ -288,6 +293,23 @@ def _cycle(
         split_role=split_role,
         load_labels=False,
     )
+    if args.role_sample_ids is not None:
+        selected = set(args.role_sample_ids)
+        examples = [
+            example for example in examples if example.sample_id in selected
+        ]
+        anchor_examples = [
+            example
+            for example in anchor_examples
+            if example.sample_id in selected
+        ]
+        expected = tuple(args.role_sample_ids)
+        if tuple(example.sample_id for example in examples) != expected:
+            raise FinalPerformanceError("query role-manifest order drifted")
+        if tuple(example.sample_id for example in anchor_examples) != expected:
+            raise FinalPerformanceError("anchor role-manifest order drifted")
+        public = dict(public)
+        public["evaluation_sample_ids"] = list(expected)
     if targets or public["labels_loaded"]:
         raise FinalPerformanceError("production input path loaded labels")
     input_seconds = time.perf_counter() - input_started
@@ -421,6 +443,8 @@ def _cycle(
         full_predictions=full_predictions,
         public=public,
         full_public=full_public,
+        parent_split_role=args.parent_split_role,
+        role_sample_ids=args.role_sample_ids,
     )
     evaluation_seconds = time.perf_counter() - production_started
     serialization_path.unlink(missing_ok=True)
@@ -465,7 +489,12 @@ def main() -> int:
     parser.add_argument("--ladder", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--resolution", type=int, required=True)
-    parser.add_argument("--role", choices=("valid_iid", "test_iid"), required=True)
+    parser.add_argument(
+        "--role",
+        choices=("valid_iid", "test_iid", "hard_input_stress"),
+        required=True,
+    )
+    parser.add_argument("--role-manifest", type=Path)
     parser.add_argument("--mode", choices=("cold", "cached", "persistent"), required=True)
     parser.add_argument("--batch-size", type=int, required=True)
     parser.add_argument("--persistent-repeats", type=int, default=3)
@@ -475,6 +504,35 @@ def main() -> int:
     parser.add_argument("--platform", choices=("cpu", "gpu"), required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.role == "valid_iid":
+        if args.role_manifest is not None:
+            raise FinalPerformanceError("valid_iid forbids a role manifest")
+        args.parent_split_role = "valid"
+        args.role_sample_ids = None
+        role_manifest_sha256 = None
+    elif args.role == "test_iid":
+        if args.role_manifest is not None:
+            raise FinalPerformanceError("test_iid forbids a role manifest")
+        args.parent_split_role = "test"
+        args.role_sample_ids = None
+        role_manifest_sha256 = None
+    else:
+        if args.role_manifest is None:
+            raise FinalPerformanceError("hard_input_stress requires a role manifest")
+        role_payload = json.loads(args.role_manifest.read_text(encoding="utf-8"))
+        if (
+            role_payload.get("role_id") != "hard_input_stress_corner_v1"
+            or role_payload.get("parent_split_role") != "test"
+            or role_payload.get("selection_uses_target_labels") is not False
+        ):
+            raise FinalPerformanceError("hard role manifest contract drifted")
+        args.parent_split_role = "test"
+        args.role_sample_ids = tuple(
+            str(value) for value in role_payload["sample_ids"]
+        )
+        if len(args.role_sample_ids) != len(set(args.role_sample_ids)):
+            raise FinalPerformanceError("hard role manifest contains duplicates")
+        role_manifest_sha256 = common._sha256(args.role_manifest)
     if args.resolution not in {4096, 8192, 16384, 32768}:
         raise FinalPerformanceError("resolution outside frozen final ladder")
     actual_platform = jax.devices()[0].platform
@@ -556,6 +614,7 @@ def main() -> int:
         )
         for key in ("model_core", "full_field_production", "evaluation")
     }
+    sample_count = int(cycles[0]["metrics"]["full_field"]["sample_count"])
     payload = {
         "schema_version": "heat3d_v6_final_performance_direct_v1",
         "status": "passed",
@@ -564,7 +623,9 @@ def main() -> int:
         "mode": args.mode,
         "platform": args.platform,
         "batch_size": args.batch_size,
-        "sample_count": 128,
+        "sample_count": sample_count,
+        "parent_split_role": args.parent_split_role,
+        "role_manifest_sha256": role_manifest_sha256,
         "checkpoint": {
             "config_id": spec["config_id"],
             "epoch": spec["epoch"],
@@ -584,7 +645,8 @@ def main() -> int:
         },
         "timing_summary_seconds": timing_summary,
         "cycles": cycles,
-        "hard_accessed": False,
+        "hard_accessed": args.role == "hard_input_stress",
+        "ood_accessed": False,
         "training_executed": False,
         "checkpoint_modified": False,
         "environment": {

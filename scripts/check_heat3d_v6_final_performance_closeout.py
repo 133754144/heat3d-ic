@@ -29,10 +29,16 @@ def main() -> int:
     assert closeout["preregistration_commit"] == PREREG_COMMIT
     assert closeout["checkpoint_modified"] is False
     assert closeout["training_executed"] is False
-    assert closeout["test_iid_opened_once_after_preregistration"] is True
-    assert closeout["test_used_for_selection"] is False
+    assert closeout["schema_version"] == (
+        "heat3d_v6_final_performance_governance_v2"
+    )
+    assert closeout["confirmatory_holdout_classification"] == (
+        "corrected_confirmatory_holdout"
+    )
+    assert closeout["confirmatory_holdout_opened_after_preregistration"] is True
+    assert closeout["confirmatory_holdout_used_for_selection"] is False
     assert closeout["hard_accessed"] is False
-    opening = closeout["test_opening_audit"]
+    opening = closeout["protocol_deviation"]
     assert opening["status"] == "completed_with_corrected_command_input"
     assert opening["selection_or_workflow_changed"] is False
     assert opening["hard_accessed"] is False
@@ -54,22 +60,24 @@ def main() -> int:
     )
     assert len(set(opening["ladder_sha256"].values())) == 2
     assert closeout["frozen_decision_unchanged"] == {
-        "default": 4096,
-        "full_field": 8192,
-        "high_resolution": 16384,
+        "default_hotspot_oriented": 4096,
+        "balanced_full_field": 8192,
+        "maximum_full_field_accuracy": 16384,
         "experimental_excluded_from_primary_test_table": 32768,
     }
     assert closeout["decision_basis"]["selection_source"] == (
-        "valid_iid_timing_and_accuracy_before_test_open"
+        "valid_iid_timing_and_accuracy_before_holdout_open"
     )
-    assert closeout["decision_basis"]["test_iid_role"] == (
+    assert closeout["decision_basis"]["confirmatory_holdout_role"] == (
         "descriptive_confirmation_only"
     )
     timing = _rows(CONFIG / "v6_final_performance_timing.csv")
     persistent = _rows(CONFIG / "v6_final_persistent_gpu.csv")
     comparison = _rows(CONFIG / "v6_final_solver_inference_comparison.csv")
     pareto = _rows(CONFIG / "v6_final_accuracy_runtime_pareto.csv")
-    test = _rows(CONFIG / "v6_final_test_iid_metrics.csv")
+    test = _rows(
+        CONFIG / "v6_final_corrected_confirmatory_holdout_metrics.csv"
+    )
     assert len(timing) == 27
     assert len(persistent) == 6
     assert len(comparison) == 4
@@ -92,6 +100,10 @@ def main() -> int:
     )
     assert all(row["hard_accessed"] == "False" for row in test)
     assert all(row["used_for_selection"] == "False" for row in test)
+    assert all(
+        row["role_classification"] == "corrected_confirmatory_holdout"
+        for row in test
+    )
     for row in timing:
         model = float(row["model_core_seconds"])
         production = float(row["full_field_production_seconds"])
@@ -105,8 +117,11 @@ def main() -> int:
         assert float(row["samples_per_second"]) > 0.0
         assert float(row["fvm_cold_speedup"]) > 1.0
         assert float(row["fvm_warm_speedup"]) > 1.0
-    fvm = closeout["matched_accuracy_fvm"]
+    fvm = closeout["legal_structured_fvm_mesh_sensitivity"]
     assert fvm["status"] == "passed"
+    assert fvm["schema_version"] == (
+        "heat3d_v6_legal_structured_fvm_mesh_sensitivity_v1"
+    )
     assert fvm["evaluation_role"] == "valid_iid"
     assert fvm["source_aware_points_used_as_fvm_mesh"] is False
     assert fvm["test_hard_accessed"] is False
@@ -125,7 +140,7 @@ def main() -> int:
     assert runner["varying_support_fallback"][
         "metadata_hash_equal_to_legacy"
     ] is True
-    for payload in closeout["test_iid"].values():
+    for payload in closeout["corrected_confirmatory_holdout"].values():
         assert payload["role"] == "test_iid"
         assert payload["hard_accessed"] is False
         assert payload["training_executed"] is False
@@ -155,8 +170,8 @@ def main() -> int:
                 "persistent_gpu_rows": len(persistent),
                 "solver_comparison_rows": len(comparison),
                 "pareto_rows": len(pareto),
-                "test_rows": len(test),
-                "test_used_for_selection": False,
+                "confirmatory_holdout_rows": len(test),
+                "confirmatory_holdout_used_for_selection": False,
                 "hard_accessed": False,
                 "training_executed": False,
                 "checkpoint_modified": False,

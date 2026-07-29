@@ -1,6 +1,6 @@
 # V6 final performance closeout
 
-The model, checkpoint, sampling, graph parameters, and reconstruction method remained frozen. Test IID was opened once after preregistration; hard remained sealed.
+The model, checkpoint, sampling, graph parameters, and reconstruction method remained frozen. The corrected confirmatory holdout was opened after preregistration; hard remained sealed.
 
 The first test command used the legacy ladder for temporary 4096/8192 outputs. They are explicitly excluded; the 16384 attempt stopped before label loading. The formal table below is the corrected, frozen source-aware workflow and did not change any selection.
 
@@ -47,7 +47,7 @@ All model values below are direct 128-sample cycles. Cold production includes gr
 | 16384 | 65.026 | 73.759/70.776/59.568 | 31.805 | 49.094/43.300/16.768 | 343.868/186.528 | 20.51×/11.12× |
 | 32768 | 112.161 | 122.675/119.552/107.288 | 32.662 | 50.975/45.578/18.185 | 343.868/186.528 | 18.91×/10.26× |
 
-## Matched-accuracy FVM
+## Legal structured-FVM mesh sensitivity
 
 | Mesh | Nodes | Cold mean/median/P95 s | Warm mean/median/P95 s | Full-field RMSE K |
 |---|---:|---:|---:|---:|
@@ -66,7 +66,7 @@ All model values below are direct 128-sample cycles. Cold production includes gr
 | 16 | 8192 | 10.575 | 12.104 | 2.645 | 32.52×/17.64× |
 | 16 | 16384 | 11.493 | 11.137 | 5.222 | 29.92×/16.23× |
 
-## Preregistered test IID
+## Corrected confirmatory holdout
 
 | Nodes | Support point-global | Full point-global | Full RMSE K |
 |---:|---:|---:|---:|
@@ -74,12 +74,12 @@ All model values below are direct 128-sample cycles. Cold production includes gr
 | 8192 | 1.5437% | 3.0976% | 1.2563 |
 | 16384 | 1.7704% | 2.8652% | 1.1620 |
 
-The test table is descriptive only. It did not change the frozen 4096/8192/16384 roles. 32768 is excluded; hard remains sealed.
+The confirmatory table is descriptive only. It did not change the frozen 4096/8192/16384 roles. 32768 is excluded; hard remains sealed.
 
 ## Frozen decision
 
-- Default remains 4096.
-- Full-field mode remains 8192.
-- 16384 remains the high-resolution upper production mode.
-- 32768 remains experimental and was not included in the test table.
-- The decision was fixed from valid_iid before test opening; test_iid is descriptive confirmation only.
+- 4096 remains the default/hotspot-oriented mode.
+- 8192 remains the balanced full-field mode.
+- 16384 remains the maximum full-field accuracy mode.
+- 32768 remains experimental and was not included in the confirmatory table.
+- The decision was fixed from valid_iid before holdout opening; the corrected confirmatory holdout is descriptive only.

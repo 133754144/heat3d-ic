@@ -1,21 +1,863 @@
 {
   "checkpoint_modified": false,
+  "confirmatory_holdout_classification": "corrected_confirmatory_holdout",
+  "confirmatory_holdout_opened_after_preregistration": true,
+  "confirmatory_holdout_used_for_selection": false,
+  "corrected_confirmatory_holdout": {
+    "16384": {
+      "batch_size": 8,
+      "checkpoint": {
+        "config_id": "V6_03_V5best_P1h",
+        "epoch": 111,
+        "modified": false,
+        "sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
+      },
+      "checkpoint_modified": false,
+      "cycles": [
+        {
+          "cycle_index": 1,
+          "device_memory": {
+            "bytes_in_use": null,
+            "bytes_limit": null,
+            "device": "TFRT_CPU_0",
+            "peak_bytes_in_use": null,
+            "platform": "cpu"
+          },
+          "direct_timing_seconds": {
+            "evaluation": 71.90876008395571,
+            "full_field_production": 69.53674941696227,
+            "model_core": 62.19886133400723
+          },
+          "evaluation_phase_seconds": {
+            "label_read_seconds": 0.9612551659811288,
+            "metrics_diagnostics_seconds": 1.3966782089555636
+          },
+          "graph_cache": {
+            "anchor": {
+              "cache_file": "runtime-artifact://graph_1024_01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46.npz",
+              "cache_file_bytes": 81468,
+              "cache_file_sha256": "c49f6f9aa16b9cb220a1c67072e2a83df8bb9d6585bd3a0b176d6397c307a6a0",
+              "cache_hit": true,
+              "cache_key": "01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46",
+              "cache_key_payload": {
+                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+                "graph_config": {
+                  "coverage_repair_policy": "none",
+                  "discrete_coverage_multiplier": 1.0,
+                  "discrete_graph_backend": "sparse_kdtree_v1",
+                  "discrete_graph_chunk_size": 1024,
+                  "min_physical_coverage": 1,
+                  "node_coordinate_encoding": "raw",
+                  "node_coordinate_freqs": 4,
+                  "overlap_factor_p2r": 1.5,
+                  "overlap_factor_r2p": 2.0,
+                  "radius_policy": "discrete_physical_coverage",
+                  "repair_p2r": true,
+                  "repair_r2p": true,
+                  "rmesh_levels": 3,
+                  "subsample_factor": 4
+                },
+                "graph_seed": 0,
+                "schema_version": "heat3d_graph_cache_key_v2",
+                "support_hash": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304"
+              },
+              "equivalence": {
+                "audited": false,
+                "graph_hash_equal": null,
+                "metadata_hash_equal": null
+              },
+              "graph_hash": "2fb071548dfc6adc6461cc8b4baccccd4cc18bd7fd875c9d9ae0f186a6655915",
+              "load_seconds": 0.0031859169830568135,
+              "metadata_hash": "c147e69af44ecb980df95eb61348ed643008179b8199d0bafd4deb4cc48f9a2a",
+              "save": null,
+              "uncached_build_seconds": null
+            },
+            "query": {
+              "cache_file": "runtime-artifact://graph_16384_3c9fc92afed1e7e88e0149bcd762d73893150f44ab6450fdc808dec374efe333.npz",
+              "cache_file_bytes": 1095352,
+              "cache_file_sha256": "f5d187f4e655198f1f209e6974afea1e3c5674e43a171ecfe428f873a0740369",
+              "cache_hit": true,
+              "cache_key": "3c9fc92afed1e7e88e0149bcd762d73893150f44ab6450fdc808dec374efe333",
+              "cache_key_payload": {
+                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+                "graph_config": {
+                  "coverage_repair_policy": "none",
+                  "discrete_coverage_multiplier": 1.0,
+                  "discrete_graph_backend": "sparse_kdtree_v1",
+                  "discrete_graph_chunk_size": 1024,
+                  "min_physical_coverage": 1,
+                  "node_coordinate_encoding": "raw",
+                  "node_coordinate_freqs": 4,
+                  "overlap_factor_p2r": 1.5,
+                  "overlap_factor_r2p": 2.0,
+                  "radius_policy": "discrete_physical_coverage",
+                  "repair_p2r": true,
+                  "repair_r2p": true,
+                  "rmesh_levels": 3,
+                  "subsample_factor": 8
+                },
+                "graph_seed": 0,
+                "schema_version": "heat3d_graph_cache_key_v2",
+                "support_hash": "f752e9da5a04aa5f050121862cc31cbc947b55916f276ec36afb28735f2fbb9f"
+              },
+              "equivalence": {
+                "audited": false,
+                "graph_hash_equal": null,
+                "metadata_hash_equal": null
+              },
+              "graph_hash": "223f974248426afc8e6e5222e275c8f8737e5a33e31c93ed14b6dce6bfef1a3e",
+              "load_seconds": 0.0033314169850200415,
+              "metadata_hash": "b7d89ca7eb89df620e15912be4372a9d0332479269fce1cbe8609eaa5ecc28f8",
+              "save": null,
+              "uncached_build_seconds": null
+            }
+          },
+          "metrics": {
+            "full_field": {
+              "bottom_cv_weighted_rmse_K": 0.6997627349934288,
+              "cv_weighted_point_global_relative_rmse_pct": 2.865153459990657,
+              "cv_weighted_rmse_K": 1.1620373668689663,
+              "full_node_count": 240825,
+              "interface_cv_weighted_rmse_K": {
+                "interface_01": 1.0790594199571142,
+                "interface_02": 0.7673929943432638,
+                "interface_03": 0.7556476729456338,
+                "interface_04": 0.7083206454221388,
+                "interface_05": 0.7001849818665206,
+                "interface_06": 0.7919425605813161,
+                "interface_07": 0.6389061987562132,
+                "interface_08": 0.7131955144346797
+              },
+              "layer_cv_weighted_rmse_K": {
+                "layer_00": 1.546983644924556,
+                "layer_01": 1.213860991757144,
+                "layer_02": 0.7618328978230849,
+                "layer_03": 0.7114332629108878,
+                "layer_04": 0.7149562546964917,
+                "layer_05": 0.6750568695244494,
+                "layer_06": 0.7405982877229036,
+                "layer_07": 0.7082456385832195,
+                "layer_08": 0.4292983889658301
+              },
+              "peak_error_rmse_K": 1.2075332677203825,
+              "sample_count": 128,
+              "sample_first_cv_relative_rmse_pct": 2.850672806279017,
+              "source_cv_weighted_rmse_K": 1.2154994178615255,
+              "top_cv_weighted_rmse_K": 0.3687130955640761
+            },
+            "support": {
+              "bottom_surface": {
+                "cv_weighted_bias_K": 0.20132041030384382,
+                "cv_weighted_relative_rmse_pct": 2.1843489586691667,
+                "cv_weighted_rmse_K": 0.7047606846328811
+              },
+              "field_cv_weighted_bias_K": 0.047284266692401905,
+              "layer_drop": {
+                "absolute_error_distribution_K": {
+                  "max": 0.9620896833226382,
+                  "mean": 0.12187863400336442,
+                  "median": 0.08758279051036766,
+                  "min": 8.917154912069236e-05,
+                  "p05": 0.008147174055218545,
+                  "p95": 0.3407736033525637
+                },
+                "rmse_K": 0.16811498899077262
+              },
+              "layer_mean": {
+                "absolute_error_distribution_K": {
+                  "max": 1.0635215725739045,
+                  "mean": 0.1336905995940726,
+                  "median": 0.09740185929734402,
+                  "min": 0.0001068339980889732,
+                  "p05": 0.010392750404899155,
+                  "p95": 0.37866425669825826
+                },
+                "rmse_K": 0.18887752864370227
+              },
+              "node_count": 16384,
+              "peak": {
+                "bias_K": 0.9183035013507705,
+                "mae_K": 1.0886769518637216,
+                "rmse_K": 1.2135034230029793
+              },
+              "point_global_cv_relative_rmse_pct": 1.7704441674178866,
+              "raw_cv_weighted_rmse_K": 0.7561574610474187,
+              "sample_count": 128,
+              "sample_first_cv_relative_rmse_pct": 1.770272878882503,
+              "scale_log_rmse": 0.001667980906795835,
+              "scale_signed_bias": 0.0009959223652918937,
+              "shape_cv_rmse": 0.01760851055702086,
+              "source_region": {
+                "cv_weighted_bias_K": 0.7626992345097365,
+                "cv_weighted_relative_rmse_pct": 2.7226792991150424,
+                "cv_weighted_rmse_K": 1.2555960477412287
+              },
+              "top_surface": {
+                "cv_weighted_bias_K": -0.05323949484120756,
+                "cv_weighted_relative_rmse_pct": 0.8879619894070103,
+                "cv_weighted_rmse_K": 0.3792947706451219
+              }
+            }
+          },
+          "mode": "cached",
+          "process_peak_ram_bytes": 3743711232,
+          "production_labels_loaded": false,
+          "production_phase_seconds": {
+            "anchor_forward": 9.387554957997054,
+            "batch_prepare": 3.7245235839509405,
+            "full_field_reconstruction": 0.8725485000177287,
+            "graph_load_or_build": 1.1081729999859817,
+            "input": 1.1424047909677029,
+            "query_forward": 52.804354917025194,
+            "scale_reconstruction": 0.006004124996252358,
+            "serialization": 0.05361904198070988
+          },
+          "reconstruction_cache": {
+            "build_seconds": 0.1964045829954557,
+            "cache_hit": false,
+            "label_independent": true,
+            "load_seconds": 0.017942334001418203,
+            "path": "runtime-artifact://reconstruction_16384_f752e9da5a04aa5f050121862cc31cbc947b55916f276ec36afb28735f2fbb9f.npz",
+            "save_seconds": 0.020246125000994653
+          }
+        }
+      ],
+      "environment": {
+        "device": "TFRT_CPU_0",
+        "jax": "0.9.2",
+        "python": "3.12.3 (v3.12.3:f6650f9ad7, Apr  9 2024, 08:18:47) [Clang 13.0.0 (clang-1300.0.29.30)]"
+      },
+      "graph_builder_code_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+      "hard_accessed": false,
+      "mode": "cached",
+      "platform": "cpu",
+      "resolution": 16384,
+      "role": "test_iid",
+      "sample_count": 128,
+      "schema_version": "heat3d_v6_final_performance_direct_v1",
+      "status": "passed",
+      "timing_contract": {
+        "cross_run_phase_addition": false,
+        "direct_single_cycle_measurements": true,
+        "evaluation": "full-field production + label read + metrics/diagnostics",
+        "full_field_production": "input + graph load/build + batch prepare + model-core + 240825-node reconstruction + serialization",
+        "model_core": "anchor/query forward + scale reconstruction"
+      },
+      "timing_summary_seconds": {
+        "evaluation": {
+          "count": 1,
+          "max": 71.90876008395571,
+          "mean": 71.90876008395571,
+          "median": 71.90876008395571,
+          "min": 71.90876008395571,
+          "p95": 71.90876008395571,
+          "std": 0.0,
+          "values": [
+            71.90876008395571
+          ]
+        },
+        "full_field_production": {
+          "count": 1,
+          "max": 69.53674941696227,
+          "mean": 69.53674941696227,
+          "median": 69.53674941696227,
+          "min": 69.53674941696227,
+          "p95": 69.53674941696227,
+          "std": 0.0,
+          "values": [
+            69.53674941696227
+          ]
+        },
+        "model_core": {
+          "count": 1,
+          "max": 62.19886133400723,
+          "mean": 62.19886133400723,
+          "median": 62.19886133400723,
+          "min": 62.19886133400723,
+          "p95": 62.19886133400723,
+          "std": 0.0,
+          "values": [
+            62.19886133400723
+          ]
+        }
+      },
+      "training_executed": false
+    },
+    "4096": {
+      "batch_size": 8,
+      "checkpoint": {
+        "config_id": "V6_03_V5best_P1h",
+        "epoch": 111,
+        "modified": false,
+        "sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
+      },
+      "checkpoint_modified": false,
+      "cycles": [
+        {
+          "cycle_index": 1,
+          "device_memory": {
+            "bytes_in_use": null,
+            "bytes_limit": null,
+            "device": "TFRT_CPU_0",
+            "peak_bytes_in_use": null,
+            "platform": "cpu"
+          },
+          "direct_timing_seconds": {
+            "evaluation": 34.23110762500437,
+            "full_field_production": 31.93675287498627,
+            "model_core": 25.281925291987136
+          },
+          "evaluation_phase_seconds": {
+            "label_read_seconds": 0.8929134169593453,
+            "metrics_diagnostics_seconds": 1.386190416989848
+          },
+          "graph_cache": {
+            "anchor": {
+              "cache_file": "runtime-artifact://graph_1024_01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46.npz",
+              "cache_file_bytes": 81468,
+              "cache_file_sha256": "c49f6f9aa16b9cb220a1c67072e2a83df8bb9d6585bd3a0b176d6397c307a6a0",
+              "cache_hit": true,
+              "cache_key": "01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46",
+              "cache_key_payload": {
+                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+                "graph_config": {
+                  "coverage_repair_policy": "none",
+                  "discrete_coverage_multiplier": 1.0,
+                  "discrete_graph_backend": "sparse_kdtree_v1",
+                  "discrete_graph_chunk_size": 1024,
+                  "min_physical_coverage": 1,
+                  "node_coordinate_encoding": "raw",
+                  "node_coordinate_freqs": 4,
+                  "overlap_factor_p2r": 1.5,
+                  "overlap_factor_r2p": 2.0,
+                  "radius_policy": "discrete_physical_coverage",
+                  "repair_p2r": true,
+                  "repair_r2p": true,
+                  "rmesh_levels": 3,
+                  "subsample_factor": 4
+                },
+                "graph_seed": 0,
+                "schema_version": "heat3d_graph_cache_key_v2",
+                "support_hash": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304"
+              },
+              "equivalence": {
+                "audited": false,
+                "graph_hash_equal": null,
+                "metadata_hash_equal": null
+              },
+              "graph_hash": "2fb071548dfc6adc6461cc8b4baccccd4cc18bd7fd875c9d9ae0f186a6655915",
+              "load_seconds": 0.0029558329842984676,
+              "metadata_hash": "c147e69af44ecb980df95eb61348ed643008179b8199d0bafd4deb4cc48f9a2a",
+              "save": null,
+              "uncached_build_seconds": null
+            },
+            "query": {
+              "cache_file": "runtime-artifact://graph_4096_ee254f92e23a1762c6b1c3ef669769bc6d91c72622ad223204421015c58d17b3.npz",
+              "cache_file_bytes": 282384,
+              "cache_file_sha256": "d95ede71a6b9f484a88b7872f7e61e603917abe9eeee571724f1e49aa38fc5d7",
+              "cache_hit": true,
+              "cache_key": "ee254f92e23a1762c6b1c3ef669769bc6d91c72622ad223204421015c58d17b3",
+              "cache_key_payload": {
+                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+                "graph_config": {
+                  "coverage_repair_policy": "none",
+                  "discrete_coverage_multiplier": 1.0,
+                  "discrete_graph_backend": "sparse_kdtree_v1",
+                  "discrete_graph_chunk_size": 1024,
+                  "min_physical_coverage": 1,
+                  "node_coordinate_encoding": "raw",
+                  "node_coordinate_freqs": 4,
+                  "overlap_factor_p2r": 1.5,
+                  "overlap_factor_r2p": 2.0,
+                  "radius_policy": "discrete_physical_coverage",
+                  "repair_p2r": true,
+                  "repair_r2p": true,
+                  "rmesh_levels": 3,
+                  "subsample_factor": 8
+                },
+                "graph_seed": 0,
+                "schema_version": "heat3d_graph_cache_key_v2",
+                "support_hash": "1d335a2e66d14aa850d7fb7542ee2c1ef1ebef46d0d0b248b56171709cd322bd"
+              },
+              "equivalence": {
+                "audited": false,
+                "graph_hash_equal": null,
+                "metadata_hash_equal": null
+              },
+              "graph_hash": "6bd70a037a6a4173e8ff8b348d4afb066728f1fdcaeef9ad79e25392e1c8c652",
+              "load_seconds": 0.002306042006239295,
+              "metadata_hash": "f4c3c120ca9b6d529a87ca6b59c61de92b8bc36e44ea7f21c6ee0c13d6b21395",
+              "save": null,
+              "uncached_build_seconds": null
+            }
+          },
+          "metrics": {
+            "full_field": {
+              "bottom_cv_weighted_rmse_K": 0.48296518437942565,
+              "cv_weighted_point_global_relative_rmse_pct": 3.5874150681606465,
+              "cv_weighted_rmse_K": 1.4549693124238605,
+              "full_node_count": 240825,
+              "interface_cv_weighted_rmse_K": {
+                "interface_01": 0.7647786615826364,
+                "interface_02": 0.7355467990156122,
+                "interface_03": 0.7316005667739465,
+                "interface_04": 0.7684904118788775,
+                "interface_05": 0.7283522799270319,
+                "interface_06": 0.6571934585657572,
+                "interface_07": 0.5600802874478087,
+                "interface_08": 0.4655666808606072
+              },
+              "layer_cv_weighted_rmse_K": {
+                "layer_00": 2.1455277145656693,
+                "layer_01": 1.211583910672499,
+                "layer_02": 0.7118764370038463,
+                "layer_03": 0.7495344852144574,
+                "layer_04": 0.70231886527945,
+                "layer_05": 0.6650261353991442,
+                "layer_06": 0.5731041447457109,
+                "layer_07": 0.5267312273901654,
+                "layer_08": 0.3606438206982967
+              },
+              "peak_error_rmse_K": 1.037314663323732,
+              "sample_count": 128,
+              "sample_first_cv_relative_rmse_pct": 3.4300085879267224,
+              "source_cv_weighted_rmse_K": 1.0239659162827297,
+              "top_cv_weighted_rmse_K": 0.3287985437872254
+            },
+            "support": {
+              "bottom_surface": {
+                "cv_weighted_bias_K": -0.07144844068964569,
+                "cv_weighted_relative_rmse_pct": 1.5392005967345872,
+                "cv_weighted_rmse_K": 0.4966368982398366
+              },
+              "field_cv_weighted_bias_K": 0.03109924394681484,
+              "layer_drop": {
+                "absolute_error_distribution_K": {
+                  "max": 0.8274434570378659,
+                  "mean": 0.09935758392803004,
+                  "median": 0.07961652698016586,
+                  "min": 7.483006434938488e-06,
+                  "p05": 0.007793324906104362,
+                  "p95": 0.26653496934051313
+                },
+                "rmse_K": 0.13625689603310662
+              },
+              "layer_mean": {
+                "absolute_error_distribution_K": {
+                  "max": 0.6794233148879272,
+                  "mean": 0.09287833793241469,
+                  "median": 0.069967030559134,
+                  "min": 0.0001296827568424419,
+                  "p05": 0.005456165659856893,
+                  "p95": 0.25462471302822026
+                },
+                "rmse_K": 0.12709660687892851
+              },
+              "node_count": 4096,
+              "peak": {
+                "bias_K": 0.16005386634860308,
+                "mae_K": 0.7960212929747872,
+                "rmse_K": 1.0423507780569092
+              },
+              "point_global_cv_relative_rmse_pct": 1.466874485703332,
+              "raw_cv_weighted_rmse_K": 0.6266983884208789,
+              "sample_count": 128,
+              "sample_first_cv_relative_rmse_pct": 1.4326703464985795,
+              "scale_log_rmse": 0.0013863417526098927,
+              "scale_signed_bias": 0.0006712848059986223,
+              "shape_cv_rmse": 0.014244991792898775,
+              "source_region": {
+                "cv_weighted_bias_K": 0.12445738137697206,
+                "cv_weighted_relative_rmse_pct": 2.238490246260547,
+                "cv_weighted_rmse_K": 1.0322178732093155
+              },
+              "top_surface": {
+                "cv_weighted_bias_K": 0.04062190664938857,
+                "cv_weighted_relative_rmse_pct": 0.8104653397462183,
+                "cv_weighted_rmse_K": 0.3460676329238669
+              }
+            }
+          },
+          "mode": "cached",
+          "process_peak_ram_bytes": 2867478528,
+          "production_labels_loaded": false,
+          "production_phase_seconds": {
+            "anchor_forward": 9.45147025003098,
+            "batch_prepare": 3.0057534169754945,
+            "full_field_reconstruction": 0.9990925840102136,
+            "graph_load_or_build": 1.0949352919706143,
+            "input": 1.1359781249775551,
+            "query_forward": 15.828085458022542,
+            "scale_reconstruction": 0.001609582977835089,
+            "serialization": 0.04245308297686279
+          },
+          "reconstruction_cache": {
+            "build_seconds": 0.1597675420343876,
+            "cache_hit": false,
+            "label_independent": true,
+            "load_seconds": 0.015681833028793335,
+            "path": "runtime-artifact://reconstruction_4096_1d335a2e66d14aa850d7fb7542ee2c1ef1ebef46d0d0b248b56171709cd322bd.npz",
+            "save_seconds": 0.018010708037763834
+          }
+        }
+      ],
+      "environment": {
+        "device": "TFRT_CPU_0",
+        "jax": "0.9.2",
+        "python": "3.12.3 (v3.12.3:f6650f9ad7, Apr  9 2024, 08:18:47) [Clang 13.0.0 (clang-1300.0.29.30)]"
+      },
+      "graph_builder_code_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+      "hard_accessed": false,
+      "mode": "cached",
+      "platform": "cpu",
+      "resolution": 4096,
+      "role": "test_iid",
+      "sample_count": 128,
+      "schema_version": "heat3d_v6_final_performance_direct_v1",
+      "status": "passed",
+      "timing_contract": {
+        "cross_run_phase_addition": false,
+        "direct_single_cycle_measurements": true,
+        "evaluation": "full-field production + label read + metrics/diagnostics",
+        "full_field_production": "input + graph load/build + batch prepare + model-core + 240825-node reconstruction + serialization",
+        "model_core": "anchor/query forward + scale reconstruction"
+      },
+      "timing_summary_seconds": {
+        "evaluation": {
+          "count": 1,
+          "max": 34.23110762500437,
+          "mean": 34.23110762500437,
+          "median": 34.23110762500437,
+          "min": 34.23110762500437,
+          "p95": 34.23110762500437,
+          "std": 0.0,
+          "values": [
+            34.23110762500437
+          ]
+        },
+        "full_field_production": {
+          "count": 1,
+          "max": 31.93675287498627,
+          "mean": 31.93675287498627,
+          "median": 31.93675287498627,
+          "min": 31.93675287498627,
+          "p95": 31.93675287498627,
+          "std": 0.0,
+          "values": [
+            31.93675287498627
+          ]
+        },
+        "model_core": {
+          "count": 1,
+          "max": 25.281925291987136,
+          "mean": 25.281925291987136,
+          "median": 25.281925291987136,
+          "min": 25.281925291987136,
+          "p95": 25.281925291987136,
+          "std": 0.0,
+          "values": [
+            25.281925291987136
+          ]
+        }
+      },
+      "training_executed": false
+    },
+    "8192": {
+      "batch_size": 8,
+      "checkpoint": {
+        "config_id": "V6_03_V5best_P1h",
+        "epoch": 111,
+        "modified": false,
+        "sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
+      },
+      "checkpoint_modified": false,
+      "cycles": [
+        {
+          "cycle_index": 1,
+          "device_memory": {
+            "bytes_in_use": null,
+            "bytes_limit": null,
+            "device": "TFRT_CPU_0",
+            "peak_bytes_in_use": null,
+            "platform": "cpu"
+          },
+          "direct_timing_seconds": {
+            "evaluation": 45.38437254197197,
+            "full_field_production": 42.99743624997791,
+            "model_core": 36.093803750001825
+          },
+          "evaluation_phase_seconds": {
+            "label_read_seconds": 0.9610555830295198,
+            "metrics_diagnostics_seconds": 1.4107270000386052
+          },
+          "graph_cache": {
+            "anchor": {
+              "cache_file": "runtime-artifact://graph_1024_01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46.npz",
+              "cache_file_bytes": 81468,
+              "cache_file_sha256": "c49f6f9aa16b9cb220a1c67072e2a83df8bb9d6585bd3a0b176d6397c307a6a0",
+              "cache_hit": true,
+              "cache_key": "01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46",
+              "cache_key_payload": {
+                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+                "graph_config": {
+                  "coverage_repair_policy": "none",
+                  "discrete_coverage_multiplier": 1.0,
+                  "discrete_graph_backend": "sparse_kdtree_v1",
+                  "discrete_graph_chunk_size": 1024,
+                  "min_physical_coverage": 1,
+                  "node_coordinate_encoding": "raw",
+                  "node_coordinate_freqs": 4,
+                  "overlap_factor_p2r": 1.5,
+                  "overlap_factor_r2p": 2.0,
+                  "radius_policy": "discrete_physical_coverage",
+                  "repair_p2r": true,
+                  "repair_r2p": true,
+                  "rmesh_levels": 3,
+                  "subsample_factor": 4
+                },
+                "graph_seed": 0,
+                "schema_version": "heat3d_graph_cache_key_v2",
+                "support_hash": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304"
+              },
+              "equivalence": {
+                "audited": false,
+                "graph_hash_equal": null,
+                "metadata_hash_equal": null
+              },
+              "graph_hash": "2fb071548dfc6adc6461cc8b4baccccd4cc18bd7fd875c9d9ae0f186a6655915",
+              "load_seconds": 0.001777541998308152,
+              "metadata_hash": "c147e69af44ecb980df95eb61348ed643008179b8199d0bafd4deb4cc48f9a2a",
+              "save": null,
+              "uncached_build_seconds": null
+            },
+            "query": {
+              "cache_file": "runtime-artifact://graph_8192_9f8f07e263e1c02e047388d867616f97129940b04df6eb34c624adab388ab530.npz",
+              "cache_file_bytes": 542840,
+              "cache_file_sha256": "73df4396f873d2b292e39ce9eac929683078db7d1140135af35a18fc3e6b1e59",
+              "cache_hit": true,
+              "cache_key": "9f8f07e263e1c02e047388d867616f97129940b04df6eb34c624adab388ab530",
+              "cache_key_payload": {
+                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+                "graph_config": {
+                  "coverage_repair_policy": "none",
+                  "discrete_coverage_multiplier": 1.0,
+                  "discrete_graph_backend": "sparse_kdtree_v1",
+                  "discrete_graph_chunk_size": 1024,
+                  "min_physical_coverage": 1,
+                  "node_coordinate_encoding": "raw",
+                  "node_coordinate_freqs": 4,
+                  "overlap_factor_p2r": 1.5,
+                  "overlap_factor_r2p": 2.0,
+                  "radius_policy": "discrete_physical_coverage",
+                  "repair_p2r": true,
+                  "repair_r2p": true,
+                  "rmesh_levels": 3,
+                  "subsample_factor": 8
+                },
+                "graph_seed": 0,
+                "schema_version": "heat3d_graph_cache_key_v2",
+                "support_hash": "73894b60ba1285774502d72d6b580ea07f1df283a3534eac7fb085471e2d4c4a"
+              },
+              "equivalence": {
+                "audited": false,
+                "graph_hash_equal": null,
+                "metadata_hash_equal": null
+              },
+              "graph_hash": "b902e72ff7fe5005fff31832439b27e57147d58463e391562a7f8594b9bb6a89",
+              "load_seconds": 0.00248904200270772,
+              "metadata_hash": "a1c087558801e656ca7fc21d11fa92df16980ccdb63344959046c334f4c0d29b",
+              "save": null,
+              "uncached_build_seconds": null
+            }
+          },
+          "metrics": {
+            "full_field": {
+              "bottom_cv_weighted_rmse_K": 0.5880987301132469,
+              "cv_weighted_point_global_relative_rmse_pct": 3.0975577517259874,
+              "cv_weighted_rmse_K": 1.2562949607425073,
+              "full_node_count": 240825,
+              "interface_cv_weighted_rmse_K": {
+                "interface_01": 0.824003394234803,
+                "interface_02": 0.7384826456592665,
+                "interface_03": 0.7216744044891368,
+                "interface_04": 0.723971203725201,
+                "interface_05": 0.641765133174651,
+                "interface_06": 0.6934578713169075,
+                "interface_07": 0.5827012540958335,
+                "interface_08": 0.5718948777195518
+              },
+              "layer_cv_weighted_rmse_K": {
+                "layer_00": 1.8009462942733012,
+                "layer_01": 1.1264651745692262,
+                "layer_02": 0.711697398796852,
+                "layer_03": 0.6791469409826711,
+                "layer_04": 0.6774173662401238,
+                "layer_05": 0.6072963281677467,
+                "layer_06": 0.6272095724388745,
+                "layer_07": 0.6238654446567629,
+                "layer_08": 0.35898543872662386
+              },
+              "peak_error_rmse_K": 1.2081650053791564,
+              "sample_count": 128,
+              "sample_first_cv_relative_rmse_pct": 3.0001441828682602,
+              "source_cv_weighted_rmse_K": 1.0157655736264908,
+              "top_cv_weighted_rmse_K": 0.3217638958800024
+            },
+            "support": {
+              "bottom_surface": {
+                "cv_weighted_bias_K": 0.1366293884978074,
+                "cv_weighted_relative_rmse_pct": 1.846668742799747,
+                "cv_weighted_rmse_K": 0.5959057807613894
+              },
+              "field_cv_weighted_bias_K": 0.03886625035675554,
+              "layer_drop": {
+                "absolute_error_distribution_K": {
+                  "max": 1.0432895316976598,
+                  "mean": 0.09903588621365536,
+                  "median": 0.06784809201700881,
+                  "min": 2.804990695892684e-05,
+                  "p05": 0.006039292534687493,
+                  "p95": 0.30098926604681747
+                },
+                "rmse_K": 0.15212326056043377
+              },
+              "layer_mean": {
+                "absolute_error_distribution_K": {
+                  "max": 0.9113497714398946,
+                  "mean": 0.10210696662580619,
+                  "median": 0.07419338604340986,
+                  "min": 0.00017462993504580027,
+                  "p05": 0.005363734367996642,
+                  "p95": 0.29227162053391553
+                },
+                "rmse_K": 0.14756399266793394
+              },
+              "node_count": 8192,
+              "peak": {
+                "bias_K": 0.6751338517572689,
+                "mae_K": 1.0515075997183283,
+                "rmse_K": 1.2204515120553443
+              },
+              "point_global_cv_relative_rmse_pct": 1.5437371063501921,
+              "raw_cv_weighted_rmse_K": 0.6594475155572631,
+              "sample_count": 128,
+              "sample_first_cv_relative_rmse_pct": 1.525788416102589,
+              "scale_log_rmse": 0.0015123153207948546,
+              "scale_signed_bias": 0.0008122627599202563,
+              "shape_cv_rmse": 0.015168966063212701,
+              "source_region": {
+                "cv_weighted_bias_K": 0.46489666037717514,
+                "cv_weighted_relative_rmse_pct": 2.3076741859913197,
+                "cv_weighted_rmse_K": 1.0637485038436794
+              },
+              "top_surface": {
+                "cv_weighted_bias_K": 0.024241610168947065,
+                "cv_weighted_relative_rmse_pct": 0.7689397746842006,
+                "cv_weighted_rmse_K": 0.32837164875356545
+              }
+            }
+          },
+          "mode": "cached",
+          "process_peak_ram_bytes": 3281207296,
+          "production_labels_loaded": false,
+          "production_phase_seconds": {
+            "anchor_forward": 9.406719749968033,
+            "batch_prepare": 3.2573688750271685,
+            "full_field_reconstruction": 0.9926033749943599,
+            "graph_load_or_build": 1.1033428749651648,
+            "input": 1.1018642080016434,
+            "query_forward": 26.68359570793109,
+            "scale_reconstruction": 0.00208079197909683,
+            "serialization": 0.05358204199001193
+          },
+          "reconstruction_cache": {
+            "build_seconds": 0.1695000419858843,
+            "cache_hit": false,
+            "label_independent": true,
+            "load_seconds": 0.01604370796121657,
+            "path": "runtime-artifact://reconstruction_8192_73894b60ba1285774502d72d6b580ea07f1df283a3534eac7fb085471e2d4c4a.npz",
+            "save_seconds": 0.019387457985430956
+          }
+        }
+      ],
+      "environment": {
+        "device": "TFRT_CPU_0",
+        "jax": "0.9.2",
+        "python": "3.12.3 (v3.12.3:f6650f9ad7, Apr  9 2024, 08:18:47) [Clang 13.0.0 (clang-1300.0.29.30)]"
+      },
+      "graph_builder_code_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
+      "hard_accessed": false,
+      "mode": "cached",
+      "platform": "cpu",
+      "resolution": 8192,
+      "role": "test_iid",
+      "sample_count": 128,
+      "schema_version": "heat3d_v6_final_performance_direct_v1",
+      "status": "passed",
+      "timing_contract": {
+        "cross_run_phase_addition": false,
+        "direct_single_cycle_measurements": true,
+        "evaluation": "full-field production + label read + metrics/diagnostics",
+        "full_field_production": "input + graph load/build + batch prepare + model-core + 240825-node reconstruction + serialization",
+        "model_core": "anchor/query forward + scale reconstruction"
+      },
+      "timing_summary_seconds": {
+        "evaluation": {
+          "count": 1,
+          "max": 45.38437254197197,
+          "mean": 45.38437254197197,
+          "median": 45.38437254197197,
+          "min": 45.38437254197197,
+          "p95": 45.38437254197197,
+          "std": 0.0,
+          "values": [
+            45.38437254197197
+          ]
+        },
+        "full_field_production": {
+          "count": 1,
+          "max": 42.99743624997791,
+          "mean": 42.99743624997791,
+          "median": 42.99743624997791,
+          "min": 42.99743624997791,
+          "p95": 42.99743624997791,
+          "std": 0.0,
+          "values": [
+            42.99743624997791
+          ]
+        },
+        "model_core": {
+          "count": 1,
+          "max": 36.093803750001825,
+          "mean": 36.093803750001825,
+          "median": 36.093803750001825,
+          "min": 36.093803750001825,
+          "p95": 36.093803750001825,
+          "std": 0.0,
+          "values": [
+            36.093803750001825
+          ]
+        }
+      },
+      "training_executed": false
+    }
+  },
   "decision_basis": {
+    "confirmatory_holdout_role": "descriptive_confirmation_only",
     "default_4096": "lowest frozen production resolution",
     "experimental_32768": "timing and valid experiment only; excluded from primary test table and production defaults",
     "full_field_8192": "lower valid full-field error than 4096 with modest persistent GPU cost",
-    "high_resolution_16384": "lowest preregistered valid full-field error; higher memory and latency than 8192",
-    "selection_source": "valid_iid_timing_and_accuracy_before_test_open",
-    "test_iid_role": "descriptive_confirmation_only"
+    "maximum_full_field_accuracy_16384": "lowest preregistered valid full-field error; higher memory and latency than 8192",
+    "selection_source": "valid_iid_timing_and_accuracy_before_holdout_open"
   },
   "frozen_decision_unchanged": {
-    "default": 4096,
+    "balanced_full_field": 8192,
+    "default_hotspot_oriented": 4096,
     "experimental_excluded_from_primary_test_table": 32768,
-    "full_field": 8192,
-    "high_resolution": 16384
+    "maximum_full_field_accuracy": 16384
   },
   "hard_accessed": false,
-  "matched_accuracy_fvm": {
+  "legal_structured_fvm_mesh_sensitivity": {
     "evaluation_role": "valid_iid",
     "meshes": {
       "coarse": {
@@ -769,7 +1611,7 @@
           "minimum_source_in_plane_intervals": 7,
           "passed": true
         },
-        "timing_source": "/private/tmp/v6_prod_d5c_solver_valid.json",
+        "timing_source": "runtime-artifact://v6_prod_d5c_solver_valid.json",
         "warm_solve_seconds": {
           "count": 128,
           "max": 1.6960529169882648,
@@ -958,7 +1800,7 @@
     "process_peak_ram_bytes": 1124548608,
     "reference_node_count": 240825,
     "sample_count": 128,
-    "schema_version": "heat3d_v6_matched_accuracy_fvm_v1",
+    "schema_version": "heat3d_v6_legal_structured_fvm_mesh_sensitivity_v1",
     "source_aware_points_used_as_fvm_mesh": false,
     "status": "passed",
     "test_hard_accessed": false,
@@ -1089,6 +1931,42 @@
     }
   ],
   "preregistration_commit": "53fc4c334fd1f20813f1d32eb8cff9a22efc1c17",
+  "protocol_deviation": {
+    "classification": "protocol_deviation_corrected_before_formal_reporting",
+    "deviation_id": "V6-PROTOCOL-DEVIATION-TEST-LADDER-001",
+    "excluded_temporary_results": [
+      {
+        "frozen_ladder": "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
+        "resolution": 4096,
+        "sha256": "ad4546e935b12fbda6638bb85414a81bcbebceb07dabf49cf3d1f3781e62045b",
+        "status": "excluded_wrong_ladder_input",
+        "used_for_selection_or_reporting": false,
+        "wrong_ladder": "configs/heat3d_v6/v6_anchored_probe_ladder.json"
+      },
+      {
+        "frozen_ladder": "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
+        "resolution": 8192,
+        "sha256": "e7cd3e257aef857459a10eebfeffeb5cfe393a63c6053e225fe7f794b0fa0e06",
+        "status": "excluded_wrong_ladder_input",
+        "used_for_selection_or_reporting": false,
+        "wrong_ladder": "configs/heat3d_v6/v6_anchored_probe_ladder.json"
+      }
+    ],
+    "formal_result_sha256": {
+      "16384": "300b4f1d8382b026896f118955353b176e4b8086b16cab5d56495bbff8dae2ef",
+      "4096": "33d4a1e3932135f161219aef590fc3bfedbeca799ece553ae36a0f89810d4d15",
+      "8192": "808485ba1476fe5e63cfe2155f0e926ae56cf3017eb3e34e91b118a51a981c04"
+    },
+    "hard_accessed": false,
+    "incident": "The first command used the legacy anchored ladder for 4096/8192. Those temporary outputs are excluded. The 16384 attempt stopped at ladder-key lookup before label loading. The frozen source-aware workflow was then executed for all three preregistered resolutions.",
+    "ladder_sha256": {
+      "excluded_anchored": "f682a4b04bb43c36a73402930602db159b9720936184576f86df8cd0a1e084cf",
+      "frozen_source_aware": "d09f5dc9d935fe78fd0209fd17a8e7cd6be557c19459f547e561306504d5c782"
+    },
+    "opening_session": "single_post_preregistration_closeout_session",
+    "selection_or_workflow_changed": false,
+    "status": "completed_with_corrected_command_input"
+  },
   "runner_graph_reuse": {
     "batch_size": 8,
     "formal_training_executed": false,
@@ -1141,7 +2019,7 @@
       "metadata_hash_equal_to_legacy": true
     }
   },
-  "schema_version": "heat3d_v6_final_performance_closeout_v1",
+  "schema_version": "heat3d_v6_final_performance_governance_v2",
   "solver_inference_comparison": [
     {
       "cpu_cached_production_with_graph_load_s": 32.53699733299436,
@@ -1225,881 +2103,6 @@
     }
   ],
   "status": "passed",
-  "test_iid": {
-    "16384": {
-      "batch_size": 8,
-      "checkpoint": {
-        "config_id": "V6_03_V5best_P1h",
-        "epoch": 111,
-        "modified": false,
-        "sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
-      },
-      "checkpoint_modified": false,
-      "cycles": [
-        {
-          "cycle_index": 1,
-          "device_memory": {
-            "bytes_in_use": null,
-            "bytes_limit": null,
-            "device": "TFRT_CPU_0",
-            "peak_bytes_in_use": null,
-            "platform": "cpu"
-          },
-          "direct_timing_seconds": {
-            "evaluation": 71.90876008395571,
-            "full_field_production": 69.53674941696227,
-            "model_core": 62.19886133400723
-          },
-          "evaluation_phase_seconds": {
-            "label_read_seconds": 0.9612551659811288,
-            "metrics_diagnostics_seconds": 1.3966782089555636
-          },
-          "graph_cache": {
-            "anchor": {
-              "cache_file": "/private/tmp/v6final_direct_cpu/graph_cache/graph_1024_01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46.npz",
-              "cache_file_bytes": 81468,
-              "cache_file_sha256": "c49f6f9aa16b9cb220a1c67072e2a83df8bb9d6585bd3a0b176d6397c307a6a0",
-              "cache_hit": true,
-              "cache_key": "01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46",
-              "cache_key_payload": {
-                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-                "graph_config": {
-                  "coverage_repair_policy": "none",
-                  "discrete_coverage_multiplier": 1.0,
-                  "discrete_graph_backend": "sparse_kdtree_v1",
-                  "discrete_graph_chunk_size": 1024,
-                  "min_physical_coverage": 1,
-                  "node_coordinate_encoding": "raw",
-                  "node_coordinate_freqs": 4,
-                  "overlap_factor_p2r": 1.5,
-                  "overlap_factor_r2p": 2.0,
-                  "radius_policy": "discrete_physical_coverage",
-                  "repair_p2r": true,
-                  "repair_r2p": true,
-                  "rmesh_levels": 3,
-                  "subsample_factor": 4
-                },
-                "graph_seed": 0,
-                "schema_version": "heat3d_graph_cache_key_v2",
-                "support_hash": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304"
-              },
-              "equivalence": {
-                "audited": false,
-                "graph_hash_equal": null,
-                "metadata_hash_equal": null
-              },
-              "graph_hash": "2fb071548dfc6adc6461cc8b4baccccd4cc18bd7fd875c9d9ae0f186a6655915",
-              "load_seconds": 0.0031859169830568135,
-              "metadata_hash": "c147e69af44ecb980df95eb61348ed643008179b8199d0bafd4deb4cc48f9a2a",
-              "save": null,
-              "uncached_build_seconds": null
-            },
-            "query": {
-              "cache_file": "/private/tmp/v6final_direct_cpu/graph_cache/graph_16384_3c9fc92afed1e7e88e0149bcd762d73893150f44ab6450fdc808dec374efe333.npz",
-              "cache_file_bytes": 1095352,
-              "cache_file_sha256": "f5d187f4e655198f1f209e6974afea1e3c5674e43a171ecfe428f873a0740369",
-              "cache_hit": true,
-              "cache_key": "3c9fc92afed1e7e88e0149bcd762d73893150f44ab6450fdc808dec374efe333",
-              "cache_key_payload": {
-                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-                "graph_config": {
-                  "coverage_repair_policy": "none",
-                  "discrete_coverage_multiplier": 1.0,
-                  "discrete_graph_backend": "sparse_kdtree_v1",
-                  "discrete_graph_chunk_size": 1024,
-                  "min_physical_coverage": 1,
-                  "node_coordinate_encoding": "raw",
-                  "node_coordinate_freqs": 4,
-                  "overlap_factor_p2r": 1.5,
-                  "overlap_factor_r2p": 2.0,
-                  "radius_policy": "discrete_physical_coverage",
-                  "repair_p2r": true,
-                  "repair_r2p": true,
-                  "rmesh_levels": 3,
-                  "subsample_factor": 8
-                },
-                "graph_seed": 0,
-                "schema_version": "heat3d_graph_cache_key_v2",
-                "support_hash": "f752e9da5a04aa5f050121862cc31cbc947b55916f276ec36afb28735f2fbb9f"
-              },
-              "equivalence": {
-                "audited": false,
-                "graph_hash_equal": null,
-                "metadata_hash_equal": null
-              },
-              "graph_hash": "223f974248426afc8e6e5222e275c8f8737e5a33e31c93ed14b6dce6bfef1a3e",
-              "load_seconds": 0.0033314169850200415,
-              "metadata_hash": "b7d89ca7eb89df620e15912be4372a9d0332479269fce1cbe8609eaa5ecc28f8",
-              "save": null,
-              "uncached_build_seconds": null
-            }
-          },
-          "metrics": {
-            "full_field": {
-              "bottom_cv_weighted_rmse_K": 0.6997627349934288,
-              "cv_weighted_point_global_relative_rmse_pct": 2.865153459990657,
-              "cv_weighted_rmse_K": 1.1620373668689663,
-              "full_node_count": 240825,
-              "interface_cv_weighted_rmse_K": {
-                "interface_01": 1.0790594199571142,
-                "interface_02": 0.7673929943432638,
-                "interface_03": 0.7556476729456338,
-                "interface_04": 0.7083206454221388,
-                "interface_05": 0.7001849818665206,
-                "interface_06": 0.7919425605813161,
-                "interface_07": 0.6389061987562132,
-                "interface_08": 0.7131955144346797
-              },
-              "layer_cv_weighted_rmse_K": {
-                "layer_00": 1.546983644924556,
-                "layer_01": 1.213860991757144,
-                "layer_02": 0.7618328978230849,
-                "layer_03": 0.7114332629108878,
-                "layer_04": 0.7149562546964917,
-                "layer_05": 0.6750568695244494,
-                "layer_06": 0.7405982877229036,
-                "layer_07": 0.7082456385832195,
-                "layer_08": 0.4292983889658301
-              },
-              "peak_error_rmse_K": 1.2075332677203825,
-              "sample_count": 128,
-              "sample_first_cv_relative_rmse_pct": 2.850672806279017,
-              "source_cv_weighted_rmse_K": 1.2154994178615255,
-              "top_cv_weighted_rmse_K": 0.3687130955640761
-            },
-            "support": {
-              "bottom_surface": {
-                "cv_weighted_bias_K": 0.20132041030384382,
-                "cv_weighted_relative_rmse_pct": 2.1843489586691667,
-                "cv_weighted_rmse_K": 0.7047606846328811
-              },
-              "field_cv_weighted_bias_K": 0.047284266692401905,
-              "layer_drop": {
-                "absolute_error_distribution_K": {
-                  "max": 0.9620896833226382,
-                  "mean": 0.12187863400336442,
-                  "median": 0.08758279051036766,
-                  "min": 8.917154912069236e-05,
-                  "p05": 0.008147174055218545,
-                  "p95": 0.3407736033525637
-                },
-                "rmse_K": 0.16811498899077262
-              },
-              "layer_mean": {
-                "absolute_error_distribution_K": {
-                  "max": 1.0635215725739045,
-                  "mean": 0.1336905995940726,
-                  "median": 0.09740185929734402,
-                  "min": 0.0001068339980889732,
-                  "p05": 0.010392750404899155,
-                  "p95": 0.37866425669825826
-                },
-                "rmse_K": 0.18887752864370227
-              },
-              "node_count": 16384,
-              "peak": {
-                "bias_K": 0.9183035013507705,
-                "mae_K": 1.0886769518637216,
-                "rmse_K": 1.2135034230029793
-              },
-              "point_global_cv_relative_rmse_pct": 1.7704441674178866,
-              "raw_cv_weighted_rmse_K": 0.7561574610474187,
-              "sample_count": 128,
-              "sample_first_cv_relative_rmse_pct": 1.770272878882503,
-              "scale_log_rmse": 0.001667980906795835,
-              "scale_signed_bias": 0.0009959223652918937,
-              "shape_cv_rmse": 0.01760851055702086,
-              "source_region": {
-                "cv_weighted_bias_K": 0.7626992345097365,
-                "cv_weighted_relative_rmse_pct": 2.7226792991150424,
-                "cv_weighted_rmse_K": 1.2555960477412287
-              },
-              "top_surface": {
-                "cv_weighted_bias_K": -0.05323949484120756,
-                "cv_weighted_relative_rmse_pct": 0.8879619894070103,
-                "cv_weighted_rmse_K": 0.3792947706451219
-              }
-            }
-          },
-          "mode": "cached",
-          "process_peak_ram_bytes": 3743711232,
-          "production_labels_loaded": false,
-          "production_phase_seconds": {
-            "anchor_forward": 9.387554957997054,
-            "batch_prepare": 3.7245235839509405,
-            "full_field_reconstruction": 0.8725485000177287,
-            "graph_load_or_build": 1.1081729999859817,
-            "input": 1.1424047909677029,
-            "query_forward": 52.804354917025194,
-            "scale_reconstruction": 0.006004124996252358,
-            "serialization": 0.05361904198070988
-          },
-          "reconstruction_cache": {
-            "build_seconds": 0.1964045829954557,
-            "cache_hit": false,
-            "label_independent": true,
-            "load_seconds": 0.017942334001418203,
-            "path": "/private/tmp/v6final_direct_cpu/reconstruction_cache/reconstruction_16384_f752e9da5a04aa5f050121862cc31cbc947b55916f276ec36afb28735f2fbb9f.npz",
-            "save_seconds": 0.020246125000994653
-          }
-        }
-      ],
-      "environment": {
-        "device": "TFRT_CPU_0",
-        "jax": "0.9.2",
-        "python": "3.12.3 (v3.12.3:f6650f9ad7, Apr  9 2024, 08:18:47) [Clang 13.0.0 (clang-1300.0.29.30)]"
-      },
-      "graph_builder_code_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-      "hard_accessed": false,
-      "mode": "cached",
-      "platform": "cpu",
-      "resolution": 16384,
-      "role": "test_iid",
-      "sample_count": 128,
-      "schema_version": "heat3d_v6_final_performance_direct_v1",
-      "status": "passed",
-      "timing_contract": {
-        "cross_run_phase_addition": false,
-        "direct_single_cycle_measurements": true,
-        "evaluation": "full-field production + label read + metrics/diagnostics",
-        "full_field_production": "input + graph load/build + batch prepare + model-core + 240825-node reconstruction + serialization",
-        "model_core": "anchor/query forward + scale reconstruction"
-      },
-      "timing_summary_seconds": {
-        "evaluation": {
-          "count": 1,
-          "max": 71.90876008395571,
-          "mean": 71.90876008395571,
-          "median": 71.90876008395571,
-          "min": 71.90876008395571,
-          "p95": 71.90876008395571,
-          "std": 0.0,
-          "values": [
-            71.90876008395571
-          ]
-        },
-        "full_field_production": {
-          "count": 1,
-          "max": 69.53674941696227,
-          "mean": 69.53674941696227,
-          "median": 69.53674941696227,
-          "min": 69.53674941696227,
-          "p95": 69.53674941696227,
-          "std": 0.0,
-          "values": [
-            69.53674941696227
-          ]
-        },
-        "model_core": {
-          "count": 1,
-          "max": 62.19886133400723,
-          "mean": 62.19886133400723,
-          "median": 62.19886133400723,
-          "min": 62.19886133400723,
-          "p95": 62.19886133400723,
-          "std": 0.0,
-          "values": [
-            62.19886133400723
-          ]
-        }
-      },
-      "training_executed": false
-    },
-    "4096": {
-      "batch_size": 8,
-      "checkpoint": {
-        "config_id": "V6_03_V5best_P1h",
-        "epoch": 111,
-        "modified": false,
-        "sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
-      },
-      "checkpoint_modified": false,
-      "cycles": [
-        {
-          "cycle_index": 1,
-          "device_memory": {
-            "bytes_in_use": null,
-            "bytes_limit": null,
-            "device": "TFRT_CPU_0",
-            "peak_bytes_in_use": null,
-            "platform": "cpu"
-          },
-          "direct_timing_seconds": {
-            "evaluation": 34.23110762500437,
-            "full_field_production": 31.93675287498627,
-            "model_core": 25.281925291987136
-          },
-          "evaluation_phase_seconds": {
-            "label_read_seconds": 0.8929134169593453,
-            "metrics_diagnostics_seconds": 1.386190416989848
-          },
-          "graph_cache": {
-            "anchor": {
-              "cache_file": "/private/tmp/v6final_direct_cpu/graph_cache/graph_1024_01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46.npz",
-              "cache_file_bytes": 81468,
-              "cache_file_sha256": "c49f6f9aa16b9cb220a1c67072e2a83df8bb9d6585bd3a0b176d6397c307a6a0",
-              "cache_hit": true,
-              "cache_key": "01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46",
-              "cache_key_payload": {
-                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-                "graph_config": {
-                  "coverage_repair_policy": "none",
-                  "discrete_coverage_multiplier": 1.0,
-                  "discrete_graph_backend": "sparse_kdtree_v1",
-                  "discrete_graph_chunk_size": 1024,
-                  "min_physical_coverage": 1,
-                  "node_coordinate_encoding": "raw",
-                  "node_coordinate_freqs": 4,
-                  "overlap_factor_p2r": 1.5,
-                  "overlap_factor_r2p": 2.0,
-                  "radius_policy": "discrete_physical_coverage",
-                  "repair_p2r": true,
-                  "repair_r2p": true,
-                  "rmesh_levels": 3,
-                  "subsample_factor": 4
-                },
-                "graph_seed": 0,
-                "schema_version": "heat3d_graph_cache_key_v2",
-                "support_hash": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304"
-              },
-              "equivalence": {
-                "audited": false,
-                "graph_hash_equal": null,
-                "metadata_hash_equal": null
-              },
-              "graph_hash": "2fb071548dfc6adc6461cc8b4baccccd4cc18bd7fd875c9d9ae0f186a6655915",
-              "load_seconds": 0.0029558329842984676,
-              "metadata_hash": "c147e69af44ecb980df95eb61348ed643008179b8199d0bafd4deb4cc48f9a2a",
-              "save": null,
-              "uncached_build_seconds": null
-            },
-            "query": {
-              "cache_file": "/private/tmp/v6final_direct_cpu/graph_cache/graph_4096_ee254f92e23a1762c6b1c3ef669769bc6d91c72622ad223204421015c58d17b3.npz",
-              "cache_file_bytes": 282384,
-              "cache_file_sha256": "d95ede71a6b9f484a88b7872f7e61e603917abe9eeee571724f1e49aa38fc5d7",
-              "cache_hit": true,
-              "cache_key": "ee254f92e23a1762c6b1c3ef669769bc6d91c72622ad223204421015c58d17b3",
-              "cache_key_payload": {
-                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-                "graph_config": {
-                  "coverage_repair_policy": "none",
-                  "discrete_coverage_multiplier": 1.0,
-                  "discrete_graph_backend": "sparse_kdtree_v1",
-                  "discrete_graph_chunk_size": 1024,
-                  "min_physical_coverage": 1,
-                  "node_coordinate_encoding": "raw",
-                  "node_coordinate_freqs": 4,
-                  "overlap_factor_p2r": 1.5,
-                  "overlap_factor_r2p": 2.0,
-                  "radius_policy": "discrete_physical_coverage",
-                  "repair_p2r": true,
-                  "repair_r2p": true,
-                  "rmesh_levels": 3,
-                  "subsample_factor": 8
-                },
-                "graph_seed": 0,
-                "schema_version": "heat3d_graph_cache_key_v2",
-                "support_hash": "1d335a2e66d14aa850d7fb7542ee2c1ef1ebef46d0d0b248b56171709cd322bd"
-              },
-              "equivalence": {
-                "audited": false,
-                "graph_hash_equal": null,
-                "metadata_hash_equal": null
-              },
-              "graph_hash": "6bd70a037a6a4173e8ff8b348d4afb066728f1fdcaeef9ad79e25392e1c8c652",
-              "load_seconds": 0.002306042006239295,
-              "metadata_hash": "f4c3c120ca9b6d529a87ca6b59c61de92b8bc36e44ea7f21c6ee0c13d6b21395",
-              "save": null,
-              "uncached_build_seconds": null
-            }
-          },
-          "metrics": {
-            "full_field": {
-              "bottom_cv_weighted_rmse_K": 0.48296518437942565,
-              "cv_weighted_point_global_relative_rmse_pct": 3.5874150681606465,
-              "cv_weighted_rmse_K": 1.4549693124238605,
-              "full_node_count": 240825,
-              "interface_cv_weighted_rmse_K": {
-                "interface_01": 0.7647786615826364,
-                "interface_02": 0.7355467990156122,
-                "interface_03": 0.7316005667739465,
-                "interface_04": 0.7684904118788775,
-                "interface_05": 0.7283522799270319,
-                "interface_06": 0.6571934585657572,
-                "interface_07": 0.5600802874478087,
-                "interface_08": 0.4655666808606072
-              },
-              "layer_cv_weighted_rmse_K": {
-                "layer_00": 2.1455277145656693,
-                "layer_01": 1.211583910672499,
-                "layer_02": 0.7118764370038463,
-                "layer_03": 0.7495344852144574,
-                "layer_04": 0.70231886527945,
-                "layer_05": 0.6650261353991442,
-                "layer_06": 0.5731041447457109,
-                "layer_07": 0.5267312273901654,
-                "layer_08": 0.3606438206982967
-              },
-              "peak_error_rmse_K": 1.037314663323732,
-              "sample_count": 128,
-              "sample_first_cv_relative_rmse_pct": 3.4300085879267224,
-              "source_cv_weighted_rmse_K": 1.0239659162827297,
-              "top_cv_weighted_rmse_K": 0.3287985437872254
-            },
-            "support": {
-              "bottom_surface": {
-                "cv_weighted_bias_K": -0.07144844068964569,
-                "cv_weighted_relative_rmse_pct": 1.5392005967345872,
-                "cv_weighted_rmse_K": 0.4966368982398366
-              },
-              "field_cv_weighted_bias_K": 0.03109924394681484,
-              "layer_drop": {
-                "absolute_error_distribution_K": {
-                  "max": 0.8274434570378659,
-                  "mean": 0.09935758392803004,
-                  "median": 0.07961652698016586,
-                  "min": 7.483006434938488e-06,
-                  "p05": 0.007793324906104362,
-                  "p95": 0.26653496934051313
-                },
-                "rmse_K": 0.13625689603310662
-              },
-              "layer_mean": {
-                "absolute_error_distribution_K": {
-                  "max": 0.6794233148879272,
-                  "mean": 0.09287833793241469,
-                  "median": 0.069967030559134,
-                  "min": 0.0001296827568424419,
-                  "p05": 0.005456165659856893,
-                  "p95": 0.25462471302822026
-                },
-                "rmse_K": 0.12709660687892851
-              },
-              "node_count": 4096,
-              "peak": {
-                "bias_K": 0.16005386634860308,
-                "mae_K": 0.7960212929747872,
-                "rmse_K": 1.0423507780569092
-              },
-              "point_global_cv_relative_rmse_pct": 1.466874485703332,
-              "raw_cv_weighted_rmse_K": 0.6266983884208789,
-              "sample_count": 128,
-              "sample_first_cv_relative_rmse_pct": 1.4326703464985795,
-              "scale_log_rmse": 0.0013863417526098927,
-              "scale_signed_bias": 0.0006712848059986223,
-              "shape_cv_rmse": 0.014244991792898775,
-              "source_region": {
-                "cv_weighted_bias_K": 0.12445738137697206,
-                "cv_weighted_relative_rmse_pct": 2.238490246260547,
-                "cv_weighted_rmse_K": 1.0322178732093155
-              },
-              "top_surface": {
-                "cv_weighted_bias_K": 0.04062190664938857,
-                "cv_weighted_relative_rmse_pct": 0.8104653397462183,
-                "cv_weighted_rmse_K": 0.3460676329238669
-              }
-            }
-          },
-          "mode": "cached",
-          "process_peak_ram_bytes": 2867478528,
-          "production_labels_loaded": false,
-          "production_phase_seconds": {
-            "anchor_forward": 9.45147025003098,
-            "batch_prepare": 3.0057534169754945,
-            "full_field_reconstruction": 0.9990925840102136,
-            "graph_load_or_build": 1.0949352919706143,
-            "input": 1.1359781249775551,
-            "query_forward": 15.828085458022542,
-            "scale_reconstruction": 0.001609582977835089,
-            "serialization": 0.04245308297686279
-          },
-          "reconstruction_cache": {
-            "build_seconds": 0.1597675420343876,
-            "cache_hit": false,
-            "label_independent": true,
-            "load_seconds": 0.015681833028793335,
-            "path": "/private/tmp/v6final_direct_cpu/reconstruction_cache/reconstruction_4096_1d335a2e66d14aa850d7fb7542ee2c1ef1ebef46d0d0b248b56171709cd322bd.npz",
-            "save_seconds": 0.018010708037763834
-          }
-        }
-      ],
-      "environment": {
-        "device": "TFRT_CPU_0",
-        "jax": "0.9.2",
-        "python": "3.12.3 (v3.12.3:f6650f9ad7, Apr  9 2024, 08:18:47) [Clang 13.0.0 (clang-1300.0.29.30)]"
-      },
-      "graph_builder_code_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-      "hard_accessed": false,
-      "mode": "cached",
-      "platform": "cpu",
-      "resolution": 4096,
-      "role": "test_iid",
-      "sample_count": 128,
-      "schema_version": "heat3d_v6_final_performance_direct_v1",
-      "status": "passed",
-      "timing_contract": {
-        "cross_run_phase_addition": false,
-        "direct_single_cycle_measurements": true,
-        "evaluation": "full-field production + label read + metrics/diagnostics",
-        "full_field_production": "input + graph load/build + batch prepare + model-core + 240825-node reconstruction + serialization",
-        "model_core": "anchor/query forward + scale reconstruction"
-      },
-      "timing_summary_seconds": {
-        "evaluation": {
-          "count": 1,
-          "max": 34.23110762500437,
-          "mean": 34.23110762500437,
-          "median": 34.23110762500437,
-          "min": 34.23110762500437,
-          "p95": 34.23110762500437,
-          "std": 0.0,
-          "values": [
-            34.23110762500437
-          ]
-        },
-        "full_field_production": {
-          "count": 1,
-          "max": 31.93675287498627,
-          "mean": 31.93675287498627,
-          "median": 31.93675287498627,
-          "min": 31.93675287498627,
-          "p95": 31.93675287498627,
-          "std": 0.0,
-          "values": [
-            31.93675287498627
-          ]
-        },
-        "model_core": {
-          "count": 1,
-          "max": 25.281925291987136,
-          "mean": 25.281925291987136,
-          "median": 25.281925291987136,
-          "min": 25.281925291987136,
-          "p95": 25.281925291987136,
-          "std": 0.0,
-          "values": [
-            25.281925291987136
-          ]
-        }
-      },
-      "training_executed": false
-    },
-    "8192": {
-      "batch_size": 8,
-      "checkpoint": {
-        "config_id": "V6_03_V5best_P1h",
-        "epoch": 111,
-        "modified": false,
-        "sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
-      },
-      "checkpoint_modified": false,
-      "cycles": [
-        {
-          "cycle_index": 1,
-          "device_memory": {
-            "bytes_in_use": null,
-            "bytes_limit": null,
-            "device": "TFRT_CPU_0",
-            "peak_bytes_in_use": null,
-            "platform": "cpu"
-          },
-          "direct_timing_seconds": {
-            "evaluation": 45.38437254197197,
-            "full_field_production": 42.99743624997791,
-            "model_core": 36.093803750001825
-          },
-          "evaluation_phase_seconds": {
-            "label_read_seconds": 0.9610555830295198,
-            "metrics_diagnostics_seconds": 1.4107270000386052
-          },
-          "graph_cache": {
-            "anchor": {
-              "cache_file": "/private/tmp/v6final_direct_cpu/graph_cache/graph_1024_01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46.npz",
-              "cache_file_bytes": 81468,
-              "cache_file_sha256": "c49f6f9aa16b9cb220a1c67072e2a83df8bb9d6585bd3a0b176d6397c307a6a0",
-              "cache_hit": true,
-              "cache_key": "01ae6e4d491bc936f8589d1164c39ab60c90efc43138c429eff9ee276507df46",
-              "cache_key_payload": {
-                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-                "graph_config": {
-                  "coverage_repair_policy": "none",
-                  "discrete_coverage_multiplier": 1.0,
-                  "discrete_graph_backend": "sparse_kdtree_v1",
-                  "discrete_graph_chunk_size": 1024,
-                  "min_physical_coverage": 1,
-                  "node_coordinate_encoding": "raw",
-                  "node_coordinate_freqs": 4,
-                  "overlap_factor_p2r": 1.5,
-                  "overlap_factor_r2p": 2.0,
-                  "radius_policy": "discrete_physical_coverage",
-                  "repair_p2r": true,
-                  "repair_r2p": true,
-                  "rmesh_levels": 3,
-                  "subsample_factor": 4
-                },
-                "graph_seed": 0,
-                "schema_version": "heat3d_graph_cache_key_v2",
-                "support_hash": "6907f9bc23ffdb9822494e24669527c2589a4fb8fd35eac93f03c16cc9604304"
-              },
-              "equivalence": {
-                "audited": false,
-                "graph_hash_equal": null,
-                "metadata_hash_equal": null
-              },
-              "graph_hash": "2fb071548dfc6adc6461cc8b4baccccd4cc18bd7fd875c9d9ae0f186a6655915",
-              "load_seconds": 0.001777541998308152,
-              "metadata_hash": "c147e69af44ecb980df95eb61348ed643008179b8199d0bafd4deb4cc48f9a2a",
-              "save": null,
-              "uncached_build_seconds": null
-            },
-            "query": {
-              "cache_file": "/private/tmp/v6final_direct_cpu/graph_cache/graph_8192_9f8f07e263e1c02e047388d867616f97129940b04df6eb34c624adab388ab530.npz",
-              "cache_file_bytes": 542840,
-              "cache_file_sha256": "73df4396f873d2b292e39ce9eac929683078db7d1140135af35a18fc3e6b1e59",
-              "cache_hit": true,
-              "cache_key": "9f8f07e263e1c02e047388d867616f97129940b04df6eb34c624adab388ab530",
-              "cache_key_payload": {
-                "graph_builder_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-                "graph_config": {
-                  "coverage_repair_policy": "none",
-                  "discrete_coverage_multiplier": 1.0,
-                  "discrete_graph_backend": "sparse_kdtree_v1",
-                  "discrete_graph_chunk_size": 1024,
-                  "min_physical_coverage": 1,
-                  "node_coordinate_encoding": "raw",
-                  "node_coordinate_freqs": 4,
-                  "overlap_factor_p2r": 1.5,
-                  "overlap_factor_r2p": 2.0,
-                  "radius_policy": "discrete_physical_coverage",
-                  "repair_p2r": true,
-                  "repair_r2p": true,
-                  "rmesh_levels": 3,
-                  "subsample_factor": 8
-                },
-                "graph_seed": 0,
-                "schema_version": "heat3d_graph_cache_key_v2",
-                "support_hash": "73894b60ba1285774502d72d6b580ea07f1df283a3534eac7fb085471e2d4c4a"
-              },
-              "equivalence": {
-                "audited": false,
-                "graph_hash_equal": null,
-                "metadata_hash_equal": null
-              },
-              "graph_hash": "b902e72ff7fe5005fff31832439b27e57147d58463e391562a7f8594b9bb6a89",
-              "load_seconds": 0.00248904200270772,
-              "metadata_hash": "a1c087558801e656ca7fc21d11fa92df16980ccdb63344959046c334f4c0d29b",
-              "save": null,
-              "uncached_build_seconds": null
-            }
-          },
-          "metrics": {
-            "full_field": {
-              "bottom_cv_weighted_rmse_K": 0.5880987301132469,
-              "cv_weighted_point_global_relative_rmse_pct": 3.0975577517259874,
-              "cv_weighted_rmse_K": 1.2562949607425073,
-              "full_node_count": 240825,
-              "interface_cv_weighted_rmse_K": {
-                "interface_01": 0.824003394234803,
-                "interface_02": 0.7384826456592665,
-                "interface_03": 0.7216744044891368,
-                "interface_04": 0.723971203725201,
-                "interface_05": 0.641765133174651,
-                "interface_06": 0.6934578713169075,
-                "interface_07": 0.5827012540958335,
-                "interface_08": 0.5718948777195518
-              },
-              "layer_cv_weighted_rmse_K": {
-                "layer_00": 1.8009462942733012,
-                "layer_01": 1.1264651745692262,
-                "layer_02": 0.711697398796852,
-                "layer_03": 0.6791469409826711,
-                "layer_04": 0.6774173662401238,
-                "layer_05": 0.6072963281677467,
-                "layer_06": 0.6272095724388745,
-                "layer_07": 0.6238654446567629,
-                "layer_08": 0.35898543872662386
-              },
-              "peak_error_rmse_K": 1.2081650053791564,
-              "sample_count": 128,
-              "sample_first_cv_relative_rmse_pct": 3.0001441828682602,
-              "source_cv_weighted_rmse_K": 1.0157655736264908,
-              "top_cv_weighted_rmse_K": 0.3217638958800024
-            },
-            "support": {
-              "bottom_surface": {
-                "cv_weighted_bias_K": 0.1366293884978074,
-                "cv_weighted_relative_rmse_pct": 1.846668742799747,
-                "cv_weighted_rmse_K": 0.5959057807613894
-              },
-              "field_cv_weighted_bias_K": 0.03886625035675554,
-              "layer_drop": {
-                "absolute_error_distribution_K": {
-                  "max": 1.0432895316976598,
-                  "mean": 0.09903588621365536,
-                  "median": 0.06784809201700881,
-                  "min": 2.804990695892684e-05,
-                  "p05": 0.006039292534687493,
-                  "p95": 0.30098926604681747
-                },
-                "rmse_K": 0.15212326056043377
-              },
-              "layer_mean": {
-                "absolute_error_distribution_K": {
-                  "max": 0.9113497714398946,
-                  "mean": 0.10210696662580619,
-                  "median": 0.07419338604340986,
-                  "min": 0.00017462993504580027,
-                  "p05": 0.005363734367996642,
-                  "p95": 0.29227162053391553
-                },
-                "rmse_K": 0.14756399266793394
-              },
-              "node_count": 8192,
-              "peak": {
-                "bias_K": 0.6751338517572689,
-                "mae_K": 1.0515075997183283,
-                "rmse_K": 1.2204515120553443
-              },
-              "point_global_cv_relative_rmse_pct": 1.5437371063501921,
-              "raw_cv_weighted_rmse_K": 0.6594475155572631,
-              "sample_count": 128,
-              "sample_first_cv_relative_rmse_pct": 1.525788416102589,
-              "scale_log_rmse": 0.0015123153207948546,
-              "scale_signed_bias": 0.0008122627599202563,
-              "shape_cv_rmse": 0.015168966063212701,
-              "source_region": {
-                "cv_weighted_bias_K": 0.46489666037717514,
-                "cv_weighted_relative_rmse_pct": 2.3076741859913197,
-                "cv_weighted_rmse_K": 1.0637485038436794
-              },
-              "top_surface": {
-                "cv_weighted_bias_K": 0.024241610168947065,
-                "cv_weighted_relative_rmse_pct": 0.7689397746842006,
-                "cv_weighted_rmse_K": 0.32837164875356545
-              }
-            }
-          },
-          "mode": "cached",
-          "process_peak_ram_bytes": 3281207296,
-          "production_labels_loaded": false,
-          "production_phase_seconds": {
-            "anchor_forward": 9.406719749968033,
-            "batch_prepare": 3.2573688750271685,
-            "full_field_reconstruction": 0.9926033749943599,
-            "graph_load_or_build": 1.1033428749651648,
-            "input": 1.1018642080016434,
-            "query_forward": 26.68359570793109,
-            "scale_reconstruction": 0.00208079197909683,
-            "serialization": 0.05358204199001193
-          },
-          "reconstruction_cache": {
-            "build_seconds": 0.1695000419858843,
-            "cache_hit": false,
-            "label_independent": true,
-            "load_seconds": 0.01604370796121657,
-            "path": "/private/tmp/v6final_direct_cpu/reconstruction_cache/reconstruction_8192_73894b60ba1285774502d72d6b580ea07f1df283a3534eac7fb085471e2d4c4a.npz",
-            "save_seconds": 0.019387457985430956
-          }
-        }
-      ],
-      "environment": {
-        "device": "TFRT_CPU_0",
-        "jax": "0.9.2",
-        "python": "3.12.3 (v3.12.3:f6650f9ad7, Apr  9 2024, 08:18:47) [Clang 13.0.0 (clang-1300.0.29.30)]"
-      },
-      "graph_builder_code_fingerprint": "270a55d098ca2591589c2391362f08ffdc9b56dc45f78fb18f30eaca061f52c6",
-      "hard_accessed": false,
-      "mode": "cached",
-      "platform": "cpu",
-      "resolution": 8192,
-      "role": "test_iid",
-      "sample_count": 128,
-      "schema_version": "heat3d_v6_final_performance_direct_v1",
-      "status": "passed",
-      "timing_contract": {
-        "cross_run_phase_addition": false,
-        "direct_single_cycle_measurements": true,
-        "evaluation": "full-field production + label read + metrics/diagnostics",
-        "full_field_production": "input + graph load/build + batch prepare + model-core + 240825-node reconstruction + serialization",
-        "model_core": "anchor/query forward + scale reconstruction"
-      },
-      "timing_summary_seconds": {
-        "evaluation": {
-          "count": 1,
-          "max": 45.38437254197197,
-          "mean": 45.38437254197197,
-          "median": 45.38437254197197,
-          "min": 45.38437254197197,
-          "p95": 45.38437254197197,
-          "std": 0.0,
-          "values": [
-            45.38437254197197
-          ]
-        },
-        "full_field_production": {
-          "count": 1,
-          "max": 42.99743624997791,
-          "mean": 42.99743624997791,
-          "median": 42.99743624997791,
-          "min": 42.99743624997791,
-          "p95": 42.99743624997791,
-          "std": 0.0,
-          "values": [
-            42.99743624997791
-          ]
-        },
-        "model_core": {
-          "count": 1,
-          "max": 36.093803750001825,
-          "mean": 36.093803750001825,
-          "median": 36.093803750001825,
-          "min": 36.093803750001825,
-          "p95": 36.093803750001825,
-          "std": 0.0,
-          "values": [
-            36.093803750001825
-          ]
-        }
-      },
-      "training_executed": false
-    }
-  },
-  "test_iid_opened_once_after_preregistration": true,
-  "test_opening_audit": {
-    "excluded_temporary_results": [
-      {
-        "frozen_ladder": "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
-        "resolution": 4096,
-        "sha256": "ad4546e935b12fbda6638bb85414a81bcbebceb07dabf49cf3d1f3781e62045b",
-        "status": "excluded_wrong_ladder_input",
-        "used_for_selection_or_reporting": false,
-        "wrong_ladder": "configs/heat3d_v6/v6_anchored_probe_ladder.json"
-      },
-      {
-        "frozen_ladder": "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
-        "resolution": 8192,
-        "sha256": "e7cd3e257aef857459a10eebfeffeb5cfe393a63c6053e225fe7f794b0fa0e06",
-        "status": "excluded_wrong_ladder_input",
-        "used_for_selection_or_reporting": false,
-        "wrong_ladder": "configs/heat3d_v6/v6_anchored_probe_ladder.json"
-      }
-    ],
-    "formal_result_sha256": {
-      "16384": "300b4f1d8382b026896f118955353b176e4b8086b16cab5d56495bbff8dae2ef",
-      "4096": "33d4a1e3932135f161219aef590fc3bfedbeca799ece553ae36a0f89810d4d15",
-      "8192": "808485ba1476fe5e63cfe2155f0e926ae56cf3017eb3e34e91b118a51a981c04"
-    },
-    "hard_accessed": false,
-    "incident": "The first command used the legacy anchored ladder for 4096/8192. Those temporary outputs are excluded. The 16384 attempt stopped at ladder-key lookup before label loading. The frozen source-aware workflow was then executed for all three preregistered resolutions.",
-    "ladder_sha256": {
-      "excluded_anchored": "f682a4b04bb43c36a73402930602db159b9720936184576f86df8cd0a1e084cf",
-      "frozen_source_aware": "d09f5dc9d935fe78fd0209fd17a8e7cd6be557c19459f547e561306504d5c782"
-    },
-    "opening_session": "single_post_preregistration_closeout_session",
-    "selection_or_workflow_changed": false,
-    "status": "completed_with_corrected_command_input"
-  },
-  "test_used_for_selection": false,
   "timing_contract": {
     "cross_run_phase_addition": false,
     "direct_single_cycle_measurements": true,

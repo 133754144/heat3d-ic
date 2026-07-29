@@ -1,0 +1,63 @@
+{
+  "group_ids": [
+    "p1g_g112",
+    "p1g_g113",
+    "p1g_g114",
+    "p1g_g115",
+    "p1g_g116",
+    "p1g_g117",
+    "p1g_g118",
+    "p1g_g119",
+    "p1g_g120",
+    "p1g_g121",
+    "p1g_g122",
+    "p1g_g123",
+    "p1g_g124",
+    "p1g_g125",
+    "p1g_g126",
+    "p1g_g127"
+  ],
+  "hard_specific_subgroup_metrics_computed_before_preregistration": false,
+  "is_distribution_shift_ood": false,
+  "parent_split_role": "test",
+  "role_classification": "input_defined_in_distribution_stress_subset",
+  "role_id": "hard_input_stress_corner_v1",
+  "same_physical_labels_previously_included_in_corrected_holdout": true,
+  "sample_count": 16,
+  "sample_ids": [
+    "p1g_g112_t0_b0_p1",
+    "p1g_g113_t0_b0_p1",
+    "p1g_g114_t0_b0_p1",
+    "p1g_g115_t0_b0_p1",
+    "p1g_g116_t0_b0_p1",
+    "p1g_g117_t0_b0_p1",
+    "p1g_g118_t0_b0_p1",
+    "p1g_g119_t0_b0_p1",
+    "p1g_g120_t0_b0_p1",
+    "p1g_g121_t0_b0_p1",
+    "p1g_g122_t0_b0_p1",
+    "p1g_g123_t0_b0_p1",
+    "p1g_g124_t0_b0_p1",
+    "p1g_g125_t0_b0_p1",
+    "p1g_g126_t0_b0_p1",
+    "p1g_g127_t0_b0_p1"
+  ],
+  "schema_version": "heat3d_v6_hard_input_stress_role_v1",
+  "selection_definition": {
+    "bottom_h_W_m2K": 20.0,
+    "interpretation": "weakest cooling plus highest frozen package power",
+    "package_total_power_W": 6.0,
+    "top_h_W_m2K": 1000.0
+  },
+  "selection_source_sha256": {
+    "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024.yaml": "ab162724af61c745f82571e9c8f07102d5262c70a4817ace0900e894bfc4af83",
+    "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5"
+  },
+  "selection_sources": [
+    "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024.yaml",
+    "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json"
+  ],
+  "selection_uses_model_errors": false,
+  "selection_uses_target_labels": false,
+  "status": "frozen_before_hard_specific_metric_open"
+}

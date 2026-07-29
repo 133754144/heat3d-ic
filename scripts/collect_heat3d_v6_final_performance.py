@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect direct timing, matched-FVM, and preregistered V6 test results."""
+"""Collect direct timing, structured-FVM sensitivity, and holdout results."""
 
 from __future__ import annotations
 
@@ -35,6 +35,25 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _sanitize_paths(value: Any) -> Any:
+    """Remove machine-local absolute paths from tracked governance artifacts."""
+    if isinstance(value, dict):
+        return {key: _sanitize_paths(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_paths(item) for item in value]
+    if isinstance(value, str) and value.startswith("/private/tmp/"):
+        return "runtime-artifact://" + Path(value).name
+    if isinstance(value, str) and value.startswith("/Users/"):
+        marker = "/data/heat3d_v6_p1h_shared_support1024_v0"
+        if marker in value:
+            suffix = value.split(marker, 1)[1]
+            return "data/heat3d_v6_p1h_shared_support1024_v0" + suffix
+        return "local-artifact://" + Path(value).name
+    if isinstance(value, str) and value.startswith("/home/"):
+        return "remote-artifact://" + Path(value).name
+    return value
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -117,7 +136,7 @@ def main() -> int:
     parser.add_argument("--cpu-dir", type=Path, required=True)
     parser.add_argument("--gpu-b8-dir", type=Path, required=True)
     parser.add_argument("--gpu-b16-dir", type=Path, required=True)
-    parser.add_argument("--matched-fvm", type=Path, required=True)
+    parser.add_argument("--legal-structured-fvm", type=Path, required=True)
     parser.add_argument("--runner-smoke", type=Path, required=True)
     parser.add_argument("--test-dir", type=Path, required=True)
     parser.add_argument("--excluded-test-dir", type=Path, required=True)
@@ -127,7 +146,7 @@ def main() -> int:
     parser.add_argument("--persistent-gpu-csv", type=Path, required=True)
     parser.add_argument("--solver-comparison-csv", type=Path, required=True)
     parser.add_argument("--pareto-csv", type=Path, required=True)
-    parser.add_argument("--test-csv", type=Path, required=True)
+    parser.add_argument("--holdout-csv", type=Path, required=True)
     parser.add_argument("--environment-json", type=Path, required=True)
     parser.add_argument("--gpu-environment", type=Path, required=True)
     parser.add_argument("--markdown", type=Path, required=True)
@@ -150,7 +169,10 @@ def main() -> int:
     timing_rows = [_timing_row(payload) for payload in timing_payloads]
     _write_csv(args.timing_csv, timing_rows)
 
-    fvm = _load(args.matched_fvm)
+    fvm = _load(args.legal_structured_fvm)
+    fvm["schema_version"] = (
+        "heat3d_v6_legal_structured_fvm_mesh_sensitivity_v1"
+    )
     reference = fvm["meshes"]["reference"]
     cold_total = (
         reference["cold_mesh_assembly_solve_seconds"]["mean"] * 128.0
@@ -326,9 +348,10 @@ def main() -> int:
                 "full_source_rmse_K": full["source_cv_weighted_rmse_K"],
                 "hard_accessed": False,
                 "used_for_selection": False,
+                "role_classification": "corrected_confirmatory_holdout",
             }
         )
-    _write_csv(args.test_csv, test_rows)
+    _write_csv(args.holdout_csv, test_rows)
     excluded_test_results = []
     for resolution in (4096, 8192):
         path = args.excluded_test_dir / f"test_{resolution}.json"
@@ -346,6 +369,8 @@ def main() -> int:
             }
         )
     test_opening_audit = {
+        "deviation_id": "V6-PROTOCOL-DEVIATION-TEST-LADDER-001",
+        "classification": "protocol_deviation_corrected_before_formal_reporting",
         "status": "completed_with_corrected_command_input",
         "opening_session": "single_post_preregistration_closeout_session",
         "incident": (
@@ -431,38 +456,43 @@ def main() -> int:
     )
     runner_smoke = _load(args.runner_smoke)
     payload = {
-        "schema_version": "heat3d_v6_final_performance_closeout_v1",
+        "schema_version": "heat3d_v6_final_performance_governance_v2",
         "status": "passed",
         "preregistration_commit": args.preregistration_commit,
         "checkpoint_modified": False,
         "training_executed": False,
-        "test_iid_opened_once_after_preregistration": True,
-        "test_used_for_selection": False,
+        "confirmatory_holdout_classification": (
+            "corrected_confirmatory_holdout"
+        ),
+        "confirmatory_holdout_opened_after_preregistration": True,
+        "confirmatory_holdout_used_for_selection": False,
         "hard_accessed": False,
         "timing_contract": timing_payloads[0]["timing_contract"],
         "timing_rows": timing_rows,
         "persistent_gpu": persistent_gpu_rows,
         "solver_inference_comparison": solver_comparison_rows,
         "runner_graph_reuse": runner_smoke,
-        "matched_accuracy_fvm": fvm,
+        "legal_structured_fvm_mesh_sensitivity": fvm,
         "pareto_rows": pareto_rows,
-        "test_iid": test_payloads,
-        "test_opening_audit": test_opening_audit,
+        "corrected_confirmatory_holdout": test_payloads,
+        "protocol_deviation": test_opening_audit,
         "frozen_decision_unchanged": {
-            "default": 4096,
-            "full_field": 8192,
-            "high_resolution": 16384,
+            "default_hotspot_oriented": 4096,
+            "balanced_full_field": 8192,
+            "maximum_full_field_accuracy": 16384,
             "experimental_excluded_from_primary_test_table": 32768,
         },
         "decision_basis": {
-            "selection_source": "valid_iid_timing_and_accuracy_before_test_open",
-            "test_iid_role": "descriptive_confirmation_only",
+            "selection_source": (
+                "valid_iid_timing_and_accuracy_before_holdout_open"
+            ),
+            "confirmatory_holdout_role": "descriptive_confirmation_only",
             "default_4096": "lowest frozen production resolution",
             "full_field_8192": (
                 "lower valid full-field error than 4096 with modest persistent "
                 "GPU cost"
             ),
-            "high_resolution_16384": (
+            "maximum_full_field_accuracy_16384": (
                 "lowest preregistered valid full-field error; higher memory and "
                 "latency than 8192"
             ),
@@ -472,6 +502,7 @@ def main() -> int:
             ),
         },
     }
+    payload = _sanitize_paths(payload)
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
@@ -482,7 +513,8 @@ def main() -> int:
         "# V6 final performance closeout",
         "",
         "The model, checkpoint, sampling, graph parameters, and reconstruction "
-        "method remained frozen. Test IID was opened once after preregistration; "
+        "method remained frozen. The corrected confirmatory holdout was opened "
+        "after preregistration; "
         "hard remained sealed.",
         "",
         "The first test command used the legacy ladder for temporary 4096/8192 "
@@ -535,7 +567,7 @@ def main() -> int:
     lines.extend(
         [
             "",
-            "## Matched-accuracy FVM",
+            "## Legal structured-FVM mesh sensitivity",
             "",
             "| Mesh | Nodes | Cold mean/median/P95 s | Warm mean/median/P95 s | Full-field RMSE K |",
             "|---|---:|---:|---:|---:|",
@@ -571,7 +603,7 @@ def main() -> int:
     lines.extend(
         [
             "",
-            "## Preregistered test IID",
+            "## Corrected confirmatory holdout",
             "",
             "| Nodes | Support point-global | Full point-global | Full RMSE K |",
             "|---:|---:|---:|---:|",
@@ -586,23 +618,28 @@ def main() -> int:
     lines.extend(
         [
             "",
-            "The test table is descriptive only. It did not change the frozen "
+            "The confirmatory table is descriptive only. It did not change the frozen "
             "4096/8192/16384 roles. 32768 is excluded; hard remains sealed.",
             "",
             "## Frozen decision",
             "",
-            "- Default remains 4096.",
-            "- Full-field mode remains 8192.",
-            "- 16384 remains the high-resolution upper production mode.",
-            "- 32768 remains experimental and was not included in the test table.",
-            "- The decision was fixed from valid_iid before test opening; test_iid "
-            "is descriptive confirmation only.",
+            "- 4096 remains the default/hotspot-oriented mode.",
+            "- 8192 remains the balanced full-field mode.",
+            "- 16384 remains the maximum full-field accuracy mode.",
+            "- 32768 remains experimental and was not included in the "
+            "confirmatory table.",
+            "- The decision was fixed from valid_iid before holdout opening; the "
+            "corrected confirmatory holdout is descriptive only.",
             "",
         ]
     )
     args.markdown.parent.mkdir(parents=True, exist_ok=True)
     args.markdown.write_text("\n".join(lines), encoding="utf-8")
-    print(json.dumps({"status": "passed", "test_rows": len(test_rows)}))
+    print(
+        json.dumps(
+            {"status": "passed", "confirmatory_holdout_rows": len(test_rows)}
+        )
+    )
     return 0
 
 

@@ -1,0 +1,62 @@
+{
+  "canonical_ood_status": "not_available",
+  "cpu_hardware": {
+    "core_configuration": "4 performance + 6 efficiency",
+    "memory_GB": 16,
+    "model": "Apple M4",
+    "physical_cores": 10
+  },
+  "governance_manifest": "configs/heat3d_v6/v6_total_governance_manifest.json",
+  "historical_results_unchanged": true,
+  "local_absolute_paths_allowed_in_new_governance_outputs": false,
+  "protocol_deviation": {
+    "classification": "protocol_deviation_corrected_before_formal_reporting",
+    "deviation_id": "V6-PROTOCOL-DEVIATION-TEST-LADDER-001",
+    "excluded_temporary_results": [
+      {
+        "frozen_ladder": "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
+        "resolution": 4096,
+        "sha256": "ad4546e935b12fbda6638bb85414a81bcbebceb07dabf49cf3d1f3781e62045b",
+        "status": "excluded_wrong_ladder_input",
+        "used_for_selection_or_reporting": false,
+        "wrong_ladder": "configs/heat3d_v6/v6_anchored_probe_ladder.json"
+      },
+      {
+        "frozen_ladder": "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
+        "resolution": 8192,
+        "sha256": "e7cd3e257aef857459a10eebfeffeb5cfe393a63c6053e225fe7f794b0fa0e06",
+        "status": "excluded_wrong_ladder_input",
+        "used_for_selection_or_reporting": false,
+        "wrong_ladder": "configs/heat3d_v6/v6_anchored_probe_ladder.json"
+      }
+    ],
+    "formal_result_sha256": {
+      "16384": "300b4f1d8382b026896f118955353b176e4b8086b16cab5d56495bbff8dae2ef",
+      "4096": "33d4a1e3932135f161219aef590fc3bfedbeca799ece553ae36a0f89810d4d15",
+      "8192": "808485ba1476fe5e63cfe2155f0e926ae56cf3017eb3e34e91b118a51a981c04"
+    },
+    "hard_accessed": false,
+    "incident": "The first command used the legacy anchored ladder for 4096/8192. Those temporary outputs are excluded. The 16384 attempt stopped at ladder-key lookup before label loading. The frozen source-aware workflow was then executed for all three preregistered resolutions.",
+    "ladder_sha256": {
+      "excluded_anchored": "f682a4b04bb43c36a73402930602db159b9720936184576f86df8cd0a1e084cf",
+      "frozen_source_aware": "d09f5dc9d935fe78fd0209fd17a8e7cd6be557c19459f547e561306504d5c782"
+    },
+    "opening_session": "single_post_preregistration_closeout_session",
+    "selection_or_workflow_changed": false,
+    "status": "completed_with_corrected_command_input"
+  },
+  "schema_version": "heat3d_v6_governance_amendment_v1",
+  "speedup_semantics": {
+    "CPU_to_CPU": "local Apple-M4 CPU production latency divided into 240825-node FVM CPU cold/warm latency",
+    "GPU_to_CPU": "RTX-5070 GPU production latency divided into 240825-node FVM CPU cold/warm latency",
+    "nonmatched_DOF": true
+  },
+  "status": "effective",
+  "terminology": {
+    "16384": "maximum_full_field_accuracy",
+    "4096": "default_hotspot_oriented",
+    "8192": "balanced_full_field",
+    "matched_accuracy_fvm": "legal_structured_FVM_mesh_sensitivity",
+    "test_iid": "corrected_confirmatory_holdout"
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Benchmark legal structured FVM meshes against the frozen 240825-node fields."""
+"""Measure legal structured-FVM mesh sensitivity against 240825-node fields."""
 
 from __future__ import annotations
 
@@ -326,7 +326,9 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(pareto)
     payload = {
-        "schema_version": "heat3d_v6_matched_accuracy_fvm_v1",
+        "schema_version": (
+            "heat3d_v6_legal_structured_fvm_mesh_sensitivity_v1"
+        ),
         "status": "passed",
         "evaluation_role": "valid_iid",
         "sample_count": 128,
@@ -361,7 +363,7 @@ def main() -> int:
         ))
     plt.xlabel("Runtime per sample (s)")
     plt.ylabel("CV-weighted full-field RMSE (K)")
-    plt.title("V6 valid_iid matched-accuracy FVM")
+    plt.title("V6 valid_iid legal structured-FVM mesh sensitivity")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     args.figure.parent.mkdir(parents=True, exist_ok=True)
