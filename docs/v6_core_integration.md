@@ -35,3 +35,9 @@ Governance language is frozen as follows:
 
 The machine-readable allowlist and exclusions are in
 `configs/heat3d_v6/v6_core_integration_manifest.json`.
+
+Clean-checkout validation was completed at
+`a2055d84ccdd4f16e9a96264c4e9e831da40eb4d`: six V5 checkers, the V6 core
+checker, the real-P1h production preflight, configuration dry-run, Python
+compilation, and JSON/YAML/CSV parsing all passed. No training or test/hard
+access occurred.

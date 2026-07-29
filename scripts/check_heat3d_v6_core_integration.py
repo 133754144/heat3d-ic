@@ -99,7 +99,20 @@ def _check_graph_backend_equivalence() -> dict[str, str]:
 
 def main() -> int:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert manifest["status"] == "prepared_for_clean_checkout_validation"
+    assert manifest["status"] == "validated_ready_for_pr"
+    clean_validation = manifest["clean_checkout_validation"]
+    assert clean_validation["v5_checker_count"] == 6
+    assert clean_validation["v5_canonical_hashes_unchanged"] is True
+    assert clean_validation["v6_core_checker"] == "passed"
+    assert clean_validation["v6_production_preflight"] == "passed"
+    assert clean_validation["v6_graph_resolutions_checked"] == [
+        1024,
+        4096,
+        8192,
+        16384,
+    ]
+    assert clean_validation["training_executed"] is False
+    assert clean_validation["test_hard_accessed"] is False
     assert manifest["integration_policy"] == {
         "full_research_history_merged": False,
         "stable_allowlist_only": True,

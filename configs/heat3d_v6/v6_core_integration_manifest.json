@@ -17,6 +17,25 @@
     "reference_epoch": 111,
     "reference_sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
   },
+  "clean_checkout_validation": {
+    "validated_commit": "a2055d84ccdd4f16e9a96264c4e9e831da40eb4d",
+    "v5_checker_count": 6,
+    "v5_canonical_hashes_unchanged": true,
+    "v6_core_checker": "passed",
+    "v6_production_preflight": "passed",
+    "v6_graph_resolutions_checked": [
+      1024,
+      4096,
+      8192,
+      16384
+    ],
+    "config_dry_run": "passed",
+    "python_compile": "passed",
+    "json_yaml_csv_validation": "passed",
+    "git_diff_check": "passed",
+    "training_executed": false,
+    "test_hard_accessed": false
+  },
   "exclude": {
     "artifact_classes": [
       "data",
@@ -131,5 +150,5 @@
     "commit": "d7f72f157ecfad0db63658755c8f72b296a16674"
   },
   "schema_version": "heat3d_v6_core_integration_manifest_v1",
-  "status": "prepared_for_clean_checkout_validation"
+  "status": "validated_ready_for_pr"
 }
