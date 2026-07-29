@@ -173,7 +173,11 @@ def main() -> int:
         for row in rows
     }
     results: dict[str, Any] = {}
-    for label, lateral in (("coarse", 48), ("medium", 56)):
+    # The smallest frozen P1h source boxes require at least seven in-plane
+    # intervals.  A label-independent mesh audit over all valid layouts showed
+    # that 48/52/56 fail that contract (minimum 5/6/6), while 60 and 62 pass.
+    # Keep both comparison meshes strictly below the 64x64 reference mesh.
+    for label, lateral in (("coarse", 60), ("medium", 62)):
         cold, warm = [], []
         sse = 0.0
         energy = 0.0
@@ -321,6 +325,27 @@ def main() -> int:
         )
         writer.writeheader()
         writer.writerows(pareto)
+    payload = {
+        "schema_version": "heat3d_v6_matched_accuracy_fvm_v1",
+        "status": "passed",
+        "evaluation_role": "valid_iid",
+        "sample_count": 128,
+        "reference_node_count": 240825,
+        "meshes": results,
+        "pareto_rows": pareto,
+        "source_aware_points_used_as_fvm_mesh": False,
+        "test_hard_accessed": False,
+        "training_executed": False,
+        "process_peak_ram_bytes": _rss_bytes(),
+    }
+    # Persist the numerical benchmark before rendering the convenience figure.
+    # A headless plotting backend must never discard an otherwise completed
+    # 128-sample solver benchmark.
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     fvm_rows = [row for row in pareto if row["method"].startswith("FVM_")]
     plt.figure(figsize=(7.2, 4.8))
     plt.plot(
@@ -342,24 +367,6 @@ def main() -> int:
     args.figure.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(args.figure, dpi=180)
     plt.close()
-    payload = {
-        "schema_version": "heat3d_v6_matched_accuracy_fvm_v1",
-        "status": "passed",
-        "evaluation_role": "valid_iid",
-        "sample_count": 128,
-        "reference_node_count": 240825,
-        "meshes": results,
-        "pareto_rows": pareto,
-        "source_aware_points_used_as_fvm_mesh": False,
-        "test_hard_accessed": False,
-        "training_executed": False,
-        "process_peak_ram_bytes": _rss_bytes(),
-    }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
     print(json.dumps({"status": "passed", "meshes": list(results)}))
     return 0
 
