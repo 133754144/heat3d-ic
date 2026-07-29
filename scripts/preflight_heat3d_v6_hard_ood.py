@@ -34,6 +34,13 @@ def main() -> int:
 
     prereg = json.loads(PREREG.read_text(encoding="utf-8"))
     role = json.loads(ROLE.read_text(encoding="utf-8"))
+    execution_head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     committed = subprocess.run(
         [
             "git",
@@ -122,6 +129,7 @@ def main() -> int:
         "schema_version": "heat3d_v6_hard_ood_preflight_v2",
         "status": "passed",
         "preregistration_commit": args.preregistration_commit,
+        "execution_head": execution_head,
         "preregistration_sha256": _sha256(PREREG),
         "role_manifest_sha256": _sha256(ROLE),
         "evaluator_sha256": current_evaluator_sha256,

@@ -46,12 +46,26 @@
   "governance": {
     "canonical_ood_status": "not_available",
     "confirmatory_holdout_classification": "corrected_confirmatory_holdout",
-    "hard_ood_preregistration": {
+    "hard_ood_evaluator_adapter": {
+      "last_committed_at": "b598211325ae53304de6f44a47a0f7b68845117b",
+      "path": "configs/heat3d_v6/v6_hard_ood_evaluator_adapter.json",
+      "sha256": "b7370370a1c3feeca1a6718bf9081ad038ddd80b6a9893548604cc652c4b58f1"
+    },
+    "hard_ood_preflight": {
       "last_committed_at": "commit_containing_this_file",
+      "path": "configs/heat3d_v6/v6_hard_ood_preflight.json",
+      "sha256": "c65f911822bca87d73c76759f9b6fa7d2352c8be4b1fafc45331896efb5df1da"
+    },
+    "hard_ood_preregistration": {
+      "last_committed_at": "63ef72007c6973805f08e68fad9c2f0dfe5122b6",
       "path": "configs/heat3d_v6/v6_hard_ood_preregistration.json",
       "sha256": "a7cbcabda141526aa1573c8a46bea852a4c1b4ac643a5cb846dab5c345ae98f8"
     },
-    "hard_stress_result": null,
+    "hard_stress_result": {
+      "last_committed_at": "commit_containing_this_file",
+      "path": "configs/heat3d_v6/v6_hard_ood_closeout.json",
+      "sha256": "bdff68621be09e7e49b4e6fa64b12263c836168a97404697e58b44f8d03b5435"
+    },
     "legal_structured_fvm_mesh_sensitivity": {
       "nonmatched_dof": true,
       "status": "passed"
@@ -143,7 +157,7 @@
       "sha256": "6aa06ede92a2a58841360c1a495e47d2ec31699a794c0d3e1e36f49c990c8d71"
     },
     {
-      "last_committed_at": "37e006880973e8cd075b7f3952a8a5f0d4eda583",
+      "last_committed_at": "63ef72007c6973805f08e68fad9c2f0dfe5122b6",
       "path": "configs/heat3d_v6/v6_final_performance_closeout.json",
       "sha256": "467e2ad4d93ef5080521cdb4614cb703e24c5343fbf53cf8b6cea56ac70f652e"
     },
@@ -173,19 +187,44 @@
       "sha256": "c4c26d806d5adbe58f042de2073977b3ecbca8a2ae176b21481ce1553c63a2d9"
     },
     {
-      "last_committed_at": "commit_containing_this_file",
+      "last_committed_at": "63ef72007c6973805f08e68fad9c2f0dfe5122b6",
       "path": "configs/heat3d_v6/v6_final_corrected_confirmatory_holdout_metrics.csv",
       "sha256": "2767bae1f6646159e8a97befb42cb4f7b4a247826ef0c6cd8cd83133fb02294b"
     },
     {
-      "last_committed_at": "commit_containing_this_file",
+      "last_committed_at": "63ef72007c6973805f08e68fad9c2f0dfe5122b6",
       "path": "configs/heat3d_v6/v6_hard_ood_preregistration.json",
       "sha256": "a7cbcabda141526aa1573c8a46bea852a4c1b4ac643a5cb846dab5c345ae98f8"
     },
     {
-      "last_committed_at": "commit_containing_this_file",
+      "last_committed_at": "63ef72007c6973805f08e68fad9c2f0dfe5122b6",
       "path": "configs/heat3d_v6/v6_hard_input_stress_role.json",
       "sha256": "beb69ed7bd18a9b8ba66da202125d13fa0807dcf85674aa264aa6693a101e77f"
+    },
+    {
+      "last_committed_at": "commit_containing_this_file",
+      "path": "configs/heat3d_v6/v6_hard_ood_preflight.json",
+      "sha256": "c65f911822bca87d73c76759f9b6fa7d2352c8be4b1fafc45331896efb5df1da"
+    },
+    {
+      "last_committed_at": "b598211325ae53304de6f44a47a0f7b68845117b",
+      "path": "configs/heat3d_v6/v6_hard_ood_evaluator_adapter.json",
+      "sha256": "b7370370a1c3feeca1a6718bf9081ad038ddd80b6a9893548604cc652c4b58f1"
+    },
+    {
+      "last_committed_at": "commit_containing_this_file",
+      "path": "configs/heat3d_v6/v6_hard_ood_closeout.json",
+      "sha256": "bdff68621be09e7e49b4e6fa64b12263c836168a97404697e58b44f8d03b5435"
+    },
+    {
+      "last_committed_at": "commit_containing_this_file",
+      "path": "configs/heat3d_v6/v6_hard_ood_metrics.csv",
+      "sha256": "03fc19a89ece36c59245da4e5e8382327ed9d1fc9e806d9fac68d0fd707555af"
+    },
+    {
+      "last_committed_at": "commit_containing_this_file",
+      "path": "docs/v6_hard_ood_closeout.md",
+      "sha256": "026e7aac9044ffb9e787f5bb0519e2ad71f46bd60072c4e89a8e988b8bef9c58"
     }
   ],
   "production_workflow": {
@@ -231,7 +270,7 @@
     },
     "sha256": "d09f5dc9d935fe78fd0209fd17a8e7cd6be557c19459f547e561306504d5c782"
   },
-  "status": "preregistered_pending_hard_stress",
+  "status": "closed",
   "three_seed_freeze": {
     "artifacts": [
       {

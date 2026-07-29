@@ -33,6 +33,15 @@ def _relative(path: Path) -> str:
 
 def _last_commit(path: Path) -> str:
     relative = _relative(path)
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--", relative],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    if status.stdout.strip():
+        return "commit_containing_this_file"
     result = subprocess.run(
         ["git", "log", "-1", "--format=%H", "--", relative],
         cwd=ROOT,
@@ -61,6 +70,10 @@ def main() -> int:
     bundle_path = CONFIG / "v6_production_bundle_manifest.json"
     prereg_path = CONFIG / "v6_hard_ood_preregistration.json"
     role_path = CONFIG / "v6_hard_input_stress_role.json"
+    preflight_path = CONFIG / "v6_hard_ood_preflight.json"
+    adapter_path = CONFIG / "v6_hard_ood_evaluator_adapter.json"
+    hard_metrics_path = CONFIG / "v6_hard_ood_metrics.csv"
+    hard_doc_path = DOCS / "v6_hard_ood_closeout.md"
     training_path = CONFIG / "v6_latest_training_results.json"
 
     acceptance = _load(acceptance_path)
@@ -102,9 +115,11 @@ def main() -> int:
         CONFIG / "v6_final_corrected_confirmatory_holdout_metrics.csv",
         prereg_path,
         role_path,
+        preflight_path,
+        adapter_path,
     ]
     if hard_path.is_file():
-        key_artifacts.append(hard_path)
+        key_artifacts.extend([hard_path, hard_metrics_path, hard_doc_path])
 
     machine_manifest = {
         "schema_version": "heat3d_v6_total_governance_manifest_v1",
@@ -206,6 +221,8 @@ def main() -> int:
                 "nonmatched_dof": True,
             },
             "hard_ood_preregistration": _artifact(prereg_path),
+            "hard_ood_preflight": _artifact(preflight_path),
+            "hard_ood_evaluator_adapter": _artifact(adapter_path),
             "hard_stress_result": (
                 _artifact(hard_path) if hard_path.is_file() else None
             ),
@@ -340,7 +357,48 @@ def main() -> int:
             "cold/warm denominator and remain nonmatched-DOF.",
             "- Canonical P1h contains no true OOD role. The preregistered hard "
             "corner is an input-defined in-distribution stress subset.",
-            "",
+        ]
+    )
+    if hard is not None:
+        hard_rows = {
+            int(row["resolution"]): row
+            for row in hard["metric_rows"]
+            if row["role"] == "hard_input_stress"
+        }
+        lines.extend(
+            [
+                "- The hard-stress subgroup was opened once after the "
+                "preregistration and label-free preflight; it was not used "
+                "for selection or tuning.",
+                "",
+                "## Frozen hard-stress descriptive result",
+                "",
+                "| Mode | Full RMSE K | Point-global % | Source RMSE K | "
+                "Bottom RMSE K |",
+                "|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for resolution in (4096, 8192, 16384):
+            row = hard_rows[resolution]
+            lines.append(
+                f"| {resolution} | {row['full_raw_cv_rmse_K']:.4f} | "
+                f"{row['full_point_global_pct']:.4f} | "
+                f"{row['full_source_rmse_K']:.4f} | "
+                f"{row['full_bottom_rmse_K']:.4f} |"
+            )
+        lines.extend(
+            [
+                "",
+                "Lower hard-stress relative errors partly reflect the larger "
+                "target-energy denominator of high-power, weak-cooling cases; "
+                "they do not establish that the subgroup is intrinsically "
+                "easier. Canonical distribution-shift OOD remains unavailable "
+                "and was not run.",
+                "",
+            ]
+        )
+    lines.extend(
+        [
             "## Remaining limits",
             "",
         ]

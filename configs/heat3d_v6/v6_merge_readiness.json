@@ -1,0 +1,73 @@
+{
+  "branch": "research/v6-p1h-shared-support",
+  "canonical_dataset": {
+    "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+    "full_field_archive_sha256": "f58141b3f365c5c90a57ec3802ae57c7e7afbf83ba0ab988060a617164b14c00",
+    "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5"
+  },
+  "canonical_model": {
+    "checkpoint_epoch": 111,
+    "checkpoint_sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2",
+    "config_id": "V6_03_V5best_P1h",
+    "seed": 0
+  },
+  "canonical_ood": {
+    "labels_accessed": false,
+    "status": "not_available_not_run"
+  },
+  "checks_required": [
+    "governance",
+    "hard_preregistration",
+    "label_free_preflight",
+    "hard_closeout",
+    "dataset_integrity",
+    "production_bundle",
+    "json_csv_yaml",
+    "py_compile",
+    "git_diff_check"
+  ],
+  "check_results": {
+    "dataset_integrity": {
+      "archive_rows_checked": 1024,
+      "sample_files_checked": 10240,
+      "status": "passed"
+    },
+    "deterministic_governance_and_result_checkers": {
+      "status": "passed"
+    },
+    "git_diff_check": {
+      "status": "passed"
+    },
+    "production_bundle": {
+      "file_count": 16,
+      "graph_cache_count": 6,
+      "reconstruction_map_count": 6,
+      "status": "passed"
+    },
+    "python_compile": {
+      "scope": "scripts+rigno",
+      "status": "passed"
+    },
+    "structured_data": {
+      "csv_files": 81,
+      "json_files": 87,
+      "status": "passed",
+      "yaml_files": 26
+    }
+  },
+  "governance_head": "commit_containing_this_file",
+  "hard_input_stress": {
+    "classification": "input_defined_in_distribution_stress_subset",
+    "sample_count": 16,
+    "used_for_selection_or_tuning": false
+  },
+  "merge_executed": false,
+  "prerequisite_commits": {
+    "evaluator_population_adapter": "b598211325ae53304de6f44a47a0f7b68845117b",
+    "label_free_preflight": "6c6ce724f302199aa56131c45946db8c741a686e",
+    "preregistration": "63ef72007c6973805f08e68fad9c2f0dfe5122b6"
+  },
+  "schema_version": "heat3d_v6_merge_readiness_v1",
+  "status": "ready_for_final_audit",
+  "training_executed": false
+}

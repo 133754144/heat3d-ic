@@ -1,6 +1,6 @@
 # V6 total closeout
 
-Status: **preregistered_pending_hard_stress**.
+Status: **closed**.
 
 This is the authoritative V6 summary. Earlier phase reports remain evidence records and are not rewritten.
 
@@ -35,6 +35,17 @@ This is the authoritative V6 summary. Earlier phase reports remain evidence reco
 - FVM results are `legal structured-FVM mesh sensitivity`, not a matched-accuracy claim.
 - CPU→CPU and GPU→CPU speedups use the same 240825-node CPU FVM cold/warm denominator and remain nonmatched-DOF.
 - Canonical P1h contains no true OOD role. The preregistered hard corner is an input-defined in-distribution stress subset.
+- The hard-stress subgroup was opened once after the preregistration and label-free preflight; it was not used for selection or tuning.
+
+## Frozen hard-stress descriptive result
+
+| Mode | Full RMSE K | Point-global % | Source RMSE K | Bottom RMSE K |
+|---:|---:|---:|---:|---:|
+| 4096 | 0.9866 | 1.6978 | 1.2211 | 0.6415 |
+| 8192 | 0.9420 | 1.6211 | 1.1578 | 0.7610 |
+| 16384 | 1.0374 | 1.7853 | 1.3469 | 0.9068 |
+
+Lower hard-stress relative errors partly reflect the larger target-energy denominator of high-power, weak-cooling cases; they do not establish that the subgroup is intrinsically easier. Canonical distribution-shift OOD remains unavailable and was not run.
 
 ## Remaining limits
 
