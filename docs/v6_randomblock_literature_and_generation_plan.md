@@ -108,12 +108,12 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate rigno
 python scripts/prepare_heat3d_v6_randomblock_protocol.py --stage smoke16
 python scripts/generate_heat3d_v6_randomblock_dataset.py \
-  --config configs/heat3d_v6_randomblock/v6_randomblock_smoke16.yaml
+  --config configs/heat3d_v6_randomblock/v6_randomblock_smoke16_v1.yaml
 python scripts/check_heat3d_v6_randomblock_dataset.py \
-  --config configs/heat3d_v6_randomblock/v6_randomblock_smoke16.yaml \
-  --dataset data/heat3d_v6_randomblock_smoke16_v0 \
-  --manifest configs/heat3d_v6_randomblock/v6_randomblock_smoke16_manifest.json \
-  --audit configs/heat3d_v6_randomblock/v6_randomblock_smoke16_audit.json
+  --config configs/heat3d_v6_randomblock/v6_randomblock_smoke16_v1.yaml \
+  --dataset data/heat3d_v6_randomblock_smoke16_v1 \
+  --manifest configs/heat3d_v6_randomblock/v6_randomblock_smoke16_v1_manifest.json \
+  --audit configs/heat3d_v6_randomblock/v6_randomblock_smoke16_v1_audit.json
 ```
 
 `pilot128` 和 `formal1024` 只在上一阶段通过并提交后，把命令中的 stage

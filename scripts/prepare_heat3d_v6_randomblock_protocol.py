@@ -19,8 +19,10 @@ import heat3d_v6_randomblock_core as core
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "configs/heat3d_v6_randomblock"
 STAGE_COUNTS = {"smoke16": 2, "pilot128": 16, "formal1024": 128}
+PROTOCOL_ATTEMPT = 1
 STAGE_OUTPUTS = {
-    stage: CONFIG_DIR / f"v6_randomblock_{stage}.yaml" for stage in STAGE_COUNTS
+    stage: CONFIG_DIR / f"v6_randomblock_{stage}_v{PROTOCOL_ATTEMPT}.yaml"
+    for stage in STAGE_COUNTS
 }
 SEEDS = {
     "layout": 20260730,
@@ -32,16 +34,16 @@ VARIANTS = (
     {
         "variant_id": "v0",
         "intended_temperature_bin": 0,
-        "package_total_power_W": 2.0,
+        "package_total_power_W": 1.8,
         "top_h_W_m2K": 333.33,
         "bottom_h_W_m2K": 333.33,
-        "power_provenance": ["RB-L01"],
+        "power_provenance": ["RB-X02", "RB-L04", "RB-L01"],
         "bc_provenance": ["RB-L05"],
     },
     {
         "variant_id": "v1",
         "intended_temperature_bin": 0,
-        "package_total_power_W": 4.0,
+        "package_total_power_W": 2.5,
         "top_h_W_m2K": 500.0,
         "bottom_h_W_m2K": 333.33,
         "power_provenance": ["RB-X02", "RB-L01", "RB-L03"],
@@ -50,16 +52,16 @@ VARIANTS = (
     {
         "variant_id": "v2",
         "intended_temperature_bin": 1,
-        "package_total_power_W": 8.0,
+        "package_total_power_W": 7.0,
         "top_h_W_m2K": 1000.0,
         "bottom_h_W_m2K": 333.33,
-        "power_provenance": ["RB-L03"],
+        "power_provenance": ["RB-X02", "RB-L01", "RB-L03"],
         "bc_provenance": ["RB-L03", "RB-L05"],
     },
     {
         "variant_id": "v3",
         "intended_temperature_bin": 1,
-        "package_total_power_W": 12.0,
+        "package_total_power_W": 7.0,
         "top_h_W_m2K": 1000.0,
         "bottom_h_W_m2K": 500.0,
         "power_provenance": ["RB-X02", "RB-L03", "RB-L01"],
@@ -68,16 +70,16 @@ VARIANTS = (
     {
         "variant_id": "v4",
         "intended_temperature_bin": 2,
-        "package_total_power_W": 23.9,
+        "package_total_power_W": 16.5,
         "top_h_W_m2K": 2050.0,
         "bottom_h_W_m2K": 500.0,
-        "power_provenance": ["RB-L02"],
+        "power_provenance": ["RB-X02", "RB-L03", "RB-L01", "RB-L02"],
         "bc_provenance": ["RB-L02", "RB-L05"],
     },
     {
         "variant_id": "v5",
         "intended_temperature_bin": 2,
-        "package_total_power_W": 32.0,
+        "package_total_power_W": 17.0,
         "top_h_W_m2K": 2050.0,
         "bottom_h_W_m2K": 1000.0,
         "power_provenance": ["RB-X02", "RB-L01", "RB-L02"],
@@ -86,7 +88,7 @@ VARIANTS = (
     {
         "variant_id": "v6",
         "intended_temperature_bin": 3,
-        "package_total_power_W": 40.0,
+        "package_total_power_W": 25.0,
         "top_h_W_m2K": 2500.0,
         "bottom_h_W_m2K": 1000.0,
         "power_provenance": ["RB-X02", "RB-L02"],
@@ -95,10 +97,10 @@ VARIANTS = (
     {
         "variant_id": "v7",
         "intended_temperature_bin": 3,
-        "package_total_power_W": 47.8,
+        "package_total_power_W": 25.0,
         "top_h_W_m2K": 2500.0,
         "bottom_h_W_m2K": 1000.0,
-        "power_provenance": ["RB-L02"],
+        "power_provenance": ["RB-X02", "RB-L01", "RB-L02"],
         "bc_provenance": ["RB-L07", "RB-L03"],
     },
 )
@@ -490,11 +492,12 @@ def prepare(stage: str) -> dict[str, Any]:
                     "q_provenance": ["RB-L02", "RB-L03", "RB-X01"],
                 }
             )
-    dataset_id = f"heat3d_v6_randomblock_{stage}_v0"
+    dataset_id = f"heat3d_v6_randomblock_{stage}_v{PROTOCOL_ATTEMPT}"
     payload = {
         "schema_version": core.SCHEMA_VERSION,
         "dataset_id": dataset_id,
         "stage": stage,
+        "protocol_attempt": PROTOCOL_ATTEMPT,
         "sample_count": len(cases),
         "group_count": len(groups),
         "variants_per_group": 8,
@@ -523,6 +526,11 @@ def prepare(stage: str) -> dict[str, Any]:
             "literature_schema": "heat3d_v6_randomblock_literature_v1",
             "protocol_generator": "scripts/prepare_heat3d_v6_randomblock_protocol.py",
             "protocol_hash_excludes": ["provenance.protocol_sha256"],
+            "global_rule_revision": {
+                "source_attempt": "smoke16_v0",
+                "source_manifest_sha256": "a32850d10775d346bd4764765335c91b088e78dfbb18001a24bb02675ce9ada2",
+                "method": "global per-variant power table adjusted from two-group aggregate peak response; no per-sample inverse calibration, filtering, replacement, or BC change",
+            },
         },
     }
     payload["provenance"]["protocol_sha256"] = core.canonical_json_sha256(

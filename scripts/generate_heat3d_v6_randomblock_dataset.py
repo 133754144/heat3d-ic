@@ -645,7 +645,7 @@ def generate(
         _csv(temporary / "support_coverage.csv", support_rows)
         temporary.rename(dataset)
 
-        stem = f"v6_randomblock_{config['stage']}"
+        stem = str(config["dataset_id"]).removeprefix("heat3d_")
         manifest_path = artifact_dir / f"{stem}_manifest.json"
         audit_path = artifact_dir / f"{stem}_audit.json"
         samples_path = artifact_dir / f"{stem}_samples.csv"

@@ -1,0 +1,43 @@
+{
+  "schema_version": "heat3d_v6_randomblock_attempt_closeout_v1",
+  "attempt_id": "smoke16_v0",
+  "dataset_id": "heat3d_v6_randomblock_smoke16_v0",
+  "status": "failed_temperature_gate",
+  "execution_host": "wsl2",
+  "execution_commit": "ab83433aa267f77c9f95ed7e2eada943f699b390",
+  "result_commit": "2e4a5c33e633291a16aba97504292e8a5689256e",
+  "protocol_sha256": "45845240c21b0350fe50df785024b4a7027abd3dbcd434ab6132c78a60aa5530",
+  "manifest_payload_sha256": "a32850d10775d346bd4764765335c91b088e78dfbb18001a24bb02675ce9ada2",
+  "full_field_archive_sha256": "ea9ded9c7eb39fd9df1704c4eb8b7e623a184a7371704e892086d3f067806feb",
+  "sample_count": 16,
+  "group_count": 2,
+  "elapsed_seconds": 24.017439118993934,
+  "peak_deltaT_K": {
+    "minimum": 48.63735171306109,
+    "median": 137.17419882609593,
+    "maximum": 274.999069832318,
+    "inside_30_150_count": 9
+  },
+  "realized_temperature_bin_counts": {
+    "0": 2,
+    "1": 4,
+    "3": 3,
+    "outside": 7
+  },
+  "physical_gate": {
+    "passed": true,
+    "maximum_energy_balance_relative_error": 1.3282336341902123e-10,
+    "maximum_linear_residual": 1.1348918210852229e-10,
+    "minimum_support_nodes_per_block": 4
+  },
+  "retention": {
+    "all_samples_retained": true,
+    "temperature_filtering": false,
+    "sample_replacement": false,
+    "training": false,
+    "model_inference": false
+  },
+  "exclusion_reason": "Seven preregistered high-power cases exceeded the 150 K upper temperature gate.",
+  "used_for_sample_selection": false,
+  "allowed_followup": "Revise only the single global eight-variant power table, then restart smoke for the same two frozen layout groups."
+}
