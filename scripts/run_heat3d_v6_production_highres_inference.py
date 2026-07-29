@@ -262,6 +262,7 @@ def _predict_groups(
     params: Any,
     groups: Sequence[Mapping[str, Any]],
     warm_repeats: int,
+    expected_sample_count: int = 128,
 ) -> tuple[dict[str, np.ndarray], dict[str, float], dict[str, Any]]:
     first_started = time.perf_counter()
     first_output = runner._model_apply(model, params, groups[0])
@@ -292,8 +293,8 @@ def _predict_groups(
         _block(output)
         collect(group, output)
     remaining_seconds = time.perf_counter() - formal_started
-    if len(predictions) != 128:
-        raise ProductionInferenceError("valid_iid prediction count drifted")
+    if len(predictions) != expected_sample_count:
+        raise ProductionInferenceError("prediction count drifted")
     sample_count = sum(len(group["sample_ids"]) for group in groups)
     formal = first_seconds + remaining_seconds
     return predictions, scales, {

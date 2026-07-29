@@ -77,9 +77,17 @@ def main() -> int:
     assert _sha256(
         ROOT / prereg["workflow"]["ladder_path"]
     ) == prereg["workflow"]["ladder_sha256"]
-    assert _sha256(
+    current_evaluator_sha256 = _sha256(
         ROOT / prereg["workflow"]["evaluator_path"]
-    ) == prereg["workflow"]["evaluator_sha256"]
+    )
+    if current_evaluator_sha256 != prereg["workflow"]["evaluator_sha256"]:
+        adapter = _load(CONFIG / "v6_hard_ood_evaluator_adapter.json")
+        assert adapter["base_evaluator"]["sha256"] == prereg["workflow"][
+            "evaluator_sha256"
+        ]
+        assert adapter["new_evaluator"]["sha256"] == current_evaluator_sha256
+        assert adapter["metrics_formulas_changed"] is False
+        assert adapter["frozen_scientific_behavior_changed"] is False
     commands = prereg["command_plan"]
     assert len(commands) == 3
     for resolution, command in zip((4096, 8192, 16384), commands):

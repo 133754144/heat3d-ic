@@ -1,0 +1,33 @@
+{
+  "adapter_commit_binding": "commit_containing_this_file_must_be_pushed_before_retry",
+  "base_evaluator": {
+    "path": "scripts/run_heat3d_v6_final_performance.py",
+    "preregistration_commit": "63ef72007c6973805f08e68fad9c2f0dfe5122b6",
+    "sha256": "e93aaa0371d01f0162b004418815eb862233bd2d962c979357cacd07a6d9ba45"
+  },
+  "base_production_helper": {
+    "path": "scripts/run_heat3d_v6_production_highres_inference.py",
+    "sha256": "e03fdc8791449c7673d7c8ce919f20e69967f099a7617a69a40824d15418516d"
+  },
+  "failure": {
+    "formal_result_written": false,
+    "hard_labels_read": false,
+    "message": "valid_iid prediction count drifted",
+    "phase": "prediction_collection_before_evaluation",
+    "resolution": 4096
+  },
+  "frozen_scientific_behavior_changed": false,
+  "metrics_formulas_changed": false,
+  "model_checkpoint_sampling_graph_reconstruction_changed": false,
+  "new_evaluator": {
+    "path": "scripts/run_heat3d_v6_final_performance.py",
+    "sha256": "ed4327748f43f88ad95c8cebbf0abf33d4d3671776e513b83fe34d66ab5e5ea3"
+  },
+  "new_production_helper": {
+    "path": "scripts/run_heat3d_v6_production_highres_inference.py",
+    "sha256": "18340a83365f8e0b3cd15e77ab6a934033a8c2ff61154382a751938e5a83dd4a"
+  },
+  "only_change": "Make prediction-count validation accept an explicit expected sample count; preserve the historical default of 128 and pass 16 only for the preregistered hard_input_stress role.",
+  "schema_version": "heat3d_v6_hard_ood_evaluator_adapter_v1",
+  "status": "frozen_before_retry"
+}

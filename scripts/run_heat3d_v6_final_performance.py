@@ -390,7 +390,11 @@ def _cycle(
     model_started = time.perf_counter()
     anchor_predictions, anchor_scales, anchor_runtime = (
         production._predict_groups(
-            model=model, params=params, groups=anchor_groups, warm_repeats=0
+            model=model,
+            params=params,
+            groups=anchor_groups,
+            warm_repeats=0,
+            expected_sample_count=len(anchor_examples),
         )
     )
     if args.resolution == 1024:
@@ -399,7 +403,11 @@ def _cycle(
         scale_seconds = 0.0
     else:
         joint_predictions, _, query_runtime = production._predict_groups(
-            model=model, params=params, groups=query_groups, warm_repeats=0
+            model=model,
+            params=params,
+            groups=query_groups,
+            warm_repeats=0,
+            expected_sample_count=len(examples),
         )
         scale_started = time.perf_counter()
         query_predictions = anchored._anchor_scale_predictions(

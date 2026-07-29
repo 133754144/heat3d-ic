@@ -48,6 +48,25 @@ def main() -> int:
     committed_prereg_sha256 = hashlib.sha256(committed).hexdigest()
     if committed_prereg_sha256 != _sha256(PREREG):
         raise RuntimeError("working preregistration differs from pushed gate")
+    current_evaluator = ROOT / prereg["workflow"]["evaluator_path"]
+    current_evaluator_sha256 = _sha256(current_evaluator)
+    adapter_path = CONFIG / "v6_hard_ood_evaluator_adapter.json"
+    adapter_binding = None
+    if current_evaluator_sha256 != prereg["workflow"]["evaluator_sha256"]:
+        adapter = json.loads(adapter_path.read_text(encoding="utf-8"))
+        if (
+            adapter["base_evaluator"]["sha256"]
+            != prereg["workflow"]["evaluator_sha256"]
+            or adapter["new_evaluator"]["sha256"]
+            != current_evaluator_sha256
+            or adapter["metrics_formulas_changed"] is not False
+        ):
+            raise RuntimeError("hard evaluator adapter binding drifted")
+        adapter_binding = {
+            "path": "configs/heat3d_v6/v6_hard_ood_evaluator_adapter.json",
+            "sha256": _sha256(adapter_path),
+            "scope": "prediction_count_only",
+        }
 
     checkpoint = args.run_dir / "params_best_valid_point_global.pkl"
     if _sha256(checkpoint) != prereg["checkpoint"]["sha256"]:
@@ -100,11 +119,13 @@ def main() -> int:
         )
 
     payload = {
-        "schema_version": "heat3d_v6_hard_ood_preflight_v1",
+        "schema_version": "heat3d_v6_hard_ood_preflight_v2",
         "status": "passed",
         "preregistration_commit": args.preregistration_commit,
         "preregistration_sha256": _sha256(PREREG),
         "role_manifest_sha256": _sha256(ROLE),
+        "evaluator_sha256": current_evaluator_sha256,
+        "evaluator_adapter": adapter_binding,
         "checkpoint_sha256": _sha256(checkpoint),
         "checkpoint_modified": False,
         "dataset_id": prereg["dataset"]["dataset_id"],
