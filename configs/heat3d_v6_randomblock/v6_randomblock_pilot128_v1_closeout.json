@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d_v6_randomblock_attempt_closeout_v1",
+  "attempt_id": "pilot128_v1",
+  "dataset_id": "heat3d_v6_randomblock_pilot128_v1",
+  "status": "failed_temperature_gate",
+  "execution_host": "wsl2",
+  "execution_commit": "c90461c",
+  "result_commit": "75bc3ebbc232f3119d610d55e57ed16829524853",
+  "protocol_sha256": "5071223722c5e4d703225f287bb837e62ad75b9c08e6587ad6e9e4daaf5d1717",
+  "manifest_payload_sha256": "5ef798b7da547a0a3a464d77593ed2ae77619b43a65bcf1de13dea78c7441a90",
+  "full_field_archive_sha256": "303897e65e9ae6efef3d608dd06fec8275d2fa0c5cfdf8c02c7fb62cda70462a",
+  "sample_count": 128,
+  "group_count": 16,
+  "elapsed_seconds": 194.65346250799485,
+  "peak_deltaT_K": {
+    "minimum": 43.651745777473764,
+    "median": 89.39242716234892,
+    "maximum": 159.86156426955472,
+    "inside_30_150_count": 123
+  },
+  "realized_temperature_bin_counts": {
+    "0": 32,
+    "1": 32,
+    "2": 31,
+    "3": 28,
+    "outside": 5
+  },
+  "physical_gate": {
+    "passed": true,
+    "maximum_energy_balance_relative_error": 1.477060757654808e-10,
+    "maximum_linear_residual": 1.1924611964321124e-10,
+    "minimum_support_nodes_per_block": 5
+  },
+  "retention": {
+    "all_samples_retained": true,
+    "temperature_filtering": false,
+    "sample_replacement": false,
+    "training": false,
+    "model_inference": false
+  },
+  "exclusion_reason": "One v5 sample crossed into bin 3 and five v6/v7 samples exceeded 150 K.",
+  "used_for_sample_selection": false,
+  "global_rule_calibration": {
+    "file": "configs/heat3d_v6_randomblock/v6_randomblock_pilot128_v1_global_rule_calibration.json",
+    "sha256": "afcf5fd43faa349d3adbfb544f5ade93e1f89a9cab72403570732e52324f9517",
+    "evaluated_all_16_layouts": true,
+    "per_sample_inverse_calibration": false,
+    "passed": true
+  }
+}

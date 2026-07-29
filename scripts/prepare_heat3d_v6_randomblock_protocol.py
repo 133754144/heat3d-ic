@@ -19,7 +19,7 @@ import heat3d_v6_randomblock_core as core
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "configs/heat3d_v6_randomblock"
 STAGE_COUNTS = {"smoke16": 2, "pilot128": 16, "formal1024": 128}
-PROTOCOL_ATTEMPT = 1
+PROTOCOL_ATTEMPT = 2
 STAGE_OUTPUTS = {
     stage: CONFIG_DIR / f"v6_randomblock_{stage}_v{PROTOCOL_ATTEMPT}.yaml"
     for stage in STAGE_COUNTS
@@ -79,7 +79,7 @@ VARIANTS = (
     {
         "variant_id": "v5",
         "intended_temperature_bin": 2,
-        "package_total_power_W": 17.0,
+        "package_total_power_W": 16.5,
         "top_h_W_m2K": 2050.0,
         "bottom_h_W_m2K": 1000.0,
         "power_provenance": ["RB-X02", "RB-L01", "RB-L02"],
@@ -88,20 +88,20 @@ VARIANTS = (
     {
         "variant_id": "v6",
         "intended_temperature_bin": 3,
-        "package_total_power_W": 25.0,
-        "top_h_W_m2K": 2500.0,
-        "bottom_h_W_m2K": 1000.0,
+        "package_total_power_W": 12.5,
+        "top_h_W_m2K": 1000.0,
+        "bottom_h_W_m2K": 500.0,
         "power_provenance": ["RB-X02", "RB-L02"],
-        "bc_provenance": ["RB-L07", "RB-L03"],
+        "bc_provenance": ["RB-L03", "RB-L05"],
     },
     {
         "variant_id": "v7",
         "intended_temperature_bin": 3,
-        "package_total_power_W": 25.0,
-        "top_h_W_m2K": 2500.0,
-        "bottom_h_W_m2K": 1000.0,
+        "package_total_power_W": 12.5,
+        "top_h_W_m2K": 1000.0,
+        "bottom_h_W_m2K": 500.0,
         "power_provenance": ["RB-X02", "RB-L01", "RB-L02"],
-        "bc_provenance": ["RB-L07", "RB-L03"],
+        "bc_provenance": ["RB-L03", "RB-L05"],
     },
 )
 
@@ -527,9 +527,10 @@ def prepare(stage: str) -> dict[str, Any]:
             "protocol_generator": "scripts/prepare_heat3d_v6_randomblock_protocol.py",
             "protocol_hash_excludes": ["provenance.protocol_sha256"],
             "global_rule_revision": {
-                "source_attempt": "smoke16_v0",
-                "source_manifest_sha256": "a32850d10775d346bd4764765335c91b088e78dfbb18001a24bb02675ce9ada2",
-                "method": "global per-variant power table adjusted from two-group aggregate peak response; no per-sample inverse calibration, filtering, replacement, or BC change",
+                "source_attempt": "pilot128_v1",
+                "source_manifest_sha256": "5ef798b7da547a0a3a464d77593ed2ae77619b43a65bcf1de13dea78c7441a90",
+                "calibration_sha256": "afcf5fd43faa349d3adbfb544f5ade93e1f89a9cab72403570732e52324f9517",
+                "method": "one global v5-v7 power/BC table evaluated on all 16 frozen pilot layouts; no per-sample inverse calibration, filtering, or replacement",
             },
         },
     }
