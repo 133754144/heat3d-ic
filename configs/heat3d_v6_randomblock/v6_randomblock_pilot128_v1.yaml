@@ -1,0 +1,6066 @@
+schema_version: heat3d_v6_randomblock_dataset_v1
+dataset_id: heat3d_v6_randomblock_pilot128_v1
+stage: pilot128
+protocol_attempt: 1
+sample_count: 128
+group_count: 16
+variants_per_group: 8
+seeds:
+  layout: 20260730
+  physics: 20260731
+  split: 20260732
+  support: 20260733
+physics:
+  footprint_m:
+  - 0.01
+  - 0.01
+  layers_bottom_to_top:
+  - id: pcb_fr4_equivalent
+    thickness_m: 0.0016
+    k_xyz_W_mK:
+    - 0.8
+    - 0.8
+    - 0.3
+    role: board
+    z_intervals: 8
+    provenance: V6-P1h frozen stack
+  - id: bt_substrate_with_vias
+    thickness_m: 0.001
+    k_xyz_W_mK:
+    - 0.2
+    - 0.2
+    - 0.49
+    role: substrate
+    z_intervals: 8
+    provenance: V6-P1h frozen stack
+  - id: silicon_interposer_tsv_0p1
+    thickness_m: 0.0001
+    k_xyz_W_mK:
+    - 148.3
+    - 148.3
+    - 151.0
+    role: interposer
+    z_intervals: 4
+    provenance: V6-P1h frozen stack
+  - id: bump_underfill_under_interposer
+    thickness_m: 7.5e-05
+    k_xyz_W_mK:
+    - 0.6
+    - 0.6
+    - 4.9
+    role: interface
+    z_intervals: 4
+    provenance: V6-P1h frozen stack
+  - id: silicon_die_lower
+    thickness_m: 0.00015
+    k_W_mK: 120.0
+    role: active
+    z_intervals: 4
+    provenance:
+    - V6-P1h frozen stack
+    - RB-L03
+  - id: tim_between_dies
+    thickness_m: 5.0e-05
+    k_W_mK: 4.0
+    role: interface
+    z_intervals: 4
+    provenance: V6-P1h frozen stack
+  - id: silicon_die_upper
+    thickness_m: 0.00015
+    k_W_mK: 120.0
+    role: active
+    z_intervals: 4
+    provenance:
+    - V6-P1h frozen stack
+    - RB-L03
+  - id: tim_to_spreader
+    thickness_m: 5.0e-05
+    k_W_mK: 4.0
+    role: interface
+    z_intervals: 4
+    provenance: V6-P1h frozen stack
+  - id: spreader
+    thickness_m: 0.001
+    k_W_mK: 400.0
+    role: passive
+    z_intervals: 16
+    provenance:
+    - V6-P1h frozen stack
+    - RB-L02
+  solver_mesh_intervals_xyz:
+  - 64
+  - 64
+  - 56
+  boundary_schema:
+    top: robin
+    bottom: robin
+    sides: adiabatic
+    top_T_inf_K: 300.0
+    bottom_T_inf_K: 300.0
+    contact: perfect
+  operator_projection:
+    point_count: 1024
+    strata:
+      volume: 512
+      block: 256
+      interface: 128
+      top: 64
+      bottom: 64
+    selection_uses_temperature_or_labels: false
+    shared_within_layout_group: true
+  literature_contract: configs/heat3d_v6_randomblock/v6_randomblock_literature.json
+  k_block_palette_W_mK:
+  - 20.0
+  - 50.0
+  - 120.0
+  - 135.0
+  - 140.0
+  - 150.0
+  - 385.0
+  - 400.0
+  - 600.0
+  surface_power_density_W_cm2:
+  - 14.5
+  - 1000.0
+  volumetric_q_max_W_m3: 66666666666.66667
+  package_power_range_W:
+  - 1.0
+  - 47.8
+temperature_bin_contract:
+  edges_K:
+  - 30.0
+  - 60.0
+  - 90.0
+  - 120.0
+  - 150.0
+  intended_slots_per_group:
+  - 2
+  - 2
+  - 2
+  - 2
+  post_solve_filtering: false
+  post_solve_replacement: false
+  pilot_may_change_only_global_rules_then_restart: true
+layout_groups:
+- group_id: rb_g000
+  split_role: valid
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0690129029
+    - 0.1975280211
+    - 0.4202557918
+    - 0.5843046149
+    nominal_area_mm2: 2.1082753878104503
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8171219196
+    - 0.945138783
+    - 0.268589576
+    - 0.4453170058
+    nominal_area_mm2: 2.262409123096394
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1782518421
+    - 0.3216148992
+    - 0.139153815
+    - 0.2528034206
+    nominal_area_mm2: 1.629315489093156
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1118471787
+    - 0.272675797
+    - 0.0980259901
+    - 0.2687228623
+    nominal_area_mm2: 2.7452942099438062
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5688709837
+    - 0.7307616026
+    - 0.3412989741
+    - 0.5503370649
+    nominal_area_mm2: 3.3841305906905603
+  cross_family_overlap_pair_count: 1
+  layout_hash: fa9fa33ddb2cc0515c137572aedaef4f7732e80af28bd3fd00dcf13da212e9da
+- group_id: rb_g001
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8174219479
+    - 0.9148310411
+    - 0.5310558956
+    - 0.6398172867
+    nominal_area_mm2: 1.0594348474063913
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4287182411
+    - 0.5426283519
+    - 0.594873335
+    - 0.7297412738
+    nominal_area_mm2: 1.536282186446702
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4070588218
+    - 0.5690793705
+    - 0.6024282649
+    - 0.7481359818
+    nominal_area_mm2: 2.3607644236503895
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3821457346
+    - 0.4850543785
+    - 0.7469885529
+    - 0.86005535
+    nominal_area_mm2: 1.1635550767971838
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0970074128
+    - 0.2091243229
+    - 0.4815733985
+    - 0.5694711324
+    nominal_area_mm2: 0.9854822316771813
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3036835232
+    - 0.4318683578
+    - 0.3927165758
+    - 0.517951863
+    nominal_area_mm2: 1.6053264588013796
+  - block_id: k02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1926375347
+    - 0.3617636357
+    - 0.1308220799
+    - 0.2663153636
+    nominal_area_mm2: 2.2915450792429324
+  - block_id: k03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6231926265
+    - 0.7172451777
+    - 0.2988096157
+    - 0.3985764178
+    nominal_area_mm2: 0.9383322255692229
+  - block_id: k04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.167106182
+    - 0.377917798
+    - 0.7066899365
+    - 0.8472155449
+    nominal_area_mm2: 2.9624430612987696
+  cross_family_overlap_pair_count: 0
+  layout_hash: 0351666a3017ea503704355fecf48b75a51f0e48117fba53b5ce1289e2c46c0e
+- group_id: rb_g002
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4173825666
+    - 0.5483960727
+    - 0.2041959485
+    - 0.3511404757
+    nominal_area_mm2: 1.9251717697544222
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1406772957
+    - 0.2672246203
+    - 0.3081682678
+    - 0.4055391261
+    nominal_area_mm2: 1.2322021609112022
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4195799097
+    - 0.5222915879
+    - 0.8149331666
+    - 0.9388279709
+    nominal_area_mm2: 1.2725443267435348
+  - block_id: q03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0639185386
+    - 0.1401039597
+    - 0.6569193482
+    - 0.7646019293
+    nominal_area_mm2: 0.8203842779868443
+  - block_id: q04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1568261876
+    - 0.2411280411
+    - 0.5258939656
+    - 0.6360450158
+    nominal_area_mm2: 0.9285937700180922
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.803697401
+    - 0.9168038212
+    - 0.6020732445
+    - 0.7437582999
+    nominal_area_mm2: 1.6025489412338176
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6047697443
+    - 0.7181314676
+    - 0.4289636144
+    - 0.525403041
+    nominal_area_mm2: 1.0932539596642323
+  - block_id: k02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0932958726
+    - 0.2026072579
+    - 0.0733883811
+    - 0.1647601913
+    nominal_area_mm2: 0.9987979142172686
+  - block_id: k03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.251933538
+    - 0.3434413259
+    - 0.4341768266
+    - 0.5257569417
+    nominal_area_mm2: 0.8380293747086082
+  - block_id: k04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.8470728089
+    - 0.9681421475
+    - 0.1521337404
+    - 0.2932007228
+    nominal_area_mm2: 1.7078886238823379
+  - block_id: k05
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4010024477
+    - 0.5651656263
+    - 0.7130649449
+    - 0.8863751543
+    nominal_area_mm2: 2.845115485409561
+  - block_id: k06
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1050858545
+    - 0.2261305997
+    - 0.4313734555
+    - 0.6031843153
+    nominal_area_mm2: 2.0796801745129296
+  - block_id: k07
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.7020828386
+    - 0.9017319961
+    - 0.2402921799
+    - 0.3701503315
+    nominal_area_mm2: 2.592607055818477
+  cross_family_overlap_pair_count: 1
+  layout_hash: ace7cc565b95d70fb1f6ae519bb4a0e8131a8b60a72aef012991b5cebef8fbe8
+- group_id: rb_g003
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5910937582
+    - 0.6698832401
+    - 0.3523363816
+    - 0.4577135189
+    nominal_area_mm2: 0.830261004931828
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.2019002352
+    - 0.3069699076
+    - 0.4321712354
+    - 0.512549842
+    nominal_area_mm2: 0.844535386335898
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.3767631531
+    - 0.4548149965
+    - 0.7660896751
+    - 0.8676494779
+    nominal_area_mm2: 0.7926929821698993
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4432803057
+    - 0.5727559233
+    - 0.1157670088
+    - 0.2129520434
+    nominal_area_mm2: 1.2583092380862682
+  - block_id: q04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8058928421
+    - 0.9179539282
+    - 0.2784918713
+    - 0.3672469284
+    nominal_area_mm2: 0.9945988101659669
+  - block_id: q05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7052354374
+    - 0.8450538378
+    - 0.157613293
+    - 0.2596158861
+    nominal_area_mm2: 1.426183938946783
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.334425577
+    - 0.5101813313
+    - 0.4793302848
+    - 0.6393822758
+    nominal_area_mm2: 2.813005840468492
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3108567435
+    - 0.4456616971
+    - 0.1658043267
+    - 0.2879967183
+    nominal_area_mm2: 1.6472139674824622
+  - block_id: k02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.3575679508
+    - 0.4603649226
+    - 0.7694347959
+    - 0.9053899721
+    nominal_area_mm2: 1.397578041360165
+  - block_id: k03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4408775337
+    - 0.6615403099
+    - 0.7537507471
+    - 0.9078460079
+    nominal_area_mm2: 3.4003088049958197
+  cross_family_overlap_pair_count: 2
+  layout_hash: 42ba6f67cbcae5495b73a2c28643e1a8fcac3dd9f7bb5cb4b7d7692a7578b783
+- group_id: rb_g004
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7475117171
+    - 0.8425498222
+    - 0.1350372159
+    - 0.2320596559
+    nominal_area_mm2: 0.9220828856537231
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4307884959
+    - 0.527322205
+    - 0.2588468625
+    - 0.3865070185
+    nominal_area_mm2: 1.2323508368913565
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7573762616
+    - 0.8555139513
+    - 0.5468329843
+    - 0.6223263587
+    nominal_area_mm2: 0.7408745344749545
+  - block_id: q03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8712277728
+    - 0.9495269217
+    - 0.6363068588
+    - 0.7240417336
+    nominal_area_mm2: 0.6869566029112518
+  - block_id: q04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.2603801331
+    - 0.3564628293
+    - 0.6474435067
+    - 0.724024835
+    nominal_area_mm2: 0.7358140501048758
+  - block_id: q05
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6461236694
+    - 0.7323356641
+    - 0.152328824
+    - 0.2398304869
+    nominal_area_mm2: 0.7543692894531865
+  - block_id: q06
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3784929
+    - 0.497883487
+    - 0.5699545731
+    - 0.6509586853
+    nominal_area_mm2: 0.967112850711173
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0370357715
+    - 0.1707609766
+    - 0.5331603888
+    - 0.665011895
+    nominal_area_mm2: 1.7631869700964153
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5339624314
+    - 0.7210339568
+    - 0.2570757577
+    - 0.4324430257
+    nominal_area_mm2: 3.2806222341303335
+  - block_id: k02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4548402298
+    - 0.642231642
+    - 0.4313300203
+    - 0.5978088059
+    nominal_area_mm2: 3.1196694727925083
+  - block_id: k03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2996638172
+    - 0.458343239
+    - 0.3935772121
+    - 0.5060152794
+    nominal_area_mm2: 1.7841607505997308
+  - block_id: k04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7449098175
+    - 0.8863285391
+    - 0.1366602865
+    - 0.3440786467
+    nominal_area_mm2: 2.933283934461107
+  - block_id: k05
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0410235205
+    - 0.2505682556
+    - 0.7798990527
+    - 0.9181546581
+    nominal_area_mm2: 2.89707342025976
+  - block_id: k06
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4816970148
+    - 0.6914400455
+    - 0.748814721
+    - 0.9123891377
+    nominal_area_mm2: 3.4308593915960186
+  cross_family_overlap_pair_count: 2
+  layout_hash: 6643cc2884ba92edc2317151eb82c45aadd551b9782520763bef0675cfa92f72
+- group_id: rb_g005
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6002854214
+    - 0.6820456363
+    - 0.4269655084
+    - 0.5221270062
+    nominal_area_mm2: 0.7780424515953994
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6830169277
+    - 0.7691389682
+    - 0.4329673623
+    - 0.5388340515
+    nominal_area_mm2: 0.9117455292032104
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2147475937
+    - 0.3142738312
+    - 0.2105210692
+    - 0.2798434317
+    nominal_area_mm2: 0.6899393916773858
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.5820538268
+    - 0.6568299258
+    - 0.4996397176
+    - 0.5998252154
+    nominal_area_mm2: 0.7491480700614179
+  - block_id: q04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8210206043
+    - 0.9273012452
+    - 0.0979572554
+    - 0.1757417725
+    nominal_area_mm2: 0.826698833779161
+  - block_id: q05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7724474938
+    - 0.8451960227
+    - 0.4650270831
+    - 0.5554704573
+    nominal_area_mm2: 0.6579622414557462
+  - block_id: q06
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5853752863
+    - 0.6546180619
+    - 0.7905111716
+    - 0.8812509505
+    nominal_area_mm2: 0.6283074144703857
+  - block_id: q07
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7939166692
+    - 0.8851779523
+    - 0.1950903985
+    - 0.2685645431
+    nominal_area_mm2: 0.6705344709992679
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4035128795
+    - 0.5314970021
+    - 0.7457401796
+    - 0.8377984663
+    nominal_area_mm2: 1.178199904909912
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6568470346
+    - 0.8156706886
+    - 0.4123949185
+    - 0.5881601957
+    nominal_area_mm2: 2.7915683567752594
+  - block_id: k02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.770517893
+    - 0.8612741579
+    - 0.2762022748
+    - 0.3644728021
+    nominal_area_mm2: 0.8011103356129026
+  cross_family_overlap_pair_count: 2
+  layout_hash: 028f6e4cdab561e1914e8abf5ee9c47a70bd1a775a8b3000a158b3d05c390104
+- group_id: rb_g006
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4654703217
+    - 0.5640803527
+    - 0.2668904146
+    - 0.332450557
+    nominal_area_mm2: 0.6464887675526046
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8771738618
+    - 0.9484969371
+    - 0.3819030773
+    - 0.4699426994
+    nominal_area_mm2: 0.6279256605721534
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.054080307
+    - 0.1237555582
+    - 0.5179538855
+    - 0.6070645098
+    nominal_area_mm2: 0.6208805140189105
+  - block_id: q03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1805353843
+    - 0.2599998352
+    - 0.585284354
+    - 0.672638744
+    nominal_area_mm2: 0.6941568639253677
+  - block_id: q04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1212851256
+    - 0.2118893886
+    - 0.3469670278
+    - 0.414227265
+    nominal_area_mm2: 0.6094064225315844
+  - block_id: q05
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.480197056
+    - 0.5539864855
+    - 0.142293108
+    - 0.2429886452
+    nominal_area_mm2: 0.7430266242342989
+  - block_id: q06
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.2657156827
+    - 0.3510096884
+    - 0.5867710442
+    - 0.6541190331
+    nominal_area_mm2: 0.5744379742860475
+  - block_id: q07
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.3987036296
+    - 0.4661741859
+    - 0.6322769659
+    - 0.725490311
+    nominal_area_mm2: 0.6289156245314262
+  - block_id: q08
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.751623199
+    - 0.8419432241
+    - 0.1691810312
+    - 0.2449796988
+    nominal_area_mm2: 0.6846137561537557
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3445192041
+    - 0.4827439672
+    - 0.7347793441
+    - 0.9464212071
+    nominal_area_mm2: 2.9254146376738044
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5600463255
+    - 0.6793187626
+    - 0.7192193268
+    - 0.8021324817
+    nominal_area_mm2: 0.9889254049042479
+  - block_id: k02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.143287528
+    - 0.2862591161
+    - 0.4749278054
+    - 0.6338503991
+    nominal_area_mm2: 2.2721415609615376
+  - block_id: k03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.3370489517
+    - 0.4923915369
+    - 0.798782772
+    - 0.9562711696
+    nominal_area_mm2: 2.446465481805763
+  - block_id: k04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6130815454
+    - 0.7741226211
+    - 0.5916113452
+    - 0.7617536773
+    nominal_area_mm2: 2.739990418653402
+  - block_id: k05
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0452032938
+    - 0.2097125572
+    - 0.3193735078
+    - 0.5154986405
+    nominal_area_mm2: 3.2264401121606574
+  cross_family_overlap_pair_count: 1
+  layout_hash: a5e170a79b5328e8379ff02130604036cac8162a4bc3e494e9ed3566a0b66228
+- group_id: rb_g007
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2726910465
+    - 0.3589049644
+    - 0.7770341117
+    - 0.8453506104
+    nominal_area_mm2: 0.588983301461381
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6513779719
+    - 0.7367079697
+    - 0.2961043738
+    - 0.3740178065
+    nominal_area_mm2: 0.6648353048082587
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.3354589356
+    - 0.4150363033
+    - 0.2855149666
+    - 0.3556112347
+    nominal_area_mm2: 0.557807650287099
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4598845712
+    - 0.5475384473
+    - 0.8678885487
+    - 0.9360267143
+    nominal_area_mm2: 0.5972574325336315
+  - block_id: q04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1165739536
+    - 0.2077035678
+    - 0.6222947367
+    - 0.6884327649
+    nominal_area_mm2: 0.6027132989565285
+  - block_id: q05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7067021188
+    - 0.7844010452
+    - 0.6331608072
+    - 0.7063112818
+    nominal_area_mm2: 0.5683713340528442
+  - block_id: q06
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5833148436
+    - 0.6718693576
+    - 0.2792610633
+    - 0.3446448072
+    nominal_area_mm2: 0.5790025668213057
+  - block_id: q07
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1068614803
+    - 0.1780163286
+    - 0.5046292879
+    - 0.5868763181
+    nominal_area_mm2: 0.5852274952097427
+  - block_id: q08
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8226058748
+    - 0.9058825584
+    - 0.7911795262
+    - 0.8578479459
+    nominal_area_mm2: 0.5551924897522974
+  - block_id: q09
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.079958079
+    - 0.1485758134
+    - 0.7428551537
+    - 0.820772498
+    nominal_area_mm2: 0.5346511641582323
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6678350325
+    - 0.8621905929
+    - 0.4616289595
+    - 0.6348177618
+    nominal_area_mm2: 3.366020672749915
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0510376548
+    - 0.2049197325
+    - 0.824574992
+    - 0.9583722234
+    nominal_area_mm2: 2.0588995951658324
+  cross_family_overlap_pair_count: 0
+  layout_hash: c3aaa902d77dc1d2942d2325a4d619f452a5e527e7fd960c01c775214f642b5e
+- group_id: rb_g008
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4415481551
+    - 0.6320621701
+    - 0.1264417705
+    - 0.2616458697
+    nominal_area_mm2: 2.5758275768772974
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.7649524516
+    - 0.9203444901
+    - 0.2140569874
+    - 0.3552068714
+    nominal_area_mm2: 2.19335682182234
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4372637044
+    - 0.554105234
+    - 0.4409202958
+    - 0.5396547225
+    nominal_area_mm2: 1.1536281432603515
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.8684844295
+    - 0.9713816358
+    - 0.3203651034
+    - 0.4592084719
+    nominal_area_mm2: 1.428659473608169
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5135172077
+    - 0.6120850458
+    - 0.7644065541
+    - 0.8699257668
+    nominal_area_mm2: 1.0400800664452028
+  - block_id: k02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0829908685
+    - 0.2661869575
+    - 0.0759212688
+    - 0.2233684559
+    nominal_area_mm2: 2.701174800069843
+  - block_id: k03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6739830157
+    - 0.8620040696
+    - 0.2065643875
+    - 0.3903012345
+    nominal_area_mm2: 3.454639561752592
+  - block_id: k04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3534866363
+    - 0.4571528943
+    - 0.2010303509
+    - 0.2968380859
+    nominal_area_mm2: 0.9932029373831125
+  cross_family_overlap_pair_count: 2
+  layout_hash: e1a0cb8198221602e6ea371dcd7b9e53d5f8c6dfd384a8e565d4e3aa486853ae
+- group_id: rb_g009
+  split_role: valid
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0766812742
+    - 0.1823213228
+    - 0.6342077096
+    - 0.7917551067
+    nominal_area_mm2: 1.6643314688372517
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7342852797
+    - 0.8782855397
+    - 0.6644863122
+    - 0.7917929203
+    nominal_area_mm2: 1.833218467252369
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4404909404
+    - 0.5520298719
+    - 0.6412718785
+    - 0.7305409541
+    nominal_area_mm2: 0.9956977308324418
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.187042138
+    - 0.2933368379
+    - 0.284792845
+    - 0.4313358109
+    nominal_area_mm2: 1.5576740592096459
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0362301981
+    - 0.1873907959
+    - 0.584851435
+    - 0.7923237524
+    nominal_area_mm2: 3.1361639508657073
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6930510668
+    - 0.9166483113
+    - 0.0485291535
+    - 0.1965915207
+    nominal_area_mm2: 3.310633732198812
+  - block_id: k02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5578324108
+    - 0.6708600591
+    - 0.2689244046
+    - 0.3856255643
+    nominal_area_mm2: 1.3190457648889211
+  - block_id: k03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.2331282003
+    - 0.3357531832
+    - 0.2493327072
+    - 0.3694665639
+    nominal_area_mm2: 1.2328734997007964
+  - block_id: k04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4298916991
+    - 0.5493527963
+    - 0.2604715932
+    - 0.4032423045
+    nominal_area_mm2: 1.7055545823020308
+  - block_id: k05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6154820107
+    - 0.8037437501
+    - 0.5280646073
+    - 0.7052738554
+    nominal_area_mm2: 3.3361721279484793
+  - block_id: k06
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5868862982
+    - 0.7203183197
+    - 0.4957455642
+    - 0.5845635351
+    nominal_area_mm2: 1.1851161407714321
+  - block_id: k07
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0332829819
+    - 0.160525976
+    - 0.4503080601
+    - 0.5387208888
+    nominal_area_mm2: 1.1249913037950259
+  cross_family_overlap_pair_count: 3
+  layout_hash: 16d9ac591a9a61db2dc9d5b2d140214f0462f6c6e17d756582aaa18cb2b3e76c
+- group_id: rb_g010
+  split_role: valid
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4819416075
+    - 0.6184856367
+    - 0.6148261981
+    - 0.7038561251
+    nominal_area_mm2: 1.2156504947798945
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6044047121
+    - 0.7470442856
+    - 0.142473767
+    - 0.2392732053
+    nominal_area_mm2: 1.3807430601922315
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.6892154545
+    - 0.7773523505
+    - 0.3935630166
+    - 0.4897952902
+    nominal_area_mm2: 0.8481613894431455
+  - block_id: q03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.183313153
+    - 0.2830887209
+    - 0.8114443875
+    - 0.8993461303
+    nominal_area_mm2: 0.8770446320699585
+  - block_id: q04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3027809875
+    - 0.4275139541
+    - 0.4822838617
+    - 0.6291158553
+    nominal_area_mm2: 1.8314790152279115
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1002976535
+    - 0.1989276063
+    - 0.2213421892
+    - 0.3598834775
+    nominal_area_mm2: 1.3664320716180824
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1476902238
+    - 0.2595696234
+    - 0.4913295208
+    - 0.5743772452
+    nominal_area_mm2: 0.9291329536767234
+  - block_id: k02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0706161537
+    - 0.1625919374
+    - 0.6146227429
+    - 0.7074193265
+    nominal_area_mm2: 0.8535038501676682
+  - block_id: k03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5406565434
+    - 0.691662371
+    - 0.1193511953
+    - 0.3326584278
+    nominal_area_mm2: 3.2210635167287185
+  cross_family_overlap_pair_count: 1
+  layout_hash: 3f3a24a9450a1fbec05520b5735cd5078504ef25aae6fcfa2097f59d01e2ff11
+- group_id: rb_g011
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5790486107
+    - 0.6633358549
+    - 0.5766387761
+    - 0.6767744597
+    nominal_area_mm2: 0.8440160815734619
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.088158292
+    - 0.1986214882
+    - 0.1293932167
+    - 0.2504779829
+    nominal_area_mm2: 1.3375410274938642
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5027577799
+    - 0.5846331679
+    - 0.4610650504
+    - 0.5380575064
+    nominal_area_mm2: 0.6303787204625445
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3013853084
+    - 0.4110732628
+    - 0.6199340676
+    - 0.7069327763
+    nominal_area_mm2: 0.9542710383076352
+  - block_id: q04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1393892299
+    - 0.2264889113
+    - 0.2229947899
+    - 0.3462824801
+    nominal_area_mm2: 1.07383185495421
+  - block_id: q05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1408875448
+    - 0.2503454204
+    - 0.5868362561
+    - 0.7090001516
+    nominal_area_mm2: 1.3371800472598452
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2584933969
+    - 0.4009381467
+    - 0.3239372259
+    - 0.4310636091
+    nominal_area_mm2: 1.5259590848256759
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.2497457462
+    - 0.3825534623
+    - 0.2326437911
+    - 0.3888561939
+    nominal_area_mm2: 2.074621244599018
+  - block_id: k02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5385057205
+    - 0.7655609327
+    - 0.5414356496
+    - 0.6928350856
+    nominal_area_mm2: 3.4376031063233325
+  - block_id: k03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1330920583
+    - 0.2768053666
+    - 0.752033519
+    - 0.9457660931
+    nominal_area_mm2: 2.7841949155091146
+  - block_id: k04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0257824887
+    - 0.1247790469
+    - 0.101231855
+    - 0.2112045637
+    nominal_area_mm2: 1.0886919654128888
+  - block_id: k05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3391824212
+    - 0.4857451921
+    - 0.8176886052
+    - 0.9304197696
+    nominal_area_mm2: 1.652219182577242
+  - block_id: k06
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0562544592
+    - 0.2033195505
+    - 0.6744562013
+    - 0.7750598586
+    nominal_area_mm2: 1.4795286049780654
+  cross_family_overlap_pair_count: 1
+  layout_hash: 381387934b6840415b5c5f2a1142fea470d98705990e9356bd06dbcc2e303c5a
+- group_id: rb_g012
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.5608733063
+    - 0.6770395655
+    - 0.1276026874
+    - 0.2189943039
+    nominal_area_mm2: 1.061662220927877
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8309577048
+    - 0.9288394393
+    - 0.7615916904
+    - 0.8423332053
+    nominal_area_mm2: 0.790311953672807
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.0721535859
+    - 0.1811543443
+    - 0.3764647087
+    - 0.4764753344
+    nominal_area_mm2: 1.0901234055476117
+  - block_id: q03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2826095543
+    - 0.3686223946
+    - 0.1224913438
+    - 0.2077859509
+    nominal_area_mm2: 0.7336431410764406
+  - block_id: q04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.5403251368
+    - 0.643191822
+    - 0.2364928965
+    - 0.310351035
+    nominal_area_mm2: 0.7597541886321041
+  - block_id: q05
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5379054632
+    - 0.6456892268
+    - 0.2636694438
+    - 0.3374738531
+    nominal_area_mm2: 0.7954917005102776
+  - block_id: q06
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.399158876
+    - 0.4778308875
+    - 0.5732657705
+    - 0.6851292609
+    nominal_area_mm2: 0.8800525800346709
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3406668249
+    - 0.4792802714
+    - 0.3378778932
+    - 0.4845702541
+    nominal_area_mm2: 2.0333533713974945
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2551458316
+    - 0.4173227541
+    - 0.6434104387
+    - 0.8121777
+    nominal_area_mm2: 2.7370155064372685
+  - block_id: k02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7128225334
+    - 0.8073679226
+    - 0.8268031548
+    - 0.9606333611
+    nominal_area_mm2: 1.2653028950956613
+  cross_family_overlap_pair_count: 0
+  layout_hash: 6d4bcfde6cc912517f17103396c452c69ce6e8300a58d99fc6896cb2064055db
+- group_id: rb_g013
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8404589455
+    - 0.9280260821
+    - 0.5258080152
+    - 0.6143941103
+    nominal_area_mm2: 0.7757230688705284
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.156562055
+    - 0.2663190985
+    - 0.8083491215
+    - 0.8901695541
+    nominal_area_mm2: 0.898036877959452
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.800939401
+    - 0.8692081403
+    - 0.1522963132
+    - 0.2381059637
+    nominal_area_mm2: 0.5858116657834973
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.8367191498
+    - 0.927050231
+    - 0.6032005678
+    - 0.681268638
+    nominal_area_mm2: 0.7051973199893563
+  - block_id: q04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.637725086
+    - 0.7134233725
+    - 0.810836938
+    - 0.9254937792
+    nominal_area_mm2: 0.8679326413662529
+  - block_id: q05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.8245077514
+    - 0.898648057
+    - 0.3972116691
+    - 0.4943888184
+    nominal_area_mm2: 0.7204743539801257
+  - block_id: q06
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.3717519803
+    - 0.4360744736
+    - 0.7151316464
+    - 0.812278092
+    nominal_area_mm2: 0.6248701590841228
+  - block_id: q07
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4635732931
+    - 0.544016632
+    - 0.395456675
+    - 0.4961762968
+    nominal_area_mm2: 0.810222267604125
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.0302553861
+    - 0.1613185106
+    - 0.0690485186
+    - 0.1725212824
+    nominal_area_mm2: 1.356146372456047
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1854320384
+    - 0.351502115
+    - 0.7896784739
+    - 0.9332910628
+    nominal_area_mm2: 2.3849753640051037
+  - block_id: k02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1511281876
+    - 0.3214946633
+    - 0.2650994999
+    - 0.4095445768
+    nominal_area_mm2: 2.4608598679753655
+  - block_id: k03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.4058585788
+    - 0.5953318798
+    - 0.0555092344
+    - 0.1811612165
+    nominal_area_mm2: 2.3807695822911747
+  - block_id: k04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1259854664
+    - 0.2645648078
+    - 0.6905810458
+    - 0.8188486343
+    nominal_area_mm2: 1.7775237940066764
+  - block_id: k05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.8000375139
+    - 0.9624337997
+    - 0.2079309599
+    - 0.348550454
+    nominal_area_mm2: 2.2836083554091116
+  cross_family_overlap_pair_count: 1
+  layout_hash: b11744a4478fd180ce964f6fc7328c34034820b1367c22e225b1bd12d2d4782d
+- group_id: rb_g014
+  split_role: train
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.379292474
+    - 0.4827043148
+    - 0.2815894195
+    - 0.3491358285
+    nominal_area_mm2: 0.6985098488564843
+  - block_id: q01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4009377791
+    - 0.4672979437
+    - 0.463849898
+    - 0.5611803963
+    nominal_area_mm2: 0.6458867885305881
+  - block_id: q02
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1814445624
+    - 0.2570998595
+    - 0.1486350074
+    - 0.2332045566
+    nominal_area_mm2: 0.6398134375768554
+  - block_id: q03
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1634530897
+    - 0.2536159698
+    - 0.7760795571
+    - 0.8603229274
+    nominal_area_mm2: 0.7595624890785644
+  - block_id: q04
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.3669858721
+    - 0.4413363262
+    - 0.4401992616
+    - 0.5140186187
+    nominal_area_mm2: 0.5488502725142872
+  - block_id: q05
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6306722444
+    - 0.7300970095
+    - 0.7080281143
+    - 0.7796552275
+    nominal_area_mm2: 0.7121508909659338
+  - block_id: q06
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.138913387
+    - 0.232759297
+    - 0.4003218773
+    - 0.4694681053
+    nominal_area_mm2: 0.6489090689015649
+  - block_id: q07
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.6823792022
+    - 0.7578016737
+    - 0.8289330836
+    - 0.9084775815
+    nominal_area_mm2: 0.5999442626315686
+  - block_id: q08
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.5107550803
+    - 0.5812903406
+    - 0.8078191059
+    - 0.8954135238
+    nominal_area_mm2: 0.6178495068992604
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.502318998
+    - 0.6771777779
+    - 0.3503848338
+    - 0.4950599031
+    nominal_area_mm2: 2.529770610111501
+  - block_id: k01
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.4153382905
+    - 0.5993710076
+    - 0.7818517228
+    - 0.9236834646
+    nominal_area_mm2: 2.610168079353924
+  cross_family_overlap_pair_count: 0
+  layout_hash: 99b158bd4f80c10702da1e6d13c89247e211bcd03d3870e3d4f4daad5df5cf57
+- group_id: rb_g015
+  split_role: test
+  q_blocks:
+  - block_id: q00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2803501427
+    - 0.3583735064
+    - 0.2525264837
+    - 0.3215416696
+    nominal_area_mm2: 0.5384796946369509
+  - block_id: q01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.2800288762
+    - 0.3633703566
+    - 0.1491067016
+    - 0.2232152267
+    nominal_area_mm2: 0.6176314197693874
+  - block_id: q02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.321723727
+    - 0.4121711287
+    - 0.4045840111
+    - 0.469114494
+    nominal_area_mm2: 0.5836614508383908
+  - block_id: q03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.8101871379
+    - 0.909765053
+    - 0.7895441378
+    - 0.8569111025
+    nominal_area_mm2: 0.6708261885367633
+  - block_id: q04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2254268751
+    - 0.2960386524
+    - 0.6518588115
+    - 0.7297075576
+    nominal_area_mm2: 0.5497038323874525
+  - block_id: q05
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.5263083124
+    - 0.6009758564
+    - 0.0579608669
+    - 0.1345604455
+    nominal_area_mm2: 0.5719502409313721
+  - block_id: q06
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.1752248794
+    - 0.2505713981
+    - 0.150310102
+    - 0.2242921724
+    nominal_area_mm2: 0.5574291456983282
+  - block_id: q07
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.1476426861
+    - 0.2241475269
+    - 0.295335881
+    - 0.3733114901
+    nominal_area_mm2: 0.5965511563553013
+  - block_id: q08
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.8406300239
+    - 0.9211246655
+    - 0.1374580425
+    - 0.2096924884
+    nominal_area_mm2: 0.5814485825133044
+  - block_id: q09
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7635174824
+    - 0.8390726427
+    - 0.2508154659
+    - 0.3239415349
+    nominal_area_mm2: 0.5525051873918617
+  k_blocks:
+  - block_id: k00
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.3189752664
+    - 0.5178864978
+    - 0.161652175
+    - 0.3107075233
+    nominal_area_mm2: 2.964878288431409
+  - block_id: k01
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.7730285341
+    - 0.9411005637
+    - 0.1275069136
+    - 0.3050189526
+    nominal_area_mm2: 2.9834808675846585
+  - block_id: k02
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.2856206771
+    - 0.3908322718
+    - 0.4116804335
+    - 0.5423809891
+    nominal_area_mm2: 1.3751213880926518
+  - block_id: k03
+    layer: silicon_die_lower
+    bbox_fraction_xy:
+    - 0.227833103
+    - 0.3644034618
+    - 0.8759241614
+    - 0.9726743499
+    nominal_area_mm2: 1.3213207956671131
+  - block_id: k04
+    layer: silicon_die_upper
+    bbox_fraction_xy:
+    - 0.5838214515
+    - 0.8100119038
+    - 0.0336105421
+    - 0.1807413448
+    nominal_area_mm2: 3.327958281524688
+  cross_family_overlap_pair_count: 3
+  layout_hash: 18b19bd5aaf7ed56a11af5f268f734b5d400a90e2f136b4c838924712f83e895
+physics_variants:
+- variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: &id001
+  - RB-X02
+  - RB-L04
+  - RB-L01
+  bc_provenance: &id002
+  - RB-L05
+- variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: &id003
+  - RB-X02
+  - RB-L01
+  - RB-L03
+  bc_provenance: &id004
+  - RB-L05
+- variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: &id005
+  - RB-X02
+  - RB-L01
+  - RB-L03
+  bc_provenance: &id006
+  - RB-L03
+  - RB-L05
+- variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: &id007
+  - RB-X02
+  - RB-L03
+  - RB-L01
+  bc_provenance: &id008
+  - RB-L05
+- variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: &id009
+  - RB-X02
+  - RB-L03
+  - RB-L01
+  - RB-L02
+  bc_provenance: &id010
+  - RB-L02
+  - RB-L05
+- variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: &id011
+  - RB-X02
+  - RB-L01
+  - RB-L02
+  bc_provenance: &id012
+  - RB-L02
+  - RB-L03
+- variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: &id013
+  - RB-X02
+  - RB-L02
+  bc_provenance: &id014
+  - RB-L07
+  - RB-L03
+- variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: &id015
+  - RB-X02
+  - RB-L01
+  - RB-L02
+  bc_provenance: &id016
+  - RB-L07
+  - RB-L03
+cases:
+- sample_id: rb_g000_v0
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.3339814310511486
+  - 0.3612567983100253
+  - 0.3047617706388262
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g000_v1
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.3594682357880937
+  - 0.3612580501218384
+  - 0.2792737140900679
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g000_v2
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.3844210870592306
+  - 0.3525969958083783
+  - 0.262981917132391
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g000_v3
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.3922522540475905
+  - 0.34230073954487444
+  - 0.2654470064075351
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g000_v4
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.3771637798442269
+  - 0.337181843064758
+  - 0.28565437709101515
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g000_v5
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.34939669021853786
+  - 0.3391902353461369
+  - 0.3114130744353251
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g000_v6
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.3476274560866113
+  - 0.3490769087301523
+  - 0.30329563518323643
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g000_v7
+  group_id: rb_g000
+  split_role: valid
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.34683702981190884
+  - 0.35238432562957955
+  - 0.3007786445585116
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v0
+  group_id: rb_g001
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.16749522182839002
+  - 0.24599343984903577
+  - 0.3736704851330849
+  - 0.21284085318948934
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v1
+  group_id: rb_g001
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.18710634063466622
+  - 0.2513903544725021
+  - 0.3560131207599471
+  - 0.20549018413288464
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v2
+  group_id: rb_g001
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.1965844943756396
+  - 0.2439691828978643
+  - 0.3446520990063043
+  - 0.21479422372019194
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v3
+  group_id: rb_g001
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.1881518158774412
+  - 0.22931013967399125
+  - 0.34631469259484116
+  - 0.23622335185372648
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v4
+  group_id: rb_g001
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.16826501568049404
+  - 0.21665032941158566
+  - 0.35894139068016867
+  - 0.25614326422775163
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v5
+  group_id: rb_g001
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.1512906775247312
+  - 0.21361957564137327
+  - 0.3751335047938028
+  - 0.2599562420400927
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v6
+  group_id: rb_g001
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.1622778419225789
+  - 0.2291269631074649
+  - 0.3718971979906109
+  - 0.23669799697934524
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g001_v7
+  group_id: rb_g001
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.16583352440727597
+  - 0.2342791041107856
+  - 0.3706052821083042
+  - 0.2292820893736342
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v0
+  group_id: rb_g002
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.34807759958804896
+  - 0.20936438330417037
+  - 0.23259985166848252
+  - 0.08692480534737727
+  - 0.12303336009192095
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v1
+  group_id: rb_g002
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.36843206134753953
+  - 0.2020372394457262
+  - 0.21492909660902695
+  - 0.08406603411993414
+  - 0.13053556847777317
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v2
+  group_id: rb_g002
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.36570129679436636
+  - 0.18949741015174826
+  - 0.20798616784388493
+  - 0.08904673736791416
+  - 0.1477683878420864
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v3
+  group_id: rb_g002
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.3414865763017949
+  - 0.17980550386346628
+  - 0.21497581317772
+  - 0.09935070141270748
+  - 0.16438140524431127
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v4
+  group_id: rb_g002
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.3133589403956756
+  - 0.17842384889643623
+  - 0.2320720047215058
+  - 0.1086312134626094
+  - 0.16751399252377294
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v5
+  group_id: rb_g002
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.29936387194905145
+  - 0.18643359464059323
+  - 0.2494117162444964
+  - 0.11003802802533992
+  - 0.15475278914051907
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v6
+  group_id: rb_g002
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.32499953309883056
+  - 0.19566035093711204
+  - 0.23882309453149575
+  - 0.09871386812543524
+  - 0.1418031533071264
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g002_v7
+  group_id: rb_g002
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.3334742392094076
+  - 0.1986340729016642
+  - 0.2352427109385688
+  - 0.09512151977136316
+  - 0.13752745717899628
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v0
+  group_id: rb_g003
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.15911265280457085
+  - 0.16199664298101524
+  - 0.12294885123346895
+  - 0.1815582069235473
+  - 0.15351703418478765
+  - 0.22086661187261006
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v1
+  group_id: rb_g003
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.15862255025004665
+  - 0.1485786034840528
+  - 0.1115545303132748
+  - 0.17697960427767526
+  - 0.16345809116898366
+  - 0.24080662050596682
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v2
+  group_id: rb_g003
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.14654047015729818
+  - 0.13370817931956935
+  - 0.1066740648111334
+  - 0.18551595585255184
+  - 0.17807214421374565
+  - 0.24948918564570155
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v3
+  group_id: rb_g003
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.1321137748826746
+  - 0.12646882952381
+  - 0.11070436381086866
+  - 0.20285201120719773
+  - 0.18777376356721312
+  - 0.24008725700823583
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v4
+  group_id: rb_g003
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.12434908639729102
+  - 0.13037400962262577
+  - 0.12172249014125154
+  - 0.21833721065382425
+  - 0.18517439263034702
+  - 0.2200428105546604
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v5
+  group_id: rb_g003
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.12707976646450794
+  - 0.14358947115296247
+  - 0.13329477776635423
+  - 0.22048669438066043
+  - 0.17230618131751402
+  - 0.20324310891800101
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v6
+  group_id: rb_g003
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.14087092331401294
+  - 0.14943773469162344
+  - 0.12650272623121686
+  - 0.2017424036573421
+  - 0.16619398215742504
+  - 0.2152522299483797
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g003_v7
+  group_id: rb_g003
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.1456309716243287
+  - 0.1513622619808324
+  - 0.12427342457078513
+  - 0.1957047321492356
+  - 0.1639769816940201
+  - 0.2190516279807982
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v0
+  group_id: rb_g004
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.16715540063325604
+  - 0.20816943691271841
+  - 0.11877826572152665
+  - 0.1075385653276041
+  - 0.1133803463391613
+  - 0.1237284679895794
+  - 0.1612495170761541
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v1
+  group_id: rb_g004
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.16367277413026904
+  - 0.19138445250453745
+  - 0.11177093997837545
+  - 0.11051953000941422
+  - 0.12522152167921483
+  - 0.13524293547734068
+  - 0.1621878462208483
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v2
+  group_id: rb_g004
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.15248801865159956
+  - 0.17968961413901718
+  - 0.11390653748009916
+  - 0.12211667137864986
+  - 0.13910994790239578
+  - 0.1393829910994
+  - 0.1533062193488383
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v3
+  group_id: rb_g004
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.14148267806717388
+  - 0.17942710320372707
+  - 0.12412728615355642
+  - 0.13589667138605957
+  - 0.14510704293525586
+  - 0.13275656250890627
+  - 0.14120265574532107
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v4
+  group_id: rb_g004
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.13733486109463186
+  - 0.1908368535662249
+  - 0.13685664395662137
+  - 0.14216562155935936
+  - 0.138356051322743
+  - 0.12068574640047534
+  - 0.13376422209994407
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v5
+  group_id: rb_g004
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.1422300251294234
+  - 0.20775710170880618
+  - 0.14331612783547587
+  - 0.1358053341138935
+  - 0.12441170063291447
+  - 0.11144233565103995
+  - 0.13503737492844653
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v6
+  group_id: rb_g004
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.15272104620740354
+  - 0.20514601048791845
+  - 0.13059913304577733
+  - 0.12339298150949335
+  - 0.12210198673580344
+  - 0.11922585870200776
+  - 0.14681298331159603
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g004_v7
+  group_id: rb_g004
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.1562335962773545
+  - 0.2041824172108221
+  - 0.12654528364252224
+  - 0.11937896100346311
+  - 0.12113996927342979
+  - 0.12173394909913593
+  - 0.15078582349327227
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v0
+  group_id: rb_g005
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.12868799993508667
+  - 0.16994592517682103
+  - 0.09898516172796089
+  - 0.12148560721932494
+  - 0.12720714783348974
+  - 0.12507885938272334
+  - 0.10342982286521407
+  - 0.1251794758593794
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v1
+  group_id: rb_g005
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.12299364798019646
+  - 0.15697719340295982
+  - 0.09652073155424018
+  - 0.12996160539324014
+  - 0.14248209393632938
+  - 0.13420238685673264
+  - 0.1011779888778281
+  - 0.11568435199847323
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v2
+  group_id: rb_g005
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.11323848932671372
+  - 0.1505215290879979
+  - 0.1014847604482316
+  - 0.14494005755766878
+  - 0.15444417994039672
+  - 0.1329902540711118
+  - 0.09363028699262235
+  - 0.10875044257525703
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v3
+  group_id: rb_g005
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.10608911297304213
+  - 0.15414102009520989
+  - 0.11148342765946484
+  - 0.15714571917373202
+  - 0.1539009741829194
+  - 0.12257079159388051
+  - 0.08629635989368399
+  - 0.10837259442806725
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v4
+  group_id: rb_g005
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.10558186916501423
+  - 0.166090324346636
+  - 0.12044034966596386
+  - 0.15724751725977412
+  - 0.14139173078933956
+  - 0.11085650088892683
+  - 0.08358108267455117
+  - 0.1148106252097942
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v5
+  group_id: rb_g005
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.11183759651733476
+  - 0.17917466854641168
+  - 0.12154782002236454
+  - 0.1449886410230002
+  - 0.12639928109939605
+  - 0.10490463283614092
+  - 0.0867512949590163
+  - 0.12439606499633561
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v6
+  group_id: rb_g005
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.11833395944923754
+  - 0.17271548087142322
+  - 0.11062345682426307
+  - 0.13612405693822804
+  - 0.1299837907288029
+  - 0.11539035307200755
+  - 0.09369004399465539
+  - 0.12313885812138234
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g005_v7
+  group_id: rb_g005
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.12050671805275097
+  - 0.1705614919216849
+  - 0.10714043979186866
+  - 0.1331279113145521
+  - 0.1309892897528833
+  - 0.11894584257345088
+  - 0.09604762444782101
+  - 0.12268068214498803
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v0
+  group_id: rb_g006
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.13756495874963992
+  - 0.10380203716995118
+  - 0.08034191111032168
+  - 0.11793803982764024
+  - 0.1063547818169094
+  - 0.1442733023659325
+  - 0.09989177122548924
+  - 0.10737064409494602
+  - 0.10246255363916995
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v1
+  group_id: rb_g006
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.12863148868012791
+  - 0.09700177876281353
+  - 0.08114825622603157
+  - 0.1296406721945149
+  - 0.11852057756899691
+  - 0.14993440196582086
+  - 0.09495770244092377
+  - 0.09939671528859934
+  - 0.10076840687217123
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v2
+  group_id: rb_g006
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.11826714653122859
+  - 0.09546669661824937
+  - 0.0873711439699406
+  - 0.14369322234495555
+  - 0.12390659755656072
+  - 0.14294025295732163
+  - 0.08687650993141671
+  - 0.09538261686453983
+  - 0.106095813225787
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v3
+  group_id: rb_g006
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.11293887767777269
+  - 0.09999753806875634
+  - 0.09558835382230857
+  - 0.15022358406354996
+  - 0.11807850660169157
+  - 0.1289728577052157
+  - 0.0810636123658959
+  - 0.09747213411434189
+  - 0.11566453558046738
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v4
+  group_id: rb_g006
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.11542052727130193
+  - 0.10816255243244055
+  - 0.10022721477957341
+  - 0.14390474158113278
+  - 0.10582977161674864
+  - 0.11774692539350137
+  - 0.08069328841952271
+  - 0.10458404256407756
+  - 0.12343093594170103
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v5
+  group_id: rb_g006
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.12445026153572251
+  - 0.11478901877095213
+  - 0.09765140980831889
+  - 0.12987747842793007
+  - 0.09578207241546047
+  - 0.11539203446838806
+  - 0.08593712230631567
+  - 0.11253491286088005
+  - 0.12358568940603222
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v6
+  group_id: rb_g006
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.12882530114546192
+  - 0.10860486499559309
+  - 0.08994099796988117
+  - 0.12713322411601752
+  - 0.10286245714384999
+  - 0.12888252900695218
+  - 0.09127904299838632
+  - 0.10885405583075293
+  - 0.11361752679310472
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g006_v7
+  group_id: rb_g006
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.1302384534765769
+  - 0.10656399244269615
+  - 0.08742270702110909
+  - 0.12603111170413778
+  - 0.10515060047415821
+  - 0.13353892205809328
+  - 0.09306362201375631
+  - 0.10760314368855722
+  - 0.11038744712091501
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v0
+  group_id: rb_g007
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.1087181658997293
+  - 0.1189429879520747
+  - 0.07250297894332024
+  - 0.0928370278827313
+  - 0.12703186618555992
+  - 0.11723605671674518
+  - 0.11158774974766535
+  - 0.10237165550144749
+  - 0.07314654623912516
+  - 0.07562496493160152
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v1
+  group_id: rb_g007
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.0996851082071497
+  - 0.11271727721201254
+  - 0.07523839537761423
+  - 0.10282337536056771
+  - 0.13785365668378705
+  - 0.11660046543950892
+  - 0.10308651770194414
+  - 0.09527834304274356
+  - 0.07388417498587903
+  - 0.08283268598879302
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v2
+  group_id: rb_g007
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.09211902331690747
+  - 0.11354536730849574
+  - 0.08172460655081044
+  - 0.11115223658226753
+  - 0.1374849226465885
+  - 0.10710608476334196
+  - 0.09390807553402643
+  - 0.09339297158831822
+  - 0.07904381521381759
+  - 0.09052289649542615
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v3
+  group_id: rb_g007
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.09037563369459184
+  - 0.12109034482282466
+  - 0.08811385260044932
+  - 0.1115592846529449
+  - 0.1263224043851331
+  - 0.0960923722126738
+  - 0.08969228258835996
+  - 0.0977428178019426
+  - 0.08577904589067949
+  - 0.09323196135040024
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v4
+  group_id: rb_g007
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.09529397283539692
+  - 0.13109196936286915
+  - 0.08978202425974328
+  - 0.1036944318058695
+  - 0.11296404120504432
+  - 0.0903443545467309
+  - 0.09252575974408166
+  - 0.10601898717656365
+  - 0.08952250242762337
+  - 0.0887619566360772
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v5
+  group_id: rb_g007
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.10426401169714594
+  - 0.13673038649259447
+  - 0.08534926448630549
+  - 0.0935450192356832
+  - 0.10565875635201978
+  - 0.09259275117861478
+  - 0.10096018718631225
+  - 0.11297057407273811
+  - 0.08733048700254213
+  - 0.08059856229604391
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v6
+  group_id: rb_g007
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.10472796620470398
+  - 0.1274774787105208
+  - 0.08016093122994492
+  - 0.09541035168390989
+  - 0.11694569346982325
+  - 0.10308834325238386
+  - 0.10424098136906196
+  - 0.10688488244940499
+  - 0.081071037840346
+  - 0.07999233378990026
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g007_v7
+  group_id: rb_g007
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.1048417133407472
+  - 0.12446856500398287
+  - 0.07841467997082975
+  - 0.0958846095581828
+  - 0.12077932910858949
+  - 0.10673569686109809
+  - 0.10530849345658248
+  - 0.10488508838693632
+  - 0.07901201628895266
+  - 0.07966980802409836
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v0
+  group_id: rb_g008
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.44300355686253956
+  - 0.36404877889447357
+  - 0.19294766424298682
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v1
+  group_id: rb_g008
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.41975831337228775
+  - 0.3670503681353283
+  - 0.21319131849238399
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v2
+  group_id: rb_g008
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.3928190966984384
+  - 0.37688889029098743
+  - 0.23029201301057403
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v3
+  group_id: rb_g008
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.37991858137530005
+  - 0.38826182672896387
+  - 0.2318195918957362
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v4
+  group_id: rb_g008
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.38877405528282377
+  - 0.39431050479186863
+  - 0.21691543992530754
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v5
+  group_id: rb_g008
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.4136375250182675
+  - 0.38985466913866706
+  - 0.19650780584306532
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v6
+  group_id: rb_g008
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.4222052321522724
+  - 0.3788985607488263
+  - 0.19889620709890124
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g008_v7
+  group_id: rb_g008
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.42519024472033606
+  - 0.3752639990723696
+  - 0.1995457562072943
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v0
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.2873698387081695
+  - 0.3073282907261281
+  - 0.13325525456139822
+  - 0.2720466160043041
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v1
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.26140746514595375
+  - 0.30370577185140585
+  - 0.14264244397065326
+  - 0.2922443190319871
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v2
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.24769543741876424
+  - 0.31385445049279037
+  - 0.15026314644446742
+  - 0.2881869656439779
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v3
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.2534375830344366
+  - 0.3323225340385296
+  - 0.15073406410169482
+  - 0.2635058188253389
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v4
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.2748423813733567
+  - 0.3460823992013642
+  - 0.14315961880285558
+  - 0.23591560062242364
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v5
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.2995971843491299
+  - 0.34515082937577074
+  - 0.1330816406117408
+  - 0.2221703456633586
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v6
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.28941252791585137
+  - 0.32784006224991635
+  - 0.13534555537225204
+  - 0.24740185446198032
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g009_v7
+  group_id: rb_g009
+  split_role: valid
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.28601612760542305
+  - 0.32201021576770084
+  - 0.13592179662225548
+  - 0.2560518600046206
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v0
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.19582628282039805
+  - 0.18097242004836608
+  - 0.10852052883957468
+  - 0.16660121078658563
+  - 0.3480795575050754
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v1
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.18359493446296518
+  - 0.18608297942382795
+  - 0.11818755082076446
+  - 0.17603999879362792
+  - 0.3360945364988143
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v2
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.18734021857414257
+  - 0.20343884343127433
+  - 0.12729371938361494
+  - 0.17413033423710497
+  - 0.30779688437386327
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v3
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.20469288638846092
+  - 0.22245154830965058
+  - 0.1287894805605587
+  - 0.16187181589842106
+  - 0.2821942688429087
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v4
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.22620220060156804
+  - 0.22967715199493208
+  - 0.1215430497167346
+  - 0.14837265139062264
+  - 0.2742049462961428
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v5
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.23764317638860902
+  - 0.219979904363517
+  - 0.11143949625517036
+  - 0.14234493408614768
+  - 0.28859248890655603
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v6
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.21604997583083826
+  - 0.203532590345215
+  - 0.11245869634786472
+  - 0.1550300289221224
+  - 0.3129287085539597
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g010_v7
+  group_id: rb_g010
+  split_role: valid
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.20910785883740518
+  - 0.19802747983213478
+  - 0.11257788173899176
+  - 0.15920839936451986
+  - 0.32107838022694846
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v0
+  group_id: rb_g011
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.11872433607223061
+  - 0.1911297494331419
+  - 0.09101489546943295
+  - 0.17462689229566453
+  - 0.2015320246806762
+  - 0.2229721020488537
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v1
+  group_id: rb_g011
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.11682443337409715
+  - 0.20565044060978316
+  - 0.10063570216313922
+  - 0.18185941172888762
+  - 0.19143378987747342
+  - 0.20359622224661955
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v2
+  group_id: rb_g011
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.12398733358898038
+  - 0.22759217651780222
+  - 0.10625417321809037
+  - 0.17501078942193588
+  - 0.17469118907081943
+  - 0.19246433818237157
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v3
+  group_id: rb_g011
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.1365466360047965
+  - 0.24254791167351575
+  - 0.10341116784981891
+  - 0.1595708822034356
+  - 0.1625407364446106
+  - 0.1953826658238227
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v4
+  group_id: rb_g011
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.146743221298403
+  - 0.23913238165202813
+  - 0.09454455563960994
+  - 0.14657017255968163
+  - 0.1618124252066597
+  - 0.2111972436436176
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v5
+  group_id: rb_g011
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.14680024474748843
+  - 0.22005996285982743
+  - 0.08604471343421148
+  - 0.1432835271454999
+  - 0.17280023475618447
+  - 0.23101131705678837
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v6
+  group_id: rb_g011
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.1334687936323348
+  - 0.2102485601701857
+  - 0.09027062025879819
+  - 0.15826492704496473
+  - 0.18376868553063816
+  - 0.22397841336307847
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g011_v7
+  group_id: rb_g011
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.1292015411690301
+  - 0.20678990498671346
+  - 0.09157317682941006
+  - 0.16338263809645834
+  - 0.1874472582045895
+  - 0.2216054807137986
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v0
+  group_id: rb_g012
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.1768255363737154
+  - 0.11090244636421057
+  - 0.1769644082651198
+  - 0.1353854608880856
+  - 0.1279603825551044
+  - 0.14125784502840996
+  - 0.1307039205253543
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v1
+  group_id: rb_g012
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.17856402543976996
+  - 0.12062796612422204
+  - 0.19120598679674605
+  - 0.1348358307809334
+  - 0.11748052915677683
+  - 0.1288526886840892
+  - 0.12843297301746257
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v2
+  group_id: rb_g012
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.19078679744651028
+  - 0.13006259844735463
+  - 0.19168845923772457
+  - 0.12382030727862302
+  - 0.10553166845060026
+  - 0.12338924418849763
+  - 0.13472092495068966
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v3
+  group_id: rb_g012
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.20637008646983485
+  - 0.13222834829289903
+  - 0.17782543069153223
+  - 0.11069699453704454
+  - 0.09934660448007171
+  - 0.12744870013720067
+  - 0.14608383539141698
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v4
+  group_id: rb_g012
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.21466059368822812
+  - 0.12535345054353927
+  - 0.16022496422129404
+  - 0.10358842223648043
+  - 0.10189854021532607
+  - 0.13898312324185177
+  - 0.15529090585328031
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v5
+  group_id: rb_g012
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.20953996755121654
+  - 0.1148657154139182
+  - 0.1502319289088417
+  - 0.10606836991976326
+  - 0.11214756658483556
+  - 0.1514311739270009
+  - 0.15571527769442392
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v6
+  group_id: rb_g012
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.19527593138680263
+  - 0.1153753578496121
+  - 0.1647188474775147
+  - 0.1186184509404397
+  - 0.11737486696045839
+  - 0.14464860886913924
+  - 0.1439879365160333
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g012_v7
+  group_id: rb_g012
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.1905189535209592
+  - 0.11534767350210427
+  - 0.16955264245508977
+  - 0.12296842004347387
+  - 0.11909110205381924
+  - 0.14237988071108673
+  - 0.1401413277134668
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v0
+  group_id: rb_g013
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.1289750580518555
+  - 0.13681955309834787
+  - 0.1029163585371055
+  - 0.13964214890942836
+  - 0.17305709868757016
+  - 0.11840457072614678
+  - 0.08611150740899817
+  - 0.11407370458054773
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v1
+  group_id: rb_g013
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.13379998288841594
+  - 0.14908738909681998
+  - 0.10778233422192278
+  - 0.13338866632724003
+  - 0.15571828244286526
+  - 0.10950534843642751
+  - 0.0870878347025789
+  - 0.12363016188372962
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v2
+  group_id: rb_g013
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.14442867588174435
+  - 0.1569711179411913
+  - 0.10385288666826725
+  - 0.11972826325495602
+  - 0.14146529174447714
+  - 0.10819150714562861
+  - 0.09308252903746757
+  - 0.13227972832626766
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v3
+  group_id: rb_g013
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  q_block_power_fractions:
+  - 0.1544988688663955
+  - 0.1545777149905746
+  - 0.09440592191130441
+  - 0.10843635190536967
+  - 0.13824294194388023
+  - 0.11520323905652986
+  - 0.10078783299506815
+  - 0.13384712833087747
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v4
+  group_id: rb_g013
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.1569328785678452
+  - 0.14395858808610928
+  - 0.08623800299281865
+  - 0.10580463132993806
+  - 0.14767332459352148
+  - 0.12705532648337964
+  - 0.10509789184895728
+  - 0.12723935609743048
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v5
+  group_id: rb_g013
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.14966328872210483
+  - 0.13264803192282257
+  - 0.08386529875574444
+  - 0.112884564545406
+  - 0.16500681170489356
+  - 0.1360298085559232
+  - 0.10259135324917003
+  - 0.11731084254393524
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v6
+  group_id: rb_g013
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.14142210064787894
+  - 0.13716430724205528
+  - 0.09299469191061024
+  - 0.1233538939093741
+  - 0.16550632957599154
+  - 0.12621177500798064
+  - 0.09532502900741383
+  - 0.11802187269869545
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g013_v7
+  group_id: rb_g013
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.13863557717644764
+  - 0.1385055846506583
+  - 0.0961336746783317
+  - 0.12697381229582486
+  - 0.16564525252511542
+  - 0.12306663078300449
+  - 0.09294105125663263
+  - 0.11809841663398495
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v0
+  group_id: rb_g014
+  split_role: train
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.09136032067240153
+  - 0.0982088020957272
+  - 0.11633943969684857
+  - 0.16710130363540515
+  - 0.08724221492297994
+  - 0.091579008335445
+  - 0.11296833085642301
+  - 0.0989939392009761
+  - 0.13620664058379356
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v1
+  group_id: rb_g014
+  split_role: train
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.0964295952055044
+  - 0.10547304457441596
+  - 0.11681057524252558
+  - 0.1533219281739073
+  - 0.07767872899727973
+  - 0.08637763489102245
+  - 0.11685803071326317
+  - 0.10680927175742792
+  - 0.14024119044465336
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v2
+  group_id: rb_g014
+  split_role: train
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.10523475203895576
+  - 0.10888484269436492
+  - 0.10992948604503432
+  - 0.1380147410052148
+  - 0.07310546595505044
+  - 0.08917522700555673
+  - 0.12752931746532303
+  - 0.1128280461043232
+  - 0.13529812168617678
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v3
+  group_id: rb_g014
+  split_role: train
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.1121531754684226
+  - 0.1058087463710588
+  - 0.10084454718601482
+  - 0.13047569914685395
+  - 0.07562911795559481
+  - 0.09867496155084093
+  - 0.1386809664757568
+  - 0.11257329429076922
+  - 0.1251594915546881
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v4
+  group_id: rb_g014
+  split_role: train
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.11206270175800156
+  - 0.09866685830628312
+  - 0.09544007862244919
+  - 0.13444807829750738
+  - 0.08418021469601214
+  - 0.10964209438022296
+  - 0.14239018289141767
+  - 0.10631063578408996
+  - 0.116859155264016
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v5
+  group_id: rb_g014
+  split_role: train
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.10505235010758625
+  - 0.0924106408564461
+  - 0.09659940502724641
+  - 0.1481156859437797
+  - 0.09404436316886351
+  - 0.11425187450782805
+  - 0.13571124167564894
+  - 0.09864510475159584
+  - 0.11516933396100505
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v6
+  group_id: rb_g014
+  split_role: train
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.10005258198478943
+  - 0.0966013373325203
+  - 0.10537620075833873
+  - 0.1541449078924684
+  - 0.0891387334183564
+  - 0.10260545277237336
+  - 0.1262416022530092
+  - 0.10060045957014756
+  - 0.12523872401799666
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g014_v7
+  group_id: rb_g014
+  split_role: train
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.09831163631249625
+  - 0.09789246094026163
+  - 0.1083543242507943
+  - 0.15613197536307938
+  - 0.08754336762257996
+  - 0.0989422571533903
+  - 0.12309315323697533
+  - 0.10110795452278924
+  - 0.12862287059763347
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v0
+  group_id: rb_g015
+  split_role: test
+  variant_id: v0
+  intended_temperature_bin: 0
+  package_total_power_W: 1.8
+  top_h_W_m2K: 333.33
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id001
+  bc_provenance: *id002
+  k_block_values_W_mK:
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  q_block_power_fractions:
+  - 0.07199488898019564
+  - 0.1235296364862858
+  - 0.1312189488176335
+  - 0.12247870085311859
+  - 0.07685469095532849
+  - 0.08949982974196538
+  - 0.08806041510874023
+  - 0.09953963774876667
+  - 0.1077645861151195
+  - 0.08905866519284622
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v1
+  group_id: rb_g015
+  split_role: test
+  variant_id: v1
+  intended_temperature_bin: 0
+  package_total_power_W: 2.5
+  top_h_W_m2K: 500.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id003
+  bc_provenance: *id004
+  k_block_values_W_mK:
+  - 50.0
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  q_block_power_fractions:
+  - 0.07807550490655302
+  - 0.1317341229521297
+  - 0.12842170571187206
+  - 0.11109585639613498
+  - 0.06997259818003232
+  - 0.08827451782512173
+  - 0.09434752773885638
+  - 0.1076523805300114
+  - 0.1083860702008616
+  - 0.08203971555842673
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v2
+  group_id: rb_g015
+  split_role: test
+  variant_id: v2
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 333.33
+  power_provenance: *id005
+  bc_provenance: *id006
+  k_block_values_W_mK:
+  - 120.0
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  q_block_power_fractions:
+  - 0.08559017692113982
+  - 0.1334888744933503
+  - 0.11965898403405001
+  - 0.1022798163174294
+  - 0.0691552017311573
+  - 0.09533113993570926
+  - 0.10445548451688284
+  - 0.11204531620478726
+  - 0.10293164617565495
+  - 0.07506335966983878
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v3
+  group_id: rb_g015
+  split_role: test
+  variant_id: v3
+  intended_temperature_bin: 1
+  package_total_power_W: 7.0
+  top_h_W_m2K: 1000.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id007
+  bc_provenance: *id008
+  k_block_values_W_mK:
+  - 135.0
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  q_block_power_fractions:
+  - 0.08937476924103875
+  - 0.1274710110137465
+  - 0.11117626709288589
+  - 0.10088407655644294
+  - 0.0747852581567372
+  - 0.1072603775181398
+  - 0.11188662940390046
+  - 0.10938257595792243
+  - 0.09548181950722855
+  - 0.07229721555195742
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v4
+  group_id: rb_g015
+  split_role: test
+  variant_id: v4
+  intended_temperature_bin: 2
+  package_total_power_W: 16.5
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 500.0
+  power_provenance: *id009
+  bc_provenance: *id010
+  k_block_values_W_mK:
+  - 140.0
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  q_block_power_fractions:
+  - 0.08648492772830245
+  - 0.11827572763071484
+  - 0.10811220287071742
+  - 0.10763352728067584
+  - 0.08415310919401713
+  - 0.11652650223243022
+  - 0.11095192629475946
+  - 0.10180065922894024
+  - 0.09090267316679711
+  - 0.07515874437264515
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v5
+  group_id: rb_g015
+  split_role: test
+  variant_id: v5
+  intended_temperature_bin: 2
+  package_total_power_W: 17.0
+  top_h_W_m2K: 2050.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id011
+  bc_provenance: *id012
+  k_block_values_W_mK:
+  - 150.0
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  q_block_power_fractions:
+  - 0.07919688950678828
+  - 0.11190944990686613
+  - 0.11200856900617598
+  - 0.11904257910967041
+  - 0.0912189689559937
+  - 0.11577565689194791
+  - 0.10237550066713988
+  - 0.0946047506531882
+  - 0.09166878855960638
+  - 0.08219884674262322
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v6
+  group_id: rb_g015
+  split_role: test
+  variant_id: v6
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id013
+  bc_provenance: *id014
+  k_block_values_W_mK:
+  - 385.0
+  - 600.0
+  - 50.0
+  - 135.0
+  - 150.0
+  q_block_power_fractions:
+  - 0.07733600971567103
+  - 0.11879719068600608
+  - 0.12005054360756666
+  - 0.11859306924548305
+  - 0.08316739439374637
+  - 0.10319286043690197
+  - 0.09729469302664173
+  - 0.09857073989431817
+  - 0.09893667491057766
+  - 0.08406082408308724
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+- sample_id: rb_g015_v7
+  group_id: rb_g015
+  split_role: test
+  variant_id: v7
+  intended_temperature_bin: 3
+  package_total_power_W: 25.0
+  top_h_W_m2K: 2500.0
+  bottom_h_W_m2K: 1000.0
+  power_provenance: *id015
+  bc_provenance: *id016
+  k_block_values_W_mK:
+  - 400.0
+  - 20.0
+  - 120.0
+  - 140.0
+  - 385.0
+  q_block_power_fractions:
+  - 0.07661587784178998
+  - 0.12101555491729467
+  - 0.12275109834125529
+  - 0.11840768000723981
+  - 0.080625649881123
+  - 0.099238061636924
+  - 0.09553120619420138
+  - 0.09978167290609702
+  - 0.10137876222299098
+  - 0.08465443605108373
+  k_provenance:
+  - RB-L01
+  - RB-L02
+  - RB-L03
+  - RB-L04
+  - RB-X03
+  q_provenance:
+  - RB-L02
+  - RB-L03
+  - RB-X01
+guardrails:
+  training: false
+  model_inference: false
+  post_solve_temperature_filtering: false
+  post_solve_sample_replacement: false
+  group_split_leakage: false
+  canonical_p1h_modified: false
+provenance:
+  base_main_commit: 332ef3f463d91442632c3ebddd4f7549c7895b8d
+  literature_schema: heat3d_v6_randomblock_literature_v1
+  protocol_generator: scripts/prepare_heat3d_v6_randomblock_protocol.py
+  protocol_hash_excludes:
+  - provenance.protocol_sha256
+  global_rule_revision:
+    source_attempt: smoke16_v0
+    source_manifest_sha256: a32850d10775d346bd4764765335c91b088e78dfbb18001a24bb02675ce9ada2
+    method: global per-variant power table adjusted from two-group aggregate peak response; no per-sample
+      inverse calibration, filtering, replacement, or BC change
+  protocol_sha256: 5071223722c5e4d703225f287bb837e62ad75b9c08e6587ad6e9e4daaf5d1717
