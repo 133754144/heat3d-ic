@@ -1,0 +1,41 @@
+{
+  "schema_version": "heat3d_v6_randomblock_closeout_validation_v1",
+  "validated_at_utc": "2026-07-29T19:29:11Z",
+  "host": "wsl2",
+  "branch": "research/v6-randomblock",
+  "validated_commit": "9a438e850bafb1c1aa0779b4e300f02a44aab0e5",
+  "environment": {
+    "conda_environment": "rigno",
+    "python": "3.14.3",
+    "kernel": "Linux 6.18.33.2-microsoft-standard-WSL2 x86_64",
+    "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+    "physical_cores": 8,
+    "logical_cpus": 16,
+    "memory_GiB": 23
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_randomblock_formal1024_v2",
+    "path": "/home/xyh/myCodeGitOnly/heat3d-ic-randomblock/data/heat3d_v6_randomblock_formal1024_v2",
+    "disk_usage": "1.2G",
+    "sample_directory_count": 1024,
+    "full_field_archive_sha256": "83a21dd34c84047e4c14b8b63fb079333fc46a3ed13b46a4f71eb2fc12e15311"
+  },
+  "checks": {
+    "full_dataset_checker": "passed",
+    "closeout_checker": "passed",
+    "py_compile": "passed",
+    "json_validation": "passed",
+    "csv_validation": "passed",
+    "yaml_validation": "passed",
+    "git_diff_check": "passed",
+    "remote_worktree_clean": true,
+    "training_runs": 0,
+    "model_inference_runs": 0
+  },
+  "qualification": {
+    "physical_window_30_150_K": "passed_1024_of_1024",
+    "strict_exact_realized_bin_gate": "failed_by_one_adjacent_bin_crossing",
+    "status": "complete_with_declared_realized_bin_deviation",
+    "canonical_promotion": false
+  }
+}
