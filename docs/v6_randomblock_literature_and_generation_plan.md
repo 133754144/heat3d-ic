@@ -97,3 +97,25 @@ pilot 失败后只修改**全局生成规则**并从头重建 pilot；禁止删�
    QC JSON/MD 和可复现命令。
 
 三个阶段均为数据生成，不训练、不做模型推理，也不修改 canonical P1h。
+
+## 可复现命令
+
+每个阶段都先冻结协议，再生成独立数据目录，最后运行只读 checker。远端
+非交互 shell 必须先加载 conda，再激活 `rigno`。
+
+```bash
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate rigno
+python scripts/prepare_heat3d_v6_randomblock_protocol.py --stage smoke16
+python scripts/generate_heat3d_v6_randomblock_dataset.py \
+  --config configs/heat3d_v6_randomblock/v6_randomblock_smoke16.yaml
+python scripts/check_heat3d_v6_randomblock_dataset.py \
+  --config configs/heat3d_v6_randomblock/v6_randomblock_smoke16.yaml \
+  --dataset data/heat3d_v6_randomblock_smoke16_v0 \
+  --manifest configs/heat3d_v6_randomblock/v6_randomblock_smoke16_manifest.json \
+  --audit configs/heat3d_v6_randomblock/v6_randomblock_smoke16_audit.json
+```
+
+`pilot128` 和 `formal1024` 只在上一阶段通过并提交后，把命令中的 stage
+替换为相应名称。`--dry-run` 只验证 240825-node mesh、全部 layout、幅值、
+support 和写入计划，不求解、不落数据。
