@@ -109,6 +109,12 @@ def build_training_command(
         _append_option(command, "--extent-feature-policy", extent_feature_policy)
     _append_option(command, "--subset", dataset.get("subset_path"))
     _append_option(command, "--split-map", _split_map_path_for_dataset(dataset))
+    dataset_loader = dataset.get("loader")
+    _append_option(command, "--dataset-loader", dataset_loader)
+    if dataset_loader is not None:
+        _append_option(
+            command, "--dataset-manifest", dataset.get("manifest_path")
+        )
     if dataset.get("boundary_mask_fallback") is True:
         command.append("--boundary-mask-fallback")
     elif dataset.get("boundary_mask_fallback") is False:
@@ -199,6 +205,10 @@ def build_training_command(
     elif model.get("pooled_latent_stop_gradient") is False:
         command.append("--no-pooled-latent-stop-gradient")
     _append_option(command, "--batch-size", run.get("batch_size"))
+    if dataset_loader is not None:
+        _append_option(
+            command, "--micro-batch-size", run.get("micro_batch_size")
+        )
     _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
     _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
     _append_option(command, "--init-mode", run.get("init_mode"))
@@ -284,6 +294,19 @@ def build_training_command(
     elif graph.get("repair_r2p") is False:
         command.append("--no-repair-r2p")
     _append_option(command, "--min-physical-coverage", graph.get("min_physical_coverage"))
+    _append_option(
+        command, "--discrete-graph-backend", graph.get("discrete_graph_backend")
+    )
+    _append_option(
+        command,
+        "--discrete-graph-chunk-size",
+        graph.get("discrete_graph_chunk_size"),
+    )
+    _append_option(
+        command,
+        "--discrete-coverage-multiplier",
+        graph.get("discrete_coverage_multiplier"),
+    )
 
     if export.get("save_final_predictions") is False:
         command.append("--no-save-predictions")
@@ -836,6 +859,7 @@ def _mapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         ("run.memory_audit_every_batch", "training --memory-audit-every-batch"),
         ("run.memory_audit_gc", "training --memory-audit-gc"),
         ("run.batch_size", "training --batch-size"),
+        ("run.micro_batch_size", "training --micro-batch-size"),
         ("run.validation_batch_size", "training --validation-batch-size"),
         ("run.prediction_batch_size", "training --prediction-batch-size"),
         ("run.init_mode", "training --init-mode"),
@@ -969,7 +993,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
         "model.report_parameter_count",
         "model.report_memory_estimate",
         "optimizer.multi_seed",
-        "run.micro_batch_size",
         "diagnostics.p_quantiles",
         "baseline_reference.path",
         "dataset.k_encoding_mode",
@@ -996,11 +1019,6 @@ def _unmapped_fields(config: Mapping[str, Any]) -> list[dict[str, str]]:
 
 def _warnings(config: Mapping[str, Any]) -> list[str]:
     warnings: list[str] = []
-    if _get_dotted(config, "run.micro_batch_size") is not None:
-        warnings.append(
-            "run.micro_batch_size is a future gradient-accumulation field and "
-            "is not passed to the current v1 runner command."
-        )
     if _get_dotted(config, "baseline_reference.path") is not None:
         warnings.append(
             "baseline_reference.path is checked by config validation only; it "
@@ -1021,8 +1039,6 @@ def _unmapped_reason(field: str) -> str:
         return "model reporting field is not a runner CLI parameter."
     if field == "optimizer.multi_seed":
         return "multi-seed execution is outside this dry-run command builder."
-    if field == "run.micro_batch_size":
-        return "future micro-batch gradient accumulation field; not passed to current runner CLI."
     if field.startswith("diagnostics."):
         return "draft v2 diagnostics field is not implemented by current v1 scripts."
     if field == "baseline_reference.path":
