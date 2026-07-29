@@ -534,6 +534,15 @@ def prepare(stage: str) -> dict[str, Any]:
             },
         },
     }
+    if stage == "formal1024":
+        payload["provenance"]["formal_freeze"] = {
+            "accepted_pilot_dataset_id": "heat3d_v6_randomblock_pilot128_v2",
+            "accepted_pilot_protocol_sha256": "31c7a8f0fa11b95650e41b83d65b03419c8746d19f6fc1347db06bce320022fb",
+            "accepted_pilot_manifest_payload_sha256": "3692dad21f910a99f09c10a9203e8a9f639b807ee9b03c6678af71211903d56e",
+            "accepted_pilot_full_field_archive_sha256": "3e62682695e50738251385386eefa94dbebc1f1bc88f5372491960ae3710373c",
+            "accepted_pilot_joint_audit_sha256": "f896ada5d7440ad96198d926764035df564d084e03a84be9075ff4ba37a8133e",
+            "post_pilot_global_rule_changes": False,
+        }
     payload["provenance"]["protocol_sha256"] = core.canonical_json_sha256(
         {
             **payload,
