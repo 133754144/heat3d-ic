@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke shared-support one-build graph reuse without an optimizer update."""
+"""Smoke run-level shared-support graph reuse through one optimizer update."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import io
 import json
 from pathlib import Path
 import sys
+import time
 
 import jax
 import jax.numpy as jnp
@@ -51,6 +52,8 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--ladder", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
+    parser.add_argument("--startup-request-count", type=int, default=104)
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     ladder = json.loads(args.ladder.read_text(encoding="utf-8"))
     examples, _, _ = anchored._load_examples(
@@ -65,7 +68,6 @@ def main() -> int:
     )
     run_config = json.loads((args.run_dir / "run_config.json").read_text())
     graph_config = dict(run_config["graph_config"])
-    graph_config["discrete_graph_backend"] = "sparse_kdtree_v1"
     builder = Heat3DGraphBuilder(**graph_config)
     coords = [runner._graph_coords_for_example(row, stats) for row in examples]
     if not all(np.array_equal(coords[0], row) for row in coords[1:]):
@@ -92,6 +94,57 @@ def main() -> int:
     legacy_graphs = builder.build_graphs(legacy)
     if graph_hash(reused_graphs) != graph_hash(legacy_graphs):
         raise AssertionError("reused graph differs from legacy graph")
+
+    request_count = int(args.startup_request_count)
+    if request_count < 3:
+        raise ValueError("startup request count must cover train/valid/prediction")
+    run_cached_builder = runner.RunSharedSupportGraphBuilder(
+        Heat3DGraphBuilder(**graph_config)
+    )
+    cache_started = time.perf_counter()
+    for index in range(request_count):
+        batch_count = 8 if index < request_count - 8 else 32
+        metadata, _ = runner._build_batch_metadata_with_seed(
+            run_cached_builder,
+            [coords[0]] * batch_count,
+            graph_seed=int(run_config["graph_seed"]),
+        )
+        run_cached_builder.build_graphs(metadata)
+    cached_startup_seconds = time.perf_counter() - cache_started
+    legacy_startup_builder = Heat3DGraphBuilder(**graph_config)
+    legacy_started = time.perf_counter()
+    for index in range(request_count):
+        batch_count = 8 if index < request_count - 8 else 32
+        metadata, _ = runner._build_batch_metadata_with_seed(
+            legacy_startup_builder,
+            [coords[0]] * batch_count,
+            graph_seed=int(run_config["graph_seed"]),
+        )
+        legacy_startup_builder.build_graphs(metadata)
+    legacy_startup_seconds = time.perf_counter() - legacy_started
+    fallback_builder = runner.RunSharedSupportGraphBuilder(
+        Heat3DGraphBuilder(**graph_config)
+    )
+    fallback_builder.build_metadata(
+        coords[0], key=runner._metadata_key(run_config["graph_seed"])
+    )
+    changed_coords = np.asarray(coords[0]).copy()
+    changed_coords[0, 0] = np.nextafter(changed_coords[0, 0], np.inf)
+    fallback_metadata = fallback_builder.build_metadata(
+        changed_coords, key=runner._metadata_key(run_config["graph_seed"])
+    )
+    direct_fallback_metadata = Heat3DGraphBuilder(**graph_config).build_metadata(
+        changed_coords, key=runner._metadata_key(run_config["graph_seed"])
+    )
+    fallback_equal = (
+        metadata_hash(fallback_metadata)
+        == metadata_hash(direct_fallback_metadata)
+    )
+    if (
+        fallback_builder.audit["varying_support_fallback_calls"] != 1
+        or not fallback_equal
+    ):
+        raise AssertionError("varying-support fallback changed legacy metadata")
 
     runtime_checkpoint = dict(checkpoint)
     runtime_checkpoint["train_only_normalization"] = stats
@@ -124,24 +177,110 @@ def main() -> int:
     max_abs = float(np.max(np.abs(error)))
     if max_abs != 0.0:
         raise AssertionError("runner forward changed under shared-support reuse")
-    print(
-        json.dumps(
-            {
-                "status": "passed",
-                "batch_size": 8,
-                "legacy_metadata_build_calls": 8,
-                "reused_metadata_build_calls": counting.calls,
-                "metadata_hash": metadata_hash(reused),
-                "graph_hash": graph_hash(reused_graphs),
-                "forward_max_abs_error_K": max_abs,
-                "optimizer_update_executed": False,
-                "training_executed": False,
-                "test_hard_accessed": False,
-            },
-            indent=2,
-            sort_keys=True,
-        )
+    loss_config = dict(run_config["loss"])
+    edge_key = runner._training_edge_masking_key(
+        model_config, model_seed=int(run_config["model_seed"]), epoch=1, batch_index=1
     )
+
+    def loss_and_grad(group):
+        def loss_fn(current_params):
+            components = runner._loss_components(
+                model, current_params, [group], stats, loss_config, key=edge_key
+            )
+            return components["total_loss"]
+
+        return jax.value_and_grad(loss_fn)(params)
+
+    legacy_loss, legacy_grad = loss_and_grad(legacy_group)
+    reused_loss, reused_grad = loss_and_grad(reused_group)
+
+    def tree_max_abs(left, right):
+        values = [
+            float(np.max(np.abs(np.asarray(a) - np.asarray(b))))
+            for a, b in zip(
+                jax.tree_util.tree_leaves(left),
+                jax.tree_util.tree_leaves(right),
+            )
+        ]
+        return max(values, default=0.0)
+
+    loss_error = float(abs(float(legacy_loss) - float(reused_loss)))
+    gradient_error = tree_max_abs(legacy_grad, reused_grad)
+    optimizer_config = dict(run_config["optimizer_config"])
+    lr_config = dict(run_config["lr_config"])
+    lr_config["updates_per_epoch"] = int(run_config["updates_per_epoch"])
+
+    def one_update(grads):
+        state = runner._build_optax_state(
+            params,
+            epochs=int(run_config["epochs"]),
+            lr_config=lr_config,
+            optimizer_config=optimizer_config,
+        )
+        updates, _ = state["tx"].update(grads, state["state"], params)
+        updates = runner._apply_native_update_controls(
+            updates,
+            native_enabled=model_config.get("native_output_mode")
+            == "native_shape_scale",
+            model_config=model_config,
+            optimizer_config=optimizer_config,
+        )
+        return state["apply_updates"](params, updates)
+
+    legacy_update_started = time.perf_counter()
+    legacy_params = one_update(legacy_grad)
+    legacy_update_seconds = time.perf_counter() - legacy_update_started
+    reused_update_started = time.perf_counter()
+    reused_params = one_update(reused_grad)
+    reused_update_seconds = time.perf_counter() - reused_update_started
+    update_error = tree_max_abs(legacy_params, reused_params)
+    if max(loss_error, gradient_error, update_error) != 0.0:
+        raise AssertionError("loss/gradient/update changed under run graph reuse")
+    payload = {
+        "status": "passed",
+        "batch_size": 8,
+        "legacy_metadata_build_calls": 8,
+        "reused_metadata_build_calls": counting.calls,
+        "run_level_cache_audit": dict(run_cached_builder.audit),
+        "varying_support_fallback": {
+            "audit": dict(fallback_builder.audit),
+            "metadata_hash_equal_to_legacy": bool(fallback_equal),
+        },
+        "startup_request_contract": {
+            "request_count": request_count,
+            "train_requests_B8": request_count - 8,
+            "valid_prediction_requests_B32": 8,
+        },
+        "startup_seconds": {
+            "legacy": float(legacy_startup_seconds),
+            "run_shared_support_cache": float(cached_startup_seconds),
+            "speedup": float(legacy_startup_seconds / cached_startup_seconds),
+            "seconds_removed_before_first_epoch": float(
+                legacy_startup_seconds - cached_startup_seconds
+            ),
+        },
+        "metadata_hash": metadata_hash(reused),
+        "graph_hash": graph_hash(reused_graphs),
+        "forward_max_abs_error_K": max_abs,
+        "loss_abs_error": loss_error,
+        "gradient_max_abs_error": gradient_error,
+        "updated_parameter_max_abs_error": update_error,
+        "optimizer_update_seconds": {
+            "legacy": float(legacy_update_seconds),
+            "run_shared_support_cache": float(reused_update_seconds),
+        },
+        "optimizer_update_executed": True,
+        "optimizer_update_persisted": False,
+        "formal_training_executed": False,
+        "test_hard_accessed": False,
+    }
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
 

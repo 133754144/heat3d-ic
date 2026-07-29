@@ -5657,7 +5657,22 @@ def _checkpoint_run_metadata(
         "seed_config": seed_config,
         "batch_config": batch_config,
         "graph_config": graph_config,
+        "run_shared_support_graph_cache": (
+            dict(builder.audit)
+            if isinstance(builder, RunSharedSupportGraphBuilder)
+            else {
+                "requested_metadata_calls": 0,
+                "shared_topology_build_calls": 0,
+                "shared_topology_reuse_calls": 0,
+                "varying_support_fallback_calls": 0,
+            }
+        ),
         "global_context": global_context_payload,
+        "run_shared_support_graph_cache": (
+            dict(builder.audit)
+            if isinstance(builder, RunSharedSupportGraphBuilder)
+            else None
+        ),
         "scale_context": scale_context_payload,
         "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "prediction_split": args.prediction_split,
@@ -7269,6 +7284,93 @@ def _metadata_key(graph_seed: int):
     return jax.random.PRNGKey(int(graph_seed))
 
 
+class RunSharedSupportGraphBuilder:
+    """Reuse one fixed-support topology across train/valid/prediction groups.
+
+    The first coordinate/key pair becomes the run-level shared support.
+    Byte-identical requests reuse its metadata; any changed support follows
+    the legacy builder path without changing graph semantics.
+    """
+
+    def __init__(self, builder: Heat3DGraphBuilder):
+        self._builder = builder
+        self._shared_coords: np.ndarray | None = None
+        self._shared_key: np.ndarray | None = None
+        self._shared_metadata = None
+        self._batch_metadata: dict[int, Any] = {}
+        self._batch_metadata_ids: dict[int, int] = {}
+        self._batch_graphs: dict[int, Any] = {}
+        self.audit = {
+            "requested_metadata_calls": 0,
+            "shared_topology_build_calls": 0,
+            "shared_topology_reuse_calls": 0,
+            "varying_support_fallback_calls": 0,
+            "shared_batched_metadata_view_builds": 0,
+            "shared_batched_graph_build_calls": 0,
+            "shared_batched_graph_reuse_calls": 0,
+        }
+
+    @property
+    def config(self):
+        return self._builder.config
+
+    def __getattr__(self, name):
+        return getattr(self._builder, name)
+
+    def build_metadata(self, coords, key=None):
+        self.audit["requested_metadata_calls"] += 1
+        coords_array = np.ascontiguousarray(np.asarray(coords))
+        key_array = (
+            None if key is None else np.ascontiguousarray(np.asarray(key))
+        )
+        if self._shared_coords is None:
+            self._shared_coords = coords_array.copy()
+            self._shared_key = None if key_array is None else key_array.copy()
+            self._shared_metadata = self._builder.build_metadata(coords, key=key)
+            self.audit["shared_topology_build_calls"] += 1
+            return self._shared_metadata
+        same_key = (
+            self._shared_key is None
+            if key_array is None
+            else self._shared_key is not None
+            and np.array_equal(self._shared_key, key_array)
+        )
+        if same_key and np.array_equal(self._shared_coords, coords_array):
+            self.audit["shared_topology_reuse_calls"] += 1
+            return self._shared_metadata
+        self.audit["varying_support_fallback_calls"] += 1
+        return self._builder.build_metadata(coords, key=key)
+
+    def build_shared_batch_metadata(self, coords, *, key, batch_size: int):
+        base = self.build_metadata(coords, key=key)
+        batch_size = int(batch_size)
+        if self._shared_metadata is not base:
+            return tree.tree_map(
+                lambda value: jnp.repeat(value, repeats=batch_size, axis=0),
+                base,
+            )
+        if batch_size not in self._batch_metadata:
+            repeated = tree.tree_map(
+                lambda value: jnp.repeat(value, repeats=batch_size, axis=0),
+                base,
+            )
+            self._batch_metadata[batch_size] = repeated
+            self._batch_metadata_ids[id(repeated)] = batch_size
+            self.audit["shared_batched_metadata_view_builds"] += 1
+        return self._batch_metadata[batch_size]
+
+    def build_graphs(self, metadata):
+        batch_size = self._batch_metadata_ids.get(id(metadata))
+        if batch_size is None:
+            return self._builder.build_graphs(metadata)
+        if batch_size not in self._batch_graphs:
+            self._batch_graphs[batch_size] = self._builder.build_graphs(metadata)
+            self.audit["shared_batched_graph_build_calls"] += 1
+        else:
+            self.audit["shared_batched_graph_reuse_calls"] += 1
+        return self._batch_graphs[batch_size]
+
+
 def _build_batch_metadata_with_seed(
     builder: Heat3DGraphBuilder,
     coords_list: list[np.ndarray],
@@ -7277,6 +7379,15 @@ def _build_batch_metadata_with_seed(
 ):
     same_coords = all(np.array_equal(coords_list[0], coords) for coords in coords_list[1:])
     if same_coords:
+        if hasattr(builder, "build_shared_batch_metadata"):
+            return (
+                builder.build_shared_batch_metadata(
+                    coords_list[0],
+                    key=_metadata_key(graph_seed),
+                    batch_size=len(coords_list),
+                ),
+                True,
+            )
         metadata = builder.build_metadata(
             coords_list[0], key=_metadata_key(graph_seed)
         )
@@ -7993,6 +8104,8 @@ def main() -> int:
         norm_start,
     )
     _record_timing(timings, "normalization", norm_start)
+    if args.dataset_loader == "v6_dual_robin_manifest_v1":
+        builder = RunSharedSupportGraphBuilder(builder)
     model_config = _resolve_decoder_bypass_model_config(model_config, stats)
     _validate_model_config(model_config)
     group_start = time.perf_counter()

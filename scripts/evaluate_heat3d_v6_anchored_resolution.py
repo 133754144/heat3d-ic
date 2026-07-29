@@ -79,11 +79,18 @@ def _load_examples(
     dataset_root: Path,
     manifest_path: Path,
     probe: Mapping[str, Any],
+    *,
+    split_role: str = "valid",
+    load_labels: bool = True,
 ) -> tuple[list[AnchoredExample], dict[str, dict[str, np.ndarray]], dict[str, Any]]:
+    if split_role not in {"valid", "test"}:
+        raise AnchoredEvaluationError(
+            f"anchored evaluator role must be valid or test, found {split_role!r}"
+        )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    rows = [row for row in manifest["samples"] if row["split_role"] == "valid"]
+    rows = [row for row in manifest["samples"] if row["split_role"] == split_role]
     if len(rows) != 128:
-        raise AnchoredEvaluationError("valid_iid count drifted")
+        raise AnchoredEvaluationError(f"{split_role}_iid count drifted")
     indices = np.asarray(probe["indices"], dtype=np.int32)
     weights = np.asarray(probe["metric_weights"], dtype=np.float64)
     archive = dataset_root / "full_fields.h5"
@@ -114,9 +121,17 @@ def _load_examples(
             top = meta["boundary_conditions"]["top"]
             bottom = meta["boundary_conditions"]["bottom"]
             q_all = np.asarray(handle["samples/q_W_m3"][archive_row], dtype=np.float64)
-            temp_all = np.asarray(handle["samples/temperature_K"][archive_row], dtype=np.float64)
             q = q_all[indices]
-            temperature = temp_all[indices]
+            if load_labels:
+                temp_all = np.asarray(
+                    handle["samples/temperature_K"][archive_row],
+                    dtype=np.float64,
+                )
+                temperature = temp_all[indices]
+            else:
+                temperature = np.full(
+                    len(indices), float(bottom["T_inf_K"]), dtype=np.float64
+                )
             broadcasts = np.column_stack(
                 (
                     np.full(len(indices), float(top["h_W_m2K"])),
@@ -137,10 +152,10 @@ def _load_examples(
                 axis=1,
             )
             enriched = dict(meta)
-            enriched["split"] = "valid_iid"
+            enriched["split"] = f"{split_role}_iid"
             enriched["v6_adapter"] = {
                 "dataset_id": manifest["dataset_id"],
-                "manifest_split_role": "valid",
+                "manifest_split_role": split_role,
                 "group_id": str(row["group_id"]),
                 "reference_temperature_K": float(bottom["T_inf_K"]),
                 "top_T_inf_K": float(top["T_inf_K"]),
@@ -165,18 +180,25 @@ def _load_examples(
                     context_weights=np.full(1024, 1.0 / 1024.0),
                 )
             )
-            targets[sample_id] = {
-                "deltaT_K": temperature - float(bottom["T_inf_K"]),
-                "q_W_m3": q,
-            }
-    return examples, targets, {
+            if load_labels:
+                targets[sample_id] = {
+                    "deltaT_K": temperature - float(bottom["T_inf_K"]),
+                    "q_W_m3": q,
+                }
+    public = {
         "coords": coords,
         "layer_id": layer,
         "control_volume": weights,
         "top_mask": flags[:, 0] > 0.5,
         "bottom_mask": flags[:, 1] > 0.5,
-        "valid_sample_ids": [str(row["sample_id"]) for row in rows],
+        "evaluation_sample_ids": [str(row["sample_id"]) for row in rows],
+        "evaluation_role": f"{split_role}_iid",
+        "labels_loaded": bool(load_labels),
     }
+    public[f"{split_role}_sample_ids"] = public["evaluation_sample_ids"]
+    if split_role == "valid":
+        public["valid_sample_ids"] = public["evaluation_sample_ids"]
+    return examples, targets, public
 
 
 def _derive_shape_scale(
