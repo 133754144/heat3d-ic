@@ -1,0 +1,96 @@
+{
+  "schema_version": "heat3d_v6_randomblock_closeout_manifest_v1",
+  "branch": "research/v6-randomblock",
+  "base_main_commit": "332ef3f463d91442632c3ebddd4f7549c7895b8d",
+  "literature_commit": "74b1e16",
+  "generator_commit": "ab83433aa267f77c9f95ed7e2eada943f699b390",
+  "execution_host": "wsl2",
+  "remote_repository_path": "/home/xyh/myCodeGitOnly/heat3d-ic-randomblock",
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "canonical_p1h_modified": false,
+    "post_solve_temperature_filtering": false,
+    "post_solve_sample_replacement": false
+  },
+  "stages": {
+    "smoke16_v0": {
+      "status": "failed_temperature_gate_retained",
+      "result_commit": "2e4a5c33e633291a16aba97504292e8a5689256e",
+      "protocol_sha256": "45845240c21b0350fe50df785024b4a7027abd3dbcd434ab6132c78a60aa5530",
+      "manifest_payload_sha256": "a32850d10775d346bd4764765335c91b088e78dfbb18001a24bb02675ce9ada2",
+      "full_field_archive_sha256": "ea9ded9c7eb39fd9df1704c4eb8b7e623a184a7371704e892086d3f067806feb"
+    },
+    "smoke16_v1": {
+      "status": "passed",
+      "result_commit": "05ddf9e60353e857b5a75d19b45074a52d2958f5",
+      "protocol_sha256": "2daf2c0de9a91e1363e335050b3479d92f4605004940160d55b154d648c9187e",
+      "manifest_payload_sha256": "518e90069b5557782d95030b7fd5cd7aa479027eb5b26c00b4dc8b2c33a3507c",
+      "full_field_archive_sha256": "8a400540dbf1ee3bbb7a712aaa6d8771ef83e7d7f7dc7c21f42ba546a485edb0"
+    },
+    "pilot128_v1": {
+      "status": "failed_temperature_gate_retained",
+      "result_commit": "75bc3ebbc232f3119d610d55e57ed16829524853",
+      "protocol_sha256": "5071223722c5e4d703225f287bb837e62ad75b9c08e6587ad6e9e4daaf5d1717",
+      "manifest_payload_sha256": "5ef798b7da547a0a3a464d77593ed2ae77619b43a65bcf1de13dea78c7441a90",
+      "full_field_archive_sha256": "303897e65e9ae6efef3d608dd06fec8275d2fa0c5cfdf8c02c7fb62cda70462a"
+    },
+    "pilot128_v2": {
+      "status": "passed",
+      "result_commit": "cdafb4f3a57ae42087592f92dc57b67a797349d5",
+      "protocol_sha256": "31c7a8f0fa11b95650e41b83d65b03419c8746d19f6fc1347db06bce320022fb",
+      "manifest_payload_sha256": "3692dad21f910a99f09c10a9203e8a9f639b807ee9b03c6678af71211903d56e",
+      "full_field_archive_sha256": "3e62682695e50738251385386eefa94dbebc1f1bc88f5372491960ae3710373c",
+      "joint_audit_sha256": "f896ada5d7440ad96198d926764035df564d084e03a84be9075ff4ba37a8133e"
+    },
+    "formal1024_v2": {
+      "status": "complete_with_declared_realized_bin_deviation",
+      "result_commit": "775fce7af80ec4df85f685db0654a48194b994c5",
+      "dataset_id": "heat3d_v6_randomblock_formal1024_v2",
+      "remote_dataset_path": "/home/xyh/myCodeGitOnly/heat3d-ic-randomblock/data/heat3d_v6_randomblock_formal1024_v2",
+      "sample_count": 1024,
+      "group_count": 128,
+      "split_role_counts": {
+        "train": 768,
+        "valid": 128,
+        "test": 128
+      },
+      "protocol_sha256": "9fa8f1d9c70e8bf3f4933b31c1ec7005fd0715e250f05a354af13edcefbdefdc",
+      "config_file_sha256": "03a09752cb9ef703a63c126a708611bfa9a35bc6d08cc66473fe539f970d0901",
+      "manifest_payload_sha256": "323fe76ee19ec00d83291b405406fdb85bf837e9fe8ac6f07fdd76b52c501b43",
+      "manifest_file_sha256": "cdd1e9ad57b442c6b3840a74740335cbfd90f96c420da118b6b515c0e09ddc8c",
+      "audit_file_sha256": "282bf27936ea75f85aac15f88d4fbe7024ea323810d3f32fa070c1ec7f92e9ca",
+      "joint_audit_file_sha256": "0514eb9f6ef2495ded9bd581b7f2135851418e8a804c43b5ecdac6995f6ac32b",
+      "full_field_archive_sha256": "83a21dd34c84047e4c14b8b63fb079333fc46a3ed13b46a4f71eb2fc12e15311",
+      "generation_elapsed_seconds": 1607.1232680589892,
+      "peak_deltaT_K": {
+        "minimum": 43.48087576313344,
+        "median": 89.19627552364716,
+        "maximum": 146.89657246577792,
+        "inside_30_150_count": 1024
+      },
+      "intended_temperature_bin_counts": {
+        "0": 256,
+        "1": 256,
+        "2": 256,
+        "3": 256
+      },
+      "realized_temperature_bin_counts": {
+        "0": 256,
+        "1": 256,
+        "2": 255,
+        "3": 257
+      },
+      "strict_exact_realized_bin_gate": false,
+      "physical_window_gate": true,
+      "deviation": "One v4 sample has peak DeltaT 120.5305238895134 K and crosses from intended bin 2 into adjacent bin 3; no sample is outside 30-150 K.",
+      "used_to_revise_generator": false,
+      "post_generation_filtering_or_replacement": false
+    }
+  },
+  "downstream_status": {
+    "dataset_generation_complete": true,
+    "canonical_promotion": false,
+    "reason": "Formal data are complete and physically valid, but the one-sample realized-bin protocol deviation is retained for explicit downstream review."
+  }
+}
