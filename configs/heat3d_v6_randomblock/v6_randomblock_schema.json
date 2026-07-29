@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "heat3d_v6_randomblock_dataset_v1",
+  "title": "Heat3D V6 RandomBlock frozen generation protocol",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "stage",
+    "seeds",
+    "physics",
+    "temperature_bin_contract",
+    "layout_groups",
+    "physics_variants",
+    "cases",
+    "guardrails"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "heat3d_v6_randomblock_dataset_v1"
+    },
+    "dataset_id": {
+      "type": "string",
+      "pattern": "^heat3d_v6_randomblock"
+    },
+    "stage": {
+      "enum": ["smoke16", "pilot128", "formal1024"]
+    },
+    "seeds": {
+      "type": "object",
+      "required": ["layout", "physics", "split", "support"],
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "physics": {
+      "type": "object",
+      "required": [
+        "footprint_m",
+        "layers_bottom_to_top",
+        "solver_mesh_intervals_xyz",
+        "boundary_schema",
+        "literature_contract"
+      ]
+    },
+    "temperature_bin_contract": {
+      "type": "object",
+      "required": ["edges_K", "intended_slots_per_group", "post_solve_filtering"],
+      "properties": {
+        "edges_K": {
+          "const": [30.0, 60.0, 90.0, 120.0, 150.0]
+        },
+        "intended_slots_per_group": {
+          "const": [2, 2, 2, 2]
+        },
+        "post_solve_filtering": {
+          "const": false
+        }
+      }
+    },
+    "layout_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "group_id",
+          "split_role",
+          "k_blocks",
+          "q_blocks",
+          "layout_hash"
+        ]
+      }
+    },
+    "physics_variants": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sample_id",
+          "group_id",
+          "split_role",
+          "variant_id",
+          "intended_temperature_bin",
+          "package_total_power_W",
+          "top_h_W_m2K",
+          "bottom_h_W_m2K",
+          "k_block_values_W_mK",
+          "q_block_power_fractions"
+        ]
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "required": [
+        "training",
+        "model_inference",
+        "post_solve_temperature_filtering",
+        "post_solve_sample_replacement",
+        "group_split_leakage"
+      ],
+      "properties": {
+        "training": {"const": false},
+        "model_inference": {"const": false},
+        "post_solve_temperature_filtering": {"const": false},
+        "post_solve_sample_replacement": {"const": false},
+        "group_split_leakage": {"const": false}
+      }
+    }
+  }
+}

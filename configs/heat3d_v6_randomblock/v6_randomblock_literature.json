@@ -1,0 +1,286 @@
+{
+  "schema_version": "heat3d_v6_randomblock_literature_v1",
+  "frozen_on": "2026-07-30",
+  "scope": {
+    "peer_reviewed_primary_sources_only_for_formal_ranges": true,
+    "preprints_may_support_background_only": true,
+    "uncited_values_forbidden": true,
+    "engineering_translations_explicitly_flagged": true
+  },
+  "sources": [
+    {
+      "id": "RB-L01",
+      "title": "Quasi-3D Thermal Simulation of Integrated Circuit Systems in Packages",
+      "publication": "Energies 13(12), 3054",
+      "year": 2020,
+      "peer_reviewed": true,
+      "doi": "10.3390/en13123054",
+      "url": "https://doi.org/10.3390/en13123054",
+      "evidence_location": "Section 4.1 and Table 1",
+      "direct_evidence": {
+        "package_total_power_W": [20.0],
+        "additional_package_power_W": [2.0],
+        "k_W_mK": {
+          "silicon": 150.0,
+          "solder": 50.0,
+          "copper_via": 385.0,
+          "molding": 0.6,
+          "kovar_lid": 17.0
+        }
+      },
+      "formal_use": [
+        "package power anchors 2 W and 20 W",
+        "silicon/copper conductivity palette"
+      ]
+    },
+    {
+      "id": "RB-L02",
+      "title": "Hotspot Cooling in Stacked Chips Using Thermoelectric Coolers",
+      "publication": "IEEE Transactions on Components, Packaging and Manufacturing Technology 3(5), 759-767",
+      "year": 2013,
+      "peer_reviewed": true,
+      "doi": "10.1109/TCPMT.2012.2226721",
+      "url": "https://doi.org/10.1109/TCPMT.2012.2226721",
+      "primary_full_text_url": "https://minds.gatech.edu/Publications/Papers_2013/Matthew_IEEE_CPMT_2013.pdf",
+      "evidence_location": "PDF pp. 1-2, Figure 1, Equation 1 and Table I",
+      "direct_evidence": {
+        "ambient_temperature_K": 300.0,
+        "heat_transfer_coefficient_W_m2K": [2050.0],
+        "surface_power_density_W_cm2": [14.5, 1000.0],
+        "hotspot_size_um": [400.0, 400.0],
+        "chip_power_W": 23.9,
+        "package_total_power_W": 47.8,
+        "k_W_mK": {
+          "chip": 140.0,
+          "heat_spreader": 400.0,
+          "effective_resistance_layer": 5.0,
+          "infill_TIM": 1.75,
+          "thermoelectric_superlattice": 1.2
+        }
+      },
+      "formal_use": [
+        "package upper power anchor 47.8 W",
+        "surface source-density envelope",
+        "2050 W/(m2 K) forced-cooling anchor",
+        "chip/copper conductivity palette"
+      ]
+    },
+    {
+      "id": "RB-L03",
+      "title": "Thermal Management of the Hotspots in 3-D Integrated Circuits with Microchannels and Through-Silicon Vias",
+      "publication": "Thermal Science 22(4), 1685-1690",
+      "year": 2018,
+      "peer_reviewed": true,
+      "doi": "10.2298/TSCI1804685W",
+      "url": "https://doi.org/10.2298/TSCI1804685W",
+      "primary_full_text_url": "https://thermalscience.vinca.rs/pdfs/papers-2018/TSCI1804685W.pdf",
+      "evidence_location": "PDF pp. 2-3, Table 1 and Figure 4",
+      "direct_evidence": {
+        "volumetric_q_W_m3": [2000000000.0, 6000000000.0],
+        "source_volume_mm3": [1.0, 1.0],
+        "derived_total_power_W": 8.0,
+        "ambient_temperature_K": 298.15,
+        "heat_transfer_coefficient_W_m2K": [1000.0],
+        "k_W_mK": {
+          "die": 120.0,
+          "bonding_layer": 20.0,
+          "thermal_TSV": 600.0
+        }
+      },
+      "formal_use": [
+        "direct volumetric-q anchors",
+        "8 W package-power anchor",
+        "bonding/die/TTSV conductivity palette",
+        "1000 W/(m2 K) cooling anchor"
+      ]
+    },
+    {
+      "id": "RB-L04",
+      "title": "Flexible and Accurate Simulation of Radiation Cooling with FETD Method",
+      "publication": "Scientific Reports 8, 2652",
+      "year": 2018,
+      "peer_reviewed": true,
+      "doi": "10.1038/s41598-018-21020-w",
+      "url": "https://doi.org/10.1038/s41598-018-21020-w",
+      "primary_full_text_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5805686/",
+      "evidence_location": "3D IC Package with a Heat Sink, Table 1 and Case 1",
+      "direct_evidence": {
+        "package_total_power_W": [1.0],
+        "ambient_temperature_K": 300.0,
+        "heat_transfer_coefficient_W_m2K": [15.0],
+        "k_W_mK": {
+          "TIM": 10.0,
+          "chip": 135.0,
+          "TSV": 400.0,
+          "underfill": 50.0,
+          "heat_sink": 220.0
+        }
+      },
+      "formal_use": [
+        "1 W lower package-power anchor",
+        "15 W/(m2 K) natural-convection anchor",
+        "TIM/chip/underfill/TSV conductivity palette"
+      ]
+    },
+    {
+      "id": "RB-L05",
+      "title": "DeepOHeat: Operator Learning-based Ultra-fast Thermal Simulation in 3D-IC Design",
+      "publication": "2023 60th ACM/IEEE Design Automation Conference",
+      "year": 2023,
+      "peer_reviewed": true,
+      "doi": "10.1109/DAC56929.2023.10247998",
+      "url": "https://doi.org/10.1109/DAC56929.2023.10247998",
+      "primary_full_text_url": "https://arxiv.org/abs/2302.12949",
+      "evidence_location": "Sections III, V-A and V-B; Figure 5",
+      "direct_evidence": {
+        "heat_transfer_coefficient_W_m2K_range": [333.33, 1000.0],
+        "example_HTC_pairs_W_m2K": [
+          [1000.0, 333.33],
+          [500.0, 500.0]
+        ],
+        "volumetric_source_power_W": 0.000625,
+        "source_layer_thickness_m": 0.00005,
+        "configuration_classes": [
+          "arbitrary heat-block power maps",
+          "inhomogeneous conductivity",
+          "independent top/bottom convection"
+        ]
+      },
+      "formal_use": [
+        "random axis-aligned heat-block topology precedent",
+        "dual-Robin 333.33-1000 W/(m2 K) envelope"
+      ]
+    },
+    {
+      "id": "RB-L06",
+      "title": "Experimental and Numerical Study of Natural Convection for High Powered and Wire-Bonded QFN64b Electronic Device",
+      "publication": "International Communications in Heat and Mass Transfer 78, 264-270",
+      "year": 2016,
+      "peer_reviewed": true,
+      "doi": "10.1016/j.icheatmasstransfer.2016.09.016",
+      "url": "https://doi.org/10.1016/j.icheatmasstransfer.2016.09.016",
+      "evidence_location": "Abstract and Equation 3 surface-specific correlations",
+      "direct_evidence": {
+        "device_power_W_range": [0.1, 1.0],
+        "inclination_degree_range": [0.0, 90.0],
+        "surface_specific_natural_convection_W_m2K": "approximately 9 to 864 over the registered power/angle domain"
+      },
+      "formal_use": [
+        "evidence that top/package/board surfaces require distinct h values"
+      ],
+      "transfer_limit": "Local QFN surface correlations are not reused as one uniform package h."
+    },
+    {
+      "id": "RB-L07",
+      "title": "Control Principles and On-Chip Circuits for Active Cooling Using Integrated Superlattice-Based Thin-Film Thermoelectric Devices",
+      "publication": "IEEE Transactions on Very Large Scale Integration Systems 22(9)",
+      "year": 2014,
+      "peer_reviewed": true,
+      "doi": "10.1109/TVLSI.2013.2278951",
+      "url": "https://doi.org/10.1109/TVLSI.2013.2278951",
+      "evidence_location": "Package/FLUENT thermal model and cooling-boundary setup",
+      "direct_evidence": {
+        "heat_transfer_coefficient_W_m2K": [2500.0],
+        "chip_lateral_size_mm": [9.0, 9.0],
+        "heat_spreader_lateral_size_mm": [23.0, 23.0]
+      },
+      "formal_use": [
+        "2500 W/(m2 K) enhanced-cooling endpoint retained from V6-layer"
+      ]
+    },
+    {
+      "id": "RB-L08",
+      "title": "Design and Implementation of Thermal Collection Networks in 3-D IC Structures",
+      "publication": "Heliyon 8, e08719",
+      "year": 2022,
+      "peer_reviewed": true,
+      "doi": "10.1016/j.heliyon.2022.e08719",
+      "url": "https://doi.org/10.1016/j.heliyon.2022.e08719",
+      "primary_full_text_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8760542/",
+      "evidence_location": "FEM model, Table 1 and 3-D TCN/TTSV cases",
+      "direct_evidence": {
+        "configuration_classes": [
+          "localized high-conductivity thermal collection networks",
+          "thermal TSV connections",
+          "3-D stacked material heterogeneity"
+        ]
+      },
+      "formal_use": [
+        "physical motivation for localized high-k blocks"
+      ]
+    }
+  ],
+  "formal_parameter_envelope": {
+    "ambient_temperature_K": 300.0,
+    "package_total_power_W": {
+      "minimum": 1.0,
+      "maximum": 47.8,
+      "direct_anchors": [1.0, 2.0, 8.0, 20.0, 23.9, 47.8],
+      "formal_intermediate_values": "allowed only when tagged engineering_interpolation_within_RB-L01_RB-L02_RB-L03_RB-L04"
+    },
+    "surface_power_density_W_cm2": {
+      "minimum": 14.5,
+      "maximum": 1000.0,
+      "direct_source": "RB-L02"
+    },
+    "volumetric_q_W_m3": {
+      "direct_minimum": 2000000000.0,
+      "direct_maximum": 6000000000.0,
+      "geometry_translated_maximum": 66666666666.66667,
+      "translation": "1000 W/cm2 divided by the frozen 0.15 mm V6 active-layer thickness"
+    },
+    "k_block_palette_W_mK": [
+      20.0,
+      50.0,
+      120.0,
+      135.0,
+      140.0,
+      150.0,
+      385.0,
+      400.0,
+      600.0
+    ],
+    "top_h_W_m2K": {
+      "minimum": 15.0,
+      "maximum": 2500.0,
+      "direct_anchors": [15.0, 333.33, 500.0, 1000.0, 2050.0, 2500.0]
+    },
+    "bottom_h_W_m2K": {
+      "minimum": 15.0,
+      "maximum": 1000.0,
+      "direct_anchors": [15.0, 333.33, 500.0, 1000.0]
+    }
+  },
+  "engineering_translations": [
+    {
+      "id": "RB-X01",
+      "kind": "geometry_conversion",
+      "description": "Surface heat flux is converted to volumetric q using the frozen 0.15 mm V6 active-layer thickness.",
+      "not_a_paper_reported_q_value": true
+    },
+    {
+      "id": "RB-X02",
+      "kind": "interpolation",
+      "description": "Intermediate power or h values may be used only inside the direct peer-reviewed envelope and must carry this provenance ID.",
+      "not_a_direct_paper_value": true
+    },
+    {
+      "id": "RB-X03",
+      "kind": "placement_semantics",
+      "description": "Cuboidal k zones inside active layers represent effective local material/interconnect composites; cited bulk values are not relabeled as measured in-situ effective properties.",
+      "not_a_material_measurement": true
+    }
+  ],
+  "background_only_exclusions": [
+    {
+      "title": "Thermal Implications of Non-Uniform Power in BSPDN-Enabled 2.5D/3D Chiplet-based Systems-in-Package using Nanosheet Technology",
+      "url": "https://arxiv.org/abs/2508.02284",
+      "reason": "preprint; useful context for nonuniform power and asymmetric cooling, but not a formal numeric range source"
+    },
+    {
+      "title": "Anisotropic thermal conductivity of high bandwidth memory",
+      "url": "https://arxiv.org/abs/2303.06785",
+      "reason": "preprint; HBM anisotropy values remain background-only until a peer-reviewed version is bound"
+    }
+  ]
+}
