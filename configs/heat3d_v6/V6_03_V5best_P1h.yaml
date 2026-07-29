@@ -1,0 +1,99 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_03_V5best_P1h
+extends: ../heat3d_v5/V4P5_42_canonical.yaml
+overrides:
+  description: >-
+    Canonical V6 P1h shared-support configuration. It retains the complete
+    V4P5_42 scientific model, loss, optimizer, graph, and e600 contract while
+    replacing only the dataset/dual-Robin runtime adapter and effective B24
+    execution contract. No historical checkpoint is loaded.
+  dataset:
+    name: heat3d_v6_p1h_shared_support1024_v0
+    subset_path: data/heat3d_v6_p1h_shared_support1024_v0
+    manifest_path: configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json
+    split_map_path: null
+    split_source: v6_manifest_group_locked
+    loader: v6_dual_robin_manifest_v1
+    bc_adapter: dual_robin_top_bottom_v1
+    feature_view: v6_dual_robin_relative_bc_features
+    input_feature_contract:
+      - k_x
+      - k_y
+      - k_z
+      - q
+      - is_top
+      - is_bottom
+      - is_side
+      - is_interior
+      - top_h
+      - bottom_h
+      - top_T_inf_minus_T_ref
+  model:
+    global_context_feature_names:
+      - log_s_phys_K
+      - P_operator_W
+      - log_P_operator_W
+      - q_weighted_local_kz_W_mK
+      - q_weighted_inverse_kz_mK_W
+      - q_low_k_overlap_fraction
+      - source_concentration
+      - source_z_centroid_normalized
+      - source_layer_kz_heterogeneity_cv
+      - harmonic_kx_W_mK
+      - harmonic_ky_W_mK
+      - harmonic_kz_W_mK
+      - anisotropy_xy_over_z
+      - log_Lx_m
+      - log_Ly_m
+      - log_Lz_m
+      - log_top_area_m2
+      - log_top_h_W_m2K
+      - log_bottom_h_W_m2K
+      - top_T_inf_K
+      - bottom_T_inf_K
+      - bc_top_cv_fraction
+      - bc_bottom_cv_fraction
+      - bc_side_cv_fraction
+  run:
+    batch_size: 24
+    micro_batch_size: 24
+    validation_batch_size: 32
+    prediction_batch_size: 32
+    drop_last: false
+    epoch_wise_batch_regrouping: false
+    init_checkpoint: null
+    final_probe_eval_after_training: false
+    final_probe_output_dir: null
+    post_training_diagnostics: false
+    post_training_diagnostics_output_dir: null
+  export:
+    output_dir: output/heat3d_v6_runs/V6_03_V5best_P1h
+    run_name: V6_03_V5best_P1h
+    prediction_split: valid_iid
+  diagnostics:
+    run_baseline_comparison: false
+  baseline_reference: null
+  metadata:
+    phase: v6_canonical_integration
+    baseline_config_id: V4P5_42_canonical
+    canonical_dataset_id: heat3d_v6_p1h_shared_support1024_v0
+    initialization: random
+    model_lifecycle_status: canonical
+    model_run_role: reference_seed0
+    model_applicability: P1h_source_aware_support_family_only
+    training_started: false
+    execution_host: null
+    training_commit: null
+    runner_pid: null
+    launch_timestamp_utc: null
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v6_logs/V6_03_V5best_P1h.log
+    bottom_boundary_semantics: robin_not_fixed_temperature
+    configured_batch_size: 24
+    effective_batch_size: 24
+    graph_compatible_micro_batch_size: 24
+    micro_batches_per_epoch: 32
+    optimizer_updates_per_epoch: 32
+    final_partial_effective_batch_size: null
+    cross_geometry_dummy_edge_padding: true
+    b24_execution_mode: one_real_B24_forward_backward_per_update

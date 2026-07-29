@@ -177,6 +177,7 @@ def decoder_bypass_required_full_condition_features(
     *,
     input_feature_schema: str,
     extent_feature_policy: str,
+    dual_robin: bool = False,
 ) -> tuple[str, ...]:
     """Return the required `full_condition` names for the active feature view."""
 
@@ -187,15 +188,22 @@ def decoder_bypass_required_full_condition_features(
         if input_feature_schema == INPUT_FEATURE_SCHEMA_BOUNDARY_DISTANCE_REPLACEMENT
         else BC_FLAG_FEATURES
     )
+    bc_scalars = (
+        "top_h",
+        "bottom_h",
+        "top_T_inf_minus_T_ref",
+    ) if dual_robin else (
+        "top_h",
+        "top_T_inf_minus_T_ref",
+        "bottom_T_fixed_minus_T_ref",
+    )
     required = (
         "k_x",
         "k_y",
         "k_z",
         "q",
         *boundary_features,
-        "top_h",
-        "top_T_inf_minus_T_ref",
-        "bottom_T_fixed_minus_T_ref",
+        *bc_scalars,
     )
     if extent_feature_policy == EXTENT_FEATURE_POLICY_LOG_EXTENT_BROADCAST:
         required = (*required, *EXTENT_BROADCAST_FEATURES)

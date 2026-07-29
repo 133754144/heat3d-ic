@@ -1,0 +1,171 @@
+{
+  "artifact_count": 14,
+  "immutability_policy": {
+    "checkpoint_selection_changed": false,
+    "hash_source": "configs/heat3d_v6/v6_training_checkpoint_metrics.csv",
+    "historical_run_directories_mutated": false,
+    "overwrite_allowed": false
+  },
+  "run_count": 4,
+  "runs": [
+    {
+      "artifact_count": 2,
+      "artifacts": [
+        {
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_kind": "final",
+          "checkpoint_sha256": "7751d9f1490d5e797896ce23f8f79f0fc57315f4a1279581fda577119d48293f",
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "prediction_sha256": "e679d47a1312a001b7823c838cf5defb49ce1db0e1899050d8cce4ab57be2ed4"
+        },
+        {
+          "checkpoint_file": "params_best.pkl",
+          "checkpoint_kind": "legacy_best",
+          "checkpoint_sha256": "9938254f63930f67f7e159b210538615dfe6edc076def8c6ee8e1dfc86f780df",
+          "epoch": 407,
+          "prediction_file": "best_predictions.npz",
+          "prediction_sha256": "4c157dee1fceb0960713979fb3645ea60652e7ee1513d1ea06291a44d9fb1bda"
+        }
+      ],
+      "config_id": "V6_01_V4best",
+      "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_01_V4best",
+      "run_id": "V6_01_V4best",
+      "source_host": "wsl2",
+      "training_commit": "ec72010"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_kind": "base_mse_best",
+          "checkpoint_sha256": "7daba5c5cdd6e5fe1b2ad5594f18b3955c70d0a4826472e6105d0253b016c0b5",
+          "epoch": 406,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "prediction_sha256": "40e505ad516242f60b424aab60995e7543432f97a8182726da4796b49adcd9f0"
+        },
+        {
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_kind": "final",
+          "checkpoint_sha256": "20c83a88df7cc42228f07810c62ed78d3ed0cceb62bd7730dc74ea83d9c57ff9",
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "prediction_sha256": "cd5f779818c533e4659ab6656ac274450c98c3b529ab5bd3d53db893af0dbdbe"
+        },
+        {
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_kind": "point_global_best",
+          "checkpoint_sha256": "276dcb6a278602612f1b6d149fe9b0aea3795809be429c457ce8d8cb0297ee6b",
+          "epoch": 406,
+          "prediction_file": "point_global_best_predictions.npz",
+          "prediction_sha256": "cb5ca012bf65c10628593c9a85f3998db680c8e70f814246220b1e34261b2ce6"
+        },
+        {
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_kind": "sample_first_best",
+          "checkpoint_sha256": "033e8c52eecd66c23cd2f4603e12a715e8c2b46e47c60d05fa668ada5e96f04e",
+          "epoch": 559,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "prediction_sha256": "d4c30d6d2a09d36ff0d9847aa5670726ba066086896ee1f5be56617ff3265a30"
+        }
+      ],
+      "config_id": "V6_02_V5best",
+      "dataset_id": "heat3d_v6_p1g_geometry_deconfounded1024_v0",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_02_V5best",
+      "run_id": "V6_02_V5best",
+      "source_host": "devbox",
+      "training_commit": "3c90d8a"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_kind": "base_mse_best",
+          "checkpoint_sha256": "973270def879e57eb49f93a43499995a5f89c69a77ad890aac3b960b1314d4d8",
+          "epoch": 111,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "prediction_sha256": "9128d67c27924e35e19b9c141366c912b6382a006fcfbf50ee76dca41a6000bc"
+        },
+        {
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_kind": "final",
+          "checkpoint_sha256": "b0338616f9695e80a2db8a93484480797ed9def2554070d3611b5d249545875e",
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "prediction_sha256": "4cf6c7414e62b45115c23fd66c377b5e802db04537392fd303363f8b4601d65e"
+        },
+        {
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_kind": "point_global_best",
+          "checkpoint_sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2",
+          "epoch": 111,
+          "prediction_file": "point_global_best_predictions.npz",
+          "prediction_sha256": "01416a6adf91ddb340a981e61337a9e5b7c29be12047b548e1aa8a31a2a451f8"
+        },
+        {
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_kind": "sample_first_best",
+          "checkpoint_sha256": "e8cca4950e1b0f64048b82f8a65463befe21269538bbfd209f8b658241cfcd7b",
+          "epoch": 427,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "prediction_sha256": "876eb80933dc90c6c2475d2bc18be6e636c1dab760709fb3bce1f78695f3f284"
+        }
+      ],
+      "config_id": "V6_03_V5best_P1h",
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_03_V5best_P1h",
+      "run_id": "V6_03_V5best_P1h",
+      "source_host": "wsl2",
+      "training_commit": "950a1ce"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "checkpoint_file": "params_best_valid_base_mse.pkl",
+          "checkpoint_kind": "base_mse_best",
+          "checkpoint_sha256": "68fd327cfd387f66fb9e359f4835d8876447063e96412f2ecc3a878f8b75abdf",
+          "epoch": 111,
+          "prediction_file": "base_mse_best_predictions.npz",
+          "prediction_sha256": "15451c8055e9b56abe2e4faa83ead9352ed341bd2e5d47a00201fde709617808"
+        },
+        {
+          "checkpoint_file": "params_final.pkl",
+          "checkpoint_kind": "final",
+          "checkpoint_sha256": "d1911f5c825f632cd8690669a8151cb101de288af8bb08fc064165245333fbcf",
+          "epoch": 600,
+          "prediction_file": "predictions.npz",
+          "prediction_sha256": "248556e8ca94ec8e941141152a5cdfe74b140fd8d0c35d465beb312a69121cd6"
+        },
+        {
+          "checkpoint_file": "params_best_valid_point_global.pkl",
+          "checkpoint_kind": "point_global_best",
+          "checkpoint_sha256": "a127b020da14f3c7bdc544c0068ea755d9f58f1be0ee6cd627add914a6aec122",
+          "epoch": 111,
+          "prediction_file": "point_global_best_predictions.npz",
+          "prediction_sha256": "5b91af2f0b20797cdaa8e983658a583bc827b460b85b481c36cf924126e90074"
+        },
+        {
+          "checkpoint_file": "params_best_valid_sample_first.pkl",
+          "checkpoint_kind": "sample_first_best",
+          "checkpoint_sha256": "d8eee5c88344a1efa463d5b2435fd9b7c64e96c21422dae2f59b41e212448d01",
+          "epoch": 415,
+          "prediction_file": "sample_first_best_predictions.npz",
+          "prediction_sha256": "7d1c212e38eae194dd91d19e928aae0ccdd3bf0dcea8f3a0cdf3e9c714072098"
+        }
+      ],
+      "config_id": "V6_04_V5best_P1h_DualAttention",
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "remote_run_dir": "output/heat3d_v6_runs/V6_04_V5best_P1h_DualAttention",
+      "run_id": "V6_04_V5best_P1h_DualAttention",
+      "source_host": "devbox",
+      "training_commit": "950a1ce"
+    }
+  ],
+  "schema_version": "heat3d_v6_run_artifact_freeze_v1",
+  "scope": "V6_01_through_V6_04_registered_checkpoints_and_predictions",
+  "status": "frozen"
+}

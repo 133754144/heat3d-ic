@@ -17,6 +17,9 @@ class Heat3DGraphBuilder:
         repair_p2r=True,
         repair_r2p=True,
         min_physical_coverage=1,
+        discrete_graph_backend="dense_reference",
+        discrete_graph_chunk_size=1024,
+        discrete_coverage_multiplier=1.0,
     ):
 
         self.config = {
@@ -31,6 +34,9 @@ class Heat3DGraphBuilder:
             "repair_p2r": repair_p2r,
             "repair_r2p": repair_r2p,
             "min_physical_coverage": min_physical_coverage,
+            "discrete_graph_backend": discrete_graph_backend,
+            "discrete_graph_chunk_size": discrete_graph_chunk_size,
+            "discrete_coverage_multiplier": discrete_coverage_multiplier,
         }
 
         self.builder = RegionInteractionGraphBuilder(
@@ -51,6 +57,9 @@ class Heat3DGraphBuilder:
             repair_p2r=repair_p2r,
             repair_r2p=repair_r2p,
             min_physical_coverage=min_physical_coverage,
+            discrete_graph_backend=discrete_graph_backend,
+            discrete_graph_chunk_size=discrete_graph_chunk_size,
+            discrete_coverage_multiplier=discrete_coverage_multiplier,
         )
 
 

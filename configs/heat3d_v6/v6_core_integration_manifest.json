@@ -1,0 +1,135 @@
+{
+  "base_main_commit": "159d3490be661bda9dcabbd2fce7a20de7ebb734",
+  "branch": "integration/v6-core",
+  "canonical_config": {
+    "command_sha256": "157601952c91556025bbd54af38f95f9b8aa2fe6c33e137e8afa86d473ae25d9",
+    "config_id": "V6_03_V5best_P1h",
+    "path": "configs/heat3d_v6/V6_03_V5best_P1h.yaml",
+    "scientific_payload_sha256": "ef2168becc36b674fd79e19338373eb1738fb5b9529f932a5c5ab75dad7130b9"
+  },
+  "canonical_dataset": {
+    "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+    "manifest_path": "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json",
+    "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5"
+  },
+  "checkpoint_policy": {
+    "checkpoint_committed": false,
+    "reference_epoch": 111,
+    "reference_sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2"
+  },
+  "exclude": {
+    "artifact_classes": [
+      "data",
+      "output",
+      "checkpoints",
+      "predictions",
+      "logs",
+      "remote host paths",
+      "generated experiment registries",
+      "research-only training YAMLs",
+      "per-sample diagnostic payloads"
+    ],
+    "path_patterns": [
+      "data/**",
+      "output/**",
+      "checkpoints/**",
+      "logs/**",
+      "configs/heat3d_v5/generated/**",
+      "configs/heat3d_v6/preflight/**",
+      "configs/heat3d_v6/resolved/**",
+      "configs/heat3d_v6/V6_01*",
+      "configs/heat3d_v6/V6_02*",
+      "configs/heat3d_v6/V6_04*"
+    ],
+    "research_branch_merge": false
+  },
+  "governance": {
+    "fvm": "legal structured-FVM mesh sensitivity",
+    "hard": "preregistered IID stress subgroup within the already-opened corrected confirmatory holdout",
+    "resolution_16384": "highest IID-average full-field accuracy mode",
+    "true_ood_available": false
+  },
+  "include": {
+    "canonical_and_protocol_configs": [
+      "configs/heat3d_v6/V6_03_V5best_P1h.yaml",
+      "configs/heat3d_v6/v6_layer_canonical_default.yaml",
+      "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json",
+      "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
+      "configs/heat3d_v6/v6_production_highres_inference.yaml",
+      "configs/heat3d_v6/v6_production_graph_cache_manifest_v2.json",
+      "configs/heat3d_v6/v6_production_bundle_manifest.json"
+    ],
+    "core_code": [
+      "rigno/graphBuilder_Heat3D.py",
+      "rigno/heat3d_graph_cache.py",
+      "rigno/heat3d_v1_normalization.py",
+      "rigno/heat3d_v1_training_semantics.py",
+      "rigno/heat3d_v2_runner_command.py",
+      "rigno/heat3d_v5_scale_pooling.py",
+      "rigno/heat3d_v6_dataset.py",
+      "rigno/heat3d_v6_full_field.py",
+      "rigno/heat3d_v6_global_context.py",
+      "rigno/models/rigno.py",
+      "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+      "scripts/run_heat3d_v6_production_highres_inference.py",
+      "scripts/run_heat3d_v6_final_performance.py",
+      "scripts/evaluate_heat3d_v6_anchored_resolution.py",
+      "scripts/evaluate_heat3d_v6_common_valid_probe.py",
+      "scripts/evaluate_heat3d_v6_source_aware_resolution.py",
+      "scripts/evaluate_heat3d_v6_volume_probe_ladder.py",
+      "scripts/prepare_heat3d_v6_source_aware_resolution_ladder.py",
+      "scripts/archive_heat3d_v6_production_bundle.py",
+      "scripts/preflight_heat3d_v6_production_bundle.py"
+    ],
+    "governance_and_index": [
+      "configs/heat3d_v6/v6_phase_index.json",
+      "configs/heat3d_v6/v6_governance_amendment.json",
+      "configs/heat3d_v6/v6_training_dataset_lifecycle.csv",
+      "configs/heat3d_v6/v6_model_lifecycle.csv",
+      "configs/heat3d_v6/v6_run_artifact_freeze.json",
+      "docs/v6_phase_index.md",
+      "docs/v6_governance_amendment.md",
+      "docs/v6_total_closeout.md"
+    ],
+    "integration_checkers": [
+      "scripts/check_heat3d_v6_core_integration.py",
+      "scripts/check_heat3d_v6_production_inference_preflight.py",
+      "scripts/check_heat3d_v6_shared_support_runner_reuse.py"
+    ],
+    "summarized_results": [
+      "configs/heat3d_v6/v6_latest_training_results.json",
+      "configs/heat3d_v6/v6_final_corrected_confirmatory_holdout_metrics.csv",
+      "configs/heat3d_v6/v6_hard_ood_metrics.csv",
+      "configs/heat3d_v6/v6_final_performance_timing.csv",
+      "configs/heat3d_v6/v6_final_persistent_gpu.csv",
+      "configs/heat3d_v6/v6_final_solver_inference_comparison.csv",
+      "configs/heat3d_v6/v6_final_accuracy_runtime_pareto.csv",
+      "configs/heat3d_v6/v6_production_highres_metrics.csv",
+      "configs/heat3d_v6/v6_production_stage_timing.csv",
+      "configs/heat3d_v6/v6_production_solver_speedup.csv",
+      "configs/heat3d_v6/v6_production_multiseed_fullfield_metrics.csv",
+      "configs/heat3d_v6/v6_source_aware_resolution_metrics.csv",
+      "configs/heat3d_v6/v6_source_aware_resolution_timing.csv",
+      "configs/heat3d_v6/v6_source_aware_resolution_limit_results.json",
+      "configs/heat3d_v6/v6_volume_resolution_ladder_results.csv",
+      "configs/heat3d_v6/v6_final_performance_environment.json",
+      "configs/heat3d_v6/v6_production_environment.json",
+      "docs/v6_latest_training_results.md",
+      "docs/v6_final_performance_closeout.md",
+      "docs/v6_hard_ood_closeout.md",
+      "docs/v6_production_inference_final_closeout.md",
+      "docs/v6_source_aware_resolution_limit_and_solver_timing.md"
+    ]
+  },
+  "integration_policy": {
+    "full_research_history_merged": false,
+    "stable_allowlist_only": true,
+    "training_executed": false
+  },
+  "research_evidence_archive": {
+    "branch": "research/v6-p1h-shared-support",
+    "commit": "d7f72f157ecfad0db63658755c8f72b296a16674"
+  },
+  "schema_version": "heat3d_v6_core_integration_manifest_v1",
+  "status": "prepared_for_clean_checkout_validation"
+}

@@ -33,10 +33,11 @@ SEMANTIC_LOG_EPS = 1.0e-12
 BC_FLAG_FEATURES = ("is_top", "is_bottom", "is_side", "is_interior")
 K_FEATURES = ("k_x", "k_y", "k_z")
 Q_FEATURES = ("q",)
-TOP_H_FEATURES = ("top_h",)
+TOP_H_FEATURES = ("top_h", "bottom_h")
 RELATIVE_BC_TEMPERATURE_FEATURES = (
     "top_T_inf_minus_T_ref",
     "bottom_T_fixed_minus_T_ref",
+    "bottom_T_inf_minus_T_ref",
 )
 TRANSFORM_LINEAR_ZSCORE = "linear_zscore"
 TRANSFORM_LOG_K_ZSCORE = "log_k_zscore"
