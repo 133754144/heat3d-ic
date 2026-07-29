@@ -74,6 +74,7 @@ def main() -> int:
     adapter_path = CONFIG / "v6_hard_ood_evaluator_adapter.json"
     hard_metrics_path = CONFIG / "v6_hard_ood_metrics.csv"
     hard_doc_path = DOCS / "v6_hard_ood_closeout.md"
+    phase_index_path = CONFIG / "v6_phase_index.json"
     training_path = CONFIG / "v6_latest_training_results.json"
 
     acceptance = _load(acceptance_path)
@@ -117,6 +118,7 @@ def main() -> int:
         role_path,
         preflight_path,
         adapter_path,
+        phase_index_path,
     ]
     if hard_path.is_file():
         key_artifacts.extend([hard_path, hard_metrics_path, hard_doc_path])
@@ -179,7 +181,7 @@ def main() -> int:
             "role_names": {
                 "4096": "default_hotspot_oriented",
                 "8192": "balanced_full_field",
-                "16384": "maximum_full_field_accuracy",
+                "16384": "iid_average_best_full_field_accuracy",
             },
             "32768": "experimental_excluded",
             "probe_hashes": {
@@ -227,6 +229,7 @@ def main() -> int:
                 _artifact(hard_path) if hard_path.is_file() else None
             ),
             "canonical_ood_status": "not_available",
+            "phase_index": _artifact(phase_index_path),
         },
         "hardware_scope": {
             "cpu": {
@@ -282,7 +285,7 @@ def main() -> int:
             ),
             "4096": "default_hotspot_oriented",
             "8192": "balanced_full_field",
-            "16384": "maximum_full_field_accuracy",
+            "16384": "iid_average_best_full_field_accuracy",
         },
         "protocol_deviation": performance["protocol_deviation"],
         "speedup_semantics": machine_manifest["hardware_scope"][
@@ -326,7 +329,7 @@ def main() -> int:
         "",
         "- 4096: default/hotspot-oriented.",
         "- 8192: balanced full-field.",
-        "- 16384: maximum full-field accuracy.",
+        "- 16384: highest IID-average full-field accuracy.",
         "- 32768: experimental and excluded from formal holdout/hard tables.",
         "",
         "## Three-seed valid_iid full-field performance",
@@ -355,8 +358,9 @@ def main() -> int:
             "matched-accuracy claim.",
             "- CPU→CPU and GPU→CPU speedups use the same 240825-node CPU FVM "
             "cold/warm denominator and remain nonmatched-DOF.",
-            "- Canonical P1h contains no true OOD role. The preregistered hard "
-            "corner is an input-defined in-distribution stress subset.",
+            "- Canonical P1h contains no true OOD role. The hard role is a "
+            "preregistered IID stress subgroup within the already-opened "
+            "corrected confirmatory holdout.",
         ]
     )
     if hard is not None:
@@ -420,7 +424,7 @@ def main() -> int:
         "- `matched-accuracy FVM` is replaced by `legal structured-FVM mesh "
         "sensitivity`.",
         "- 4096/8192/16384 mean default/hotspot-oriented, balanced full-field, "
-        "and maximum full-field accuracy.",
+        "and highest IID-average full-field accuracy.",
         "- CPU→CPU and GPU→CPU speedups are distinct and nonmatched-DOF.",
         "- Local CPU: Apple M4, 10 cores, 16 GB memory.",
         "",

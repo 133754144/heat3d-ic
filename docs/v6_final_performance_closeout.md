@@ -80,6 +80,6 @@ The confirmatory table is descriptive only. It did not change the frozen 4096/81
 
 - 4096 remains the default/hotspot-oriented mode.
 - 8192 remains the balanced full-field mode.
-- 16384 remains the maximum full-field accuracy mode.
+- 16384 remains the highest IID-average full-field accuracy mode.
 - 32768 remains experimental and was not included in the confirmatory table.
 - The decision was fixed from valid_iid before holdout opening; the corrected confirmatory holdout is descriptive only.

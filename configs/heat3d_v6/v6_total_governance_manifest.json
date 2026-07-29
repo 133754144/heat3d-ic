@@ -52,7 +52,7 @@
       "sha256": "b7370370a1c3feeca1a6718bf9081ad038ddd80b6a9893548604cc652c4b58f1"
     },
     "hard_ood_preflight": {
-      "last_committed_at": "commit_containing_this_file",
+      "last_committed_at": "4b85f402bd180e9fd53d55e34d6046c2885f7306",
       "path": "configs/heat3d_v6/v6_hard_ood_preflight.json",
       "sha256": "c65f911822bca87d73c76759f9b6fa7d2352c8be4b1fafc45331896efb5df1da"
     },
@@ -64,11 +64,16 @@
     "hard_stress_result": {
       "last_committed_at": "commit_containing_this_file",
       "path": "configs/heat3d_v6/v6_hard_ood_closeout.json",
-      "sha256": "bdff68621be09e7e49b4e6fa64b12263c836168a97404697e58b44f8d03b5435"
+      "sha256": "c856768ba266f24d419ed57c877a74f897827d8ee4fa8eecf8dbd7671a6e1650"
     },
     "legal_structured_fvm_mesh_sensitivity": {
       "nonmatched_dof": true,
       "status": "passed"
+    },
+    "phase_index": {
+      "last_committed_at": "commit_containing_this_file",
+      "path": "configs/heat3d_v6/v6_phase_index.json",
+      "sha256": "d196881f05090c7bb89d88c4ea32b585ddbf2f36586f6930f9926ab55a0ec63c"
     },
     "protocol_deviation": {
       "classification": "protocol_deviation_corrected_before_formal_reporting",
@@ -157,9 +162,9 @@
       "sha256": "6aa06ede92a2a58841360c1a495e47d2ec31699a794c0d3e1e36f49c990c8d71"
     },
     {
-      "last_committed_at": "63ef72007c6973805f08e68fad9c2f0dfe5122b6",
+      "last_committed_at": "commit_containing_this_file",
       "path": "configs/heat3d_v6/v6_final_performance_closeout.json",
-      "sha256": "467e2ad4d93ef5080521cdb4614cb703e24c5343fbf53cf8b6cea56ac70f652e"
+      "sha256": "f543ce5364de8b2f4f97161cc86fa6394138b3e844e557087a5a242df9b8d99b"
     },
     {
       "last_committed_at": "d3506e5e9db92d94284560519bc48f210d4c0b7b",
@@ -202,7 +207,7 @@
       "sha256": "beb69ed7bd18a9b8ba66da202125d13fa0807dcf85674aa264aa6693a101e77f"
     },
     {
-      "last_committed_at": "commit_containing_this_file",
+      "last_committed_at": "4b85f402bd180e9fd53d55e34d6046c2885f7306",
       "path": "configs/heat3d_v6/v6_hard_ood_preflight.json",
       "sha256": "c65f911822bca87d73c76759f9b6fa7d2352c8be4b1fafc45331896efb5df1da"
     },
@@ -213,18 +218,23 @@
     },
     {
       "last_committed_at": "commit_containing_this_file",
+      "path": "configs/heat3d_v6/v6_phase_index.json",
+      "sha256": "d196881f05090c7bb89d88c4ea32b585ddbf2f36586f6930f9926ab55a0ec63c"
+    },
+    {
+      "last_committed_at": "commit_containing_this_file",
       "path": "configs/heat3d_v6/v6_hard_ood_closeout.json",
-      "sha256": "bdff68621be09e7e49b4e6fa64b12263c836168a97404697e58b44f8d03b5435"
+      "sha256": "c856768ba266f24d419ed57c877a74f897827d8ee4fa8eecf8dbd7671a6e1650"
     },
     {
       "last_committed_at": "commit_containing_this_file",
       "path": "configs/heat3d_v6/v6_hard_ood_metrics.csv",
-      "sha256": "03fc19a89ece36c59245da4e5e8382327ed9d1fc9e806d9fac68d0fd707555af"
+      "sha256": "3f03c874e413373f4f2d684010fe132898fdda75a207f8aa549b25ce89917ce9"
     },
     {
       "last_committed_at": "commit_containing_this_file",
       "path": "docs/v6_hard_ood_closeout.md",
-      "sha256": "026e7aac9044ffb9e787f5bb0519e2ad71f46bd60072c4e89a8e988b8bef9c58"
+      "sha256": "23837587c4f3e96cce6c3dfd71989e7a689f2ff9c15cfba04886bd1c595803fa"
     }
   ],
   "production_workflow": {
@@ -264,7 +274,7 @@
       16384
     ],
     "role_names": {
-      "16384": "maximum_full_field_accuracy",
+      "16384": "iid_average_best_full_field_accuracy",
       "4096": "default_hotspot_oriented",
       "8192": "balanced_full_field"
     },

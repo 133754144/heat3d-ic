@@ -55,7 +55,7 @@ def main() -> int:
     assert performance["frozen_decision_unchanged"] == {
         "default_hotspot_oriented": 4096,
         "balanced_full_field": 8192,
-        "maximum_full_field_accuracy": 16384,
+        "iid_average_best_full_field_accuracy": 16384,
         "experimental_excluded_from_primary_test_table": 32768,
     }
     assert amendment["cpu_hardware"] == {
@@ -79,7 +79,7 @@ def main() -> int:
     assert total["source_aware_ladder"]["role_names"] == {
         "4096": "default_hotspot_oriented",
         "8192": "balanced_full_field",
-        "16384": "maximum_full_field_accuracy",
+        "16384": "iid_average_best_full_field_accuracy",
     }
     assert total["source_aware_ladder"]["32768"] == "experimental_excluded"
     assert total["governance"]["canonical_ood_status"] == "not_available"

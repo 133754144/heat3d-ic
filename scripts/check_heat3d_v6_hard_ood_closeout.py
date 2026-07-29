@@ -47,11 +47,15 @@ def main() -> int:
     assert closeout["workflow"]["resolutions"] == {
         "4096": "default_hotspot_oriented",
         "8192": "balanced_full_field",
-        "16384": "maximum_full_field_accuracy",
+        "16384": "iid_average_best_full_field_accuracy",
     }
     assert closeout["workflow"]["excluded_resolution"] == 32768
     assert closeout["hard_role"]["selection_uses_target_labels"] is False
     assert closeout["hard_role"]["sample_count"] == 16
+    assert closeout["hard_role"]["role_classification"] == (
+        "preregistered_iid_stress_subgroup_within_already_"
+        "opened_corrected_confirmatory_holdout"
+    )
     assert closeout["canonical_ood"]["status"] == "not_available_not_run"
     assert closeout["canonical_ood"]["labels_accessed"] is False
     assert closeout["hard_used_for_selection_or_tuning"] is False
@@ -65,6 +69,14 @@ def main() -> int:
         "valid_iid",
         "corrected_confirmatory_holdout",
         "hard_input_stress",
+    }
+    assert {
+        row["role_classification"]
+        for row in rows
+        if row["role"] == "hard_input_stress"
+    } == {
+        "preregistered_iid_stress_subgroup_within_already_"
+        "opened_corrected_confirmatory_holdout"
     }
     assert all(row["used_for_selection_or_tuning"] == "False" for row in rows)
     numeric = [

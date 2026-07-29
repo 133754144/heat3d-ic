@@ -2,7 +2,7 @@
 
 The canonical checkpoint and 4096/8192/16384 Anchor-derived workflow were frozen before this descriptive evaluation. 32768 was excluded.
 
-Canonical P1h has no registered distribution-shift OOD role, so no OOD labels were opened. `hard_input_stress` is an input-defined in-distribution corner, not OOD.
+Canonical P1h has no registered distribution-shift OOD role, so no OOD labels were opened. `hard_input_stress` is a preregistered IID stress subgroup within the already-opened corrected confirmatory holdout, not OOD.
 
 | Mode | Role | Support point-global % | Full point-global % | Full RMSE K | Peak K | Source K | Layer/interface K | Bias K |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|

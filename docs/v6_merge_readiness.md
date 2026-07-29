@@ -12,7 +12,8 @@ Status: **ready for final audit; not merged**.
   context/scale, sparse KD-tree edge-list cached graphs, and frozen
   layer/interface-aware full-field reconstruction.
 - Resolution roles: 4096 default/hotspot-oriented, 8192 balanced full-field,
-  and 16384 maximum full-field accuracy. 32768 remains experimental.
+  and 16384 highest IID-average full-field accuracy. 32768 remains
+  experimental.
 
 ## Governance status
 
@@ -22,8 +23,9 @@ Status: **ready for final audit; not merged**.
   not used for selection or formal reporting.
 - The FVM comparison is a legal structured-FVM mesh sensitivity study with
   nonmatched degrees of freedom.
-- The preregistered 16-case hard corner is an input-defined in-distribution
-  stress subset, not OOD, and was not used for selection or tuning.
+- The hard role is a preregistered 16-case IID stress subgroup within the
+  already-opened corrected confirmatory holdout, not OOD, and was not used for
+  selection or tuning.
 - Canonical P1h has no registered distribution-shift OOD role; no OOD labels
   were opened.
 

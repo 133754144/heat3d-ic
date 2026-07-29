@@ -17,7 +17,7 @@ This is the authoritative V6 summary. Earlier phase reports remain evidence reco
 
 - 4096: default/hotspot-oriented.
 - 8192: balanced full-field.
-- 16384: maximum full-field accuracy.
+- 16384: highest IID-average full-field accuracy.
 - 32768: experimental and excluded from formal holdout/hard tables.
 
 ## Three-seed valid_iid full-field performance
@@ -34,7 +34,7 @@ This is the authoritative V6 summary. Earlier phase reports remain evidence reco
 - The wrong-ladder temporary outputs are excluded by SHA and were never used for selection.
 - FVM results are `legal structured-FVM mesh sensitivity`, not a matched-accuracy claim.
 - CPU→CPU and GPU→CPU speedups use the same 240825-node CPU FVM cold/warm denominator and remain nonmatched-DOF.
-- Canonical P1h contains no true OOD role. The preregistered hard corner is an input-defined in-distribution stress subset.
+- Canonical P1h contains no true OOD role. The hard role is a preregistered IID stress subgroup within the already-opened corrected confirmatory holdout.
 - The hard-stress subgroup was opened once after the preregistration and label-free preflight; it was not used for selection or tuning.
 
 ## Frozen hard-stress descriptive result

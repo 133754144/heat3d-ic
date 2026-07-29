@@ -479,7 +479,7 @@ def main() -> int:
         "frozen_decision_unchanged": {
             "default_hotspot_oriented": 4096,
             "balanced_full_field": 8192,
-            "maximum_full_field_accuracy": 16384,
+            "iid_average_best_full_field_accuracy": 16384,
             "experimental_excluded_from_primary_test_table": 32768,
         },
         "decision_basis": {
@@ -492,7 +492,7 @@ def main() -> int:
                 "lower valid full-field error than 4096 with modest persistent "
                 "GPU cost"
             ),
-            "maximum_full_field_accuracy_16384": (
+            "iid_average_best_full_field_accuracy_16384": (
                 "lowest preregistered valid full-field error; higher memory and "
                 "latency than 8192"
             ),
@@ -625,7 +625,7 @@ def main() -> int:
             "",
             "- 4096 remains the default/hotspot-oriented mode.",
             "- 8192 remains the balanced full-field mode.",
-            "- 16384 remains the maximum full-field accuracy mode.",
+            "- 16384 remains the highest IID-average full-field accuracy mode.",
             "- 32768 remains experimental and was not included in the "
             "confirmatory table.",
             "- The decision was fixed from valid_iid before holdout opening; the "

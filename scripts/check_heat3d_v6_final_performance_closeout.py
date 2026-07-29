@@ -62,7 +62,7 @@ def main() -> int:
     assert closeout["frozen_decision_unchanged"] == {
         "default_hotspot_oriented": 4096,
         "balanced_full_field": 8192,
-        "maximum_full_field_accuracy": 16384,
+        "iid_average_best_full_field_accuracy": 16384,
         "experimental_excluded_from_primary_test_table": 32768,
     }
     assert closeout["decision_basis"]["selection_source"] == (

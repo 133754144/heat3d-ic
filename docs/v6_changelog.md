@@ -22,16 +22,16 @@
   a production bundle, run-level shared-graph reuse smoke, CPU/GPU timing, and
   legal structured-FVM mesh sensitivity results.
 - Standardized resolution terminology: 4096 default/hotspot-oriented, 8192
-  balanced full-field, 16384 maximum full-field accuracy.
+  balanced full-field, 16384 highest IID-average full-field accuracy.
 
 ## Governance and held-out evidence
 
 - Reclassified the opened test split as a corrected confirmatory holdout.
 - Registered the wrong-ladder protocol deviation and excluded temporary result
   hashes without changing the frozen decision.
-- Preregistered and evaluated once a 16-case input-defined stress subset after
-  label-free preflight. It is not distribution-shift OOD and did not affect
-  selection or tuning.
+- Preregistered and evaluated once a 16-case IID stress subgroup within the
+  already-opened corrected confirmatory holdout after label-free preflight. It
+  is not distribution-shift OOD and did not affect selection or tuning.
 - Recorded that canonical P1h has no available OOD role.
 
 No training, checkpoint mutation, sampling change, graph-parameter change, or

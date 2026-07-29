@@ -52,6 +52,10 @@ def main() -> int:
         total["canonical_model"]["reference_checkpoint_sha256"]
     )
     assert readiness["hard_input_stress"]["sample_count"] == 16
+    assert readiness["hard_input_stress"]["classification"] == (
+        "preregistered_iid_stress_subgroup_within_already_"
+        "opened_corrected_confirmatory_holdout"
+    )
     assert readiness["hard_input_stress"]["used_for_selection_or_tuning"] is False
     assert hard["hard_used_for_selection_or_tuning"] is False
     assert hard["training_executed"] is False

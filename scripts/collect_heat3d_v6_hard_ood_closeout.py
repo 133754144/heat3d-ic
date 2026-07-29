@@ -116,8 +116,22 @@ def main() -> int:
     performance = _load(CONFIG / "v6_final_performance_closeout.json")
     prereg = _load(CONFIG / "v6_hard_ood_preregistration.json")
     role_manifest = _load(CONFIG / "v6_hard_input_stress_role.json")
+    hard_role = dict(role_manifest)
+    hard_role["preregistered_original_role_classification"] = hard_role[
+        "role_classification"
+    ]
+    hard_role["role_classification"] = (
+        "preregistered_iid_stress_subgroup_within_already_opened_"
+        "corrected_confirmatory_holdout"
+    )
     preflight = _load(CONFIG / "v6_hard_ood_preflight.json")
     adapter = _load(CONFIG / "v6_hard_ood_evaluator_adapter.json")
+    workflow = dict(prereg["workflow"])
+    workflow["resolutions"] = {
+        "4096": "default_hotspot_oriented",
+        "8192": "balanced_full_field",
+        "16384": "iid_average_best_full_field_accuracy",
+    }
     rows = []
     result_hashes: dict[str, str] = {}
     for resolution in (4096, 8192, 16384):
@@ -159,7 +173,8 @@ def main() -> int:
                     resolution=resolution,
                     role="hard_input_stress",
                     classification=(
-                        "input_defined_in_distribution_stress_subset"
+                        "preregistered_iid_stress_subgroup_within_already_"
+                        "opened_corrected_confirmatory_holdout"
                     ),
                     payload=hard,
                 ),
@@ -211,8 +226,8 @@ def main() -> int:
             "metrics_formulas_changed": False,
         },
         "checkpoint": prereg["checkpoint"],
-        "workflow": prereg["workflow"],
-        "hard_role": role_manifest,
+        "workflow": workflow,
+        "hard_role": hard_role,
         "hard_result_sha256": result_hashes,
         "metric_rows": rows,
         "comparisons": comparisons,
@@ -246,8 +261,9 @@ def main() -> int:
         "were frozen before this descriptive evaluation. 32768 was excluded.",
         "",
         "Canonical P1h has no registered distribution-shift OOD role, so no "
-        "OOD labels were opened. `hard_input_stress` is an input-defined "
-        "in-distribution corner, not OOD.",
+        "OOD labels were opened. `hard_input_stress` is a preregistered IID "
+        "stress subgroup within the already-opened corrected confirmatory "
+        "holdout, not OOD.",
         "",
         "| Mode | Role | Support point-global % | Full point-global % | "
         "Full RMSE K | Peak K | Source K | Layer/interface K | Bias K |",
