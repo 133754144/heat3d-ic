@@ -1,0 +1,53 @@
+{
+  "dataset_id": "heat3d_v6_randomblock_pilot128_v1",
+  "elapsed_seconds": 194.65346250799485,
+  "group_count": 16,
+  "guardrails": {
+    "canonical_p1h_modified": false,
+    "group_split_leakage": false,
+    "model_inference_runs": 0,
+    "sample_replacements": 0,
+    "temperature_filtered_samples": 0,
+    "training_runs": 0
+  },
+  "intended_temperature_bin_counts": {
+    "0": 32,
+    "1": 32,
+    "2": 32,
+    "3": 32
+  },
+  "peak_deltaT_K": {
+    "inside_30_150_count": 123,
+    "maximum": 159.86156426955472,
+    "median": 89.39242716234892,
+    "minimum": 43.651745777473764
+  },
+  "physics_QC": {
+    "maximum_cg_iterations": 1211,
+    "maximum_energy_balance_relative_error": 1.477060757654808e-10,
+    "maximum_k_W_mK": 600.0,
+    "maximum_linear_residual": 1.1924611964321124e-10,
+    "maximum_q_W_m3": 33883430734.964092,
+    "maximum_surface_power_density_W_cm2": 525.7803910006613,
+    "minimum_k_W_mK": 20.0,
+    "minimum_q_W_m3": 1789411322.6929135,
+    "minimum_support_nodes_per_block": 5,
+    "minimum_surface_power_density_W_cm2": 19.072117019080594
+  },
+  "realized_temperature_bin_counts": {
+    "0": 32,
+    "1": 32,
+    "2": 31,
+    "3": 28,
+    "outside": 5
+  },
+  "sample_count": 128,
+  "schema_version": "heat3d_v6_randomblock_audit_v1",
+  "split_role_counts": {
+    "test": 8,
+    "train": 96,
+    "valid": 24
+  },
+  "stage": "pilot128",
+  "status": "failed_temperature_gate"
+}
