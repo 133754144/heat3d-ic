@@ -15,7 +15,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import gaussian_kde, pearsonr, spearmanr
+from scipy.stats import gaussian_kde, ks_2samp, pearsonr, spearmanr
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -220,8 +220,10 @@ def audit(
                 }
             )
     split_summaries: dict[str, Any] = {}
+    split_masks: dict[str, np.ndarray] = {}
     for role in ("train", "valid_iid", "test_iid"):
         mask = np.asarray([row["split_role"] == role for row in rows])
+        split_masks[role] = mask
         split_summaries[role] = {
             "sample_count": int(np.sum(mask)),
             "metrics": {
@@ -238,6 +240,87 @@ def audit(
                 parameter_values["bottom_h_W_m2K"][mask]
             ),
         }
+    split_qc_report: dict[str, Any] | None = None
+    if "split_qc" in acceptance:
+        split_gate = acceptance["split_qc"]
+        role_pairs = (
+            ("train", "valid_iid"),
+            ("train", "test_iid"),
+            ("valid_iid", "test_iid"),
+        )
+        parameter_ks = []
+        for name, values in parameter_values.items():
+            for left, right in role_pairs:
+                result = ks_2samp(
+                    values[split_masks[left]], values[split_masks[right]]
+                )
+                parameter_ks.append(
+                    {
+                        "variable": name,
+                        "left": left,
+                        "right": right,
+                        "ks": float(result.statistic),
+                        "pvalue": float(result.pvalue),
+                    }
+                )
+        temperature_ks = []
+        for name, values in metrics.items():
+            for left, right in role_pairs:
+                result = ks_2samp(
+                    values[split_masks[left]], values[split_masks[right]]
+                )
+                temperature_ks.append(
+                    {
+                        "variable": name,
+                        "left": left,
+                        "right": right,
+                        "ks": float(result.statistic),
+                        "pvalue": float(result.pvalue),
+                    }
+                )
+        peak_medians = {
+            role: float(np.median(peaks[mask]))
+            for role, mask in split_masks.items()
+        }
+        peak_pairwise_relative = [
+            abs(peak_medians[left] - peak_medians[right])
+            / max(float(np.median(peaks)), 1.0e-12)
+            for left, right in role_pairs
+        ]
+        split_qc_report = {
+            "assignment_method": split_gate["assignment_method"],
+            "target_independent": bool(split_gate["target_independent"]),
+            "parameter_ks": parameter_ks,
+            "temperature_ks": temperature_ks,
+            "maximum_pre_solve_parameter_ks": max(
+                row["ks"] for row in parameter_ks
+            ),
+            "maximum_temperature_metric_ks": max(
+                row["ks"] for row in temperature_ks
+            ),
+            "peak_medians_K": peak_medians,
+            "maximum_peak_median_relative_difference": max(
+                peak_pairwise_relative
+            ),
+        }
+        checks.update(
+            {
+                "split_pre_solve_parameter_ks": split_qc_report[
+                    "maximum_pre_solve_parameter_ks"
+                ]
+                <= float(split_gate["maximum_pre_solve_parameter_ks"]),
+                "split_temperature_metric_ks": split_qc_report[
+                    "maximum_temperature_metric_ks"
+                ]
+                <= float(split_gate["maximum_temperature_metric_ks"]),
+                "split_peak_median": split_qc_report[
+                    "maximum_peak_median_relative_difference"
+                ]
+                <= float(
+                    split_gate["maximum_peak_median_relative_difference"]
+                ),
+            }
+        )
     output = {
         "schema_version": "heat3d_v6_p1i_distribution_audit_v1",
         "dataset_id": dataset_id,
@@ -254,6 +337,7 @@ def audit(
         },
         "correlations": correlation_rows,
         "split_summaries": split_summaries,
+        "split_qc": split_qc_report,
         "guardrails": {
             "training_runs": 0,
             "model_inference_runs": 0,

@@ -240,7 +240,45 @@ def _cross_overlap_count(
     return total
 
 
-def _split_map(sample_ids: Sequence[str], counts: Mapping[str, int]) -> dict[str, str]:
+def _split_map(
+    sample_ids: Sequence[str],
+    counts: Mapping[str, int],
+    split_spec: Mapping[str, Any] | None = None,
+) -> dict[str, str]:
+    if split_spec and split_spec["method"] == "hash_within_sobol_octets":
+        block_size = int(split_spec["block_size"])
+        per_block = {
+            key: int(value)
+            for key, value in split_spec["roles_per_block"].items()
+        }
+        if block_size != sum(per_block.values()) or len(sample_ids) % block_size:
+            raise core.ContinuousPhysicsError("invalid Sobol-octet split contract")
+        result: dict[str, str] = {}
+        salt = str(split_spec["hash_salt"])
+        role_order = ("train", "valid_iid", "test_iid")
+        role_slots = [
+            role for role in role_order for _ in range(per_block[role])
+        ]
+        for offset in range(0, len(sample_ids), block_size):
+            block = list(sample_ids[offset : offset + block_size])
+            ordered = sorted(
+                block,
+                key=lambda value: hashlib.sha256(
+                    f"{salt}:{value}".encode("utf-8")
+                ).hexdigest(),
+            )
+            for sample_id, role in zip(ordered, role_slots):
+                result[sample_id] = role
+        realized = Counter(result.values())
+        if realized != Counter({key: int(value) for key, value in counts.items()}):
+            raise core.ContinuousPhysicsError(
+                f"Sobol-octet split count mismatch: {realized}"
+            )
+        return result
+    if split_spec and split_spec["method"] != "global_sample_id_hash":
+        raise core.ContinuousPhysicsError(
+            f"unsupported split method: {split_spec['method']}"
+        )
     ordered = sorted(
         sample_ids,
         key=lambda value: hashlib.sha256(
@@ -344,7 +382,7 @@ def _case_from_sobol(
         _log_lerp(sampling["local_k_W_mK"]["range"], cursor.take())
         for _ in k_blocks
     ]
-    sample_id = f"v6p1i_{index:04d}"
+    sample_id = f"{config.get('sample_id_prefix', 'v6p1i_')}{index:04d}"
     group = {
         "group_id": sample_id,
         "split_role": split_role,
@@ -400,9 +438,24 @@ def _save_sample(
     return {name: core.file_sha256(root / name) for name in names}
 
 
+def _existing_sample_hashes(root: Path) -> dict[str, str]:
+    names = [*ARRAY_FILES, "sample_meta.json"]
+    missing = [name for name in names if not (root / name).is_file()]
+    if missing:
+        raise core.ContinuousPhysicsError(
+            f"incomplete resumable sample {root}: {missing}"
+        )
+    return {name: core.file_sha256(root / name) for name in names}
+
+
 def _protocol_checks(config: Mapping[str, Any]) -> None:
-    if int(config["sample_count"]) != 128 or config["stage"] != "pilot128":
-        raise core.ContinuousPhysicsError("this entrypoint is pilot128-only")
+    sample_count = int(config["sample_count"])
+    if sample_count not in {128, 1024}:
+        raise core.ContinuousPhysicsError("only frozen 128/1024 stages are supported")
+    if config["stage"] not in {"pilot128", "formal1024"}:
+        raise core.ContinuousPhysicsError("unexpected generation stage")
+    if sample_count & (sample_count - 1):
+        raise core.ContinuousPhysicsError("Sobol sample count must be a power of two")
     if config["sampling"]["method"] != "scrambled_sobol":
         raise core.ContinuousPhysicsError("Sobol is the only accepted design")
     if "temperature_bin" in json.dumps(config).lower():
@@ -427,22 +480,32 @@ def _protocol_checks(config: Mapping[str, Any]) -> None:
             )
 
 
-def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str, Any]:
+def generate(
+    config_path: Path,
+    output_root: Path,
+    *,
+    replace: bool,
+    resume: bool,
+) -> dict[str, Any]:
     config = core.load_config(config_path)
     _protocol_checks(config)
     artifact_prefix = str(config["artifact_prefix"])
     dataset_dir = output_root / str(config["dataset_id"])
     if dataset_dir.exists():
-        if not replace:
+        if replace:
+            shutil.rmtree(dataset_dir)
+        elif not resume:
             raise core.ContinuousPhysicsError(
-                f"dataset exists; pass --replace for deterministic rebuild: {dataset_dir}"
+                f"dataset exists; pass --resume or --replace: {dataset_dir}"
             )
-        shutil.rmtree(dataset_dir)
-    dataset_dir.mkdir(parents=True)
+    dataset_dir.mkdir(parents=True, exist_ok=resume)
     sample_ids = [
-        f"v6p1i_{index:04d}" for index in range(int(config["sample_count"]))
+        f"{config.get('sample_id_prefix', 'v6p1i_')}{index:04d}"
+        for index in range(int(config["sample_count"]))
     ]
-    split_map = _split_map(sample_ids, config["split_counts"])
+    split_map = _split_map(
+        sample_ids, config["split_counts"], config.get("split_assignment")
+    )
     dimensions = int(config["sampling"]["dimensions"])
     sampler = qmc.Sobol(
         d=dimensions,
@@ -462,6 +525,88 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
         case, group, physics, sampled_backgrounds = _case_from_sobol(
             index, sobol, config, split_map[sample_id]
         )
+        sample_dir = dataset_dir / "samples" / sample_id
+        if resume and sample_dir.is_dir():
+            meta = json.loads(
+                (sample_dir / "sample_meta.json").read_text(encoding="utf-8")
+            )
+            if (
+                meta["dataset_id"] != config["dataset_id"]
+                or int(meta["sobol_index"]) != index
+                or meta["split_role"] != case["split_role"]
+            ):
+                raise core.ContinuousPhysicsError(
+                    f"{sample_id}: resume provenance mismatch"
+                )
+            rows = list(meta.get("region_rows", []))
+            if not rows:
+                raise core.ContinuousPhysicsError(
+                    f"{sample_id}: resume metadata lacks region_rows"
+                )
+            source_rows = [row for row in rows if row["family"] == "q"]
+            k_rows = [row for row in rows if row["family"] == "k"]
+            for row in rows:
+                region_rows.append(
+                    {
+                        "sample_id": sample_id,
+                        "split_role": case["split_role"],
+                        **row,
+                    }
+                )
+            background_rows.extend(sampled_backgrounds)
+            sample_rows.append(
+                {
+                    "sample_id": sample_id,
+                    "split_role": case["split_role"],
+                    "sobol_index": index,
+                    "package_total_power_W": meta["package_total_power_W"],
+                    "continuous_severity": meta["continuous_severity"],
+                    "top_h_W_m2K": meta["top_h_W_m2K"],
+                    "bottom_h_W_m2K": meta["bottom_h_W_m2K"],
+                    "source_count": len(source_rows),
+                    "k_region_count": len(k_rows),
+                    "total_source_volume_m3": sum(
+                        float(row["source_volume_m3"]) for row in source_rows
+                    ),
+                    "mean_q_W_m3": float(
+                        np.mean([row["q_W_m3"] for row in source_rows])
+                    ),
+                    "max_q_W_m3": float(
+                        np.max([row["q_W_m3"] for row in source_rows])
+                    ),
+                    "mean_local_k_W_mK": float(
+                        np.mean([row["k_x_W_mK"] for row in k_rows])
+                    ),
+                    **{
+                        key: meta[key]
+                        for key in (
+                            "peak_deltaT_K",
+                            "mean_deltaT_K",
+                            "cv_rms_deltaT_K",
+                            "top_heat_fraction",
+                            "bottom_heat_fraction",
+                            "energy_balance_relative_error",
+                            "linear_residual",
+                            "cg_iterations",
+                        )
+                    },
+                    "minimum_support_nodes_per_region": meta[
+                        "minimum_support_nodes_per_region"
+                    ],
+                    "coordinate_sha256": meta["coordinate_sha256"],
+                    "support_index_sha256": meta["support_index_sha256"],
+                }
+            )
+            sample_manifest.append(
+                {
+                    "sample_id": sample_id,
+                    "split_role": case["split_role"],
+                    "relative_path": f"samples/{sample_id}",
+                    "file_sha256": _existing_sample_hashes(sample_dir),
+                }
+            )
+            print(f"[{index + 1:04d}/{len(values):04d}] {sample_id} resumed")
+            continue
         mesh = core.build_mesh(physics)
         layout = core.validate_layout(group, mesh)
         k_diag, q_field, rows = core.build_case_fields(
@@ -525,13 +670,14 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
             "q_blocks": group["q_blocks"],
             "k_blocks": group["k_blocks"],
         }
+        source_rows = [row for row in rows if row["family"] == "q"]
+        k_rows = [row for row in rows if row["family"] == "k"]
+        meta["region_rows"] = rows
         hashes = _save_sample(
-            dataset_dir / "samples" / sample_id,
+            sample_dir,
             arrays=arrays,
             metadata=meta,
         )
-        source_rows = [row for row in rows if row["family"] == "q"]
-        k_rows = [row for row in rows if row["family"] == "k"]
         for row in rows:
             region_rows.append(
                 {
@@ -581,7 +727,7 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
             }
         )
         print(
-            f"[{index + 1:03d}/128] {sample_id} "
+            f"[{index + 1:04d}/{len(values):04d}] {sample_id} "
             f"peak={metrics['peak_deltaT_K']:.3f}K "
             f"residual={metrics['linear_residual']:.2e}"
         )
@@ -630,9 +776,12 @@ def preflight(config_path: Path) -> dict[str, Any]:
     config = core.load_config(config_path)
     _protocol_checks(config)
     sample_ids = [
-        f"v6p1i_{index:04d}" for index in range(int(config["sample_count"]))
+        f"{config.get('sample_id_prefix', 'v6p1i_')}{index:04d}"
+        for index in range(int(config["sample_count"]))
     ]
-    split_map = _split_map(sample_ids, config["split_counts"])
+    split_map = _split_map(
+        sample_ids, config["split_counts"], config.get("split_assignment")
+    )
     sampler = qmc.Sobol(
         d=int(config["sampling"]["dimensions"]),
         scramble=bool(config["sampling"]["scramble"]),
@@ -684,13 +833,17 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output-root", type=Path, default=ROOT / "data")
     parser.add_argument("--replace", action="store_true")
+    parser.add_argument("--resume", action="store_true")
     parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
     if args.preflight_only:
         print(json.dumps(preflight(args.config.resolve()), indent=2))
         return 0
     manifest = generate(
-        args.config.resolve(), args.output_root.resolve(), replace=args.replace
+        args.config.resolve(),
+        args.output_root.resolve(),
+        replace=args.replace,
+        resume=args.resume,
     )
     print(json.dumps({k: manifest[k] for k in ("dataset_id", "sample_count", "dataset_root", "elapsed_seconds")}, indent=2))
     return 0
