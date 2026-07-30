@@ -1,0 +1,91 @@
+{
+  "schema_version": "heat3d_v6_p1i_formal1024_closeout_v1",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v0",
+  "status": "qualification_failed",
+  "generation_status": "completed_1024",
+  "qualification_status": "failed_frozen_acceptance",
+  "sample_count": 1024,
+  "split_role_counts": {
+    "train": 768,
+    "valid_iid": 128,
+    "test_iid": 128
+  },
+  "generation": {
+    "sobol_seed": 612804,
+    "elapsed_seconds": 2110.260211291956,
+    "solver_mesh_node_count": 240825,
+    "dataset_root": "data/heat3d_v6_p1i_continuous_physics1024_v0",
+    "sample_directory_count": 1024,
+    "file_count": 9216,
+    "local_size": "186M"
+  },
+  "temperature_summary_K": {
+    "peak": {
+      "minimum": 33.13954880243864,
+      "median": 95.58087692674104,
+      "maximum": 174.48326505337383
+    },
+    "mean": {
+      "minimum": 25.52504269465359,
+      "median": 75.00626857962182,
+      "maximum": 142.91523918849273
+    },
+    "cv_rms": {
+      "minimum": 25.954143568873985,
+      "median": 75.87074294946788,
+      "maximum": 143.20981502371714
+    }
+  },
+  "passed_frozen_gates": {
+    "primary_30_150_K": {
+      "count": 973,
+      "fraction": 0.9501953125,
+      "minimum_fraction": 0.95
+    },
+    "outer_20_180_K_violation_count": 0,
+    "histogram_counts": [40, 87, 81, 90, 82, 90, 80, 87, 91, 84, 92, 69],
+    "histogram_empty_bins": 0,
+    "histogram_max_min_ratio": 2.3,
+    "kde_mode_count": 2,
+    "energy_balance_max_abs_relative_error": 1.3949914924420768e-10,
+    "linear_residual_max": 1.2224976412714607e-10,
+    "minimum_support_nodes_per_region": 3,
+    "maximum_temperature_metric_ks": 0.1328125,
+    "maximum_peak_median_relative_difference": 0.08109761621771808
+  },
+  "failed_frozen_gates": {
+    "maximum_sorted_peak_gap_K": {
+      "observed": 5.743379827650131,
+      "maximum": 5.0
+    },
+    "maximum_pre_solve_parameter_ks": {
+      "observed": 0.17708333333333334,
+      "maximum": 0.15,
+      "worst_variable": "bottom_h_W_m2K",
+      "worst_pair": "train_vs_valid_iid"
+    }
+  },
+  "implementation_amendment": {
+    "reason": "The frozen distribution auditor retained a pilot-only 128-row assertion. It was amended after generation to read the already-frozen acceptance sample_count.",
+    "scientific_contract_changed": false,
+    "samples_changed": false,
+    "thresholds_changed": false,
+    "split_changed": false,
+    "original_hashes_retained_in_freeze_manifest": true
+  },
+  "decision": {
+    "formal_dataset_qualified": false,
+    "formal1024_allowed_for_training": false,
+    "samples_filtered": false,
+    "samples_replaced": false,
+    "seed_reselected": false,
+    "automatic_retry_started": false,
+    "next_dataset_version_requires_explicit_new_preregistration": true
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "model_error_selection": false,
+    "frozen_v6_modified": false
+  }
+}

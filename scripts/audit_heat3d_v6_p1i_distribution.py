@@ -90,9 +90,12 @@ def audit(
     background_path: Path | None = None,
 ) -> dict[str, Any]:
     rows = _read_csv(samples_path)
-    if len(rows) != 128:
-        raise RuntimeError(f"expected 128 rows, found {len(rows)}")
     acceptance = json.loads(acceptance_path.read_text(encoding="utf-8"))
+    expected_sample_count = int(acceptance.get("sample_count", 128))
+    if len(rows) != expected_sample_count:
+        raise RuntimeError(
+            f"expected {expected_sample_count} rows, found {len(rows)}"
+        )
     metrics = {
         "deltaT_max_K": np.asarray(
             [float(row["peak_deltaT_K"]) for row in rows]
@@ -322,8 +325,9 @@ def audit(
             }
         )
     output = {
-        "schema_version": "heat3d_v6_p1i_distribution_audit_v1",
+        "schema_version": "heat3d_v6_p1i_distribution_audit_v2",
         "dataset_id": dataset_id,
+        "sample_count": len(rows),
         "status": "passed" if all(checks.values()) else "failed",
         "checks": checks,
         "temperature_coverage": temperature_checks,
@@ -343,7 +347,7 @@ def audit(
             "model_inference_runs": 0,
             "test_labels_used_for_design": False,
             "post_solve_filtering_or_replacement": False,
-            "formal1024_generated": False,
+            "formal1024_generated": len(rows) == 1024,
         },
     }
     return output
@@ -379,17 +383,18 @@ def _plot(report: Mapping[str, Any], samples_path: Path, output: Path) -> None:
 def _markdown(report: Mapping[str, Any]) -> str:
     coverage = report["temperature_coverage"]
     summary = report["metric_summaries"]
+    sample_count = int(report["sample_count"])
     lines = [
         f"# {report['dataset_id']} distribution audit",
         "",
         f"Status: **{report['status']}**.",
         "",
-        "No training or model inference was run. The 1024-sample expansion remains "
-        "blocked pending an explicit decision after this report.",
+        "No training or model inference was run. This report audits the frozen "
+        f"{sample_count}-sample artifact without filtering or replacement.",
         "",
         "## Temperature coverage",
         "",
-        f"- Primary 30--150 K: {coverage['inside_primary_count']}/128 "
+        f"- Primary 30--150 K: {coverage['inside_primary_count']}/{sample_count} "
         f"({100 * coverage['inside_primary_fraction']:.2f}%).",
         f"- Outer-safety violations: {coverage['outside_outer_count']}.",
         f"- Twelve-bin counts: `{coverage['histogram_counts']}`.",

@@ -100,11 +100,18 @@ def _freeze(config: dict[str, Any], required: bool) -> None:
     payload = json.loads(FREEZE.read_text(encoding="utf-8"))
     _assert(payload["status"] == "frozen_before_generation", "freeze status")
     _assert(payload["sample_count"] == 1024, "freeze sample count")
+    effective_hashes = {
+        row["path"]: row["effective_sha256"]
+        for row in payload.get("implementation_amendments", [])
+    }
     for artifact in payload["frozen_artifacts"]:
         path = ROOT / artifact["path"]
         _assert(path.is_file(), f"frozen artifact missing: {artifact['path']}")
+        expected_sha = effective_hashes.get(
+            artifact["path"], artifact["sha256"]
+        )
         _assert(
-            core.file_sha256(path) == artifact["sha256"],
+            core.file_sha256(path) == expected_sha,
             f"frozen artifact SHA drift: {artifact['path']}",
         )
 
@@ -154,11 +161,33 @@ def _generated(config: dict[str, Any], required: bool) -> None:
         )
     _assert(AUDIT.is_file() and CLOSEOUT.is_file() and ARTIFACTS.is_file(), "closeout files")
     audit = json.loads(AUDIT.read_text(encoding="utf-8"))
-    _assert(audit["status"] == "passed", "formal distribution gate")
-    _assert(all(audit["checks"].values()), "formal checks")
     closeout = json.loads(CLOSEOUT.read_text(encoding="utf-8"))
-    _assert(closeout["status"] == "passed", "formal closeout")
+    failed_checks = sorted(
+        key for key, value in audit["checks"].items() if not value
+    )
+    if audit["status"] == "passed":
+        _assert(not failed_checks, "passed audit has failed checks")
+        _assert(closeout["status"] == "passed", "formal passed closeout")
+    else:
+        _assert(
+            failed_checks
+            == ["sorted_gap", "split_pre_solve_parameter_ks"],
+            "unexpected formal qualification failures",
+        )
+        _assert(
+            closeout["status"] == "qualification_failed",
+            "formal failed closeout",
+        )
+        _assert(
+            closeout["decision"]["formal_dataset_qualified"] is False
+            and closeout["decision"]["automatic_retry_started"] is False,
+            "failed dataset lifecycle",
+        )
     artifact_manifest = json.loads(ARTIFACTS.read_text(encoding="utf-8"))
+    _assert(
+        artifact_manifest["status"] == closeout["status"],
+        "artifact/closeout status",
+    )
     for artifact in artifact_manifest["artifacts"]:
         path = ROOT / artifact["path"]
         _assert(path.is_file(), f"artifact missing: {artifact['path']}")

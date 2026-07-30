@@ -34,6 +34,22 @@
     {"path": "configs/heat3d_v6_p1i/v6_p1i_background_k_contract.csv", "sha256": "a0f504ceea7aa9b0a7ac1eea70a7be31a849a561e114d2fe8e5859c8cadbf703"},
     {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_closeout.json", "sha256": "da20d2b25654da0937f76eab29b8849d1fe99b903f6a3adf9306b0edd85dbfc5"}
   ],
+  "implementation_amendments": [
+    {
+      "path": "scripts/audit_heat3d_v6_p1i_distribution.py",
+      "original_frozen_sha256": "c1053fd4c50924c31f70d695d19a190482dac519808117d9ab93f459b63ce947",
+      "effective_sha256": "5c4b043942d58f27605a6a48022728b499e7de30ced2e96ece15a648151a3e31",
+      "reason": "The frozen implementation incorrectly hard-coded a 128-row input assertion and 128-row Markdown denominator. The amendment reads the already-frozen sample_count from the acceptance contract and does not alter physics, samples, split assignment, thresholds, or computed metric formulas.",
+      "discovered_after_generation": true
+    },
+    {
+      "path": "scripts/check_heat3d_v6_p1i_formal1024.py",
+      "original_frozen_sha256": "1d3e23caa97e23bfebe0aa79657c8d1728ba435f93fc578d13886c06874408d1",
+      "effective_sha256": "08c5e089d0d0e3175c38dce4790ad335ce6071562d19f5ee5c793c43a84c4d04",
+      "reason": "The checker now verifies explicitly recorded effective hashes for post-freeze implementation-only amendments while retaining every original frozen hash, and validates the frozen-gate failure lifecycle without treating generation completion as qualification.",
+      "discovered_after_generation": true
+    }
+  ],
   "guardrails": {
     "frozen_v6_modified": false,
     "post_solve_filtering_or_replacement": false,
