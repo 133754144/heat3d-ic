@@ -1,0 +1,45 @@
+{
+  "schema_version": "heat3d_v6_p1i_formal1024_freeze_v1",
+  "status": "frozen_before_generation",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v0",
+  "protocol_commit": "35331e9e6db251ee043447f27bd1850ae52c5ff5",
+  "sample_count": 1024,
+  "sobol_seed": 612804,
+  "split_contract": {
+    "method": "hash_within_sobol_octets",
+    "block_size": 8,
+    "roles_per_block": {"train": 6, "valid_iid": 1, "test_iid": 1},
+    "total_counts": {"train": 768, "valid_iid": 128, "test_iid": 128},
+    "target_values_used": false
+  },
+  "preflight": {
+    "status": "passed",
+    "sample_count": 1024,
+    "package_power_W": [1.7933213191678559, 19.051183239764203],
+    "q_W_m3": [1028142970.2909135, 34173294375.199577],
+    "minimum_source_control_volume_count": 200,
+    "minimum_support_nodes_per_region": 3,
+    "solver_runs": 0,
+    "training_runs": 0,
+    "model_inference_runs": 0
+  },
+  "frozen_artifacts": [
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v0.yaml", "sha256": "a2bc00e4618786914fb72e7341fd05808210f0be76180261ff09e77e976eddf3"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_acceptance.json", "sha256": "6707e2aa24e0c366f5547aed90e68261de4bfb9709a265727d826f398ecae394"},
+    {"path": "scripts/heat3d_v6_p1i_continuous_core.py", "sha256": "d9a16ad59ffc4bb2c0bbf6457aaa53c1f5ce6d916d75a753b83fe15d8df9145a"},
+    {"path": "scripts/generate_heat3d_v6_p1i_continuous_dataset.py", "sha256": "52ca0bbd2edf2f60befee856fd6e5012b3e7c2c75f9607ace9dd014a0268fb96"},
+    {"path": "scripts/audit_heat3d_v6_p1i_distribution.py", "sha256": "c1053fd4c50924c31f70d695d19a190482dac519808117d9ab93f459b63ce947"},
+    {"path": "scripts/check_heat3d_v6_p1i_formal1024.py", "sha256": "1d3e23caa97e23bfebe0aa79657c8d1728ba435f93fc578d13886c06874408d1"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_literature.json", "sha256": "88f8e5fe299c2045e0a21563bbe33ae6c6e28083f829a4c3ff32398751170b6a"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_background_k_contract.csv", "sha256": "a0f504ceea7aa9b0a7ac1eea70a7be31a849a561e114d2fe8e5859c8cadbf703"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_closeout.json", "sha256": "da20d2b25654da0937f76eab29b8849d1fe99b903f6a3adf9306b0edd85dbfc5"}
+  ],
+  "guardrails": {
+    "frozen_v6_modified": false,
+    "post_solve_filtering_or_replacement": false,
+    "per_sample_Rth_backsolve": false,
+    "model_error_selection": false,
+    "training_runs": 0,
+    "model_inference_runs": 0
+  }
+}
