@@ -1,0 +1,76 @@
+{
+  "schema_version": "heat3d_v6_p1i_pilot_closeout_v1",
+  "attempt_id": "pilot128_v1",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics128_v1",
+  "protocol_commit": "f604c13",
+  "sobol_seed": 612802,
+  "sample_count": 128,
+  "generation_elapsed_seconds": 277.71082520799246,
+  "status": "failed_distribution_gate",
+  "physics_qc": {
+    "passed": true,
+    "maximum_abs_energy_balance_relative_error": 1.0600704986396254e-10,
+    "maximum_linear_residual": 1.2730386734759973e-10,
+    "minimum_support_nodes_per_region": 4,
+    "all_finite": true
+  },
+  "temperature_distribution": {
+    "deltaT_max_K": {
+      "minimum": 15.069893689779008,
+      "q05": 22.068759682809986,
+      "median": 49.534035837459584,
+      "q95": 102.19177471453617,
+      "maximum": 142.39857922525204
+    },
+    "deltaT_mean_K": {
+      "minimum": 10.309105582543783,
+      "median": 36.529718522922096,
+      "maximum": 121.3435806018247
+    },
+    "deltaT_cv_rms_K": {
+      "minimum": 10.474516097397824,
+      "median": 36.99010686328713,
+      "maximum": 121.92657547904217
+    },
+    "inside_30_150_count": 108,
+    "inside_30_150_fraction": 0.84375,
+    "outside_20_180_count": 4,
+    "histogram_30_150_counts": [20, 25, 11, 16, 8, 11, 10, 2, 2, 1, 1, 1],
+    "histogram_nonzero_max_min_ratio": 25.0,
+    "maximum_sorted_gap_K": 10.735705925591162,
+    "kde_mode_count": 1,
+    "four_cluster_pattern_detected": false
+  },
+  "dominant_peak_correlations": {
+    "top_h_spearman_rho": -0.7527410272843802,
+    "package_power_spearman_rho": 0.6185394158579014,
+    "max_q_spearman_rho": 0.4993877037172679,
+    "bottom_h_spearman_rho": 0.04536714887383263
+  },
+  "decision": {
+    "formal1024_allowed": false,
+    "formal1024_generated": false,
+    "sample_filtering_or_replacement_performed": false,
+    "next_revision_not_implemented": true,
+    "recommended_next_global_rule": "Use one preregistered continuous severity variable and a global pre-solve power/cooling correlation to counter the dominant top-h dependence; freeze a new config and seed before any solve. Do not change individual samples or infer Rth per sample."
+  },
+  "artifacts": {
+    "config": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1.yaml",
+    "manifest": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1_manifest.json",
+    "samples_csv": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1_samples.csv",
+    "regions_csv": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1_regions.csv",
+    "background_k_samples_csv": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1_background_k_samples.csv",
+    "correlations_csv": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1_correlations.csv",
+    "distribution_audit_json": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1_distribution_audit.json",
+    "distribution_report": "docs/v6_p1i_pilot128_v1_distribution_audit.md",
+    "figure": "docs/v6_p1i_pilot128_v1_distribution.png",
+    "local_dataset_root": "data/heat3d_v6_p1i_continuous_physics128_v1"
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "frozen_v6_modified": false,
+    "test_labels_used_for_design": false
+  }
+}
+

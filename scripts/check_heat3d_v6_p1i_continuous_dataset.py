@@ -25,6 +25,9 @@ BACKGROUND = CONFIG_DIR / "v6_p1i_background_k_contract.csv"
 LITERATURE = CONFIG_DIR / "v6_p1i_literature.json"
 MANIFEST = CONFIG_DIR / "v6_p1i_pilot128_v1_manifest.json"
 AUDIT = CONFIG_DIR / "v6_p1i_pilot128_v1_distribution_audit.json"
+CLOSEOUT = CONFIG_DIR / "v6_p1i_pilot128_v1_closeout.json"
+ATTEMPTS = CONFIG_DIR / "v6_p1i_generation_attempts.csv"
+ARTIFACT_MANIFEST = CONFIG_DIR / "v6_p1i_pilot128_v1_artifact_manifest.json"
 
 
 def _assert(condition: bool, message: str) -> None:
@@ -97,7 +100,13 @@ def _artifact_contract(config: dict[str, Any]) -> None:
         manifest["config_sha256"] == core.file_sha256(CONFIG),
         "config hash drift",
     )
-    dataset_root = Path(manifest["dataset_root"])
+    hash_payload = copy.deepcopy(manifest)
+    expected_payload_hash = hash_payload.pop("manifest_payload_sha256")
+    _assert(
+        core.canonical_json_sha256(hash_payload) == expected_payload_hash,
+        "manifest payload hash drift",
+    )
+    dataset_root = ROOT / manifest["dataset_root"]
     _assert(dataset_root.exists(), "dataset root missing")
     _assert(len(manifest["samples"]) == 128, "sample manifest count")
     ids = set()
@@ -133,6 +142,40 @@ def _artifact_contract(config: dict[str, Any]) -> None:
         audit["guardrails"]["formal1024_generated"] is False,
         "formal1024 must remain blocked",
     )
+    _assert(CLOSEOUT.exists(), "pilot closeout missing")
+    closeout = json.loads(CLOSEOUT.read_text(encoding="utf-8"))
+    _assert(
+        closeout["status"] == "failed_distribution_gate",
+        "closeout status must preserve failed gate",
+    )
+    _assert(
+        closeout["decision"]["formal1024_allowed"] is False,
+        "formal1024 must remain disallowed",
+    )
+    with ATTEMPTS.open(encoding="utf-8", newline="") as handle:
+        attempts = {row["attempt_id"]: row for row in csv.DictReader(handle)}
+    _assert(
+        attempts["pilot128_v0"]["status"] == "failed_generator_geometry_gate",
+        "v0 failure provenance missing",
+    )
+    _assert(
+        attempts["pilot128_v1"]["status"] == "failed_distribution_gate",
+        "v1 failure provenance missing",
+    )
+    artifact_manifest = json.loads(
+        ARTIFACT_MANIFEST.read_text(encoding="utf-8")
+    )
+    _assert(
+        artifact_manifest["formal1024_allowed"] is False,
+        "artifact manifest opened formal1024",
+    )
+    for artifact in artifact_manifest["artifacts"]:
+        path = ROOT / artifact["path"]
+        _assert(path.is_file(), f"artifact missing: {artifact['path']}")
+        _assert(
+            core.file_sha256(path) == artifact["sha256"],
+            f"artifact SHA drift: {artifact['path']}",
+        )
 
 
 def main() -> int:

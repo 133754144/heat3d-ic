@@ -563,7 +563,7 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
         "config_path": str(config_path.relative_to(ROOT)),
         "config_sha256": core.file_sha256(config_path),
         "config_payload_sha256": core.canonical_json_sha256(config),
-        "dataset_root": str(dataset_dir),
+        "dataset_root": str(dataset_dir.relative_to(ROOT)),
         "sobol": {
             "seed": int(config["sampling"]["seed"]),
             "dimensions": dimensions,
