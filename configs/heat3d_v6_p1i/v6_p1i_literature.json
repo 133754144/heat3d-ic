@@ -1,0 +1,69 @@
+{
+  "schema_version": "heat3d_v6_p1i_literature_v1",
+  "rules": {
+    "primary_or_authoritative_sources_preferred": true,
+    "reference_value_distinguished_from_sampling_envelope": true,
+    "engineering_interpolation_explicitly_labeled": true,
+    "uncited_silent_defaults_forbidden": true
+  },
+  "sources": [
+    {
+      "id": "P1I-L01",
+      "title": "Modeling, Analysis, Design, and Tests for Electronics Packaging beyond Moore, Chapter 3",
+      "year": 2019,
+      "type": "authoritative_book_chapter_package_model",
+      "url": "https://www.sciencedirect.com/science/article/pii/B9780081025321000032",
+      "evidence": "Tables 3.3.1-3.3.2 provide the frozen effective package-stack values used by P1c/P1h: PCB 0.8/0.3, BT substrate 0.2/0.49, interposer 148.3/151.0, bump-underfill 0.6/4.9 W/(m K).",
+      "use": "reference values; surrounding ranges are explicitly engineering uncertainty envelopes, not direct measured ranges"
+    },
+    {
+      "id": "P1I-L02",
+      "title": "Quasi-3D Thermal Simulation of Integrated Circuit Systems in Packages",
+      "year": 2020,
+      "type": "peer_reviewed_primary_method_and_package_case",
+      "doi": "10.3390/en13123054",
+      "url": "https://doi.org/10.3390/en13123054",
+      "evidence": "Table 1: silicon 150, solder 50, copper 385, molding 0.6 W/(m K); package and PCB heat paths are explicitly represented.",
+      "use": "silicon/copper endpoints and package-path plausibility"
+    },
+    {
+      "id": "P1I-L03",
+      "title": "Temperature-Aware Microarchitecture: Modeling and Implementation",
+      "year": 2008,
+      "type": "peer_reviewed_primary_thermal_model_validation",
+      "url": "https://www.cs.virginia.edu/~skadron/Papers/hotspot_tc08.pdf",
+      "evidence": "Silicon is approximately 100 W/(m K), while typical TIM is below 10 W/(m K); the V6 TIM range remains within the previously used 1.33-7.5 W/(m K) model bracket.",
+      "use": "silicon lower endpoint and TIM order-of-magnitude envelope"
+    },
+    {
+      "id": "P1I-L04",
+      "title": "Compact Thermal Modelling Tool for Fast Design Space Exploration of 3D ICs with Integrated Microchannels",
+      "year": 2020,
+      "type": "peer_reviewed_primary_compact_model",
+      "doi": "10.3390/en13092217",
+      "url": "https://doi.org/10.3390/en13092217",
+      "evidence": "Uses silicon k=130 and copper spreader k=400 W/(m K), and explicitly models a weak secondary package path.",
+      "use": "silicon/copper interior reference and asymmetric-cooling plausibility"
+    },
+    {
+      "id": "P1I-L05",
+      "title": "3D-ICE 4.0: Accurate and efficient thermal modeling for 2.5D/3D heterogeneous chiplet systems",
+      "year": 2026,
+      "type": "peer_reviewed_primary_solver_method",
+      "url": "https://infoscience.epfl.ch/entities/publication/12080437-8e93-46c4-a15f-b6020057d1ab",
+      "evidence": "Preserves material heterogeneity and anisotropy and uses adaptive vertical partitioning for heterogeneous package stacks.",
+      "use": "method support for explicit anisotropic per-layer fields; not a numeric conductivity source"
+    }
+  ],
+  "sampling_interpretation": {
+    "log_uniform": "used for positive quantities spanning a multiplicative range, including TIM, local k, and Robin h",
+    "correlated_axes": "one Sobol latent drives kxy and kz together for effective anisotropic layers, preserving the reference ordering instead of independently scrambling axes",
+    "continuous_power": "package power is sampled continuously and independently of boundary-condition family; q follows exactly from power fractions and resolved source volume",
+    "not_claimed": [
+      "Every point inside an engineering envelope is a measured material value",
+      "A uniform Robin coefficient represents all package cooling hardware",
+      "The generator targets temperature by per-sample Rth inversion"
+    ]
+  }
+}
+

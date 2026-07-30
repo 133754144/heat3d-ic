@@ -1,0 +1,37 @@
+{
+  "schema_version": "heat3d_v6_p1i_pilot_acceptance_v1",
+  "frozen_before_generation": true,
+  "sample_count": 128,
+  "temperature_coverage": {
+    "primary_interval_K": [30.0, 150.0],
+    "minimum_inside_primary_fraction": 0.9,
+    "outer_safety_interval_K": [20.0, 180.0],
+    "maximum_outside_outer_count": 0,
+    "histogram_equal_width_bins": 12,
+    "maximum_internal_empty_bins": 0,
+    "maximum_nonzero_bin_count_ratio": 5.0,
+    "maximum_sorted_peak_gap_K": 22.0,
+    "forbidden_kde_mode_count": 4,
+    "maximum_kde_mode_count": 3
+  },
+  "physics_qc": {
+    "maximum_abs_energy_balance_relative_error": 1e-6,
+    "maximum_linear_residual": 1e-7,
+    "minimum_source_nodes_per_source": 16,
+    "minimum_support_nodes_per_local_region": 1,
+    "all_values_finite": true
+  },
+  "design_qc": {
+    "sobol_only": true,
+    "discrete_temperature_bins_forbidden": true,
+    "per_sample_power_backsolve_forbidden": true,
+    "post_solve_filter_or_replacement_forbidden": true,
+    "missing_background_k_must_raise": true,
+    "split_assignment_independent_of_labels": true
+  },
+  "decision": {
+    "formal1024_generation_allowed_only_if_all_gates_pass": true,
+    "report_pilot_before_formal_decision": true
+  }
+}
+

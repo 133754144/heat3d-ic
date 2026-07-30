@@ -1,0 +1,11 @@
+layer_id,material_meaning,reference_kx_W_mK,reference_ky_W_mK,reference_kz_W_mK,continuous_kx_range_W_mK,continuous_ky_range_W_mK,continuous_kz_range_W_mK,distribution,fallback_logic,evidence_class,source_ids
+pcb_fr4_equivalent,via-bearing FR-4 PCB equivalent,0.8,0.8,0.3,0.64-1.0,0.64-1.0,0.24-0.375,correlated_log_uniform_axes,explicit sampled layer background only; missing value is fatal,engineering_uncertainty_envelope_around_package_table,P1I-L01
+bt_substrate_with_vias,via-bearing BT substrate equivalent,0.2,0.2,0.49,0.16-0.25,0.16-0.25,0.392-0.6125,correlated_log_uniform_axes,explicit sampled layer background only; missing value is fatal,engineering_uncertainty_envelope_around_package_table,P1I-L01
+silicon_interposer_tsv_0p1,silicon interposer with TSV effective conductivity,148.3,148.3,151.0,120-150,120-150,120-155,correlated_linear_axes,explicit sampled layer background only; local k regions may overwrite active-die nodes only,peer_reviewed_material_envelope_plus_engineering_effective_range,P1I-L01|P1I-L02|P1I-L04
+bump_underfill_under_interposer,bump and underfill effective layer,0.6,0.6,4.9,0.48-0.75,0.48-0.75,3.92-6.125,correlated_log_uniform_axes,explicit sampled layer background only; missing value is fatal,engineering_uncertainty_envelope_around_package_table,P1I-L01
+silicon_die_lower,active silicon die background,120,120,120,100-150,100-150,100-150,isotropic_linear,explicit sampled layer background; local k regions overwrite only their masks,peer_reviewed_direct_material_range,P1I-L02|P1I-L03|P1I-L05
+tim_between_dies,thermal interface material,4,4,4,1.33-7.5,1.33-7.5,1.33-7.5,isotropic_log_uniform,explicit sampled layer background only; missing value is fatal,peer_reviewed_model_range,P1I-L03
+silicon_die_upper,active silicon die background,120,120,120,100-150,100-150,100-150,isotropic_linear,explicit sampled layer background; local k regions overwrite only their masks,peer_reviewed_direct_material_range,P1I-L02|P1I-L03|P1I-L05
+tim_to_spreader,thermal interface material,4,4,4,1.33-7.5,1.33-7.5,1.33-7.5,isotropic_log_uniform,explicit sampled layer background only; missing value is fatal,peer_reviewed_model_range,P1I-L03
+spreader,copper heat spreader,400,400,400,385-400,385-400,385-400,isotropic_linear,explicit sampled layer background only; missing value is fatal,peer_reviewed_direct_material_range,P1I-L02|P1I-L04
+
