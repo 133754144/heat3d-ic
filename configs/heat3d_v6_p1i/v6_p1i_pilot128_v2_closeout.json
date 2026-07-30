@@ -1,0 +1,74 @@
+{
+  "schema_version": "heat3d_v6_p1i_pilot_closeout_v1",
+  "attempt_id": "pilot128_v2",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics128_v2",
+  "protocol_commit": "2784243",
+  "sobol_seed": 612803,
+  "sample_count": 128,
+  "generation_elapsed_seconds": 281.8512001669733,
+  "status": "passed",
+  "physics_qc": {
+    "passed": true,
+    "maximum_abs_energy_balance_relative_error": 9.98514417989722e-11,
+    "maximum_linear_residual": 1.1018609201341159e-10,
+    "minimum_support_nodes_per_region": 4,
+    "minimum_source_control_volume_count": 240,
+    "all_finite": true
+  },
+  "temperature_distribution": {
+    "deltaT_max_K": {
+      "minimum": 35.38921330947494,
+      "q05": 41.930528277732726,
+      "median": 93.67211784236639,
+      "q95": 146.42251866941925,
+      "maximum": 166.76503895610546
+    },
+    "deltaT_mean_K": {
+      "minimum": 26.520831024001968,
+      "median": 74.26910394445014,
+      "maximum": 132.75664645640276
+    },
+    "deltaT_cv_rms_K": {
+      "minimum": 26.594767751907366,
+      "median": 75.13026799418552,
+      "maximum": 133.04849709943318
+    },
+    "inside_30_150_count": 124,
+    "inside_30_150_fraction": 0.96875,
+    "outside_20_180_count": 0,
+    "histogram_30_150_counts": [5, 8, 12, 11, 13, 10, 9, 10, 13, 11, 12, 10],
+    "histogram_nonzero_max_min_ratio": 2.6,
+    "maximum_sorted_gap_K": 8.67264045852454,
+    "kde_mode_count": 2,
+    "kde_mode_locations_K": [69.15851272015655, 116.75146771037181],
+    "four_cluster_pattern_detected": false
+  },
+  "split_descriptive_peak_deltaT_K": {
+    "train": {"count": 96, "q05": 42.561565925687006, "median": 92.1875520982752, "q95": 144.87655417744878},
+    "valid_iid": {"count": 16, "q05": 50.07597130535221, "median": 107.59160081631748, "q95": 148.44766511584606},
+    "test_iid": {"count": 16, "q05": 39.35715545665103, "median": 89.43836436608325, "q95": 139.57646155482365}
+  },
+  "correlation_closeout": {
+    "severity_peak_spearman_rho": 0.9849329335286576,
+    "package_power_peak_spearman_rho": 0.7969179179637428,
+    "max_q_peak_spearman_rho": 0.5376304706097783,
+    "top_h_peak_spearman_rho_after_global_correction": -0.03543879326130745,
+    "largest_abs_background_kz_peak_spearman_rho": 0.048417185497161695
+  },
+  "decision": {
+    "pilot_acceptance_passed": true,
+    "eligible_for_formal1024_protocol_freeze": true,
+    "formal1024_allowed": false,
+    "formal1024_generated": false,
+    "reason_formal_still_closed": "pilot result must be reported before the formal1024 decision",
+    "sample_filtering_or_replacement_performed": false
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "frozen_v6_modified": false,
+    "per_sample_Rth_backsolve": false,
+    "test_labels_used_for_design": false
+  }
+}
+

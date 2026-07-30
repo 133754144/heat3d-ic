@@ -84,7 +84,10 @@ def _summary(values: np.ndarray) -> dict[str, Any]:
 
 
 def audit(
-    samples_path: Path, acceptance_path: Path, dataset_id: str
+    samples_path: Path,
+    acceptance_path: Path,
+    dataset_id: str,
+    background_path: Path | None = None,
 ) -> dict[str, Any]:
     rows = _read_csv(samples_path)
     if len(rows) != 128:
@@ -172,7 +175,9 @@ def audit(
             ),
         }
     )
-    parameter_names = (
+    parameter_values: dict[str, np.ndarray] = {
+        name: np.asarray([float(row[name]) for row in rows])
+        for name in (
         "package_total_power_W",
         "top_h_W_m2K",
         "bottom_h_W_m2K",
@@ -182,10 +187,25 @@ def audit(
         "mean_local_k_W_mK",
         "source_count",
         "k_region_count",
-    )
+        )
+    }
+    if "continuous_severity" in rows[0]:
+        parameter_values["continuous_severity"] = np.asarray(
+            [float(row["continuous_severity"]) for row in rows]
+        )
+    if background_path is not None and background_path.exists():
+        background_rows = _read_csv(background_path)
+        by_sample: dict[str, dict[str, float]] = {}
+        for row in background_rows:
+            by_sample.setdefault(row["sample_id"], {})[
+                f"background_kz_{row['layer_id']}_W_mK"
+            ] = float(row["background_kz_W_mK"])
+        for name in sorted(next(iter(by_sample.values()))):
+            parameter_values[name] = np.asarray(
+                [by_sample[row["sample_id"]][name] for row in rows]
+            )
     correlation_rows = []
-    for parameter in parameter_names:
-        x = np.asarray([float(row[parameter]) for row in rows])
+    for parameter, x in parameter_values.items():
         for metric, y in metrics.items():
             pearson = pearsonr(x, y)
             spearman = spearmanr(x, y)
@@ -199,6 +219,25 @@ def audit(
                     "spearman_p": float(spearman.pvalue),
                 }
             )
+    split_summaries: dict[str, Any] = {}
+    for role in ("train", "valid_iid", "test_iid"):
+        mask = np.asarray([row["split_role"] == role for row in rows])
+        split_summaries[role] = {
+            "sample_count": int(np.sum(mask)),
+            "metrics": {
+                name: _summary(values[mask])
+                for name, values in metrics.items()
+            },
+            "package_total_power_W": _summary(
+                parameter_values["package_total_power_W"][mask]
+            ),
+            "top_h_W_m2K": _summary(
+                parameter_values["top_h_W_m2K"][mask]
+            ),
+            "bottom_h_W_m2K": _summary(
+                parameter_values["bottom_h_W_m2K"][mask]
+            ),
+        }
     output = {
         "schema_version": "heat3d_v6_p1i_distribution_audit_v1",
         "dataset_id": dataset_id,
@@ -214,6 +253,7 @@ def audit(
             "minimum_support_nodes_per_region": int(np.min(support)),
         },
         "correlations": correlation_rows,
+        "split_summaries": split_summaries,
         "guardrails": {
             "training_runs": 0,
             "model_inference_runs": 0,
@@ -312,11 +352,20 @@ def main() -> int:
     parser.add_argument("--acceptance", type=Path, default=DEFAULT_ACCEPTANCE)
     parser.add_argument("--artifact-prefix", default=DEFAULT_PREFIX)
     parser.add_argument("--dataset-id", default=DEFAULT_DATASET_ID)
+    parser.add_argument("--background", type=Path)
     args = parser.parse_args()
-    report = audit(
-        args.samples.resolve(), args.acceptance.resolve(), args.dataset_id
-    )
     prefix = str(args.artifact_prefix)
+    background_path = (
+        args.background.resolve()
+        if args.background
+        else CONFIG_DIR / f"{prefix}_background_k_samples.csv"
+    )
+    report = audit(
+        args.samples.resolve(),
+        args.acceptance.resolve(),
+        args.dataset_id,
+        background_path,
+    )
     _json(CONFIG_DIR / f"{prefix}_distribution_audit.json", report)
     _csv(
         CONFIG_DIR / f"{prefix}_correlations.csv",

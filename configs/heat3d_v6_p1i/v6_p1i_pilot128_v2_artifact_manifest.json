@@ -1,0 +1,37 @@
+{
+  "schema_version": "heat3d_v6_p1i_artifact_manifest_v1",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics128_v2",
+  "status": "passed_eligible_pending_formal_decision",
+  "protocol_commit": "2784243",
+  "sobol_seed": 612803,
+  "sample_count": 128,
+  "formal1024_allowed": false,
+  "formal1024_generated": false,
+  "artifacts": [
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2.yaml", "sha256": "a21bc9f898c2478e0199b1968e15765068856fecd24887d4c220ecbcf0006b04"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_manifest.json", "sha256": "72a1a4870396483a9faee054f0e82111c593dd70e16d1ab700d60688912f6b77"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_samples.csv", "sha256": "9138509a310a9761fe9d0a6875bcdf944ac8427f5f1905ab12d151221205ef88"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_regions.csv", "sha256": "2abd995558c681f1d5d7db4cc15f6c1e2d6070eb89fb2a6bdb3aa51478c65b5d"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_background_k_samples.csv", "sha256": "823c36572221d8ee33e812e3b6baa4e0d27a5a5d74aa191c6f2a4f8da0bb07cf"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_correlations.csv", "sha256": "d6d255f1ebfef1879c4ab293e86b751d53dce274db0cf6c1af0c5e1e729fe160"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_distribution_audit.json", "sha256": "d25cd9fbb55e947b277d3caadb834a8f3390dc2a046f9b5e6f305ae38cbf52d1"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2_closeout.json", "sha256": "da20d2b25654da0937f76eab29b8849d1fe99b903f6a3adf9306b0edd85dbfc5"},
+    {"path": "docs/v6_p1i_pilot128_v2_distribution.png", "sha256": "c0ea6510eb443bd2719a3f8a07350f9ac579115f51a12afcad41165f4850bf95"},
+    {"path": "docs/v6_p1i_pilot128_v2_distribution_audit.md", "sha256": "6d6c76b114f9c90f5e5189a33547f00b895084f0cc3abdce002c7677310cbb0e"},
+    {"path": "docs/v6_p1i_pilot128_v2_closeout.md", "sha256": "1f9bde4f2cc6a3a56b1651382c50ad293d8e180b632faa0c8303cf89d6c0d74c"}
+  ],
+  "ignored_dataset": {
+    "path": "data/heat3d_v6_p1i_continuous_physics128_v2",
+    "size_MiB_approx": 23,
+    "sample_directory_count": 128,
+    "tracked": false
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "frozen_v6_modified": false,
+    "per_sample_Rth_backsolve": false,
+    "test_labels_used_for_design": false,
+    "post_solve_filtering_or_replacement": false
+  }
+}
