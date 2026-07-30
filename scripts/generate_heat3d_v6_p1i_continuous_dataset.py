@@ -28,7 +28,7 @@ import heat3d_v6_p1i_continuous_core as core
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = (
-    ROOT / "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1.yaml"
+    ROOT / "configs/heat3d_v6_p1i/v6_p1i_pilot128_v2.yaml"
 )
 RESULT_DIR = ROOT / "configs/heat3d_v6_p1i"
 ARRAY_FILES = (
@@ -116,6 +116,8 @@ def _rectangles(
     margin: float,
     gap: float,
     layer_probability: float,
+    size_bias: float | None = None,
+    size_bias_weight: float = 0.0,
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     by_layer: dict[str, list[list[float]]] = {
@@ -130,8 +132,19 @@ def _rectangles(
                 if cursor.take() < layer_probability
                 else "silicon_die_lower"
             )
-            width = _lerp(width_range, cursor.take())
-            height = _lerp(height_range, cursor.take())
+            width_u = cursor.take()
+            height_u = cursor.take()
+            if size_bias is not None:
+                width_u = (
+                    (1.0 - size_bias_weight) * width_u
+                    + size_bias_weight * float(size_bias)
+                )
+                height_u = (
+                    (1.0 - size_bias_weight) * height_u
+                    + size_bias_weight * float(size_bias)
+                )
+            width = _lerp(width_range, width_u)
+            height = _lerp(height_range, height_u)
             cx = margin + (1.0 - 2.0 * margin) * cursor.take()
             cy = margin + (1.0 - 2.0 * margin) * cursor.take()
             x0 = max(margin, min(cx - width / 2.0, 1.0 - margin - width))
@@ -264,7 +277,27 @@ def _case_from_sobol(
     bottom_h = _log_lerp(
         sampling["bottom_h_W_m2K"]["range"], cursor.take()
     )
-    power = _lerp(sampling["power_W"]["range"], cursor.take())
+    severity = cursor.take()
+    power_spec = sampling["power_W"]
+    if power_spec["distribution"] == "continuous_uniform":
+        power = _lerp(power_spec["range"], severity)
+    elif (
+        power_spec["distribution"]
+        == "continuous_severity_top_h_power_law"
+    ):
+        base_power = _lerp(power_spec["base_range_W"], severity)
+        power = base_power * (
+            top_h / float(power_spec["top_h_reference_W_m2K"])
+        ) ** float(power_spec["top_h_exponent"])
+        low, high = map(float, power_spec["allowed_range_W"])
+        if not low <= power <= high:
+            raise core.ContinuousPhysicsError(
+                f"global power law produced {power} W outside {low, high}"
+            )
+    else:
+        raise core.ContinuousPhysicsError(
+            f"unsupported power distribution: {power_spec['distribution']}"
+        )
     source_count = _count(
         sampling["source_count"]["range_inclusive"], cursor.take()
     )
@@ -280,6 +313,10 @@ def _case_from_sobol(
         margin=float(source_spec["center_margin"]),
         gap=float(source_spec["same_family_gap"]),
         layer_probability=source_layer_probability,
+        size_bias=severity,
+        size_bias_weight=float(
+            source_spec.get("size_severity_weight", 0.0)
+        ),
     )
     intensity_bounds = sampling["source_power_heterogeneity"]["range"]
     raw_power = []
@@ -322,6 +359,7 @@ def _case_from_sobol(
         "group_id": sample_id,
         "split_role": split_role,
         "package_total_power_W": power,
+        "continuous_severity": severity,
         "top_h_W_m2K": top_h,
         "bottom_h_W_m2K": bottom_h,
         "k_block_values_W_mK": k_values,
@@ -341,6 +379,7 @@ def _case_from_sobol(
         "top_h_W_m2K": top_h,
         "bottom_h_W_m2K": bottom_h,
         "package_total_power_W": power,
+        "continuous_severity": severity,
     }
     for row in background_rows:
         row["sample_id"] = sample_id
@@ -508,6 +547,7 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
                 "split_role": case["split_role"],
                 "sobol_index": index,
                 "package_total_power_W": metrics["package_total_power_W"],
+                "continuous_severity": case["continuous_severity"],
                 "top_h_W_m2K": case["top_h_W_m2K"],
                 "bottom_h_W_m2K": case["bottom_h_W_m2K"],
                 "source_count": len(source_rows),
@@ -586,12 +626,69 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
     return manifest
 
 
+def preflight(config_path: Path) -> dict[str, Any]:
+    config = core.load_config(config_path)
+    _protocol_checks(config)
+    sample_ids = [
+        f"v6p1i_{index:04d}" for index in range(int(config["sample_count"]))
+    ]
+    split_map = _split_map(sample_ids, config["split_counts"])
+    sampler = qmc.Sobol(
+        d=int(config["sampling"]["dimensions"]),
+        scramble=bool(config["sampling"]["scramble"]),
+        seed=int(config["sampling"]["seed"]),
+    )
+    values = sampler.random_base2(
+        int(math.log2(int(config["sample_count"])))
+    )
+    powers: list[float] = []
+    densities: list[float] = []
+    source_nodes: list[int] = []
+    support_nodes: list[int] = []
+    for index, sobol in enumerate(values):
+        case, group, physics, _ = _case_from_sobol(
+            index, sobol, config, split_map[sample_ids[index]]
+        )
+        mesh = core.build_mesh(physics)
+        layout = core.validate_layout(group, mesh)
+        _, _, rows = core.build_case_fields(case, group, mesh, layout)
+        support = core.select_group_support(
+            group,
+            mesh,
+            layout,
+            int(config["sampling"]["seed"]) + 1901,
+        )
+        q_rows = [row for row in rows if row["family"] == "q"]
+        powers.append(float(case["package_total_power_W"]))
+        densities.extend(float(row["q_W_m3"]) for row in q_rows)
+        source_nodes.extend(
+            int(row["control_volume_count"]) for row in q_rows
+        )
+        support_nodes.extend(map(int, support["block_coverage"]))
+    return {
+        "status": "passed",
+        "config": str(config_path.relative_to(ROOT)),
+        "sample_count": len(values),
+        "package_power_W": [min(powers), max(powers)],
+        "q_W_m3": [min(densities), max(densities)],
+        "minimum_source_control_volume_count": min(source_nodes),
+        "minimum_support_nodes_per_region": min(support_nodes),
+        "solver_runs": 0,
+        "training_runs": 0,
+        "model_inference_runs": 0,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output-root", type=Path, default=ROOT / "data")
     parser.add_argument("--replace", action="store_true")
+    parser.add_argument("--preflight-only", action="store_true")
     args = parser.parse_args()
+    if args.preflight_only:
+        print(json.dumps(preflight(args.config.resolve()), indent=2))
+        return 0
     manifest = generate(
         args.config.resolve(), args.output_root.resolve(), replace=args.replace
     )

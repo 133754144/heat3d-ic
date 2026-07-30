@@ -21,7 +21,9 @@ from scipy.stats import gaussian_kde, pearsonr, spearmanr
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "configs/heat3d_v6_p1i"
 DOCS_DIR = ROOT / "docs"
-DEFAULT_SAMPLES = CONFIG_DIR / "v6_p1i_pilot128_v1_samples.csv"
+DEFAULT_PREFIX = "v6_p1i_pilot128_v2"
+DEFAULT_DATASET_ID = "heat3d_v6_p1i_continuous_physics128_v2"
+DEFAULT_SAMPLES = CONFIG_DIR / f"{DEFAULT_PREFIX}_samples.csv"
 DEFAULT_ACCEPTANCE = CONFIG_DIR / "v6_p1i_pilot_acceptance.json"
 
 
@@ -81,7 +83,9 @@ def _summary(values: np.ndarray) -> dict[str, Any]:
     }
 
 
-def audit(samples_path: Path, acceptance_path: Path) -> dict[str, Any]:
+def audit(
+    samples_path: Path, acceptance_path: Path, dataset_id: str
+) -> dict[str, Any]:
     rows = _read_csv(samples_path)
     if len(rows) != 128:
         raise RuntimeError(f"expected 128 rows, found {len(rows)}")
@@ -197,7 +201,7 @@ def audit(samples_path: Path, acceptance_path: Path) -> dict[str, Any]:
             )
     output = {
         "schema_version": "heat3d_v6_p1i_distribution_audit_v1",
-        "dataset_id": "heat3d_v6_p1i_continuous_physics128_v1",
+        "dataset_id": dataset_id,
         "status": "passed" if all(checks.values()) else "failed",
         "checks": checks,
         "temperature_coverage": temperature_checks,
@@ -240,7 +244,7 @@ def _plot(report: Mapping[str, Any], samples_path: Path, output: Path) -> None:
         axis.set_ylabel("density")
         axis.grid(alpha=0.2)
     fig.suptitle(
-        f"V6-P1i pilot128 continuous coverage: {report['status']}"
+        f"{report['dataset_id']} continuous coverage: {report['status']}"
     )
     fig.tight_layout()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -252,7 +256,7 @@ def _markdown(report: Mapping[str, Any]) -> str:
     coverage = report["temperature_coverage"]
     summary = report["metric_summaries"]
     lines = [
-        "# V6-P1i pilot128 distribution audit",
+        f"# {report['dataset_id']} distribution audit",
         "",
         f"Status: **{report['status']}**.",
         "",
@@ -306,19 +310,24 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--samples", type=Path, default=DEFAULT_SAMPLES)
     parser.add_argument("--acceptance", type=Path, default=DEFAULT_ACCEPTANCE)
+    parser.add_argument("--artifact-prefix", default=DEFAULT_PREFIX)
+    parser.add_argument("--dataset-id", default=DEFAULT_DATASET_ID)
     args = parser.parse_args()
-    report = audit(args.samples.resolve(), args.acceptance.resolve())
-    _json(CONFIG_DIR / "v6_p1i_pilot128_v1_distribution_audit.json", report)
+    report = audit(
+        args.samples.resolve(), args.acceptance.resolve(), args.dataset_id
+    )
+    prefix = str(args.artifact_prefix)
+    _json(CONFIG_DIR / f"{prefix}_distribution_audit.json", report)
     _csv(
-        CONFIG_DIR / "v6_p1i_pilot128_v1_correlations.csv",
+        CONFIG_DIR / f"{prefix}_correlations.csv",
         report["correlations"],
     )
     _plot(
         report,
         args.samples.resolve(),
-        DOCS_DIR / "v6_p1i_pilot128_v1_distribution.png",
+        DOCS_DIR / f"{prefix}_distribution.png",
     )
-    (DOCS_DIR / "v6_p1i_pilot128_v1_distribution_audit.md").write_text(
+    (DOCS_DIR / f"{prefix}_distribution_audit.md").write_text(
         _markdown(report), encoding="utf-8"
     )
     print(json.dumps({"status": report["status"], "checks": report["checks"]}, indent=2))

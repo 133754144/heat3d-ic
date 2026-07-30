@@ -19,15 +19,15 @@ import heat3d_v6_p1i_continuous_core as core
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "configs/heat3d_v6_p1i"
-CONFIG = CONFIG_DIR / "v6_p1i_pilot128_v1.yaml"
+CONFIG = CONFIG_DIR / "v6_p1i_pilot128_v2.yaml"
 ACCEPTANCE = CONFIG_DIR / "v6_p1i_pilot_acceptance.json"
 BACKGROUND = CONFIG_DIR / "v6_p1i_background_k_contract.csv"
 LITERATURE = CONFIG_DIR / "v6_p1i_literature.json"
-MANIFEST = CONFIG_DIR / "v6_p1i_pilot128_v1_manifest.json"
-AUDIT = CONFIG_DIR / "v6_p1i_pilot128_v1_distribution_audit.json"
-CLOSEOUT = CONFIG_DIR / "v6_p1i_pilot128_v1_closeout.json"
+MANIFEST = CONFIG_DIR / "v6_p1i_pilot128_v2_manifest.json"
+AUDIT = CONFIG_DIR / "v6_p1i_pilot128_v2_distribution_audit.json"
+CLOSEOUT = CONFIG_DIR / "v6_p1i_pilot128_v2_closeout.json"
 ATTEMPTS = CONFIG_DIR / "v6_p1i_generation_attempts.csv"
-ARTIFACT_MANIFEST = CONFIG_DIR / "v6_p1i_pilot128_v1_artifact_manifest.json"
+ARTIFACT_MANIFEST = CONFIG_DIR / "v6_p1i_pilot128_v2_artifact_manifest.json"
 
 
 def _assert(condition: bool, message: str) -> None:
@@ -145,8 +145,8 @@ def _artifact_contract(config: dict[str, Any]) -> None:
     _assert(CLOSEOUT.exists(), "pilot closeout missing")
     closeout = json.loads(CLOSEOUT.read_text(encoding="utf-8"))
     _assert(
-        closeout["status"] == "failed_distribution_gate",
-        "closeout status must preserve failed gate",
+        closeout["status"] in {"passed", "failed_distribution_gate"},
+        "closeout status invalid",
     )
     _assert(
         closeout["decision"]["formal1024_allowed"] is False,
@@ -161,6 +161,11 @@ def _artifact_contract(config: dict[str, Any]) -> None:
     _assert(
         attempts["pilot128_v1"]["status"] == "failed_distribution_gate",
         "v1 failure provenance missing",
+    )
+    _assert(
+        attempts["pilot128_v2"]["status"]
+        in {"frozen_not_run", "passed", "failed_distribution_gate"},
+        "v2 lifecycle status invalid",
     )
     artifact_manifest = json.loads(
         ARTIFACT_MANIFEST.read_text(encoding="utf-8")
