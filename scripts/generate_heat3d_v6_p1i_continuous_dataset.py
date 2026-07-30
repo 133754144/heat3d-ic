@@ -28,7 +28,7 @@ import heat3d_v6_p1i_continuous_core as core
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = (
-    ROOT / "configs/heat3d_v6_p1i/v6_p1i_pilot128_v0.yaml"
+    ROOT / "configs/heat3d_v6_p1i/v6_p1i_pilot128_v1.yaml"
 )
 RESULT_DIR = ROOT / "configs/heat3d_v6_p1i"
 ARRAY_FILES = (
@@ -391,6 +391,7 @@ def _protocol_checks(config: Mapping[str, Any]) -> None:
 def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str, Any]:
     config = core.load_config(config_path)
     _protocol_checks(config)
+    artifact_prefix = str(config["artifact_prefix"])
     dataset_dir = output_root / str(config["dataset_id"])
     if dataset_dir.exists():
         if not replace:
@@ -544,10 +545,10 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
             f"peak={metrics['peak_deltaT_K']:.3f}K "
             f"residual={metrics['linear_residual']:.2e}"
         )
-    _csv(RESULT_DIR / "v6_p1i_pilot128_v0_samples.csv", sample_rows)
-    _csv(RESULT_DIR / "v6_p1i_pilot128_v0_regions.csv", region_rows)
+    _csv(RESULT_DIR / f"{artifact_prefix}_samples.csv", sample_rows)
+    _csv(RESULT_DIR / f"{artifact_prefix}_regions.csv", region_rows)
     _csv(
-        RESULT_DIR / "v6_p1i_pilot128_v0_background_k_samples.csv",
+        RESULT_DIR / f"{artifact_prefix}_background_k_samples.csv",
         background_rows,
     )
     manifest = {
@@ -580,7 +581,7 @@ def generate(config_path: Path, output_root: Path, *, replace: bool) -> dict[str
         "samples": sample_manifest,
     }
     manifest["manifest_payload_sha256"] = core.canonical_json_sha256(manifest)
-    manifest_path = RESULT_DIR / "v6_p1i_pilot128_v0_manifest.json"
+    manifest_path = RESULT_DIR / f"{artifact_prefix}_manifest.json"
     _json(manifest_path, manifest)
     return manifest
 

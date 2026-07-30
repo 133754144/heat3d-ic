@@ -21,7 +21,7 @@ from scipy.stats import gaussian_kde, pearsonr, spearmanr
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "configs/heat3d_v6_p1i"
 DOCS_DIR = ROOT / "docs"
-DEFAULT_SAMPLES = CONFIG_DIR / "v6_p1i_pilot128_v0_samples.csv"
+DEFAULT_SAMPLES = CONFIG_DIR / "v6_p1i_pilot128_v1_samples.csv"
 DEFAULT_ACCEPTANCE = CONFIG_DIR / "v6_p1i_pilot_acceptance.json"
 
 
@@ -197,7 +197,7 @@ def audit(samples_path: Path, acceptance_path: Path) -> dict[str, Any]:
             )
     output = {
         "schema_version": "heat3d_v6_p1i_distribution_audit_v1",
-        "dataset_id": "heat3d_v6_p1i_continuous_physics128_v0",
+        "dataset_id": "heat3d_v6_p1i_continuous_physics128_v1",
         "status": "passed" if all(checks.values()) else "failed",
         "checks": checks,
         "temperature_coverage": temperature_checks,
@@ -308,17 +308,17 @@ def main() -> int:
     parser.add_argument("--acceptance", type=Path, default=DEFAULT_ACCEPTANCE)
     args = parser.parse_args()
     report = audit(args.samples.resolve(), args.acceptance.resolve())
-    _json(CONFIG_DIR / "v6_p1i_pilot128_v0_distribution_audit.json", report)
+    _json(CONFIG_DIR / "v6_p1i_pilot128_v1_distribution_audit.json", report)
     _csv(
-        CONFIG_DIR / "v6_p1i_pilot128_v0_correlations.csv",
+        CONFIG_DIR / "v6_p1i_pilot128_v1_correlations.csv",
         report["correlations"],
     )
     _plot(
         report,
         args.samples.resolve(),
-        DOCS_DIR / "v6_p1i_pilot128_v0_distribution.png",
+        DOCS_DIR / "v6_p1i_pilot128_v1_distribution.png",
     )
-    (DOCS_DIR / "v6_p1i_pilot128_v0_distribution_audit.md").write_text(
+    (DOCS_DIR / "v6_p1i_pilot128_v1_distribution_audit.md").write_text(
         _markdown(report), encoding="utf-8"
     )
     print(json.dumps({"status": report["status"], "checks": report["checks"]}, indent=2))

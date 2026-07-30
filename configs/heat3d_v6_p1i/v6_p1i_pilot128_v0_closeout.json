@@ -1,0 +1,20 @@
+{
+  "schema_version": "heat3d_v6_p1i_attempt_closeout_v1",
+  "attempt_id": "pilot128_v0",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics128_v0",
+  "config_path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v0.yaml",
+  "sobol_seed": 612801,
+  "status": "failed_generator_geometry_gate",
+  "completed_sample_count": 7,
+  "failure_sample_id": "v6p1i_0007",
+  "failure": "underresolved k block: fewer than four in-plane solver intervals",
+  "partial_dataset_path": "data/heat3d_v6_p1i_continuous_physics128_v0",
+  "partial_results_used_as_formal_pilot": false,
+  "sample_replacement_performed": false,
+  "formal1024_allowed": false,
+  "global_revision": {
+    "minimum_k_region_width_height_fraction": "0.07 -> 0.085",
+    "continuous_power_range_W": "1.8-7.0 -> 2.5-7.5",
+    "reason": "ensure mesh-resolved local-k regions; remove an evident low-temperature tail through one global pre-solve rule rather than sample replacement"
+  }
+}
