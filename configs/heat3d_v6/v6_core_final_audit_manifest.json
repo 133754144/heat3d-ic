@@ -1,0 +1,89 @@
+{
+  "schema_version": "heat3d_v6_core_final_audit_manifest_v1",
+  "branch": "integration/v6-core-final-audit",
+  "base_main_commit": "332ef3f463d91442632c3ebddd4f7549c7895b8d",
+  "base_main_tree_sha1": "b08defef2c39910c7e52152039597ef482d77c19",
+  "prior_integration_branch": {
+    "branch": "integration/v6-core",
+    "commit": "82beed94dd217932677a2cbe7cb0e010b202b54c",
+    "tree_sha1": "b08defef2c39910c7e52152039597ef482d77c19",
+    "tree_identical_to_current_main": true
+  },
+  "external_state_correction": {
+    "main_already_contains_v6_before_this_goal": true,
+    "main_merge_commit": "332ef3f463d91442632c3ebddd4f7549c7895b8d",
+    "main_rewritten_or_reverted": false,
+    "new_merge_to_main_authorized": false,
+    "new_merge_to_main_performed": false
+  },
+  "frozen_evidence": {
+    "core_integration_manifest": {
+      "path": "configs/heat3d_v6/v6_core_integration_manifest.json",
+      "sha256": "b7dc58a946b233ee4fab9b2019b008c745f4c3896bcc7b3b1874235136682b52"
+    },
+    "phase_index": {
+      "path": "configs/heat3d_v6/v6_phase_index.json",
+      "sha256": "d196881f05090c7bb89d88c4ea32b585ddbf2f36586f6930f9926ab55a0ec63c"
+    },
+    "governance_amendment": {
+      "path": "configs/heat3d_v6/v6_governance_amendment.json",
+      "sha256": "f2a845d3b76a6c946d7ae43cca52ca29edef0e43371bb392786cf88434e35a51"
+    },
+    "canonical_config": {
+      "path": "configs/heat3d_v6/V6_03_V5best_P1h.yaml",
+      "sha256": "58f7aef0b49d289d55c7f82afaf8def33447c75bb8ea179a37f3b30c5ecd6390"
+    }
+  },
+  "governance": {
+    "hard": "preregistered IID stress subgroup within the already-opened corrected confirmatory holdout",
+    "resolution_16384": "highest IID-average full-field accuracy mode",
+    "fvm": "legal structured-FVM mesh sensitivity",
+    "true_ood_available": false
+  },
+  "decision_index_coverage": [
+    "P1a-P1h dataset lifecycle",
+    "V6_01-V6_04 model decisions",
+    "P1g-to-P1h canonical transition",
+    "failed volume-representative probe",
+    "Anchor-derived retention",
+    "sparse KD-tree and graph-cache retention",
+    "4096 default hotspot-oriented mode",
+    "8192 balanced full-field mode",
+    "16384 IID-average full-field accuracy mode",
+    "32768 experimental exclusion",
+    "corrected confirmatory holdout and hard governance"
+  ],
+  "stable_scope": {
+    "source_of_truth": "configs/heat3d_v6/v6_core_integration_manifest.json",
+    "allowlist_only": true,
+    "full_research_history_merged": false,
+    "frozen_v6_results_modified": false
+  },
+  "excluded": [
+    "data/**",
+    "new V6 output/**",
+    "checkpoints/**",
+    "logs/**",
+    "predictions/**",
+    "temporary worktrees",
+    "research-only registries",
+    "per-sample diagnostics"
+  ],
+  "inherited_main_exception": {
+    "path": "output/heat3d_ic/heat3d_operator_best.pkl",
+    "reason": "pre-existing tracked V5 integration fixture inherited from main; not a V6 output and not modified by this branch"
+  },
+  "validation": {
+    "v5_checker_count": 6,
+    "v5_checkers_passed": true,
+    "v6_core_checker_passed": true,
+    "canonical_config_dry_run_passed": true,
+    "python_compile_passed": true,
+    "json_yaml_csv_validation_passed": true,
+    "git_diff_check_passed": true,
+    "training_executed": false,
+    "model_inference_executed": false,
+    "test_hard_accessed": false
+  },
+  "status": "validated_no_new_main_merge"
+}
