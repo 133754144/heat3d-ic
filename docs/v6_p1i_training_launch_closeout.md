@@ -17,5 +17,5 @@ closed.
   test transfer failed badly (232.114% support and 218.229% full-field
   point-global CV-relative RMSE). This documents a model applicability boundary
   and was not used to alter P1i training.
-- Launch host `DESKTOP-2GE35DV`, PID `71870`, tmux
+- Launch host `DESKTOP-2GE35DV`, training PID `71882` (launcher PID `71870`), tmux
   `V6_05_V5best_P1i_seed0`; the run is not monitored to completion here.

@@ -18,7 +18,8 @@ def main() -> int:
     checks = {
         "running_e600": payload["status"] == row["execution_status"] == "running_e600",
         "training_commit_bound": row["training_commit"] == payload["training_commit"] == "93ea04a52b5cfcc1a9e9af027bcd6747151737ae",
-        "pid_bound": int(row["pid"]) == int(payload["launch"]["pid"]) == 71870,
+        "pid_bound": int(row["pid"]) == int(payload["launch"]["pid"]) == 71882,
+        "launcher_pid_bound": int(payload["launch"]["launcher_pid"]) == 71870,
         "full_field_frozen": payload["full_field"]["archive_sha256"] == "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
         "smokes_passed": payload["smoke"]["B8"]["status"] == payload["smoke"]["B16"]["status"] == "passed",
         "test_closed": row["test_access"] == "closed_audited_holdout" == payload["launch"]["test_role"],
