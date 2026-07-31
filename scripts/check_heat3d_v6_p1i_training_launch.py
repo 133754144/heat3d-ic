@@ -95,6 +95,16 @@ def check(dataset_root: Path) -> dict[str, Any]:
     checks["sample_count_1024"] = len(manifest_roles) == len(split) == 1024
     checks["split_counts_768_128_128"] = counts == Counter({"train": 768, "valid_iid": 128, "test_iid": 128})
     checks["split_exact_match"] = manifest_roles == split
+    file_failures: list[str] = []
+    checked_files = 0
+    for row in manifest["samples"]:
+        sample_dir = dataset_root / str(row["relative_path"])
+        for name, expected in row["file_sha256"].items():
+            checked_files += 1
+            path = sample_dir / name
+            if not path.is_file() or _sha(path) != expected:
+                file_failures.append(str(Path(row["relative_path"]) / name))
+    checks["dataset_9216_file_sha256"] = checked_files == 9216 and not file_failures
     dataset = Heat3DV6DualRobinDataset(
         dataset_root / "samples", MANIFEST, include_roles={"train", "valid_iid"}
     )
@@ -125,6 +135,10 @@ def check(dataset_root: Path) -> dict[str, Any]:
         "split_counts": dict(sorted(counts.items())),
         "materialized_sample_count": len(dataset),
         "materialized_roles": sorted(dataset.materialized_roles),
+        "dataset_files_checked": checked_files,
+        "dataset_file_hash_failures": file_failures,
+        "holdout_file_integrity_bytes_hashed": True,
+        "holdout_target_semantics_opened": False,
         "training_started": False,
         "test_or_sealed_target_accessed_by_checker": False,
     }

@@ -2,6 +2,7 @@
   "baseline_config": "configs/heat3d_v6/V6_03_V5best_P1h.yaml",
   "candidate_config": "configs/heat3d_v6_p1i/V6_05_V5best_P1i_seed0.yaml",
   "checks": {
+    "dataset_9216_file_sha256": true,
     "effective_batch_24": true,
     "epochs_600": true,
     "frozen_graph": true,
@@ -23,7 +24,11 @@
     "varying_support": true,
     "varying_support_micro_b8": true
   },
+  "dataset_file_hash_failures": [],
+  "dataset_files_checked": 9216,
   "forbidden_resolved_differences": [],
+  "holdout_file_integrity_bytes_hashed": true,
+  "holdout_target_semantics_opened": false,
   "materialized_roles": [
     "train",
     "valid_iid"
