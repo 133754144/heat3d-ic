@@ -1,0 +1,27 @@
+{
+  "schema_version": "heat3d_v6_p1i_population_power_calibration_v2",
+  "status": "frozen_before_pilot128_v9_generation",
+  "parent": "configs/heat3d_v6_p1i/v6_p1i_v8_population_power_calibration.json",
+  "completed_population_scope": ["pilot128_v5", "pilot128_v6", "pilot128_v7", "pilot128_v8"],
+  "selected_global_rule": {
+    "base_range_W": [2.6, 11.2],
+    "severity_curve_exponent": 0.71,
+    "top_h_exponent": 0.6,
+    "independent_multiplier_range": [0.75, 1.25]
+  },
+  "counterfactual_gate_summary": {
+    "pilot128_v5": {"all_temperature_gates_pass": true, "nonzero_bin_ratio": 5.0},
+    "pilot128_v6": {"all_temperature_gates_pass": true, "nonzero_bin_ratio": 5.0},
+    "pilot128_v7": {"all_temperature_gates_pass": true, "nonzero_bin_ratio": 4.25},
+    "pilot128_v8": {"all_temperature_gates_pass": true, "nonzero_bin_ratio": 4.0}
+  },
+  "guardrails": {
+    "single_population_rule": true,
+    "per_sample_Rth_backsolve": false,
+    "post_solve_filtering": false,
+    "post_solve_replacement": false,
+    "temperature_used_for_split": false,
+    "pilot128_v9_outputs_used": false,
+    "formal1024_v1_generated": false
+  }
+}

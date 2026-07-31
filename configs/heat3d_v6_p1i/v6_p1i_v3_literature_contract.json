@@ -1,0 +1,210 @@
+{
+  "schema_version": "heat3d_v6_p1i_v3_literature_contract_v1",
+  "rules": {
+    "primary_or_authoritative_sources_only": true,
+    "original_units_retained": true,
+    "si_conversion_explicit": true,
+    "reference_values_not_promoted_to_measured_ranges": true,
+    "q_derived_from_power_and_resolved_volume": true,
+    "silent_defaults_forbidden": true
+  },
+  "sources": [
+    {
+      "id": "P1I3-L01",
+      "title": "DeepOHeat: Operator Learning-based Ultra-fast Thermal Simulation in 3D-IC Design",
+      "year": 2023,
+      "url": "https://arxiv.org/abs/2302.12949",
+      "evidence": {
+        "geometry_original": "1 x 1 x 0.5 mm and 1 x 1 x 0.55 mm",
+        "geometry_si_m": "0.001 x 0.001 x 0.0005 and 0.001 x 0.001 x 0.00055",
+        "h_original_W_m2K": "333.33-1000, reference 500",
+        "power_original_W": "0.000625 in a 0.05 mm source layer",
+        "source_thickness_si_m": 0.00005
+      },
+      "supports": ["Robin h", "continuous BC sampling", "resolved source thickness"]
+    },
+    {
+      "id": "P1I3-L02",
+      "title": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
+      "year": 2025,
+      "url": "https://arxiv.org/abs/2504.03955",
+      "evidence": {
+        "layer_k_original_W_mK": [0.1, 1.0, 20.0],
+        "source_component_power_original_mW": [0.5, 1.0, 2.0],
+        "total_power_si_W": 0.013,
+        "source_layer_thickness_original_mm": 0.05,
+        "source_layer_thickness_si_m": 0.00005,
+        "h_si_W_m2K": 500
+      },
+      "supports": ["low effective k", "component power heterogeneity", "layer thickness"]
+    },
+    {
+      "id": "P1I3-L03",
+      "title": "Self-Attention to Operator Learning-based 3D-IC Thermal Simulation",
+      "year": 2025,
+      "url": "https://arxiv.org/abs/2510.15968",
+      "evidence": {
+        "die_lateral_original_mm": "10-16",
+        "die_lateral_si_m": "0.010-0.016",
+        "die_thickness_original_mm": "0.10-0.15",
+        "die_thickness_si_m": "0.00010-0.00015",
+        "tim_thickness_original_mm": "0.020-0.052",
+        "tim_thickness_si_m": "0.000020-0.000052",
+        "k_original_W_mK": {
+          "core_cache": 100,
+          "tim": 4,
+          "spreader_sink": 400,
+          "tsv_effective": 100
+        }
+      },
+      "supports": ["10 mm package scale", "die/TIM thickness", "local/effective k endpoints"]
+    },
+    {
+      "id": "P1I3-L04",
+      "title": "Quasi-3D Thermal Simulation of Integrated Circuit Systems in Packages",
+      "year": 2020,
+      "doi": "10.3390/en13123054",
+      "url": "https://www.mdpi.com/1996-1073/13/12/3054",
+      "evidence": {
+        "package_original_mm": "35 x 35 x 3.25",
+        "package_si_m": "0.035 x 0.035 x 0.00325",
+        "validation_die_original_mm": "1 x 1 x 0.1",
+        "validation_die_si_m": "0.001 x 0.001 x 0.0001",
+        "total_power_original_W": "20 package, 10 per die; validation 1",
+        "k_original_W_mK": {
+          "silicon": 150,
+          "solder": 50,
+          "copper": 385,
+          "molding": 0.6
+        }
+      },
+      "supports": ["1-20 W package power scale", "bulk/effective k", "package geometry"]
+    },
+    {
+      "id": "P1I3-L05",
+      "title": "Anisotropic thermal conductivity of high bandwidth memory",
+      "year": 2023,
+      "url": "https://arxiv.org/abs/2303.06785",
+      "evidence": {
+        "footprints_original_mm": "6 x 10 top, 7 x 11 base",
+        "footprints_si_m": "0.006 x 0.010, 0.007 x 0.011",
+        "total_thickness_original_um": 700,
+        "total_thickness_si_m": 0.0007,
+        "layer_thickness_original_um": "DRAM 80/120, base 150, interfaces 65",
+        "layer_thickness_si_m": "8e-5/1.2e-4, 1.5e-4, 6.5e-5",
+        "k_original_W_mK": {
+          "memory_in_plane": 140,
+          "polymer_solder_through_plane": 2,
+          "device_effective_in_plane": 100,
+          "device_effective_through_plane": 7
+        }
+      },
+      "supports": ["10 mm footprint", "anisotropic/effective k", "layer thickness"]
+    },
+    {
+      "id": "P1I3-L06",
+      "title": "Thermal Implications of Non-Uniform Power in BSPDN-Enabled 2.5D/3D Chiplet-based Systems-in-Package using Nanosheet Technology",
+      "year": 2025,
+      "url": "https://arxiv.org/abs/2508.02284",
+      "evidence": {
+        "chiplet_lateral_original_mm": "approximately 10-23",
+        "chiplet_lateral_si_m": "approximately 0.010-0.023",
+        "k_original_W_mK": {
+          "logic_silicon": 135,
+          "lower_k_layer": 71,
+          "mold": 3
+        },
+        "top_bottom_h_original_W_m2K": [2500, 200]
+      },
+      "supports": ["asymmetric dual Robin", "local k heterogeneity", "package footprint"]
+    },
+    {
+      "id": "P1I3-L07",
+      "title": "Local measurements of flow boiling heat transfer on hot spots in 3D compatible radial microchannels",
+      "year": 2015,
+      "url": "https://research.ibm.com/publications/local-measurements-of-flow-boiling-heat-transfer-on-hot-spots-in-3d-compatible-radial-microchannels",
+      "evidence": {
+        "background_heat_flux_original_W_cm2": 20,
+        "core_heat_flux_original_W_cm2": 200,
+        "hotspot_heat_flux_original_W_mm2": 21,
+        "hotspot_heat_flux_converted_W_cm2": 2100,
+        "hotspot_size_original_mm": "0.2 x 0.2",
+        "hotspot_size_si_m": "0.0002 x 0.0002"
+      },
+      "supports": ["source-area scale", "surface power-density guardrail"],
+      "limitation": "Liquid-cooled test vehicle; used only as a heat-flux/source-size envelope, not as a Robin-h source."
+    },
+    {
+      "id": "P1I3-L08",
+      "title": "Thermal Simulation of FCBGA Package with Heat Sink",
+      "year": 2014,
+      "url": "https://www.comsol.com/paper/thermal-simulation-of-fcbga-package-with-heat-sink-19729",
+      "evidence": {
+        "die_original_mm": "4 x 4 x 0.3",
+        "die_si_m": "0.004 x 0.004 x 0.0003",
+        "power_original_W": "1-5"
+      },
+      "supports": ["component power scale", "die geometry"],
+      "limitation": "COMSOL conference contribution; supports scale, not the full sampling distribution."
+    },
+    {
+      "id": "P1I3-L09",
+      "title": "Modeling, Analysis, Design, and Tests for Electronics Packaging beyond Moore, Chapter 3",
+      "year": 2019,
+      "url": "https://www.sciencedirect.com/science/article/pii/B9780081025321000032",
+      "evidence": {
+        "layer_thickness_original": "75 um bump/underfill, 100 um interposer, 1 mm BT substrate, 1.6 mm PCB",
+        "layer_thickness_si_m": [0.000075, 0.0001, 0.001, 0.0016],
+        "effective_k_W_mK": {
+          "pcb_xy_z": [0.8, 0.8, 0.3],
+          "bt_xy_z": [0.2, 0.2, 0.49],
+          "interposer_xy_z": [148.3, 148.3, 151.0],
+          "bump_underfill_xy_z": [0.6, 0.6, 4.9]
+        }
+      },
+      "supports": ["frozen nine-layer thickness", "effective anisotropic background k"]
+    }
+  ],
+  "parameter_contracts": {
+    "top_h_W_m2K": {
+      "v3_range": [500.0, 1600.0],
+      "supporting_sources": ["P1I3-L01", "P1I3-L06"],
+      "interpretation": "Continuous effective Robin coefficient spanning strong package convection; it is not a universal heatsink HTC."
+    },
+    "bottom_h_W_m2K": {
+      "v3_range": [20.0, 200.0],
+      "supporting_sources": ["P1I3-L06"],
+      "interpretation": "Weak-to-moderate board-side effective Robin path; lower values are an engineering extension toward weak cooling and remain explicitly labeled."
+    },
+    "package_total_power_W": {
+      "v3_allowed_range": [1.7, 20.0],
+      "supporting_sources": ["P1I3-L04", "P1I3-L08"],
+      "interpretation": "Package/component scale for a 10 x 10 mm footprint; generated continuously and never backsolved from temperature."
+    },
+    "surface_power_density_W_cm2": {
+      "v3_guardrail": [1.0, 1000.0],
+      "supporting_sources": ["P1I3-L07"],
+      "interpretation": "Conservative envelope below the cited 2100 W/cm2 local hotspot; each source is checked before solving."
+    },
+    "volumetric_q_W_m3": {
+      "v3_guardrail": [100000000.0, 80000000000.0],
+      "supporting_sources": ["P1I3-L01", "P1I3-L02", "P1I3-L07"],
+      "interpretation": "Not claimed as a directly measured literature interval. q is exactly power fraction divided by resolved source volume; the bound enforces source power, area and thickness plausibility."
+    },
+    "local_k_W_mK": {
+      "v3_range": [20.0, 400.0],
+      "supporting_sources": ["P1I3-L02", "P1I3-L03", "P1I3-L04", "P1I3-L05", "P1I3-L06"],
+      "interpretation": "Effective heterogeneous local regions, not a bulk-silicon-only interval. Material meaning must remain explicit."
+    },
+    "source_planform_fraction": {
+      "v3_width_height_range": [0.08, 0.14],
+      "physical_size_for_10mm_package_m": [0.0008, 0.0014],
+      "supporting_sources": ["P1I3-L07", "P1I3-L08"],
+      "interpretation": "Resolved local sources; literature includes smaller 0.2 mm hotspots, while V3 deliberately uses a mesh-resolved conservative scale."
+    },
+    "layer_thickness_m": {
+      "supporting_sources": ["P1I3-L03", "P1I3-L05", "P1I3-L09"],
+      "interpretation": "Nine-layer stack thicknesses remain fixed; no thickness is silently sampled."
+    }
+  }
+}

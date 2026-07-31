@@ -1,0 +1,69 @@
+{
+  "schema_version": "heat3d_v6_p1i_population_power_calibration_v7",
+  "status": "same_scientific_rule_refrozen_before_pilot128_v14_generation",
+  "completed_population_scope": [
+    "pilot128_v5",
+    "pilot128_v6",
+    "pilot128_v7",
+    "pilot128_v8",
+    "pilot128_v9",
+    "pilot128_v10",
+    "pilot128_v11",
+    "pilot128_v12"
+  ],
+  "search_method": "seeded differential evolution over one monotonic six-knot population curve, top-h exponent and symmetric independent-jitter width; objective uses complete historical populations only",
+  "search_seed": 20260731,
+  "selected_global_rule": {
+    "latent_knots": [
+      0.0,
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      1.0
+    ],
+    "base_power_knots_W": [
+      3.24,
+      4.388428616453006,
+      8.677455505883174,
+      8.90903872548954,
+      9.054535868751294,
+      9.311935104162083
+    ],
+    "top_h_exponent": 0.7142049245593189,
+    "independent_multiplier_range": [
+      0.6238035399336456,
+      1.3761964600663544
+    ]
+  },
+  "counterfactual_summary": {
+    "populations_passing_all_frozen_gates": 8,
+    "population_count": 8,
+    "maximum_nonzero_bin_ratio": 3.2,
+    "minimum_histogram_bin_count": 5,
+    "maximum_histogram_bin_count": 17,
+    "maximum_core_gap_K": 5.130656844844488,
+    "maximum_full_gap_K": 11.957543142443171,
+    "minimum_inside_primary_fraction": 0.9375,
+    "minimum_peak_deltaT_K": 24.260741049720103,
+    "maximum_peak_deltaT_K": 169.7357824483115,
+    "minimum_power_peak_spearman": 0.743098791430141,
+    "maximum_abs_severity_peak_spearman": 0.6945957700054934,
+    "maximum_abs_mean_source_area_peak_spearman": 0.14483382164438746,
+    "maximum_single_latent_peak_r2": 0.4639297173085749,
+    "minimum_power_W": 1.737254799167536,
+    "maximum_power_W": 18.715902319037713
+  },
+  "guardrails": {
+    "single_population_rule": true,
+    "per_sample_Rth_backsolve": false,
+    "post_solve_filtering": false,
+    "post_solve_replacement": false,
+    "temperature_used_for_split": false,
+    "pilot128_v13_partial_outputs_used_for_scientific_rule": false,
+    "pilot128_v14_outputs_used": false,
+    "formal1024_v1_generated": false,
+    "preflight_only_floor_adjustment": "lowest base-power knot raised from 3.1729378586475114 to 3.24 W after the unseen v13 input-only preflight found 1.6687401465193594 W below the frozen 1.7 W literature floor; no target or solver output was available",
+    "engineering_only_revision": "v13 was aborted after 24 solves because sample_id_prefix collided with v12; v14 retains the identical scientific rule, fixes the prefix, and uses unseen seed 612816"
+  }
+}

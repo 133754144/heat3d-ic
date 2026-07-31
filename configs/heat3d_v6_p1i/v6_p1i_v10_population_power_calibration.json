@@ -1,0 +1,27 @@
+{
+  "schema_version": "heat3d_v6_p1i_population_power_calibration_v3",
+  "status": "frozen_before_pilot128_v10_generation",
+  "completed_population_scope": ["pilot128_v5", "pilot128_v6", "pilot128_v7", "pilot128_v8", "pilot128_v9"],
+  "selected_global_rule": {
+    "base_range_W": [2.7, 10.7],
+    "severity_curve_exponent": 0.86,
+    "top_h_exponent": 0.68,
+    "independent_multiplier_range": [0.75, 1.25]
+  },
+  "selection_basis": "best aggregate frozen-gate score over five completed populations while keeping top-h exponent below the pre-v3 value 0.79",
+  "counterfactual_summary": {
+    "populations_passing_all_temperature_gates": 4,
+    "population_count": 5,
+    "only_counterfactual_miss": "pilot128_v7 full gap 15.211 K versus 15.0 K",
+    "pilot128_v9_outer_safety_violations": 0
+  },
+  "guardrails": {
+    "single_population_rule": true,
+    "per_sample_Rth_backsolve": false,
+    "post_solve_filtering": false,
+    "post_solve_replacement": false,
+    "temperature_used_for_split": false,
+    "pilot128_v10_outputs_used": false,
+    "formal1024_v1_generated": false
+  }
+}

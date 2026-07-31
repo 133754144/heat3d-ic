@@ -1,0 +1,69 @@
+{
+  "schema_version": "heat3d_v6_p1i_population_power_calibration_v8",
+  "status": "frozen_before_pilot128_v15_generation",
+  "completed_population_scope": [
+    "pilot128_v5",
+    "pilot128_v6",
+    "pilot128_v7",
+    "pilot128_v8",
+    "pilot128_v9",
+    "pilot128_v10",
+    "pilot128_v11",
+    "pilot128_v12",
+    "pilot128_v14"
+  ],
+  "excluded_population": {
+    "pilot128_v13": "aborted engineering run with only 24 samples and colliding sample IDs"
+  },
+  "search_method": "seeded differential evolution over one monotonic six-knot population curve, top-h exponent and independent-jitter width with analytical whole-domain power bounds",
+  "search_seed": 20260801,
+  "selected_global_rule": {
+    "latent_knots": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "base_power_knots_W": [
+      3.9914069682008684,
+      4.1049353528440635,
+      9.000248235089995,
+      9.158189599208379,
+      9.382129490028273,
+      9.499966325540942
+    ],
+    "top_h_exponent": 0.7396540391988838,
+    "independent_multiplier_range": [
+      0.6657273987049462,
+      1.3342726012950538
+    ]
+  },
+  "analytical_domain_bounds": {
+    "top_h_W_m2K": [500.0, 1600.0],
+    "severity": [0.0, 1.0],
+    "independent_power_latent": [0.0, 1.0],
+    "minimum_power_W": 1.72824110936785,
+    "maximum_power_W": 19.488784118219606,
+    "literature_contract_W": [1.7, 20.0]
+  },
+  "counterfactual_summary": {
+    "populations_passing_all_frozen_gates": 9,
+    "population_count": 9,
+    "maximum_nonzero_bin_ratio": 3.4,
+    "minimum_histogram_bin_count": 5,
+    "maximum_histogram_bin_count": 18,
+    "maximum_core_gap_K": 5.902120049679347,
+    "maximum_full_gap_K": 11.991677820698584,
+    "minimum_inside_primary_fraction": 0.9453125,
+    "minimum_peak_deltaT_K": 30.99167883323293,
+    "maximum_peak_deltaT_K": 171.04063003716809,
+    "minimum_power_peak_spearman": 0.7314537172678997,
+    "maximum_abs_severity_peak_spearman": 0.7151963926020874,
+    "maximum_abs_mean_source_area_peak_spearman": 0.1364905694927669,
+    "maximum_single_latent_peak_r2": 0.5037279186703231
+  },
+  "guardrails": {
+    "single_population_rule": true,
+    "per_sample_Rth_backsolve": false,
+    "post_solve_filtering": false,
+    "post_solve_replacement": false,
+    "temperature_used_for_split": false,
+    "pilot128_v15_outputs_used": false,
+    "formal1024_v1_generated": false
+  }
+}

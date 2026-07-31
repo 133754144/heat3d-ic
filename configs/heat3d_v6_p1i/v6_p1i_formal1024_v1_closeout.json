@@ -1,0 +1,64 @@
+{
+  "schema_version": "heat3d_v6_p1i_formal1024_v1_closeout_v1",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "sobol_seed": 612819,
+  "sample_count": 1024,
+  "split_counts": {
+    "train": 768,
+    "valid_iid": 128,
+    "test_iid": 128
+  },
+  "generation_elapsed_seconds": 2171.2625679579796,
+  "status": "generated_complete_qualification_passed",
+  "failed_gates": [],
+  "temperature_distribution": {
+    "minimum_peak_deltaT_K": 30.37403451000688,
+    "maximum_peak_deltaT_K": 173.0984308776595,
+    "mean_peak_deltaT_K": 91.95303288399397,
+    "median_peak_deltaT_K": 90.77670386923518,
+    "inside_30_150_count": 993,
+    "inside_30_150_fraction": 0.9697265625,
+    "outside_20_180_count": 0,
+    "histogram_30_150_counts": [55, 85, 86, 62, 78, 138, 103, 96, 85, 81, 69, 55],
+    "histogram_nonzero_max_min_ratio": 2.5090909090909093,
+    "maximum_core_q05_q95_gap_K": 1.1386939946503958,
+    "maximum_full_gap_K": 4.076698941706809,
+    "kde_mode_count": 2
+  },
+  "split_qc": {
+    "maximum_continuous_ks": 0.13411458333333334,
+    "maximum_discrete_tv": 0.1171875,
+    "maximum_joint_discrepancy": 0.03649670826688441,
+    "target_values_used": false
+  },
+  "physical_response": {
+    "power_peak_spearman": 0.776859398469351,
+    "top_h_reff_spearman": -0.9789847046885057,
+    "top_h_peak_partial_spearman_controlling_log_power": -0.8961812531868363,
+    "severity_peak_spearman": 0.7008354865531792,
+    "mean_source_area_peak_spearman": -0.023198827873542664,
+    "maximum_single_latent_peak_linear_r2": 0.6295869130264832
+  },
+  "physics_qc": {
+    "maximum_abs_energy_balance_relative_error": 1.3135926575614426e-10,
+    "maximum_linear_residual": 1.2249120060956343e-10,
+    "maximum_source_power_relative_error": 4.099804347752008e-16,
+    "minimum_source_control_volume_count": 200,
+    "minimum_support_nodes_per_local_region": 4,
+    "all_values_finite": true
+  },
+  "decision": {
+    "formal_dataset_qualified": true,
+    "training_allowed_by_this_closeout": false,
+    "formal1024_v0_remains_permanent_failed_qualification": true,
+    "sample_filtering_or_replacement_performed": false,
+    "automatic_retry_started": false
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "formal1024_v0_modified": false,
+    "v6_or_p1h_modified": false,
+    "per_sample_Rth_backsolve": false
+  }
+}

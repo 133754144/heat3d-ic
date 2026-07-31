@@ -1,0 +1,58 @@
+{
+  "schema_version": "heat3d_v6_p1i_pilot128_v5_acceptance_v1",
+  "frozen_before_generation": true,
+  "sample_count": 128,
+  "temperature_coverage": {
+    "primary_interval_K": [30.0, 150.0],
+    "minimum_inside_primary_fraction": 0.9,
+    "outer_safety_interval_K": [20.0, 180.0],
+    "maximum_outside_outer_count": 0,
+    "histogram_equal_width_bins": 12,
+    "maximum_internal_empty_bins": 0,
+    "maximum_nonzero_bin_count_ratio": 5.0,
+    "core_quantile_interval": [0.05, 0.95],
+    "maximum_core_sorted_peak_gap_K": 8.0,
+    "maximum_full_sorted_peak_gap_K": 15.0,
+    "maximum_kde_mode_count": 3,
+    "forbidden_kde_mode_count": 4
+  },
+  "split_qc": {
+    "method": "balanced_pre_solve_assignment_v1",
+    "exact_counts": {"train": 96, "valid_iid": 16, "test_iid": 16},
+    "maximum_continuous_ks": 0.5,
+    "maximum_discrete_tv": 0.375,
+    "maximum_joint_discrepancy": 0.15,
+    "temperature_or_model_error_used": false
+  },
+  "physics_qc": {
+    "maximum_abs_energy_balance_relative_error": 1e-6,
+    "maximum_linear_residual": 1e-7,
+    "minimum_source_nodes_per_source": 16,
+    "minimum_support_nodes_per_local_region": 4,
+    "all_values_finite": true,
+    "power_conservation_required": true
+  },
+  "physical_response_qc": {
+    "minimum_power_peak_spearman": 0.45,
+    "maximum_top_h_reff_spearman": -0.3,
+    "maximum_top_h_peak_partial_spearman_controlling_power": -0.3,
+    "maximum_abs_severity_peak_spearman": 0.9,
+    "maximum_abs_mean_source_area_peak_spearman": 0.8,
+    "maximum_abs_single_generator_latent_peak_spearman": 0.9,
+    "maximum_single_generator_latent_peak_r2": 0.8
+  },
+  "design_qc": {
+    "sobol_only": true,
+    "discrete_temperature_bins_forbidden": true,
+    "per_sample_power_backsolve_forbidden": true,
+    "post_solve_filter_or_replacement_forbidden": true,
+    "missing_background_k_must_raise": true,
+    "source_size_severity_coupling_forbidden": true,
+    "independent_power_jitter_required": true,
+    "split_assignment_independent_of_labels": true
+  },
+  "decision": {
+    "formal1024_v1_input_preflight_allowed_only_if_all_gates_pass": true,
+    "formal1024_v1_generation_allowed_only_after_separate_freeze": true
+  }
+}

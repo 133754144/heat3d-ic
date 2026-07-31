@@ -1,0 +1,27 @@
+{
+  "schema_version": "heat3d_v6_p1i_pilot_closeout_v13",
+  "attempt_id": "pilot128_v13",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics128_v13",
+  "sobol_seed": 612815,
+  "status": "aborted_engineering_id_collision",
+  "completed_sample_count": 24,
+  "planned_sample_count": 128,
+  "reason": "sample_id_prefix remained v6p1i12_ and collided with the completed v12 sample namespace",
+  "scientific_qualification_performed": false,
+  "partial_targets_used_to_modify_scientific_rule": false,
+  "partial_artifacts_retained": true,
+  "decision": {
+    "pilot_acceptance_passed": false,
+    "formal1024_v1_input_preflight_allowed": false,
+    "formal1024_v1_generation_allowed": false,
+    "next_action": "retain identical global physics rule, correct namespace, and use a new unseen Sobol seed",
+    "sample_filtering_or_replacement_performed": false
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "formal1024_v0_modified": false,
+    "v6_or_p1h_modified": false,
+    "per_sample_Rth_backsolve": false
+  }
+}

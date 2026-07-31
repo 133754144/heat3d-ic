@@ -1,0 +1,82 @@
+{
+  "schema_version": "heat3d_v6_p1i_split_preregistration_v1",
+  "status": "frozen_before_pilot128_v3_generation",
+  "selected_method": "balanced_pre_solve_assignment_v1",
+  "selection_evidence": {
+    "comparison_csv": "configs/heat3d_v6_p1i/v6_p1i_split_candidate_comparison.csv",
+    "comparison_json": "configs/heat3d_v6_p1i/v6_p1i_split_candidate_assignments.json",
+    "datasets": [
+      "heat3d_v6_p1i_continuous_physics128_v2",
+      "heat3d_v6_p1i_continuous_physics1024_v0"
+    ],
+    "temperature_or_model_error_used": false,
+    "aggregate_composite_scores": {
+      "octet_hash": 1.4901652801757964,
+      "global_hash": 1.444692167567852,
+      "independent_sobol_dimension": 1.7783827850216817,
+      "balanced_pre_solve_assignment": 1.1050000345585848
+    }
+  },
+  "algorithm": {
+    "name": "balanced_pre_solve_assignment_v1",
+    "candidate_pool": "one deterministic multilabel greedy assignment plus 512 deterministic global-hash multistarts",
+    "continuous_encoding": "eight global rank bins per feature",
+    "discrete_encoding": "exact category one-hot tokens",
+    "joint_tokens": [
+      "power x top_h",
+      "power x bottom_h",
+      "power x total_source_area",
+      "top_h x bottom_h",
+      "q_proxy_mean x mean_local_k"
+    ],
+    "selection_objective": "maximum_continuous_KS + maximum_discrete_TV + maximum_joint_discrepancy",
+    "tie_break": "assignment SHA256",
+    "target_independent": true
+  },
+  "feature_contract": {
+    "continuous": [
+      "continuous_severity",
+      "package_total_power_W",
+      "top_h_W_m2K",
+      "bottom_h_W_m2K",
+      "total_source_area_fraction",
+      "mean_source_area_fraction",
+      "source_area_cv",
+      "mean_source_aspect_ratio",
+      "source_centroid_spread",
+      "source_upper_fraction",
+      "q_proxy_mean_W_m3",
+      "q_proxy_max_W_m3",
+      "mean_local_k_W_mK",
+      "local_k_log_std",
+      "cross_family_overlap_fraction",
+      "all_nine_background_kz"
+    ],
+    "discrete": [
+      "source_count",
+      "k_region_count",
+      "upper_source_count",
+      "cross_family_overlap_pair_count"
+    ],
+    "forbidden": [
+      "temperature",
+      "DeltaT",
+      "solver convergence",
+      "energy residual",
+      "model error",
+      "model prediction"
+    ]
+  },
+  "sample_size_aware_gates": {
+    "pilot128": {
+      "maximum_continuous_ks": 0.5,
+      "maximum_discrete_tv": 0.375,
+      "maximum_joint_discrepancy": 0.15
+    },
+    "formal1024": {
+      "maximum_continuous_ks": 0.16,
+      "maximum_discrete_tv": 0.15,
+      "maximum_joint_discrepancy": 0.05
+    }
+  }
+}

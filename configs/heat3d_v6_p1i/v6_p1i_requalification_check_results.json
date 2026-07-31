@@ -1,0 +1,32 @@
+{
+  "schema_version": "heat3d_v6_p1i_requalification_check_results_v1",
+  "status": "passed",
+  "checks": {
+    "requalification_checker": "passed",
+    "continuous_dataset_checker": "passed",
+    "formal1024_v0_historical_snapshot_checker": "passed",
+    "formal1024_v0_historical_snapshot_commit": "93f5d2aef4398b81e74e856b43680f0785693a25",
+    "postmortem_zero_solve_replay": "passed_hash_identical",
+    "formal1024_v1_audit_all_gates": "passed",
+    "formal1024_v1_json_all_finite": "passed",
+    "python_compile": "passed",
+    "json_validation": "passed",
+    "yaml_validation": "passed",
+    "csv_validation": "passed",
+    "git_diff_check": "passed",
+    "scope_only_configs_heat3d_v6_p1i_docs_v6_p1i_scripts_v6_p1i": "passed"
+  },
+  "validation_counts_before_this_result_file": {
+    "json_files": 128,
+    "yaml_files": 18,
+    "csv_files": 82,
+    "staged_files": 262
+  },
+  "historical_checker_note": "the live v0 checker cannot accept an append-only attempts registry because the original artifact manifest binds the registry at the formal1024_v0 row; it passed unchanged in the exact source snapshot, while the new checker verifies that historical prefix hash and all later lifecycle rows",
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "formal1024_v0_modified": false,
+    "v6_or_p1h_modified": false
+  }
+}

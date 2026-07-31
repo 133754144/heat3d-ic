@@ -1,0 +1,30 @@
+{
+  "schema_version": "heat3d_v6_p1i_population_power_calibration_v5",
+  "status": "frozen_before_pilot128_v12_generation",
+  "completed_population_scope": ["pilot128_v5", "pilot128_v6", "pilot128_v7", "pilot128_v8", "pilot128_v9", "pilot128_v10", "pilot128_v11"],
+  "search_method": "differential evolution over one monotonic six-knot population curve, top-h exponent and symmetric independent-jitter width",
+  "selected_global_rule": {
+    "latent_knots": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "base_power_knots_W": [2.78774929, 5.76769393, 7.63269813, 8.47952057, 10.2650022, 10.51110891],
+    "top_h_exponent": 0.6291163036486078,
+    "independent_multiplier_range": [0.7789257530971941, 1.221074246902806]
+  },
+  "counterfactual_summary": {
+    "populations_passing_all_temperature_and_response_gates": 7,
+    "population_count": 7,
+    "maximum_nonzero_bin_ratio": 4.5,
+    "maximum_core_gap_K": 6.8181567731933015,
+    "maximum_full_gap_K": 13.965025129708806,
+    "maximum_abs_severity_peak_spearman": 0.8651632027101264,
+    "maximum_single_latent_peak_r2": 0.7799131106478252
+  },
+  "guardrails": {
+    "single_population_rule": true,
+    "per_sample_Rth_backsolve": false,
+    "post_solve_filtering": false,
+    "post_solve_replacement": false,
+    "temperature_used_for_split": false,
+    "pilot128_v12_outputs_used": false,
+    "formal1024_v1_generated": false
+  }
+}

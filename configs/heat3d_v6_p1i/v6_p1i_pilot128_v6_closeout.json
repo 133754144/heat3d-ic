@@ -1,0 +1,77 @@
+{
+  "schema_version": "heat3d_v6_p1i_pilot_closeout_v6",
+  "attempt_id": "pilot128_v6",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics128_v6",
+  "sobol_seed": 612808,
+  "sample_count": 128,
+  "generation_elapsed_seconds": 261.7280407079961,
+  "status": "generated_complete_qualification_failed",
+  "failed_gates": [
+    "temperature_core_gap"
+  ],
+  "temperature_distribution": {
+    "minimum_peak_deltaT_K": 29.086575595676265,
+    "maximum_peak_deltaT_K": 145.979075338371,
+    "inside_30_150_count": 127,
+    "inside_30_150_fraction": 0.9921875,
+    "outside_20_180_count": 0,
+    "histogram_30_150_counts": [
+      7,
+      10,
+      14,
+      17,
+      15,
+      16,
+      20,
+      5,
+      8,
+      5,
+      4,
+      6
+    ],
+    "histogram_nonzero_max_min_ratio": 5.0,
+    "maximum_core_q05_q95_gap_K": 8.776499598422276,
+    "maximum_full_gap_K": 8.776499598422276,
+    "kde_mode_count": 1
+  },
+  "physical_response": {
+    "power_peak_spearman": 0.75778245742538,
+    "top_h_reff_spearman": -0.9756225965940304,
+    "top_h_peak_partial_spearman_controlling_power": -0.9056234120253197,
+    "severity_peak_spearman": 0.84907182750412,
+    "mean_source_area_peak_spearman": -0.058534380150155656,
+    "maximum_single_latent_peak_linear_r2": 0.6844907779458733
+  },
+  "physics_qc": {
+    "passed": true,
+    "maximum_abs_energy_balance_relative_error": 1.0423833068913007e-10,
+    "maximum_linear_residual": 1.1809260964648014e-10,
+    "maximum_source_power_relative_error": 4.031127565423291e-16,
+    "minimum_source_control_volume_count": 200,
+    "minimum_support_nodes_per_region": 5,
+    "all_finite": true
+  },
+  "split_qc": {
+    "passed": true,
+    "method": "balanced_pre_solve_assignment_v1",
+    "maximum_continuous_ks": 0.3645833333333333,
+    "maximum_discrete_tv": 0.3541666666666667,
+    "maximum_joint_discrepancy": 0.10261776371181471,
+    "temperature_or_model_error_used": false
+  },
+  "decision": {
+    "pilot_acceptance_passed": false,
+    "formal1024_v1_input_preflight_allowed": false,
+    "formal1024_v1_generation_allowed": false,
+    "next_action": "revise_global_generation_rule_and_return_to_new_128_pilot",
+    "sample_filtering_or_replacement_performed": false
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "formal1024_v0_modified": false,
+    "v6_or_p1h_modified": false,
+    "per_sample_Rth_backsolve": false,
+    "test_or_model_error_used_for_design": false
+  }
+}

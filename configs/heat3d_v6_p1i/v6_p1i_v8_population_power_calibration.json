@@ -1,0 +1,84 @@
+{
+  "schema_version": "heat3d_v6_p1i_population_power_calibration_v1",
+  "status": "frozen_before_pilot128_v8_generation",
+  "calibration_scope": "completed pilot populations v3-v7",
+  "physical_basis": "the steady linear heat equation makes each completed case peak DeltaT exactly proportional to total power when all other case inputs are fixed",
+  "candidate_search": {
+    "base_low_W": [2.8, 3.6, 0.1],
+    "base_high_W": [9.8, 11.0, 0.1],
+    "severity_curve_exponents": [0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0],
+    "independent_multiplier_ranges": [
+      [0.65, 1.35],
+      [0.68, 1.32],
+      [0.7, 1.3],
+      [0.72, 1.28],
+      [0.75, 1.25]
+    ],
+    "top_h_exponent": 0.6,
+    "sample_filtering_or_replacement": false,
+    "new_seed_outputs_used": false
+  },
+  "selected_global_rule": {
+    "base_range_W": [2.8, 11.0],
+    "severity_curve_exponent": 0.8,
+    "top_h_exponent": 0.6,
+    "independent_multiplier_range": [0.75, 1.25],
+    "selection_reason": "best aggregate frozen-gate score across five completed pilot populations; passed all temperature gates counterfactually for v5-v7 and improved high-temperature occupancy without per-sample adaptation"
+  },
+  "counterfactual_historical_checks": [
+    {
+      "pilot": "v3",
+      "inside_primary_fraction": 0.9453125,
+      "outside_outer_count": 1,
+      "nonzero_bin_ratio": 5.333333333333333,
+      "maximum_core_gap_K": 3.92,
+      "maximum_full_gap_K": 23.84,
+      "all_temperature_gates_pass": false
+    },
+    {
+      "pilot": "v4",
+      "inside_primary_fraction": 0.9609375,
+      "outside_outer_count": 1,
+      "nonzero_bin_ratio": 7.0,
+      "maximum_core_gap_K": 5.47,
+      "maximum_full_gap_K": 19.53,
+      "all_temperature_gates_pass": false
+    },
+    {
+      "pilot": "v5",
+      "inside_primary_fraction": 0.953125,
+      "outside_outer_count": 0,
+      "nonzero_bin_ratio": 4.75,
+      "maximum_core_gap_K": 4.68,
+      "maximum_full_gap_K": 13.04,
+      "all_temperature_gates_pass": true
+    },
+    {
+      "pilot": "v6",
+      "inside_primary_fraction": 0.953125,
+      "outside_outer_count": 0,
+      "nonzero_bin_ratio": 4.0,
+      "maximum_core_gap_K": 5.31,
+      "maximum_full_gap_K": 5.31,
+      "all_temperature_gates_pass": true
+    },
+    {
+      "pilot": "v7",
+      "inside_primary_fraction": 0.96875,
+      "outside_outer_count": 0,
+      "nonzero_bin_ratio": 4.5,
+      "maximum_core_gap_K": 4.38,
+      "maximum_full_gap_K": 9.21,
+      "all_temperature_gates_pass": true
+    }
+  ],
+  "guardrails": {
+    "per_sample_Rth_backsolve": false,
+    "post_solve_filtering": false,
+    "post_solve_replacement": false,
+    "temperature_used_for_split": false,
+    "model_error_used": false,
+    "pilot128_v8_seed_outputs_used": false,
+    "formal1024_v1_generated": false
+  }
+}

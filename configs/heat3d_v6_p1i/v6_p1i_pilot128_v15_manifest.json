@@ -1,0 +1,2081 @@
+{
+  "config_path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v15.yaml",
+  "config_payload_sha256": "6d4262bb0f60303411579a3315dd8cf354ca2b68b3677905949633575aa322df",
+  "config_sha256": "bc875546890527ec8cc1574be4d935cfbc227bae9f4d64d8915893ee3a16b803",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics128_v15",
+  "dataset_root": "data/heat3d_v6_p1i_continuous_physics128_v15",
+  "elapsed_seconds": 272.1194158750586,
+  "guardrails": {
+    "frozen_v6_modified": false,
+    "model_inference_runs": 0,
+    "post_solve_filtering": false,
+    "training_runs": 0
+  },
+  "manifest_payload_sha256": "90b13ea7167f6e14083e3a1ee34ba88a93d3e3d311f148a84cd44005ba8a3901",
+  "sample_count": 128,
+  "samples": [
+    {
+      "file_sha256": {
+        "bc_features.npy": "5ff796b8d51504b8759110cbf56d2013b28fc84c68667e3e64c14b0d7645fb2f",
+        "control_volume.npy": "8babf9a4e3889d88870cfba99db690026afc5696ddf15679eed0141292d2c458",
+        "coords.npy": "572993b1d7b5afede38ccc73e167216fbec6189cea39443054fdfbad262ce7f1",
+        "deltaT.npy": "25862314569cf26f99eb749894e2c8bec80d19e214bde0ccddee43c1b4d392f3",
+        "k_field.npy": "b5e88d87345251df82d4c06288247a5604c0fed6f6d5f72c13e3834252324b25",
+        "layer_id.npy": "97d151f21aa564a5047b1b4f0a1c064fe9f66eada0358d09e7628087b87b5d51",
+        "q_field.npy": "f25a8bcc6921622bddb76b4f95c46457fb725bc7a46f935d9ac746f0529e085e",
+        "sample_meta.json": "f920e4fd66888f33ceca9fcaa813b07044aa99b8e0f4e1014d1cb82f859c5bfe",
+        "temperature.npy": "0744476d3c638473a14a56e5f29110c6c931684f22eb7611e011d945a63a5a45"
+      },
+      "relative_path": "samples/v6p1i15_0000",
+      "sample_id": "v6p1i15_0000",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "a0f78a7bbe847e996d0b563958c011c8feebff4e10d9befa1bfe5f429140c701",
+        "control_volume.npy": "aa82e9db3a9d504dd1db5aebdf5467ea356f5b6309b521edf0674093e8d918bc",
+        "coords.npy": "f2b7720518c6c32add72b8c24aa49fda496de311c718fb74fa71d3c0cdd918dd",
+        "deltaT.npy": "13cd330f642b965c604090fcff84f53342c565042f5a2251870a927b49bec47b",
+        "k_field.npy": "fba4f9df359e5f26f2a90704f14d0f14f2251752a61a9fec372a4853c8466061",
+        "layer_id.npy": "d08bad41857ed3fba24eda846c3d7dca41bb7e7ebdd8035b22713ea856cb9302",
+        "q_field.npy": "2c3955bf3baa2e7499519f9e546b466aa07e9c6698f4e833e188e20dd907d538",
+        "sample_meta.json": "a86ceaf9a0a282ff832882b6c01e74f2b6cebc17bd64d9f332b8a9fd7504cb24",
+        "temperature.npy": "6530e7130c9aa6b0fa253a72446dfd9c523e7197b9b8214e0282295dad159f76"
+      },
+      "relative_path": "samples/v6p1i15_0001",
+      "sample_id": "v6p1i15_0001",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "ea5f7a55a83330bba0226b7658f531b366db249bc2a4e23b0673391a11b77ad2",
+        "control_volume.npy": "32a164ea818fd9db81d6ddf9edc4e25205d01168412f7edd3f8cafa98891db76",
+        "coords.npy": "e00d1e9c122dc0492e2ee0662dae461f55af4715c79a47981eccad60b4d1118a",
+        "deltaT.npy": "e752b15ed2a467ddb64b22c6072eb63eac2e0642fb1048af7fd8f74b7d43acb3",
+        "k_field.npy": "8ec55248559cf51d0954c7980fdb51eb0565b25f82573f72c1eac3585bb32d1f",
+        "layer_id.npy": "01e76efdd25e033430a02ede32322bb15b7398ecc852cd3192296470dec89344",
+        "q_field.npy": "27f19a265c6e2669538f00b9b7107e78cadcfa79a5eaa1d83ceef31d16dbdb4d",
+        "sample_meta.json": "f41a8009f262d1af66e5e8ab8628e5015cdb4380a0dca0fa013686bcc1141904",
+        "temperature.npy": "bdfde89527b006163c5ab9cca44ee356a17595662ad3706373a10d05a42a6d96"
+      },
+      "relative_path": "samples/v6p1i15_0002",
+      "sample_id": "v6p1i15_0002",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "610f6439e0b2ef4ac2f2714aecbec5f5b33793fc4be805daa4a4026b29f5c28e",
+        "control_volume.npy": "221da2a3bcf8fdaaad9375060197cc42ee9c06c052b330e3f3e56d33f4e389aa",
+        "coords.npy": "e73580bf886eeff192cc56ec787ca433a6ee46bb0a14963dce9c08ac71ad4a74",
+        "deltaT.npy": "39a57c8c2a771499637bfe038dc6f3c7e18c3f88a2b19636cdb93e3988eebc48",
+        "k_field.npy": "802a5f7325d4b014916790152988fd55251ae4df1b15ae19e9884e5b3876d322",
+        "layer_id.npy": "abbcce2c505e946e932844997005e1b7b3c157120e14ba514ca094c647eab5e6",
+        "q_field.npy": "4c2dcfbdbefb9600ee2d978d176df8d5a8f76c1ec4ca5d87f35fb30bd9cd868e",
+        "sample_meta.json": "87c63b2c577538bea4ee07110246e7cf67e4bfc9b84097550f59d58fd3c7cdda",
+        "temperature.npy": "e7b321f69d0db3bc685cc6008872071d7f36574c23262d29e112d507472313bd"
+      },
+      "relative_path": "samples/v6p1i15_0003",
+      "sample_id": "v6p1i15_0003",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "aefb50e1becce2bb88d3b978b6270e6adf35356ef48c5f918aec261011bf165b",
+        "control_volume.npy": "1b794d31bae0afc7a237a25e25d287486bf75b6f801b2729e0bf9d8aa90ebb28",
+        "coords.npy": "aef1de162e952dd01cfad265005d21d9fed110a922a1930a7a263b95066496fd",
+        "deltaT.npy": "f84bba2ae8feb9094f06758423b1090f7f9bda1adcbc0c24ea5574062a427fd1",
+        "k_field.npy": "6979a015542c4b6f3c6d36c9a141933c143f5f95720636b55858588a8eac5b03",
+        "layer_id.npy": "3d98db7ac74b8667afc93741fa33b5dee1d43179b3378ccbfb54276f033f7a96",
+        "q_field.npy": "a79c8761e144b01ccaa6d25235e26bb87c6750dddd6ecddb3c13e4aa8f43594c",
+        "sample_meta.json": "e7d6da57f7a641954283e0be5047800034d24336aa609bd74c1ea97a741a0ecc",
+        "temperature.npy": "54c84478bf94a974fcc2b41e83d49d5b37e58fb2814de99e4c9d56e637486011"
+      },
+      "relative_path": "samples/v6p1i15_0004",
+      "sample_id": "v6p1i15_0004",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "359bf04f64df501298bef02406c9c8542313614b3da74a921688443e5d1c85ff",
+        "control_volume.npy": "29e9cf9a120715cf588ab8fb5658297eb51f486b04e1aea154dff8879206d05a",
+        "coords.npy": "0d579cf6036999d67a0d133980d379fb3f26b2662b561e3b68c17228eb8ccc5c",
+        "deltaT.npy": "a64aea24e4d544d7fe827157f3d55919296fbe92b2ed22aea011dc0d3dec7e9a",
+        "k_field.npy": "60ec5b44c300d1550e2cc9d21ce50bcbb731388f9229c02939334edffc94648b",
+        "layer_id.npy": "cc824256ab91ebb54f7fee9265228f7e124beace14ddcb845845dcd5c0009b1d",
+        "q_field.npy": "7529d3dae89c909c38d140165f6578f08183a23b5223038f1f7788b534d1def7",
+        "sample_meta.json": "6520332b549d97f387a7c2711a18e92d0f13b4d7059d5a09c8c069855a0d0ac6",
+        "temperature.npy": "f2f4b93287258d5ad782c0a9aa78c9195ed259759d6bf56aafc43433aa4a2f55"
+      },
+      "relative_path": "samples/v6p1i15_0005",
+      "sample_id": "v6p1i15_0005",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "ce3263710f29e4d9697ce95563a12e836806e198dd2973823d59dbeef8fe2ddf",
+        "control_volume.npy": "62b02610163b5785eca906805f7d74989396e2be3e892476b05257668508e98c",
+        "coords.npy": "2bb8b6fbaada2c67a754bb28d65e86e402a4d7232ad2937da0e7e3766c032f6b",
+        "deltaT.npy": "10053a7b46a6ddab1290eedfb9d3eb5b6405b58996f910c6476188977a195c7c",
+        "k_field.npy": "157154c6474d483922299e82d8eb60f2552cfb063cbb303f3de0b9432c7288af",
+        "layer_id.npy": "a5cbfddb03d5d1f7f6351a6e81f187db8975237af7106ef0ffab237fb9ad7e3c",
+        "q_field.npy": "2d202a8c115d8180bcde0cd81eecf3b699deab08e82ac2f86c54eab5ef0d7042",
+        "sample_meta.json": "7ad971be2798c9a25f3207501d65cd667ab76f9d06d833bbc924b01f0fb501bb",
+        "temperature.npy": "05b20259388e6e22adf180ef8804705080385317d67bcec31c01575e1177f456"
+      },
+      "relative_path": "samples/v6p1i15_0006",
+      "sample_id": "v6p1i15_0006",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "d5ab8ecc68d9c6637e38b8b2d6cb475d1dfc41d36022e0863a3ac33c3386dee8",
+        "control_volume.npy": "6789ade1ae21a37dc132a28a2b6770054f56523c939563bb0e57aef3b9ab9aa1",
+        "coords.npy": "c1194d2bfda27650f0190e609a6346bae8066b4fe3d769bd43f1af10188d6934",
+        "deltaT.npy": "b8506f066ff9c72b133f692b26340bc3811288a71cae4c5f807db9dc8459648a",
+        "k_field.npy": "4025592b3068435a453b430cb511edbd5c2c22b72865839b9cd51b5dbec2ad54",
+        "layer_id.npy": "e8102fb90136f42b47320f5d47b56acc5994cfcaedf5a304933cc862282d7ba2",
+        "q_field.npy": "df1bc91e8c005d85a071b708f9b5546c222f2d35a67bede2535ce2dfdefa5dec",
+        "sample_meta.json": "7037caa5ee6c2da23423e8865ec32152c89a75fe7d45a97372ba20ed9e7923c4",
+        "temperature.npy": "44261d938ff554f97fcf4fc43b92ee9f7d28fe9ca23b18dd0a34c69752ce3262"
+      },
+      "relative_path": "samples/v6p1i15_0007",
+      "sample_id": "v6p1i15_0007",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "c4e919f43ff057ef61c06f0bedf8dbeba13fd9f9bc71b4d4935b1eae9f5a6a4d",
+        "control_volume.npy": "b1372c6e1a02cf797951283377660332050321e23b0c6a646e9fefb3a1bfffa6",
+        "coords.npy": "f58c424c95fafe88a1c7c08cfc672eca4b77a8bc3952927b21a56b6f75d0671e",
+        "deltaT.npy": "9c1fc036caaa43873a71b86ccf9fcdf0877e060d8f4b18dedd1ba1b155f73b14",
+        "k_field.npy": "5ef61a6af0d89e401e7749199726bdb33cce061a95c3cd397f8af90f4166b840",
+        "layer_id.npy": "55619ea74415a43d6d581941322870415e2370f861e685002d16c0196a9d1380",
+        "q_field.npy": "acd7816b4e956bbe35155f7a8395733355bc60a2963bb0dae91f3a67b6a11546",
+        "sample_meta.json": "2d3d618f34a58c60a13cd794b770bfb9f18f2f1995664f59b95ce560b3033088",
+        "temperature.npy": "cd67a3c578a277a34f01f8415cb86890cc9b2346001901c67026b474530663af"
+      },
+      "relative_path": "samples/v6p1i15_0008",
+      "sample_id": "v6p1i15_0008",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "eed4d588dfa170bd1b090c5515bd1e779119555b646685b6bfbe3041e457bd70",
+        "control_volume.npy": "fad04054d0939d8eeae6bfc8b421adc26693d42af10459801bf4b3d248a41981",
+        "coords.npy": "555a06f09aade8978797d6d862ae48d9844604d8376273668a573bcf6ed1697f",
+        "deltaT.npy": "388b77786583ac5aaf912e7965a978c3f1606338067b6d06f8ef21da4e201c98",
+        "k_field.npy": "0157b61265bbc2ccc87f7e5e18813018378921e2e6257cca79e23c5b0439d41c",
+        "layer_id.npy": "a453ebf38ec4567863e5a4f0d82ddade718474c2c35551c16ffcedc75e85049e",
+        "q_field.npy": "3f8f4dae538ac9b9f577696b38acfde3973e50ab0215e1e409abd16ff94e55b1",
+        "sample_meta.json": "1a581b9814010349795f5dea66030ebff46468067317d9fccf85514895e11821",
+        "temperature.npy": "cbcbbfb234be93aeee27c2b32ff0769a4a3ba25e43c23cadf243696ad09c4669"
+      },
+      "relative_path": "samples/v6p1i15_0009",
+      "sample_id": "v6p1i15_0009",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "ac87a77a2947170bf4f3267b5b876f3314013a8a2fc124a323fd15d40df23f4a",
+        "control_volume.npy": "08f5fc50924a4c524bcf48d4edd230b86637da2b3ef1cf1c230fbc84b047707f",
+        "coords.npy": "afee1cc39dbc4f4f6646333a1da39bf2bf7200c4ca3339a2b5c41edf2240c144",
+        "deltaT.npy": "9ddee4a8386712f19c5db4523c695d14e999ef76c1f6220e5f0a11449132ce30",
+        "k_field.npy": "a54ccfad0e2e16e11e980b9f8bf4ca8a65f9aac4d0e7124a86147fa2b8faf8ce",
+        "layer_id.npy": "5b2c62272f9c89d2cacf03bbb136bd244657961bc16de9d95254cdf75c135686",
+        "q_field.npy": "e96abf6e338f31a36d2852f2c34a3a31d9c24552b0fdda8c63e7ecbbba5655e5",
+        "sample_meta.json": "bcaf4d178fc93effe7b7c9c3db708836574fc5a5e6a368175ad4632071e1403e",
+        "temperature.npy": "950e9aca8fb29543c09a553be37665b91c279deb0b0eee6a4edfc552f4a5068f"
+      },
+      "relative_path": "samples/v6p1i15_0010",
+      "sample_id": "v6p1i15_0010",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "7dbc49d39aafdc872669f6217acf19b4ca0e4c2592654d5e7d4d60b6ed3a25dd",
+        "control_volume.npy": "4bd3b1d23d9b8d7900446adc707af1bbba252a048643153e82dcc5079e3c2771",
+        "coords.npy": "c06145c67b840f5b87fc1583d372f7155e43abb5f72d7e131cd8009935f46623",
+        "deltaT.npy": "43046e5a0d172b217a5015247c723861aa03c954c0fb11bbb8a3466be8aec82e",
+        "k_field.npy": "1a0a0be4b4643eac18372701555e5892fffcd0300c999bc40000912a6fb9adc6",
+        "layer_id.npy": "6489ffa6f7a004e9cd2814c9b5ee83d6e36dac8e34a91552fd30e6e93d51d22c",
+        "q_field.npy": "6d21c071c9072f52d1cd5fe77007a17aaab130f5946d516805bee9a96300dba5",
+        "sample_meta.json": "66ddac43ac397e0490cbb5a99cefee05ffdfec734f75dbedecb9fdbbd6c0241f",
+        "temperature.npy": "069ae55daea239aa095f50c317265b49d8c51fc1d7d5be1c6826a9d3d8e2b1cc"
+      },
+      "relative_path": "samples/v6p1i15_0011",
+      "sample_id": "v6p1i15_0011",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "27c58db1cef7455db3aa491fad358662c868acf0abbf29d36296785f2b71d15a",
+        "control_volume.npy": "a19e4474183277509acf8f92904909c6b9e65918bb398bafe81d94baad724f75",
+        "coords.npy": "e041f92e58326b6c324b960be98ee1971b1e8f0c24c10ba6de28270383a492fa",
+        "deltaT.npy": "cb5c514b95039e91264e9f2c1a3e4cdd041065b36f313b0f813b7e3699536e05",
+        "k_field.npy": "9b9a515a52487f31acb88db8563f3dde68bf31e729c205d940b5c79aabb66a90",
+        "layer_id.npy": "e0ed59961aae5355b367d6082aa9b5a8a8eecdcf560fff555f0aaa546e6b6b8e",
+        "q_field.npy": "36dc222db0ef8e81f6f35c972481e85e8c75deaa68eab3960fdff48d74dd40d4",
+        "sample_meta.json": "2a20b6278a173203e5137b9a6732bf02f741ed7e5f77fd1237fc9101fb620a53",
+        "temperature.npy": "92fcb817b7ed5f684d562f994d5edf04d4f763ba2804012f2cd63f2de973d889"
+      },
+      "relative_path": "samples/v6p1i15_0012",
+      "sample_id": "v6p1i15_0012",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "6fb9d419ffd68ae8c814b33384d7d29d64e1d153586a28d2ad5126af8e19f1c5",
+        "control_volume.npy": "8cbff77f6ddece256efeda66f7bcc387e0de06b315b4c2ae6ea6b6b6530f6297",
+        "coords.npy": "1212f7800d0a4a7b38a0abd2baf26c3a6bbd5487db53129079f6297cd0368be3",
+        "deltaT.npy": "2c8399882311d1409aeb1464a54bfdd270255057819aef7ac0cbc477ea6a526a",
+        "k_field.npy": "f4d2459bfd046ab671eaff64c784aea5badbeea648c27a7e06893b56efd3d599",
+        "layer_id.npy": "5fc5b9973ae272e0da94ad564f0ba8087827d061787a0e816d066f526e251d1d",
+        "q_field.npy": "d7b5a9ddc15c34bba3ea55c6a0d27e26d62ef4e0940413bd50be35852bfbdb60",
+        "sample_meta.json": "a767448fd5ee5f5e1cc33ff326bce0725e0648520f936b704a8045cc0bf0ec2c",
+        "temperature.npy": "8ab2da6428b7b6765429562834d49cfd3e10209b9aee0564813097b9c1a2e083"
+      },
+      "relative_path": "samples/v6p1i15_0013",
+      "sample_id": "v6p1i15_0013",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "53be9218664e47b178618f360ac092f93fe11a1df15bedf2b345fa62ce796f34",
+        "control_volume.npy": "be4ffb9ae3ab7d24b27b4847abcf69a7161731a398305cf063fd9b52fff12a90",
+        "coords.npy": "315e7567ce9aa388f75aac0c2dfef5152b7499c8898371ae744f9430c49f938e",
+        "deltaT.npy": "e7fce0f758ffa5dfe7d1dd9aec7dd3bee8a93cc028eec5b9c4e92422a27ffdd6",
+        "k_field.npy": "a09acee380a71e9b190f3cd606a8dc2740f788d10d3c9b055189ab69185a05fd",
+        "layer_id.npy": "4b9aa0c8d99b77c7f6669d1c0dac6bf82a9ae1bf102ec9a0007f219855802fd3",
+        "q_field.npy": "0ca30df8707ad15e4d928c779ae63eb09a9b15bf2fecdc47b73f7b00fd3792c1",
+        "sample_meta.json": "8ed798c1519d45f006f1fdcdd26373a8d39da199002804a67e8186da828ab98a",
+        "temperature.npy": "8cad0228a37f70d38bb0972f2368b1e284778f16aea281d20b684663198010b6"
+      },
+      "relative_path": "samples/v6p1i15_0014",
+      "sample_id": "v6p1i15_0014",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "db79783061ee0299dae364c70232a78141d03ecf8388ef5aacd5834ba15b36cc",
+        "control_volume.npy": "ac1e9587f1e87cc832a302facc4bd07e5a1adbbbd9b811eacfd0ffa33bf295ed",
+        "coords.npy": "71ea6265a4b0552eb9652d794ce5133c68636ff5966429019f28f646176e95c9",
+        "deltaT.npy": "3d9d86e89640007b4c53ef84f80d58502906a5a3e6da725d2a906a1eb3c84067",
+        "k_field.npy": "302b90326132776ca5c318474b10efa5bb4332da2423cd4324161227f2124d28",
+        "layer_id.npy": "a3ba0c3de4f16602aa4b6b565bb07b39ed2fc87328c1c183816cfda46b7d8c4a",
+        "q_field.npy": "561deb4c1afa1c8aa3ab505e881fab7f1036450be14f878531adb56082c2d074",
+        "sample_meta.json": "2c04f9cad72f63d0e4ff6cf20935f631b222d8c8a7e473fe20a2ec23e5c5120c",
+        "temperature.npy": "a1b9b859483823478d9e55e63f338d32828f0b5c79174e403a2af7ee8d0e751e"
+      },
+      "relative_path": "samples/v6p1i15_0015",
+      "sample_id": "v6p1i15_0015",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "d9bd4155957286c954e76100904ef997b5be4eaf5d795cf3c817546d0f0b163a",
+        "control_volume.npy": "94a0f51696bfa7a14ea8a258fe6ef68bd27c1fe913a9b0c86b53d2a10dfabcd3",
+        "coords.npy": "7809de1caa129addc19de833fa851c7db3b203e81dc6ca7f7c4b6980704b1384",
+        "deltaT.npy": "d6c1b09fd075a532a68d6d9f3ea962894930745a9f2ddade754c0906c692e978",
+        "k_field.npy": "d7e857896a8cfdd351a7f973f4a3163667e711d786ed03a0f9f9e7088fdb8337",
+        "layer_id.npy": "2f5919381ac90e320cf1ea46178318587988c2d3bb6c529085582f28eec6742c",
+        "q_field.npy": "22ce83ad3d8f85b0abd5993ee4b62714f908d108d5d040541854dce4283f667e",
+        "sample_meta.json": "7d470ae31e75d2524297838a6e388c023539e2b2c204e1445eec7e89f6a1b187",
+        "temperature.npy": "48d1d6b64f3efaabd8b7a3babe709be617a9debbc2db532b26208888d94a186f"
+      },
+      "relative_path": "samples/v6p1i15_0016",
+      "sample_id": "v6p1i15_0016",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "bf82ea5ae4ceee61184efad2a8b046c60321f67e153d6ac3a0c0bb1c6ab5bd5f",
+        "control_volume.npy": "e1e8ea86006a1750e2c08c10d5bc07e270f4623d66c375aa58914155359f1dbf",
+        "coords.npy": "5adaef64bd15b53e6efac573fdf733f36d77c0b1b95fb59fe6d511679a75a0b2",
+        "deltaT.npy": "7ad7fd91d0fbfcb8a52c8056d357d60b83bb9d077a49550b5425d11ee9505598",
+        "k_field.npy": "eae497e915ced7422ab3fe6bc823ff559f47bb700b6492b86d7db24b7b5b9a57",
+        "layer_id.npy": "6a71ff20787e24391a12aec73c89e72159673e29bfa7d17e69ce61571eab8214",
+        "q_field.npy": "9776d07d3211c3502d36832a7152905127a16f0709be58700183a3a404bab168",
+        "sample_meta.json": "a7b503a7930115b8437c9f38b085de822da0dec19146e074b5e19f2da7105b0c",
+        "temperature.npy": "0286038770d65c0a31f967cea4abfb83493028caf74458361e90ae54b3b26d38"
+      },
+      "relative_path": "samples/v6p1i15_0017",
+      "sample_id": "v6p1i15_0017",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "4b642d742d69fdcbb4ac0262c1c41fd61d035c469214864ecb7b5f90c7372902",
+        "control_volume.npy": "04b01321f237426f0c659df3c3c504af403c254e36d801d2dc9b22b776120f4e",
+        "coords.npy": "806c3baecb21a577e0f9792355cbfb64ca7bf5607f32a28b1f2fd7a18df1bc67",
+        "deltaT.npy": "3307c808d89fc1ef4eff0e03109bbc2505505b79f1c3da5e49179da0bf46199a",
+        "k_field.npy": "a455fe56008214a17a9680700cfdfce5a3438a78aa8514fc92a84d36681a3b0b",
+        "layer_id.npy": "d309c5f1178e43d6a5716e0ec00cdb98f5ae976c677824d5694d238b65cb22bd",
+        "q_field.npy": "18fd1df7d22ea6462553ad948b82f0288d3126d9628b667f23cfdd2bdc66a897",
+        "sample_meta.json": "e7ede7d0466345d2a153adb74a27c4a3789da8f4ef3a9c881352426ec47f659e",
+        "temperature.npy": "4f629034f1f12d8c28699c129cdf1f075c0c42d3e5f783d34f01b990e318eb60"
+      },
+      "relative_path": "samples/v6p1i15_0018",
+      "sample_id": "v6p1i15_0018",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "ee0b44e630260637bf53ce1d0db816ac916ed4c33901a6c981d40d83d830e9c2",
+        "control_volume.npy": "29cc85d9f3281a1fc7614f0036edbf57df5a2fb20ecc16986246da73df056214",
+        "coords.npy": "299cf362214493dc0b5f16d8654bf2adddd9c168f4804163a6c376b54c0e18af",
+        "deltaT.npy": "2490e83735e4f4281dd220ea82af93fa0492a289b1940c958b239072e49630ce",
+        "k_field.npy": "d1fbd63f4fd3590713d5ae444919e11653715a45f226de735aa9d07ed8a53991",
+        "layer_id.npy": "451fe63a306b905e17b4379b42b6cc303c3be3ab5be053c5651c9d51b8b8a8e8",
+        "q_field.npy": "e169010d02e687d9cdd1eb393ed9d858faa9d8a0216a5907e5d2a012ca88624e",
+        "sample_meta.json": "ad917322f4cc5f8e792f9072f10b4d205e9f3daa7aacb67892371252a8e4da48",
+        "temperature.npy": "a02cf8138928efe1731d592eb9a5501a33efa4a24ca4690205854385bb4219ea"
+      },
+      "relative_path": "samples/v6p1i15_0019",
+      "sample_id": "v6p1i15_0019",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "1e35c5640017b6971b6f7f26df4b638d3e65efb93c8f5633af3865f9d7cba2d5",
+        "control_volume.npy": "175706a9be75166037f6d482f69d8e6cdb7b1ff66d8f6dad6b61adb79201970d",
+        "coords.npy": "7361be2eda09c04b771d6a447063ab40b04fdc8666ce7929360593e0e02f8606",
+        "deltaT.npy": "5a6cff824bccca966652ec59d2927ae4e0dc4f6a8eae64cacd316eb8215a2997",
+        "k_field.npy": "ce64b47bb029d3f9163b275d5e2dab36bfa74745b57138f2ce06424a116aa85e",
+        "layer_id.npy": "3306bc73068385478f677408c11551e79fb5e0e02943239deb876c173c23ac13",
+        "q_field.npy": "824db65a23e82fefe678ab48567c8ccd9c54ed02cdbf76d37047eb072c7c2c52",
+        "sample_meta.json": "bc77b2a50337686de36dcce458e1170af0134f463d35bea528ba558ee478e7e4",
+        "temperature.npy": "e012a51277f98bfe8de96b7342ebb7a0b3ba692abf44e520a8ac8e3255954e60"
+      },
+      "relative_path": "samples/v6p1i15_0020",
+      "sample_id": "v6p1i15_0020",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "1cde758887d6759ed0f8752bfb51a5fd60e817090d1bf0880c50734c279bd731",
+        "control_volume.npy": "3a5c4a7c30a373946ac3598233598dfe84bf309c9c669a955b1dfcd5d88e19c3",
+        "coords.npy": "590d20c88256ad84598933a5847743e91135e101da8f2d697200f3738e04132f",
+        "deltaT.npy": "c2a45417014f742aaeeed1edaca388b9bf01e9d534a1981916c8c6d558f06f2d",
+        "k_field.npy": "324d76d5dea4fdd421b6b29b222fbef430bd544861b6ac0b1f6fa4f382265ff4",
+        "layer_id.npy": "6287c4871eb31f7322727cafa5570f0360be7b7d81f4e2c0cfb6a704dcb79033",
+        "q_field.npy": "5e47ce742d87a52a0c58d3ca7506377dc03b0da74d3d824e24d9c77d04eef965",
+        "sample_meta.json": "c8c89fb4cb2dea5fbffce47fc0ccb6a30e3339fa6450d1f7104d7ecddf9f75fb",
+        "temperature.npy": "ab43641ea5f6a0b50b6401dfffdd67395c58044137a9ac34fbe7b089bb4d7982"
+      },
+      "relative_path": "samples/v6p1i15_0021",
+      "sample_id": "v6p1i15_0021",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "d21ea018ae0c5772bd4aca2d12777ee0a7e8ad3a60299fd3ce0b2e956e32f70b",
+        "control_volume.npy": "3c890a88f5ad987341adcb87aa157e016a264945708038f29f41d931e01405b7",
+        "coords.npy": "327c712aea5475273494a813aa490cf986747afb72873b725e951a65461c2303",
+        "deltaT.npy": "1275399059ef7affbfae6953dfc6b3dccf026c0c83d942a27de3f512a172d04d",
+        "k_field.npy": "0013f5bc15de9a16401c3e3e4186072676291e81e36f34b7115f21dd605d61cf",
+        "layer_id.npy": "63d92d488cbd684e2d10d1c5a774ccdd1c9948a52c87132e7d52885534a46339",
+        "q_field.npy": "e04badfd0689e013b8bc86d6f2eda3fdec9ee860410f6a591c2031ceebd6bbb9",
+        "sample_meta.json": "36998452c4dbf25b02acc5dd0cb870fac7a0cc949993e56336c7548ba0a720c6",
+        "temperature.npy": "18d4573257e8dcffea70fba40552872cf032c9c52b2d8ae130267bab8e39e349"
+      },
+      "relative_path": "samples/v6p1i15_0022",
+      "sample_id": "v6p1i15_0022",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "15d3c947b3f7065c58cd5c9d305312f3ac87e7650299dc32dc81b225ad47a6d7",
+        "control_volume.npy": "069f62a1850f7027c0bd5191ef0322add4e4d7a132805bd49acca8482e95418c",
+        "coords.npy": "f15c2fcc348ca2225b5e1ab891521a482260cb858421dcc960d5b2b0682fee0b",
+        "deltaT.npy": "e0fc13979fd289af92d2093cd6f6ef2c614baaa8193137f0c19f93ca37644169",
+        "k_field.npy": "91eacdfaf7cc0c03ef36fcc8ca9d6f6c6633f6509c999b052f3d551eca8e3f02",
+        "layer_id.npy": "5e193ccbb294e9977c2e99883958fae893b519f69e12dcd0a5118387dd323ea6",
+        "q_field.npy": "d3b09a7ca4e330806bdb2ab5a9ecd8767c3117b76515706e469b62264eba5fe7",
+        "sample_meta.json": "a3867e57b082d0de3beb8a256edfa6749dfe29dd46adeb771a201d1f223fc684",
+        "temperature.npy": "f5ec788a375bcbbef3bfa7c7047914a48ab6b661546bbf92652c940e8f7b0d15"
+      },
+      "relative_path": "samples/v6p1i15_0023",
+      "sample_id": "v6p1i15_0023",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "122b5ad0f544520f26c3e15dd98bfa284537dfc3e25697509530b836a129eba2",
+        "control_volume.npy": "9d0829e46670238227e2ed503d828e858086c4a2c60d8901ad3b8cf182753e94",
+        "coords.npy": "50621ce6005f41142d3c447f2880267e86caeb2d717e9df8ac2b453d18006cf5",
+        "deltaT.npy": "542d899e98441b63bb45bc121c14513aad802fed1ba1c762b75230e639b80f23",
+        "k_field.npy": "d834270d84f20b0d8d1278e305eec0b7f555cd4fd04f8059ab656c422fce7169",
+        "layer_id.npy": "cecb1ea13285c42fe3058cf9099ec81b0351cb3089814a3174c4678b15982742",
+        "q_field.npy": "5b1b35d9717241f42b7db99bdb87689091aee58f8b235274c5d5eb696b8408c1",
+        "sample_meta.json": "e6799ce331c5256527d3e8fc5fbe98f335924832ab147aa2d3749211eba2a8f4",
+        "temperature.npy": "0be8ecbca98fbd3a8b375db7b62ff32d50104ed5f78969c6cba61fee392e8688"
+      },
+      "relative_path": "samples/v6p1i15_0024",
+      "sample_id": "v6p1i15_0024",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "629b5000b639358d9cc634a72adba1d747bfface3b746dddfc340aad920b23e0",
+        "control_volume.npy": "3585c8260dc003ffd81d9732e78050b48fec3d2bd37a422bc9523579e1e7f461",
+        "coords.npy": "148503fd0781cfaa9e06b98d119ee60f9163298861286fa1a1b1203754c680aa",
+        "deltaT.npy": "313c5c27f5d39f00dd6e1a32989b9f7763026bfb3b36556e43bb5823681cd763",
+        "k_field.npy": "96ca13f05ed98c747d756d414847bc7920507be129700cc732b97a7970925c37",
+        "layer_id.npy": "8e9f51b97c56f96363ec2d3dd34ea2a9fb73e4d0ba11aaa9255ae71f1d32772a",
+        "q_field.npy": "dbfd7e5560b77ed96667ebc3a3016f796b187ddd27c3c7fd62f1ff2c1bc809f7",
+        "sample_meta.json": "67803ba578ccc05730c16b0061e719c7aee1972ea7369c806a51653fcfe5ce95",
+        "temperature.npy": "344966c177942430dbbbaf9c8cc0dffa12a81920f5849d78678140af8bdfd629"
+      },
+      "relative_path": "samples/v6p1i15_0025",
+      "sample_id": "v6p1i15_0025",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "65f7c2c0684bd9dfd931c33a19bcd72e4819eb7077d2f5bb6b9d9b2c1ac39b02",
+        "control_volume.npy": "3e263a3287da86c7fb2a175db6953e6fd88eb08cfe1a8ac8514bf7ef724cd992",
+        "coords.npy": "4dcb02d10fb7b6a07e5a379501df1969cce6c7157b484335be25eeac36c4dd98",
+        "deltaT.npy": "5d4f745ea0ffbfcb5e93183f4acd480d034252a96b2a6487bb840a29e8ff298f",
+        "k_field.npy": "a380ca6a791af94b092274ac421963677be0a8a311dfb97b9a7948c9f7a8d594",
+        "layer_id.npy": "9ac82942b94d7f41fac1d7b9405c46d9f7b8a1d258f12138d0274776393e01b6",
+        "q_field.npy": "5a621ce3c12d492af667e193d025277e4a7fd53586306c4c33d1ecdc647ddb4d",
+        "sample_meta.json": "fc26681a26ea62cf699fd84a7fd42fb8312f023f5434826ca1f85fd96c16b839",
+        "temperature.npy": "ed2bf8060c6ab9910f43d3ecfc8c01a74b51a285405ede63567cb8a78571a596"
+      },
+      "relative_path": "samples/v6p1i15_0026",
+      "sample_id": "v6p1i15_0026",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "6916507323e30e93afe37c7741104ffa55f73ef873767f347c5c01aade2204b9",
+        "control_volume.npy": "44c1967504748799db37bab7c0171c72c644ea02511f30c7a17a5228a2a17e89",
+        "coords.npy": "aeb11d7eeca32039ddc9ca1bd97cde501a228aaec432eec7949b153d3bedacfc",
+        "deltaT.npy": "136bce32e26d2ba1cc6cb72306769f521f648bb9b22e3adc4f2577aea8f54755",
+        "k_field.npy": "f3152ca92757d701092f7564383384d4797772353e45d660d39b423e2b233452",
+        "layer_id.npy": "06aa815265cbac1f0ed0cc996db4a7d619c57e9a6fa25063e9c93b2802899f65",
+        "q_field.npy": "f8249b74c0a38faa40d98fa86211c279cd7df38b6e346bde8e729caab9e0f1b3",
+        "sample_meta.json": "c76c4c509df699f9bf5f7a097ec80695b5f921d5382775952d25fe64a78e90e5",
+        "temperature.npy": "49ca045912e8b0a5d6840365e08d358cf8c0415bd67d59564873792ebdf43c2f"
+      },
+      "relative_path": "samples/v6p1i15_0027",
+      "sample_id": "v6p1i15_0027",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "3c89dfa0dfa9f12ce140142b0f5481814cf510b7fe3abe6b40125f93f44e9832",
+        "control_volume.npy": "03155fe60da78a89482fdf04478fd1b05eb7f767de5f9b0aedc9f81f68b41f42",
+        "coords.npy": "a478fb63e1f5492d1717538a211a83280ed5cab8a1c0be80537affea33f3d777",
+        "deltaT.npy": "80a8880b11bf66752249b44827ee7f2a7279f9215281a35cff1504587c2b5d60",
+        "k_field.npy": "0e928212320b79f6a950dc13955794b1d9008a7c75e8d2d2dc424762431b1fad",
+        "layer_id.npy": "dd71129cd6caa50f090ed1e0d125c0a9906cbc34f0e8fb5cb5df8543449ad955",
+        "q_field.npy": "c452be69154337c2d34eaea378dfcc0e53285932ef4b2bfd48e9079f6d1f3f6f",
+        "sample_meta.json": "09fdd0269abf8b6efe8474f3874229088e23c3771cfc6afad74373ffa0e7dbef",
+        "temperature.npy": "bec06e1d46c4caab03a4959ffbff2744eef43330bf5201b31403e17b411aae24"
+      },
+      "relative_path": "samples/v6p1i15_0028",
+      "sample_id": "v6p1i15_0028",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "1d0a4f6181a72cacc523236f3a4b3603f16b6ffd426c107ed0ec24d3fdd21474",
+        "control_volume.npy": "66f4b29f2cb9c2783f0f231958474a4c6fabff2a2d293f2d538d763b29312162",
+        "coords.npy": "47b89e083576b2cb19a1e7fe30361b800744c7eba20741d82d009804c30f6c10",
+        "deltaT.npy": "8093047f85cd3f80308c057dd3da87901ad7e33efe5d5de0d5a0a86fa2040e67",
+        "k_field.npy": "517306eb06c90b3f675ecaf214cf4d1c508bb49160276a481ba7406e5148e3ee",
+        "layer_id.npy": "80858112826a1486ed8b52555513ab9cbf5f993c5a59e6f902ecd0ea04127338",
+        "q_field.npy": "e72b6e9a19a7b992340f515fc40eb25085113717f3addc4d43a2c7a90d9286a2",
+        "sample_meta.json": "6f4e8e3d4b4203728f4d2632289a2250cb12acd957485353704e97bc21cc3bd0",
+        "temperature.npy": "fe497b2f49852ec7304c9dcecf79a31f33745e5cab25514c2aad3d4ead90d9a5"
+      },
+      "relative_path": "samples/v6p1i15_0029",
+      "sample_id": "v6p1i15_0029",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "722ce94668af0e2ff461665f368b025e419b224d99b8b2f1c5718ca4e86c1423",
+        "control_volume.npy": "90fdac7f6e924ad980f64aecc3b708f2bfc9314afed6bd9378cdf7da479be571",
+        "coords.npy": "adaa1be58c0bd3994dbcbca48d3c3d3c81b128ed42937cf5a15968cdcb5de091",
+        "deltaT.npy": "73bac632440bd609ce102b2bd1fb41ef57d00a15b568e7f94eb0e19c777462c3",
+        "k_field.npy": "22f14347343021bbb2900375d3d116e3fb2f587daabb2df44f2bf5a10379213a",
+        "layer_id.npy": "64e6d041ce02a748b6e01a20bbd31658a6bc89c0a84cb2ad86378543081e33f7",
+        "q_field.npy": "72a7d2b40ef1481506c8a0f8e6f92f03330030ddcd286b09ce3057e2a591f4c7",
+        "sample_meta.json": "666599be6f51ed010df2ce65eaa8ac53c80604dedf10eb82c8c577eea2572ef3",
+        "temperature.npy": "fef95719a271bd6eb7d59581056f87f329aff38afed389ca4be1ac93094c7a69"
+      },
+      "relative_path": "samples/v6p1i15_0030",
+      "sample_id": "v6p1i15_0030",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "d8e766ad0000cb283f4e420b55415bb9eb0675b4fd0662d0ab711ff4bba39fcc",
+        "control_volume.npy": "dac0fbd9b7fa22e650ef66eddde28611adba1f8e04bbb476ee9e1ce03dd65cea",
+        "coords.npy": "15d505bfbaffd40f6ec0c31126a5a72feba1d81c6a985a5cf539d221ca88b9e9",
+        "deltaT.npy": "a8ec28c9bd810bd2d24c5e24e3793dc230e65fe733b8392e17513916fed3693b",
+        "k_field.npy": "1de681553b37b29ecf2e5d4c5117e97b99d2e2780e3d9a2c8c988e29f4faf3e3",
+        "layer_id.npy": "58a9a6e52e5c041aa320799398fa449776ec01ac8353a84c81a2711597fb2a3a",
+        "q_field.npy": "2bc1b749882571fc8ad9e40619adac76401387e040264fd0e3d75b24d309619b",
+        "sample_meta.json": "f05eb1be4dd7607ab2ddd6f921459a064d64abdb4b69b363edb10afa1667340f",
+        "temperature.npy": "7948a7ab5529c2f8cb08472b9c1baf33b409b055046ad6a2e011f65833a3a2c7"
+      },
+      "relative_path": "samples/v6p1i15_0031",
+      "sample_id": "v6p1i15_0031",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "9f298bc37f408912086c2f92ee7e200ea08b015377850a3a2510c5b2c0550f15",
+        "control_volume.npy": "41406982c22559c0fa38d3a3c3484fa718dff8aac63588eee09c05510028f969",
+        "coords.npy": "8ea9d526a5f392c1d23ceb0cb8df26325a1738622d6dca06c8201c57e0a262eb",
+        "deltaT.npy": "8aa384835976a9d2b8fda7e06cd831321d5b860fb800b07e028d8f53360a42ec",
+        "k_field.npy": "1bf3972dd84930d3d2c39d4963f401b96b3b9d96a6cd769f6c9ae529afcae522",
+        "layer_id.npy": "8b1c9629e6d4a606dc0f3dcdaaa76e98138ec587832b8dbf63854d7101813b4b",
+        "q_field.npy": "c141f2c7c766d4b13797b935fe570246d503f819729ac76eeea61b11018ea258",
+        "sample_meta.json": "ec7af81a61d8cca97a7da874971e09ea5bd9db9fd6eb2a6cdf1d289e979d54bc",
+        "temperature.npy": "fbbaa7fe40629a11f7f7821f8d305878863abf9671857540847c7f95ff0a7e63"
+      },
+      "relative_path": "samples/v6p1i15_0032",
+      "sample_id": "v6p1i15_0032",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "a72369f72585db6e2a173f4739d28a50728aef52a1c6ba7260c54fafd8885e94",
+        "control_volume.npy": "dcf4d0e05bf5a580e38045e20d9d3069f75fac14a4c50da43a822bebc7c79b02",
+        "coords.npy": "a7801ea4cd301a139ad2d022bf9da5acd5bade89e982343c0d7f2f3583f48bde",
+        "deltaT.npy": "4dd6a4582d52e5dc5f6b2f0da4a46f641f896324c63df596afcf89e163723dd4",
+        "k_field.npy": "054aaf8c2cfb710bd512be15fff2234bd1d8a8b778fec749c5253200acda91f6",
+        "layer_id.npy": "b3a02e0f231413c2c2f7553da72a9940597eaaccc5b9e382a3dc208cff2435b0",
+        "q_field.npy": "0ac92df71784c324cd7a41fe51f5421ec10df590a62cbe7025ea1ec0b537cf2d",
+        "sample_meta.json": "dfce7921b34914d22325ae64b16dfc929182c172a576b1b1ccc0e20ba3e71d9b",
+        "temperature.npy": "ec5a630b9c517ef454e6cc86c1f0cc2b5445abfe9e52cc5814aed932c50e9c8c"
+      },
+      "relative_path": "samples/v6p1i15_0033",
+      "sample_id": "v6p1i15_0033",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "1bef359edafc79e51e7ecd4e3e63208802154bf66f8fcb75de2073b5df1b1337",
+        "control_volume.npy": "0fed38421c40240de119d8102d0a3193c982ff5e38d00d44fdb1917c0c3ae92a",
+        "coords.npy": "7cba75866f4e15538b27e00dbfa30da267e9cd41aaae13c894633dee4d06fe27",
+        "deltaT.npy": "afffc416df20cc0ca63cf18a7749e6214956ef02e80cc60697f863aa45f9a2d9",
+        "k_field.npy": "499a6a43af7a29079f3b7c286e78f85968b9cc5a09e38b97b8c0e30911be8ec7",
+        "layer_id.npy": "f2bab431da808b9d4292bbfa7b6fac8d85763662258929caf415143b6d2184c2",
+        "q_field.npy": "24bdb7040b40ac91fb6611c6477fd6c9dbc4dc0343537514a62a45c214b96a80",
+        "sample_meta.json": "c835313d827872603c8e0c052179832ec7577f26fea10f027619df17d2aac91a",
+        "temperature.npy": "990bc8c32dc3bcdc7b897627197040f39b90239c4d5462113aa31afb38373c28"
+      },
+      "relative_path": "samples/v6p1i15_0034",
+      "sample_id": "v6p1i15_0034",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "c1a8c7989a93048ae0fd4e33af65a01d0405cd7f0e476dd16ab3b1f85a33671f",
+        "control_volume.npy": "ce971340575012b0a7753ba0b6849595c94a76da889cf102e5721d9a956328b3",
+        "coords.npy": "4d710cabb6b634edae498696da9562bd842449380e6e771f44b4c5ad76cb59ed",
+        "deltaT.npy": "117da092c49bc3afef78addc62ded195f6113a42a9925980bffbd4ef67c65fb9",
+        "k_field.npy": "868a20c061d60a59ba2bb57d29bc9cdb67b15603cb3d385542c1d3cf872b07ab",
+        "layer_id.npy": "e85f1c81278b772063c9b7cf2b98a0c172d10abd789b144c76620109d877dc00",
+        "q_field.npy": "644b7d510dacbb3eeb21db01ee80b49404c8fb9709cdc659007a23bc724d588b",
+        "sample_meta.json": "43b562524e3d681ec5ba0217506a20ae11a7aa74f8fc4320538cf30d48fe8cf9",
+        "temperature.npy": "f63fdbd8a6cacf8d10438e9e02c7752742961db82833d13c8005e5ff570d0492"
+      },
+      "relative_path": "samples/v6p1i15_0035",
+      "sample_id": "v6p1i15_0035",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "fd2724d2b822c247b5fca3f09daeb0536266a93594d37687e0a2d75c033d1673",
+        "control_volume.npy": "4630347134e7279ec0b8d6de4a01128bc0695cec4646687cdce971f9cea052bc",
+        "coords.npy": "65fc90ec16a4c707c4ddf7aa27b0cc2cd327a9ec6ef0f27178a5bcf17ff36ccc",
+        "deltaT.npy": "d02a44f6a74e90aa211ee0dc8295535b587ffc6862dce641afc88c2f52b59e9a",
+        "k_field.npy": "b4a7e6efecb9ad64fc31a92148e1d2a5d4171298088a36727d2245baf0ff70b4",
+        "layer_id.npy": "dd8c156de26472d9032a67f095a76a10f6c1466c1f3dbb99ca5edff73428c035",
+        "q_field.npy": "18d85e300e7678efa89da0ecc443929d83366b15eb46f416ca4a4aca09f1b8b8",
+        "sample_meta.json": "0acf66e7d1b73c3a6a4f62362a1b9e5dc997954968626be49d7e5983152b92b5",
+        "temperature.npy": "8f318d7983899816645b5817db99dbfae04f931951df58d609779fc83f713a9c"
+      },
+      "relative_path": "samples/v6p1i15_0036",
+      "sample_id": "v6p1i15_0036",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "0e6f3e61342f11a49cb1dad984ac129c04dbd720833b56c8fd2118ce8da98359",
+        "control_volume.npy": "b2e1d20d1553df1ea014d41f666e376aff4332343d368aeb7203f69a16df9bd6",
+        "coords.npy": "70e045cbadd389e604cc6d1a71e5382ea6adcaac03da7e832d4b2c6bd17032e8",
+        "deltaT.npy": "93f24db4ef682095989b8e05743183037510c07a0cb9274f7fc9cdec9c7c08a3",
+        "k_field.npy": "e4ba5aa5888600b1967ec124ab7a31c48315e115f2b36c4e9c640d787eac80ec",
+        "layer_id.npy": "f9baea8112cb948aaa85251b66a75194b0303faa02d360ac775affd14949dac9",
+        "q_field.npy": "dbbe2d8dcd395cf62cd0cb23bcae3d0b62ff86733e306c157348f9790d5daa87",
+        "sample_meta.json": "91638721a789c0b6cd7100e3937aa2d2a38a9b022e0d2353b8476f484377e027",
+        "temperature.npy": "1e900e4531a9d1d053c1cf17e5e3977796d281225396dc1752878e3f317a3846"
+      },
+      "relative_path": "samples/v6p1i15_0037",
+      "sample_id": "v6p1i15_0037",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "ae17480152911a7c014a88e57085bfcf6e7a1eb4b00081f8b1033754bcf40e5c",
+        "control_volume.npy": "7aae0b46ec5c98c3617de688be20e494111da1287e08726e3e234d76268379bb",
+        "coords.npy": "d5b0dd6a687f79417e7f3cc45edafa5ee9579df99cd7b71bfec0a0eb342f8d07",
+        "deltaT.npy": "2ca1c6e869cc1d8d23d9fe98752fa6965d51e9118b81fe00712fefa799942842",
+        "k_field.npy": "a272d3f49631c3604d6fc1452e8d1ffd2bf0fdfab74239cbd2cedd0438a0a8c6",
+        "layer_id.npy": "85b17b062d6de21000a8a21db95bc3032302285d40eeb7c908e098998bcfa2ed",
+        "q_field.npy": "d2375954e1906101d6a66211f34810ec9a496a7ab96dcfacb05788857901d1ba",
+        "sample_meta.json": "245029ad55b82cf949e9827e0b8d4609bbf1f5eb05884e3f8f1fe3cd812ed1d0",
+        "temperature.npy": "832f340d501d0c423badfc0a4f7b7d84dc084092132afe1ebb97be9b29112581"
+      },
+      "relative_path": "samples/v6p1i15_0038",
+      "sample_id": "v6p1i15_0038",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "95a364f92b5ab1be7cf322b9465249780b1f71d9b0c0ce3ab0daadf92cebbadb",
+        "control_volume.npy": "cfacc52abbb30624144f899c72d8e3ca26ba5ec422ccd7a6b54622eaa6676da4",
+        "coords.npy": "6180659bfdf81edc8dd3c46d280232b34234baab9c83b3067bd59ef893bb4dc0",
+        "deltaT.npy": "ca64a49fdd84409393b54623a95c0322a4df177e7271dfceaee49b999c92fe31",
+        "k_field.npy": "78f11ecb552f93a614490d2f6b39fbc34573e89024eb6bd680c03f6a58dfd5ff",
+        "layer_id.npy": "b3fb970debbf60b17f8dccf4035914ccd61682aa76e0a5c2ffc3c00907913a77",
+        "q_field.npy": "5ec0117c17373b35d19c6b74f59753ace61d7a1538c32752b5a5e2936f2d2523",
+        "sample_meta.json": "0460d5e87442173fe211e2592041d791f5f02d50731faec50764057cba86a1ce",
+        "temperature.npy": "554278d4cd4ec207e86f2b6f0da78696c2dfccb7cd8d7ce92e97ea5ae9e5bfb5"
+      },
+      "relative_path": "samples/v6p1i15_0039",
+      "sample_id": "v6p1i15_0039",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "b3ce7948b5603b298ce5eb3db259c13cbc9451c983254cfcd163c6958d3ee3d9",
+        "control_volume.npy": "28d35494400ee1ddc089fc1238f48cb66832831e69be913e51f974a0b66243d7",
+        "coords.npy": "0837b80d01174ee00140aaff38bc95b177014e8f234744a31e13ee296c005b5e",
+        "deltaT.npy": "d7a51c24e8f04a6f0931cab0ed895b7e8ccf5e40506fca69b5b158bf40b3f2be",
+        "k_field.npy": "857238ca04810a6096fa7a396f7ef7a6f91ca41342a416f66b59ea08078a2675",
+        "layer_id.npy": "0ba5da04f89da001af758232aec9852cdf1dd537e027db10bc529c35d3a8e2d1",
+        "q_field.npy": "5753bd79eb9dc6736317dec0677cad59c89764f0059ea6de4a01ba5f61f86423",
+        "sample_meta.json": "3f993f823b4e3b01433627fa8e6ed33e9767d01da54bead72c409cdd81d17eba",
+        "temperature.npy": "4920d8e235921f8f3a4e6c4d6e8a57cdc68655183116e096ff7285b7be6087ad"
+      },
+      "relative_path": "samples/v6p1i15_0040",
+      "sample_id": "v6p1i15_0040",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "212fcd0de4807e1a490ceff5109107dd35f0ad2c3198452288f02da3dc7ed7bb",
+        "control_volume.npy": "96fa980aa00c09a3889c43690522fc39681c7c60a6f2eed410c16e9bbc095362",
+        "coords.npy": "4f1ca7b2d00c5b5f9c349a7ac0775d8c08efe0f458b0c7b244402489db506c1f",
+        "deltaT.npy": "a7ddf16f24433d9b29f4100f38a7db0f4960b15b33d9ee6b7d4a9643cf4a79cf",
+        "k_field.npy": "077941813edc8457134dd56e7b86e8d2e58f840ce5423159bf71937e786160bd",
+        "layer_id.npy": "7ebe3d64ed49d71f62e5670c1f3e5807ec3f802413a381a0a455ceb1fbff0cee",
+        "q_field.npy": "9fd82620d17b96e3d69d2dfc41cfd02e9e98bb6100a7ebb2eb15a2c14db0aef7",
+        "sample_meta.json": "94bcd8780ff86973d791b67a421a6c8998cfcabbe3851f1135e349baf4ba111a",
+        "temperature.npy": "59703bf4f2a491a7dc41c3ddbde72995cb7ab32d78f448b16dc13040e8ea5829"
+      },
+      "relative_path": "samples/v6p1i15_0041",
+      "sample_id": "v6p1i15_0041",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "0643219ce49e817ed82bc531c2ddd63ea4d3dfac5de6ab8a6282fa5fe64643f5",
+        "control_volume.npy": "387ac0d875d1ff2a00c96019ab4855b72d4201efaad99d406739d714117fafd0",
+        "coords.npy": "d0fcdcea79ca0ef49357f8c0d59c687b5638a0b28cbcdcf4257ce9b7f0a284df",
+        "deltaT.npy": "1786795600145f2597830d4234ae12211a804b967ffd0d7c3ad6d43403c81aae",
+        "k_field.npy": "90d96df71bcdd9d67c205c81e709378581465ec52ebf8c93104a5da9a9709ad9",
+        "layer_id.npy": "b697be6ff84dded3da7b31f7483549abfd6fe0b8a9c6f63b46d2f413bfc5bd13",
+        "q_field.npy": "1aaff09c6ffa85249476700def44abd01965921f2e85de610cafe54283188cbe",
+        "sample_meta.json": "dc754457ebbc3817845accc49bd5a9caf9fe810838392e1bb857444ba0c28129",
+        "temperature.npy": "eababbc99261b3f2d3897257f8fbbb913c56547679899a84d5bfb3d8605f767b"
+      },
+      "relative_path": "samples/v6p1i15_0042",
+      "sample_id": "v6p1i15_0042",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "0f823c52561c6664c6048123b0d8244c389f8832f0ceb482837571b22cc90378",
+        "control_volume.npy": "8bc9d0750f20d50a09b9086804692fa267fd6602dcd1fabb76aa90f89aa57548",
+        "coords.npy": "344aba371252a2bad1691364c2b0a11669b07228008ee9b6c99d6a304c5a1507",
+        "deltaT.npy": "009460fc52e9a0e1fbbbc2d7e88d2412429580ad4b3f95c989dba0b1b5251adc",
+        "k_field.npy": "597f9462dbfb7bd50be3175d82b4c2b30effb3e2055619e16e732b5e55dfa425",
+        "layer_id.npy": "b5b741ba1528e0f823cb856d21f22fd62264131db48092d465a1037c0af68852",
+        "q_field.npy": "ab98906b3c3b2bfdd901b5cdfe871f327170d673ed56df5c3635fe98a2caf4f0",
+        "sample_meta.json": "b12806689e6744155155202ad3b54336d6af2c8781b19680992d08f9661001bb",
+        "temperature.npy": "14996bc2c6f6936f3a2ebe5366f0e0e00ff971c298b2ccb7e3807b863ba242ca"
+      },
+      "relative_path": "samples/v6p1i15_0043",
+      "sample_id": "v6p1i15_0043",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "f23b2c8f8bc3fc37cfa2022ed85d71c86ef866dcd4a8e3b3391271bb839f1247",
+        "control_volume.npy": "cfbb74c5d6bfabad29b9dc1fd6bd725e59adfa0d25f0081290fe7b7729f7ce8c",
+        "coords.npy": "6d4173d0fa10ad341fb0143f5f4d015550a93818eb17bbb575cf2c6b8cc1a7bd",
+        "deltaT.npy": "d09823ad91a1314cc25f1e0ccfe03cfa3cdcb7c4916a56c7d535d8bcb4d9e1c7",
+        "k_field.npy": "31c4eb906de7a11ab677f48d62e5b081afe2e90a2afda62dbc86e41a1f553de6",
+        "layer_id.npy": "7306940cdf64b989fc0c12ddd8dac5ab320a410869fce2efe439dbf9e65054e0",
+        "q_field.npy": "7b953bb8bc63ed6acd05810722cdeb5a05baee3f83289cbeb040013764a61f2f",
+        "sample_meta.json": "b7fffca1f9ddce0cba3abf7a470579ac9d6f01dc6c7ca4a0bb359423cd72e60f",
+        "temperature.npy": "f7038bc597a590f7fc78e5821f2efcf6d8fbc8aeaeeab711191172bf922b3e3d"
+      },
+      "relative_path": "samples/v6p1i15_0044",
+      "sample_id": "v6p1i15_0044",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "b1af972a6bbc13e77e04b1169553b5769dcc8013f8f8e806d30d2403a6cab0cd",
+        "control_volume.npy": "0aaa6d417f172e74c506fdafc24ac4024ed3b4833799aaf3f860f0ac182ddb66",
+        "coords.npy": "bfaa2f9b73b563dcc6c464d5b36f2c994cdceb9aac78b8295842051f29a5b904",
+        "deltaT.npy": "c32aea9f1dc94e46819b0ba07986bffc8d496556fe95c6f09564ae0b557bfb43",
+        "k_field.npy": "c4eec81a4ae05546570bdf15afd7fe903477aeda626f1414603e95f87e686f8d",
+        "layer_id.npy": "1fb21bf36080d176e39b0bb52e163583ef358f74b2dd9d03a61dc8659579c4ae",
+        "q_field.npy": "06f28210062a2fb56452fed2b0ca08086933af3bacc59f353e1606f1472a2630",
+        "sample_meta.json": "2c52c6e3618c430bbf1f10b3b5cfa7be90349cf0fa7771bd4f64f09eb07a123b",
+        "temperature.npy": "ee0bea600cb2dc86ede807dde2310a82de0efd8d567810cc7e8cd561d140795f"
+      },
+      "relative_path": "samples/v6p1i15_0045",
+      "sample_id": "v6p1i15_0045",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "e18893c40bb61749cee43937048e59dc6dcff7eb1372473b7205d19ea19ad8ac",
+        "control_volume.npy": "075621f0cb2f3fabe844809bbac513b64d77c7fa16d4a78f305ccfeb4a75de00",
+        "coords.npy": "4342b061b60e7918233d22c9fd274844038b293b1b12d735c115a6fda9d1e88d",
+        "deltaT.npy": "b2f62ae2e21fa44f15a44349027f541c2cfc4530a1660a28db8669e59203ff6c",
+        "k_field.npy": "2ad12cfd007164950559dd54f4ff70201d5a223e3a320cf5c01a04142c1d2a9c",
+        "layer_id.npy": "233476103b25a5ec876b7974dd1cfd16be41f244973cffb629ca2e0770c21f97",
+        "q_field.npy": "606463197e29cea4ef0ba0a6d6a406476684ec9872f525a8b71d050cf16b2254",
+        "sample_meta.json": "7a8795fa1cad8904d8109180f6fbc2f47b6c0bd60d89bd9e26ac8becec83027c",
+        "temperature.npy": "5695daa17101009ceacda74f51c809d39771f495917305ec05def92dd7ea8eec"
+      },
+      "relative_path": "samples/v6p1i15_0046",
+      "sample_id": "v6p1i15_0046",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "b14fb0d3a2f27e79048aa80732956dbae7ac27136be54d171ad747264e754af1",
+        "control_volume.npy": "65d8284d89d974ac042bc6508318191aa0862cac5d0d300a408e94faf49e9dc9",
+        "coords.npy": "7958b0032da1b8a264f79b1e61534d3709cb22c26145a21f0dcabe1288466f36",
+        "deltaT.npy": "4afc1fb5f29a3f215a2d35e2b94fba6bfb92b174299a5c8a74c28d16597d5fec",
+        "k_field.npy": "bbc07be92e43e3783b21995111b865fe1b0bdf3396bcde2817a95ca47675a7e8",
+        "layer_id.npy": "4943b8139ad94f14f06992ad93ae1a8111face36523c6529c043de1e2b693083",
+        "q_field.npy": "8391618ab815645810c7e007314baa819e42064b41dbd3491fa21993b09ee947",
+        "sample_meta.json": "693afb1f1b0586b2eeb3ea2bf5b1bed92a3d38cefb33c4b94d9ef2780d73bec3",
+        "temperature.npy": "460dffa3e454da091ab12c44c036db56766b9df6f259aab7717444c0b9f3b37b"
+      },
+      "relative_path": "samples/v6p1i15_0047",
+      "sample_id": "v6p1i15_0047",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "f4991136cbfe83c8b9d754219e12f049636a8f349438b21676eb4dddb6d3d71c",
+        "control_volume.npy": "3ad412ab45f71b14990ae1dd4c433d7b5245f61ee4453100b4cd9890e5edb5a9",
+        "coords.npy": "90b986e3fe5fc61c2779adcd5a50d7016a6ddd78a40117131f885488cbda323b",
+        "deltaT.npy": "bf96b8f7af9420146c1cf98cf9a5a6eafe1675eda4b8a785ac4b118864033519",
+        "k_field.npy": "918f8da8e1aa26f50eefba7055daac9a1d69ab694d3a1aa05e9ffb6f6b4385cd",
+        "layer_id.npy": "65c4c503e637fa8c0e9b154cb37217a9c29b130e0750f8e0d0269c461c1bcf45",
+        "q_field.npy": "f23b0bc3b0bb2fad3a4ae13861ed674c723ca06f4b03ddf2efbd12534508341e",
+        "sample_meta.json": "2bd7883acfb798095af3077d14be26d032c65e5966b5e19c24e96fe94d72369c",
+        "temperature.npy": "1a976357764e8357635205213666d34458bcd784edc2ad9ce7e5197106c1fc00"
+      },
+      "relative_path": "samples/v6p1i15_0048",
+      "sample_id": "v6p1i15_0048",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "e707f1980e293c5d7ddaa2246b1c954e7d2820a6d0d5057f3a5ef077132506e6",
+        "control_volume.npy": "83021b608213e1cb2d5d70e26f4809f9a150ba42c67ea59bda061ba082e203f7",
+        "coords.npy": "d2fbb13f539d45d8b66c49c00060e2de2386253b2accb1ca131aa44eba0c7960",
+        "deltaT.npy": "ead00aade3191dbcbefba8696a91bdd90a2f0095f913764a43652f920c0a9729",
+        "k_field.npy": "2e0ea8cfe0c807d7831aef59c12a5d36baabb1393bb20828e2595f037c2dbcdf",
+        "layer_id.npy": "2c4f9d97c35c3735be624e9ca8373fc63c941aaddac006d94de5e27cfa905623",
+        "q_field.npy": "ae933e9c020b74ee00d4dfd36f3424ca6a25ed755155cb5d6d3b6d3efe25d285",
+        "sample_meta.json": "177eb1cd071184d0b85db625b51e267dcc5bad8b835877c773b085df30257151",
+        "temperature.npy": "a98862ae2a75d796d7f9f75deb88dba986a378dbad7e730dc7af374caba67387"
+      },
+      "relative_path": "samples/v6p1i15_0049",
+      "sample_id": "v6p1i15_0049",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "03bcf820b7717daf06baad14493f35cd96584acf3a69c14d20377e14af7ad8f9",
+        "control_volume.npy": "1dc82d959e5f6f2452a2e3957245a7b669bfbd1f88754b425c0ca3ea2c09e2e0",
+        "coords.npy": "ab6624794e44a75889dfd52b2080b637368f150cb551aaa699de6f43e5cca9cd",
+        "deltaT.npy": "f6736a68d6814b3905030f72aa99727747d1dcf05e004688d8e2e409b09b8ff4",
+        "k_field.npy": "ba13f2ff9b90bda8cd4da614a1ce5d0b6571234e16328a95942a299937ee85c2",
+        "layer_id.npy": "84fe73ce6a1d015fea2e075c9afa1eb5ba0aa34d6793a61a164ea04e7bcd1d55",
+        "q_field.npy": "d5d67ef43aafcf2545de559cbb7d646cc33da57a4742d5add46a5ed6f92f134a",
+        "sample_meta.json": "7321e4ab4a00fe2cc845062b8393621603b2edb2c523486a4472c56d103837d2",
+        "temperature.npy": "b2155e70be7e9f575ac879a38e8aba9a33f6c8efb5e48878a82e102af6af3efa"
+      },
+      "relative_path": "samples/v6p1i15_0050",
+      "sample_id": "v6p1i15_0050",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "6d58b634c0a32405bcd69b8a097e154b7675e174aa87fdb5be185e5fbc41ce47",
+        "control_volume.npy": "9f0e6581d36de00f65c974698ed3f76a97a23a060fa77822e2e790148684d5fe",
+        "coords.npy": "1d1dafd91396a5b2dfb838696aabac1020f44295bf4215b630b39576e87f8d40",
+        "deltaT.npy": "b0614d46723b329e52d1667659a5f796dfd913350a1d311b0215dabde8f9c2fd",
+        "k_field.npy": "64c180dc7e013be3c6130aeac1fd947544da866ca8952aea8df48dcfbc5a46de",
+        "layer_id.npy": "19559d2434dc6ec919ce66eaff565a64e5e42ae41ab7fc3f71e199b52bb647fb",
+        "q_field.npy": "6d72d92e13f4d8018425f7d3c7fcf5dc6a3010aa7985b081d2602c72336aab96",
+        "sample_meta.json": "52ce6b224ffca2635aef083296394601806bee8bbfe935f97dc0696e113cfb44",
+        "temperature.npy": "92efa217a9f2df2d3945f2e053db38453b100fe0b75ff40cf5ce415416dc155d"
+      },
+      "relative_path": "samples/v6p1i15_0051",
+      "sample_id": "v6p1i15_0051",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "f1c5c13035a6a548a5cbae66fef1317d13011d22d09d1b5bd1bb82d7ff42dadd",
+        "control_volume.npy": "25aa2451ed6e6f4ab9b5dc4d484cdb05b0326c88b55619f832b7c9bb31da7f08",
+        "coords.npy": "be20bea87f4ad7a4070842a3b287b93fdaab51180502c40b64784e6b55cfb312",
+        "deltaT.npy": "3ee99694ab357adc5f18053e28438bf222bfd04fd964ea4396209123e238b788",
+        "k_field.npy": "79802584be5ac194fc4bf14ba7a2800c56c5e59497fce2e3004c6050f5246ca1",
+        "layer_id.npy": "7d216d049795b181f02ed74faf6f4b34466f7f49e8a8dd88c27b9b7edc1cb722",
+        "q_field.npy": "a9a639fc89a0c995d7b1c10b8c5d019e3d90a781391948df1379dbb920a8cc3c",
+        "sample_meta.json": "19373ccc64ce01afb889e81c4cbd6a9ae99c8a170c3431ba752690f399552ae8",
+        "temperature.npy": "9bc187bb72b74da7a0bc33b59e944c9d13b3caa80e502db637098d8a73923a25"
+      },
+      "relative_path": "samples/v6p1i15_0052",
+      "sample_id": "v6p1i15_0052",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "51f255cabce1b5969eae47854db599d2c63808a3fe495e436e5f8b76ea2b70ac",
+        "control_volume.npy": "b954cce0aadf70abcf4f64a79a48d630187cafc5584dd89dbf569758d368efb4",
+        "coords.npy": "8b86679491b4d28535ebd21937c0dd9878776945e8b01b6ee775e2411f44682a",
+        "deltaT.npy": "bff96a4aba64360cde24b466f83219ab4e22911446535de3bc66cf2a7cb68dc7",
+        "k_field.npy": "ac6394384fd5d83dc3662b354398cafea4f74c59c6a744d84613107074e56657",
+        "layer_id.npy": "cb2ac1c4ad9c321bd2b61987224fc553fbc9b4b85aacd1ebd2017d8ea506cf25",
+        "q_field.npy": "c6fdd2b1c250e182932b3c5558f5654f225e75d771608450f0ce27dbc8f48681",
+        "sample_meta.json": "a8018659efb8ffd8047198fc397f07c23f1ef4afab8e5f472acb2bf659888a67",
+        "temperature.npy": "aaac35d3e46e6b58b5c9d5451d479bb51c8ff29af82a5af6e3f683d11a7d3337"
+      },
+      "relative_path": "samples/v6p1i15_0053",
+      "sample_id": "v6p1i15_0053",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "3ed94d9b019c8fd10cb8c1ad73ae60e58555b126b7923e1b6e7cb11c48291d93",
+        "control_volume.npy": "91d7a69b6fd8468569f1747f87eefe78f895f3e586bd00466e3ab47d21e4f9c0",
+        "coords.npy": "da0600b1984657af5557c966020e2cf9ae9177e2632c9c568bb774b1c0dbff14",
+        "deltaT.npy": "19a93ef2ada031a27fde40aee0643065699d79880ab9ba89756922e8e8194f3c",
+        "k_field.npy": "3f46fed509b36128c155691cc1940a0663bfcd24746d21db671a9eef225788a2",
+        "layer_id.npy": "690890a373f87cd8ebcb08271e535bb6d286df434f74df7a51622debf59a3ea3",
+        "q_field.npy": "4a68354e111aa83671c88bbb5c77bd9207e9f651912004332a818a7456722fd0",
+        "sample_meta.json": "134196ab3e63598bfc1cab41ca984c4e398a218ed6aaf7098195185729f8117c",
+        "temperature.npy": "6875386d2b4e663e636ea831b566cb60ca74a917bbbfa59fc13a251722dbeff0"
+      },
+      "relative_path": "samples/v6p1i15_0054",
+      "sample_id": "v6p1i15_0054",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "f97ff7dd57d3c2b83c7792c746fe69d28891c8ea2de1266652539b441cd65db5",
+        "control_volume.npy": "dfce7b153a35d2a5ceb8ac09544407303065c53af72610ef6b6e6c9977dc4968",
+        "coords.npy": "1004c04a80ec1f988cfdd9d68504d3c7cb30dfc5eb0ef2e47d87d171f9f73516",
+        "deltaT.npy": "256e42a4b60c3ad42cab012705da3a7a8e3b74e91395c1e272353c7d33371d1f",
+        "k_field.npy": "7df2cb8eb775a83fa236ed4e810fd5e3da0b89548a775502188ea25dce2cc23b",
+        "layer_id.npy": "60cc42f4e47ea3de55a9b8128026f2bd4f5b67e094e3ee5e52c5d62a1781f6aa",
+        "q_field.npy": "7a32c45e51ca1b15f03650caae9aa7d37a0f2258e143a9102ff3b66b6356d4b3",
+        "sample_meta.json": "86b59a57657fd1a7111db9ba1ca789b6763f532c68b14e80a913ba07e301e785",
+        "temperature.npy": "582dc4925fbc2ebd83a044523e1d738c816e2931e58b357b29858e79d74fb003"
+      },
+      "relative_path": "samples/v6p1i15_0055",
+      "sample_id": "v6p1i15_0055",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "ae54b76bf4ef274a5f6c15e35273eefd2a6031b2a4c82348d4eb77bf00d20bc7",
+        "control_volume.npy": "2f1ec657cde98e39da65901ec693fc1d89486665d4049d371243f57ed0693188",
+        "coords.npy": "b1ffb4ac9014915192a2456040898b86175abd3d828ea99828452746f71cd759",
+        "deltaT.npy": "fe02f26b98d188f594374824ae3065a51832a6577c94df8c7323b43d54f94c15",
+        "k_field.npy": "7299b641008adb07616eb836543d78d3befb1f32fae5b4903a18d83cf8539e11",
+        "layer_id.npy": "8030fc21f0fed47c9d70fe76639f19d07141262bc4a97000022b7ca6f717912e",
+        "q_field.npy": "1878e63649d73d60d35ac13876ccdf79c477f9b67eba0bb8a3ee354e0294fc9f",
+        "sample_meta.json": "a5b42367dfb9ceac11c81f0a49c2056280945d374fd7a97e0aff145a7bcfd798",
+        "temperature.npy": "f60a643b6a8feeff9d39a8c3a04a9d091f32fd5678f86886722a64edd5d4c5a3"
+      },
+      "relative_path": "samples/v6p1i15_0056",
+      "sample_id": "v6p1i15_0056",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "51c920ec42bbf5412e963dfc19eaca5b7dc3c38b9b28f19249908e97a805b86a",
+        "control_volume.npy": "dade84a16ed9e0d344bb27f2a7ddd8838bd791ec11f71fedde6e1df84de4b82c",
+        "coords.npy": "f08d6582bcfbb5b3a65acf772effc455c90b33c5adb8fd4ff12bb40ca2d250dc",
+        "deltaT.npy": "86ffcc04ae713b552335d9a1d812d6ce382f2860fa4f9f8be8cc53e43bf1c0b7",
+        "k_field.npy": "c7b157223681f94c53255751f34ef37768d1f28aca7c21a2e9f999a50bd6c6bb",
+        "layer_id.npy": "09747a929162488e953e479fd744f74d6bab61cafc1f917a49b15a1c91efaaab",
+        "q_field.npy": "c6f806ab54a16f735198f73531839a9d851c2139f1bcff79a448a5cfc98e9ddb",
+        "sample_meta.json": "171898f01f8b63f535c09ce7875e534966b970d0e13c61e90c5195a0641806c9",
+        "temperature.npy": "a24fdd0f03d7948bb5fe281293de516c6fbba7bcd692567b06949dcad15196ab"
+      },
+      "relative_path": "samples/v6p1i15_0057",
+      "sample_id": "v6p1i15_0057",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "2dbff35716d826ee056fdf88ef605c8a7211eef76f48a1d6150989828f5f1732",
+        "control_volume.npy": "b18ae947706820bcb38505a694d706aebbef9e604e4e799009590db92ae587e0",
+        "coords.npy": "472eb45a931bca401ee0d52ed3d49e2707d9c079feeb435057d55fbd306a6460",
+        "deltaT.npy": "7742a4913a2a89ec02856d78adb4665c92d8a812b01a2a40d2b4dc55fada29a5",
+        "k_field.npy": "57d153b0d739816a7e84999585c58d7e8b29eb110aa645dff93351178b14ff39",
+        "layer_id.npy": "ccaaeba764040f975972324903536b8f698b502c332fc917c4a7e434b0ab16d2",
+        "q_field.npy": "71e1d024158d1d1367e0a20326471c330e483a88846141630865ad5c08ec057c",
+        "sample_meta.json": "c99fe2f09591d97a3601925d00a477211ddb7357e3a65f4b409930c4b4299aa3",
+        "temperature.npy": "5e86b449f4b546565e67c959ea0be811bc092251bc9ef84e107528bdc76d8d0d"
+      },
+      "relative_path": "samples/v6p1i15_0058",
+      "sample_id": "v6p1i15_0058",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "694fef81ab338317f79ca8e655c866aa2262f2283c50ff8b360f74bd439b14b2",
+        "control_volume.npy": "3190510f08fe00a9b91987551ace3dfc3ecf9fdbc99ef9b90ba70ac2ea1b4074",
+        "coords.npy": "79b73cd666e2ed0be70ac27be990846b74df6d5113fdf9f6b9c403045d7dca8b",
+        "deltaT.npy": "fdf1b78b659402361f93cafb0051ac00129e3c01f9862a5f277da0e89e535171",
+        "k_field.npy": "f138388646411a173e5364e8e69d398528bbf06839d748eb8734410e5bf5787c",
+        "layer_id.npy": "881f539517160b3f2486f7858f959094d5fb13f74d636d489c879f0bb5c8a3b5",
+        "q_field.npy": "a9f4768b1992e922c26ecd9590a519e898fef8eef1443bec0bc2f0318a2daa91",
+        "sample_meta.json": "9729ec7afb185e4d1b776aa37e808495eb270903f7926aaf08c9707575bcc07d",
+        "temperature.npy": "16b977febee545b55a4be288d9eaa85ed7cf1d8463a3ce57a3c441ffd996c111"
+      },
+      "relative_path": "samples/v6p1i15_0059",
+      "sample_id": "v6p1i15_0059",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "fcec44645260052e4ac11df21e29009eea1db8520a70df5d1031df03b3acc24a",
+        "control_volume.npy": "1584152b26bc4b040c3d4027160188fa468879e1a49493b669795aaeb91e3e07",
+        "coords.npy": "ba276ae71e4038608cfc58d37667cb2da03e733cbcea172d82dc467352b6d2c8",
+        "deltaT.npy": "c72e7f94f4f9ffc9ed3a9a87e19959745a89d7a1aff643bffdf6af15b05818d3",
+        "k_field.npy": "85246455655168d6e9bb7b75c6515beee1b9cec46fcc5aa48968fbe6637da223",
+        "layer_id.npy": "6d5fce638c5fd2ac686bf5dba6857ac0b5d80d5c997480c84c3abcb22b6874a8",
+        "q_field.npy": "0ef6a4de1bb0ea046931e06845bef2c2766fc928a60c092fc8fb44f61f42be57",
+        "sample_meta.json": "8c6062b41d85cb9c3700da4f430c7dda97ca41126b5975c4055eb8cbef85c932",
+        "temperature.npy": "86e1da1f900eaa0eabdd6bee2fb7aef2fd28c6cea5d2ad19af38cd7cf1835331"
+      },
+      "relative_path": "samples/v6p1i15_0060",
+      "sample_id": "v6p1i15_0060",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "385a1788cfaa73f122466f696850cdae48f6156c988982c6a8a36c92a554b0c5",
+        "control_volume.npy": "2ceaebb6eb2e5402f9c96dc3c68c8449c82927de1615fa2e5ce8e91aa7dd338b",
+        "coords.npy": "505c38b2bd9feeff1b4f667f391c4584af2f24b8632fd6ababbdd4cef15d1ac6",
+        "deltaT.npy": "238ee2505d7fc8112a5ba6ac2668de2eff7f4774b1a6b89e1ac5b2c81ffe72fa",
+        "k_field.npy": "784f023cc87cbc7c25eddbe62f1202d212eacedc205e679bfe6b8cf0bccfcdd9",
+        "layer_id.npy": "67a5eae907df207265202d16855f95e7c9bcdb7cb0726d74e490dd3efa87324d",
+        "q_field.npy": "c54e98eeff06ef41d309d76c096891c15f994cdfcc35a3478b524bf180410646",
+        "sample_meta.json": "670596b24029a2610b50401bb4be177b259e96ddbc84b5bb2c1919cd225a8e98",
+        "temperature.npy": "db82ada7b66e68f3b922c8e5622cbbe71bf92e640af597eb4086e9d04211e2a5"
+      },
+      "relative_path": "samples/v6p1i15_0061",
+      "sample_id": "v6p1i15_0061",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "48da261d2764267306d98a65aea7fa7483789deeef3c957ff6ea9571050c22ef",
+        "control_volume.npy": "f5504344a39af771347a37f6840ad714a0563e5a0064e1c919f4f05ed3a8808d",
+        "coords.npy": "44980e06a83339e0dea8cbffbc60b1d84f88072adac40f0f5fd9e02a7996008e",
+        "deltaT.npy": "5362965073ff4e8dd129ef06384b2c4aeffd1d2e56a917949ef2de3fcfba6c38",
+        "k_field.npy": "d41f02f1b128addf47096d15f8b9111439bee7c792c118bbe78a0b4417980f70",
+        "layer_id.npy": "bf933eea8c83e83bfa23da491c81ecb34194a580bad62f5745f921866516cd57",
+        "q_field.npy": "5d4267d13e06cbd93e3ffe697ec774e036fed689323b52c9819f559b1ab58c6b",
+        "sample_meta.json": "db354cbf3f1b003b256209961ef9c48e14f82cff518c584c0a18ca52a39cca58",
+        "temperature.npy": "30703040e356bc4f4ac4ac884713330f6bf0feefab758c58191a1a384b1a5b6d"
+      },
+      "relative_path": "samples/v6p1i15_0062",
+      "sample_id": "v6p1i15_0062",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "065e8fb06b78d2e5b98ac41bdfa12920b60818ca4d164544e4534d767800904a",
+        "control_volume.npy": "7eb4a62eef02a74168babc26ffad46adc897dfee72676fcbf345e958b6f1a792",
+        "coords.npy": "84d2e891f93022d4ec2943d2624af7bdabd389a4ae94796d5764b9061567e05e",
+        "deltaT.npy": "70f8e29f665bb033f7f7750d28654771aed21773fdbcfc2eeed630ca466e0794",
+        "k_field.npy": "ef5f6e680eb23ff8301f62b8e93c67857be58b56ad682200e2d5a5f41c3404ce",
+        "layer_id.npy": "74d2921f922ad77cfa77435474b98447a527ff3adbccf7ff8adcb306283a2351",
+        "q_field.npy": "e78675275f76dabb290c3bc3ef0bc5e9ffdad89c4492201e0cc7fe5839cbba0b",
+        "sample_meta.json": "d965602fee948b757ead512d40db381c129609ef7928deb994e7ffe780fa28cd",
+        "temperature.npy": "ebc4f777f0ed74262c9ac2558966b39c12390e44ab66bd5e352a7841b6c0f47c"
+      },
+      "relative_path": "samples/v6p1i15_0063",
+      "sample_id": "v6p1i15_0063",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "a76fadfd657bfd178630d781fd32638622a435d6945796843b96e7e41f234e77",
+        "control_volume.npy": "8c61617da8f74bd200728bcafa8a4202da67e4885f849b0448e2da462bce9fc8",
+        "coords.npy": "3d08763f31571b4b6c13b786ee2235736196f03e69fdca7941d574b5fef8a8a2",
+        "deltaT.npy": "f6031a2d60e198f0d06ae5d9b856b86d8a9c55d757068ea43696f0b5d15c22e8",
+        "k_field.npy": "cae950e8c54d44cb5471e1056fbc9131b8705b3866dfc918795516c83dee8e30",
+        "layer_id.npy": "7aa4feb7575e1bb5f264ff48d41d9085f7b779ee19918796b7d17c64f1438067",
+        "q_field.npy": "da982e95cf64fffc6a4bd76585bdbd3da001e316e47c7ddea16faf5d95f4376c",
+        "sample_meta.json": "c484f49c70da5661c2127e9ae2999130bfab88752f7792c9a0a9b0685192ec25",
+        "temperature.npy": "c861ead03242bc035704034aa5f5ff4a0ac0a352b5b5cd3fd4162f3e9dac5f33"
+      },
+      "relative_path": "samples/v6p1i15_0064",
+      "sample_id": "v6p1i15_0064",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "eed9dc445104c719dcb02fc26171fa8a5bf5a9b9bb3b6d2dc96e760a65d473d8",
+        "control_volume.npy": "e72bce492a246499523c957d279669f801e8de8c962b0a83641d0109a991efe8",
+        "coords.npy": "1d1e3a191acd388499fe5d82b983444c08fa283779a9f95c29a55f504689a205",
+        "deltaT.npy": "5f073d8081c5080a1468c4fd0d6b432f0029ecc22d5fdd103488c9ff82aa10a1",
+        "k_field.npy": "e3c66d1f7b9e8358755267cb30c8a4dab0415b38530d81f8949cf75a31ef3fa3",
+        "layer_id.npy": "91b717d049af228c9adf101a4b6cc0cd0c304c4f45a201a6191603e4947a7d16",
+        "q_field.npy": "6134093e75c5ed0176ee05fbf1785e679308803f2bee67034560fb51319d4d03",
+        "sample_meta.json": "0f12eb7842a8a01e2c8dde0151652cfb7c114ce7f019b83caf7cf4fd4aa2c4bb",
+        "temperature.npy": "65e61e6fd8e8cc86ee52ac2ad88772a515d64fc5f1220f10eeeab6d3ee857ef8"
+      },
+      "relative_path": "samples/v6p1i15_0065",
+      "sample_id": "v6p1i15_0065",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "54d50eb6993dd99362d94b447125da8d1f7dd3d12e702663a2033c28b3403fb0",
+        "control_volume.npy": "68026f84d8c9d2adc33bfd5ae7be6963fc3139d25aef665882f3f3c94b175aa8",
+        "coords.npy": "02c705357d9dc7f9721861dd2c763eceabc910201eac56726adeb9cc4aecb0a8",
+        "deltaT.npy": "05894062482999ce478648584613013ceab2123f081be4d48cd8798cfa625ec4",
+        "k_field.npy": "09650398c5dccbb5fb9381c5f8441c1fe929f5bf68c0c79b02b7d581ef03f663",
+        "layer_id.npy": "49e4eaa8c2945d70fb20ee7454ab161739b70a626f267221e28fcb593149bbc5",
+        "q_field.npy": "1215f15f17de614f596914de860ac86fcc5469cd31f403806237b45edba5135e",
+        "sample_meta.json": "e2ddfcd5aa1d42252a48efc148afcc19d75f4f25a868cca063a58004db3393c3",
+        "temperature.npy": "502edcc6faa60d8a8a062e390202acf9dab59afde9345d38a49de110ae6a15d2"
+      },
+      "relative_path": "samples/v6p1i15_0066",
+      "sample_id": "v6p1i15_0066",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "7ebf75b20c3646a21c07171da6972183748dbdf0f2d936c8f71d0472e54bdfe2",
+        "control_volume.npy": "de69a79032d258b552a925921a6fba8089c0d379446df31096b27a48ca694a9c",
+        "coords.npy": "43579642e6ceb8064deda1bbe3068cdf39c83292cd53e5cc7629c14e611f1763",
+        "deltaT.npy": "f13eeca38dbd77765c30619616dda243c6f709eb2078d2c309cdd7ac21b46d5e",
+        "k_field.npy": "206d9e41c190223db69d63ed9167becddf62a43cfa01d31451a2143592669a92",
+        "layer_id.npy": "c796a8d76bded3ef760b877a4d0ebb539bfbd12ff4c5589f148c8949079fa498",
+        "q_field.npy": "7e97b6aca1d632be001e78fb34c17d829e828b751b3df4326a5634cbd05d8450",
+        "sample_meta.json": "10eb1d35f8f9fba5483954602d2b97a9a5cbaa3fb2c86f6854a3cb85d1397b5b",
+        "temperature.npy": "ebe44f87dc2a2d81f585a8b68960379676a002f450db14fbba2688a93c0e8f12"
+      },
+      "relative_path": "samples/v6p1i15_0067",
+      "sample_id": "v6p1i15_0067",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "b6a4e5a056e426472ccc8587cb7f1c1299be3b9525669bf3f4b8055db739bde0",
+        "control_volume.npy": "5b89d07404235a68df62d4c9f6d2ccf8c858f62fe188c56e360e3592f5dad6c0",
+        "coords.npy": "48424a98442b9de536bcd3ad9037497d2cd4f67371b1df6b3d92a56924b4bdb4",
+        "deltaT.npy": "865e6a36bf776d1d45dcc6791c67aab532ada880b1d2e49cba6aac2557451d8a",
+        "k_field.npy": "6ede9935684c66f4c5e896dd19286514f736781d9a764a9c661647b4763ba3da",
+        "layer_id.npy": "370a219458db6c35d48c3f12fa02a2c9abfff4734efc60dccd1102b4f8c3efde",
+        "q_field.npy": "4550827002e2bea220b56c1e07d28cc2b3ee3e09d3b12e7586d51f7d22458535",
+        "sample_meta.json": "eef5fdeda4a540d5bc1348bb01c3d6e731f1f766cddfdd00c99c6b991e4fa040",
+        "temperature.npy": "9f12178e821c582a1df0183d689ccd5b07176b0ff60db5cf425f9fc17b45e44f"
+      },
+      "relative_path": "samples/v6p1i15_0068",
+      "sample_id": "v6p1i15_0068",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "102224c8bab1b6ea9244566fc23b7c11ba48ee86693c46714ac9893b9e0b24e9",
+        "control_volume.npy": "548e02888812636095b3b6319fc8bd78f28b8aec1bb2556170ca17aff866d756",
+        "coords.npy": "4e31e2fcf53b6687a3b6c65f6afc5928897795b4eddc517216cf14e7f034ce42",
+        "deltaT.npy": "e16c72d55a73e510570f6121357531b35ebf1e8806a4d7e311c98bafe460d550",
+        "k_field.npy": "06629f1de72b66358a2d21e624dfe5441bdca389ca58d6cbdb3e1334b8aa55ac",
+        "layer_id.npy": "06104ddd1c2f2ce9804dc0e984cd95a52bb53f8a6d5578635ac4861e8e84c6e0",
+        "q_field.npy": "fe007dc9682aa79d352b9db3aa2873fb884bc04c736726dcb9e1f9bac205a0ce",
+        "sample_meta.json": "b680c966375a9d4a2405ce32afba7f3be2f691f22d70c94a276ef33f212f5b6b",
+        "temperature.npy": "d94edd82c878693c0aafbf76bb8c4c50dff1ef00a717f9847aa1ea1fc19bec96"
+      },
+      "relative_path": "samples/v6p1i15_0069",
+      "sample_id": "v6p1i15_0069",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "29c7b835cde8ebc533e53ac0bffe5d7f0e104791fa439f10be6fcdbb1aa7c022",
+        "control_volume.npy": "58a2eadc339adc30f46037c2162b7a7eac4fe15544370faaee1eacd8bd9a04f3",
+        "coords.npy": "8960f65ddb1da215923f59e1ac4a6bbd94a4c627d488c0f4e068902c2b922bf7",
+        "deltaT.npy": "d4be48715e7c32655bd4b25d0d536cf6cf863a58f46c68bd60492e9fa98099fd",
+        "k_field.npy": "6c1a8860be4c806a5e603fd75efe3ba3d320b6a00d26fe80b7be5871ab7c2d5f",
+        "layer_id.npy": "9faf46a72bc043333e24573dd3229bdedf3dd50aa13f6384d261969a0737d6d5",
+        "q_field.npy": "8c5b99119f7fa8fbb59476432d9f2dd341c77ee3982341fe0f57ec303b4917ee",
+        "sample_meta.json": "d8c0a5eaba9687b649349d0e7eb6bab520aac888bd09b96dad3fc09d3a8607e5",
+        "temperature.npy": "4b02ecdef21668c527bbe53f735f48eca2747af60b4de45335e256b225ace17f"
+      },
+      "relative_path": "samples/v6p1i15_0070",
+      "sample_id": "v6p1i15_0070",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "c16cdc57ece66f602ace4e546b653625612a080da9af722424ee7b5dc23ee387",
+        "control_volume.npy": "01f0fcdb5f5b1794a36c149048d56c2659c54e87992bded745c7400985132003",
+        "coords.npy": "5c88ad04e6b5049febb7ad7c407f9abd8aceb56981ec03d01517dc83b8429bef",
+        "deltaT.npy": "a8e61e830c336d134c68be2654ba2bde7566f8337648d3f02164047ea27d76b8",
+        "k_field.npy": "739ace8b0344a0315af270934847e4465685ecf1a6df9849a5041bd6ae5d3bad",
+        "layer_id.npy": "5c43e46a66fe92a345998b3a14abded833c9692206d900e8480467cf6ffc09c4",
+        "q_field.npy": "f712fbfebc4f5d37404db05667c925d7a261e23615d478883d2d25586e093f29",
+        "sample_meta.json": "0dd56a93a9fdcbd8704e9eefe9f7bc936e98cb67334fefb50b3c68b91ed403e7",
+        "temperature.npy": "2af1eee7e03117a1d6997d671e1ded4b52bf892d799b28988b23a91bfbd8113b"
+      },
+      "relative_path": "samples/v6p1i15_0071",
+      "sample_id": "v6p1i15_0071",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "2f056b676719a17987f61b240de15454144d25624858c2b2d23d954d8971671b",
+        "control_volume.npy": "137a9622737d90cc7469dfe811fe90d3ba1d28959c1763524ff26c3b0d4f600f",
+        "coords.npy": "85c1f2effa99cc5b522b2ff365128027925955ac9e605268688c5654ea359ead",
+        "deltaT.npy": "7599f009ddc212b45ca66e058ab1e4036b4aba92493d4fbd041774c81ec64a18",
+        "k_field.npy": "bd6b63b0c1572733d548737f5d06ce3d7a100d45b72457fad4633a2b0613f01a",
+        "layer_id.npy": "52c8e3faaa012fc71524381cfaa73f216215e4192aff441cef3b4cc301742a33",
+        "q_field.npy": "ccf5b57947c578d0eafca7e85d95a40b0e36e460148d1662487fa2b80fb99e0e",
+        "sample_meta.json": "e0c6563c51bf5273f19bae26756558b27312a2166f70406fbafe38d403c61862",
+        "temperature.npy": "6928c4fc1954313c13e3ed635138b9a253ad53d9aa817d7a2993fc7357dc2e2a"
+      },
+      "relative_path": "samples/v6p1i15_0072",
+      "sample_id": "v6p1i15_0072",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "085795d19acb077415f9b18f13a531726edf49f7f866867c66c24794025c67f7",
+        "control_volume.npy": "cc40c66d57908421bc8aeb38c32c5b2d167c250b035b8ff703f007c1c16e30df",
+        "coords.npy": "0ef4fed00da1987cb2fd4fd0d0f288915654db2e66df13ed2714896e2dd02527",
+        "deltaT.npy": "4c73dd0e47fd81950f9c1164e127a489c0bf27998c8c3d0abdafcd818e470828",
+        "k_field.npy": "9b0c6de7a9040bfd13698000fddb090896f9ef0fe95dc5507aa32f39e7aa52e9",
+        "layer_id.npy": "42e3c83166666a849dcbbcd934f4b11c677a68ced9c7e9ba1962b7e0a939180d",
+        "q_field.npy": "087b90bb1b0ca66419a4d0cd8fe75bdade266b85c71847a5f7b040dff1dc5b7c",
+        "sample_meta.json": "7d374f1b72180df70d2643f190382472df62e40599908196d75117c3be6a6061",
+        "temperature.npy": "06fe652c4da65ec27519d364bd87d632307430632c5d896fce354b0e60c88124"
+      },
+      "relative_path": "samples/v6p1i15_0073",
+      "sample_id": "v6p1i15_0073",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "98cde97f85325af4299fb1dcd28ff2c2eb8f479469e5cce796860c9eb5814013",
+        "control_volume.npy": "5f68b46df07ce09e573bb99fe2e789affaa6334f87433debfd2ac3e8200d9991",
+        "coords.npy": "9e3ef693f31bd32b1a91450fb5ccb7493ff74398acbafa11979a3e7291958b36",
+        "deltaT.npy": "a83f9e353da14f4f0821f19043a7237f97acd02ba1af550df3b0a289a47ae465",
+        "k_field.npy": "8ce050b775f748908075be53e7c3f135d35cb8d30aa3fc4bdf349f1c3fb563db",
+        "layer_id.npy": "ffa3e1a28ce596a0743a852fd71b4da9bdff1d009bdffe935144028ee66e7c7a",
+        "q_field.npy": "916949a055cf590ea4e9a3b2aa6b81fff409b7564597c282e2b8a840c234a6c8",
+        "sample_meta.json": "9f016e7bc833689e7bb9614d303e33837846b7646c686766b57a140dfa801c67",
+        "temperature.npy": "43720edf3d3de000666b61df0a5c1f24645bedc4903cafdc4131adfa13f39848"
+      },
+      "relative_path": "samples/v6p1i15_0074",
+      "sample_id": "v6p1i15_0074",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "3bb5668b7292be70a6145e0f845a2f9e7212a4117afe97c141481c3594a71d25",
+        "control_volume.npy": "fc8391af9140660168928e0118a08f7357d27f41ee05be40cdba9d66bfc4f494",
+        "coords.npy": "876599d552f3250e2c8ae86da84585f97017f1604a5f5ccee9e2ea07120e81e3",
+        "deltaT.npy": "e8c813bbb0fae670f763b2ea05c4f620faddd1b69eb6a4545aa3d6f1a83085c9",
+        "k_field.npy": "0f09c90cc1910741a57098daad1f348ecb1272fab13aa6caabb7833bc5b0c09b",
+        "layer_id.npy": "c41c114a18c501fc69a35bf251ffd25a36690df6a743e1de15068ffe9e40da40",
+        "q_field.npy": "9e6198fcac4715771c5e07deb23bc2592dcc9f45e922dd4d72bbb1ef91afd135",
+        "sample_meta.json": "103585b633ab7f59b242da080f5f7ea20b656121b0aff91aac524e896159eb43",
+        "temperature.npy": "eb6b984781502ab849881ee8e3e75243713bd739b020f9b71b4e6ece7c9424ec"
+      },
+      "relative_path": "samples/v6p1i15_0075",
+      "sample_id": "v6p1i15_0075",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "45eee061869d58bbbc824e094107b1b349e297e865f0a90cbdd2f428449b44f6",
+        "control_volume.npy": "1f5503ca58771242a93f480b696f398644bbbeb6e2e1c758dcb160bbdcd661c3",
+        "coords.npy": "7461d42f91b0d120f0198a5b1cb9292538530b13807a292ce9cb0d70659117e2",
+        "deltaT.npy": "79cb9def6713c1a8363b383e368004b21b21785618ca6ec996c9f2017d467b3c",
+        "k_field.npy": "4a0ed9dffc27c7293827b52145c1f1488022f2b9263e432ddfb8a6f78c9c95d4",
+        "layer_id.npy": "bea6f7e2d18293336d3e67355b6b067cbff0a2893aecbad589b430205ae1b81a",
+        "q_field.npy": "44f36581d24d95f4db053a5d34cc15a721263fbc60c9fa3c9d1d7beb8d8acc9a",
+        "sample_meta.json": "5abdbc5bce3d0b08fa9d096425f89a4beaae0c243d62f31cb067848b105c45b8",
+        "temperature.npy": "33063f3628d37c9dfdd00f05145ed3697f28407fc63051ee19b9d8dd929055b9"
+      },
+      "relative_path": "samples/v6p1i15_0076",
+      "sample_id": "v6p1i15_0076",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "907f13920d2b36bb5ad81157bb46e3ccf6d1b4aa3b9532814773de8f924c75b3",
+        "control_volume.npy": "1c60f86852062412a2987ffcd84a2f78e74cc48d684ecd59f27775e32c83ca09",
+        "coords.npy": "c243f48312473f9744238d83ae716572ec454bd0c2a86f20f34d298c935832a0",
+        "deltaT.npy": "4d4d8a06dfab842323c2c14ca9623b9eff009af5a80849d0fb8a96f25370ddf4",
+        "k_field.npy": "f475d88fcdd92e1845bafc04eb4c63521cafa744477e8ffd5b52fd6b27d1fc51",
+        "layer_id.npy": "68cf8ef9d7f8c54f191716b779e4b6754f512ac670d0f61c943b77cf535fb747",
+        "q_field.npy": "445e9456e65b6b1adf8629faf46c1dd69425972fc7c80d67ae7b223eca09f7ba",
+        "sample_meta.json": "15144357f7a341cd52d6daafabb48b1bf75fef194a856486696048f3b3de34f3",
+        "temperature.npy": "f052f59e43862e70f2759d9c7b89595292f7fe2d667c98bdccee4d3d86793323"
+      },
+      "relative_path": "samples/v6p1i15_0077",
+      "sample_id": "v6p1i15_0077",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "eb4afd9f03cda1f6844b1a7e91ddce5ca18a56c6e2d54bc20e82d7f345339bd0",
+        "control_volume.npy": "4d0fb49c8f5507ae50eb7770d8c82f0133ddc40bbce4ea352d666ce459d12c1c",
+        "coords.npy": "d1d5e9bea88bc21df3e3678f396ffee851655e444700144387b5ee6cad8f1a21",
+        "deltaT.npy": "d417f0759a135127582850ec3921dfc35e4073f9514fc9463489fec31fe2e03a",
+        "k_field.npy": "c2c0a494ab219ff04a8c1247f2a0184536828dbce79ffa77f8fa095a85035083",
+        "layer_id.npy": "6b7ea2d81fccffb0b4c09596982da25af028b20a7ade56f2dccd2dd78f95b0dd",
+        "q_field.npy": "337bbe1f92fe5ff5685d6c7d78354dc1aa154cf793797d35b9d1465e15558046",
+        "sample_meta.json": "87647d2c5c18371841a15575d9acc9a31aa31588291d51ef9ffbd3c7506d2b2b",
+        "temperature.npy": "4d8c8b2e75712ecf9d8e0cbbcff30cff00233ff326c65ab9e0e48a4a03a0df88"
+      },
+      "relative_path": "samples/v6p1i15_0078",
+      "sample_id": "v6p1i15_0078",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "b30d3fd9c3a30e4f9999692295446b6fb03bfa3e4d2cd648704ccfddc1e30bc8",
+        "control_volume.npy": "e0f90c2803a5c5ced2b9e078dbc7b5d9689889f4ae4eea41a12c24de5c3d0c84",
+        "coords.npy": "4052e6ae2028ee66b65a02b5eab5ddf989855fe3bf45a4c702c2d1a75144f52d",
+        "deltaT.npy": "57757258a48f5039bb395758a97693fbd5e3a5d1dd8a379183a2bdce224654ce",
+        "k_field.npy": "72bb77f5276441c6088426e518491deabeb303a6798584e8a21dd2b9c201e637",
+        "layer_id.npy": "8ed376d042b132d8c8415bda8508e93c3e0fa3b52b57f8b4086657b8afe643c1",
+        "q_field.npy": "da897dce895441dbd0722b4635b3e470f48dc3dc570c54be1c2e87f5e9cc6da4",
+        "sample_meta.json": "958335de7b8e5e21753ea81c11bf10495d9dcaf79c98cc2bad55599d1905eafd",
+        "temperature.npy": "2a00c9ab99b2291555cba56ce24b6de42269967365390ac3385a6ca2b5eb458a"
+      },
+      "relative_path": "samples/v6p1i15_0079",
+      "sample_id": "v6p1i15_0079",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "7bbc3fa6f42c72d09046b9b18b0f08097f227fde729a2b538b6c818293947dda",
+        "control_volume.npy": "a3d44ef1454c44fa12a3558c607d95b8c600eb2fc251687d54b838741c2ef0e4",
+        "coords.npy": "790368295ef0cd2e6ff77ca725e7d719e4c9f95b2c5465bce9d5ec787cb5c363",
+        "deltaT.npy": "442d49ec6004f9301e5b8dad0ac41a3ee4b4dfb907a5f7fbc7ee4c649d8c054a",
+        "k_field.npy": "3d852f0d8fa8f1a013b54a7d6cd835783248a40338df5cd5bb980cb25bb75a21",
+        "layer_id.npy": "aaeb20225c2c05185b95f177915ea47c54d52c1e23b5605821d3e231393c9ab5",
+        "q_field.npy": "c054e5f1993a699fe6daa49960aa28379529eb7c0bee7536f1d57b3d8b716586",
+        "sample_meta.json": "b39699d41f7c0b1b803c2ba282c9d66eb7a45eba5b1a1c39d65ca4bf63303e4e",
+        "temperature.npy": "2361da92a6aa8c01ff76762cb8fb3481e706cf935e201dcdecf634234d2bf5ac"
+      },
+      "relative_path": "samples/v6p1i15_0080",
+      "sample_id": "v6p1i15_0080",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "570e4c86d06de9e2f527344f5fa7e0458a8cda698f706ec71f76e7c459a92622",
+        "control_volume.npy": "49376309a067326ff857e7109b34c9e28fbfbc76a9464f4623b1960bb37b49de",
+        "coords.npy": "4bf5391093eba2b3bdbb258c1ada73e9c4afbee5a946e5525e19c5a54eca1a69",
+        "deltaT.npy": "bb1c0b63db385d82017f19bbc6ba1b10c4f4541f85266af9d6326d29c13014cb",
+        "k_field.npy": "cef20227d07d3d633df851ae9ea36f58ddd259de67620f283d6bc29f0d8e0711",
+        "layer_id.npy": "05b839c480af5567b12e1cc9baeccd399306e8e4af319aae978f14d444a8764c",
+        "q_field.npy": "1363c54f5eb96723ce016472e644e5ff27a398b51472a13253b77fd1fef02308",
+        "sample_meta.json": "a5753ce99e42518443875be8562de6c6b92d6e37bf333a82c4183bf25755ab9b",
+        "temperature.npy": "9512b231cff88ed925e5bd3885b4f206aa0bc41f52f3d06746e56409d3c285fa"
+      },
+      "relative_path": "samples/v6p1i15_0081",
+      "sample_id": "v6p1i15_0081",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "c9484314fed342b1931d3ddb03542bbc1738c451a59b13d447ecd2116ea34fff",
+        "control_volume.npy": "f302a78edd3588365ec09e6c01673aa033c1e48f7177ec790af1a69e205624f7",
+        "coords.npy": "b57496cbcbb488353f37f07445d36721f9cbdec454914b7a12a1d1b09aa24ac0",
+        "deltaT.npy": "e658df87669e30558e0c7086bea22126c6dbd5754d7b3030e613a60ff8d2cb28",
+        "k_field.npy": "e23a82f628295d2b42163da4224a0cb18bdcec40c055e14d164104896cb13c9f",
+        "layer_id.npy": "01ea4aafe0a1f2865c7a0f79302167311c93222a60bcbe784454c559d86f51db",
+        "q_field.npy": "931917e5a7b44534a1419eef3e0b13f3ada23be405d5a38d8e5371ba566359ad",
+        "sample_meta.json": "b4c06cdda7a4ae14194943afa1a4932de884efe6f08ecb2cd0b7636d29da33b7",
+        "temperature.npy": "d28d69c29f1387d32f26361eb5b2f676f3389caab35a67465f48fc5caa8d6b7e"
+      },
+      "relative_path": "samples/v6p1i15_0082",
+      "sample_id": "v6p1i15_0082",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "7df13f3ae3550ee96f4135b0dc2d9fa0d8aa85fe630d4649e11549e611ef0ba8",
+        "control_volume.npy": "89da5507f55039986e2c05ed894cbca31d8ac2b1173e5310f1a3dacdcf3ba86b",
+        "coords.npy": "f6216643dbfd22ecd44b605e7d7c9d8f3573467db1861ba753a5612b3aaa53ce",
+        "deltaT.npy": "1bf8814e6cd54705e0bf9460a4ff7cd9ed9f5dc3afb82da88da53dee534bc6ec",
+        "k_field.npy": "41f84088d744ebe2aba274212fd0cf0de1c36c8855f8065ff5a39ed9636997f7",
+        "layer_id.npy": "4a2c44743db2e54f38f36b065861939615f2395bf1493bde64da0fdf5c72e459",
+        "q_field.npy": "5189c5301c1bf79a0a7d77d29b24db33390e11f0b12b58c485f05715cbd8f157",
+        "sample_meta.json": "a82e77a87fb1b728d207db90a08e78cd3eb90dae6a937d8cd085f22bd24bd044",
+        "temperature.npy": "b507033bf451bfcd6d9286d8dde107c34704490e39906dbad26181e0427a031d"
+      },
+      "relative_path": "samples/v6p1i15_0083",
+      "sample_id": "v6p1i15_0083",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "7c72e2b50a74656c18e9c702a98079e6575cdae21d707e487b4228733136844b",
+        "control_volume.npy": "c749b6b0e0f53cd65e21ce8a4a7fcb3eefb50860c6776c48282a398550464e8d",
+        "coords.npy": "9ebe016a4087778bb8b2dbc39be29873b39eebb5b8ae9173af72f795cc56825c",
+        "deltaT.npy": "198f3a9363b8e0ac88e9478b4919ca2cbd4a4bd1da0951eede679343eb531a1e",
+        "k_field.npy": "b73f541e87b627dcfef0db2b63c36834fbcd617fbda46aa551baa10c32064fe4",
+        "layer_id.npy": "1a8b5f5d9653400f8e37481b826641977e84412d3864cedb7f0277130d9f05db",
+        "q_field.npy": "7d5531c7c9b02f3412db8a376ab7ccc935444b1deb4e0216d8b25ffd955bdfcd",
+        "sample_meta.json": "8ad26d4d693fa3e2d5b17639f78843cbf084e2f1db078f6bfa42ca2c54b5ba29",
+        "temperature.npy": "dac0be61815df286a0ad752f9f142ac375876e0d8cb9737c3a8669f2053fdba9"
+      },
+      "relative_path": "samples/v6p1i15_0084",
+      "sample_id": "v6p1i15_0084",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "e013010e7f822fe12e2835df886686180ff9a9d6eff92f6a91760205d084ee26",
+        "control_volume.npy": "38836768daf8fc3a1786ac976815993acb73365ac1d57353f097102454eb5058",
+        "coords.npy": "5ba5bd2c69147bd8b149aa005e7bbedf8b72f1383dab7047dda5b9bb04f990bd",
+        "deltaT.npy": "4495022ed612e7789cf8a3b906d1bb1084652d23e8a2ea887e687b6dcee52348",
+        "k_field.npy": "4f762ca4ecdab442de10df4dd4ff33fe412ce29e6865f35a8d91a88f5c0ea9bf",
+        "layer_id.npy": "75bd6a4b73898179e33995e84288df2254d6c94927759fbfc8012dae73d305ae",
+        "q_field.npy": "48abf50f967beda07a9f57de930bffe1f29a5986df154367fd154340e3268bd6",
+        "sample_meta.json": "d41aef7744b6123b34b87e4ccb892e1921513826d3cdf342947692c06007427d",
+        "temperature.npy": "42c35ae2dd289c7fa1f3f793acfbb4a6846f2c636170fcf415e4de59f678a838"
+      },
+      "relative_path": "samples/v6p1i15_0085",
+      "sample_id": "v6p1i15_0085",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "c4ba9d5af8d481af0b2366b13f4a4020e5472c4e060634a9dcb01dc03118a5c2",
+        "control_volume.npy": "988434915113e992ea416db773810711d7c55f9dd6ad6ff401073b299a43757f",
+        "coords.npy": "ceb5502b17cc91b3a5f99c0c1ff12878296bd4212d9fd3a033453f24ae6dfb60",
+        "deltaT.npy": "213e8ad2d05f92155fac28e7f476caf7bc4133bb574872aee2a90f4cf9cfd625",
+        "k_field.npy": "ee9ea1db590e4a45871d32d58a3c397a320884aaa5a6fb6df0a637591b0120d9",
+        "layer_id.npy": "124618927d8deeb955ab1820eea5f4658020cdd55a444f99f97f1636f3ae9c63",
+        "q_field.npy": "030a8f5464f7f6d3c4713b8db48edbd88cce68f53819168583c731c7ab8d6ce2",
+        "sample_meta.json": "9d74654ea2301da30ced8c9bb0a1ea652c02dc8340f9abc775d996500abc33e4",
+        "temperature.npy": "4299c1861c16c2d87c9e861ed2da222af45e83153a622104aa1c408a13530136"
+      },
+      "relative_path": "samples/v6p1i15_0086",
+      "sample_id": "v6p1i15_0086",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "d48ab6afa3f705a264467e41d3772bc78bfe0a00440f0ee4c2742f3552bbe059",
+        "control_volume.npy": "641b29dc9f46e0d8c626de208e43f7263fd61079bc2a58c855103ec2d1b144df",
+        "coords.npy": "3c5ae2fd241a62a9a695d77bc0a154233ccacfab6c183a041049b784c31b991c",
+        "deltaT.npy": "c0955eb18e2f2e47535d03d5b95bc4f92dbd78f25242f2540cc9af85f6eab43b",
+        "k_field.npy": "a27a27e7e65b3bb63d8ed86f47d656f24d702b0402d53187dceca66153912277",
+        "layer_id.npy": "cb7c38134ae37e941329dbbf7ffb0a4fcdd3d5695afca59c9000cb9b811e88b6",
+        "q_field.npy": "9a570e2e124c51e4ceae44c4a99174402e542e25e88f059eb1fce993560b7352",
+        "sample_meta.json": "a7cab549de9dd4f4c99a5090da0497064305402356aa3650c5e22a33fb17ba58",
+        "temperature.npy": "739ec8f78e9768aa47a82ac4180118d0ef789775dfae6c56a03c5a24b133293d"
+      },
+      "relative_path": "samples/v6p1i15_0087",
+      "sample_id": "v6p1i15_0087",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "f45e47f5c12fc4036c0b7d67878d1d438de6bb09809a5bf5c55ac46409a7c248",
+        "control_volume.npy": "6fc55f28ff782c2166d02b58db1dca3310517a7bb3f5dd00bc84e3b8bcc8d7bf",
+        "coords.npy": "78986d90f25a198fa67331a58c30c2168e5c3cf36875ee01735e1f6fc3f2a1f1",
+        "deltaT.npy": "df43a30566ef9ad41fe7463b08d5c8c2fa12cdb967a8cf75d71caa901da4da06",
+        "k_field.npy": "080c46cc49fdecaa732487ce498a178375f95f344c171028f0b0998df1424111",
+        "layer_id.npy": "df09b16dd1385d9c30b8a1b80dcf2e1540c14b5ed1c1903cf8e3835a674d0c16",
+        "q_field.npy": "6217046653886d9aaaf5943d90afbadc3025e621902097f327895b333ef99df9",
+        "sample_meta.json": "bdd925d8e985145e35a888760670eac44bf786cb445bd0784422b6fa2509b748",
+        "temperature.npy": "e4bec9f4f87c5043b5af38ca7b341e6cab3421fd292ff06217f395706bc572cc"
+      },
+      "relative_path": "samples/v6p1i15_0088",
+      "sample_id": "v6p1i15_0088",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "bc384a2d2a1a94a65103ce09654f629c872a905f451d0d300a4e2acf4345c1e8",
+        "control_volume.npy": "6cf5654cccde9689164687ba586743445a530bde2738181fa2f7e61efed4b697",
+        "coords.npy": "1a60ed49298da62b878c7a200d9dca15968b8795017c12e079de05825fc32fde",
+        "deltaT.npy": "9ce74bf90566a2b4d1c775c654fd516bb15fdb230f9873b69ca30d9c0ac8fb53",
+        "k_field.npy": "6cd1d5c38809de09d8b4e8f1d571da2483bc2637f6a6fb7ba2373994933bc4fa",
+        "layer_id.npy": "55cf08c43eb198bf1925321617c19ab24e6dc3d5130641474e74177ec336f190",
+        "q_field.npy": "d6eaac55d6f23a433a30239c9be599f096c59896d4f484d82e36ffa33b257af2",
+        "sample_meta.json": "813cf2ea8cb4e449a7ce3f17f51112fa2cfd2464a864e797adde0c667882d969",
+        "temperature.npy": "1faf16f48566731bbe16cdf0f62e9f5a83004176828bf84b8a2ea77e790b41d3"
+      },
+      "relative_path": "samples/v6p1i15_0089",
+      "sample_id": "v6p1i15_0089",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "bc2fe848cc6fb024a56894033e48abb35a7aa5bc895c4827cdbe25a67b6eb11d",
+        "control_volume.npy": "66711be97cb0fa0d9ee24a53201405958e2ee591f8bc3313833bf73bbab5103d",
+        "coords.npy": "51a16bb51e7bd3b21cb6b8b14db7a69bd793df2173978c64c03e2efc628f81b4",
+        "deltaT.npy": "d17e04a3feb7603cbebe21327a6cbcfc8d22c58e52bd7eaccd333b7aa13f0af3",
+        "k_field.npy": "6cd83b4d1a01ca92a42574a6dd1a1893df0632aefb7335613fabdf70f9f94045",
+        "layer_id.npy": "7f458259b375ed0e4220690b462a2b199dd91c287b2c8152a710cff47b870755",
+        "q_field.npy": "04d0dbd0fbf8c9b99702cdde279b7cfe9317f8655c8a4cb72e80cfb392947abc",
+        "sample_meta.json": "8a5a3a452cf97160af7bf142ffa15932cfc4dc77000dafb6da95688200056a18",
+        "temperature.npy": "7aff07e12ca7b1a88f7c9640c868822ced5528848476fb76cd9d99e6d711a245"
+      },
+      "relative_path": "samples/v6p1i15_0090",
+      "sample_id": "v6p1i15_0090",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "40fd7f58a92b020ac5019a809ddb8bf826d9dcd10d2b6082aacb03271e754523",
+        "control_volume.npy": "c63c00741b17b989eff212577324e99ef2bb967f1c7dc4b5ea523e119871d02b",
+        "coords.npy": "96e8e4265ad12e6afa90d460c1f1c9e9500109caaccb56c0212d353147e5d51f",
+        "deltaT.npy": "2cb2dd113d16bf29c4c159da82605cf5479b15f8ce3332f7371892989e3fec06",
+        "k_field.npy": "8fd68f871dd9964c6fe74f305d7d4afe7d476dcaea4b72ad2d2183ca140ffb90",
+        "layer_id.npy": "25029eeabd68c76e915b9c3945e3b1d0d42a723fc3b325eb65228ebfcf34ecc5",
+        "q_field.npy": "4790b13753dacfc6f46e41168e3f1eb17338921e02ae35d2d5d8824b2009433b",
+        "sample_meta.json": "d358a0826ef15d86f06b4063527126da99c4c7a0285b25f4f72b945f1ecee13e",
+        "temperature.npy": "f7a54e5410977fcada217efb9a3da48f9c7a4199259b24049e2170b6698e7934"
+      },
+      "relative_path": "samples/v6p1i15_0091",
+      "sample_id": "v6p1i15_0091",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "7684e845a3d21d489c1e3a6c9e1c30d79ac7855b32458b26522d974b86dd57d4",
+        "control_volume.npy": "464f6a76674a3fe8a7f7f2532130e7e059c75f95510310cdc1ab0a40e9e11028",
+        "coords.npy": "c1415d7071a1cdf9c9a1f2c0c1fe0fe0145b3579d09d44b98775e97dde823505",
+        "deltaT.npy": "26245310f379d824fd06c9681d471f6adf8cfa8b7af6789084992efa4d16c20b",
+        "k_field.npy": "0ca5adcee2dca8d22b73bd5718ef8b272b59d92479e5de7a6d95dc3ab4ee5fcf",
+        "layer_id.npy": "a53aa3ad4e7c6acd1a0072c3c0c7caba285bfa241af073fc5819f49874f1982c",
+        "q_field.npy": "d8a76f8484242afd5637bce1094da3437138c88d6fac2a8cc239c9d28321835a",
+        "sample_meta.json": "c1363a951bdcf9a1780a3767f1603ece6646312b289f6017f90b5ebecd64df9e",
+        "temperature.npy": "04e3dec15c22fccd8dec6ba1dd227e258c7ad9563d388e56360284e6cfc16dbe"
+      },
+      "relative_path": "samples/v6p1i15_0092",
+      "sample_id": "v6p1i15_0092",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "e2490e07bdebaf97724c3ddaf41ec5d13c5cf7d6b3ed61220f36cb15b3b73554",
+        "control_volume.npy": "cae7376917dac14a8c32d105c265ad9161268009223c8dc094c194dfd5a997ca",
+        "coords.npy": "d3d682e4be99f3e2bbb67ad3760e7bf3a211bf29d5bc3998dc63954968d4d6f9",
+        "deltaT.npy": "79141c39200f42aad56d2e7bfcdef417a66d0227912a572ac81be3ea49e3591c",
+        "k_field.npy": "23a9c3470b94e65de6865087079eafe5000303f15e4e77a94688131e3f132496",
+        "layer_id.npy": "5d92afba8489f18f1aa9dfa189e3b130102df3f97b932628068b24bfc4585676",
+        "q_field.npy": "ba2f4ff1b5942bac1ef936e733fbbd107a41487b95731dcce39b90e14a1fb9c6",
+        "sample_meta.json": "ba80e182cffa069e5ebbb608d75c050df7520febf426d3d5e10d718dac9551d9",
+        "temperature.npy": "03fdce9926dbcce376c65df698723f360d47cf0c93facb592c6408d2cdbf376d"
+      },
+      "relative_path": "samples/v6p1i15_0093",
+      "sample_id": "v6p1i15_0093",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "0ab5b881dd1e77a524146be0c92f21947e3a78c0a4d842b095047309ebd0c10e",
+        "control_volume.npy": "0ca034f7ec696a853e6cd91481c308121042828f222ca0a767059a05cc69ec24",
+        "coords.npy": "2f0767f5f96f0224c523169b45fa02f2174b887bd3ecd5c3e59c610de2bd7b1c",
+        "deltaT.npy": "2b2daef10fa9bbfa834790016689458ce4c92aad97dd14a8d951244c12155e81",
+        "k_field.npy": "189cdd374329de98b54ddbcbe888414ad460d6ef89bbcd0a29410adc36d6ab73",
+        "layer_id.npy": "06420ab07c8147d7647123a2772d3c9e7fa7a5ff544d62970de8ede4bb9677eb",
+        "q_field.npy": "84a04e34ad3b270d766fd89eba34e14fc085ae00489f1051a963fa3f74b33320",
+        "sample_meta.json": "715c147b7b80e0ab511f42025a506ebdcb908f91a98c6999f6534ee63c6037ad",
+        "temperature.npy": "0f85d41f9142d195309155026496aa2bc2600a9f9c1f82c43065607289eafe0c"
+      },
+      "relative_path": "samples/v6p1i15_0094",
+      "sample_id": "v6p1i15_0094",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "1f4b55cd6b4564906194f303b2f8a36c9546ebed3513b7833d2a132181d19d77",
+        "control_volume.npy": "451bf62e19628e4c78c4df7c201bd9287376883c5cec75d2d7ff43ace685d376",
+        "coords.npy": "c82ce96b809b356e92b9900987dd6449d26e82739851b3ed8fbe312ec7448d73",
+        "deltaT.npy": "8a840f6e72349910a81461abf3e1a2f9d0c469da1da55338b5f80d151f3665aa",
+        "k_field.npy": "c2734669c8a726617b18669d0e39d30d311f44ea34643aabc07c91e0b283a6d0",
+        "layer_id.npy": "95dfc20860e0ab2fc18c017a406b8da439c01397c85ef8e987e196de3b9eb52d",
+        "q_field.npy": "0607a566b34761f3f17dd31da6ab9c2e51a7a7208f61d2ea0622237ffd2c5b36",
+        "sample_meta.json": "47683a980845c557655fe4cb183319fc06fdb72d7597b7e71766c968bf62664a",
+        "temperature.npy": "309fbabe3b1b375e7cc6962e6c577b30573a62e8ca670537914b8f30b1347e27"
+      },
+      "relative_path": "samples/v6p1i15_0095",
+      "sample_id": "v6p1i15_0095",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "12cda7319a12a64339a482578fcbd3d9cf520014fdc205594db648799379cd61",
+        "control_volume.npy": "f6fc303d7c0bfe43a7390f09ce843a7a032e94b37f9243006db75d36485a2e08",
+        "coords.npy": "491f769ad81d765a3a6ac7c36da282be470dd5c56d6ae07d2fd2da03e0a1b345",
+        "deltaT.npy": "2d4dc51c2c8c534a5c2578b916ff03b17e1736c0a3e7455057cc6b550e229bed",
+        "k_field.npy": "a98841eae060fce3733a0e172ff9a399a43c436a19d906ca9451ae18085623f4",
+        "layer_id.npy": "626576d69609590226cb5fbaaa3fb7170757c4c63edf9690326862c9f427f104",
+        "q_field.npy": "19a3518c2d67550f0e4ed1b0382d8581e3fc53e2ecb2529078a960484a9f8ea9",
+        "sample_meta.json": "b97a9b1a18a466d7edb4e24c0e23a10d62718b0c3af424df5b935b777b2bc08f",
+        "temperature.npy": "a14bb489ad55c8375dbaea4e24c1e2c1175cd2746c81ec4de3a1f3a55ebc5ef3"
+      },
+      "relative_path": "samples/v6p1i15_0096",
+      "sample_id": "v6p1i15_0096",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "d18935b9684bd456ebbe7aa5d6de0090d0360acb6329192f54fc16b254c7d923",
+        "control_volume.npy": "c9834165c636a591cb53b68e91041593bc4f9d094801b552f3ed76239458e2b1",
+        "coords.npy": "571c44457876e38cf459522f84ea50e62e52784fd7315ceae702e66b90b84e08",
+        "deltaT.npy": "d0f48353c1a544ba94f914212498298c59580d059d68a3ea8bd2c3c1382ad21a",
+        "k_field.npy": "40e490a6a20153cb9907e1dc635b41d121acc67d7d8432806416f69ed4cb598a",
+        "layer_id.npy": "e4c3c67243b36fd623f341d0460010ba2677629e407c8327a62d1e0a02725a92",
+        "q_field.npy": "4c0a4868c799271562de72393ae5cf7604f3e56a55282927d6239b0ad9fc3c22",
+        "sample_meta.json": "f33bc52b710b5c6f69f40d678cffcea05fbdbbcb8494dd106331c5116fe8739e",
+        "temperature.npy": "7bc4d26c154128e8d670e1f30baf34f39daf61c8c2be1a40e14fdc7353577647"
+      },
+      "relative_path": "samples/v6p1i15_0097",
+      "sample_id": "v6p1i15_0097",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "1db6a43b2baedf96fd10ed15e2b50684e15e220d512d26853807f6d8c5a7323f",
+        "control_volume.npy": "545faf767949313b639b47befd59c4d54f279af173301c1aa82526991f476a32",
+        "coords.npy": "7bf4cccfdd2f5ef7a86065772b6f1183d1688afad5fb757094b545a63c16062d",
+        "deltaT.npy": "ac05d4eb5ea503e0321083a4b8f6ea74618285770640f5b1ab2efb73a836413e",
+        "k_field.npy": "30ee77bbe97fe99f209d824ddd62d0190f20ecbda5a10658de8e485bef243308",
+        "layer_id.npy": "e88b348153d72b47a8510ef567cd3bbc971f16d152c22100447b12586e2b0113",
+        "q_field.npy": "344357dca7eccef3264dc4b5c710f0033fd6236af0ccacc17834f309bdf7e2e8",
+        "sample_meta.json": "40b5f1bd0fef846dc87718551731629eb1344cdb25c388ac86f03917b2080f68",
+        "temperature.npy": "8a5e67501fda362523dee5f43211ded0f299a79c85bda32a1089604ee5c9565b"
+      },
+      "relative_path": "samples/v6p1i15_0098",
+      "sample_id": "v6p1i15_0098",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "c416704175b6d6fa14458fb75ae249abd5d93fbf0f8e2b0a94c545535ce74b29",
+        "control_volume.npy": "76eec23148a5fbd4430dfbaf276c3b5896a35c8d7f5e8fdb92c7bf7bbc13491c",
+        "coords.npy": "ef92d231b0e9b561b00971bccd92051a166d751a27deed6772124b8b66ee92a4",
+        "deltaT.npy": "7e05cdcddc171e3b850066b9b882c45adc533cd181e5d34c70a38ba15d206da1",
+        "k_field.npy": "c80ac97a3716374308d0b401d8181daf6485a2cad3168171b7d94a1854990d6f",
+        "layer_id.npy": "9a96e9f50d7ecae82cd0c189bc6c3f32ab448f8fb27ee5b549df575df87937f2",
+        "q_field.npy": "eb261db5064987d0b37f121d6348656f8275ac8ac6a0d77830e6ee23a57f2fa8",
+        "sample_meta.json": "42a581da5bee22f70a4ffab4b0b27879f4eb6f6b8cbdc6c9e02b719cdfc7ca7c",
+        "temperature.npy": "75c41d22cd3d23d2026dbbb36dd607d9b59bc13b4b0672311f5acbb0155a7c28"
+      },
+      "relative_path": "samples/v6p1i15_0099",
+      "sample_id": "v6p1i15_0099",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "cd68f0a9424cc2a3fbc8ce14925bda038010f3b204da2d646090e8ce61346926",
+        "control_volume.npy": "a87616945d3d058ca5052d2ec0157dc1c2b14351413d5a56ec3d5b234a12ece9",
+        "coords.npy": "15dacce0aab9408c9d29455b6dceeb52e792bba5ec032125542b71bf1fc27a7b",
+        "deltaT.npy": "9a1054d6e8d37ac28ff80c35df4d0adf06f8bc426111ffe449094361442df0ab",
+        "k_field.npy": "a12667381a6fa71cb9eaf8950f01c3bef960f5d43e41a5722a69d80fb0746e75",
+        "layer_id.npy": "a68e8132fe1584b2dda05a59863e68f290fe6e16202571ddbe797cd288ea69db",
+        "q_field.npy": "4a2a65845391be7f34b060cc3c29ed33245a543775e25f2f4e67c2bb48be7d85",
+        "sample_meta.json": "d43ecd5c63b8a3e9413c9dcdf8a55d961faf920e6909aee42bdecbf61d1bb85b",
+        "temperature.npy": "1eea911e6c9f55bbd658788320beb5468faef62c1d15406178bf536304b819d8"
+      },
+      "relative_path": "samples/v6p1i15_0100",
+      "sample_id": "v6p1i15_0100",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "917b7ef6475af0f4be16c3f9cfbb921dfec0cdd4cddda3f132139cdaccd895ea",
+        "control_volume.npy": "69a5940dd6b8c06f6ecbce7a225ace6b512adcdfc3156552267545d4c5cfc411",
+        "coords.npy": "fbecce72a9ccfa2a5b99bcbf79689ed778e4feb1ec4275b431a948d7344b27d6",
+        "deltaT.npy": "2fc638e17749a63b7e99be867a820bdbcf8739b3e7c43acf4b8d461dda8e1c5b",
+        "k_field.npy": "424c71532152e4670c8bcd223411522173c5ecf000c0d694bb150d9262068b1a",
+        "layer_id.npy": "c15879a01205668a2d5d69c814b07ffd36c849c6461bd59e0c7e6ba4c2b097a2",
+        "q_field.npy": "76024498ede7bbb7341bc58ab1c3a17562c2d0305c7a4457d44229ab0d248880",
+        "sample_meta.json": "28d401ea16ba102b9dbd73f1355742d045c031b918b09a15e80cc78d8c43bb47",
+        "temperature.npy": "d38fb7d754521b08a78fbdd7c13b101854c6b24a64aee7a2be8cf3be9f8716ba"
+      },
+      "relative_path": "samples/v6p1i15_0101",
+      "sample_id": "v6p1i15_0101",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "91a93a63edbe017dbba3fa02720ae6095d2baed32a738a7de866bbefd1b4a3a5",
+        "control_volume.npy": "4c5b804cfea38177badee9ba81fcd23db3d3be1bf43817fe028246c4218a5c54",
+        "coords.npy": "258c05d185c43eb04d76e333e49930387b44d68f3c526ee350bbe5710a728642",
+        "deltaT.npy": "da3ec497b30d3b2f62dc5c1678fa9bbb0e8bba954a0df63c38fe333b4804063f",
+        "k_field.npy": "b6bb4be2341e91c8ad72c919748bdb7bf299b6a555708982a6e1e3dd0a3e7282",
+        "layer_id.npy": "394d9e262c255d8c187a4f7711f3f7c3ba7c662590f1151baacf2668afd9a54b",
+        "q_field.npy": "b3da3c7b907f4289196e1ff1ade1c9c1a9edd0f2706b5a7b3fc943663d362762",
+        "sample_meta.json": "162de5b1d44634fde670646b97e036c77206b791548bece6a14c376be5124f13",
+        "temperature.npy": "524cef950b6ce7fd586baa2c06ae179de425861dd03e719945784f6f87c475ef"
+      },
+      "relative_path": "samples/v6p1i15_0102",
+      "sample_id": "v6p1i15_0102",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "74d9a60b21e06834e60997d263b6c5eca398ef47d5399f4f332968191781dfac",
+        "control_volume.npy": "175a10de19e6a1186f7ea8e223324f5cdd7d68fb3a5a5d9c58e2688f91b06f78",
+        "coords.npy": "44877920623f7e010d036ed553b738b48f55ffe8edb6d487220119c9c6c4c872",
+        "deltaT.npy": "033291093ffd23d129fd35c26a07d5d29c0a1b582fa2a2138b34e88ac93dd76e",
+        "k_field.npy": "fa0b69fbdbf004f97db42432c009e8e6662c70d2e37546baccf51a1311e49bcf",
+        "layer_id.npy": "248a684a43d547522f94beae11fe0760cd58f2c67984b3d245713bb05d6e7dba",
+        "q_field.npy": "ffd33876bfeee608ef04308feac2fa410e618e878d092f37f01f37473c3be232",
+        "sample_meta.json": "76bcaf47c1133ada2685510e54a963ce0f6774b9eb68e6216e9d5a1b292435b1",
+        "temperature.npy": "1c2c71aa8d0d6ba48ca3ce88e54c16620d62275b25bc93677f69bb10f27f3beb"
+      },
+      "relative_path": "samples/v6p1i15_0103",
+      "sample_id": "v6p1i15_0103",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "2aea0451f94de8b8370e566631271e68cb711f6f121b641027a8da87a664ae32",
+        "control_volume.npy": "e1ca0bac3ae2670a058f3961fc25ce6834a625292c9cd9801ec67045ce1b0929",
+        "coords.npy": "ba22a49c52296bd3128fc89747a19521738f8abac50d3bea05a9912408c11a93",
+        "deltaT.npy": "0e5b71028b1fffacc0cfef2f8dd4de1b54fa29b2bb56c1e3ebbddecdb37f3afc",
+        "k_field.npy": "97d152ae4a229f556268fc146cccadf5f44db567c70f41e0a05e0c386f3198e0",
+        "layer_id.npy": "1afe70030f9290b5c8a910fd3d93a5999ac4dc4f7258750f29141cfcfc2b4cbd",
+        "q_field.npy": "7ff6c310d44d53ecd7a3835d2583a04a99bae9a0c9b321b1278a1869859c4fad",
+        "sample_meta.json": "49607e99ceaf37beaa4125563942eda4f3531bdbf76a0fabcd629fccb0ab3a77",
+        "temperature.npy": "410bce302c64f24408465d1b92396726c1b8bdb5752f3f31d6c50a57e442271d"
+      },
+      "relative_path": "samples/v6p1i15_0104",
+      "sample_id": "v6p1i15_0104",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "c7e1589f8b015406e9033775573a891e2461aa8337c6ef0e6b3a41e524b1aa62",
+        "control_volume.npy": "c3c0bd600fd78edb22eac986f223250311b2f551a1feeff01f2692eb1e1e5915",
+        "coords.npy": "8f495abf6483e60d400ca288d116316c7d01a55cfb5055d60f4f39bac3cadcfc",
+        "deltaT.npy": "f96c642303310a85436cb1b9fb400705e0214fe2ca62482de023528ac5353162",
+        "k_field.npy": "b3a563b2135894c0fb1fa208af7d6d79ac508a63d1dc3ce47b1191573fc7cde7",
+        "layer_id.npy": "c1039fa21ad7c8a27c39b27784c974a85dc00721d611b5189a97807d9d96d098",
+        "q_field.npy": "6976f0d0371bb3b23f001bbe10ce7cea4d94581efba0292e8ce10ceedbc273d0",
+        "sample_meta.json": "a3d2326332d00116951f39599bd6914a43253835272d3029910a903bd587db56",
+        "temperature.npy": "ed1190a89712e91dd7b860fb8dc015787e4118cfc99d8babc23d67e30b884514"
+      },
+      "relative_path": "samples/v6p1i15_0105",
+      "sample_id": "v6p1i15_0105",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "aef3b26426913ea2dbae965e70dbcbb55e3320de290fefc7bce0d614b64a8afe",
+        "control_volume.npy": "ea18372566d2ea0ac09cc2dca90760e4c5abcd53927b427ee5b627d3e15f61ed",
+        "coords.npy": "f650157b8c9c8163b6764f4d0b231ab04d570283b11d41c85f8070ebf1ae0ee3",
+        "deltaT.npy": "b61a63abe779b334f885eecf4740f195d9541b676f92804117ddc028e75edb7b",
+        "k_field.npy": "6a4565ec3cb2159ba8688dbf455d72381333fcd215dd22f897da042a92ecedc5",
+        "layer_id.npy": "2cf51d63ffd365c8b654a24686e32c1646ddc2deb0c420fa4629a1481bf9a4bb",
+        "q_field.npy": "d5be7ca73ec4b2bfceaee67b42de04da701203d3154502784b7206ef132e1697",
+        "sample_meta.json": "a70dc9b7ba8ce6ff5f2be0e151dc11e18db0c4535cc01db30a8bc83ac9377374",
+        "temperature.npy": "184b2e27bebdfabb8231a5ea5c74472dbbabca08c085a3133a112e3d9724100b"
+      },
+      "relative_path": "samples/v6p1i15_0106",
+      "sample_id": "v6p1i15_0106",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "f5b2f1c980dc883714bfad52a6f519552f2f5c2353460ddc15729d0abd45acef",
+        "control_volume.npy": "64620a2e22cf474acf9d75ff35784825b26963ffd65a34760b04c62ad659fef0",
+        "coords.npy": "766db3df590dfa8b1198c30e6bfe3f0b1ffa5711a2ed2c3e1f35199d864ecc32",
+        "deltaT.npy": "014b92a5990d2ea9e243daf835329bcd04a183c4257a575e4d7ed8acc6973ef6",
+        "k_field.npy": "3208792de284e629114dba0cfd7d61f2c6ed600e296684629118622545ec7176",
+        "layer_id.npy": "00a2439cee3002ee83cb54e48fd87ff0ffd62f9c9e7bf2b56fe3060d6b59958b",
+        "q_field.npy": "93d840926c4b3558fe9a5bbc587395d1654fda466283d5fbae716775e97356d9",
+        "sample_meta.json": "fcf23aa6b141783816e6f7428b940872d875f70cda2a42585b08ac7088d99872",
+        "temperature.npy": "dfe76418c7bbd503bf599c7f17ba711b2bf6f3d2f70cc4ad9af1a20ba23b0639"
+      },
+      "relative_path": "samples/v6p1i15_0107",
+      "sample_id": "v6p1i15_0107",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "8797dac76706a25048466928ae3837766c6e0c019c9351c8a838f05a50da1646",
+        "control_volume.npy": "ea0d5943ab48c55f7d5a3e251d9e5d73d4209ed98d156f313f6ab91e4cc94c7b",
+        "coords.npy": "5a457e2a922d0739f19aa84f712350a17833a451ffaa54678cf2257c5b5f611c",
+        "deltaT.npy": "4eb80ef97a909c4cb90497cb36eda1f67d4195edbfd6ee2ea587dfb5cf3301d2",
+        "k_field.npy": "c342df8eba2eda757e8cc213aaee7db710e48da77cd398c156062b93c1ae4bde",
+        "layer_id.npy": "52469fa76b887f31fb7aefe860e1b44c9b19eb3b615eb3bb0f911812e8dd7bb5",
+        "q_field.npy": "bd0a719e1c4e9aef967581fdb33997b175d31d1cbec180c88b0809274318d21a",
+        "sample_meta.json": "66c9cb7f2f31835349815b1e795271a85bd57d22107583cfd6c473fdbb72901d",
+        "temperature.npy": "6f7686bd6dc2cbac6e59fa9d74a3f57ae7cd54fc00905dc7c15da326e29bc656"
+      },
+      "relative_path": "samples/v6p1i15_0108",
+      "sample_id": "v6p1i15_0108",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "e7a2b79cba2ac41b2e4fa3c415cd8ea3894996672b8097f33cedc238862926bd",
+        "control_volume.npy": "dd2c1ef7ed91be56a0dcf3f137431af500c8b32fe412c59a95077211888f5a1a",
+        "coords.npy": "9d5c5420bbb0cc2c76b7eb78360e64f1e38dd32c54cf4fd36ac71b6d0c7c27df",
+        "deltaT.npy": "43a73b3950879a67a4ae553e36a077ca943886941a4cffed6c596329e1aae7a7",
+        "k_field.npy": "ab28f7c5aec5909644e59eb8848736adfddb9b0db42d2672303b01ab7055106e",
+        "layer_id.npy": "1d393de9d4cff432f428dc5acc9eca0d491d0812ac2f6ef5097a6df3b21c6fc2",
+        "q_field.npy": "587e34a8ced0c1a1e8b6fb689c5a9773c86cee59d9b6b9c40abbc9aa50db0fa6",
+        "sample_meta.json": "3b7f79937d818b08248288f1944ecff10e2770e8f7467f6e74208f6f1b5f2870",
+        "temperature.npy": "77128c13e423aee1faa054b39375b46a7e6501f280cd0a62c1aea51e13dd7d9f"
+      },
+      "relative_path": "samples/v6p1i15_0109",
+      "sample_id": "v6p1i15_0109",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "8c967ab8807201f4f95a4e089e92c009ec50043d84fba8338ff0dd8f212fbf15",
+        "control_volume.npy": "4734c91cca145d35255498ac8740278c7af84dc9bd57830413b94cacbf9bed7d",
+        "coords.npy": "56b5b6e32bbdf99ee97e32ad1afadb372b8e8b88f5b9a6f1f7fdd50b297f9a08",
+        "deltaT.npy": "8ed80a57126e04435fc0761b062f7b16c814a6c59aee901a27ce3516c869529f",
+        "k_field.npy": "262cbe74be8d24c1a22aa64732d71e7a491eab7e5faddb67b2406da5c2171b78",
+        "layer_id.npy": "289e441113d768144d331ef85611d1e7996c77be4af17363ebc8cae3a6ba68c0",
+        "q_field.npy": "ac7f41d3f68bd98d7a6c2aa4f385ec7269c47e0afa281040b919857c984030f0",
+        "sample_meta.json": "1badf8c26cb2da1505f13beb08c0ad774138162309c41d7cc03b42b4ec9122bd",
+        "temperature.npy": "3fa27efb5dbb634d00451dca5f11009279accfd20a82149261c5821f33d1c133"
+      },
+      "relative_path": "samples/v6p1i15_0110",
+      "sample_id": "v6p1i15_0110",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "17d0e6b386f0cdd2784b50c74b0b300df49fa8184e5f85d459ed145e29d6e165",
+        "control_volume.npy": "51ace5ba33f843fdb6bb0b4e11555879c24200be228d47f51ca0f9adb988c9dd",
+        "coords.npy": "4168981ce6723f7201d242dcc7b34dd4df2dd4812aed46b022fad0463817f56b",
+        "deltaT.npy": "0e6c946a7ff4c08b148669d907d76af77c8e921523cfb527cad1d90da8ab710c",
+        "k_field.npy": "c8e7c3ffbdec1f78814df823ee94699a3caca401dfc7ad63c82690242317750a",
+        "layer_id.npy": "b6427c7cbc78fbe5930623e3eb7e32b8463fda1838f330a5b94c2cfbee3e3520",
+        "q_field.npy": "0418043580bd11dd3f8ef096589aa285773d03e34452c6b60a31ba078933da4a",
+        "sample_meta.json": "22e8d6ed1a0662d6b7f285dca960a59e4ce5ceefcec4a096958e2f7325708dfa",
+        "temperature.npy": "7b11d7d45b7ca46d8b4563d3da4de258792ee2df25ba33a20256192357abd772"
+      },
+      "relative_path": "samples/v6p1i15_0111",
+      "sample_id": "v6p1i15_0111",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "e27f304baaa9ac056595140d1c686aa3faa55dd26d8880ec2f6cde8b175e9d11",
+        "control_volume.npy": "33c9aa08830b9561f82df5b5357666186971068fb619be9b832f0882a7a7383f",
+        "coords.npy": "c5353960f8c435f78f111ad7f65003f6e13d02c2b586c0d3cb428b3d6915824f",
+        "deltaT.npy": "9e7a444164cf529248463111d96ac805bbf537a7bea1f94990e2c32b8f47ace1",
+        "k_field.npy": "cbc5f0d0eb12389a048e81238cceb5247ff3eb4d94cc92ebceca419706536886",
+        "layer_id.npy": "59f21394b2da3f3b4cb1b59102c8095ccefa1cca5148cd8ef0ae391052f70381",
+        "q_field.npy": "cb4e750612b6eb82d9ebabe82a8e4825cea7f28257f819dca28f43efdc47e83d",
+        "sample_meta.json": "69c88f77b109cf1ab8ef3609a64d20912f487f2aa67839b76401d4c8f3ad6346",
+        "temperature.npy": "093b05d5cccea4611c4da9b8389d9a515de01b3616b91892548c541dffd6db4d"
+      },
+      "relative_path": "samples/v6p1i15_0112",
+      "sample_id": "v6p1i15_0112",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "3f9d108683f94cab443051765a8873b1e91b27cb2914d722f1e493d88a5940be",
+        "control_volume.npy": "bffc8d0e064362a85b18fa74aba632ae7ef9d754066e1eafd379e9bdb220ba51",
+        "coords.npy": "fee2b48be0b80f771f5f081d00ad6589fb8a9e114ad89b00b379b45143e63eff",
+        "deltaT.npy": "a5149b38039566add03f61055b31a7cfa9801c058bf0afdea1b515d5901048c0",
+        "k_field.npy": "cac38925a22203acef40bf166ec5e51acbd52b1f0a4391de374aec35afd52d5f",
+        "layer_id.npy": "1278e044aa4053529dcd68e1b573092cc7c34945d50becc2d95f6b9e8fa9119d",
+        "q_field.npy": "353a2cb1267cabd1d09cc5a2a1fbe217586544134112958d8f62d6bc8644a1b6",
+        "sample_meta.json": "5f2dd60fc27ec9fb985fe55626ae80c6b4be0832c50767aa2de2104eb93fff89",
+        "temperature.npy": "2896fc59a0f261860772c2d94f360f2a1eb6623034604f8fe7dd7dfc993865c5"
+      },
+      "relative_path": "samples/v6p1i15_0113",
+      "sample_id": "v6p1i15_0113",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "4128cdf23514cc9b5a23007564f38fb725d86549a31eeb27d6c6055b539f4f23",
+        "control_volume.npy": "aaccf1798020f66cce9fdec57f3f46df47934bb46971cddf43df2f3aa35f2f1c",
+        "coords.npy": "41569770ed1584d9b7dd9cdcc5262400b6e0ee7e76dc284371e7c8adaa7ad2f9",
+        "deltaT.npy": "34bc418f645c146cf4f183c756166ad529ecf24158dc69de48379f1b236ec170",
+        "k_field.npy": "95342664203a3d1757cfbbaceea0d2fbd673f3531eca3072db3dc30de38274d6",
+        "layer_id.npy": "f10fd59932f86ca4539497dbee203ccb4e5d25cfef7fe5226d633967d27a294a",
+        "q_field.npy": "0ffb240600538c2569aa347c50fb6b58422e7cafb6c8edcad3cfafc776bb6619",
+        "sample_meta.json": "75107965573a87fa9c6e95d0e62e16ba9e3285b9ac70241bf96beb8206deb446",
+        "temperature.npy": "3aef93d668b1d002936f81c0491ea1d37411294a03f71ce24b023bd2a875807a"
+      },
+      "relative_path": "samples/v6p1i15_0114",
+      "sample_id": "v6p1i15_0114",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "b53e3409f20be1adb656a9bcf0de6e8addd1b62145c917f0ed7ca1f147f5ea8a",
+        "control_volume.npy": "ee115d3cd676fc9a173c9230137e6d60f5f72af24861f4a75020b13eccc36f0f",
+        "coords.npy": "89c0277655d98705355d7931f3d01dde7c9204df8a14e99864924db7973eaf58",
+        "deltaT.npy": "3b7c598c9585640722a7196a68b7617b1fc79463bbd85d3c96a5ada37bc3ebea",
+        "k_field.npy": "4140ba9442a6b6ff9715d57052a7fdcf62ca8ec4a4a8d49a259152e74771a595",
+        "layer_id.npy": "065fd3d52f1910b108f2fb68748a0bc9777d315413cd1cd602e0be421dcca14e",
+        "q_field.npy": "dd52609606689636bf1c30d7b9c3a2451c8a73a9dc1bc5040a33b190a5649431",
+        "sample_meta.json": "7bd646990d5def184d2eda8aef9482c326f9466cc497e756b67b06bff505148d",
+        "temperature.npy": "8bbd4e13f83b3c3eb5f778a46d63fcb28412d7923075c037640174d35195259e"
+      },
+      "relative_path": "samples/v6p1i15_0115",
+      "sample_id": "v6p1i15_0115",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "fcc28fe07fd7bdebc133af628a998bdb590d3aa22f6af6216db3c43384ce922b",
+        "control_volume.npy": "1f27f4f4f35650e3fbb7cf1a27a052241fa966c9a6391fada17a792088f07a2e",
+        "coords.npy": "c51e0f3623cd24211cb772162e21fe1496c3cf40771f152a5a6d2981a9cd5483",
+        "deltaT.npy": "7925581a8cd917eb813c5972f69f4810bef73bd078f970259358523524f9377d",
+        "k_field.npy": "07e2760e3ff6e55dc2124bb95697f554eb50548dc1453603ce831e7eaa73fbcd",
+        "layer_id.npy": "9e736638c321c526e63a50de9611e015f5b35765a097edb3ca822fd71af6c952",
+        "q_field.npy": "093f5005bdac04f6af2935fe071914c4a33768175e46d6051c61be0a31e14d6b",
+        "sample_meta.json": "0e9c284d45f8882dbe7f5cacf750760515158f1dc915a9bd05905bc8b5e07b04",
+        "temperature.npy": "6361950f7649c42349bf97dbc6742745cdd1716f95aca01a0b41494b3ad0ffc5"
+      },
+      "relative_path": "samples/v6p1i15_0116",
+      "sample_id": "v6p1i15_0116",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "22f6f41133ecac6b712db9523d54162fe9125bcba513c48d9f81063c0c191727",
+        "control_volume.npy": "404271309f483e122245e5a69ca308106c5d0d4b301eb5112d1aaa4f71ab29dd",
+        "coords.npy": "3e2cc96e0d3a990c455977a82a6e7be987040c3d8b3f29ebee45ffa6a7d414ca",
+        "deltaT.npy": "a7c694368a82d5ec5644556e0dcd470223bb12827351ebd554f9fb160033025b",
+        "k_field.npy": "95ae962a41edb1dcfc688f966514a55f9248e1c044476246c59d41ce6581c4a1",
+        "layer_id.npy": "5ebe8d0850ac80cf964c3e1e6c4901a96bd0a560c4f018bf98b0fce8632dca2d",
+        "q_field.npy": "7b35155e1641cd85ce4e13e8137dd322a5cb72cf01e04cdcb05069a31a17b21e",
+        "sample_meta.json": "6090291465181028c7e1f19dc3267d6042d0fe41b3b39250505a6dec36062ad2",
+        "temperature.npy": "1853c562f9420a0baa94fd6b0d48d12f45dbcb6645d3caf8a978b3d27e17dfc7"
+      },
+      "relative_path": "samples/v6p1i15_0117",
+      "sample_id": "v6p1i15_0117",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "bf8933d6c36c68b938dfd5ba4c18e851b5471c64fbda842ddc4aafe020b8878d",
+        "control_volume.npy": "2072c1e3cd205619dcfdcf0012c05a01bd9c227aa1beda43866c556568ed6a1d",
+        "coords.npy": "a3754832ac4c84c992f633c09e2e617fc0ed9ae3576b761bc766c4f5b8fe5764",
+        "deltaT.npy": "a6192dbbe720be5366c45dc32df576b3463aa84d1641fec7d3d2893c0b951ea6",
+        "k_field.npy": "42ff74a40b8049dbca488c7d3c647c64c1bd2158dd2de3a9808ca2e067490b34",
+        "layer_id.npy": "8eb472de615629d8600a20f9bf0517fee6adef72f1cf74a69049c0a3d1d95258",
+        "q_field.npy": "b7c6fc2cb91d810d4b9d876645672ccddb3a9a240e47bbe035c735d42f01d4b8",
+        "sample_meta.json": "339cb23b5a0885442d18fb88f28c6fa9e339ab1ad2c5e5d22aee90ed0ee0eb44",
+        "temperature.npy": "e680ff9b221beed9fbf7fb9cdea6176ea9c0c4f15d702371eb333b3ef5c33038"
+      },
+      "relative_path": "samples/v6p1i15_0118",
+      "sample_id": "v6p1i15_0118",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "35e8bd9605870045597d3d7ba9bd2511802eb595b17db78472592b6c38243172",
+        "control_volume.npy": "19aff074c0299ea92293193870e1f163f6c617ea3ee1d2db4b81f40a2c05a0d2",
+        "coords.npy": "066850289656e25a9d20ba2bd97b7d8630880b8d46f7f1b3de188b69c7a0f9ed",
+        "deltaT.npy": "a5f3a48066104e5a35aeb8850698d574654f1f8f742cbbf7fd8c1392c8d82dcb",
+        "k_field.npy": "6dbec0623f0caef9b98b41a28f9de5414418ac1f5ab6b3c352a1c21b3f418c4f",
+        "layer_id.npy": "494bc0e7592ba6d1db6f5be29fe8357d4b5d5307eee970b14461c050873460f2",
+        "q_field.npy": "60618422d836242cca37142febcb859cc90a068c87b927b018dece90d68fc666",
+        "sample_meta.json": "1bda812dbb6e1e893590943f9ce8ab25fb8c0fe12f5a2e3c4dac7e09bf371aab",
+        "temperature.npy": "c699b4c7c501ea3559ee5d533180e53ba62a25e188375855117ecce40d0edf06"
+      },
+      "relative_path": "samples/v6p1i15_0119",
+      "sample_id": "v6p1i15_0119",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "5008e4ed4486869208ab17b9a5219084bbd1e6ee7dab6a74fba0db1655955f40",
+        "control_volume.npy": "8552361ab79652313f9e0e4fe59039ca80bb8221096c1268d16ad7d19f525971",
+        "coords.npy": "73a426fb7a46757149bddd4dde774a02a3c9f2696fe75f0d5adab5254e435873",
+        "deltaT.npy": "22bbb618d2259bb3609ce99de3bc116a256fa2e78cbb3a54ebdb4d57dd6274e5",
+        "k_field.npy": "29ea802ebbd59d91c23febce1e600dcc18404da7cc70390b5a00a9b1477fbe50",
+        "layer_id.npy": "9403cf833b421f6946ef28c1adea3170c35aba26de7fdf839b8e3662edd4eae4",
+        "q_field.npy": "b4dac6e77cd0c1fb5abdf5e380efbf97c4f5be17a6a69a592438311b9d78e7a4",
+        "sample_meta.json": "608bdaf32a48d24c4399ec498668a540ee293fdf1f6922335dd24dc773f5fd87",
+        "temperature.npy": "115fc7ba74dc512651c742b330d71fa139102c7e80e42f446b7d6f9c7e7b4670"
+      },
+      "relative_path": "samples/v6p1i15_0120",
+      "sample_id": "v6p1i15_0120",
+      "split_role": "valid_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "eb8480c2a70e2da182b8b9623a061bd32ae5ec870816470279cdcf258db3bed4",
+        "control_volume.npy": "d292543e9a828fbc65614480c5c0fcd61f6827a05cc1449a37b55a416c0bd57b",
+        "coords.npy": "e2112494b15da46d4ddc4b458499efb6729272b7895bc32eaefc496415fb22ff",
+        "deltaT.npy": "22a5f38fe9f34f7468854aa5c0f907e96ea9e0de77223bf560bf833a2fe90c43",
+        "k_field.npy": "c4e1983c7b8e1cad1df522ba10c047e429f359b275ac5916f476e1eb2a1fb699",
+        "layer_id.npy": "67c240ee7cae926588cc76b5c41de2ea66c70e4e2df879e55c79e896581c7a36",
+        "q_field.npy": "263c8550ffa188b7d4eaa15f716a2fbf47f3f93a7df3714081c50546b2f50e76",
+        "sample_meta.json": "f59b9f0fc9347362c3a2c7bd3aa5b1f534dddafc61d7ccd5ac5fd017959ba466",
+        "temperature.npy": "c4cf6657fe012d210a2493ecb94c0310c267dd9427cecd57a8f955d6c40b0dbd"
+      },
+      "relative_path": "samples/v6p1i15_0121",
+      "sample_id": "v6p1i15_0121",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "ab0c18c0b10877b71908005c392ca022da8c22281d3884a7880681bff8b78772",
+        "control_volume.npy": "af2c51332a33ad7ebbe8d8391915c49e247ed7251b8d6d3edb824ddcf9515a06",
+        "coords.npy": "1c46a9358f35e949f123847266c38a94e42b571834a4d5fa6d9defda046726a0",
+        "deltaT.npy": "49881ff3db22d67bc9c51fe56432d134da037702ba63078797f6a03343b0e93f",
+        "k_field.npy": "d5dd1ea7ea978b0f0945d14fbf586bce209222cba9cc04a100557afc03b282af",
+        "layer_id.npy": "949cf0e1e538a0435014dfb91f77b562a88f77d091109777cbfbe84a9a6c33d3",
+        "q_field.npy": "0cebc7e92c3a5b7a455a855371d165f4a7b1d638de2154f1e0f2b09962c36bef",
+        "sample_meta.json": "4fa9eb64519d436e5fa2cdf496f990cbf0ef28968cd3cbe348e9dc4d236337f2",
+        "temperature.npy": "3b1f579c98f7d265c93e1f62cfa51374cf64a45e35a164e57d3bddaffb97c16e"
+      },
+      "relative_path": "samples/v6p1i15_0122",
+      "sample_id": "v6p1i15_0122",
+      "split_role": "test_iid"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "d6cefc4e181d471d6375869c7fef490f713cc035e900edf242c738bb91c48ca4",
+        "control_volume.npy": "59e211aa979fa02a2572b35eba784eb23663f389c757c8535131cb0adbd8bfe3",
+        "coords.npy": "a57670a7bc47822a455e3010d7c4d09a2cc0bdec2d7e92b49b44f511a4e5b82c",
+        "deltaT.npy": "d583e4542d7c990efaf60057317427643b0eeb336b4bb5dede26188b9ada13b2",
+        "k_field.npy": "a26d31ee6021ac477120e9c28155600111a42b8317861468cfba78734e197ae4",
+        "layer_id.npy": "ff2836625177a91fa9451f6ebdda85a5a8a2ce03c88a633523f08761bdaccfc3",
+        "q_field.npy": "c34c0bbab31405345abb03cf40557d4555debe5a701f551e812b804752adf9bb",
+        "sample_meta.json": "588bb35f42af2d6e6e2046ac9f530761b255c476ce9bd60a8f1aeae67f5f8746",
+        "temperature.npy": "58d27bcdf1f3e7f4d94f1d2e31989079709ac9c8a66cd0a3d71df00e24ce7d62"
+      },
+      "relative_path": "samples/v6p1i15_0123",
+      "sample_id": "v6p1i15_0123",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "1da142ee758b74bfb2f6c4d3166dad669080d31aebaa747734307c5ffb841b88",
+        "control_volume.npy": "6fd2f329504a95a7818ac58d8d785c97ad6866876d0b44a6b04c6783f216b8c2",
+        "coords.npy": "760e318ee04e9bf9ab3bb35245452bf1dc407f5d7939aae0d3ce8e05b24173d9",
+        "deltaT.npy": "6ec653a126b7c307b818745bcb10a6da09f08b9a6a40d698673797c3a1fcac67",
+        "k_field.npy": "1275eb88748fd921bd33da77cae9c7acab100a734687386c576799bbdd6ea724",
+        "layer_id.npy": "43ea1993cb1772b81cdf6b2e48103a320710ce347c09314915850784af8fc558",
+        "q_field.npy": "9e20306a5acdfde5713d199fa15eba7cc12878ae4e7f2cff6f51a35e41f74832",
+        "sample_meta.json": "19655ddd7e1e54ae054ea54910f39aaa0034d45c2888b7f75f39ba4212da7dfe",
+        "temperature.npy": "0f53228f9d81d443d065b79a78ecc05f92ec8bdd1c96ae76fb14abecea03d9ac"
+      },
+      "relative_path": "samples/v6p1i15_0124",
+      "sample_id": "v6p1i15_0124",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "9ad86b8340b5274ea1a5f68e6bbfea58bf8eeee270cf976ecf03fe2ae323e2e6",
+        "control_volume.npy": "49d0d73edaa9c78c62a3c5152f5926ffb9e2133b83659bfb5cdc05819699cf44",
+        "coords.npy": "6bdb910873953b3f5689fa4c1ea544200e378cef6a6e14d3ae8018503a8692d5",
+        "deltaT.npy": "3f52b76a4ffe91fb026c96a70801797b049eed89e351351ab1b03aeb07242d83",
+        "k_field.npy": "7b4fcad4b0a733d2086d99c4d7300ecb7079b68a8f6f16aacf058af73bd4b3c6",
+        "layer_id.npy": "43bf74abaa537fe431faa422f473bae38c21300293b793899ef01a8e3c3b8498",
+        "q_field.npy": "714dc9df2656d5f365cd22e9dc3054d9aabd604aa4bbea9e89fc3df873331584",
+        "sample_meta.json": "96c48588183089974f94913a08a25d571705d4dd933ce81cd61472a774c4813a",
+        "temperature.npy": "4987af1d0ebb219da142314d5957994edb27618227e8b1428dbb5a9cfe0451c1"
+      },
+      "relative_path": "samples/v6p1i15_0125",
+      "sample_id": "v6p1i15_0125",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "12af3652ad7b824bbb1dc30bf8ebd49e4398b387bc818cdd303fe34ae4e9dbc4",
+        "control_volume.npy": "b97de1551f022d74251e0d9eac53fee33cfd24ef338d92705705d58a087be103",
+        "coords.npy": "552f076e99addcadd853e563f9bf317882a64195448d45c42c6986756742c0fb",
+        "deltaT.npy": "4211e427cae8579051109eec47de3dfb3cb97d6d4069fb6fce6f674e7c77118d",
+        "k_field.npy": "ff689a8e8ffe33122106f1d1924f9426e2a1bcfbb7472255ea8f5a10426d0915",
+        "layer_id.npy": "7906e6aa700d2a2f374ca058b8e092c613c8e79f65c85c266f14db5fd8cf3b85",
+        "q_field.npy": "b06739e63f9635f2099240d658bbaa8697efc0f1a362d1e1c0cb256d80ccc6f3",
+        "sample_meta.json": "8f582113dc431e88c1b9f7d0126c33522362d191cf340166c913c25b3c9492ee",
+        "temperature.npy": "c9accf53b4f9dee28f495119207ec94e4dd42776bed1bbce677627faa9798cf5"
+      },
+      "relative_path": "samples/v6p1i15_0126",
+      "sample_id": "v6p1i15_0126",
+      "split_role": "train"
+    },
+    {
+      "file_sha256": {
+        "bc_features.npy": "6edf0ad9542f4cf39e5d789a854a3564f1c133b14ebb6aecff2930d2e2a8fd55",
+        "control_volume.npy": "f5908763cf8edf96e76f9b876c3c937746126fe2ce93316a40d2fb8223d4e839",
+        "coords.npy": "bfb92012b7b9310e346060c41c4b2d0c7acc0240eb63b89bcd71de21213b972b",
+        "deltaT.npy": "2729859e94932574e1f9b9a86c3fa759a39162812effc8166ebe5cf0472000fd",
+        "k_field.npy": "6e50769c32e235cbf3baa537208b869d396f8cb05fe34474bc4b9ffe9d2900dd",
+        "layer_id.npy": "de7d77eddf64ce5edcfcd3343df8ce206dcb6a7622834f68992ef5d391f6b8e6",
+        "q_field.npy": "fe252501670dd810e7baa5fb363dd73486eea9d6af42ceba75e64ac428651160",
+        "sample_meta.json": "1a0c8afd826459dfb9a37047d88865b5bc62481be9fc6861154fb217b5f004b2",
+        "temperature.npy": "ad71a7367da7c51bdb51b071899b05f112268930cb8bb65db62a859b2debbda4"
+      },
+      "relative_path": "samples/v6p1i15_0127",
+      "sample_id": "v6p1i15_0127",
+      "split_role": "train"
+    }
+  ],
+  "schema_version": "heat3d_v6_p1i_manifest_v1",
+  "sobol": {
+    "design_sha256": "28f88108ea6ec85e288511f4e4188b192289e2927c865055374f16568bc049d3",
+    "dimensions": 1024,
+    "scramble": true,
+    "seed": 612818
+  },
+  "solver_mesh_node_count": 240825,
+  "split_role_counts": {
+    "test_iid": 16,
+    "train": 96,
+    "valid_iid": 16
+  },
+  "stage": "pilot128",
+  "status": "generated_pending_distribution_audit"
+}

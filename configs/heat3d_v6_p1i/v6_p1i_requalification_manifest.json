@@ -1,0 +1,77 @@
+{
+  "schema_version": "heat3d_v6_p1i_requalification_manifest_v1",
+  "status": "complete",
+  "branch": "research/v6-p1i-continuous-physics",
+  "source_head": "93f5d2aef4398b81e74e856b43680f0785693a25",
+  "closeout_commit": "self",
+  "formal1024_v0": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v0",
+    "lifecycle": "permanent_failed_qualification",
+    "modified": false,
+    "postmortem_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v0_postmortem.json",
+    "postmortem_sha256": "201b0981e23ff4a8ba63d78bd719d5048a6b3998a5ddd714904c7a6fff6aed74",
+    "maximum_peak_gap_K": 5.743379827650131,
+    "gap_classification": "extreme_upper_tail_not_core_or_modal_valley"
+  },
+  "split_reconstruction": {
+    "compared_methods": [
+      "hash_within_sobol_octets",
+      "global_hash",
+      "independent_sobol_split_dimension",
+      "balanced_pre_solve_assignment_v1"
+    ],
+    "selected_method": "balanced_pre_solve_assignment_v1",
+    "target_values_used": false,
+    "preregistration_path": "configs/heat3d_v6_p1i/v6_p1i_split_preregistration_v1.json",
+    "preregistration_sha256": "e9761c4478ab91e82e191423ca51e83771c61e236b384c044d314edabd485521"
+  },
+  "literature_contract": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_v3_literature_contract.json",
+    "sha256": "34469fdca4cd95c1c11f4d590c3a794e68e3094093328e3b7e5d7c84d36f912e"
+  },
+  "accepted_pilot": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics128_v15",
+    "sobol_seed": 612818,
+    "status": "generated_complete_qualification_passed",
+    "closeout_path": "configs/heat3d_v6_p1i/v6_p1i_pilot128_v15_closeout.json",
+    "closeout_sha256": "36dd53ee179c04e034f66b6a7293e9079e29a9388da2be3c20493a663c092a42",
+    "analytical_power_domain_W": [1.72824110936785, 19.488784118219606],
+    "failed_gates": []
+  },
+  "formal1024_v1": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "sobol_seed": 612819,
+    "status": "generated_complete_qualification_passed",
+    "sample_count": 1024,
+    "split_counts": {
+      "train": 768,
+      "valid_iid": 128,
+      "test_iid": 128
+    },
+    "dataset_root": "data/heat3d_v6_p1i_continuous_physics1024_v1",
+    "dataset_size_bytes": 161096584,
+    "manifest_payload_sha256": "27d2ea3b7ec4e4ce9c6d068471cd19036ac8148b6cd57da325219d718c7e5ed5",
+    "artifact_manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_artifact_manifest.json",
+    "artifact_manifest_sha256": "4bb2313d6e358fb99a16cd8172621778ea16f863df9abd13b513652e59254a0a",
+    "qualification": {
+      "inside_30_150_fraction": 0.9697265625,
+      "outside_20_180_count": 0,
+      "histogram_nonzero_max_min_ratio": 2.5090909090909093,
+      "maximum_core_gap_K": 1.1386939946503958,
+      "maximum_full_gap_K": 4.076698941706809,
+      "maximum_continuous_ks": 0.13411458333333334,
+      "maximum_discrete_tv": 0.1171875,
+      "maximum_joint_discrepancy": 0.03649670826688441,
+      "minimum_local_region_support": 4,
+      "maximum_energy_balance_relative_error": 1.3135926575614426e-10
+    }
+  },
+  "guardrails": {
+    "training_runs": 0,
+    "model_inference_runs": 0,
+    "formal1024_v0_modified": false,
+    "v6_or_p1h_modified": false,
+    "per_sample_Rth_backsolve": false,
+    "post_solve_filtering_or_replacement": false
+  }
+}
