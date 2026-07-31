@@ -46,8 +46,11 @@ REQUIRED_OUTPUTS = (
     CONFIG / "v6_p1i_literature_id_crosswalk.csv",
     CONFIG / "v6_p1i_cross_family_contact_evidence.json",
     CONFIG / f"{PREFIX}_archive_manifest.json",
+    CONFIG / f"{PREFIX}_external_archive_verification.json",
     CONFIG / f"{PREFIX}_clean_checkout_replay.json",
     Path("docs") / f"{PREFIX}_training_preflight_audit.md",
+    Path("docs") / f"{PREFIX}_training_preflight_closeout.md",
+    Path("docs") / f"{PREFIX}_archive_readme.md",
     Path("docs") / f"{PREFIX}_training_preflight_distributions.png",
     Path("docs") / f"{PREFIX}_training_preflight_joint_coverage.png",
     Path("docs") / f"{PREFIX}_training_preflight_split_ecdf.png",
@@ -319,8 +322,27 @@ def check(repo_root: Path) -> dict[str, Any]:
         "HF commit SHA",
     )
     expect(
-        archive["external_archive"]["verified_file_count"] == file_count + 4,
+        archive["external_archive"]["verified_file_count"] == file_count + 3,
         "HF verified file count",
+    )
+    verification_path = (
+        repo_root / CONFIG / f"{PREFIX}_external_archive_verification.json"
+    )
+    verification = load_json(verification_path)
+    expect(verification["status"] == "passed", "HF verification status")
+    expect(
+        verification["resolved_commit_sha"]
+        == archive["external_archive"]["commit_sha"],
+        "HF verification commit",
+    )
+    expect(
+        verification["revision"] == archive["external_archive"]["tag"],
+        "HF verification tag",
+    )
+    expect(
+        sha256(verification_path)
+        == archive["external_archive"]["verification_sha256"],
+        "HF verification artifact SHA",
     )
     checks["external_archive_bound"] = True
 
