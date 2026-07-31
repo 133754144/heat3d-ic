@@ -1,0 +1,46 @@
+{
+  "schema_version": "heat3d_v6_p1i_training_launch_closeout_v1",
+  "status": "running_e600",
+  "branch": "research/v6-p1i-training",
+  "training_commit": "93ea04a52b5cfcc1a9e9af027bcd6747151737ae",
+  "config_id": "V6_05_V5best_P1i_seed0",
+  "config_sha256": "0b310b2a23ac5221df1b78519162781302a0533c8a47cbd04df02ea208271225",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+  "hf_dataset_revision": "p1i-formal1024-v1-27d2ea3b",
+  "hf_dataset_commit": "7b3af69e2164ad06d1c079fbde4d6cbd50183c9a",
+  "full_field": {
+    "sample_count": 1024,
+    "solver_node_count": 240825,
+    "archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "archive_size_bytes": 916402712,
+    "hf_revision": "p1i-formal1024-v1-fullfield-49023ac1-v2",
+    "hf_commit": "e2840047baa06eab48965403d9fd9bccb7e71cbd",
+    "remote_hash_equal": true
+  },
+  "smoke": {
+    "B8": {"status": "passed", "peak_bytes_in_use": 2048815872},
+    "B16": {"status": "passed", "peak_bytes_in_use": 4074500096},
+    "batch_order_prefix_equal": true,
+    "wrong_shared_graph_reuse_rejected": true,
+    "test_or_sealed_inference_runs": 0
+  },
+  "randomblock_one_time_transfer": {
+    "checkpoint_sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2",
+    "support_point_global_cv_relative_rmse_pct": 232.11404136856663,
+    "full_field_point_global_cv_relative_rmse_pct": 218.22879025310638,
+    "normalization_or_context_refit": false,
+    "used_for_tuning": false
+  },
+  "launch": {
+    "host_alias": "wsl2",
+    "hostname": "DESKTOP-2GE35DV",
+    "pid": 71870,
+    "tmux_session": "V6_05_V5best_P1i_seed0",
+    "timestamp": "2026-08-01T03:02:35+08:00",
+    "output_dir": "output/heat3d_v6_p1i_runs/V6_05_V5best_P1i_seed0",
+    "log_path": "output/heat3d_v6_p1i_logs/V6_05_V5best_P1i_seed0.log",
+    "test_role": "closed_audited_holdout",
+    "sealed_iid_role": "closed_confirmatory"
+  }
+}
