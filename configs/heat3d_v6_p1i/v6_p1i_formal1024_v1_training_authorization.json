@@ -1,0 +1,34 @@
+{
+  "authorized": true,
+  "checks": {
+    "all_primary_output_bins_occupied": true,
+    "contact_applicability_boundary_registered": true,
+    "continuous_broad_coverage_primary_outputs": true,
+    "frozen_input_sha256_match": true,
+    "no_data_regeneration": true,
+    "no_model_inference": true,
+    "no_sample_filtering_or_replacement": true,
+    "no_training": true,
+    "power_top_h_coupling_registered": true,
+    "sample_count_1024": true,
+    "split_counts_768_128_128": true,
+    "test_descriptive_only": true
+  },
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "decision": "authorized_for_training_with_frozen_applicability_boundaries",
+  "guardrails": {
+    "dataset_regeneration_runs": 0,
+    "formal1024_v1_modified": false,
+    "model_inference_runs": 0,
+    "sample_filter_or_replacement_runs": 0,
+    "training_runs": 0
+  },
+  "known_boundaries": [
+    "power and top_h are deliberately coupled; the high-power/low-top-h corner is absent",
+    "all interfaces use perfect contact (R_contact=0)",
+    "finite contact-resistance response cannot be learned",
+    "test_iid was read only for this preregistered descriptive split audit and did not modify rules"
+  ],
+  "schema_version": "heat3d_v6_p1i_training_authorization_v1",
+  "scope": "Training authorization is limited to the frozen formal1024_v1 coupled input distribution. It is not an OOD or strict-uniform claim."
+}

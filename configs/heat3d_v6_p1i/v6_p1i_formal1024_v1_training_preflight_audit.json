@@ -1,0 +1,5685 @@
+{
+  "contact_applicability_boundary": {
+    "applicability_boundary": {
+      "future_dataset_only_proposal": {
+        "candidate_interfaces": [
+          "silicon_die_lower/tim_between_dies",
+          "tim_between_dies/silicon_die_upper",
+          "silicon_die_upper/tim_to_spreader",
+          "silicon_interposer_tsv_0p1/bump_underfill_under_interposer"
+        ],
+        "interface_binding": "Each sampled R_contact must bind to a named adjacent-material interface; arbitrary mid-plane insertion is forbidden.",
+        "required_preregistration": [
+          "primary-literature bounds per interface",
+          "sampling distribution and zero-contact mass",
+          "group-locked split policy",
+          "mesh/interface convergence",
+          "energy and interface-jump QC",
+          "no post-solve temperature filtering"
+        ],
+        "sampling": "continuous log-space sampling with an explicit zero-contact stratum",
+        "status": "proposal_not_implemented"
+      },
+      "prohibited_claim": "Performance on these datasets is not evidence of generalization across contact-resistance values.",
+      "statement": "P1h, P1i, and V6 random-block cannot identify or learn response variation caused by finite interface thermal contact resistance because every generated case fixes R_contact=0."
+    },
+    "contact_contract": {
+      "R_contact_m2K_W": 0.0,
+      "finite_contact_resistance_sampled": false,
+      "interface_model": "perfect_contact"
+    },
+    "evidence": [
+      {
+        "commit": "261b7b2999f3989c1faca02675d948d387c2138c",
+        "config_path": "configs/heat3d_v6/v6_p1h_shared_support1024.yaml",
+        "config_sha256": "08bcf564f62102b592716b3f3126d5acb6b61c3dc7be59157c80993f363e9abe",
+        "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+        "evidence_field": "physics.boundary_common.contact",
+        "evidence_value": {
+          "R_contact_m2K_W": 0.0,
+          "type": "perfect"
+        },
+        "family": "P1h",
+        "interpretation": "P1h changes support only and inherits the P1g physical cases unchanged.",
+        "manifest_path": "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json",
+        "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5",
+        "physics_parent_path": "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024.yaml",
+        "physics_parent_sha256": "ab162724af61c745f82571e9c8f07102d5262c70a4817ace0900e894bfc4af83"
+      },
+      {
+        "commit": "658c8fd977e2df5288c06046ede374b53198e132",
+        "config_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml",
+        "config_sha256": "1e15a77fe51eea7ec64614566bb6bb12bfcf05948f3b7c8c6f3c85ec759a58f8",
+        "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+        "evidence_field": "physics.contact",
+        "evidence_value": {
+          "R_contact_m2K_W": 0.0,
+          "type": "perfect"
+        },
+        "family": "P1i"
+      },
+      {
+        "commit": "44d0b5d3da48fa601b984e2fd8b452bcb349d5d7",
+        "config_path": "configs/heat3d_v6_randomblock/v6_randomblock_formal1024_v2.yaml",
+        "config_sha256": "03a09752cb9ef703a63c126a708611bfa9a35bc6d08cc66473fe539f970d0901",
+        "dataset_id": "heat3d_v6_randomblock_formal1024_v2",
+        "evidence_field": "physics.boundary_schema.contact",
+        "evidence_value": "perfect",
+        "family": "V6 random-block",
+        "interpretation": "The perfect-contact keyword is the R_contact=0 limit.",
+        "solver_path": "scripts/heat3d_v6_randomblock_core.py",
+        "solver_semantics": "Neighbor-face conductance uses the harmonic conductivity only; no finite interface resistance term is present."
+      }
+    ],
+    "schema_version": "heat3d_v6_p1i_cross_family_contact_evidence_v1",
+    "scope": [
+      "P1h",
+      "P1i",
+      "V6 random-block"
+    ]
+  },
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "distribution_audit": {
+    "continuous_broad_coverage": {
+      "conclusion": "continuous broad coverage is supported across the frozen observed ranges; strict uniformity is not supported and is not claimed",
+      "criteria": {
+        "Reff_peak_K_W_all_12_bins_occupied": true,
+        "Reff_peak_K_W_entropy_ge_0p90": true,
+        "Reff_peak_K_W_max_gap_le_0p05_range": true,
+        "cv_rms_deltaT_K_all_12_bins_occupied": true,
+        "cv_rms_deltaT_K_entropy_ge_0p90": true,
+        "cv_rms_deltaT_K_max_gap_le_0p05_range": true,
+        "mean_deltaT_K_all_12_bins_occupied": true,
+        "mean_deltaT_K_entropy_ge_0p90": true,
+        "mean_deltaT_K_max_gap_le_0p05_range": true,
+        "peak_deltaT_K_all_12_bins_occupied": true,
+        "peak_deltaT_K_entropy_ge_0p90": true,
+        "peak_deltaT_K_max_gap_le_0p05_range": true
+      },
+      "passed": true,
+      "primary_metrics": [
+        "peak_deltaT_K",
+        "mean_deltaT_K",
+        "cv_rms_deltaT_K",
+        "Reff_peak_K_W"
+      ]
+    },
+    "metrics": {
+      "Reff_peak_K_W": {
+        "histogram": {
+          "bin_count": 12,
+          "bin_count_cv": 0.45809005291758004,
+          "counts": [
+            67,
+            153,
+            132,
+            121,
+            105,
+            102,
+            86,
+            77,
+            80,
+            58,
+            34,
+            9
+          ],
+          "edges": [
+            6.992221097165395,
+            8.239809546275087,
+            9.487397995384779,
+            10.734986444494472,
+            11.982574893604165,
+            13.230163342713858,
+            14.47775179182355,
+            15.725340240933242,
+            16.972928690042934,
+            18.220517139152626,
+            19.46810558826232,
+            20.71569403737201,
+            21.963282486481706
+          ],
+          "empty_bins": 0,
+          "normalized_entropy": 0.9502432536238303,
+          "occupied_bins": 12,
+          "reference": "equal_width_over_observed_range",
+          "shannon_entropy_nats": 2.3612657798460415
+        },
+        "maximum_sorted_gap": {
+          "gap": 0.49524817600573456,
+          "lower": 21.46803431047597,
+          "normalized_by_observed_range": 0.03308036505408727,
+          "unit": "K/W",
+          "upper": 21.963282486481706
+        },
+        "metric": "Reff_peak_K_W",
+        "modal_diagnostics": {
+          "bandwidth_sensitivity": "stable_count",
+          "diagnosis": "unimodal",
+          "runs": [
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                9.277432033303697
+              ],
+              "scott_bandwidth_factor": 0.75
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                9.57040779434707
+              ],
+              "scott_bandwidth_factor": 1.0
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                9.834085979286103
+              ],
+              "scott_bandwidth_factor": 1.25
+            }
+          ]
+        },
+        "observed_range": [
+          6.992221097165395,
+          21.963282486481706
+        ],
+        "summary": {
+          "count": 1024,
+          "mean": 12.913976541177949,
+          "q00": 6.992221097165395,
+          "q01": 7.421296602542083,
+          "q05": 8.048529398824249,
+          "q10": 8.538183148350289,
+          "q100": 21.963282486481706,
+          "q25": 9.813869342163443,
+          "q50": 12.348855670376622,
+          "q75": 15.757833841314238,
+          "q90": 18.162412404563423,
+          "q95": 19.219412829258143,
+          "q99": 20.609996566597825,
+          "std": 3.584897136028666
+        },
+        "uniform_reference_diagnostics": {
+          "interpretation": "diagnostic_only_not_a_uniformity_acceptance_test",
+          "ks_pvalue": 9.147452221106525e-27,
+          "ks_statistic": 0.17137513633063584,
+          "reference": "continuous_uniform_over_observed_range",
+          "wasserstein": 1.6129446590076224,
+          "wasserstein_normalized_range": 0.10773749549638854,
+          "wasserstein_unit": "K/W"
+        },
+        "unit": "K/W"
+      },
+      "bottom_heat_fraction": {
+        "histogram": {
+          "bin_count": 12,
+          "bin_count_cv": 0.761934064119991,
+          "counts": [
+            121,
+            190,
+            180,
+            164,
+            118,
+            83,
+            64,
+            43,
+            28,
+            21,
+            9,
+            3
+          ],
+          "edges": [
+            0.011709423409229076,
+            0.022944933822815185,
+            0.03418044423640129,
+            0.045415954649987406,
+            0.05665146506357351,
+            0.06788697547715962,
+            0.07912248589074573,
+            0.09035799630433183,
+            0.10159350671791795,
+            0.11282901713150406,
+            0.12406452754509016,
+            0.13530003795867626,
+            0.14653554837226238
+          ],
+          "empty_bins": 0,
+          "normalized_entropy": 0.8691455058691776,
+          "occupied_bins": 12,
+          "reference": "equal_width_over_observed_range",
+          "shannon_entropy_nats": 2.159745447167675
+        },
+        "maximum_sorted_gap": {
+          "gap": 0.007494527062402362,
+          "lower": 0.13904102130986,
+          "normalized_by_observed_range": 0.055586608785628266,
+          "unit": "fraction",
+          "upper": 0.14653554837226238
+        },
+        "metric": "bottom_heat_fraction",
+        "modal_diagnostics": {
+          "bandwidth_sensitivity": "stable_count",
+          "diagnosis": "unimodal",
+          "runs": [
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                0.03334492682795458
+              ],
+              "scott_bandwidth_factor": 0.75
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                0.03413646963595673
+              ],
+              "scott_bandwidth_factor": 1.0
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                0.03545570764929365
+              ],
+              "scott_bandwidth_factor": 1.25
+            }
+          ]
+        },
+        "observed_range": [
+          0.011709423409229076,
+          0.14653554837226238
+        ],
+        "summary": {
+          "count": 1024,
+          "mean": 0.05186351975281076,
+          "q00": 0.011709423409229076,
+          "q01": 0.014138667105677214,
+          "q05": 0.018135389454203992,
+          "q10": 0.021467569336815186,
+          "q100": 0.14653554837226238,
+          "q25": 0.031260223576164495,
+          "q50": 0.046843511530215834,
+          "q75": 0.0677296862573258,
+          "q90": 0.09059475621565398,
+          "q95": 0.10507819040224459,
+          "q99": 0.12641298031183412,
+          "std": 0.026737153367260395
+        },
+        "uniform_reference_diagnostics": {
+          "interpretation": "diagnostic_only_not_a_uniformity_acceptance_test",
+          "ks_pvalue": 3.618088471985004e-109,
+          "ks_statistic": 0.34469865870545807,
+          "reference": "continuous_uniform_over_observed_range",
+          "wasserstein": 0.027303760243545954,
+          "wasserstein_normalized_range": 0.20251090247555592,
+          "wasserstein_unit": "fraction"
+        },
+        "unit": "fraction"
+      },
+      "cv_rms_deltaT_K": {
+        "histogram": {
+          "bin_count": 12,
+          "bin_count_cv": 0.5090879415450366,
+          "counts": [
+            62,
+            107,
+            105,
+            104,
+            151,
+            133,
+            119,
+            101,
+            77,
+            42,
+            18,
+            5
+          ],
+          "edges": [
+            22.486610592128407,
+            32.8391742266917,
+            43.191737861255,
+            53.544301495818296,
+            63.89686513038159,
+            74.24942876494488,
+            84.60199239950819,
+            94.95455603407146,
+            105.30711966863478,
+            115.65968330319808,
+            126.01224693776135,
+            136.36481057232467,
+            146.71737420688797
+          ],
+          "empty_bins": 0,
+          "normalized_entropy": 0.9337121540448324,
+          "occupied_bins": 12,
+          "reference": "equal_width_over_observed_range",
+          "shannon_entropy_nats": 2.320187540573882
+        },
+        "maximum_sorted_gap": {
+          "gap": 5.398089239522193,
+          "lower": 138.3711300661754,
+          "normalized_by_observed_range": 0.04345211348987361,
+          "unit": "K",
+          "upper": 143.7692193056976
+        },
+        "metric": "cv_rms_deltaT_K",
+        "modal_diagnostics": {
+          "bandwidth_sensitivity": "count_changes",
+          "diagnosis": "unimodal",
+          "runs": [
+            {
+              "mode_count": 2,
+              "mode_locations": [
+                38.2889582143581,
+                70.37987953950147
+              ],
+              "scott_bandwidth_factor": 0.75
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                71.59544474121144
+              ],
+              "scott_bandwidth_factor": 1.0
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                72.56789690257942
+              ],
+              "scott_bandwidth_factor": 1.25
+            }
+          ]
+        },
+        "observed_range": [
+          22.486610592128407,
+          146.71737420688797
+        ],
+        "summary": {
+          "count": 1024,
+          "mean": 73.60055247832507,
+          "q00": 22.486610592128407,
+          "q01": 26.499019988293163,
+          "q05": 31.912630957806048,
+          "q10": 35.78581621632489,
+          "q100": 146.71737420688797,
+          "q25": 52.005236937266886,
+          "q50": 73.04933365786549,
+          "q75": 93.41741771668566,
+          "q90": 109.64828065806006,
+          "q95": 117.70873267280471,
+          "q99": 131.72215002523583,
+          "std": 26.895043703343408
+        },
+        "uniform_reference_diagnostics": {
+          "interpretation": "diagnostic_only_not_a_uniformity_acceptance_test",
+          "ks_pvalue": 1.8700262602198823e-36,
+          "ks_statistic": 0.20021466410658428,
+          "reference": "continuous_uniform_over_observed_range",
+          "wasserstein": 11.567622469872596,
+          "wasserstein_normalized_range": 0.09311399313091137,
+          "wasserstein_unit": "K"
+        },
+        "unit": "K"
+      },
+      "mean_deltaT_K": {
+        "histogram": {
+          "bin_count": 12,
+          "bin_count_cv": 0.5194578190587279,
+          "counts": [
+            61,
+            109,
+            107,
+            103,
+            150,
+            134,
+            123,
+            102,
+            74,
+            39,
+            17,
+            5
+          ],
+          "edges": [
+            22.008407564353615,
+            32.384981192357714,
+            42.76155482036181,
+            53.138128448365904,
+            63.51470207637,
+            73.8912757043741,
+            84.26784933237819,
+            94.64442296038229,
+            105.02099658838638,
+            115.39757021639049,
+            125.77414384439457,
+            136.15071747239867,
+            146.52729110040278
+          ],
+          "empty_bins": 0,
+          "normalized_entropy": 0.9310876464816045,
+          "occupied_bins": 12,
+          "reference": "equal_width_over_observed_range",
+          "shannon_entropy_nats": 2.3136658842775977
+        },
+        "maximum_sorted_gap": {
+          "gap": 5.373680484016489,
+          "lower": 138.26967018824504,
+          "normalized_by_observed_range": 0.043155546624065004,
+          "unit": "K",
+          "upper": 143.64335067226153
+        },
+        "metric": "mean_deltaT_K",
+        "modal_diagnostics": {
+          "bandwidth_sensitivity": "stable_count",
+          "diagnosis": "unimodal",
+          "runs": [
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                70.01275209782071
+              ],
+              "scott_bandwidth_factor": 0.75
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                70.98745960103831
+              ],
+              "scott_bandwidth_factor": 1.0
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                71.96216710425591
+              ],
+              "scott_bandwidth_factor": 1.25
+            }
+          ]
+        },
+        "observed_range": [
+          22.008407564353615,
+          146.52729110040278
+        ],
+        "summary": {
+          "count": 1024,
+          "mean": 73.05400911326919,
+          "q00": 22.008407564353615,
+          "q01": 26.27568921223072,
+          "q05": 31.538088817292355,
+          "q10": 35.50943356313078,
+          "q100": 146.52729110040278,
+          "q25": 51.80741173665199,
+          "q50": 72.64288929314864,
+          "q75": 92.96378364780443,
+          "q90": 108.648624508149,
+          "q95": 117.4261478994637,
+          "q99": 131.13735200777427,
+          "std": 26.781835326868876
+        },
+        "uniform_reference_diagnostics": {
+          "interpretation": "diagnostic_only_not_a_uniformity_acceptance_test",
+          "ks_pvalue": 1.5572617500365886e-38,
+          "ks_statistic": 0.20586171170520573,
+          "reference": "continuous_uniform_over_observed_range",
+          "wasserstein": 11.834177114262426,
+          "wasserstein_normalized_range": 0.09503921636782378,
+          "wasserstein_unit": "K"
+        },
+        "unit": "K"
+      },
+      "peak_deltaT_K": {
+        "histogram": {
+          "bin_count": 12,
+          "bin_count_cv": 0.4412938878005861,
+          "counts": [
+            76,
+            96,
+            93,
+            80,
+            155,
+            123,
+            109,
+            102,
+            85,
+            70,
+            27,
+            8
+          ],
+          "edges": [
+            30.37403451000688,
+            42.267734207311264,
+            54.16143390461565,
+            66.05513360192003,
+            77.94883329922442,
+            89.8425329965288,
+            101.73623269383319,
+            113.62993239113756,
+            125.52363208844196,
+            137.41733178574634,
+            149.31103148305073,
+            161.2047311803551,
+            173.0984308776595
+          ],
+          "empty_bins": 0,
+          "normalized_entropy": 0.9514643209662785,
+          "occupied_bins": 12,
+          "reference": "equal_width_over_observed_range",
+          "shannon_entropy_nats": 2.36430001820513
+        },
+        "maximum_sorted_gap": {
+          "gap": 4.076698941706809,
+          "lower": 167.50279188894888,
+          "normalized_by_observed_range": 0.02856343446151552,
+          "unit": "K",
+          "upper": 171.5794908306557
+        },
+        "metric": "peak_deltaT_K",
+        "modal_diagnostics": {
+          "bandwidth_sensitivity": "count_changes",
+          "diagnosis": "bimodal",
+          "runs": [
+            {
+              "mode_count": 2,
+              "mode_locations": [
+                49.36671347869647,
+                87.07276731359491
+              ],
+              "scott_bandwidth_factor": 0.75
+            },
+            {
+              "mode_count": 2,
+              "mode_locations": [
+                50.76323399110011,
+                88.74859192847927
+              ],
+              "scott_bandwidth_factor": 1.0
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                90.42441654336366
+              ],
+              "scott_bandwidth_factor": 1.25
+            }
+          ]
+        },
+        "observed_range": [
+          30.37403451000688,
+          173.0984308776595
+        ],
+        "summary": {
+          "count": 1024,
+          "mean": 91.95303288399397,
+          "q00": 30.37403451000688,
+          "q01": 33.9866598029056,
+          "q05": 39.65927083622004,
+          "q10": 45.12495110441116,
+          "q100": 173.0984308776595,
+          "q25": 64.24305663036394,
+          "q50": 90.77670386923518,
+          "q75": 116.93940818272219,
+          "q90": 137.76965890892112,
+          "q95": 146.08404513372523,
+          "q99": 159.5184918434289,
+          "std": 33.168849905938956
+        },
+        "uniform_reference_diagnostics": {
+          "interpretation": "diagnostic_only_not_a_uniformity_acceptance_test",
+          "ks_pvalue": 6.772260492125719e-22,
+          "ks_statistic": 0.15480463263566557,
+          "reference": "continuous_uniform_over_observed_range",
+          "wasserstein": 10.149076082652245,
+          "wasserstein_normalized_range": 0.07110960943571701,
+          "wasserstein_unit": "K"
+        },
+        "unit": "K"
+      },
+      "top_heat_fraction": {
+        "histogram": {
+          "bin_count": 12,
+          "bin_count_cv": 0.7619340641199908,
+          "counts": [
+            3,
+            9,
+            21,
+            28,
+            43,
+            64,
+            83,
+            118,
+            164,
+            180,
+            190,
+            121
+          ],
+          "edges": [
+            0.853464451651843,
+            0.8646999620632634,
+            0.8759354724746837,
+            0.8871709828861042,
+            0.8984064932975245,
+            0.9096420037089449,
+            0.9208775141203653,
+            0.9321130245317857,
+            0.943348534943206,
+            0.9545840453546264,
+            0.9658195557660467,
+            0.9770550661774672,
+            0.9882905765888875
+          ],
+          "empty_bins": 0,
+          "normalized_entropy": 0.8691455058691778,
+          "occupied_bins": 12,
+          "reference": "equal_width_over_observed_range",
+          "shannon_entropy_nats": 2.1597454471676754
+        },
+        "maximum_sorted_gap": {
+          "gap": 0.007494526992526396,
+          "lower": 0.853464451651843,
+          "normalized_by_observed_range": 0.05558660827807577,
+          "unit": "fraction",
+          "upper": 0.8609589786443694
+        },
+        "metric": "top_heat_fraction",
+        "modal_diagnostics": {
+          "bandwidth_sensitivity": "stable_count",
+          "diagnosis": "unimodal",
+          "runs": [
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                0.9666550731743324
+              ],
+              "scott_bandwidth_factor": 0.75
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                0.9658635303664829
+              ],
+              "scott_bandwidth_factor": 1.0
+            },
+            {
+              "mode_count": 1,
+              "mode_locations": [
+                0.9645442923534002
+              ],
+              "scott_bandwidth_factor": 1.25
+            }
+          ]
+        },
+        "observed_range": [
+          0.853464451651843,
+          0.9882905765888875
+        ],
+        "summary": {
+          "count": 1024,
+          "mean": 0.9481364802528658,
+          "q00": 0.853464451651843,
+          "q01": 0.8735870196913504,
+          "q05": 0.8949218096162912,
+          "q10": 0.9094052437806293,
+          "q100": 0.9882905765888875,
+          "q25": 0.9322703137427178,
+          "q50": 0.9531564884591215,
+          "q75": 0.9687397764621698,
+          "q90": 0.9785324306729547,
+          "q95": 0.9818646105424239,
+          "q99": 0.9858613328778728,
+          "std": 0.026737153365750027
+        },
+        "uniform_reference_diagnostics": {
+          "interpretation": "diagnostic_only_not_a_uniformity_acceptance_test",
+          "ks_pvalue": 3.618089720364483e-109,
+          "ks_statistic": 0.34469865847463455,
+          "reference": "continuous_uniform_over_observed_range",
+          "wasserstein": 0.027303760237598562,
+          "wasserstein_normalized_range": 0.20251090247047995,
+          "wasserstein_unit": "fraction"
+        },
+        "unit": "fraction"
+      }
+    }
+  },
+  "frozen_bindings": {
+    "background_k_contract_sha256": "a0f504ceea7aa9b0a7ac1eea70a7be31a849a561e114d2fe8e5859c8cadbf703",
+    "formal_config_sha256": "1e15a77fe51eea7ec64614566bb6bb12bfcf05948f3b7c8c6f3c85ec759a58f8",
+    "formal_manifest_payload_sha256": "27d2ea3b7ec4e4ce9c6d068471cd19036ac8148b6cd57da325219d718c7e5ed5",
+    "formal_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "input_sha256": {
+      "configs/heat3d_v6_p1i/v6_p1i_background_k_contract.csv": "a0f504ceea7aa9b0a7ac1eea70a7be31a849a561e114d2fe8e5859c8cadbf703",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml": "1e15a77fe51eea7ec64614566bb6bb12bfcf05948f3b7c8c6f3c85ec759a58f8",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_input_definitions.csv": "afea524f5002814a4ec2e8dbac0bc6d2c60f18de9e2cf16c80c1ffe63feac498",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_regions.csv": "bb2fa33b822e4366f106488d24fcf60d7357bd46c4b196572ae50e66e7820acf",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_samples.csv": "5f0305e5994c8a8ec43a31ee9844526f5fad262a46c73a730cdf4285cd2d4018",
+      "configs/heat3d_v6_p1i/v6_p1i_literature.json": "88f8e5fe299c2045e0a21563bbe33ae6c6e28083f829a4c3ff32398751170b6a",
+      "configs/heat3d_v6_p1i/v6_p1i_v3_literature_contract.json": "34469fdca4cd95c1c11f4d590c3a794e68e3094093328e3b7e5d7c84d36f912e"
+    }
+  },
+  "guardrails": {
+    "dataset_regeneration_runs": 0,
+    "formal1024_v1_modified": false,
+    "model_inference_runs": 0,
+    "sample_filter_or_replacement_runs": 0,
+    "training_runs": 0
+  },
+  "joint_input_coverage": {
+    "pairs": {
+      "bt_substrate_with_vias_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 42,
+            "high_x_low_y": 39,
+            "low_x_high_y": 42,
+            "low_x_low_y": 39
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.025390625,
+            "high_x_low_y": 0.9521484375,
+            "low_x_high_y": 1.025390625,
+            "low_x_low_y": 0.9521484375
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -2.2888227931599595e-05,
+          "pearson_coverage_transform_pvalue": 0.9994163245806218,
+          "pearson_raw": -1.812813588356082e-05,
+          "pearson_raw_pvalue": 0.9995377122380468,
+          "spearman": -1.2468324983583301e-18,
+          "spearman_pvalue": 1.0
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.020052625184003012,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.008293382876526974,
+          "q01": 0.008537975833765896,
+          "q05": 0.013024396789065163,
+          "q10": 0.014626851554491728,
+          "q100": 0.04144379167515932,
+          "q25": 0.01754443111847058,
+          "q50": 0.019887823138260076,
+          "q75": 0.022762584969761232,
+          "q90": 0.02533439353127489,
+          "q95": 0.027178981759044187,
+          "q99": 0.032276401983102214,
+          "std": 0.004586864745979052
+        },
+        "pair_id": "bt_substrate_with_vias_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.03460946317708858,
+          "counts": [
+            [
+              28,
+              28,
+              30,
+              28,
+              27,
+              30
+            ],
+            [
+              28,
+              29,
+              28,
+              28,
+              30,
+              27
+            ],
+            [
+              30,
+              27,
+              28,
+              29,
+              29,
+              28
+            ],
+            [
+              30,
+              27,
+              29,
+              28,
+              28,
+              29
+            ],
+            [
+              28,
+              29,
+              28,
+              30,
+              28,
+              27
+            ],
+            [
+              27,
+              30,
+              28,
+              28,
+              29,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0005898395666258354,
+          "normalized_entropy": 0.9998332717217205,
+          "normalized_mutual_information": 0.00032919643141869474,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.035587631168532426,
+          "counts": [
+            [
+              28,
+              28,
+              30,
+              28,
+              27,
+              30
+            ],
+            [
+              28,
+              29,
+              28,
+              28,
+              30,
+              27
+            ],
+            [
+              30,
+              27,
+              28,
+              29,
+              29,
+              28
+            ],
+            [
+              30,
+              27,
+              29,
+              28,
+              28,
+              29
+            ],
+            [
+              28,
+              29,
+              28,
+              30,
+              28,
+              27
+            ],
+            [
+              27,
+              30,
+              28,
+              28,
+              28,
+              30
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0006235208122848928,
+          "normalized_entropy": 0.9998238727911616,
+          "normalized_mutual_information": 0.0003479943325837951,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_bt_substrate_with_vias_W_mK",
+        "x_bounds_raw": [
+          0.392,
+          0.6125
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "bt_substrate_with_vias_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 41,
+            "high_x_low_y": 41,
+            "low_x_high_y": 41,
+            "low_x_low_y": 41
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0009765625,
+            "high_x_low_y": 1.0009765625,
+            "low_x_high_y": 1.0009765625,
+            "low_x_low_y": 1.0009765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 1.746230139654248e-10,
+          "pearson_coverage_transform_pvalue": 0.9999999955469174,
+          "pearson_raw": 5.6308643975395284e-05,
+          "pearson_raw_pvalue": 0.9985640672271798,
+          "spearman": 1.734723475976807e-17,
+          "spearman_pvalue": 0.9999999999999996
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.02127122589358161,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.004646362799999804,
+          "q01": 0.006956902808616388,
+          "q05": 0.00890182874088425,
+          "q10": 0.011338917769898274,
+          "q100": 0.041248748573058464,
+          "q25": 0.01834101885487219,
+          "q50": 0.021680083565308317,
+          "q75": 0.025438046402468398,
+          "q90": 0.027494107688630334,
+          "q95": 0.030114307600587344,
+          "q99": 0.03530680240819627,
+          "std": 0.006134083355786437
+        },
+        "pair_id": "bt_substrate_with_vias_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.07004070733219182,
+          "counts": [
+            [
+              27,
+              32,
+              26,
+              26,
+              32,
+              28
+            ],
+            [
+              30,
+              26,
+              29,
+              30,
+              25,
+              30
+            ],
+            [
+              28,
+              28,
+              30,
+              30,
+              28,
+              27
+            ],
+            [
+              28,
+              28,
+              30,
+              30,
+              26,
+              29
+            ],
+            [
+              28,
+              32,
+              25,
+              26,
+              32,
+              27
+            ],
+            [
+              29,
+              26,
+              30,
+              29,
+              27,
+              30
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0024372266021691624,
+          "normalized_entropy": 0.9993161548899882,
+          "normalized_mutual_information": 0.0013602471316508105,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.07004070733219182,
+          "counts": [
+            [
+              27,
+              32,
+              26,
+              26,
+              32,
+              28
+            ],
+            [
+              30,
+              26,
+              29,
+              30,
+              25,
+              30
+            ],
+            [
+              28,
+              27,
+              31,
+              30,
+              28,
+              27
+            ],
+            [
+              28,
+              28,
+              30,
+              30,
+              26,
+              29
+            ],
+            [
+              29,
+              31,
+              25,
+              26,
+              32,
+              27
+            ],
+            [
+              29,
+              26,
+              30,
+              29,
+              27,
+              30
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.00244631469502574,
+          "normalized_entropy": 0.9993152124731765,
+          "normalized_mutual_information": 0.0013653171358720317,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_bt_substrate_with_vias_W_mK",
+        "x_bounds_raw": [
+          0.392,
+          0.6125
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "bump_underfill_under_interposer_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 41,
+            "high_x_low_y": 41,
+            "low_x_high_y": 40,
+            "low_x_low_y": 42
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0009765625,
+            "high_x_low_y": 1.0009765625,
+            "low_x_high_y": 0.9765625,
+            "low_x_low_y": 1.025390625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -2.7430314963883262e-17,
+          "pearson_coverage_transform_pvalue": 0.9999999999999993,
+          "pearson_raw": 7.462136268395619e-07,
+          "pearson_raw_pvalue": 0.9999809707159663,
+          "spearman": -1.0299920638612292e-18,
+          "spearman_pvalue": 1.0
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01914567627269307,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.004966501376553949,
+          "q01": 0.006017886310624372,
+          "q05": 0.00951785408065966,
+          "q10": 0.01136805625343766,
+          "q100": 0.040672111747747534,
+          "q25": 0.01361831848516832,
+          "q50": 0.019866531463275775,
+          "q75": 0.023544233148209207,
+          "q90": 0.02659874112799836,
+          "q95": 0.028004206489361066,
+          "q99": 0.03370985345719819,
+          "std": 0.006160162303895595
+        },
+        "pair_id": "bump_underfill_under_interposer_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.048632420304643494,
+          "counts": [
+            [
+              29,
+              28,
+              28,
+              29,
+              29,
+              28
+            ],
+            [
+              30,
+              28,
+              29,
+              29,
+              28,
+              27
+            ],
+            [
+              27,
+              28,
+              29,
+              28,
+              28,
+              30
+            ],
+            [
+              26,
+              29,
+              29,
+              29,
+              27,
+              30
+            ],
+            [
+              30,
+              27,
+              30,
+              26,
+              32,
+              26
+            ],
+            [
+              29,
+              30,
+              26,
+              30,
+              27,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.001176408586344383,
+          "normalized_entropy": 0.9996695865201652,
+          "normalized_mutual_information": 0.0006565675319650889,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.044964314192270864,
+          "counts": [
+            [
+              29,
+              28,
+              28,
+              29,
+              28,
+              29
+            ],
+            [
+              29,
+              28,
+              29,
+              29,
+              28,
+              27
+            ],
+            [
+              28,
+              28,
+              29,
+              28,
+              28,
+              30
+            ],
+            [
+              27,
+              29,
+              29,
+              29,
+              27,
+              30
+            ],
+            [
+              29,
+              27,
+              30,
+              26,
+              32,
+              26
+            ],
+            [
+              29,
+              30,
+              26,
+              30,
+              27,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.001003099539306636,
+          "normalized_entropy": 0.9997179493305798,
+          "normalized_mutual_information": 0.0005598417050698706,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_bump_underfill_under_interposer_W_mK",
+        "x_bounds_raw": [
+          3.92,
+          6.125
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "bump_underfill_under_interposer_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 39,
+            "high_x_low_y": 43,
+            "low_x_high_y": 43,
+            "low_x_low_y": 39
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9521484375,
+            "high_x_low_y": 1.0498046875,
+            "low_x_high_y": 1.0498046875,
+            "low_x_low_y": 0.9521484375
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -7.152557372908097e-07,
+          "pearson_coverage_transform_pvalue": 0.9999817601768552,
+          "pearson_raw": 5.284182242682313e-05,
+          "pearson_raw_pvalue": 0.9986524749288497,
+          "spearman": 1.0842021724855044e-18,
+          "spearman_pvalue": 1.0
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01903187274980269,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.011520640104169049,
+          "q01": 0.013449584144887589,
+          "q05": 0.013583458502542058,
+          "q10": 0.014633949118434478,
+          "q100": 0.03520050856174644,
+          "q25": 0.015398083314291437,
+          "q50": 0.016566926913411682,
+          "q75": 0.021334750398425684,
+          "q90": 0.030161110606921098,
+          "q95": 0.032145232354114844,
+          "q99": 0.03355054846884436,
+          "std": 0.005583338905362036
+        },
+        "pair_id": "bump_underfill_under_interposer_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.0665210404919,
+          "counts": [
+            [
+              32,
+              26,
+              28,
+              31,
+              26,
+              28
+            ],
+            [
+              28,
+              27,
+              30,
+              29,
+              29,
+              28
+            ],
+            [
+              25,
+              33,
+              27,
+              26,
+              30,
+              29
+            ],
+            [
+              30,
+              29,
+              26,
+              29,
+              31,
+              25
+            ],
+            [
+              27,
+              29,
+              29,
+              29,
+              27,
+              30
+            ],
+            [
+              28,
+              28,
+              30,
+              27,
+              27,
+              31
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.002193074119671171,
+          "normalized_entropy": 0.9993842869374786,
+          "normalized_mutual_information": 0.0012239825292097665,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.06855440927650094,
+          "counts": [
+            [
+              32,
+              26,
+              28,
+              31,
+              26,
+              28
+            ],
+            [
+              29,
+              26,
+              29,
+              29,
+              29,
+              28
+            ],
+            [
+              25,
+              33,
+              28,
+              26,
+              30,
+              29
+            ],
+            [
+              30,
+              30,
+              26,
+              29,
+              31,
+              25
+            ],
+            [
+              27,
+              28,
+              29,
+              29,
+              27,
+              30
+            ],
+            [
+              28,
+              27,
+              31,
+              27,
+              27,
+              31
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0023360863092856893,
+          "normalized_entropy": 0.9993459722898907,
+          "normalized_mutual_information": 0.0013037973713803993,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_bump_underfill_under_interposer_W_mK",
+        "x_bounds_raw": [
+          3.92,
+          6.125
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "effective_background_kz_x_bottom_h": {
+        "bound_source": "frozen observed effective stack support + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 17,
+            "high_x_low_y": 23,
+            "low_x_high_y": 25,
+            "low_x_low_y": 23
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.4150390625,
+            "high_x_low_y": 0.5615234375,
+            "low_x_high_y": 0.6103515625,
+            "low_x_low_y": 0.5615234375
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 0.00015630250151968676,
+          "pearson_coverage_transform_pvalue": 0.9960141275406378,
+          "pearson_raw": 0.0003271452192421015,
+          "pearson_raw_pvalue": 0.9916575819424217,
+          "spearman": 2.6967402188686138e-05,
+          "spearman_pvalue": 0.9993123010971021
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.015140897356186511,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.001294775968363078,
+          "q01": 0.0017732404625362215,
+          "q05": 0.0030712572161741836,
+          "q10": 0.004850329511498343,
+          "q100": 0.07961288906122767,
+          "q25": 0.008994919552373531,
+          "q50": 0.013934724201082853,
+          "q75": 0.0193022353087747,
+          "q90": 0.02586612592131028,
+          "q95": 0.032092049214198254,
+          "q99": 0.04587546802746857,
+          "std": 0.009069174123320254
+        },
+        "pair_id": "effective_background_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.4101097443872875,
+          "counts": [
+            [
+              13,
+              12,
+              13,
+              13,
+              13,
+              13
+            ],
+            [
+              31,
+              40,
+              36,
+              35,
+              32,
+              35
+            ],
+            [
+              43,
+              36,
+              39,
+              37,
+              42,
+              38
+            ],
+            [
+              41,
+              37,
+              36,
+              41,
+              41,
+              39
+            ],
+            [
+              32,
+              33,
+              33,
+              33,
+              32,
+              32
+            ],
+            [
+              11,
+              12,
+              14,
+              12,
+              11,
+              13
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.001821475703110165,
+          "normalized_entropy": 0.9734929640788579,
+          "normalized_mutual_information": 0.0010440923277727106,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.09749987479959911,
+          "counts": [
+            [
+              27,
+              34,
+              28,
+              26,
+              27,
+              29
+            ],
+            [
+              27,
+              27,
+              30,
+              34,
+              27,
+              25
+            ],
+            [
+              32,
+              23,
+              29,
+              25,
+              32,
+              30
+            ],
+            [
+              29,
+              32,
+              24,
+              28,
+              27,
+              31
+            ],
+            [
+              24,
+              26,
+              33,
+              31,
+              29,
+              27
+            ],
+            [
+              32,
+              28,
+              27,
+              27,
+              28,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.004726443117970683,
+          "normalized_entropy": 0.9986789305218028,
+          "normalized_mutual_information": 0.0026378837497118947,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "effective_background_kz_W_mK",
+        "x_bounds_raw": [
+          0.4509767789801387,
+          0.6984513346018041
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "effective_background_kz_x_top_h": {
+        "bound_source": "frozen observed effective stack support + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 18,
+            "high_x_low_y": 21,
+            "low_x_high_y": 24,
+            "low_x_low_y": 22
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.439453125,
+            "high_x_low_y": 0.5126953125,
+            "low_x_high_y": 0.5859375,
+            "low_x_low_y": 0.537109375
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -2.212570758719501e-06,
+          "pearson_coverage_transform_pvalue": 0.9999435769652725,
+          "pearson_raw": 1.2194101072705854e-05,
+          "pearson_raw_pvalue": 0.9996890367601735,
+          "spearman": 0.00014849393820186296,
+          "spearman_pvalue": 0.9962132522999843
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01637615316841543,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0014171887075874775,
+          "q01": 0.0025062382771199993,
+          "q05": 0.0043906461553727865,
+          "q10": 0.006409381316576142,
+          "q100": 0.10541524018194012,
+          "q25": 0.009743783431051119,
+          "q50": 0.014881123128056232,
+          "q75": 0.021087641030137074,
+          "q90": 0.027662518380238702,
+          "q95": 0.03167936130420783,
+          "q99": 0.047177165637611596,
+          "std": 0.00991288609928834
+        },
+        "pair_id": "effective_background_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.41798700310610737,
+          "counts": [
+            [
+              11,
+              17,
+              12,
+              11,
+              13,
+              13
+            ],
+            [
+              36,
+              33,
+              35,
+              38,
+              33,
+              34
+            ],
+            [
+              40,
+              37,
+              36,
+              40,
+              42,
+              40
+            ],
+            [
+              36,
+              45,
+              40,
+              36,
+              41,
+              37
+            ],
+            [
+              37,
+              26,
+              37,
+              34,
+              25,
+              36
+            ],
+            [
+              10,
+              14,
+              10,
+              12,
+              16,
+              11
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.005749215346514063,
+          "normalized_entropy": 0.9723953137984153,
+          "normalized_mutual_information": 0.00329552636365461,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.08137760412499866,
+          "counts": [
+            [
+              27,
+              29,
+              31,
+              29,
+              30,
+              25
+            ],
+            [
+              30,
+              28,
+              27,
+              27,
+              26,
+              32
+            ],
+            [
+              27,
+              29,
+              25,
+              30,
+              31,
+              29
+            ],
+            [
+              31,
+              30,
+              32,
+              24,
+              27,
+              27
+            ],
+            [
+              29,
+              23,
+              31,
+              32,
+              27,
+              28
+            ],
+            [
+              27,
+              31,
+              25,
+              29,
+              29,
+              30
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0033475018747201953,
+          "normalized_entropy": 0.9990637314024268,
+          "normalized_mutual_information": 0.00186828034889074,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "effective_background_kz_W_mK",
+        "x_bounds_raw": [
+          0.4509767789801387,
+          0.6984513346018041
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "mean_q_x_mean_local_k": {
+        "bound_source": "frozen observed q support + formal local-k contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 1,
+            "high_x_low_y": 2,
+            "low_x_high_y": 3,
+            "low_x_low_y": 1
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.0244140625,
+            "high_x_low_y": 0.048828125,
+            "low_x_high_y": 0.0732421875,
+            "low_x_low_y": 0.0244140625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -0.018137509385141103,
+          "pearson_coverage_transform_pvalue": 0.5620905762062747,
+          "pearson_raw": -0.022930323360085166,
+          "pearson_raw_pvalue": 0.46357642216579464,
+          "spearman": -0.020251066179100215,
+          "spearman_pvalue": 0.5174319808058256
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.011704025358465698,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.00043898115556262194,
+          "q01": 0.0010111711072031866,
+          "q05": 0.0020557761136187703,
+          "q10": 0.0029378430473628266,
+          "q100": 0.19284053049914493,
+          "q25": 0.005152133258327659,
+          "q50": 0.00838504495460563,
+          "q75": 0.013255963926722342,
+          "q90": 0.022844480541547533,
+          "q95": 0.030288419809794343,
+          "q99": 0.058689362624050896,
+          "std": 0.01278862212355589
+        },
+        "pair_id": "mean_q_x_mean_local_k",
+        "physical_range_occupancy": {
+          "bin_count_cv": 1.4765495824501098,
+          "counts": [
+            [
+              1,
+              4,
+              6,
+              19,
+              6,
+              1
+            ],
+            [
+              3,
+              7,
+              17,
+              90,
+              57,
+              6
+            ],
+            [
+              3,
+              16,
+              73,
+              164,
+              99,
+              7
+            ],
+            [
+              2,
+              17,
+              56,
+              147,
+              97,
+              6
+            ],
+            [
+              1,
+              7,
+              14,
+              50,
+              28,
+              6
+            ],
+            [
+              1,
+              0,
+              2,
+              6,
+              4,
+              1
+            ]
+          ],
+          "empty_cells": 1,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.013978549119177116,
+          "normalized_entropy": 0.7649017387191662,
+          "normalized_mutual_information": 0.010162124400105454,
+          "occupancy_fraction": 0.9722222222222222,
+          "occupied_cells": 35,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.14925760292611562,
+          "counts": [
+            [
+              22,
+              22,
+              39,
+              25,
+              34,
+              29
+            ],
+            [
+              35,
+              29,
+              20,
+              26,
+              30,
+              30
+            ],
+            [
+              26,
+              27,
+              30,
+              36,
+              25,
+              27
+            ],
+            [
+              32,
+              28,
+              28,
+              27,
+              28,
+              28
+            ],
+            [
+              22,
+              36,
+              24,
+              30,
+              30,
+              28
+            ],
+            [
+              34,
+              28,
+              30,
+              27,
+              23,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.011057503497489305,
+          "normalized_entropy": 0.9969122144842295,
+          "normalized_mutual_information": 0.006171323352545295,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "mean_q_W_m3",
+        "x_bounds_raw": [
+          1113663519.193053,
+          45392515952.52296
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "mean_local_k_W_mK",
+        "y_bounds_raw": [
+          20.0,
+          400.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "pcb_fr4_equivalent_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 39,
+            "high_x_low_y": 43,
+            "low_x_high_y": 42,
+            "low_x_low_y": 42
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9521484375,
+            "high_x_low_y": 1.0498046875,
+            "low_x_high_y": 1.025390625,
+            "low_x_low_y": 1.025390625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 4.391018798566293e-17,
+          "pearson_coverage_transform_pvalue": 0.9999999999999989,
+          "pearson_raw": 2.9089016383083196e-06,
+          "pearson_raw_pvalue": 0.9999258197472731,
+          "spearman": -4.9873299934333204e-18,
+          "spearman_pvalue": 0.9999999999999999
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.02093155532136933,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.007449814768386172,
+          "q01": 0.007720792831706848,
+          "q05": 0.00957195991403245,
+          "q10": 0.01077002575747721,
+          "q100": 0.04014665744189435,
+          "q25": 0.014690811788252078,
+          "q50": 0.02154937550040733,
+          "q75": 0.025703485005944056,
+          "q90": 0.029108210476560255,
+          "q95": 0.03464161099530352,
+          "q99": 0.03696323549112001,
+          "std": 0.00695989393990801
+        },
+        "pair_id": "pcb_fr4_equivalent_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.07004070733219182,
+          "counts": [
+            [
+              26,
+              32,
+              27,
+              30,
+              28,
+              28
+            ],
+            [
+              27,
+              29,
+              30,
+              29,
+              27,
+              29
+            ],
+            [
+              31,
+              27,
+              27,
+              28,
+              28,
+              29
+            ],
+            [
+              31,
+              27,
+              28,
+              27,
+              32,
+              26
+            ],
+            [
+              30,
+              25,
+              30,
+              25,
+              31,
+              30
+            ],
+            [
+              26,
+              30,
+              29,
+              32,
+              25,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0024453802658061206,
+          "normalized_entropy": 0.999315473230615,
+          "normalized_mutual_information": 0.0013647956198837576,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.07004070733219182,
+          "counts": [
+            [
+              26,
+              32,
+              27,
+              30,
+              28,
+              28
+            ],
+            [
+              27,
+              29,
+              30,
+              29,
+              26,
+              29
+            ],
+            [
+              31,
+              27,
+              27,
+              28,
+              28,
+              30
+            ],
+            [
+              31,
+              27,
+              28,
+              27,
+              32,
+              26
+            ],
+            [
+              29,
+              25,
+              30,
+              25,
+              31,
+              30
+            ],
+            [
+              27,
+              30,
+              29,
+              32,
+              25,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0024453802658061102,
+          "normalized_entropy": 0.9993154732306149,
+          "normalized_mutual_information": 0.0013647956198837518,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_pcb_fr4_equivalent_W_mK",
+        "x_bounds_raw": [
+          0.24,
+          0.375
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "pcb_fr4_equivalent_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 40,
+            "high_x_low_y": 41,
+            "low_x_high_y": 40,
+            "low_x_low_y": 43
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9765625,
+            "high_x_low_y": 1.0009765625,
+            "low_x_high_y": 0.9765625,
+            "low_x_low_y": 1.0498046875
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 2.7755575615628914e-17,
+          "pearson_coverage_transform_pvalue": 0.9999999999999993,
+          "pearson_raw": -1.705761606546341e-07,
+          "pearson_raw_pvalue": 0.999995650116677,
+          "spearman": -6.938893903907228e-18,
+          "spearman_pvalue": 0.9999999999999998
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01892801579731937,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.003402180197428359,
+          "q01": 0.005463143560968488,
+          "q05": 0.009107047758694876,
+          "q10": 0.01007943743771501,
+          "q100": 0.045478633708014,
+          "q25": 0.012827831444529352,
+          "q50": 0.020732011496183367,
+          "q75": 0.023534821744752143,
+          "q90": 0.025497936139048855,
+          "q95": 0.02839284866304227,
+          "q99": 0.03233411107145001,
+          "std": 0.006372850671655405
+        },
+        "pair_id": "pcb_fr4_equivalent_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.040969095631646545,
+          "counts": [
+            [
+              26,
+              31,
+              29,
+              27,
+              30,
+              28
+            ],
+            [
+              31,
+              27,
+              27,
+              31,
+              27,
+              28
+            ],
+            [
+              28,
+              28,
+              29,
+              28,
+              28,
+              29
+            ],
+            [
+              28,
+              29,
+              29,
+              28,
+              28,
+              29
+            ],
+            [
+              28,
+              30,
+              27,
+              28,
+              29,
+              29
+            ],
+            [
+              29,
+              27,
+              29,
+              29,
+              28,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0008214307861735962,
+          "normalized_entropy": 0.9997670512976102,
+          "normalized_mutual_information": 0.0004584509580470892,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.040969095631646545,
+          "counts": [
+            [
+              26,
+              30,
+              30,
+              27,
+              30,
+              28
+            ],
+            [
+              31,
+              27,
+              26,
+              31,
+              27,
+              28
+            ],
+            [
+              28,
+              28,
+              30,
+              28,
+              28,
+              29
+            ],
+            [
+              29,
+              28,
+              29,
+              28,
+              28,
+              29
+            ],
+            [
+              28,
+              29,
+              27,
+              28,
+              29,
+              29
+            ],
+            [
+              29,
+              28,
+              29,
+              29,
+              28,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.000830760851467798,
+          "normalized_entropy": 0.9997660413571041,
+          "normalized_mutual_information": 0.00046365744710890103,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_pcb_fr4_equivalent_W_mK",
+        "x_bounds_raw": [
+          0.24,
+          0.375
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "power_x_bottom_h": {
+        "bound_source": "formal config",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 3,
+            "high_x_low_y": 1,
+            "low_x_high_y": 57,
+            "low_x_low_y": 56
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.0732421875,
+            "high_x_low_y": 0.0244140625,
+            "low_x_high_y": 1.3916015625,
+            "low_x_low_y": 1.3671875
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 0.000130388859583273,
+          "pearson_coverage_transform_pvalue": 0.9966749475168539,
+          "pearson_raw": -7.271181140366782e-05,
+          "pearson_raw_pvalue": 0.9981457689613855,
+          "spearman": -9.031229883413316e-05,
+          "spearman_pvalue": 0.9976969383274824
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.014567816670431373,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0003135470131069382,
+          "q01": 0.001562962465655382,
+          "q05": 0.0033607265266784214,
+          "q10": 0.004650452140161853,
+          "q100": 0.08090235630845707,
+          "q25": 0.008068985035958333,
+          "q50": 0.012928718645010294,
+          "q75": 0.018700355207388223,
+          "q90": 0.02582351655516217,
+          "q95": 0.031162453299671152,
+          "q99": 0.04672737775998685,
+          "std": 0.009664118412338956
+        },
+        "pair_id": "power_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.7232683218762506,
+          "counts": [
+            [
+              38,
+              38,
+              39,
+              38,
+              39,
+              34
+            ],
+            [
+              56,
+              60,
+              60,
+              58,
+              58,
+              62
+            ],
+            [
+              43,
+              45,
+              44,
+              43,
+              47,
+              46
+            ],
+            [
+              25,
+              20,
+              18,
+              23,
+              17,
+              20
+            ],
+            [
+              9,
+              5,
+              9,
+              9,
+              8,
+              5
+            ],
+            [
+              0,
+              2,
+              1,
+              0,
+              2,
+              3
+            ]
+          ],
+          "empty_cells": 2,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.006655245592869479,
+          "normalized_entropy": 0.911502404805367,
+          "normalized_mutual_information": 0.004085124307504282,
+          "occupancy_fraction": 0.9444444444444444,
+          "occupied_cells": 34,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.08179840465379656,
+          "counts": [
+            [
+              33,
+              26,
+              26,
+              26,
+              32,
+              28
+            ],
+            [
+              28,
+              31,
+              30,
+              31,
+              24,
+              26
+            ],
+            [
+              24,
+              30,
+              29,
+              27,
+              30,
+              31
+            ],
+            [
+              27,
+              28,
+              29,
+              28,
+              27,
+              32
+            ],
+            [
+              26,
+              28,
+              29,
+              30,
+              31,
+              26
+            ],
+            [
+              33,
+              27,
+              28,
+              29,
+              26,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.00333210743501942,
+          "normalized_entropy": 0.9990680273026202,
+          "normalized_mutual_information": 0.0018596885301998109,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "package_total_power_W",
+        "x_bounds_raw": [
+          1.7,
+          20.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "power_x_top_h": {
+        "bound_source": "formal config",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 13,
+            "high_x_low_y": 0,
+            "low_x_high_y": 26,
+            "low_x_low_y": 106
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.3173828125,
+            "high_x_low_y": 0.0,
+            "low_x_high_y": 0.634765625,
+            "low_x_low_y": 2.587890625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 0.558128600475746,
+          "pearson_coverage_transform_pvalue": 6.545287614793904e-85,
+          "pearson_raw": 0.5610678028925653,
+          "pearson_raw_pvalue": 5.6336346997951384e-86,
+          "spearman": 0.5333741998068807,
+          "spearman_pvalue": 2.3891955644877457e-76
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.012484370373746152,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0010988148346216112,
+          "q01": 0.0021434547597598734,
+          "q05": 0.004002572071079134,
+          "q10": 0.005353362171590588,
+          "q100": 0.03840400350432159,
+          "q25": 0.008179909488764294,
+          "q50": 0.01152844139416194,
+          "q75": 0.01608246076275033,
+          "q90": 0.020641243378441573,
+          "q95": 0.023705150497285672,
+          "q99": 0.028228768980752765,
+          "std": 0.006042804284181545
+        },
+        "pair_id": "power_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.906308928579785,
+          "counts": [
+            [
+              71,
+              53,
+              40,
+              29,
+              23,
+              10
+            ],
+            [
+              82,
+              81,
+              69,
+              55,
+              33,
+              34
+            ],
+            [
+              17,
+              38,
+              52,
+              57,
+              57,
+              47
+            ],
+            [
+              0,
+              0,
+              9,
+              30,
+              41,
+              43
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              16,
+              29
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              8
+            ]
+          ],
+          "empty_cells": 11,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.195795937658785,
+          "normalized_entropy": 0.8587200960639574,
+          "normalized_mutual_information": 0.12018369687159217,
+          "occupancy_fraction": 0.6944444444444444,
+          "occupied_cells": 25,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.5879522652485809,
+          "counts": [
+            [
+              56,
+              44,
+              33,
+              22,
+              12,
+              4
+            ],
+            [
+              48,
+              35,
+              22,
+              24,
+              21,
+              20
+            ],
+            [
+              38,
+              40,
+              41,
+              21,
+              17,
+              14
+            ],
+            [
+              27,
+              35,
+              31,
+              36,
+              26,
+              16
+            ],
+            [
+              2,
+              16,
+              36,
+              39,
+              38,
+              39
+            ],
+            [
+              0,
+              0,
+              8,
+              29,
+              56,
+              78
+            ]
+          ],
+          "empty_cells": 2,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.19927614410645922,
+          "normalized_entropy": 0.9443888027647812,
+          "normalized_mutual_information": 0.11121837058506097,
+          "occupancy_fraction": 0.9444444444444444,
+          "occupied_cells": 34,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "package_total_power_W",
+        "x_bounds_raw": [
+          1.7,
+          20.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "power_x_total_source_area": {
+        "bound_source": "formal config power + frozen observed derived-area support",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 2,
+            "high_x_low_y": 3,
+            "low_x_high_y": 16,
+            "low_x_low_y": 64
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.048828125,
+            "high_x_low_y": 0.0732421875,
+            "low_x_high_y": 0.390625,
+            "low_x_low_y": 1.5625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -0.002543866807629599,
+          "pearson_coverage_transform_pvalue": 0.9351998401001558,
+          "pearson_raw": -0.002543866807629599,
+          "pearson_raw_pvalue": 0.9351998401001558,
+          "spearman": 0.001657338530863313,
+          "spearman_pvalue": 0.9577557364259326
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.013565253169889251,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0010649876368632526,
+          "q01": 0.00149025538053429,
+          "q05": 0.002778330249989426,
+          "q10": 0.004529450080363415,
+          "q100": 0.10242735195943474,
+          "q25": 0.0072849142944557506,
+          "q50": 0.011468837407356864,
+          "q75": 0.01668297092782678,
+          "q90": 0.02449750126079186,
+          "q95": 0.029510210504206488,
+          "q99": 0.051521013224231,
+          "std": 0.01033856719899234
+        },
+        "pair_id": "power_x_total_source_area",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.8498091539543047,
+          "counts": [
+            [
+              39,
+              49,
+              43,
+              50,
+              38,
+              7
+            ],
+            [
+              62,
+              66,
+              72,
+              78,
+              61,
+              15
+            ],
+            [
+              48,
+              58,
+              59,
+              48,
+              46,
+              9
+            ],
+            [
+              24,
+              21,
+              28,
+              22,
+              24,
+              4
+            ],
+            [
+              6,
+              15,
+              6,
+              11,
+              4,
+              3
+            ],
+            [
+              2,
+              0,
+              2,
+              2,
+              1,
+              1
+            ]
+          ],
+          "empty_cells": 1,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.009176922523456421,
+          "normalized_entropy": 0.8870638492970804,
+          "normalized_mutual_information": 0.005771635375283899,
+          "occupancy_fraction": 0.9722222222222222,
+          "occupied_cells": 35,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.10626148834949566,
+          "counts": [
+            [
+              28,
+              30,
+              28,
+              27,
+              28,
+              30
+            ],
+            [
+              36,
+              25,
+              30,
+              28,
+              31,
+              20
+            ],
+            [
+              24,
+              29,
+              23,
+              34,
+              26,
+              35
+            ],
+            [
+              28,
+              28,
+              33,
+              26,
+              28,
+              28
+            ],
+            [
+              27,
+              28,
+              27,
+              29,
+              29,
+              30
+            ],
+            [
+              28,
+              30,
+              30,
+              27,
+              28,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0056694374071542,
+          "normalized_entropy": 0.9984157829550176,
+          "normalized_mutual_information": 0.003164180004510861,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "package_total_power_W",
+        "x_bounds_raw": [
+          1.7,
+          20.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "total_source_area_fraction",
+        "y_bounds_raw": [
+          0.02675859867293177,
+          0.14564823748033934
+        ],
+        "y_transform_for_coverage": "linear"
+      },
+      "silicon_die_lower_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 43,
+            "high_x_low_y": 38,
+            "low_x_high_y": 39,
+            "low_x_low_y": 43
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0498046875,
+            "high_x_low_y": 0.927734375,
+            "low_x_high_y": 0.9521484375,
+            "low_x_low_y": 1.0498046875
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -1.4305114746163139e-06,
+          "pearson_coverage_transform_pvalue": 0.9999635203537192,
+          "pearson_raw": -1.3135252749943427e-05,
+          "pearson_raw_pvalue": 0.9996650363392796,
+          "spearman": -1.3877787807814457e-17,
+          "spearman_pvalue": 0.9999999999999997
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.014770232995858907,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0027968505118361494,
+          "q01": 0.0030310276652964745,
+          "q05": 0.004671916345392258,
+          "q10": 0.0059070748091769164,
+          "q100": 0.041975685803044054,
+          "q25": 0.010063398722805622,
+          "q50": 0.013184512555084408,
+          "q75": 0.020806391907110575,
+          "q90": 0.026235001312342222,
+          "q95": 0.026908993861066426,
+          "q99": 0.03279341999942679,
+          "std": 0.007179365857963252
+        },
+        "pair_id": "silicon_die_lower_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.08980128072322381,
+          "counts": [
+            [
+              28,
+              31,
+              26,
+              28,
+              31,
+              26
+            ],
+            [
+              34,
+              24,
+              28,
+              34,
+              24,
+              28
+            ],
+            [
+              29,
+              30,
+              26,
+              29,
+              30,
+              26
+            ],
+            [
+              28,
+              28,
+              29,
+              28,
+              27,
+              30
+            ],
+            [
+              24,
+              31,
+              31,
+              24,
+              32,
+              30
+            ],
+            [
+              28,
+              26,
+              31,
+              28,
+              27,
+              30
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0040152550511141,
+          "normalized_entropy": 0.9988742040030225,
+          "normalized_mutual_information": 0.002240968429240998,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.08549245557905971,
+          "counts": [
+            [
+              29,
+              31,
+              26,
+              28,
+              31,
+              26
+            ],
+            [
+              33,
+              24,
+              28,
+              33,
+              24,
+              28
+            ],
+            [
+              29,
+              30,
+              26,
+              30,
+              30,
+              26
+            ],
+            [
+              28,
+              28,
+              30,
+              28,
+              27,
+              30
+            ],
+            [
+              24,
+              31,
+              30,
+              24,
+              31,
+              30
+            ],
+            [
+              28,
+              26,
+              31,
+              28,
+              27,
+              31
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.003680559104483596,
+          "normalized_entropy": 0.9989707900128364,
+          "normalized_mutual_information": 0.0020541635240793905,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_silicon_die_lower_W_mK",
+        "x_bounds_raw": [
+          100.0,
+          150.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "silicon_die_lower_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 40,
+            "high_x_low_y": 42,
+            "low_x_high_y": 40,
+            "low_x_low_y": 41
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9765625,
+            "high_x_low_y": 1.025390625,
+            "low_x_high_y": 0.9765625,
+            "low_x_low_y": 1.0009765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -3.410688073114676e-13,
+          "pearson_coverage_transform_pvalue": 0.9999999999913023,
+          "pearson_raw": -1.096608084064836e-07,
+          "pearson_raw_pvalue": 0.9999972035264492,
+          "spearman": 1.2332799712022613e-18,
+          "spearman_pvalue": 1.0
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01995216761591372,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.006643017227800963,
+          "q01": 0.007276217619243549,
+          "q05": 0.011035675839477973,
+          "q10": 0.012307107544137495,
+          "q100": 0.041371303253617826,
+          "q25": 0.015816009048009474,
+          "q50": 0.020269581252807325,
+          "q75": 0.023294688722176916,
+          "q90": 0.026635092148154092,
+          "q95": 0.028745836900396674,
+          "q99": 0.03638153018527745,
+          "std": 0.0057742693249091485
+        },
+        "pair_id": "silicon_die_lower_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.042612156697795764,
+          "counts": [
+            [
+              27,
+              31,
+              27,
+              29,
+              27,
+              29
+            ],
+            [
+              29,
+              27,
+              30,
+              29,
+              29,
+              28
+            ],
+            [
+              29,
+              28,
+              28,
+              27,
+              30,
+              28
+            ],
+            [
+              28,
+              28,
+              29,
+              28,
+              30,
+              27
+            ],
+            [
+              30,
+              27,
+              29,
+              29,
+              27,
+              30
+            ],
+            [
+              27,
+              31,
+              27,
+              29,
+              27,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0008796087647366702,
+          "normalized_entropy": 0.9997476290960016,
+          "normalized_mutual_information": 0.0004909223917710493,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.04933332398560581,
+          "counts": [
+            [
+              27,
+              31,
+              28,
+              29,
+              27,
+              29
+            ],
+            [
+              30,
+              25,
+              30,
+              29,
+              28,
+              28
+            ],
+            [
+              29,
+              28,
+              28,
+              27,
+              31,
+              28
+            ],
+            [
+              28,
+              28,
+              29,
+              28,
+              31,
+              27
+            ],
+            [
+              29,
+              27,
+              29,
+              29,
+              26,
+              30
+            ],
+            [
+              28,
+              31,
+              27,
+              29,
+              27,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0012102060351481699,
+          "normalized_entropy": 0.9996601551625015,
+          "normalized_mutual_information": 0.0006754302874782678,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_silicon_die_lower_W_mK",
+        "x_bounds_raw": [
+          100.0,
+          150.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "silicon_die_upper_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 42,
+            "high_x_low_y": 41,
+            "low_x_high_y": 40,
+            "low_x_low_y": 40
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.025390625,
+            "high_x_low_y": 1.0009765625,
+            "low_x_high_y": 0.9765625,
+            "low_x_low_y": 0.9765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -2.1250362580715887e-17,
+          "pearson_coverage_transform_pvalue": 0.9999999999999994,
+          "pearson_raw": -1.7427153650426998e-06,
+          "pearson_raw_pvalue": 0.9999555588045239,
+          "spearman": 3.903127820947816e-18,
+          "spearman_pvalue": 0.9999999999999999
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.014325665204256387,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0045406444303100636,
+          "q01": 0.005261228537244544,
+          "q05": 0.006543851224774863,
+          "q10": 0.007601524326319202,
+          "q100": 0.026767269402195763,
+          "q25": 0.010173281242028712,
+          "q50": 0.01382795893997915,
+          "q75": 0.01847610893869449,
+          "q90": 0.02128578766099303,
+          "q95": 0.022859524772400563,
+          "q99": 0.024906566671453873,
+          "std": 0.00513743898867465
+        },
+        "pair_id": "silicon_die_upper_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.05647200115156625,
+          "counts": [
+            [
+              32,
+              27,
+              27,
+              28,
+              30,
+              27
+            ],
+            [
+              26,
+              28,
+              30,
+              30,
+              29,
+              27
+            ],
+            [
+              29,
+              30,
+              27,
+              29,
+              26,
+              30
+            ],
+            [
+              27,
+              30,
+              28,
+              31,
+              27,
+              28
+            ],
+            [
+              30,
+              28,
+              28,
+              25,
+              29,
+              30
+            ],
+            [
+              27,
+              27,
+              31,
+              28,
+              30,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0015858356015881552,
+          "normalized_entropy": 0.9995553337361626,
+          "normalized_mutual_information": 0.0008850735867821204,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.05767509007903673,
+          "counts": [
+            [
+              32,
+              27,
+              27,
+              28,
+              30,
+              27
+            ],
+            [
+              26,
+              28,
+              30,
+              30,
+              29,
+              27
+            ],
+            [
+              29,
+              30,
+              27,
+              29,
+              26,
+              30
+            ],
+            [
+              27,
+              30,
+              28,
+              31,
+              26,
+              29
+            ],
+            [
+              30,
+              28,
+              28,
+              25,
+              29,
+              30
+            ],
+            [
+              27,
+              27,
+              31,
+              28,
+              30,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0016568975070019028,
+          "normalized_entropy": 0.9995355035338855,
+          "normalized_mutual_information": 0.0009247340758297432,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_silicon_die_upper_W_mK",
+        "x_bounds_raw": [
+          100.0,
+          150.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "silicon_die_upper_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 40,
+            "high_x_low_y": 42,
+            "low_x_high_y": 41,
+            "low_x_low_y": 39
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9765625,
+            "high_x_low_y": 1.025390625,
+            "low_x_high_y": 1.0009765625,
+            "low_x_low_y": 0.9521484375
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -2.3635607360183997e-17,
+          "pearson_coverage_transform_pvalue": 0.9999999999999993,
+          "pearson_raw": -3.4999651766370876e-07,
+          "pearson_raw_pvalue": 0.9999910746964322,
+          "spearman": 4.7704895589362195e-18,
+          "spearman_pvalue": 0.9999999999999999
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.019010925036530613,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.003722710551148048,
+          "q01": 0.004517927672763579,
+          "q05": 0.00818083470276085,
+          "q10": 0.009059087919333656,
+          "q100": 0.04753404804878898,
+          "q25": 0.015484762922595608,
+          "q50": 0.01959930537691311,
+          "q75": 0.023423872268940923,
+          "q90": 0.026155493389692586,
+          "q95": 0.027980043832157676,
+          "q99": 0.032826985981172147,
+          "std": 0.006381855763313424
+        },
+        "pair_id": "silicon_die_upper_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.06334872945401115,
+          "counts": [
+            [
+              27,
+              31,
+              28,
+              28,
+              31,
+              26
+            ],
+            [
+              28,
+              28,
+              29,
+              28,
+              27,
+              30
+            ],
+            [
+              30,
+              27,
+              28,
+              30,
+              27,
+              29
+            ],
+            [
+              26,
+              32,
+              28,
+              25,
+              32,
+              28
+            ],
+            [
+              30,
+              28,
+              27,
+              31,
+              27,
+              27
+            ],
+            [
+              29,
+              26,
+              30,
+              29,
+              26,
+              31
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.001985032163552931,
+          "normalized_entropy": 0.9994423421507175,
+          "normalized_mutual_information": 0.0011078716703257396,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.060008951155223506,
+          "counts": [
+            [
+              28,
+              30,
+              28,
+              28,
+              31,
+              26
+            ],
+            [
+              28,
+              28,
+              29,
+              28,
+              27,
+              30
+            ],
+            [
+              30,
+              27,
+              28,
+              30,
+              27,
+              29
+            ],
+            [
+              26,
+              31,
+              29,
+              25,
+              32,
+              28
+            ],
+            [
+              30,
+              28,
+              27,
+              31,
+              27,
+              27
+            ],
+            [
+              29,
+              26,
+              30,
+              29,
+              26,
+              31
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0017918722361242427,
+          "normalized_entropy": 0.9994978381185661,
+          "normalized_mutual_information": 0.0010000650669549375,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_silicon_die_upper_W_mK",
+        "x_bounds_raw": [
+          100.0,
+          150.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "silicon_interposer_tsv_0p1_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 39,
+            "high_x_low_y": 41,
+            "low_x_high_y": 43,
+            "low_x_low_y": 41
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9521484375,
+            "high_x_low_y": 1.0009765625,
+            "low_x_high_y": 1.0498046875,
+            "low_x_low_y": 1.0009765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -3.46451997756958e-07,
+          "pearson_coverage_transform_pvalue": 0.9999911650856634,
+          "pearson_raw": -1.1045321712237904e-06,
+          "pearson_raw_pvalue": 0.9999718331913915,
+          "spearman": -1.3877787807814457e-17,
+          "spearman_pvalue": 0.9999999999999997
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.022147895921046008,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.004857063133710264,
+          "q01": 0.010880111471750963,
+          "q05": 0.015647057849870954,
+          "q10": 0.016558206604865417,
+          "q100": 0.042556845350114905,
+          "q25": 0.018781588138579924,
+          "q50": 0.022086185924634412,
+          "q75": 0.02563065497124626,
+          "q90": 0.027591436557016045,
+          "q95": 0.028903785808481512,
+          "q99": 0.03238670983192638,
+          "std": 0.004615500421646041
+        },
+        "pair_id": "silicon_interposer_tsv_0p1_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.043410372599400136,
+          "counts": [
+            [
+              29,
+              28,
+              28,
+              29,
+              27,
+              30
+            ],
+            [
+              28,
+              31,
+              28,
+              27,
+              30,
+              27
+            ],
+            [
+              28,
+              27,
+              29,
+              29,
+              29,
+              28
+            ],
+            [
+              28,
+              30,
+              28,
+              28,
+              27,
+              29
+            ],
+            [
+              29,
+              27,
+              28,
+              30,
+              27,
+              30
+            ],
+            [
+              29,
+              27,
+              30,
+              28,
+              31,
+              26
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0009317153882897767,
+          "normalized_entropy": 0.9997378694572047,
+          "normalized_mutual_information": 0.000520001366943639,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.04179870031061074,
+          "counts": [
+            [
+              29,
+              28,
+              28,
+              29,
+              27,
+              30
+            ],
+            [
+              28,
+              31,
+              27,
+              27,
+              30,
+              27
+            ],
+            [
+              28,
+              27,
+              30,
+              29,
+              29,
+              28
+            ],
+            [
+              28,
+              30,
+              28,
+              28,
+              27,
+              30
+            ],
+            [
+              29,
+              27,
+              28,
+              30,
+              27,
+              29
+            ],
+            [
+              29,
+              27,
+              30,
+              28,
+              30,
+              27
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0008629800190041981,
+          "normalized_entropy": 0.9997570504272139,
+          "normalized_mutual_information": 0.00048163934519847453,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_silicon_interposer_tsv_0p1_W_mK",
+        "x_bounds_raw": [
+          120.0,
+          155.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "silicon_interposer_tsv_0p1_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 40,
+            "high_x_low_y": 40,
+            "low_x_high_y": 40,
+            "low_x_low_y": 41
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9765625,
+            "high_x_low_y": 0.9765625,
+            "low_x_high_y": 0.9765625,
+            "low_x_low_y": 1.0009765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -2.7284708780522804e-12,
+          "pearson_coverage_transform_pvalue": 0.999999999930421,
+          "pearson_raw": 1.7604869606797436e-05,
+          "pearson_raw_pvalue": 0.9995510561125451,
+          "spearman": -2.3852447794681098e-18,
+          "spearman_pvalue": 1.0
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.020262459165059796,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.004338501593757735,
+          "q01": 0.0065787813357958205,
+          "q05": 0.0109407239598188,
+          "q10": 0.012571349492890337,
+          "q100": 0.036448626680979285,
+          "q25": 0.016311089740441126,
+          "q50": 0.019775562800668337,
+          "q75": 0.024886314630522627,
+          "q90": 0.028080146615762403,
+          "q95": 0.030160568067180874,
+          "q99": 0.03606357855755617,
+          "std": 0.0061113630409327805
+        },
+        "pair_id": "silicon_interposer_tsv_0p1_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.058853590520778765,
+          "counts": [
+            [
+              29,
+              30,
+              25,
+              26,
+              31,
+              30
+            ],
+            [
+              29,
+              27,
+              30,
+              30,
+              26,
+              29
+            ],
+            [
+              27,
+              29,
+              30,
+              29,
+              28,
+              27
+            ],
+            [
+              30,
+              29,
+              27,
+              27,
+              28,
+              29
+            ],
+            [
+              30,
+              27,
+              29,
+              29,
+              26,
+              30
+            ],
+            [
+              25,
+              30,
+              29,
+              30,
+              31,
+              26
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0017379554594088064,
+          "normalized_entropy": 0.9995112902177957,
+          "normalized_mutual_information": 0.0009699750226317331,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.052698193606375156,
+          "counts": [
+            [
+              29,
+              29,
+              26,
+              26,
+              31,
+              30
+            ],
+            [
+              28,
+              27,
+              30,
+              30,
+              26,
+              29
+            ],
+            [
+              28,
+              29,
+              30,
+              29,
+              28,
+              27
+            ],
+            [
+              30,
+              29,
+              28,
+              27,
+              28,
+              29
+            ],
+            [
+              30,
+              27,
+              28,
+              29,
+              26,
+              30
+            ],
+            [
+              26,
+              29,
+              29,
+              30,
+              31,
+              26
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.001389272056982555,
+          "normalized_entropy": 0.999610185837681,
+          "normalized_mutual_information": 0.000775369150029371,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_silicon_interposer_tsv_0p1_W_mK",
+        "x_bounds_raw": [
+          120.0,
+          155.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "spreader_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 41,
+            "high_x_low_y": 41,
+            "low_x_high_y": 40,
+            "low_x_low_y": 39
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0009765625,
+            "high_x_low_y": 1.0009765625,
+            "low_x_high_y": 0.9765625,
+            "low_x_low_y": 0.9521484375
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -3.469446951953614e-18,
+          "pearson_coverage_transform_pvalue": 0.9999999999999999,
+          "pearson_raw": -4.068323109479577e-06,
+          "pearson_raw_pvalue": 0.9998962532001612,
+          "spearman": 6.938893903907228e-18,
+          "spearman_pvalue": 0.9999999999999998
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.014212356581317349,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0011782051801369948,
+          "q01": 0.0032503545282154362,
+          "q05": 0.0037928370770736264,
+          "q10": 0.005134417955340418,
+          "q100": 0.04205007048965658,
+          "q25": 0.010568380279652227,
+          "q50": 0.013700865003936236,
+          "q75": 0.017940075773926867,
+          "q90": 0.02194223992116782,
+          "q95": 0.02571693139711664,
+          "q99": 0.028394250665925207,
+          "std": 0.006303476451899391
+        },
+        "pair_id": "spreader_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.08052940675034492,
+          "counts": [
+            [
+              29,
+              25,
+              31,
+              31,
+              26,
+              28
+            ],
+            [
+              29,
+              32,
+              24,
+              25,
+              32,
+              29
+            ],
+            [
+              28,
+              28,
+              30,
+              29,
+              28,
+              28
+            ],
+            [
+              27,
+              31,
+              27,
+              28,
+              31,
+              27
+            ],
+            [
+              32,
+              24,
+              29,
+              28,
+              25,
+              32
+            ],
+            [
+              26,
+              30,
+              30,
+              30,
+              29,
+              26
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.003260631253744369,
+          "normalized_entropy": 0.9990879731107778,
+          "normalized_mutual_information": 0.0018197968288990933,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.07924008896523746,
+          "counts": [
+            [
+              29,
+              25,
+              31,
+              31,
+              26,
+              29
+            ],
+            [
+              29,
+              32,
+              24,
+              25,
+              31,
+              29
+            ],
+            [
+              28,
+              28,
+              30,
+              29,
+              28,
+              28
+            ],
+            [
+              27,
+              31,
+              27,
+              28,
+              31,
+              27
+            ],
+            [
+              32,
+              24,
+              29,
+              28,
+              25,
+              32
+            ],
+            [
+              26,
+              30,
+              30,
+              30,
+              29,
+              26
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0031628844120942983,
+          "normalized_entropy": 0.999115249886296,
+          "normalized_mutual_information": 0.001765243161640512,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_spreader_W_mK",
+        "x_bounds_raw": [
+          385.0,
+          400.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "spreader_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 40,
+            "high_x_low_y": 43,
+            "low_x_high_y": 42,
+            "low_x_low_y": 40
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9765625,
+            "high_x_low_y": 1.0498046875,
+            "low_x_high_y": 1.025390625,
+            "low_x_low_y": 0.9765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -7.152557372617395e-07,
+          "pearson_coverage_transform_pvalue": 0.9999817601768559,
+          "pearson_raw": -3.991893567262229e-05,
+          "pearson_raw_pvalue": 0.9989820226645485,
+          "spearman": 7.047314121155779e-19,
+          "spearman_pvalue": 1.0
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.019963163940660254,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.00420029044247756,
+          "q01": 0.004702974813267178,
+          "q05": 0.0064022137439220155,
+          "q10": 0.011642947300527166,
+          "q100": 0.042876730291050505,
+          "q25": 0.01532076202885732,
+          "q50": 0.02000855548423543,
+          "q75": 0.02440313876122235,
+          "q90": 0.028721861916479137,
+          "q95": 0.03353104840724036,
+          "q99": 0.03638612487305588,
+          "std": 0.007151223665401276
+        },
+        "pair_id": "spreader_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.07385808750464466,
+          "counts": [
+            [
+              29,
+              29,
+              27,
+              29,
+              27,
+              29
+            ],
+            [
+              31,
+              25,
+              29,
+              29,
+              32,
+              25
+            ],
+            [
+              28,
+              32,
+              26,
+              30,
+              26,
+              29
+            ],
+            [
+              28,
+              28,
+              30,
+              27,
+              30,
+              28
+            ],
+            [
+              25,
+              32,
+              28,
+              30,
+              24,
+              31
+            ],
+            [
+              29,
+              26,
+              30,
+              26,
+              31,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0027346780641982534,
+          "normalized_entropy": 0.9992331494790673,
+          "normalized_mutual_information": 0.0015262585717320508,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.07245014449606019,
+          "counts": [
+            [
+              29,
+              29,
+              27,
+              30,
+              27,
+              29
+            ],
+            [
+              31,
+              25,
+              29,
+              28,
+              32,
+              25
+            ],
+            [
+              28,
+              31,
+              27,
+              30,
+              26,
+              29
+            ],
+            [
+              29,
+              27,
+              30,
+              27,
+              30,
+              28
+            ],
+            [
+              25,
+              32,
+              28,
+              30,
+              24,
+              31
+            ],
+            [
+              29,
+              26,
+              30,
+              26,
+              31,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.002640146137463378,
+          "normalized_entropy": 0.9992611227792844,
+          "normalized_mutual_information": 0.001473496754123524,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_spreader_W_mK",
+        "x_bounds_raw": [
+          385.0,
+          400.0
+        ],
+        "x_transform_for_coverage": "linear",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "tim_between_dies_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 41,
+            "high_x_low_y": 41,
+            "low_x_high_y": 42,
+            "low_x_low_y": 40
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0009765625,
+            "high_x_low_y": 1.0009765625,
+            "low_x_high_y": 1.025390625,
+            "low_x_low_y": 0.9765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 2.5749031919972132e-05,
+          "pearson_coverage_transform_pvalue": 0.9993433708938111,
+          "pearson_raw": 0.00020004578506328113,
+          "pearson_raw_pvalue": 0.9948986429224627,
+          "spearman": 8.673617379884035e-18,
+          "spearman_pvalue": 0.9999999999999998
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01665493406464387,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.0024955057045193837,
+          "q01": 0.006275064025913279,
+          "q05": 0.008079442548102955,
+          "q10": 0.009609315214391886,
+          "q100": 0.03733521919804744,
+          "q25": 0.011279364420247608,
+          "q50": 0.016177642683067962,
+          "q75": 0.021813460235057452,
+          "q90": 0.024541691877453576,
+          "q95": 0.02542449751851556,
+          "q99": 0.03243605422278326,
+          "std": 0.006105396942215574
+        },
+        "pair_id": "tim_between_dies_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.051378697023304325,
+          "counts": [
+            [
+              29,
+              25,
+              31,
+              28,
+              29,
+              29
+            ],
+            [
+              28,
+              31,
+              27,
+              28,
+              29,
+              28
+            ],
+            [
+              29,
+              28,
+              28,
+              30,
+              26,
+              29
+            ],
+            [
+              28,
+              30,
+              28,
+              27,
+              31,
+              27
+            ],
+            [
+              30,
+              26,
+              29,
+              30,
+              26,
+              29
+            ],
+            [
+              27,
+              30,
+              28,
+              28,
+              30,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0013185683271511762,
+          "normalized_entropy": 0.9996299160891592,
+          "normalized_mutual_information": 0.0007359085630063134,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.05269819360637517,
+          "counts": [
+            [
+              29,
+              25,
+              31,
+              28,
+              29,
+              29
+            ],
+            [
+              28,
+              30,
+              27,
+              28,
+              29,
+              28
+            ],
+            [
+              29,
+              29,
+              28,
+              30,
+              26,
+              29
+            ],
+            [
+              28,
+              30,
+              28,
+              27,
+              31,
+              27
+            ],
+            [
+              30,
+              26,
+              29,
+              30,
+              25,
+              30
+            ],
+            [
+              27,
+              30,
+              28,
+              28,
+              30,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0013946414804036807,
+          "normalized_entropy": 0.9996086874715463,
+          "normalized_mutual_information": 0.0007783658886834461,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_tim_between_dies_W_mK",
+        "x_bounds_raw": [
+          1.33,
+          7.5
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "tim_between_dies_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 41,
+            "high_x_low_y": 42,
+            "low_x_high_y": 43,
+            "low_x_low_y": 41
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0009765625,
+            "high_x_low_y": 1.025390625,
+            "low_x_high_y": 1.0498046875,
+            "low_x_low_y": 1.0009765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -3.25396177017212e-17,
+          "pearson_coverage_transform_pvalue": 0.9999999999999991,
+          "pearson_raw": 0.0006376254152632085,
+          "pearson_raw_pvalue": 0.9837409608653991,
+          "spearman": 4.377466271410224e-18,
+          "spearman_pvalue": 0.9999999999999999
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01668785641022803,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.005876209337424907,
+          "q01": 0.005999567616419583,
+          "q05": 0.008322358472372731,
+          "q10": 0.009211684415996678,
+          "q100": 0.03993714043908989,
+          "q25": 0.01088742929739914,
+          "q50": 0.01542803583240536,
+          "q75": 0.022185408669134904,
+          "q90": 0.02630872006356059,
+          "q95": 0.028307489664200807,
+          "q99": 0.032527531799061496,
+          "std": 0.0067259803026041886
+        },
+        "pair_id": "tim_between_dies_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.052042627322164955,
+          "counts": [
+            [
+              30,
+              26,
+              31,
+              27,
+              29,
+              28
+            ],
+            [
+              26,
+              30,
+              27,
+              31,
+              27,
+              30
+            ],
+            [
+              30,
+              28,
+              28,
+              27,
+              30,
+              27
+            ],
+            [
+              28,
+              29,
+              30,
+              27,
+              29,
+              28
+            ],
+            [
+              27,
+              30,
+              25,
+              30,
+              28,
+              30
+            ],
+            [
+              29,
+              29,
+              29,
+              29,
+              27,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0013475725797723883,
+          "normalized_entropy": 0.99962022863457,
+          "normalized_mutual_information": 0.0007520973776895644,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.05137869702330432,
+          "counts": [
+            [
+              30,
+              26,
+              31,
+              27,
+              29,
+              28
+            ],
+            [
+              26,
+              30,
+              26,
+              31,
+              27,
+              30
+            ],
+            [
+              30,
+              28,
+              29,
+              27,
+              30,
+              27
+            ],
+            [
+              28,
+              29,
+              30,
+              27,
+              29,
+              28
+            ],
+            [
+              27,
+              29,
+              26,
+              30,
+              28,
+              30
+            ],
+            [
+              30,
+              28,
+              29,
+              29,
+              27,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0013157141421199679,
+          "normalized_entropy": 0.9996307125646571,
+          "normalized_mutual_information": 0.0007343156086166014,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_tim_between_dies_W_mK",
+        "x_bounds_raw": [
+          1.33,
+          7.5
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "tim_to_spreader_kz_x_bottom_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 40,
+            "high_x_low_y": 42,
+            "low_x_high_y": 41,
+            "low_x_low_y": 43
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 0.9765625,
+            "high_x_low_y": 1.025390625,
+            "low_x_high_y": 1.0009765625,
+            "low_x_low_y": 1.0498046875
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 6.984919253237576e-10,
+          "pearson_coverage_transform_pvalue": 0.9999999821876728,
+          "pearson_raw": -1.5479535468134777e-05,
+          "pearson_raw_pvalue": 0.9996052545081364,
+          "spearman": -3.469446951953614e-18,
+          "spearman_pvalue": 0.9999999999999999
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01920574416765983,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.007821120452016477,
+          "q01": 0.010684029822989384,
+          "q05": 0.01323223404444112,
+          "q10": 0.013981103175548324,
+          "q100": 0.033130062500693204,
+          "q25": 0.015924511541018004,
+          "q50": 0.018295501549600336,
+          "q75": 0.021146853656521136,
+          "q90": 0.02632958319318551,
+          "q95": 0.029041202111070186,
+          "q99": 0.032614501869625424,
+          "std": 0.004756781572558915
+        },
+        "pair_id": "tim_to_spreader_kz_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.04419417382415923,
+          "counts": [
+            [
+              27,
+              29,
+              28,
+              28,
+              30,
+              28
+            ],
+            [
+              28,
+              30,
+              29,
+              27,
+              30,
+              27
+            ],
+            [
+              30,
+              27,
+              28,
+              30,
+              27,
+              29
+            ],
+            [
+              30,
+              26,
+              29,
+              30,
+              27,
+              29
+            ],
+            [
+              29,
+              29,
+              29,
+              29,
+              26,
+              29
+            ],
+            [
+              27,
+              29,
+              28,
+              27,
+              31,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0009714225841726559,
+          "normalized_entropy": 0.9997267889532183,
+          "normalized_mutual_information": 0.0005421624221286309,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.04419417382415923,
+          "counts": [
+            [
+              27,
+              29,
+              29,
+              28,
+              29,
+              29
+            ],
+            [
+              28,
+              30,
+              28,
+              27,
+              30,
+              27
+            ],
+            [
+              30,
+              27,
+              28,
+              30,
+              27,
+              29
+            ],
+            [
+              30,
+              26,
+              29,
+              30,
+              27,
+              29
+            ],
+            [
+              29,
+              28,
+              29,
+              29,
+              26,
+              29
+            ],
+            [
+              27,
+              30,
+              28,
+              27,
+              31,
+              28
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0009714225841726655,
+          "normalized_entropy": 0.9997267889532183,
+          "normalized_mutual_information": 0.0005421624221286363,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_tim_to_spreader_W_mK",
+        "x_bounds_raw": [
+          1.33,
+          7.5
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "tim_to_spreader_kz_x_top_h": {
+        "bound_source": "formal per-layer k contract + formal BC contract",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 41,
+            "high_x_low_y": 40,
+            "low_x_high_y": 42,
+            "low_x_low_y": 40
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0009765625,
+            "high_x_low_y": 0.9765625,
+            "low_x_high_y": 1.025390625,
+            "low_x_low_y": 0.9765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": -5.319475328974255e-15,
+          "pearson_coverage_transform_pvalue": 0.9999999999998643,
+          "pearson_raw": 6.645521110091972e-05,
+          "pearson_raw_pvalue": 0.9983053188888865,
+          "spearman": 2.9815559743351372e-18,
+          "spearman_pvalue": 1.0
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.01892486818053371,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.005043396720319629,
+          "q01": 0.006840073948871402,
+          "q05": 0.010964131823008186,
+          "q10": 0.012427600519198674,
+          "q100": 0.05071143869933767,
+          "q25": 0.015639811909210207,
+          "q50": 0.018876122677875043,
+          "q75": 0.022245659656260484,
+          "q90": 0.025010491202360215,
+          "q95": 0.027146441510738455,
+          "q99": 0.031038125747606768,
+          "std": 0.005232075455175972
+        },
+        "pair_id": "tim_to_spreader_kz_x_top_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.043410372599400136,
+          "counts": [
+            [
+              28,
+              29,
+              29,
+              28,
+              28,
+              28
+            ],
+            [
+              29,
+              29,
+              28,
+              28,
+              28,
+              29
+            ],
+            [
+              28,
+              28,
+              28,
+              30,
+              29,
+              28
+            ],
+            [
+              26,
+              30,
+              28,
+              30,
+              29,
+              28
+            ],
+            [
+              29,
+              28,
+              29,
+              25,
+              31,
+              29
+            ],
+            [
+              30,
+              28,
+              28,
+              30,
+              25,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0009424810566235788,
+          "normalized_entropy": 0.9997332715764677,
+          "normalized_mutual_information": 0.0005260106519297161,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.045721484026248545,
+          "counts": [
+            [
+              28,
+              30,
+              29,
+              28,
+              28,
+              28
+            ],
+            [
+              29,
+              28,
+              28,
+              28,
+              28,
+              29
+            ],
+            [
+              29,
+              27,
+              28,
+              30,
+              29,
+              28
+            ],
+            [
+              26,
+              30,
+              28,
+              30,
+              29,
+              28
+            ],
+            [
+              29,
+              27,
+              29,
+              25,
+              31,
+              29
+            ],
+            [
+              30,
+              28,
+              29,
+              30,
+              25,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0010516425272583995,
+          "normalized_entropy": 0.9997044031518697,
+          "normalized_mutual_information": 0.0005869341202083387,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "background_kz_tim_to_spreader_W_mK",
+        "x_bounds_raw": [
+          1.33,
+          7.5
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "top_h_W_m2K",
+        "y_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "y_transform_for_coverage": "log10"
+      },
+      "top_h_x_bottom_h": {
+        "bound_source": "formal config",
+        "corner_coverage": {
+          "counts": {
+            "high_x_high_y": 41,
+            "high_x_low_y": 42,
+            "low_x_high_y": 41,
+            "low_x_low_y": 40
+          },
+          "ratios_to_uniform_independent_expectation": {
+            "high_x_high_y": 1.0009765625,
+            "high_x_low_y": 1.025390625,
+            "low_x_high_y": 1.0009765625,
+            "low_x_low_y": 0.9765625
+          },
+          "threshold": "lowest/highest 20% of frozen physical range",
+          "uniform_independent_expected_count_per_corner": 40.96
+        },
+        "correlation": {
+          "pearson_coverage_transform": 0.00018310546874195777,
+          "pearson_coverage_transform_pvalue": 0.9953306318886361,
+          "pearson_raw": -0.0001459662248641364,
+          "pearson_raw_pvalue": 0.9962777111111966,
+          "spearman": 0.0001831056433731464,
+          "spearman_pvalue": 0.9953306274354212
+        },
+        "nearest_neighbour": {
+          "count": 1024,
+          "mean": 0.0201681235666189,
+          "metric": "euclidean_in_normalized_pair_space",
+          "q00": 0.009009202575509825,
+          "q01": 0.009026396882110406,
+          "q05": 0.00940208390207962,
+          "q10": 0.010456442748578066,
+          "q100": 0.04241996902659066,
+          "q25": 0.017115626133153698,
+          "q50": 0.0220067547923702,
+          "q75": 0.023879687447217583,
+          "q90": 0.024554782924335838,
+          "q95": 0.02572372857245088,
+          "q99": 0.03203768645795365,
+          "std": 0.005702843031429884
+        },
+        "pair_id": "top_h_x_bottom_h",
+        "physical_range_occupancy": {
+          "bin_count_cv": 0.043410372599400136,
+          "counts": [
+            [
+              29,
+              29,
+              28,
+              30,
+              27,
+              27
+            ],
+            [
+              27,
+              28,
+              29,
+              28,
+              30,
+              30
+            ],
+            [
+              30,
+              27,
+              29,
+              27,
+              30,
+              27
+            ],
+            [
+              27,
+              29,
+              28,
+              28,
+              28,
+              31
+            ],
+            [
+              31,
+              29,
+              28,
+              29,
+              27,
+              26
+            ],
+            [
+              27,
+              28,
+              29,
+              29,
+              29,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.000927207868572578,
+          "normalized_entropy": 0.9997375336407441,
+          "normalized_mutual_information": 0.0005174864916324968,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "frozen_physical_range"
+        },
+        "rank_occupancy": {
+          "bin_count_cv": 0.04419417382415923,
+          "counts": [
+            [
+              30,
+              29,
+              28,
+              30,
+              27,
+              27
+            ],
+            [
+              26,
+              27,
+              29,
+              28,
+              30,
+              30
+            ],
+            [
+              30,
+              28,
+              29,
+              27,
+              29,
+              28
+            ],
+            [
+              27,
+              29,
+              28,
+              28,
+              28,
+              31
+            ],
+            [
+              31,
+              29,
+              28,
+              29,
+              27,
+              26
+            ],
+            [
+              27,
+              28,
+              29,
+              29,
+              29,
+              29
+            ]
+          ],
+          "empty_cells": 0,
+          "grid": [
+            6,
+            6
+          ],
+          "mutual_information_nats": 0.0009690960480444914,
+          "normalized_entropy": 0.9997274381854865,
+          "normalized_mutual_information": 0.000540863954826175,
+          "occupancy_fraction": 1.0,
+          "occupied_cells": 36,
+          "scheme": "marginal_quantile_rank"
+        },
+        "x": "top_h_W_m2K",
+        "x_bounds_raw": [
+          500.0,
+          1600.0
+        ],
+        "x_transform_for_coverage": "log10",
+        "y": "bottom_h_W_m2K",
+        "y_bounds_raw": [
+          20.0,
+          200.0
+        ],
+        "y_transform_for_coverage": "log10"
+      }
+    },
+    "power_top_h_assessment": {
+      "conclusion": "artificially_coupled_not_deconfounded; high-power/low-top-h coverage is absent under the frozen physical-range corner definition",
+      "contract_origin": {
+        "independent_multiplier_range": [
+          0.6657273987049462,
+          1.3342726012950539
+        ],
+        "power_rule": "monotonic_piecewise_severity_top_h_power_law_with_independent_jitter",
+        "top_h_exponent": 0.7396540391988838
+      },
+      "empirical_spearman": 0.5333741998068807,
+      "high_power_low_top_h_count": 0,
+      "low_power_high_top_h_count": 26,
+      "physical_6x6_empty_cells": 11,
+      "training_implication": "The dataset supports the frozen coupled operating distribution, not independent identification of power and top-h effects over all corners."
+    }
+  },
+  "literature_registry": {
+    "bindings": {
+      "background_k_contract": {
+        "legacy_ids_resolved_by_crosswalk": true,
+        "path": "configs/heat3d_v6_p1i/v6_p1i_background_k_contract.csv",
+        "sha256": "a0f504ceea7aa9b0a7ac1eea70a7be31a849a561e114d2fe8e5859c8cadbf703"
+      },
+      "formal_config": {
+        "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml",
+        "sha256": "1e15a77fe51eea7ec64614566bb6bb12bfcf05948f3b7c8c6f3c85ec759a58f8"
+      },
+      "formal_manifest": {
+        "manifest_payload_sha256": "27d2ea3b7ec4e4ce9c6d068471cd19036ac8148b6cd57da325219d718c7e5ed5",
+        "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+        "sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514"
+      }
+    },
+    "canonical_id_policy": "V6-LIT-NNN identifies a unique DOI or URL",
+    "schema_version": "heat3d_v6_literature_registry_v1",
+    "source_count": 12,
+    "sources": [
+      {
+        "canonical_id": "V6-LIT-001",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L01"
+        ],
+        "title": "DeepOHeat: Operator Learning-based Ultra-fast Thermal Simulation in 3D-IC Design",
+        "url": "https://arxiv.org/abs/2302.12949"
+      },
+      {
+        "canonical_id": "V6-LIT-002",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L02"
+        ],
+        "title": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
+        "url": "https://arxiv.org/abs/2504.03955"
+      },
+      {
+        "canonical_id": "V6-LIT-003",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L03"
+        ],
+        "title": "Self-Attention to Operator Learning-based 3D-IC Thermal Simulation",
+        "url": "https://arxiv.org/abs/2510.15968"
+      },
+      {
+        "canonical_id": "V6-LIT-004",
+        "doi": "10.3390/en13123054",
+        "legacy_ids": [
+          "P1I3-L04",
+          "P1I-L02"
+        ],
+        "title": "Quasi-3D Thermal Simulation of Integrated Circuit Systems in Packages",
+        "url": "https://www.mdpi.com/1996-1073/13/12/3054"
+      },
+      {
+        "canonical_id": "V6-LIT-005",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L05"
+        ],
+        "title": "Anisotropic thermal conductivity of high bandwidth memory",
+        "url": "https://arxiv.org/abs/2303.06785"
+      },
+      {
+        "canonical_id": "V6-LIT-006",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L06"
+        ],
+        "title": "Thermal Implications of Non-Uniform Power in BSPDN-Enabled 2.5D/3D Chiplet-based Systems-in-Package using Nanosheet Technology",
+        "url": "https://arxiv.org/abs/2508.02284"
+      },
+      {
+        "canonical_id": "V6-LIT-007",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L07"
+        ],
+        "title": "Local measurements of flow boiling heat transfer on hot spots in 3D compatible radial microchannels",
+        "url": "https://research.ibm.com/publications/local-measurements-of-flow-boiling-heat-transfer-on-hot-spots-in-3d-compatible-radial-microchannels"
+      },
+      {
+        "canonical_id": "V6-LIT-008",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L08"
+        ],
+        "title": "Thermal Simulation of FCBGA Package with Heat Sink",
+        "url": "https://www.comsol.com/paper/thermal-simulation-of-fcbga-package-with-heat-sink-19729"
+      },
+      {
+        "canonical_id": "V6-LIT-009",
+        "doi": null,
+        "legacy_ids": [
+          "P1I3-L09",
+          "P1I-L01"
+        ],
+        "title": "Modeling, Analysis, Design, and Tests for Electronics Packaging beyond Moore, Chapter 3",
+        "url": "https://www.sciencedirect.com/science/article/pii/B9780081025321000032"
+      },
+      {
+        "canonical_id": "V6-LIT-010",
+        "doi": null,
+        "legacy_ids": [
+          "P1I-L03"
+        ],
+        "title": "Temperature-Aware Microarchitecture: Modeling and Implementation",
+        "url": "https://www.cs.virginia.edu/~skadron/Papers/hotspot_tc08.pdf"
+      },
+      {
+        "canonical_id": "V6-LIT-011",
+        "doi": "10.3390/en13092217",
+        "legacy_ids": [
+          "P1I-L04"
+        ],
+        "title": "Compact Thermal Modelling Tool for Fast Design Space Exploration of 3D ICs with Integrated Microchannels",
+        "url": "https://doi.org/10.3390/en13092217"
+      },
+      {
+        "canonical_id": "V6-LIT-012",
+        "doi": null,
+        "legacy_ids": [
+          "P1I-L05"
+        ],
+        "title": "3D-ICE 4.0: Accurate and efficient thermal modeling for 2.5D/3D heterogeneous chiplet systems",
+        "url": "https://infoscience.epfl.ch/entities/publication/12080437-8e93-46c4-a15f-b6020057d1ab"
+      }
+    ]
+  },
+  "methodology": {
+    "joint_physical_occupancy": "6x6 cells in frozen config ranges using sampling-native linear/log10 transforms; derived quantities use frozen observed bounds.",
+    "joint_rank_occupancy": "6x6 cells after marginal empirical-rank transforms, isolating joint dependence from marginal skew.",
+    "split_use": "train/valid_iid/test_iid are compared descriptively; test_iid does not set thresholds, alter split assignment, or authorize selection.",
+    "uniform_reference": "For each scalar metric, values are min-max normalized over the frozen observed support and compared with Uniform(0,1). KS and Wasserstein are diagnostics, not acceptance tests."
+  },
+  "schema_version": "heat3d_v6_p1i_training_preflight_audit_v1",
+  "split_audit": {
+    "input_nearest_train_summary": {
+      "test_iid": {
+        "count": 128,
+        "feature_schema": [
+          "package_total_power_W",
+          "top_h_W_m2K",
+          "bottom_h_W_m2K",
+          "source_count",
+          "k_region_count",
+          "total_source_area_fraction",
+          "mean_q_W_m3",
+          "mean_local_k_W_mK",
+          "effective_background_kz_W_mK"
+        ],
+        "fit_population": "train",
+        "mean": 1.2608855413787001,
+        "q00": 0.5533803806382568,
+        "q01": 0.6333466795885025,
+        "q05": 0.8596070388153901,
+        "q10": 0.9860259448513762,
+        "q100": 2.1556561802353995,
+        "q25": 1.1048569021608117,
+        "q50": 1.2071340195641462,
+        "q75": 1.4211255234899838,
+        "q90": 1.633178208904213,
+        "q95": 1.76454829444043,
+        "q99": 1.9105043014195215,
+        "std": 0.26901012263280294,
+        "target_features_used": false
+      },
+      "train": {
+        "count": 768,
+        "feature_schema": [
+          "package_total_power_W",
+          "top_h_W_m2K",
+          "bottom_h_W_m2K",
+          "source_count",
+          "k_region_count",
+          "total_source_area_fraction",
+          "mean_q_W_m3",
+          "mean_local_k_W_mK",
+          "effective_background_kz_W_mK"
+        ],
+        "fit_population": "train",
+        "mean": 1.2615151393877266,
+        "q00": 0.6709250020553394,
+        "q01": 0.7575376049553305,
+        "q05": 0.8837863595608159,
+        "q10": 0.9379797415070847,
+        "q100": 2.5189479505850416,
+        "q25": 1.0532498806809554,
+        "q50": 1.2227775554739662,
+        "q75": 1.4307293771485405,
+        "q90": 1.6288109766304633,
+        "q95": 1.7862885976226237,
+        "q99": 2.1151527236057794,
+        "std": 0.28328910645300037,
+        "target_features_used": false
+      },
+      "valid_iid": {
+        "count": 128,
+        "feature_schema": [
+          "package_total_power_W",
+          "top_h_W_m2K",
+          "bottom_h_W_m2K",
+          "source_count",
+          "k_region_count",
+          "total_source_area_fraction",
+          "mean_q_W_m3",
+          "mean_local_k_W_mK",
+          "effective_background_kz_W_mK"
+        ],
+        "fit_population": "train",
+        "mean": 1.228800748241744,
+        "q00": 0.6460415775550461,
+        "q01": 0.6765338583560675,
+        "q05": 0.8297500857728503,
+        "q10": 0.9234424670800478,
+        "q100": 1.8632659922031338,
+        "q25": 1.0392139342020148,
+        "q50": 1.2032962671723268,
+        "q75": 1.3930973781118379,
+        "q90": 1.6372329936970897,
+        "q95": 1.697699199104243,
+        "q99": 1.8145444686581695,
+        "std": 0.26815750476170064,
+        "target_features_used": false
+      }
+    },
+    "maximum_train_vs_holdout_ks": 0.12760416666666666,
+    "maximum_train_vs_holdout_wasserstein_normalized_global_range": 0.038393955035060906,
+    "role_counts": {
+      "test_iid": 128,
+      "train": 768,
+      "valid_iid": 128
+    },
+    "test_iid_use": "descriptive_only_no_rule_adjustment"
+  },
+  "status": "passed",
+  "training_authorization": {
+    "authorized": true,
+    "checks": {
+      "all_primary_output_bins_occupied": true,
+      "contact_applicability_boundary_registered": true,
+      "continuous_broad_coverage_primary_outputs": true,
+      "frozen_input_sha256_match": true,
+      "no_data_regeneration": true,
+      "no_model_inference": true,
+      "no_sample_filtering_or_replacement": true,
+      "no_training": true,
+      "power_top_h_coupling_registered": true,
+      "sample_count_1024": true,
+      "split_counts_768_128_128": true,
+      "test_descriptive_only": true
+    },
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "decision": "authorized_for_training_with_frozen_applicability_boundaries",
+    "guardrails": {
+      "dataset_regeneration_runs": 0,
+      "formal1024_v1_modified": false,
+      "model_inference_runs": 0,
+      "sample_filter_or_replacement_runs": 0,
+      "training_runs": 0
+    },
+    "known_boundaries": [
+      "power and top_h are deliberately coupled; the high-power/low-top-h corner is absent",
+      "all interfaces use perfect contact (R_contact=0)",
+      "finite contact-resistance response cannot be learned",
+      "test_iid was read only for this preregistered descriptive split audit and did not modify rules"
+    ],
+    "schema_version": "heat3d_v6_p1i_training_authorization_v1",
+    "scope": "Training authorization is limited to the frozen formal1024_v1 coupled input distribution. It is not an OOD or strict-uniform claim."
+  }
+}

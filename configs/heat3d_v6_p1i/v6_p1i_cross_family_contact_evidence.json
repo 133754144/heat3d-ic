@@ -1,0 +1,79 @@
+{
+  "schema_version": "heat3d_v6_p1i_cross_family_contact_evidence_v1",
+  "scope": [
+    "P1h",
+    "P1i",
+    "V6 random-block"
+  ],
+  "contact_contract": {
+    "interface_model": "perfect_contact",
+    "R_contact_m2K_W": 0.0,
+    "finite_contact_resistance_sampled": false
+  },
+  "evidence": [
+    {
+      "family": "P1h",
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "commit": "261b7b2999f3989c1faca02675d948d387c2138c",
+      "manifest_path": "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json",
+      "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5",
+      "config_path": "configs/heat3d_v6/v6_p1h_shared_support1024.yaml",
+      "config_sha256": "08bcf564f62102b592716b3f3126d5acb6b61c3dc7be59157c80993f363e9abe",
+      "physics_parent_path": "configs/heat3d_v6/v6_p1g_geometry_deconfounded1024.yaml",
+      "physics_parent_sha256": "ab162724af61c745f82571e9c8f07102d5262c70a4817ace0900e894bfc4af83",
+      "evidence_field": "physics.boundary_common.contact",
+      "evidence_value": {
+        "type": "perfect",
+        "R_contact_m2K_W": 0.0
+      },
+      "interpretation": "P1h changes support only and inherits the P1g physical cases unchanged."
+    },
+    {
+      "family": "P1i",
+      "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "commit": "658c8fd977e2df5288c06046ede374b53198e132",
+      "config_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml",
+      "config_sha256": "1e15a77fe51eea7ec64614566bb6bb12bfcf05948f3b7c8c6f3c85ec759a58f8",
+      "evidence_field": "physics.contact",
+      "evidence_value": {
+        "type": "perfect",
+        "R_contact_m2K_W": 0.0
+      }
+    },
+    {
+      "family": "V6 random-block",
+      "dataset_id": "heat3d_v6_randomblock_formal1024_v2",
+      "commit": "44d0b5d3da48fa601b984e2fd8b452bcb349d5d7",
+      "config_path": "configs/heat3d_v6_randomblock/v6_randomblock_formal1024_v2.yaml",
+      "config_sha256": "03a09752cb9ef703a63c126a708611bfa9a35bc6d08cc66473fe539f970d0901",
+      "evidence_field": "physics.boundary_schema.contact",
+      "evidence_value": "perfect",
+      "solver_path": "scripts/heat3d_v6_randomblock_core.py",
+      "solver_semantics": "Neighbor-face conductance uses the harmonic conductivity only; no finite interface resistance term is present.",
+      "interpretation": "The perfect-contact keyword is the R_contact=0 limit."
+    }
+  ],
+  "applicability_boundary": {
+    "statement": "P1h, P1i, and V6 random-block cannot identify or learn response variation caused by finite interface thermal contact resistance because every generated case fixes R_contact=0.",
+    "prohibited_claim": "Performance on these datasets is not evidence of generalization across contact-resistance values.",
+    "future_dataset_only_proposal": {
+      "status": "proposal_not_implemented",
+      "sampling": "continuous log-space sampling with an explicit zero-contact stratum",
+      "interface_binding": "Each sampled R_contact must bind to a named adjacent-material interface; arbitrary mid-plane insertion is forbidden.",
+      "candidate_interfaces": [
+        "silicon_die_lower/tim_between_dies",
+        "tim_between_dies/silicon_die_upper",
+        "silicon_die_upper/tim_to_spreader",
+        "silicon_interposer_tsv_0p1/bump_underfill_under_interposer"
+      ],
+      "required_preregistration": [
+        "primary-literature bounds per interface",
+        "sampling distribution and zero-contact mass",
+        "group-locked split policy",
+        "mesh/interface convergence",
+        "energy and interface-jump QC",
+        "no post-solve temperature filtering"
+      ]
+    }
+  }
+}
