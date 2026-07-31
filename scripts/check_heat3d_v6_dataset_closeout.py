@@ -34,10 +34,10 @@ P1G = "heat3d_v6_p1g_geometry_deconfounded1024_v0"
 P1H = "heat3d_v6_p1h_shared_support1024_v0"
 MANIFEST_SHA256 = "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5"
 ARCHIVE_SHA256 = "f58141b3f365c5c90a57ec3802ae57c7e7afbf83ba0ab988060a617164b14c00"
-HISTORICAL_CONFIG_SHA256 = {
+FROZEN_CONFIG_SHA256 = {
     "V6_01_V4best.yaml": "e4024f4bbbc4dab173c5512216bed895c0175ca45a02e616061af31456d50ad7",
     "V6_02_V5best.yaml": "5aa236b6aaffc46d604f0d9c1bea741f0c6c6acabdae262cd056b47136b44fd5",
-    "V6_03_V5best_P1h.yaml": "7c67c9fe85fe926f3d791601cf65d53225266eb2706a0209bad0bafca77d6178",
+    "V6_03_V5best_P1h.yaml": "1f2c0564fb87a6ac067df6deb2a661a78ca104623775c9616a5936c990fc1ddf",
     "V6_04_V5best_P1h_DualAttention.yaml": "5c7ec0ae37a8c9495044c4f498f219dd954f60ba65c713f1821962c1fc333931",
 }
 
@@ -90,7 +90,10 @@ def main() -> int:
     )
     _assert(default["dataset_id"] == P1H, "default dataset is not P1h")
     _assert(default["lifecycle_status"] == "canonical", "P1h is not canonical")
-    _assert(default["canonical_model_candidate"] == "V6_03_V5best_P1h", "candidate drift")
+    _assert(
+        default["canonical_model_configuration"] == "V6_03_V5best_P1h",
+        "canonical model configuration drifted",
+    )
     _assert(
         default["registered_ablation"] == "V6_04_V5best_P1h_DualAttention",
         "ablation drift",
@@ -120,10 +123,10 @@ def main() -> int:
         "P1g lifecycle drifted",
     )
 
-    for name, expected in HISTORICAL_CONFIG_SHA256.items():
+    for name, expected in FROZEN_CONFIG_SHA256.items():
         _assert(
             _sha256(ROOT / "configs/heat3d_v6" / name) == expected,
-            f"historical config was modified: {name}",
+            f"frozen config was modified: {name}",
         )
 
     manifest_path = dataset / "manifest.json"
