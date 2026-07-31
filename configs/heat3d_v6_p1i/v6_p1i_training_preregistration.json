@@ -1,0 +1,71 @@
+{
+  "schema_version": "heat3d_v6_p1i_training_preregistration_v1",
+  "status": "frozen_before_smoke_and_training",
+  "config_id": "V6_05_V5best_P1i_seed0",
+  "scientific_baseline": "V6_03_V5best_P1h",
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "split_counts": {"train": 768, "valid_iid": 128, "test_iid": 128},
+    "training_roles": ["train"],
+    "selection_roles": ["valid_iid"],
+    "audited_holdout_roles": ["test_iid"],
+    "sealed_roles": ["sealed_iid_confirmatory"]
+  },
+  "architecture": {
+    "node_latent_size": 96,
+    "edge_latent_size": 96,
+    "processor_steps": 6,
+    "mlp_hidden_layers": 2,
+    "decoder_bypass": "post_decoder_residual_explicit_local_condition",
+    "global_context": "film_24d_train_only_standardized",
+    "native_output": "native_shape_scale_joint",
+    "scale_head": "physics_plus_pooled_latent_mean_with_physics_gate",
+    "shape_attention": "none",
+    "r2r_edge_masking_probability": 0.05
+  },
+  "loss": {
+    "shape_cv_weight": 1.5,
+    "log_scale_weight": 0.5,
+    "relative_field_weight": 1.0,
+    "raw_field_weight": 1.0,
+    "raw_mode": "point_global_fixed_train_energy_sse",
+    "scale_weight_mode": "train_true_scale_squared_clipped",
+    "scale_weight_clip": [0.25, 4.0]
+  },
+  "optimizer": {
+    "name": "adamw",
+    "learning_rate": 0.0005,
+    "schedule": "warmup_cosine",
+    "warmup_epochs": 10,
+    "minimum_learning_rate": 0.00005,
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "optimizer_state_initialization": "fresh"
+  },
+  "execution": {
+    "epochs": 600,
+    "effective_batch_size": 24,
+    "micro_batch_size": 8,
+    "micro_batches_per_update": 3,
+    "drop_last": false,
+    "epoch_wise_batch_regrouping": false,
+    "random_initialization": true,
+    "init_checkpoint": null
+  },
+  "seeds": {"model": 0, "optimizer": 0, "batch_build": 0, "batch_order": 0, "graph": 0},
+  "checkpoint_selection": {
+    "primary": "valid_point_global_true_rms_relative_rmse",
+    "runner_field": "valid_rel_rmse_v4_pct",
+    "diagnostic_checkpoints": ["valid_sample_first_cv_relative_rmse", "valid_base_mse", "final"],
+    "test_or_sealed_used": false
+  },
+  "launch_gate": [
+    "HF frozen archive replay passes",
+    "full-field sidecar completes and hashes verify",
+    "B8 and B16 one-update/reload smokes pass",
+    "batch-order prefix and graph-reuse guards pass",
+    "random-block compatibility audit is explicit and any allowed one-time test is frozen"
+  ],
+  "training_started": false
+}

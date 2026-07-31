@@ -55,6 +55,7 @@ from rigno.heat3d_v1_normalization import (  # noqa: E402
 )
 from rigno.heat3d_v1_native_supervised import Heat3DV1NativeSupervisedDataset  # noqa: E402
 from rigno.heat3d_v6_dataset import (  # noqa: E402
+    CONTINUOUS_PHYSICS_V6_DATASET_ID,
     Heat3DV6DualRobinDataset,
     V6DualRobinExample,
 )
@@ -219,7 +220,16 @@ INIT_MODE_CHOICES = ("real_first_batch", "upstream_dummy")
 PARTIAL_LOAD_POLICY_CHOICES = ("matching", "skip_decoder", "encoder_processor_only")
 FINAL_PROBE_CHECKPOINT_KIND_CHOICES = ("best", "final", "both")
 SAMPLE_WEIGHT_POLICY_CHOICES = ("none", "hard_sample_list")
-DATASET_LOADER_CHOICES = ("v1_metadata", "v6_dual_robin_manifest_v1")
+DATASET_LOADER_CHOICES = (
+    "v1_metadata",
+    "v6_dual_robin_manifest_v1",
+    "v6_p1i_dual_robin_manifest_v1",
+)
+V6_MANIFEST_LOADERS = frozenset(DATASET_LOADER_CHOICES[1:])
+
+
+def _is_v6_manifest_loader(name: str) -> bool:
+    return str(name) in V6_MANIFEST_LOADERS
 
 
 def parse_args() -> argparse.Namespace:
@@ -8050,14 +8060,36 @@ def main() -> int:
             f"max={sample_weight_summary['max']:.6g}"
         ),
     )
-    for sample_id in all_ids:
+    materialized_splits = {"train", primary_validation_split}
+    if stress_validation_split is not None:
+        materialized_splits.add(stress_validation_split)
+    if args.prediction_split == "all":
+        materialized_splits.update(split_ids)
+    elif args.prediction_split == "test_iid":
+        materialized_splits.add("test_iid")
+    materialized_ids = sorted(
+        sample_id
+        for split_name in materialized_splits
+        for sample_id in split_ids.get(split_name, [])
+    )
+    for sample_id in materialized_ids:
         if not (sample_root / sample_id / "temperature.npy").is_file():
             raise FileNotFoundError(f"Missing temperature.npy for {sample_id}")
 
-    if args.dataset_loader == "v6_dual_robin_manifest_v1":
+    if _is_v6_manifest_loader(args.dataset_loader):
         if args.dataset_manifest is None:
             raise ValueError("V6 dual-Robin loader requires --dataset-manifest")
-        dataset = Heat3DV6DualRobinDataset(sample_root, args.dataset_manifest)
+        dataset = Heat3DV6DualRobinDataset(
+            sample_root,
+            args.dataset_manifest,
+            include_roles=materialized_splits & {"train", "valid_iid", "test_iid"},
+        )
+        is_p1i = dataset.manifest.get("dataset_id") == CONTINUOUS_PHYSICS_V6_DATASET_ID
+        if is_p1i != (args.dataset_loader == "v6_p1i_dual_robin_manifest_v1"):
+            raise ValueError(
+                "P1i requires the explicit v6_p1i_dual_robin_manifest_v1 loader; "
+                "the P1g/P1h loader may not silently adapt it"
+            )
         configured_splits = {
             key: split_ids.get(key, []) for key in ("train", "valid_iid", "test_iid")
         }
@@ -8071,7 +8103,7 @@ def main() -> int:
             boundary_mask_fallback=args.boundary_mask_fallback,
         )
     index_by_id = dataset.sample_index_by_id()
-    missing = [sample_id for sample_id in all_ids if sample_id not in index_by_id]
+    missing = [sample_id for sample_id in materialized_ids if sample_id not in index_by_id]
     if missing:
         raise FileNotFoundError(f"Dataset loader did not expose samples: {missing}")
 
@@ -8104,7 +8136,7 @@ def main() -> int:
         norm_start,
     )
     _record_timing(timings, "normalization", norm_start)
-    if args.dataset_loader == "v6_dual_robin_manifest_v1":
+    if _is_v6_manifest_loader(args.dataset_loader):
         builder = RunSharedSupportGraphBuilder(builder)
     model_config = _resolve_decoder_bypass_model_config(model_config, stats)
     _validate_model_config(model_config)

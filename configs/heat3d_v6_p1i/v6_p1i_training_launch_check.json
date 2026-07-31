@@ -1,0 +1,218 @@
+{
+  "baseline_config": "configs/heat3d_v6/V6_03_V5best_P1h.yaml",
+  "candidate_config": "configs/heat3d_v6_p1i/V6_05_V5best_P1i_seed0.yaml",
+  "checks": {
+    "effective_batch_24": true,
+    "epochs_600": true,
+    "frozen_graph": true,
+    "frozen_hashes": true,
+    "frozen_loss": true,
+    "frozen_model": true,
+    "frozen_optimizer": true,
+    "loader_train_valid_896": true,
+    "output_not_started": true,
+    "random_initialization": true,
+    "resolved_diff_only_dataset_runtime_identity": true,
+    "sample_count_1024": true,
+    "sealed_definition_only": true,
+    "sealed_id_no_overlap": true,
+    "split_counts_768_128_128": true,
+    "split_exact_match": true,
+    "test_not_materialized": true,
+    "valid_only_prediction": true,
+    "varying_support": true,
+    "varying_support_micro_b8": true
+  },
+  "forbidden_resolved_differences": [],
+  "materialized_roles": [
+    "train",
+    "valid_iid"
+  ],
+  "materialized_sample_count": 896,
+  "resolved_differences": [
+    {
+      "baseline": "V6_03_V5best_P1h",
+      "candidate": "V6_05_V5best_P1i_seed0",
+      "path": "config_id"
+    },
+    {
+      "baseline": "dual_robin_top_bottom_v1",
+      "candidate": "dual_robin_p1i_explicit_v1",
+      "path": "dataset.bc_adapter"
+    },
+    {
+      "baseline": "v6_dual_robin_manifest_v1",
+      "candidate": "v6_p1i_dual_robin_manifest_v1",
+      "path": "dataset.loader"
+    },
+    {
+      "baseline": "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json",
+      "candidate": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+      "path": "dataset.manifest_path"
+    },
+    {
+      "baseline": "heat3d_v6_p1h_shared_support1024_v0",
+      "candidate": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "path": "dataset.name"
+    },
+    {
+      "baseline": null,
+      "candidate": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_split_manifest.json",
+      "path": "dataset.split_map_path"
+    },
+    {
+      "baseline": "v6_manifest_group_locked",
+      "candidate": "frozen_balanced_pre_solve_assignment_v1",
+      "path": "dataset.split_source"
+    },
+    {
+      "baseline": "data/heat3d_v6_p1h_shared_support1024_v0",
+      "candidate": "data/heat3d_v6_p1i_continuous_physics1024_v1",
+      "path": "dataset.subset_path"
+    },
+    {
+      "baseline": "Canonical V6 P1h shared-support configuration. It retains the complete V4P5_42 scientific model, loss, optimizer, graph, and e600 contract while replacing only the dataset/dual-Robin runtime adapter and effective B24 execution contract. No historical checkpoint is loaded.",
+      "candidate": "Frozen P1i formal1024_v1 single-seed training transfer. The V6_03 architecture, four-term loss, optimizer, schedule, e600 budget, effective B24 contract, seed, graph policy, and validation selection remain frozen. Only the dataset/explicit P1i loader binding and the varying-support B8 execution adapter differ; no historical checkpoint is loaded.",
+      "path": "description"
+    },
+    {
+      "baseline": "output/heat3d_v6_runs/V6_03_V5best_P1h",
+      "candidate": "output/heat3d_v6_p1i_runs/V6_05_V5best_P1i_seed0",
+      "path": "export.output_dir"
+    },
+    {
+      "baseline": "V6_03_V5best_P1h",
+      "candidate": "V6_05_V5best_P1i_seed0",
+      "path": "export.run_name"
+    },
+    {
+      "baseline": "one_real_B24_forward_backward_per_update",
+      "candidate": null,
+      "path": "metadata.b24_execution_mode"
+    },
+    {
+      "baseline": "V4P5_42_canonical",
+      "candidate": "V6_03_V5best_P1h",
+      "path": "metadata.baseline_config_id"
+    },
+    {
+      "baseline": "robin_not_fixed_temperature",
+      "candidate": null,
+      "path": "metadata.bottom_boundary_semantics"
+    },
+    {
+      "baseline": "heat3d_v6_p1h_shared_support1024_v0",
+      "candidate": null,
+      "path": "metadata.canonical_dataset_id"
+    },
+    {
+      "baseline": true,
+      "candidate": null,
+      "path": "metadata.cross_geometry_dummy_edge_padding"
+    },
+    {
+      "baseline": null,
+      "candidate": "audited_holdout_not_for_selection",
+      "path": "metadata.current_test_role"
+    },
+    {
+      "baseline": null,
+      "candidate": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "path": "metadata.dataset_id"
+    },
+    {
+      "baseline": null,
+      "candidate": "wsl2",
+      "path": "metadata.execution_host"
+    },
+    {
+      "baseline": null,
+      "candidate": "prepared_not_started",
+      "path": "metadata.execution_status"
+    },
+    {
+      "baseline": 24,
+      "candidate": 8,
+      "path": "metadata.graph_compatible_micro_batch_size"
+    },
+    {
+      "baseline": "explicit_user_instruction_only",
+      "candidate": "all_preflight_gates_must_pass",
+      "path": "metadata.launch_policy"
+    },
+    {
+      "baseline": "output/heat3d_v6_logs/V6_03_V5best_P1h.log",
+      "candidate": "output/heat3d_v6_p1i_logs/V6_05_V5best_P1i_seed0.log",
+      "path": "metadata.log_path"
+    },
+    {
+      "baseline": 32,
+      "candidate": null,
+      "path": "metadata.micro_batches_per_epoch"
+    },
+    {
+      "baseline": null,
+      "candidate": 3,
+      "path": "metadata.micro_batches_per_optimizer_update"
+    },
+    {
+      "baseline": "P1h_source_aware_support_family_only",
+      "candidate": null,
+      "path": "metadata.model_applicability"
+    },
+    {
+      "baseline": "canonical",
+      "candidate": null,
+      "path": "metadata.model_lifecycle_status"
+    },
+    {
+      "baseline": "reference_seed0",
+      "candidate": null,
+      "path": "metadata.model_run_role"
+    },
+    {
+      "baseline": "v6_canonical_integration",
+      "candidate": "v6_p1i_training",
+      "path": "metadata.phase"
+    },
+    {
+      "baseline": null,
+      "candidate": "train_valid_only_test_and_sealed_closed",
+      "path": "metadata.split_access_policy"
+    },
+    {
+      "baseline": null,
+      "candidate": "V6_05_V5best_P1i_seed0",
+      "path": "metadata.tmux_session"
+    },
+    {
+      "baseline": null,
+      "candidate": true,
+      "path": "metadata.varying_support_graphs"
+    },
+    {
+      "baseline": 24,
+      "candidate": 8,
+      "path": "run.micro_batch_size"
+    },
+    {
+      "baseline": 32,
+      "candidate": 16,
+      "path": "run.prediction_batch_size"
+    },
+    {
+      "baseline": 32,
+      "candidate": 16,
+      "path": "run.validation_batch_size"
+    }
+  ],
+  "schema_version": "heat3d_v6_p1i_training_launch_check_v1",
+  "split_counts": {
+    "test_iid": 128,
+    "train": 768,
+    "valid_iid": 128
+  },
+  "status": "passed",
+  "test_or_sealed_target_accessed_by_checker": false,
+  "training_started": false
+}
