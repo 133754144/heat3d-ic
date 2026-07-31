@@ -106,11 +106,11 @@ def smoke(config_path: Path, dataset_root: Path, manifest_path: Path, batch_size
     builder = runner.RunSharedSupportGraphBuilder(
         Heat3DGraphBuilder(**runner._graph_config_from_args(args))
     )
-    order = np.random.default_rng(int(config["run"]["batch_build_seed"])).permutation(len(train_examples))
+    order = np.random.default_rng(int(args.batch_build_seed)).permutation(len(train_examples))
     examples = [train_examples[int(raw)] for raw in order[:batch_size]]
     group = runner._make_batch_group_with_seed(
         f"p1i_varying_support_B{batch_size}", examples, stats, builder,
-        graph_seed=int(config["run"]["graph_seed"]),
+        graph_seed=int(args.graph_seed),
     )
     groups = [group]
     by_id = {example.sample_id: example for example in examples}
@@ -169,7 +169,11 @@ def smoke(config_path: Path, dataset_root: Path, manifest_path: Path, batch_size
     )
     memory = jax.devices()[0].memory_stats() or {}
     standardizer = context_payload.get("standardizer", {})
-    passed = finite and reload_parameter_error == 0.0 and reload_loss_error <= 1.0e-12 and wrong_reuse_rejected
+    # Parameter bytes are the strict checkpoint invariant.  A replayed GPU
+    # reduction can differ by a few float32 ulps even with identical parameters,
+    # so use an explicit relative numerical tolerance for the scalar loss.
+    reload_loss_tolerance = max(1.0e-5, 1.0e-5 * abs(float(loss_after)))
+    passed = finite and reload_parameter_error == 0.0 and reload_loss_error <= reload_loss_tolerance and wrong_reuse_rejected
     return {
         "schema_version": "heat3d_v6_p1i_training_smoke_v1",
         "status": "passed" if passed else "failed",
@@ -186,6 +190,7 @@ def smoke(config_path: Path, dataset_root: Path, manifest_path: Path, batch_size
         "finite_forward_backward_update": finite,
         "checkpoint_reload_parameter_max_abs_error": reload_parameter_error,
         "checkpoint_reload_loss_abs_error": reload_loss_error,
+        "checkpoint_reload_loss_tolerance": reload_loss_tolerance,
         "ephemeral_checkpoint_sha256": checkpoint_sha,
         "global_context_fit_population": standardizer.get("fit_population"),
         "global_context_fit_sample_count": standardizer.get("fit_sample_count"),

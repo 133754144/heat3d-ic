@@ -29,7 +29,11 @@ for value in (ROOT, ROOT / "scripts"):
 import evaluate_heat3d_v6_common_valid_probe as common  # noqa: E402
 from rigno.heat3d_v1_native_supervised import V1SteadyConditionInput, V1SteadyTarget  # noqa: E402
 from rigno.heat3d_v6_dataset import V6_DUAL_ROBIN_CONDITION_FEATURES, V6DualRobinExample  # noqa: E402
-from rigno.heat3d_v6_full_field import FullFieldMetricAccumulator, build_reconstruction_map  # noqa: E402
+from rigno.heat3d_v6_full_field import (  # noqa: E402
+    FullFieldMetricAccumulator,
+    ReconstructionMap,
+    build_reconstruction_map,
+)
 
 
 DATASET_ID = "heat3d_v6_randomblock_formal1024_v2"
@@ -92,8 +96,12 @@ def load_test(dataset_root: Path, manifest_path: Path):
         stored_flags = np.load(sample_dir / "bc_features.npy").astype(np.float64)
         if coords.shape != (1024, 3) or stored_flags.shape != (1024, 4):
             raise RuntimeError(f"{sample_id}: support schema drift")
-        if not np.array_equal(stored_flags, flags(coords)):
-            raise RuntimeError(f"{sample_id}: BC flag semantics drift")
+        # The support is a strict subset of the solver mesh, so its coordinate
+        # extrema are not necessarily package boundaries.  The persisted flags
+        # are authoritative and must be one-hot; recomputing them from support
+        # extrema would silently relabel interior points as side points.
+        if not np.array_equal(np.sum(stored_flags, axis=1), np.ones(1024)):
+            raise RuntimeError(f"{sample_id}: persisted BC flags are not one-hot")
         top_bc = meta["boundary_conditions"]["top"]
         bottom_bc = meta["boundary_conditions"]["bottom"]
         if top_bc["type"] != "robin" or bottom_bc["type"] != "robin":
@@ -152,13 +160,56 @@ def aggregate_support(predictions, examples, truth, public):
     }
 
 
+def layer_aware_fallback_map(full_coords, full_layer, support_indices):
+    """Label-independent fallback when a random support misses a volume domain.
+
+    P1h's strict layer/interface partition requires every domain to be sampled;
+    random-block supports do not guarantee that.  This explicit fallback never
+    crosses a material layer, but allows its boundary/interface nodes to support
+    that layer's interior reconstruction.
+    """
+    neighbors = np.empty((len(full_coords), 8), dtype=np.int32)
+    weights = np.zeros((len(full_coords), 8), dtype=np.float64)
+    for layer in range(int(np.max(full_layer)) + 1):
+        query = np.flatnonzero(full_layer == layer)
+        support_local = np.flatnonzero(full_layer[support_indices] == layer)
+        if not len(support_local):
+            raise RuntimeError(f"layer_{layer:02d}: random-block support has no nodes")
+        k = min(8, len(support_local))
+        distance, local = cKDTree(full_coords[support_indices[support_local]]).query(
+            full_coords[query], k=k
+        )
+        if k == 1:
+            distance = distance[:, None]; local = local[:, None]
+        selected = support_local[np.asarray(local, dtype=np.int64)]
+        exact = np.asarray(distance) <= 1e-15
+        inverse = 1.0 / np.maximum(np.asarray(distance), 1e-15) ** 2
+        local_weights = inverse / np.sum(inverse, axis=1, keepdims=True)
+        exact_rows = np.any(exact, axis=1)
+        if np.any(exact_rows):
+            local_weights[exact_rows] = exact[exact_rows] / np.sum(exact[exact_rows], axis=1, keepdims=True)
+        neighbors[query, :k] = selected
+        neighbors[query, k:] = selected[:, :1]
+        weights[query, :k] = local_weights
+    if not np.allclose(np.sum(weights, axis=1), 1.0, rtol=0.0, atol=1e-12):
+        raise RuntimeError("fallback reconstruction is not partition of unity")
+    return ReconstructionMap(
+        support_indices=np.asarray(support_indices, dtype=np.int32),
+        neighbor_local_indices=neighbors,
+        neighbor_weights=weights,
+        domain_code=np.asarray(full_layer, dtype=np.int16),
+        domain_names=tuple(f"layer_{i:02d}" for i in range(int(np.max(full_layer))+1)),
+    )
+
+
 def evaluate(args):
     manifest, rows, examples, support_truth, support_public = load_test(args.dataset, args.manifest)
     predictions, checkpoint = common._predict(
         run_dir=args.run_dir, spec=CHECKPOINT_SPEC, examples=examples, batch_size=args.batch_size
     )
     support_metrics = aggregate_support(predictions, examples, support_truth, support_public)
-    archive_path = args.dataset / manifest["full_field_archive"]["relative_path"]
+    archive_entry = manifest["full_field_archive"]
+    archive_path = args.dataset / str(archive_entry.get("relative_path") or archive_entry["path"])
     if sha256(archive_path) != manifest["full_field_archive"]["sha256"]:
         raise RuntimeError("random-block full-field archive SHA mismatch")
     with h5py.File(archive_path, "r") as h:
@@ -171,14 +222,22 @@ def evaluate(args):
         acc = FullFieldMetricAccumulator(control_volume=full_cv, layer_id=full_layer,
             boundaries=boundaries(first_meta), coords=full_coords)
         reconstruction_hashes = []
+        reconstruction_modes = []
         for index, example in enumerate(examples, start=1):
             sid=example.sample_id; row=lookup[sid]
             support_coords=np.asarray(example.condition.coords)
             distance, support_indices = cKDTree(full_coords).query(support_coords, k=1)
             if float(np.max(distance)) > 1e-14 or len(np.unique(support_indices)) != 1024:
                 raise RuntimeError(f"{sid}: support is not exact full-mesh subset")
-            mapping, audit = build_reconstruction_map(coords=full_coords, layer_id=full_layer,
-                boundaries=boundaries(example.meta), support_indices=support_indices)
+            try:
+                mapping, audit = build_reconstruction_map(coords=full_coords, layer_id=full_layer,
+                    boundaries=boundaries(example.meta), support_indices=support_indices)
+                reconstruction_modes.append("strict_layer_interface_v1")
+            except RuntimeError as error:
+                if "support domain is empty" not in str(error):
+                    raise
+                mapping = layer_aware_fallback_map(full_coords, full_layer, support_indices)
+                reconstruction_modes.append("explicit_layer_aware_fallback_v1")
             reconstruction_hashes.append(hashlib.sha256(mapping.neighbor_local_indices.tobytes()+mapping.neighbor_weights.tobytes()).hexdigest())
             ref=float(example.meta["v6_adapter"]["reference_temperature_K"])
             pred_support=np.asarray(predictions[sid])-ref
@@ -203,6 +262,9 @@ def evaluate(args):
             "explicit_adapter":"randomblock_raw_arrays_metadata_v1"},
         "support_metrics":support_metrics,"full_field_metrics":full_metrics,
         "reconstruction_map_hash_count":len(set(reconstruction_hashes)),
+        "reconstruction_mode_counts":{
+            mode: reconstruction_modes.count(mode) for mode in sorted(set(reconstruction_modes))
+        },
     }
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(payload,indent=2,sort_keys=True)+"\n")
