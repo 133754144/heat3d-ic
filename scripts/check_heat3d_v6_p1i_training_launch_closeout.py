@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the post-launch P1i governance record without reading targets."""
+"""Validate the stopped historical launch and corrected P1i handoff."""
 
 from __future__ import annotations
 
@@ -15,8 +15,10 @@ def main() -> int:
     with (ROOT / "configs/heat3d_v6_p1i/v6_p1i_training_registry.csv").open(newline="") as handle:
         rows = list(csv.DictReader(handle))
     row = next(item for item in rows if item["config_id"] == payload["config_id"])
+    replacement = next(item for item in rows if item["config_id"] == payload["replacement_config_id"])
     checks = {
-        "running_e600": payload["status"] == row["execution_status"] == "running_e600",
+        "stopped_before_epoch": payload["status"] == row["execution_status"] == "stopped_superseded_before_epoch",
+        "replacement_prepared": replacement["execution_status"] == "prepared_not_started" and replacement["training_commit"] == "",
         "training_commit_bound": row["training_commit"] == payload["training_commit"] == "93ea04a52b5cfcc1a9e9af027bcd6747151737ae",
         "pid_bound": int(row["pid"]) == int(payload["launch"]["pid"]) == 71882,
         "launcher_pid_bound": int(payload["launch"]["launcher_pid"]) == 71870,
@@ -25,6 +27,7 @@ def main() -> int:
         "test_closed": row["test_access"] == "closed_audited_holdout" == payload["launch"]["test_role"],
         "sealed_closed": row["sealed_access"] == "closed_confirmatory" == payload["launch"]["sealed_iid_role"],
         "randomblock_not_for_tuning": payload["randomblock_one_time_transfer"]["used_for_tuning"] is False,
+        "replacement_not_started": payload["replacement_training_started"] is False,
     }
     result = {"status": "passed" if all(checks.values()) else "failed", "checks": checks}
     print(json.dumps(result, indent=2, sort_keys=True))

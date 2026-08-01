@@ -1,0 +1,36 @@
+{
+  "schema_version": "heat3d_v6_p1i_batch_contract_correction_v1",
+  "status": "corrected_prepared_not_started",
+  "superseded_config_id": "V6_05_V5best_P1i_seed0",
+  "replacement_config_id": "V6_05_V5best_P1i_seed0_B24",
+  "reason": "The first launch used micro_batch_size=8 and validation/prediction batch_size=16, unlike the frozen V6best contract.",
+  "stopped_before_first_epoch": true,
+  "historical_launch": {
+    "training_commit": "93ea04a52b5cfcc1a9e9af027bcd6747151737ae",
+    "worker_pid": 71882,
+    "launcher_pid": 71870,
+    "tmux_session": "V6_05_V5best_P1i_seed0",
+    "log_path": "output/heat3d_v6_p1i_logs/V6_05_V5best_P1i_seed0.log"
+  },
+  "replacement_contract": {
+    "batch_size": 24,
+    "micro_batch_size": 24,
+    "validation_batch_size": 32,
+    "prediction_batch_size": 32,
+    "drop_last": false,
+    "micro_batches_per_optimizer_update": 1,
+    "micro_batches_per_epoch": 32,
+    "optimizer_updates_per_epoch": 32
+  },
+  "scientific_invariants": [
+    "dataset binding and split",
+    "model and graph",
+    "loss",
+    "optimizer and learning-rate schedule",
+    "seed and random initialization",
+    "epochs and checkpoint selection",
+    "test and sealed roles closed"
+  ],
+  "training_started": false,
+  "manual_start_required": true
+}

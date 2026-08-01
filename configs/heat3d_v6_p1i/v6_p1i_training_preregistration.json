@@ -1,7 +1,8 @@
 {
   "schema_version": "heat3d_v6_p1i_training_preregistration_v1",
-  "status": "frozen_before_smoke_and_training",
-  "config_id": "V6_05_V5best_P1i_seed0",
+  "status": "frozen_corrected_before_training",
+  "config_id": "V6_05_V5best_P1i_seed0_B24",
+  "supersedes_config_id": "V6_05_V5best_P1i_seed0",
   "scientific_baseline": "V6_03_V5best_P1h",
   "dataset": {
     "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
@@ -46,8 +47,10 @@
   "execution": {
     "epochs": 600,
     "effective_batch_size": 24,
-    "micro_batch_size": 8,
-    "micro_batches_per_update": 3,
+    "micro_batch_size": 24,
+    "validation_batch_size": 32,
+    "prediction_batch_size": 32,
+    "micro_batches_per_update": 1,
     "drop_last": false,
     "epoch_wise_batch_regrouping": false,
     "random_initialization": true,
@@ -63,7 +66,7 @@
   "launch_gate": [
     "HF frozen archive replay passes",
     "full-field sidecar completes and hashes verify",
-    "B8 and B16 one-update/reload smokes pass",
+    "V6best B24 validation/prediction batch contract is resolved and checked",
     "batch-order prefix and graph-reuse guards pass",
     "random-block compatibility audit is explicit and any allowed one-time test is frozen"
   ],

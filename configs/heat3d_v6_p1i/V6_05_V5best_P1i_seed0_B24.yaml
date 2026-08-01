@@ -1,0 +1,102 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_05_V5best_P1i_seed0_B24
+extends: ../heat3d_v5/V4P5_42_canonical.yaml
+overrides:
+  description: >-
+    Corrected P1i formal1024_v1 single-seed training transfer. The V6_03
+    architecture, four-term loss, optimizer, schedule, e600 budget, native
+    V6best B24 execution contract, seed, graph policy, and validation selection
+    remain frozen. Only the P1i dataset/loader binding and run identity differ;
+    no historical checkpoint is loaded. This supersedes the stopped
+    micro-B8/validation-B16 launch before its first epoch.
+  dataset:
+    name: heat3d_v6_p1i_continuous_physics1024_v1
+    subset_path: data/heat3d_v6_p1i_continuous_physics1024_v1
+    manifest_path: configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json
+    split_map_path: configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_split_manifest.json
+    split_source: frozen_balanced_pre_solve_assignment_v1
+    loader: v6_p1i_dual_robin_manifest_v1
+    bc_adapter: dual_robin_p1i_explicit_v1
+    feature_view: v6_dual_robin_relative_bc_features
+    input_feature_contract:
+      - k_x
+      - k_y
+      - k_z
+      - q
+      - is_top
+      - is_bottom
+      - is_side
+      - is_interior
+      - top_h
+      - bottom_h
+      - top_T_inf_minus_T_ref
+  model:
+    global_context_feature_names:
+      - log_s_phys_K
+      - P_operator_W
+      - log_P_operator_W
+      - q_weighted_local_kz_W_mK
+      - q_weighted_inverse_kz_mK_W
+      - q_low_k_overlap_fraction
+      - source_concentration
+      - source_z_centroid_normalized
+      - source_layer_kz_heterogeneity_cv
+      - harmonic_kx_W_mK
+      - harmonic_ky_W_mK
+      - harmonic_kz_W_mK
+      - anisotropy_xy_over_z
+      - log_Lx_m
+      - log_Ly_m
+      - log_Lz_m
+      - log_top_area_m2
+      - log_top_h_W_m2K
+      - log_bottom_h_W_m2K
+      - top_T_inf_K
+      - bottom_T_inf_K
+      - bc_top_cv_fraction
+      - bc_bottom_cv_fraction
+      - bc_side_cv_fraction
+  run:
+    batch_size: 24
+    micro_batch_size: 24
+    validation_batch_size: 32
+    prediction_batch_size: 32
+    drop_last: false
+    epoch_wise_batch_regrouping: false
+    init_checkpoint: null
+    final_probe_eval_after_training: false
+    final_probe_output_dir: null
+    post_training_diagnostics: false
+    post_training_diagnostics_output_dir: null
+  export:
+    output_dir: output/heat3d_v6_p1i_runs/V6_05_V5best_P1i_seed0_B24
+    run_name: V6_05_V5best_P1i_seed0_B24
+    prediction_split: valid_iid
+  diagnostics:
+    run_baseline_comparison: false
+  baseline_reference: null
+  metadata:
+    phase: v6_p1i_training
+    baseline_config_id: V6_03_V5best_P1h
+    supersedes_config_id: V6_05_V5best_P1i_seed0
+    dataset_id: heat3d_v6_p1i_continuous_physics1024_v1
+    initialization: random
+    execution_status: prepared_not_started
+    training_started: false
+    execution_host: null
+    training_commit: null
+    runner_pid: null
+    tmux_session: null
+    launch_timestamp_utc: null
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v6_p1i_logs/V6_05_V5best_P1i_seed0_B24.log
+    split_access_policy: train_valid_only_test_and_sealed_closed
+    current_test_role: audited_holdout_not_for_selection
+    configured_batch_size: 24
+    effective_batch_size: 24
+    graph_compatible_micro_batch_size: 24
+    micro_batches_per_optimizer_update: 1
+    micro_batches_per_epoch: 32
+    optimizer_updates_per_epoch: 32
+    varying_support_graphs: true
+    b24_execution_mode: one_real_B24_forward_backward_per_update

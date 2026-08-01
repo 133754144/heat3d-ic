@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic launch preflight for frozen P1i and V6_05 transfer."""
+"""Deterministic launch preflight for the corrected P1i V6best B24 transfer."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from rigno.heat3d_v6_dataset import Heat3DV6DualRobinDataset  # noqa: E402
 
 
 BASELINE = ROOT / "configs/heat3d_v6/V6_03_V5best_P1h.yaml"
-CANDIDATE = ROOT / "configs/heat3d_v6_p1i/V6_05_V5best_P1i_seed0.yaml"
+CANDIDATE = ROOT / "configs/heat3d_v6_p1i/V6_05_V5best_P1i_seed0_B24.yaml"
 MANIFEST = ROOT / "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json"
 CONFIG = ROOT / "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml"
 SPLIT = ROOT / "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_split_manifest.json"
@@ -83,7 +83,20 @@ def check(dataset_root: Path) -> dict[str, Any]:
         checks[f"frozen_{section}"] = baseline[section] == candidate[section]
     checks["epochs_600"] = candidate["run"]["epochs"] == baseline["run"]["epochs"] == 600
     checks["effective_batch_24"] = candidate["run"]["batch_size"] == baseline["run"]["batch_size"] == 24
-    checks["varying_support_micro_b8"] = candidate["run"]["micro_batch_size"] == 8
+    checks["v6best_batch_contract"] = all(
+        candidate["run"].get(key) == baseline["run"].get(key)
+        for key in ("batch_size", "micro_batch_size", "validation_batch_size", "prediction_batch_size", "drop_last")
+    )
+    checks["micro_batches_one_real_update"] = (
+        candidate["metadata"].get("micro_batches_per_optimizer_update") == 1
+        and candidate["metadata"].get("micro_batches_per_epoch") == 32
+    )
+    checks["prepared_not_started"] = (
+        candidate["metadata"].get("execution_status") == "prepared_not_started"
+        and candidate["metadata"].get("training_started") is False
+        and candidate["metadata"].get("runner_pid") is None
+        and candidate["metadata"].get("launch_timestamp_utc") is None
+    )
     checks["random_initialization"] = candidate["run"].get("init_checkpoint") is None
     checks["valid_only_prediction"] = candidate["export"]["prediction_split"] == "valid_iid"
     checks["output_not_started"] = not (ROOT / candidate["export"]["output_dir"]).exists()
