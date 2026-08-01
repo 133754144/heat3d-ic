@@ -117,7 +117,7 @@ class Metrics:
             mask = np.isclose(self.coords[:, 2], boundary, atol=1e-15)
             interface_errors.append(_weighted(error, cv, mask))
         row["interface_mean_squared_error_sum"] = float(np.sum(np.square(interface_errors)))
-        row["interface_count"] = int(len(interface_errors))
+        row["interface_mean_count"] = int(len(interface_errors))
         self.rows.append(row)
 
     def summary(self) -> dict[str, Any]:
