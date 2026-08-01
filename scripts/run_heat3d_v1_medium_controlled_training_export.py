@@ -5660,6 +5660,7 @@ def _checkpoint_run_metadata(
     seed_config: dict[str, Any],
     batch_config: dict[str, Any],
     graph_config: dict[str, Any],
+    builder: Any | None = None,
     global_context_payload: dict[str, Any] | None = None,
     scale_context_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -5681,16 +5682,6 @@ def _checkpoint_run_metadata(
         "seed_config": seed_config,
         "batch_config": batch_config,
         "graph_config": graph_config,
-        "run_shared_support_graph_cache": (
-            dict(builder.audit)
-            if isinstance(builder, RunSharedSupportGraphBuilder)
-            else {
-                "requested_metadata_calls": 0,
-                "shared_topology_build_calls": 0,
-                "shared_topology_reuse_calls": 0,
-                "varying_support_fallback_calls": 0,
-            }
-        ),
         "global_context": global_context_payload,
         "run_shared_support_graph_cache": (
             dict(builder.audit)
@@ -8639,6 +8630,7 @@ def main() -> int:
         seed_config=seed_config,
         batch_config=batch_config,
         graph_config=graph_config,
+        builder=builder,
         global_context_payload=global_context_payload,
         scale_context_payload=scale_context_payload,
     )
