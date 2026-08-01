@@ -224,6 +224,50 @@ def _write_per_sample_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+def _paired_best_to_final(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_label = {
+        label: {row["sample_id"]: row for row in rows if row["checkpoint_label"] == label}
+        for label in ("point_global_best", "final")
+    }
+    sample_ids = sorted(by_label["point_global_best"])
+    if sample_ids != sorted(by_label["final"]) or len(sample_ids) != 128:
+        raise CollectionError("best/final paired sample population drifted")
+    best = by_label["point_global_best"]
+    final = by_label["final"]
+    best_sse = np.asarray(
+        [best[sample_id]["point_error_squared_sum"] for sample_id in sample_ids],
+        dtype=np.float64,
+    )
+    final_sse = np.asarray(
+        [final[sample_id]["point_error_squared_sum"] for sample_id in sample_ids],
+        dtype=np.float64,
+    )
+    sample_rel_delta = np.asarray(
+        [
+            final[sample_id]["sample_cv_relative_rmse"]
+            - best[sample_id]["sample_cv_relative_rmse"]
+            for sample_id in sample_ids
+        ],
+        dtype=np.float64,
+    )
+    best_top5 = float(np.sum(np.sort(best_sse)[-5:]) / np.sum(best_sse))
+    final_top5 = float(np.sum(np.sort(final_sse)[-5:]) / np.sum(final_sse))
+    return {
+        "point_sse_change_pct": float((np.sum(final_sse) / np.sum(best_sse) - 1.0) * 100.0),
+        "point_sse_final_wins": int(np.sum(final_sse < best_sse)),
+        "sample_relative_final_wins": int(np.sum(sample_rel_delta < 0.0)),
+        "sample_relative_mean_change_percentage_points": float(
+            100.0 * np.mean(sample_rel_delta)
+        ),
+        "sample_relative_median_change_percentage_points": float(
+            100.0 * np.median(sample_rel_delta)
+        ),
+        "top5_sample_sse_fraction_best": best_top5,
+        "top5_sample_sse_fraction_final": final_top5,
+        "interpretation": "mild_late_valid_regression_with_increased_tail_concentration",
+    }
+
+
 def _write_markdown(path: Path, payload: dict[str, Any]) -> None:
     lines = [
         "# V6 P1i seed0 B24 valid-only recovery closeout",
@@ -255,6 +299,14 @@ def _write_markdown(path: Path, payload: dict[str, Any]) -> None:
             "- 训练日志中的 `raw_rmse_K` 是未加 CV 的逐点 RMSE；表中 `raw CV RMSE K` 为冻结 V5 CV 口径。",
             "- 训练日志 `best=e542/0.0031` 中 epoch 由 point-global 选择，斜杠后数值按既有日志合同显示该 epoch 的 valid base MSE。",
             "",
+            "## Best 到 final 诊断",
+            "",
+            f"- point-global SSE 增加 {payload['best_to_final']['point_sse_change_pct']:.4f}%；final 在 {payload['best_to_final']['point_sse_final_wins']}/128 个样本上降低 SSE。",
+            f"- sample-first relative RMSE 平均增加 {payload['best_to_final']['sample_relative_mean_change_percentage_points']:.6f} 个百分点；final 在 {payload['best_to_final']['sample_relative_final_wins']}/128 个样本上改善。",
+            f"- top-5 样本 SSE 占比由 {100.0 * payload['best_to_final']['top5_sample_sse_fraction_best']:.3f}% 升至 {100.0 * payload['best_to_final']['top5_sample_sse_fraction_final']:.3f}%，说明轻微后期退化伴随尾部集中。",
+            "- final 的 background bias 从接近零转为轻微正偏；shape 与 scale 指标也均小幅退化，因此 e542 优于 e600 的方向一致。",
+            "- 用户提供的末段日志未保存到注册 log 路径；其 e600 train/valid base MSE 分别为 0.000121/0.00317，约 26.2 倍 generalization gap，但绝对 valid 误差仍很低。",
+            "",
             "## 工件状态",
             "",
             "- predictions: saved and SHA256-bound",
@@ -281,6 +333,12 @@ def main() -> int:
     parser.add_argument("--output-csv", type=Path, required=True)
     parser.add_argument("--per-sample-csv", type=Path, required=True)
     parser.add_argument("--output-md", type=Path, required=True)
+    parser.add_argument("--registered-log-path", type=Path)
+    parser.add_argument("--observed-final-train-base-mse", type=float)
+    parser.add_argument("--observed-final-valid-base-mse", type=float)
+    parser.add_argument("--observed-final-raw-rmse-K", type=float)
+    parser.add_argument("--observed-final-point-global-pct", type=float)
+    parser.add_argument("--observed-best-valid-base-mse", type=float)
     args = parser.parse_args()
 
     manifest = _load_manifest(args.manifest, args.dataset_id)
@@ -334,7 +392,33 @@ def main() -> int:
             "training_epochs_completed": 600,
             "retraining_performed": False,
         },
+        "artifact_inventory": {
+            "run_dir": str(args.run_dir),
+            "files": sorted(path.name for path in args.run_dir.iterdir() if path.is_file()),
+            "params_checkpoint_count": len(list(args.run_dir.glob("params*.pkl"))),
+            "run_config_exists": (args.run_dir / "run_config.json").is_file(),
+            "loss_summary_exists": (args.run_dir / "loss_summary.json").is_file(),
+            "registered_log_path": (
+                str(args.registered_log_path) if args.registered_log_path is not None else None
+            ),
+            "registered_log_exists": (
+                args.registered_log_path.is_file()
+                if args.registered_log_path is not None
+                else None
+            ),
+        },
+        "user_supplied_terminal_log": {
+            "source": "user_pasted_terminal_excerpt",
+            "best_epoch": args.best_epoch,
+            "best_valid_base_mse_display": args.observed_best_valid_base_mse,
+            "final_epoch": args.final_epoch,
+            "final_train_base_mse": args.observed_final_train_base_mse,
+            "final_valid_base_mse": args.observed_final_valid_base_mse,
+            "final_raw_rmse_K_unweighted": args.observed_final_raw_rmse_K,
+            "final_point_global_true_rms_pct": args.observed_final_point_global_pct,
+        },
         "metrics": metrics,
+        "best_to_final": _paired_best_to_final(per_sample),
         "gate": {
             "metric": "valid_iid point-global true-RMS relative RMSE",
             "threshold_pct": 20.0,
