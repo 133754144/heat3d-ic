@@ -401,8 +401,18 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Maximum graph-compatible micro-batch size used for sample-weighted gradient accumulation.",
     )
-    parser.add_argument("--validation-batch-size", type=int, default=88)
-    parser.add_argument("--prediction-batch-size", type=int, default=88)
+    parser.add_argument(
+        "--validation-batch-size",
+        type=int,
+        default=32,
+        help="Validation batch size; the default is the V6 contract value 32.",
+    )
+    parser.add_argument(
+        "--prediction-batch-size",
+        type=int,
+        default=32,
+        help="Prediction batch size; the default is the V6 contract value 32.",
+    )
     parser.add_argument(
         "--prediction-split",
         choices=("all", "train", "valid_iid", "valid_stress", "test_iid"),
@@ -2043,11 +2053,15 @@ def _parse_csv_feature_names(value: str, flag_name: str) -> tuple[str, ...]:
 
 
 def _batch_config_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    batch_size = _optional_batch_size(args.batch_size, "batch-size")
+    micro_batch_size = _optional_batch_size(
+        args.micro_batch_size, "micro-batch-size"
+    )
+    if micro_batch_size is None and batch_size is not None:
+        micro_batch_size = batch_size
     return {
-        "batch_size": _optional_batch_size(args.batch_size, "batch-size"),
-        "micro_batch_size": _optional_batch_size(
-            args.micro_batch_size, "micro-batch-size"
-        ),
+        "batch_size": batch_size,
+        "micro_batch_size": micro_batch_size,
         "validation_batch_size": _optional_batch_size(
             args.validation_batch_size, "validation-batch-size"
         ),

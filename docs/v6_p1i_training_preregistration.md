@@ -18,3 +18,11 @@ is retained only as a historical record. Launch of the corrected YAML is
 authorized only after the HF archive, full-field sidecar, B24 resolved-config
 check, batch-order prefix, wrong-graph-reuse guard and cross-dataset
 compatibility gate all pass.
+
+## Future YAML batch defaults
+
+Unless a later experiment explicitly preregisters another contract, new YAML
+profiles use `micro_batch_size = batch_size`,
+`validation_batch_size = 32`, and `prediction_batch_size = 32`. The runner and
+dry-run command builder resolve omitted/null micro-batch values to the training
+batch size and omitted/null validation or prediction values to 32.

@@ -172,6 +172,8 @@ run:
   epochs: 600
   batching: mini_batch
   batch_size: 28
+  # Null is resolved by the runner to run.batch_size (one full batch/update).
+  # Future derived YAMLs should override this only for explicit accumulation.
   micro_batch_size: null
   validation_batch_size: 32
   prediction_batch_size: 32

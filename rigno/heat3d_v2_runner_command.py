@@ -204,13 +204,23 @@ def build_training_command(
         command.append("--pooled-latent-stop-gradient")
     elif model.get("pooled_latent_stop_gradient") is False:
         command.append("--no-pooled-latent-stop-gradient")
-    _append_option(command, "--batch-size", run.get("batch_size"))
+    batch_size = run.get("batch_size")
+    micro_batch_size = run.get("micro_batch_size")
+    validation_batch_size = run.get("validation_batch_size")
+    prediction_batch_size = run.get("prediction_batch_size")
+    # Batch defaults are resolved here as well as in the runner so dry-run
+    # commands faithfully expose the contract used by a future YAML.
+    if micro_batch_size is None:
+        micro_batch_size = batch_size
+    if validation_batch_size is None:
+        validation_batch_size = 32
+    if prediction_batch_size is None:
+        prediction_batch_size = 32
+    _append_option(command, "--batch-size", batch_size)
     if dataset_loader is not None:
-        _append_option(
-            command, "--micro-batch-size", run.get("micro_batch_size")
-        )
-    _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
-    _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
+        _append_option(command, "--micro-batch-size", micro_batch_size)
+    _append_option(command, "--validation-batch-size", validation_batch_size)
+    _append_option(command, "--prediction-batch-size", prediction_batch_size)
     _append_option(command, "--init-mode", run.get("init_mode"))
     _append_option(command, "--init-checkpoint", run.get("init_checkpoint"))
     _append_option(command, "--checkpoint-load-strict", run.get("checkpoint_load_strict"))
