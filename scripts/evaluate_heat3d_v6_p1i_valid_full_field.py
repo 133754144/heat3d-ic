@@ -196,6 +196,7 @@ def main() -> int:
         floor_metrics = None
         model_metrics: dict[str, Metrics] = {}
         map_audits = []
+        fallback_samples = []
         full_tree = cKDTree(full_coords)
         for row_index, row in enumerate(valid_rows):
             sample_id = row["sample_id"]
@@ -216,6 +217,15 @@ def main() -> int:
             )
             if row_index in (0, len(valid_rows) - 1):
                 map_audits.append({"sample_id": sample_id, **map_audit})
+            fallback_domains = [
+                name
+                for name, audit in map_audit["domain_coverage"].items()
+                if audit["empty_domain_fallback_used"]
+            ]
+            if fallback_domains:
+                fallback_samples.append(
+                    {"sample_id": sample_id, "domains": fallback_domains}
+                )
             truth = np.asarray(archive["samples/deltaT_K"][index_by_id[sample_id]], dtype=np.float64)
             source = _source_mask(full_coords, full_layer, meta)
             if floor_metrics is None:
@@ -245,6 +255,12 @@ def main() -> int:
         "reconstruction_only_sampling_floor": floor_metrics.summary(),
         "model_plus_reconstruction": {label: metrics.summary() for label, metrics in model_metrics.items()},
         "reconstruction_map_audit_examples": map_audits,
+        "same_layer_empty_domain_fallback": {
+            "sample_count": len(fallback_samples),
+            "domain_count": sum(len(row["domains"]) for row in fallback_samples),
+            "samples": fallback_samples,
+            "label_independent": True,
+        },
     }
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     args.output_json.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

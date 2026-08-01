@@ -1,0 +1,55 @@
+{
+  "schema_version": "heat3d_v6_p1i_checkpoint_reliability_smoke_v1",
+  "status": "passed_expected_injected_metadata_failure",
+  "config_id": "V6_06_checkpoint_reliability_smoke_e3",
+  "host": "devbox",
+  "training_commit": "b0e101e31e159fd3be06446e77c0cac3fc41964d",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "accessed_roles": ["train", "valid_iid"],
+  "test_accessed": false,
+  "sealed_accessed": false,
+  "batch_contract": {
+    "batch_size": 24,
+    "micro_batch_size": 24,
+    "train_sample_count": 768,
+    "groups_per_epoch": 32,
+    "optimizer_updates_per_epoch": 32,
+    "drop_last": false
+  },
+  "epochs": [
+    {"epoch": 1, "elapsed_s": 307.67, "valid_base_mse": 1.48, "point_global_true_rms_pct": 46.06},
+    {"epoch": 2, "elapsed_s": 147.14, "valid_base_mse": 0.235, "point_global_true_rms_pct": 18.36},
+    {"epoch": 3, "elapsed_s": 206.12, "valid_base_mse": 0.0584, "point_global_true_rms_pct": 9.15}
+  ],
+  "finite": {
+    "loss": true,
+    "gradient": true,
+    "prediction": true,
+    "oom": false,
+    "nan": false,
+    "inf": false
+  },
+  "fault_injection": {
+    "stage": "after_atomic_checkpoints_and_prediction_exports_before_checkpoint_metadata",
+    "exception": "RuntimeError: injected post-checkpoint metadata failure",
+    "expected_nonzero_exit": true
+  },
+  "checkpoint_audit": {
+    "params_best.pkl": {"epoch": 3, "size_bytes": 10763949, "sha256": "8a95e168765460559dc398cc0f87ac220602ba802528420a8503953150314b4a"},
+    "params_latest.pkl": {"epoch": 3, "size_bytes": 10764233, "sha256": "92d2ff4d452e974d1d6da51557c17960e2280c7208090303b2e368e522537d97"},
+    "params_final.pkl": {"epoch": 3, "size_bytes": 10764232, "sha256": "ba82b93ad2cf6697cb15eb82cce462b14647159139b67861b0cdc20e4931ed2a"},
+    "schema_version": "heat3d_training_state_checkpoint_v2",
+    "optimizer_state_saved": true,
+    "best_state_saved": true,
+    "parameter_reload_max_abs_error": 0.0,
+    "optimizer_reload_max_abs_error": 0.0,
+    "static_duplicate_key_check": "passed"
+  },
+  "prediction_audit": {
+    "predictions.npz": {"size_bytes": 491624, "sha256": "3c0e66a0c772e3242f9d8448f46e7691d22ce0d5c75e6a89a373b577df6404a3"},
+    "best_predictions.npz": {"size_bytes": 491722, "sha256": "8061911d3374e469d0d7126d42ed150883a9a47b59dcef6e0ad1f6f9730ee8be"}
+  },
+  "pretraining_contract_present": true,
+  "formal_training_gate": "passed"
+}
+
