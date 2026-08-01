@@ -15,6 +15,7 @@ CONFIG_DIR = ROOT / "configs/heat3d_v6_p1i"
 FULL_FIELDS = ROOT / "data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5"
 DATASET = ROOT / "data/heat3d_v6_p1i_continuous_physics1024_v1"
 MANIFEST = CONFIG_DIR / "v6_p1i_formal1024_v1_manifest.json"
+LOG_DIR = ROOT / "output/heat3d_v6_p1i_logs"
 RUNS = {
     "seed0": ("V6_06_V5best_P1i_seed0_reliable_B24.yaml", "V6_06_V5best_P1i_seed0_reliable_B24"),
     "seed1": ("V6_07_V5best_P1i_seed1_reliable_B24.yaml", "V6_07_V5best_P1i_seed1_reliable_B24"),
@@ -32,41 +33,50 @@ def _write_status(path: Path, payload: dict) -> None:
 def _run_seed(label: str) -> None:
     config_name, run_name = RUNS[label]
     output = ROOT / "output/heat3d_v6_p1i_runs" / run_name
-    subprocess.run(
-        [sys.executable, "scripts/run_heat3d_v4_config.py", "--config", str(CONFIG_DIR / config_name)],
-        cwd=ROOT,
-        check=True,
-    )
-    subprocess.run(
-        [sys.executable, "scripts/check_heat3d_v6_p1i_training_closeout.py", "--output-dir", str(output)],
-        cwd=ROOT,
-        check=True,
-    )
-    required = (
-        "params_best.pkl", "params_final.pkl", "params_latest.pkl",
-        "best_predictions.npz", "predictions.npz", "run_config.json",
-        "loss_summary.json", "environment.json", "resolved_config_pretraining.yaml",
-        "resolved_command.txt", "pretraining_provenance.json",
-    )
-    missing = [name for name in required if not (output / name).is_file()]
-    if missing:
-        raise RuntimeError(f"{run_name}: missing formal artifacts: {missing}")
-    subprocess.run(
-        [
-            sys.executable,
-            "scripts/evaluate_heat3d_v6_p1i_valid_full_field.py",
-            "--dataset-root", str(DATASET),
-            "--manifest", str(MANIFEST),
-            "--full-fields", str(FULL_FIELDS),
-            "--predictions", f"point_global_best={output / 'best_predictions.npz'}",
-            "--predictions", f"final={output / 'predictions.npz'}",
-            "--output-json", str(output / "valid_full_field.json"),
-            "--output-csv", str(output / "valid_full_field.csv"),
-            "--output-md", str(output / "valid_full_field.md"),
-        ],
-        cwd=ROOT,
-        check=True,
-    )
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = LOG_DIR / f"{run_name}.log"
+    with log_path.open("x", encoding="utf-8") as log:
+        subprocess.run(
+            [sys.executable, "scripts/run_heat3d_v4_config.py", "--config", str(CONFIG_DIR / config_name)],
+            cwd=ROOT,
+            check=True,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+        )
+        subprocess.run(
+            [sys.executable, "scripts/check_heat3d_v6_p1i_training_closeout.py", "--output-dir", str(output)],
+            cwd=ROOT,
+            check=True,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+        )
+        required = (
+            "params_best.pkl", "params_final.pkl", "params_latest.pkl",
+            "best_predictions.npz", "predictions.npz", "run_config.json",
+            "loss_summary.json", "environment.json", "resolved_config_pretraining.yaml",
+            "resolved_command.txt", "pretraining_provenance.json",
+        )
+        missing = [name for name in required if not (output / name).is_file()]
+        if missing:
+            raise RuntimeError(f"{run_name}: missing formal artifacts: {missing}")
+        subprocess.run(
+            [
+                sys.executable,
+                "scripts/evaluate_heat3d_v6_p1i_valid_full_field.py",
+                "--dataset-root", str(DATASET),
+                "--manifest", str(MANIFEST),
+                "--full-fields", str(FULL_FIELDS),
+                "--predictions", f"point_global_best={output / 'best_predictions.npz'}",
+                "--predictions", f"final={output / 'predictions.npz'}",
+                "--output-json", str(output / "valid_full_field.json"),
+                "--output-csv", str(output / "valid_full_field.csv"),
+                "--output-md", str(output / "valid_full_field.md"),
+            ],
+            cwd=ROOT,
+            check=True,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+        )
 
 
 def main() -> int:
