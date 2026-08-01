@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v6_p1i_legacy_seed0_archive_v1",
+  "config_id": "V6_05_V5best_P1i_seed0_B24",
+  "training_commit": "dfe3cf62b2e5795630f5504480b2facfd5f6c65c",
+  "training_command_entrypoint": "python scripts/run_heat3d_v4_config.py --config configs/heat3d_v6_p1i/V6_05_V5best_P1i_seed0_B24.yaml",
+  "training_command_provenance": "reconstructed_from_frozen_config_and_registered_runner; original shell history unavailable",
+  "config_sha256_at_training_commit": "7552e28a476ba248b2627261203cd06256e508262aa0fa707ee71ec580a20e46",
+  "config_size_bytes_at_training_commit": 3498,
+  "source_run_directory": "output/heat3d_v6_p1i_runs/V6_05_V5best_P1i_seed0_B24",
+  "source_directory_overwritten": false,
+  "artifacts": {
+    "best_predictions.npz": {
+      "size_bytes": 484101,
+      "sha256": "11c869b416eced0fd0a9833696ec9d799ce00cd88a18b2ce46be3cc204bb3fd2",
+      "checkpoint_epoch": 542
+    },
+    "predictions.npz": {
+      "size_bytes": 484325,
+      "sha256": "ec9c5b5367f9edadbe800324137b61b665a80f149de558f6814d0cb4dd7d4bdc",
+      "checkpoint_epoch": 600
+    },
+    "terminal_tail": {
+      "tracked_path": "configs/heat3d_v6_p1i/v6_p1i_legacy_seed0_terminal_tail.txt",
+      "complete_log": false,
+      "source": "user_supplied_terminal_excerpt"
+    }
+  },
+  "complete_log_available": false,
+  "complete_log_absence_audit": {
+    "searched": [
+      "registered log path on devbox and wsl2",
+      "repository output/log trees",
+      "shell histories and surviving tmux sessions",
+      "devbox Codex sqlite logs and temporary directories"
+    ],
+    "result": "no complete V6_05_V5best_P1i_seed0_B24 log survived",
+    "reason": "the launch did not persist stdout/stderr to the registered log path and terminal scrollback is not durable"
+  },
+  "dual_machine_backup": {
+    "devbox": "pending",
+    "wsl2": "pending"
+  },
+  "hugging_face": {
+    "repo_id": "133754144X/heat3d-thermal-simulation",
+    "repo_type": "dataset",
+    "path": "subsets/heat3d_v6_p1i_training_archives/V6_05_V5best_P1i_seed0_B24/",
+    "immutable_revision": "pending",
+    "commit": "pending"
+  },
+  "test_accessed": false,
+  "sealed_accessed": false
+}

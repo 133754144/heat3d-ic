@@ -1,0 +1,33 @@
+[train] epoch 595/600 start lr=5.008e-05 batches=32
+[train] epoch 595/600 metrics computed elapsed=70.92s
+epoch 595/600 lr=5.01e-05 train=0.000146 valid=0.00316 raw_rmse_K=1.66 rel_rmse_v4_pct=2.13% best=e542/0.0031
+epoch 596/600 valid_total=0.00121 valid_base=0.00317 raw_rmse_K=1.66 rel_rmse_v4_pct=2.13%
+epoch 597/600 valid_total=0.00121 valid_base=0.00316 raw_rmse_K=1.66 rel_rmse_v4_pct=2.13%
+epoch 598/600 valid_total=0.00121 valid_base=0.00317 raw_rmse_K=1.66 rel_rmse_v4_pct=2.13%
+epoch 599/600 valid_total=0.00121 valid_base=0.00319 raw_rmse_K=1.67 rel_rmse_v4_pct=2.14%
+[train] epoch 600/600 start lr=5.000e-05 batches=32
+[train] epoch 600/600 metrics computed elapsed=160.75s
+epoch 600/600 lr=5.00e-05 train=0.000121 valid=0.00317 raw_rmse_K=1.66 rel_rmse_v4_pct=2.13% best=e542/0.0031
+[train] final train/valid metrics reused from last epoch full metrics
+[export] building recovered predictions ...
+[export] prediction arrays built: key_count=128 elapsed=1.46s
+[export] predictions saved: key_count=128 path=output/heat3d_v6_p1i_runs/V6_05_V5best_P1i_seed0_B24/predictions.npz elapsed=0.04s
+[export] building best-valid recovered predictions ...
+[export] best-valid prediction arrays built: key_count=128 elapsed=1.48s
+[export] best predictions saved: key_count=128 path=output/heat3d_v6_p1i_runs/V6_05_V5best_P1i_seed0_B24/best_predictions.npz elapsed=0.04s
+Traceback (most recent call last):
+  File "scripts/run_heat3d_v4_controlled_training.py", line 274, in <module>
+    raise SystemExit(main())
+  File "scripts/run_heat3d_v4_controlled_training.py", line 71, in main
+    return legacy_runner.main()
+  File "scripts/run_heat3d_v1_medium_controlled_training_export.py", line 8616, in main
+    checkpoint_run_metadata = _checkpoint_run_metadata(...)
+  File "scripts/run_heat3d_v4_controlled_training.py", line 246, in _checkpoint_run_metadata
+    payload = original_checkpoint_run_metadata(**kwargs)
+  File "scripts/run_heat3d_v1_medium_controlled_training_export.py", line 5672, in _checkpoint_run_metadata
+    if isinstance(builder, RunSharedSupportGraphBuilder)
+NameError: name 'builder' is not defined
+
+Provenance: verbatim metric/export lines and normalized Python traceback copied
+from the user-supplied terminal excerpt. This is not a complete training log.
+

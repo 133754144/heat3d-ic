@@ -74,6 +74,7 @@ def build_reconstruction_map(
     layer_id: np.ndarray,
     boundaries: np.ndarray,
     support_indices: np.ndarray,
+    empty_domain_fallback: str = "error",
 ) -> tuple[ReconstructionMap, dict[str, Any]]:
     started = time.perf_counter()
     coords = np.asarray(coords, dtype=np.float64)
@@ -92,8 +93,27 @@ def build_reconstruction_map(
         support_local = np.flatnonzero(support_code == code)
         if not len(query_rows):
             continue
+        fallback_used = False
         if not len(support_local):
-            raise RuntimeError(f"{name}: support domain is empty")
+            if empty_domain_fallback != "same_layer":
+                raise RuntimeError(f"{name}: support domain is empty")
+            if name.startswith("layer_"):
+                layer = int(name.rsplit("_", 1)[1])
+                support_local = np.flatnonzero(layer_id[support_indices] == layer)
+            elif name == "top":
+                support_local = np.flatnonzero(
+                    layer_id[support_indices] == int(np.max(layer_id))
+                )
+            elif name == "bottom":
+                support_local = np.flatnonzero(layer_id[support_indices] == 0)
+            elif name.startswith("interface_"):
+                interface = int(name.rsplit("_", 1)[1])
+                support_local = np.flatnonzero(
+                    np.isin(layer_id[support_indices], [interface - 1, interface])
+                )
+            if not len(support_local):
+                raise RuntimeError(f"{name}: same-layer support fallback is empty")
+            fallback_used = True
         dimensions = 2 if name.startswith(("top", "bottom", "interface")) else 3
         k = min(4 if dimensions == 2 else 8, len(support_local))
         query_coords = coords[query_rows]
@@ -123,6 +143,7 @@ def build_reconstruction_map(
             "support_node_count": int(len(support_local)),
             "neighbor_count": int(k),
             "maximum_nearest_distance_m": float(np.max(np.asarray(distance)[:, 0])),
+            "empty_domain_fallback_used": fallback_used,
         }
     if not np.allclose(np.sum(weights, axis=1), 1.0, rtol=0.0, atol=1.0e-12):
         raise RuntimeError("reconstruction weights do not form a partition of unity")
@@ -138,6 +159,7 @@ def build_reconstruction_map(
         "label_independent": True,
         "selection_inputs": ["coords", "layer_id", "layer_boundaries", "support_indices"],
         "target_or_split_inputs": [],
+        "empty_domain_fallback": empty_domain_fallback,
         "build_seconds": float(time.perf_counter() - started),
         "full_node_count": int(len(coords)),
         "support_node_count": int(len(support_indices)),

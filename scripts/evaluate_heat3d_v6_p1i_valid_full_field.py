@@ -212,6 +212,7 @@ def main() -> int:
                 layer_id=full_layer,
                 boundaries=boundaries,
                 support_indices=np.asarray(support_indices, dtype=np.int32),
+                empty_domain_fallback="same_layer",
             )
             if row_index in (0, len(valid_rows) - 1):
                 map_audits.append({"sample_id": sample_id, **map_audit})
