@@ -55,3 +55,10 @@ best/latest/final after the intended metadata exception. The formal seed0 run
 is assigned to devbox; WSL2 runs seed1 and then seed2 serially. The queue runs a
 checkpoint reload check and valid support/full-field evaluation after seed1;
 any failure prevents seed2 from starting.
+
+All prelaunch hashes and clean-worktree checks passed at training commit
+`3884de07525b7e8c0f8fa3382b24bf94322bebe9`. Devbox seed0 started under tmux
+`V6_P1i_seed0_reliable` (training PID 695678). WSL2 seed1 started under the
+serial supervisor `V6_P1i_seed1_seed2_queue` (training PID 398621); seed2 is
+queued and has no PID or log until the seed1 checkpoint reload and valid
+support/full-field gate passes. Each seed writes an independent complete log.
