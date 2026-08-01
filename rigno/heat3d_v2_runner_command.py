@@ -327,6 +327,12 @@ def build_training_command(
     elif export.get("save_best_predictions") is True:
         command.append("--save-best-predictions")
     _append_option(command, "--best-predictions-name", export.get("best_predictions_name"))
+    if export.get("reliable_checkpointing") is True:
+        command.append("--reliable-checkpointing")
+    _append_option(command, "--latest-checkpoint-name", export.get("latest_checkpoint_name"))
+    _append_option(command, "--latest-checkpoint-every", export.get("latest_checkpoint_every"))
+    if export.get("inject_post_checkpoint_metadata_failure") is True:
+        command.append("--inject-post-checkpoint-metadata-failure")
     if export.get("save_point_global_best_checkpoint") is True:
         command.append("--save-point-global-best-checkpoint")
     _append_option(

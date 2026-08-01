@@ -13,8 +13,10 @@ import gc
 import hashlib
 import json
 import math
+import os
 import pickle
 from pathlib import Path
+import platform
 import resource
 import subprocess
 import sys
@@ -583,6 +585,21 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--final-checkpoint-name", type=str, default="params_final.pkl")
     parser.add_argument("--best-checkpoint-name", type=str, default="params_best.pkl")
+    parser.add_argument(
+        "--reliable-checkpointing",
+        action="store_true",
+        help=(
+            "Atomically save optimizer-aware best/latest/final training-state "
+            "checkpoints before post-training metadata and diagnostics."
+        ),
+    )
+    parser.add_argument("--latest-checkpoint-name", type=str, default="params_latest.pkl")
+    parser.add_argument("--latest-checkpoint-every", type=int, default=10)
+    parser.add_argument(
+        "--inject-post-checkpoint-metadata-failure",
+        action="store_true",
+        help="Test-only fault injection after reliable checkpoints and predictions exist.",
+    )
     parser.add_argument(
         "--save-point-global-best-checkpoint",
         action="store_true",
@@ -3867,6 +3884,88 @@ def _gradient_accumulation_windows(
     return windows
 
 
+def _host_training_tree(value: Any) -> Any:
+    return tree.tree_map(lambda leaf: np.asarray(jax.device_get(leaf)), value)
+
+
+def _training_tree_max_abs_difference(expected: Any, actual: Any) -> float:
+    expected_leaves, expected_structure = tree.tree_flatten(expected)
+    actual_leaves, actual_structure = tree.tree_flatten(actual)
+    if expected_structure != actual_structure:
+        return float("inf")
+    errors = [
+        float(np.max(np.abs(np.asarray(left) - np.asarray(right))))
+        if np.asarray(left).size
+        else 0.0
+        for left, right in zip(expected_leaves, actual_leaves, strict=True)
+    ]
+    return max(errors, default=0.0)
+
+
+def _atomic_training_state_checkpoint(
+    path: Path,
+    *,
+    params: Any,
+    optimizer_state: Any,
+    epoch: int,
+    checkpoint_kind: str,
+    record: Mapping[str, Any],
+    best_state: Mapping[str, Any],
+    model_config: Mapping[str, Any],
+    stats: Mapping[str, Any],
+    frozen_run_contract: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Write and immediately reload an optimizer-aware checkpoint atomically."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    host_params = _host_training_tree(params)
+    host_optimizer_state = _host_training_tree(optimizer_state)
+    payload = {
+        "schema_version": "heat3d_training_state_checkpoint_v2",
+        "checkpoint_format_version": 2,
+        "checkpoint_kind": str(checkpoint_kind),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "git_commit": _current_git_commit(),
+        "epoch": int(epoch),
+        "params": host_params,
+        "optimizer_state": host_optimizer_state,
+        "optimizer_state_saved": True,
+        "record": dict(record),
+        "best_state": dict(best_state),
+        "model_config": dict(model_config),
+        "train_only_normalization": dict(stats),
+        "frozen_run_contract": dict(frozen_run_contract),
+        "load_policy_intended": "resume_full_training_state",
+    }
+    tmp_path = path.with_name(path.name + f".tmp-{os.getpid()}")
+    with tmp_path.open("wb") as handle:
+        pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        handle.flush()
+        os.fsync(handle.fileno())
+    tmp_path.replace(path)
+    with path.open("rb") as handle:
+        reloaded = pickle.load(handle)
+    param_error = _training_tree_max_abs_difference(host_params, reloaded["params"])
+    optimizer_error = _training_tree_max_abs_difference(
+        host_optimizer_state, reloaded["optimizer_state"]
+    )
+    report = {
+        "path": str(path),
+        "checkpoint_kind": str(checkpoint_kind),
+        "epoch": int(epoch),
+        "parameter_reload_max_abs_error": param_error,
+        "optimizer_reload_max_abs_error": optimizer_error,
+        "passed": bool(param_error == 0.0 and optimizer_error == 0.0),
+    }
+    if not report["passed"]:
+        raise RuntimeError(f"training-state checkpoint reload failed: {report}")
+    audit_path = path.with_suffix(path.suffix + ".reload.json")
+    audit_tmp_path = audit_path.with_name(audit_path.name + f".tmp-{os.getpid()}")
+    audit_tmp_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    audit_tmp_path.replace(audit_path)
+    return report
+
+
 def _fit_once(
     train_groups: list[dict],
     valid_groups: list[dict],
@@ -3899,6 +3998,7 @@ def _fit_once(
     track_base_mse_best: bool = False,
     track_sample_first_best: bool = False,
     epoch_regroup_fn: Any | None = None,
+    reliable_checkpoint_config: Mapping[str, Any] | None = None,
 ) -> dict:
     timings = timings if timings is not None else {}
     init_start = time.perf_counter()
@@ -4057,6 +4157,97 @@ def _fit_once(
         lr_config=optax_lr_config,
         optimizer_config=optimizer_config,
     )
+    reliable_checkpoint_reports: list[dict[str, Any]] = []
+
+    def reliable_best_state() -> dict[str, Any]:
+        return {
+            "selection_metric": selection_metric,
+            "primary": dict(best_record) if best_record is not None else None,
+            "point_global": (
+                dict(point_global_best_record)
+                if point_global_best_record is not None
+                else None
+            ),
+            "base_mse": (
+                dict(base_mse_best_record)
+                if base_mse_best_record is not None
+                else None
+            ),
+            "sample_first": (
+                dict(sample_first_best_record)
+                if sample_first_best_record is not None
+                else None
+            ),
+        }
+
+    def save_reliable_checkpoint(
+        filename_key: str,
+        *,
+        checkpoint_params: Any,
+        checkpoint_epoch: int,
+        checkpoint_kind: str,
+        checkpoint_record: Mapping[str, Any],
+    ) -> None:
+        if reliable_checkpoint_config is None:
+            return
+        if optax_state is None:
+            raise RuntimeError(
+                "reliable checkpointing requires optimizer state; unsupported manual optimizer"
+            )
+        filename = str(reliable_checkpoint_config[filename_key])
+        report = _atomic_training_state_checkpoint(
+            Path(str(reliable_checkpoint_config["output_dir"])) / filename,
+            params=checkpoint_params,
+            optimizer_state=optax_state["state"],
+            epoch=checkpoint_epoch,
+            checkpoint_kind=checkpoint_kind,
+            record=checkpoint_record,
+            best_state=reliable_best_state(),
+            model_config=model_config,
+            stats=stats,
+            frozen_run_contract=reliable_checkpoint_config,
+        )
+        reliable_checkpoint_reports.append(report)
+
+    if reliable_checkpoint_config is not None:
+        save_reliable_checkpoint(
+            "best_checkpoint_name",
+            checkpoint_params=best_params,
+            checkpoint_epoch=0,
+            checkpoint_kind="best",
+            checkpoint_record=best_record or initial_best_record,
+        )
+        if track_point_global_best:
+            save_reliable_checkpoint(
+                "point_global_best_checkpoint_name",
+                checkpoint_params=point_global_best_params,
+                checkpoint_epoch=0,
+                checkpoint_kind="point_global_best",
+                checkpoint_record=point_global_best_record or initial_best_record,
+            )
+        if track_base_mse_best:
+            save_reliable_checkpoint(
+                "base_mse_best_checkpoint_name",
+                checkpoint_params=base_mse_best_params,
+                checkpoint_epoch=0,
+                checkpoint_kind="base_mse_best",
+                checkpoint_record=base_mse_best_record or initial_best_record,
+            )
+        if track_sample_first_best:
+            save_reliable_checkpoint(
+                "sample_first_best_checkpoint_name",
+                checkpoint_params=sample_first_best_params,
+                checkpoint_epoch=0,
+                checkpoint_kind="sample_first_best",
+                checkpoint_record=sample_first_best_record or initial_best_record,
+            )
+        save_reliable_checkpoint(
+            "latest_checkpoint_name",
+            checkpoint_params=params,
+            checkpoint_epoch=0,
+            checkpoint_kind="latest",
+            checkpoint_record=initial_best_record,
+        )
     train_metrics_epoch_values = train_metrics_epochs(train_metrics_schedule, epochs)
     train_metrics_epoch_lookup = set(train_metrics_epoch_values)
     if batch_enabled:
@@ -4681,6 +4872,10 @@ def _fit_once(
         record["epoch_mean_param_norm"] = param_norm_summary["mean"]
         record["epoch_update_to_param_norm_ratio"] = update_param_ratio_summary["mean"]
         record["epoch_max_update_to_param_norm_ratio"] = update_param_ratio_summary["max"]
+        primary_improved = False
+        point_global_improved = False
+        base_mse_improved = False
+        sample_first_improved = False
         score = float(record[selection_metric])
         if best_score is None or score < best_score:
             if memory_audit is not None:
@@ -4693,6 +4888,7 @@ def _fit_once(
             best_record = dict(record)
             best_params = _host_params(params)
             best_params_storage = "cpu"
+            primary_improved = True
             if memory_audit is not None:
                 memory_audit.record("best_params_copy_end", epoch=epoch)
         if track_point_global_best:
@@ -4701,12 +4897,14 @@ def _fit_once(
                 point_global_best_score = point_global_score
                 point_global_best_record = dict(record)
                 point_global_best_params = _host_params(params)
+                point_global_improved = True
         if track_base_mse_best:
             base_score = float(record["valid_base_mse"])
             if base_mse_best_score is None or base_score < base_mse_best_score:
                 base_mse_best_score = base_score
                 base_mse_best_record = dict(record)
                 base_mse_best_params = _host_params(params)
+                base_mse_improved = True
         if track_sample_first_best:
             sample_score = float(
                 record["valid_native_sample_first_cv_relative_rmse"]
@@ -4725,6 +4923,7 @@ def _fit_once(
                 sample_first_best_raw_cv_rmse_K = sample_raw_cv_rmse_K
                 sample_first_best_record = dict(record)
                 sample_first_best_params = _host_params(params)
+                sample_first_improved = True
         record["best_epoch"] = best_record.get("epoch") if best_record is not None else None
         record["best_valid_iid_loss"] = best_record.get("valid_iid_loss") if best_record is not None else None
         record["best_valid_base_mse"] = best_record.get("valid_base_mse") if best_record is not None else None
@@ -4737,6 +4936,49 @@ def _fit_once(
         record["epoch_valid_stress_time_s"] = float(valid_stress_time)
         record["epoch_total_time_s"] = float(time.perf_counter() - epoch_start)
         epoch_history.append(record)
+        if primary_improved:
+            save_reliable_checkpoint(
+                "best_checkpoint_name",
+                checkpoint_params=best_params,
+                checkpoint_epoch=epoch,
+                checkpoint_kind="best",
+                checkpoint_record=best_record or record,
+            )
+        if point_global_improved:
+            save_reliable_checkpoint(
+                "point_global_best_checkpoint_name",
+                checkpoint_params=point_global_best_params,
+                checkpoint_epoch=epoch,
+                checkpoint_kind="point_global_best",
+                checkpoint_record=point_global_best_record or record,
+            )
+        if base_mse_improved:
+            save_reliable_checkpoint(
+                "base_mse_best_checkpoint_name",
+                checkpoint_params=base_mse_best_params,
+                checkpoint_epoch=epoch,
+                checkpoint_kind="base_mse_best",
+                checkpoint_record=base_mse_best_record or record,
+            )
+        if sample_first_improved:
+            save_reliable_checkpoint(
+                "sample_first_best_checkpoint_name",
+                checkpoint_params=sample_first_best_params,
+                checkpoint_epoch=epoch,
+                checkpoint_kind="sample_first_best",
+                checkpoint_record=sample_first_best_record or record,
+            )
+        if reliable_checkpoint_config is not None and (
+            epoch % int(reliable_checkpoint_config["latest_checkpoint_every"]) == 0
+            or epoch == epochs
+        ):
+            save_reliable_checkpoint(
+                "latest_checkpoint_name",
+                checkpoint_params=params,
+                checkpoint_epoch=epoch,
+                checkpoint_kind="latest",
+                checkpoint_record=record,
+            )
         if memory_audit is not None:
             memory_audit.collect("epoch_gc_end", epoch=epoch)
             memory_audit.record(
@@ -4801,6 +5043,14 @@ def _fit_once(
         and bool(np.all(np.isfinite(valid_losses)))
         and (not valid_stress_losses or bool(np.all(np.isfinite(valid_stress_losses))))
     )
+    if reliable_checkpoint_config is not None:
+        save_reliable_checkpoint(
+            "final_checkpoint_name",
+            checkpoint_params=params,
+            checkpoint_epoch=epochs,
+            checkpoint_kind="final",
+            checkpoint_record=epoch_history[-1],
+        )
     return {
         "model": model,
         "params": params,
@@ -4876,6 +5126,7 @@ def _fit_once(
         "primary_validation_split": primary_validation_split,
         "stress_validation_split": stress_validation_split,
         "checkpoint_load_info": checkpoint_load_info,
+        "reliable_checkpoint_reports": reliable_checkpoint_reports,
         "best_record": best_record,
         "best_params": best_params,
         "best_params_storage": best_params_storage,
@@ -5712,6 +5963,15 @@ def _write_params_checkpoint(
     host_params = _host_params(params)
     param_tree_summary = _param_tree_summary(host_params)
     train_stats = _stats_payload(stats)
+    existing_training_state: dict[str, Any] | None = None
+    if path.is_file():
+        with path.open("rb") as handle:
+            candidate = pickle.load(handle)
+        if (
+            isinstance(candidate, dict)
+            and candidate.get("schema_version") == "heat3d_training_state_checkpoint_v2"
+        ):
+            existing_training_state = candidate
     payload = {
         "schema_version": "heat3d_v3_params_checkpoint_v1",
         "checkpoint_format_version": 1,
@@ -5736,6 +5996,24 @@ def _write_params_checkpoint(
         "warm_start_supported": True,
         "warm_start_mode": "params_only",
     }
+    if existing_training_state is not None:
+        payload = existing_training_state
+        payload.update(
+            {
+                "post_training_metadata_attached_at": datetime.now(timezone.utc).isoformat(),
+                "record": _json_safe(record),
+                "run_config_metadata": _json_safe(run_metadata),
+                "selection_metric": record.get("checkpoint_selection_metric"),
+                "configuration_hash": _stable_json_hash(run_metadata),
+                "param_tree_summary": param_tree_summary,
+                "param_count": param_tree_summary["param_count"],
+                "param_shapes": param_tree_summary["param_shapes"],
+                "model_config_hash": _stable_json_hash(model_config),
+                "train_stats_hash": _stable_json_hash(train_stats),
+                "optimizer_state_saved": True,
+                "load_policy_intended": "resume_full_training_state",
+            }
+        )
     tmp_path = path.with_name(path.name + ".tmp")
     with tmp_path.open("wb") as handle:
         pickle.dump(payload, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -7950,6 +8228,9 @@ def main() -> int:
     _output_filename(args.best_predictions_name, "best-predictions-name")
     _output_filename(args.final_checkpoint_name, "final-checkpoint-name")
     _output_filename(args.best_checkpoint_name, "best-checkpoint-name")
+    _output_filename(args.latest_checkpoint_name, "latest-checkpoint-name")
+    if args.latest_checkpoint_every < 1:
+        raise ValueError("--latest-checkpoint-every must be >= 1")
     _output_filename(
         args.point_global_best_checkpoint_name,
         "point-global-best-checkpoint-name",
@@ -8011,6 +8292,26 @@ def main() -> int:
 
     output_start = time.perf_counter()
     output_dir = _ensure_ignored_output_dir(args.output_dir)
+    environment_path = output_dir / "environment.json"
+    environment_payload = {
+        "schema_version": "heat3d_training_environment_v1",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "git_commit": _current_git_commit(),
+        "python": sys.version,
+        "platform": platform.platform(),
+        "jax_version": getattr(jax, "__version__", None),
+        "jax_default_backend": jax.default_backend(),
+        "jax_devices": [str(device) for device in jax.devices()],
+        "test_and_sealed_access": "closed",
+    }
+    environment_tmp = environment_path.with_name(
+        environment_path.name + f".tmp-{os.getpid()}"
+    )
+    environment_tmp.write_text(
+        json.dumps(environment_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    environment_tmp.replace(environment_path)
     profile_timing_json_path = (
         _ensure_ignored_output_file(args.profile_timing_json, "profile-timing-json")
         if args.profile_timing_json is not None
@@ -8486,6 +8787,25 @@ def main() -> int:
             _check_decoder_bypass_input_alignment(model_config, groups)
             return groups
 
+    reliable_checkpoint_config = (
+        {
+            "enabled": True,
+            "output_dir": str(output_dir),
+            "final_checkpoint_name": args.final_checkpoint_name,
+            "best_checkpoint_name": args.best_checkpoint_name,
+            "latest_checkpoint_name": args.latest_checkpoint_name,
+            "latest_checkpoint_every": int(args.latest_checkpoint_every),
+            "point_global_best_checkpoint_name": args.point_global_best_checkpoint_name,
+            "base_mse_best_checkpoint_name": args.base_mse_best_checkpoint_name,
+            "sample_first_best_checkpoint_name": args.sample_first_best_checkpoint_name,
+            "selection_metric": args.selection_metric,
+            "epochs": int(args.epochs),
+            "prediction_split": args.prediction_split,
+            "test_and_sealed_access": "closed",
+        }
+        if args.reliable_checkpointing
+        else None
+    )
     result = _fit_once(
         train_groups,
         valid_groups,
@@ -8518,6 +8838,7 @@ def main() -> int:
         track_base_mse_best=bool(args.save_base_mse_best_checkpoint),
         track_sample_first_best=bool(args.save_sample_first_best_checkpoint),
         epoch_regroup_fn=epoch_regroup_fn,
+        reliable_checkpoint_config=reliable_checkpoint_config,
     )
     prediction_groups = _prediction_groups_for_split(
         args.prediction_split,
@@ -8618,6 +8939,11 @@ def main() -> int:
         best_predictions_path=best_predictions_path,
         best_predictions_saved=best_predictions_saved,
     )
+    if args.inject_post_checkpoint_metadata_failure:
+        raise RuntimeError(
+            "injected post-checkpoint metadata failure: reliable checkpoints and "
+            "prediction exports must remain complete and reloadable"
+        )
     checkpoint_run_metadata = _checkpoint_run_metadata(
         sample_root=sample_root,
         args=args,
@@ -9013,14 +9339,10 @@ def main() -> int:
         "loss": loss_config,
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
-        "model_config": model_config,
-        "attention_diagnostics_by_checkpoint": attention_diagnostics_by_checkpoint,
         "batch_config": batch_config,
         "sample_weight_config": sample_weight_config,
         "sample_weight_summary": sample_weight_summary,
-        "graph_config": graph_config,
         "split_counts": split_counts,
-        "boundary_mask_fallback": bool(args.boundary_mask_fallback),
         "timing_diagnostics": dict(timings),
         "timing_profile_counts": dict(profile_counts),
         "train_ids": train_ids,
@@ -9310,7 +9632,6 @@ def main() -> int:
         "grad_norm_selected": _selected_steps_or_empty(result["grad_norms"], args.report_every),
         "lr_config": lr_config,
         "optimizer_config": optimizer_config,
-        "model_config": model_config,
         "batch_config": batch_config,
         "sample_weight_config": sample_weight_config,
         "sample_weight_summary": sample_weight_summary,

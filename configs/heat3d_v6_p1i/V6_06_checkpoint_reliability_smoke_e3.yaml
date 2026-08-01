@@ -1,0 +1,24 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_06_checkpoint_reliability_smoke_e3
+extends: V6_06_V5best_P1i_seed0_reliable_B24.yaml
+overrides:
+  description: >-
+    Real P1i B24 three-epoch checkpoint reliability gate with an intentional
+    post-checkpoint metadata failure. A non-zero exit is expected only after
+    atomic best/latest/final checkpoints and valid predictions reload exactly.
+  run:
+    epochs: 3
+    report_every: 1
+  export:
+    output_dir: output/heat3d_v6_p1i_smoke/V6_06_checkpoint_reliability_smoke_e3
+    run_name: V6_06_checkpoint_reliability_smoke_e3
+    latest_checkpoint_every: 1
+    inject_post_checkpoint_metadata_failure: true
+  metadata:
+    phase: v6_p1i_training_closeout_smoke
+    execution_status: prepared_not_started
+    training_started: false
+    execution_host: devbox
+    log_path: output/heat3d_v6_p1i_logs/V6_06_checkpoint_reliability_smoke_e3.log
+    expected_terminal_status: injected_post_checkpoint_metadata_failure
+    test_and_sealed_access: closed
