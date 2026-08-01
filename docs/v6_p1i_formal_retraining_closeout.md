@@ -43,7 +43,9 @@ e542/e600 rows combine model and reconstruction error.
 Thus the 240825-node result is dominated by the varying-support reconstruction
 floor. e542 remains slightly better than e600, consistent with the 1024-point
 valid evaluation. Full source/background/layer/interface/surface metrics and
-worst samples are in the JSON/CSV closeout.
+worst samples are in the JSON/CSV closeout. Three of 128 supports lacked one
+layer-interior domain; their label-independent reconstruction used nodes from
+the same layer only, and the exact sample/domain list is frozen in JSON.
 
 ## Gate and formal queue
 
