@@ -205,6 +205,7 @@ def main() -> int:
     checkpoint_rows = []
     primary_rows = []
     artifacts = []
+    reconstruction_floor: dict[str, Any] | None = None
     for seed, host, config_id in RUNS:
         seed_dir = args.evidence_root / f"seed{seed}"
         support = json.loads((seed_dir / "valid_support.json").read_text())
@@ -217,6 +218,11 @@ def main() -> int:
         if provenance["git_commit"] != "3884de07525b7e8c0f8fa3382b24bf94322bebe9":
             raise RuntimeError("training commit drifted")
         by_full = full["model_plus_reconstruction"]
+        current_floor = full["reconstruction_only_sampling_floor"]
+        if reconstruction_floor is None:
+            reconstruction_floor = current_floor
+        elif current_floor != reconstruction_floor:
+            raise RuntimeError("reconstruction-only sampling floor drifted across seeds")
         for label in ("point_global_best", "sample_first_best", "base_mse_best", "final"):
             support_metric = _metric(support["metrics"], label)
             full_metric = by_full[label]
@@ -391,6 +397,7 @@ def main() -> int:
         "seeds": seeds,
         "primary_mean_std": aggregate,
         "checkpoint_comparison": checkpoint_rows,
+        "valid_full_field_reconstruction_only_sampling_floor": reconstruction_floor,
         "benchmark": {
             "host_alias": "devbox",
             "reported_host": benchmark_payloads[0]["environment"]["host"],
@@ -487,6 +494,12 @@ def main() -> int:
             f"{aggregate['support_sample_first_pct']['mean']:.6f}±{aggregate['support_sample_first_pct']['std']:.6f}%，"
             "full-field point-global "
             f"{aggregate['full_point_global_pct']['mean']:.6f}±{aggregate['full_point_global_pct']['std']:.6f}%。",
+            "",
+            "同一 128-sample valid 真值在冻结 1024 support 上直接采样后重建至 240825 节点的 oracle sampling floor："
+            f"point-global {reconstruction_floor['point_global_true_rms_relative_rmse_pct']:.6f}%，"
+            f"sample-first {reconstruction_floor['sample_first_cv_relative_rmse_pct']:.6f}%，"
+            f"raw CV {reconstruction_floor['raw_cv_weighted_rmse_K']:.6f} K。"
+            "它与模型+重建误差分开报告。",
             "",
             "## Checkpoint reliability and late-epoch behavior",
             "",

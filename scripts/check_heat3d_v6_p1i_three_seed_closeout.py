@@ -43,6 +43,13 @@ def main() -> int:
     _require(closeout["sealed_accessed"] is False, "sealed IID must remain closed")
     _require(closeout["retrained"] is False and closeout["tuned"] is False, "no retraining/tuning")
     _require(closeout["primary_checkpoint"] == "point_global_best", "primary checkpoint drift")
+    floor = closeout["valid_full_field_reconstruction_only_sampling_floor"]
+    for key in (
+        "point_global_true_rms_relative_rmse_pct",
+        "sample_first_cv_relative_rmse_pct",
+        "raw_cv_weighted_rmse_K",
+    ):
+        _require(_finite(floor[key]), f"non-finite reconstruction floor: {key}")
     _require([item["seed"] for item in closeout["seeds"]] == [0, 1, 2], "three seeds")
 
     for seed in closeout["seeds"]:

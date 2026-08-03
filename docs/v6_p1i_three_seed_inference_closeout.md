@@ -12,6 +12,8 @@
 
 三 seed mean±std：support point-global 2.027348±0.094738%，sample-first 1.629402±0.013132%，full-field point-global 3.442626±0.058435%。
 
+同一 128-sample valid 真值在冻结 1024 support 上直接采样后重建至 240825 节点的 oracle sampling floor：point-global 3.066851%，sample-first 3.584837%，raw CV 2.730219 K。它与模型+重建误差分开报告。
+
 ## Checkpoint reliability and late-epoch behavior
 
 - 三个独立 Python 进程均成功加载 best/sample-first/base/final/latest；参数归档 schema 为 optimizer-aware v2。
