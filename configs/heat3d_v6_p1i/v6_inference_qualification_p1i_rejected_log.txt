@@ -1,0 +1,77 @@
+[qualification] p1i model_support cold 1/32 wall=16.479s
+[qualification] p1i model_support cold 2/32 wall=16.217s
+[qualification] p1i model_support cold 3/32 wall=16.063s
+[qualification] p1i model_support cold 4/32 wall=16.268s
+[qualification] p1i model_support cold 5/32 wall=15.991s
+[qualification] p1i model_support cold 6/32 wall=16.292s
+[qualification] p1i model_support cold 7/32 wall=16.017s
+[qualification] p1i model_support cold 8/32 wall=16.278s
+[qualification] p1i model_support cold 9/32 wall=16.293s
+[qualification] p1i model_support cold 10/32 wall=16.300s
+[qualification] p1i model_support cold 11/32 wall=15.965s
+[qualification] p1i model_support cold 12/32 wall=16.239s
+[qualification] p1i model_support cold 13/32 wall=16.231s
+[qualification] p1i model_support cold 14/32 wall=16.244s
+[qualification] p1i model_support cold 15/32 wall=16.136s
+[qualification] p1i model_support cold 16/32 wall=16.166s
+[qualification] p1i model_support cold 17/32 wall=16.131s
+[qualification] p1i model_support cold 18/32 wall=16.143s
+[qualification] p1i model_support cold 19/32 wall=16.179s
+[qualification] p1i model_support cold 20/32 wall=16.392s
+[qualification] p1i model_support cold 21/32 wall=15.950s
+[qualification] p1i model_support cold 22/32 wall=16.257s
+[qualification] p1i model_support cold 23/32 wall=16.159s
+[qualification] p1i model_support cold 24/32 wall=16.112s
+[qualification] p1i model_support cold 25/32 wall=16.163s
+[qualification] p1i model_support cold 26/32 wall=16.317s
+[qualification] p1i model_support cold 27/32 wall=16.147s
+[qualification] p1i model_support cold 28/32 wall=16.226s
+[qualification] p1i model_support cold 29/32 wall=16.097s
+[qualification] p1i model_support cold 30/32 wall=16.112s
+[qualification] p1i model_support cold 31/32 wall=16.259s
+[qualification] p1i model_support cold 32/32 wall=16.213s
+[qualification] p1i model_support jit_cached_new_case wall=191.986s
+[qualification] p1i model_support fully_cached_repeat wall=199.910s
+[qualification] p1i production_reconstruction cold 1/32 wall=16.538s
+[qualification] p1i production_reconstruction cold 2/32 wall=16.552s
+[qualification] p1i production_reconstruction cold 3/32 wall=16.247s
+[qualification] p1i production_reconstruction cold 4/32 wall=16.335s
+[qualification] p1i production_reconstruction cold 5/32 wall=16.296s
+[qualification] p1i production_reconstruction cold 6/32 wall=16.294s
+[qualification] p1i production_reconstruction cold 7/32 wall=16.434s
+[qualification] p1i production_reconstruction cold 8/32 wall=16.338s
+[qualification] p1i production_reconstruction cold 9/32 wall=16.379s
+[qualification] p1i production_reconstruction cold 10/32 wall=16.280s
+[qualification] p1i production_reconstruction cold 11/32 wall=16.237s
+[qualification] p1i production_reconstruction cold 12/32 wall=16.536s
+[qualification] p1i production_reconstruction cold 13/32 wall=16.293s
+[qualification] p1i production_reconstruction cold 14/32 wall=16.290s
+[qualification] p1i production_reconstruction cold 15/32 wall=16.276s
+[qualification] p1i production_reconstruction cold 16/32 wall=16.365s
+[qualification] p1i production_reconstruction cold 17/32 wall=16.286s
+[qualification] p1i production_reconstruction cold 18/32 wall=16.427s
+[qualification] p1i production_reconstruction cold 19/32 wall=16.463s
+[qualification] p1i production_reconstruction cold 20/32 wall=16.152s
+[qualification] p1i production_reconstruction cold 21/32 wall=16.358s
+[qualification] p1i production_reconstruction cold 22/32 wall=16.402s
+[qualification] p1i production_reconstruction cold 23/32 wall=16.349s
+[qualification] p1i production_reconstruction cold 24/32 wall=16.273s
+[qualification] p1i production_reconstruction cold 25/32 wall=16.294s
+[qualification] p1i production_reconstruction cold 26/32 wall=16.383s
+[qualification] p1i production_reconstruction cold 27/32 wall=16.306s
+[qualification] p1i production_reconstruction cold 28/32 wall=16.243s
+[qualification] p1i production_reconstruction cold 29/32 wall=16.375s
+[qualification] p1i production_reconstruction cold 30/32 wall=16.274s
+[qualification] p1i production_reconstruction cold 31/32 wall=16.209s
+[qualification] p1i production_reconstruction cold 32/32 wall=16.323s
+[qualification] p1i production_reconstruction jit_cached_new_case wall=196.374s
+Traceback (most recent call last):
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 795, in <module>
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 791, in main
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 739, in orchestrate
+    output = work / f"{args.family}_{route}_{state}.json"
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 698, in run_process
+    completed = subprocess.run(command, env=env, text=True, capture_output=True, check=False)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: worker failed (-15): /home/xyh/miniconda3/envs/rigno/bin/python /tmp/benchmark_heat3d_v6_inference_qualification.py --worker --family p1i --route production_reconstruction --state fully_cached_repeat --sample-count 32 --dataset-root data/heat3d_v6_p1i_continuous_physics1024_v1 --manifest configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json --full-fields data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5 --run-dir /tmp/p1i-seed0-timing-run --checkpoint-sha256 51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e --checkpoint-epoch 559 --output /tmp/v6_inference_qualification/p1i/p1i_production_reconstruction_fully_cached_repeat.json

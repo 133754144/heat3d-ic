@@ -65,3 +65,15 @@ Wrong-ladder temporary 4096/8192 results are excluded by SHA and were not used
 for selection or formal reporting. This integration retains the compact
 bindings in `configs/heat3d_v6/v6_phase_index.json`; the complete governance
 manifest remains in the frozen research evidence archive at `d7f72f1`.
+
+## P1i valid-only inference qualification
+
+P1i formal1024_v1 remains frozen. Its three-seed closeout uses point-global
+true-RMS relative RMSE as primary, sample-first CV-relative RMSE as secondary,
+and deploys the native 1024 source-aware support through a layer-aware
+240825-node reconstruction. The corrected benchmark uses 32 fixed
+`valid_iid` samples on one WSL2 host and separates fresh-process cold,
+JIT-cached new-case, and graph/JIT/map-cached repeated inference. Production
+timing excludes oracle and metric work. The historical 4.864x value is only a
+cached steady-state speedup; structured-support Route A is only an OOD
+compatibility diagnostic. See `docs/v6_inference_qualification_closeout.md`.

@@ -25,7 +25,7 @@
 
 固定 `devbox` SSH alias（系统报告 hostname `XYH-Desktop`、WSL2）、RTX 5070、B1、同一首个 valid 样本；每个稳态阶段预热一次后重复 20 次。FVM 与直接模型使用同节点数结构化网格；source 以 control-volume overlap 守恒投影。
 
-| nodes | direct PG % | direct graph/JIT/steady-e2e s | 1024+recon PG % (oracle floor) | 1024+recon core/e2e s | FVM PG % | FVM assembly/solve/e2e s | FVM/B core / e2e |
+| nodes | direct PG % | direct graph/JIT/steady-e2e s | 1024+recon PG % (oracle floor) | 1024+recon core/e2e s | FVM PG % | FVM assembly/solve/e2e s | cached steady FVM/B core / e2e |
 |---:|---:|---:|---:|---:|---:|---:|---:|
 | 1024 | 6477.7187 | 1.684/2.828/0.3415 | 1.3286 (0.6824) | 0.3299/0.3540 | 0.7141 | 0.0002/0.0030/0.0032 | 0.010×/0.009× |
 | 4096 | 450.6820 | 3.834/6.921/0.3392 | 1.3387 (0.6943) | 0.3270/0.3516 | 0.6861 | 0.0003/0.0064/0.0068 | 0.021×/0.019× |
@@ -36,6 +36,6 @@
 ## Applicability
 
 - 当前 checkpoint 的可信默认路径仍是 P1i 原生 source-aware 1024 support 后进行 layer-aware reconstruction；它在所有目标分辨率上最稳定。
-- 直接结构化高分辨率不具稳定兼容性：误差随分辨率非单调，65536 的偶然恢复没有在 240825 延续，因此所有 A 路线结果都只作 compatibility diagnostic，不构成生产适用区间。
+- 直接结构化高分辨率不具稳定兼容性：误差随分辨率非单调，65536 的偶然恢复没有在 240825 延续；Route A 仅是 structured-support OOD compatibility diagnostic，不构成生产适用区间。
 - 基准精度与耗时使用一个预注册 valid 样本，适合工程兼容性与阶段计时，不替代 128-sample 三 seed 质量统计。
-- FVM 和模型同节点数，但计算图/数值方法不同；speedup 仅为同硬件单样本墙钟比较。
+- 表中 5.613×/4.864× 仅是 cached steady-state speedup：它来自单个 valid 样本的稳态分段计时，不包含新进程、新案例构图/JIT 和独立峰值内存口径，不得作为生产端到端 speedup。

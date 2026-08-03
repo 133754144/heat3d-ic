@@ -1,0 +1,99 @@
+[qualification] randomblock model_support cold 1/32 wall=11.585s
+[qualification] randomblock model_support cold 2/32 wall=11.265s
+[qualification] randomblock model_support cold 3/32 wall=11.409s
+[qualification] randomblock model_support cold 4/32 wall=10.945s
+[qualification] randomblock model_support cold 5/32 wall=11.193s
+[qualification] randomblock model_support cold 6/32 wall=10.753s
+[qualification] randomblock model_support cold 7/32 wall=11.233s
+[qualification] randomblock model_support cold 8/32 wall=11.247s
+[qualification] randomblock model_support cold 9/32 wall=10.991s
+[qualification] randomblock model_support cold 10/32 wall=11.060s
+[qualification] randomblock model_support cold 11/32 wall=11.340s
+[qualification] randomblock model_support cold 12/32 wall=11.259s
+[qualification] randomblock model_support cold 13/32 wall=11.164s
+[qualification] randomblock model_support cold 14/32 wall=11.151s
+[qualification] randomblock model_support cold 15/32 wall=11.172s
+[qualification] randomblock model_support cold 16/32 wall=10.929s
+[qualification] randomblock model_support cold 17/32 wall=11.378s
+[qualification] randomblock model_support cold 18/32 wall=11.248s
+[qualification] randomblock model_support cold 19/32 wall=11.276s
+[qualification] randomblock model_support cold 20/32 wall=11.188s
+[qualification] randomblock model_support cold 21/32 wall=11.303s
+[qualification] randomblock model_support cold 22/32 wall=11.285s
+[qualification] randomblock model_support cold 23/32 wall=11.192s
+[qualification] randomblock model_support cold 24/32 wall=11.391s
+[qualification] randomblock model_support cold 25/32 wall=10.965s
+[qualification] randomblock model_support cold 26/32 wall=10.946s
+[qualification] randomblock model_support cold 27/32 wall=11.275s
+[qualification] randomblock model_support cold 28/32 wall=10.997s
+[qualification] randomblock model_support cold 29/32 wall=11.070s
+[qualification] randomblock model_support cold 30/32 wall=11.141s
+[qualification] randomblock model_support cold 31/32 wall=11.132s
+[qualification] randomblock model_support cold 32/32 wall=10.991s
+[qualification] randomblock model_support jit_cached_new_case wall=85.822s
+[qualification] randomblock model_support fully_cached_repeat wall=84.830s
+[qualification] randomblock production_reconstruction cold 1/32 wall=11.399s
+[qualification] randomblock production_reconstruction cold 2/32 wall=11.227s
+[qualification] randomblock production_reconstruction cold 3/32 wall=11.488s
+[qualification] randomblock production_reconstruction cold 4/32 wall=11.157s
+[qualification] randomblock production_reconstruction cold 5/32 wall=11.569s
+[qualification] randomblock production_reconstruction cold 6/32 wall=11.256s
+[qualification] randomblock production_reconstruction cold 7/32 wall=11.200s
+[qualification] randomblock production_reconstruction cold 8/32 wall=11.257s
+[qualification] randomblock production_reconstruction cold 9/32 wall=11.380s
+[qualification] randomblock production_reconstruction cold 10/32 wall=11.037s
+[qualification] randomblock production_reconstruction cold 11/32 wall=11.397s
+[qualification] randomblock production_reconstruction cold 12/32 wall=11.385s
+[qualification] randomblock production_reconstruction cold 13/32 wall=11.185s
+[qualification] randomblock production_reconstruction cold 14/32 wall=11.309s
+[qualification] randomblock production_reconstruction cold 15/32 wall=11.483s
+[qualification] randomblock production_reconstruction cold 16/32 wall=11.242s
+[qualification] randomblock production_reconstruction cold 17/32 wall=11.451s
+[qualification] randomblock production_reconstruction cold 18/32 wall=11.303s
+[qualification] randomblock production_reconstruction cold 19/32 wall=11.412s
+[qualification] randomblock production_reconstruction cold 20/32 wall=11.489s
+[qualification] randomblock production_reconstruction cold 21/32 wall=11.177s
+[qualification] randomblock production_reconstruction cold 22/32 wall=11.128s
+[qualification] randomblock production_reconstruction cold 23/32 wall=11.319s
+[qualification] randomblock production_reconstruction cold 24/32 wall=11.313s
+[qualification] randomblock production_reconstruction cold 25/32 wall=11.288s
+[qualification] randomblock production_reconstruction cold 26/32 wall=11.490s
+[qualification] randomblock production_reconstruction cold 27/32 wall=11.402s
+[qualification] randomblock production_reconstruction cold 28/32 wall=11.327s
+[qualification] randomblock production_reconstruction cold 29/32 wall=11.289s
+[qualification] randomblock production_reconstruction cold 30/32 wall=11.286s
+[qualification] randomblock production_reconstruction cold 31/32 wall=11.286s
+[qualification] randomblock production_reconstruction cold 32/32 wall=11.273s
+[qualification] randomblock production_reconstruction jit_cached_new_case wall=91.058s
+[qualification] randomblock production_reconstruction fully_cached_repeat wall=88.777s
+Traceback (most recent call last):
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 920, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 916, in main
+    return worker(args) if args.worker else orchestrate(args)
+                                            ~~~~~~~~~~~^^^^^^
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 837, in orchestrate
+    payload, wall, _ = run_process(command, fvm=route == "fvm")
+                       ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 815, in run_process
+    raise RuntimeError(f"worker failed ({completed.returncode}): {' '.join(command)}\n{completed.stdout}\n{completed.stderr}")
+RuntimeError: worker failed (1): /home/xyh/miniconda3/envs/rigno/bin/python /tmp/benchmark_heat3d_v6_inference_qualification.py --worker --family randomblock --route fvm --state cold --sample-count 32 --dataset-root /home/xyh/myCodeGitOnly/heat3d-ic-randomblock/data/heat3d_v6_randomblock_formal1024_v2 --manifest /home/xyh/myCodeGitOnly/heat3d-ic-randomblock/configs/heat3d_v6_randomblock/v6_randomblock_formal1024_v2_manifest.json --full-fields /home/xyh/myCodeGitOnly/heat3d-ic-randomblock/data/heat3d_v6_randomblock_formal1024_v2/full_fields.h5 --run-dir output/heat3d_v6_runs/V6_03_V5best_P1h --checkpoint-sha256 3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2 --checkpoint-epoch 111 --output /tmp/v6_inference_qualification_final/randomblock/randomblock_fvm_cold_00.json --edge-targets /tmp/v6_inference_qualification_final/randomblock_edge_contract.json --randomblock-config /home/xyh/myCodeGitOnly/heat3d-ic-randomblock/configs/heat3d_v6_randomblock/v6_randomblock_formal1024_v2.yaml --sample-id rb_g000_v0
+
+Traceback (most recent call last):
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 920, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 916, in main
+    return worker(args) if args.worker else orchestrate(args)
+           ~~~~~~^^^^^^
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 746, in worker
+    measurements, extra = fvm_measurements(data, selected, state=args.state, collect_metrics=collect_metrics)
+                          ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/benchmark_heat3d_v6_inference_qualification.py", line 611, in fvm_measurements
+    mesh = prior.core.build_mesh(first_physics)
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/heat3d_v6_p1i_continuous_core.py", line 106, in build_mesh
+    raise ContinuousPhysicsError(
+    ...<2 lines>...
+    )
+heat3d_v6_p1i_continuous_core.ContinuousPhysicsError: pcb_fr4_equivalent: missing explicit background_k_xyz_W_mK; silent conductivity defaults are forbidden
