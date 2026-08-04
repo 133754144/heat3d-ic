@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import importlib.util
 import json
@@ -18,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "audit_heat3d_v6_p1i_controlled_cross_resolution.py"
 EXECUTION_MANIFEST = ROOT / "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_execution_manifest.json"
 R0_PROTOCOL = ROOT / "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_protocol.json"
+R0_EXECUTION_MANIFEST = ROOT / "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_execution_manifest.json"
 DIAGNOSTIC_NAME = "measure_conservative_full_graph_rediscretization_diagnostic"
 
 
@@ -175,7 +177,105 @@ def check_r0_closeout(path: Path) -> None:
         raise RuntimeError("R0 formal metric replay tolerance failed")
     if payload["r0_to_r1"]["graph_hash_equal_fraction"] != 0.0:
         raise RuntimeError("R0/R1 graph discontinuity unexpectedly absent")
+    if len(payload["per_sample_drift"]) != 24:
+        raise RuntimeError("all 24 diagnostic cells must carry R0-relative drift")
+    if {
+        (int(row["resolution"]), int(row["discretization_seed"]))
+        for row in payload["per_sample_drift"]
+    } != {
+        (resolution, seed)
+        for resolution in (512, 1024, 2048, 4096, 8192, 16384)
+        for seed in (0, 1, 2, 3)
+    }:
+        raise RuntimeError("R0-relative drift cell identity failed")
     finite_tree(payload)
+
+
+def check_r0_execution_archive(path: Path, closeout_path: Path, decoder_audit_path: Path) -> None:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    expected_commit = "3eede1a192628e3bfc97f5f0be4b588ce4e0d7ed"
+    if payload["status"] != "completed_valid_only":
+        raise RuntimeError("R0 execution archive status drifted")
+    if payload["preparation_commit"] != expected_commit or payload["execution_commit"] != expected_commit:
+        raise RuntimeError("R0 preparation/execution commit drifted")
+    execution = payload["execution"]
+    if (
+        execution["final_status"] != "passed"
+        or execution["fixed32_gate"] != "passed"
+        or execution["formal128_gate"] != "passed"
+        or float(execution["formal_replay_absolute_tolerance"]) != 0.005
+        or int(execution["resolution_row_count"]) != 25
+        or int(execution["main_cell_count"]) != 24
+    ):
+        raise RuntimeError("R0 execution gate metadata drifted")
+    if payload["role_contract"] != {
+        "valid_only": True,
+        "test_accessed": False,
+        "sealed_accessed": False,
+        "training_executed": False,
+        "tuning_executed": False,
+        "checkpoint_modified": False,
+    }:
+        raise RuntimeError("R0 execution role contract drifted")
+    repaired = payload["repaired_protocol_failures"]
+    if len(repaired) != 2 or any(
+        row["status"] != "failed_closed_repaired" or row["scientific_result_used"] is not False
+        for row in repaired
+    ):
+        raise RuntimeError("R0 repaired failure provenance drifted")
+    if payload["post_gate_orchestration_fix"]["fix_commit"] != expected_commit:
+        raise RuntimeError("R0 orchestration fix provenance drifted")
+    decoder = payload["decoder_only_condition"]
+    if (
+        decoder["status"] != "failed_closed_decoder_only_absent"
+        or decoder["randomblock_not_executed"] is not True
+        or decoder["randomblock_result_used"] is not False
+    ):
+        raise RuntimeError("R0 random-block/decoder fail-closed status drifted")
+    if ROOT / decoder["audit_path"] != decoder_audit_path.resolve():
+        raise RuntimeError("R0 decoder audit binding drifted")
+
+    artifact_paths = {row["path"] for row in payload["artifacts"]}
+    required = {
+        "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.json",
+        "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.csv",
+        "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_execution.log",
+        "docs/v6_p1i_cross_resolution_r0_closeout.md",
+        "docs/figures/v6_p1i_r0_resolution_error.png",
+        "docs/figures/v6_p1i_r0_resolution_time.png",
+    }
+    if artifact_paths != required:
+        raise RuntimeError("R0 archived artifact set drifted")
+    for artifact in payload["artifacts"]:
+        artifact_path = ROOT / artifact["path"]
+        if not artifact_path.is_file():
+            raise RuntimeError(f"missing R0 archived artifact: {artifact_path}")
+        if artifact_path.stat().st_size != int(artifact["size_bytes"]):
+            raise RuntimeError(f"R0 artifact size mismatch: {artifact_path}")
+        if file_sha256(artifact_path) != artifact["sha256"]:
+            raise RuntimeError(f"R0 artifact SHA mismatch: {artifact_path}")
+    if closeout_path.resolve() != (ROOT / "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.json").resolve():
+        raise RuntimeError("R0 closeout path is not the archived artifact")
+
+    csv_path = ROOT / "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.csv"
+    with csv_path.open(newline="", encoding="utf-8") as handle:
+        csv_rows = list(csv.DictReader(handle))
+    if len(csv_rows) != 25 or sum(row["reference_label"] == "R0" for row in csv_rows) != 1:
+        raise RuntimeError("R0 CSV row contract failed")
+    for row in csv_rows:
+        for key in ("resolution", "support_point_global_pct", "full_point_global_pct", "worker_wall_seconds"):
+            if not math.isfinite(float(row[key])):
+                raise RuntimeError(f"R0 CSV non-finite field: {key}")
+
+    report = (ROOT / "docs/v6_p1i_cross_resolution_r0_closeout.md").read_text(encoding="utf-8")
+    if "R0 exact checkpoint replay" not in report or "R0 to R1 discontinuity" not in report:
+        raise RuntimeError("R0 Markdown report sections missing")
+    for png in (
+        ROOT / "docs/figures/v6_p1i_r0_resolution_error.png",
+        ROOT / "docs/figures/v6_p1i_r0_resolution_time.png",
+    ):
+        if png.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+            raise RuntimeError(f"invalid PNG signature: {png}")
 
 
 def check_decoder_audit(path: Path) -> None:
@@ -264,13 +364,18 @@ def main() -> int:
     parser.add_argument("--execution-manifest", type=Path, default=EXECUTION_MANIFEST)
     parser.add_argument("--r0-closeout", type=Path)
     parser.add_argument("--decoder-audit", type=Path)
+    parser.add_argument("--r0-execution-manifest", type=Path, default=R0_EXECUTION_MANIFEST)
     parser.add_argument("--r0-protocol", type=Path, default=R0_PROTOCOL)
     args = parser.parse_args()
     module = load_module()
     protocol = json.loads(args.protocol.read_text(encoding="utf-8"))
     check_protocol(protocol)
     check_r0_protocol(args.r0_protocol)
-    if args.execution_manifest.exists():
+    # The legacy Stage-A execution manifest binds the checker version that
+    # produced that historical bundle.  R0 closeout has its own immutable
+    # execution manifest and must not rewrite the legacy provenance merely
+    # because this checker gained R0 archive validation.
+    if args.execution_manifest.exists() and args.r0_closeout is None:
         check_execution_manifest(args.execution_manifest)
     if args.result is not None:
         payload = json.loads(args.result.read_text(encoding="utf-8"))
@@ -283,6 +388,8 @@ def main() -> int:
         check_r0_closeout(args.r0_closeout)
     if args.decoder_audit is not None:
         check_decoder_audit(args.decoder_audit)
+    if args.r0_closeout is not None and args.decoder_audit is not None:
+        check_r0_execution_archive(args.r0_execution_manifest, args.r0_closeout, args.decoder_audit)
     print(json.dumps({
         "status": "passed",
         "protocol": str(args.protocol),

@@ -1,0 +1,109 @@
+{
+  "schema_version": "heat3d_v6_p1i_cross_resolution_r0_execution_manifest_v1",
+  "status": "completed_valid_only",
+  "branch": "research/v6-p1i-training",
+  "preparation_commit": "3eede1a192628e3bfc97f5f0be4b588ce4e0d7ed",
+  "execution_commit": "3eede1a192628e3bfc97f5f0be4b588ce4e0d7ed",
+  "host": {
+    "ssh_alias": "wsl2",
+    "hostname": "DESKTOP-2GE35DV"
+  },
+  "execution": {
+    "command": "python scripts/closeout_heat3d_v6_p1i_cross_resolution_r0.py --dataset-root /home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1 --manifest /home/xyh/myCodeGitOnly/heat3d-ic/configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json --full-fields /home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5 --run-dir /tmp/p1i-seed0-timing-run --edge-targets configs/heat3d_v6_p1i/v6_inference_qualification_p1i_edge_contract.json --checkpoint-sha256 51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e --checkpoint-epoch 559 --prior-result configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_results.json --historical-qualification configs/heat3d_v6_p1i/v6_unified_raw/v6_unified_timing_p1i_raw.json --formal-closeout configs/heat3d_v6_p1i/v6_p1i_three_seed_inference_closeout.json --work-dir /tmp/v6_p1i_cross_resolution_r0_workers --output-json /tmp/v6_p1i_cross_resolution_r0_closeout.json --output-csv /tmp/v6_p1i_cross_resolution_r0_closeout.csv --report-md /tmp/v6_p1i_cross_resolution_r0_closeout.md --figure-dir /tmp/v6_p1i_cross_resolution_r0_figures",
+    "log_path": "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_execution.log",
+    "final_status": "passed",
+    "fixed32_gate": "passed",
+    "formal128_gate": "passed",
+    "formal_replay_absolute_tolerance": 0.005,
+    "resolution_row_count": 25,
+    "main_cell_count": 24
+  },
+  "role_contract": {
+    "valid_only": true,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "tuning_executed": false,
+    "checkpoint_modified": false
+  },
+  "frozen_inputs": {
+    "dataset_manifest": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+      "sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514"
+    },
+    "full_field_archive": {
+      "path": "data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+      "sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb"
+    },
+    "checkpoint": {
+      "path": "/tmp/p1i-seed0-timing-run/params_best_valid_point_global.pkl",
+      "epoch": 559,
+      "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+    },
+    "edge_targets": {
+      "path": "configs/heat3d_v6_p1i/v6_inference_qualification_p1i_edge_contract.json",
+      "sha256": "39091755ed9e9ccc56072a4a6068e1cad19b5cea5e376b0cd925312fef62484e"
+    }
+  },
+  "repaired_protocol_failures": [
+    {
+      "execution_head": "32bcef20a34a10126d8eb066345388f13765bdbb",
+      "status": "failed_closed_repaired",
+      "failure": "formal128 real r2r edge count 4217 exceeded fixed32 timing padding target 4201",
+      "fix_commit": "da618016b5bdb0153f8aeecbacfb45ce5d7e9d54",
+      "scientific_result_used": false
+    },
+    {
+      "execution_head": "da618016b5bdb0153f8aeecbacfb45ce5d7e9d54",
+      "status": "failed_closed_repaired",
+      "failure": "formal full point-global replay drift -0.008548909012769723 percentage points exceeded 0.005 because diagnostic timing reconstruction was compared with the formal evaluator contract",
+      "fix_commit": "d9914812c6793aa3bd8d94bc36aaa123faa6951c",
+      "scientific_result_used": false
+    }
+  ],
+  "post_gate_orchestration_fix": {
+    "execution_head": "d9914812c6793aa3bd8d94bc36aaa123faa6951c",
+    "status": "failed_closed_repaired",
+    "failure": "keyword-only FamilyData constructor was called positionally before any main cell",
+    "fix_commit": "3eede1a192628e3bfc97f5f0be4b588ce4e0d7ed",
+    "scientific_result_used": false
+  },
+  "decoder_only_condition": {
+    "status": "failed_closed_decoder_only_absent",
+    "audit_path": "configs/heat3d_v6_p1i/v6_p1i_decoder_only_history_audit.json",
+    "randomblock_not_executed": true,
+    "randomblock_result_used": false
+  },
+  "artifacts": [
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.json",
+      "size_bytes": 1022420,
+      "sha256": "5980b129fe5dbf05767b7f06e21ee83b57320831c96407099f3110220ad99859"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.csv",
+      "size_bytes": 13348,
+      "sha256": "ca4f1ac14fbd461c9f4a1e8901382300527e9de9633464d5cb0b85c2967631d3"
+    },
+    {
+      "path": "docs/v6_p1i_cross_resolution_r0_closeout.md",
+      "size_bytes": 1419,
+      "sha256": "dce3180c0dff4ca2f732a9ca9278038242867a63cd3f40524440d066f23bf391"
+    },
+    {
+      "path": "docs/figures/v6_p1i_r0_resolution_error.png",
+      "size_bytes": 96714,
+      "sha256": "1a84269d0df1bee27ee631f269afab73cfb8710c6ce0ed454709a87fd5050fac"
+    },
+    {
+      "path": "docs/figures/v6_p1i_r0_resolution_time.png",
+      "size_bytes": 128483,
+      "sha256": "afea497a6ca19c5a53941f10a35cfd80d711bb0f0222ef6f4d816f1bbbe11815"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_execution.log",
+      "size_bytes": 84550,
+      "sha256": "7effef3d5ad9710491ddeb3169390ce75ddb90be9675f37ab8d9e72a0052f252"
+    }
+  ]
+}
