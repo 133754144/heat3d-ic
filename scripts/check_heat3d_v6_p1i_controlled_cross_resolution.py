@@ -84,8 +84,21 @@ def check_result(payload: dict[str, Any], module: Any, replay_data: bool) -> Non
         for sample in row["samples"]:
             for family in ("p2r", "r2r", "r2p"):
                 graph = sample["graph"][family]
-                if graph["edge_count"] <= 0 or graph["in_degree"]["zero_count"] or graph["out_degree"]["zero_count"]:
-                    raise RuntimeError(f"zero edge/degree: {family}")
+                if graph["edge_count"] <= 0:
+                    raise RuntimeError(f"zero edge count: {family}")
+            # The production coverage contract is physical-node coverage:
+            # every input physical node reaches p2r and every output physical
+            # node receives r2p.  Refined regional centroids can be inactive in
+            # those bipartite graphs and are reported rather than hidden.
+            if sample["graph"]["p2r"]["out_degree"]["zero_count"]:
+                raise RuntimeError("p2r misses physical input nodes")
+            if sample["graph"]["r2p"]["in_degree"]["zero_count"]:
+                raise RuntimeError("r2p misses physical output nodes")
+            if (
+                sample["graph"]["r2r"]["isolated_node_count"]
+                or sample["graph"]["r2r"]["weakly_connected_components"] != 1
+            ):
+                raise RuntimeError("regional processor graph is disconnected")
             if row["support_mode"] == "source_aware":
                 conservation = sample["conservation"]
                 if conservation["relative_volume_error"] > 1e-12 or conservation["relative_source_power_error"] > 1e-12:
