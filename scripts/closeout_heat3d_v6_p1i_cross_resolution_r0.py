@@ -58,6 +58,7 @@ def worker_command(
     sample_count: int,
     output: Path,
     prediction_npz: Path | None,
+    checkpoint_reconstruction_mode: str = "diagnostic_timing",
 ) -> list[str]:
     command = [
         sys.executable,
@@ -78,7 +79,10 @@ def worker_command(
         "--output", str(output),
     ]
     if support_mode == "checkpoint_replay":
-        command.extend(("--edge-targets", str(args.edge_targets)))
+        command.extend((
+            "--edge-targets", str(args.edge_targets),
+            "--checkpoint-reconstruction-mode", checkpoint_reconstruction_mode,
+        ))
     if prediction_npz is not None:
         command.extend(("--prediction-npz", str(prediction_npz)))
     return command
@@ -309,6 +313,7 @@ def main() -> int:
     r0_128, r0_128_wall = run_worker(worker_command(
         args, support_mode="checkpoint_replay", resolution=1024, seed=0,
         sample_count=128, output=r0_128_json, prediction_npz=None,
+        checkpoint_reconstruction_mode="formal_valid128",
     ), args.worker_timeout)
     formal_diffs = {
         "support": formal_replay_differences(r0_128["support_metrics"], formal_expected["support"], tolerance, "R0 formal support"),

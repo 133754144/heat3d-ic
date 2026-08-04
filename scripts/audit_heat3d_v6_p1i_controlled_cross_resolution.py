@@ -633,17 +633,40 @@ def source_example(
 def checkpoint_example(
     data: base.FamilyData,
     row: Mapping[str, Any],
+    reconstruction_mode: str,
 ) -> tuple[V6DualRobinExample, dict[str, Any]]:
     """Return the frozen 1024-point training support without re-discretizing it."""
     original, public0 = data.load_example(row)
     truth = data.truth(row, include_full_kq=False)
     shared = data.full_shared()
     _, full_q = data.full_kq(row)
-    mapping, map_audit = base.build_map(original, shared)
     coords = np.asarray(public0["coords"], dtype=np.float64)
     cv = np.asarray(public0["cv"], dtype=np.float64)
     q = np.asarray(public0["q"], dtype=np.float64)
     features = np.asarray(original.condition.condition_features, dtype=np.float64)
+    if reconstruction_mode == "formal_valid128":
+        # Replay the formal 128-valid full-field evaluator exactly.  Its map
+        # uses per-domain same-layer fallback.  The timing diagnostic below
+        # retains its historical all-map fallback so R0-to-R1 drift compares
+        # predictions in precisely the same reconstruction domain.
+        distance, support_indices = cKDTree(shared["coords"]).query(coords, k=1)
+        if float(np.max(distance)) > 1.0e-14 or len(np.unique(support_indices)) != TRAINING_RESOLUTION:
+            raise RuntimeError(f"{row['sample_id']}: checkpoint support is not an exact full-mesh subset")
+        meta = json.loads((data.sample_dir(row) / "sample_meta.json").read_text(encoding="utf-8"))
+        boundaries = float(np.min(shared["coords"][:, 2])) + layer_boundaries(meta)
+        mapping, map_audit = build_reconstruction_map(
+            coords=shared["coords"],
+            layer_id=shared["layer"],
+            boundaries=boundaries,
+            support_indices=np.asarray(support_indices, dtype=np.int32),
+            empty_domain_fallback="same_layer",
+        )
+        map_mode = "frozen_formal_per_domain_same_layer_fallback_v1"
+    elif reconstruction_mode == "diagnostic_timing":
+        mapping, map_audit = base.build_map(original, shared)
+        map_mode = "frozen_diagnostic_timing_reconstruction_v1"
+    else:
+        raise RuntimeError(f"unsupported checkpoint reconstruction mode: {reconstruction_mode}")
     return original, {
         "sample_id": str(row["sample_id"]),
         "support_truth": truth["support_delta"],
@@ -658,7 +681,7 @@ def checkpoint_example(
         "support_q": q,
         "mapping": mapping,
         "map_audit": map_audit,
-        "map_mode": "frozen_checkpoint_support_layer_aware_reconstruction",
+        "map_mode": map_mode,
         "support_hash": array_sha256(coords),
         "pointwise_hashes": {
             "coords": array_sha256(coords),
@@ -745,7 +768,7 @@ def worker(args: argparse.Namespace) -> int:
         elif args.support_mode == "checkpoint_replay":
             if args.resolution != TRAINING_RESOLUTION:
                 raise RuntimeError("checkpoint replay is frozen at N=1024")
-            example, public = checkpoint_example(data, row)
+            example, public = checkpoint_example(data, row, args.checkpoint_reconstruction_mode)
         else:
             example, public = structured_example(data, row, args.resolution)
         examples.append(example)
@@ -924,6 +947,7 @@ def worker(args: argparse.Namespace) -> int:
             "direct_N_interpretation": "measure_conservative_full_graph_rediscretization_diagnostic",
             "checkpoint_iid": False,
             "same_distribution_invariance_claimed": False,
+            "checkpoint_reconstruction_mode": args.checkpoint_reconstruction_mode,
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -1127,6 +1151,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--graph-csv", type=Path)
     parser.add_argument("--drift-csv", type=Path)
     parser.add_argument("--edge-targets", type=Path)
+    parser.add_argument(
+        "--checkpoint-reconstruction-mode",
+        choices=("diagnostic_timing", "formal_valid128"),
+        default="diagnostic_timing",
+    )
     parser.add_argument("--prediction-npz", type=Path)
     args = parser.parse_args()
     if args.worker and args.resolution is None:
