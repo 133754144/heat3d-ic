@@ -723,9 +723,13 @@ def worker(args: argparse.Namespace) -> int:
         full_fields_path=args.full_fields, randomblock_config=None,
     )
     rows = data.selected_rows(args.sample_count)
+    # The tracked edge contract was sized for the frozen 32-case timing queue.
+    # It is a JIT padding shape, not part of the physical graph contract.  Build
+    # the real graphs first and choose a padding envelope covering the requested
+    # valid-only replay so that the 128-case formal metric replay cannot be
+    # rejected merely because a later graph has a few more real edges.
     runtime = base.ModelRuntime(
-        args.run_dir, args.checkpoint_sha256, args.checkpoint_epoch,
-        args.edge_targets if args.support_mode == "checkpoint_replay" else None,
+        args.run_dir, args.checkpoint_sha256, args.checkpoint_epoch, None,
         verify_checkpoint_sha=not args.checkpoint_sha_preverified,
     )
     graph_config = dict(runtime.run_config["graph_config"])
@@ -762,7 +766,25 @@ def worker(args: argparse.Namespace) -> int:
         for example in examples
     ]
     targets = edge_targets(raw_metadata)
-    if args.support_mode != "checkpoint_replay":
+    tracked_timing_targets = None
+    if args.support_mode == "checkpoint_replay":
+        tracked_payload = json.loads(args.edge_targets.read_text(encoding="utf-8"))
+        tracked_timing_targets = tracked_payload["edge_targets"]
+        targets = {
+            field: (
+                None
+                if targets[field] is None
+                else max(int(targets[field]), int(tracked_timing_targets[field]))
+            )
+            for field in EDGE_FIELDS
+        }
+        runtime.builder = runner.RunSharedSupportGraphBuilder(
+            FixedEdgeBuilder(
+                runner.Heat3DGraphBuilder(**graph_config),
+                targets,
+            )
+        )
+    else:
         runtime.builder = FixedEdgeBuilder(
             CorrectedHeat3DGraphBuilder(
                 regional_mode=args.regional_mode, physical_node_count=args.resolution, **graph_config
@@ -863,6 +885,11 @@ def worker(args: argparse.Namespace) -> int:
             oracle_metric_rows, full=True, domain="full_240825_oracle_reconstruction"
         ) if oracle_metric_rows else None,
         "edge_targets": targets,
+        "edge_padding_contract": {
+            "semantics": "jit_shape_only_real_edges_unchanged",
+            "tracked_fixed32_targets": tracked_timing_targets,
+            "requested_valid_replay_targets": targets,
+        },
         "regional_correction": {
             "mode": args.regional_mode,
             "rmesh_correction_dsf": getattr(raw_builder, "correction_dsf", 1.0),
