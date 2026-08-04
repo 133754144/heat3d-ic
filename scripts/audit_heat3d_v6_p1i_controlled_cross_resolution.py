@@ -628,6 +628,12 @@ def one_metric_row(prediction: np.ndarray, truth: np.ndarray, cv: np.ndarray, co
     return {"prediction": prediction, "truth": truth, "weights": cv, "coords": coords, "layer": layer, "q": q}
 
 
+def metrics_with_domain(rows: Sequence[Mapping[str, Any]], *, full: bool, domain: str) -> dict[str, Any]:
+    result = base.metric_accumulate(rows, full=full)
+    result["domain"] = domain
+    return result
+
+
 def worker(args: argparse.Namespace) -> int:
     data = base.FamilyData(
         family="p1i", dataset_root=args.dataset_root, manifest_path=args.manifest,
@@ -682,7 +688,9 @@ def worker(args: argparse.Namespace) -> int:
             prediction, public["support_truth"], public["support_cv"], public["support_coords"], public["support_layer"], public["support_q"]
         )
         support_metric_rows.append(support_row)
-        support_metrics = base.metric_accumulate([support_row], full=False)
+        support_metrics = metrics_with_domain(
+            [support_row], full=False, domain=f"support_{args.resolution}"
+        )
         record: dict[str, Any] = {
             "sample_id": public["sample_id"],
             "support_hash": public["support_hash"],
@@ -702,8 +710,12 @@ def worker(args: argparse.Namespace) -> int:
             full_metric_rows.append(full_row)
             oracle_metric_rows.append(oracle_row)
             record.update({
-                "full_metrics": base.metric_accumulate([full_row], full=True),
-                "oracle_reconstruction_metrics": base.metric_accumulate([oracle_row], full=True),
+                "full_metrics": metrics_with_domain(
+                    [full_row], full=True, domain="full_240825"
+                ),
+                "oracle_reconstruction_metrics": metrics_with_domain(
+                    [oracle_row], full=True, domain="full_240825_oracle_reconstruction"
+                ),
                 "selection": public["selection_audit"],
                 "quota": public["quota"],
                 "capacity_shortage": public["capacity_shortage"],
@@ -730,9 +742,15 @@ def worker(args: argparse.Namespace) -> int:
         "regional_mode": args.regional_mode,
         "sample_count": len(rows),
         "sample_ids": [str(row["sample_id"]) for row in rows],
-        "support_metrics": base.metric_accumulate(support_metric_rows, full=False),
-        "full_metrics": base.metric_accumulate(full_metric_rows, full=True) if full_metric_rows else None,
-        "oracle_reconstruction_metrics": base.metric_accumulate(oracle_metric_rows, full=True) if oracle_metric_rows else None,
+        "support_metrics": metrics_with_domain(
+            support_metric_rows, full=False, domain=f"support_{args.resolution}"
+        ),
+        "full_metrics": metrics_with_domain(
+            full_metric_rows, full=True, domain="full_240825"
+        ) if full_metric_rows else None,
+        "oracle_reconstruction_metrics": metrics_with_domain(
+            oracle_metric_rows, full=True, domain="full_240825_oracle_reconstruction"
+        ) if oracle_metric_rows else None,
         "edge_targets": targets,
         "regional_correction": {
             "mode": args.regional_mode,
