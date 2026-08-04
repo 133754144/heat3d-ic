@@ -662,7 +662,10 @@ def worker(args: argparse.Namespace) -> int:
         regional_mode=args.regional_mode, physical_node_count=args.resolution, **graph_config
     )
     raw_metadata = [
-        raw_builder.build_metadata(example.condition.coords, key=jax.random.PRNGKey(int(runtime.run_config["graph_seed"])))
+        raw_builder.build_metadata(
+            runner._graph_coords_for_example(example, runtime.stats),
+            key=jax.random.PRNGKey(int(runtime.run_config["graph_seed"])),
+        )
         for example in examples
     ]
     targets = edge_targets(raw_metadata)
