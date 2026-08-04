@@ -610,17 +610,34 @@ def source_example(
 
 
 def structured_example(data: base.FamilyData, row: Mapping[str, Any], n: int) -> tuple[V6DualRobinExample, dict[str, Any]]:
-    example, public = direct.direct_example(data, row, n, None, None)
+    original, public0 = data.load_example(row)
+    meta = json.loads((data.sample_dir(row) / "sample_meta.json").read_text(encoding="utf-8"))
+    # Use the frozen P1i legal structured-mesh registry.  The newer unified
+    # benchmark intentionally starts at 4096 and therefore omits the 1024
+    # factor cell, even though P1i's original legal SHAPES registry includes it.
+    mesh = prior.core.build_mesh(prior._target_physics(meta, n))
+    k, q, power = prior._continuous_fields(meta, mesh)
+    if power["relative_power_error"] > 1e-12:
+        raise RuntimeError("P1i structured-support source power drift")
+    example = prior._example(original, meta, mesh, k, q)
+    full_truth = data.truth(row, include_full_kq=False)["full_delta"]
+    coords = np.asarray(mesh["coords"], dtype=np.float64)
+    truth = direct.unified.regular_truth(data.full_shared(), full_truth, coords)
+    weights = np.asarray(
+        mesh.get("weights") if "weights" in mesh else mesh["info"]["weights"],
+        dtype=np.float64,
+    )
     return example, {
         "sample_id": str(row["sample_id"]),
-        "support_truth": public["truth"],
-        "support_coords": public["coords"],
-        "support_cv": public["weights"],
-        "support_layer": public["layer"],
-        "support_q": public["q"],
-        "support_hash": array_sha256(public["coords"]),
-        "reference_K": float(public["reference_K"]),
+        "support_truth": truth,
+        "support_coords": coords,
+        "support_cv": weights,
+        "support_layer": np.asarray(mesh["layer_ids"], dtype=np.int32),
+        "support_q": np.asarray(q, dtype=np.float64),
+        "support_hash": array_sha256(coords),
+        "reference_K": float(public0["reference_K"]),
         "structured_support_OOD": True,
+        "structured_mesh_registry": "frozen_p1i_SHAPES",
     }
 
 
