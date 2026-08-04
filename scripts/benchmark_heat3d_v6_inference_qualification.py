@@ -54,7 +54,12 @@ from evaluate_heat3d_v6_p1i_randomblock_transfer import layer_aware_fallback_map
 
 
 ROUTES = ("model_support", "production_reconstruction", "fvm")
-STATES = ("cold", "jit_cached_new_case", "fully_cached_repeat")
+STATES = (
+    "process_cold",
+    "jit_cached_new_topology",
+    "known_topology_new_physics",
+    "fully_cached",
+)
 EDGE_FIELDS = ("p2r_edge_indices", "r2r_edge_indices", "r2r_edge_domains", "r2p_edge_indices")
 
 
@@ -308,10 +313,18 @@ class FixedEdgeTargetBuilder:
 
 
 class ModelRuntime:
-    def __init__(self, run_dir: Path, checkpoint_sha: str, checkpoint_epoch: int, edge_targets: Path | None) -> None:
+    def __init__(
+        self,
+        run_dir: Path,
+        checkpoint_sha: str,
+        checkpoint_epoch: int,
+        edge_targets: Path | None,
+        *,
+        verify_checkpoint_sha: bool = True,
+    ) -> None:
         self.run_dir = run_dir
         checkpoint_path = run_dir / "params_best_valid_point_global.pkl"
-        if sha256(checkpoint_path) != checkpoint_sha:
+        if verify_checkpoint_sha and sha256(checkpoint_path) != checkpoint_sha:
             raise RuntimeError("checkpoint SHA mismatch")
         self.run_config = json.loads((run_dir / "run_config.json").read_text(encoding="utf-8"))
         checkpoint = runner._load_params_checkpoint(checkpoint_path)
@@ -508,12 +521,31 @@ def model_measurements(
     graph_cache: dict[str, dict[str, Any]] = {}
     map_cache: dict[str, Any] = {}
     cache_preparation_seconds = 0.0
-    if state == "jit_cached_new_case":
+    if state == "jit_cached_new_topology":
+        if data.family == "randomblock":
+            raise RuntimeError(
+                "random-block unseen topology changes raw edge shapes; fixed padding failed "
+                "the frozen numerical-equivalence gate, so a JIT-cache-hit claim is forbidden"
+            )
+        warm_keys = set()
         for warm_row in data.warmup_rows(rows):
             example, _ = data.load_example(warm_row)
+            warm_keys.add(support_key(example))
             group = runtime.graph(example)
             runtime.forward(group)
-    elif state == "fully_cached_repeat":
+        measured_keys = {support_key(data.load_example(row)[0]) for row in rows}
+        if warm_keys & measured_keys:
+            raise RuntimeError("new-topology timing reused a warmed support hash")
+    elif state == "known_topology_new_physics":
+        if data.family != "randomblock":
+            raise RuntimeError(
+                "P1i has no preregistered valid pair sharing a support hash; "
+                "known-topology/new-physics is not applicable"
+            )
+        for warm_row in data.warmup_rows(rows):
+            example, _ = data.load_example(warm_row)
+            runtime.forward(runtime.graph(example))
+    elif state == "fully_cached":
         started = time.perf_counter()
         for row in rows:
             example, _ = data.load_example(row)
@@ -561,6 +593,7 @@ def model_measurements(
             "jit_or_forward_seconds": forward_s, "map_build_seconds": map_build_s,
             "map_apply_seconds": map_apply_s, "output_seconds": output_s,
             "continuous_wall_seconds": wall, "output_bytes": output_bytes,
+            "prediction_serialization_completed_monotonic_s": time.perf_counter(),
         })
 
         # Accuracy and oracle work are deliberately after the timed production span.
@@ -674,7 +707,7 @@ def fvm_measurements(
     example_cache: dict[str, V6DualRobinExample] = {}
     q_cache: dict[str, np.ndarray] = {}
     cache_preparation_seconds = 0.0
-    if state == "fully_cached_repeat":
+    if state == "fully_cached":
         started = time.perf_counter()
         for row in rows:
             k, q = data.full_kq(row)
@@ -698,7 +731,7 @@ def fvm_measurements(
         e2e_started = time.perf_counter()
         sample_id = str(row["sample_id"])
         started = time.perf_counter()
-        if state == "fully_cached_repeat":
+        if state == "fully_cached":
             example = example_cache[sample_id]
             q = q_cache[sample_id]
             k = None
@@ -730,6 +763,7 @@ def fvm_measurements(
             "data_seconds": data_s, "assembly_seconds": assembly_s,
             "linear_solve_seconds": solve_s, "output_seconds": output_s,
             "continuous_wall_seconds": wall, "output_bytes": output_bytes,
+            "prediction_serialization_completed_monotonic_s": time.perf_counter(),
         })
         if collect_metrics:
             truth = data.truth(row, include_full_kq=False)
@@ -820,7 +854,13 @@ def worker(args: argparse.Namespace) -> int:
     if args.route == "fvm":
         measurements, extra = fvm_measurements(data, selected, state=args.state, collect_metrics=collect_metrics)
     else:
-        runtime = ModelRuntime(args.run_dir, args.checkpoint_sha256, args.checkpoint_epoch, args.edge_targets)
+        runtime = ModelRuntime(
+            args.run_dir,
+            args.checkpoint_sha256,
+            args.checkpoint_epoch,
+            args.edge_targets,
+            verify_checkpoint_sha=not args.checkpoint_sha_preverified,
+        )
         measurements, extra = model_measurements(
             data, runtime, selected, route=args.route, state=args.state,
             collect_metrics=collect_metrics,
@@ -870,6 +910,8 @@ def worker_command(args: argparse.Namespace, *, route: str, state: str, output: 
         command.extend(("--edge-targets", str(args.edge_targets)))
     if args.randomblock_config is not None:
         command.extend(("--randomblock-config", str(args.randomblock_config)))
+    if args.checkpoint_sha_preverified:
+        command.append("--checkpoint-sha-preverified")
     if sample_id is not None:
         command.extend(("--sample-id", sample_id))
     return command
@@ -889,10 +931,20 @@ def run_process(command: list[str], *, fvm: bool) -> tuple[dict[str, Any], float
     if completed.returncode != 0:
         raise RuntimeError(f"worker failed ({completed.returncode}): {' '.join(command)}\n{completed.stdout}\n{completed.stderr}")
     output_path = Path(command[command.index("--output") + 1])
-    return json.loads(output_path.read_text()), external_wall, completed.stdout[-2000:]
+    payload = json.loads(output_path.read_text())
+    if payload["state"] == "process_cold":
+        cutoff = float(payload["measurements"][-1]["prediction_serialization_completed_monotonic_s"])
+        external_wall = cutoff - started
+        if external_wall <= 0.0:
+            raise RuntimeError("invalid cross-process monotonic cold cutoff")
+    return payload, external_wall, completed.stdout[-2000:]
 
 
 def orchestrate(args: argparse.Namespace) -> int:
+    checkpoint_path = args.run_dir / "params_best_valid_point_global.pkl"
+    if sha256(checkpoint_path) != args.checkpoint_sha256:
+        raise RuntimeError("checkpoint SHA preflight failed")
+    args.checkpoint_sha_preverified = True
     data = FamilyData(
         family=args.family, dataset_root=args.dataset_root, manifest_path=args.manifest,
         full_fields_path=args.full_fields, randomblock_config=args.randomblock_config,
@@ -907,13 +959,13 @@ def orchestrate(args: argparse.Namespace) -> int:
         cold_payloads, cold_walls = [], []
         for index, row in enumerate(selected):
             output = work / f"{args.family}_{route}_cold_{index:02d}.json"
-            command = worker_command(args, route=route, state="cold", output=output, sample_id=str(row["sample_id"]))
+            command = worker_command(args, route=route, state="process_cold", output=output, sample_id=str(row["sample_id"]))
             commands.append(" ".join(command))
             payload, wall, _ = run_process(command, fvm=route == "fvm")
             payload["external_fresh_process_wall_seconds"] = wall
             cold_payloads.append(payload); cold_walls.append(wall)
             print(f"[qualification] {args.family} {route} cold {index+1}/{len(selected)} wall={wall:.3f}s", flush=True)
-        route_payload["cold"] = {
+        route_payload["process_cold"] = {
             "fresh_process_count": len(cold_payloads),
             "external_process_wall_seconds": distribution(cold_walls),
             "stage_timing": {
@@ -924,7 +976,23 @@ def orchestrate(args: argparse.Namespace) -> int:
             "peak_device_bytes": max(int(payload["device_memory"]["peak_bytes_in_use"]) for payload in cold_payloads),
             "sample_ids": [payload["sample_ids"][0] for payload in cold_payloads],
         }
-        for state in ("jit_cached_new_case", "fully_cached_repeat"):
+        for state in ("jit_cached_new_topology", "known_topology_new_physics", "fully_cached"):
+            if (route == "fvm" and state == "jit_cached_new_topology") or (
+                route != "fvm" and args.family == "randomblock" and state == "jit_cached_new_topology"
+            ) or (
+                route != "fvm" and args.family == "p1i" and state == "known_topology_new_physics"
+            ):
+                route_payload[state] = {
+                    "status": "not_applicable_under_frozen_numerical_contract",
+                    "reason": (
+                        "FVM has no JIT cache state"
+                        if route == "fvm"
+                        else "unseen random-block topology changes raw edge shapes and fixed padding failed equivalence"
+                        if args.family == "randomblock"
+                        else "P1i valid cases do not provide preregistered same-support/new-physics pairs"
+                    ),
+                }
+                continue
             output = work / f"{args.family}_{route}_{state}.json"
             command = worker_command(args, route=route, state=state, output=output)
             commands.append(" ".join(command))
@@ -942,6 +1010,8 @@ def orchestrate(args: argparse.Namespace) -> int:
             "independent_process_per_route_state": True, "cold_fresh_process_per_sample": True,
             "continuous_wall_clock_not_stage_sum": True, "minimum_measurements": 20,
             "batch_size": 1, "fixed_threads": 1, "production_excludes_oracle": True,
+            "cold_cutoff": "prediction_serialization_completed_monotonic_timestamp",
+            "hash_metrics_oracle_json_checker_outside_production_timing": True,
         },
         "dataset": {"id": data.manifest["dataset_id"], "manifest_sha256": sha256(args.manifest), "full_fields_sha256": sha256(args.full_fields)},
         "checkpoint": {"sha256": args.checkpoint_sha256, "epoch": args.checkpoint_epoch},
@@ -973,6 +1043,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--checkpoint-epoch", type=int, required=True)
+    parser.add_argument("--checkpoint-sha-preverified", action="store_true")
     parser.add_argument("--edge-targets", type=Path)
     parser.add_argument("--work-dir", type=Path, default=Path("/tmp/v6_inference_qualification"))
     parser.add_argument("--output", type=Path, required=True)
