@@ -1,0 +1,91 @@
+{
+  "checkpoint": {
+    "config_id": "V6_05_V5best_P1i_seed0_B24",
+    "epoch": 559,
+    "filename": "params_best_valid_point_global.pkl",
+    "selection_metric": "valid_iid point-global true-RMS relative RMSE",
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "sample_count": 1024,
+    "solver_node_count": 240825,
+    "valid_subset_count": 32,
+    "valid_subset_selection": "sha256(sample_id) ascending first 32 from valid_iid"
+  },
+  "factor_diagnostic": {
+    "cells": {
+      "A": "source-aware support + fixed training-scale Nr",
+      "B": "source-aware support + Nr grows with N",
+      "C": "legal structured support + fixed training-scale Nr",
+      "D": "current legal structured support + Nr grows with N"
+    },
+    "discretization_seed": 0,
+    "interpretation": "direct-N compound-OOD diagnostic only",
+    "resolutions": [1024, 4096, 16384, 65536]
+  },
+  "main_ladder": {
+    "discretization_seeds": [0, 1, 2, 3],
+    "input_output_coordinates": "x_in_equals_x_out",
+    "regional_mesh": "fixed_training_nr_using_upstream_subsample_or_simplex_centroid_refinement",
+    "resolutions": [512, 1024, 2048, 4096, 8192, 16384],
+    "source_aware_strata": {
+      "block": 0.25,
+      "bottom": 0.0625,
+      "interface": 0.125,
+      "top": 0.0625,
+      "volume": 0.5
+    },
+    "support_contract": "strictly nested within sample and discretization seed; target-independent",
+    "weights_contract": "same-layer nearest selected-node partition with exact volume/source-power/CV-k-moment conservation"
+  },
+  "metrics": {
+    "common_full_field_nodes": 240825,
+    "full_field": [
+      "point_global_true_rms_relative_rmse_pct",
+      "sample_first_cv_relative_rmse_pct",
+      "raw_cv_weighted_rmse_K",
+      "peak_rmse_K",
+      "source_rmse_K",
+      "interface_drop_rmse_K"
+    ],
+    "graph": [
+      "regional_node_count",
+      "p2r_r2r_r2p_edge_count",
+      "degree",
+      "normalized_edge_length"
+    ],
+    "support": [
+      "point_global_true_rms_relative_rmse_pct",
+      "sample_first_cv_relative_rmse_pct",
+      "raw_cv_weighted_rmse_K",
+      "peak_rmse_K",
+      "source_rmse_K",
+      "interface_drop_rmse_K"
+    ],
+    "drift": [
+      "global_context_24d_z",
+      "regional_qk_summary",
+      "log_s_phys",
+      "predicted_log_scale"
+    ]
+  },
+  "role_contract": {
+    "allowed": ["valid_iid", "train_only_normalization_metadata"],
+    "sealed_accessed": false,
+    "test_accessed": false,
+    "training_executed": false,
+    "tuning_executed": false
+  },
+  "schema_version": "heat3d_v6_p1i_controlled_cross_resolution_protocol_v1",
+  "status": "frozen_before_evaluation",
+  "upstream": {
+    "code_commit": "3e4b307c90f34237d0c1e5e497d4301116e9c3db",
+    "paper": "https://openreview.net/forum?id=ahJfROJOYt",
+    "repository": "https://github.com/camlab-ethz/rigno",
+    "resolution_rule": "regional mesh is corrected toward the training regional resolution; higher-resolution inputs use extra subsampling, lower-resolution inputs use simplex-centroid refinement",
+    "test_code": "rigno/test.py::_build_graph_metadata and get_all_estimations correction_dsf=train_space_dsf/test_space_dsf"
+  }
+}
