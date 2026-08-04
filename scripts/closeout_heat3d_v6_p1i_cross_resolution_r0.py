@@ -323,7 +323,13 @@ def main() -> int:
     prior = json.loads(args.prior_result.read_text(encoding="utf-8"))
     prior_lookup = {(int(row["discretization_seed"]), int(row["resolution"])): row for row in prior["main"]}
     reference_by_id = {sample["sample_id"]: sample for sample in r0_32["samples"]}
-    data = base.FamilyData("p1i", args.dataset_root, args.manifest, args.full_fields, None)
+    data = base.FamilyData(
+        family="p1i",
+        dataset_root=args.dataset_root,
+        manifest_path=args.manifest,
+        full_fields_path=args.full_fields,
+        randomblock_config=None,
+    )
     full_cv = np.asarray(data.full_shared()["cv"], dtype=np.float64)
     rows: list[dict[str, Any]] = [{
         "reference_label": "R0", "resolution": 1024, "discretization_seed": 0,
