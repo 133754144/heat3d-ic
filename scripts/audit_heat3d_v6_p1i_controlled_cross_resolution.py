@@ -487,7 +487,10 @@ def model_output(runtime: base.ModelRuntime, group: Mapping[str, Any]) -> Mappin
 
 def feature_summary(group: Mapping[str, Any], output: Mapping[str, np.ndarray], n_regional: int) -> dict[str, Any]:
     global_context = np.asarray(group["global_context"], dtype=np.float64).reshape(-1)
-    qk = np.asarray(group.get("qk_region_features"), dtype=np.float64).reshape(-1, 4)[:n_regional]
+    qk_raw = np.asarray(group.get("qk_region_features"), dtype=np.float64)
+    if qk_raw.ndim < 2:
+        raise RuntimeError(f"regional QK feature rank drifted: {qk_raw.shape}")
+    qk = qk_raw.reshape(-1, qk_raw.shape[-1])[:n_regional]
     native = group["native_physics"]
     log_s_phys = float(np.asarray(native["log_s_phys"]).reshape(-1)[0])
     s_hat = float(np.asarray(output["s_hat"]).reshape(-1)[0])
@@ -497,6 +500,7 @@ def feature_summary(group: Mapping[str, Any], output: Mapping[str, np.ndarray], 
         "qk_mean": np.mean(qk, axis=0).tolist(),
         "qk_std": np.std(qk, axis=0).tolist(),
         "qk_nonzero_fraction": np.mean(np.abs(qk) > 0.0, axis=0).tolist(),
+        "qk_feature_width": int(qk.shape[1]),
         "log_s_phys": log_s_phys,
         "predicted_log_scale": float(math.log(max(s_hat, 1e-30))),
     }
