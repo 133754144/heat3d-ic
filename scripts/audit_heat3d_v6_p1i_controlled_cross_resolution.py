@@ -700,7 +700,9 @@ def worker(args: argparse.Namespace) -> int:
         "regional_correction": {
             "mode": args.regional_mode,
             "rmesh_correction_dsf": raw_builder.correction_dsf,
-            "training_regional_target": int(TRAINING_RESOLUTION / graph_config["subsample_factor"]),
+            "training_regional_target": int(
+                TRAINING_RESOLUTION / raw_builder.config["subsample_factor"]
+            ),
             "actual_regional_counts": sorted({row["graph"]["regional_nodes"] for row in sample_records}),
             "upstream_mechanism": "random physical-node subsampling; simplex-centroid refinement below training resolution",
         },
