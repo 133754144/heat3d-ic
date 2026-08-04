@@ -1,6 +1,6 @@
 # V6 P1i controlled cross-resolution closeout
 
-This is a frozen valid-only diagnostic. Test/sealed remained closed; no training, tuning, or checkpoint mutation occurred. Direct-N results are compound-OOD diagnostics and are not model-selection evidence.
+This is a frozen valid-only measure-conservative full-graph re-discretization diagnostic. It is neither checkpoint-IID nor a formal same-distribution invariance test. Test/sealed remained closed; no training, tuning, or checkpoint mutation occurred.
 
 ## Source-aware nested ladder with training-scale regional mesh
 

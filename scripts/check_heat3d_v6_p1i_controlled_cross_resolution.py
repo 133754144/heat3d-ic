@@ -17,6 +17,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "audit_heat3d_v6_p1i_controlled_cross_resolution.py"
 EXECUTION_MANIFEST = ROOT / "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_execution_manifest.json"
+R0_PROTOCOL = ROOT / "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_protocol.json"
+DIAGNOSTIC_NAME = "measure_conservative_full_graph_rediscretization_diagnostic"
 
 
 def file_sha256(path: Path) -> str:
@@ -67,6 +69,11 @@ def check_protocol(protocol: dict[str, Any]) -> None:
         raise RuntimeError("factor resolution ladder drifted")
     if protocol["checkpoint"]["sha256"] != "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e":
         raise RuntimeError("checkpoint SHA drifted")
+    interpretation = protocol["factor_diagnostic"]["interpretation"]
+    if "measure-conservative full-graph re-discretization diagnostic" not in interpretation:
+        raise RuntimeError("Stage A diagnostic terminology drifted")
+    if "not checkpoint-IID" not in interpretation or "not formal same-distribution invariance" not in interpretation:
+        raise RuntimeError("Stage A applicability boundary missing")
 
 
 def check_execution_manifest(path: Path) -> None:
@@ -99,6 +106,10 @@ def check_result(payload: dict[str, Any], module: Any, replay_data: bool) -> Non
     contract = payload["contract"]
     if contract["test_accessed"] or contract["sealed_accessed"] or contract["training_executed"] or contract["tuning_executed"]:
         raise RuntimeError("forbidden role/action recorded")
+    if contract.get("direct_N_interpretation") != DIAGNOSTIC_NAME:
+        raise RuntimeError("result diagnostic terminology drifted")
+    if contract.get("checkpoint_iid") is not False or contract.get("same_distribution_invariance_claimed") is not False:
+        raise RuntimeError("result checkpoint-IID boundary drifted")
     main_keys = {
         (int(row["resolution"]), int(row["discretization_seed"])) for row in payload["main"]
     }
@@ -112,6 +123,8 @@ def check_result(payload: dict[str, Any], module: Any, replay_data: bool) -> Non
             raise RuntimeError("fixed valid subset drift")
         if not row["contract"]["x_in_equals_x_out"]:
             raise RuntimeError("x_in=x_out contract failed")
+        if row["contract"].get("direct_N_interpretation") != DIAGNOSTIC_NAME:
+            raise RuntimeError("worker diagnostic terminology drifted")
         actual = row["regional_correction"]["actual_regional_counts"]
         if row["regional_mode"] == "fixed_training_nr" and not all(abs(int(value) - 256) <= 1 for value in actual):
             raise RuntimeError(f"fixed Nr drift: {actual}")
@@ -142,6 +155,58 @@ def check_result(payload: dict[str, Any], module: Any, replay_data: bool) -> Non
     finite_tree(payload)
     if replay_data and payload["nested_replay_binding"]["entry_count"] != 32 * 4 * 6:
         raise RuntimeError("nested replay binding count failed")
+
+
+def check_r0_closeout(path: Path) -> None:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload["status"] != "passed" or payload["diagnostic_name"] != "measure-conservative full-graph re-discretization diagnostic":
+        raise RuntimeError("R0 closeout identity drifted")
+    if payload["checkpoint_iid"] is not False or payload["formal_same_distribution_invariance"] is not False:
+        raise RuntimeError("R0 applicability boundary drifted")
+    contract = payload["contract"]
+    if contract["test_accessed"] or contract["sealed_accessed"] or contract["training_executed"] or contract["tuning_executed"]:
+        raise RuntimeError("R0 forbidden role/action recorded")
+    if len(payload["resolution_rows"]) != 25:
+        raise RuntimeError("R0 plus 24 re-discretization rows required")
+    r0_rows = [row for row in payload["resolution_rows"] if row["reference_label"] == "R0"]
+    if len(r0_rows) != 1 or int(r0_rows[0]["resolution"]) != 1024:
+        raise RuntimeError("exact R0 reference missing")
+    if any(abs(float(value)) > float(payload["r0"]["formal_tolerance"]) for domain in payload["r0"]["formal128_replay_differences"].values() for value in domain.values()):
+        raise RuntimeError("R0 formal metric replay tolerance failed")
+    if payload["r0_to_r1"]["graph_hash_equal_fraction"] != 0.0:
+        raise RuntimeError("R0/R1 graph discontinuity unexpectedly absent")
+    finite_tree(payload)
+
+
+def check_decoder_audit(path: Path) -> None:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload["status"] != "failed_closed_decoder_only_absent" or payload["decoder_only_verified"] is not False:
+        raise RuntimeError("decoder-only audit must fail closed")
+    randomblock = payload["randomblock_condition"]
+    if randomblock["execution_status"] != "not_executed_fail_closed" or int(randomblock["dedicated_checkpoint_count"]) != 0:
+        raise RuntimeError("random-block conditional gate drifted")
+    contract = payload["role_contract"]
+    if any(contract.values()):
+        raise RuntimeError("decoder-only audit performed a forbidden action")
+    if len(payload["fail_closed_blockers"]) < 5:
+        raise RuntimeError("decoder-only interface audit is incomplete")
+
+
+def check_r0_protocol(path: Path) -> None:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload["status"] != "frozen_before_evaluation":
+        raise RuntimeError("R0 protocol was not frozen before evaluation")
+    if payload["stage_a_name"] != "measure-conservative full-graph re-discretization diagnostic":
+        raise RuntimeError("Stage A name drifted")
+    if payload["stage_a_boundaries"] != {
+        "checkpoint_iid": False,
+        "formal_same_distribution_invariance": False,
+        "model_selection_allowed": False,
+        "production_speedup_claim_allowed": False,
+    }:
+        raise RuntimeError("Stage A boundaries drifted")
+    if payload["decoder_only_condition"]["randomblock_execution_allowed"] is not False:
+        raise RuntimeError("random-block execution must remain fail-closed")
 
 
 def replay_supports(payload: dict[str, Any], module: Any, args: argparse.Namespace) -> None:
@@ -197,10 +262,14 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--full-fields", type=Path)
     parser.add_argument("--execution-manifest", type=Path, default=EXECUTION_MANIFEST)
+    parser.add_argument("--r0-closeout", type=Path)
+    parser.add_argument("--decoder-audit", type=Path)
+    parser.add_argument("--r0-protocol", type=Path, default=R0_PROTOCOL)
     args = parser.parse_args()
     module = load_module()
     protocol = json.loads(args.protocol.read_text(encoding="utf-8"))
     check_protocol(protocol)
+    check_r0_protocol(args.r0_protocol)
     if args.execution_manifest.exists():
         check_execution_manifest(args.execution_manifest)
     if args.result is not None:
@@ -210,6 +279,10 @@ def main() -> int:
             if not all((args.dataset_root, args.manifest, args.full_fields)):
                 parser.error("--replay-data requires dataset/full-field paths")
             replay_supports(payload, module, args)
+    if args.r0_closeout is not None:
+        check_r0_closeout(args.r0_closeout)
+    if args.decoder_audit is not None:
+        check_decoder_audit(args.decoder_audit)
     print(json.dumps({
         "status": "passed",
         "protocol": str(args.protocol),

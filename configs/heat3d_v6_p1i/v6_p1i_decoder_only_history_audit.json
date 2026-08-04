@@ -1,0 +1,129 @@
+{
+  "schema_version": "heat3d_v6_p1i_decoder_only_history_audit_v1",
+  "status": "failed_closed_decoder_only_absent",
+  "audit_head": "3199462dc7e8d9d06217caa1342182805bae82e7",
+  "definition": "x_in fixed at the original 1024 support; encoder, p2r, r2r and processed regional latent fixed; only x_out and r2p expand to N and only the decoder executes",
+  "decoder_only_verified": false,
+  "routes": [
+    {
+      "route_id": "anchored_full_N",
+      "classification": "two full-model forwards plus anchor-scale reconstruction",
+      "evidence": [
+        "configs/heat3d_v6/v6_production_highres_inference.yaml:10-16",
+        "scripts/run_heat3d_v6_production_highres_inference.py:582-648"
+      ],
+      "decoder_only": false,
+      "reason": "the N-node query group is passed through runner._model_apply, so encoder, p2r, processor, r2r, decoder and r2p all execute"
+    },
+    {
+      "route_id": "support1024_plus_reconstruction",
+      "classification": "1024 full-model inference followed by label-independent reconstruction",
+      "evidence": [
+        "scripts/benchmark_heat3d_v6_inference_qualification.py:518-610"
+      ],
+      "decoder_only": false,
+      "reason": "there is no N-node decoder or r2p execution"
+    },
+    {
+      "route_id": "controlled_full_graph_rediscretization",
+      "classification": "measure-conservative full-graph re-discretization diagnostic",
+      "evidence": [
+        "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_protocol.json",
+        "docs/v6_p1i_controlled_cross_resolution_protocol_audit.md"
+      ],
+      "decoder_only": false,
+      "reason": "the frozen protocol requires x_in=x_out and rebuilds the complete graph at each N"
+    },
+    {
+      "route_id": "generic_rigno_metadata_api",
+      "classification": "unverified lower-level capability only",
+      "evidence": [
+        "rigno/models/rigno.py:541-550"
+      ],
+      "decoder_only": false,
+      "reason": "the generic builder accepts separate x_in/x_out, but no Heat3D adapter, checkpoint replay, cached-latent API or numerical-equivalence test exercises that path"
+    }
+  ],
+  "fail_closed_blockers": [
+    {
+      "id": "heat3d_graph_wrapper_symmetric",
+      "evidence": "rigno/graphBuilder_Heat3D.py:66-80",
+      "detail": "Heat3DGraphBuilder.build_metadata accepts one coords array and binds it to both x_inp and x_out"
+    },
+    {
+      "id": "v6_adapter_symmetric",
+      "evidence": "rigno/heat3d_v6_dataset.py:88-99; scripts/run_heat3d_v1_medium_controlled_training_export.py:7771-7785",
+      "detail": "the V6 bridge and runner construct identical x_inp/x_out arrays"
+    },
+    {
+      "id": "node_local_decoder_bypass_alignment",
+      "evidence": "scripts/run_heat3d_v1_medium_controlled_training_export.py:2479-2499; rigno/models/rigno.py:2144-2157",
+      "detail": "the frozen checkpoint uses node-local k/q/BC bypass and enforces one-to-one input/output node count and ordering"
+    },
+    {
+      "id": "decoder_requires_encoder_latent_pnodes",
+      "evidence": "rigno/models/rigno.py:1638-1688",
+      "detail": "the decoder receives latent_pnodes created by the encoder; no verified cache/serialization or asymmetric-output contract exists"
+    },
+    {
+      "id": "missing_r2p_only_api",
+      "evidence": "repository and git-history search at audit_head",
+      "detail": "no r2p-only graph builder, decoder-only group, configuration, checker or result bundle exists"
+    }
+  ],
+  "git_history": {
+    "positive_decoder_only_implementation_found": false,
+    "searches": [
+      "git log --all -Sdecoder_only",
+      "git log --all -Sdecoder-only",
+      "git grep decoder-only HEAD"
+    ],
+    "negative_evidence_commits": [
+      {
+        "commit": "c8b77bf",
+        "is_current_head_ancestor": false,
+        "statement": "added query nodes still enter encoder/processor; not pure decoder-only"
+      },
+      {
+        "commit": "da3ea4a",
+        "statement": "controlled P1i protocol freezes x_in=x_out"
+      },
+      {
+        "commit": "332ef3f",
+        "statement": "production high-resolution route integrated as anchored full-N rather than decoder-only"
+      }
+    ]
+  },
+  "randomblock_condition": {
+    "execution_status": "not_executed_fail_closed",
+    "reason": "no verified decoder-only protocol and no random-block-trained checkpoint",
+    "remote_host": "wsl2",
+    "repository": {
+      "path": "~/myCodeGitOnly/heat3d-ic-randomblock",
+      "branch": "research/v6-randomblock",
+      "head": "44d0b5d3da48fa601b984e2fd8b452bcb349d5d7",
+      "clean": true
+    },
+    "dataset": {
+      "dataset_id": "heat3d_v6_randomblock_formal1024_v2",
+      "manifest_sha256": "cdd1e9ad57b442c6b3840a74740335cbfd90f96c420da118b6b515c0e09ddc8c",
+      "full_fields_sha256": "83a21dd34c84047e4c14b8b63fb079333fc46a3ed13b46a4f71eb2fc12e15311",
+      "config_sha256": "03a09752cb9ef703a63c126a708611bfa9a35bc6d08cc66473fe539f970d0901"
+    },
+    "dedicated_checkpoint_count": 0,
+    "available_runtime_only_ood_checkpoint": {
+      "config_id": "V6_03_V5best_P1h",
+      "trained_on_randomblock": false,
+      "checkpoint_sha256": "3ad58c2b34a46481acb74722c80bdcadbf55a0d613bc25c4fe2d7646b91aa1f2",
+      "run_config_sha256": "b33d0fd5f69d7438448fef81aa3aa0035f261a378d25c05824210f4728fd5190"
+    },
+    "allowed_interpretation": "existing full-1024 runtime-only OOD diagnostic only; no decoder-only or production speedup claim"
+  },
+  "role_contract": {
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "inference_executed": false,
+    "tuning_executed": false
+  }
+}

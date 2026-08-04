@@ -27,8 +27,9 @@ The historical experiments establish the following boundaries:
   confounded query resolution and `Nr`.
 - Production Anchor-derived inference is a valid deployment path, but it is not
   an upstream-style direct-`N` invariance experiment.
-- The existing P1i structured direct-`N` results are retained only as
-  compound-OOD diagnostics.
+- The existing P1i structured direct-`N` results are retained only as a
+  measure-conservative full-graph re-discretization diagnostic. It is neither
+  checkpoint-IID nor a formal same-distribution invariance test.
 
 ## Upstream protocol and Heat3D correction
 
@@ -90,7 +91,8 @@ The four factor cells at 1024/4096/16384/65536 are:
 | C | legal structured | fixed near training `Nr=256` |
 | D | existing legal structured | grows as approximately `N/4` |
 
-Direct-`N` results remain compound-OOD diagnostics. A versus B isolates
+Direct-`N` results remain a measure-conservative full-graph re-discretization
+diagnostic. A versus B isolates
 regional-scale drift under the same support; A versus C diagnoses support
 distribution; C versus D isolates regional scale on structured support.
 

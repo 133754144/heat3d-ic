@@ -1,0 +1,79 @@
+{
+  "schema_version": "heat3d_v6_p1i_cross_resolution_r0_protocol_v1",
+  "status": "frozen_before_evaluation",
+  "stage_a_name": "measure-conservative full-graph re-discretization diagnostic",
+  "stage_a_boundaries": {
+    "checkpoint_iid": false,
+    "formal_same_distribution_invariance": false,
+    "model_selection_allowed": false,
+    "production_speedup_claim_allowed": false
+  },
+  "r0": {
+    "definition": "exact checkpoint replay on the original frozen 1024 support",
+    "frozen_fields": [
+      "coordinates",
+      "pointwise_k_xyz",
+      "pointwise_q",
+      "control_volume_weights",
+      "global_context_24d",
+      "regional_qk_features",
+      "physics_and_predicted_scale",
+      "graph_config",
+      "graph_seed"
+    ],
+    "checkpoint": {
+      "epoch": 559,
+      "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+    },
+    "fixed32_expected_support": {
+      "point_global_true_rms_relative_rmse_pct": 1.754487868378866,
+      "sample_first_cv_relative_rmse_pct": 1.4104530489481268,
+      "raw_cv_weighted_rmse_K": 1.2949739684504056
+    },
+    "formal128_expected_support": {
+      "point_global_true_rms_relative_rmse_pct": 2.1099431505824233,
+      "sample_first_cv_relative_rmse_pct": 1.6407085115485034,
+      "raw_cv_weighted_rmse_K": 1.316122932076816
+    },
+    "formal128_expected_full": {
+      "point_global_true_rms_relative_rmse_pct": 3.4598839257728553,
+      "sample_first_cv_relative_rmse_pct": 3.9642902273173015,
+      "raw_cv_weighted_rmse_K": 2.985701455888172
+    },
+    "absolute_metric_tolerance": 0.005
+  },
+  "r1": {
+    "definition": "existing reconstructed measure-conservative N=1024 cell",
+    "comparison_to_r0": [
+      "support_and_common-full-field metric delta",
+      "common-full-field prediction drift",
+      "pointwise coords/k/q/weight hashes",
+      "graph hashes and edge statistics",
+      "Global Context, QK, physical-scale and predicted-scale drift"
+    ]
+  },
+  "r2_plus": {
+    "resolutions": [512, 2048, 4096, 8192, 16384],
+    "discretization_seeds": [0, 1, 2, 3],
+    "all_drift_references": "R0 exact checkpoint replay"
+  },
+  "deterministic_replay": {
+    "prior_cell_count": 24,
+    "prior_metric_absolute_tolerance": 0.005,
+    "fixed_valid_subset_count": 32,
+    "fixed_valid_subset_selection": "sha256(sample_id) ascending"
+  },
+  "decoder_only_condition": {
+    "required_before_randomblock_execution": true,
+    "audit_path": "configs/heat3d_v6_p1i/v6_p1i_decoder_only_history_audit.json",
+    "current_decision": "failed_closed_decoder_only_absent",
+    "randomblock_execution_allowed": false
+  },
+  "role_contract": {
+    "allowed": ["valid_iid", "train_only_normalization_metadata"],
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "tuning_executed": false
+  }
+}

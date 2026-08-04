@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Controlled, valid-only P1i cross-resolution audit.
+"""Controlled, valid-only P1i full-graph re-discretization diagnostic.
 
 The primary ladder uses deterministic source-aware supports selected directly
 from the frozen 240825-node FVM mesh.  The supports are nested within each
@@ -10,8 +10,9 @@ graph construction.
 
 The script also exposes the four preregistered factor cells that separate
 support distribution from regional-mesh node-count drift.  All model results
-are diagnostic: the frozen checkpoint and its train-only normalization are
-never modified.
+are a measure-conservative full-graph re-discretization diagnostic.  They are
+not checkpoint-IID or a formal same-distribution invariance test.  The frozen
+checkpoint and its train-only normalization are never modified.
 """
 
 from __future__ import annotations
@@ -491,6 +492,15 @@ def graph_stats(metadata: Any, n_physical: int) -> dict[str, Any]:
     return result
 
 
+def graph_sha256(metadata: Any, n_physical: int) -> str:
+    n_regional = int(np.asarray(metadata.x_rnodes).shape[1] - 1)
+    digest = hashlib.sha256()
+    digest.update(np.ascontiguousarray(np.asarray(metadata.x_rnodes)[0, :n_regional]).tobytes())
+    for field in ("p2r_edge_indices", "r2r_edge_indices", "r2p_edge_indices"):
+        digest.update(np.ascontiguousarray(real_edges(metadata, field, n_physical, n_regional)).tobytes())
+    return digest.hexdigest()
+
+
 def edge_targets(metadata_rows: Sequence[Any]) -> dict[str, int | None]:
     result: dict[str, int | None] = {}
     for field in EDGE_FIELDS:
@@ -605,6 +615,62 @@ def source_example(
             - sum(np.any([mask[indices] for mask in registered_masks], axis=0))
         ),
         "conservation": conservation,
+        "pointwise_hashes": {
+            "coords": array_sha256(coords[indices]),
+            "k_xyz": array_sha256(support_k),
+            "q": array_sha256(support_q),
+            "weights": array_sha256(support_cv),
+        },
+        "physical_totals": {
+            "volume_m3": float(np.sum(support_cv)),
+            "source_power_W": float(np.sum(support_q * support_cv)),
+            "cv_k_moment_xyz": np.sum(support_k * support_cv[:, None], axis=0).tolist(),
+        },
+        "reference_K": float(public0["reference_K"]),
+    }
+
+
+def checkpoint_example(
+    data: base.FamilyData,
+    row: Mapping[str, Any],
+) -> tuple[V6DualRobinExample, dict[str, Any]]:
+    """Return the frozen 1024-point training support without re-discretizing it."""
+    original, public0 = data.load_example(row)
+    truth = data.truth(row, include_full_kq=False)
+    shared = data.full_shared()
+    _, full_q = data.full_kq(row)
+    mapping, map_audit = base.build_map(original, shared)
+    coords = np.asarray(public0["coords"], dtype=np.float64)
+    cv = np.asarray(public0["cv"], dtype=np.float64)
+    q = np.asarray(public0["q"], dtype=np.float64)
+    features = np.asarray(original.condition.condition_features, dtype=np.float64)
+    return original, {
+        "sample_id": str(row["sample_id"]),
+        "support_truth": truth["support_delta"],
+        "full_truth": truth["full_delta"],
+        "full_coords": np.asarray(shared["coords"], dtype=np.float64),
+        "full_cv": np.asarray(shared["cv"], dtype=np.float64),
+        "full_layer": np.asarray(shared["layer"], dtype=np.int32),
+        "full_q": np.asarray(full_q, dtype=np.float64),
+        "support_coords": coords,
+        "support_cv": cv,
+        "support_layer": np.asarray(public0["layer"], dtype=np.int32),
+        "support_q": q,
+        "mapping": mapping,
+        "map_audit": map_audit,
+        "map_mode": "frozen_checkpoint_support_layer_aware_reconstruction",
+        "support_hash": array_sha256(coords),
+        "pointwise_hashes": {
+            "coords": array_sha256(coords),
+            "k_xyz": array_sha256(features[:, :3]),
+            "q": array_sha256(q),
+            "weights": array_sha256(cv),
+        },
+        "physical_totals": {
+            "volume_m3": float(np.sum(cv)),
+            "source_power_W": float(np.sum(q * cv)),
+            "cv_k_moment_xyz": np.sum(features[:, :3] * cv[:, None], axis=0).tolist(),
+        },
         "reference_K": float(public0["reference_K"]),
     }
 
@@ -658,25 +724,35 @@ def worker(args: argparse.Namespace) -> int:
     )
     rows = data.selected_rows(args.sample_count)
     runtime = base.ModelRuntime(
-        args.run_dir, args.checkpoint_sha256, args.checkpoint_epoch, None,
+        args.run_dir, args.checkpoint_sha256, args.checkpoint_epoch,
+        args.edge_targets if args.support_mode == "checkpoint_replay" else None,
         verify_checkpoint_sha=not args.checkpoint_sha_preverified,
     )
     graph_config = dict(runtime.run_config["graph_config"])
-    graph_config["discrete_graph_backend"] = "sparse_kdtree_v1"
-    graph_config["discrete_graph_chunk_size"] = 2048
+    if args.support_mode != "checkpoint_replay":
+        graph_config["discrete_graph_backend"] = "sparse_kdtree_v1"
+        graph_config["discrete_graph_chunk_size"] = 2048
     examples = []
     public_rows = []
     sequences_cache: dict[tuple[str, int], tuple[dict[str, np.ndarray], dict[str, Any]]] = {}
     for row in rows:
         if args.support_mode == "source_aware":
             example, public = source_example(data, row, args.resolution, args.discretization_seed, sequences_cache)
+        elif args.support_mode == "checkpoint_replay":
+            if args.resolution != TRAINING_RESOLUTION:
+                raise RuntimeError("checkpoint replay is frozen at N=1024")
+            example, public = checkpoint_example(data, row)
         else:
             example, public = structured_example(data, row, args.resolution)
         examples.append(example)
         public_rows.append(public)
 
-    raw_builder = CorrectedHeat3DGraphBuilder(
-        regional_mode=args.regional_mode, physical_node_count=args.resolution, **graph_config
+    raw_builder = (
+        runner.Heat3DGraphBuilder(**graph_config)
+        if args.support_mode == "checkpoint_replay"
+        else CorrectedHeat3DGraphBuilder(
+            regional_mode=args.regional_mode, physical_node_count=args.resolution, **graph_config
+        )
     )
     raw_metadata = [
         raw_builder.build_metadata(
@@ -686,12 +762,13 @@ def worker(args: argparse.Namespace) -> int:
         for example in examples
     ]
     targets = edge_targets(raw_metadata)
-    runtime.builder = FixedEdgeBuilder(
-        CorrectedHeat3DGraphBuilder(
-            regional_mode=args.regional_mode, physical_node_count=args.resolution, **graph_config
-        ),
-        targets,
-    )
+    if args.support_mode != "checkpoint_replay":
+        runtime.builder = FixedEdgeBuilder(
+            CorrectedHeat3DGraphBuilder(
+                regional_mode=args.regional_mode, physical_node_count=args.resolution, **graph_config
+            ),
+            targets,
+        )
     runtime.compiled_apply = jax.jit(
         lambda params, model_group: runner._model_apply(runtime.model, params, model_group)
     )
@@ -700,6 +777,9 @@ def worker(args: argparse.Namespace) -> int:
     full_metric_rows = []
     oracle_metric_rows = []
     sample_records = []
+    support_predictions = []
+    full_predictions = []
+    full_truths = []
     for index, (example, public, metadata) in enumerate(zip(examples, public_rows, raw_metadata, strict=True)):
         group = runtime.graph(example)
         output = model_output(runtime, group)
@@ -708,6 +788,7 @@ def worker(args: argparse.Namespace) -> int:
             prediction, public["support_truth"], public["support_cv"], public["support_coords"], public["support_layer"], public["support_q"]
         )
         support_metric_rows.append(support_row)
+        support_predictions.append(prediction.astype(np.float32))
         support_metrics = metrics_with_domain(
             [support_row], full=False, domain=f"support_{args.resolution}"
         )
@@ -716,11 +797,17 @@ def worker(args: argparse.Namespace) -> int:
             "support_hash": public["support_hash"],
             "support_metrics": support_metrics,
             "graph": graph_stats(metadata, args.resolution),
+            "graph_sha256": graph_sha256(metadata, args.resolution),
             "features": feature_summary(group, output, int(np.asarray(metadata.x_rnodes).shape[1] - 1)),
+            "support_prediction_sha256": array_sha256(prediction.astype(np.float32)),
+            "pointwise_hashes": public.get("pointwise_hashes"),
+            "physical_totals": public.get("physical_totals"),
         }
-        if args.support_mode == "source_aware":
+        if args.support_mode in {"source_aware", "checkpoint_replay"}:
             reconstructed = public["mapping"].reconstruct(prediction)
             oracle = public["mapping"].reconstruct(public["support_truth"])
+            full_predictions.append(np.asarray(reconstructed, dtype=np.float32))
+            full_truths.append(np.asarray(public["full_truth"], dtype=np.float32))
             full_row = one_metric_row(
                 reconstructed, public["full_truth"], public["full_cv"], public["full_coords"], public["full_layer"], public["full_q"]
             )
@@ -736,15 +823,19 @@ def worker(args: argparse.Namespace) -> int:
                 "oracle_reconstruction_metrics": metrics_with_domain(
                     [oracle_row], full=True, domain="full_240825_oracle_reconstruction"
                 ),
-                "selection": public["selection_audit"],
-                "quota": public["quota"],
-                "capacity_shortage": public["capacity_shortage"],
-                "registered_block_node_coverage": public["registered_block_node_coverage"],
-                "block_core_selected_count": public["block_core_selected_count"],
-                "block_halo_selected_count": public["block_halo_selected_count"],
-                "conservation": public["conservation"],
                 "reconstruction_mode": public["map_mode"],
+                "full_prediction_sha256": array_sha256(np.asarray(reconstructed, dtype=np.float32)),
             })
+            if args.support_mode == "source_aware":
+                record.update({
+                    "selection": public["selection_audit"],
+                    "quota": public["quota"],
+                    "capacity_shortage": public["capacity_shortage"],
+                    "registered_block_node_coverage": public["registered_block_node_coverage"],
+                    "block_core_selected_count": public["block_core_selected_count"],
+                    "block_halo_selected_count": public["block_halo_selected_count"],
+                    "conservation": public["conservation"],
+                })
         sample_records.append(record)
         print(
             f"[cross-resolution] N={args.resolution} seed={args.discretization_seed} "
@@ -774,12 +865,16 @@ def worker(args: argparse.Namespace) -> int:
         "edge_targets": targets,
         "regional_correction": {
             "mode": args.regional_mode,
-            "rmesh_correction_dsf": raw_builder.correction_dsf,
+            "rmesh_correction_dsf": getattr(raw_builder, "correction_dsf", 1.0),
             "training_regional_target": int(
                 TRAINING_RESOLUTION / raw_builder.config["subsample_factor"]
             ),
             "actual_regional_counts": sorted({row["graph"]["regional_nodes"] for row in sample_records}),
-            "upstream_mechanism": "random physical-node subsampling; simplex-centroid refinement below training resolution",
+            "upstream_mechanism": (
+                "frozen checkpoint graph config and graph seed; no regional correction"
+                if args.support_mode == "checkpoint_replay"
+                else "random physical-node subsampling; simplex-centroid refinement below training resolution"
+            ),
         },
         "samples": sample_records,
         "support_index_sets_materialized_for_internal_check": bool(support_sets),
@@ -799,11 +894,22 @@ def worker(args: argparse.Namespace) -> int:
             "training_executed": False,
             "checkpoint_modified": False,
             "x_in_equals_x_out": True,
-            "direct_N_interpretation": "compound_OOD_diagnostic_only",
+            "direct_N_interpretation": "measure_conservative_full_graph_rediscretization_diagnostic",
+            "checkpoint_iid": False,
+            "same_distribution_invariance_claimed": False,
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.prediction_npz is not None:
+        args.prediction_npz.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            args.prediction_npz,
+            sample_ids=np.asarray([str(row["sample_id"]) for row in rows]),
+            support_predictions=np.stack(support_predictions),
+            full_predictions=np.stack(full_predictions) if full_predictions else np.empty((0, 0), dtype=np.float32),
+            full_truth=np.stack(full_truths) if full_truths else np.empty((0, 0), dtype=np.float32),
+        )
     return 0
 
 
@@ -953,7 +1059,9 @@ def orchestrate(args: argparse.Namespace) -> int:
             "valid_only": True, "test_accessed": False, "sealed_accessed": False,
             "training_executed": False, "tuning_executed": False,
             "sample_count": args.sample_count, "discretization_seeds": list(DISCRETIZATION_SEEDS),
-            "direct_N_interpretation": "compound_OOD_diagnostic_only",
+            "direct_N_interpretation": "measure_conservative_full_graph_rediscretization_diagnostic",
+            "checkpoint_iid": False,
+            "same_distribution_invariance_claimed": False,
         },
         "inputs": {
             "manifest_sha256": base.sha256(args.manifest),
@@ -975,7 +1083,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--resolution", type=int, choices=sorted(set(MAIN_RESOLUTIONS + FACTOR_RESOLUTIONS)))
     parser.add_argument("--discretization-seed", type=int, default=0)
-    parser.add_argument("--support-mode", choices=("source_aware", "structured"), default="source_aware")
+    parser.add_argument("--support-mode", choices=("checkpoint_replay", "source_aware", "structured"), default="source_aware")
     parser.add_argument("--regional-mode", choices=("fixed_training_nr", "growing_nr"), default="fixed_training_nr")
     parser.add_argument("--sample-count", type=int, default=SAMPLE_COUNT)
     parser.add_argument("--dataset-root", type=Path, required=True)
@@ -991,6 +1099,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metrics-csv", type=Path)
     parser.add_argument("--graph-csv", type=Path)
     parser.add_argument("--drift-csv", type=Path)
+    parser.add_argument("--edge-targets", type=Path)
+    parser.add_argument("--prediction-npz", type=Path)
     args = parser.parse_args()
     if args.worker and args.resolution is None:
         parser.error("--worker requires --resolution")

@@ -1,0 +1,7 @@
+route_id,classification,x_in_contract,x_out_contract,encoder_processor_at_N,decoder_only_verified,evidence,decision
+anchored_full_N,two full-model forwards plus anchor-scale reconstruction,1024 anchor then N query,N query,N query full model,false,configs/heat3d_v6/v6_production_highres_inference.yaml:10-16; scripts/run_heat3d_v6_production_highres_inference.py:582-648,not decoder-only
+support1024_plus_reconstruction,1024 full-model inference plus reconstruction,1024,no model x_out at N,no,false,scripts/benchmark_heat3d_v6_inference_qualification.py:518-610,not decoder-only
+controlled_full_graph_rediscretization,measure-conservative full-graph re-discretization,N,N,yes,false,configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_protocol.json,diagnostic only
+generic_rigno_metadata_api,unverified lower-level capability,API permits separate x_in,API permits separate x_out,unverified,false,rigno/models/rigno.py:541-550,insufficient evidence
+true_decoder_only,required frozen-latent route,1024,N,no,false,repository and git-history search,fail closed
+randomblock_conditional,requires verified decoder-only plus dedicated checkpoint,1024,N,no,false,WSL2 artifact audit,not executed
