@@ -31,6 +31,7 @@
     "input_output_coordinates": "x_in_equals_x_out",
     "regional_mesh": "fixed_training_nr_using_upstream_subsample_or_simplex_centroid_refinement",
     "resolutions": [512, 1024, 2048, 4096, 8192, 16384],
+    "block_stratum_policy": "all registered q/k block nodes first; if the preregistered quota exceeds literal block capacity, fill only from target-independent same-active-layer halo and report core/halo counts",
     "source_aware_strata": {
       "block": 0.25,
       "bottom": 0.0625,

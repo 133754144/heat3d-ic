@@ -64,6 +64,12 @@ volume. The 512/1024/2048/4096/8192/16384 sets are strictly nested within the
 same sample and discretization seed. Different seeds are independent
 discretizations and are not claimed to be nested with one another.
 
+All literal q/k block nodes are ordered before any extension. If a high-N 25%
+block quota exceeds the finite literal block capacity, the remainder is drawn
+only from a target-independent halo in the same active layers. Core and halo
+counts are reported separately; this avoids silently changing the quota or
+dropping low-capacity samples.
+
 Full solver nodes are assigned to the nearest selected node within the same
 layer. Aggregated control volume, source power, and CV-weighted conductivity
 moments are conserved to floating-point tolerance. Temperature is excluded

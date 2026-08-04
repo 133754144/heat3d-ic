@@ -163,11 +163,25 @@ def support_sequences(
 ) -> tuple[dict[str, np.ndarray], dict[str, Any]]:
     boundaries = layer_boundaries(meta)
     masks = block_masks(meta, coords, layer)
-    block_union = np.logical_or.reduce(masks)
+    block_core = np.logical_or.reduce(masks)
     interface_masks = [np.isclose(coords[:, 2], value, atol=1e-15) for value in boundaries[1:-1]]
-    interface_union = np.logical_or.reduce(interface_masks) & ~block_union
-    top = np.isclose(coords[:, 2], boundaries[-1], atol=1e-15) & ~block_union & ~interface_union
-    bottom = np.isclose(coords[:, 2], boundaries[0], atol=1e-15) & ~block_union & ~interface_union
+    raw_interface = np.logical_or.reduce(interface_masks)
+    raw_top = np.isclose(coords[:, 2], boundaries[-1], atol=1e-15)
+    raw_bottom = np.isclose(coords[:, 2], boundaries[0], atol=1e-15)
+    layers = [str(row["id"]) for row in meta["physics"]["layers_bottom_to_top"]]
+    active_names = {str(row["layer"]) for row in [*meta["q_blocks"], *meta["k_blocks"]]}
+    active_ids = [index for index, name in enumerate(layers) if name in active_names]
+    block_halo = (
+        np.isin(layer, active_ids)
+        & ~block_core
+        & ~raw_interface
+        & ~raw_top
+        & ~raw_bottom
+    )
+    block_union = block_core | block_halo
+    interface_union = raw_interface & ~block_union
+    top = raw_top & ~block_union & ~interface_union
+    bottom = raw_bottom & ~block_union & ~interface_union
     reserved = block_union | interface_union | top | bottom
     volume = ~reserved
     seed_text = f"{sample_id}:{discretization_seed}:p1i_cross_resolution_v1"
@@ -181,8 +195,16 @@ def support_sequences(
             candidates = np.flatnonzero(layer == layer_id)
         mandatory_volume.append(int(weighted_order(candidates, cv, seed_text=f"{seed_text}:layer:{layer_id}")[0]))
 
+    block_core_order = weighted_order(
+        np.flatnonzero(block_core), cv,
+        seed_text=f"{seed_text}:block_core", mandatory=mandatory_block,
+    )
+    block_halo_order = weighted_order(
+        np.flatnonzero(block_halo), cv,
+        seed_text=f"{seed_text}:block_halo",
+    )
     pools = {
-        "block": np.flatnonzero(block_union),
+        "block": np.concatenate((block_core_order, block_halo_order)),
         "interface": np.flatnonzero(interface_union),
         "top": np.flatnonzero(top),
         "bottom": np.flatnonzero(bottom),
@@ -195,12 +217,18 @@ def support_sequences(
         "bottom": [],
         "volume": mandatory_volume,
     }
-    sequences = {
-        name: weighted_order(pool, cv, seed_text=f"{seed_text}:{name}", mandatory=mandatory[name])
-        for name, pool in pools.items()
-    }
+    sequences = {}
+    for name, pool in pools.items():
+        sequences[name] = (
+            pool
+            if name == "block"
+            else weighted_order(pool, cv, seed_text=f"{seed_text}:{name}", mandatory=mandatory[name])
+        )
     return sequences, {
         "pool_capacity": {name: int(len(value)) for name, value in pools.items()},
+        "block_core_capacity": int(np.sum(block_core)),
+        "block_halo_capacity": int(np.sum(block_halo)),
+        "block_order": "all registered q/k block nodes before active-layer halo",
         "registered_block_count": len(masks),
         "mandatory_block_count": len(set(mandatory_block)),
         "mandatory_interface_count": len(set(mandatory_interface)),
@@ -569,6 +597,13 @@ def source_example(
         "quota": realized,
         "capacity_shortage": shortage,
         "registered_block_node_coverage": block_coverage,
+        "block_core_selected_count": int(
+            sum(np.any([mask[indices] for mask in registered_masks], axis=0))
+        ),
+        "block_halo_selected_count": int(
+            realized["block"]
+            - sum(np.any([mask[indices] for mask in registered_masks], axis=0))
+        ),
         "conservation": conservation,
         "reference_K": float(public0["reference_K"]),
     }
@@ -673,6 +708,8 @@ def worker(args: argparse.Namespace) -> int:
                 "quota": public["quota"],
                 "capacity_shortage": public["capacity_shortage"],
                 "registered_block_node_coverage": public["registered_block_node_coverage"],
+                "block_core_selected_count": public["block_core_selected_count"],
+                "block_halo_selected_count": public["block_halo_selected_count"],
                 "conservation": public["conservation"],
                 "reconstruction_mode": public["map_mode"],
             })
