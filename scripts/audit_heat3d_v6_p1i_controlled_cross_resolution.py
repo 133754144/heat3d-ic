@@ -901,7 +901,7 @@ def write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     keys = sorted({key for row in rows for key in row})
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=keys)
+        writer = csv.DictWriter(handle, fieldnames=keys, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import math
@@ -15,6 +16,15 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "audit_heat3d_v6_p1i_controlled_cross_resolution.py"
+EXECUTION_MANIFEST = ROOT / "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_execution_manifest.json"
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def load_module():
@@ -57,6 +67,30 @@ def check_protocol(protocol: dict[str, Any]) -> None:
         raise RuntimeError("factor resolution ladder drifted")
     if protocol["checkpoint"]["sha256"] != "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e":
         raise RuntimeError("checkpoint SHA drifted")
+
+
+def check_execution_manifest(path: Path) -> None:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload["status"] != "completed_valid_only" or payload["formal_evaluator_commit"] != "9458900528bc84ab571e95682f7ae02b047ed9a2":
+        raise RuntimeError("formal execution identity drifted")
+    if payload["role_contract"] != {
+        "test_accessed": False,
+        "sealed_accessed": False,
+        "training_executed": False,
+        "tuning_executed": False,
+    }:
+        raise RuntimeError("execution role contract drifted")
+    if len(payload["engineering_preflights"]) != 2 or not all(
+        item["formal_result_used"] is False for item in payload["engineering_preflights"]
+    ):
+        raise RuntimeError("engineering failure provenance drifted")
+    for artifact in payload["artifacts"]:
+        artifact_path = ROOT / artifact["path"]
+        if not artifact_path.is_file():
+            raise RuntimeError(f"missing bound artifact: {artifact_path}")
+        actual = file_sha256(artifact_path)
+        if actual != artifact["sha256"]:
+            raise RuntimeError(f"artifact SHA mismatch: {artifact_path}: {actual}")
 
 
 def check_result(payload: dict[str, Any], module: Any, replay_data: bool) -> None:
@@ -162,10 +196,13 @@ def main() -> int:
     parser.add_argument("--dataset-root", type=Path)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--full-fields", type=Path)
+    parser.add_argument("--execution-manifest", type=Path, default=EXECUTION_MANIFEST)
     args = parser.parse_args()
     module = load_module()
     protocol = json.loads(args.protocol.read_text(encoding="utf-8"))
     check_protocol(protocol)
+    if args.execution_manifest.exists():
+        check_execution_manifest(args.execution_manifest)
     if args.result is not None:
         payload = json.loads(args.result.read_text(encoding="utf-8"))
         check_result(payload, module, args.replay_data)

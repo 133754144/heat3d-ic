@@ -1,0 +1,81 @@
+{
+  "schema_version": "heat3d_v6_p1i_controlled_cross_resolution_execution_v1",
+  "status": "completed_valid_only",
+  "branch": "research/v6-p1i-training",
+  "formal_evaluator_commit": "9458900528bc84ab571e95682f7ae02b047ed9a2",
+  "execution_host": "wsl2",
+  "execution_window_local": {
+    "date": "2026-08-04",
+    "start_approx": "22:22:28+08:00",
+    "end_approx": "23:02:05+08:00",
+    "wall_seconds_approx": 2377
+  },
+  "role_contract": {
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "tuning_executed": false
+  },
+  "frozen_inputs": {
+    "checkpoint_epoch": 559,
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "valid_sample_count": 32,
+    "discretization_seeds": [0, 1, 2, 3]
+  },
+  "upstream_binding": {
+    "repository": "https://github.com/camlab-ethz/rigno",
+    "commit": "3e4b307c90f34237d0c1e5e497d4301116e9c3db",
+    "files": {
+      "rigno/test.py": "b94fc47392efad6ebac2efbcd5207f9338d5f55d444dca2062cfd7cbb5937944",
+      "rigno/models/rigno.py": "d54175c4c5803d5552031c3e5d8cf1782fcd666b3f7b78f1a17f317f682d9800"
+    }
+  },
+  "formal_command": "python scripts/audit_heat3d_v6_p1i_controlled_cross_resolution.py --dataset-root data/heat3d_v6_p1i_continuous_physics1024_v1 --manifest configs/heat3d_v6_p1i/heat3d_v6_p1i_continuous_physics1024_v1_manifest.json --full-fields data/heat3d_v6_p1i_continuous_physics1024_v1/full_fields.h5 --run-dir /tmp/p1i-seed0-timing-run --checkpoint-sha256 51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e --checkpoint-epoch 559 --sample-count 32 --work-dir /tmp/v6_p1i_controlled_cross_resolution_workers --output /tmp/v6_p1i_controlled_cross_resolution.json --metrics-csv /tmp/v6_p1i_controlled_cross_resolution_metrics.csv --graph-csv /tmp/v6_p1i_controlled_cross_resolution_graph.csv --drift-csv /tmp/v6_p1i_controlled_cross_resolution_drift.csv --worker-timeout 7200",
+  "formal_checks": {
+    "cell_count": 40,
+    "main_cells": 24,
+    "factor_cells": 16,
+    "nested_support_replays": 768,
+    "full_data_replay": "passed",
+    "remote_worktree_clean_before_evaluation": true,
+    "result_checker": "passed"
+  },
+  "engineering_preflights": [
+    {
+      "commit": "3c1a977",
+      "status": "failed_closed",
+      "reason": "edge preflight used raw coordinates while the runner uses normalized coordinates, causing a one-edge boundary mismatch",
+      "fix_commit": "8abba83",
+      "formal_result_used": false
+    },
+    {
+      "commit": "8abba83",
+      "status": "failed_closed",
+      "reason": "structured N=1024 requested a shape absent from the unified structured registry",
+      "fix_commit": "9458900",
+      "formal_result_used": false
+    }
+  ],
+  "artifacts": [
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_protocol.json", "sha256": "7534b04f0bcd0cbfd339b5a04427b37f620b5d36cc4369d6e54900151d928f66"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_historical_protocol_audit.csv", "sha256": "21ae4b054f596dfef9c1d9124d5eced515f40daf1bbbd496663986a9893e8dce"},
+    {"path": "docs/v6_p1i_controlled_cross_resolution_protocol_audit.md", "sha256": "9b07f9a7fd3bc8b5380e1d2a72f9533ed2ee7d2f4b328df87d1b2e26437ab50b"},
+    {"path": "scripts/audit_heat3d_v6_p1i_controlled_cross_resolution.py", "sha256": "77d2220985fd92009ea854b40db5ce10d8f9744732713ec7a96b1b4a5d06c22d"},
+    {"path": "scripts/check_heat3d_v6_p1i_controlled_cross_resolution.py", "sha256": "b3b8c84be85f34ec5d5e1a2d852cafd70a582a11fe34fa7f6196c9583bb4d9b0"},
+    {"path": "scripts/closeout_heat3d_v6_p1i_controlled_cross_resolution.py", "sha256": "eabc45baaec712f370716bbcb8f4b8c83c28ad93703ad06f0cb4cc17894c66df"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_results.json", "sha256": "5f7df91496eb4fdc780c113a15a5803f952cccde3a5507bd22ac190d6f4a6ccc"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_metrics.csv", "sha256": "e14d85d680cb3d3da33c60c9be8de9e8a0e0595b8143eb16b082a3709106923e"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_graph.csv", "sha256": "83a44ea46baa21dae6ee5dd9e7843b77870299782f2634d1c936e3fa58602d40"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_drift.csv", "sha256": "5b86191cc6ed4c9ef7639c7fc7a3b28f6de7f63f79d23819f91b3728f69139e2"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_summary.json", "sha256": "a7187160c6aaf8f815a485ff1095cda11fdc1fb7b55ebc0ea9373b438bd1fb9c"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_main_summary.csv", "sha256": "e0b0f7371647108bdfba1c8695a9c3df28fe21d0431bd45f5e432d8d215cfd89"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_factor_summary.csv", "sha256": "2bd5449fcaf81995b0211a13e73e51128abd0ddef2d9e2e1cce93dc9d183b085"},
+    {"path": "configs/heat3d_v6_p1i/v6_p1i_controlled_cross_resolution_execution.log", "sha256": "4be359bb8eb7e98c27875a1942a19189350f8161ac5ff330d8f3cbe5f7318a19"},
+    {"path": "docs/v6_p1i_controlled_cross_resolution_closeout.md", "sha256": "cda65b96d3ee7e8236e3c5151cd7735df4a059e4d43bed03a0c20a68cab8926f"},
+    {"path": "docs/figures/v6_p1i_controlled_resolution_error.png", "sha256": "d2c06159c4f9f5f9e1bf078ed4c8b1608742ea7ffaf67e875b65d13ee71511d2"},
+    {"path": "docs/figures/v6_p1i_controlled_graph_scale.png", "sha256": "5d49ed1d91b11daa2bba443663c4301fa89db251b92cc43ffa90eca51e614a18"},
+    {"path": "docs/figures/v6_p1i_controlled_feature_drift.png", "sha256": "a1a7fe6706c8d1529cad7c76edbfdeb1f1e559f38fcdc1a7d988000d4b8480d7"}
+  ]
+}

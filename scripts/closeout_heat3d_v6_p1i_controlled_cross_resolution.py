@@ -80,7 +80,7 @@ def factor_summary(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
 def write_csv(path: Path, rows: Sequence[Mapping[str, Any]]) -> None:
     keys = sorted({key for row in rows for key in row})
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=keys)
+        writer = csv.DictWriter(handle, fieldnames=keys, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -144,6 +144,35 @@ def plot_results(main_rows: Sequence[Mapping[str, Any]], factors: Sequence[Mappi
 
 
 def report_markdown(main_rows: Sequence[Mapping[str, Any]], factor_rows: Sequence[Mapping[str, Any]], attribution: Sequence[Mapping[str, Any]], payload: Mapping[str, Any]) -> str:
+    graph_scale_rows = []
+    for n in sorted({int(item["resolution"]) for item in payload["main"]}):
+        cells = [item for item in payload["main"] if int(item["resolution"]) == n]
+        samples = [sample for cell in cells for sample in cell["samples"]]
+        drift = [item for item in payload["feature_drift"] if int(item["resolution"]) == n]
+        graph_scale_rows.append({
+            "resolution": n,
+            "p2r_in_degree_mean": float(np.mean([
+                sample["graph"]["p2r"]["in_degree"]["mean"] for sample in samples
+            ])),
+            "p2r_edges_mean": float(np.mean([
+                sample["graph"]["p2r"]["edge_count"] for sample in samples
+            ])),
+            "r2r_edges_mean": float(np.mean([
+                sample["graph"]["r2r"]["edge_count"] for sample in samples
+            ])),
+            "global_context_z_l2_mean": float(np.mean([
+                abs(float(item["global_context_z_l2_drift"])) for item in drift
+            ])),
+            "qk_l2_mean": float(np.mean([
+                abs(float(item["qk_summary_l2_drift"])) for item in drift
+            ])),
+            "log_s_phys_abs_mean": float(np.mean([
+                abs(float(item["log_s_phys_drift"])) for item in drift
+            ])),
+            "predicted_log_scale_abs_mean": float(np.mean([
+                abs(float(item["predicted_log_scale_drift"])) for item in drift
+            ])),
+        })
     lines = [
         "# V6 P1i controlled cross-resolution closeout",
         "",
@@ -186,6 +215,28 @@ def report_markdown(main_rows: Sequence[Mapping[str, Any]], factor_rows: Sequenc
         f"The largest source-aware regional-scale contrast is B-A={worst_regional['regional_effect_source_B_minus_A_pct_point']:+.4f} points at N={worst_regional['resolution']}.",
         "",
         "Interpretation uses the full A-D pattern together with Global Context, QK, physical-scale, predicted-scale, graph-size, and oracle-floor drift. It does not attribute the existing structured direct-N curve to resolution alone.",
+        "",
+        "The source-aware ladder is conservative and label-independent, but it is not checkpoint-IID: the checkpoint was trained on the frozen sparse P1i support, whereas this audit redistributes full-field control volume, q, and conductivity moments onto nested supports. Therefore even N=1024 is a support-measure/discretization diagnostic, not a replay of the training support.",
+        "",
+        "Oracle full-field error decreases monotonically from 3.2059% at N=512 to 1.8045% at N=16384 while model error increases after N=1024. Sampling resolution is therefore not the primary failure. The sign-changing C-A contrast also shows that structured support and resolution cannot be interpreted independently in Direct-N mode.",
+        "",
+        "## Graph-scale and feature drift",
+        "",
+        "| N | mean p2r in-degree | mean p2r edges | mean r2r edges | Global Context z L2 drift | QK L2 drift | abs d log(s_phys) | abs d predicted log-scale |",
+        "|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in graph_scale_rows:
+        lines.append(
+            f"| {row['resolution']} | {row['p2r_in_degree_mean']:.3f} | {row['p2r_edges_mean']:.1f} | "
+            f"{row['r2r_edges_mean']:.1f} | {row['global_context_z_l2_mean']:.3f} | "
+            f"{row['qk_l2_mean']:.3f} | {row['log_s_phys_abs_mean']:.6f} | "
+            f"{row['predicted_log_scale_abs_mean']:.3f} |"
+        )
+    lines += [
+        "",
+        "With Nr fixed near 256, mean p2r regional in-degree rises from 9.775 at N=1024 to 307.966 at N=16384 while r2r edge count remains near 4.1k. Global Context z drift and predicted log-scale drift increase with N even though physical log-scale drift stays near 0.0015. The supported attribution is therefore: support-distribution/measure shift plus p2r graph-scale and context/scale-response drift are primary; changing Nr is secondary in the source-aware A-B contrast.",
+        "",
+        "At N=512, simplex-centroid refinement reaches Nr=255 but leaves 46.8 regional nodes inactive on average in p2r/r2p. Every physical node remains covered and the r2r graph remains one connected component; this is a reported sub-resolution boundary rather than a hidden pass condition.",
         "",
         "## Reproducibility and governance",
         "",

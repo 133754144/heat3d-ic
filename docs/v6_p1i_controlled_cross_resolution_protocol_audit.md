@@ -54,6 +54,11 @@ This audit therefore solves the correction from the explicit target:
 Every worker checks the realized `Nr`; this protocol is named
 `upstream_regional_scale_corrected_heat3d_3d` rather than `upstream_like`.
 
+The audited upstream files are content-bound as follows:
+
+- `rigno/test.py`: `b94fc47392efad6ebac2efbcd5207f9338d5f55d444dca2062cfd7cbb5937944`;
+- `rigno/models/rigno.py`: `d54175c4c5803d5552031c3e5d8cf1782fcd666b3f7b78f1a17f317f682d9800`.
+
 ## Controlled design
 
 For each discretization seed 0/1/2/3 and each valid sample, one label-independent
