@@ -157,6 +157,28 @@ def scale_difference(expected: Mapping[str, float], actual: Mapping[str, float])
             "rmse": float(math.sqrt(np.mean(np.square(values))))}
 
 
+def predict_paired(model: Any, params: Any, groups: Sequence[Mapping[str, Any]]
+                   ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict[str, float], dict[str, float]]:
+    """Compare each reference/adapter pair inside the same device launch."""
+    reference_predictions, adapted_predictions = {}, {}
+    reference_scales, adapted_scales = {}, {}
+    for group in groups:
+        output = runner._model_apply(model, params, group)
+        raw = np.asarray(output["raw_temperature"], dtype=np.float64)
+        scale = np.asarray(output["s_hat"], dtype=np.float64).reshape(len(group["sample_ids"]), -1)
+        if len(group["sample_ids"]) % 2:
+            raise RuntimeError("paired R0 group has odd size")
+        for index in range(0, len(group["sample_ids"]), 2):
+            left, right = map(str, group["sample_ids"][index:index + 2])
+            if left != right:
+                raise RuntimeError("paired R0 sample order drifted")
+            reference_predictions[left] = raw[index, 0, :, :]
+            adapted_predictions[right] = raw[index + 1, 0, :, :]
+            reference_scales[left] = float(scale[index, 0])
+            adapted_scales[right] = float(scale[index + 1, 0])
+    return reference_predictions, adapted_predictions, reference_scales, adapted_scales
+
+
 def metric_differences(actual_support: Mapping[str, Any], actual_full: Mapping[str, Any],
                        frozen_closeout: Mapping[str, Any], seed: int) -> dict[str, Any]:
     frozen = next(row["primary"] for row in frozen_closeout["seeds"] if int(row["seed"]) == seed)
@@ -280,12 +302,26 @@ def main() -> int:
 
     model = GraphNeuralOperator(**model_config)
     params = runner._device_params(checkpoint["params"])
-    reference_predictions, reference_scales = predict_with_scales(model, params, reference_groups)
-    adapted_predictions, adapted_scales = predict_with_scales(model, params, adapted_groups)
+    sequential_reference, sequential_reference_scales = predict_with_scales(model, params, reference_groups)
+    sequential_adapter, sequential_adapter_scales = predict_with_scales(model, params, adapted_groups)
+    paired_examples = [item for pair in zip(reference_examples, adapted_examples, strict=True) for item in pair]
+    paired_groups, _ = prepare_groups(
+        paired_examples, stats=stats, run_config=run_config, model_config=model_config,
+        global_lookup=global_lookup, label="r0_paired_same_launch",
+        batch_size=args.prediction_batch_size,
+    )
+    reference_predictions, adapted_predictions, reference_scales, adapted_scales = predict_paired(
+        model, params, paired_groups
+    )
     archived = load_predictions(args.archived_predictions)
     adapter_vs_reference = difference(reference_predictions, adapted_predictions)
     adapter_vs_archived = difference(archived, adapted_predictions)
     adapter_scale_vs_reference = scale_difference(reference_scales, adapted_scales)
+    sequential_launch_diagnostic = {
+        "prediction": difference(sequential_reference, sequential_adapter),
+        "predicted_scale": scale_difference(sequential_reference_scales, sequential_adapter_scales),
+        "role": "diagnostic_only_separate_GPU_launch_nondeterminism_not_adapter_gate",
+    }
 
     family = qualification.FamilyData(
         family="p1i", dataset_root=args.dataset_root, manifest_path=args.manifest,
@@ -367,7 +403,10 @@ def main() -> int:
         "feature_and_scale_equivalence": {"group_sections": [row["sections"] for row in group_checks],
                                           "predicted_scale": adapter_scale_vs_reference, "standardizer": standardizer_diff},
         "prediction_equivalence": {"adapter_vs_reference": adapter_vs_reference,
-                                   "adapter_vs_archived": adapter_vs_archived, "hard_gate_is_prediction_level": True},
+                                   "adapter_vs_archived": adapter_vs_archived,
+                                   "paired_same_launch": True,
+                                   "sequential_launch_diagnostic": sequential_launch_diagnostic,
+                                   "hard_gate_is_prediction_level": True},
         "full_field_reconstruction_equivalence": {
             "adapter_vs_reference": full_adapter_vs_reference, "adapter_vs_archived": full_adapter_vs_archived,
             "mapping_sample_count": len(reconstruction_checks),

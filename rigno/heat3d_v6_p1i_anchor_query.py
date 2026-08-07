@@ -8,12 +8,20 @@ import hashlib
 from typing import Any, Mapping
 
 import numpy as np
+from scipy.spatial import cKDTree
 
 from rigno.heat3d_v1_native_supervised import V1SteadyConditionInput
 from rigno.heat3d_v6_dataset import V6DualRobinExample
 
 
 TRAINING_ANCHOR_COUNT = 1024
+HIGH_N_SELECTION_SEED = 20260808
+HIGH_N_STRATUM_FRACTIONS = {
+    "source": 0.35,
+    "interface": 0.15,
+    "robin": 0.10,
+    "volume": 0.40,
+}
 
 
 def array_sha256(value: np.ndarray) -> str:
@@ -122,3 +130,139 @@ class P1iSampleVaryingAnchorQueryAdapter:
             "feature_schema_exact": schema_exact,
             "arrays": rows,
         }
+
+
+def _hash_order(sample_id: str, seed: int, indices: np.ndarray) -> np.ndarray:
+    return np.asarray(sorted(
+        map(int, indices),
+        key=lambda index: (
+            hashlib.sha256(f"{seed}:{sample_id}:{index}".encode()).digest(), index
+        ),
+    ), dtype=np.int64)
+
+
+def _weighted_interleave(buckets: Mapping[str, np.ndarray], weights: Mapping[str, float]) -> np.ndarray:
+    """Deterministically interleave finite queues by largest quota deficit."""
+    queues = {name: list(map(int, values)) for name, values in buckets.items()}
+    consumed = {name: 0 for name in queues}
+    result: list[int] = []
+    while any(queues.values()):
+        active = [name for name, values in queues.items() if values]
+        total_weight = sum(float(weights[name]) for name in active)
+        step = len(result) + 1
+        chosen = max(
+            active,
+            key=lambda name: (
+                float(weights[name]) / total_weight * step - consumed[name],
+                -list(sorted(active)).index(name),
+            ),
+        )
+        result.append(queues[chosen].pop(0))
+        consumed[chosen] += 1
+    return np.asarray(result, dtype=np.int64)
+
+
+def deterministic_nested_query_order(
+    *,
+    sample_id: str,
+    anchor_indices: np.ndarray,
+    full_coords: np.ndarray,
+    full_control_volume: np.ndarray,
+    full_layer_id: np.ndarray,
+    full_q: np.ndarray,
+    layer_boundaries_m: np.ndarray,
+    selection_seed: int = HIGH_N_SELECTION_SEED,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Return one label-independent order whose prefixes define every high N.
+
+    The exact original anchors always lead the order. Added solver nodes use
+    exclusive source/interface/Robin/volume strata, deterministic hash order,
+    layer-volume interleaving, and a documented exhausted-stratum fallback.
+    """
+    coords = np.asarray(full_coords, dtype=np.float64)
+    cv = np.asarray(full_control_volume, dtype=np.float64).reshape(-1)
+    layer = np.asarray(full_layer_id, dtype=np.int32).reshape(-1)
+    q = np.asarray(full_q, dtype=np.float64).reshape(-1)
+    anchors = np.asarray(anchor_indices, dtype=np.int64).reshape(-1)
+    node_count = len(coords)
+    if len(anchors) != TRAINING_ANCHOR_COUNT or len(np.unique(anchors)) != len(anchors):
+        raise ValueError("anchor indices must be the unique original ordered 1024 nodes")
+    if any(len(value) != node_count for value in (cv, layer, q)):
+        raise ValueError("full-field coordinate/kind arrays have inconsistent counts")
+    if np.any(anchors < 0) or np.any(anchors >= node_count) or np.any(cv <= 0.0):
+        raise ValueError("invalid solver indices or control volumes")
+    available = np.ones(node_count, dtype=bool)
+    available[anchors] = False
+    z = coords[:, 2]
+    q_eps = max(1.0e-30, float(np.max(np.abs(q))) * 1.0e-12)
+    source = available & (q > q_eps)
+    internal = np.asarray(layer_boundaries_m, dtype=np.float64).reshape(-1)[1:-1]
+    interface = available & ~source
+    interface &= np.any(np.isclose(z[:, None], internal[None, :], atol=1.0e-15), axis=1)
+    robin = available & ~source & ~interface
+    robin &= np.isclose(z, np.min(z), atol=1.0e-15) | np.isclose(z, np.max(z), atol=1.0e-15)
+    volume = available & ~source & ~interface & ~robin
+    masks = {"source": source, "interface": interface, "robin": robin, "volume": volume}
+    stratum_sequences: dict[str, np.ndarray] = {}
+    stratum_counts = {}
+    for name, mask in masks.items():
+        layer_buckets, layer_weights = {}, {}
+        for layer_id in sorted(map(int, np.unique(layer[mask]))):
+            selected = np.flatnonzero(mask & (layer == layer_id))
+            key = f"layer_{layer_id:02d}"
+            layer_buckets[key] = _hash_order(sample_id, selection_seed, selected)
+            layer_weights[key] = float(np.sum(cv[selected]))
+        stratum_sequences[name] = (
+            _weighted_interleave(layer_buckets, layer_weights)
+            if layer_buckets else np.empty(0, dtype=np.int64)
+        )
+        stratum_counts[name] = int(np.sum(mask))
+    added = _weighted_interleave(stratum_sequences, HIGH_N_STRATUM_FRACTIONS)
+    order = np.concatenate((anchors, added))
+    if len(order) != node_count or len(np.unique(order)) != node_count:
+        raise RuntimeError("nested query order is not a permutation of solver nodes")
+    return order, {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "selection_seed": int(selection_seed),
+        "anchor_count": int(len(anchors)),
+        "anchor_order_preserved": bool(np.array_equal(order[:len(anchors)], anchors)),
+        "stratum_fractions": dict(HIGH_N_STRATUM_FRACTIONS),
+        "stratum_candidate_counts": stratum_counts,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave",
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "target_or_temperature_used": False,
+        "order_sha256": array_sha256(order),
+    }
+
+
+def conservative_selected_control_volume(
+    *,
+    full_coords: np.ndarray,
+    full_control_volume: np.ndarray,
+    full_layer_id: np.ndarray,
+    selected_indices: np.ndarray,
+) -> tuple[np.ndarray, dict[str, Any]]:
+    """Partition every solver CV to its nearest selected node in the same layer."""
+    coords = np.asarray(full_coords, dtype=np.float64)
+    cv = np.asarray(full_control_volume, dtype=np.float64).reshape(-1)
+    layer = np.asarray(full_layer_id, dtype=np.int32).reshape(-1)
+    selected = np.asarray(selected_indices, dtype=np.int64).reshape(-1)
+    result = np.zeros(len(selected), dtype=np.float64)
+    for layer_id in sorted(map(int, np.unique(layer))):
+        full_local = np.flatnonzero(layer == layer_id)
+        support_local = np.flatnonzero(layer[selected] == layer_id)
+        if not len(support_local):
+            raise RuntimeError(f"selected support has no node in layer {layer_id}")
+        nearest = cKDTree(coords[selected[support_local]]).query(coords[full_local], k=1)[1]
+        np.add.at(result, support_local[np.asarray(nearest, dtype=np.int64)], cv[full_local])
+    if np.any(result <= 0.0):
+        raise RuntimeError("selected support contains a zero-measure node")
+    relative_error = abs(float(np.sum(result) - np.sum(cv))) / float(np.sum(cv))
+    return result, {
+        "algorithm": "same_layer_nearest_solver_cv_partition_v1",
+        "full_volume_m3": float(np.sum(cv)),
+        "selected_volume_m3": float(np.sum(result)),
+        "relative_volume_error": relative_error,
+        "label_or_temperature_used": False,
+        "weights_sha256": array_sha256(result),
+    }

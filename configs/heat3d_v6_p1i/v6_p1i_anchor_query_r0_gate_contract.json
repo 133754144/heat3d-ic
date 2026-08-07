@@ -1,7 +1,13 @@
 {
-  "schema_version": "heat3d_v6_p1i_anchor_query_r0_gate_contract_v1",
-  "status": "frozen_before_three_seed_execution",
+  "schema_version": "heat3d_v6_p1i_anchor_query_r0_gate_contract_v2",
+  "status": "frozen_before_corrected_three_seed_execution",
   "scope": "V6_06/V6_07/V6_08 point-global-best checkpoints, 128 valid_iid, exact original 1024 anchors",
+  "execution_binding": {
+    "hard_adapter_comparison": "reference and adapter are paired in the same model apply launch",
+    "separate_launch_comparison": "reported diagnostic only because identical GPU inputs showed launch-level reduction nondeterminism",
+    "numeric_tolerances_changed_from_v1": false,
+    "v1_diagnostic_failure_preserved": true
+  },
   "hard_gate": {
     "input_arrays": "bitwise_equal",
     "sample_order_and_feature_schema": "exact",
