@@ -126,10 +126,16 @@ def main() -> int:
         assert {int(row["seed"]) for row in r0["seeds"]} == {0, 1, 2}
         assert all(row["adapter_reference_max_abs_K"] == 0.0 for row in r0["seeds"])
         assert r0["role_contract"]["high_n_inference_executed"] is False
+        for seed in r0["seeds"]:
+            for evidence in seed["raw_results"].values():
+                path = ROOT / evidence["path"]
+                assert path.is_file() and sha256(path) == evidence["sha256"]
 
     if args.binding_json:
         binding = json.loads(args.binding_json.read_text())
         assert binding["status"] == "frozen_after_three_seed_r0_pass"
+        manifest_path = ROOT / binding["dataset"]["manifest_path"]
+        assert manifest_path.is_file() and sha256(manifest_path) == binding["dataset"]["manifest_sha256"]
         assert binding["resolutions"]["mandatory"] == [1024, 4096, 8192, 16384]
         assert binding["resolutions"]["optional_valid_only"] == 32768
         assert binding["resolutions"]["optional_enters_mandatory_ranking"] is False

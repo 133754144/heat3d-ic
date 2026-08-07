@@ -169,11 +169,19 @@ def main() -> int:
         "graph_builder": repo / "rigno/graphBuilder_Heat3D.py",
         "reconstruction": repo / "rigno/heat3d_v6_full_field.py",
         "full_kq_reconstruction": repo / "scripts/benchmark_heat3d_v6_p1i_resolution.py",
-        "mesh_core": repo / "scripts/heat3d_v6_randomblock_core.py",
+        "mesh_core": repo / "scripts/heat3d_v6_p1i_continuous_core.py",
     }
     binding = {
         "schema_version": "heat3d_v6_p1i_high_n_implementation_binding_v1",
         "status": "frozen_after_three_seed_r0_pass",
+        "dataset": {
+            "dataset_id": manifest["dataset_id"],
+            "manifest_path": str(args.manifest),
+            "manifest_sha256": sha256(args.manifest),
+            "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+            "solver_node_count": 240825,
+            "support_family": "sample_varying_source_aware_1024_solver_nodes",
+        },
         "r0_closeout_path": str(args.output_r0_json),
         "r0_closeout_sha256": sha256(args.output_r0_json),
         "prior_protocol_path": str(args.protocol),
