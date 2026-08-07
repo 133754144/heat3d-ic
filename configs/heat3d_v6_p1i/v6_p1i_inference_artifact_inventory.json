@@ -1,0 +1,189 @@
+{
+  "schema_version": "heat3d_v6_p1i_inference_artifact_inventory_v1",
+  "status": "completed_read_only_inventory",
+  "inventory_commit_parent": "5ae734eddeb96e8448fc7bdfb36dff3328bf80d8",
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "canonical_role": "formal_v6_randomblock",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "sample_count": 1024,
+    "valid_iid_count": 128,
+    "solver_node_count": 240825
+  },
+  "evidence_bindings": {
+    "three_seed_artifact_manifest": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_three_seed_artifact_manifest.json",
+      "sha256": "c7bc7f72c95ed2b78fb7113d601f947fb943d3efc5ab208fc06da60509b845a5"
+    },
+    "three_seed_valid_closeout": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_three_seed_inference_closeout.json",
+      "sha256": "3f48e7acb287859895f0468692572f54e1a5ba1c83aa5b8a3b4a869762ea7aa2"
+    },
+    "seed0_timing_and_comparison": {
+      "path": "configs/heat3d_v6_p1i/v6_unified_performance_closeout.json",
+      "sha256": "70391b0a8dde8db0bb2cdc1c8951152a18c10af821b78417ce1e3f3e2ade8920"
+    },
+    "seed0_full_graph_rediscretization": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.json",
+      "sha256": "5980b129fe5dbf05767b7f06e21ee83b57320831c96407099f3110220ad99859"
+    },
+    "training_registry": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_training_registry.csv",
+      "sha256": "7848ebe86e76117b163eecfa4a541ba411bac0aebd7cede7add94556e81d4f30"
+    }
+  },
+  "runs": [
+    {
+      "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+      "seed": 0,
+      "host": "devbox",
+      "execution_status": "completed_e600",
+      "primary_checkpoint": {
+        "epoch": 559,
+        "filename": "params_best_valid_point_global.pkl",
+        "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+      },
+      "training_and_checkpoint_bundle": "complete",
+      "valid_1024_support": "complete",
+      "valid_1024_to_full_field": "complete",
+      "independent_reload": "complete",
+      "timing": "seed0_fixed32_available",
+      "cross_resolution": "seed0_full_graph_rediscretization_diagnostic_only"
+    },
+    {
+      "config_id": "V6_07_V5best_P1i_seed1_reliable_B24",
+      "seed": 1,
+      "host": "wsl2",
+      "execution_status": "completed_e600",
+      "primary_checkpoint": {
+        "epoch": 455,
+        "filename": "params_best_valid_point_global.pkl",
+        "sha256": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7"
+      },
+      "training_and_checkpoint_bundle": "complete",
+      "valid_1024_support": "complete",
+      "valid_1024_to_full_field": "complete",
+      "independent_reload": "complete",
+      "timing": "not_run",
+      "cross_resolution": "not_run"
+    },
+    {
+      "config_id": "V6_08_V5best_P1i_seed2_reliable_B24",
+      "seed": 2,
+      "host": "wsl2",
+      "execution_status": "completed_e600",
+      "primary_checkpoint": {
+        "epoch": 587,
+        "filename": "params_best_valid_point_global.pkl",
+        "sha256": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49"
+      },
+      "training_and_checkpoint_bundle": "complete",
+      "valid_1024_support": "complete",
+      "valid_1024_to_full_field": "complete",
+      "independent_reload": "complete",
+      "timing": "not_run",
+      "cross_resolution": "not_run"
+    }
+  ],
+  "available_scope": {
+    "three_seed_valid_1024_support_metrics": true,
+    "three_seed_valid_1024_predictions": true,
+    "three_seed_valid_240825_reconstruction": true,
+    "three_seed_reload_audit": true,
+    "seed0_fixed32_timing": true,
+    "seed0_1024_to_240825_reconstruction_timing": true,
+    "seed0_full_graph_rediscretization_diagnostic_512_to_16384": true,
+    "anchor_derived_full_N_query_results": false
+  },
+  "remote_read_only_verification": {
+    "wsl2": {
+      "branch": "research/v6-p1i-training",
+      "head": "5ae734eddeb96e8448fc7bdfb36dff3328bf80d8",
+      "origin_head_equal": true,
+      "worktree_clean": true,
+      "verified_runs": [
+        "V6_07_V5best_P1i_seed1_reliable_B24",
+        "V6_08_V5best_P1i_seed2_reliable_B24"
+      ]
+    },
+    "devbox": {
+      "branch": "research/v6-p1i-training",
+      "head": "3884de07525b7e8c0f8fa3382b24bf94322bebe9",
+      "worktree_clean": true,
+      "checkout_updated": false,
+      "verified_runs": [
+        "V6_06_V5best_P1i_seed0_reliable_B24"
+      ]
+    },
+    "core_artifact_hashes_match_frozen_manifest": true,
+    "remote_run_directory_archive_copy_gap": [
+      "all_valid_fullfield.json_and_csv",
+      "valid_support.json_and_csv",
+      "independent_replay.json"
+    ],
+    "gap_interpretation": "These files remain frozen as local_read_only_sync entries with size/SHA in the tracked artifact manifest; checkpoints, predictions, run_config, loss_summary and valid_full_field artifacts were verified in place.",
+    "remote_training_or_inference_executed": false,
+    "test_or_sealed_accessed": false
+  },
+  "gaps": [
+    {
+      "gap_id": "G01",
+      "priority": "blocking",
+      "item": "P1i anchor-derived full-N query implementation binding",
+      "status": "missing",
+      "reason": "P1h production code is evidence for the workflow design, but P1i sample-varying anchors require an explicit adapter and graph-cache contract."
+    },
+    {
+      "gap_id": "G02",
+      "priority": "blocking",
+      "item": "R0 exact replay for each V6_06/07/08 primary checkpoint under the new workflow",
+      "status": "missing",
+      "reason": "Only V6_06 has the separate R0 versus full-graph re-discretization closeout."
+    },
+    {
+      "gap_id": "G03",
+      "priority": "blocking",
+      "item": "valid_iid anchor-derived results at 4096/8192/16384 for three seeds",
+      "status": "missing",
+      "reason": "Existing high-N results recompute the full graph/support/context contract and are diagnostic-only."
+    },
+    {
+      "gap_id": "G04",
+      "priority": "required_before_timing_claim",
+      "item": "P1i support-hash graph caches and full-field reconstruction maps for each target N",
+      "status": "missing",
+      "reason": "The tracked P1i edge contract covers 1024 timing shapes, not the proposed per-sample anchor/query cache family."
+    },
+    {
+      "gap_id": "G05",
+      "priority": "required_before_multiseed_runtime_summary",
+      "item": "V6_07/08 timing under the same host/environment/protocol",
+      "status": "missing",
+      "reason": "Unified timing is bound to the V6_06 seed0 primary checkpoint."
+    },
+    {
+      "gap_id": "G06",
+      "priority": "optional",
+      "item": "32768 anchor-derived valid_iid diagnostic",
+      "status": "eligible_not_run",
+      "reason": "The prerequisite 1024-to-full-field reconstruction exists; 32768 remains optional and cannot enter the mandatory comparison table."
+    }
+  ],
+  "interpretation": {
+    "existing_full_graph_cross_resolution_reused_as_anchor_query_result": false,
+    "existing_randomblock_v2_reused_as_current_benchmark": false,
+    "large_scale_inference_executed_this_round": false
+  },
+  "role_contract": {
+    "accessed_roles": [
+      "tracked_metadata",
+      "valid_iid_result_artifacts"
+    ],
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "inference_executed": false,
+    "checkpoint_modified": false
+  }
+}

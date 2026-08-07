@@ -1,0 +1,216 @@
+{
+  "schema_version": "heat3d_v6_p1i_anchor_query_resolution_protocol_v1",
+  "status": "frozen_before_implementation_and_execution",
+  "protocol_name": "P1i 1024-anchor conditioned full-N query inference",
+  "purpose": "valid-only preparation for checkpoint-preserving cross-resolution inference",
+  "not_equivalent_to": [
+    "measure-conservative full-graph re-discretization diagnostic",
+    "structured-support direct-N compatibility diagnostic",
+    "decoder-only inference"
+  ],
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "canonical_role": "formal_v6_randomblock",
+    "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "sample_count": 1024,
+    "valid_iid_count": 128,
+    "solver_node_count": 240825,
+    "support_family": "sample_varying_source_aware_1024_solver_nodes"
+  },
+  "checkpoints": [
+    {
+      "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+      "seed": 0,
+      "epoch": 559,
+      "filename": "params_best_valid_point_global.pkl",
+      "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+      "config_sha256": "12c2e01c9251c5546e9bfadbae17071d4fb737c79e5c3a38bb6529bda44f7788"
+    },
+    {
+      "config_id": "V6_07_V5best_P1i_seed1_reliable_B24",
+      "seed": 1,
+      "epoch": 455,
+      "filename": "params_best_valid_point_global.pkl",
+      "sha256": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7",
+      "config_sha256": "df178d91a679982779e5feb5278e7259d71844368df34a555d00c9c1447f1b29"
+    },
+    {
+      "config_id": "V6_08_V5best_P1i_seed2_reliable_B24",
+      "seed": 2,
+      "epoch": 587,
+      "filename": "params_best_valid_point_global.pkl",
+      "sha256": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49",
+      "config_sha256": "600f3b069004926034f9a50c6ad097b6902a11bf64b6aca2230ab53e5d8d8d3d"
+    }
+  ],
+  "workflow": [
+    "load_exact_per_sample_1024_checkpoint_anchors",
+    "compute_global_context_qk_and_physical_scale_from_anchors_only",
+    "run_1024_anchor_forward_and_freeze_predicted_anchor_scale",
+    "construct_label_independent_nested_full_N_query_support_containing_all_anchors",
+    "run_full_N_source_aware_query_forward_with_anchor_derived_context",
+    "replace_query_scale_with_frozen_anchor_scale_and_reconstruct_field",
+    "reconstruct_query_prediction_to_240825_solver_nodes",
+    "evaluate_valid_iid_support_and_full_field_metrics"
+  ],
+  "anchor_contract": {
+    "node_count": 1024,
+    "source": "original sample pointwise coords/k/q/control-volume arrays",
+    "order_preserved": true,
+    "global_context_source": "anchors_only",
+    "qk_and_scale_context_source": "anchors_only",
+    "scale_pooling_source": "anchors_only",
+    "predicted_scale_source": "anchor_forward_only",
+    "normalization_source": "frozen train-only checkpoint metadata",
+    "target_or_label_use": false
+  },
+  "query_contract": {
+    "mandatory_resolutions": [
+      1024,
+      4096,
+      8192,
+      16384
+    ],
+    "optional_resolution": {
+      "nodes": 32768,
+      "status": "eligible_preregistered_not_required",
+      "prerequisite": "three-seed 1024-to-full-field reconstruction artifacts exist",
+      "may_enter_mandatory_ranking": false
+    },
+    "nested_within_sample": true,
+    "all_1024_anchors_retained": true,
+    "added_node_selection": "label-independent source/layer/interface/Robin-surface aware plus volume-PPS from the frozen 240825-node mesh",
+    "pointwise_fields": "read k/q/control-volume directly from the full-field sidecar at selected solver nodes or apply a preregistered conservative same-layer partition; never interpolate from the old 1024 support",
+    "shape_source": "full-N query forward",
+    "scale_source": "1024 anchor forward",
+    "x_in_equals_x_out": true,
+    "temperature_or_test_label_use": false
+  },
+  "graph_contract": {
+    "backend": "sparse_kdtree_v1",
+    "graph_config_source": "each checkpoint run_config.json",
+    "graph_seed_source": "each checkpoint frozen graph seed",
+    "regional_mesh_rule": "preserve checkpoint graph semantics; any regional correction must be preregistered and R0-equivalent before high-N execution",
+    "cache_scope": "per sample support hash and resolution",
+    "cache_key_fields": [
+      "support_hash",
+      "resolved_graph_config",
+      "graph_seed",
+      "graph_builder_code_fingerprint"
+    ],
+    "graph_builder_path": "rigno/graphBuilder_Heat3D.py",
+    "graph_builder_sha256_at_freeze": "fce189e90aa3e182a418cd1ef50a9b5d24558fc3d24e50f9d6d1e734c3129cc3",
+    "real_edge_semantics_must_match_uncached": true
+  },
+  "reconstruction_contract": {
+    "target_node_count": 240825,
+    "method": "frozen layer/interface-aware reconstruction with per-domain same-layer fallback",
+    "implementation_path": "rigno/heat3d_v6_full_field.py",
+    "implementation_sha256_at_freeze": "8ffaa7680d1463c40fc57da9f3171cee75d0034e999854487b12a2f17be0e6d8",
+    "oracle_sampling_floor_required": true,
+    "map_cache_key_fields": [
+      "full_field_coords_hash",
+      "query_support_hash",
+      "layer_hash",
+      "interface_definition_hash",
+      "reconstruction_code_fingerprint"
+    ]
+  },
+  "execution_stages": [
+    {
+      "stage": "P0_R0_replay",
+      "scope": "all three seeds at exact original 1024 anchors",
+      "gate": "support and full-field metrics reproduce frozen three-seed values within 0.005 absolute metric units; graph/features/predictions reproduce within registered numeric tolerances"
+    },
+    {
+      "stage": "P1_development",
+      "scope": "V6_06 seed0 on preregistered valid_iid subset; 4096 before larger N",
+      "gate": "finite outputs, no graph/cache drift, anchor context/scale exact, full-field reconstruction and oracle checks pass"
+    },
+    {
+      "stage": "P2_formal_valid_only",
+      "scope": "V6_06/07/08 at mandatory resolutions on all 128 valid_iid",
+      "gate": "all outputs complete and reproducible; no test/sealed access"
+    },
+    {
+      "stage": "P3_optional_32768",
+      "scope": "valid_iid only after P2 passes",
+      "gate": "optional diagnostic; failure does not change mandatory resolution decisions"
+    }
+  ],
+  "metrics": {
+    "support": [
+      "point_global_true_rms_relative_rmse_pct",
+      "sample_first_cv_relative_rmse_pct",
+      "raw_cv_weighted_rmse_K",
+      "peak_rmse_K",
+      "source_rmse_K",
+      "background_rmse_K",
+      "layer_mean_rmse_K",
+      "interface_drop_rmse_K",
+      "top_rmse_K",
+      "bottom_rmse_K",
+      "shape_cv_rmse",
+      "scale_log_rmse"
+    ],
+    "full_field": [
+      "point_global_true_rms_relative_rmse_pct",
+      "sample_first_cv_relative_rmse_pct",
+      "raw_cv_weighted_rmse_K",
+      "peak_rmse_K",
+      "source_rmse_K",
+      "background_rmse_K",
+      "layer_mean_rmse_K",
+      "interface_drop_rmse_K",
+      "top_rmse_K",
+      "bottom_rmse_K",
+      "oracle_reconstruction_metrics"
+    ],
+    "runtime_if_later_executed": [
+      "data_prepare_seconds",
+      "graph_build_or_load_seconds",
+      "anchor_forward_seconds",
+      "query_forward_seconds",
+      "scale_reconstruction_seconds",
+      "full_field_map_build_or_load_seconds",
+      "full_field_map_apply_seconds",
+      "serialization_seconds",
+      "peak_RAM_bytes",
+      "peak_device_memory_bytes"
+    ]
+  },
+  "historical_result_policy": {
+    "full_graph_rediscretization_result_path": "configs/heat3d_v6_p1i/v6_p1i_cross_resolution_r0_closeout.json",
+    "interpretation": "association evidence for support/p2r/context-scale drift only",
+    "may_be_relabelled_as_anchor_query": false,
+    "legacy_randomblock_v2_may_be_used_for_selection_or_benchmarking": false
+  },
+  "implementation_gate": {
+    "adapter_status": "not_implemented_this_round",
+    "required_adapter": "P1i sample-varying anchor/query adapter preserving frozen model parameters",
+    "required_checks": [
+      "R0 graph_feature_prediction_replay",
+      "anchor_context_and_scale_exactness",
+      "nested_support_and_label_independence",
+      "sparse_cache_uncached_equivalence",
+      "reconstruction_map_binding",
+      "finite_forward",
+      "role_access_audit"
+    ],
+    "execution_authorized_this_round": false
+  },
+  "role_contract": {
+    "development_allowed_roles": [
+      "valid_iid",
+      "train_only_normalization_metadata"
+    ],
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "checkpoint_modified": false,
+    "model_selection_allowed": false,
+    "large_scale_inference_executed_this_round": false
+  }
+}

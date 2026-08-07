@@ -16,11 +16,23 @@ This index is the short route through the complete evidence retained on
 | P1g-v0 | `heat3d_v6_p1g_geometry_deconfounded1024_v0` | archived geometry-adaptive baseline |
 | P1g-v1 | `heat3d_v6_p1g_geometry_deconfounded1024_v1` | retained noncanonical |
 | P1h-v0 | `heat3d_v6_p1h_shared_support1024_v0` | sole canonical V6-layer dataset |
+| P1i-v1 | `heat3d_v6_p1i_continuous_physics1024_v1` | canonical role: `formal_v6_randomblock` |
+| legacy random-block v2 | `heat3d_v6_randomblock_formal1024_v2` | `deprecated_engineering_history`; superseded by P1i |
 
 P1g→P1h keeps the 1,024 physical cases, 128 groups, split assignment, source,
 power, and BC metadata fixed. It replaces sample-varying projected supports
 with one ordered label-independent 1,024-node solver support and retains a
 reusable full-field archive.
+
+Canonical is role-scoped rather than a single global dataset label. P1h remains
+the canonical **V6-layer** dataset. P1i formal1024_v1, with its existing dataset
+ID and manifest SHA `f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514`,
+is the canonical **formal V6 random-block** dataset. This governance label does
+not make P1i an OOD or independent benchmark. The older
+`heat3d_v6_randomblock_formal1024_v2` is immutable engineering history only;
+its historical manifests, results and audits remain unchanged.
+The machine-readable role amendment is
+`configs/heat3d_v6_p1i/v6_dataset_role_governance.json`.
 
 ## Model configurations
 
@@ -30,6 +42,9 @@ reusable full-field archive.
 | V6_02 | P1g-v0 | V5-derived historical baseline |
 | V6_03 | P1h-v0 | canonical; seed0 reference and seed1/2 replications |
 | V6_04 | P1h-v0 | DualAttention ablation; retained but not canonical |
+| V6_06 | P1i-v1 | formal random-block seed0 reference |
+| V6_07 | P1i-v1 | formal random-block seed1 replication |
+| V6_08 | P1i-v1 | formal random-block seed2 replication |
 
 V6_03 seed0 point-global checkpoint e111 is frozen as the reference.
 
@@ -77,3 +92,8 @@ JIT-cached new-case, and graph/JIT/map-cached repeated inference. Production
 timing excludes oracle and metric work. The historical 4.864x value is only a
 cached steady-state speedup; structured-support Route A is only an OOD
 compatibility diagnostic. See `docs/v6_inference_qualification_closeout.md`.
+
+The legacy random-block-v2 transfer and timing records remain reproducibility
+evidence for an engineering diagnostic. They no longer hold a current formal
+OOD or independent-benchmark role and must not be used for new selection,
+tuning, production or generalization claims.
