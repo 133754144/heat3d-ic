@@ -1,0 +1,45 @@
+{
+  "schema_version": "heat3d_v6_p1i_anchor_query_r0_gate_contract_v1",
+  "status": "frozen_before_three_seed_execution",
+  "scope": "V6_06/V6_07/V6_08 point-global-best checkpoints, 128 valid_iid, exact original 1024 anchors",
+  "hard_gate": {
+    "input_arrays": "bitwise_equal",
+    "sample_order_and_feature_schema": "exact",
+    "graph_metadata_and_real_edge_semantics": "exact_hash",
+    "model_input_global_context_native_scale_qk": "bitwise_equal",
+    "adapter_vs_reference_prediction": {"max_abs_error_K": 0.0, "rmse_K": 0.0},
+    "adapter_vs_reference_predicted_scale": {"max_abs_error": 0.0},
+    "adapter_vs_reference_full_field_reconstruction": {"max_abs_error_K": 0.0, "rmse_K": 0.0},
+    "adapter_vs_archived_prediction": {
+      "rmse_K_max": 0.01,
+      "mean_abs_error_K_max": 0.005,
+      "fraction_abs_gt_0p1_K_max": 0.0001,
+      "max_abs_error_K": "reported_only_due_to_frozen_cross_process_JAX_replay_contract"
+    },
+    "adapter_vs_archived_full_field_reconstruction": {
+      "rmse_K_max": 0.01,
+      "mean_abs_error_K_max": 0.005,
+      "fraction_abs_gt_0p1_K_max": 0.0001,
+      "max_abs_error_K": "reported_only_due_to_frozen_cross_process_JAX_replay_contract"
+    },
+    "frozen_aggregate_metrics": {
+      "absolute_tolerance": 0.005,
+      "role": "secondary_consistency_check_not_prediction_gate"
+    },
+    "train_only_standardizer": {
+      "mean_max_abs_error": 1e-12,
+      "std_max_abs_error": 1e-12,
+      "fit_population": "train_only",
+      "fit_sample_count": 768
+    }
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "model_or_checkpoint_modified": false,
+    "high_n_inference_executed": false
+  },
+  "stage_b_release_condition": "all three seed-level hard gates pass"
+}
