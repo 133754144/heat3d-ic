@@ -209,6 +209,10 @@ def main() -> int:
     parser.add_argument("--frozen-closeout", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--prediction-batch-size", type=int, default=32)
+    parser.add_argument(
+        "--backend-role", required=True,
+        choices=("deterministic_cpu_equivalence", "historical_gpu_replay"),
+    )
     args = parser.parse_args()
 
     contract = json.loads(args.contract.read_text())
@@ -362,13 +366,23 @@ def main() -> int:
     archived_limit = hard["adapter_vs_archived_prediction"]
     full_archived_limit = hard["adapter_vs_archived_full_field_reconstruction"]
     aggregate_tolerance = float(hard["frozen_aggregate_metrics"]["absolute_tolerance"])
-    checks = {
+    common_checks = {
         "input_exact": all(row["passed"] for row in input_checks),
         "group_features_exact": all(row["passed"] for row in group_checks),
         "graph_semantics_exact": all(row["real_edge_semantics_exact"] and row["metadata"]["passed"] for row in graph_checks),
+        "frozen_metrics_secondary": all(abs(row["difference"]) <= aggregate_tolerance for row in frozen_differences.values()),
+        "train_only_standardizer_exact": (
+            standardizer_diff["mean_max_abs_error"] <= float(hard["train_only_standardizer"]["mean_max_abs_error"])
+            and standardizer_diff["std_max_abs_error"] <= float(hard["train_only_standardizer"]["std_max_abs_error"])
+            and standardizer_diff["fit_population"] == "train_only"
+            and standardizer_diff["fit_sample_count"] == 768),
+    }
+    exact_checks = {
         "adapter_reference_prediction_exact": adapter_vs_reference["max_abs_error_K"] == 0.0,
         "adapter_reference_scale_exact": adapter_scale_vs_reference["max_abs_error"] == 0.0,
         "adapter_reference_full_field_exact": full_adapter_vs_reference["max_abs_error_K"] == 0.0,
+    }
+    archived_checks = {
         "archived_prediction_replay": (
             adapter_vs_archived["rmse_K"] <= float(archived_limit["rmse_K_max"])
             and adapter_vs_archived["mean_abs_error_K"] <= float(archived_limit["mean_abs_error_K_max"])
@@ -377,23 +391,26 @@ def main() -> int:
             full_adapter_vs_archived["rmse_K"] <= float(full_archived_limit["rmse_K_max"])
             and full_adapter_vs_archived["mean_abs_error_K"] <= float(full_archived_limit["mean_abs_error_K_max"])
             and full_adapter_vs_archived["fraction_abs_gt_0p1_K"] <= float(full_archived_limit["fraction_abs_gt_0p1_K_max"])),
-        "frozen_metrics_secondary": all(abs(row["difference"]) <= aggregate_tolerance for row in frozen_differences.values()),
-        "train_only_standardizer_exact": (
-            standardizer_diff["mean_max_abs_error"] <= float(hard["train_only_standardizer"]["mean_max_abs_error"])
-            and standardizer_diff["std_max_abs_error"] <= float(hard["train_only_standardizer"]["std_max_abs_error"])
-            and standardizer_diff["fit_population"] == "train_only"
-            and standardizer_diff["fit_sample_count"] == 768),
     }
+    backend = jax.default_backend()
+    if args.backend_role == "deterministic_cpu_equivalence":
+        checks = {**common_checks, "backend_is_cpu": backend == "cpu", **exact_checks}
+        diagnostic_checks = archived_checks
+    else:
+        checks = {**common_checks, "backend_is_gpu": backend == "gpu", **archived_checks}
+        diagnostic_checks = exact_checks
     passed = all(checks.values())
     payload = {
-        "schema_version": "heat3d_v6_p1i_anchor_query_r0_seed_result_v1",
+        "schema_version": "heat3d_v6_p1i_anchor_query_r0_seed_backend_result_v2",
         "status": "passed" if passed else "failed", "config_id": args.config_id, "seed": args.seed,
+        "backend_role": args.backend_role, "jax_backend": backend,
         "checkpoint": {"path": str(checkpoint_path), "sha256": sha256(checkpoint_path), "epoch": int(checkpoint["epoch"])},
         "archived_predictions": {"path": str(args.archived_predictions), "sha256": sha256(args.archived_predictions)},
         "dataset": {"dataset_id": dataset.manifest["dataset_id"], "manifest_sha256": sha256(args.manifest),
                     "full_field_archive_sha256": sha256(args.full_fields), "train_count": 768,
                     "valid_iid_count": 128, "anchor_count": 1024, "full_field_node_count": 240825},
         "contract_sha256": sha256(args.contract), "checks": checks,
+        "diagnostic_checks_not_part_of_this_backend_gate": diagnostic_checks,
         "input_equivalence": {"sample_count": len(input_checks), "all_passed": all(row["passed"] for row in input_checks), "samples": input_checks},
         "group_equivalence": group_checks,
         "graph_equivalence": {"sample_count": len(graph_checks),

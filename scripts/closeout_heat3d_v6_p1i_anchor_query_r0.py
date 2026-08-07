@@ -90,8 +90,13 @@ def main() -> int:
     args = parser.parse_args()
 
     raw = [json.loads(path.read_text()) for path in args.seed_result]
-    if {int(row["seed"]) for row in raw} != {0, 1, 2} or len(raw) != 3:
-        raise RuntimeError("R0 closeout requires exactly seeds 0/1/2")
+    expected_roles = {"deterministic_cpu_equivalence", "historical_gpu_replay"}
+    if {int(row["seed"]) for row in raw} != {0, 1, 2} or len(raw) != 6:
+        raise RuntimeError("R0 closeout requires CPU+GPU results for seeds 0/1/2")
+    if {(int(row["seed"]), row["backend_role"]) for row in raw} != {
+        (seed, role) for seed in (0, 1, 2) for role in expected_roles
+    }:
+        raise RuntimeError("R0 dual-backend seed/role matrix is incomplete")
     if any(row["status"] != "passed" or not all(row["checks"].values()) for row in raw):
         raise RuntimeError("Stage B is blocked because at least one R0 gate failed")
     for row in raw:
@@ -99,35 +104,43 @@ def main() -> int:
         if roles["test_accessed"] or roles["sealed_accessed"] or roles["training_executed"] or roles["high_n_inference_executed"]:
             raise RuntimeError("R0 role contract failed")
 
+    indexed = {(int(row["seed"]), row["backend_role"]): (path, row)
+               for path, row in zip(args.seed_result, raw, strict=True)}
     seeds = []
-    for path, row in sorted(zip(args.seed_result, raw, strict=True), key=lambda pair: int(pair[1]["seed"])):
-        metrics = row["metrics_secondary"]
+    for seed in (0, 1, 2):
+        cpu_path, cpu = indexed[(seed, "deterministic_cpu_equivalence")]
+        gpu_path, gpu = indexed[(seed, "historical_gpu_replay")]
+        if cpu["jax_backend"] != "cpu" or gpu["jax_backend"] != "gpu":
+            raise RuntimeError("R0 backend role does not match JAX backend")
+        metrics = gpu["metrics_secondary"]
         seeds.append({
-            "seed": int(row["seed"]),
-            "config_id": row["config_id"],
-            "checkpoint_epoch": int(row["checkpoint"]["epoch"]),
-            "checkpoint_sha256": row["checkpoint"]["sha256"],
-            "raw_result_path": str(path),
-            "raw_result_sha256": sha256(path),
-            "all_checks_passed": all(row["checks"].values()),
-            "adapter_reference_max_abs_K": row["prediction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"],
-            "adapter_reference_scale_max_abs": row["feature_and_scale_equivalence"]["predicted_scale"]["max_abs_error"],
-            "adapter_reference_full_max_abs_K": row["full_field_reconstruction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"],
-            "archived_rmse_K": row["prediction_equivalence"]["adapter_vs_archived"]["rmse_K"],
-            "archived_full_rmse_K": row["full_field_reconstruction_equivalence"]["adapter_vs_archived"]["rmse_K"],
+            "seed": seed,
+            "config_id": gpu["config_id"],
+            "checkpoint_epoch": int(gpu["checkpoint"]["epoch"]),
+            "checkpoint_sha256": gpu["checkpoint"]["sha256"],
+            "raw_results": {
+                "deterministic_cpu_equivalence": {"path": str(cpu_path), "sha256": sha256(cpu_path)},
+                "historical_gpu_replay": {"path": str(gpu_path), "sha256": sha256(gpu_path)},
+            },
+            "all_checks_passed": all(cpu["checks"].values()) and all(gpu["checks"].values()),
+            "adapter_reference_max_abs_K": cpu["prediction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"],
+            "adapter_reference_scale_max_abs": cpu["feature_and_scale_equivalence"]["predicted_scale"]["max_abs_error"],
+            "adapter_reference_full_max_abs_K": cpu["full_field_reconstruction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"],
+            "archived_rmse_K": gpu["prediction_equivalence"]["adapter_vs_archived"]["rmse_K"],
+            "archived_full_rmse_K": gpu["full_field_reconstruction_equivalence"]["adapter_vs_archived"]["rmse_K"],
             "support_point_global_pct": metrics["support"]["point_global_true_rms_relative_rmse_pct"],
             "support_sample_first_pct": metrics["support"]["sample_first_cv_relative_rmse_pct"],
             "support_raw_cv_rmse_K": metrics["support"]["raw_cv_weighted_rmse_K"],
             "full_point_global_pct": metrics["full_240825"]["point_global_true_rms_relative_rmse_pct"],
             "full_sample_first_pct": metrics["full_240825"]["sample_first_cv_relative_rmse_pct"],
             "full_raw_cv_rmse_K": metrics["full_240825"]["raw_cv_weighted_rmse_K"],
-            "input_sample_count": row["input_equivalence"]["sample_count"],
-            "graph_sample_count": row["graph_equivalence"]["sample_count"],
-            "mapping_sample_count": row["full_field_reconstruction_equivalence"]["mapping_sample_count"],
+            "input_sample_count": cpu["input_equivalence"]["sample_count"],
+            "graph_sample_count": cpu["graph_equivalence"]["sample_count"],
+            "mapping_sample_count": cpu["full_field_reconstruction_equivalence"]["mapping_sample_count"],
         })
     r0 = {
-        "schema_version": "heat3d_v6_p1i_anchor_query_r0_closeout_v1",
-        "status": "passed_three_seed_prediction_level_equivalence",
+        "schema_version": "heat3d_v6_p1i_anchor_query_r0_closeout_v2",
+        "status": "passed_three_seed_dual_backend_prediction_level_equivalence",
         "gate_contract_path": str(args.contract),
         "gate_contract_sha256": sha256(args.contract),
         "manifest_sha256": sha256(args.manifest),

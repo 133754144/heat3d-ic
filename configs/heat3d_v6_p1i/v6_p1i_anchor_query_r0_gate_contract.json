@@ -1,12 +1,14 @@
 {
-  "schema_version": "heat3d_v6_p1i_anchor_query_r0_gate_contract_v2",
-  "status": "frozen_before_corrected_three_seed_execution",
+  "schema_version": "heat3d_v6_p1i_anchor_query_r0_gate_contract_v3",
+  "status": "frozen_before_dual_backend_three_seed_execution",
   "scope": "V6_06/V6_07/V6_08 point-global-best checkpoints, 128 valid_iid, exact original 1024 anchors",
   "execution_binding": {
-    "hard_adapter_comparison": "reference and adapter are paired in the same model apply launch",
-    "separate_launch_comparison": "reported diagnostic only because identical GPU inputs showed launch-level reduction nondeterminism",
+    "hard_adapter_comparison": "deterministic CPU reference/adapter predictions and scales paired in the same model apply launch; exact zero tolerance",
+    "historical_checkpoint_replay": "GPU adapter prediction arrays versus frozen training-time GPU prediction archive; frozen RMSE/MAE/tail tolerance",
+    "GPU_adapter_reference_comparison": "reported diagnostic only because identical graph inputs showed segment-reduction order nondeterminism",
+    "CPU_archived_prediction_comparison": "reported diagnostic only because CPU/GPU backend drift exceeds the historical GPU replay tolerance",
     "numeric_tolerances_changed_from_v1": false,
-    "v1_diagnostic_failure_preserved": true
+    "v1_and_v2_diagnostic_failures_preserved": true
   },
   "hard_gate": {
     "input_arrays": "bitwise_equal",

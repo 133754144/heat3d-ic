@@ -83,8 +83,8 @@ def main() -> int:
     args = parser.parse_args()
 
     contract = json.loads(args.contract.read_text())
-    assert contract["status"] == "frozen_before_corrected_three_seed_execution"
-    assert contract["execution_binding"]["hard_adapter_comparison"].startswith("reference and adapter")
+    assert contract["status"] == "frozen_before_dual_backend_three_seed_execution"
+    assert contract["execution_binding"]["hard_adapter_comparison"].startswith("deterministic CPU")
     assert contract["hard_gate"]["adapter_vs_reference_prediction"]["max_abs_error_K"] == 0.0
     assert contract["role_contract"]["test_accessed"] is False
     assert contract["role_contract"]["sealed_accessed"] is False
@@ -97,9 +97,15 @@ def main() -> int:
         assert row["input_equivalence"]["sample_count"] == 128
         assert row["graph_equivalence"]["sample_count"] == 128
         assert row["full_field_reconstruction_equivalence"]["mapping_sample_count"] == 128
-        assert row["prediction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"] == 0.0
-        assert row["feature_and_scale_equivalence"]["predicted_scale"]["max_abs_error"] == 0.0
-        assert row["full_field_reconstruction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"] == 0.0
+        if row["backend_role"] == "deterministic_cpu_equivalence":
+            assert row["jax_backend"] == "cpu"
+            assert row["prediction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"] == 0.0
+            assert row["feature_and_scale_equivalence"]["predicted_scale"]["max_abs_error"] == 0.0
+            assert row["full_field_reconstruction_equivalence"]["adapter_vs_reference"]["max_abs_error_K"] == 0.0
+        else:
+            assert row["backend_role"] == "historical_gpu_replay" and row["jax_backend"] == "gpu"
+            assert row["checks"]["archived_prediction_replay"]
+            assert row["checks"]["archived_full_field_replay"]
         roles = row["role_contract"]
         assert not any(roles[key] for key in (
             "test_accessed", "sealed_accessed", "training_executed",
@@ -107,11 +113,15 @@ def main() -> int:
         ))
         raw_results.append(row)
     if raw_results:
-        assert {int(row["seed"]) for row in raw_results} == {0, 1, 2}
+        assert len(raw_results) == 6
+        assert {(int(row["seed"]), row["backend_role"]) for row in raw_results} == {
+            (seed, role) for seed in (0, 1, 2)
+            for role in ("deterministic_cpu_equivalence", "historical_gpu_replay")
+        }
 
     if args.r0_json:
         r0 = json.loads(args.r0_json.read_text())
-        assert r0["status"] == "passed_three_seed_prediction_level_equivalence"
+        assert r0["status"] == "passed_three_seed_dual_backend_prediction_level_equivalence"
         assert r0["stage_b_released"] is True and r0["seed_count"] == 3
         assert {int(row["seed"]) for row in r0["seeds"]} == {0, 1, 2}
         assert all(row["adapter_reference_max_abs_K"] == 0.0 for row in r0["seeds"])
