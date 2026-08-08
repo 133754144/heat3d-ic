@@ -1,0 +1,38 @@
+{
+  "schema_version": "heat3d_v6_p1i_anchor_high_n_valid32_execution_manifest_v1",
+  "branch": "research/v6-p1i-training",
+  "execution_commit": "91131e482c3f8ed0e2d621c74d86e7007006e08d",
+  "closeout_code_commit": "7c0ee10c63a8deb2576f34319d1d4296cb9f73d4",
+  "host": "wsl2",
+  "frozen_binding_sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede",
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "development_subset": {
+    "role": "valid_iid",
+    "sample_count": 32,
+    "selection": "frozen_label_independent"
+  },
+  "status": "incomplete_fail_closed_at_4096_graph_gate",
+  "executed_resolutions": [1024, 4096],
+  "not_executed_resolutions": [8192, 16384, 32768],
+  "failure_gate": "cross_backend_real_edge_topology_exact",
+  "remote_artifact_root": "/tmp/v6_p1i_anchor_high_n_valid32_78b0e1c",
+  "failure_bundle": {
+    "path": "/tmp/v6_p1i_anchor_high_n_valid32_failure_bundle_7c0ee10.tar.gz",
+    "bytes": 129266,
+    "sha256": "b090cf9fbbe3ab05adaef8dc8dee2b06e0069891687fb9b9954ab3408eda341e",
+    "member_count": 9
+  },
+  "role_contract": {
+    "training_executed": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "three_seed_valid128_executed": false,
+    "checkpoint_modified": false,
+    "manifest_modified": false,
+    "frozen_binding_modified": false
+  }
+}
