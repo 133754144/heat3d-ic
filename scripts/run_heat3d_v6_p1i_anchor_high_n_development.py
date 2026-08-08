@@ -491,6 +491,33 @@ def prepare_actual_data(args: argparse.Namespace) -> dict[str, Any]:
     return payload
 
 
+def reusable_preflight(args: argparse.Namespace) -> dict[str, Any] | None:
+    path = args.artifact_root / "actual_data_preflight.json"
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    binding = _binding(args)
+    if (
+        payload.get("status") != "passed"
+        or payload.get("binding", {}).get("sha256") != _sha256(args.binding)
+        or payload.get("checkpoint", {}).get("sha256") != CHECKPOINT_SHA256
+        or payload.get("dataset", {}).get("manifest_sha256") != _sha256(args.manifest)
+        or payload.get("dataset", {}).get("full_fields_sha256") != _sha256(args.full_fields)
+        or payload.get("sample_ids") != binding["development_subset"]["sample_ids"]
+    ):
+        return None
+    for sample in payload["samples"]:
+        physics = Path(sample["physics_cache_file"])
+        if not physics.is_file() or _sha256(physics) != sample["physics_cache_sha256"]:
+            return None
+    for resolution in HIGH_N_RESOLUTIONS:
+        for row in payload["supports"][str(resolution)]:
+            support = Path(row["support_file"])
+            if not support.is_file() or _sha256(support) != row["support_file_sha256"]:
+                return None
+    return payload
+
+
 def _load_support(path: Path) -> dict[str, np.ndarray]:
     with np.load(path, allow_pickle=False) as payload:
         return {name: np.asarray(payload[name]) for name in payload.files}
@@ -1233,7 +1260,16 @@ def closeout(args: argparse.Namespace) -> dict[str, Any]:
 
 def orchestrate(args: argparse.Namespace) -> int:
     args.artifact_root.mkdir(parents=True, exist_ok=True)
-    prepare_actual_data(args)
+    preflight = reusable_preflight(args)
+    if preflight is None:
+        prepare_actual_data(args)
+        print("[orchestrator] actual-data preflight generated", flush=True)
+    else:
+        print(
+            "[orchestrator] actual-data preflight and support/physics caches reused "
+            f"sha256={_sha256(args.artifact_root / 'actual_data_preflight.json')}",
+            flush=True,
+        )
     execution = []
     for resolution in MANDATORY_RESOLUTIONS:
         cpu_command = _cpu_audit_command(args, resolution)
