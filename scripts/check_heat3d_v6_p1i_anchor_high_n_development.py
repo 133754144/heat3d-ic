@@ -162,17 +162,73 @@ def check_results(root: Path, binding: dict[str, Any]) -> dict[str, Any]:
     return {"preflight": preflight, "results": result_rows, "closeout": closeout}
 
 
+def check_failure_results(root: Path, binding: dict[str, Any]) -> dict[str, Any]:
+    preflight = json.loads((root / "actual_data_preflight.json").read_text())
+    require(preflight["status"] == "passed", "failure closeout preflight failed")
+    require(preflight["sample_ids"] == binding["development_subset"]["sample_ids"],
+            "failure closeout valid32 IDs drift")
+    r1024 = json.loads((root / "resolution_1024.json").read_text())
+    r4096 = json.loads((root / "resolution_4096.json").read_text())
+    require(r1024["status"] == "passed", "1024 did not pass")
+    require(r4096["status"] == "failed", "4096 did not fail closed")
+    positive_false = [
+        key for key, value in r4096["implementation_hard_gates"].items()
+        if value is False and key not in {"test_accessed", "sealed_accessed", "training_executed"}
+    ]
+    require(positive_false == ["cross_backend_real_edge_topology_exact"],
+            f"unexpected 4096 failures: {positive_false}")
+    require(r4096["cached_uncached_prediction_equivalence"]["deterministic_cpu_hard_gate"]["status"] == "passed",
+            "4096 deterministic CPU cache gate failed")
+    require(all(row["cached_uncached_hash_exact"] for row in r4096["graph_cache"]["samples"]),
+            "4096 same-GPU cache hash failed")
+    require(r4096["cross_backend_graph_diagnostic"]["real_edge_topology_exact"] is False,
+            "4096 cross-backend topology unexpectedly exact")
+    for payload in (r1024, r4096):
+        require(payload["role_contract"]["test_accessed"] is False, "test accessed")
+        require(payload["role_contract"]["sealed_accessed"] is False, "sealed accessed")
+        require(payload["role_contract"]["training_executed"] is False, "training executed")
+        require(finite_tree(payload["support_metrics"]), "non-finite support metrics")
+        require(finite_tree(payload["full_field_model_plus_reconstruction"]), "non-finite full metrics")
+        require(finite_tree(payload["oracle_sampling_reconstruction_floor"]), "non-finite floor metrics")
+    require(not any((root / f"resolution_{n}.json").exists() for n in (8192, 16384, 32768)),
+            "higher resolution exists after 4096 fail-close")
+    state = json.loads((root / "execution_state.json").read_text())
+    require(state["status"] == "failed", "execution state is not failed")
+    require([row["resolution"] for row in state["execution"]] == [1024, 4096],
+            "fail-close execution order drift")
+    require(state["higher_resolutions_started_after_4096_failure"] is False,
+            "higher resolution started after 4096 failure")
+    closeout = json.loads((root / "anchor_high_n_valid32_failure_closeout.json").read_text())
+    require(closeout["status"] == "incomplete_fail_closed_at_4096_graph_gate",
+            "failure closeout status drift")
+    require(closeout["failed_hard_gates"] == ["cross_backend_real_edge_topology_exact"],
+            "failure closeout reason drift")
+    require(closeout["role_contract"]["resolution_8192_executed"] is False, "8192 executed")
+    require(closeout["role_contract"]["resolution_16384_executed"] is False, "16384 executed")
+    require(closeout["role_contract"]["resolution_32768_executed"] is False, "32768 executed")
+    with (root / "anchor_high_n_valid32_failure_closeout.csv").open(newline="", encoding="utf-8") as handle:
+        require(len(list(csv.DictReader(handle))) == 2, "failure CSV row count drift")
+    require((root / "anchor_high_n_valid32_failure_closeout.md").is_file(), "failure Markdown missing")
+    return {"preflight": preflight, "resolution_1024": r1024,
+            "resolution_4096": r4096, "closeout": closeout}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binding", type=Path, default=ROOT / "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json")
     parser.add_argument("--results-root", type=Path)
+    parser.add_argument("--expected-failure-resolution", type=int, choices=(4096,))
     args = parser.parse_args()
     binding = check_static(args.binding)
     if args.results_root is not None:
-        check_results(args.results_root, binding)
+        if args.expected_failure_resolution == 4096:
+            check_failure_results(args.results_root, binding)
+        else:
+            check_results(args.results_root, binding)
     print(json.dumps({
         "status": "passed", "static_binding": True,
         "results_checked": args.results_root is not None,
+        "expected_failure_resolution": args.expected_failure_resolution,
         "mandatory_resolutions": list(MANDATORY),
     }, sort_keys=True))
     return 0
