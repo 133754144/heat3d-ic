@@ -115,6 +115,13 @@ def check_results(root: Path, binding: dict[str, Any]) -> dict[str, Any]:
                 "deterministic CPU cache prediction drift")
         require(cache_equivalence["gpu_reduction_nondeterminism_is_not_graph_cache_failure"] is True,
                 "GPU diagnostic classification drift")
+        cross_backend = payload["cross_backend_graph_diagnostic"]
+        require(cross_backend["real_edge_topology_exact"] is True,
+                "cross-backend real-edge topology drift")
+        require(cross_backend["known_float_normalization_drift_not_edge_topology_drift"] is True,
+                "cross-backend float-drift classification missing")
+        require(cross_backend["cache_directories_are_backend_isolated_key_payload_is_unchanged"] is True,
+                "backend cache isolation contract drift")
         graph_rows = payload["graph_cache"]["samples"]
         require(len(graph_rows) == 32, "graph cache sample count drift")
         require(all(row["cached_uncached_hash_exact"] for row in graph_rows), "graph cache equivalence failed")

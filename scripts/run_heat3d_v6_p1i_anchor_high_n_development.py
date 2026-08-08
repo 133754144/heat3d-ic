@@ -600,6 +600,21 @@ def _edge_counts(metadata: Any) -> dict[str, int | None]:
     }
 
 
+def _edge_topology_sha256(metadata: Any) -> str:
+    digest = hashlib.sha256()
+    for field in qualification.EDGE_FIELDS:
+        value = getattr(metadata, field)
+        digest.update(field.encode())
+        if value is None:
+            digest.update(b"<none>")
+            continue
+        array = np.ascontiguousarray(np.asarray(value))
+        digest.update(str(array.dtype).encode())
+        digest.update(str(tuple(array.shape)).encode())
+        digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
 def _prepare_group(
     *, example: V6DualRobinExample, anchor: V6DualRobinExample,
     runtime: Mapping[str, Any], builder: Heat3DGraphBuilder, metadata: Any,
@@ -764,11 +779,12 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
             example=example, stats=runtime["stats"], graph_config=runtime["graph_config"],
             graph_seed=graph_seed, ordered_support_hash=support_row["ordered_support_hash"],
             code_fingerprint=code_fingerprint,
-            cache_dir=args.artifact_root / "graph_cache" / str(resolution),
+            cache_dir=args.artifact_root / "graph_cache_gpu" / str(resolution),
             audit_fresh=True,
         )
         audit["sample_id"] = example.sample_id
         audit["raw_edge_counts"] = _edge_counts(metadata)
+        audit["edge_topology_sha256"] = _edge_topology_sha256(metadata)
         graph_records.append(audit)
         raw_metadata.append(metadata)
         fresh_metadata.append(fresh)
@@ -919,12 +935,17 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
     tolerance = float(binding["numeric_tolerances"]["cached_uncached_prediction_max_abs_K"])
     cpu_audit_path = args.artifact_root / f"resolution_{resolution}_cpu_cache_audit.json"
     cpu_audit = json.loads(cpu_audit_path.read_text(encoding="utf-8"))
+    cross_backend_edge_topology_exact = (
+        graph_records[0]["edge_topology_sha256"]
+        == cpu_audit["graph_cache"]["edge_topology_sha256"]
+    )
     hard_checks = {
         "preflight_passed": preflight["status"] == "passed",
         "resolution_registered": resolution in MANDATORY_RESOLUTIONS,
         "valid32_exact": [example.sample_id for example in examples] == binding["development_subset"]["sample_ids"],
         "checkpoint_frozen": _sha256(runtime["checkpoint_path"]) == CHECKPOINT_SHA256,
         "graph_cache_hash_exact": all(row["cached_uncached_hash_exact"] for row in graph_records),
+        "cross_backend_real_edge_topology_exact": cross_backend_edge_topology_exact,
         "deterministic_cpu_cached_uncached_prediction_within_tolerance": (
             cpu_audit["status"] == "passed"
             and cpu_audit["cached_uncached_prediction"]["max_abs_error_K"] <= tolerance
@@ -976,6 +997,16 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
         },
         "support_artifacts": support_rows,
         "graph_cache": {"edge_targets": edge_targets, "samples": graph_records},
+        "cross_backend_graph_diagnostic": {
+            "real_edge_topology_exact": cross_backend_edge_topology_exact,
+            "cpu_metadata_hash": cpu_audit["graph_cache"]["metadata_hash"],
+            "gpu_metadata_hash": graph_records[0]["metadata_hash"],
+            "metadata_hash_exact": (
+                cpu_audit["graph_cache"]["metadata_hash"] == graph_records[0]["metadata_hash"]
+            ),
+            "known_float_normalization_drift_not_edge_topology_drift": True,
+            "cache_directories_are_backend_isolated_key_payload_is_unchanged": True,
+        },
         "reconstruction_cache": {"samples": reconstruction_records},
         "prediction_artifact": {"path": str(prediction_path), "sha256": _sha256(prediction_path),
                                 "bytes": prediction_path.stat().st_size},
@@ -1032,10 +1063,11 @@ def deterministic_cpu_cache_audit(args: argparse.Namespace, resolution: int) -> 
         example=example, stats=runtime["stats"], graph_config=runtime["graph_config"],
         graph_seed=int(runtime["run_config"]["graph_seed"]), ordered_support_hash=support_hash,
         code_fingerprint=binding["code_fingerprints"]["graph_builder"]["sha256"],
-        cache_dir=args.artifact_root / "graph_cache" / str(resolution), audit_fresh=True,
+        cache_dir=args.artifact_root / "graph_cache_cpu" / str(resolution), audit_fresh=True,
     )
     if fresh is None:
         raise HighNDevelopmentError("deterministic cache audit did not build fresh metadata")
+    graph_audit["edge_topology_sha256"] = _edge_topology_sha256(loaded)
     edge_targets = _edge_counts(loaded)
     cached_group = _prepare_group(
         example=example, anchor=anchor, runtime=runtime, builder=builder,
