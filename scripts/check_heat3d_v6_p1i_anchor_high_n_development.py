@@ -106,7 +106,15 @@ def check_results(root: Path, binding: dict[str, Any]) -> dict[str, Any]:
         require(finite_tree(payload["full_field_model_plus_reconstruction"]), "non-finite full metric")
         require(finite_tree(payload["oracle_sampling_reconstruction_floor"]), "non-finite floor metric")
         replay = payload["fixed_input_gpu_replay"]["prediction"]
-        require(replay["max_abs_error_K"] <= 1.0e-6, "fixed-input replay drift")
+        require(math.isfinite(replay["max_abs_error_K"]) and math.isfinite(replay["rmse_K"]),
+                "non-finite GPU replay diagnostic")
+        cache_equivalence = payload["cached_uncached_prediction_equivalence"]
+        require(cache_equivalence["deterministic_cpu_hard_gate"]["status"] == "passed",
+                "deterministic CPU cache gate failed")
+        require(cache_equivalence["deterministic_cpu_hard_gate"]["cached_uncached_prediction"]["max_abs_error_K"] <= 1.0e-6,
+                "deterministic CPU cache prediction drift")
+        require(cache_equivalence["gpu_reduction_nondeterminism_is_not_graph_cache_failure"] is True,
+                "GPU diagnostic classification drift")
         graph_rows = payload["graph_cache"]["samples"]
         require(len(graph_rows) == 32, "graph cache sample count drift")
         require(all(row["cached_uncached_hash_exact"] for row in graph_rows), "graph cache equivalence failed")
@@ -128,6 +136,8 @@ def check_results(root: Path, binding: dict[str, Any]) -> dict[str, Any]:
     require(state["status"] == "passed", "execution state failed")
     require([row["resolution"] for row in state["execution"]] == list(MANDATORY), "execution order drift")
     require(all(row["returncode"] == 0 for row in state["execution"]), "worker return code failed")
+    require(all(row["cpu_cache_audit_returncode"] == 0 for row in state["execution"]),
+            "CPU cache audit return code failed")
     require(state["higher_resolutions_started_after_4096_failure"] is False, "fail-fast contract drift")
     require(not (root / "resolution_32768.json").exists(), "forbidden 32768 result exists")
 

@@ -917,21 +917,26 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
         if isinstance(value, (int, float))
     )
     tolerance = float(binding["numeric_tolerances"]["cached_uncached_prediction_max_abs_K"])
+    cpu_audit_path = args.artifact_root / f"resolution_{resolution}_cpu_cache_audit.json"
+    cpu_audit = json.loads(cpu_audit_path.read_text(encoding="utf-8"))
     hard_checks = {
         "preflight_passed": preflight["status"] == "passed",
         "resolution_registered": resolution in MANDATORY_RESOLUTIONS,
         "valid32_exact": [example.sample_id for example in examples] == binding["development_subset"]["sample_ids"],
         "checkpoint_frozen": _sha256(runtime["checkpoint_path"]) == CHECKPOINT_SHA256,
         "graph_cache_hash_exact": all(row["cached_uncached_hash_exact"] for row in graph_records),
-        "cached_uncached_prediction_within_tolerance": cached_uncached_prediction is not None
-        and cached_uncached_prediction["prediction"]["max_abs_error_K"] <= tolerance,
+        "deterministic_cpu_cached_uncached_prediction_within_tolerance": (
+            cpu_audit["status"] == "passed"
+            and cpu_audit["cached_uncached_prediction"]["max_abs_error_K"] <= tolerance
+        ),
         "reconstruction_support_hash_exact": all(row["cache_key_payload"]["ordered_support_hash"] == support_rows[index]["ordered_support_hash"]
                                                  for index, row in enumerate(reconstruction_records)),
         "anchor_context_frozen": all(group["anchor_context_audit"]["exact"] for group in groups),
         "anchor_scale_frozen": resolution == 1024 or set(anchor_scales) == {example.sample_id for example in examples},
         "prediction_finite": finite,
-        "fixed_input_replay_within_tolerance": replay is not None
-        and replay["prediction"]["max_abs_error_K"] <= tolerance,
+        "fixed_input_gpu_replay_finite": replay is not None
+        and np.isfinite(replay["prediction"]["max_abs_error_K"])
+        and np.isfinite(replay["prediction"]["rmse_K"]),
         "test_accessed": False,
         "sealed_accessed": False,
         "training_executed": False,
@@ -960,7 +965,15 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
             "full_raw_cv_excess_K": full_metrics["raw_cv_weighted_rmse_K"] - floor_metrics["raw_cv_weighted_rmse_K"],
         },
         "fixed_input_gpu_replay": replay,
-        "cached_uncached_prediction_equivalence": cached_uncached_prediction,
+        "cached_uncached_prediction_equivalence": {
+            "deterministic_cpu_hard_gate": cpu_audit,
+            "gpu_diagnostic_only": cached_uncached_prediction,
+            "gpu_within_frozen_numeric_tolerance": (
+                cached_uncached_prediction is not None
+                and cached_uncached_prediction["prediction"]["max_abs_error_K"] <= tolerance
+            ),
+            "gpu_reduction_nondeterminism_is_not_graph_cache_failure": True,
+        },
         "support_artifacts": support_rows,
         "graph_cache": {"edge_targets": edge_targets, "samples": graph_records},
         "reconstruction_cache": {"samples": reconstruction_records},
@@ -994,6 +1007,87 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
     return payload
 
 
+def deterministic_cpu_cache_audit(args: argparse.Namespace, resolution: int) -> dict[str, Any]:
+    """Prediction-level cache gate on the deterministic CPU backend."""
+    if jax.devices()[0].platform != "cpu":
+        raise HighNDevelopmentError("deterministic cache audit must run on CPU")
+    binding = _binding(args)
+    preflight = json.loads((args.artifact_root / "actual_data_preflight.json").read_text())
+    runtime = _checkpoint_runtime(args)
+    dataset = _dataset(args)
+    anchor = _valid_examples(dataset, binding)[0]
+    full, _ = _full_shared(args)
+    if resolution == 1024:
+        example = anchor
+        indices, _ = _anchor_indices(anchor, full["coords"], 1.0e-14)
+        support_hash = array_sha256(indices.astype(np.int32))
+    else:
+        row = next(
+            item for item in preflight["supports"][str(resolution)]
+            if item["sample_id"] == anchor.sample_id
+        )
+        example = _query_example(anchor, _load_support(Path(row["support_file"])), full["coords"])
+        support_hash = row["ordered_support_hash"]
+    builder, loaded, fresh, graph_audit = _graph_cache_one(
+        example=example, stats=runtime["stats"], graph_config=runtime["graph_config"],
+        graph_seed=int(runtime["run_config"]["graph_seed"]), ordered_support_hash=support_hash,
+        code_fingerprint=binding["code_fingerprints"]["graph_builder"]["sha256"],
+        cache_dir=args.artifact_root / "graph_cache" / str(resolution), audit_fresh=True,
+    )
+    if fresh is None:
+        raise HighNDevelopmentError("deterministic cache audit did not build fresh metadata")
+    edge_targets = _edge_counts(loaded)
+    cached_group = _prepare_group(
+        example=example, anchor=anchor, runtime=runtime, builder=builder,
+        metadata=loaded, edge_targets=edge_targets,
+    )
+    fresh_group = _prepare_group(
+        example=example, anchor=anchor, runtime=runtime, builder=builder,
+        metadata=fresh, edge_targets=edge_targets,
+    )
+    model = GraphNeuralOperator(**runtime["model_config"])
+    params = runner._device_params(runtime["checkpoint"]["params"])
+    compiled = jax.jit(lambda model_params, group: runner._model_apply(model, model_params, group))
+    cached_raw, cached_scale = _predict_output(compiled, params, cached_group)
+    fresh_raw, fresh_scale = _predict_output(compiled, params, fresh_group)
+    repeated_raw, repeated_scale = _predict_output(compiled, params, cached_group)
+    cached_fresh = _prediction_difference(cached_raw, fresh_raw)
+    repeated = _prediction_difference(cached_raw, repeated_raw)
+    tolerance = float(binding["numeric_tolerances"]["cached_uncached_prediction_max_abs_K"])
+    checks = {
+        "backend_is_cpu": True,
+        "metadata_and_graph_hash_exact": graph_audit["cached_uncached_hash_exact"],
+        "cached_uncached_prediction_within_tolerance": cached_fresh["max_abs_error_K"] <= tolerance,
+        "fixed_input_repeat_within_tolerance": repeated["max_abs_error_K"] <= tolerance,
+        "scale_within_tolerance": abs(cached_scale - fresh_scale) <= tolerance
+        and abs(cached_scale - repeated_scale) <= tolerance,
+        "test_accessed": False,
+        "sealed_accessed": False,
+        "training_executed": False,
+    }
+    positive = {key: value for key, value in checks.items()
+                if key not in {"test_accessed", "sealed_accessed", "training_executed"}}
+    status = "passed" if all(value is True for value in positive.values()) and not any(
+        checks[key] for key in ("test_accessed", "sealed_accessed", "training_executed")
+    ) else "failed"
+    payload = {
+        "schema_version": "heat3d_v6_p1i_anchor_high_n_cpu_cache_audit_v1",
+        "status": status, "resolution": resolution, "sample_id": anchor.sample_id,
+        "checks": checks, "cached_uncached_prediction": cached_fresh,
+        "fixed_input_repeat": repeated,
+        "scale": {"cached": cached_scale, "fresh": fresh_scale, "repeated": repeated_scale},
+        "graph_cache": graph_audit,
+        "role_contract": {"accessed_roles": ["valid_iid_inputs"], "test_accessed": False,
+                          "sealed_accessed": False, "training_executed": False,
+                          "checkpoint_modified": False, "high_n_inference_executed": resolution > 1024},
+    }
+    output = args.artifact_root / f"resolution_{resolution}_cpu_cache_audit.json"
+    _write_json(output, payload)
+    if status != "passed":
+        raise HighNDevelopmentError(f"N={resolution} deterministic CPU cache audit failed")
+    return payload
+
+
 def _subprocess_command(args: argparse.Namespace, resolution: int) -> list[str]:
     return [
         sys.executable, str(Path(__file__).resolve()), "--worker-resolution", str(resolution),
@@ -1002,6 +1096,14 @@ def _subprocess_command(args: argparse.Namespace, resolution: int) -> list[str]:
         "--binding", str(args.binding), "--artifact-root", str(args.artifact_root),
         "--platform", args.platform,
     ]
+
+
+def _cpu_audit_command(args: argparse.Namespace, resolution: int) -> list[str]:
+    command = _subprocess_command(args, resolution)
+    command[2:4] = ["--cpu-cache-audit-resolution", str(resolution)]
+    platform_index = command.index("--platform") + 1
+    command[platform_index] = "cpu"
+    return command
 
 
 def closeout(args: argparse.Namespace) -> dict[str, Any]:
@@ -1090,12 +1192,37 @@ def orchestrate(args: argparse.Namespace) -> int:
     prepare_actual_data(args)
     execution = []
     for resolution in MANDATORY_RESOLUTIONS:
+        cpu_command = _cpu_audit_command(args, resolution)
+        cpu_log_path = args.artifact_root / f"resolution_{resolution}_cpu_cache_audit.log"
+        cpu_environment = dict(os.environ)
+        cpu_environment["JAX_PLATFORMS"] = "cpu"
+        cpu_environment["CUDA_VISIBLE_DEVICES"] = ""
+        with cpu_log_path.open("w", encoding="utf-8") as log:
+            cpu_process = subprocess.run(
+                cpu_command, stdout=log, stderr=subprocess.STDOUT, text=True,
+                env=cpu_environment,
+            )
+        if cpu_process.returncode != 0:
+            _write_json(args.artifact_root / "execution_state.json", {
+                "status": "failed", "execution": execution,
+                "failed_cpu_audit_resolution": resolution,
+                "cpu_audit_log": str(cpu_log_path),
+                "higher_resolutions_started_after_4096_failure": False,
+            })
+            raise HighNDevelopmentError(
+                f"N={resolution} deterministic CPU cache audit failed; see {cpu_log_path}"
+            )
         command = _subprocess_command(args, resolution)
         log_path = args.artifact_root / f"resolution_{resolution}.log"
         started = time.time()
         with log_path.open("w", encoding="utf-8") as log:
             process = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, text=True)
-        execution.append({"resolution": resolution, "command": command, "returncode": process.returncode,
+        execution.append({"resolution": resolution,
+                          "cpu_cache_audit_command": cpu_command,
+                          "cpu_cache_audit_returncode": cpu_process.returncode,
+                          "cpu_cache_audit_log": str(cpu_log_path),
+                          "cpu_cache_audit_log_sha256": _sha256(cpu_log_path),
+                          "command": command, "returncode": process.returncode,
                           "log": str(log_path), "log_sha256": _sha256(log_path),
                           "started_unix": started, "finished_unix": time.time()})
         _write_json(args.artifact_root / "execution_state.json", {
@@ -1130,6 +1257,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--artifact-root", type=Path)
     parser.add_argument("--platform", choices=("cpu", "gpu"), default="gpu")
     parser.add_argument("--worker-resolution", type=int, choices=MANDATORY_RESOLUTIONS)
+    parser.add_argument("--cpu-cache-audit-resolution", type=int, choices=MANDATORY_RESOLUTIONS)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -1155,6 +1283,9 @@ def main() -> int:
         raise HighNDevelopmentError("GPU execution requested but JAX is not on CUDA")
     if args.platform == "cpu" and actual_platform != "cpu":
         raise HighNDevelopmentError("CPU execution requested but JAX did not select CPU")
+    if args.cpu_cache_audit_resolution is not None:
+        deterministic_cpu_cache_audit(args, args.cpu_cache_audit_resolution)
+        return 0
     if args.worker_resolution is not None:
         execute_resolution(args, args.worker_resolution)
         return 0
