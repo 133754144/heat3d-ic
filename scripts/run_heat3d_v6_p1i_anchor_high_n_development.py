@@ -147,7 +147,17 @@ def _device_memory() -> dict[str, Any]:
 
 def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            payload, indent=2, sort_keys=True,
+            default=lambda value: value.item() if isinstance(value, np.generic) else _raise_json_type(value),
+        ) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _raise_json_type(value: Any) -> Any:
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 def _binding(args: argparse.Namespace) -> dict[str, Any]:
@@ -955,9 +965,11 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
         "anchor_context_frozen": all(group["anchor_context_audit"]["exact"] for group in groups),
         "anchor_scale_frozen": resolution == 1024 or set(anchor_scales) == {example.sample_id for example in examples},
         "prediction_finite": finite,
-        "fixed_input_gpu_replay_finite": replay is not None
-        and np.isfinite(replay["prediction"]["max_abs_error_K"])
-        and np.isfinite(replay["prediction"]["rmse_K"]),
+        "fixed_input_gpu_replay_finite": bool(
+            replay is not None
+            and np.isfinite(replay["prediction"]["max_abs_error_K"])
+            and np.isfinite(replay["prediction"]["rmse_K"])
+        ),
         "test_accessed": False,
         "sealed_accessed": False,
         "training_executed": False,
