@@ -147,7 +147,7 @@ def _prepare_case(
     device_mapping = to_device_reconstruction_map(mapping)
     operator_weights = np.asarray(example.operator_point_weights, dtype=np.float32)
     anchor_scale = float(args_anchor_scales[sample_id])
-    return group, mapping, device_mapping, operator_weights, anchor_scale
+    return highn._model_group(group), mapping, device_mapping, operator_weights, anchor_scale
 
 
 # Set once in main so _prepare_case remains easy to call inside the timed loop.
@@ -168,7 +168,7 @@ def benchmark_resolution(
 
     @jax.jit
     def model_core(model_params: Any, group: dict[str, Any], weights: Any, anchor_scale: Any) -> Any:
-        output = highn.runner._model_apply(model, model_params, highn._model_group(group))
+        output = highn.runner._model_apply(model, model_params, group)
         raw = output["raw_temperature"][0, 0, :, 0]
         delta = raw - highn.REFERENCE_K
         normalized = weights / jnp.sum(weights)
