@@ -1,0 +1,32 @@
+{
+  "checks": {
+    "finite_k_q_cv": true,
+    "positive_k_cv_nonnegative_q": true,
+    "predicted_host_ram_within_limit": true,
+    "predicted_vram_within_limit": true,
+    "source_layer_interface_boundary_coverage": true,
+    "support_capacity_exact": true,
+    "support_hash_and_nested_prefix_exact": true
+  },
+  "prediction": {
+    "device_vram_limit_bytes": 9615360000,
+    "host_ram_bytes": 24748118016,
+    "method": "previous_observed_peak_scaled_by_resolution_ratio_with_1p25_safety_factor",
+    "predicted_peak_rss_bytes": 6639833088,
+    "predicted_peak_vram_bytes": 1329770240,
+    "previous_peak_rss_bytes": 5297655808,
+    "previous_peak_vram_bytes": 531908096,
+    "previous_resolution": 16384
+  },
+  "resolution": 32768,
+  "role_contract": {
+    "accessed_roles": [
+      "valid_iid_inputs"
+    ],
+    "sealed_accessed": false,
+    "test_accessed": false,
+    "training_executed": false
+  },
+  "schema_version": "heat3d_v6_p1i_gpu_only_high_n_feasibility_v1",
+  "status": "passed"
+}

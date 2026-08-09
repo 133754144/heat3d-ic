@@ -303,6 +303,55 @@ def check_gpu_only_results(
     return {"preflight": preflight, "closeout": closeout, "amendment": amendment}
 
 
+def check_gpu_only_archive() -> dict[str, Any]:
+    config = ROOT / "configs/heat3d_v6_p1i"
+    closeout = json.loads(
+        (config / "v6_p1i_gpu_only_high_n_closeout.json").read_text(encoding="utf-8")
+    )
+    execution = json.loads(
+        (config / "v6_p1i_gpu_only_high_n_execution_manifest.json").read_text(encoding="utf-8")
+    )
+    amendment_path = config / "v6_p1i_gpu_only_high_n_protocol_amendment.json"
+    require(closeout["status"] == "passed_core_and_optional_ladder",
+            "archived GPU-only closeout did not pass")
+    require([row["resolution"] for row in closeout["rows"]]
+            == [1024, 4096, 8192, 16384, 32768, 65536],
+            "archived accuracy-resolution ladder drift")
+    require(all(row["status"] == "passed" for row in closeout["rows"]),
+            "archived resolution status failed")
+    require(all(finite_tree(row) for row in closeout["rows"]), "archived metric is non-finite")
+    require(closeout["protocol_amendment"]["sha256"] == sha256(amendment_path),
+            "archived protocol amendment hash drift")
+    require(execution["protocol_amendment_sha256"] == sha256(amendment_path),
+            "execution manifest protocol hash drift")
+    require(execution["status"] == closeout["status"], "execution/closeout status mismatch")
+    require(execution["historical_failure_artifact_preserved"] is True,
+            "historical failure preservation missing")
+    require(closeout["accuracy_used_as_gate"] is False, "accuracy used as gate")
+    for resolution in GPU_ONLY_LADDER:
+        feasibility = json.loads(
+            (config / f"v6_p1i_gpu_only_high_n_feasibility_{resolution}.json")
+            .read_text(encoding="utf-8")
+        )
+        require(feasibility["status"] == "passed", f"N={resolution} feasibility failed")
+        require(all(feasibility["checks"].values()), f"N={resolution} feasibility check drift")
+    manifest_lines = (
+        config / "v6_p1i_gpu_only_high_n_artifact_sha256.txt"
+    ).read_text(encoding="utf-8").splitlines()[1:]
+    manifest = {Path(line.split(maxsplit=2)[2]).name: line.split(maxsplit=2)[1]
+                for line in manifest_lines}
+    for row in closeout["rows"][1:]:
+        require(manifest[f"resolution_{row['resolution']}.json"] == row["result_sha256"],
+                f"N={row['resolution']} result SHA manifest mismatch")
+    for payload in (closeout["role_contract"], execution["role_contract"]):
+        require(payload["test_accessed"] is False, "test accessed")
+        require(payload["sealed_accessed"] is False, "sealed accessed")
+        require(payload["training_executed"] is False, "training executed")
+        require(payload["three_seed_valid128_executed"] is False,
+                "three-seed valid128 executed")
+    return {"closeout": closeout, "execution": execution}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binding", type=Path, default=ROOT / "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json")
@@ -310,8 +359,11 @@ def main() -> int:
     parser.add_argument("--expected-failure-resolution", type=int, choices=(4096,))
     parser.add_argument("--gpu-only-amendment", type=Path)
     parser.add_argument("--baseline-root", type=Path)
+    parser.add_argument("--check-gpu-only-archive", action="store_true")
     args = parser.parse_args()
     binding = check_static(args.binding)
+    if args.check_gpu_only_archive:
+        check_gpu_only_archive()
     if args.results_root is not None:
         if args.gpu_only_amendment is not None:
             require(args.baseline_root is not None, "--baseline-root required for GPU-only check")
@@ -328,6 +380,7 @@ def main() -> int:
         "expected_failure_resolution": args.expected_failure_resolution,
         "mandatory_resolutions": list(MANDATORY),
         "gpu_only": args.gpu_only_amendment is not None,
+        "gpu_only_archive_checked": args.check_gpu_only_archive,
     }, sort_keys=True))
     return 0
 

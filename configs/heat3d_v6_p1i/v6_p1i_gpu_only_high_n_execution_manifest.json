@@ -1,0 +1,46 @@
+{
+  "schema_version": "heat3d_v6_p1i_gpu_only_high_n_execution_manifest_v1",
+  "branch": "research/v6-p1i-training",
+  "execution_commit": "b93571317a03f25aa69b9a1f4515c4b06aeba246",
+  "host": "wsl2",
+  "artifact_root": "/tmp/v6_p1i_gpu_only_high_n_valid32_b935713",
+  "status": "passed_core_and_optional_ladder",
+  "protocol_amendment_sha256": "c654c3ad5a0238a5a736fd360696d72d75a386c350a7e67a9f8122e84bcd8314",
+  "frozen_binding_sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede",
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "resolutions": {
+    "baseline": [1024],
+    "mandatory_passed": [4096, 8192, 16384],
+    "optional_passed": [32768, 65536],
+    "failed": [],
+    "stopped": []
+  },
+  "small_bundle": {
+    "remote_path": "/tmp/v6_p1i_gpu_only_high_n_valid32_b935713_small_bundle.tar.gz",
+    "bytes": 89941,
+    "sha256": "ea9a3bf68508fb50d94d509c8e08d5fc60005854dc1de5456f3d9aa8a0017233",
+    "member_count": 11
+  },
+  "artifact_sha256_manifest": {
+    "remote_path": "/tmp/v6_p1i_gpu_only_high_n_valid32_b935713_sha_manifest.txt",
+    "bytes": 2958,
+    "sha256": "12195cf95adb9d36147e210dc17fab2d9f6c4cc9ec2bebbd40022c7d4dc57a57",
+    "referenced_artifact_count": 21
+  },
+  "historical_failure_artifact_preserved": true,
+  "accuracy_used_as_gate": false,
+  "role_contract": {
+    "accessed_roles": ["valid_iid"],
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "three_seed_valid128_executed": false,
+    "checkpoint_modified": false,
+    "manifest_modified": false,
+    "frozen_binding_modified": false
+  }
+}
