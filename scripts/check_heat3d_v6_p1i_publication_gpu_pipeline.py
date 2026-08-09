@@ -82,11 +82,33 @@ def check_graph(path: Path, csv_path: Path) -> None:
     require(len(rows) == 11, "graph CSV row count")
 
 
+def check_closeout(path: Path, csv_path: Path) -> None:
+    payload = json.loads(path.read_text())
+    require(payload["status"] == "passed_p0_p1_p2", "closeout status")
+    require([row["resolution"] for row in payload["curve"]] == EXPECTED, "closeout resolutions")
+    require(payload["decision"]["priority"] == "graph reuse/fixed regional mesh", "decision drift")
+    provenance = payload["execution_provenance"]
+    require(len(provenance["graph_execution_commit"]) == 40, "graph execution commit")
+    require(len(provenance["timing_execution_commit"]) == 40, "timing execution commit")
+    require(provenance["actual_new_compute"]["fresh_graph_builds"] == 0, "fresh graph build recorded")
+    require(provenance["actual_new_compute"]["reconstruction_map_builds"] == 0, "map build recorded")
+    require(provenance["actual_new_compute"]["metric_or_label_evaluations"] == 0, "label/metric evaluation recorded")
+    for row in payload["curve"]:
+        require(row["reconstruction_max_abs_error_K"] <= 1e-4, "closeout recon max")
+        require(row["reconstruction_max_rmse_K"] <= 1e-5, "closeout recon rmse")
+        require(row["new_case_median_seconds"] > row["warm_cache_median_seconds"], "timing ordering")
+    with csv_path.open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    require(len(rows) == len(EXPECTED), "closeout CSV row count")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--timing-json", type=Path)
     parser.add_argument("--graph-json", type=Path)
     parser.add_argument("--graph-csv", type=Path)
+    parser.add_argument("--closeout-json", type=Path)
+    parser.add_argument("--closeout-csv", type=Path)
     args = parser.parse_args()
     check_static()
     if args.timing_json:
@@ -94,7 +116,14 @@ def main() -> int:
     if args.graph_json:
         require(args.graph_csv is not None, "--graph-csv required")
         check_graph(args.graph_json, args.graph_csv)
-    print(json.dumps({"status": "passed", "static": True, "timing": bool(args.timing_json), "graph": bool(args.graph_json)}))
+    if args.closeout_json:
+        require(args.closeout_csv is not None, "--closeout-csv required")
+        check_closeout(args.closeout_json, args.closeout_csv)
+    print(json.dumps({
+        "status": "passed", "static": True,
+        "timing": bool(args.timing_json), "graph": bool(args.graph_json),
+        "closeout": bool(args.closeout_json),
+    }))
     return 0
 
 

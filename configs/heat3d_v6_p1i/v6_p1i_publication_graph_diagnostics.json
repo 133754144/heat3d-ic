@@ -1,0 +1,2069 @@
+{
+  "partition_priority": [
+    "source_q_positive",
+    "interface",
+    "background"
+  ],
+  "role_contract": {
+    "inference": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "schema_version": "heat3d_v6_cached_graph_diagnostics_v1",
+  "status": "passed_offline_cache_only",
+  "summaries": [
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 8.8125,
+          "mean": 2.53399658203125,
+          "median": 2.0,
+          "p95": 5.53125
+        },
+        "p2r_regional": {
+          "max": 75.25,
+          "mean": 10.135986328125,
+          "median": 6.65625,
+          "p95": 31.6484375
+        },
+        "r2p_physical": {
+          "max": 8.8125,
+          "mean": 2.53399658203125,
+          "median": 2.0,
+          "p95": 5.53125
+        },
+        "r2p_regional": {
+          "max": 75.25,
+          "mean": 10.135986328125,
+          "median": 6.65625,
+          "p95": 31.6484375
+        },
+        "r2r_in": {
+          "max": 39.0,
+          "mean": 16.0908203125,
+          "median": 14.84375,
+          "p95": 28.2265625
+        },
+        "r2r_out": {
+          "max": 39.0,
+          "mean": 16.0908203125,
+          "median": 14.84375,
+          "p95": 28.2265625
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 2904.0,
+          "mean": 2594.8125,
+          "median": 2583.0,
+          "min": 2102.0,
+          "p95": 2877.45
+        },
+        "r2p": {
+          "count": 32,
+          "max": 2904.0,
+          "mean": 2594.8125,
+          "median": 2583.0,
+          "min": 2102.0,
+          "p95": 2877.45
+        },
+        "r2r": {
+          "count": 32,
+          "max": 4200.0,
+          "mean": 4119.25,
+          "median": 4116.0,
+          "min": 4038.0,
+          "p95": 4181.0
+        }
+      },
+      "family": "P1i_sample_varying",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "cache_load_seconds_sum": 0.07249472406692803,
+        "fresh_build_seconds_sum_qualification_only": 34.14312546653673,
+        "historical_graph_stage_seconds": 58.78627277794294,
+        "historical_group_prepare_seconds": 11.757518211845309
+      },
+      "normalized_regional_radius": {
+        "max": 0.5338934743776917,
+        "mean": 0.19230660677612832,
+        "median": 0.20184291363693774,
+        "p95": 0.3721500413957983
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0025984827292423866,
+        "mean": 0.0008956784766414258,
+        "median": 0.0009271003910026271,
+        "p95": 0.0017918538844266438
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 2.261286812072094,
+          "physical_node_count": {
+            "count": 32,
+            "max": 779.0,
+            "mean": 706.96875,
+            "median": 703.0,
+            "min": 626.0,
+            "p95": 768.45
+          },
+          "r2p_degree_mean": 2.261286812072094
+        },
+        "interface": {
+          "p2r_degree_mean": 2.412235936359695,
+          "physical_node_count": {
+            "count": 32,
+            "max": 208.0,
+            "mean": 192.3125,
+            "median": 191.5,
+            "min": 176.0,
+            "p95": 206.35
+          },
+          "r2p_degree_mean": 2.412235936359695
+        },
+        "source": {
+          "p2r_degree_mean": 4.177075633862762,
+          "physical_node_count": {
+            "count": 32,
+            "max": 214.0,
+            "mean": 124.71875,
+            "median": 124.5,
+            "min": 37.0,
+            "p95": 201.0
+          },
+          "r2p_degree_mean": 4.177075633862762
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0025984827292423866,
+          "mean": 0.0007508751184717242,
+          "median": 0.0007159473905210536,
+          "p95": 0.0016197375250850173
+        },
+        "r2p": {
+          "max": 0.0025984827292423866,
+          "mean": 0.0007508751184717242,
+          "median": 0.0007159473905210536,
+          "p95": 0.0016197375250850173
+        },
+        "r2r": {
+          "max": 0.009802398100994907,
+          "mean": 0.00209993667808476,
+          "median": 0.0018345494741887328,
+          "p95": 0.0047090542443524895
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 256.0,
+        "mean": 256.0,
+        "median": 256.0,
+        "min": 256.0,
+        "p95": 256.0
+      },
+      "resolution": 1024
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 11.4375,
+          "mean": 2.8998947143554688,
+          "median": 2.0,
+          "p95": 6.90625
+        },
+        "p2r_regional": {
+          "max": 223.65625,
+          "mean": 11.599578857421875,
+          "median": 6.640625,
+          "p95": 36.24531249999994
+        },
+        "r2p_physical": {
+          "max": 11.4375,
+          "mean": 2.8998947143554688,
+          "median": 2.0,
+          "p95": 6.90625
+        },
+        "r2p_regional": {
+          "max": 223.65625,
+          "mean": 11.599578857421875,
+          "median": 6.640625,
+          "p95": 36.24531249999994
+        },
+        "r2r_in": {
+          "max": 53.65625,
+          "mean": 17.3128662109375,
+          "median": 15.15625,
+          "p95": 32.584374999999994
+        },
+        "r2r_out": {
+          "max": 53.65625,
+          "mean": 17.3128662109375,
+          "median": 15.15625,
+          "p95": 32.584374999999994
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 13299.0,
+          "mean": 11877.96875,
+          "median": 11889.0,
+          "min": 10903.0,
+          "p95": 12748.35
+        },
+        "r2p": {
+          "count": 32,
+          "max": 13299.0,
+          "mean": 11877.96875,
+          "median": 11889.0,
+          "min": 10903.0,
+          "p95": 12748.35
+        },
+        "r2r": {
+          "count": 32,
+          "max": 17884.0,
+          "mean": 17728.375,
+          "median": 17731.0,
+          "min": 17548.0,
+          "p95": 17866.6
+        }
+      },
+      "family": "P1i_sample_varying",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "cache_load_seconds_sum": 0.07124546775594354,
+        "fresh_build_seconds_sum_qualification_only": 42.66014375141822,
+        "historical_graph_stage_seconds": 68.17683076299727,
+        "historical_group_prepare_seconds": 11.565777042880654
+      },
+      "normalized_regional_radius": {
+        "max": 0.3584200767800212,
+        "mean": 0.11123003256886932,
+        "median": 0.1154265315271914,
+        "p95": 0.23160495399497444
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.001740872004983865,
+        "mean": 0.0005147598479067319,
+        "median": 0.0005036275976677689,
+        "p95": 0.0011181939398388348
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 1.9631034799310172,
+          "physical_node_count": {
+            "count": 32,
+            "max": 2315.0,
+            "mean": 2240.71875,
+            "median": 2238.5,
+            "min": 2161.0,
+            "p95": 2301.0
+          },
+          "r2p_degree_mean": 1.9631034799310172
+        },
+        "interface": {
+          "p2r_degree_mean": 2.1764351556583037,
+          "physical_node_count": {
+            "count": 32,
+            "max": 669.0,
+            "mean": 652.6875,
+            "median": 652.5,
+            "min": 636.0,
+            "p95": 666.45
+          },
+          "r2p_degree_mean": 2.1764351556583037
+        },
+        "source": {
+          "p2r_degree_mean": 5.042475326727394,
+          "physical_node_count": {
+            "count": 32,
+            "max": 1291.0,
+            "mean": 1202.59375,
+            "median": 1202.0,
+            "min": 1112.0,
+            "p95": 1282.6
+          },
+          "r2p_degree_mean": 5.042475326727394
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.001740872004983865,
+          "mean": 0.00044426005786879166,
+          "median": 0.0004234282198918267,
+          "p95": 0.0009861924676747619
+        },
+        "r2p": {
+          "max": 0.001740872004983865,
+          "mean": 0.00044426005786879166,
+          "median": 0.0004234282198918267,
+          "p95": 0.0009861924676747619
+        },
+        "r2r": {
+          "max": 0.009795467464500692,
+          "mean": 0.0012684124824792736,
+          "median": 0.0010983424273310251,
+          "p95": 0.003021218501927914
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 1024.0,
+        "mean": 1024.0,
+        "median": 1024.0,
+        "min": 1024.0,
+        "p95": 1024.0
+      },
+      "resolution": 4096
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 11.8125,
+          "mean": 2.7710037231445312,
+          "median": 2.0,
+          "p95": 6.5
+        },
+        "p2r_regional": {
+          "max": 305.625,
+          "mean": 11.084014892578125,
+          "median": 6.78125,
+          "p95": 28.412499999999966
+        },
+        "r2p_physical": {
+          "max": 11.8125,
+          "mean": 2.7710037231445312,
+          "median": 2.0,
+          "p95": 6.5
+        },
+        "r2p_regional": {
+          "max": 305.625,
+          "mean": 11.084014892578125,
+          "median": 6.78125,
+          "p95": 28.412499999999966
+        },
+        "r2r_in": {
+          "max": 59.3125,
+          "mean": 17.565338134765625,
+          "median": 15.46875,
+          "p95": 33.38437499999999
+        },
+        "r2r_out": {
+          "max": 59.3125,
+          "mean": 17.565338134765625,
+          "median": 15.46875,
+          "p95": 33.38437499999999
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 25018.0,
+          "mean": 22700.0625,
+          "median": 22648.5,
+          "min": 18843.0,
+          "p95": 24148.9
+        },
+        "r2p": {
+          "count": 32,
+          "max": 25018.0,
+          "mean": 22700.0625,
+          "median": 22648.5,
+          "min": 18843.0,
+          "p95": 24148.9
+        },
+        "r2r": {
+          "count": 32,
+          "max": 36432.0,
+          "mean": 35973.8125,
+          "median": 35922.0,
+          "min": 35564.0,
+          "p95": 36270.9
+        }
+      },
+      "family": "P1i_sample_varying",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "cache_load_seconds_sum": 0.06836360064335167,
+        "fresh_build_seconds_sum_qualification_only": 48.58065477642231,
+        "historical_graph_stage_seconds": 73.9925936490763,
+        "historical_group_prepare_seconds": 11.159061518963426
+      },
+      "normalized_regional_radius": {
+        "max": 0.2801474411971867,
+        "mean": 0.08700512281210848,
+        "median": 0.09233219490852207,
+        "p95": 0.18528330661356449
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0013728310625513514,
+        "mean": 0.00040001853217123354,
+        "median": 0.000387572227082488,
+        "p95": 0.0008867389050819824
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 1.9011843241871076,
+          "physical_node_count": {
+            "count": 32,
+            "max": 5469.0,
+            "mean": 4445.3125,
+            "median": 4291.0,
+            "min": 4209.0,
+            "p95": 5353.0
+          },
+          "r2p_degree_mean": 1.9011843241871076
+        },
+        "interface": {
+          "p2r_degree_mean": 2.168546866232596,
+          "physical_node_count": {
+            "count": 32,
+            "max": 1451.0,
+            "mean": 1265.0,
+            "median": 1265.0,
+            "min": 1067.0,
+            "p95": 1393.8
+          },
+          "r2p_degree_mean": 2.168546866232596
+        },
+        "source": {
+          "p2r_degree_mean": 4.625713360394024,
+          "physical_node_count": {
+            "count": 32,
+            "max": 2725.0,
+            "mean": 2481.6875,
+            "median": 2633.0,
+            "min": 1272.0,
+            "p95": 2716.6
+          },
+          "r2p_degree_mean": 4.625713360394024
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0013728310625513514,
+          "mean": 0.00034419503567124,
+          "median": 0.00033564597195414036,
+          "p95": 0.0007867751168326199
+        },
+        "r2p": {
+          "max": 0.0013728310625513514,
+          "mean": 0.00034419503567124,
+          "median": 0.00033564597195414036,
+          "p95": 0.0007867751168326199
+        },
+        "r2r": {
+          "max": 0.009601605039026923,
+          "mean": 0.0009828826597947785,
+          "median": 0.0008382411439607683,
+          "p95": 0.0023582349804831906
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 2048.0,
+        "mean": 2048.0,
+        "median": 2048.0,
+        "min": 2048.0,
+        "p95": 2048.0
+      },
+      "resolution": 8192
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 11.03125,
+          "mean": 2.3628063201904297,
+          "median": 2.0,
+          "p95": 5.15625
+        },
+        "p2r_regional": {
+          "max": 287.03125,
+          "mean": 9.451225280761719,
+          "median": 6.890625,
+          "p95": 23.0
+        },
+        "r2p_physical": {
+          "max": 11.03125,
+          "mean": 2.3628063201904297,
+          "median": 2.0,
+          "p95": 5.15625
+        },
+        "r2p_regional": {
+          "max": 287.03125,
+          "mean": 9.451225280761719,
+          "median": 6.890625,
+          "p95": 23.0
+        },
+        "r2r_in": {
+          "max": 61.5,
+          "mean": 17.865524291992188,
+          "median": 15.96875,
+          "p95": 33.921875
+        },
+        "r2r_out": {
+          "max": 61.5,
+          "mean": 17.865524291992188,
+          "median": 15.96875,
+          "p95": 33.921875
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 43810.0,
+          "mean": 38712.21875,
+          "median": 39162.0,
+          "min": 33609.0,
+          "p95": 42274.1
+        },
+        "r2p": {
+          "count": 32,
+          "max": 43810.0,
+          "mean": 38712.21875,
+          "median": 39162.0,
+          "min": 33609.0,
+          "p95": 42274.1
+        },
+        "r2r": {
+          "count": 32,
+          "max": 73724.0,
+          "mean": 73177.1875,
+          "median": 73161.0,
+          "min": 72548.0,
+          "p95": 73659.5
+        }
+      },
+      "family": "P1i_sample_varying",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "cache_load_seconds_sum": 0.07630569022148848,
+        "fresh_build_seconds_sum_qualification_only": 56.21977368602529,
+        "historical_graph_stage_seconds": 82.80080477893353,
+        "historical_group_prepare_seconds": 12.287724322173744
+      },
+      "normalized_regional_radius": {
+        "max": 0.21363273169845343,
+        "mean": 0.0734151715865039,
+        "median": 0.07821103965397924,
+        "p95": 0.1369850302580744
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0010486854808180717,
+        "mean": 0.0003389428819383574,
+        "median": 0.0003497321891998865,
+        "p95": 0.0006544991508020474
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 1.8814520574492968,
+          "physical_node_count": {
+            "count": 32,
+            "max": 11771.0,
+            "mean": 10324.4375,
+            "median": 10148.0,
+            "min": 8899.0,
+            "p95": 11654.55
+          },
+          "r2p_degree_mean": 1.8814520574492968
+        },
+        "interface": {
+          "p2r_degree_mean": 2.1466149787556996,
+          "physical_node_count": {
+            "count": 32,
+            "max": 3341.0,
+            "mean": 2623.8125,
+            "median": 2556.0,
+            "min": 2086.0,
+            "p95": 3284.25
+          },
+          "r2p_degree_mean": 2.1466149787556996
+        },
+        "source": {
+          "p2r_degree_mean": 3.9534693724435424,
+          "physical_node_count": {
+            "count": 32,
+            "max": 5152.0,
+            "mean": 3435.75,
+            "median": 3684.0,
+            "min": 1272.0,
+            "p95": 4983.2
+          },
+          "r2p_degree_mean": 3.9534693724435424
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0010486854808180717,
+          "mean": 0.00027677256459837597,
+          "median": 0.0002696609135649942,
+          "p95": 0.0005793794076661887
+        },
+        "r2p": {
+          "max": 0.0010486854808180717,
+          "mean": 0.00027677256459837597,
+          "median": 0.0002696609135649942,
+          "p95": 0.0005793794076661887
+        },
+        "r2r": {
+          "max": 0.009400793983819978,
+          "mean": 0.0008063208546473866,
+          "median": 0.0006982722490630631,
+          "p95": 0.001804448589078059
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 4096.0,
+        "mean": 4096.0,
+        "median": 4096.0,
+        "min": 4096.0,
+        "p95": 4096.0
+      },
+      "resolution": 16384
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 9.84375,
+          "mean": 2.108523368835449,
+          "median": 2.0,
+          "p95": 4.03125
+        },
+        "p2r_regional": {
+          "max": 191.65625,
+          "mean": 8.434093475341797,
+          "median": 6.8125,
+          "p95": 21.3125
+        },
+        "r2p_physical": {
+          "max": 9.84375,
+          "mean": 2.108523368835449,
+          "median": 2.0,
+          "p95": 4.03125
+        },
+        "r2p_regional": {
+          "max": 191.65625,
+          "mean": 8.434093475341797,
+          "median": 6.8125,
+          "p95": 21.3125
+        },
+        "r2r_in": {
+          "max": 60.65625,
+          "mean": 17.82659149169922,
+          "median": 16.0,
+          "p95": 34.125
+        },
+        "r2r_out": {
+          "max": 60.65625,
+          "mean": 17.82659149169922,
+          "median": 16.0,
+          "p95": 34.125
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 71410.0,
+          "mean": 69092.09375,
+          "median": 69159.0,
+          "min": 66535.0,
+          "p95": 71015.6
+        },
+        "r2p": {
+          "count": 32,
+          "max": 71410.0,
+          "mean": 69092.09375,
+          "median": 69159.0,
+          "min": 66535.0,
+          "p95": 71015.6
+        },
+        "r2r": {
+          "count": 32,
+          "max": 146836.0,
+          "mean": 146035.4375,
+          "median": 146034.0,
+          "min": 145154.0,
+          "p95": 146715.5
+        }
+      },
+      "family": "P1i_sample_varying",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "cache_load_seconds_sum": 0.2286368953064084,
+        "fresh_build_seconds_sum_qualification_only": 67.75131956674159,
+        "historical_graph_stage_seconds": 94.73598622484133,
+        "historical_group_prepare_seconds": 11.989972396986559
+      },
+      "normalized_regional_radius": {
+        "max": 0.16844476107507944,
+        "mean": 0.06102837240282177,
+        "median": 0.06753235461656004,
+        "p95": 0.10773919989587738
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0008244099720288794,
+        "mean": 0.0002855273830500379,
+        "median": 0.00031250002793967743,
+        "p95": 0.0004941616869651774
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 1.8832344631429376,
+          "physical_node_count": {
+            "count": 32,
+            "max": 24374.0,
+            "mean": 22917.90625,
+            "median": 22752.0,
+            "min": 21757.0,
+            "p95": 24258.0
+          },
+          "r2p_degree_mean": 1.8832344631429376
+        },
+        "interface": {
+          "p2r_degree_mean": 2.222381782903798,
+          "physical_node_count": {
+            "count": 32,
+            "max": 7122.0,
+            "mean": 6414.34375,
+            "median": 6336.5,
+            "min": 5859.0,
+            "p95": 7064.8
+          },
+          "r2p_degree_mean": 2.222381782903798
+        },
+        "source": {
+          "p2r_degree_mean": 3.4121355260507436,
+          "physical_node_count": {
+            "count": 32,
+            "max": 5152.0,
+            "mean": 3435.75,
+            "median": 3684.0,
+            "min": 1272.0,
+            "p95": 4983.2
+          },
+          "r2p_degree_mean": 3.4121355260507436
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0008244099720288794,
+          "mean": 0.00023491353058171702,
+          "median": 0.00022097096790260737,
+          "p95": 0.0004872542343296501
+        },
+        "r2p": {
+          "max": 0.0008244099720288794,
+          "mean": 0.00023491353058171702,
+          "median": 0.00022097096790260737,
+          "p95": 0.0004872542343296501
+        },
+        "r2r": {
+          "max": 0.009021559894429324,
+          "mean": 0.0006496059981589985,
+          "median": 0.0005658636119328631,
+          "p95": 0.0013921268340230184
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 8192.0,
+        "mean": 8192.0,
+        "median": 8192.0,
+        "min": 8192.0,
+        "p95": 8192.0
+      },
+      "resolution": 32768
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 9.0,
+          "mean": 2.020789623260498,
+          "median": 2.0,
+          "p95": 4.0
+        },
+        "p2r_regional": {
+          "max": 112.5625,
+          "mean": 8.083158493041992,
+          "median": 6.96875,
+          "p95": 19.46875
+        },
+        "r2p_physical": {
+          "max": 9.0,
+          "mean": 2.020789623260498,
+          "median": 2.0,
+          "p95": 4.0
+        },
+        "r2p_regional": {
+          "max": 112.5625,
+          "mean": 8.083158493041992,
+          "median": 6.96875,
+          "p95": 19.46875
+        },
+        "r2r_in": {
+          "max": 62.125,
+          "mean": 17.7818603515625,
+          "median": 16.0,
+          "p95": 34.125
+        },
+        "r2r_out": {
+          "max": 62.125,
+          "mean": 17.7818603515625,
+          "median": 16.0,
+          "p95": 34.125
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 135469.0,
+          "mean": 132434.46875,
+          "median": 132430.5,
+          "min": 128060.0,
+          "p95": 134977.0
+        },
+        "r2p": {
+          "count": 32,
+          "max": 135469.0,
+          "mean": 132434.46875,
+          "median": 132430.5,
+          "min": 128060.0,
+          "p95": 134977.0
+        },
+        "r2r": {
+          "count": 32,
+          "max": 292380.0,
+          "mean": 291338.0,
+          "median": 291323.0,
+          "min": 290492.0,
+          "p95": 292020.8
+        }
+      },
+      "family": "P1i_sample_varying",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "cache_load_seconds_sum": 0.13811337854713202,
+        "fresh_build_seconds_sum_qualification_only": 90.9245887924917,
+        "historical_graph_stage_seconds": 122.2256215880625,
+        "historical_group_prepare_seconds": 12.380870006978512
+      },
+      "normalized_regional_radius": {
+        "max": 0.12893454683944583,
+        "mean": 0.04930222062758194,
+        "median": 0.04521186085185036,
+        "p95": 0.08833106397651136
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0006302937438355164,
+        "mean": 0.00023353018115665112,
+        "median": 0.00022097105351338392,
+        "p95": 0.00043254582037102654
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 1.8738753214891972,
+          "physical_node_count": {
+            "count": 32,
+            "max": 51230.0,
+            "mean": 48897.59375,
+            "median": 48616.0,
+            "min": 46963.0,
+            "p95": 51139.6
+          },
+          "r2p_degree_mean": 1.8738753214891972
+        },
+        "interface": {
+          "p2r_degree_mean": 2.3148032926284996,
+          "physical_node_count": {
+            "count": 32,
+            "max": 13437.0,
+            "mean": 13202.65625,
+            "median": 13230.0,
+            "min": 12908.0,
+            "p95": 13422.8
+          },
+          "r2p_degree_mean": 2.3148032926284996
+        },
+        "source": {
+          "p2r_degree_mean": 2.9730977136561956,
+          "physical_node_count": {
+            "count": 32,
+            "max": 5152.0,
+            "mean": 3435.75,
+            "median": 3684.0,
+            "min": 1272.0,
+            "p95": 4983.2
+          },
+          "r2p_degree_mean": 2.9730977136561956
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0006302937438355164,
+          "mean": 0.00019433637178477558,
+          "median": 0.0001987843999834131,
+          "p95": 0.00034938584285425917
+        },
+        "r2p": {
+          "max": 0.0006302937438355164,
+          "mean": 0.00019433637178477558,
+          "median": 0.0001987843999834131,
+          "p95": 0.00034938584285425917
+        },
+        "r2r": {
+          "max": 0.009002163887845359,
+          "mean": 0.0005122936052533039,
+          "median": 0.000458462274134845,
+          "p95": 0.001072180119129582
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 16384.0,
+        "mean": 16384.0,
+        "median": 16384.0,
+        "min": 16384.0,
+        "p95": 16384.0
+      },
+      "resolution": 65536
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 9.0,
+          "mean": 3.248046875,
+          "median": 3.0,
+          "p95": 6.0
+        },
+        "p2r_regional": {
+          "max": 197.0,
+          "mean": 12.9921875,
+          "median": 7.0,
+          "p95": 39.75
+        },
+        "r2p_physical": {
+          "max": 9.0,
+          "mean": 3.248046875,
+          "median": 3.0,
+          "p95": 6.0
+        },
+        "r2p_regional": {
+          "max": 197.0,
+          "mean": 12.9921875,
+          "median": 7.0,
+          "p95": 39.75
+        },
+        "r2r_in": {
+          "max": 35.0,
+          "mean": 15.3984375,
+          "median": 14.0,
+          "p95": 27.0
+        },
+        "r2r_out": {
+          "max": 35.0,
+          "mean": 15.3984375,
+          "median": 14.0,
+          "p95": 27.0
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 3326.0,
+          "mean": 3326.0,
+          "median": 3326.0,
+          "min": 3326.0,
+          "p95": 3326.0
+        },
+        "r2p": {
+          "count": 32,
+          "max": 3326.0,
+          "mean": 3326.0,
+          "median": 3326.0,
+          "min": 3326.0,
+          "p95": 3326.0
+        },
+        "r2r": {
+          "count": 32,
+          "max": 3942.0,
+          "mean": 3942.0,
+          "median": 3942.0,
+          "min": 3942.0,
+          "p95": 3942.0
+        }
+      },
+      "family": "P1h_shared_support",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "historical_cached_load_seconds": 0.0024251639988506213,
+        "historical_uncached_build_seconds": 2.248666111001512,
+        "scope": "one shared-support graph reused across samples"
+      },
+      "normalized_regional_radius": {
+        "max": 0.9507250189781189,
+        "mean": 0.18417202612181427,
+        "median": 0.15061724931001663,
+        "p95": 0.5034439042210579
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.004640388251536718,
+        "mean": 0.0008627912108221717,
+        "median": 0.0006464107988177388,
+        "p95": 0.0024348059538299013
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 3.211498652808387,
+          "physical_node_count": {
+            "count": 32,
+            "max": 811.0,
+            "mean": 790.25,
+            "median": 797.0,
+            "min": 756.0,
+            "p95": 811.0
+          },
+          "r2p_degree_mean": 3.211498652808387
+        },
+        "interface": {
+          "p2r_degree_mean": 3.2699799196787147,
+          "physical_node_count": {
+            "count": 32,
+            "max": 166.0,
+            "mean": 165.75,
+            "median": 166.0,
+            "min": 165.0,
+            "p95": 166.0
+          },
+          "r2p_degree_mean": 3.2699799196787147
+        },
+        "source": {
+          "p2r_degree_mean": 3.648275869951595,
+          "physical_node_count": {
+            "count": 32,
+            "max": 102.0,
+            "mean": 68.0,
+            "median": 61.5,
+            "min": 47.0,
+            "p95": 102.0
+          },
+          "r2p_degree_mean": 3.648275869951595
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.004640388251536718,
+          "mean": 0.0011023152996204695,
+          "median": 0.0007876240440059144,
+          "p95": 0.002833189593769766
+        },
+        "r2p": {
+          "max": 0.004640388251536718,
+          "mean": 0.0011023152996204695,
+          "median": 0.0007876240440059144,
+          "p95": 0.002833189593769766
+        },
+        "r2r": {
+          "max": 0.011527861912753382,
+          "mean": 0.0019756699148785186,
+          "median": 0.0015388840315306417,
+          "p95": 0.00480409613222003
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 256.0,
+        "mean": 256.0,
+        "median": 256.0,
+        "min": 256.0,
+        "p95": 256.0
+      },
+      "resolution": 1024
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 11.0,
+          "mean": 3.8662109375,
+          "median": 4.0,
+          "p95": 7.0
+        },
+        "p2r_regional": {
+          "max": 324.0,
+          "mean": 30.9296875,
+          "median": 18.5,
+          "p95": 107.34999999999997
+        },
+        "r2p_physical": {
+          "max": 11.0,
+          "mean": 3.8662109375,
+          "median": 4.0,
+          "p95": 7.0
+        },
+        "r2p_regional": {
+          "max": 324.0,
+          "mean": 30.9296875,
+          "median": 18.5,
+          "p95": 107.34999999999997
+        },
+        "r2r_in": {
+          "max": 43.0,
+          "mean": 15.1640625,
+          "median": 14.0,
+          "p95": 26.0
+        },
+        "r2r_out": {
+          "max": 43.0,
+          "mean": 15.1640625,
+          "median": 14.0,
+          "p95": 26.0
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 15836.0,
+          "mean": 15836.0,
+          "median": 15836.0,
+          "min": 15836.0,
+          "p95": 15836.0
+        },
+        "r2p": {
+          "count": 32,
+          "max": 15836.0,
+          "mean": 15836.0,
+          "median": 15836.0,
+          "min": 15836.0,
+          "p95": 15836.0
+        },
+        "r2r": {
+          "count": 32,
+          "max": 7764.0,
+          "mean": 7764.0,
+          "median": 7764.0,
+          "min": 7764.0,
+          "p95": 7764.0
+        }
+      },
+      "family": "P1h_shared_support",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "historical_cached_load_seconds": 0.0021196309971855953,
+        "historical_uncached_build_seconds": 2.3895340650051367,
+        "scope": "one shared-support graph reused across samples"
+      },
+      "normalized_regional_radius": {
+        "max": 0.5403528809547424,
+        "mean": 0.16979820121923694,
+        "median": 0.1369490772485733,
+        "p95": 0.38032844513654707
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.002603228572651735,
+        "mean": 0.000812823700895512,
+        "median": 0.0006505857016688649,
+        "p95": 0.0018337661955711807
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 3.8173092998186915,
+          "physical_node_count": {
+            "count": 32,
+            "max": 3373.0,
+            "mean": 3293.75,
+            "median": 3317.5,
+            "min": 3167.0,
+            "p95": 3373.0
+          },
+          "r2p_degree_mean": 3.8173092998186915
+        },
+        "interface": {
+          "p2r_degree_mean": 3.628901408052045,
+          "physical_node_count": {
+            "count": 32,
+            "max": 545.0,
+            "mean": 543.0,
+            "median": 542.5,
+            "min": 542.0,
+            "p95": 545.0
+          },
+          "r2p_degree_mean": 3.628901408052045
+        },
+        "source": {
+          "p2r_degree_mean": 4.948825542594275,
+          "physical_node_count": {
+            "count": 32,
+            "max": 387.0,
+            "mean": 259.25,
+            "median": 234.5,
+            "min": 181.0,
+            "p95": 387.0
+          },
+          "r2p_degree_mean": 4.948825542594275
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.002603228572651735,
+          "mean": 0.0007142886175557921,
+          "median": 0.0006350444509676501,
+          "p95": 0.0014957486174872814
+        },
+        "r2p": {
+          "max": 0.002603228572651735,
+          "mean": 0.0007142886175557921,
+          "median": 0.0006350444509676501,
+          "p95": 0.0014957486174872814
+        },
+        "r2r": {
+          "max": 0.010099236102490241,
+          "mean": 0.0014658146417035303,
+          "median": 0.0011443475663101897,
+          "p95": 0.0036531723169097143
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 512.0,
+        "mean": 512.0,
+        "median": 512.0,
+        "min": 512.0,
+        "p95": 512.0
+      },
+      "resolution": 4096
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 11.0,
+          "mean": 3.528076171875,
+          "median": 3.0,
+          "p95": 7.0
+        },
+        "p2r_regional": {
+          "max": 317.0,
+          "mean": 28.224609375,
+          "median": 18.0,
+          "p95": 97.54999999999973
+        },
+        "r2p_physical": {
+          "max": 11.0,
+          "mean": 3.528076171875,
+          "median": 3.0,
+          "p95": 7.0
+        },
+        "r2p_regional": {
+          "max": 317.0,
+          "mean": 28.224609375,
+          "median": 18.0,
+          "p95": 97.54999999999973
+        },
+        "r2r_in": {
+          "max": 47.0,
+          "mean": 15.6484375,
+          "median": 14.0,
+          "p95": 29.0
+        },
+        "r2r_out": {
+          "max": 47.0,
+          "mean": 15.6484375,
+          "median": 14.0,
+          "p95": 29.0
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 28902.0,
+          "mean": 28902.0,
+          "median": 28902.0,
+          "min": 28902.0,
+          "p95": 28902.0
+        },
+        "r2p": {
+          "count": 32,
+          "max": 28902.0,
+          "mean": 28902.0,
+          "median": 28902.0,
+          "min": 28902.0,
+          "p95": 28902.0
+        },
+        "r2r": {
+          "count": 32,
+          "max": 16024.0,
+          "mean": 16024.0,
+          "median": 16024.0,
+          "min": 16024.0,
+          "p95": 16024.0
+        }
+      },
+      "family": "P1h_shared_support",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "historical_cached_load_seconds": 0.0021805670112371445,
+        "historical_uncached_build_seconds": 2.595450405991869,
+        "scope": "one shared-support graph reused across samples"
+      },
+      "normalized_regional_radius": {
+        "max": 0.4314265251159668,
+        "mean": 0.12861197983329475,
+        "median": 0.10539498925209045,
+        "p95": 0.2752278462052345
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0020410724057417064,
+        "mean": 0.0006111366461098998,
+        "median": 0.000499765472617969,
+        "p95": 0.0012790398656106106
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 3.4685400607957413,
+          "physical_node_count": {
+            "count": 32,
+            "max": 6760.0,
+            "mean": 6635.25,
+            "median": 6688.5,
+            "min": 6404.0,
+            "p95": 6760.0
+          },
+          "r2p_degree_mean": 3.4685400607957413
+        },
+        "interface": {
+          "p2r_degree_mean": 3.4342568370420183,
+          "physical_node_count": {
+            "count": 32,
+            "max": 1051.0,
+            "mean": 1046.0,
+            "median": 1045.5,
+            "min": 1042.0,
+            "p95": 1051.0
+          },
+          "r2p_degree_mean": 3.4342568370420183
+        },
+        "source": {
+          "p2r_degree_mean": 4.517723314861952,
+          "physical_node_count": {
+            "count": 32,
+            "max": 746.0,
+            "mean": 510.75,
+            "median": 454.0,
+            "min": 389.0,
+            "p95": 746.0
+          },
+          "r2p_degree_mean": 4.517723314861952
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0020410724057417064,
+          "mean": 0.0005130053210328644,
+          "median": 0.0004687500000000004,
+          "p95": 0.0011048543456039807
+        },
+        "r2p": {
+          "max": 0.0020410724057417064,
+          "mean": 0.0005130053210328644,
+          "median": 0.0004687500000000004,
+          "p95": 0.0011048543456039807
+        },
+        "r2r": {
+          "max": 0.011338659306421738,
+          "mean": 0.0011697277901343164,
+          "median": 0.0008975879080742541,
+          "p95": 0.0029189798517252363
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 1024.0,
+        "mean": 1024.0,
+        "median": 1024.0,
+        "min": 1024.0,
+        "p95": 1024.0
+      },
+      "resolution": 8192
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 12.0,
+          "mean": 3.5906982421875,
+          "median": 3.0,
+          "p95": 7.0
+        },
+        "p2r_regional": {
+          "max": 606.0,
+          "mean": 28.7255859375,
+          "median": 18.0,
+          "p95": 78.0
+        },
+        "r2p_physical": {
+          "max": 12.0,
+          "mean": 3.5906982421875,
+          "median": 3.0,
+          "p95": 7.0
+        },
+        "r2p_regional": {
+          "max": 606.0,
+          "mean": 28.7255859375,
+          "median": 18.0,
+          "p95": 78.0
+        },
+        "r2r_in": {
+          "max": 54.0,
+          "mean": 15.9443359375,
+          "median": 15.0,
+          "p95": 29.0
+        },
+        "r2r_out": {
+          "max": 54.0,
+          "mean": 15.9443359375,
+          "median": 15.0,
+          "p95": 29.0
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 58830.0,
+          "mean": 58830.0,
+          "median": 58830.0,
+          "min": 58830.0,
+          "p95": 58830.0
+        },
+        "r2p": {
+          "count": 32,
+          "max": 58830.0,
+          "mean": 58830.0,
+          "median": 58830.0,
+          "min": 58830.0,
+          "p95": 58830.0
+        },
+        "r2r": {
+          "count": 32,
+          "max": 32654.0,
+          "mean": 32654.0,
+          "median": 32654.0,
+          "min": 32654.0,
+          "p95": 32654.0
+        }
+      },
+      "family": "P1h_shared_support",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "historical_cached_load_seconds": 0.0024361399991903454,
+        "historical_uncached_build_seconds": 3.03181117400527,
+        "scope": "one shared-support graph reused across samples"
+      },
+      "normalized_regional_radius": {
+        "max": 0.36119914054870605,
+        "mean": 0.1001074129310382,
+        "median": 0.07784438878297806,
+        "p95": 0.23253954723477346
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0017815241017174034,
+        "mean": 0.0004734190162364452,
+        "median": 0.0003513930339868007,
+        "p95": 0.0011336474324430057
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 3.55408229920398,
+          "physical_node_count": {
+            "count": 32,
+            "max": 13643.0,
+            "mean": 13332.0,
+            "median": 13421.0,
+            "min": 12843.0,
+            "p95": 13643.0
+          },
+          "r2p_degree_mean": 3.55408229920398
+        },
+        "interface": {
+          "p2r_degree_mean": 3.4281963096682735,
+          "physical_node_count": {
+            "count": 32,
+            "max": 2060.0,
+            "mean": 2051.0,
+            "median": 2050.0,
+            "min": 2044.0,
+            "p95": 2060.0
+          },
+          "r2p_degree_mean": 3.4281963096682735
+        },
+        "source": {
+          "p2r_degree_mean": 4.397371723614707,
+          "physical_node_count": {
+            "count": 32,
+            "max": 1497.0,
+            "mean": 1001.0,
+            "median": 910.0,
+            "min": 687.0,
+            "p95": 1497.0
+          },
+          "r2p_degree_mean": 4.397371723614707
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0017815241017174034,
+          "mean": 0.0004350173032304346,
+          "median": 0.0003513924376517027,
+          "p95": 0.0009960861123203824
+        },
+        "r2p": {
+          "max": 0.0017815241017174034,
+          "mean": 0.0004350173032304346,
+          "median": 0.0003513924376517027,
+          "p95": 0.0009960861123203824
+        },
+        "r2r": {
+          "max": 0.011308115299796601,
+          "mean": 0.0008771897033517949,
+          "median": 0.0006453254447002057,
+          "p95": 0.0022371595411369307
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 2048.0,
+        "mean": 2048.0,
+        "median": 2048.0,
+        "min": 2048.0,
+        "p95": 2048.0
+      },
+      "resolution": 16384
+    },
+    {
+      "coverage": {
+        "p2r_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "p2r_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        },
+        "r2p_min_degree": {
+          "count": 32,
+          "max": 1.0,
+          "mean": 1.0,
+          "median": 1.0,
+          "min": 1.0,
+          "p95": 1.0
+        },
+        "r2p_zero_degree_nodes": {
+          "count": 32,
+          "max": 0.0,
+          "mean": 0.0,
+          "median": 0.0,
+          "min": 0.0,
+          "p95": 0.0
+        }
+      },
+      "degree": {
+        "p2r_physical": {
+          "max": 12.0,
+          "mean": 3.43792724609375,
+          "median": 3.0,
+          "p95": 6.0
+        },
+        "p2r_regional": {
+          "max": 740.0,
+          "mean": 27.50341796875,
+          "median": 18.0,
+          "p95": 76.0
+        },
+        "r2p_physical": {
+          "max": 12.0,
+          "mean": 3.43792724609375,
+          "median": 3.0,
+          "p95": 6.0
+        },
+        "r2p_regional": {
+          "max": 740.0,
+          "mean": 27.50341796875,
+          "median": 18.0,
+          "p95": 76.0
+        },
+        "r2r_in": {
+          "max": 57.0,
+          "mean": 15.96875,
+          "median": 15.0,
+          "p95": 29.0
+        },
+        "r2r_out": {
+          "max": 57.0,
+          "mean": 15.96875,
+          "median": 15.0,
+          "p95": 29.0
+        }
+      },
+      "edge_count": {
+        "p2r": {
+          "count": 32,
+          "max": 112654.0,
+          "mean": 112654.0,
+          "median": 112654.0,
+          "min": 112654.0,
+          "p95": 112654.0
+        },
+        "r2p": {
+          "count": 32,
+          "max": 112654.0,
+          "mean": 112654.0,
+          "median": 112654.0,
+          "min": 112654.0,
+          "p95": 112654.0
+        },
+        "r2r": {
+          "count": 32,
+          "max": 65408.0,
+          "mean": 65408.0,
+          "median": 65408.0,
+          "min": 65408.0,
+          "p95": 65408.0
+        }
+      },
+      "family": "P1h_shared_support",
+      "graph_count": 32,
+      "graph_stage_timing": {
+        "historical_cached_load_seconds": 0.0027630060067167506,
+        "historical_uncached_build_seconds": 2.9381301599933067,
+        "scope": "one shared-support graph reused across samples"
+      },
+      "normalized_regional_radius": {
+        "max": 0.32834750413894653,
+        "mean": 0.07756711108117997,
+        "median": 0.0625000074505806,
+        "p95": 0.18592971190810204
+      },
+      "observed_physical_support_radius_m": {
+        "max": 0.0015829783054357482,
+        "mean": 0.0003628035592985415,
+        "median": 0.00031249999999999995,
+        "p95": 0.0009110862335695783
+      },
+      "partition": {
+        "background": {
+          "p2r_degree_mean": 3.414692225542729,
+          "physical_node_count": {
+            "count": 32,
+            "max": 27330.0,
+            "mean": 26704.0,
+            "median": 26892.5,
+            "min": 25701.0,
+            "p95": 27330.0
+          },
+          "r2p_degree_mean": 3.414692225542729
+        },
+        "interface": {
+          "p2r_degree_mean": 3.3029815102069833,
+          "physical_node_count": {
+            "count": 32,
+            "max": 4080.0,
+            "mean": 4065.25,
+            "median": 4069.5,
+            "min": 4042.0,
+            "p95": 4080.0
+          },
+          "r2p_degree_mean": 3.3029815102069833
+        },
+        "source": {
+          "p2r_degree_mean": 4.0372220091785165,
+          "physical_node_count": {
+            "count": 32,
+            "max": 3025.0,
+            "mean": 1998.75,
+            "median": 1806.0,
+            "min": 1358.0,
+            "p95": 3025.0
+          },
+          "r2p_degree_mean": 4.0372220091785165
+        }
+      },
+      "physical_edge_length_m": {
+        "p2r": {
+          "max": 0.0015829783054357482,
+          "mean": 0.00034043194117347643,
+          "median": 0.00028428902584018786,
+          "p95": 0.000796721506763061
+        },
+        "r2p": {
+          "max": 0.0015829783054357482,
+          "mean": 0.00034043194117347643,
+          "median": 0.00028428902584018786,
+          "p95": 0.000796721506763061
+        },
+        "r2r": {
+          "max": 0.00962814270646335,
+          "mean": 0.0006690175787757186,
+          "median": 0.0004941058844013089,
+          "p95": 0.0017297488726347489
+        }
+      },
+      "regional_node_count": {
+        "count": 32,
+        "max": 4096.0,
+        "mean": 4096.0,
+        "median": 4096.0,
+        "min": 4096.0,
+        "p95": 4096.0
+      },
+      "resolution": 32768
+    }
+  ]
+}
