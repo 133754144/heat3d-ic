@@ -1,0 +1,34 @@
+{
+  "schema_version": "heat3d_v6_p1i_graph_scale_a_timing_amendment_v1",
+  "status": "preregistered_before_a_timing_only_execution",
+  "reason": "A publication new-case excluded fresh graph construction while B/C continuous spans included it",
+  "authorized_scope": {
+    "candidate": "A",
+    "resolutions": [8192, 16384],
+    "population": "frozen_valid32",
+    "checkpoint": "V6_06 seed0 point-global best e559",
+    "timing_only": true,
+    "accuracy_recomputed": false,
+    "metrics_evaluated": false,
+    "prediction_artifact_saved": false,
+    "training": false,
+    "test_accessed": false,
+    "sealed_accessed": false
+  },
+  "continuous_span": [
+    "fresh graph construction",
+    "group preparation",
+    "cached reconstruction-map load and H2D transfer",
+    "neural forward with frozen anchor scale",
+    "GPU reconstruction apply"
+  ],
+  "excluded": [
+    "qualification graph pass",
+    "JIT compilation",
+    "hashing",
+    "accuracy metrics",
+    "oracle reconstruction",
+    "prediction serialization"
+  ],
+  "comparison": "A/B/C current-executor continuous new-case span on the same WSL2 RTX 5070 host"
+}

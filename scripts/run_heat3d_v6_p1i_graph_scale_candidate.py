@@ -41,6 +41,7 @@ from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 
 
 CANDIDATES = {
+    "A": {"subsample_factor": 4, "coverage_mode": "discrete_physical_coverage"},
     "B": {"subsample_factor": 8, "coverage_mode": "discrete_physical_coverage"},
     "C": {"subsample_factor": 4, "coverage_mode": NATIVE_POLICY},
     "D": {"subsample_factor": 8, "coverage_mode": NATIVE_POLICY},
@@ -253,6 +254,17 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         raise RuntimeError("graph-scale policy contract is not preregistered")
     if args.candidate not in CANDIDATES or args.resolution not in (4096, 8192, 16384, 32768):
         raise RuntimeError("unregistered candidate or resolution")
+    if args.candidate == "A":
+        if not args.timing_only or args.timing_amendment is None:
+            raise RuntimeError("A may only run under the timing-only amendment")
+        amendment = json.loads(args.timing_amendment.read_text())
+        if amendment["status"] != "preregistered_before_a_timing_only_execution":
+            raise RuntimeError("A timing amendment is not preregistered")
+        scope = amendment["authorized_scope"]
+        if args.resolution not in scope["resolutions"] or not scope["timing_only"]:
+            raise RuntimeError("A timing-only resolution is not authorized")
+    elif args.timing_only:
+        raise RuntimeError("timing-only mode is registered only for baseline A")
     binding = highn._binding(args)
     highn._protocol_amendment(args)
     runtime = highn._checkpoint_runtime(args)
@@ -391,8 +403,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         new_case_seconds.append(time.perf_counter() - new_started)
         support_np = np.asarray(support_delta, dtype=np.float64)
         full_np = np.asarray(full_delta, dtype=np.float64)
-        predictions.append(support_np)
-        full_predictions.append(full_np)
+        if not args.timing_only:
+            predictions.append(support_np)
+            full_predictions.append(full_np)
         response_drift.append(_diff(support_np[:1024], native_prediction[anchor.sample_id] - highn.REFERENCE_K))
         anchor_k = np.asarray(anchor.condition.condition_features[:, :3], dtype=np.float64)
         anchor_q = np.asarray(anchor.condition.condition_features[:, 3], dtype=np.float64)
@@ -447,29 +460,32 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         jax.block_until_ready(value)
         warm_seconds.append(time.perf_counter() - phase)
 
-    support_metric_rows, full_metric_rows = [], []
-    with h5py.File(args.full_fields, "r") as archive:
-        for example, anchor, support, support_pred, full_pred in zip(
-            examples, anchors, support_payloads, predictions, full_predictions, strict=True
-        ):
-            truth_full = np.asarray(
-                archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]], dtype=np.float64
-            )
-            indices = np.asarray(support["selected_indices"], dtype=np.int64)
-            with np.load(
-                next(row for row in preflight["samples"] if row["sample_id"] == anchor.sample_id)["physics_cache_file"],
-                allow_pickle=False,
-            ) as physics:
-                full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
-            support_metric_rows.append(highn._metric_row(
-                support_pred, truth_full[indices], np.asarray(support["operator_control_volume"]),
-                full["coords"][indices], np.asarray(support["layer_id"]), np.asarray(support["q_W_m3"]),
-            ))
-            full_metric_rows.append(highn._metric_row(
-                full_pred, truth_full, full["cv"], full["coords"], full["layer"], full_q,
-            ))
-    support_metrics = qualification.metric_accumulate(support_metric_rows, full=False)
-    full_metrics = qualification.metric_accumulate(full_metric_rows, full=True)
+    if args.timing_only:
+        support_metrics = full_metrics = None
+    else:
+        support_metric_rows, full_metric_rows = [], []
+        with h5py.File(args.full_fields, "r") as archive:
+            for example, anchor, support, support_pred, full_pred in zip(
+                examples, anchors, support_payloads, predictions, full_predictions, strict=True
+            ):
+                truth_full = np.asarray(
+                    archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]], dtype=np.float64
+                )
+                indices = np.asarray(support["selected_indices"], dtype=np.int64)
+                with np.load(
+                    next(row for row in preflight["samples"] if row["sample_id"] == anchor.sample_id)["physics_cache_file"],
+                    allow_pickle=False,
+                ) as physics:
+                    full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
+                support_metric_rows.append(highn._metric_row(
+                    support_pred, truth_full[indices], np.asarray(support["operator_control_volume"]),
+                    full["coords"][indices], np.asarray(support["layer_id"]), np.asarray(support["q_W_m3"]),
+                ))
+                full_metric_rows.append(highn._metric_row(
+                    full_pred, truth_full, full["cv"], full["coords"], full["layer"], full_q,
+                ))
+        support_metrics = qualification.metric_accumulate(support_metric_rows, full=False)
+        full_metrics = qualification.metric_accumulate(full_metric_rows, full=True)
     maximum_feature_drift = {
         name: {
             "max_abs": max(row[name]["max_abs"] for row in anchor_feature_drift),
@@ -480,18 +496,22 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     graph_summary = _mean_summary(diagnostics)
     result = {
         "schema_version": "heat3d_v6_p1i_graph_scale_candidate_result_v1",
-        "status": "passed",
+        "status": "passed_timing_only" if args.timing_only else "passed",
         "candidate": args.candidate,
         "policy": CANDIDATES[args.candidate],
         "resolution": args.resolution,
         "checkpoint": {"epoch": highn.CHECKPOINT_EPOCH, "sha256": highn.CHECKPOINT_SHA256},
         "sample_ids": [anchor.sample_id for anchor in anchors],
-        "accuracy": {
+        "accuracy": ({
+            "status": "not_evaluated_timing_only",
+            "metrics_evaluated": False,
+            "accuracy_recomputed": False,
+        } if args.timing_only else {
             "support": support_metrics,
             "full_field": full_metrics,
             "oracle_reconstruction_floor_reused": baseline_result["oracle_sampling_reconstruction_floor"],
             "oracle_source": str(args.baseline_artifact_root / f"resolution_{args.resolution}.json"),
-        },
+        }),
         "common_anchor_response_drift": {
             "sample_count": len(response_drift),
             "rmse_K": float(math.sqrt(np.mean([row["rmse"] ** 2 for row in response_drift]))),
@@ -525,20 +545,24 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
             "training": False, "test": False, "sealed": False,
             "checkpoint_modified": False, "support_or_physics_modified": False,
+            "timing_only": bool(args.timing_only),
+            "metrics_evaluated": not args.timing_only,
+            "prediction_artifact_saved": not args.timing_only,
         },
     }
-    prediction_path = args.output_dir / "predictions.npz"
-    with prediction_path.open("wb") as handle:
-        np.savez_compressed(
-            handle,
-            sample_ids=np.asarray(result["sample_ids"]),
-            support_deltaT_K=np.asarray(predictions),
-            full_deltaT_K=np.asarray(full_predictions),
-        )
-    result["prediction_artifact"] = {
-        "path": str(prediction_path), "sha256": _sha256(prediction_path),
-        "bytes": prediction_path.stat().st_size,
-    }
+    if not args.timing_only:
+        prediction_path = args.output_dir / "predictions.npz"
+        with prediction_path.open("wb") as handle:
+            np.savez_compressed(
+                handle,
+                sample_ids=np.asarray(result["sample_ids"]),
+                support_deltaT_K=np.asarray(predictions),
+                full_deltaT_K=np.asarray(full_predictions),
+            )
+        result["prediction_artifact"] = {
+            "path": str(prediction_path), "sha256": _sha256(prediction_path),
+            "bytes": prediction_path.stat().st_size,
+        }
     return result
 
 
@@ -557,6 +581,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--native-predictions", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--timing-repeats", type=int, default=20)
+    parser.add_argument("--timing-only", action="store_true")
+    parser.add_argument("--timing-amendment", type=Path)
     return parser.parse_args()
 
 
@@ -567,11 +593,10 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     result = execute(args)
     _write_json(args.output_dir / "result.json", result)
-    print(json.dumps({
-        "status": result["status"], "candidate": args.candidate,
-        "resolution": args.resolution,
-        "full_pg_pct": result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],
-    }))
+    summary = {"status": result["status"], "candidate": args.candidate, "resolution": args.resolution}
+    if not args.timing_only:
+        summary["full_pg_pct"] = result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"]
+    print(json.dumps(summary))
     return 0
 
 

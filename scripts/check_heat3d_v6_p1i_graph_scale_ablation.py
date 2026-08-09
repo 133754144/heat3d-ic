@@ -46,6 +46,16 @@ def check_protocol(path: Path) -> dict[str, object]:
     implementation = (ROOT / "rigno/heat3d_v6_graph_scale.py").read_text()
     for forbidden in ("target_u", "temperature", "prediction", "truth", "q_W_m3"):
         require(forbidden not in implementation, f"label/error-dependent graph implementation: {forbidden}")
+    timing_amendment = json.loads(
+        (ROOT / "configs/heat3d_v6_p1i/v6_p1i_graph_scale_a_timing_amendment.json").read_text()
+    )
+    require(
+        timing_amendment["status"] == "preregistered_before_a_timing_only_execution",
+        "A timing amendment",
+    )
+    timing_scope = timing_amendment["authorized_scope"]
+    require(timing_scope["resolutions"] == [8192, 16384], "A timing resolutions")
+    require(timing_scope["timing_only"] and not timing_scope["accuracy_recomputed"], "A timing scope")
     return {"protocol_checked": True, "legacy_graph_builder_unchanged": True}
 
 
@@ -82,6 +92,25 @@ def check_result(path: Path, candidate: str, resolution: int) -> dict[str, objec
     return {"result_checked": True, "candidate": candidate, "resolution": resolution}
 
 
+def check_a_timing_result(path: Path, resolution: int) -> dict[str, object]:
+    payload = json.loads(path.read_text())
+    require(payload["status"] == "passed_timing_only", "A timing-only status")
+    require(payload["candidate"] == "A" and payload["resolution"] == resolution, "A timing identity")
+    require(len(payload["sample_ids"]) == 32, "A timing valid32")
+    require(payload["accuracy"] == {
+        "status": "not_evaluated_timing_only", "metrics_evaluated": False,
+        "accuracy_recomputed": False,
+    }, "A timing accuracy boundary")
+    role = payload["role_contract"]
+    require(role["timing_only"] and not role["metrics_evaluated"], "A timing role")
+    require(not role["training"] and not role["test"] and not role["sealed"], "A timing access")
+    require(not role["prediction_artifact_saved"] and "prediction_artifact" not in payload, "A timing prediction")
+    for name in ("graph_construction", "warm_cache_e2e", "new_case_e2e"):
+        timing = payload["timing"][name]
+        require(timing["count"] >= 20 and timing["median_seconds"] > 0.0, f"A timing {name}")
+    return {"a_timing_result_checked": True, "resolution": resolution}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--protocol", type=Path, default=ROOT / "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_protocol.json")
@@ -89,11 +118,15 @@ def main() -> int:
     parser.add_argument("--candidate", choices=["B", "C", "D"])
     parser.add_argument("--resolution", type=int)
     parser.add_argument("--closeout", action="store_true")
+    parser.add_argument("--a-timing-result", type=Path)
     args = parser.parse_args()
     report = check_protocol(args.protocol)
     if args.result:
         require(args.candidate is not None and args.resolution is not None, "result identity arguments")
         report.update(check_result(args.result, args.candidate, args.resolution))
+    if args.a_timing_result:
+        require(args.resolution in (8192, 16384), "A timing resolution")
+        report.update(check_a_timing_result(args.a_timing_result, args.resolution))
     if args.closeout:
         policy_path = ROOT / "configs/heat3d_v6_p1i/v6_p1i_graph_scale_policy_closeout.json"
         policy = json.loads(policy_path.read_text())
