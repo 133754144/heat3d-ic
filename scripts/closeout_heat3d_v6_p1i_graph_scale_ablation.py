@@ -117,12 +117,17 @@ def baseline_rows() -> list[dict[str, object]]:
         int(row["resolution"]): row for row in load_csv(PUB_GRAPH)
         if row["family"] == "P1i_sample_varying"
     }
+    direct = {
+        int(row["resolution"]): row for row in load_csv(UNIFIED_RESOLUTION)
+        if row["family"] == "p1i" and row["route"] == "production_reconstruction"
+        and row["state"] == "new_topology" and row["status"] == "passed"
+    }
     rows = []
     for resolution in (8192, 16384):
         m, t, g = metric[resolution], timing[resolution], graph[resolution]
         rows.append({
             "candidate": "A", "resolution": resolution,
-            "evidence": "historical_read_only", "factor": 4,
+            "evidence": "historical_read_only_accuracy_graph_plus_direct_wall", "factor": 4,
             "coverage_mode": "discrete_physical_coverage",
             "support_pg_pct": m["support_point_global_pct"],
             "support_sample_first_pct": m["support_sample_first_pct"],
@@ -157,11 +162,13 @@ def baseline_rows() -> list[dict[str, object]]:
             "normalized_p2r_edge_length_median": "",
             "physical_p2r_edge_length_median_m": float(g["p2r_edge_length_median_m"]),
             "undercovered_fraction": 0.0, "r2r_components_max": 1.0,
-            "receptive_field_proxy_m": "", "graph_median_s": "", "graph_p95_s": "",
+            "receptive_field_proxy_m": "",
+            "graph_median_s": float(direct[resolution]["graph_s_median"]),
+            "graph_p95_s": float(direct[resolution]["graph_s_p95"]),
             "warm_median_s": float(t["warm_cache_median_seconds"]),
             "warm_p95_s": float(t["warm_cache_p95_seconds"]),
-            "new_case_median_s": float(t["new_case_median_seconds"]),
-            "new_case_p95_s": float(t["new_case_p95_seconds"]),
+            "new_case_median_s": float(direct[resolution]["continuous_wall_median_s"]),
+            "new_case_p95_s": float(direct[resolution]["continuous_wall_p95_s"]),
             "peak_vram_bytes": int(t["peak_vram_bytes"]),
             "artifact_sha256": m["result_sha256"],
         })
@@ -386,6 +393,8 @@ def main() -> int:
         "P1i A 对应为 11.084/9.451，Nr=2048/4096。B 虽把 Nr 降至 P1h 密度，却未复现 P1h 的 physical/source coverage。\n"
         "- 候选 timing 使用同步连续 span，但独立 neural/apply 子段包含一次首调用 JIT；它们不进入正式性能表。"
         "warm-cache/new-case 连续 span 与 accuracy 仍有效。\n"
+        "- A 的 new-case 来自历史 unified direct-wall new-topology，B/C 来自本轮连续 fresh-graph span；"
+        "硬件相同但并非同期代码，故 latency 仅作工程参考，且没有参与已失败的 accuracy gate。\n"
         "- 实际新增计算：B8192 因初始误把 report-only k/q/CV 当 hard gate，在保留结果前有两次工程重试；"
         "最终 B8192/B16384/C8192/C16384 均由 SHA 绑定。没有重跑 A/FVM accuracy，也没有运行 D、winner 扩展或 timing-only 补测。\n"
         "\n## 工程优先级\n\n"
