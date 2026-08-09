@@ -1,0 +1,63 @@
+{
+  "schema_version": "heat3d_v6_p1i_publication_gpu_pipeline_protocol_v1",
+  "status": "preregistered_before_publication_timing",
+  "scope": [
+    "P0_timing_cleanup",
+    "P1_cached_graph_diagnostics",
+    "P2_gpu_reconstruction_apply"
+  ],
+  "frozen_inputs": {
+    "checkpoint_epoch": 559,
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "high_n_binding_path": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+    "high_n_binding_sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede",
+    "gpu_only_amendment_path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_protocol_amendment.json",
+    "gpu_only_amendment_sha256": "c654c3ad5a0238a5a736fd360696d72d75a386c350a7e67a9f8122e84bcd8314",
+    "resolutions": [4096, 8192, 16384, 32768, 65536],
+    "sample_role": "frozen_valid32",
+    "batch_size": 1
+  },
+  "timing_contract": {
+    "gpu_synchronization_required": true,
+    "repetitions_per_warm_state": 30,
+    "new_case_population": 32,
+    "new_case": "cached graph/map load + group/input prepare + H2D map transfer + neural-forward + GPU reconstruction apply",
+    "warm_cache": "in-memory group/device map + neural-forward + GPU reconstruction apply",
+    "neural_forward": "in-memory group + anchor-derived model-core only",
+    "statistics": ["median", "p95"],
+    "excluded_from_all_production_timers": [
+      "fresh_graph_build",
+      "reconstruction_map_build",
+      "hash",
+      "equivalence_audit",
+      "labels",
+      "metrics",
+      "serialization"
+    ]
+  },
+  "gpu_reconstruction_contract": {
+    "map_builder_changed": false,
+    "map_indices_changed": false,
+    "map_weights_changed": false,
+    "interpolation_algorithm_changed": false,
+    "only_apply_backend_changes": "numpy_cpu_to_jax_gpu",
+    "cpu_gpu_max_abs_tolerance_K": 0.0001,
+    "cpu_gpu_rmse_tolerance_K": 0.00001
+  },
+  "graph_diagnostic_contract": {
+    "model_inference_required": false,
+    "p1i_cached_resolutions": [1024, 4096, 8192, 16384, 32768, 65536],
+    "p1h_cached_resolutions": [1024, 4096, 8192, 16384, 32768],
+    "frozen_graph_method_changed": false
+  },
+  "role_contract": {
+    "training": false,
+    "checkpoint_modified": false,
+    "dataset_or_manifest_modified": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "three_seed_valid128": false,
+    "full_gpu_graph_builder": false,
+    "batch_inference": false
+  }
+}
