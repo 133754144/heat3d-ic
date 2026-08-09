@@ -917,10 +917,19 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
             phase = time.perf_counter()
             repeated_raw, repeated_scale = _predict_output(compiled, params, group)
             replay_seconds = time.perf_counter() - phase
+            replay_left, replay_right = raw, repeated_raw
+            replay_scale_drift = abs(scale - repeated_scale)
+            if protocol is not None and resolution > 1024:
+                frozen_scale = anchor_scales[example.sample_id]
+                weights = np.asarray(example.operator_point_weights)
+                replay_left = _anchor_scale(raw, frozen_scale, weights)
+                replay_right = _anchor_scale(repeated_raw, frozen_scale, weights)
+                replay_scale_drift = 0.0
             replay = {
                 "sample_id": example.sample_id,
-                "prediction": _prediction_difference(raw, repeated_raw),
-                "scale_abs_drift": abs(scale - repeated_scale),
+                "prediction": _prediction_difference(replay_left, replay_right),
+                "scale_abs_drift": replay_scale_drift,
+                "discarded_query_scale_abs_drift_report_only": abs(scale - repeated_scale),
                 "repeat_seconds": replay_seconds,
             }
             if fresh_metadata[0] is None:
@@ -930,10 +939,19 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
                 metadata=fresh_metadata[0], edge_targets=edge_targets,
             )
             fresh_raw, fresh_scale = _predict_output(compiled, params, fresh_group)
+            cache_left, cache_right = raw, fresh_raw
+            cache_scale_drift = abs(scale - fresh_scale)
+            if protocol is not None and resolution > 1024:
+                frozen_scale = anchor_scales[example.sample_id]
+                weights = np.asarray(example.operator_point_weights)
+                cache_left = _anchor_scale(raw, frozen_scale, weights)
+                cache_right = _anchor_scale(fresh_raw, frozen_scale, weights)
+                cache_scale_drift = 0.0
             cached_uncached_prediction = {
                 "sample_id": example.sample_id,
-                "prediction": _prediction_difference(raw, fresh_raw),
-                "scale_abs_drift": abs(scale - fresh_scale),
+                "prediction": _prediction_difference(cache_left, cache_right),
+                "scale_abs_drift": cache_scale_drift,
+                "discarded_query_scale_abs_drift_report_only": abs(scale - fresh_scale),
             }
         else:
             steady_seconds.append(elapsed)

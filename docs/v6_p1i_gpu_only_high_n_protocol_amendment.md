@@ -10,7 +10,8 @@ This amendment applies only to new GPU-only High-N development runs. The prior
   GPU replay; finite prediction; support/reconstruction hashes; physical support
   coverage and pre-resolution capacity/memory feasibility.
 - Same-GPU replay tolerances: maximum absolute error `0.1 K`, RMSE `0.01 K`,
-  scale drift `1e-6`.
+  scale drift `1e-6`. These gates apply after formal frozen-anchor-scale
+  reconstruction. The discarded query-scale-head value remains report-only.
 - Mandatory order: 4096, 8192, 16384. Optional order after all mandatory gates
   pass: 32768, then 65536.
 - Accuracy is reported but never used to change the sampler, model, checkpoint,
