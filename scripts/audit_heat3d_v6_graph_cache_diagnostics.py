@@ -276,7 +276,11 @@ def _p1h_rows(args: argparse.Namespace, resolution: int) -> tuple[list[dict[str,
         support_coords = coords[indices]
         lower, upper = np.min(coords, axis=0), np.max(coords, axis=0)
         for entry in valid:
-            q = np.asarray(archive["samples/q_W_m3"][lookup[entry["sample_id"]], indices], dtype=np.float64)
+            full_q = np.asarray(
+                archive["samples/q_W_m3"][lookup[entry["sample_id"]]],
+                dtype=np.float64,
+            )
+            q = full_q[indices]
             rows.append(_one_graph(
                 cache_file, lower=lower, upper=upper,
                 categories=_categories(support_coords, q, boundaries),
