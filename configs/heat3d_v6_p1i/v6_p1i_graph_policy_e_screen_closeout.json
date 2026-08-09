@@ -1,0 +1,102 @@
+{
+  "E_16384_executed": false,
+  "accuracy": {
+    "full_point_global_pct": {
+      "A": 2.7427579982503554,
+      "E": 2.758323270681768,
+      "E_minus_A": 0.015565272431412591,
+      "margin": 0.05843506828224949,
+      "passed": true
+    },
+    "full_raw_cv_rmse_K": {
+      "A": 2.491699688318761,
+      "E": 2.42978259041746,
+      "E_minus_A": -0.061917097901301066,
+      "margin": 0.019179597941702667,
+      "passed": true
+    },
+    "interface_rmse_K": {
+      "A": 0.5623705985613656,
+      "E": 0.453002118041612,
+      "E_minus_A": -0.10936848051975362,
+      "margin": 0.04746620520450112,
+      "passed": true
+    },
+    "peak_rmse_K": {
+      "A": 3.369423744840235,
+      "E": 3.433107511805672,
+      "E_minus_A": 0.0636837669654371,
+      "margin": 0.3785072688630482,
+      "passed": true
+    },
+    "source_rmse_K": {
+      "A": 3.6060349963750618,
+      "E": 3.7290300180299774,
+      "E_minus_A": 0.1229950216549156,
+      "margin": 0.13095819024668282,
+      "passed": true
+    }
+  },
+  "artifacts": {
+    "E_8192": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_policy_e_raw/E_8192.json",
+      "sha256": "c0adece413ce8f877dfe6097030b9f865491e865c9b4005047731c22bda507d9"
+    },
+    "failed_pre_graph_launch_log": {
+      "remote_path": "/tmp/v6_p1i_graph_policy_e_e856_E8192.log",
+      "sha256": "fd495c7afc37c1e6a2ef8303f39a026e90769c159ebb61ad5ce710d20652e7f6"
+    },
+    "preregistration": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_policy_e_confirmation_preregistration.json",
+      "sha256": "5615708575f5b1cb140c3655e4936fd53b2015244f6866111813b47ebc383264"
+    },
+    "successful_log": {
+      "remote_path": "/tmp/v6_p1i_graph_policy_e_e856_E8192_retry.log",
+      "sha256": "152c7918d3e641dd49da8498afe4cde519049838be14810b9669186f631df900"
+    }
+  },
+  "confirmation_policy_set": [
+    "A",
+    "B"
+  ],
+  "coverage": {
+    "max_isolated_physical_fraction": 0.0,
+    "passed": true,
+    "r2r_connected_components_max": 1.0,
+    "regional_node_count_exact": true,
+    "undercovered_fraction": 0.0
+  },
+  "decision": "E_NO_GO",
+  "latency": {
+    "A_peak_vram_bytes": 185564416,
+    "E_peak_vram_bytes": 232680704,
+    "graph_construction": {
+      "A_seconds": 0.1327279225224629,
+      "E_seconds": 0.07158616499509662,
+      "improvement_fraction": 0.46065482202524966
+    },
+    "new_case_e2e": {
+      "A_seconds": 0.47749551839660853,
+      "E_seconds": 0.3961342030670494,
+      "improvement_fraction": 0.17039178839366675
+    },
+    "passed": false,
+    "peak_vram_ratio": 1.253907990635446,
+    "speed_passed": true,
+    "vram_passed": false,
+    "warm_cache_e2e": {
+      "A_seconds": 0.0037603575037792325,
+      "E_seconds": 0.0024698920315131545,
+      "improvement_fraction": 0.34317627272649875
+    }
+  },
+  "reason": "peak_vram_ratio_exceeded_preregistered_1.10_limit",
+  "role_contract": {
+    "sealed": false,
+    "test": false,
+    "training": false,
+    "valid32_seed0_only": true
+  },
+  "schema_version": "heat3d_v6_p1i_graph_policy_e_screen_closeout_v1",
+  "status": "completed_E_no_go_stopped_after_8192"
+}
