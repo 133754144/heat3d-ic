@@ -1,0 +1,97 @@
+{
+  "schema_version": "heat3d_v6_p1i_graph_scale_ablation_protocol_v1",
+  "status": "preregistered_before_candidate_execution",
+  "branch": "research/v6-p1i-training",
+  "scientific_scope": {
+    "checkpoint": "V6_06 seed0 point-global best e559",
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "population": "frozen_valid32",
+    "mandatory_candidate_resolutions": [8192, 16384],
+    "winner_extension_resolutions": [4096, 32768],
+    "forbidden_resolutions": [65536],
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "accuracy_used_to_modify_graph_policy": false
+  },
+  "frozen_inputs": {
+    "high_n_binding_sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede",
+    "gpu_only_amendment_sha256": "c654c3ad5a0238a5a736fd360696d72d75a386c350a7e67a9f8122e84bcd8314",
+    "legacy_graph_builder_sha256": "fce189e90aa3e182a418cd1ef50a9b5d24558fc3d24e50f9d6d1e734c3129cc3",
+    "support_sampler": "frozen high-N binding",
+    "anchor_context_and_scale": "frozen native1024",
+    "high_n_k_q_cv": "frozen sidecar-derived representation",
+    "reconstruction": "frozen layer-aware reconstruction map",
+    "metrics": "frozen V6 true-RMS/CV formulas"
+  },
+  "candidates": {
+    "A": {
+      "role": "read_only_historical_baseline",
+      "regional_subsample_factor": 4,
+      "coverage_mode": "discrete_physical_coverage",
+      "run": false
+    },
+    "B": {
+      "role": "mandatory_new_candidate",
+      "regional_subsample_factor": 8,
+      "coverage_mode": "discrete_physical_coverage",
+      "run_resolutions": [8192, 16384]
+    },
+    "C": {
+      "role": "mandatory_new_candidate",
+      "regional_subsample_factor": 4,
+      "coverage_mode": "native1024_physical_coverage_v1",
+      "run_resolutions": [8192, 16384]
+    },
+    "D": {
+      "role": "conditional_candidate",
+      "regional_subsample_factor": 8,
+      "coverage_mode": "native1024_physical_coverage_v1",
+      "run_resolutions": [8192, 16384],
+      "trigger": "B_and_C_both_clear_improvement_over_A"
+    }
+  },
+  "native1024_physical_coverage_v1": {
+    "reference": "each sample unchanged native1024 factor4 discrete_physical_coverage graph",
+    "coordinate_definition": "runner-normalized float32 graph coordinates",
+    "distance_convention": "non-periodic Euclidean L2 float32",
+    "transfer": "nearest native regional coordinate with lowest-index argmin tie rule",
+    "uses_temperature_prediction_or_error": false,
+    "changes_legacy_discrete_physical_coverage": false
+  },
+  "selection_rule": {
+    "comparison_resolutions": [8192, 16384],
+    "clear_improvement_over_A": {
+      "full_field_point_global_pct_each_resolution": "candidate <= A",
+      "full_field_raw_cv_rmse_K_each_resolution": "candidate <= A",
+      "mean_point_global_improvement_min_percentage_points": 0.01,
+      "mean_raw_cv_improvement_min_K": 0.01,
+      "source_and_peak_non_regression_max_relative": 0.01
+    },
+    "ordered_decision_fields": [
+      "mean full-field point-global RMSE pct",
+      "mean full-field raw CV RMSE K",
+      "mean source RMSE K",
+      "mean peak RMSE K",
+      "mean common-anchor response RMSE K",
+      "coverage and receptive-field stability",
+      "warm-cache and new-case latency then peak VRAM"
+    ],
+    "tie_tolerance": {
+      "point_global_percentage_points": 1e-06,
+      "raw_or_regional_error_K": 1e-06,
+      "latency_seconds": 1e-06
+    },
+    "no_go": "If no new candidate meets clear_improvement_over_A, stop graph-policy extension.",
+    "winner_extension": "Only the frozen winner may then run N=4096 and N=32768."
+  },
+  "production_timing_contract": {
+    "unit": "single_sample_B1",
+    "host": "WSL2 RTX 5070 plus Ryzen 7 9700X",
+    "gpu_synchronization": "jax.block_until_ready",
+    "jit_warmup_separate": true,
+    "exclude": ["qualification", "hash", "accuracy", "oracle", "serialization"],
+    "report": ["median", "p95"]
+  }
+}
