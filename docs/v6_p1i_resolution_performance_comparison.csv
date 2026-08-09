@@ -1,0 +1,21 @@
+resolution,method,accuracy_scope,point_global_pct,sample_first_pct,raw_cv_rmse_K,total_cold_s,total_new_case_s,total_cached_s,graph_s,jit_first_forward_s,steady_forward_s,reconstruction_s,fvm_cold_s,fvm_cached_s,measurement_scope
+1024,1024_plus_deltaT,support_1024,1.7545,1.4105,1.2950,9.970509,1.763765,0.010003,4.693918,3.891172,0.002953,0.017158,,,old unified benchmark; per-sample median over 32 valid cases
+1024,anchor_derived,full_240825_from_N1024,3.071968,3.793174,2.930196,,,,58.786273,4.288622,0.002138,2.050101,,,latest GPU-only worker; valid32
+4096,1024_plus_deltaT,resolution_4096,3.120073,3.983222,2.969870,9.912454,1.787428,0.003720,4.806047,3.886167,0.002682,0.000087,,,old unified resolution diagnostic; per-sample median over 32 valid cases
+4096,anchor_derived,full_240825_from_N4096,2.823750,3.290321,2.638153,,,,68.176831,4.767196,0.003265,1.982502,,,latest GPU-only worker; valid32
+4096,physical_solver_fvm,resolution_4096,1.190491,1.962932,1.518489,0.652112,,0.006258,,,,,0.652112,0.006258,old unified resolution diagnostic; per-sample median over 32 valid cases
+8192,1024_plus_deltaT,resolution_8192,3.307223,4.182704,3.113792,9.985309,1.750683,0.003882,4.799533,3.962168,0.002694,0.000162,,,old unified resolution diagnostic; per-sample median over 32 valid cases
+8192,anchor_derived,full_240825_from_N8192,2.742758,3.086004,2.491700,,,,73.992594,5.340694,0.004315,6.299644,,,latest GPU-only worker; valid32
+8192,physical_solver_fvm,resolution_8192,1.191106,1.963303,1.518798,0.661005,,0.012109,,,,,0.661005,0.012109,old unified resolution diagnostic; per-sample median over 32 valid cases
+16384,1024_plus_deltaT,resolution_16384,3.381870,4.253201,3.170599,10.050536,1.743902,0.004588,4.807531,3.972127,0.002937,0.000327,,,old unified resolution diagnostic; per-sample median over 32 valid cases
+16384,anchor_derived,full_240825_from_N16384,2.817371,3.158629,2.534275,,,,82.800805,5.125930,0.007674,6.997903,,,latest GPU-only worker; valid32
+16384,physical_solver_fvm,resolution_16384,1.191235,1.963571,1.519003,0.674709,,0.025245,,,,,0.674709,0.025245,old unified resolution diagnostic; per-sample median over 32 valid cases
+32768,1024_plus_deltaT,resolution_32768,3.384517,4.249483,3.168678,9.976809,1.775330,0.005673,4.822288,3.956890,0.003011,0.000655,,,old unified resolution diagnostic; per-sample median over 32 valid cases
+32768,anchor_derived,full_240825_from_N32768,2.939390,3.329180,2.646894,,,,94.735986,5.104812,0.017681,7.537200,,,latest GPU-only worker; valid32
+32768,physical_solver_fvm,resolution_32768,1.191553,1.963771,1.519157,0.713815,,0.062941,,,,,0.713815,0.062941,old unified resolution diagnostic; per-sample median over 32 valid cases
+65536,1024_plus_deltaT,resolution_65536,3.336016,4.180686,3.136391,10.076137,1.791099,0.006358,4.766229,3.988333,0.002900,0.001706,,,old unified resolution diagnostic; per-sample median over 32 valid cases
+65536,anchor_derived,full_240825_from_N65536,3.144189,3.540718,2.799543,,,,122.225622,5.657808,0.034644,8.585756,,,latest GPU-only worker; valid32
+65536,physical_solver_fvm,resolution_65536,1.191934,1.964010,1.519356,0.819073,,0.157089,,,,,0.819073,0.157089,old unified resolution diagnostic; per-sample median over 32 valid cases
+240825,1024_plus_deltaT,full_240825,3.072005,3.793191,2.930201,10.153436,1.847755,0.012970,4.817310,3.967959,0.002929,0.018156,,,old unified benchmark; per-sample median over 32 valid cases
+240825,anchor_derived,not_run,,,,,,,,,,,,,,latest GPU-only ladder stopped at 65536
+240825,physical_solver_fvm,full_240825,0.069648,0.045814,0.036553,2.305627,,1.669673,,,,,2.305627,1.669673,old unified resolution diagnostic; per-sample median over 32 valid cases
