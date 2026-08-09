@@ -11,6 +11,20 @@
     "training": false,
     "valid32_seed0_only": true
   },
+  "matched_A_timing_only": {
+    "A_16384": {
+      "accuracy_recomputed": false,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/A_16384_timing_only.json",
+      "same_executor_span_as_B_C": true,
+      "sha256": "0b99d4e424618c1eb456be638001382a0e445273e184d5ece807e90e1581c68e"
+    },
+    "A_8192": {
+      "accuracy_recomputed": false,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/A_8192_timing_only.json",
+      "same_executor_span_as_B_C": true,
+      "sha256": "b260314be3056a0a66e30d6de06765e892c3d004566ec4e4f7cc6d5a0dd4c352"
+    }
+  },
   "native1024_physical_coverage_hypothesis_supported": false,
   "next_priority": "GPU graph optimization for sample-varying new topology; reuse fixed graphs when support repeats",
   "raw_artifacts": {
@@ -54,6 +68,7 @@
     }
   },
   "status": "completed_no_go",
+  "timing_comparison_status": "same_executor_continuous_span_completed_for_A_B_C",
   "timing_only_artifacts": {
     "first": {
       "path": "configs/heat3d_v6_p1i/v6_p1i_reconstruction_apply_only_timing_first.json",

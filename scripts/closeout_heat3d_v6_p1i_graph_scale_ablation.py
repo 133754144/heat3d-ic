@@ -112,22 +112,22 @@ def candidate_row(candidate: str, resolution: int, payload: dict) -> dict[str, o
 def baseline_rows() -> list[dict[str, object]]:
     closeout = json.loads(BASELINE.read_text())
     metric = {int(row["resolution"]): row for row in closeout["rows"]}
-    timing = {int(row["resolution"]): row for row in load_csv(PUB_TIMING)}
+    matched_timing = {
+        resolution: json.loads((RAW / f"A_{resolution}_timing_only.json").read_text())
+        for resolution in (8192, 16384)
+    }
     graph = {
         int(row["resolution"]): row for row in load_csv(PUB_GRAPH)
         if row["family"] == "P1i_sample_varying"
     }
-    direct = {
-        int(row["resolution"]): row for row in load_csv(UNIFIED_RESOLUTION)
-        if row["family"] == "p1i" and row["route"] == "production_reconstruction"
-        and row["state"] == "new_topology" and row["status"] == "passed"
-    }
     rows = []
     for resolution in (8192, 16384):
-        m, t, g = metric[resolution], timing[resolution], graph[resolution]
-        rows.append({
+        m, g = metric[resolution], graph[resolution]
+        matched = matched_timing[resolution]
+        mg, mt = matched["graph_diagnostics"], matched["timing"]
+        row = {
             "candidate": "A", "resolution": resolution,
-            "evidence": "historical_read_only_accuracy_graph_plus_direct_wall", "factor": 4,
+            "evidence": "historical_accuracy_plus_new_matched_timing_only", "factor": 4,
             "coverage_mode": "discrete_physical_coverage",
             "support_pg_pct": m["support_point_global_pct"],
             "support_sample_first_pct": m["support_sample_first_pct"],
@@ -141,37 +141,51 @@ def baseline_rows() -> list[dict[str, object]]:
             "peak_rmse_K": m["full_peak_rmse_K"],
             "oracle_floor_pg_pct": m["oracle_full_point_global_pct"],
             "oracle_floor_raw_K": m["oracle_full_raw_cv_rmse_K"],
-            "common_anchor_response_rmse_K": "", "common_anchor_response_max_K": "",
-            "delta_k_max": "", "delta_q_max": "", "delta_cv_max": "",
-            "regional_nodes": float(g["regional_nodes_mean"]),
-            "p2r_edges": float(g["p2r_edges_mean"]), "r2r_edges": float(g["r2r_edges_mean"]),
-            "r2p_edges": float(g["r2p_edges_mean"]),
-            "physical_degree_p5": "", "physical_degree_median": "", "physical_degree_mean": "", "physical_degree_p95": "",
-            "regional_degree_p5": "", "regional_degree_median": "",
-            "regional_degree_mean": float(g["p2r_regional_degree_mean"]), "regional_degree_p95": "",
-            "r2r_degree_mean": float(g["r2r_out_degree_mean"]),
-            "r2p_regional_degree_mean": float(g["r2p_regional_degree_mean"]),
-            "r2p_physical_degree_mean": "",
-            "source_degree_mean": float(g["source_p2r_degree_mean"]),
-            "interface_degree_mean": float(g["interface_p2r_degree_mean"]),
-            "background_degree_mean": float(g["background_p2r_degree_mean"]),
-            "target_radius_p5": "", "target_radius_median": float(g["normalized_radius_median"]),
-            "target_radius_p95": "", "target_radius_max": "", "realized_radius_p5": "",
-            "realized_radius_median": "", "realized_radius_p95": "",
-            "physical_coverage_radius_median_m": float(g["observed_radius_median_m"]),
-            "normalized_p2r_edge_length_median": "",
-            "physical_p2r_edge_length_median_m": float(g["p2r_edge_length_median_m"]),
-            "undercovered_fraction": 0.0, "r2r_components_max": 1.0,
-            "receptive_field_proxy_m": "",
-            "graph_median_s": float(direct[resolution]["graph_s_median"]),
-            "graph_p95_s": float(direct[resolution]["graph_s_p95"]),
-            "warm_median_s": float(t["warm_cache_median_seconds"]),
-            "warm_p95_s": float(t["warm_cache_p95_seconds"]),
-            "new_case_median_s": float(direct[resolution]["continuous_wall_median_s"]),
-            "new_case_p95_s": float(direct[resolution]["continuous_wall_p95_s"]),
-            "peak_vram_bytes": int(t["peak_vram_bytes"]),
-            "artifact_sha256": m["result_sha256"],
-        })
+            "common_anchor_response_rmse_K": matched["common_anchor_response_drift"]["rmse_K"],
+            "common_anchor_response_max_K": matched["common_anchor_response_drift"]["max_abs_K"],
+            "delta_k_max": matched["common_anchor_input_drift"]["delta_k"]["max_abs"],
+            "delta_q_max": matched["common_anchor_input_drift"]["delta_q"]["max_abs"],
+            "delta_cv_max": matched["common_anchor_input_drift"]["delta_cv"]["max_abs"],
+            "regional_nodes": mg["regional_node_count"],
+            "p2r_edges": mg["edge_count"]["p2r"], "r2r_edges": mg["edge_count"]["r2r"],
+            "r2p_edges": mg["edge_count"]["r2p"],
+            "physical_degree_p5": mg["degree"]["p2r_physical"]["p5"],
+            "physical_degree_median": mg["degree"]["p2r_physical"]["median"],
+            "physical_degree_mean": mg["degree"]["p2r_physical"]["mean"],
+            "physical_degree_p95": mg["degree"]["p2r_physical"]["p95"],
+            "regional_degree_p5": mg["degree"]["p2r_regional"]["p5"],
+            "regional_degree_median": mg["degree"]["p2r_regional"]["median"],
+            "regional_degree_mean": mg["degree"]["p2r_regional"]["mean"],
+            "regional_degree_p95": mg["degree"]["p2r_regional"]["p95"],
+            "r2r_degree_mean": mg["degree"]["r2r_regional"]["mean"],
+            "r2p_regional_degree_mean": mg["degree"]["r2p_regional"]["mean"],
+            "r2p_physical_degree_mean": mg["degree"]["r2p_physical"]["mean"],
+            "source_degree_mean": mg["partition"]["source"]["p2r_degree"]["mean"],
+            "interface_degree_mean": mg["partition"]["interface"]["p2r_degree"]["mean"],
+            "background_degree_mean": mg["partition"]["background"]["p2r_degree"]["mean"],
+            "target_radius_p5": mg["target_normalized_radius"]["p5"],
+            "target_radius_median": mg["target_normalized_radius"]["median"],
+            "target_radius_p95": mg["target_normalized_radius"]["p95"],
+            "target_radius_max": mg["target_normalized_radius"]["max"],
+            "realized_radius_p5": mg["realized_normalized_radius"]["p5"],
+            "realized_radius_median": mg["realized_normalized_radius"]["median"],
+            "realized_radius_p95": mg["realized_normalized_radius"]["p95"],
+            "physical_coverage_radius_median_m": mg["physical_coverage_radius_m"]["median"],
+            "normalized_p2r_edge_length_median": mg["normalized_edge_length"]["p2r"]["median"],
+            "physical_p2r_edge_length_median_m": mg["physical_edge_length_m"]["p2r"]["median"],
+            "undercovered_fraction": mg["undercovered_fraction"],
+            "r2r_components_max": mg["r2r_connected_components"]["max"],
+            "receptive_field_proxy_m": mg["effective_physical_receptive_field_proxy_m"],
+            "graph_median_s": mt["graph_construction"]["median_seconds"],
+            "graph_p95_s": mt["graph_construction"]["p95_seconds"],
+            "warm_median_s": mt["warm_cache_e2e"]["median_seconds"],
+            "warm_p95_s": mt["warm_cache_e2e"]["p95_seconds"],
+            "new_case_median_s": mt["new_case_e2e"]["median_seconds"],
+            "new_case_p95_s": mt["new_case_e2e"]["p95_seconds"],
+            "peak_vram_bytes": int(matched["device_memory"]["peak_bytes_in_use"]),
+            "artifact_sha256": sha256(RAW / f"A_{resolution}_timing_only.json"),
+        }
+        rows.append(row)
     return rows
 
 
@@ -245,6 +259,10 @@ def performance_rows() -> list[dict[str, object]]:
     apply_rows = {int(row["resolution"]): row for row in json.loads(APPLY_FIRST.read_text())["results"]}
     replay = json.loads(APPLY_REPLAY.read_text())
     apply_rows[8192] = replay["results"][0]
+    matched_a = {
+        resolution: json.loads((RAW / f"A_{resolution}_timing_only.json").read_text())
+        for resolution in (8192, 16384)
+    }
 
     def timed(n: int, route: str, state: str, family: str = "p1i") -> dict[str, str]:
         hits = [row for row in unified if row["family"] == family and row["resolution"] == str(n)
@@ -277,26 +295,51 @@ def performance_rows() -> list[dict[str, object]]:
     for n in (4096, 8192, 16384, 32768):
         m, p = metric[n], pub[n]
         new = timed(n, "production_reconstruction", "new_topology")
-        warm = p
         fvm_new = timed(n, "fvm", "known_topology_new_physics")
         fvm_warm = timed(n, "fvm", "fully_cached")
+        if n in matched_a:
+            matched = matched_a[n]
+            graph_median = matched["timing"]["graph_construction"]["median_seconds"]
+            graph_p95 = matched["timing"]["graph_construction"]["p95_seconds"]
+            map_median = 0.0
+            map_p95 = 0.0
+            apply_median = matched["timing"]["reconstruction_apply_gpu"]["median_seconds"]
+            apply_p95 = matched["timing"]["reconstruction_apply_gpu"]["p95_seconds"]
+            neural_median = matched["timing"]["neural_core"]["median_seconds"]
+            neural_p95 = matched["timing"]["neural_core"]["p95_seconds"]
+            warm_median = matched["timing"]["warm_cache_e2e"]["median_seconds"]
+            warm_p95 = matched["timing"]["warm_cache_e2e"]["p95_seconds"]
+            new_median = matched["timing"]["new_case_e2e"]["median_seconds"]
+            new_p95 = matched["timing"]["new_case_e2e"]["p95_seconds"]
+            peak_vram = matched["device_memory"]["peak_bytes_in_use"]
+            timing_evidence = "new_matched_A_timing_only_current_executor"
+        else:
+            graph_median, graph_p95 = new["graph_s_median"], new["graph_s_p95"]
+            map_median, map_p95 = new["map_build_s_median"], new["map_build_s_p95"]
+            apply_median = apply_rows[n]["median_seconds"]
+            apply_p95 = apply_rows[n]["p95_seconds"]
+            neural_median, neural_p95 = p["neural_forward_median_seconds"], p["neural_forward_p95_seconds"]
+            warm_median, warm_p95 = p["warm_cache_median_seconds"], p["warm_cache_p95_seconds"]
+            new_median, new_p95 = new["continuous_wall_median_s"], new["continuous_wall_p95_s"]
+            peak_vram = p["peak_vram_bytes"]
+            timing_evidence = "historical_direct_new_topology_plus_publication_cached"
         rows.append({
             "resolution": n, "system": "GPU_RIGNO", "graph_policy": "A_frozen_no_go_retained",
             "measurement_domain": f"reconstructed_full_240825_from_{n}",
             "point_global_pct": m["full_point_global_pct"], "sample_first_pct": m["full_sample_first_pct"],
             "raw_cv_rmse_K": m["full_raw_cv_rmse_K"], "accuracy_evidence": "historical_valid32",
-            "neural_core_median_s": p["neural_forward_median_seconds"], "neural_core_p95_s": p["neural_forward_p95_seconds"],
-            "graph_construction_median_s": new["graph_s_median"], "graph_construction_p95_s": new["graph_s_p95"],
-            "reconstruction_map_build_median_s": new["map_build_s_median"], "reconstruction_map_build_p95_s": new["map_build_s_p95"],
-            "reconstruction_apply_median_s": apply_rows[n]["median_seconds"],
-            "reconstruction_apply_p95_s": apply_rows[n]["p95_seconds"],
-            "warm_cache_median_s": warm["warm_cache_median_seconds"], "warm_cache_p95_s": warm["warm_cache_p95_seconds"],
-            "new_case_median_s": new["continuous_wall_median_s"], "new_case_p95_s": new["continuous_wall_p95_s"],
-            "peak_vram_bytes": p["peak_vram_bytes"],
-            "new_case_speedup_vs_fvm": float(fvm_new["continuous_wall_median_s"]) / float(new["continuous_wall_median_s"]),
-            "warm_speedup_vs_fvm": float(fvm_warm["continuous_wall_median_s"]) / float(warm["warm_cache_median_seconds"]),
-            "neural_core_over_fvm": float(p["neural_forward_median_seconds"]) / float(fvm_new["continuous_wall_median_s"]),
-            "timing_evidence": "historical_direct_new_topology_plus_publication_cached",
+            "neural_core_median_s": neural_median, "neural_core_p95_s": neural_p95,
+            "graph_construction_median_s": graph_median, "graph_construction_p95_s": graph_p95,
+            "reconstruction_map_build_median_s": map_median, "reconstruction_map_build_p95_s": map_p95,
+            "reconstruction_apply_median_s": apply_median,
+            "reconstruction_apply_p95_s": apply_p95,
+            "warm_cache_median_s": warm_median, "warm_cache_p95_s": warm_p95,
+            "new_case_median_s": new_median, "new_case_p95_s": new_p95,
+            "peak_vram_bytes": peak_vram,
+            "new_case_speedup_vs_fvm": float(fvm_new["continuous_wall_median_s"]) / float(new_median),
+            "warm_speedup_vs_fvm": float(fvm_warm["continuous_wall_median_s"]) / float(warm_median),
+            "neural_core_over_fvm": float(neural_median) / float(fvm_new["continuous_wall_median_s"]),
+            "timing_evidence": timing_evidence,
         })
         a = old_accuracy[n]
         rows.append({
@@ -358,6 +401,16 @@ def main() -> int:
         "candidate_execution_code_commit": "bb259d3",
         "raw_artifacts": {f"{c}_{n}": {"path": str(RAW.relative_to(ROOT) / f"{c}_{n}.json"), "sha256": sha256(RAW / f"{c}_{n}.json")}
                           for c in ("B", "C") for n in (8192, 16384)},
+        "matched_A_timing_only": {
+            f"A_{n}": {
+                "path": str(RAW.relative_to(ROOT) / f"A_{n}_timing_only.json"),
+                "sha256": sha256(RAW / f"A_{n}_timing_only.json"),
+                "same_executor_span_as_B_C": True,
+                "accuracy_recomputed": False,
+            }
+            for n in (8192, 16384)
+        },
+        "timing_comparison_status": "same_executor_continuous_span_completed_for_A_B_C",
         "timing_only_artifacts": {
             "first": {"path": str(APPLY_FIRST.relative_to(ROOT)), "sha256": sha256(APPLY_FIRST)},
             "replay8192": {"path": str(APPLY_REPLAY.relative_to(ROOT)), "sha256": sha256(APPLY_REPLAY),
@@ -370,7 +423,8 @@ def main() -> int:
     GRAPH_MD.write_text(
         "# V6/P1i high-N graph-scale 因果消融\n\n"
         "范围：冻结 seed0 checkpoint 与 frozen valid32；无训练、无 test/sealed 访问。"
-        "A 与 FVM 证据只读复用，本轮仅新增 B/C 的 8192/16384。\n\n"
+        "A 与 FVM accuracy 证据只读复用；B/C 新增 8192/16384 accuracy/graph，"
+        "A 仅补同 executor 的 8192/16384 timing-only。\n\n"
         "| 策略 | N | full PG % | sample-first % | raw K | source K | peak K | anchor drift K | Nr | under-covered | warm/new-case ms | VRAM MiB |\n"
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n" +
         "\n".join(
@@ -393,10 +447,12 @@ def main() -> int:
         "P1i A 对应为 11.084/9.451，Nr=2048/4096。B 虽把 Nr 降至 P1h 密度，却未复现 P1h 的 physical/source coverage。\n"
         "- 候选 timing 使用同步连续 span，但独立 neural/apply 子段包含一次首调用 JIT；它们不进入正式性能表。"
         "warm-cache/new-case 连续 span 与 accuracy 仍有效。\n"
-        "- A 的 new-case 来自历史 unified direct-wall new-topology，B/C 来自本轮连续 fresh-graph span；"
-        "硬件相同但并非同期代码，故 latency 仅作工程参考，且没有参与已失败的 accuracy gate。\n"
+        "- A/B/C 的 8192/16384 new-case 现均来自同一 executor、同一 WSL2 RTX 5070、同一 valid32 的连续 span："
+        "fresh graph + group prepare + cached-map load/H2D + forward + GPU reconstruction。"
+        "A 补测不读标签、不算指标、不保存预测。\n"
         "- 实际新增计算：B8192 因初始误把 report-only k/q/CV 当 hard gate，在保留结果前有两次工程重试；"
-        "最终 B8192/B16384/C8192/C16384 均由 SHA 绑定。没有重跑 A/FVM accuracy，也没有运行 D、winner 扩展或 timing-only 补测。\n"
+        "最终 B8192/B16384/C8192/C16384 及 A8192/A16384 timing-only 均由 SHA 绑定。"
+        "没有重跑 A/FVM accuracy，也没有运行 D 或 winner 扩展。\n"
         "\n## 工程优先级\n\n"
         "冻结策略仍为 A；新拓扑图构建主导端到端延迟，而 warm neural 仅为毫秒级。下一步优先 GPU 图构建优化。"
         "只有 support hash 重复时才优先固定图复用；对当前 B1 瓶颈，batch inference 优先级更低。\n"
@@ -429,9 +485,10 @@ def main() -> int:
         "相对 240825 FVM，new-case 为 0.962x，重复已知样本为 166.92x。CSV 明确标记其评价域和较早 timing 协议。\n\n"
         "`new_case_speedup_vs_fvm < 1` 表示 sample-varying 新 support 的 RIGNO 端到端更慢。"
         "warm-cache ratio 只比较重复已知样本 lower bound。CSV 单列 neural-core/FVM ratio，禁止称为 E2E speedup。\n"
-        "\n证据来源：A accuracy/graph、GPU clean cached timing、unified direct-wall timing 与 FVM field 全部是历史只读复用。"
-        "本轮只新增 B/C valid32 accuracy/graph 与同步 candidate warm/new-case span，并补了缺失的 GPU reconstruction-apply timing-only；"
-        "未重跑 FVM 或 A accuracy。8192 首轮受 CUDA timer 抖动影响，正式值采用预先不看 accuracy 的 100-repeat 复核。\n"
+        "\n证据来源：A accuracy/graph 与 FVM field 为历史只读复用；A 的 8192/16384 timing 是本轮同 executor timing-only 补测。"
+        "B/C valid32 accuracy/graph 与连续 warm/new-case span为本轮已有结果，GPU reconstruction-apply 为 timing-only。"
+        "未重跑 FVM 或 A accuracy。8192 reconstruction-apply 首轮受 CUDA timer 抖动影响，正式值采用预先不看 accuracy 的 100-repeat 复核。"
+        "4096/32768 A timing 仍为历史协议，只有 8192/16384 可用于本轮 A/B/C 同口径横比。\n"
     )
     print(json.dumps({"status": policy["status"], "decision": outcome, "graph_rows": len(graph_csv_rows), "performance_rows": len(perf)}))
     return 0

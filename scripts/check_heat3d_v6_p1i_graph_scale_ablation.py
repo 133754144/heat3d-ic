@@ -143,6 +143,21 @@ def main() -> int:
                 raw = ROOT / f"configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/{candidate}_{resolution}.json"
                 check_result(raw, candidate, resolution)
                 require(sha256(raw) == policy["raw_artifacts"][f"{candidate}_{resolution}"]["sha256"], "raw SHA")
+        require(
+            policy["timing_comparison_status"]
+            == "same_executor_continuous_span_completed_for_A_B_C",
+            "matched timing comparison status",
+        )
+        for resolution in (8192, 16384):
+            raw = ROOT / (
+                "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/"
+                f"A_{resolution}_timing_only.json"
+            )
+            check_a_timing_result(raw, resolution)
+            frozen = policy["matched_A_timing_only"][f"A_{resolution}"]
+            require(frozen["same_executor_span_as_B_C"], "A matched timing semantics")
+            require(frozen["accuracy_recomputed"] is False, "A accuracy boundary")
+            require(sha256(raw) == frozen["sha256"], "A timing raw SHA")
         for key in ("first", "replay8192"):
             timing = policy["timing_only_artifacts"][key]
             path = ROOT / timing["path"]
@@ -162,9 +177,28 @@ def main() -> int:
         for row in performance_rows:
             if row["system"] == "GPU_RIGNO" and int(row["resolution"]) >= 4096:
                 require(float(row["reconstruction_apply_median_s"]) > 0.0, "GPU apply timing")
+            if row["system"] == "GPU_RIGNO" and int(row["resolution"]) in (8192, 16384):
+                require(
+                    row["timing_evidence"] == "new_matched_A_timing_only_current_executor",
+                    "performance A matched timing evidence",
+                )
+        a_rows = {
+            int(row["resolution"]): row for row in graph_rows if row["candidate"] == "A"
+        }
+        for resolution in (8192, 16384):
+            require(
+                a_rows[resolution]["evidence"]
+                == "historical_accuracy_plus_new_matched_timing_only",
+                "graph table A matched timing evidence",
+            )
+            require(
+                a_rows[resolution]["artifact_sha256"]
+                == policy["matched_A_timing_only"][f"A_{resolution}"]["sha256"],
+                "graph table A timing SHA",
+            )
         graph_md = (ROOT / "docs/v6_p1i_graph_scale_ablation.md").read_text()
         perf_md = (ROOT / "docs/v6_p1i_resolution_performance_comparison.md").read_text()
-        for phrase in ("不成立", "未触发 D", "GPU 图构建优化"):
+        for phrase in ("不成立", "未触发 D", "GPU 图构建优化", "同一 executor"):
             require(phrase in graph_md, f"missing graph conclusion: {phrase}")
         for phrase in ("评价域", "重复已知样本", "neural-core/FVM"):
             require(phrase in perf_md, f"missing timing qualification: {phrase}")
