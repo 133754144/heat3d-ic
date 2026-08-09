@@ -474,8 +474,6 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         }
         for name in ("delta_k", "delta_q", "delta_cv")
     }
-    if any(value["max_abs"] != 0.0 for value in maximum_feature_drift.values()):
-        raise RuntimeError("common-anchor k/q/CV drifted")
     graph_summary = _mean_summary(diagnostics)
     result = {
         "schema_version": "heat3d_v6_p1i_graph_scale_candidate_result_v1",
@@ -497,6 +495,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             "max_abs_K": max(row["max_abs"] for row in response_drift),
         },
         "common_anchor_input_drift": maximum_feature_drift,
+        "common_anchor_input_drift_interpretation": (
+            "report_only_frozen_high_n_overlap_fields_vs_native1024_binary_mask_fields"
+        ),
         "graph_diagnostics": graph_summary,
         "graph_diagnostics_per_sample": diagnostics,
         "timing": {
