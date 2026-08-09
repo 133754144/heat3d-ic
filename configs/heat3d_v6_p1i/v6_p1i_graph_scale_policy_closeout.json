@@ -1,0 +1,58 @@
+{
+  "D_executed": false,
+  "D_reason": "B_and_C_did_not_both_pass_clear_improvement",
+  "candidate_execution_code_commit": "bb259d3",
+  "candidate_production_graph_policy": null,
+  "causal_conclusion": "Preserving native1024 local coverage radius did not improve both 8192 and 16384; the observed high-N degradation is not explained by radius/receptive-field drift alone.",
+  "decision": "no_go_keep_A",
+  "frozen_roles": {
+    "sealed": false,
+    "test": false,
+    "training": false,
+    "valid32_seed0_only": true
+  },
+  "native1024_physical_coverage_hypothesis_supported": false,
+  "next_priority": "GPU graph optimization for sample-varying new topology; reuse fixed graphs when support repeats",
+  "raw_artifacts": {
+    "B_16384": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/B_16384.json",
+      "sha256": "5b81fc3ab25f28cfd683419106f7a55434a4044e41339d15d463e099bb9a79fb"
+    },
+    "B_8192": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/B_8192.json",
+      "sha256": "285c924897245e085b32079cada0c0840cbd6834ffd2197ddd54d63eeca8dcd1"
+    },
+    "C_16384": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/C_16384.json",
+      "sha256": "3456bbcf6b446fdbfcb51076dc15c6aa8b077522030a76bf198b931b2b90f51c"
+    },
+    "C_8192": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/C_8192.json",
+      "sha256": "9ecabb2432a81109074224ed97292e37cc59beff9275d63cda4cd38e020911f2"
+    }
+  },
+  "retained_production_graph_policy": "A_factor4_discrete_physical_coverage",
+  "schema_version": "heat3d_v6_p1i_graph_scale_policy_closeout_v1",
+  "selection": {
+    "B": {
+      "candidate": "B",
+      "mean_pg_gain_percentage_points": 0.03223926740672112,
+      "mean_raw_gain_K": 0.06571241978808806,
+      "passed": false,
+      "pg_non_regression_each": true,
+      "raw_non_regression_each": true,
+      "source_peak_non_regression": false
+    },
+    "C": {
+      "candidate": "C",
+      "mean_pg_gain_percentage_points": -0.04869067605337407,
+      "mean_raw_gain_K": -0.02163779063152038,
+      "passed": false,
+      "pg_non_regression_each": false,
+      "raw_non_regression_each": false,
+      "source_peak_non_regression": false
+    }
+  },
+  "status": "completed_no_go",
+  "winner_extension_executed": false
+}

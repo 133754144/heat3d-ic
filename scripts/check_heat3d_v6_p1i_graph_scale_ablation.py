@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -42,6 +43,9 @@ def check_protocol(path: Path) -> dict[str, object]:
     require(native["uses_temperature_prediction_or_error"] is False, "native policy leakage")
     require(native["changes_legacy_discrete_physical_coverage"] is False, "legacy semantics")
     require(sha256(ROOT / "rigno/graphBuilder_Heat3D.py") == EXPECTED_GRAPH_BUILDER_SHA, "legacy graph builder drift")
+    implementation = (ROOT / "rigno/heat3d_v6_graph_scale.py").read_text()
+    for forbidden in ("target_u", "temperature", "prediction", "truth", "q_W_m3"):
+        require(forbidden not in implementation, f"label/error-dependent graph implementation: {forbidden}")
     return {"protocol_checked": True, "legacy_graph_builder_unchanged": True}
 
 
@@ -84,11 +88,43 @@ def main() -> int:
     parser.add_argument("--result", type=Path)
     parser.add_argument("--candidate", choices=["B", "C", "D"])
     parser.add_argument("--resolution", type=int)
+    parser.add_argument("--closeout", action="store_true")
     args = parser.parse_args()
     report = check_protocol(args.protocol)
     if args.result:
         require(args.candidate is not None and args.resolution is not None, "result identity arguments")
         report.update(check_result(args.result, args.candidate, args.resolution))
+    if args.closeout:
+        policy_path = ROOT / "configs/heat3d_v6_p1i/v6_p1i_graph_scale_policy_closeout.json"
+        policy = json.loads(policy_path.read_text())
+        require(policy["status"] == "completed_no_go", "closeout status")
+        require(policy["decision"] == "no_go_keep_A", "closeout decision")
+        require(policy["candidate_production_graph_policy"] is None, "unexpected winner")
+        require(policy["D_executed"] is False and policy["winner_extension_executed"] is False, "unexpected execution")
+        require(policy["frozen_roles"] == {
+            "training": False, "test": False, "sealed": False, "valid32_seed0_only": True,
+        }, "closeout roles")
+        for candidate in ("B", "C"):
+            require(policy["selection"][candidate]["passed"] is False, f"{candidate} decision")
+            for resolution in (8192, 16384):
+                raw = ROOT / f"configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/{candidate}_{resolution}.json"
+                check_result(raw, candidate, resolution)
+                require(sha256(raw) == policy["raw_artifacts"][f"{candidate}_{resolution}"]["sha256"], "raw SHA")
+        with (ROOT / "docs/v6_p1i_graph_scale_ablation.csv").open(newline="") as handle:
+            graph_rows = list(csv.DictReader(handle))
+        with (ROOT / "docs/v6_p1i_resolution_performance_comparison.csv").open(newline="") as handle:
+            performance_rows = list(csv.DictReader(handle))
+        require(len(graph_rows) == 8, "graph CSV row count")
+        require(len(performance_rows) == 11, "performance CSV row count")
+        require({row["candidate"] for row in graph_rows} == {"A", "B", "C", "P1h_context"}, "graph CSV roles")
+        require(all(row["measurement_domain"] for row in performance_rows), "performance domain")
+        graph_md = (ROOT / "docs/v6_p1i_graph_scale_ablation.md").read_text()
+        perf_md = (ROOT / "docs/v6_p1i_resolution_performance_comparison.md").read_text()
+        for phrase in ("不成立", "未触发 D", "GPU 图构建优化"):
+            require(phrase in graph_md, f"missing graph conclusion: {phrase}")
+        for phrase in ("评价域", "重复已知样本", "neural-core/FVM"):
+            require(phrase in perf_md, f"missing timing qualification: {phrase}")
+        report["closeout_checked"] = True
     print(json.dumps(report, sort_keys=True))
     return 0
 

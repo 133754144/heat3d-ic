@@ -351,8 +351,6 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     graph_seconds = []
     group_seconds = []
     map_load_transfer_seconds = []
-    neural_seconds = []
-    reconstruction_apply_seconds = []
     new_case_seconds = []
     predictions = []
     full_predictions = []
@@ -427,6 +425,11 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     apply_seconds = []
     group, weights, device_map, support_delta, _ = retained[0]
     scale = jnp.asarray(anchor_scales[anchors[0].sample_id])
+    # Compile the standalone component functions before collecting their
+    # production distributions.  The combined production_apply was compiled
+    # above, but JAX caches these two entry points independently.
+    jax.block_until_ready(model_core(params, group, weights, scale))
+    jax.block_until_ready(device_map.reconstruct(support_delta))
     for _ in range(args.timing_repeats):
         phase = time.perf_counter()
         value = model_core(params, group, weights, scale)
