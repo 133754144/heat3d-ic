@@ -110,6 +110,14 @@ def main() -> int:
                 raw = ROOT / f"configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/{candidate}_{resolution}.json"
                 check_result(raw, candidate, resolution)
                 require(sha256(raw) == policy["raw_artifacts"][f"{candidate}_{resolution}"]["sha256"], "raw SHA")
+        for key in ("first", "replay8192"):
+            timing = policy["timing_only_artifacts"][key]
+            path = ROOT / timing["path"]
+            payload = json.loads(path.read_text())
+            require(payload["status"] == "passed", "timing-only status")
+            require(payload["timing_contract"]["labels_or_metrics_read"] is False, "timing-only labels")
+            require(payload["role_contract"]["training"] is False, "timing-only training")
+            require(sha256(path) == timing["sha256"], "timing-only SHA")
         with (ROOT / "docs/v6_p1i_graph_scale_ablation.csv").open(newline="") as handle:
             graph_rows = list(csv.DictReader(handle))
         with (ROOT / "docs/v6_p1i_resolution_performance_comparison.csv").open(newline="") as handle:
@@ -118,6 +126,9 @@ def main() -> int:
         require(len(performance_rows) == 11, "performance CSV row count")
         require({row["candidate"] for row in graph_rows} == {"A", "B", "C", "P1h_context"}, "graph CSV roles")
         require(all(row["measurement_domain"] for row in performance_rows), "performance domain")
+        for row in performance_rows:
+            if row["system"] == "GPU_RIGNO" and int(row["resolution"]) >= 4096:
+                require(float(row["reconstruction_apply_median_s"]) > 0.0, "GPU apply timing")
         graph_md = (ROOT / "docs/v6_p1i_graph_scale_ablation.md").read_text()
         perf_md = (ROOT / "docs/v6_p1i_resolution_performance_comparison.md").read_text()
         for phrase in ("不成立", "未触发 D", "GPU 图构建优化"):

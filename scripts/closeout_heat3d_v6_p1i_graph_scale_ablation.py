@@ -17,6 +17,8 @@ PUB_GRAPH = ROOT / "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.c
 UNIFIED_RESOLUTION = ROOT / "configs/heat3d_v6_p1i/v6_unified_performance_resolution.csv"
 UNIFIED_TIMING = ROOT / "configs/heat3d_v6_p1i/v6_unified_performance_timing.csv"
 POLICY = ROOT / "configs/heat3d_v6_p1i/v6_p1i_graph_scale_policy_closeout.json"
+APPLY_FIRST = ROOT / "configs/heat3d_v6_p1i/v6_p1i_reconstruction_apply_only_timing_first.json"
+APPLY_REPLAY = ROOT / "configs/heat3d_v6_p1i/v6_p1i_reconstruction_apply_only_timing_replay8192.json"
 GRAPH_CSV = ROOT / "docs/v6_p1i_graph_scale_ablation.csv"
 GRAPH_MD = ROOT / "docs/v6_p1i_graph_scale_ablation.md"
 PERF_CSV = ROOT / "docs/v6_p1i_resolution_performance_comparison.csv"
@@ -233,6 +235,9 @@ def performance_rows() -> list[dict[str, object]]:
         32768: {"point_global_pct": 1.191553, "sample_first_pct": 1.963771, "raw_cv_rmse_K": 1.519157},
         240825: {"point_global_pct": 0.069648, "sample_first_pct": 0.045814, "raw_cv_rmse_K": 0.036553},
     }
+    apply_rows = {int(row["resolution"]): row for row in json.loads(APPLY_FIRST.read_text())["results"]}
+    replay = json.loads(APPLY_REPLAY.read_text())
+    apply_rows[8192] = replay["results"][0]
 
     def timed(n: int, route: str, state: str, family: str = "p1i") -> dict[str, str]:
         hits = [row for row in unified if row["family"] == family and row["resolution"] == str(n)
@@ -276,7 +281,8 @@ def performance_rows() -> list[dict[str, object]]:
             "neural_core_median_s": p["neural_forward_median_seconds"], "neural_core_p95_s": p["neural_forward_p95_seconds"],
             "graph_construction_median_s": new["graph_s_median"], "graph_construction_p95_s": new["graph_s_p95"],
             "reconstruction_map_build_median_s": new["map_build_s_median"], "reconstruction_map_build_p95_s": new["map_build_s_p95"],
-            "reconstruction_apply_median_s": "", "reconstruction_apply_p95_s": "",
+            "reconstruction_apply_median_s": apply_rows[n]["median_seconds"],
+            "reconstruction_apply_p95_s": apply_rows[n]["p95_seconds"],
             "warm_cache_median_s": warm["warm_cache_median_seconds"], "warm_cache_p95_s": warm["warm_cache_p95_seconds"],
             "new_case_median_s": new["continuous_wall_median_s"], "new_case_p95_s": new["continuous_wall_p95_s"],
             "peak_vram_bytes": p["peak_vram_bytes"],
@@ -345,6 +351,11 @@ def main() -> int:
         "candidate_execution_code_commit": "bb259d3",
         "raw_artifacts": {f"{c}_{n}": {"path": str(RAW.relative_to(ROOT) / f"{c}_{n}.json"), "sha256": sha256(RAW / f"{c}_{n}.json")}
                           for c in ("B", "C") for n in (8192, 16384)},
+        "timing_only_artifacts": {
+            "first": {"path": str(APPLY_FIRST.relative_to(ROOT)), "sha256": sha256(APPLY_FIRST)},
+            "replay8192": {"path": str(APPLY_REPLAY.relative_to(ROOT)), "sha256": sha256(APPLY_REPLAY),
+                            "reason": "first-pass CUDA timer anomaly; frozen 100-repeat replay"},
+        },
     }
     POLICY.write_text(json.dumps(policy, indent=2, sort_keys=True) + "\n")
     graph_csv_rows = rows + p1h_graph_context_rows()
@@ -410,7 +421,8 @@ def main() -> int:
         "`new_case_speedup_vs_fvm < 1` 表示 sample-varying 新 support 的 RIGNO 端到端更慢。"
         "warm-cache ratio 只比较重复已知样本 lower bound。CSV 单列 neural-core/FVM ratio，禁止称为 E2E speedup。\n"
         "\n证据来源：A accuracy/graph、GPU clean cached timing、unified direct-wall timing 与 FVM field 全部是历史只读复用。"
-        "本轮只新增 B/C valid32 accuracy/graph 与同步 candidate warm/new-case span；未重跑 FVM 或 A accuracy。\n"
+        "本轮只新增 B/C valid32 accuracy/graph 与同步 candidate warm/new-case span，并补了缺失的 GPU reconstruction-apply timing-only；"
+        "未重跑 FVM 或 A accuracy。8192 首轮受 CUDA timer 抖动影响，正式值采用预先不看 accuracy 的 100-repeat 复核。\n"
     )
     print(json.dumps({"status": policy["status"], "decision": outcome, "graph_rows": len(graph_csv_rows), "performance_rows": len(perf)}))
     return 0

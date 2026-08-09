@@ -15,4 +15,4 @@
 
 `new_case_speedup_vs_fvm < 1` 表示 sample-varying 新 support 的 RIGNO 端到端更慢。warm-cache ratio 只比较重复已知样本 lower bound。CSV 单列 neural-core/FVM ratio，禁止称为 E2E speedup。
 
-证据来源：A accuracy/graph、GPU clean cached timing、unified direct-wall timing 与 FVM field 全部是历史只读复用。本轮只新增 B/C valid32 accuracy/graph 与同步 candidate warm/new-case span；未重跑 FVM 或 A accuracy。
+证据来源：A accuracy/graph、GPU clean cached timing、unified direct-wall timing 与 FVM field 全部是历史只读复用。本轮只新增 B/C valid32 accuracy/graph 与同步 candidate warm/new-case span，并补了缺失的 GPU reconstruction-apply timing-only；未重跑 FVM 或 A accuracy。8192 首轮受 CUDA timer 抖动影响，正式值采用预先不看 accuracy 的 100-repeat 复核。
