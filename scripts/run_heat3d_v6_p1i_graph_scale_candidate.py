@@ -30,6 +30,7 @@ for value in (ROOT, ROOT / "scripts"):
 import benchmark_heat3d_v6_inference_qualification as qualification  # noqa: E402
 import benchmark_heat3d_v6_p1i_publication_gpu_pipeline as publication  # noqa: E402
 import run_heat3d_v6_p1i_anchor_high_n_development as highn  # noqa: E402
+import run_heat3d_v1_medium_controlled_training_export as legacy_runner  # noqa: E402
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
 from rigno.heat3d_graph_cache import save_metadata  # noqa: E402
 from rigno.heat3d_v6_graph_scale import (  # noqa: E402
@@ -73,6 +74,92 @@ def _sha256(path: Path) -> str:
 def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def _confirmation_runtime(args: argparse.Namespace, contract: Mapping[str, Any]) -> dict[str, Any]:
+    frozen = contract["checkpoints"][str(args.seed)]
+    checkpoint_path = args.run_dir / "params_best_valid_point_global.pkl"
+    if _sha256(checkpoint_path) != frozen["sha256"]:
+        raise RuntimeError("confirmation checkpoint SHA drifted")
+    checkpoint = legacy_runner._load_params_checkpoint(checkpoint_path)
+    if int(checkpoint["epoch"]) != int(frozen["epoch"]):
+        raise RuntimeError("confirmation checkpoint epoch drifted")
+    run_config_path = args.run_dir / "run_config.json"
+    if _sha256(run_config_path) != frozen["run_config_sha256"]:
+        raise RuntimeError("confirmation run_config SHA drifted")
+    run_config = json.loads(run_config_path.read_text())
+    stats = highn.common._materialize_checkpoint_stats(checkpoint["train_only_normalization"])
+    checkpoint = dict(checkpoint)
+    checkpoint["train_only_normalization"] = stats
+    highn.install_checkpoint_feature_hooks(stats)
+    standardizer = run_config["global_context"]["standardizer"]
+    if standardizer.get("fit_population") != "train_only" or int(standardizer.get("fit_sample_count", -1)) != 768:
+        raise RuntimeError("confirmation Global Context standardizer drifted")
+    model_config = legacy_runner._resolve_decoder_bypass_model_config(dict(checkpoint["model_config"]), stats)
+    legacy_runner._validate_model_config(model_config)
+    graph_config = dict(run_config["graph_config"])
+    graph_config["discrete_graph_backend"] = "sparse_kdtree_v1"
+    graph_config = dict(Heat3DGraphBuilder(**graph_config).config)
+    return {
+        "checkpoint_path": checkpoint_path, "checkpoint": checkpoint,
+        "run_config_path": run_config_path, "run_config": run_config,
+        "stats": stats, "model_config": model_config, "graph_config": graph_config,
+    }
+
+
+def _native_cache(
+    path: Path, *, anchors: list[Any], runtime: Mapping[str, Any], checkpoint_sha: str,
+) -> tuple[dict[str, np.ndarray], dict[str, float]]:
+    if path.is_file():
+        with np.load(path, allow_pickle=False) as payload:
+            ids = [str(value) for value in np.asarray(payload["sample_ids"]).tolist()]
+            if ids != [anchor.sample_id for anchor in anchors]:
+                raise RuntimeError("native cache sample order drifted")
+            if str(np.asarray(payload["checkpoint_sha256"]).item()) != checkpoint_sha:
+                raise RuntimeError("native cache checkpoint drifted")
+            predictions = np.asarray(payload["predictions_K"], dtype=np.float64)
+            scales = np.asarray(payload["predicted_scales"], dtype=np.float64)
+    else:
+        builder_rows = []
+        graph_key = highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
+        for anchor in anchors:
+            builder = Heat3DGraphBuilder(**dict(runtime["graph_config"]))
+            metadata = builder.build_metadata(
+                highn.runner._graph_coords_for_example(anchor, runtime["stats"]), key=graph_key
+            )
+            builder_rows.append((builder, metadata))
+        edge_targets = {}
+        for field in qualification.EDGE_FIELDS:
+            values = [getattr(metadata, field) for _, metadata in builder_rows]
+            edge_targets[field] = None if all(value is None for value in values) else max(
+                int(value.shape[1]) for value in values if value is not None
+            )
+        model = GraphNeuralOperator(**runtime["model_config"])
+        params = highn.runner._device_params(runtime["checkpoint"]["params"])
+        compiled = jax.jit(lambda model_params, group: highn.runner._model_apply(model, model_params, group))
+        predictions, scales = [], []
+        for anchor, (builder, metadata) in zip(anchors, builder_rows, strict=True):
+            group = highn._prepare_group(
+                example=anchor, anchor=anchor, runtime=runtime, builder=builder,
+                metadata=metadata, edge_targets=edge_targets,
+            )
+            output = compiled(params, highn._model_group(group))
+            jax.block_until_ready(output["raw_temperature"])
+            predictions.append(np.asarray(output["raw_temperature"], dtype=np.float64)[0, 0, :, 0])
+            scales.append(float(np.asarray(output["s_hat"], dtype=np.float64).reshape(-1)[0]))
+        predictions = np.asarray(predictions)
+        scales = np.asarray(scales)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("wb") as handle:
+            np.savez_compressed(
+                handle, sample_ids=np.asarray([anchor.sample_id for anchor in anchors]),
+                predictions_K=predictions, predicted_scales=scales,
+                checkpoint_sha256=np.asarray(checkpoint_sha),
+            )
+    return (
+        dict(zip([anchor.sample_id for anchor in anchors], predictions, strict=True)),
+        dict(zip([anchor.sample_id for anchor in anchors], map(float, scales), strict=True)),
+    )
 
 
 def _dist(values: Any) -> dict[str, float | int]:
@@ -265,8 +352,10 @@ def _runtime_distribution(values: list[float]) -> dict[str, float | int]:
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     policy_contract = json.loads(args.policy_contract.read_text())
+    confirmation = policy_contract["status"] == "frozen_after_E_no_go_before_confirmation"
     allowed_status = (
-        "preregistered_before_E_execution" if args.candidate == "E"
+        "frozen_after_E_no_go_before_confirmation" if confirmation
+        else "preregistered_before_E_execution" if args.candidate == "E"
         else "preregistered_before_candidate_execution"
     )
     if policy_contract["status"] != allowed_status:
@@ -281,7 +370,12 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError("E scientific contract drifted")
     if args.candidate not in CANDIDATES or args.resolution not in (4096, 8192, 16384, 32768):
         raise RuntimeError("unregistered candidate or resolution")
-    if args.candidate == "A":
+    if confirmation:
+        if args.candidate not in policy_contract["policies"] or args.resolution not in policy_contract["resolutions"]:
+            raise RuntimeError("unregistered confirmation cell")
+        if args.timing_only:
+            raise RuntimeError("confirmation requires accuracy and timing")
+    elif args.candidate == "A":
         if not args.timing_only or args.timing_amendment is None:
             raise RuntimeError("A may only run under the timing-only amendment")
         amendment = json.loads(args.timing_amendment.read_text())
@@ -293,31 +387,59 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     elif args.timing_only:
         raise RuntimeError("timing-only mode is registered only for baseline A")
     binding = highn._binding(args)
-    highn._protocol_amendment(args)
-    runtime = highn._checkpoint_runtime(args)
+    if confirmation:
+        runtime = _confirmation_runtime(args, policy_contract)
+        frozen_checkpoint = policy_contract["checkpoints"][str(args.seed)]
+    else:
+        highn._protocol_amendment(args)
+        runtime = highn._checkpoint_runtime(args)
+        frozen_checkpoint = {
+            "config_id": highn.CONFIG_ID, "epoch": highn.CHECKPOINT_EPOCH,
+            "sha256": highn.CHECKPOINT_SHA256,
+        }
     dataset = highn._dataset(args)
-    anchors = highn._valid_examples(dataset, binding)
     full, archive_lookup = highn._full_shared(args)
     preflight = json.loads((args.baseline_artifact_root / "actual_data_preflight.json").read_text())
+    if confirmation:
+        expected = sorted(
+            dataset.split_ids["valid_iid"], key=lambda sample_id: hashlib.sha256(sample_id.encode()).hexdigest()
+        )[32:]
+        if preflight["sample_ids"] != expected or len(expected) != 96:
+            raise RuntimeError("confirmation remaining-valid96 selection drifted")
+        index = dataset.sample_index_by_id()
+        anchors = [dataset[index[sample_id]] for sample_id in expected]
+    else:
+        anchors = highn._valid_examples(dataset, binding)
     supports_by_id = {
         row["sample_id"]: row for row in preflight["supports"][str(args.resolution)]
     }
-    baseline_result = json.loads(
-        (args.baseline_artifact_root / f"resolution_{args.resolution}.json").read_text()
-    )
-    baseline_maps = {
-        row["sample_id"]: Path(row["cache_file"])
-        for row in baseline_result["reconstruction_cache"]["samples"]
-    }
-    with np.load(args.native_predictions, allow_pickle=False) as payload:
-        native_ids = [str(value) for value in np.asarray(payload["sample_ids"]).tolist()]
-        native_prediction = {
-            sample_id: np.asarray(prediction, dtype=np.float64)
-            for sample_id, prediction in zip(native_ids, np.asarray(payload["predictions_K"]), strict=True)
+    if confirmation:
+        baseline_result = None
+        baseline_maps = {
+            row["sample_id"]: Path(row["cache_file"])
+            for row in preflight["reconstruction_maps"][str(args.resolution)]
         }
-        anchor_scales = dict(zip(native_ids, map(float, np.asarray(payload["predicted_scales"])), strict=True))
-    if native_ids != [anchor.sample_id for anchor in anchors]:
-        raise RuntimeError("native prediction order drifted")
+        native_prediction, anchor_scales = _native_cache(
+            args.native_cache, anchors=anchors, runtime=runtime,
+            checkpoint_sha=frozen_checkpoint["sha256"],
+        )
+    else:
+        baseline_result = json.loads(
+            (args.baseline_artifact_root / f"resolution_{args.resolution}.json").read_text()
+        )
+        baseline_maps = {
+            row["sample_id"]: Path(row["cache_file"])
+            for row in baseline_result["reconstruction_cache"]["samples"]
+        }
+        with np.load(args.native_predictions, allow_pickle=False) as payload:
+            native_ids = [str(value) for value in np.asarray(payload["sample_ids"]).tolist()]
+            native_prediction = {
+                sample_id: np.asarray(prediction, dtype=np.float64)
+                for sample_id, prediction in zip(native_ids, np.asarray(payload["predictions_K"]), strict=True)
+            }
+            anchor_scales = dict(zip(native_ids, map(float, np.asarray(payload["predicted_scales"])), strict=True))
+        if native_ids != [anchor.sample_id for anchor in anchors]:
+            raise RuntimeError("native prediction order drifted")
     graph_key = highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
     examples, support_payloads, boundaries_by_id = [], [], {}
     for anchor in anchors:
@@ -493,6 +615,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         jax.block_until_ready(value)
         warm_seconds.append(time.perf_counter() - phase)
 
+    per_sample_metrics = []
     if args.timing_only:
         support_metrics = full_metrics = None
     else:
@@ -510,13 +633,23 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                     allow_pickle=False,
                 ) as physics:
                     full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
-                support_metric_rows.append(highn._metric_row(
+                support_row = highn._metric_row(
                     support_pred, truth_full[indices], np.asarray(support["operator_control_volume"]),
                     full["coords"][indices], np.asarray(support["layer_id"]), np.asarray(support["q_W_m3"]),
-                ))
-                full_metric_rows.append(highn._metric_row(
+                )
+                full_row = highn._metric_row(
                     full_pred, truth_full, full["cv"], full["coords"], full["layer"], full_q,
-                ))
+                )
+                support_metric_rows.append(support_row)
+                full_metric_rows.append(full_row)
+                single = qualification.metric_accumulate([full_row], full=True)
+                per_sample_metrics.append({
+                    "sample_id": anchor.sample_id,
+                    "full_rmse_K": single["raw_cv_weighted_rmse_K"],
+                    "source_rmse_K": single["source_rmse_K"],
+                    "peak_rmse_K": single["peak_rmse_K"],
+                    "interface_rmse_K": single["interface_drop_rmse_K"],
+                })
         support_metrics = qualification.metric_accumulate(support_metric_rows, full=False)
         full_metrics = qualification.metric_accumulate(full_metric_rows, full=True)
     maximum_feature_drift = {
@@ -533,7 +666,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         "candidate": args.candidate,
         "policy": _resolved_policy(args.candidate, args.resolution),
         "resolution": args.resolution,
-        "checkpoint": {"epoch": highn.CHECKPOINT_EPOCH, "sha256": highn.CHECKPOINT_SHA256},
+        "checkpoint": frozen_checkpoint,
         "sample_ids": [anchor.sample_id for anchor in anchors],
         "accuracy": ({
             "status": "not_evaluated_timing_only",
@@ -542,9 +675,16 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         } if args.timing_only else {
             "support": support_metrics,
             "full_field": full_metrics,
-            "oracle_reconstruction_floor_reused": baseline_result["oracle_sampling_reconstruction_floor"],
-            "oracle_source": str(args.baseline_artifact_root / f"resolution_{args.resolution}.json"),
+            "oracle_reconstruction_floor_reused": (
+                preflight["oracle_reconstruction_floor"][str(args.resolution)]
+                if confirmation else baseline_result["oracle_sampling_reconstruction_floor"]
+            ),
+            "oracle_source": (
+                str(args.baseline_artifact_root / "actual_data_preflight.json")
+                if confirmation else str(args.baseline_artifact_root / f"resolution_{args.resolution}.json")
+            ),
         }),
+        "per_sample_metrics": per_sample_metrics,
         "common_anchor_response_drift": {
             "sample_count": len(response_drift),
             "rmse_K": float(math.sqrt(np.mean([row["rmse"] ** 2 for row in response_drift]))),
@@ -580,10 +720,11 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             "checkpoint_modified": False, "support_or_physics_modified": False,
             "timing_only": bool(args.timing_only),
             "metrics_evaluated": not args.timing_only,
-            "prediction_artifact_saved": not args.timing_only,
+            "prediction_artifact_saved": not args.timing_only and not args.no_save_predictions,
+            "confirmation_remaining_valid96": confirmation,
         },
     }
-    if not args.timing_only:
+    if not args.timing_only and not args.no_save_predictions:
         prediction_path = args.output_dir / "predictions.npz"
         with prediction_path.open("wb") as handle:
             np.savez_compressed(
@@ -611,7 +752,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--full-fields", type=Path, required=True)
     parser.add_argument("--baseline-artifact-root", type=Path, required=True)
-    parser.add_argument("--native-predictions", type=Path, required=True)
+    parser.add_argument("--native-predictions", type=Path)
+    parser.add_argument("--native-cache", type=Path)
+    parser.add_argument("--seed", type=int, choices=[0, 1, 2], default=0)
+    parser.add_argument("--no-save-predictions", action="store_true")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--timing-repeats", type=int, default=20)
     parser.add_argument("--timing-only", action="store_true")
@@ -624,6 +768,10 @@ def main() -> int:
     if jax.devices()[0].platform != "gpu":
         raise RuntimeError("graph-scale candidate execution requires formal GPU backend")
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    if args.native_cache is None:
+        if args.native_predictions is None:
+            raise RuntimeError("native predictions or native cache path is required")
+        args.native_cache = args.native_predictions
     result = execute(args)
     _write_json(args.output_dir / "result.json", result)
     summary = {"status": result["status"], "candidate": args.candidate, "resolution": args.resolution}
