@@ -155,6 +155,16 @@ def _aggregate(rows: list[dict[str, Any]], *, family: str, resolution: int) -> d
             result.append(value)
         return np.asarray(result, dtype=np.float64)
 
+    def optional_mean(path: tuple[str, ...]) -> float | None:
+        observed = []
+        for row in rows:
+            value: Any = row
+            for key in path:
+                value = value[key]
+            if value is not None:
+                observed.append(float(value))
+        return None if not observed else float(np.mean(observed))
+
     summary: dict[str, Any] = {
         "family": family,
         "resolution": resolution,
@@ -192,8 +202,8 @@ def _aggregate(rows: list[dict[str, Any]], *, family: str, resolution: int) -> d
     for category in ("source", "interface", "background"):
         summary["partition"][category] = {
             "physical_node_count": _distribution(values(("partition", category, "physical_node_count"))),
-            "p2r_degree_mean": float(np.mean(values(("partition", category, "p2r_degree", "mean")))),
-            "r2p_degree_mean": float(np.mean(values(("partition", category, "r2p_degree", "mean")))),
+            "p2r_degree_mean": optional_mean(("partition", category, "p2r_degree", "mean")),
+            "r2p_degree_mean": optional_mean(("partition", category, "r2p_degree", "mean")),
         }
     return summary
 
@@ -253,7 +263,7 @@ def _p1h_rows(args: argparse.Namespace, resolution: int) -> tuple[list[dict[str,
     ladder = json.loads(args.p1h_ladder.read_text())
     indices = np.asarray(ladder["probes"][str(resolution)]["indices"], dtype=np.int64)
     manifest = json.loads(args.p1h_manifest.read_text())
-    valid = [row for row in manifest["samples"] if row["split_role"] == "valid_iid"][:32]
+    valid = [row for row in manifest["samples"] if row["split_role"] == "valid"][:32]
     cache_manifest = json.loads(args.p1h_cache_manifest.read_text())
     cache_entry = next(row for row in cache_manifest["entries"] if row["resolution"] == resolution)
     cache_file = args.p1h_cache_root / cache_entry["cache_file"]
