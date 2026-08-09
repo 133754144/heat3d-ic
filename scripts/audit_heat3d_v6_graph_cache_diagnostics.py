@@ -204,11 +204,21 @@ def _p1i_rows(args: argparse.Namespace, resolution: int) -> tuple[list[dict[str,
     caches = {row["sample_id"]: Path(row["cache_file"]) for row in result["graph_cache"]["samples"]}
     preflight = json.loads((args.p1i_root / "actual_data_preflight.json").read_text())
     with h5py.File(args.p1i_full_fields, "r") as archive:
-        full_coords = np.asarray(archive["mesh/coords"], dtype=np.float64)
-        boundaries = np.asarray(archive["mesh/boundaries"], dtype=np.float64)
+        full_coords = np.asarray(archive["shared/coords_m"], dtype=np.float64)
     lower, upper = np.min(full_coords, axis=0), np.max(full_coords, axis=0)
     manifest = json.loads(args.p1i_manifest.read_text())
     manifest_samples = {row["sample_id"]: row for row in manifest["samples"]}
+    first_entry = manifest_samples[next(iter(caches))]
+    first_meta = json.loads(
+        (args.p1i_dataset_root / first_entry["relative_path"] / "sample_meta.json").read_text()
+    )
+    thickness = [
+        float(row["thickness_m"])
+        for row in first_meta["physics"]["layers_bottom_to_top"]
+    ]
+    boundaries = float(np.min(full_coords[:, 2])) + np.concatenate(
+        [np.asarray([0.0]), np.cumsum(thickness)]
+    )
     support_lookup = (
         {} if resolution == 1024 else {
             row["sample_id"]: row for row in preflight["supports"][str(resolution)]
