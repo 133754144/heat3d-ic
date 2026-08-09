@@ -29,3 +29,7 @@ All 160 cached-map cases pass CPU-vs-GPU apply equivalence; maximum absolute err
 **Next priority: graph reuse/fixed regional mesh.** The median new-case/warm-cache latency ratio is 45.4x, so cache/group/H2D preparation dominates B1. The frozen accuracy curve and declining regional/source coverage provide associated evidence for stabilizing and reusing the regional representation before optimizing graph build kernels or adding batch inference.
 
 GPU graph optimization is secondary because cached steady-state does not build a graph. Batch inference is deferred because the dominant B1 new-case cost is preparation/cache transfer, not the already-small warm model+reconstruction apply.
+
+## Timing note
+
+JAX emitted CUDA delay-kernel accuracy warnings during excluded compile/qualification work. The reported production intervals use continuous host perf_counter wall time bounded by jax.block_until_ready; compile/qualification samples are not included in median or p95.

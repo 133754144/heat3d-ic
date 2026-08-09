@@ -68,6 +68,8 @@ def _write_md(path: Path, payload: dict) -> None:
         "## Decision", "",
         f"**Next priority: {conclusion['priority']}.** {conclusion['basis']}", "",
         "GPU graph optimization is secondary because cached steady-state does not build a graph. Batch inference is deferred because the dominant B1 new-case cost is preparation/cache transfer, not the already-small warm model+reconstruction apply.",
+        "", "## Timing note", "",
+        payload["timing_runtime_note"],
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -173,6 +175,11 @@ def main() -> int:
         "curve": curve,
         "graph_drift_correlation_post_8192": correlation,
         "decision": decision,
+        "timing_runtime_note": (
+            "JAX emitted CUDA delay-kernel accuracy warnings during excluded compile/qualification work. "
+            "The reported production intervals use continuous host perf_counter wall time bounded by "
+            "jax.block_until_ready; compile/qualification samples are not included in median or p95."
+        ),
         "execution_provenance": {
             "host": "wsl2",
             "formal_backend": "gpu",

@@ -168,5 +168,6 @@
     "neural_forward": "in-memory group + anchor-derived model-core; no full-field reconstruction",
     "new_case": "cached graph/map load + group/input prepare + H2D map transfer + model-core + GPU reconstruction apply",
     "warm_cache": "in-memory group/device map + model-core + GPU reconstruction apply"
-  }
+  },
+  "timing_runtime_note": "JAX emitted CUDA delay-kernel accuracy warnings during excluded compile/qualification work. The reported production intervals use continuous host perf_counter wall time bounded by jax.block_until_ready; compile/qualification samples are not included in median or p95."
 }
