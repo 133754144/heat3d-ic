@@ -45,7 +45,21 @@ CANDIDATES = {
     "B": {"subsample_factor": 8, "coverage_mode": "discrete_physical_coverage"},
     "C": {"subsample_factor": 4, "coverage_mode": NATIVE_POLICY},
     "D": {"subsample_factor": 8, "coverage_mode": NATIVE_POLICY},
+    "E": {
+        "regional_node_target": 256,
+        "coverage_mode": "discrete_physical_coverage",
+    },
 }
+
+
+def _resolved_policy(candidate: str, physical_node_count: int) -> dict[str, Any]:
+    policy = dict(CANDIDATES[candidate])
+    if candidate == "E":
+        target = int(policy["regional_node_target"])
+        if physical_node_count not in (8192, 16384) or physical_node_count % target:
+            raise RuntimeError("E requires N in {8192,16384} divisible by frozen Nr=256")
+        policy["subsample_factor"] = physical_node_count // target
+    return policy
 
 
 def _sha256(path: Path) -> str:
@@ -89,8 +103,9 @@ def _builder(
     anchor: Any,
     runtime: Mapping[str, Any],
     graph_key: Any,
+    physical_node_count: int,
 ) -> Any:
-    policy = CANDIDATES[candidate]
+    policy = _resolved_policy(candidate, physical_node_count)
     graph_config = dict(runtime["graph_config"])
     graph_config["subsample_factor"] = policy["subsample_factor"]
     if policy["coverage_mode"] == "discrete_physical_coverage":
@@ -250,8 +265,20 @@ def _runtime_distribution(values: list[float]) -> dict[str, float | int]:
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     policy_contract = json.loads(args.policy_contract.read_text())
-    if policy_contract["status"] != "preregistered_before_candidate_execution":
-        raise RuntimeError("graph-scale policy contract is not preregistered")
+    allowed_status = (
+        "preregistered_before_E_execution" if args.candidate == "E"
+        else "preregistered_before_candidate_execution"
+    )
+    if policy_contract["status"] != allowed_status:
+        raise RuntimeError("graph-scale policy contract is not preregistered for candidate")
+    if args.candidate == "E":
+        registered = policy_contract["policies"]["E"]
+        if (
+            registered["regional_node_count"] != 256
+            or registered["coverage_mode"] != "discrete_physical_coverage"
+            or args.resolution not in policy_contract["resolutions"]
+        ):
+            raise RuntimeError("E scientific contract drifted")
     if args.candidate not in CANDIDATES or args.resolution not in (4096, 8192, 16384, 32768):
         raise RuntimeError("unregistered candidate or resolution")
     if args.candidate == "A":
@@ -306,7 +333,10 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     qualification_metadata, qualification_builders = [], []
     qualification_build_seconds = []
     for example, anchor in zip(examples, anchors, strict=True):
-        builder = _builder(args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key)
+        builder = _builder(
+            args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key,
+            physical_node_count=len(example.condition.coords),
+        )
         started = time.perf_counter()
         metadata = builder.build_metadata(
             highn.runner._graph_coords_for_example(example, runtime["stats"]), key=graph_key
@@ -374,7 +404,10 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
 
     for example, anchor, support in zip(examples, anchors, support_payloads, strict=True):
         new_started = time.perf_counter()
-        builder = _builder(args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key)
+        builder = _builder(
+            args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key,
+            physical_node_count=len(example.condition.coords),
+        )
         phase = time.perf_counter()
         metadata = builder.build_metadata(
             highn.runner._graph_coords_for_example(example, runtime["stats"]), key=graph_key
@@ -498,7 +531,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": "heat3d_v6_p1i_graph_scale_candidate_result_v1",
         "status": "passed_timing_only" if args.timing_only else "passed",
         "candidate": args.candidate,
-        "policy": CANDIDATES[args.candidate],
+        "policy": _resolved_policy(args.candidate, args.resolution),
         "resolution": args.resolution,
         "checkpoint": {"epoch": highn.CHECKPOINT_EPOCH, "sha256": highn.CHECKPOINT_SHA256},
         "sample_ids": [anchor.sample_id for anchor in anchors],

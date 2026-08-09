@@ -1,0 +1,77 @@
+{
+  "schema_version": "heat3d_v6_p1i_graph_policy_e_confirmation_preregistration_v1",
+  "status": "preregistered_before_E_execution",
+  "base_commit": "7a5adcc99153dc0eec4a6d8364a79cc9e64b87a5",
+  "scope": {
+    "training": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "checkpoint_modified": false,
+    "dataset_or_support_modified": false,
+    "radius_or_factor_search": false
+  },
+  "policies": {
+    "A": {
+      "regional_subsample_factor": 4,
+      "coverage_mode": "discrete_physical_coverage",
+      "valid32_accuracy": "reuse_7a5adcc_only"
+    },
+    "B": {
+      "regional_subsample_factor": 8,
+      "coverage_mode": "discrete_physical_coverage",
+      "role": "primary_candidate",
+      "valid32_accuracy": "reuse_7a5adcc_only"
+    },
+    "E": {
+      "regional_node_count": 256,
+      "coverage_mode": "discrete_physical_coverage",
+      "resolved_subsample_factor": {"8192": 32, "16384": 64},
+      "role": "screen_on_seed0_frozen_valid32"
+    }
+  },
+  "resolutions": [8192, 16384],
+  "historical_margin_source": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_three_seed_inference_closeout.json",
+    "population": "valid_iid_128_three_seed_point_global_best",
+    "rule": "one frozen between-seed standard deviation, recorded before E",
+    "values": {
+      "full_point_global_pct": 0.05843506828224949,
+      "full_raw_cv_rmse_K": 0.019179597941702667,
+      "source_rmse_K": 0.13095819024668282,
+      "peak_rmse_K": 0.3785072688630482,
+      "interface_rmse_K": 0.04746620520450112
+    }
+  },
+  "E_screen_gate": {
+    "accuracy": "E_minus_A aggregate metric <= corresponding frozen margin at both resolutions",
+    "coverage": {
+      "regional_node_count_exact": 256,
+      "undercovered_fraction_max": 0.0,
+      "isolated_physical_fraction_max": 0.0,
+      "r2r_connected_components_max": 1
+    },
+    "latency": {
+      "fresh_or_warm_median_improvement_min_fraction": 0.05,
+      "peak_vram_ratio_max": 1.10
+    },
+    "decision": "all accuracy and coverage checks plus latency check must pass at both N; otherwise E NO-GO"
+  },
+  "confirmation": {
+    "population": "remaining_valid96_excluding_frozen_valid32",
+    "population_rule": "valid_iid sorted by SHA256(sample_id), exclude first 32",
+    "seeds": [0, 1, 2],
+    "policy_set_if_E_passes": ["A", "B", "E"],
+    "policy_set_if_E_fails": ["A", "B"],
+    "paired_bootstrap": {
+      "seed": 20260810,
+      "replicates": 10000,
+      "confidence": 0.95,
+      "unit": "sample",
+      "difference": "candidate_minus_A"
+    },
+    "non_inferiority": "upper paired-bootstrap 95% CI <= frozen margin for every accuracy metric at both resolutions",
+    "latency_pareto_order": ["fresh_median", "warm_median", "peak_vram"],
+    "selection": "among accuracy-non-inferior policies choose latency Pareto winner; B remains primary candidate",
+    "no_repeat": "do not recompute A/B frozen-valid32 accuracy"
+  }
+}
