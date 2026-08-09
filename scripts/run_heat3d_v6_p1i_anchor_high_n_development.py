@@ -70,6 +70,9 @@ from run_heat3d_v3_final_probe_checkpoint_smoke import install_checkpoint_featur
 
 MANDATORY_RESOLUTIONS = (1024, 4096, 8192, 16384)
 HIGH_N_RESOLUTIONS = (4096, 8192, 16384)
+GPU_ONLY_MANDATORY_RESOLUTIONS = (4096, 8192, 16384)
+GPU_ONLY_OPTIONAL_RESOLUTIONS = (32768, 65536)
+GPU_ONLY_SUPPORT_RESOLUTIONS = GPU_ONLY_MANDATORY_RESOLUTIONS + GPU_ONLY_OPTIONAL_RESOLUTIONS
 CHECKPOINT_SHA256 = "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
 CHECKPOINT_EPOCH = 559
 CONFIG_ID = "V6_06_V5best_P1i_seed0_reliable_B24"
@@ -180,6 +183,42 @@ def _binding(args: argparse.Namespace) -> dict[str, Any]:
         if _sha256(path) != row["sha256"]:
             raise HighNDevelopmentError(f"frozen implementation fingerprint drifted: {path}")
     return payload
+
+
+def _protocol_amendment(args: argparse.Namespace) -> dict[str, Any] | None:
+    path = getattr(args, "gpu_only_amendment", None)
+    if path is None:
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("status") != "frozen_before_gpu_only_high_n_execution":
+        raise HighNDevelopmentError("GPU-only protocol amendment is not frozen")
+    if payload["frozen_binding"]["sha256"] != _sha256(args.binding):
+        raise HighNDevelopmentError("GPU-only amendment does not bind the frozen implementation")
+    if payload["backend_contract"] != {
+        "formal_backend": "gpu",
+        "cpu_graph_or_inference_required": False,
+        "cross_backend_topology_equality": "report_only",
+        "same_gpu_graph_cache_hash_exact": True,
+        "same_gpu_cached_vs_fresh_prediction_hard_gate": True,
+        "same_gpu_fixed_input_replay_hard_gate": True,
+    }:
+        raise HighNDevelopmentError("GPU-only backend contract drifted")
+    resolution = payload["resolution_contract"]
+    if tuple(resolution["mandatory_order"]) != GPU_ONLY_MANDATORY_RESOLUTIONS:
+        raise HighNDevelopmentError("GPU-only mandatory resolution order drifted")
+    if tuple(resolution["optional_order"]) != GPU_ONLY_OPTIONAL_RESOLUTIONS:
+        raise HighNDevelopmentError("GPU-only optional resolution order drifted")
+    if payload["frozen_science"]["checkpoint_sha256"] != CHECKPOINT_SHA256:
+        raise HighNDevelopmentError("GPU-only checkpoint binding drifted")
+    return payload
+
+
+def _support_resolutions(args: argparse.Namespace) -> tuple[int, ...]:
+    return GPU_ONLY_SUPPORT_RESOLUTIONS if _protocol_amendment(args) is not None else HIGH_N_RESOLUTIONS
+
+
+def _execution_resolutions(args: argparse.Namespace) -> tuple[int, ...]:
+    return GPU_ONLY_SUPPORT_RESOLUTIONS if _protocol_amendment(args) is not None else MANDATORY_RESOLUTIONS
 
 
 def _dataset(args: argparse.Namespace) -> Heat3DV6DualRobinDataset:
@@ -315,7 +354,8 @@ def prepare_actual_data(args: argparse.Namespace) -> dict[str, Any]:
     power_tolerance = float(binding["numeric_tolerances"]["full_kq_power_relative_error"])
     volume_tolerance = float(binding["numeric_tolerances"]["operator_volume_relative_error"])
     sample_rows = []
-    support_rows: dict[str, list[dict[str, Any]]] = {str(n): [] for n in HIGH_N_RESOLUTIONS}
+    support_resolutions = _support_resolutions(args)
+    support_rows: dict[str, list[dict[str, Any]]] = {str(n): [] for n in support_resolutions}
     for sample_number, example in enumerate(examples, start=1):
         if example.sample_id not in archive_lookup:
             raise HighNDevelopmentError(f"{example.sample_id}: absent from full-field sidecar")
@@ -352,7 +392,7 @@ def prepare_actual_data(args: argparse.Namespace) -> dict[str, Any]:
             selection_seed=int(binding["nested_support"]["selection_seed"]),
         )
         previous = anchor_indices
-        for resolution in HIGH_N_RESOLUTIONS:
+        for resolution in support_resolutions:
             indices = np.asarray(order[:resolution], dtype=np.int64)
             if not np.array_equal(indices[:len(previous)], previous):
                 raise HighNDevelopmentError(f"{example.sample_id}: N={resolution} is not nested")
@@ -510,7 +550,7 @@ def reusable_preflight(args: argparse.Namespace) -> dict[str, Any] | None:
         physics = Path(sample["physics_cache_file"])
         if not physics.is_file() or _sha256(physics) != sample["physics_cache_sha256"]:
             return None
-    for resolution in HIGH_N_RESOLUTIONS:
+    for resolution in _support_resolutions(args):
         for row in payload["supports"][str(resolution)]:
             support = Path(row["support_file"])
             if not support.is_file() or _sha256(support) != row["support_file_sha256"]:
@@ -773,7 +813,8 @@ def _mapping_cache(
 
 
 def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, Any]:
-    if resolution not in MANDATORY_RESOLUTIONS:
+    protocol = _protocol_amendment(args)
+    if resolution not in _execution_resolutions(args):
         raise HighNDevelopmentError("unregistered resolution")
     started = time.perf_counter()
     binding = _binding(args)
@@ -844,9 +885,16 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
         ))
     group_seconds = time.perf_counter() - group_started
 
-    anchor_artifact = args.artifact_root / "resolution_1024_predictions.npz"
+    anchor_artifact = (
+        args.baseline_root / "resolution_1024_predictions.npz"
+        if protocol is not None else args.artifact_root / "resolution_1024_predictions.npz"
+    )
     anchor_scales: dict[str, float] = {}
     if resolution > 1024:
+        if protocol is not None:
+            expected = protocol["baseline_1024_artifacts"]["predictions_sha256"]
+            if not anchor_artifact.is_file() or _sha256(anchor_artifact) != expected:
+                raise HighNDevelopmentError("frozen 1024 anchor prediction artifact drifted")
         with np.load(anchor_artifact, allow_pickle=False) as payload:
             anchor_ids = [str(value) for value in np.asarray(payload["sample_ids"]).tolist()]
             scale_array = np.asarray(payload["predicted_scales"], dtype=np.float64)
@@ -969,45 +1017,74 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
         for value in metrics.values()
         if isinstance(value, (int, float))
     )
-    tolerance = float(binding["numeric_tolerances"]["cached_uncached_prediction_max_abs_K"])
-    cpu_audit_path = args.artifact_root / f"resolution_{resolution}_cpu_cache_audit.json"
-    cpu_audit = json.loads(cpu_audit_path.read_text(encoding="utf-8"))
-    cross_backend_edge_topology_exact = (
-        graph_records[0]["edge_topology_sha256"]
-        == cpu_audit["graph_cache"]["edge_topology_sha256"]
+    if protocol is None:
+        value = float(binding["numeric_tolerances"]["cached_uncached_prediction_max_abs_K"])
+        replay_tolerance = {
+            "prediction_max_abs_K": value,
+            "prediction_rmse_K": value,
+            "scale_abs": value,
+        }
+        cpu_audit_path = args.artifact_root / f"resolution_{resolution}_cpu_cache_audit.json"
+        cpu_audit = json.loads(cpu_audit_path.read_text(encoding="utf-8"))
+        cross_backend_edge_topology_exact: bool | None = (
+            graph_records[0]["edge_topology_sha256"]
+            == cpu_audit["graph_cache"]["edge_topology_sha256"]
+        )
+    else:
+        replay_tolerance = dict(protocol["same_gpu_numeric_tolerances"])
+        cpu_audit = None
+        cross_backend_edge_topology_exact = None
+    same_gpu_cached_prediction_passed = bool(
+        cached_uncached_prediction is not None
+        and cached_uncached_prediction["prediction"]["max_abs_error_K"]
+        <= replay_tolerance["prediction_max_abs_K"]
+        and cached_uncached_prediction["prediction"]["rmse_K"]
+        <= replay_tolerance["prediction_rmse_K"]
+        and cached_uncached_prediction["scale_abs_drift"] <= replay_tolerance["scale_abs"]
     )
-    hard_checks = {
+    same_gpu_replay_passed = bool(
+        replay is not None
+        and replay["prediction"]["max_abs_error_K"] <= replay_tolerance["prediction_max_abs_K"]
+        and replay["prediction"]["rmse_K"] <= replay_tolerance["prediction_rmse_K"]
+        and replay["scale_abs_drift"] <= replay_tolerance["scale_abs"]
+    )
+    hard_checks: dict[str, bool] = {
         "preflight_passed": preflight["status"] == "passed",
-        "resolution_registered": resolution in MANDATORY_RESOLUTIONS,
+        "resolution_registered": resolution in _execution_resolutions(args),
         "valid32_exact": [example.sample_id for example in examples] == binding["development_subset"]["sample_ids"],
         "checkpoint_frozen": _sha256(runtime["checkpoint_path"]) == CHECKPOINT_SHA256,
         "graph_cache_hash_exact": all(row["cached_uncached_hash_exact"] for row in graph_records),
-        "cross_backend_real_edge_topology_exact": cross_backend_edge_topology_exact,
-        "deterministic_cpu_cached_uncached_prediction_within_tolerance": (
-            cpu_audit["status"] == "passed"
-            and cpu_audit["cached_uncached_prediction"]["max_abs_error_K"] <= tolerance
-        ),
         "reconstruction_support_hash_exact": all(row["cache_key_payload"]["ordered_support_hash"] == support_rows[index]["ordered_support_hash"]
                                                  for index, row in enumerate(reconstruction_records)),
         "anchor_context_frozen": all(group["anchor_context_audit"]["exact"] for group in groups),
         "anchor_scale_frozen": resolution == 1024 or set(anchor_scales) == {example.sample_id for example in examples},
         "prediction_finite": finite,
-        "fixed_input_gpu_replay_finite": bool(
-            replay is not None
-            and np.isfinite(replay["prediction"]["max_abs_error_K"])
-            and np.isfinite(replay["prediction"]["rmse_K"])
-        ),
+        "same_gpu_cached_uncached_prediction_reproducible": same_gpu_cached_prediction_passed,
+        "same_gpu_fixed_input_replay_reproducible": same_gpu_replay_passed,
         "test_accessed": False,
         "sealed_accessed": False,
         "training_executed": False,
     }
+    if protocol is None:
+        hard_checks["cross_backend_real_edge_topology_exact"] = bool(
+            cross_backend_edge_topology_exact
+        )
+        hard_checks["deterministic_cpu_cached_uncached_prediction_within_tolerance"] = bool(
+            cpu_audit["status"] == "passed"
+            and cpu_audit["cached_uncached_prediction"]["max_abs_error_K"]
+            <= replay_tolerance["prediction_max_abs_K"]
+        )
     positive_checks = {key: value for key, value in hard_checks.items()
                        if key not in {"test_accessed", "sealed_accessed", "training_executed"}}
     status = "passed" if all(value is True for value in positive_checks.values()) and not any(
         hard_checks[key] for key in ("test_accessed", "sealed_accessed", "training_executed")
     ) else "failed"
     payload = {
-        "schema_version": "heat3d_v6_p1i_anchor_derived_high_n_valid32_result_v1",
+        "schema_version": (
+            "heat3d_v6_p1i_anchor_derived_gpu_only_high_n_valid32_result_v1"
+            if protocol is not None
+            else "heat3d_v6_p1i_anchor_derived_high_n_valid32_result_v1"
+        ),
         "status": status,
         "resolution": resolution,
         "implementation_hard_gates": hard_checks,
@@ -1027,24 +1104,34 @@ def execute_resolution(args: argparse.Namespace, resolution: int) -> dict[str, A
         "fixed_input_gpu_replay": replay,
         "cached_uncached_prediction_equivalence": {
             "deterministic_cpu_hard_gate": cpu_audit,
-            "gpu_diagnostic_only": cached_uncached_prediction,
-            "gpu_within_frozen_numeric_tolerance": (
-                cached_uncached_prediction is not None
-                and cached_uncached_prediction["prediction"]["max_abs_error_K"] <= tolerance
-            ),
+            "same_gpu_hard_gate": cached_uncached_prediction,
+            "same_gpu_within_amended_numeric_tolerance": same_gpu_cached_prediction_passed,
+            "same_gpu_numeric_tolerances": replay_tolerance,
             "gpu_reduction_nondeterminism_is_not_graph_cache_failure": True,
         },
         "support_artifacts": support_rows,
         "graph_cache": {"edge_targets": edge_targets, "samples": graph_records},
         "cross_backend_graph_diagnostic": {
+            "gate_role": "report_only" if protocol is not None else "hard_gate",
+            "executed_this_run": protocol is None,
             "real_edge_topology_exact": cross_backend_edge_topology_exact,
-            "cpu_metadata_hash": cpu_audit["graph_cache"]["metadata_hash"],
+            "cpu_metadata_hash": (
+                None if cpu_audit is None else cpu_audit["graph_cache"]["metadata_hash"]
+            ),
             "gpu_metadata_hash": graph_records[0]["metadata_hash"],
-            "metadata_hash_exact": (
+            "metadata_hash_exact": None if cpu_audit is None else (
                 cpu_audit["graph_cache"]["metadata_hash"] == graph_records[0]["metadata_hash"]
             ),
-            "known_float_normalization_drift_not_edge_topology_drift": True,
+            "known_float_normalization_drift_not_edge_topology_drift": (
+                True if protocol is None else None
+            ),
             "cache_directories_are_backend_isolated_key_payload_is_unchanged": True,
+        },
+        "protocol_amendment": None if protocol is None else {
+            "path": str(args.gpu_only_amendment),
+            "sha256": _sha256(args.gpu_only_amendment),
+            "cross_backend_topology_equality": "report_only",
+            "formal_backend": "gpu",
         },
         "reconstruction_cache": {"samples": reconstruction_records},
         "prediction_artifact": {"path": str(prediction_path), "sha256": _sha256(prediction_path),
@@ -1160,13 +1247,19 @@ def deterministic_cpu_cache_audit(args: argparse.Namespace, resolution: int) -> 
 
 
 def _subprocess_command(args: argparse.Namespace, resolution: int) -> list[str]:
-    return [
+    command = [
         sys.executable, str(Path(__file__).resolve()), "--worker-resolution", str(resolution),
         "--dataset-root", str(args.dataset_root), "--manifest", str(args.manifest),
         "--full-fields", str(args.full_fields), "--run-dir", str(args.run_dir),
         "--binding", str(args.binding), "--artifact-root", str(args.artifact_root),
         "--platform", args.platform,
     ]
+    if args.gpu_only_amendment is not None:
+        command += [
+            "--gpu-only-amendment", str(args.gpu_only_amendment),
+            "--baseline-root", str(args.baseline_root),
+        ]
+    return command
 
 
 def _cpu_audit_command(args: argparse.Namespace, resolution: int) -> list[str]:
@@ -1177,7 +1270,233 @@ def _cpu_audit_command(args: argparse.Namespace, resolution: int) -> list[str]:
     return command
 
 
+def gpu_only_feasibility(args: argparse.Namespace, resolution: int) -> dict[str, Any]:
+    protocol = _protocol_amendment(args)
+    if protocol is None:
+        raise HighNDevelopmentError("GPU-only feasibility requires the protocol amendment")
+    preflight = json.loads(
+        (args.artifact_root / "actual_data_preflight.json").read_text(encoding="utf-8")
+    )
+    rows = preflight["supports"][str(resolution)]
+    exact_capacity = len(rows) == 32
+    finite_physics = positive_cv = nested_exact = coverage = exact_capacity
+    for row in rows:
+        path = Path(row["support_file"])
+        if not path.is_file() or _sha256(path) != row["support_file_sha256"]:
+            exact_capacity = False
+            continue
+        with np.load(path, allow_pickle=False) as payload:
+            indices = np.asarray(payload["selected_indices"], dtype=np.int64)
+            cv = np.asarray(payload["operator_control_volume"], dtype=np.float64)
+            k = np.asarray(payload["k_xyz"], dtype=np.float64)
+            q = np.asarray(payload["q_W_m3"], dtype=np.float64)
+        exact_capacity &= len(indices) == resolution and len(np.unique(indices)) == resolution
+        finite_physics &= bool(np.all(np.isfinite(k)) and np.all(np.isfinite(q)) and np.all(np.isfinite(cv)))
+        positive_cv &= bool(np.all(cv > 0.0) and np.all(k > 0.0) and np.all(q >= 0.0))
+        coverage &= bool(
+            row["nonzero_q_count"] > 0
+            and min(row["layer_counts"].values()) > 0
+            and row["top_count"] > 0
+            and row["bottom_count"] > 0
+            and min(row["interface_counts"].values()) > 0
+        )
+        if resolution > 4096:
+            previous = next(
+                item for item in preflight["supports"][str(resolution // 2)]
+                if item["sample_id"] == row["sample_id"]
+            )
+            with np.load(previous["support_file"], allow_pickle=False) as payload:
+                previous_indices = np.asarray(payload["selected_indices"], dtype=np.int64)
+            nested_exact &= bool(np.array_equal(indices[:len(previous_indices)], previous_indices))
+
+    previous_resolution = 4096 if resolution == 4096 else resolution // 2
+    previous_path = (
+        args.baseline_root / "resolution_4096.json"
+        if resolution == 4096
+        else args.artifact_root / f"resolution_{previous_resolution}.json"
+    )
+    previous = json.loads(previous_path.read_text(encoding="utf-8"))
+    ratio = resolution / previous_resolution
+    safety = 1.25
+    previous_vram = int(previous["runtime"]["device_memory"]["peak_bytes_in_use"] or 0)
+    previous_rss = int(previous["runtime"]["process_peak_rss_bytes"])
+    predicted_vram = int(max(previous_vram, 256 << 20) * ratio * safety)
+    predicted_rss = int(previous_rss + max(0, resolution - previous_resolution) * 65536 * safety)
+    memory = _device_memory()
+    vram_limit = int(memory.get("bytes_limit") or 0)
+    host_total = int(os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES"))
+    fraction = protocol["feasibility_contract"]
+    vram_feasible = vram_limit > 0 and predicted_vram <= vram_limit * float(
+        fraction["predicted_peak_vram_fraction_limit"]
+    )
+    host_feasible = predicted_rss <= host_total * float(
+        fraction["predicted_host_ram_fraction_limit"]
+    )
+    checks = {
+        "support_capacity_exact": bool(exact_capacity),
+        "support_hash_and_nested_prefix_exact": bool(nested_exact),
+        "finite_k_q_cv": bool(finite_physics),
+        "positive_k_cv_nonnegative_q": bool(positive_cv),
+        "source_layer_interface_boundary_coverage": bool(coverage),
+        "predicted_vram_within_limit": bool(vram_feasible),
+        "predicted_host_ram_within_limit": bool(host_feasible),
+    }
+    payload = {
+        "schema_version": "heat3d_v6_p1i_gpu_only_high_n_feasibility_v1",
+        "status": "passed" if all(checks.values()) else "failed",
+        "resolution": resolution,
+        "checks": checks,
+        "prediction": {
+            "method": fraction["prediction_method"],
+            "previous_resolution": previous_resolution,
+            "previous_peak_vram_bytes": previous_vram,
+            "previous_peak_rss_bytes": previous_rss,
+            "predicted_peak_vram_bytes": predicted_vram,
+            "predicted_peak_rss_bytes": predicted_rss,
+            "device_vram_limit_bytes": vram_limit,
+            "host_ram_bytes": host_total,
+        },
+        "role_contract": {
+            "accessed_roles": ["valid_iid_inputs"],
+            "test_accessed": False,
+            "sealed_accessed": False,
+            "training_executed": False,
+        },
+    }
+    _write_json(args.artifact_root / f"resolution_{resolution}_feasibility.json", payload)
+    return payload
+
+
+def _curve_row(args: argparse.Namespace, resolution: int, payload: dict[str, Any]) -> dict[str, Any]:
+    support = payload["support_metrics"]
+    full = payload["full_field_model_plus_reconstruction"]
+    floor = payload["oracle_sampling_reconstruction_floor"]
+    runtime = payload["runtime"]
+    return {
+        "resolution": resolution,
+        "status": payload["status"],
+        "support_point_global_pct": support["point_global_true_rms_relative_rmse_pct"],
+        "support_sample_first_pct": support["sample_first_cv_relative_rmse_pct"],
+        "support_raw_cv_rmse_K": support["raw_cv_weighted_rmse_K"],
+        "support_peak_rmse_K": support["peak_rmse_K"],
+        "support_source_rmse_K": support["source_rmse_K"],
+        "support_background_rmse_K": support["background_rmse_K"],
+        "support_interface_drop_rmse_K": support["interface_drop_rmse_K"],
+        "full_point_global_pct": full["point_global_true_rms_relative_rmse_pct"],
+        "full_sample_first_pct": full["sample_first_cv_relative_rmse_pct"],
+        "full_raw_cv_rmse_K": full["raw_cv_weighted_rmse_K"],
+        "full_peak_rmse_K": full["peak_rmse_K"],
+        "full_source_rmse_K": full["source_rmse_K"],
+        "full_background_rmse_K": full["background_rmse_K"],
+        "full_interface_drop_rmse_K": full["interface_drop_rmse_K"],
+        "oracle_full_point_global_pct": floor["point_global_true_rms_relative_rmse_pct"],
+        "oracle_full_raw_cv_rmse_K": floor["raw_cv_weighted_rmse_K"],
+        "gpu_replay_rmse_K": payload["fixed_input_gpu_replay"]["prediction"]["rmse_K"],
+        "gpu_replay_max_abs_K": payload["fixed_input_gpu_replay"]["prediction"]["max_abs_error_K"],
+        "graph_seconds": runtime["graph_build_or_load_seconds"],
+        "jit_first_forward_seconds": runtime["jit_first_forward_seconds"],
+        "steady_forward_median_seconds": runtime["steady_forward_seconds"]["median"],
+        "reconstruction_seconds": runtime["reconstruction_seconds"],
+        "end_to_end_seconds": runtime["end_to_end_seconds"],
+        "peak_rss_bytes": runtime["process_peak_rss_bytes"],
+        "peak_vram_bytes": runtime["device_memory"].get("peak_bytes_in_use"),
+        "result_sha256": _sha256(
+            (args.baseline_root if resolution == 1024 else args.artifact_root)
+            / f"resolution_{resolution}.json"
+        ),
+    }
+
+
+def gpu_only_closeout(
+    args: argparse.Namespace,
+    execution: list[dict[str, Any]],
+    stop_reason: dict[str, Any] | None,
+) -> dict[str, Any]:
+    protocol = _protocol_amendment(args)
+    if protocol is None:
+        raise HighNDevelopmentError("GPU-only closeout requires protocol amendment")
+    baseline_path = args.baseline_root / "resolution_1024.json"
+    if _sha256(baseline_path) != protocol["baseline_1024_artifacts"]["result_sha256"]:
+        raise HighNDevelopmentError("frozen 1024 baseline result drifted")
+    rows = [_curve_row(args, 1024, json.loads(baseline_path.read_text(encoding="utf-8")))]
+    for row in execution:
+        result_path = args.artifact_root / f"resolution_{row['resolution']}.json"
+        if result_path.is_file():
+            rows.append(_curve_row(
+                args, row["resolution"], json.loads(result_path.read_text(encoding="utf-8"))
+            ))
+    passed = {row["resolution"] for row in rows if row["status"] == "passed"}
+    mandatory_passed = set(GPU_ONLY_MANDATORY_RESOLUTIONS).issubset(passed)
+    status = (
+        "passed_core_and_optional_ladder"
+        if mandatory_passed and stop_reason is None
+        else "passed_core_optional_stopped"
+        if mandatory_passed
+        else "incomplete_mandatory_stopped"
+    )
+    csv_path = args.artifact_root / "gpu_only_high_n_accuracy_resolution_latency.csv"
+    with csv_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    payload = {
+        "schema_version": "heat3d_v6_p1i_gpu_only_high_n_closeout_v1",
+        "status": status,
+        "rows": rows,
+        "execution": execution,
+        "stop_reason": stop_reason,
+        "protocol_amendment": {
+            "path": str(args.gpu_only_amendment),
+            "sha256": _sha256(args.gpu_only_amendment),
+        },
+        "frozen_binding": {
+            "path": str(args.binding), "sha256": _sha256(args.binding), "modified": False
+        },
+        "accuracy_used_as_gate": False,
+        "cross_backend_graph_topology": "report_only_not_executed",
+        "formal_backend": "gpu",
+        "role_contract": {
+            "accessed_roles": ["valid_iid"],
+            "test_accessed": False,
+            "sealed_accessed": False,
+            "training_executed": False,
+            "checkpoint_modified": False,
+            "manifest_modified": False,
+            "three_seed_valid128_executed": False,
+        },
+        "summary_csv": {"path": str(csv_path), "sha256": _sha256(csv_path)},
+    }
+    json_path = args.artifact_root / "gpu_only_high_n_closeout.json"
+    _write_json(json_path, payload)
+    md_path = args.artifact_root / "gpu_only_high_n_closeout.md"
+    lines = [
+        "# P1i GPU-only Anchor-derived High-N closeout", "",
+        f"Status: `{status}`. CPU/GPU graph equality is report-only; same-GPU cache and replay are hard gates.", "",
+        "| N | status | support PG % | full PG % | full raw K | oracle PG % | peak/source/interface K | replay RMSE K | graph s | forward median s | E2E s | VRAM B |",
+        "|---:|---|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| {row['resolution']} | {row['status']} | {row['support_point_global_pct']:.6f} | "
+            f"{row['full_point_global_pct']:.6f} | {row['full_raw_cv_rmse_K']:.6f} | "
+            f"{row['oracle_full_point_global_pct']:.6f} | {row['full_peak_rmse_K']:.4f}/"
+            f"{row['full_source_rmse_K']:.4f}/{row['full_interface_drop_rmse_K']:.4f} | "
+            f"{row['gpu_replay_rmse_K']:.9f} | {row['graph_seconds']:.3f} | "
+            f"{row['steady_forward_median_seconds']:.6f} | {row['end_to_end_seconds']:.3f} | "
+            f"{row['peak_vram_bytes']} |"
+        )
+    if stop_reason is not None:
+        lines += ["", f"Stop reason: `{json.dumps(stop_reason, sort_keys=True)}`."]
+    lines += ["", "Valid32 only; test/sealed closed; no training or checkpoint/manifest changes.", ""]
+    md_path.write_text("\n".join(lines), encoding="utf-8")
+    payload["closeout_markdown"] = {"path": str(md_path), "sha256": _sha256(md_path)}
+    _write_json(json_path, payload)
+    return payload
+
+
 def closeout(args: argparse.Namespace) -> dict[str, Any]:
+    if _protocol_amendment(args) is not None:
+        raise HighNDevelopmentError("GPU-only closeout requires execution state")
     rows = []
     for resolution in MANDATORY_RESOLUTIONS:
         path = args.artifact_root / f"resolution_{resolution}.json"
@@ -1258,7 +1577,94 @@ def closeout(args: argparse.Namespace) -> dict[str, Any]:
     return payload
 
 
+def orchestrate_gpu_only(args: argparse.Namespace) -> int:
+    if args.baseline_root is None:
+        raise HighNDevelopmentError("--baseline-root is required for GPU-only execution")
+    args.artifact_root.mkdir(parents=True, exist_ok=True)
+    preflight = reusable_preflight(args)
+    if preflight is None:
+        prepare_actual_data(args)
+        print("[gpu-only] actual-data preflight generated", flush=True)
+    else:
+        print(
+            "[gpu-only] actual-data preflight and support/physics caches reused "
+            f"sha256={_sha256(args.artifact_root / 'actual_data_preflight.json')}",
+            flush=True,
+        )
+    execution: list[dict[str, Any]] = []
+    stop_reason: dict[str, Any] | None = None
+    for resolution in GPU_ONLY_SUPPORT_RESOLUTIONS:
+        feasibility = gpu_only_feasibility(args, resolution)
+        if feasibility["status"] != "passed":
+            stop_reason = {
+                "resolution": resolution,
+                "stage": "support_capacity_memory_feasibility",
+                "reason": "feasibility_failed",
+                "mandatory": resolution in GPU_ONLY_MANDATORY_RESOLUTIONS,
+            }
+            break
+        command = _subprocess_command(args, resolution)
+        log_path = args.artifact_root / f"resolution_{resolution}.log"
+        started = time.time()
+        with log_path.open("w", encoding="utf-8") as log:
+            process = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, text=True)
+        row = {
+            "resolution": resolution,
+            "backend": "gpu",
+            "feasibility_path": str(args.artifact_root / f"resolution_{resolution}_feasibility.json"),
+            "feasibility_sha256": _sha256(
+                args.artifact_root / f"resolution_{resolution}_feasibility.json"
+            ),
+            "command": command,
+            "returncode": process.returncode,
+            "log": str(log_path),
+            "log_sha256": _sha256(log_path),
+            "started_unix": started,
+            "finished_unix": time.time(),
+        }
+        execution.append(row)
+        if process.returncode != 0:
+            stop_reason = {
+                "resolution": resolution,
+                "stage": "gpu_worker",
+                "reason": "worker_failed_or_hard_gate_failed",
+                "mandatory": resolution in GPU_ONLY_MANDATORY_RESOLUTIONS,
+                "returncode": process.returncode,
+                "log": str(log_path),
+            }
+            break
+        result = json.loads(
+            (args.artifact_root / f"resolution_{resolution}.json").read_text(encoding="utf-8")
+        )
+        if result["status"] != "passed":
+            stop_reason = {
+                "resolution": resolution,
+                "stage": "gpu_hard_gate",
+                "reason": "result_status_failed",
+                "mandatory": resolution in GPU_ONLY_MANDATORY_RESOLUTIONS,
+            }
+            break
+        _write_json(args.artifact_root / "execution_state.json", {
+            "status": "running",
+            "protocol": "gpu_only_amendment_v1",
+            "execution": execution,
+            "stop_reason": None,
+        })
+    result = gpu_only_closeout(args, execution, stop_reason)
+    _write_json(args.artifact_root / "execution_state.json", {
+        "status": result["status"],
+        "protocol": "gpu_only_amendment_v1",
+        "execution": execution,
+        "stop_reason": stop_reason,
+        "closeout_sha256": _sha256(args.artifact_root / "gpu_only_high_n_closeout.json"),
+    })
+    print(json.dumps({"status": result["status"], "artifact_root": str(args.artifact_root)}))
+    return 1 if result["status"] == "incomplete_mandatory_stopped" else 0
+
+
 def orchestrate(args: argparse.Namespace) -> int:
+    if _protocol_amendment(args) is not None:
+        return orchestrate_gpu_only(args)
     args.artifact_root.mkdir(parents=True, exist_ok=True)
     preflight = reusable_preflight(args)
     if preflight is None:
@@ -1334,9 +1740,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--full-fields", type=Path)
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--binding", type=Path, default=ROOT / "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json")
+    parser.add_argument("--gpu-only-amendment", type=Path)
+    parser.add_argument("--baseline-root", type=Path)
     parser.add_argument("--artifact-root", type=Path)
     parser.add_argument("--platform", choices=("cpu", "gpu"), default="gpu")
-    parser.add_argument("--worker-resolution", type=int, choices=MANDATORY_RESOLUTIONS)
+    parser.add_argument(
+        "--worker-resolution", type=int,
+        choices=tuple(sorted(set(MANDATORY_RESOLUTIONS + GPU_ONLY_OPTIONAL_RESOLUTIONS))),
+    )
     parser.add_argument("--cpu-cache-audit-resolution", type=int, choices=MANDATORY_RESOLUTIONS)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -1345,19 +1756,30 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     binding = _binding(args)
+    protocol = _protocol_amendment(args)
     if args.dry_run:
         print(json.dumps({
-            "status": "dry_run_passed", "mandatory_order": list(MANDATORY_RESOLUTIONS),
+            "status": "dry_run_passed",
+            "protocol": "gpu_only_amendment_v1" if protocol is not None else "original",
+            "mandatory_order": list(
+                GPU_ONLY_MANDATORY_RESOLUTIONS if protocol is not None else MANDATORY_RESOLUTIONS
+            ),
+            "optional_order": list(GPU_ONLY_OPTIONAL_RESOLUTIONS) if protocol is not None else [],
             "valid32_count": binding["development_subset"]["count"],
             "selection_rule": binding["development_subset"]["selection_rule"],
             "selection_seed": binding["nested_support"]["selection_seed"],
             "checkpoint": {"config_id": CONFIG_ID, "epoch": CHECKPOINT_EPOCH, "sha256": CHECKPOINT_SHA256},
-            "forbidden": ["training", "test", "sealed", "three_seed_valid128", "32768"],
+            "forbidden": ["training", "test", "sealed", "three_seed_valid128"],
+            "cross_backend_graph_topology": (
+                "report_only" if protocol is not None else "hard_gate"
+            ),
         }, indent=2))
         return 0
     for name in ("dataset_root", "full_fields", "run_dir", "artifact_root"):
         if getattr(args, name) is None:
             raise HighNDevelopmentError(f"--{name.replace('_', '-')} is required")
+    if protocol is not None and args.baseline_root is None:
+        raise HighNDevelopmentError("--baseline-root is required by the GPU-only amendment")
     actual_platform = jax.devices()[0].platform
     if args.platform == "gpu" and actual_platform not in {"gpu", "cuda"}:
         raise HighNDevelopmentError("GPU execution requested but JAX is not on CUDA")

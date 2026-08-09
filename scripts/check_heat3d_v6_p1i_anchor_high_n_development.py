@@ -18,6 +18,9 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 MANDATORY = (1024, 4096, 8192, 16384)
 HIGH_N = (4096, 8192, 16384)
+GPU_ONLY_MANDATORY = (4096, 8192, 16384)
+GPU_ONLY_OPTIONAL = (32768, 65536)
+GPU_ONLY_LADDER = GPU_ONLY_MANDATORY + GPU_ONLY_OPTIONAL
 
 
 class CheckError(RuntimeError):
@@ -213,15 +216,109 @@ def check_failure_results(root: Path, binding: dict[str, Any]) -> dict[str, Any]
             "resolution_4096": r4096, "closeout": closeout}
 
 
+def check_gpu_only_results(
+    root: Path,
+    binding: dict[str, Any],
+    amendment_path: Path,
+    baseline_root: Path,
+) -> dict[str, Any]:
+    amendment = json.loads(amendment_path.read_text(encoding="utf-8"))
+    require(amendment["status"] == "frozen_before_gpu_only_high_n_execution",
+            "GPU-only amendment not frozen")
+    require(amendment["frozen_binding"]["sha256"] == sha256(
+        ROOT / amendment["frozen_binding"]["path"]
+    ), "GPU-only amendment binding hash drift")
+    require(amendment["backend_contract"]["formal_backend"] == "gpu",
+            "formal backend is not GPU")
+    require(amendment["backend_contract"]["cross_backend_topology_equality"] == "report_only",
+            "cross-backend topology was not downgraded to report-only")
+    baseline = baseline_root / "resolution_1024.json"
+    require(sha256(baseline) == amendment["baseline_1024_artifacts"]["result_sha256"],
+            "1024 baseline result drift")
+    require(sha256(baseline_root / "resolution_1024_predictions.npz")
+            == amendment["baseline_1024_artifacts"]["predictions_sha256"],
+            "1024 anchor predictions drift")
+
+    preflight = json.loads((root / "actual_data_preflight.json").read_text(encoding="utf-8"))
+    require(preflight["status"] == "passed", "GPU-only preflight failed")
+    require(preflight["sample_ids"] == binding["development_subset"]["sample_ids"],
+            "GPU-only valid32 order drift")
+    require(tuple(sorted(map(int, preflight["supports"]))) == GPU_ONLY_LADDER,
+            "GPU-only support ladder drift")
+    for resolution in GPU_ONLY_LADDER:
+        rows = preflight["supports"][str(resolution)]
+        require(len(rows) == 32, f"N={resolution} support count drift")
+        feasibility_path = root / f"resolution_{resolution}_feasibility.json"
+        result_path = root / f"resolution_{resolution}.json"
+        if not feasibility_path.exists():
+            require(not result_path.exists(), f"N={resolution} result exists without feasibility")
+            continue
+        feasibility = json.loads(feasibility_path.read_text(encoding="utf-8"))
+        if feasibility["status"] == "passed":
+            require(all(feasibility["checks"].values()), f"N={resolution} feasibility gate drift")
+        if not result_path.exists():
+            continue
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        require(result["sample_ids"] == binding["development_subset"]["sample_ids"],
+                f"N={resolution} sample order drift")
+        negative = {"test_accessed", "sealed_accessed", "training_executed"}
+        gates = result["implementation_hard_gates"]
+        require(all(value is True for key, value in gates.items() if key not in negative),
+                f"N={resolution} GPU hard gate failed")
+        require(all(gates[key] is False for key in negative), f"N={resolution} role violation")
+        require("cross_backend_real_edge_topology_exact" not in gates,
+                "cross-backend diagnostic remains a hard gate")
+        require(result["cross_backend_graph_diagnostic"]["gate_role"] == "report_only",
+                "cross-backend diagnostic role drift")
+        require(result["cross_backend_graph_diagnostic"]["executed_this_run"] is False,
+                "CPU graph diagnostic unexpectedly executed")
+        require(result["cached_uncached_prediction_equivalence"]
+                ["same_gpu_within_amended_numeric_tolerance"] is True,
+                "same-GPU cached/fresh prediction gate failed")
+        require(result["protocol_amendment"]["formal_backend"] == "gpu",
+                "result protocol backend drift")
+        require(finite_tree(result["support_metrics"]), "non-finite support metrics")
+        require(finite_tree(result["full_field_model_plus_reconstruction"]),
+                "non-finite full-field metrics")
+        require(finite_tree(result["oracle_sampling_reconstruction_floor"]),
+                "non-finite oracle floor")
+
+    closeout = json.loads((root / "gpu_only_high_n_closeout.json").read_text(encoding="utf-8"))
+    require(closeout["status"] in {
+        "passed_core_and_optional_ladder", "passed_core_optional_stopped"
+    }, "GPU-only mandatory ladder did not close")
+    require(closeout["cross_backend_graph_topology"] == "report_only_not_executed",
+            "closeout cross-backend role drift")
+    resolutions = [row["resolution"] for row in closeout["rows"]]
+    require(resolutions[0] == 1024, "curve lacks frozen 1024 baseline")
+    require(all(resolution in resolutions for resolution in GPU_ONLY_MANDATORY),
+            "curve lacks mandatory GPU resolutions")
+    require(resolutions == sorted(resolutions), "curve resolution order drift")
+    require(closeout["role_contract"]["test_accessed"] is False, "test accessed")
+    require(closeout["role_contract"]["sealed_accessed"] is False, "sealed accessed")
+    require(closeout["role_contract"]["training_executed"] is False, "training executed")
+    require((root / "gpu_only_high_n_accuracy_resolution_latency.csv").is_file(),
+            "GPU-only curve CSV missing")
+    require((root / "gpu_only_high_n_closeout.md").is_file(), "GPU-only Markdown missing")
+    return {"preflight": preflight, "closeout": closeout, "amendment": amendment}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binding", type=Path, default=ROOT / "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json")
     parser.add_argument("--results-root", type=Path)
     parser.add_argument("--expected-failure-resolution", type=int, choices=(4096,))
+    parser.add_argument("--gpu-only-amendment", type=Path)
+    parser.add_argument("--baseline-root", type=Path)
     args = parser.parse_args()
     binding = check_static(args.binding)
     if args.results_root is not None:
-        if args.expected_failure_resolution == 4096:
+        if args.gpu_only_amendment is not None:
+            require(args.baseline_root is not None, "--baseline-root required for GPU-only check")
+            check_gpu_only_results(
+                args.results_root, binding, args.gpu_only_amendment, args.baseline_root
+            )
+        elif args.expected_failure_resolution == 4096:
             check_failure_results(args.results_root, binding)
         else:
             check_results(args.results_root, binding)
@@ -230,6 +327,7 @@ def main() -> int:
         "results_checked": args.results_root is not None,
         "expected_failure_resolution": args.expected_failure_resolution,
         "mandatory_resolutions": list(MANDATORY),
+        "gpu_only": args.gpu_only_amendment is not None,
     }, sort_keys=True))
     return 0
 

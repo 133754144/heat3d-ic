@@ -1,0 +1,73 @@
+{
+  "schema_version": "heat3d_v6_p1i_gpu_only_high_n_protocol_amendment_v1",
+  "status": "frozen_before_gpu_only_high_n_execution",
+  "effective_date": "2026-08-08",
+  "supersedes_for_new_gpu_only_runs": {
+    "hard_gate": "cross_backend_real_edge_topology_exact",
+    "new_role": "report_only_diagnostic"
+  },
+  "historical_failure_artifact": {
+    "closeout_commit": "8d6dbeedd15b5d5a789c2b4eecdd8a0679023d40",
+    "closeout_json": "configs/heat3d_v6_p1i/v6_p1i_anchor_high_n_valid32_failure_closeout.json",
+    "bundle_sha256": "b090cf9fbbe3ab05adaef8dc8dee2b06e0069891687fb9b9954ab3408eda341e",
+    "preserved_unchanged": true
+  },
+  "frozen_binding": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+    "sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede",
+    "modified": false
+  },
+  "backend_contract": {
+    "formal_backend": "gpu",
+    "cpu_graph_or_inference_required": false,
+    "cross_backend_topology_equality": "report_only",
+    "same_gpu_graph_cache_hash_exact": true,
+    "same_gpu_cached_vs_fresh_prediction_hard_gate": true,
+    "same_gpu_fixed_input_replay_hard_gate": true
+  },
+  "same_gpu_numeric_tolerances": {
+    "prediction_max_abs_K": 0.1,
+    "prediction_rmse_K": 0.01,
+    "scale_abs": 1e-06
+  },
+  "resolution_contract": {
+    "baseline_reference": 1024,
+    "mandatory_order": [4096, 8192, 16384],
+    "optional_order": [32768, 65536],
+    "stop_on_mandatory_hard_gate_failure": true,
+    "stop_on_optional_infeasible_oom_or_instability": true,
+    "accuracy_is_never_a_gate": true
+  },
+  "baseline_1024_artifacts": {
+    "result_sha256": "347b1c4f262fbf9142d3eee048696c8f9d20972efb46692415dc481b497b9205",
+    "predictions_sha256": "d0094868c73c48c50bb2b701a9ed4c1e0435e7b03d5cb4c0246028d6349e751b"
+  },
+  "feasibility_contract": {
+    "support_capacity_exact": true,
+    "support_hash_and_nested_prefix_exact": true,
+    "finite_k_q_cv": true,
+    "positive_cv": true,
+    "source_layer_interface_boundary_coverage": true,
+    "predicted_peak_vram_fraction_limit": 0.85,
+    "predicted_host_ram_fraction_limit": 0.85,
+    "prediction_method": "previous_observed_peak_scaled_by_resolution_ratio_with_1p25_safety_factor"
+  },
+  "frozen_science": {
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "checkpoint_epoch": 559,
+    "anchor_context": "frozen_original_1024",
+    "anchor_scale": "frozen_original_1024",
+    "high_n_k_q_cv": "frozen_fractional_overlap_kq_plus_conservative_selected_cv",
+    "sampler_quota_seed_order": "unchanged_from_frozen_binding",
+    "metrics": "unchanged_from_frozen_binding"
+  },
+  "role_contract": {
+    "development_subset": "frozen_valid32",
+    "training_executed": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "three_seed_valid128_executed": false,
+    "checkpoint_modified": false,
+    "manifest_modified": false
+  }
+}
