@@ -4,6 +4,24 @@
 test/sealed。指标与原始实验文件保持一致；CSV 是数值表，本文档记录测量边界和
 不可直接比较的部分。
 
+## 硬件与执行设备
+
+两套实验均绑定同一台 WSL2 主机 `DESKTOP-2GE35DV`：
+
+| 项目 | 实测配置 |
+|---|---|
+| 模型图/神经网络推理 | NVIDIA GeForce RTX 5070（GPU） |
+| 物理求解器 FVM | AMD Ryzen 7 9700X 8-Core Processor（CPU，16 logical CPUs） |
+| 主机内存 | 24,168,084 kB（约 23.0 GiB，历史环境记录） |
+| Python / JAX | Python 3.14.3；JAX/JAXlib 0.9.1/0.9.1 |
+| 数值库 | NumPy 2.4.2；SciPy 1.17.1 |
+| 求解器线程口径 | B1/单线程计时；FVM 不使用 GPU |
+
+因此表中的模型路线明确是 **GPU backend 的图构建/图推理**，物理基线是
+**CPU FVM assembly/solve**；重建阶段单独计时，不把它冒充为 FVM 或 GPU forward，
+也没有把 FVM 的 CPU 时间误记为 GPU 时间。Anchor-derived
+的峰值显存也单独保留在原始 CSV 中（65536 为 `2,350,252,032 B`）。
+
 ## 主结果
 
 | N | 1024+ΔT PG / raw K | 1024+ΔT 总耗时 cold / new / cached (s) | 1024+ΔT graph-free forward (s) | Anchor full-field PG / raw K | Anchor graph / E2E / steady / reconstruction (s) | FVM PG / raw K | FVM 总耗时 cold / cached (s) |
