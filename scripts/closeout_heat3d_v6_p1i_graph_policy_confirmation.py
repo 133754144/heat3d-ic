@@ -115,7 +115,9 @@ def main() -> int:
             policy_rows = [r for r in table if r["policy"] == policy and int(r["resolution"]) == resolution]
             values[policy] = {
                 "fresh_median_s": float(np.median([float(r["fresh_median_s"]) for r in policy_rows])),
+                "fresh_p95_s": float(np.median([float(r["fresh_p95_s"]) for r in policy_rows])),
                 "warm_median_s": float(np.median([float(r["warm_median_s"]) for r in policy_rows])),
+                "warm_p95_s": float(np.median([float(r["warm_p95_s"]) for r in policy_rows])),
                 "peak_vram_bytes": int(max(int(r["peak_vram_bytes"]) for r in policy_rows)),
             }
         fresh_gain = 1.0 - values["B"]["fresh_median_s"] / values["A"]["fresh_median_s"]
@@ -139,12 +141,53 @@ def main() -> int:
         "role_contract": {"training": False, "test": False, "sealed": False, "remaining_valid96_only": True},
     }
     FINAL.write_text(json.dumps(final, indent=2, sort_keys=True) + "\n")
+    summary_lines = [
+        "| N | policy | full PG % | full raw K | source K | peak K | interface K |",
+        "|---:|:---:|---:|---:|---:|---:|---:|",
+    ]
+    for resolution in (8192, 16384):
+        for policy in ("A", "B"):
+            rows = [r for r in table if r["policy"] == policy and int(r["resolution"]) == resolution]
+            mean = lambda key: float(np.mean([float(r[key]) for r in rows]))
+            summary_lines.append(
+                f"| {resolution} | {policy} | {mean('full_point_global_pct'):.6f} | "
+                f"{mean('full_raw_cv_rmse_K'):.6f} | {mean('source_rmse_K'):.6f} | "
+                f"{mean('peak_rmse_K'):.6f} | {mean('interface_rmse_K'):.6f} |"
+            )
+    paired_lines = [
+        "| N | metric (B-A) | mean K | 95% CI K | median K | win rate | worst K | margin K | pass |",
+        "|---:|:---|---:|:---:|---:|---:|---:|---:|:---:|",
+    ]
+    for row in paired_rows:
+        paired_lines.append(
+            f"| {row['resolution']} | {row['metric']} | {row['mean']:.6f} | "
+            f"[{row['ci_low']:.6f}, {row['ci_high']:.6f}] | {row['median']:.6f} | "
+            f"{row['win_rate']:.3f} | {row['worst_case']:.6f} | "
+            f"{row['non_inferiority_margin']:.6f} | {row['passed']} |"
+        )
+    latency_lines = [
+        "| N | policy | fresh median/p95 s | warm median/p95 s | peak VRAM MiB |",
+        "|---:|:---:|:---:|:---:|---:|",
+    ]
+    for resolution in (8192, 16384):
+        for policy in ("A", "B"):
+            item = latency[str(resolution)][policy]
+            latency_lines.append(
+                f"| {resolution} | {policy} | {item['fresh_median_s']:.6f} / {item['fresh_p95_s']:.6f} | "
+                f"{item['warm_median_s']:.6f} / {item['warm_p95_s']:.6f} | "
+                f"{item['peak_vram_bytes'] / 2**20:.1f} |"
+            )
     MD_PATH.write_text(
         "# P1i A/B graph-policy confirmatory closeout\n\n"
-        "范围：剩余 valid96 × seeds0/1/2 × N{8192,16384}；冻结 valid32 未重算；无训练、test/sealed。\n\n"
-        f"最终判定：**{final['decision']}**。accuracy non-inferiority={ni_pass}，latency Pareto={latency_pass}。\n\n"
-        "详细逐 seed 指标见 `v6_p1i_graph_policy_confirmation.csv`；clustered paired bootstrap、win rate、"
-        "median、worst-case 与 95% CI 见 `v6_p1i_graph_policy_confirmation_paired.csv`。\n"
+        "范围：剩余 valid96 × seeds0/1/2 × N{8192,16384}；冻结 valid32 未重算；无训练、test/sealed。"
+        "差值均为 B-A；配对 bootstrap 以 sample ID 为 cluster，并在 cluster 内平均三个 seed。\n\n"
+        f"最终判定：**{final['decision']}**。accuracy non-inferiority={ni_pass}，latency Pareto={latency_pass}。"
+        "E 因 8192 VRAM ratio 超出预注册上限而 NO-GO，未运行 E@16384。\n\n"
+        "## 三 seed 汇总（均值）\n\n" + "\n".join(summary_lines) + "\n\n"
+        "## 配对确认\n\n" + "\n".join(paired_lines) + "\n\n"
+        "## Latency Pareto\n\n" + "\n".join(latency_lines) + "\n\n"
+        "详细逐 seed 指标见 `v6_p1i_graph_policy_confirmation.csv`；完整配对统计见 "
+        "`v6_p1i_graph_policy_confirmation_paired.csv`。\n"
     )
     print(json.dumps({"status": "completed", "decision": final["decision"], "ni": ni_pass, "latency": latency_pass}))
     return 0

@@ -46,6 +46,13 @@ def main() -> int:
     require(final["E_decision"] == "NO_GO", "E decision")
     require(final["decision"] in ("B_GO", "B_NO_GO_RETAIN_A"), "final decision")
     require(len(final["paired"]) == 8, "paired metric count")
+    for resolution in ("8192", "16384"):
+        require(final["latency"][resolution]["passed"], f"latency gate {resolution}")
+        for policy in ("A", "B"):
+            values = final["latency"][resolution][policy]
+            require(values["fresh_median_s"] > 0 and values["fresh_p95_s"] > 0, "fresh latency")
+            require(values["warm_median_s"] > 0 and values["warm_p95_s"] > 0, "warm latency")
+            require(values["peak_vram_bytes"] > 0, "VRAM")
     with (ROOT / "docs/v6_p1i_graph_policy_confirmation.csv").open(newline="") as handle:
         table = list(csv.DictReader(handle))
     with (ROOT / "docs/v6_p1i_graph_policy_confirmation_paired.csv").open(newline="") as handle:
@@ -54,6 +61,7 @@ def main() -> int:
     require(not (CONFIG / "v6_p1i_graph_policy_e_raw/E_16384.json").exists(), "E 16384 must not exist")
     md = (ROOT / "docs/v6_p1i_graph_policy_confirmation.md").read_text()
     require("剩余 valid96" in md and "test/sealed" in md, "report scope")
+    require("三 seed 汇总" in md and "配对确认" in md and "Latency Pareto" in md, "report tables")
     print(json.dumps({"status": "passed", "decision": final["decision"], "cells": 12, "paired_rows": 8}))
     return 0
 
