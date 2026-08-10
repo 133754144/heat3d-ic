@@ -29,6 +29,7 @@ import run_heat3d_v6_p1i_anchor_high_n_development as highn  # noqa: E402
 import run_heat3d_v1_medium_controlled_training_export as legacy  # noqa: E402
 import run_heat3d_v6_p1i_graph_scale_candidate as candidate  # noqa: E402
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
+from rigno.heat3d_v6_gpu_reconstruction import to_device_reconstruction_map  # noqa: E402
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 
 IMPORT_FINISHED = time.perf_counter()
@@ -46,6 +47,7 @@ def distribution(values: list[float]) -> dict[str, float | int]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", choices=["B", "E"], required=True)
+    parser.add_argument("--resolution", type=int, choices=[8192, 16384, 32768, 240825], default=240825)
     parser.add_argument("--optimization-mode", choices=["baseline", "reference", "shared_reverse", "gpu_tiled", "combined"], default="baseline")
     parser.add_argument("--binding", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
@@ -53,6 +55,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--full-fields", type=Path, required=True)
     parser.add_argument("--preflight", type=Path, required=True)
+    parser.add_argument("--baseline-artifact-root", type=Path, required=True)
     parser.add_argument("--native-predictions", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--warm-repeats", type=int, default=20)
@@ -70,14 +73,30 @@ def main() -> int:
     preflight = json.loads(args.preflight.read_text())
     physics_path = Path(next(row for row in preflight["samples"] if row["sample_id"] == sample_id)["physics_cache_file"])
     full, _ = highn._full_shared(args)
-    with np.load(physics_path, allow_pickle=False) as physics:
-        support = {
-            "selected_indices": np.arange(len(full["coords"]), dtype=np.int64),
-            "operator_control_volume": np.asarray(full["cv"], dtype=np.float64),
-            "k_xyz": np.asarray(physics["k_xyz"], dtype=np.float64),
-            "q_W_m3": np.asarray(physics["q_W_m3"], dtype=np.float64),
-            "layer_id": np.asarray(full["layer"], dtype=np.int32),
-        }
+    if args.resolution == 240825:
+        with np.load(physics_path, allow_pickle=False) as physics:
+            support = {
+                "selected_indices": np.arange(len(full["coords"]), dtype=np.int64),
+                "operator_control_volume": np.asarray(full["cv"], dtype=np.float64),
+                "k_xyz": np.asarray(physics["k_xyz"], dtype=np.float64),
+                "q_W_m3": np.asarray(physics["q_W_m3"], dtype=np.float64),
+                "layer_id": np.asarray(full["layer"], dtype=np.int32),
+            }
+        reconstruction_map = None
+    else:
+        support_row = next(
+            row for row in preflight["supports"][str(args.resolution)]
+            if row["sample_id"] == sample_id
+        )
+        support = highn._load_support(Path(support_row["support_file"]))
+        baseline_result = json.loads(
+            (args.baseline_artifact_root / f"resolution_{args.resolution}.json").read_text()
+        )
+        map_row = next(
+            row for row in baseline_result["reconstruction_cache"]["samples"]
+            if row["sample_id"] == sample_id
+        )
+        reconstruction_map = candidate.publication._load_mapping_no_audit(Path(map_row["cache_file"]))
     example = highn._query_example(anchor, support, full["coords"])
     phases["input_and_support_prepare_seconds"] = time.perf_counter() - phase
 
@@ -96,7 +115,7 @@ def main() -> int:
     graph_key = highn.runner._metadata_key(int(run_config["graph_seed"]))
     builder = candidate._builder(
         args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key,
-        physical_node_count=240825, optimization_mode=args.optimization_mode,
+        physical_node_count=args.resolution, optimization_mode=args.optimization_mode,
     )
     phase = time.perf_counter()
     metadata = builder.build_metadata(highn.runner._graph_coords_for_example(example, stats), key=graph_key)
@@ -121,6 +140,7 @@ def main() -> int:
     phase = time.perf_counter()
     params = highn.runner._device_params(checkpoint["params"])
     group, weights, scale = jax.device_put((group, weights, jnp.asarray(anchor_scale)))
+    device_map = None if reconstruction_map is None else to_device_reconstruction_map(reconstruction_map)
     jax.block_until_ready(weights)
     phases["h2d_seconds"] = time.perf_counter() - phase
 
@@ -131,7 +151,13 @@ def main() -> int:
         delta = raw - highn.REFERENCE_K
         normalized = model_weights / jnp.sum(model_weights)
         query_scale = jnp.sqrt(jnp.sum(normalized * delta * delta))
-        return delta / query_scale * frozen_scale
+        support_delta = delta / query_scale * frozen_scale
+        if device_map is None:
+            return support_delta
+        return jnp.sum(
+            support_delta[device_map.neighbor_local_indices]
+            * device_map.neighbor_weights.astype(support_delta.dtype), axis=1
+        )
 
     phase = time.perf_counter()
     prediction = apply(params, group, weights, scale)
@@ -152,7 +178,7 @@ def main() -> int:
         "status": "passed" if bool(np.all(np.isfinite(np.asarray(prediction)))) else "failed_nonfinite",
         "candidate": args.candidate,
         "optimization_mode": args.optimization_mode,
-        "resolution": 240825,
+        "resolution": args.resolution,
         "sample_id": sample_id,
         "timing": {
             "process_cold_continuous_seconds": production_finished - PROCESS_STARTED,
@@ -162,7 +188,7 @@ def main() -> int:
             "warm_timing_total_seconds_excluded_from_process_cold": timing_finished - production_finished,
         },
         "memory": candidate.publication._device_memory(),
-        "direct_full_grid_output": True,
+        "direct_full_grid_output": args.resolution == 240825,
         "excluded_from_production_span": ["metrics", "oracle", "hash", "equivalence", "serialization"],
         "role_contract": {"training": False, "test": False, "sealed": False, "valid_iid": True},
     }
