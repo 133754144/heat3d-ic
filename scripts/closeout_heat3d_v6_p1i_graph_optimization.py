@@ -93,7 +93,7 @@ def main() -> int:
         "B_optimization_applied": False,
         "decision": (
             "NO-GO for production graph replacement: shared reverse is exact and modestly improves fresh topology, "
-            "but its independent process-cold median gain is below the preregistered 3% clear-gain threshold; "
+            "but its independent process-cold bootstrap 95% CI includes zero, so the gain is not clear; "
             "GPU tiled is edge-exact but slower. Original B/E remain frozen production comparisons."
         ),
         "role_contract": {"training": False, "test": False, "sealed": False, "valid32_only": True},

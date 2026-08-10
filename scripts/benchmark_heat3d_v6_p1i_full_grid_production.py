@@ -63,6 +63,11 @@ def main() -> int:
 
     phases: dict[str, float] = {"python_and_module_import_seconds": IMPORT_FINISHED - PROCESS_STARTED}
     phase = time.perf_counter()
+    device = jax.devices()[0]
+    token = jax.device_put(jnp.zeros((1,), dtype=jnp.float32), device=device)
+    jax.block_until_ready(token)
+    phases["cuda_context_init_seconds"] = time.perf_counter() - phase
+    phase = time.perf_counter()
     binding = json.loads(args.binding.read_text())
     sample_id = binding["development_subset"]["sample_ids"][0]
     dataset = highn.Heat3DV6DualRobinDataset(args.dataset_root, args.manifest, include_roles={"valid_iid"})
@@ -163,6 +168,8 @@ def main() -> int:
     prediction = apply(params, group, weights, scale)
     jax.block_until_ready(prediction)
     phases["jit_plus_first_forward_and_sync_seconds"] = time.perf_counter() - phase
+    phases["reconstruction_apply_seconds"] = 0.0 if args.resolution == 240825 else None
+    phases["synchronization_contract"] = "block_until_ready included in JIT/forward span"
     production_finished = time.perf_counter()
 
     warm = []
