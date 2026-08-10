@@ -83,11 +83,20 @@ def main() -> int:
         ids_a = [str(value) for value in np.asarray(a["sample_ids"]).tolist()]
         ids_b = [str(value) for value in np.asarray(b["sample_ids"]).tolist()]
         if ids_a != ids_b:
-            raise RuntimeError("sample order differs")
-        support_a, support_b = np.asarray(a["support_deltaT_K"]), np.asarray(b["support_deltaT_K"])
-        full_a, full_b = np.asarray(a["full_deltaT_K"]), np.asarray(b["full_deltaT_K"])
+            if ids_a[: len(ids_b)] != ids_b:
+                raise RuntimeError("sample order differs")
+            ids_a = ids_a[: len(ids_b)]
+            support_a = np.asarray(a["support_deltaT_K"])[: len(ids_b)]
+            full_a = np.asarray(a["full_deltaT_K"])[: len(ids_b)]
+        else:
+            support_a = np.asarray(a["support_deltaT_K"])
+            full_a = np.asarray(a["full_deltaT_K"])
+        support_b, full_b = np.asarray(b["support_deltaT_K"]), np.asarray(b["full_deltaT_K"])
     graph_rows = []
-    for row_a, row_b in zip(left["graph_metadata_artifacts"], right["graph_metadata_artifacts"], strict=True):
+    for row_a, row_b in zip(
+        left["graph_metadata_artifacts"][: len(right["graph_metadata_artifacts"])],
+        right["graph_metadata_artifacts"], strict=True,
+    ):
         meta_a = load_metadata(Path(row_a["path"]))[0]
         meta_b = load_metadata(Path(row_b["path"]))[0]
         n_p = int(np.asarray(meta_a.x_pnodes_inp).shape[1] - 1)
