@@ -52,4 +52,7 @@ def test_exact_reverse_and_gpu_tiled_backends_preserve_graph_edges() -> None:
         np.testing.assert_array_equal(observed.r2r_edge_indices, reference.r2r_edge_indices)
         np.testing.assert_array_equal(observed.r2r_edge_domains, reference.r2r_edge_domains)
         assert observed.r2p_edge_indices is None
-        assert reference.r2p_edge_indices is None
+        np.testing.assert_array_equal(
+            np.flip(reference.r2p_edge_indices, axis=-1),
+            reference.p2r_edge_indices,
+        )
