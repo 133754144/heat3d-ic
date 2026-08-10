@@ -426,7 +426,13 @@ class RegionInteractionGraphBuilder:
         # bounded tiles.  Results are brought back and lexicographically sorted
         # to the exact canonical sparse backend order before graph packing.
         centers_device = jax.device_put(jnp.asarray(centers_array))
-        radii_device = jax.device_put(jnp.asarray(radii_array))
+        shortlist_slack = np.maximum(
+          np.asarray(1.0e-7, dtype=radii_array.dtype),
+          np.abs(radii_array) * np.asarray(1.0e-6, dtype=radii_array.dtype),
+        )
+        shortlist_radii_device = jax.device_put(
+          jnp.asarray(radii_array + shortlist_slack)
+        )
         edge_blocks = []
         for start in range(0, len(points_array), self.discrete_graph_chunk_size):
           block = jax.device_put(jnp.asarray(
@@ -435,10 +441,20 @@ class RegionInteractionGraphBuilder:
           distance = jnp.linalg.norm(
             block[:, None, :] - centers_device[None, :, :], axis=-1
           )
-          point_index, center_index = jnp.where(distance <= radii_device)
+          point_index, center_index = jnp.where(distance <= shortlist_radii_device)
           point_index, center_index = jax.device_get((point_index, center_index))
           if len(point_index):
-            edge_blocks.append(np.column_stack((point_index + start, center_index)))
+            # Reapply the frozen NumPy float32 predicate to the compact GPU
+            # shortlist.  This makes the optimization edge-exact at boundary
+            # ties rather than accepting platform-dependent GPU norms.
+            reference_distance = np.linalg.norm(
+              points_array[point_index + start] - centers_array[center_index],
+              axis=1,
+            )
+            keep = reference_distance <= radii_array[center_index]
+            edge_blocks.append(np.column_stack(
+              (point_index[keep] + start, center_index[keep])
+            ))
         if edge_blocks:
           edges = np.concatenate(edge_blocks, axis=0)
           order = np.lexsort((edges[:, 1], edges[:, 0]))
