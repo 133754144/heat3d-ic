@@ -1,0 +1,116 @@
+{
+  "baseline_known_support_median_s": 0.055247233947739005,
+  "candidate": "B",
+  "equivalence": {
+    "group_tree_all_exact": true,
+    "passed": false,
+    "prediction_max_abs_K": 0.0102691650390625,
+    "prediction_max_rmse_K": 0.0010588903095869158
+  },
+  "jax_compilation_cache": {
+    "compile_and_first_apply_seconds": 5.375011300202459,
+    "directory": "/tmp/v6_p1i_performance_p3_cache/B_8192/jax_compilation",
+    "enabled": true,
+    "file_count_after": 44
+  },
+  "memory": {
+    "bytes_in_use": 32856832,
+    "bytes_limit": 9615360000,
+    "device": "cuda:0",
+    "peak_bytes_in_use": 165530112,
+    "platform": "gpu"
+  },
+  "promote": false,
+  "reconstruction_cache": {
+    "file_sha256": "7810ad025f12137a6e4102817e8e767921b061edbd7f5868a0597acc4c58e176",
+    "h2d_seconds": 0.01265037921257317,
+    "load_seconds": 0.014864861033856869,
+    "path": "/tmp/v6_p1i_gpu_only_high_n_valid32_b935713/reconstruction_cache/8192/v6p1if1_0308_e4db42247a0655f029b5f6bfc40f2bf7130e28c8c711190bd4225b6a084ea91a.npz"
+  },
+  "resolution": 8192,
+  "role_contract": {
+    "metrics_computed": false,
+    "sealed": false,
+    "temperature_read": false,
+    "test": false,
+    "training": false,
+    "valid_iid": true
+  },
+  "sample_count": 32,
+  "schema_version": "heat3d_v6_p1i_static_cache_v1",
+  "speedup_vs_p2_dynamic_full_pack": 1.750229436109617,
+  "static_graph_cache": {
+    "build_seconds": 2.839274951023981,
+    "file_sha256": "97c284efe563783320e7b0a2bdc8d19d8f50fa6e49cafe8febd02fc0f418094f",
+    "fresh_cached_exact": true,
+    "graph_hash": "7f6d66116986ea1251b2b213735ffd46f5ba34164b30eba845f72994327f9c20",
+    "load_seconds": 0.00445947889238596,
+    "metadata_hash": "b0c2ff4b3fdbd2e21ca4363a2a747cc35198c2488f630e04ad70d2cc754bafbe",
+    "path": "/tmp/v6_p1i_performance_p3_cache/B_8192/static_graph_metadata.npz",
+    "save": {
+      "cache_file_bytes": 587108,
+      "cache_file_sha256": "97c284efe563783320e7b0a2bdc8d19d8f50fa6e49cafe8febd02fc0f418094f",
+      "save_seconds": 0.0012452409137040377
+    }
+  },
+  "static_packing": {
+    "dynamic_fields": [
+      "k_xyz",
+      "q_W_m3",
+      "top_h",
+      "bottom_h",
+      "global_context",
+      "log_s_phys",
+      "qk_features",
+      "anchor_scale"
+    ],
+    "static_fields": [
+      "coordinates",
+      "graphs",
+      "control_volumes",
+      "reference_temperature",
+      "dirichlet_structure"
+    ],
+    "static_h2d_seconds": 0.00019497587345540524
+  },
+  "status": "failed_equivalence",
+  "timing": {
+    "dynamic_h2d": {
+      "count": 32,
+      "mean_seconds": 0.000442523138190154,
+      "median_seconds": 0.0004031654680147767,
+      "p95_seconds": 0.0005025787279009818,
+      "std_seconds": 0.00019023349929230243
+    },
+    "dynamic_input_preparation": {
+      "count": 32,
+      "mean_seconds": 0.010973631979140919,
+      "median_seconds": 0.010971048497594893,
+      "p95_seconds": 0.012316834449302405,
+      "std_seconds": 0.0007786677711654986
+    },
+    "forward": {
+      "count": 32,
+      "mean_seconds": 0.076952830706432,
+      "median_seconds": 0.003004207625053823,
+      "p95_seconds": 0.004048932017758489,
+      "std_seconds": 0.4113696512425524
+    },
+    "known_support_new_physics_total": {
+      "count": 32,
+      "mean_seconds": 0.10558145498362137,
+      "median_seconds": 0.03156570950523019,
+      "p95_seconds": 0.03505808840272948,
+      "std_seconds": 0.4114574857812402
+    },
+    "reconstruction": {
+      "count": 32,
+      "mean_seconds": 0.0008123349616653286,
+      "median_seconds": 0.0012375620426610112,
+      "p95_seconds": 0.0013027401291765273,
+      "std_seconds": 0.0005188053052785124
+    },
+    "reconstruction_map_load": 0.014864861033856869,
+    "static_graph_load": 0.00445947889238596
+  }
+}

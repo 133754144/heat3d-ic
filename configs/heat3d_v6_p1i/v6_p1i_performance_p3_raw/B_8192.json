@@ -1,0 +1,115 @@
+{
+  "baseline_known_support_median_s": 0.055247233947739005,
+  "candidate": "B",
+  "equivalence": {
+    "group_tree_all_exact": true,
+    "passed": true,
+    "prediction_max_abs_K": 0.013153076171875,
+    "prediction_max_rmse_K": 0.0010419556778535287,
+    "same_gpu_reference_repeat_max_abs_K": 0.01120758056640625,
+    "same_gpu_reference_repeat_max_rmse_K": 0.0010584971972636276
+  },
+  "jax_compilation_cache": {
+    "compile_and_first_apply_seconds": 1.2686991901136935,
+    "directory": "/tmp/v6_p1i_performance_p3_cache/B_8192/jax_compilation",
+    "enabled": true,
+    "file_count_after": 44
+  },
+  "memory": {
+    "bytes_in_use": 33047040,
+    "bytes_limit": 9615360000,
+    "device": "cuda:0",
+    "peak_bytes_in_use": 94325248,
+    "platform": "gpu"
+  },
+  "promote": true,
+  "reconstruction_cache": {
+    "file_sha256": "7810ad025f12137a6e4102817e8e767921b061edbd7f5868a0597acc4c58e176",
+    "h2d_seconds": 0.01005504815839231,
+    "load_seconds": 0.014599449001252651,
+    "path": "/tmp/v6_p1i_gpu_only_high_n_valid32_b935713/reconstruction_cache/8192/v6p1if1_0308_e4db42247a0655f029b5f6bfc40f2bf7130e28c8c711190bd4225b6a084ea91a.npz"
+  },
+  "resolution": 8192,
+  "role_contract": {
+    "metrics_computed": false,
+    "sealed": false,
+    "temperature_read": false,
+    "test": false,
+    "training": false,
+    "valid_iid": true
+  },
+  "sample_count": 32,
+  "schema_version": "heat3d_v6_p1i_static_cache_v1",
+  "speedup_vs_p2_dynamic_full_pack": 3.709637726460828,
+  "static_graph_cache": {
+    "build_seconds": 2.7316590019036084,
+    "cache_hit": true,
+    "file_sha256": "97c284efe563783320e7b0a2bdc8d19d8f50fa6e49cafe8febd02fc0f418094f",
+    "fresh_cached_exact": true,
+    "graph_hash": "7f6d66116986ea1251b2b213735ffd46f5ba34164b30eba845f72994327f9c20",
+    "load_seconds": 0.005151611054316163,
+    "metadata_hash": "b0c2ff4b3fdbd2e21ca4363a2a747cc35198c2488f630e04ad70d2cc754bafbe",
+    "path": "/tmp/v6_p1i_performance_p3_cache/B_8192/static_graph_metadata.npz",
+    "save": null
+  },
+  "static_packing": {
+    "dynamic_fields": [
+      "k_xyz",
+      "q_W_m3",
+      "top_h",
+      "bottom_h",
+      "global_context",
+      "log_s_phys",
+      "qk_features",
+      "anchor_scale"
+    ],
+    "static_fields": [
+      "coordinates",
+      "graphs",
+      "control_volumes",
+      "reference_temperature",
+      "dirichlet_structure"
+    ],
+    "static_h2d_seconds": 0.00019406178034842014
+  },
+  "status": "passed",
+  "timing": {
+    "dynamic_h2d": {
+      "count": 32,
+      "mean_seconds": 0.0004090065631316975,
+      "median_seconds": 0.00040631042793393135,
+      "p95_seconds": 0.000522011355496943,
+      "std_seconds": 6.154119635773794e-05
+    },
+    "dynamic_input_preparation": {
+      "count": 32,
+      "mean_seconds": 0.010672772572434042,
+      "median_seconds": 0.010809073457494378,
+      "p95_seconds": 0.011547473701648414,
+      "std_seconds": 0.0006204189359107541
+    },
+    "forward": {
+      "count": 32,
+      "mean_seconds": 0.03153600051882677,
+      "median_seconds": 0.0029194799717515707,
+      "p95_seconds": 0.003076882380992174,
+      "std_seconds": 0.1592082943121809
+    },
+    "known_support_new_physics_total": {
+      "count": 32,
+      "mean_seconds": 0.043431741345557384,
+      "median_seconds": 0.014892891980707645,
+      "p95_seconds": 0.01613511177711189,
+      "std_seconds": 0.1592543516438311
+    },
+    "reconstruction": {
+      "count": 32,
+      "mean_seconds": 0.0008114685624605045,
+      "median_seconds": 0.0012368265306577086,
+      "p95_seconds": 0.0013051061308942736,
+      "std_seconds": 0.0005112018819905028
+    },
+    "reconstruction_map_load": 0.014599449001252651,
+    "static_graph_load": 0.005151611054316163
+  }
+}

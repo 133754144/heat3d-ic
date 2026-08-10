@@ -1,0 +1,37 @@
+{
+  "schema_version": "heat3d_v6_p1i_performance_p3_protocol_v1",
+  "status": "frozen_after_p2_before_p3_execution",
+  "p2_commit": "28d31ee",
+  "routes": ["B8192_recon", "E32768_recon", "B240825_direct", "E240825_direct"],
+  "cache_scope": {
+    "static_graph": ["regional_nodes", "p2r", "r2r", "r2p", "structural_features", "padding_shape_metadata"],
+    "reconstruction_map": "frozen_existing_map_loaded_and_device_resident",
+    "static_packing": ["coordinates", "graphs", "control_volumes", "reference_temperature", "dirichlet_structure"],
+    "dynamic_packing": ["k_xyz", "q_W_m3", "top_h", "bottom_h", "global_context", "log_s_phys", "qk_features", "anchor_scale"],
+    "jax_compilation_cache": "persistent_cache_enabled_when_supported"
+  },
+  "equivalence_tolerance": {
+    "cpu_model_group_tree": "bitwise_exact",
+    "static_graph_and_reconstruction_hash": "exact",
+    "same_gpu_prediction_max_abs_K": 0.1,
+    "same_gpu_prediction_rmse_K": 0.01,
+    "basis": "frozen_same_GPU_replay_envelope_from_high_N_binding; not selected from P3 accuracy"
+  },
+  "protocol_amendment": {
+    "reason": "initial 1e-6/1e-7 prediction gate incorrectly treated known same-input GPU reduction nondeterminism as cache precision loss",
+    "failed_diagnostic": "B8192 max=0.0102691650390625K rmse=0.0010588903095869158K while CPU model-group tree was bitwise exact",
+    "timing_fix": "move tree/hash equivalence audit outside production total",
+    "scientific_scope_changed": false
+  },
+  "promotion_rule": "promote only if prediction equivalence passes and median known-support total improves",
+  "forbidden": ["hybrid_gpu_tiled", "unseen_topology_gpu_builder", "training", "test", "sealed"],
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "accuracy_recomputed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_search": false
+  }
+}
