@@ -1,0 +1,65 @@
+{
+  "candidate": "B",
+  "direct_full_grid_output": false,
+  "excluded_from_production_span": [
+    "metrics",
+    "oracle",
+    "hash",
+    "equivalence",
+    "serialization"
+  ],
+  "memory": {
+    "bytes_in_use": 23647744,
+    "bytes_limit": 9615360000,
+    "device": "cuda:0",
+    "peak_bytes_in_use": 163328768,
+    "platform": "gpu"
+  },
+  "optimization_mode": "baseline",
+  "resolution": 8192,
+  "role_contract": {
+    "sealed": false,
+    "test": false,
+    "training": false,
+    "valid_iid": true
+  },
+  "sample_id": "v6p1if1_0308",
+  "schema_version": "heat3d_v6_p1i_full_grid_production_timing_v1",
+  "status": "passed",
+  "timing": {
+    "decomposition": {
+      "checkpoint_and_runtime_load_seconds": 0.044002309907227755,
+      "cuda_context_init_seconds": 0.41653780406340957,
+      "graph_construction_seconds": 2.7191961389034986,
+      "graph_stage": {
+        "coordinate_normalization_seconds": 0.14597665588371456,
+        "coverage_radius_seconds": 0.803389318054542,
+        "coverage_repair_seconds": 1.4540273696184158e-06,
+        "p2r_seconds": 0.04445573012344539,
+        "packing_seconds": 0.27911347104236484,
+        "r2p_reused_from_p2r": false,
+        "r2p_seconds": 0.0152907301671803,
+        "r2r_seconds": 0.8614531338680536,
+        "regional_prepare_seconds": 0.7475673409644514,
+        "total_seconds": 2.1496915339957923
+      },
+      "h2d_seconds": 0.04146708478219807,
+      "input_and_support_prepare_seconds": 0.08966550417244434,
+      "jit_plus_first_forward_and_sync_seconds": 4.943067594897002,
+      "packing_padding_seconds": 1.2337366328574717,
+      "python_and_module_import_seconds": 0.6612808529753238,
+      "reconstruction_apply_seconds": null,
+      "synchronization_contract": "block_until_ready included in JIT/forward span"
+    },
+    "process_cold_continuous_seconds": 10.1833356609568,
+    "process_cold_span": "process entry through synchronized first prediction",
+    "warm_resident_neural_forward": {
+      "count": 20,
+      "mean_seconds": 0.002740498585626483,
+      "median_seconds": 0.0027316234773024917,
+      "p95_seconds": 0.0029445378109812736,
+      "std_seconds": 0.00010289019809865758
+    },
+    "warm_timing_total_seconds_excluded_from_process_cold": 0.0548482071608305
+  }
+}

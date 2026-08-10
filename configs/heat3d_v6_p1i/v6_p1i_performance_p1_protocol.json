@@ -1,0 +1,32 @@
+{
+  "schema_version": "heat3d_v6_p1i_performance_p1_protocol_v1",
+  "status": "frozen_before_p1_closeout",
+  "base_commit": "2ccb77926d849ccbcfbd9a5e3ee43f8117d2f2a3",
+  "routes": [
+    "B_8192_reconstruct_240825",
+    "E_32768_reconstruct_240825",
+    "B_240825_direct",
+    "E_240825_direct",
+    "FVM_240825"
+  ],
+  "accuracy_population": "seed0_frozen_valid32",
+  "timing_contract": {
+    "gpu": "RTX_5070_B1_synchronized",
+    "cpu": "Ryzen_7_9700X_fixed_thread_historical_FVM",
+    "process_cold": "independent process entry through first synchronized prediction",
+    "fresh": "resident runtime with fresh graph construction; qualification excluded",
+    "warm": "resident compiled fixed input replay",
+    "model_and_reconstruction_reported_separately": true
+  },
+  "reuse_only_except": [
+    "B_8192_process_cold_10_independent_processes"
+  ],
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_search": false
+  }
+}
