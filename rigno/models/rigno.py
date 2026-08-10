@@ -680,7 +680,7 @@ class RegionInteractionGraphBuilder:
       r2p_edge_indices=r2p_edge_indices.astype(jnp.uint16)
     # Ommit storing duplicated edge indices
     if (
-      self.overlap_factor_p2r == self.overlap_factor_r2p
+      (_reuse_reverse or self.overlap_factor_p2r == self.overlap_factor_r2p)
       and np.array_equal(
         np.asarray(r2p_edge_indices),
         np.flip(np.asarray(p2r_edge_indices), axis=-1),
