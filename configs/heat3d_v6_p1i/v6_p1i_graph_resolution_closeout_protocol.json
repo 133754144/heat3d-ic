@@ -1,0 +1,116 @@
+{
+  "schema_version": "heat3d_v6_p1i_graph_resolution_closeout_protocol_v1",
+  "status": "preregistered_before_graph_resolution_closeout",
+  "base_commit": "d3337f2478a90d8018681dc148f779b14ce8cb01",
+  "scope": {
+    "checkpoint": "V6_06 seed0 point-global best e559",
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "population": "frozen_valid32",
+    "training": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "valid96_confirmation_reexecuted": false,
+    "factor_or_radius_search": false
+  },
+  "resolutions": [1024, 4096, 8192, 16384, 32768],
+  "policies": {
+    "A": {
+      "coverage_mode": "discrete_physical_coverage",
+      "regional_subsample_factor": 4,
+      "role": "read_only_historical_baseline"
+    },
+    "B": {
+      "coverage_mode": "discrete_physical_coverage",
+      "regional_subsample_factor": 8,
+      "resolved_subsample_factor": {
+        "1024": 8,
+        "4096": 8,
+        "8192": 8,
+        "16384": 8,
+        "32768": 8
+      },
+      "role": "candidate_production_policy_frozen_at_d3337f2"
+    },
+    "E": {
+      "coverage_mode": "discrete_physical_coverage",
+      "regional_node_count": 256,
+      "resolved_subsample_factor": {
+        "1024": 4,
+        "4096": 16,
+        "8192": 32,
+        "16384": 64,
+        "32768": 128
+      },
+      "role": "exploratory_fixed_regional_capacity"
+    }
+  },
+  "new_execution_cells": [
+    {"policy": "B", "resolution": 1024},
+    {"policy": "B", "resolution": 4096},
+    {"policy": "B", "resolution": 32768},
+    {"policy": "E", "resolution": 4096},
+    {"policy": "E", "resolution": 16384},
+    {"policy": "E", "resolution": 32768}
+  ],
+  "reused_cells": {
+    "A": [1024, 4096, 8192, 16384, 32768],
+    "B": [8192, 16384],
+    "E": [8192]
+  },
+  "derived_without_execution": {
+    "E_1024": "exact policy alias of A_1024: factor=4, Nr=256, identical coverage mode/support/model/reconstruction"
+  },
+  "E_execution_rule": {
+    "regional_node_count": 256,
+    "continue_unless": ["OOM", "coverage_discontinuity", "execution_failure"],
+    "vram_is_report_only": true,
+    "accuracy_is_not_a_stop_gate": true
+  },
+  "frozen_inputs": {
+    "support_sampler": "v6_p1i_high_n_implementation_binding.json",
+    "anchor_context_and_scale": "native1024 frozen",
+    "high_n_k_q_cv": "frozen representation",
+    "reconstruction": "frozen layer-aware map",
+    "model_or_checkpoint_modified": false
+  },
+  "provenance": {
+    "A_accuracy": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_closeout.json",
+      "sha256": "d4a4433f46b155ae941e6fda87b7fc39d7d59c21e77e35cfa6ae57a670b879ba"
+    },
+    "A_graph": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.json",
+      "sha256": "61ea0642e554aeb123937b213bb88fb3aabd75a971b493dccf9c0768c9648722"
+    },
+    "A_publication_timing": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_publication_gpu_timing.json",
+      "sha256": "e2b8b2d86b6719f98b85682c574d8855d8923e185fc8cede3cfd3992dc7babe4"
+    },
+    "B_8192": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/B_8192.json",
+      "sha256": "285c924897245e085b32079cada0c0840cbd6834ffd2197ddd54d63eeca8dcd1"
+    },
+    "B_16384": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/B_16384.json",
+      "sha256": "5b81fc3ab25f28cfd683419106f7a55434a4044e41339d15d463e099bb9a79fb"
+    },
+    "E_8192": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_policy_e_raw/E_8192.json",
+      "sha256": "c0adece413ce8f877dfe6097030b9f865491e865c9b4005047731c22bda507d9"
+    },
+    "valid96_confirmation": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_policy_final.json",
+      "sha256": "8a804c561572d09fb3471ef63c3b4e341ce4e408cb1c787d5b20f08d0582bd8a",
+      "role": "decision provenance only; not mixed into valid32 curve"
+    }
+  },
+  "timing_contract": {
+    "unit": "single_sample_B1",
+    "host": "WSL2 RTX 5070",
+    "gpu_synchronized": true,
+    "jit_compile_excluded": true,
+    "qualification_hash_metrics_serialization_excluded": true,
+    "report": ["fresh_median_p95", "warm_median_p95", "peak_vram"],
+    "cross_provenance_comparability_must_be_explicit": true
+  }
+}

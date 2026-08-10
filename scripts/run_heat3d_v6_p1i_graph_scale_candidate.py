@@ -57,8 +57,8 @@ def _resolved_policy(candidate: str, physical_node_count: int) -> dict[str, Any]
     policy = dict(CANDIDATES[candidate])
     if candidate == "E":
         target = int(policy["regional_node_target"])
-        if physical_node_count not in (8192, 16384) or physical_node_count % target:
-            raise RuntimeError("E requires N in {8192,16384} divisible by frozen Nr=256")
+        if physical_node_count not in (1024, 4096, 8192, 16384, 32768) or physical_node_count % target:
+            raise RuntimeError("E requires a registered N divisible by frozen Nr=256")
         policy["subsample_factor"] = physical_node_count // target
     return policy
 
@@ -353,14 +353,16 @@ def _runtime_distribution(values: list[float]) -> dict[str, float | int]:
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     policy_contract = json.loads(args.policy_contract.read_text())
     confirmation = policy_contract["status"] == "frozen_after_E_no_go_before_confirmation"
+    resolution_closeout = policy_contract["status"] == "preregistered_before_graph_resolution_closeout"
     allowed_status = (
         "frozen_after_E_no_go_before_confirmation" if confirmation
+        else "preregistered_before_graph_resolution_closeout" if resolution_closeout
         else "preregistered_before_E_execution" if args.candidate == "E"
         else "preregistered_before_candidate_execution"
     )
     if policy_contract["status"] != allowed_status:
         raise RuntimeError("graph-scale policy contract is not preregistered for candidate")
-    if args.candidate == "E":
+    if args.candidate == "E" and not resolution_closeout:
         registered = policy_contract["policies"]["E"]
         if (
             registered["regional_node_count"] != 256
@@ -368,9 +370,22 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             or args.resolution not in policy_contract["resolutions"]
         ):
             raise RuntimeError("E scientific contract drifted")
-    if args.candidate not in CANDIDATES or args.resolution not in (4096, 8192, 16384, 32768):
+    if args.candidate not in CANDIDATES or args.resolution not in (1024, 4096, 8192, 16384, 32768):
         raise RuntimeError("unregistered candidate or resolution")
-    if confirmation:
+    if resolution_closeout:
+        registered = policy_contract["policies"].get(args.candidate)
+        cell = {"policy": args.candidate, "resolution": args.resolution}
+        if registered is None or cell not in policy_contract["new_execution_cells"]:
+            raise RuntimeError("cell is not preregistered for graph-resolution closeout")
+        resolved = _resolved_policy(args.candidate, args.resolution)
+        if (
+            resolved["subsample_factor"] != registered["resolved_subsample_factor"][str(args.resolution)]
+            or resolved["coverage_mode"] != registered["coverage_mode"]
+        ):
+            raise RuntimeError("graph-resolution policy definition drifted")
+        if args.timing_only or args.seed != 0:
+            raise RuntimeError("graph-resolution closeout requires seed0 accuracy plus timing")
+    elif confirmation:
         if args.candidate not in policy_contract["policies"] or args.resolution not in policy_contract["resolutions"]:
             raise RuntimeError("unregistered confirmation cell")
         if args.timing_only:
@@ -411,7 +426,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     else:
         anchors = highn._valid_examples(dataset, binding)
     supports_by_id = {
-        row["sample_id"]: row for row in preflight["supports"][str(args.resolution)]
+        row["sample_id"]: row for row in preflight.get("supports", {}).get(str(args.resolution), [])
     }
     if confirmation:
         baseline_result = None
@@ -443,8 +458,24 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     graph_key = highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
     examples, support_payloads, boundaries_by_id = [], [], {}
     for anchor in anchors:
-        row = supports_by_id[anchor.sample_id]
-        support = highn._load_support(Path(row["support_file"]))
+        if args.resolution == 1024:
+            indices, maximum = highn._anchor_indices(
+                anchor, full["coords"],
+                float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]),
+            )
+            if maximum > float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]):
+                raise RuntimeError("native1024 anchor coordinate replay drifted")
+            features = np.asarray(anchor.condition.condition_features, dtype=np.float64)
+            support = {
+                "selected_indices": indices,
+                "operator_control_volume": np.asarray(anchor.operator_point_weights, dtype=np.float64),
+                "k_xyz": features[:, :3],
+                "q_W_m3": features[:, 3],
+                "layer_id": np.asarray(full["layer"][indices], dtype=np.int32),
+            }
+        else:
+            row = supports_by_id[anchor.sample_id]
+            support = highn._load_support(Path(row["support_file"]))
         examples.append(highn._query_example(anchor, support, full["coords"]))
         support_payloads.append(support)
         boundaries_by_id[anchor.sample_id] = highn._boundaries(
