@@ -89,6 +89,7 @@ class RegionInteractionGraphBuilder:
     discrete_graph_backend: str = "dense_reference",
     discrete_graph_chunk_size: int = 1024,
     discrete_coverage_multiplier: float = 1.0,
+    reuse_exact_p2r_for_r2p: bool = False,
   ):
     """
     Class for building the graphs that are used in RIGNO.
@@ -151,11 +152,13 @@ class RegionInteractionGraphBuilder:
     if int(node_coordinate_freqs) < 1:
       raise ValueError("node_coordinate_freqs must be at least 1")
     if discrete_graph_backend not in {
-      "dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1"
+      "dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1",
+      "gpu_tiled_exact_v1",
     }:
       raise ValueError(
         "discrete_graph_backend must be one of "
-        "{'dense_reference', 'chunked_numpy_v1', 'sparse_kdtree_v1'}, "
+        "{'dense_reference', 'chunked_numpy_v1', 'sparse_kdtree_v1', "
+        "'gpu_tiled_exact_v1'}, "
         f"found {discrete_graph_backend!r}"
       )
     if int(discrete_graph_chunk_size) < 1:
@@ -181,6 +184,7 @@ class RegionInteractionGraphBuilder:
     self.discrete_graph_backend = discrete_graph_backend
     self.discrete_graph_chunk_size = int(discrete_graph_chunk_size)
     self.discrete_coverage_multiplier = float(discrete_coverage_multiplier)
+    self.reuse_exact_p2r_for_r2p = bool(reuse_exact_p2r_for_r2p)
 
     # Domain shifts for periodic BC
     # self._domain_shifts = jnp.concatenate([
@@ -374,7 +378,7 @@ class RegionInteractionGraphBuilder:
     if (
       self.radius_policy == "discrete_physical_coverage"
       and self.discrete_graph_backend
-      in {"chunked_numpy_v1", "sparse_kdtree_v1"}
+      in {"chunked_numpy_v1", "sparse_kdtree_v1", "gpu_tiled_exact_v1"}
     ):
       centers_array = np.asarray(centers)
       points_array = np.asarray(points)
@@ -412,6 +416,33 @@ class RegionInteractionGraphBuilder:
           edges = np.column_stack(
             (point_index[order], center_index[order])
           )
+        else:
+          edges = np.empty((0, 2), dtype=np.int64)
+        return jnp.asarray(edges, dtype=jnp.int32)
+
+      if self.discrete_graph_backend == "gpu_tiled_exact_v1":
+        # The radius itself remains the frozen sparse-KDTree coverage result.
+        # Only the final point/center predicate is evaluated on the GPU in
+        # bounded tiles.  Results are brought back and lexicographically sorted
+        # to the exact canonical sparse backend order before graph packing.
+        centers_device = jax.device_put(jnp.asarray(centers_array))
+        radii_device = jax.device_put(jnp.asarray(radii_array))
+        edge_blocks = []
+        for start in range(0, len(points_array), self.discrete_graph_chunk_size):
+          block = jax.device_put(jnp.asarray(
+            points_array[start : start + self.discrete_graph_chunk_size]
+          ))
+          distance = jnp.linalg.norm(
+            block[:, None, :] - centers_device[None, :, :], axis=-1
+          )
+          point_index, center_index = jnp.where(distance <= radii_device)
+          point_index, center_index = jax.device_get((point_index, center_index))
+          if len(point_index):
+            edge_blocks.append(np.column_stack((point_index + start, center_index)))
+        if edge_blocks:
+          edges = np.concatenate(edge_blocks, axis=0)
+          order = np.lexsort((edges[:, 1], edges[:, 0]))
+          edges = edges[order]
         else:
           edges = np.empty((0, 2), dtype=np.int64)
         return jnp.asarray(edges, dtype=jnp.int32)
@@ -594,13 +625,24 @@ class RegionInteractionGraphBuilder:
       else x_out
     )
     _phase_started = time.perf_counter()
-    r2p_edge_indices = self._get_supported_pnodes_by_rnodes(
-      centers=x_rnodes,
-      points=r2p_points,
-      radii=self._get_effective_support_radii(r_rnodes, self.overlap_factor_r2p),
-      apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
+    p2r_radii = self._get_effective_support_radii(r_rnodes, self.overlap_factor_p2r)
+    r2p_radii = self._get_effective_support_radii(r_rnodes, self.overlap_factor_r2p)
+    _reuse_reverse = (
+      self.reuse_exact_p2r_for_r2p
+      and np.array_equal(np.asarray(x_inp), np.asarray(r2p_points))
+      and np.array_equal(np.asarray(p2r_radii), np.asarray(r2p_radii))
     )
+    if _reuse_reverse:
+      r2p_edge_indices = p2r_edge_indices
+    else:
+      r2p_edge_indices = self._get_supported_pnodes_by_rnodes(
+        centers=x_rnodes,
+        points=r2p_points,
+        radii=r2p_radii,
+        apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
+      )
     _timings["r2p_seconds"] = time.perf_counter() - _phase_started
+    _timings["r2p_reused_from_p2r"] = bool(_reuse_reverse)
 
     _phase_started = time.perf_counter()
     if self.coverage_repair_policy == "nearest_rnode":

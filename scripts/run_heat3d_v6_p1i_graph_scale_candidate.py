@@ -194,10 +194,15 @@ def _builder(
     runtime: Mapping[str, Any],
     graph_key: Any,
     physical_node_count: int,
+    optimization_mode: str = "baseline",
 ) -> Any:
     policy = _resolved_policy(candidate, physical_node_count)
     graph_config = dict(runtime["graph_config"])
     graph_config["subsample_factor"] = policy["subsample_factor"]
+    if optimization_mode in {"shared_reverse", "combined"}:
+        graph_config["reuse_exact_p2r_for_r2p"] = True
+    if optimization_mode in {"gpu_tiled", "combined"}:
+        graph_config["discrete_graph_backend"] = "gpu_tiled_exact_v1"
     if policy["coverage_mode"] == "discrete_physical_coverage":
         return Heat3DGraphBuilder(**graph_config)
     anchor_coords = highn.runner._graph_coords_for_example(anchor, runtime["stats"])
@@ -360,6 +365,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         json.loads(args.full_grid_protocol.read_text())
         if args.full_grid_protocol is not None else None
     )
+    optimization_only = args.optimization_mode != "baseline"
     confirmation = policy_contract["status"] == "frozen_after_E_no_go_before_confirmation"
     resolution_closeout = policy_contract["status"] == "preregistered_before_graph_resolution_closeout"
     allowed_status = (
@@ -368,7 +374,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         else "preregistered_before_E_execution" if args.candidate == "E"
         else "preregistered_before_candidate_execution"
     )
-    if not full_grid and policy_contract["status"] != allowed_status:
+    if not full_grid and not optimization_only and policy_contract["status"] != allowed_status:
         raise RuntimeError("graph-scale policy contract is not preregistered for candidate")
     if full_grid:
         if full_grid_contract is None or full_grid_contract.get("status") != "preregistered_before_full_grid_execution":
@@ -382,6 +388,14 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             or registered["coverage_mode"] != resolved["coverage_mode"]
         ):
             raise RuntimeError("full-grid policy definition drifted")
+    if optimization_only:
+        if full_grid_contract is None:
+            raise RuntimeError("optimization execution requires the frozen full-grid protocol")
+        allowed_cells = {("E", 32768), ("E", 8192), ("E", 16384), ("E", 240825), ("B", 240825)}
+        if (args.candidate, args.resolution) not in allowed_cells:
+            raise RuntimeError("optimization cell is outside the preregistered scope")
+        if not args.timing_only:
+            raise RuntimeError("optimization variants are timing/equivalence only")
     if args.candidate == "E" and not resolution_closeout and not full_grid:
         registered = policy_contract["policies"]["E"]
         if (
@@ -393,8 +407,11 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     if args.candidate not in CANDIDATES or args.resolution not in (1024, 4096, 8192, 16384, 32768, 240825):
         raise RuntimeError("unregistered candidate or resolution")
     if full_grid:
-        if args.seed != 0 or args.timing_only:
-            raise RuntimeError("full-grid execution requires seed0 accuracy plus timing")
+        if args.seed != 0 or (args.timing_only and not optimization_only):
+            raise RuntimeError("full-grid baseline execution requires seed0 accuracy plus timing")
+    elif optimization_only:
+        if args.seed != 0:
+            raise RuntimeError("optimization screen is frozen to seed0")
     elif resolution_closeout:
         registered = policy_contract["policies"].get(args.candidate)
         cell = {"policy": args.candidate, "resolution": args.resolution}
@@ -528,6 +545,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         builder = _builder(
             args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key,
             physical_node_count=len(example.condition.coords),
+            optimization_mode=args.optimization_mode,
         )
         started = time.perf_counter()
         metadata = builder.build_metadata(
@@ -611,6 +629,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         builder = _builder(
             args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key,
             physical_node_count=len(example.condition.coords),
+            optimization_mode=args.optimization_mode,
         )
         phase = time.perf_counter()
         metadata = builder.build_metadata(
@@ -646,7 +665,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         new_case_seconds.append(time.perf_counter() - new_started)
         support_np = np.asarray(support_delta, dtype=np.float64)
         full_np = np.asarray(full_delta, dtype=np.float64)
-        if not args.timing_only:
+        if not args.timing_only or optimization_only:
             predictions.append(support_np)
             full_predictions.append(full_np)
         anchor_local = (
@@ -767,6 +786,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": "heat3d_v6_p1i_graph_scale_candidate_result_v1",
         "status": "passed_timing_only" if args.timing_only else "passed",
         "candidate": args.candidate,
+        "optimization_mode": args.optimization_mode,
         "policy": _resolved_policy(args.candidate, args.resolution),
         "resolution": args.resolution,
         "checkpoint": frozen_checkpoint,
@@ -841,7 +861,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             "direct_full_grid_output": full_grid,
         },
     }
-    if not args.timing_only and not args.no_save_predictions:
+    if (not args.timing_only or optimization_only) and not args.no_save_predictions:
         prediction_path = args.output_dir / "predictions.npz"
         with prediction_path.open("wb") as handle:
             np.savez_compressed(
@@ -879,6 +899,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timing-amendment", type=Path)
     parser.add_argument("--full-grid-protocol", type=Path)
     parser.add_argument("--sample-count", type=int, choices=[1, 32])
+    parser.add_argument(
+        "--optimization-mode",
+        choices=["baseline", "shared_reverse", "gpu_tiled", "combined"],
+        default="baseline",
+    )
     return parser.parse_args()
 
 
