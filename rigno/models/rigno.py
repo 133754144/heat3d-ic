@@ -1,4 +1,5 @@
 from typing import Tuple, Union, NamedTuple
+import time
 
 from flax import linen as nn
 import flax.typing
@@ -541,12 +542,17 @@ class RegionInteractionGraphBuilder:
   def build_metadata(self, x_inp: Array, x_out: Array, domain: Array, rmesh_correction_dsf: int = 1, key: Union[flax.typing.PRNGKey, None] = None) -> RegionInteractionGraphMetadata:
     """Returns the metadata that is needed for building all RIGNO graphs."""
 
+    _timing_started = time.perf_counter()
+    _timings = {}
+
     # Normalize coordinates in [-1, +1) —— 归一化
     x_inp = 2 * (x_inp - domain[0]) / (domain[1] - domain[0]) - 1
     x_out = 2 * (x_out - domain[0]) / (domain[1] - domain[0]) - 1
+    _timings["coordinate_normalization_seconds"] = time.perf_counter() - _timing_started
 
     # Randomly sub-sample pmesh to get rmesh —— 随机采样
     if key is None: key = jax.random.PRNGKey(0)
+    _phase_started = time.perf_counter()
     x_rnodes = _subsample_pointset(key=key, x=x_inp, factor=self.subsample_factor)
 
     # Downsample or upsample the rmesh —— 参数rmesh_correction_dsf不为1时微调网格密度
@@ -554,6 +560,7 @@ class RegionInteractionGraphBuilder:
       x_rnodes = _subsample_pointset(key=key, x=x_rnodes, factor=rmesh_correction_dsf)
     elif rmesh_correction_dsf < 1:
       x_rnodes = _upsample_pointset(key=key, x=x_rnodes, factor=(1 / rmesh_correction_dsf))
+    _timings["regional_prepare_seconds"] = time.perf_counter() - _phase_started
 
     # Compute minimum support radius of each rmesh node —— 计算每个区域节点的“最小支持半径”
     if self.radius_policy == "discrete_physical_coverage":
@@ -564,15 +571,20 @@ class RegionInteractionGraphBuilder:
       )
     else:
       r_rnodes = self._compute_minimum_support_radius(x_rnodes)
+    _timings["coverage_radius_seconds"] = time.perf_counter() - _phase_started
 
     # Get edge indices
+    _phase_started = time.perf_counter()
     p2r_edge_indices = self._get_supported_pnodes_by_rnodes(
       centers=x_rnodes, # 区域节点坐标
       points=x_inp,     # 物理节点坐标
       radii=self._get_effective_support_radii(r_rnodes, self.overlap_factor_p2r),
       apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
     ) # 返回哪些物理点连到哪些区域点
+    _timings["p2r_seconds"] = time.perf_counter() - _phase_started
+    _phase_started = time.perf_counter()
     r2r_edge_indices, r2r_edge_domains = self._get_r2r_edges(x_rnodes)
+    _timings["r2r_seconds"] = time.perf_counter() - _phase_started
     r2p_points = (
       x_inp
       if (
@@ -581,13 +593,16 @@ class RegionInteractionGraphBuilder:
       )
       else x_out
     )
+    _phase_started = time.perf_counter()
     r2p_edge_indices = self._get_supported_pnodes_by_rnodes(
       centers=x_rnodes,
       points=r2p_points,
       radii=self._get_effective_support_radii(r_rnodes, self.overlap_factor_r2p),
       apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
     )
+    _timings["r2p_seconds"] = time.perf_counter() - _phase_started
 
+    _phase_started = time.perf_counter()
     if self.coverage_repair_policy == "nearest_rnode":
       if self.repair_p2r:
         p2r_edge_indices = self._repair_physical_node_coverage(
@@ -601,6 +616,8 @@ class RegionInteractionGraphBuilder:
           centers=x_rnodes,
           points=x_out,
         )
+    _timings["coverage_repair_seconds"] = time.perf_counter() - _phase_started
+    _phase_started = time.perf_counter()
     r2p_edge_indices = jnp.flip(r2p_edge_indices, axis=-1)
 
     # Add dummy nodes and edges
@@ -641,6 +658,10 @@ class RegionInteractionGraphBuilder:
       r2r_edge_domains=jnp.expand_dims(r2r_edge_domains, axis=0),
       r2p_edge_indices=(jnp.expand_dims(r2p_edge_indices, axis=0) if (r2p_edge_indices is not None) else None),
     )
+
+    _timings["packing_seconds"] = time.perf_counter() - _phase_started
+    _timings["total_seconds"] = time.perf_counter() - _timing_started
+    self.last_build_timings = _timings
 
     return graph_metadata
 

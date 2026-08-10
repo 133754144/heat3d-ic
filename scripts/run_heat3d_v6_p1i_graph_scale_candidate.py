@@ -57,9 +57,12 @@ def _resolved_policy(candidate: str, physical_node_count: int) -> dict[str, Any]
     policy = dict(CANDIDATES[candidate])
     if candidate == "E":
         target = int(policy["regional_node_target"])
-        if physical_node_count not in (1024, 4096, 8192, 16384, 32768) or physical_node_count % target:
-            raise RuntimeError("E requires a registered N divisible by frozen Nr=256")
-        policy["subsample_factor"] = physical_node_count // target
+        if physical_node_count not in (1024, 4096, 8192, 16384, 32768, 240825):
+            raise RuntimeError("E requires a registered N with frozen Nr=256")
+        # _subsample_pointset keeps int(N / factor) nodes.  The exact rational
+        # N/256 therefore preserves the frozen E capacity even when the full
+        # solver grid is not divisible by 256.
+        policy["subsample_factor"] = physical_node_count / target
     return policy
 
 
@@ -352,6 +355,11 @@ def _runtime_distribution(values: list[float]) -> dict[str, float | int]:
 
 def execute(args: argparse.Namespace) -> dict[str, Any]:
     policy_contract = json.loads(args.policy_contract.read_text())
+    full_grid = args.resolution == 240825
+    full_grid_contract = (
+        json.loads(args.full_grid_protocol.read_text())
+        if args.full_grid_protocol is not None else None
+    )
     confirmation = policy_contract["status"] == "frozen_after_E_no_go_before_confirmation"
     resolution_closeout = policy_contract["status"] == "preregistered_before_graph_resolution_closeout"
     allowed_status = (
@@ -360,9 +368,21 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         else "preregistered_before_E_execution" if args.candidate == "E"
         else "preregistered_before_candidate_execution"
     )
-    if policy_contract["status"] != allowed_status:
+    if not full_grid and policy_contract["status"] != allowed_status:
         raise RuntimeError("graph-scale policy contract is not preregistered for candidate")
-    if args.candidate == "E" and not resolution_closeout:
+    if full_grid:
+        if full_grid_contract is None or full_grid_contract.get("status") != "preregistered_before_full_grid_execution":
+            raise RuntimeError("full-grid execution protocol is not preregistered")
+        if args.candidate not in full_grid_contract["policies"]:
+            raise RuntimeError("candidate is not registered for full-grid execution")
+        registered = full_grid_contract["policies"][args.candidate]
+        resolved = _resolved_policy(args.candidate, args.resolution)
+        if (
+            int(registered["regional_node_count"]) != int(args.resolution / resolved["subsample_factor"])
+            or registered["coverage_mode"] != resolved["coverage_mode"]
+        ):
+            raise RuntimeError("full-grid policy definition drifted")
+    if args.candidate == "E" and not resolution_closeout and not full_grid:
         registered = policy_contract["policies"]["E"]
         if (
             registered["regional_node_count"] != 256
@@ -370,9 +390,12 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             or args.resolution not in policy_contract["resolutions"]
         ):
             raise RuntimeError("E scientific contract drifted")
-    if args.candidate not in CANDIDATES or args.resolution not in (1024, 4096, 8192, 16384, 32768):
+    if args.candidate not in CANDIDATES or args.resolution not in (1024, 4096, 8192, 16384, 32768, 240825):
         raise RuntimeError("unregistered candidate or resolution")
-    if resolution_closeout:
+    if full_grid:
+        if args.seed != 0 or args.timing_only:
+            raise RuntimeError("full-grid execution requires seed0 accuracy plus timing")
+    elif resolution_closeout:
         registered = policy_contract["policies"].get(args.candidate)
         cell = {"policy": args.candidate, "resolution": args.resolution}
         if registered is None or cell not in policy_contract["new_execution_cells"]:
@@ -425,6 +448,8 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         anchors = [dataset[index[sample_id]] for sample_id in expected]
     else:
         anchors = highn._valid_examples(dataset, binding)
+        if args.sample_count is not None:
+            anchors = anchors[: args.sample_count]
     supports_by_id = {
         row["sample_id"]: row for row in preflight.get("supports", {}).get(str(args.resolution), [])
     }
@@ -439,10 +464,10 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             checkpoint_sha=frozen_checkpoint["sha256"],
         )
     else:
-        baseline_result = json.loads(
+        baseline_result = None if full_grid else json.loads(
             (args.baseline_artifact_root / f"resolution_{args.resolution}.json").read_text()
         )
-        baseline_maps = {
+        baseline_maps = {} if full_grid else {
             row["sample_id"]: Path(row["cache_file"])
             for row in baseline_result["reconstruction_cache"]["samples"]
         }
@@ -453,26 +478,39 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                 for sample_id, prediction in zip(native_ids, np.asarray(payload["predictions_K"]), strict=True)
             }
             anchor_scales = dict(zip(native_ids, map(float, np.asarray(payload["predicted_scales"])), strict=True))
-        if native_ids != [anchor.sample_id for anchor in anchors]:
+        if native_ids[: len(anchors)] != [anchor.sample_id for anchor in anchors]:
             raise RuntimeError("native prediction order drifted")
     graph_key = highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
-    examples, support_payloads, boundaries_by_id = [], [], {}
+    examples, support_payloads, boundaries_by_id, anchor_indices_by_id = [], [], {}, {}
     for anchor in anchors:
+        anchor_indices, anchor_maximum = highn._anchor_indices(
+            anchor, full["coords"],
+            float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]),
+        )
+        if anchor_maximum > float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]):
+            raise RuntimeError("native1024 anchor coordinate replay drifted")
+        anchor_indices_by_id[anchor.sample_id] = anchor_indices
         if args.resolution == 1024:
-            indices, maximum = highn._anchor_indices(
-                anchor, full["coords"],
-                float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]),
-            )
-            if maximum > float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]):
-                raise RuntimeError("native1024 anchor coordinate replay drifted")
             features = np.asarray(anchor.condition.condition_features, dtype=np.float64)
             support = {
-                "selected_indices": indices,
+                "selected_indices": anchor_indices,
                 "operator_control_volume": np.asarray(anchor.operator_point_weights, dtype=np.float64),
                 "k_xyz": features[:, :3],
                 "q_W_m3": features[:, 3],
-                "layer_id": np.asarray(full["layer"][indices], dtype=np.int32),
+                "layer_id": np.asarray(full["layer"][anchor_indices], dtype=np.int32),
             }
+        elif full_grid:
+            physics_path = Path(next(
+                row for row in preflight["samples"] if row["sample_id"] == anchor.sample_id
+            )["physics_cache_file"])
+            with np.load(physics_path, allow_pickle=False) as physics:
+                support = {
+                    "selected_indices": np.arange(len(full["coords"]), dtype=np.int64),
+                    "operator_control_volume": np.asarray(full["cv"], dtype=np.float64),
+                    "k_xyz": np.asarray(physics["k_xyz"], dtype=np.float64),
+                    "q_W_m3": np.asarray(physics["q_W_m3"], dtype=np.float64),
+                    "layer_id": np.asarray(full["layer"], dtype=np.int32),
+                }
         else:
             row = supports_by_id[anchor.sample_id]
             support = highn._load_support(Path(row["support_file"]))
@@ -485,6 +523,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     # Qualification pass determines only padding envelopes. No prediction is run.
     qualification_metadata, qualification_builders = [], []
     qualification_build_seconds = []
+    qualification_graph_stage_rows = []
     for example, anchor in zip(examples, anchors, strict=True):
         builder = _builder(
             args.candidate, anchor=anchor, runtime=runtime, graph_key=graph_key,
@@ -496,6 +535,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         )
         jax.block_until_ready(metadata.r_rnodes)
         qualification_build_seconds.append(time.perf_counter() - started)
+        qualification_graph_stage_rows.append(dict(getattr(builder.builder, "last_build_timings", {})))
         qualification_metadata.append(metadata)
         qualification_builders.append(builder)
     edge_targets = {}
@@ -525,6 +565,11 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         )
         return support_delta, full_delta
 
+    @jax.jit
+    def direct_full_grid_apply(model_params, group, weights, anchor_scale):
+        support_delta = model_core(model_params, group, weights, anchor_scale)
+        return support_delta, support_delta
+
     # Compile outside production timing using qualification metadata and cached map.
     first_group = highn._prepare_group(
         example=examples[0], anchor=anchors[0], runtime=runtime,
@@ -532,18 +577,24 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         edge_targets=edge_targets,
     )
     first_group = highn._model_group(first_group)
-    first_map = publication._load_mapping_no_audit(baseline_maps[anchors[0].sample_id])
-    first_device_map = to_device_reconstruction_map(first_map)
+    first_map = None if full_grid else publication._load_mapping_no_audit(baseline_maps[anchors[0].sample_id])
+    first_device_map = None if full_grid else to_device_reconstruction_map(first_map)
     first_weights = jnp.asarray(examples[0].operator_point_weights, dtype=jnp.float32)
     started = time.perf_counter()
-    compiled = production_apply(
-        params, first_group, first_weights, jnp.asarray(anchor_scales[anchors[0].sample_id]),
-        first_device_map.neighbor_local_indices, first_device_map.neighbor_weights,
-    )
+    if full_grid:
+        compiled = direct_full_grid_apply(
+            params, first_group, first_weights, jnp.asarray(anchor_scales[anchors[0].sample_id])
+        )
+    else:
+        compiled = production_apply(
+            params, first_group, first_weights, jnp.asarray(anchor_scales[anchors[0].sample_id]),
+            first_device_map.neighbor_local_indices, first_device_map.neighbor_weights,
+        )
     jax.block_until_ready(compiled[1])
     compile_seconds = time.perf_counter() - started
 
     graph_seconds = []
+    graph_stage_rows = []
     group_seconds = []
     map_load_transfer_seconds = []
     new_case_seconds = []
@@ -567,6 +618,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         )
         jax.block_until_ready(metadata.r_rnodes)
         graph_seconds.append(time.perf_counter() - phase)
+        graph_stage_rows.append(dict(getattr(builder.builder, "last_build_timings", {})))
         phase = time.perf_counter()
         group = highn._prepare_group(
             example=example, anchor=anchor, runtime=runtime, builder=builder,
@@ -575,15 +627,20 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         group = highn._model_group(group)
         group_seconds.append(time.perf_counter() - phase)
         phase = time.perf_counter()
-        cpu_map = publication._load_mapping_no_audit(baseline_maps[anchor.sample_id])
-        device_map = to_device_reconstruction_map(cpu_map)
+        cpu_map = None if full_grid else publication._load_mapping_no_audit(baseline_maps[anchor.sample_id])
+        device_map = None if full_grid else to_device_reconstruction_map(cpu_map)
         map_load_transfer_seconds.append(time.perf_counter() - phase)
         weights = jnp.asarray(example.operator_point_weights, dtype=jnp.float32)
         phase = time.perf_counter()
-        support_delta, full_delta = production_apply(
-            params, group, weights, jnp.asarray(anchor_scales[anchor.sample_id]),
-            device_map.neighbor_local_indices, device_map.neighbor_weights,
-        )
+        if full_grid:
+            support_delta, full_delta = direct_full_grid_apply(
+                params, group, weights, jnp.asarray(anchor_scales[anchor.sample_id])
+            )
+        else:
+            support_delta, full_delta = production_apply(
+                params, group, weights, jnp.asarray(anchor_scales[anchor.sample_id]),
+                device_map.neighbor_local_indices, device_map.neighbor_weights,
+            )
         jax.block_until_ready(support_delta)
         neural_plus_reconstruction = time.perf_counter() - phase
         new_case_seconds.append(time.perf_counter() - new_started)
@@ -592,14 +649,20 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         if not args.timing_only:
             predictions.append(support_np)
             full_predictions.append(full_np)
-        response_drift.append(_diff(support_np[:1024], native_prediction[anchor.sample_id] - highn.REFERENCE_K))
+        anchor_local = (
+            anchor_indices_by_id[anchor.sample_id]
+            if full_grid else np.arange(1024, dtype=np.int64)
+        )
+        response_drift.append(_diff(
+            support_np[anchor_local], native_prediction[anchor.sample_id] - highn.REFERENCE_K
+        ))
         anchor_k = np.asarray(anchor.condition.condition_features[:, :3], dtype=np.float64)
         anchor_q = np.asarray(anchor.condition.condition_features[:, 3], dtype=np.float64)
         anchor_feature_drift.append({
             "sample_id": anchor.sample_id,
-            "delta_k": _diff(np.asarray(support["k_xyz"][:1024]), anchor_k),
-            "delta_q": _diff(np.asarray(support["q_W_m3"][:1024]), anchor_q),
-            "delta_cv": _diff(np.asarray(support["operator_control_volume"][:1024]), np.asarray(anchor.operator_point_weights)),
+            "delta_k": _diff(np.asarray(support["k_xyz"])[anchor_local], anchor_k),
+            "delta_q": _diff(np.asarray(support["q_W_m3"])[anchor_local], anchor_q),
+            "delta_cv": _diff(np.asarray(support["operator_control_volume"])[anchor_local], np.asarray(anchor.operator_point_weights)),
         })
         native_reference = getattr(builder, "native_reference", None)
         diag = _graph_diagnostics(
@@ -628,21 +691,30 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     # production distributions.  The combined production_apply was compiled
     # above, but JAX caches these two entry points independently.
     jax.block_until_ready(model_core(params, group, weights, scale))
-    jax.block_until_ready(device_map.reconstruct(support_delta))
+    if not full_grid:
+        jax.block_until_ready(device_map.reconstruct(support_delta))
     for _ in range(args.timing_repeats):
         phase = time.perf_counter()
         value = model_core(params, group, weights, scale)
         jax.block_until_ready(value)
         forward_seconds.append(time.perf_counter() - phase)
         phase = time.perf_counter()
-        value = device_map.reconstruct(support_delta)
-        jax.block_until_ready(value)
-        apply_seconds.append(time.perf_counter() - phase)
+        if full_grid:
+            value = support_delta
+            jax.block_until_ready(value)
+            apply_seconds.append(0.0)
+        else:
+            value = device_map.reconstruct(support_delta)
+            jax.block_until_ready(value)
+            apply_seconds.append(time.perf_counter() - phase)
         phase = time.perf_counter()
-        _, value = production_apply(
-            params, group, weights, scale,
-            device_map.neighbor_local_indices, device_map.neighbor_weights,
-        )
+        if full_grid:
+            _, value = direct_full_grid_apply(params, group, weights, scale)
+        else:
+            _, value = production_apply(
+                params, group, weights, scale,
+                device_map.neighbor_local_indices, device_map.neighbor_weights,
+            )
         jax.block_until_ready(value)
         warm_seconds.append(time.perf_counter() - phase)
 
@@ -706,11 +778,16 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
         } if args.timing_only else {
             "support": support_metrics,
             "full_field": full_metrics,
-            "oracle_reconstruction_floor_reused": (
+            "oracle_reconstruction_floor_reused": ({
+                "point_global_true_rms_relative_rmse_pct": 0.0,
+                "raw_cv_weighted_rmse_K": 0.0,
+                "reason": "query support exactly equals the 240825-node solver field",
+            } if full_grid else (
                 preflight["oracle_reconstruction_floor"][str(args.resolution)]
                 if confirmation else baseline_result["oracle_sampling_reconstruction_floor"]
-            ),
+            )),
             "oracle_source": (
+                str(args.full_fields) if full_grid else
                 str(args.baseline_artifact_root / "actual_data_preflight.json")
                 if confirmation else str(args.baseline_artifact_root / f"resolution_{args.resolution}.json")
             ),
@@ -734,8 +811,16 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                 "jit_compile_excluded": True,
             },
             "qualification_graph_build": _runtime_distribution(qualification_build_seconds),
+            "qualification_graph_stage": {
+                key: _runtime_distribution([row[key] for row in qualification_graph_stage_rows])
+                for key in qualification_graph_stage_rows[0]
+            },
             "jit_compile_seconds_excluded": compile_seconds,
             "graph_construction": _runtime_distribution(graph_seconds),
+            "graph_stage": {
+                key: _runtime_distribution([row[key] for row in graph_stage_rows])
+                for key in graph_stage_rows[0]
+            },
             "group_prepare": _runtime_distribution(group_seconds),
             "cached_reconstruction_map_load_and_h2d": _runtime_distribution(map_load_transfer_seconds),
             "neural_core": _runtime_distribution(forward_seconds),
@@ -753,6 +838,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             "metrics_evaluated": not args.timing_only,
             "prediction_artifact_saved": not args.timing_only and not args.no_save_predictions,
             "confirmation_remaining_valid96": confirmation,
+            "direct_full_grid_output": full_grid,
         },
     }
     if not args.timing_only and not args.no_save_predictions:
@@ -791,6 +877,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timing-repeats", type=int, default=20)
     parser.add_argument("--timing-only", action="store_true")
     parser.add_argument("--timing-amendment", type=Path)
+    parser.add_argument("--full-grid-protocol", type=Path)
+    parser.add_argument("--sample-count", type=int, choices=[1, 32])
     return parser.parse_args()
 
 

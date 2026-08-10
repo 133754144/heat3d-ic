@@ -1,0 +1,85 @@
+{
+  "schema_version": "heat3d_v6_p1i_full_grid_performance_protocol_v1",
+  "status": "preregistered_before_full_grid_execution",
+  "base_commit": "9f439baace4aa6bbb0cafad85c0dc9acb5231069",
+  "scientific_contract": {
+    "checkpoint": "V6_06 seed0 point-global best e559",
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "sample_population": "frozen_valid32",
+    "resolution": 240825,
+    "query_support": "full_fields.h5 solver-node order",
+    "direct_output": true,
+    "reconstruction_map": "identity_not_built",
+    "anchor_context_and_scale": "frozen_native1024",
+    "allowed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training": false
+  },
+  "policies": {
+    "B": {
+      "regional_subsample_factor": 8,
+      "regional_node_count": 30103,
+      "coverage_mode": "discrete_physical_coverage"
+    },
+    "E": {
+      "regional_node_target": 256,
+      "resolved_subsample_factor": 940.72265625,
+      "regional_node_count": 256,
+      "coverage_mode": "discrete_physical_coverage"
+    }
+  },
+  "execution_order": [
+    "B@240825 sample1 feasibility",
+    "B@240825 valid32 only if feasibility passes",
+    "E@240825 sample1 feasibility",
+    "E@240825 valid32 only if feasibility passes"
+  ],
+  "hard_gates": [
+    "finite k/q/CV and prediction",
+    "power and CV conservation",
+    "zero isolated or under-covered physical nodes",
+    "one connected R2R component",
+    "no OOM or execution failure",
+    "same-GPU cached replay within frozen prediction tolerance"
+  ],
+  "timing_contract": {
+    "host": "WSL2 RTX 5070 GPU and Ryzen 7 9700X CPU",
+    "unit": "seconds_per_sample_B1",
+    "synchronize_gpu": true,
+    "states": ["process_cold", "fresh_topology", "warm_resident"],
+    "production_excludes": ["metrics", "hash", "oracle", "qualification", "serialization"],
+    "do_not_pool_protocols": true,
+    "decomposition": [
+      "process_cuda_init", "checkpoint_load", "support_regional_prepare",
+      "kdtree_neighbor_search", "p2r", "r2r", "r2p",
+      "packing_padding", "h2d", "jit", "forward", "reconstruction", "sync"
+    ]
+  },
+  "optimization_contract": {
+    "screen_cell": "E@32768 frozen valid32",
+    "order": [
+      "device_resident_metadata_no_redundant_h2d",
+      "shared_reversed_p2r_r2p_if_exact",
+      "gpu_native_tiled_p2r_r2p_if_exact",
+      "padding_bucketing_only_if_still_needed"
+    ],
+    "accuracy_change_allowed": false,
+    "promotion": "only exact-equivalent variants with clear fresh/process-cold gain",
+    "B_restriction": "only generic exact-equivalent optimizations; no E-specific dense GPU P2R at 240825"
+  },
+  "historical_inputs": {
+    "graph_resolution_closeout": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_closeout.json",
+      "sha256": "9229c59b9b34b40e32489fa55db37280a11d1292ea1a736de1e6b5afb4e0f0c6"
+    },
+    "fvm_timing": {
+      "path": "configs/heat3d_v6_p1i/v6_unified_performance_timing.csv",
+      "sha256": "f8c0645a295a47f304cca8a2af56d98ed8bd9bdaa1f1f66ebd4c4c3e32da1dde"
+    },
+    "high_n_binding": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+      "sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede"
+    }
+  }
+}
