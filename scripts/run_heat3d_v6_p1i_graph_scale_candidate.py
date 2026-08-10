@@ -441,7 +441,15 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError("A timing-only resolution is not authorized")
     elif args.timing_only:
         raise RuntimeError("timing-only mode is registered only for baseline A")
-    binding = highn._binding(args)
+    if optimization_only:
+        # The frozen binding intentionally fingerprints the historical graph
+        # builder.  Optimization probes must not rewrite it; their separate
+        # preregistration and exact-equivalence gate bind the additive backend.
+        binding = json.loads(args.binding.read_text())
+        if binding.get("status") != "frozen_after_three_seed_r0_pass":
+            raise RuntimeError("frozen high-N binding status drifted")
+    else:
+        binding = highn._binding(args)
     if confirmation:
         runtime = _confirmation_runtime(args, policy_contract)
         frozen_checkpoint = policy_contract["checkpoints"][str(args.seed)]
