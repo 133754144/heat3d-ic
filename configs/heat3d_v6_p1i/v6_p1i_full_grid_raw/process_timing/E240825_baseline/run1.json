@@ -1,0 +1,62 @@
+{
+  "candidate": "E",
+  "direct_full_grid_output": true,
+  "excluded_from_production_span": [
+    "metrics",
+    "oracle",
+    "hash",
+    "equivalence",
+    "serialization"
+  ],
+  "memory": {
+    "bytes_in_use": 170807040,
+    "bytes_limit": 9615360000,
+    "device": "cuda:0",
+    "peak_bytes_in_use": 4108945664,
+    "platform": "gpu"
+  },
+  "optimization_mode": "baseline",
+  "resolution": 240825,
+  "role_contract": {
+    "sealed": false,
+    "test": false,
+    "training": false,
+    "valid_iid": true
+  },
+  "sample_id": "v6p1if1_0308",
+  "schema_version": "heat3d_v6_p1i_full_grid_production_timing_v1",
+  "status": "passed",
+  "timing": {
+    "decomposition": {
+      "checkpoint_and_runtime_load_seconds": 0.4709220619406551,
+      "graph_construction_seconds": 3.3436361360363662,
+      "graph_stage": {
+        "coordinate_normalization_seconds": 0.15093168406747282,
+        "coverage_radius_seconds": 1.1656194170936942,
+        "coverage_repair_seconds": 2.844957634806633e-06,
+        "p2r_seconds": 0.24368202406913042,
+        "packing_seconds": 0.24681353685446084,
+        "r2p_reused_from_p2r": false,
+        "r2p_seconds": 0.21812553494237363,
+        "r2r_seconds": 0.7172905521001667,
+        "regional_prepare_seconds": 0.4478908951859921,
+        "total_seconds": 2.742480742977932
+      },
+      "h2d_seconds": 0.031545963836833835,
+      "input_and_support_prepare_seconds": 0.09691057913005352,
+      "jit_plus_first_forward_and_sync_seconds": 4.626159816049039,
+      "packing_padding_seconds": 1.6036155589390546,
+      "python_and_module_import_seconds": 0.6766669519711286
+    },
+    "process_cold_continuous_seconds": 10.882780391955748,
+    "process_cold_span": "process entry through synchronized first prediction",
+    "warm_resident_neural_forward": {
+      "count": 20,
+      "mean_seconds": 0.08522198306163772,
+      "median_seconds": 0.08519267558585852,
+      "p95_seconds": 0.08580152713693678,
+      "std_seconds": 0.0004223451190037177
+    },
+    "warm_timing_total_seconds_excluded_from_process_cold": 1.7044894308783114
+  }
+}

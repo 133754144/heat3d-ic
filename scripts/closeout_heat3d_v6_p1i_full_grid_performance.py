@@ -89,6 +89,10 @@ def main() -> int:
         policy: ROOT / f"configs/heat3d_v6_p1i/v6_p1i_full_grid_raw/{policy}_240825.json"
         for policy in ("B", "E")
     }
+    feasibility_paths = {
+        policy: ROOT / f"configs/heat3d_v6_p1i/v6_p1i_full_grid_raw/{policy}_240825_sample1_feasibility.json"
+        for policy in ("B", "E")
+    }
     process_counts = {}
     for policy, path in full_paths.items():
         source = json.loads(path.read_text())
@@ -153,12 +157,28 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=FIELDS)
         writer.writeheader(); writer.writerows(rows)
     optimization = json.loads(args.optimization_summary.read_text())
+    decomposition = {
+        policy: json.loads(
+            (args.process_timing_root / f"{policy}240825_baseline/decomposition.json").read_text()
+        )["timing"]
+        for policy in ("B", "E")
+    }
     closeout = {
         "schema_version": "heat3d_v6_p1i_full_grid_performance_closeout_v1",
         "status": "completed",
         "rows": rows,
         "process_cold_repeat_counts": process_counts,
         "optimization": optimization,
+        "first_inference_latency_decomposition": decomposition,
+        "sample1_feasibility": {
+            policy: {
+                "status": json.loads(path.read_text())["status"],
+                "undercovered_fraction": json.loads(path.read_text())["graph_diagnostics"]["undercovered_fraction"],
+                "r2r_components": json.loads(path.read_text())["graph_diagnostics"]["r2r_connected_components"]["max"],
+                "path": str(path.relative_to(ROOT)), "sha256": sha(path),
+            }
+            for policy, path in feasibility_paths.items()
+        },
         "historical_artifacts_reexecuted": False,
         "timing_protocols_pooled": False,
         "role_contract": {"training": False, "test": False, "sealed": False},
@@ -192,8 +212,41 @@ def main() -> int:
         "## Optimization decision", "",
         optimization["decision"], "",
         "- GPU tiled exact：边可做到完全一致，但图构建更慢，NO-GO。",
-        "- P2R/R2P reverse reuse：仅在 fresh 路径有小幅收益；是否推广由独立 process-cold 重复门决定。",
+        "- P2R/R2P reverse reuse：仅在 fresh 路径有小幅收益；独立 process-cold bootstrap CI 含 0，因此未推广。",
         "- padding/bucketing：未进入，因为前两步已定位主要瓶颈且无进一步预注册收益依据。", "",
+        "## Original first-inference bottleneck", "",
+        (
+            f"- B@240825：连续 process-cold {decomposition['B']['process_cold_continuous_seconds']:.3f} s；"
+            f"CUDA init {decomposition['B']['decomposition']['cuda_context_init_seconds']:.3f} s，"
+            f"graph {decomposition['B']['decomposition']['graph_construction_seconds']:.3f} s，"
+            f"packing/padding {decomposition['B']['decomposition']['packing_padding_seconds']:.3f} s，"
+            f"JIT+首 forward+sync {decomposition['B']['decomposition']['jit_plus_first_forward_and_sync_seconds']:.3f} s。"
+        ),
+        (
+            f"- E@240825：连续 process-cold {decomposition['E']['process_cold_continuous_seconds']:.3f} s；"
+            f"CUDA init {decomposition['E']['decomposition']['cuda_context_init_seconds']:.3f} s，"
+            f"graph {decomposition['E']['decomposition']['graph_construction_seconds']:.3f} s，"
+            f"packing/padding {decomposition['E']['decomposition']['packing_padding_seconds']:.3f} s，"
+            f"JIT+首 forward+sync {decomposition['E']['decomposition']['jit_plus_first_forward_and_sync_seconds']:.3f} s。"
+        ),
+        "- direct full-grid output 与 solver grid 同序，reconstruction map/build/apply 均为 0；同步已包含在首 forward 或 warm forward span。", "",
+        "## Timing interpretation", "",
+        "- process-cold：独立进程连续 wall-clock；与 FVM process-cold 比较。",
+        "- fresh-topology：进程已驻留、重新构图；历史 FVM 没有语义相同的 unseen-topology 状态，因此 speedup 标记 N/A。",
+        "- warm-resident：固定 support/graph/JIT 重复分析；只与 FVM fully-cached lower bound 比较。",
+        "- 历史 A/B/E 行保留各自 provenance，不与本轮 full-grid timing 合并统计。", "",
+        "## GO / NO-GO", "",
+        (
+            f"- B/E@240825 implementation feasibility 均 GO；但 process-cold 相对 full FVM 仅 "
+            f"{float(b['process_cold_speedup_vs_fvm']):.3f}x / {float(e['process_cold_speedup_vs_fvm']):.3f}x，"
+            "不构成 cold/new-case production speedup。"
+        ),
+        (
+            f"- 固定 support 的 warm repeated-analysis 为 {float(b['warm_resident_speedup_vs_fvm']):.2f}x / "
+            f"{float(e['warm_resident_speedup_vs_fvm']):.2f}x；该结论只适用于 fully-cached 语义。"
+        ),
+        "- E 的 full-grid PG/raw 优于 B，但 source/peak 更差且 VRAM 更高；不据此替换既有 B@8192 推荐分辨率。",
+        "- graph optimization 总结为 NO-GO：不推广 shared-reverse、GPU tiled 或 padding/bucketing，不修改 frozen graph policy。", "",
         "完整逐分辨率表见 `docs/v6_p1i_full_grid_performance_closeout.csv`。",
     ]
     args.output_md.parent.mkdir(parents=True, exist_ok=True)

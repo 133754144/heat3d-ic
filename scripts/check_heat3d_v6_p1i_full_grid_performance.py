@@ -7,6 +7,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 
 
@@ -45,6 +46,32 @@ def check_closeout(path: Path, table: Path) -> None:
         "training": False, "test": False, "sealed": False,
     }
     assert payload["historical_artifacts_reexecuted"] is False
+    assert payload["timing_protocols_pooled"] is False
+    assert payload["process_cold_repeat_counts"] == {"B": 10, "E": 10}
+    for policy in ("B", "E"):
+        feasibility = payload["sample1_feasibility"][policy]
+        assert feasibility["status"] == "passed"
+        assert feasibility["undercovered_fraction"] == 0.0
+        assert feasibility["r2r_components"] == 1.0
+    optimization = payload["optimization"]
+    assert optimization["status"] == "completed_no_promotion"
+    assert optimization["promoted_cells"] == []
+    assert optimization["B_optimization_applied"] is False
+    for name in ("shared_reverse", "gpu_tiled"):
+        equivalence = optimization[name]["equivalence"]
+        assert equivalence["status"] == "passed"
+        assert all(
+            equivalence["edge_summary"][field]["all_samples_exact"]
+            for field in ("p2r", "r2r", "r2p")
+        )
+        assert equivalence["full_prediction_difference"]["rmse_K"] < 0.01
+        assert equivalence["full_prediction_difference"]["max_abs_K"] < 0.1
+        assert max(
+            abs(value)
+            for value in equivalence["metric_delta_candidate_minus_reference"].values()
+        ) < 0.001
+    assert optimization["shared_reverse"]["process_cold_unpaired_bootstrap"]["ci95_seconds"][0] <= 0.0
+    assert optimization["gpu_tiled"]["gain_pct"]["graph_construction_pct"] < 0.0
     rows = list(csv.DictReader(table.open(newline="")))
     required = {("A", str(n)) for n in (1024, 4096, 8192, 16384, 32768)}
     required |= {("B", str(n)) for n in (1024, 4096, 8192, 16384, 32768, 240825)}
@@ -53,6 +80,19 @@ def check_closeout(path: Path, table: Path) -> None:
     for row in rows:
         assert row["timing_protocol"]
         assert row["provenance"]
+        for field in ("point_global_pct", "raw_cv_rmse_K"):
+            if row[field] not in ("", "not_available"):
+                assert math.isfinite(float(row[field]))
+    for policy in ("B", "E"):
+        row = next(
+            row for row in rows
+            if row["policy"] == policy and row["resolution"] == "240825"
+        )
+        assert row["status"] == "new_full_grid_valid32"
+        assert float(row["process_cold_median_s"]) > 0.0
+        assert float(row["fresh_topology_median_s"]) > 0.0
+        assert float(row["warm_resident_median_s"]) > 0.0
+        assert row["fresh_topology_speedup_vs_fvm"] == "not_comparable_no_fvm_unseen_topology_state"
 
 
 def main() -> int:
