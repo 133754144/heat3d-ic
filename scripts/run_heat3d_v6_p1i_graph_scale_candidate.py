@@ -353,8 +353,9 @@ def _mean_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _runtime_distribution(values: list[float]) -> dict[str, float | int]:
-    base = publication._distribution(values)
-    base["p5_seconds"] = float(np.percentile(np.asarray(values), 5))
+    numeric = np.asarray(values, dtype=np.float64)
+    base = publication._distribution(numeric.tolist())
+    base["p5_seconds"] = float(np.percentile(numeric, 5))
     return base
 
 
