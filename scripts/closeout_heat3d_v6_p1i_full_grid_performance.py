@@ -154,7 +154,7 @@ def main() -> int:
 
     args.output_csv.parent.mkdir(parents=True, exist_ok=True)
     with args.output_csv.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=FIELDS, lineterminator="\n")
         writer.writeheader(); writer.writerows(rows)
     optimization = json.loads(args.optimization_summary.read_text())
     decomposition = {
