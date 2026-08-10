@@ -1,0 +1,43 @@
+{
+  "schema_version": "heat3d_v6_p1i_performance_p2_protocol_v1",
+  "status": "frozen_after_p1_before_p2_execution",
+  "p1_commit": "e514103",
+  "workload_states": [
+    "virgin_process_cold",
+    "resident_runtime_graph_rebuild",
+    "known_support_new_physics",
+    "same_input_resident_replay"
+  ],
+  "routes": [
+    "B8192_recon",
+    "E32768_recon",
+    "B240825_direct",
+    "E240825_direct",
+    "FVM240825"
+  ],
+  "known_support_new_physics": {
+    "population": "frozen_valid32",
+    "support_and_graph": "fixed_from_first_preregistered_valid32_sample",
+    "dynamic_fields": ["k_xyz", "q_W_m3", "top_h", "bottom_h", "anchor_global_context", "anchor_scale"],
+    "physics_source": "full_field_sidecar_and_frozen_native_anchor",
+    "require_unique_group_ids": true,
+    "require_unique_combined_physics_hashes": true,
+    "temperature_read": false,
+    "metrics_computed": false
+  },
+  "speedup_rules": {
+    "virgin_process_cold": "compare_with_FVM_process_cold",
+    "resident_runtime_graph_rebuild": "N/A_no_matched_FVM_unseen_topology_state",
+    "known_support_new_physics": "compare_with_FVM_known_topology_new_physics",
+    "same_input_resident_replay": "compare_with_FVM_fully_cached"
+  },
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "accuracy_recomputed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_search": false
+  }
+}
