@@ -46,7 +46,7 @@ def distribution(values: list[float]) -> dict[str, float | int]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", choices=["B", "E"], required=True)
-    parser.add_argument("--optimization-mode", choices=["baseline", "shared_reverse", "gpu_tiled", "combined"], default="baseline")
+    parser.add_argument("--optimization-mode", choices=["baseline", "reference", "shared_reverse", "gpu_tiled", "combined"], default="baseline")
     parser.add_argument("--binding", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--dataset-root", type=Path, required=True)

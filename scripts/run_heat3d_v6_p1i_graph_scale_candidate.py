@@ -901,7 +901,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sample-count", type=int, choices=[1, 32])
     parser.add_argument(
         "--optimization-mode",
-        choices=["baseline", "shared_reverse", "gpu_tiled", "combined"],
+        choices=["baseline", "reference", "shared_reverse", "gpu_tiled", "combined"],
         default="baseline",
     )
     return parser.parse_args()
