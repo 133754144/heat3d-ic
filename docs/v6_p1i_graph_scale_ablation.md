@@ -25,3 +25,10 @@
 ## 工程优先级
 
 冻结策略仍为 A；新拓扑图构建主导端到端延迟，而 warm neural 仅为毫秒级。下一步优先 GPU 图构建优化。只有 support hash 重复时才优先固定图复用；对当前 B1 瓶颈，batch inference 优先级更低。
+
+## 后续 graph-resolution 收口
+
+本节以上内容保留 `7a5adcc` 时点的历史判定，不回写。后续 `d3337f2` 已通过独立的
+remaining-valid96 × 3-seed non-inferiority/latency Pareto 确认，将 B 冻结为 candidate
+production policy。本轮 seed0 frozen-valid32 的 1024–32768 resolution curve 见
+`docs/v6_p1i_graph_resolution_closeout.md`；两个人群不混合统计。

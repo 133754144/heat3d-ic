@@ -1,0 +1,589 @@
+{
+  "B_best_and_recommended_resolution": 8192,
+  "B_recommendation_basis": "minimum valid32 full-field point-global RMSE; also faster than B@16384 and B@32768",
+  "E_scaling": {
+    "full_point_global_monotonic_improvement": true,
+    "production_status": "not_promoted",
+    "raw_cv_rmse_monotonic_improvement": true,
+    "reason": "full/raw improve with N, but source/peak locality and memory do not improve monotonically; only seed0 valid32",
+    "regional_nodes_constant": true,
+    "retain": "exploratory_fixed_capacity_only"
+  },
+  "actual_new_execution_cells": [
+    {
+      "policy": "B",
+      "resolution": 1024
+    },
+    {
+      "policy": "B",
+      "resolution": 4096
+    },
+    {
+      "policy": "B",
+      "resolution": 32768
+    },
+    {
+      "policy": "E",
+      "resolution": 4096
+    },
+    {
+      "policy": "E",
+      "resolution": 16384
+    },
+    {
+      "policy": "E",
+      "resolution": 32768
+    }
+  ],
+  "compression_locality": {
+    "A": "Nr=N/4; highest regional capacity and locality, highest regional-state cost",
+    "B": "Nr=N/8; confirmed latency Pareto winner on separate valid96x3-seed protocol",
+    "E": "Nr=256; strongest regional-state compression, but P2R densification and source/peak trade-off prevent production high-efficiency claim"
+  },
+  "protocol": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_closeout_protocol.json",
+    "role": "frozen_before_new_execution",
+    "sha256": "1dac1d02434adc31c833cc3843024d6e202f380315b9d0fbf0e06caa06edd06e"
+  },
+  "provenance_warning": "All curve rows are seed0 frozen valid32. Separate valid96x3-seed confirmation is decision provenance only and is not pooled or averaged with this curve.",
+  "role_contract": {
+    "sealed": false,
+    "test": false,
+    "training": false,
+    "valid96_confirmation_reexecuted": false
+  },
+  "rows": [
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 1.7770571205182932,
+      "fresh_p95_s": 1.9087410156964324,
+      "full_point_global_pct": 3.071967625386462,
+      "full_raw_cv_rmse_K": 2.930196006566672,
+      "interface_rmse_K": 1.4165821789031567,
+      "p2r_edges_mean": 2594.8125,
+      "p2r_regional_degree_mean": 10.135986328125,
+      "peak_rmse_K": 2.6755216248449316,
+      "peak_vram_bytes": 139176192,
+      "physical_coverage_radius_median_m": 0.0009271003910026271,
+      "policy": "A",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 4119.25,
+      "regional_nodes": 256.0,
+      "resolution": 1024,
+      "sample_count": 32,
+      "source_rmse_K": 2.9627762630847885,
+      "sources": {
+        "accuracy": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_closeout.json",
+          "role": "historical_valid32_gpu_only",
+          "sha256": "d4a4433f46b155ae941e6fda87b7fc39d7d59c21e77e35cfa6ae57a670b879ba"
+        },
+        "graph": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.json",
+          "role": "historical_offline_cache_diagnostic",
+          "sha256": "61ea0642e554aeb123937b213bb88fb3aabd75a971b493dccf9c0768c9648722"
+        },
+        "timing": {
+          "path": "configs/heat3d_v6_p1i/v6_inference_qualification_timing.csv",
+          "role": "historical_reuse_qualification_span_not_cross_policy_matched",
+          "sha256": "deae2b4b803b38c22c8dd70b8f9df9bee01797835ba7c0e361ee45ce1a8d3141"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.010156094445846975,
+      "warm_p95_s": 0.012516494310693814
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.32604494562838227,
+      "fresh_p95_s": 0.3387186749605462,
+      "full_point_global_pct": 2.823750041212247,
+      "full_raw_cv_rmse_K": 2.6381528447588414,
+      "interface_rmse_K": 0.6908449321960156,
+      "p2r_edges_mean": 11877.96875,
+      "p2r_regional_degree_mean": 11.599578857421875,
+      "peak_rmse_K": 3.565766029145503,
+      "peak_vram_bytes": 157979136,
+      "physical_coverage_radius_median_m": 0.0005036275976677689,
+      "policy": "A",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 17728.375,
+      "regional_nodes": 1024.0,
+      "resolution": 4096,
+      "sample_count": 32,
+      "source_rmse_K": 3.5611520964318055,
+      "sources": {
+        "accuracy": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_closeout.json",
+          "role": "historical_valid32_gpu_only",
+          "sha256": "d4a4433f46b155ae941e6fda87b7fc39d7d59c21e77e35cfa6ae57a670b879ba"
+        },
+        "graph": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.json",
+          "role": "historical_offline_cache_diagnostic",
+          "sha256": "61ea0642e554aeb123937b213bb88fb3aabd75a971b493dccf9c0768c9648722"
+        },
+        "timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_gpu_timing.json",
+          "role": "historical_reuse_publication_span_not_candidate_runner_matched",
+          "sha256": "e2b8b2d86b6719f98b85682c574d8855d8923e185fc8cede3cfd3992dc7babe4"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.0032185360323637724,
+      "warm_p95_s": 0.003490280220285058
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.47749551839660853,
+      "fresh_p95_s": 0.4961270613945089,
+      "full_point_global_pct": 2.7427579982503554,
+      "full_raw_cv_rmse_K": 2.491699688318761,
+      "interface_rmse_K": 0.5623705985613656,
+      "p2r_edges_mean": 22700.0625,
+      "p2r_regional_degree_mean": 11.084014892578125,
+      "peak_rmse_K": 3.369423744840235,
+      "peak_vram_bytes": 185564416,
+      "physical_coverage_radius_median_m": 0.000387572227082488,
+      "policy": "A",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 35973.8125,
+      "regional_nodes": 2048.0,
+      "resolution": 8192,
+      "sample_count": 32,
+      "source_rmse_K": 3.6060349963750618,
+      "sources": {
+        "accuracy": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_closeout.json",
+          "role": "historical_valid32_gpu_only",
+          "sha256": "d4a4433f46b155ae941e6fda87b7fc39d7d59c21e77e35cfa6ae57a670b879ba"
+        },
+        "graph": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.json",
+          "role": "historical_offline_cache_diagnostic",
+          "sha256": "61ea0642e554aeb123937b213bb88fb3aabd75a971b493dccf9c0768c9648722"
+        },
+        "timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/A_8192_timing_only.json",
+          "role": "historical_reuse_matched_candidate_span",
+          "sha256": "b260314be3056a0a66e30d6de06765e892c3d004566ec4e4f7cc6d5a0dd4c352"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.0037603575037792325,
+      "warm_p95_s": 0.003928012738469988
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.5764100778615102,
+      "fresh_p95_s": 0.5957284889183938,
+      "full_point_global_pct": 2.8173708946158174,
+      "full_raw_cv_rmse_K": 2.5342753349123437,
+      "interface_rmse_K": 0.5954506934552837,
+      "p2r_edges_mean": 38712.21875,
+      "p2r_regional_degree_mean": 9.451225280761719,
+      "peak_rmse_K": 3.496277891479243,
+      "peak_vram_bytes": 310001152,
+      "physical_coverage_radius_median_m": 0.0003497321891998865,
+      "policy": "A",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 73177.1875,
+      "regional_nodes": 4096.0,
+      "resolution": 16384,
+      "sample_count": 32,
+      "source_rmse_K": 3.7365713301693875,
+      "sources": {
+        "accuracy": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_closeout.json",
+          "role": "historical_valid32_gpu_only",
+          "sha256": "d4a4433f46b155ae941e6fda87b7fc39d7d59c21e77e35cfa6ae57a670b879ba"
+        },
+        "graph": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.json",
+          "role": "historical_offline_cache_diagnostic",
+          "sha256": "61ea0642e554aeb123937b213bb88fb3aabd75a971b493dccf9c0768c9648722"
+        },
+        "timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/A_16384_timing_only.json",
+          "role": "historical_reuse_matched_candidate_span",
+          "sha256": "0b99d4e424618c1eb456be638001382a0e445273e184d5ece807e90e1581c68e"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.006770816049538553,
+      "warm_p95_s": 0.006908007396850734
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.4129834249615669,
+      "fresh_p95_s": 0.4236251087975688,
+      "full_point_global_pct": 2.939389790801459,
+      "full_raw_cv_rmse_K": 2.6468942460370664,
+      "interface_rmse_K": 0.6568611645383883,
+      "p2r_edges_mean": 69092.09375,
+      "p2r_regional_degree_mean": 8.434093475341797,
+      "peak_rmse_K": 3.108928655934672,
+      "peak_vram_bytes": 470183936,
+      "physical_coverage_radius_median_m": 0.00031250002793967743,
+      "policy": "A",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 146035.4375,
+      "regional_nodes": 8192.0,
+      "resolution": 32768,
+      "sample_count": 32,
+      "source_rmse_K": 3.703181295835305,
+      "sources": {
+        "accuracy": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_closeout.json",
+          "role": "historical_valid32_gpu_only",
+          "sha256": "d4a4433f46b155ae941e6fda87b7fc39d7d59c21e77e35cfa6ae57a670b879ba"
+        },
+        "graph": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.json",
+          "role": "historical_offline_cache_diagnostic",
+          "sha256": "61ea0642e554aeb123937b213bb88fb3aabd75a971b493dccf9c0768c9648722"
+        },
+        "timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_gpu_timing.json",
+          "role": "historical_reuse_publication_span_not_candidate_runner_matched",
+          "sha256": "e2b8b2d86b6719f98b85682c574d8855d8923e185fc8cede3cfd3992dc7babe4"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.018056844943203032,
+      "warm_p95_s": 0.018398880877066405
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.38637551094871014,
+      "fresh_p95_s": 0.4009417407447472,
+      "full_point_global_pct": 3.0477158084334937,
+      "full_raw_cv_rmse_K": 2.934367665899419,
+      "interface_rmse_K": 1.2680209414247423,
+      "p2r_edges_mean": 3135.3125,
+      "p2r_regional_degree_mean": 24.49462890625,
+      "peak_rmse_K": 2.636333018109248,
+      "peak_vram_bytes": 156589312,
+      "physical_coverage_radius_median_m": 0.0015076103072596276,
+      "policy": "B",
+      "provenance_class": "new_execution",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 1763.8125,
+      "regional_nodes": 128.0,
+      "resolution": 1024,
+      "sample_count": 32,
+      "source_rmse_K": 2.9201524570693107,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_raw/B_1024.json",
+          "role": "new_execution",
+          "sha256": "33faf61f409a6ad3b45c5d3c361d983f9ac56d267d2c3bf53e9e20dbe75353f6"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.0015270320000126958,
+      "warm_p95_s": 0.0017444085795432342
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.42827818740624934,
+      "fresh_p95_s": 0.4382643488352187,
+      "full_point_global_pct": 2.795196333268537,
+      "full_raw_cv_rmse_K": 2.6129528339826256,
+      "interface_rmse_K": 0.6457290152916809,
+      "p2r_edges_mean": 17096.9375,
+      "p2r_regional_degree_mean": 33.3924560546875,
+      "peak_rmse_K": 3.688483058974905,
+      "peak_vram_bytes": 168447488,
+      "physical_coverage_radius_median_m": 0.0009214975928015602,
+      "policy": "B",
+      "provenance_class": "new_execution",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 7865.5,
+      "regional_nodes": 512.0,
+      "resolution": 4096,
+      "sample_count": 32,
+      "source_rmse_K": 3.520061566626727,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_raw/B_4096.json",
+          "role": "new_execution",
+          "sha256": "2531317c3afac564de1000e5ac62fb870daba11f4bb85cd4a59e56b05261a76a"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.009673716966062784,
+      "warm_p95_s": 0.010260488593485207
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.4418046238133684,
+      "fresh_p95_s": 0.4548626501346007,
+      "full_point_global_pct": 2.739835066049737,
+      "full_raw_cv_rmse_K": 2.4587887815005853,
+      "interface_rmse_K": 0.5100798090283039,
+      "p2r_edges_mean": 34946.5,
+      "p2r_regional_degree_mean": 34.12744140625,
+      "peak_rmse_K": 3.4786064303177264,
+      "peak_vram_bytes": 190544896,
+      "physical_coverage_radius_median_m": 0.0006975079021275368,
+      "policy": "B",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 16120.9375,
+      "regional_nodes": 1024.0,
+      "resolution": 8192,
+      "sample_count": 32,
+      "source_rmse_K": 3.587522396517475,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/B_8192.json",
+          "role": "historical_reuse",
+          "sha256": "285c924897245e085b32079cada0c0840cbd6834ffd2197ddd54d63eeca8dcd1"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.0026642305310815573,
+      "warm_p95_s": 0.0037145422073081137
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.5456065846374258,
+      "fresh_p95_s": 0.5555880114203319,
+      "full_point_global_pct": 2.7558152920029935,
+      "full_raw_cv_rmse_K": 2.4357614021543434,
+      "interface_rmse_K": 0.546116829368644,
+      "p2r_edges_mean": 54934.75,
+      "p2r_regional_degree_mean": 26.8236083984375,
+      "peak_rmse_K": 3.440714127890834,
+      "peak_vram_bytes": 249393664,
+      "physical_coverage_radius_median_m": 0.0005676063594982547,
+      "policy": "B",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 32975.5,
+      "regional_nodes": 2048.0,
+      "resolution": 16384,
+      "sample_count": 32,
+      "source_rmse_K": 3.6838103894423657,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/B_16384.json",
+          "role": "historical_reuse",
+          "sha256": "5b81fc3ab25f28cfd683419106f7a55434a4044e41339d15d463e099bb9a79fb"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.004963301471434534,
+      "warm_p95_s": 0.005227320385165514
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.7345602569403127,
+      "fresh_p95_s": 0.7649584123166278,
+      "full_point_global_pct": 2.808226193684273,
+      "full_raw_cv_rmse_K": 2.5203762948403656,
+      "interface_rmse_K": 0.6291286552792261,
+      "p2r_edges_mean": 90461.34375,
+      "p2r_regional_degree_mean": 22.085289001464844,
+      "peak_rmse_K": 3.479292549903588,
+      "peak_vram_bytes": 355941888,
+      "physical_coverage_radius_median_m": 0.0004941058137189628,
+      "policy": "B",
+      "provenance_class": "new_execution",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 66253.5625,
+      "regional_nodes": 4096.0,
+      "resolution": 32768,
+      "sample_count": 32,
+      "source_rmse_K": 3.6273425074271852,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_raw/B_32768.json",
+          "role": "new_execution",
+          "sha256": "75ba079a0e1bce66025518a8784493d51d4ed74d8653844ef94600393c7dfd9d"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.008580053108744323,
+      "warm_p95_s": 0.008959434763528408
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 1.7770571205182932,
+      "fresh_p95_s": 1.9087410156964324,
+      "full_point_global_pct": 3.071967625386462,
+      "full_raw_cv_rmse_K": 2.930196006566672,
+      "interface_rmse_K": 1.4165821789031567,
+      "p2r_edges_mean": 2594.8125,
+      "p2r_regional_degree_mean": 10.135986328125,
+      "peak_rmse_K": 2.6755216248449316,
+      "peak_vram_bytes": 139176192,
+      "physical_coverage_radius_median_m": 0.0009271003910026271,
+      "policy": "E",
+      "provenance_class": "exact_policy_alias",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 4119.25,
+      "regional_nodes": 256.0,
+      "resolution": 1024,
+      "sample_count": 32,
+      "source_rmse_K": 2.9627762630847885,
+      "sources": {
+        "accuracy": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_gpu_only_high_n_closeout.json",
+          "role": "historical_valid32_gpu_only",
+          "sha256": "d4a4433f46b155ae941e6fda87b7fc39d7d59c21e77e35cfa6ae57a670b879ba"
+        },
+        "alias_contract": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_closeout_protocol.json",
+          "role": "E1024_equals_A1024_factor4_Nr256",
+          "sha256": "1dac1d02434adc31c833cc3843024d6e202f380315b9d0fbf0e06caa06edd06e"
+        },
+        "graph": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_diagnostics.json",
+          "role": "historical_offline_cache_diagnostic",
+          "sha256": "61ea0642e554aeb123937b213bb88fb3aabd75a971b493dccf9c0768c9648722"
+        },
+        "timing": {
+          "path": "configs/heat3d_v6_p1i/v6_inference_qualification_timing.csv",
+          "role": "historical_reuse_qualification_span_not_cross_policy_matched",
+          "sha256": "deae2b4b803b38c22c8dd70b8f9df9bee01797835ba7c0e361ee45ce1a8d3141"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.010156094445846975,
+      "warm_p95_s": 0.012516494310693814
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.4021484674885869,
+      "fresh_p95_s": 0.41481964928098025,
+      "full_point_global_pct": 2.78584094575648,
+      "full_raw_cv_rmse_K": 2.5999888472290746,
+      "interface_rmse_K": 0.6138855987439292,
+      "p2r_edges_mean": 20746.0,
+      "p2r_regional_degree_mean": 81.0390625,
+      "peak_rmse_K": 3.635362770116775,
+      "peak_vram_bytes": 168614912,
+      "physical_coverage_radius_median_m": 0.0013372688042685124,
+      "policy": "E",
+      "provenance_class": "new_execution",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 3621.6875,
+      "regional_nodes": 256.0,
+      "resolution": 4096,
+      "sample_count": 32,
+      "source_rmse_K": 3.5992641344927407,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_raw/E_4096.json",
+          "role": "new_execution",
+          "sha256": "548ec93dd5af2a0f5536579569c82c45f89f1d26d5468c9fe1dcc0cc036be012"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.0016566845588386059,
+      "warm_p95_s": 0.007719611702486873
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.3961342030670494,
+      "fresh_p95_s": 0.40764049511635675,
+      "full_point_global_pct": 2.758323270681768,
+      "full_raw_cv_rmse_K": 2.42978259041746,
+      "interface_rmse_K": 0.453002118041612,
+      "p2r_edges_mean": 53547.03125,
+      "p2r_regional_degree_mean": 209.1680908203125,
+      "peak_rmse_K": 3.433107511805672,
+      "peak_vram_bytes": 232680704,
+      "physical_coverage_radius_median_m": 0.0014772135560009157,
+      "policy": "E",
+      "provenance_class": "historical_reuse",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 3548.6875,
+      "regional_nodes": 256.0,
+      "resolution": 8192,
+      "sample_count": 32,
+      "source_rmse_K": 3.7290300180299774,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_policy_e_raw/E_8192.json",
+          "role": "historical_reuse",
+          "sha256": "c0adece413ce8f877dfe6097030b9f865491e865c9b4005047731c22bda507d9"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.0024698920315131545,
+      "warm_p95_s": 0.0027098333695903427
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.486140901572071,
+      "fresh_p95_s": 0.5011816544574685,
+      "full_point_global_pct": 2.7022718511135237,
+      "full_raw_cv_rmse_K": 2.2848017567439847,
+      "interface_rmse_K": 0.38572251781135125,
+      "p2r_edges_mean": 89133.65625,
+      "p2r_regional_degree_mean": 348.1783447265625,
+      "peak_rmse_K": 4.017883445902608,
+      "peak_vram_bytes": 337585408,
+      "physical_coverage_radius_median_m": 0.0015737968326047192,
+      "policy": "E",
+      "provenance_class": "new_execution",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 3522.0625,
+      "regional_nodes": 256.0,
+      "resolution": 16384,
+      "sample_count": 32,
+      "source_rmse_K": 3.872171969669102,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_raw/E_16384.json",
+          "role": "new_execution",
+          "sha256": "cd9c222b23fca150d6a736fab299d56f63d3c9e96c7605d8b448e0172f7f1c30"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.006150820991024375,
+      "warm_p95_s": 0.006484616920351985
+    },
+    {
+      "coverage_passed": true,
+      "fresh_median_s": 0.5640492564998567,
+      "fresh_p95_s": 0.5775734907248988,
+      "full_point_global_pct": 2.6724606376756133,
+      "full_raw_cv_rmse_K": 2.2087146445648043,
+      "interface_rmse_K": 0.3844841081111273,
+      "p2r_edges_mean": 155037.5,
+      "p2r_regional_degree_mean": 605.615234375,
+      "peak_rmse_K": 4.051528852456719,
+      "peak_vram_bytes": 504221440,
+      "physical_coverage_radius_median_m": 0.0016369922867439197,
+      "policy": "E",
+      "provenance_class": "new_execution",
+      "r2r_components_max": 1.0,
+      "r2r_edges_mean": 3530.125,
+      "regional_nodes": 256.0,
+      "resolution": 32768,
+      "sample_count": 32,
+      "source_rmse_K": 3.903574068592729,
+      "sources": {
+        "accuracy_graph_timing": {
+          "path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_raw/E_32768.json",
+          "role": "new_execution",
+          "sha256": "8f0bb99322452ecfd324e4bd07d57553de9b75e4d22de1876f0c20092d4a205c"
+        }
+      },
+      "undercovered_fraction": 0.0,
+      "warm_median_s": 0.008730652974918485,
+      "warm_p95_s": 0.009644364123232663
+    }
+  ],
+  "schema_version": "heat3d_v6_p1i_graph_resolution_closeout_v1",
+  "status": "completed"
+}
