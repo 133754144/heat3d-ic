@@ -290,11 +290,25 @@ def main() -> int:
                 )
             else:
                 exact_support = True
+            # The frozen high-N full-field representation uses fractional
+            # overlap while native1024 inputs use the generator's binary-mask
+            # fields.  Their overlap-node drift is a report-only diagnostic,
+            # not a hard gate.  The gate instead proves that the anchor forward
+            # receives the original checkpoint-IID k/q/CV without adaptation.
             anchor_exact = (
                 anchor_distance == 0.0
-                and np.array_equal(full_k[anchor_indices], anchor_support["k_xyz"])
-                and np.array_equal(full_q[anchor_indices], anchor_support["q_W_m3"])
-                and np.array_equal(cv[anchor_indices], anchor_support["operator_control_volume"])
+                and np.array_equal(
+                    anchor_support["k_xyz"],
+                    np.asarray(anchor.condition.condition_features[:, :3], dtype=np.float64),
+                )
+                and np.array_equal(
+                    anchor_support["q_W_m3"],
+                    np.asarray(anchor.condition.condition_features[:, 3], dtype=np.float64),
+                )
+                and np.array_equal(
+                    anchor_support["operator_control_volume"],
+                    np.asarray(anchor.operator_point_weights, dtype=np.float64),
+                )
             )
             if not exact_support or not anchor_exact:
                 raise RuntimeError(f"P5-R support hard gate failed: {args.route}/{anchor.sample_id}")
@@ -479,6 +493,17 @@ def main() -> int:
                 "support_hash": array_sha256(selected),
                 "support_exact": exact_support,
                 "anchor_k_q_cv_exact": anchor_exact,
+                "full_field_at_anchor_representation_drift_report_only": {
+                    "delta_k_max_abs": float(np.max(np.abs(
+                        full_k[anchor_indices] - anchor_support["k_xyz"]
+                    ))),
+                    "delta_q_max_abs": float(np.max(np.abs(
+                        full_q[anchor_indices] - anchor_support["q_W_m3"]
+                    ))),
+                    "delta_cv_max_abs": float(np.max(np.abs(
+                        cv[anchor_indices] - anchor_support["operator_control_volume"]
+                    ))),
+                },
                 "selected_volume_m3": float(np.sum(selected_cv)),
                 "full_volume_m3": float(np.sum(cv)),
                 "selected_power_W": float(np.sum(query_support["q_W_m3"] * selected_cv)),
