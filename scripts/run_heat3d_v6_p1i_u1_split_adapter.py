@@ -378,6 +378,7 @@ def main() -> int:
                     "encoder_pnode_local_transform_exact": locality, "passed": passed,
                 })
                 if not passed:
+                    print(json.dumps(rows[-1], indent=2, sort_keys=True), flush=True)
                     raise RuntimeError(f"U1 identity fail-fast: {anchor.sample_id}")
             else:
                 if number == 1:
