@@ -131,6 +131,17 @@ def main() -> int:
                 reuse_exact_p2r_for_r2p=True,
             )
 
+            # Match the frozen P5-S timing boundary: graph/JAX shape warm-up is
+            # outside continuous preprocessing, while every measured graph is
+            # still freshly constructed from the candidate support.
+            warm_builder = Heat3DGraphBuilder(**graph_config)
+            warm_example = highn._query_example(anchor, frozen, coords)
+            warm_metadata = warm_builder.build_metadata(
+                highn.runner._graph_coords_for_example(warm_example, runtime["stats"]),
+                key=key,
+            )
+            _block(warm_metadata)
+
             full_order, full_audit = deterministic_nested_query_order(
                 sample_id=anchor.sample_id, anchor_indices=anchor_indices,
                 full_coords=coords, full_control_volume=cv, full_layer_id=layer,
