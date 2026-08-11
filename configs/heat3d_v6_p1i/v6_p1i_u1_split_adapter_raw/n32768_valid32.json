@@ -1,0 +1,930 @@
+{
+  "backend": "gpu",
+  "checkpoint_parameter_tree_after": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+  "checkpoint_parameter_tree_before": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+  "checkpoint_parameters_unchanged": true,
+  "full_field_accuracy": {
+    "background_rmse_K": 2.2962976897374086,
+    "bottom_rmse_K": 1.536594162975336,
+    "domain": "full_240825",
+    "interface_drop_rmse_K": 0.4321040521423008,
+    "layer_mean_rmse_K": 2.2233631885301994,
+    "peak_rmse_K": 3.5842685534661047,
+    "point_global_true_rms_relative_rmse_pct": 2.7481461438000476,
+    "raw_cv_weighted_rmse_K": 2.3038229762005265,
+    "sample_count": 32,
+    "sample_first_cv_relative_rmse_pct": 2.781570878231495,
+    "source_rmse_K": 3.8149485815882067,
+    "top_rmse_K": 2.0867301254060937
+  },
+  "jit_padding_envelope": {
+    "native": {
+      "p2r_edge_indices": 2905,
+      "r2p_edge_indices": 2905,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    },
+    "query": {
+      "p2r_edge_indices": 175274,
+      "r2p_edge_indices": 175274,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    },
+    "semantics": "shape_only_max_of_tracked_and_actual_valid_subset; real_edges_unchanged"
+  },
+  "memory": {
+    "bytes_in_use": 53959936,
+    "bytes_limit": 9615360000,
+    "device": "cuda:0",
+    "peak_bytes_in_use": 839432448,
+    "platform": "gpu"
+  },
+  "original_decoder_pre_bypass_output_shape": [
+    1,
+    1,
+    1024,
+    1
+  ],
+  "protocol_sha256": "a2674a4d03bf361f1bcc5074a4ccd99730ff602d59369c18ba43f438d8030c5a",
+  "resolution": 32768,
+  "role_contract": {
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid"
+    ],
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "production_route_replaced": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "sample_count": 32,
+  "samples": [
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 6.555017712060362,
+      "original_decoder_pre_bypass_output_shape": [
+        1,
+        1,
+        1024,
+        1
+      ],
+      "sample_id": "v6p1if1_0308",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.00701167294755578
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.37953313696198165,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0511",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007016638061031699
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38318041199818254,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0041",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006675963988527656
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.4021461110096425,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0846",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006949777947738767
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38166704890318215,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0572",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.00678073987364769
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38129989290609956,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0347",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007022802950814366
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3762427340261638,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0286",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006963158026337624
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3917685020714998,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0124",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007077714893966913
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3934750920161605,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_1017",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007138771004974842
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.37897441210225224,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0854",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007166923955082893
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38712026085704565,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0928",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007006272906437516
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3905418219510466,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0543",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.00707455794326961
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3764177681878209,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0632",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006886066868901253
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3800574350170791,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0599",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007096749031916261
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3828885129187256,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0003",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007181311026215553
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.377573830075562,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0029",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006984505103901029
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.37465465697459877,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0991",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007092952029779553
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38461917103268206,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0109",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007006735075265169
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.37582883704453707,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0365",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007196835009381175
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38820428983308375,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0091",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006977269891649485
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3749317361507565,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0930",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007063993951305747
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38229662901721895,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0175",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007350692059844732
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38346826704218984,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0915",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006964546162635088
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.39849843783304095,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0869",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.0070790990721434355
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3743226688820869,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0522",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007083781994879246
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3807933460921049,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0118",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007073484128341079
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.37603580113500357,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0708",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007003891048952937
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38412340893410146,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0817",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007027113111689687
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.38253417890518904,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_1003",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007087867008522153
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3774828889872879,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0697",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007048658095300198
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3828052720054984,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0907",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.007217835867777467
+    },
+    {
+      "encoder_locality": {
+        "array_equal": "not_same_nodes_high_n",
+        "input_shape": [
+          1,
+          1024,
+          96
+        ],
+        "output_shape": [
+          1,
+          32768,
+          96
+        ]
+      },
+      "finite": true,
+      "first_eager_seconds": 0.3793288408778608,
+      "original_decoder_pre_bypass_output_shape": null,
+      "sample_id": "v6p1if1_0203",
+      "split_adapter_pre_bypass_output_shape": [
+        1,
+        1,
+        32768,
+        1
+      ],
+      "steady_forward_seconds": 0.006977732991799712
+    }
+  ],
+  "schema_version": "heat3d_v6_p1i_u1_split_high_n_v1",
+  "split_adapter_pre_bypass_output_shape": [
+    1,
+    1,
+    32768,
+    1
+  ],
+  "status": "passed",
+  "steady_forward": {
+    "count": 32,
+    "mean_seconds": 0.007040191063424572,
+    "median_seconds": 0.007037885603494942,
+    "p95_seconds": 0.007206285395659507
+  },
+  "support_accuracy": {
+    "background_rmse_K": 2.268079785552175,
+    "bottom_rmse_K": 1.547566072191058,
+    "domain": "support_1024",
+    "interface_drop_rmse_K": 0.42083785114555317,
+    "layer_mean_rmse_K": 2.25949348835813,
+    "peak_rmse_K": 3.5842685534661047,
+    "point_global_true_rms_relative_rmse_pct": 2.883880283648933,
+    "raw_cv_weighted_rmse_K": 2.279506502115046,
+    "sample_count": 32,
+    "sample_first_cv_relative_rmse_pct": 2.7533179334182236,
+    "source_rmse_K": 3.839402311760526,
+    "top_rmse_K": 2.093423870688079
+  }
+}

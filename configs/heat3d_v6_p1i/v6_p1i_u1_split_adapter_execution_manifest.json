@@ -1,0 +1,73 @@
+{
+  "schema_version": "heat3d_v6_p1i_u1_split_adapter_execution_manifest_v1",
+  "status": "completed_valid32",
+  "branch": "research/v6-p1i-training",
+  "host": "wsl2",
+  "execution_commits": {
+    "identity_valid32": "48d1d34",
+    "high_n_8192_32768": "af28483"
+  },
+  "frozen_inputs": {
+    "checkpoint_config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "checkpoint_epoch": 559,
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "formal_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_fields_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "valid_subset": "frozen_valid32_from_high_n_binding",
+    "resolutions_executed": [1024, 8192, 32768],
+    "resolution_240825_executed": false
+  },
+  "backend_contract": {
+    "identity": "CPU deterministic bitwise exact",
+    "high_n": "GPU",
+    "reason": "independent GPU reductions are not bitwise reproducible even between unchanged reference calls",
+    "tolerance_relaxed": false
+  },
+  "artifacts": {
+    "protocol": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u1_split_adapter_protocol.json",
+      "sha256": "a2674a4d03bf361f1bcc5074a4ccd99730ff602d59369c18ba43f438d8030c5a"
+    },
+    "backend_amendment": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u1_split_adapter_backend_amendment.json",
+      "sha256": "7f50327029f82e8e41861fe6ce5d25061e89fc07277b7db8c345bb4a6a404089"
+    },
+    "identity_valid32": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u1_split_adapter_raw/identity_valid32.json",
+      "sha256": "e9f678cfe83fbff55dce3fee639f13404684a38c8ed02764a41f83a56b2bb50a"
+    },
+    "n8192_valid32": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u1_split_adapter_raw/n8192_valid32.json",
+      "sha256": "2223e434492e57ac935e59788df8ba65dd0412b54520baa27f2177be67d491da"
+    },
+    "n32768_valid32": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u1_split_adapter_raw/n32768_valid32.json",
+      "sha256": "7f9bb866a8540d45c72b004f0867b89b289465a24e6d73580f26de9745800e76"
+    },
+    "p5r_reference": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_p5r_resolution_sweep_closeout.json",
+      "sha256": "b30a0bf9dd181c3e2cb31607809d77242838ed60e53fa5d30137fee7d4e4065f"
+    }
+  },
+  "commands": {
+    "entrypoint": "python scripts/run_heat3d_v6_p1i_u1_split_adapter.py",
+    "identity_environment": "CUDA_VISIBLE_DEVICES='' JAX_PLATFORMS=cpu OMP_NUM_THREADS=8",
+    "high_n_environment": "JAX_PLATFORMS=cuda",
+    "execution_order": [
+      "identity_1024_valid32",
+      "8192_single_sample_smoke",
+      "8192_valid32",
+      "32768_single_sample_smoke",
+      "32768_valid32"
+    ]
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "production_route_replaced": false
+  }
+}
