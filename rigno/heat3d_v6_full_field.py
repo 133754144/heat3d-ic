@@ -41,6 +41,15 @@ class ReconstructionMap:
         return np.sum(gathered * self.neighbor_weights, axis=1)
 
 
+@dataclass(frozen=True)
+class ReconstructionDomainPartition:
+    """Reusable label-independent partition for a fixed solver mesh."""
+
+    domain_code: np.ndarray
+    domain_names: tuple[str, ...]
+    query_rows: tuple[np.ndarray, ...]
+
+
 def _domain_partition(
     coords: np.ndarray,
     layer_id: np.ndarray,
@@ -68,6 +77,26 @@ def _domain_partition(
     return code, tuple(names)
 
 
+def prepare_reconstruction_domain_partition(
+    *,
+    coords: np.ndarray,
+    layer_id: np.ndarray,
+    boundaries: np.ndarray,
+) -> ReconstructionDomainPartition:
+    """Precompute fixed full-grid domain membership without support labels."""
+
+    code, names = _domain_partition(
+        np.asarray(coords, dtype=np.float64),
+        np.asarray(layer_id, dtype=np.int32),
+        np.asarray(boundaries, dtype=np.float64),
+    )
+    return ReconstructionDomainPartition(
+        domain_code=code,
+        domain_names=names,
+        query_rows=tuple(np.flatnonzero(code == index) for index in range(len(names))),
+    )
+
+
 def build_reconstruction_map(
     *,
     coords: np.ndarray,
@@ -75,6 +104,8 @@ def build_reconstruction_map(
     boundaries: np.ndarray,
     support_indices: np.ndarray,
     empty_domain_fallback: str = "error",
+    prepared_partition: ReconstructionDomainPartition | None = None,
+    query_workers: int = -1,
 ) -> tuple[ReconstructionMap, dict[str, Any]]:
     started = time.perf_counter()
     coords = np.asarray(coords, dtype=np.float64)
@@ -82,14 +113,22 @@ def build_reconstruction_map(
     support_indices = np.asarray(support_indices, dtype=np.int32)
     if len(np.unique(support_indices)) != len(support_indices):
         raise ValueError("support indices are not unique")
-    domain_code, domain_names = _domain_partition(coords, layer_id, boundaries)
+    partition_reused = prepared_partition is not None
+    if prepared_partition is None:
+        prepared_partition = prepare_reconstruction_domain_partition(
+            coords=coords, layer_id=layer_id, boundaries=boundaries
+        )
+    domain_code = np.asarray(prepared_partition.domain_code, dtype=np.int16)
+    domain_names = tuple(prepared_partition.domain_names)
+    if len(domain_code) != len(coords) or len(prepared_partition.query_rows) != len(domain_names):
+        raise ValueError("prepared reconstruction partition does not match full grid")
     support_code = domain_code[support_indices]
     max_neighbors = 8
     neighbors = np.empty((len(coords), max_neighbors), dtype=np.int32)
     weights = np.zeros((len(coords), max_neighbors), dtype=np.float64)
     coverage: dict[str, Any] = {}
     for code, name in enumerate(domain_names):
-        query_rows = np.flatnonzero(domain_code == code)
+        query_rows = np.asarray(prepared_partition.query_rows[code], dtype=np.int64)
         support_local = np.flatnonzero(support_code == code)
         if not len(query_rows):
             continue
@@ -122,7 +161,9 @@ def build_reconstruction_map(
             query_coords = query_coords[:, :2]
             candidate_coords = candidate_coords[:, :2]
         tree = cKDTree(candidate_coords)
-        distance, local_neighbor = tree.query(query_coords, k=k)
+        distance, local_neighbor = tree.query(
+            query_coords, k=k, workers=int(query_workers)
+        )
         if k == 1:
             distance = distance[:, None]
             local_neighbor = local_neighbor[:, None]
@@ -160,6 +201,8 @@ def build_reconstruction_map(
         "selection_inputs": ["coords", "layer_id", "layer_boundaries", "support_indices"],
         "target_or_split_inputs": [],
         "empty_domain_fallback": empty_domain_fallback,
+        "prepared_partition_reused": partition_reused,
+        "query_workers": int(query_workers),
         "build_seconds": float(time.perf_counter() - started),
         "full_node_count": int(len(coords)),
         "support_node_count": int(len(support_indices)),

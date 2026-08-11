@@ -1,0 +1,11 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5_a5_protocol_v1",
+  "phase": "P5-A5_reconstruction_map_knn",
+  "baseline_commit": "83d2b27",
+  "population": {"role": "valid_iid", "sample_count": 32, "routes": ["B8192", "E32768"], "full_grid_nodes": 240825},
+  "reference": "partition_per_map_plus_domain_ckdtree_query_workers_1",
+  "candidate": "precomputed_fixed_partition_plus_domain_ckdtree_query_workers_all",
+  "hard_gates": {"neighbor_indices_equal": true, "neighbor_weights_array_equal": true, "domain_code_equal": true, "mapping_hash_equal": true, "partition_of_unity_equal": true},
+  "promotion_rule": "promote only if all 64 mapping gates pass and pooled median map-build time improves",
+  "role_contract": {"training": false, "test": false, "sealed": false, "temperature_or_prediction_used": false, "graph_policy_modified": false, "reconstruction_semantics_modified": false}
+}
