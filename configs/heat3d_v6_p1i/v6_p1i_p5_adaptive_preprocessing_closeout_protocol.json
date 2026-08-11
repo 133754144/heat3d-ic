@@ -1,0 +1,12 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5_closeout_protocol_v1",
+  "phase": "P5_adaptive_preprocessing_closeout",
+  "baseline_commit": "af5795a5da3b3ca7d5faec02e3a39038c04cf2b1",
+  "population": {"role": "valid_iid", "sample_count": 32, "routes": ["B8192_adaptive", "E32768_adaptive"]},
+  "reference_pipeline": ["pop0_ordering", "single_worker_cv", "single_worker_coverage", "serial_radius_queries", "separate_r2p", "per_map_partition", "single_worker_reconstruction_knn"],
+  "candidate_pipeline": ["cursor_ordering", "parallel_cv", "parallel_coverage", "batched_radius_queries", "exact_reverse_reuse", "cached_partition", "parallel_reconstruction_knn"],
+  "reported_stages": ["support_ordering", "cv_redistribution", "regional_prepare", "coverage", "p2r", "r2r", "r2p", "reconstruction_map", "packing", "graph_total", "total_adaptive_preprocessing"],
+  "total_definition": "component-sum of the matched named stages for one new adaptive case; qualification, inference, accuracy, hashes and serialization excluded",
+  "hard_gates": {"support_order_exact": true, "cv_exact": true, "canonical_graph_hash_exact": true, "reconstruction_map_exact": true},
+  "role_contract": {"training": false, "test": false, "sealed": false, "inference": false, "temperature_or_prediction_used": false, "gpu_tiled_used": false, "graph_policy_modified": false}
+}
