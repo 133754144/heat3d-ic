@@ -143,22 +143,32 @@ def _hash_order(sample_id: str, seed: int, indices: np.ndarray) -> np.ndarray:
 
 def _weighted_interleave(buckets: Mapping[str, np.ndarray], weights: Mapping[str, float]) -> np.ndarray:
     """Deterministically interleave finite queues by largest quota deficit."""
-    queues = {name: list(map(int, values)) for name, values in buckets.items()}
+    # Keep the frozen queue contents and tie-breaking semantics, but advance a
+    # cursor instead of repeatedly shifting a Python list with ``pop(0)``.
+    # The latter is quadratic in each bucket length and dominates high-N
+    # support preparation even though no scientific work is being performed.
+    queues = {name: tuple(map(int, values)) for name, values in buckets.items()}
+    names = tuple(sorted(queues))
+    rank = {name: index for index, name in enumerate(names)}
+    cursor = {name: 0 for name in queues}
     consumed = {name: 0 for name in queues}
     result: list[int] = []
-    while any(queues.values()):
-        active = [name for name, values in queues.items() if values]
+    remaining = sum(len(values) for values in queues.values())
+    while remaining:
+        active = [name for name in names if cursor[name] < len(queues[name])]
         total_weight = sum(float(weights[name]) for name in active)
         step = len(result) + 1
         chosen = max(
             active,
             key=lambda name: (
                 float(weights[name]) / total_weight * step - consumed[name],
-                -list(sorted(active)).index(name),
+                -rank[name],
             ),
         )
-        result.append(queues[chosen].pop(0))
+        result.append(queues[chosen][cursor[chosen]])
+        cursor[chosen] += 1
         consumed[chosen] += 1
+        remaining -= 1
     return np.asarray(result, dtype=np.int64)
 
 

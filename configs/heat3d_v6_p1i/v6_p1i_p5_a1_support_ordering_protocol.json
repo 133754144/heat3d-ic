@@ -1,0 +1,37 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5_a1_protocol_v1",
+  "phase": "P5-A1_support_ordering",
+  "baseline_commit": "af5795a5da3b3ca7d5faec02e3a39038c04cf2b1",
+  "population": {
+    "role": "valid_iid",
+    "sample_count": 32,
+    "selection": "frozen_high_n_binding_valid32"
+  },
+  "reference": "list_pop0_weighted_deficit_interleave",
+  "candidate": "cursor_weighted_deficit_interleave",
+  "hard_gates": {
+    "selected_indices_array_equal": true,
+    "selected_indices_sha256_equal": true,
+    "full_order_is_permutation": true,
+    "anchor_prefix_exact": true
+  },
+  "timing": {
+    "clock": "time.perf_counter",
+    "runs_per_sample": 1,
+    "report": [
+      "full_order_seconds",
+      "sha256_sort_seconds",
+      "weighted_interleave_seconds"
+    ],
+    "promotion_rule": "promote only if every hard gate passes and median full-order time improves"
+  },
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "temperature_or_prediction_used": false
+  }
+}
