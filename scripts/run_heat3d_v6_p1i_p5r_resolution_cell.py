@@ -148,6 +148,7 @@ def _parse() -> argparse.Namespace:
         parser.add_argument(f"--{name.replace('_', '-')}", dest=name, type=Path, required=True)
     parser.add_argument("--route", required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
+    parser.add_argument("--sample-count", type=int, choices=[1, 32], default=32)
     return parser.parse_args()
 
 
@@ -176,6 +177,7 @@ def main() -> int:
     preflight = json.loads((args.artifact_root / "actual_data_preflight.json").read_text())
     if preflight["sample_ids"] != [anchor.sample_id for anchor in anchors]:
         raise RuntimeError("P5-R valid32 order drifted")
+    anchors = anchors[: args.sample_count]
     frozen_supports = {
         row["sample_id"]: row for row in preflight.get("supports", {}).get(str(resolution), [])
     }
@@ -491,9 +493,9 @@ def main() -> int:
 
     result = {
         "schema_version": "heat3d_v6_p1i_p5r_resolution_cell_v1",
-        "status": "passed",
+        "status": "passed" if args.sample_count == 32 else "passed_smoke",
         "route": route,
-        "sample_count": 32,
+        "sample_count": args.sample_count,
         "sample_ids": [anchor.sample_id for anchor in anchors],
         "checkpoint_sha256": args.checkpoint_sha256,
         "protocol_sha256": _sha256(args.protocol),
