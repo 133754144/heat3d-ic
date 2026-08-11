@@ -1,0 +1,61 @@
+{
+  "schema_version": "heat3d_v6_p1i_u2_asymmetric_production_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "0289698",
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "valid_subset": "frozen_valid32_from_high_n_binding",
+  "u1_32768_accuracy_gate": {
+    "metric": "full_field_point_global_true_rms_relative_rmse_pct",
+    "reference_E32768_pct": 2.6724435845348524,
+    "u1_32768_pct": 2.7481461438000476,
+    "delta_percentage_points": 0.0757025592651952,
+    "non_inferiority_margin_percentage_points": 0.1,
+    "passed_before_runtime": true
+  },
+  "runtime_go_gate": {
+    "reference": "P6 E32768 valid32",
+    "matched_b1_e2e_minimum_speedup": 1.2,
+    "resident_throughput_minimum_speedup_at_highest_common_batch": 1.2,
+    "both_required": true
+  },
+  "execution_order": [
+    "U1_32768_single_sample_smoke",
+    "U1_32768_valid32_matched_runtime_and_batch",
+    "evaluate_accuracy_and_runtime_gate",
+    "U1_240825_single_sample_direct_smoke_if_GO",
+    "U1_240825_valid32_accuracy_and_B1_if_smoke_passes"
+  ],
+  "routes": {
+    "U1_32768": {"resolution": 32768, "output_mode": "reconstruction", "regional_nodes": 256},
+    "U1_240825": {"resolution": 240825, "output_mode": "direct", "regional_nodes": 256}
+  },
+  "batch_sizes_32768": [1, 2, 4, 8, 16],
+  "repeats": 20,
+  "fail_fast": {
+    "u1_32768_failure_stops_240825": true,
+    "runtime_go_failure_stops_240825": true,
+    "u1_240825_smoke_failure_stops_valid32": true,
+    "oom_at_high_batch_nonblocking": true
+  },
+  "frozen_semantics": {
+    "input": "native1024 c_in, graph, Global Context, QK and scale",
+    "output": "N-node c_out, CV, Dirichlet and native physical fields",
+    "graph": "native1024 p2r/r2r plus N-output r2p",
+    "checkpoint_parameters_changed": false,
+    "sampler_or_support_changed": false,
+    "reconstruction_changed": false
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "production_route_replaced": false
+  }
+}
