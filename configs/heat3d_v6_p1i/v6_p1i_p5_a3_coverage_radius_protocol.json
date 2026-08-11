@@ -1,0 +1,12 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5_a3_protocol_v1",
+  "phase": "P5-A3_coverage_radius",
+  "baseline_commit": "eb6011b",
+  "population": {"role": "valid_iid", "sample_count": 32, "routes": ["B8192", "E32768"]},
+  "reference": "batched_ckdtree_query_workers_1_reference_dtype_ties",
+  "candidate": "batched_ckdtree_query_workers_all_reference_dtype_ties",
+  "profiling_correction": "coverage timer starts after regional prepare completes",
+  "hard_gates": {"nearest_assignment_equal": true, "radii_array_equal": true, "radii_sha256_equal": true, "final_graph_hash_equal": true},
+  "promotion_rule": "timer correction is mandatory; parallel query promoted only if exact and pooled median coverage time improves",
+  "role_contract": {"training": false, "test": false, "sealed": false, "temperature_or_prediction_used": false, "graph_policy_modified": false}
+}

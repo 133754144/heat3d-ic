@@ -308,7 +308,8 @@ class RegionInteractionGraphBuilder:
       tree = cKDTree(np.asarray(centers_array, dtype=np.float64))
       candidate_count = min(16, len(centers_array))
       _, nearest_candidates = tree.query(
-        np.asarray(points_array, dtype=np.float64), k=candidate_count
+        np.asarray(points_array, dtype=np.float64), k=candidate_count,
+        workers=-1,
       )
       nearest_candidates = np.asarray(nearest_candidates, dtype=np.int64)
       if candidate_count == 1:
@@ -610,6 +611,7 @@ class RegionInteractionGraphBuilder:
     _timings["regional_prepare_seconds"] = time.perf_counter() - _phase_started
 
     # Compute minimum support radius of each rmesh node —— 计算每个区域节点的“最小支持半径”
+    _phase_started = time.perf_counter()
     if self.radius_policy == "discrete_physical_coverage":
       coverage_points = jnp.concatenate([x_inp, x_out], axis=0)
       r_rnodes = self._compute_discrete_physical_coverage_radius(
