@@ -21,6 +21,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import rigno.heat3d_v6_p1i_anchor_query as anchor_query  # noqa: E402
+from rigno.heat3d_v6_dataset import Heat3DV6DualRobinDataset  # noqa: E402
 
 
 def _reference_weighted_interleave(
@@ -108,6 +109,8 @@ def main() -> int:
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--artifact-root", type=Path, required=True)
     parser.add_argument("--full-fields", type=Path, required=True)
+    parser.add_argument("--dataset-root", type=Path, required=True)
+    parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -122,7 +125,19 @@ def main() -> int:
         coords = np.asarray(archive["shared/coords_m"][:], dtype=np.float64)
         cv = np.asarray(archive["shared/control_volume_m3"][:], dtype=np.float64)
         layer = np.asarray(archive["shared/layer_id"][:], dtype=np.int32)
-    boundaries = np.asarray(preflight["shared"]["layer_boundaries_m"], dtype=np.float64)
+    dataset = Heat3DV6DualRobinDataset(
+        args.dataset_root, args.manifest, include_roles={"valid_iid"}
+    )
+    example_by_id = {example.sample_id: example for example in dataset}
+    first = example_by_id[sample_ids[0]]
+    boundaries_values = [float(np.min(coords[:, 2]))]
+    for layer_meta in first.meta["physics"]["layers_bottom_to_top"]:
+        boundaries_values.append(
+            boundaries_values[-1] + float(layer_meta["thickness_m"])
+        )
+    boundaries = np.asarray(boundaries_values, dtype=np.float64)
+    if boundaries.shape != (10,):
+        raise RuntimeError("frozen P1i stack must have nine layers")
 
     rows: list[dict[str, Any]] = []
     for number, sample_id in enumerate(sample_ids, start=1):
