@@ -46,6 +46,20 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def _load_frozen_binding(path: Path) -> dict[str, Any]:
+    """Read immutable scientific fields without rewriting its historical code fingerprint."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("status") != "frozen_after_three_seed_r0_pass":
+        raise RuntimeError("high-N binding status drifted")
+    if payload["dataset"]["dataset_id"] != "heat3d_v6_p1i_continuous_physics1024_v1":
+        raise RuntimeError("high-N binding dataset drifted")
+    if int(payload["nested_support"]["selection_seed"]) != 20260808:
+        raise RuntimeError("high-N support selection seed drifted")
+    if len(payload["development_subset"]["sample_ids"]) != 32:
+        raise RuntimeError("high-N frozen valid32 drifted")
+    return payload
+
+
 def _edges(value: Any) -> int:
     return 0 if value is None else int(np.asarray(value).shape[1] - 1)
 
@@ -187,7 +201,7 @@ def main() -> int:
     protocol = json.loads(args.protocol.read_text(encoding="utf-8"))
     if protocol["status"] != "preregistered_before_execution":
         raise RuntimeError("U1 protocol is not preregistered")
-    binding = highn._binding(argparse.Namespace(binding=args.binding, gpu_only_amendment=None))
+    binding = _load_frozen_binding(args.binding)
     runtime_args = argparse.Namespace(run_dir=args.run_dir)
     runtime = highn._checkpoint_runtime(runtime_args)
     dataset_args = argparse.Namespace(dataset_root=args.dataset_root, manifest=args.manifest)
@@ -320,6 +334,15 @@ def main() -> int:
         "status": "passed_expected_no_go" if decision.startswith("NO_GO") else "passed_probe",
         "protocol_path": str(args.protocol),
         "protocol_sha256": _sha256(args.protocol),
+        "historical_binding": {
+            "path": str(args.binding),
+            "sha256": _sha256(args.binding),
+            "scientific_fields_reused": [
+                "dataset", "development_subset", "nested_support", "numeric_tolerances"
+            ],
+            "historical_code_fingerprint_revalidation": "not_applicable_after_committed_P5-S_exact_optimization",
+            "historical_binding_modified": False,
+        },
         "checkpoint": {
             "config_id": highn.CONFIG_ID,
             "epoch": highn.CHECKPOINT_EPOCH,
