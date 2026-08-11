@@ -50,7 +50,9 @@ def main()->int:
         if number%2: candidate=run("candidate");reference=run("reference")
         else: reference=run("reference");candidate=run("candidate")
         gates={"prefix_array_equal_historical":bool(np.array_equal(reference["selected"],candidate["selected"]) and np.array_equal(reference["selected"],np.asarray(frozen["selected_indices"]))),"prefix_sha256_equal":reference["prefix_hash"]==candidate["prefix_hash"]==array_sha256(np.asarray(frozen["selected_indices"])),"anchor_prefix_exact":bool(np.array_equal(candidate["selected"][:1024],anchors_idx)),"geometry_partition_exact":geometry_exact,"cv_exact":bool(np.array_equal(reference["cv"],candidate["cv"]) and reference["cv_hash"]==candidate["cv_hash"]),"canonical_graph_hash_exact":a4._canonical_hash(reference["metadata"])==a4._canonical_hash(candidate["metadata"]),"reconstruction_map_exact":highn._mapping_sha256(reference["mapping"])==highn._mapping_sha256(candidate["mapping"])}
-        rows.append({"route":route,"resolution":resolution,"sample_id":anchor.sample_id,"gates":gates,"reference":reference["stages"],"candidate":candidate["stages"]});print(f"[P5-S] {route} {number}/32 exact={all(gates.values())}",flush=True)
+        rows.append({"route":route,"resolution":resolution,"sample_id":anchor.sample_id,"gates":gates,"reference":reference["stages"],"candidate":candidate["stages"]});print(f"[P5-S] {route} {number}/32 gates={gates}",flush=True)
+        if not all(gates.values()):
+            raise RuntimeError(f"P5-S fail-fast exact gate: {route}/{anchor.sample_id}: {gates}")
     hard=all(value for row in rows for value in row["gates"].values());summary={}
     for route in ("B8192_adaptive","E32768_adaptive"):
       selected=[r for r in rows if r["route"]==route];stages={}
