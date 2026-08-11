@@ -1,0 +1,71 @@
+{
+  "schema_version": "heat3d_v6_p1i_u1_split_adapter_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "bb34423",
+  "historical_u1": {
+    "result": "configs/heat3d_v6_p1i/v6_p1i_u1_asymmetric_query_result.json",
+    "preserved": true,
+    "prior_decision": "NO_GO_requires_model_path_change_or_retraining",
+    "amendment": "test the explicitly requested checkpoint-preserving split adapter without altering the historical result"
+  },
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "modified": false
+  },
+  "adapter": {
+    "c_in_nodes": 1024,
+    "c_out_nodes": "N",
+    "encoder_graph": "native1024 p2r",
+    "processor_graph": "native1024 r2r",
+    "decoder_graph": "native1024 regional nodes to N output r2p",
+    "output_local_latent": "same frozen Encoder pnode node-embedding/update applied to c_out with dummy-only p2r",
+    "global_context": "native1024-derived",
+    "qk_and_scale_context": "native1024-derived",
+    "scale": "native1024-derived",
+    "output_cv_dirichlet_native_fields": "N-node query-derived",
+    "new_parameters": 0,
+    "checkpoint_parameters_changed": false
+  },
+  "execution_order": [
+    "pre_bypass_shape_probe_8192_single_sample",
+    "encoder_locality_audit_1024_valid32",
+    "identity_1024_to_1024_valid32",
+    "split_1024_to_8192_single_sample_smoke",
+    "split_1024_to_8192_valid32_accuracy_latency",
+    "split_1024_to_32768_single_sample_smoke_if_8192_passes",
+    "split_1024_to_32768_valid32_accuracy_latency_if_smoke_passes"
+  ],
+  "identity_hard_gate": {
+    "comparison": "bitwise array equality",
+    "tolerance": 0.0,
+    "fields": [
+      "encoder_input_pnodes", "encoder_output_local_pnodes", "processed_rnodes_pre_film",
+      "processed_rnodes", "decoder_pre_bypass", "decoder_post_bypass", "phi_hat",
+      "s_hat", "raw_temperature"
+    ]
+  },
+  "high_n_hard_gate": {
+    "graph_constructed": true,
+    "pre_bypass_output_nodes_equal_N": true,
+    "finite_forward": true,
+    "checkpoint_parameter_tree_unchanged": true,
+    "support_and_reconstruction_hash_frozen": true,
+    "valid32_only": true
+  },
+  "fail_fast": {
+    "identity_failure_stops_all_high_n": true,
+    "8192_failure_stops_32768": true,
+    "32768_required_before_discussing_240825": true
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "production_route_replaced": false
+  }
+}
