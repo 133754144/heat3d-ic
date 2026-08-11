@@ -96,6 +96,16 @@ def _edge_targets(path: Path) -> dict[str, int | None]:
     return targets
 
 
+def _compatible_targets(
+    targets: Mapping[str, int | None], metadata: Any,
+) -> dict[str, int | None]:
+    """Preserve the envelope while respecting exact reverse-edge omission."""
+    return {
+        field: None if getattr(metadata, field) is None else targets[field]
+        for field in qualification.EDGE_FIELDS
+    }
+
+
 def _builder(
     route: Mapping[str, Any], runtime: Mapping[str, Any], anchor: Any, graph_key: Any,
 ) -> Heat3DGraphBuilder:
@@ -329,6 +339,8 @@ def main() -> int:
             )
             _block_tree((anchor_metadata, query_metadata))
             graph_seconds = time.perf_counter() - phase
+            compatible_anchor_targets = _compatible_targets(anchor_targets, anchor_metadata)
+            compatible_query_targets = _compatible_targets(query_targets, query_metadata)
             phase = time.perf_counter()
             mapping = None
             if not direct:
@@ -342,11 +354,11 @@ def main() -> int:
             phase = time.perf_counter()
             anchor_group = highn._model_group(highn._prepare_group(
                 example=anchor_example, anchor=anchor, runtime=runtime, builder=anchor_builder,
-                metadata=anchor_metadata, edge_targets=anchor_targets,
+                metadata=anchor_metadata, edge_targets=compatible_anchor_targets,
             ))
             query_group = highn._model_group(highn._prepare_group(
                 example=query_example, anchor=anchor, runtime=runtime, builder=query_builder,
-                metadata=query_metadata, edge_targets=query_targets,
+                metadata=query_metadata, edge_targets=compatible_query_targets,
             ))
             device_map = None if mapping is None else to_device_reconstruction_map(mapping)
             anchor_group, query_group, device_weights = jax.device_put((
@@ -407,6 +419,8 @@ def main() -> int:
                 )
                 _block_tree((anchor_metadata, query_metadata))
                 graph_seconds = time.perf_counter() - phase
+                compatible_anchor_targets = _compatible_targets(anchor_targets, anchor_metadata)
+                compatible_query_targets = _compatible_targets(query_targets, query_metadata)
                 phase = time.perf_counter()
                 mapping = None
                 if not direct:
@@ -420,12 +434,12 @@ def main() -> int:
                 anchor_group = highn._model_group(highn._prepare_group(
                     example=anchor_example, anchor=anchor, runtime=runtime,
                     builder=anchor_builder, metadata=anchor_metadata,
-                    edge_targets=anchor_targets,
+                    edge_targets=compatible_anchor_targets,
                 ))
                 query_group = highn._model_group(highn._prepare_group(
                     example=query_example, anchor=anchor, runtime=runtime,
                     builder=query_builder, metadata=query_metadata,
-                    edge_targets=query_targets,
+                    edge_targets=compatible_query_targets,
                 ))
                 device_map = None if mapping is None else to_device_reconstruction_map(mapping)
                 anchor_group, query_group, device_weights = jax.device_put((
