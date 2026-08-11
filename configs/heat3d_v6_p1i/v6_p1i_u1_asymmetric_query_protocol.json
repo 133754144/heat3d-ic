@@ -1,0 +1,46 @@
+{
+  "schema_version": "heat3d_v6_p1i_u1_asymmetric_query_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "37b319a",
+  "stage": "U1_checkpoint_preserving_asymmetric_query_probe",
+  "scientific_contract": {
+    "checkpoint": "V6_06 seed0 point-global best e559, unchanged",
+    "input_nodes": 1024,
+    "output_nodes": [8192, 32768],
+    "regional_nodes": 256,
+    "graph_policy": "E-like fixed Nr=256 with current discrete_physical_coverage semantics",
+    "anchor_context_and_scale": "frozen native-1024",
+    "training_allowed": false,
+    "accuracy_evaluation_allowed": false,
+    "model_or_checkpoint_changes_allowed": false
+  },
+  "execution_order": [
+    "static upstream/current interface audit",
+    "build strict asymmetric graph for 8192 and 32768 while preserving native-1024 p2r/r2r/rnodes",
+    "verify graph and tensor alignment invariants",
+    "attempt one frozen-checkpoint forward at 8192",
+    "fail closed before the 32768 forward if the same structural blocker applies"
+  ],
+  "hard_gates": {
+    "input_graph_exact_native1024": true,
+    "regional_node_count_exact": 256,
+    "output_graph_constructible_for_both_resolutions": true,
+    "checkpoint_parameter_tree_unchanged": true,
+    "finite_forward_required_for_GO": true,
+    "no_large_model_change_or_retraining_required_for_GO": true
+  },
+  "interpretation": {
+    "graph_build_success_is_not_forward_success": true,
+    "structural_edge_reduction_is_not_measured_latency": true,
+    "u1_must_not_replace_current_production_routes": true,
+    "no_go_condition": "decoder/tensor/bypass incompatibility requiring model-path changes or retraining"
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid_inputs"],
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false,
+    "checkpoint_modified": false,
+    "accuracy_evaluation_executed": false
+  }
+}
