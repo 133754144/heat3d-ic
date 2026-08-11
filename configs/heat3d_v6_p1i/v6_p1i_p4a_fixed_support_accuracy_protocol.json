@@ -1,0 +1,60 @@
+{
+  "schema_version": "heat3d_v6_p1i_p4a_fixed_support_accuracy_protocol_v1",
+  "status": "frozen_before_p4a_execution",
+  "base_commit": "37c0e6419b1c9d4e5c9974cd8afafe8fe71ceaf0",
+  "population": {
+    "name": "frozen_valid32",
+    "binding_path": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+    "binding_sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede",
+    "selection": "preexisting label-independent development subset",
+    "sample_count": 32
+  },
+  "routes": {
+    "B8192_recon": {
+      "policy": "B",
+      "resolution": 8192,
+      "fixed_support": "first preregistered valid32 sample support/graph/reconstruction map",
+      "adaptive_reference_path": "configs/heat3d_v6_p1i/v6_p1i_graph_scale_ablation_raw/B_8192.json",
+      "adaptive_reference_sha256": "285c924897245e085b32079cada0c0840cbd6834ffd2197ddd54d63eeca8dcd1"
+    },
+    "E32768_recon": {
+      "policy": "E",
+      "resolution": 32768,
+      "fixed_support": "first preregistered valid32 sample support/graph/reconstruction map",
+      "adaptive_reference_path": "configs/heat3d_v6_p1i/v6_p1i_graph_resolution_raw/E_32768.json",
+      "adaptive_reference_sha256": "8f0bb99322452ecfd324e4bd07d57553de9b75e4d22de1876f0c20092d4a205c"
+    }
+  },
+  "metrics": [
+    "full_field_point_global_true_rms_relative_rmse_pct",
+    "full_field_raw_cv_weighted_rmse_K",
+    "full_field_source_rmse_K",
+    "full_field_peak_rmse_K",
+    "full_field_interface_drop_rmse_K",
+    "per_sample_raw_source_peak_interface",
+    "worst_case_and_paired_delta"
+  ],
+  "production_go_gate": {
+    "finite_and_complete": true,
+    "aggregate_noninferiority_margins": {
+      "point_global_pct_absolute": 0.25,
+      "raw_cv_rmse_K_absolute": 0.2,
+      "source_rmse_K_absolute": 0.5,
+      "peak_rmse_K_absolute": 0.5,
+      "interface_rmse_K_absolute": 0.1
+    },
+    "worst_sample_raw_rmse_delta_K_max": 2.0,
+    "all_conditions_required": true,
+    "margin_basis": "fixed before P4-A from prior valid32 scale and engineering materiality; not inferred from fixed-support results"
+  },
+  "fail_fast": "if neither route passes, stop before P4-B",
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_search": false,
+    "adaptive_accuracy_reexecuted": false
+  }
+}
