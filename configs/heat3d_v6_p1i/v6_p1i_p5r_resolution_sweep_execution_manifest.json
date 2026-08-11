@@ -1,0 +1,40 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5r_resolution_sweep_execution_manifest_v1",
+  "status": "completed_valid32",
+  "branch": "research/v6-p1i-training",
+  "execution_commit": "2842ecd",
+  "host": "wsl2",
+  "backend": "RTX 5070 GPU model plus Ryzen 7 9700X host preprocessing",
+  "remote_artifact_root": "/tmp/v6_p1i_p5r_valid32_2842ecd",
+  "remote_log": {
+    "path": "/tmp/v6_p1i_p5r_valid32_2842ecd.log",
+    "sha256": "ffb35707538e7f42dd69f9614ae3352acff26d09de3ae592721cbf183e96070f",
+    "tracked": false
+  },
+  "smoke": {
+    "sample_count_per_cell": 1,
+    "registered_cells_passed": 6,
+    "output_root": "/tmp/v6_p1i_p5r_366bd9c/smoke"
+  },
+  "valid32_cells": [
+    {"route": "native1024_reconstruction", "sha256": "74df36ee58a6bdfac9474d448c3af0524af560c7cf1d9626cd9a648de160eb48"},
+    {"route": "B4096_reconstruction", "sha256": "5201dbc32c52c8a4eb6ee40042599b25d7e178288589160968271fcf06a4bd76"},
+    {"route": "B8192_reconstruction", "sha256": "2a5737eb1e36e6baea1eab7dfaca2787a63d9894c35e4b8dfd42fd2739a23256"},
+    {"route": "E16384_reconstruction", "sha256": "6fb5641212ba17afc2b4a2ed2ed634ef9377ef2de1c793c1adb2b017d2bc0840"},
+    {"route": "E32768_reconstruction", "sha256": "7216b797037793e1bc04a1497cbb522bf09e4deb764e1e250ad262c8bc3fa21d"},
+    {"route": "E240825_direct", "sha256": "a0fdbf812793fa916687911d019ac3017b2a3738c2c367969a7ec588a4a54b25"}
+  ],
+  "closeout": {
+    "json_sha256": "b30a0bf9dd181c3e2cb31607809d77242838ed60e53fa5d30137fee7d4e4065f",
+    "csv_sha256": "ea28ccc30291722e95054d08a2e2776c4b98f35fc6745d291198a130f1b467f0",
+    "md_sha256": "e9dcacb1735f4dc305d154e4280788fbdb1bfca75073e0c27624f8d2f6b38fee"
+  },
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "accuracy_and_latency_same_execution": true
+  }
+}

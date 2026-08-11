@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -20,6 +21,8 @@ def main() -> int:
     parser.add_argument("--json", type=Path)
     parser.add_argument("--csv", type=Path)
     parser.add_argument("--md", type=Path)
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--raw-root", type=Path)
     args = parser.parse_args()
     protocol = json.loads(args.protocol.read_text())
     require(protocol["status"] == "preregistered_before_execution", "protocol status")
@@ -49,6 +52,15 @@ def main() -> int:
         require(len(csv_rows) == 6, "CSV rows")
         text = args.md.read_text()
         require("no old latency was joined to new accuracy" in text, "timing provenance note")
+        if args.manifest is not None:
+            require(args.raw_root is not None, "raw root required with manifest")
+            manifest = json.loads(args.manifest.read_text())
+            require(manifest["status"] == "completed_valid32", "manifest status")
+            require(manifest["role_contract"]["accuracy_and_latency_same_execution"], "manifest timing role")
+            for row in manifest["valid32_cells"]:
+                path = args.raw_root / f"{row['route']}.json"
+                require(path.is_file(), f"missing raw cell {path}")
+                require(hashlib.sha256(path.read_bytes()).hexdigest() == row["sha256"], f"raw SHA {path}")
         checked = True
     print(json.dumps({"p5r_protocol_checked": True, "result_checked": checked}))
     return 0
