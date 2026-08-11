@@ -38,6 +38,9 @@ def main() -> int:
             require(sample["encoder_pnode_local_transform_exact"]["array_equal"], "encoder locality")
         resolutions = [int(row["resolution"]) for row in result["high_n"]]
         require(resolutions in ([8192], [8192, 32768]), "high-N order")
+        for row in result["high_n"]:
+            require(row["original_decoder_pre_bypass_output_shape"][2] == 1024, "original decoder shape")
+            require(row["split_adapter_pre_bypass_output_shape"][2] == row["resolution"], "split decoder shape")
         if resolutions == [8192, 32768]:
             require(result["decision"]["worth_entering_1024_to_240825"], "240825 discussion gate")
         require(result["role_contract"] == role, "result role contract")

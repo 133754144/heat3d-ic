@@ -77,13 +77,14 @@ def main() -> int:
     lines = [
         "# V6 P1i U1 split-adapter closeout", "",
         f"Identity gate: **PASS** on {identity['sample_count']} frozen valid samples.", "",
-        "| N | pre-bypass shape | PG (%) | raw (K) | forward median (s) | ΔPG vs P5-R route (pp) | speedup vs P5-R forward |",
-        "|---:|---|---:|---:|---:|---:|---:|",
+        "| N | original pre-bypass | split pre-bypass | PG (%) | raw (K) | forward median (s) | ΔPG vs P5-R route (pp) | speedup vs P5-R forward |",
+        "|---:|---|---|---:|---:|---:|---:|---:|",
     ]
     for probe, comparison in zip(probes, comparisons, strict=True):
         metric = probe["full_field_accuracy"]
         lines.append(
-            f"| {probe['resolution']} | {probe['pre_bypass_output_shape']} | "
+            f"| {probe['resolution']} | {probe['original_decoder_pre_bypass_output_shape']} | "
+            f"{probe['split_adapter_pre_bypass_output_shape']} | "
             f"{metric['point_global_true_rms_relative_rmse_pct']:.6f} | "
             f"{metric['raw_cv_weighted_rmse_K']:.6f} | "
             f"{probe['steady_forward']['median_seconds']:.6f} | "

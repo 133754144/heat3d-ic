@@ -431,9 +431,7 @@ def main() -> int:
                         qk_region_features=anchor_group.get("qk_region_features"),
                         method=_pre_bypass_method,
                     )
-                    pre_shape = list(np.asarray(pre["decoder_pre_bypass"]).shape)
-                    if pre_shape[2] != args.resolution:
-                        raise RuntimeError(f"U1 pre-bypass output is not N nodes: {pre_shape}")
+                    original_pre_shape = list(np.asarray(pre["decoder_pre_bypass"]).shape)
                 started = time.perf_counter()
                 split = model.apply(
                     {"params": params}, inputs_in=anchor_group["inputs"],
@@ -454,6 +452,11 @@ def main() -> int:
                 split = compiled(params, anchor_group["inputs"], output_group["inputs"], graphs, local_p2r, kwargs)
                 jax.block_until_ready(split["raw_temperature"])
                 forward_times.append(time.perf_counter() - started)
+                split_pre_shape = list(np.asarray(split["decoder_pre_bypass"]).shape)
+                if split_pre_shape[2] != args.resolution:
+                    raise RuntimeError(
+                        f"U1 split-adapter pre-bypass output is not N nodes: {split_pre_shape}"
+                    )
                 raw = np.asarray(split["raw_temperature"], dtype=np.float64)[0, 0, :, 0]
                 if not np.all(np.isfinite(raw)):
                     raise RuntimeError(f"U1 nonfinite: {anchor.sample_id}")
@@ -480,7 +483,9 @@ def main() -> int:
                     full_delta, truth, full["cv"], full["coords"], full["layer"], full_q,
                 ))
                 rows.append({
-                    "sample_id": anchor.sample_id, "pre_bypass_output_shape": pre_shape if number == 1 else None,
+                    "sample_id": anchor.sample_id,
+                    "original_decoder_pre_bypass_output_shape": original_pre_shape if number == 1 else None,
+                    "split_adapter_pre_bypass_output_shape": split_pre_shape,
                     "finite": True, "first_eager_seconds": elapsed,
                     "steady_forward_seconds": forward_times[-1],
                     "encoder_locality": _tree_diff(
@@ -505,7 +510,8 @@ def main() -> int:
             "schema_version": "heat3d_v6_p1i_u1_split_high_n_v1",
             "status": "passed" if args.sample_count == 32 else "passed_smoke",
             "resolution": args.resolution, "sample_count": args.sample_count,
-            "pre_bypass_output_shape": rows[0]["pre_bypass_output_shape"],
+            "original_decoder_pre_bypass_output_shape": rows[0]["original_decoder_pre_bypass_output_shape"],
+            "split_adapter_pre_bypass_output_shape": rows[0]["split_adapter_pre_bypass_output_shape"],
             "support_accuracy": qualification.metric_accumulate(metric_rows, full=False),
             "full_field_accuracy": qualification.metric_accumulate(full_metric_rows, full=True),
             "steady_forward": _stats(forward_times),
