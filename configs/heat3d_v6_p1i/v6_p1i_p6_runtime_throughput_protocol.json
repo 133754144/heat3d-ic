@@ -1,0 +1,72 @@
+{
+  "schema_version": "heat3d_v6_p1i_p6_runtime_throughput_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "69d256ff3433f259ff7213b8837682fbd0b330f4",
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "valid_subset": "frozen_valid32_from_high_n_binding",
+  "routes": [
+    {"route": "native1024", "resolution": 1024, "regional_policy": "native_factor4", "output_mode": "reconstruction"},
+    {"route": "E16384", "resolution": 16384, "regional_policy": "fixed_Nr256", "output_mode": "reconstruction"},
+    {"route": "E32768", "resolution": 32768, "regional_policy": "fixed_Nr256", "output_mode": "reconstruction"}
+  ],
+  "stage_contract": [
+    "support_plus_cv",
+    "anchor_graph",
+    "query_graph",
+    "reconstruction_map",
+    "anchor_group_pack",
+    "query_group_pack",
+    "h2d_enqueue",
+    "h2d_sync",
+    "anchor_forward",
+    "query_forward",
+    "reconstruction_apply",
+    "matched_continuous_e2e"
+  ],
+  "runtime_states": {
+    "fresh_sample": "new valid sample with fresh graph, group pack, H2D and warm-compiled inference",
+    "same_shape_new_sample": "distinct valid sample under an already compiled padded shape; graph remains fresh",
+    "same_input_replay": "device-resident prepared group, graph and reconstruction map"
+  },
+  "native1024_optimization": {
+    "reuse_anchor_as_query_graph": true,
+    "reuse_anchor_as_query_group": true,
+    "required_gate": "canonical graph hash and host group tree hash exact against duplicate reference"
+  },
+  "batch_contract": {
+    "sizes": [1, 2, 4, 8, 16],
+    "repeats": 20,
+    "resident_forward_only": true,
+    "prepared_group_steady_inference": true,
+    "streamed_prepared_host_batch": true,
+    "oom_or_feasibility_skip_nonblocking": true,
+    "metrics": ["batch_wall_seconds", "samples_per_second", "average_per_case_seconds", "marginal_per_case_seconds"]
+  },
+  "fvm_contract": {
+    "host": "wsl2",
+    "cpu": "Ryzen 7 9700X",
+    "processes": 1,
+    "threads": 1,
+    "sample_count": 32,
+    "state": "known_topology_new_physics",
+    "comparison_note": "GPU batch and serial CPU FVM are reported separately"
+  },
+  "reuse": {
+    "accuracy": "P5-R same-semantics valid32 results",
+    "support_and_reconstruction": "frozen High-N artifacts and deterministic builders",
+    "new_computation": "runtime and throughput only"
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_semantics_modified": false
+  }
+}
