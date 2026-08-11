@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 import hashlib
+import time
 from typing import Any, Mapping
 
 import numpy as np
@@ -132,13 +133,25 @@ class P1iSampleVaryingAnchorQueryAdapter:
         }
 
 
-def _hash_order(sample_id: str, seed: int, indices: np.ndarray) -> np.ndarray:
-    return np.asarray(sorted(
-        map(int, indices),
-        key=lambda index: (
-            hashlib.sha256(f"{seed}:{sample_id}:{index}".encode()).digest(), index
-        ),
-    ), dtype=np.int64)
+def _hash_order(
+    sample_id: str,
+    seed: int,
+    indices: np.ndarray,
+    profile: dict[str, float] | None = None,
+) -> np.ndarray:
+    hash_started = time.perf_counter()
+    decorated = [
+        (hashlib.sha256(f"{seed}:{sample_id}:{index}".encode()).digest(), int(index))
+        for index in map(int, indices)
+    ]
+    hash_seconds = time.perf_counter() - hash_started
+    sort_started = time.perf_counter()
+    decorated.sort(key=lambda item: (item[0], item[1]))
+    sort_seconds = time.perf_counter() - sort_started
+    if profile is not None:
+        profile["sha256_seconds"] = profile.get("sha256_seconds", 0.0) + hash_seconds
+        profile["sort_seconds"] = profile.get("sort_seconds", 0.0) + sort_seconds
+    return np.fromiter((item[1] for item in decorated), dtype=np.int64, count=len(decorated))
 
 
 def _weighted_interleave(buckets: Mapping[str, np.ndarray], weights: Mapping[str, float]) -> np.ndarray:
@@ -183,6 +196,7 @@ class NestedQueryGeometryCache:
     top_indices: np.ndarray
     bottom_indices: np.ndarray
     interface_indices: np.ndarray
+    layer_boundaries_m: np.ndarray
     static_hashes: Mapping[str, str]
 
 
@@ -198,10 +212,11 @@ def prepare_nested_query_geometry_cache(
     coords = np.asarray(full_coords, dtype=np.float64)
     cv = np.asarray(full_control_volume, dtype=np.float64).reshape(-1)
     layer = np.asarray(full_layer_id, dtype=np.int32).reshape(-1)
+    boundaries = np.asarray(layer_boundaries_m, dtype=np.float64).reshape(-1)
     if len(coords) != len(cv) or len(coords) != len(layer) or np.any(cv <= 0.0):
         raise ValueError("invalid nested-query geometry arrays")
     z = coords[:, 2]
-    internal = np.asarray(layer_boundaries_m, dtype=np.float64).reshape(-1)[1:-1]
+    internal = boundaries[1:-1]
     interface = np.flatnonzero(
         np.any(np.isclose(z[:, None], internal[None, :], atol=1.0e-15), axis=1)
     )
@@ -219,6 +234,7 @@ def prepare_nested_query_geometry_cache(
         top_indices=top,
         bottom_indices=bottom,
         interface_indices=interface,
+        layer_boundaries_m=boundaries,
         static_hashes={
             "coords": array_sha256(coords),
             "control_volume": array_sha256(cv),
@@ -226,6 +242,7 @@ def prepare_nested_query_geometry_cache(
             "top_indices": array_sha256(top),
             "bottom_indices": array_sha256(bottom),
             "interface_indices": array_sha256(interface),
+            "layer_boundaries_m": array_sha256(boundaries),
         },
     )
 
@@ -237,6 +254,9 @@ class _LazyWeightedInterleave:
         self,
         buckets: Mapping[str, np.ndarray | "_LazyWeightedInterleave"],
         weights: Mapping[str, float],
+        *,
+        profile: dict[str, float] | None = None,
+        profile_key: str | None = None,
     ) -> None:
         self._buckets = dict(buckets)
         self._names = tuple(sorted(self._buckets))
@@ -245,27 +265,35 @@ class _LazyWeightedInterleave:
         self._consumed = {name: 0 for name in self._names}
         self._weights = {name: float(weights[name]) for name in self._names}
         self._emitted = 0
-
-    def _bucket_remaining(self, name: str) -> int:
-        bucket = self._buckets[name]
-        if isinstance(bucket, _LazyWeightedInterleave):
-            return bucket.remaining
-        return len(bucket) - self._cursor[name]
+        self._remaining_by_name = {
+            name: (
+                self._buckets[name].remaining
+                if isinstance(self._buckets[name], _LazyWeightedInterleave)
+                else len(self._buckets[name])
+            )
+            for name in self._names
+        }
+        self._remaining = sum(self._remaining_by_name.values())
+        self._active = tuple(
+            name for name in self._names if self._remaining_by_name[name] > 0
+        )
+        self._total_weight = sum(self._weights[name] for name in self._active)
+        self._profile = profile
+        self._profile_key = profile_key
 
     @property
     def remaining(self) -> int:
-        return sum(self._bucket_remaining(name) for name in self._names)
+        return self._remaining
 
     def pop_next(self) -> int:
-        active = [name for name in self._names if self._bucket_remaining(name) > 0]
-        if not active:
+        started = time.perf_counter() if self._profile is not None else 0.0
+        if not self._active:
             raise StopIteration
-        total_weight = sum(self._weights[name] for name in active)
         step = self._emitted + 1
         chosen = max(
-            active,
+            self._active,
             key=lambda name: (
-                self._weights[name] / total_weight * step - self._consumed[name],
+                self._weights[name] / self._total_weight * step - self._consumed[name],
                 -self._rank[name],
             ),
         )
@@ -277,6 +305,20 @@ class _LazyWeightedInterleave:
             self._cursor[chosen] += 1
         self._consumed[chosen] += 1
         self._emitted += 1
+        self._remaining_by_name[chosen] -= 1
+        self._remaining -= 1
+        if self._remaining_by_name[chosen] == 0:
+            self._active = tuple(
+                name for name in self._active if self._remaining_by_name[name] > 0
+            )
+            # Recompute in the same sorted-name order used by the historical
+            # implementation. Subtraction would change floating-point order.
+            self._total_weight = sum(self._weights[name] for name in self._active)
+        if self._profile is not None and self._profile_key is not None:
+            self._profile[self._profile_key] = (
+                self._profile.get(self._profile_key, 0.0)
+                + (time.perf_counter() - started)
+            )
         return value
 
     def take(self, count: int) -> np.ndarray:
@@ -293,6 +335,7 @@ def deterministic_nested_query_prefix(
     target_count: int,
     geometry_cache: NestedQueryGeometryCache,
     selection_seed: int = HIGH_N_SELECTION_SEED,
+    profile: dict[str, float] | None = None,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Return the exact historical prefix without materializing the full order."""
 
@@ -306,6 +349,7 @@ def deterministic_nested_query_prefix(
         raise ValueError("target_count must lie between anchor and solver node counts")
     if len(q) != node_count or len(anchors) != TRAINING_ANCHOR_COUNT:
         raise ValueError("lazy prefix inputs do not match frozen P1i sizes")
+    mask_started = time.perf_counter()
     available = np.ones(node_count, dtype=bool)
     available[anchors] = False
     q_eps = max(1.0e-30, float(np.max(np.abs(q))) * 1.0e-12)
@@ -319,6 +363,12 @@ def deterministic_nested_query_prefix(
     robin = available & ~source & ~interface & robin_static
     volume = available & ~source & ~interface & ~robin
     masks = {"source": source, "interface": interface, "robin": robin, "volume": volume}
+    if profile is not None:
+        profile.clear()
+        profile["mask_seconds"] = time.perf_counter() - mask_started
+        profile["sha256_seconds"] = 0.0
+        profile["sort_seconds"] = 0.0
+        profile["inner_interleave_seconds"] = 0.0
     strata: dict[str, _LazyWeightedInterleave] = {}
     counts: dict[str, int] = {}
     for name, mask in masks.items():
@@ -329,13 +379,24 @@ def deterministic_nested_query_prefix(
             if not len(selected):
                 continue
             key = f"layer_{layer_index:02d}"
-            layer_buckets[key] = _hash_order(sample_id, selection_seed, selected)
+            layer_buckets[key] = _hash_order(
+                sample_id, selection_seed, selected, profile=profile
+            )
             layer_weights[key] = float(np.sum(cv[selected]))
         if layer_buckets:
-            strata[name] = _LazyWeightedInterleave(layer_buckets, layer_weights)
+            strata[name] = _LazyWeightedInterleave(
+                layer_buckets, layer_weights,
+                profile=profile, profile_key="inner_interleave_seconds",
+            )
         counts[name] = int(np.sum(mask))
     outer = _LazyWeightedInterleave(strata, HIGH_N_STRATUM_FRACTIONS)
+    interleave_started = time.perf_counter()
     added = outer.take(target_count - len(anchors))
+    total_interleave_seconds = time.perf_counter() - interleave_started
+    if profile is not None:
+        profile["outer_interleave_seconds"] = max(
+            0.0, total_interleave_seconds - profile["inner_interleave_seconds"]
+        )
     prefix = np.concatenate((anchors, added))
     if len(prefix) != target_count or len(np.unique(prefix)) != target_count:
         raise RuntimeError("lazy nested-query prefix is not unique or complete")
@@ -349,6 +410,7 @@ def deterministic_nested_query_prefix(
         "stratum_candidate_counts": counts,
         "inner_and_outer_early_stop": True,
         "geometry_static_hashes": dict(geometry_cache.static_hashes),
+        "profile_seconds": dict(profile) if profile is not None else None,
         "target_or_temperature_used": False,
         "prefix_sha256": array_sha256(prefix),
     }

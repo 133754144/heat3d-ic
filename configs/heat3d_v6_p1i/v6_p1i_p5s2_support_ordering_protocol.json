@@ -1,0 +1,37 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5s2_support_ordering_protocol_v1",
+  "status": "preregistered_before_candidate_execution",
+  "baseline_commit": "f5c21743e1fb36836469097600d2ca04e362805e",
+  "routes": ["B8192_adaptive", "E32768_adaptive"],
+  "baseline_source": "configs/heat3d_v6_p1i/v6_p1i_p5s_lazy_prefix_closeout.json",
+  "optimization": {
+    "lazy_interleave": "cache remaining_by_name, remaining, active and total_weight",
+    "float_order": "recompute active total weight in historical sorted-name order only when a bucket exhausts",
+    "geometry_cache_addition": "layer_boundaries_m plus SHA256",
+    "allowed": "low-risk exact Python/NumPy only",
+    "forbidden": ["C_or_CPP", "approximate_q_cluster_cache", "semantic_or_order_change"]
+  },
+  "profile_stages": [
+    "mask", "sha256", "sort", "inner_interleave", "outer_interleave"
+  ],
+  "hard_gates": [
+    "candidate prefix equals historical full-order prefix bitwise",
+    "candidate prefix equals frozen support bitwise",
+    "prefix SHA256 exact",
+    "anchor prefix exact",
+    "geometry partition and boundary hash exact",
+    "CV exact",
+    "canonical graph hash exact",
+    "reconstruction map exact"
+  ],
+  "population": "frozen valid32",
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "inference": false,
+    "temperature_or_prediction_used": false,
+    "checkpoint_modified": false,
+    "graph_policy_modified": false
+  }
+}
