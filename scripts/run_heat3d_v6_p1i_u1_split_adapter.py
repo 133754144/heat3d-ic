@@ -255,6 +255,41 @@ def _combined_targets(native: Mapping[str, int | None], query: Mapping[str, int 
     }
 
 
+def _expand_target(targets: dict[str, int | None], field: str, value: Any) -> None:
+    if value is None:
+        return
+    count = int(np.asarray(value).shape[1])
+    current = targets.get(field)
+    targets[field] = count if current is None else max(int(current), count)
+
+
+def _actual_padding_envelope(
+    *, anchors: list[Any], resolution: int, support_rows: Mapping[str, Mapping[str, Any]],
+    full_coords: np.ndarray, stats: Mapping[str, Any], graph_config: Mapping[str, Any],
+    graph_key: Any, native_targets: Mapping[str, int | None],
+    query_targets: Mapping[str, int | None],
+) -> tuple[dict[str, int | None], dict[str, int | None]]:
+    """Expand only the JIT padding envelope; real edges and their order are unchanged."""
+    native = dict(native_targets)
+    query = dict(query_targets)
+    for anchor in anchors:
+        builder = Heat3DGraphBuilder(**graph_config)
+        anchor_coords = runner._graph_coords_for_example(anchor, stats)
+        native_metadata = builder.build_metadata(anchor_coords, key=graph_key)
+        for field in qualification.EDGE_FIELDS:
+            _expand_target(native, field, getattr(native_metadata, field))
+        if resolution != 1024:
+            support = highn._load_support(Path(support_rows[anchor.sample_id]["support_file"]))
+            output = highn._query_example(anchor, support, full_coords)
+            asymmetric, _ = prior_u1._strict_asymmetric_metadata(
+                builder, native_metadata, anchor_coords,
+                runner._graph_coords_for_example(output, stats),
+            )
+            for field in qualification.EDGE_FIELDS:
+                _expand_target(query, field, getattr(asymmetric, field))
+    return native, query
+
+
 def _model_kwargs(anchor_group: Mapping[str, Any], output_group: Mapping[str, Any]) -> dict[str, Any]:
     anchor_physics = anchor_group["native_physics"]
     output_physics = output_group["native_physics"]
@@ -311,9 +346,14 @@ def main() -> int:
     physics_rows = {row["sample_id"]: row for row in preflight["samples"]}
     native_targets = _edge_targets(args.native_padding_result)
     query_targets = native_targets if args.resolution == 1024 else _edge_targets(args.query_padding_result)
-    asymmetric_targets = _combined_targets(native_targets, query_targets)
     graph_key = runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
     graph_config = dict(runtime["graph_config"]); graph_config["subsample_factor"] = 4
+    native_targets, query_targets = _actual_padding_envelope(
+        anchors=anchors, resolution=args.resolution, support_rows=support_rows,
+        full_coords=full["coords"], stats=runtime["stats"], graph_config=graph_config,
+        graph_key=graph_key, native_targets=native_targets, query_targets=query_targets,
+    )
+    asymmetric_targets = _combined_targets(native_targets, query_targets)
     model = GraphNeuralOperator(**runtime["model_config"])
     params = runner._device_params(runtime["checkpoint"]["params"])
     params_before = highn._tree_sha256(runtime["checkpoint"]["params"])
@@ -479,6 +519,11 @@ def main() -> int:
         "checkpoint_parameter_tree_before": params_before,
         "checkpoint_parameter_tree_after": params_after,
         "checkpoint_parameters_unchanged": params_before == params_after,
+        "jit_padding_envelope": {
+            "semantics": "shape_only_max_of_tracked_and_actual_valid_subset; real_edges_unchanged",
+            "native": native_targets,
+            "query": query_targets,
+        },
         "role_contract": protocol["role_contract"],
     })
     if not result["checkpoint_parameters_unchanged"]:
