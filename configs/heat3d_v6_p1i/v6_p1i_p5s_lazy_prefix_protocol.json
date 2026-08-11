@@ -1,0 +1,13 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5s_protocol_v1",
+  "phase": "P5-S_adaptive_support_ordering",
+  "baseline_commit": "9b3314a9c553765afab593de9de0c83400d1a95c",
+  "population": {"role": "valid_iid", "sample_count": 32, "routes": ["B8192_adaptive", "E32768_adaptive"]},
+  "reference": "optimized_full_240825_order_then_prefix",
+  "candidate": "hierarchical_lazy_prefix_inner_and_outer_early_stop",
+  "geometry_cache": ["coords", "control_volume", "layer_id", "layer_indices", "top_indices", "bottom_indices", "interface_indices"],
+  "hard_gates": {"prefix_array_equal_historical": true, "prefix_sha256_equal": true, "anchor_prefix_exact": true, "geometry_partition_exact": true, "cv_exact": true, "canonical_graph_hash_exact": true, "reconstruction_map_exact": true},
+  "timing": {"single_case_continuous": true, "graph_shape_warmup_before_measurement": true, "graph_block_until_ready": true, "excluded": ["qualification", "hash", "accuracy", "inference", "serialization"]},
+  "stop_rule": "stop support-order micro-optimization when it is no longer the largest stage; do not implement C/C++ or approximate q-cluster caching in this phase",
+  "role_contract": {"training": false, "test": false, "sealed": false, "inference": false, "temperature_or_prediction_used": false, "graph_policy_modified": false, "checkpoint_modified": false}
+}
