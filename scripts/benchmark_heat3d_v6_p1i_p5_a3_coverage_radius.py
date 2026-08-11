@@ -89,7 +89,9 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     protocol = json.loads(args.protocol.read_text())
-    binding = highn._binding(args)
+    binding = json.loads(args.binding.read_text())
+    if binding.get("status") != "frozen_after_three_seed_r0_pass":
+        raise RuntimeError("high-N binding status drifted")
     runtime = highn._checkpoint_runtime(args)
     dataset = highn._dataset(args)
     anchors = highn._valid_examples(dataset, binding)
