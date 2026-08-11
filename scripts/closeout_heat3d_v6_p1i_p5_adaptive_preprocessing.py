@@ -27,6 +27,12 @@ STAGES=("support_ordering","cv_redistribution","regional_prepare","coverage","p2
 def _stats(v:list[float])->dict[str,float]:
     a=np.asarray(v,dtype=np.float64);return {"median_seconds":float(np.median(a)),"mean_seconds":float(np.mean(a)),"p95_seconds":float(np.quantile(a,.95)),"sum_seconds":float(np.sum(a))}
 
+def _block_metadata(metadata: Any) -> None:
+    jax.tree_util.tree_map(
+        lambda value: value.block_until_ready() if hasattr(value, "block_until_ready") else value,
+        metadata,
+    )
+
 def main()->int:
     p=argparse.ArgumentParser()
     for name in ("protocol","binding","artifact_root","dataset_root","manifest","full_fields","run_dir","output_json","output_csv","output_md"):p.add_argument("--"+name.replace("_","-"),dest=name,type=Path,required=True)
@@ -50,16 +56,19 @@ def main()->int:
         started=time.perf_counter();cand_cv,cand_assign,_=a2._redistribute(coords,cv,layer,selected,workers=-1);cand_cv_s=time.perf_counter()-started
         if not np.array_equal(cand_cv,np.asarray(frozen["operator_control_volume"],dtype=np.float64)):raise RuntimeError("frozen selected CV drift")
         example=highn._query_example(anchor,frozen,coords);graph_coords=highn.runner._graph_coords_for_example(example,runtime["stats"]);config=dict(runtime["graph_config"]);config.update(subsample_factor=factor,discrete_graph_backend="sparse_kdtree_v1",reuse_exact_p2r_for_r2p=False)
-        ref_builder=Heat3DGraphBuilder(**config);RegionInteractionGraphBuilder._compute_discrete_physical_coverage_radius=a3._reference_coverage;RegionInteractionGraphBuilder._get_supported_pnodes_by_rnodes=a4._reference_edges
-        try:ref_meta=ref_builder.build_metadata(graph_coords,key=key);jax.block_until_ready(ref_meta.r_rnodes)
+        RegionInteractionGraphBuilder._compute_discrete_physical_coverage_radius=a3._reference_coverage;RegionInteractionGraphBuilder._get_supported_pnodes_by_rnodes=a4._reference_edges
+        try:
+          ref_warm=Heat3DGraphBuilder(**config);_block_metadata(ref_warm.build_metadata(graph_coords,key=key))
+          ref_builder=Heat3DGraphBuilder(**config);ref_graph_started=time.perf_counter();ref_meta=ref_builder.build_metadata(graph_coords,key=key);_block_metadata(ref_meta);ref_graph_wall=time.perf_counter()-ref_graph_started
         finally:RegionInteractionGraphBuilder._compute_discrete_physical_coverage_radius=production_coverage;RegionInteractionGraphBuilder._get_supported_pnodes_by_rnodes=production_edges
-        cand_config=dict(config);cand_config["reuse_exact_p2r_for_r2p"]=True;cand_builder=Heat3DGraphBuilder(**cand_config);cand_meta=cand_builder.build_metadata(graph_coords,key=key);jax.block_until_ready(cand_meta.r_rnodes)
+        cand_config=dict(config);cand_config["reuse_exact_p2r_for_r2p"]=True;cand_warm=Heat3DGraphBuilder(**cand_config);_block_metadata(cand_warm.build_metadata(graph_coords,key=key));cand_builder=Heat3DGraphBuilder(**cand_config);cand_graph_started=time.perf_counter();cand_meta=cand_builder.build_metadata(graph_coords,key=key);_block_metadata(cand_meta);cand_graph_wall=time.perf_counter()-cand_graph_started
         ref_map_started=time.perf_counter();ref_map,_=build_reconstruction_map(coords=coords,layer_id=layer,boundaries=boundaries,support_indices=selected,empty_domain_fallback="same_layer",prepared_partition=None,query_workers=1);ref_map_s=time.perf_counter()-ref_map_started
         cand_map_started=time.perf_counter();cand_map,_=build_reconstruction_map(coords=coords,layer_id=layer,boundaries=boundaries,support_indices=selected,empty_domain_fallback="same_layer",prepared_partition=partition,query_workers=-1);cand_map_s=time.perf_counter()-cand_map_started
         ref_t=ref_builder.builder.last_build_timings;cand_t=cand_builder.builder.last_build_timings
-        ref_stages={"support_ordering":order["reference_seconds"],"cv_redistribution":ref_cv_s,"regional_prepare":float(ref_t["regional_prepare_seconds"]),"coverage":float(ref_t["coverage_radius_seconds"]),"p2r":float(ref_t["p2r_seconds"]),"r2r":float(ref_t["r2r_seconds"]),"r2p":float(ref_t["r2p_seconds"]),"reconstruction_map":ref_map_s,"packing":float(ref_t["packing_seconds"]),"graph_total":float(ref_t["total_seconds"])}
-        cand_stages={"support_ordering":order["candidate_seconds"],"cv_redistribution":cand_cv_s,"regional_prepare":float(cand_t["regional_prepare_seconds"]),"coverage":float(cand_t["coverage_radius_seconds"]),"p2r":float(cand_t["p2r_seconds"]),"r2r":float(cand_t["r2r_seconds"]),"r2p":float(cand_t["r2p_seconds"]),"reconstruction_map":cand_map_s,"packing":float(cand_t["packing_seconds"]),"graph_total":float(cand_t["total_seconds"])}
-        named=("support_ordering","cv_redistribution","regional_prepare","coverage","p2r","r2r","r2p","reconstruction_map","packing");ref_stages["total_adaptive_preprocessing"]=sum(ref_stages[k] for k in named);cand_stages["total_adaptive_preprocessing"]=sum(cand_stages[k] for k in named)
+        ref_stages={"support_ordering":order["reference_seconds"],"cv_redistribution":ref_cv_s,"regional_prepare":float(ref_t["regional_prepare_seconds"]),"coverage":float(ref_t["coverage_radius_seconds"]),"p2r":float(ref_t["p2r_seconds"]),"r2r":float(ref_t["r2r_seconds"]),"r2p":float(ref_t["r2p_seconds"]),"reconstruction_map":ref_map_s,"packing":float(ref_t["packing_seconds"]),"graph_total":ref_graph_wall}
+        cand_stages={"support_ordering":order["candidate_seconds"],"cv_redistribution":cand_cv_s,"regional_prepare":float(cand_t["regional_prepare_seconds"]),"coverage":float(cand_t["coverage_radius_seconds"]),"p2r":float(cand_t["p2r_seconds"]),"r2r":float(cand_t["r2r_seconds"]),"r2p":float(cand_t["r2p_seconds"]),"reconstruction_map":cand_map_s,"packing":float(cand_t["packing_seconds"]),"graph_total":cand_graph_wall}
+        ref_stages["total_adaptive_preprocessing"]=ref_stages["support_ordering"]+ref_stages["cv_redistribution"]+ref_stages["graph_total"]+ref_stages["reconstruction_map"]
+        cand_stages["total_adaptive_preprocessing"]=cand_stages["support_ordering"]+cand_stages["cv_redistribution"]+cand_stages["graph_total"]+cand_stages["reconstruction_map"]
         gates={"support_order_exact":order["exact"],"cv_exact":bool(np.array_equal(ref_cv,cand_cv) and np.array_equal(ref_assign,cand_assign) and array_sha256(ref_cv)==array_sha256(cand_cv)),"canonical_graph_hash_exact":a4._canonical_hash(ref_meta)==a4._canonical_hash(cand_meta),"reconstruction_map_exact":highn._mapping_sha256(ref_map)==highn._mapping_sha256(cand_map)}
         rows.append({"route":route,"resolution":resolution,"sample_id":anchor.sample_id,"gates":gates,"reference":ref_stages,"candidate":cand_stages});print(f"[P5-closeout] {route} {number}/32 exact={all(gates.values())}",flush=True)
     hard=all(v for row in rows for v in row["gates"].values());summary={}
@@ -68,7 +77,7 @@ def main()->int:
       for stage in STAGES:
         ref=_stats([r["reference"][stage] for r in selected]);cand=_stats([r["candidate"][stage] for r in selected]);stages[stage]={"reference":ref,"candidate":cand,"median_speedup":ref["median_seconds"]/max(cand["median_seconds"],1e-30)}
       ranked=sorted(((name,data["candidate"]["median_seconds"]) for name,data in stages.items() if name not in ("graph_total","total_adaptive_preprocessing")),key=lambda x:x[1],reverse=True);summary[route]={"stages":stages,"remaining_bottleneck":ranked[0][0],"remaining_bottleneck_median_seconds":ranked[0][1]}
-    result={"schema_version":"heat3d_v6_p1i_p5_adaptive_preprocessing_closeout_v1","status":"passed" if hard else "failed","protocol_sha256":hashlib.sha256(a.protocol.read_bytes()).hexdigest(),"hard_gate_passed":hard,"population":protocol["population"],"summary":summary,"samples":rows,"decision":{"optimized_adaptive_preprocessing":"GO","gpu_tiled":"NO_GO","next_stage":"GO_batch_or_offline_parallel_support_ordering; NO_GO_more_graph_policy_or_GPU_tiled_search"},"role_contract":protocol["role_contract"]};a.output_json.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
+    result={"schema_version":"heat3d_v6_p1i_p5_adaptive_preprocessing_closeout_v1","status":"passed" if hard else "failed","protocol_sha256":hashlib.sha256(a.protocol.read_bytes()).hexdigest(),"hard_gate_passed":hard,"population":protocol["population"],"timing_semantics":{"graph_shape_warmup_before_each_reference_and_candidate":True,"graph_total":"continuous build_metadata plus full metadata block_until_ready","total":"support ordering + CV redistribution + synchronized graph total + reconstruction map"},"summary":summary,"samples":rows,"decision":{"optimized_adaptive_preprocessing":"GO","gpu_tiled":"NO_GO","next_stage":"GO_batch_or_offline_parallel_support_ordering; NO_GO_more_graph_policy_or_GPU_tiled_search"},"role_contract":protocol["role_contract"]};a.output_json.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     with a.output_csv.open("w",newline="") as handle:
       writer=csv.writer(handle);writer.writerow(["route","stage","reference_median_s","candidate_median_s","median_speedup","candidate_p95_s"])
       for route,data in summary.items():
