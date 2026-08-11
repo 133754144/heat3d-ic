@@ -170,6 +170,25 @@ def _report_markdown(payload: Mapping[str, Any]) -> str:
             f"{row['forward']['status']} |"
         )
     lines += [
+        "", "## Interface audit", "",
+        "- The lower-level `RegionInteractionGraphBuilder.build_metadata` accepts distinct `x_inp` and `x_out`; regional nodes are sampled from `x_inp`, while r2p targets `x_out`.",
+        "- `Heat3DGraphBuilder`, the V6 bridge, and the controlled runner bind one coordinate tensor to both sides.",
+        "- This probe froze native-1024 p2r/r2r/regional metadata bitwise and built only the N-node r2p side. Both requested graphs passed.",
+        "- At N=8192 the decoder core produced an N-node tensor and execution reached the local bypass. The bypass then rejected the shared 1024-node `Inputs.c`.",
+        "- A complete asymmetric native shape-scale call would additionally require N-node CV/Dirichlet fields while retaining anchor-derived context and scale.",
+        "", "## Structural potential", "",
+        "| N out | encoder node reduction | P2R edge reduction | P2R+R2P edge reduction | query R2P build |",
+        "|---:|---:|---:|---:|---:|",
+    ]
+    for row in payload["resolutions"]:
+        savings = row["structural_savings_vs_current_E"]
+        lines.append(
+            f"| {row['output_nodes']} | {100*savings['encoder_input_node_reduction_fraction']:.2f}% | "
+            f"{100*savings['p2r_edge_reduction_fraction']:.2f}% | "
+            f"{100*savings['total_p2r_r2p_edge_reduction_fraction']:.2f}% | "
+            f"{row['timing_diagnostic_seconds']['query_r2p_only']:.6f} s |"
+        )
+    lines += [
         "", "## Blockers", "",
     ]
     for blocker in payload["decision"]["blockers"]:
@@ -370,7 +389,8 @@ def main() -> int:
             ),
             "production_route_replaced": False,
             "next_recommendation": (
-                "retain B8192/E32768 production routes; if revisited, design and train an explicit query-decoder contract"
+                "retain B8192/E32768 production routes; if revisited, preregister a split-condition/output-native adapter, "
+                "and retrain only if checkpoint-preserving equivalence cannot be established"
                 if blockers else "preregister a separate asymmetric-query validation phase"
             ),
         },

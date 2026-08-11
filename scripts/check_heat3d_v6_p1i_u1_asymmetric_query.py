@@ -54,7 +54,10 @@ def main() -> int:
         result_checked = True
     if args.report is not None:
         text = args.report.read_text(encoding="utf-8")
-        for section in ("# V6 P1i U1", "## Probe", "## Blockers", "## Interpretation"):
+        for section in (
+            "# V6 P1i U1", "## Probe", "## Interface audit",
+            "## Structural potential", "## Blockers", "## Interpretation",
+        ):
             assert section in text
     print(json.dumps({"u1_protocol_checked": True, "result_checked": result_checked}, sort_keys=True))
     return 0

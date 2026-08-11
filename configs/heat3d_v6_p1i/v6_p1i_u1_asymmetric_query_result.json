@@ -1,0 +1,189 @@
+{
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "file_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "parameter_tree_sha256_after": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+    "parameter_tree_sha256_before": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+    "unchanged": true
+  },
+  "decision": {
+    "blockers": [
+      "frozen Inputs.c is shared by the 1024-node encoder and the N-node local decoder bypass",
+      "frozen local decoder bypass requires one-to-one x_inp/x_out and c/output alignment",
+      "native shape-scale projection requires N-node CV/BC fields while log_s/context must remain anchor-derived",
+      "runner wrapper constructs identical x_inp/x_out and has no frozen asymmetric group contract"
+    ],
+    "interpretation": "The graph primitive can preserve the native 1024 encoder/processor graph and attach an N-node r2p query graph, and the decoder core reaches its N-node output. The frozen full model path still cannot complete because input conditions, output-local bypass conditions, and output-native projection fields have no split asymmetric interface. Adding that interface exceeds this minimal checker and requires a separately preregistered adapter validation, although no checkpoint weights were changed here.",
+    "next_recommendation": "retain B8192/E32768 production routes; if revisited, preregister a split-condition/output-native adapter, and retrain only if checkpoint-preserving equivalence cannot be established",
+    "production_route_replaced": false,
+    "u1": "NO_GO_requires_model_path_change_or_retraining"
+  },
+  "historical_binding": {
+    "historical_binding_modified": false,
+    "historical_code_fingerprint_revalidation": "not_applicable_after_committed_P5-S_exact_optimization",
+    "path": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+    "scientific_fields_reused": [
+      "dataset",
+      "development_subset",
+      "nested_support",
+      "numeric_tolerances"
+    ],
+    "sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede"
+  },
+  "probe_sample": "v6p1if1_0308",
+  "protocol_path": "configs/heat3d_v6_p1i/v6_p1i_u1_asymmetric_query_protocol.json",
+  "protocol_sha256": "42be10b23f2ba2dc2c66857aeca4d4eb58f067feca10a61a89c77696226e7726",
+  "resolutions": [
+    {
+      "asymmetric_graph_audit": {
+        "domain_from_native_anchor_only": true,
+        "query_inside_native_domain": true,
+        "query_normalized_max": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "query_normalized_min": [
+          -1.0,
+          -1.0,
+          -1.0
+        ],
+        "r2p_real_edges": 19252
+      },
+      "current_E_edge_counts": {
+        "p2r": 53809,
+        "r2p": 53809,
+        "r2r": 3518
+      },
+      "edge_counts": {
+        "p2r": 2544,
+        "r2p": 19252,
+        "r2r": 4158
+      },
+      "forward": {
+        "decoder_core_reached_bypass": true,
+        "exception_message": "decoder bypass requires one-to-one input/output node alignment; x_inp=(1, 1, 1024, 3) x_out=(1, 1, 8192, 3)",
+        "exception_type": "ValueError",
+        "status": "failed_structural_incompatibility"
+      },
+      "graph_build_status": "passed",
+      "graph_sha256": "a80faa09239df1f4e4e6c0f6dbeb22b349a7ffbdcfb462f2b03883171334c553",
+      "input_nodes": 1024,
+      "metadata_sha256": "03ddc6a193c12c1a0839b16565d0ff097ca566865fa6c6f2e57c29b7ff30729e",
+      "native_encoder_graph_exact": true,
+      "native_field_equality": {
+        "p2r_edge_indices": true,
+        "r2r_edge_domains": true,
+        "r2r_edge_indices": true,
+        "r_rnodes": true,
+        "x_pnodes_inp": true,
+        "x_rnodes": true
+      },
+      "output_nodes": 8192,
+      "regional_nodes": 256,
+      "sample_id": "v6p1if1_0308",
+      "structural_savings_vs_current_E": {
+        "encoder_input_node_reduction_fraction": 0.875,
+        "interpretation": "structural upper-bound only; no successful U1 latency measurement",
+        "p2r_edge_reduction_fraction": 0.9527216636622127,
+        "r2p_edge_change_fraction": -0.6422159861733168,
+        "total_p2r_r2p_edge_reduction_fraction": 0.7974688249177647
+      },
+      "tensor_contract": {
+        "decoder_bypass_alignment_matches": false,
+        "decoder_bypass_condition_nodes": 1024,
+        "decoder_bypass_enabled": true,
+        "decoder_bypass_output_nodes": 8192,
+        "decoder_core_runtime_alignment_observed": true,
+        "decoder_output_pnodes_including_dummy": 8193,
+        "encoder_latent_pnodes_including_dummy": 1025,
+        "latent_pnode_count_equals_decoder_output_count": false
+      },
+      "timing_diagnostic_seconds": {
+        "native_anchor_graph_metadata": 2.205353546887636,
+        "query_r2p_only": 0.018743512919172645
+      }
+    },
+    {
+      "asymmetric_graph_audit": {
+        "domain_from_native_anchor_only": true,
+        "query_inside_native_domain": true,
+        "query_normalized_max": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "query_normalized_min": [
+          -1.0,
+          -1.0,
+          -1.0
+        ],
+        "r2p_real_edges": 63348
+      },
+      "current_E_edge_counts": {
+        "p2r": 163596,
+        "r2p": 163596,
+        "r2r": 3474
+      },
+      "edge_counts": {
+        "p2r": 2544,
+        "r2p": 63348,
+        "r2r": 4158
+      },
+      "forward": {
+        "status": "not_executed_fail_fast_same_frozen_interface_blocker"
+      },
+      "graph_build_status": "passed",
+      "graph_sha256": "90b032ee0880fa56d3c7c3ee90fc1aff9542b0591e86141d1a856c393400ca6f",
+      "input_nodes": 1024,
+      "metadata_sha256": "0aa035b98b4b765647753ac4defacfc5675d9b9cb2b90155259b89d840f426ec",
+      "native_encoder_graph_exact": true,
+      "native_field_equality": {
+        "p2r_edge_indices": true,
+        "r2r_edge_domains": true,
+        "r2r_edge_indices": true,
+        "r_rnodes": true,
+        "x_pnodes_inp": true,
+        "x_rnodes": true
+      },
+      "output_nodes": 32768,
+      "regional_nodes": 256,
+      "sample_id": "v6p1if1_0308",
+      "structural_savings_vs_current_E": {
+        "encoder_input_node_reduction_fraction": 0.96875,
+        "interpretation": "structural upper-bound only; no successful U1 latency measurement",
+        "p2r_edge_reduction_fraction": 0.9844494975427273,
+        "r2p_edge_change_fraction": -0.6127778185285704,
+        "total_p2r_r2p_edge_reduction_fraction": 0.7986136580356488
+      },
+      "tensor_contract": {
+        "decoder_bypass_alignment_matches": false,
+        "decoder_bypass_condition_nodes": 1024,
+        "decoder_bypass_enabled": true,
+        "decoder_bypass_output_nodes": 32768,
+        "decoder_core_runtime_alignment_observed": false,
+        "decoder_output_pnodes_including_dummy": 32769,
+        "encoder_latent_pnodes_including_dummy": 1025,
+        "latent_pnode_count_equals_decoder_output_count": false
+      },
+      "timing_diagnostic_seconds": {
+        "native_anchor_graph_metadata": 0.04668082413263619,
+        "query_r2p_only": 0.028018770972266793
+      }
+    }
+  ],
+  "role_contract": {
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid_inputs"
+    ],
+    "accuracy_evaluation_executed": false,
+    "checkpoint_modified": false,
+    "sealed_accessed": false,
+    "test_accessed": false,
+    "training_executed": false
+  },
+  "schema_version": "heat3d_v6_p1i_u1_asymmetric_query_result_v1",
+  "status": "passed_expected_no_go"
+}
