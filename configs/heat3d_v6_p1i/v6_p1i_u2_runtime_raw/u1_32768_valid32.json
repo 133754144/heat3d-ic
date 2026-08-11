@@ -1,0 +1,1013 @@
+{
+  "accuracy": {
+    "full_field": {
+      "background_rmse_K": 2.29688492884212,
+      "bottom_rmse_K": 1.5370172093157977,
+      "domain": "full_240825",
+      "interface_drop_rmse_K": 0.4321278547042875,
+      "layer_mean_rmse_K": 2.224027775039687,
+      "peak_rmse_K": 3.5801907550612024,
+      "point_global_true_rms_relative_rmse_pct": 2.7485276744424527,
+      "raw_cv_weighted_rmse_K": 2.304400977198596,
+      "sample_count": 32,
+      "sample_first_cv_relative_rmse_pct": 2.7818140974435694,
+      "source_rmse_K": 3.8141165082253026,
+      "top_rmse_K": 2.087880313814185
+    },
+    "support": {
+      "background_rmse_K": 2.268603126819276,
+      "bottom_rmse_K": 1.547958919413388,
+      "domain": "support_1024",
+      "interface_drop_rmse_K": 0.42070089050398063,
+      "layer_mean_rmse_K": 2.2600707232234507,
+      "peak_rmse_K": 3.5801907550612024,
+      "point_global_true_rms_relative_rmse_pct": 2.8841509860971124,
+      "raw_cv_weighted_rmse_K": 2.280017059227967,
+      "sample_count": 32,
+      "sample_first_cv_relative_rmse_pct": 2.7534334551027104,
+      "source_rmse_K": 3.8385969926581254,
+      "top_rmse_K": 2.094239882258586
+    }
+  },
+  "batch": [
+    {
+      "average_per_case_seconds": 0.006027012481354177,
+      "batch_size": 1,
+      "batch_wall_seconds": 0.006027012481354177,
+      "marginal_per_case_seconds": null,
+      "peak_vram_bytes": 1187792128,
+      "prepared_group_steady_inference": {
+        "count": 20,
+        "mean_seconds": 0.00600020244019106,
+        "median_seconds": 0.006027012481354177,
+        "p95_seconds": 0.006138743343763053,
+        "std_seconds": 0.00011060366579445022
+      },
+      "resident_forward_only": {
+        "count": 20,
+        "mean_seconds": 0.005921952670905739,
+        "median_seconds": 0.005881368066184223,
+        "p95_seconds": 0.006170670583378524,
+        "std_seconds": 0.0001288173041965175
+      },
+      "samples_per_second": 165.91968294303504,
+      "status": "passed",
+      "streamed_prepared_host_batch": {
+        "count": 20,
+        "mean_seconds": 0.01482404547277838,
+        "median_seconds": 0.01489757769741118,
+        "p95_seconds": 0.015560947253834456,
+        "std_seconds": 0.0004685601077988568
+      }
+    },
+    {
+      "average_per_case_seconds": 0.00518037419533357,
+      "batch_size": 2,
+      "batch_wall_seconds": 0.01036074839066714,
+      "marginal_per_case_seconds": 0.0043337359093129635,
+      "peak_vram_bytes": 1644019456,
+      "prepared_group_steady_inference": {
+        "count": 20,
+        "mean_seconds": 0.010345830384176224,
+        "median_seconds": 0.01036074839066714,
+        "p95_seconds": 0.010508964536711574,
+        "std_seconds": 0.00010971309141185661
+      },
+      "resident_forward_only": {
+        "count": 20,
+        "mean_seconds": 0.010294680763036013,
+        "median_seconds": 0.010285855387337506,
+        "p95_seconds": 0.010512777219992131,
+        "std_seconds": 0.00013534671823173182
+      },
+      "samples_per_second": 193.03624840475618,
+      "status": "passed",
+      "streamed_prepared_host_batch": {
+        "count": 20,
+        "mean_seconds": 0.021774258569348604,
+        "median_seconds": 0.021656602970324457,
+        "p95_seconds": 0.02276089207734913,
+        "std_seconds": 0.0007897314043421212
+      }
+    },
+    {
+      "average_per_case_seconds": 0.005295937473420054,
+      "batch_size": 4,
+      "batch_wall_seconds": 0.021183749893680215,
+      "marginal_per_case_seconds": 0.005052245804108679,
+      "peak_vram_bytes": 2401360896,
+      "prepared_group_steady_inference": {
+        "count": 20,
+        "mean_seconds": 0.021159261860884727,
+        "median_seconds": 0.021183749893680215,
+        "p95_seconds": 0.021338602935429662,
+        "std_seconds": 0.00016456560051046458
+      },
+      "resident_forward_only": {
+        "count": 20,
+        "mean_seconds": 0.0212238329811953,
+        "median_seconds": 0.02123388450127095,
+        "p95_seconds": 0.021417612535879017,
+        "std_seconds": 0.00016160762852052453
+      },
+      "samples_per_second": 188.82398159323657,
+      "status": "passed",
+      "streamed_prepared_host_batch": {
+        "count": 20,
+        "mean_seconds": 0.03750860830768943,
+        "median_seconds": 0.03754258749540895,
+        "p95_seconds": 0.038822127319872377,
+        "std_seconds": 0.0007694539602198984
+      }
+    },
+    {
+      "batch_size": 8,
+      "estimated_peak_bytes": 9061861376,
+      "status": "skipped_memory_feasibility"
+    },
+    {
+      "batch_size": 16,
+      "estimated_peak_bytes": 18123722752,
+      "status": "skipped_memory_feasibility"
+    }
+  ],
+  "checkpoint_parameters_unchanged": true,
+  "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+  "memory": {
+    "bytes_in_use": 1033632768,
+    "bytes_limit": 9615360000,
+    "device": "cuda:0",
+    "peak_bytes_in_use": 2401360896,
+    "platform": "gpu"
+  },
+  "output_mode": "reconstruction",
+  "padding": {
+    "actual_native": {
+      "p2r_edge_indices": 2911,
+      "r2p_edge_indices": 2905,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    },
+    "actual_query": {
+      "p2r_edge_indices": 175274,
+      "r2p_edge_indices": 175274,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    },
+    "tracked_native": {
+      "p2r_edge_indices": 2905,
+      "r2p_edge_indices": 2905,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    },
+    "tracked_query": {
+      "p2r_edge_indices": 175274,
+      "r2p_edge_indices": 175274,
+      "r2r_edge_domains": 3595,
+      "r2r_edge_indices": 3595
+    }
+  },
+  "protocol_sha256": "f35328a07f1e53d2ca1740ac84aa0a22d92771ec51c7d5ed4b715b58ee30da70",
+  "resolution": 32768,
+  "role_contract": {
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid"
+    ],
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "production_route_replaced": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "runtime": {
+    "fresh_sample": {
+      "anchor_graph": {
+        "count": 32,
+        "mean_seconds": 0.019544838447473012,
+        "median_seconds": 0.01961532491259277,
+        "p95_seconds": 0.020646729110740124,
+        "std_seconds": 0.0005970598720746981
+      },
+      "anchor_group_pack": {
+        "count": 32,
+        "mean_seconds": 0.14694001050520455,
+        "median_seconds": 0.16588662296999246,
+        "p95_seconds": 0.17258559133624657,
+        "std_seconds": 0.041632015024495275
+      },
+      "asymmetric_forward": {
+        "count": 32,
+        "mean_seconds": 0.01758830526523525,
+        "median_seconds": 0.00675299356225878,
+        "p95_seconds": 0.07272893927292898,
+        "std_seconds": 0.023476805889437805
+      },
+      "h2d_enqueue": {
+        "count": 32,
+        "mean_seconds": 0.006759487863746472,
+        "median_seconds": 0.006779053597711027,
+        "p95_seconds": 0.007246658462099731,
+        "std_seconds": 0.000332887586378752
+      },
+      "h2d_sync": {
+        "count": 32,
+        "mean_seconds": 0.0017920202226378024,
+        "median_seconds": 0.001625144504942,
+        "p95_seconds": 0.0027700117439962923,
+        "std_seconds": 0.00042007133655377475
+      },
+      "matched_continuous_e2e": {
+        "count": 32,
+        "mean_seconds": 0.895161934538919,
+        "median_seconds": 0.9447144644800574,
+        "p95_seconds": 0.9943365248967894,
+        "std_seconds": 0.12248425261356619
+      },
+      "query_graph": {
+        "count": 32,
+        "mean_seconds": 0.01761809400341008,
+        "median_seconds": 0.017572329845279455,
+        "p95_seconds": 0.018489293521270156,
+        "std_seconds": 0.0005627731300675949
+      },
+      "query_group_pack": {
+        "count": 32,
+        "mean_seconds": 0.0853037944616517,
+        "median_seconds": 0.08611307549290359,
+        "p95_seconds": 0.08966960746329278,
+        "std_seconds": 0.015940775862141498
+      },
+      "reconstruction_apply": {
+        "count": 32,
+        "mean_seconds": 0.0010102890519192442,
+        "median_seconds": 0.0012994535500183702,
+        "p95_seconds": 0.0013959461473859846,
+        "std_seconds": 0.0004810365490131638
+      },
+      "reconstruction_map": {
+        "count": 32,
+        "mean_seconds": 0.11468936306482647,
+        "median_seconds": 0.11520919506438076,
+        "p95_seconds": 0.11762803862802684,
+        "std_seconds": 0.002449319941821535
+      },
+      "support_plus_cv": {
+        "count": 32,
+        "mean_seconds": 0.289773474818503,
+        "median_seconds": 0.28991047653835267,
+        "p95_seconds": 0.29170657352078705,
+        "std_seconds": 0.0014125246268512292
+      }
+    },
+    "same_input_replay": {
+      "count": 20,
+      "mean_seconds": 0.006318620149977505,
+      "median_seconds": 0.006071998039260507,
+      "p95_seconds": 0.0074842356145381934,
+      "std_seconds": 0.0007228264547899915
+    }
+  },
+  "sample_count": 32,
+  "samples": [
+    {
+      "sample_id": "v6p1if1_0308",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2545,
+        "r2p_edges": 63418,
+        "r2r_edges": 4159,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02062531397677958,
+        "anchor_group_pack": 0.013471873942762613,
+        "asymmetric_forward": 0.006820393959060311,
+        "h2d_enqueue": 0.005973580991849303,
+        "h2d_sync": 0.0016443731728941202,
+        "matched_continuous_e2e": 0.5054230471141636,
+        "query_graph": 0.019133620895445347,
+        "query_group_pack": 0.02534405398182571,
+        "reconstruction_apply": 0.0003391860518604517,
+        "reconstruction_map": 0.1073952370788902,
+        "support_plus_cv": 0.28749329992569983
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0511",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2496,
+        "r2p_edges": 54710,
+        "r2r_edges": 4149,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02026849496178329,
+        "anchor_group_pack": 0.1556470561772585,
+        "asymmetric_forward": 0.0065793071407824755,
+        "h2d_enqueue": 0.006981230108067393,
+        "h2d_sync": 0.001626335084438324,
+        "matched_continuous_e2e": 0.8978394540026784,
+        "query_graph": 0.017400963930413127,
+        "query_group_pack": 0.07552230707369745,
+        "reconstruction_apply": 0.00026177894324064255,
+        "reconstruction_map": 0.11418855609372258,
+        "support_plus_cv": 0.2887468629051
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0041",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2324,
+        "r2p_edges": 54657,
+        "r2r_edges": 4195,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.018861128017306328,
+        "anchor_group_pack": 0.1509915420319885,
+        "asymmetric_forward": 0.007593453163281083,
+        "h2d_enqueue": 0.007261750986799598,
+        "h2d_sync": 0.0015768911689519882,
+        "matched_continuous_e2e": 0.8965122730005533,
+        "query_graph": 0.0166948598343879,
+        "query_group_pack": 0.07942175003699958,
+        "reconstruction_apply": 0.0012775540817528963,
+        "reconstruction_map": 0.11432810802944005,
+        "support_plus_cv": 0.2904612720012665
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0846",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2671,
+        "r2p_edges": 58586,
+        "r2r_edges": 4119,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.01884167594835162,
+        "anchor_group_pack": 0.19776957808062434,
+        "asymmetric_forward": 0.009777046972885728,
+        "h2d_enqueue": 0.006573235150426626,
+        "h2d_sync": 0.0016068490222096443,
+        "matched_continuous_e2e": 0.9574871929362416,
+        "query_graph": 0.01709098811261356,
+        "query_group_pack": 0.0824171241838485,
+        "reconstruction_apply": 0.0013015212025493383,
+        "reconstruction_map": 0.11669553513638675,
+        "support_plus_cv": 0.290509554091841
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0572",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2480,
+        "r2p_edges": 54856,
+        "r2r_edges": 4089,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.01901910617016256,
+        "anchor_group_pack": 0.15412925300188363,
+        "asymmetric_forward": 0.07325766910798848,
+        "h2d_enqueue": 0.006788842147216201,
+        "h2d_sync": 0.0027662930078804493,
+        "matched_continuous_e2e": 0.9793784469366074,
+        "query_graph": 0.017084120074287057,
+        "query_group_pack": 0.08399451291188598,
+        "reconstruction_apply": 0.0013562159147113562,
+        "reconstruction_map": 0.11385148507542908,
+        "support_plus_cv": 0.2916826060973108
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0347",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2446,
+        "r2p_edges": 55942,
+        "r2r_edges": 4115,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019716464215889573,
+        "anchor_group_pack": 0.15697381109930575,
+        "asymmetric_forward": 0.0065709189511835575,
+        "h2d_enqueue": 0.00687271892093122,
+        "h2d_sync": 0.0015753530897200108,
+        "matched_continuous_e2e": 0.9204467998351902,
+        "query_graph": 0.017821080051362514,
+        "query_group_pack": 0.08311337302438915,
+        "reconstruction_apply": 0.0012739640660583973,
+        "reconstruction_map": 0.11354128015227616,
+        "support_plus_cv": 0.2911892510019243
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0286",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2786,
+        "r2p_edges": 67706,
+        "r2r_edges": 4109,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02096484205685556,
+        "anchor_group_pack": 0.16432818304747343,
+        "asymmetric_forward": 0.0065363028552383184,
+        "h2d_enqueue": 0.006562856025993824,
+        "h2d_sync": 0.001614956883713603,
+        "matched_continuous_e2e": 0.9285731569398195,
+        "query_graph": 0.018247990868985653,
+        "query_group_pack": 0.08300823997706175,
+        "reconstruction_apply": 0.0003282700199633837,
+        "reconstruction_map": 0.11349417688325047,
+        "support_plus_cv": 0.2903694240376353
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0124",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2803,
+        "r2p_edges": 67112,
+        "r2r_edges": 4135,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.020076395943760872,
+        "anchor_group_pack": 0.16359711904078722,
+        "asymmetric_forward": 0.006727384170517325,
+        "h2d_enqueue": 0.006567206000909209,
+        "h2d_sync": 0.0016245869919657707,
+        "matched_continuous_e2e": 0.9302591460291296,
+        "query_graph": 0.01823687879368663,
+        "query_group_pack": 0.08572599804028869,
+        "reconstruction_apply": 0.0013537958730012178,
+        "reconstruction_map": 0.1154669679235667,
+        "support_plus_cv": 0.2892521321773529
+      }
+    },
+    {
+      "sample_id": "v6p1if1_1017",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2620,
+        "r2p_edges": 58333,
+        "r2r_edges": 4107,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.020092712016776204,
+        "anchor_group_pack": 0.16432902589440346,
+        "asymmetric_forward": 0.0065251789055764675,
+        "h2d_enqueue": 0.00682247313670814,
+        "h2d_sync": 0.0015925820916891098,
+        "matched_continuous_e2e": 0.9289274988695979,
+        "query_graph": 0.017220089910551906,
+        "query_group_pack": 0.08473386708647013,
+        "reconstruction_apply": 0.00029679015278816223,
+        "reconstruction_map": 0.11750268307514489,
+        "support_plus_cv": 0.2901207620743662
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0854",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2824,
+        "r2p_edges": 63295,
+        "r2r_edges": 4139,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019751532934606075,
+        "anchor_group_pack": 0.1598788641858846,
+        "asymmetric_forward": 0.009774874895811081,
+        "h2d_enqueue": 0.006814805790781975,
+        "h2d_sync": 0.0016119510401040316,
+        "matched_continuous_e2e": 0.9376702669542283,
+        "query_graph": 0.017578113824129105,
+        "query_group_pack": 0.0867890459485352,
+        "reconstruction_apply": 0.0013747140765190125,
+        "reconstruction_map": 0.1159326359629631,
+        "support_plus_cv": 0.29107473813928664
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0928",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2456,
+        "r2p_edges": 49113,
+        "r2r_edges": 4091,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019637675024569035,
+        "anchor_group_pack": 0.1675228918902576,
+        "asymmetric_forward": 0.07132823299616575,
+        "h2d_enqueue": 0.006251198938116431,
+        "h2d_sync": 0.002774556865915656,
+        "matched_continuous_e2e": 1.0154455320443958,
+        "query_graph": 0.01715701282955706,
+        "query_group_pack": 0.08603877807036042,
+        "reconstruction_apply": 0.00024917395785450935,
+        "reconstruction_map": 0.11778125097043812,
+        "support_plus_cv": 0.2902156710624695
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0543",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2683,
+        "r2p_edges": 54102,
+        "r2r_edges": 4201,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019864536821842194,
+        "anchor_group_pack": 0.067955780075863,
+        "asymmetric_forward": 0.006513597210869193,
+        "h2d_enqueue": 0.0062160121742635965,
+        "h2d_sync": 0.0015587068628519773,
+        "matched_continuous_e2e": 0.6158172381110489,
+        "query_graph": 0.01725082495249808,
+        "query_group_pack": 0.08080765185877681,
+        "reconstruction_apply": 0.0002990600187331438,
+        "reconstruction_map": 0.11043555685319006,
+        "support_plus_cv": 0.28836872591637075
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0632",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2769,
+        "r2p_edges": 62956,
+        "r2r_edges": 4097,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.01924865785986185,
+        "anchor_group_pack": 0.1685287249274552,
+        "asymmetric_forward": 0.006513959029689431,
+        "h2d_enqueue": 0.0066765721421688795,
+        "h2d_sync": 0.0015025390312075615,
+        "matched_continuous_e2e": 0.9415699241217226,
+        "query_graph": 0.017739978153258562,
+        "query_group_pack": 0.08730895793996751,
+        "reconstruction_apply": 0.001287603983655572,
+        "reconstruction_map": 0.11553695378825068,
+        "support_plus_cv": 0.289328538114205
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0599",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2656,
+        "r2p_edges": 52597,
+        "r2r_edges": 4085,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.018830147106200457,
+        "anchor_group_pack": 0.16770812892355025,
+        "asymmetric_forward": 0.0065582438837736845,
+        "h2d_enqueue": 0.006409550784155726,
+        "h2d_sync": 0.0016127198468893766,
+        "matched_continuous_e2e": 0.9442250470165163,
+        "query_graph": 0.016987763112410903,
+        "query_group_pack": 0.08618737291544676,
+        "reconstruction_apply": 0.00030127400532364845,
+        "reconstruction_map": 0.11692854901775718,
+        "support_plus_cv": 0.2891136489342898
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0003",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2436,
+        "r2p_edges": 55655,
+        "r2r_edges": 4103,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019832698861137033,
+        "anchor_group_pack": 0.16585218301042914,
+        "asymmetric_forward": 0.009772460907697678,
+        "h2d_enqueue": 0.007190186996012926,
+        "h2d_sync": 0.0016529560089111328,
+        "matched_continuous_e2e": 0.9452038819435984,
+        "query_graph": 0.01712940796278417,
+        "query_group_pack": 0.08725260011851788,
+        "reconstruction_apply": 0.0013000210747122765,
+        "reconstruction_map": 0.11486737104132771,
+        "support_plus_cv": 0.2870217449963093
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0029",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2911,
+        "r2p_edges": 66220,
+        "r2r_edges": 4095,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019031564006581903,
+        "anchor_group_pack": 0.11886504013091326,
+        "asymmetric_forward": 0.009797065053135157,
+        "h2d_enqueue": 0.0068910999689251184,
+        "h2d_sync": 0.001594671979546547,
+        "matched_continuous_e2e": 0.8968977860640734,
+        "query_graph": 0.01826907484792173,
+        "query_group_pack": 0.08157210401259363,
+        "reconstruction_apply": 0.0013423720374703407,
+        "reconstruction_map": 0.11603665305301547,
+        "support_plus_cv": 0.2893565660342574
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0991",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2395,
+        "r2p_edges": 49970,
+        "r2r_edges": 4109,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019232908030971885,
+        "anchor_group_pack": 0.06982095609419048,
+        "asymmetric_forward": 0.07301284605637193,
+        "h2d_enqueue": 0.007077289978042245,
+        "h2d_sync": 0.0026946209836751223,
+        "matched_continuous_e2e": 0.6902519429568201,
+        "query_graph": 0.01697934907861054,
+        "query_group_pack": 0.08166135521605611,
+        "reconstruction_apply": 0.0013971049338579178,
+        "reconstruction_map": 0.11019827891141176,
+        "support_plus_cv": 0.2917358670383692
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0109",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2456,
+        "r2p_edges": 62574,
+        "r2r_edges": 4123,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019719059811905026,
+        "anchor_group_pack": 0.12320421799086034,
+        "asymmetric_forward": 0.006778602954000235,
+        "h2d_enqueue": 0.006900336127728224,
+        "h2d_sync": 0.0015747752040624619,
+        "matched_continuous_e2e": 0.963841361226514,
+        "query_graph": 0.01842699502594769,
+        "query_group_pack": 0.15014271601103246,
+        "reconstruction_apply": 0.00024022720754146576,
+        "reconstruction_map": 0.11644651088863611,
+        "support_plus_cv": 0.2901079058647156
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0365",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2479,
+        "r2p_edges": 58396,
+        "r2r_edges": 4167,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019210058031603694,
+        "anchor_group_pack": 0.16976484702900052,
+        "asymmetric_forward": 0.006566000869497657,
+        "h2d_enqueue": 0.006737309042364359,
+        "h2d_sync": 0.0016496179159730673,
+        "matched_continuous_e2e": 0.9470889910589904,
+        "query_graph": 0.017673064954578876,
+        "query_group_pack": 0.08708950411528349,
+        "reconstruction_apply": 0.0013187830336391926,
+        "reconstruction_map": 0.11833310103975236,
+        "support_plus_cv": 0.2897337309550494
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0091",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2564,
+        "r2p_edges": 52170,
+        "r2r_edges": 4147,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.018950844183564186,
+        "anchor_group_pack": 0.16633030795492232,
+        "asymmetric_forward": 0.0066245689522475,
+        "h2d_enqueue": 0.007544548017904162,
+        "h2d_sync": 0.0016118308994919062,
+        "matched_continuous_e2e": 0.9388839539606124,
+        "query_graph": 0.01725162612274289,
+        "query_group_pack": 0.0852219881489873,
+        "reconstruction_apply": 0.0013038560282438993,
+        "reconstruction_map": 0.11651963787153363,
+        "support_plus_cv": 0.28978394507430494
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0930",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2434,
+        "r2p_edges": 54377,
+        "r2r_edges": 4147,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.018715541111305356,
+        "anchor_group_pack": 0.0687527609989047,
+        "asymmetric_forward": 0.006624461151659489,
+        "h2d_enqueue": 0.006699864054098725,
+        "h2d_sync": 0.0016081011854112148,
+        "matched_continuous_e2e": 0.6173315688502043,
+        "query_graph": 0.017581910826265812,
+        "query_group_pack": 0.0824883608147502,
+        "reconstruction_apply": 0.00030555296689271927,
+        "reconstruction_map": 0.10930876201018691,
+        "support_plus_cv": 0.2892854828387499
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0175",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2398,
+        "r2p_edges": 61028,
+        "r2r_edges": 4129,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019973569083958864,
+        "anchor_group_pack": 0.16893632500432432,
+        "asymmetric_forward": 0.009746239054948092,
+        "h2d_enqueue": 0.0067975870333611965,
+        "h2d_sync": 0.0015577650628983974,
+        "matched_continuous_e2e": 0.9550435419660062,
+        "query_graph": 0.01811871607787907,
+        "query_group_pack": 0.08851980092003942,
+        "reconstruction_apply": 0.0013332520611584187,
+        "reconstruction_map": 0.1172676607966423,
+        "support_plus_cv": 0.29427878092974424
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0915",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2891,
+        "r2p_edges": 66073,
+        "r2r_edges": 4157,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02067290316335857,
+        "anchor_group_pack": 0.17064407211728394,
+        "asymmetric_forward": 0.009769816882908344,
+        "h2d_enqueue": 0.006653137039393187,
+        "h2d_sync": 0.001646870980039239,
+        "matched_continuous_e2e": 0.9501237440854311,
+        "query_graph": 0.01856543612666428,
+        "query_group_pack": 0.08852325100451708,
+        "reconstruction_apply": 0.0012945239432156086,
+        "reconstruction_map": 0.11389836808666587,
+        "support_plus_cv": 0.2901615931186825
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0869",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2818,
+        "r2p_edges": 64794,
+        "r2r_edges": 4167,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019399341195821762,
+        "anchor_group_pack": 0.06789154699072242,
+        "asymmetric_forward": 0.07249665190465748,
+        "h2d_enqueue": 0.006835271837189794,
+        "h2d_sync": 0.002712015062570572,
+        "matched_continuous_e2e": 0.6883952559437603,
+        "query_graph": 0.01782354898750782,
+        "query_group_pack": 0.08135319501161575,
+        "reconstruction_apply": 0.0013530340511351824,
+        "reconstruction_map": 0.11245854198932648,
+        "support_plus_cv": 0.28927901992574334
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0522",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2826,
+        "r2p_edges": 68678,
+        "r2r_edges": 4063,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.01994924806058407,
+        "anchor_group_pack": 0.1693829980213195,
+        "asymmetric_forward": 0.006614649901166558,
+        "h2d_enqueue": 0.007206812035292387,
+        "h2d_sync": 0.0016415510326623917,
+        "matched_continuous_e2e": 0.9506528789643198,
+        "query_graph": 0.01813665800727904,
+        "query_group_pack": 0.08707310003228486,
+        "reconstruction_apply": 0.0012972899712622166,
+        "reconstruction_map": 0.11506915115751326,
+        "support_plus_cv": 0.2884613110218197
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0118",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2862,
+        "r2p_edges": 58104,
+        "r2r_edges": 4131,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019592974800616503,
+        "anchor_group_pack": 0.1700324951671064,
+        "asymmetric_forward": 0.00657900283113122,
+        "h2d_enqueue": 0.0067692650482058525,
+        "h2d_sync": 0.0016395379789173603,
+        "matched_continuous_e2e": 0.9458781972061843,
+        "query_graph": 0.017398999072611332,
+        "query_group_pack": 0.0881747140083462,
+        "reconstruction_apply": 0.00037563592195510864,
+        "reconstruction_map": 0.11454625008627772,
+        "support_plus_cv": 0.29059372283518314
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0708",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2104,
+        "r2p_edges": 49520,
+        "r2r_edges": 4173,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.01965235499665141,
+        "anchor_group_pack": 0.1729939030483365,
+        "asymmetric_forward": 0.006550640100613236,
+        "h2d_enqueue": 0.007072343025356531,
+        "h2d_sync": 0.0016468928661197424,
+        "matched_continuous_e2e": 0.9456172159407288,
+        "query_graph": 0.016821622848510742,
+        "query_group_pack": 0.08786619012244046,
+        "reconstruction_apply": 0.0013858550228178501,
+        "reconstruction_map": 0.11534923897124827,
+        "support_plus_cv": 0.28778299503028393
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0817",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2663,
+        "r2p_edges": 59554,
+        "r2r_edges": 4057,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.01919176708906889,
+        "anchor_group_pack": 0.17023769905790687,
+        "asymmetric_forward": 0.009881597943603992,
+        "h2d_enqueue": 0.006494591012597084,
+        "h2d_sync": 0.001625702017918229,
+        "matched_continuous_e2e": 0.9525721638929099,
+        "query_graph": 0.017421765020117164,
+        "query_group_pack": 0.08794100000523031,
+        "reconstruction_apply": 0.0013043798971921206,
+        "reconstruction_map": 0.11573215597309172,
+        "support_plus_cv": 0.2900370080024004
+      }
+    },
+    {
+      "sample_id": "v6p1if1_1003",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2405,
+        "r2p_edges": 57316,
+        "r2r_edges": 4039,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.018764102831482887,
+        "anchor_group_pack": 0.1682215561158955,
+        "asymmetric_forward": 0.07017225190065801,
+        "h2d_enqueue": 0.006569058168679476,
+        "h2d_sync": 0.002859354019165039,
+        "matched_continuous_e2e": 1.0126186201814562,
+        "query_graph": 0.017788269091397524,
+        "query_group_pack": 0.08830102509818971,
+        "reconstruction_apply": 0.001394998049363494,
+        "reconstruction_map": 0.11618578620254993,
+        "support_plus_cv": 0.2890920350328088
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0697",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2838,
+        "r2p_edges": 65630,
+        "r2r_edges": 4111,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.019961373880505562,
+        "anchor_group_pack": 0.16592106292955577,
+        "asymmetric_forward": 0.006518621928989887,
+        "h2d_enqueue": 0.006463279016315937,
+        "h2d_sync": 0.0016351458616554737,
+        "matched_continuous_e2e": 0.9457022622227669,
+        "query_graph": 0.01811919384635985,
+        "query_group_pack": 0.08926775702275336,
+        "reconstruction_apply": 0.0012988860253244638,
+        "reconstruction_map": 0.11444929800927639,
+        "support_plus_cv": 0.29040080099366605
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0907",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2410,
+        "r2p_edges": 55381,
+        "r2r_edges": 4043,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.01906334306113422,
+        "anchor_group_pack": 0.1722515181172639,
+        "asymmetric_forward": 0.006570994853973389,
+        "h2d_enqueue": 0.00723431003279984,
+        "h2d_sync": 0.001768109854310751,
+        "matched_continuous_e2e": 0.9532690360210836,
+        "query_graph": 0.01706253900192678,
+        "query_group_pack": 0.09016075800172985,
+        "reconstruction_apply": 0.0013317379634827375,
+        "reconstruction_map": 0.11539019690826535,
+        "support_plus_cv": 0.28742807800881565
+      }
+    },
+    {
+      "sample_id": "v6p1if1_0203",
+      "shape": {
+        "output_nodes": 32768,
+        "p2r_edges": 2606,
+        "r2p_edges": 58082,
+        "r2r_edges": 4101,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.018722495064139366,
+        "anchor_group_pack": 0.17014501406811178,
+        "asymmetric_forward": 0.007672731997445226,
+        "h2d_enqueue": 0.006395289907231927,
+        "h2d_sync": 0.0015364340506494045,
+        "matched_continuous_e2e": 0.946234478848055,
+        "query_graph": 0.017566545866429806,
+        "query_group_pack": 0.0866989700589329,
+        "reconstruction_apply": 0.0014508371241390705,
+        "reconstruction_map": 0.11492367903701961,
+        "support_plus_cv": 0.2902841200120747
+      }
+    }
+  ],
+  "schema_version": "heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1",
+  "status": "passed"
+}

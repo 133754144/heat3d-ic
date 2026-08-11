@@ -80,6 +80,7 @@ def main() -> int:
         raise RuntimeError("U2 protocol not frozen")
     direct = args.resolution == 240825
     runtime = p5r._runtime(args)
+    checkpoint_parameter_sha256_before = highn._tree_sha256(runtime["checkpoint"]["params"])
     binding = json.loads(args.binding.read_text())
     dataset = highn._dataset(args)
     anchors = highn._valid_examples(dataset, binding)
@@ -264,7 +265,9 @@ def main() -> int:
     result={"schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1","status":"passed" if args.sample_count==32 else "passed_smoke",
         "resolution":args.resolution,"output_mode":"direct" if direct else "reconstruction","sample_count":args.sample_count,
         "protocol_sha256":sha256(args.protocol),"checkpoint_sha256":args.checkpoint_sha256,
-        "checkpoint_parameters_unchanged":highn._tree_sha256(runtime["checkpoint"]["params"])==highn._tree_sha256(runtime["checkpoint"]["params"]),
+        "checkpoint_parameter_sha256_before": checkpoint_parameter_sha256_before,
+        "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
+        "checkpoint_parameters_unchanged":checkpoint_parameter_sha256_before==highn._tree_sha256(runtime["checkpoint"]["params"]),
         "accuracy":{"support":qualification.metric_accumulate(metric_support,full=False),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
         "padding":{"tracked_native":tracked_native,"actual_native":native_targets,"tracked_query":tracked_query,"actual_query":query_targets},
