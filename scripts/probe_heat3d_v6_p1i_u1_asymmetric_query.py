@@ -276,7 +276,8 @@ def main() -> int:
             "tensor_contract": {
                 "encoder_latent_pnodes_including_dummy": 1025,
                 "decoder_output_pnodes_including_dummy": resolution + 1,
-                "latent_pnode_count_matches_decoder_output": False,
+                "latent_pnode_count_equals_decoder_output_count": False,
+                "decoder_core_runtime_alignment_observed": False,
                 "decoder_bypass_enabled": model_config.get("decoder_bypass_mode") != "none",
                 "decoder_bypass_condition_nodes": 1024,
                 "decoder_bypass_output_nodes": resolution,
@@ -306,10 +307,13 @@ def main() -> int:
             "output_shape": list(np.asarray(output["raw_temperature"]).shape),
         }
     except Exception as exc:  # Expected fail-closed evidence, captured verbatim.
+        reached_bypass = "decoder bypass requires" in str(exc)
+        rows[0]["tensor_contract"]["decoder_core_runtime_alignment_observed"] = reached_bypass
         rows[0]["forward"] = {
             "status": "failed_structural_incompatibility",
             "exception_type": type(exc).__name__,
             "exception_message": str(exc),
+            "decoder_core_reached_bypass": reached_bypass,
         }
 
     if rows[0]["forward"]["status"] == "passed":
@@ -323,8 +327,9 @@ def main() -> int:
         }
         decision = "NO_GO_requires_model_path_change_or_retraining"
         blockers = [
-            "decoder receives 1025 encoder latent pnodes while r2p defines N+1 output pnodes",
+            "frozen Inputs.c is shared by the 1024-node encoder and the N-node local decoder bypass",
             "frozen local decoder bypass requires one-to-one x_inp/x_out and c/output alignment",
+            "native shape-scale projection requires N-node CV/BC fields while log_s/context must remain anchor-derived",
             "runner wrapper constructs identical x_inp/x_out and has no frozen asymmetric group contract",
         ]
 
@@ -358,8 +363,9 @@ def main() -> int:
             "blockers": blockers,
             "interpretation": (
                 "The graph primitive can preserve the native 1024 encoder/processor graph and attach an N-node r2p query graph, "
-                "but the frozen checkpoint model path cannot consume that asymmetric graph without changing decoder physical-node initialization "
-                "and the node-local bypass contract. That exceeds the permitted minimal checkpoint-preserving probe."
+                "and the decoder core reaches its N-node output. The frozen full model path still cannot complete because input conditions, "
+                "output-local bypass conditions, and output-native projection fields have no split asymmetric interface. Adding that interface "
+                "exceeds this minimal checker and requires a separately preregistered adapter validation, although no checkpoint weights were changed here."
                 if blockers else "The minimal 8192 forward completed; further validation would still be required before any production use."
             ),
             "production_route_replaced": False,

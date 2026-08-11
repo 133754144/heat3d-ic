@@ -45,6 +45,9 @@ def main() -> int:
             assert row["asymmetric_graph_audit"]["query_inside_native_domain"] is True
         if result["decision"]["u1"].startswith("NO_GO"):
             assert rows[0]["forward"]["status"] == "failed_structural_incompatibility"
+            assert rows[0]["forward"]["decoder_core_reached_bypass"] is True
+            assert rows[0]["tensor_contract"]["decoder_core_runtime_alignment_observed"] is True
+            assert "decoder bypass requires" in rows[0]["forward"]["exception_message"]
             assert rows[1]["forward"]["status"].startswith("not_executed_fail_fast")
             assert len(result["decision"]["blockers"]) >= 2
         assert result["decision"]["production_route_replaced"] is False
