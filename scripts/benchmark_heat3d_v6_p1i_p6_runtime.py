@@ -158,6 +158,43 @@ def main() -> int:
         )
         return Heat3DGraphBuilder(**config)
 
+    # Qualification-only shape envelope.  It is outside every production
+    # timing span and changes no real edge, ordering, or graph semantics.
+    tracked_anchor_targets = dict(anchor_targets)
+    tracked_query_targets = dict(query_targets)
+    frozen_support_rows = {
+        row["sample_id"]: row
+        for row in preflight.get("supports", {}).get(str(resolution), [])
+    }
+    for anchor in anchors:
+        with jax.default_device(cpu):
+            anchor_metadata = builder(1024).build_metadata(
+                highn.runner._graph_coords_for_example(anchor, runtime["stats"]), key=graph_key,
+            )
+            block(anchor_metadata)
+            for field in qualification.EDGE_FIELDS:
+                value = getattr(anchor_metadata, field)
+                if value is not None:
+                    anchor_targets[field] = max(
+                        int(anchor_targets.get(field) or 0), int(np.asarray(value).shape[1])
+                    )
+            if resolution != 1024:
+                frozen_support = highn._load_support(
+                    Path(frozen_support_rows[anchor.sample_id]["support_file"])
+                )
+                query_example = highn._query_example(anchor, frozen_support, coords)
+                query_metadata = builder(resolution).build_metadata(
+                    highn.runner._graph_coords_for_example(query_example, runtime["stats"]),
+                    key=graph_key,
+                )
+                block(query_metadata)
+                for field in qualification.EDGE_FIELDS:
+                    value = getattr(query_metadata, field)
+                    if value is not None:
+                        query_targets[field] = max(
+                            int(query_targets.get(field) or 0), int(np.asarray(value).shape[1])
+                        )
+
     def prepare_one(anchor: Any) -> dict[str, Any]:
         with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
             full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
@@ -418,6 +455,13 @@ def main() -> int:
             "same_input_replay": dist(replay_values),
         },
         "native1024_reuse_exact_gate": native_reuse_gate,
+        "jit_padding_envelope": {
+            "semantics": "qualification_only_shape_max; real_edges_unchanged; outside_timing",
+            "tracked_anchor": tracked_anchor_targets,
+            "actual_anchor": anchor_targets,
+            "tracked_query": tracked_query_targets,
+            "actual_query": query_targets,
+        },
         "batch": batch_rows,
         "memory": candidate.publication._device_memory(),
         "samples": [
