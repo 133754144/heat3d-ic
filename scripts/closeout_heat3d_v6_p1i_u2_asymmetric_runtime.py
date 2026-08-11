@@ -194,7 +194,7 @@ def main() -> int:
     }
     args.output_json.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     with args.output_csv.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader(); writer.writerows(rows)
     lines = [
         "# V6 P1i P6 + U2 runtime/throughput closeout", "",
