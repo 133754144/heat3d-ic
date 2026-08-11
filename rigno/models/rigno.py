@@ -388,18 +388,22 @@ class RegionInteractionGraphBuilder:
         from scipy.spatial import cKDTree
 
         point_tree = cKDTree(np.asarray(points_array, dtype=np.float64))
+        query_radii = np.asarray(radii_array, dtype=np.float64) + np.maximum(
+          np.asarray(1.0e-7, dtype=np.float64),
+          np.abs(np.asarray(radii_array, dtype=np.float64)) * 1.0e-6,
+        )
+        candidate_lists = point_tree.query_ball_point(
+          np.asarray(centers_array, dtype=np.float64),
+          query_radii,
+          workers=-1,
+          return_sorted=True,
+        )
         point_parts = []
         center_parts = []
-        for center_index, (center, radius) in enumerate(
-          zip(centers_array, radii_array)
+        for center_index, (center, radius, candidate_list) in enumerate(
+          zip(centers_array, radii_array, candidate_lists)
         ):
-          query_radius = float(radius) + max(1.0e-7, abs(float(radius)) * 1.0e-6)
-          candidates = np.asarray(
-            point_tree.query_ball_point(
-              np.asarray(center, dtype=np.float64), query_radius
-            ),
-            dtype=np.int64,
-          )
+          candidates = np.asarray(candidate_list, dtype=np.int64)
           if not len(candidates):
             continue
           reference_distance = np.linalg.norm(
