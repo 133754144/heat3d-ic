@@ -1,0 +1,27 @@
+{
+  "schema_version": "heat3d_v6_p1i_u1_split_adapter_backend_amendment_v1",
+  "status": "frozen_after_gpu_identity_diagnostic_before_cpu_identity_execution",
+  "parent_protocol": "configs/heat3d_v6_p1i/v6_p1i_u1_split_adapter_protocol.json",
+  "reason": "Independent GPU launches are not bitwise reproducible for the frozen processor reductions; the unchanged public path also drifted from the unchanged traced path.",
+  "observed_gpu_identity_diagnostic": {
+    "sample_id": "v6p1if1_0308",
+    "encoder_input_and_output_local_exact": true,
+    "processed_rnodes_pre_film_max_abs": 0.004121184349060059,
+    "public_vs_traced_raw_temperature_max_abs_K": 0.00811767578125,
+    "split_vs_standard_raw_temperature_max_abs_K": 0.00848388671875,
+    "decision": "not_an_adapter_semantics_failure; GPU result remains failed for the bitwise identity gate"
+  },
+  "amended_backend_contract": {
+    "identity_1024_to_1024": "CPU deterministic, bitwise exact for every registered layer and final output",
+    "high_n_8192_32768": "GPU, finite checkpoint-preserving probe after CPU identity passes",
+    "tolerance_changed": false,
+    "identity_fields_changed": false,
+    "model_or_checkpoint_changed": false
+  },
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false
+  }
+}

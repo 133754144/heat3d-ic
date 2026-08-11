@@ -287,8 +287,11 @@ def _parse() -> argparse.Namespace:
 
 def main() -> int:
     args = _parse()
-    if jax.devices()[0].platform != "gpu":
-        raise RuntimeError("U1 split adapter requires the frozen GPU backend")
+    backend = jax.devices()[0].platform
+    if args.resolution == 1024 and backend != "cpu":
+        raise RuntimeError("U1 bitwise identity gate requires the deterministic CPU backend")
+    if args.resolution != 1024 and backend != "gpu":
+        raise RuntimeError("U1 high-N split adapter requires the frozen GPU backend")
     protocol = json.loads(args.protocol.read_text())
     if protocol["status"] != "preregistered_before_execution":
         raise RuntimeError("U1 split protocol is not preregistered")
@@ -471,6 +474,7 @@ def main() -> int:
         }
     params_after = highn._tree_sha256(runtime["checkpoint"]["params"])
     result.update({
+        "backend": backend,
         "protocol_sha256": _sha256(args.protocol),
         "checkpoint_parameter_tree_before": params_before,
         "checkpoint_parameter_tree_after": params_after,
