@@ -263,7 +263,9 @@ def conservative_selected_control_volume(
         support_local = np.flatnonzero(layer[selected] == layer_id)
         if not len(support_local):
             raise RuntimeError(f"selected support has no node in layer {layer_id}")
-        nearest = cKDTree(coords[selected[support_local]]).query(coords[full_local], k=1)[1]
+        nearest = cKDTree(coords[selected[support_local]]).query(
+            coords[full_local], k=1, workers=-1
+        )[1]
         np.add.at(result, support_local[np.asarray(nearest, dtype=np.int64)], cv[full_local])
     if np.any(result <= 0.0):
         raise RuntimeError("selected support contains a zero-measure node")

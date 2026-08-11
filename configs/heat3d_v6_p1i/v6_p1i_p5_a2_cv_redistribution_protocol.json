@@ -1,0 +1,17 @@
+{
+  "schema_version": "heat3d_v6_p1i_p5_a2_protocol_v1",
+  "phase": "P5-A2_cv_redistribution",
+  "baseline_commit": "7e9d95d",
+  "population": {"role": "valid_iid", "sample_count": 32, "routes": ["B8192", "E32768"]},
+  "reference": "same_layer_ckdtree_query_workers_1",
+  "candidate": "same_layer_ckdtree_query_workers_all",
+  "hard_gates": {
+    "selected_cv_array_equal": true,
+    "selected_cv_sha256_equal": true,
+    "nearest_assignment_equal": true,
+    "volume_sum_bitwise_equal": true,
+    "relative_volume_error_not_increased": true
+  },
+  "promotion_rule": "promote only if every hard gate passes and pooled median total time improves",
+  "role_contract": {"training": false, "test": false, "sealed": false, "temperature_or_prediction_used": false, "graph_policy_modified": false}
+}
