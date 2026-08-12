@@ -63,12 +63,19 @@ def prepare_hash_worker(index: int) -> dict[str, Any]:
     return {"sample_id": row["sample_id"], "hashes": complete_hash(row)}
 
 
+def prepare_case_hash(state: dict[str, Any], index: int) -> dict[str, Any]:
+    row = p8.prepare_case(state, index)
+    return {"sample_id": row["sample_id"], "hashes": complete_hash(row)}
+
+
 def parse() -> argparse.Namespace:
     p = argparse.ArgumentParser()
-    p.add_argument("--mode", choices=("neural", "fvm"), required=True)
+    p.add_argument("--mode", choices=("neural-exact", "neural", "fvm"), required=True)
     for name in ("protocol", "binding", "artifact_root", "dataset_root", "manifest", "full_fields", "run_dir", "native_padding_result", "query_padding_result", "output"):
         p.add_argument(f"--{name.replace('_', '-')}", dest=name, type=Path, required=True)
     p.add_argument("--checkpoint-sha256", required=True); p.add_argument("--checkpoint-epoch", type=int, default=559)
+    p.add_argument("--exact-backend", choices=("serial", "thread2", "thread4", "thread8", "process2", "process4", "process8"))
+    p.add_argument("--exact-dir", type=Path)
     return p.parse_args()
 
 
@@ -82,34 +89,73 @@ def serialized_state(state: dict[str, Any]) -> dict[str, str]:
 def prepare_runner(state: dict[str, Any], backend: str, *, hash_only: bool = False) -> tuple[Callable[[list[int]], list[dict[str, Any]]], Callable[[], None], float]:
     if backend == "serial":
         p8.prepare_case(state, 0)
-        return lambda indices: [p8.prepare_case(state, index) for index in indices], lambda: None, 0.0
+        function = (lambda index: prepare_case_hash(state, index)) if hash_only else (lambda index: p8.prepare_case(state, index))
+        return lambda indices: [function(index) for index in indices], lambda: None, 0.0
     workers = int("".join(filter(str.isdigit, backend)))
     if backend.startswith("thread"):
         pool = ThreadPoolExecutor(max_workers=workers); list(pool.map(lambda _: p8.prepare_case(state, 0), range(workers)))
-        return lambda indices: list(pool.map(lambda index: p8.prepare_case(state, index), indices)), lambda: pool.shutdown(), 0.0
+        function = (lambda index: prepare_case_hash(state, index)) if hash_only else (lambda index: p8.prepare_case(state, index))
+        return lambda indices: list(pool.map(function, indices)), lambda: pool.shutdown(), 0.0
     os.environ.update(OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1", MKL_NUM_THREADS="1", NUMEXPR_NUM_THREADS="1")
     started = time.perf_counter(); pool = ProcessPoolExecutor(max_workers=workers, mp_context=mp.get_context("spawn"), initializer=p8.init_prepare_worker, initargs=(serialized_state(state),))
     ready = {future.result() for future in [pool.submit(p8.worker_ready) for _ in range(workers * 4)]}
     if len(ready) != workers: raise RuntimeError(f"{backend}: worker readiness failed")
-    list(pool.map(p8.prepare_worker, [0] * workers))
+    list(pool.map(prepare_hash_worker, [0] * workers))
     function = prepare_hash_worker if hash_only else p8.prepare_worker
     return lambda indices: list(pool.map(function, indices)), lambda: pool.shutdown(), time.perf_counter() - started
+
+
+def neural_exact(args: argparse.Namespace) -> int:
+    protocol = json.loads(args.protocol.read_text()); state = p8.runtime_state(args); state["args"] = args; p8.ensure_edge_envelope(state)
+    orders = [np.random.default_rng(seed).permutation(32).tolist() for seed in protocol["randomized_order_seeds"]]
+    backend = args.exact_backend
+    if backend is None:
+        raise RuntimeError("--exact-backend is required for neural-exact")
+    run, close, startup = prepare_runner(state, backend, hash_only=True)
+    started = time.perf_counter(); rows = run(orders[0]); elapsed = time.perf_counter() - started; close()
+    hashes = {row["sample_id"]: row["hashes"] for row in rows}
+    reference_hashes = hashes
+    if backend != "serial":
+        if args.exact_dir is None:
+            raise RuntimeError("--exact-dir is required for non-serial neural-exact")
+        serial = json.loads((args.exact_dir / "serial.json").read_text())
+        reference_hashes = serial["hashes"]
+    exact = hashes == reference_hashes
+    result = {
+        "schema_version": "heat3d_v6_p1i_p9_neural_exact_v1",
+        "status": "passed" if exact else "failed",
+        "backend": backend,
+        "startup_and_untimed_warmup_seconds": startup,
+        "steady_wall_seconds": elapsed,
+        "samples_per_second": 32 / elapsed,
+        "full_payload_exact_vs_serial": exact,
+        "hashes": hashes,
+        "protocol_sha256": p8.sha256(args.protocol),
+        "role_contract": protocol["role_contract"],
+    }
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    if not exact:
+        raise RuntimeError(f"{backend}: complete prepared payload exact gate failed")
+    print(json.dumps({"status": "passed", "backend": backend, "samples_per_second": 32 / elapsed}))
+    return 0
 
 
 def neural(args: argparse.Namespace) -> int:
     protocol = json.loads(args.protocol.read_text()); state = p8.runtime_state(args); state["args"] = args; p8.ensure_edge_envelope(state)
     orders = [np.random.default_rng(seed).permutation(32).tolist() for seed in protocol["randomized_order_seeds"]]
-    reference_hashes = None; backend_rows = []
+    if args.exact_dir is None:
+        raise RuntimeError("--exact-dir is required for neural timing")
+    backend_rows = []
+    serial_hashes = None
     for backend in protocol["neural"]["persistent_preprocessing_backends"]:
-        run, close, startup = prepare_runner(state, backend, hash_only=backend.startswith("process")); started = time.perf_counter(); rows = run(orders[0]); elapsed = time.perf_counter() - started; close()
-        hashes = {row["sample_id"]: (row["hashes"] if "hashes" in row else complete_hash(row)) for row in rows}
-        reference_hashes = hashes if reference_hashes is None else reference_hashes
-        exact = hashes == reference_hashes
-        backend_rows.append({"backend": backend, "startup_and_untimed_warmup_seconds": startup, "steady_wall_seconds": elapsed, "samples_per_second": 32 / elapsed, "full_payload_exact_vs_serial": exact, "hashes": hashes})
-        if not exact: raise RuntimeError(f"{backend}: complete prepared payload exact gate failed")
-        del rows
-        jax.clear_caches()
-        gc.collect()
+        row = json.loads((args.exact_dir / f"{backend}.json").read_text())
+        if row.get("status") != "passed" or not row.get("full_payload_exact_vs_serial"):
+            raise RuntimeError(f"{backend}: frozen exact artifact failed")
+        serial_hashes = row["hashes"] if backend == "serial" else serial_hashes
+        if serial_hashes is None or row["hashes"] != serial_hashes:
+            raise RuntimeError(f"{backend}: exact artifact differs from serial")
+        backend_rows.append(row)
     winner = max(backend_rows, key=lambda row: row["samples_per_second"])["backend"]
 
     runtime = state["runtime"]; model = GraphNeuralOperator(**runtime["model_config"]); params = highn.runner._device_params(runtime["checkpoint"]["params"]); gpu = jax.devices("gpu")[0]
@@ -165,7 +211,10 @@ def fvm(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    args = parse(); return neural(args) if args.mode == "neural" else fvm(args)
+    args = parse()
+    if args.mode == "neural-exact":
+        return neural_exact(args)
+    return neural(args) if args.mode == "neural" else fvm(args)
 
 
 if __name__ == "__main__": raise SystemExit(main())
