@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d_v6_p1i_u3_asymmetric_production_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "1fc1e29",
+  "historical_u2": {
+    "status": "completed_no_go_unchanged",
+    "closeout": "configs/heat3d_v6_p1i/v6_p1i_u2_asymmetric_production_closeout.json"
+  },
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "valid_subset": "frozen_valid32_from_high_n_binding",
+  "u1_32768": {
+    "regional_nodes": 256,
+    "output_mode": "reconstruct_240825",
+    "profile_stages": ["dummy_local_p2r", "graph_extraction", "host_tree", "inputs", "kwargs", "other"],
+    "optimization": "checkpoint_preserving_exact_only",
+    "identity_gate_if_local_transform_changes": "1024_to_1024_bitwise_exact",
+    "batch_sizes": [1, 4, 8, 16],
+    "batch_memory_rule": "attempt_actual_all; OOM_is_report_only"
+  },
+  "direct_240825": {
+    "independent_preregistration": true,
+    "input": "native1024 encode_and_process",
+    "output": "240825_full_grid_local_transform_r2p_decode",
+    "adaptive_support": false,
+    "reconstruction": false,
+    "regional_nodes": 256,
+    "smoke_gates": ["finite", "shape_240825", "checkpoint_unchanged", "graph_finite", "latency_finite"],
+    "valid32_only_if_smoke_GO": true,
+    "fail_fast": true
+  },
+  "timing": {
+    "b1": "matched_continuous_E2E_same_as_P5R_P6_U2",
+    "batch": "resident_forward_and_reconstruction_throughput",
+    "gpu_sync_required": true,
+    "metrics_hash_serialization_excluded": true
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false
+  }
+}
