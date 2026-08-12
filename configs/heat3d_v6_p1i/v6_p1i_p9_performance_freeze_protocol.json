@@ -1,0 +1,48 @@
+{
+  "schema_version": "heat3d_v6_p1i_p9_performance_freeze_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "5d8ee4314c09180746d1a8c9e212cf03e1142e95",
+  "route": "E16384_reconstruction",
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "population": "frozen_valid32",
+  "randomized_order_seeds": [20260813, 20260814, 20260815],
+  "neural": {
+    "persistent_preprocessing_backends": ["serial", "thread2", "thread4", "thread8", "process2", "process4", "process8"],
+    "kdtree_workers_per_case": 1,
+    "exact_hash_scope": ["selected_indices", "selected_cv", "reconstruction_map", "anchor_group_all_leaves", "query_group_all_leaves", "inputs", "graphs", "native_physics", "global_context", "scale_context", "qk_features"],
+    "untimed_worker_warmup": true,
+    "fresh_b1_population": 32,
+    "full_valid32_batch_modes": ["2xB16", "B32"],
+    "resident_batch_sizes": [1, 16, 32],
+    "resident_repeats": 20,
+    "marginal_added_case_formula": "(median_fresh_B32_seconds - median_fresh_B16_seconds) / 16"
+  },
+  "fvm": {
+    "persistent_process_counts": [1, 2, 4, 8],
+    "threads_per_process": 1,
+    "untimed_worker_warmup": true,
+    "repeat_orders": 3,
+    "startup_outside_steady": true
+  },
+  "publication_comparison": "fresh full-valid32 neural throughput versus saturated persistent FVM throughput",
+  "timing": {
+    "host": "wsl2",
+    "gpu": "RTX 5070",
+    "cpu": "Ryzen 7 9700X",
+    "synchronize_gpu": true,
+    "metrics_hash_serialization_outside_span": true
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_semantics_modified": false
+  }
+}
