@@ -43,7 +43,7 @@ def stack(trees:list[Any])->Any:return jax.tree_util.tree_map(lambda *xs:np.conc
 
 def graph_semantic_sha(tree:Any)->str:
     digest=hashlib.sha256()
-    for leaf in jax.tree_util.tree_leaves(tree['metadata']):
+    for leaf in jax.tree_util.tree_leaves(tree['graphs']):
         array=np.ascontiguousarray(np.asarray(leaf));digest.update(str(array.dtype).encode());digest.update(str(array.shape).encode());digest.update(array.tobytes())
     return digest.hexdigest()
 
