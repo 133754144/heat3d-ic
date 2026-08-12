@@ -17,6 +17,7 @@ import numpy as np
 
 ROUTES = ("native1024_reconstruction", "E16384_reconstruction", "E240825_direct", "U_direct240825")
 METRICS = ("point_global_pct", "raw_cv_rmse_K", "source_rmse_K", "peak_abs_error_K", "interface_rmse_K")
+SSE_METRICS = ("point_global_SSE", "raw_cv_SSE", "source_cv_SSE", "peak_squared_error", "interface_squared_error")
 
 
 def sha256(path: Path) -> str:
@@ -52,12 +53,18 @@ def sample_metrics(prediction: np.ndarray, truth: np.ndarray, cv: np.ndarray,
     for value in sorted(np.unique(layer)):
         mask = layer == value
         means.append(float(np.sum(cv[mask] * error[mask]) / np.sum(cv[mask])))
+    interface_squared_error = float(np.mean(np.square(np.diff(means))))
     return {
         "point_global_pct": math.sqrt(float(np.sum(error ** 2)) / float(np.sum(truth ** 2))) * 100.0,
         "raw_cv_rmse_K": math.sqrt(float(np.sum(cv * error ** 2)) / float(np.sum(cv))),
         "source_rmse_K": math.sqrt(float(np.sum(cv[source] * error[source] ** 2)) / float(np.sum(cv[source]))),
         "peak_abs_error_K": abs(float(np.max(prediction) - np.max(truth))),
-        "interface_rmse_K": math.sqrt(float(np.mean(np.square(np.diff(means))))),
+        "interface_rmse_K": math.sqrt(interface_squared_error),
+        "point_global_SSE": float(np.sum(error ** 2)),
+        "raw_cv_SSE": float(np.sum(cv * error ** 2)),
+        "source_cv_SSE": float(np.sum(cv[source] * error[source] ** 2)),
+        "peak_squared_error": float((np.max(prediction) - np.max(truth)) ** 2),
+        "interface_squared_error": interface_squared_error,
     }
 
 
@@ -68,6 +75,7 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--full-fields", type=Path, required=True)
     parser.add_argument("--physics-root", type=Path, required=True)
     parser.add_argument("--historical-root", type=Path, required=True)
+    parser.add_argument("--u4-result", type=Path, required=True)
     parser.add_argument("--p8-closeout", type=Path, required=True)
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-csv", type=Path, required=True)
@@ -105,16 +113,18 @@ def main() -> int:
     ])
 
     rows = []
-    by_route: dict[str, dict[str, np.ndarray]] = {route: {metric: np.empty(32) for metric in METRICS} for route in ROUTES}
+    all_metrics = METRICS + SSE_METRICS
+    by_route: dict[str, dict[str, np.ndarray]] = {route: {metric: np.empty(32) for metric in all_metrics} for route in ROUTES}
     for index, sid in enumerate(expected_ids):
         for route in ROUTES:
             values = sample_metrics(prediction[route][index], truth[index], cv, layer, q[index])
             row = {"sample_id": sid, "route": route, **values}
             rows.append(row)
-            for metric in METRICS:
+            for metric in all_metrics:
                 by_route[route][metric][index] = values[metric]
 
     comparisons = {}
+    preregistered_sse = {}
     for baseline in ("native1024_reconstruction", "E16384_reconstruction", "E240825_direct"):
         key = f"U_direct240825_minus_{baseline}"
         comparisons[key] = {
@@ -125,9 +135,17 @@ def main() -> int:
             )
             for metric in METRICS
         }
+        preregistered_sse[key] = {
+            metric: bootstrap(
+                by_route["U_direct240825"][metric] - by_route[baseline][metric],
+                seed=int(protocol["bootstrap"]["seed"]),
+                replicates=int(protocol["bootstrap"]["replicates"]),
+            )
+            for metric in SSE_METRICS
+        }
 
     historical = {route: json.loads((args.historical_root / f"{route}.json").read_text()) for route in ROUTES[:-1]}
-    current_u4 = json.loads((args.prediction_root / "U_direct240825.json").read_text())
+    current_u4 = json.loads(args.u4_result.read_text())
     aggregate = {
         **{route: historical[route]["accuracy"]["full_field"] for route in ROUTES[:-1]},
         "U_direct240825": current_u4["accuracy"]["full_field"],
@@ -155,6 +173,7 @@ def main() -> int:
         "matched_continuous_latency": latency,
         "same_240825_output_pareto": same_domain,
         "paired_valid32": comparisons,
+        "paired_valid32_preregistered_sse": preregistered_sse,
         "packing": current_u4["packing_optimization"],
         "padding": current_u4["padding"],
         "checkpoint_parameters_unchanged": current_u4["checkpoint_parameters_unchanged"],
