@@ -102,6 +102,7 @@ def neural(args: argparse.Namespace) -> int:
         backend_rows.append({"backend": backend, "startup_and_untimed_warmup_seconds": startup, "steady_wall_seconds": elapsed, "samples_per_second": 32 / elapsed, "full_payload_exact_vs_serial": exact, "hashes": hashes})
         if not exact: raise RuntimeError(f"{backend}: complete prepared payload exact gate failed")
         del rows
+        jax.clear_caches()
         gc.collect()
     winner = max(backend_rows, key=lambda row: row["samples_per_second"])["backend"]
 
