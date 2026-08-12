@@ -74,6 +74,11 @@ def _block_tree(tree: Any) -> None:
 
 def _edge_targets(path: Path) -> dict[str, int | None]:
     payload = json.loads(path.read_text())
+    if "padding_envelopes" in payload and "query" in payload["padding_envelopes"]:
+        return {
+            key: (None if value is None else int(value))
+            for key, value in payload["padding_envelopes"]["query"].items()
+        }
     if "graph_cache" in payload and "edge_targets" in payload["graph_cache"]:
         return {
             key: (None if value is None else int(value))
