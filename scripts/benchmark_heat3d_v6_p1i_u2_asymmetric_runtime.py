@@ -68,6 +68,7 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--sample-count", type=int, choices=[1, 32], default=32)
     parser.add_argument("--repeats", type=int, default=20)
+    parser.add_argument("--batch-sizes", default=None)
     return parser.parse_args()
 
 
@@ -191,9 +192,14 @@ def main() -> int:
             phase=time.perf_counter(); output_group=host_tree(highn._prepare_group(
                 example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
                 edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric))); query_pack_s=time.perf_counter()-phase
-            graphs=host_tree(output_group["graphs"]); local=host_tree(u1._dummy_local_p2r(builder,asymmetric))
-            inputs_in=host_tree(anchor_group["inputs"]); inputs_out=host_tree(output_group["inputs"])
-            kwargs=host_tree(u1._model_kwargs(anchor_group,output_group))
+            detail_started=time.perf_counter()
+            phase=time.perf_counter(); graphs_raw=output_group["graphs"]; graph_extraction_s=time.perf_counter()-phase
+            phase=time.perf_counter(); local_raw=u1._dummy_local_p2r(builder,asymmetric); dummy_local_p2r_s=time.perf_counter()-phase
+            phase=time.perf_counter(); graphs=host_tree(graphs_raw); local=host_tree(local_raw); host_tree_s=time.perf_counter()-phase
+            phase=time.perf_counter(); inputs_in=host_tree(anchor_group["inputs"]); inputs_out=host_tree(output_group["inputs"]); inputs_s=time.perf_counter()-phase
+            phase=time.perf_counter(); kwargs=host_tree(u1._model_kwargs(anchor_group,output_group)); kwargs_s=time.perf_counter()-phase
+            detail_total_s=time.perf_counter()-detail_started
+            other_s=max(0.0,detail_total_s-(graph_extraction_s+dummy_local_p2r_s+host_tree_s+inputs_s+kwargs_s))
         phase=time.perf_counter(); mapping=None if direct else build_reconstruction_map(
             coords=coords,layer_id=layer,boundaries=boundaries,support_indices=selected,
             empty_domain_fallback="same_layer",prepared_partition=partition,query_workers=-1)[0]
@@ -214,7 +220,10 @@ def main() -> int:
                 "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
                           "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
                           "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
-                          "reconstruction_apply":recon_s,"matched_continuous_e2e":time.perf_counter()-total_start},
+                          "reconstruction_apply":recon_s,"dummy_local_p2r":dummy_local_p2r_s,
+                          "graph_extraction":graph_extraction_s,"host_tree":host_tree_s,"inputs":inputs_s,
+                          "kwargs":kwargs_s,"profiled_other":other_s,
+                          "matched_continuous_e2e":time.perf_counter()-total_start},
                 "shape":{"output_nodes":int(np.asarray(values).shape[1]),"regional_nodes":int(np.asarray(asymmetric.x_rnodes).shape[1]-1),
                          "p2r_edges":int(np.asarray(asymmetric.p2r_edge_indices).shape[1]),
                          "r2r_edges":int(np.asarray(asymmetric.r2r_edge_indices).shape[1]),
@@ -230,12 +239,18 @@ def main() -> int:
     for _ in range(args.repeats):
         phase=time.perf_counter(); value=split_forward(params,ii,io,g,l,kw);full_value=reconstruct(value,mi,mw);block(full_value)
         replay.append(time.perf_counter()-phase)
-    batch_rows=[]; sizes=protocol["batch_sizes_32768"] if not direct else [1]
+    batch_rows=[]
+    if args.batch_sizes is not None:
+        sizes=[int(value) for value in args.batch_sizes.split(",")]
+    elif not direct:
+        sizes=protocol.get("batch_sizes_32768",protocol.get("u1_32768",{}).get("batch_sizes",[1]))
+    else:
+        sizes=[1]
     limit=int(candidate.publication._device_memory().get("bytes_limit",0)); one_peak=int(candidate.publication._device_memory().get("peak_bytes_in_use",0))
     t1=None
     for b in sizes:
         if b>len(prepared): continue
-        if limit and b*one_peak>0.8*limit:
+        if args.batch_sizes is None and limit and b*one_peak>0.8*limit:
             batch_rows.append({"batch_size":b,"status":"skipped_memory_feasibility","estimated_peak_bytes":b*one_peak});continue
         subset=prepared[:b]; host=(stack([r["inputs_in"] for r in subset]),stack([r["inputs_out"] for r in subset]),
             stack([r["graphs"] for r in subset]),stack([r["local"] for r in subset]),stack([r["kwargs"] for r in subset]),
