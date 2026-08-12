@@ -110,6 +110,10 @@ def main()->int:
     batch_sizes=[int(x) for x in args.batch_sizes.split(',') if int(x)<=args.sample_count];rows=[];t1=None
     workers=int(protocol['fresh_batch_contract']['cpu_preprocess_workers'])
     for batch_size in batch_sizes:
+        # Compile this padded batch shape outside the production span. Repeating
+        # the already prepared warm sample changes no measured fresh-case cache.
+        warm_host=(stack([warm['anchor']]*batch_size),stack([warm['query']]*batch_size),np.concatenate([warm['weights']]*batch_size),np.concatenate([warm['indices']]*batch_size),np.concatenate([warm['map_weights']]*batch_size))
+        warm_device=jax.device_put(warm_host,gpu);block(warm_device);block(forward(params,*warm_device))
         selected_anchors=anchors[:batch_size];total_start=time.perf_counter();phase=time.perf_counter()
         if batch_size==1:prepared=[prepare(selected_anchors[0])]
         else:
