@@ -31,7 +31,7 @@ def main()->int:
         cell_dir=args.work_dir/f'p{count}';cell_dir.mkdir(parents=True,exist_ok=True)
         def run(item:tuple[int,str])->dict[str,Any]:
             index,sample_id=item;output=cell_dir/f'{index:02d}_{sample_id}.json'
-            command=[sys.executable,str(ROOT/'scripts/benchmark_heat3d_v6_inference_qualification.py'),'--worker','--family','p1i','--route','fvm','--state','jit_cached_new_case','--sample-count','32','--sample-id',sample_id,
+            command=[sys.executable,str(ROOT/'scripts/benchmark_heat3d_v6_inference_qualification.py'),'--worker','--family','p1i','--route','fvm','--state','known_topology_new_physics','--sample-count','32','--sample-id',sample_id,
                      '--dataset-root',str(args.dataset_root),'--manifest',str(args.manifest),'--full-fields',str(args.full_fields),'--run-dir',str(args.run_dir),'--checkpoint-sha256',args.checkpoint_sha256,'--checkpoint-epoch',str(args.checkpoint_epoch),'--edge-targets',str(args.edge_targets),'--output',str(output)]
             completed=subprocess.run(command,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,check=False)
             if completed.returncode:raise RuntimeError(f'{sample_id}: FVM worker failed: {completed.stderr[-2000:]}')

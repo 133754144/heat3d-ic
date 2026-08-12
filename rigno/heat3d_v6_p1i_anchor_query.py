@@ -495,6 +495,7 @@ def conservative_selected_control_volume(
     full_control_volume: np.ndarray,
     full_layer_id: np.ndarray,
     selected_indices: np.ndarray,
+    query_workers: int = -1,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Partition every solver CV to its nearest selected node in the same layer."""
     coords = np.asarray(full_coords, dtype=np.float64)
@@ -508,7 +509,7 @@ def conservative_selected_control_volume(
         if not len(support_local):
             raise RuntimeError(f"selected support has no node in layer {layer_id}")
         nearest = cKDTree(coords[selected[support_local]]).query(
-            coords[full_local], k=1, workers=-1
+            coords[full_local], k=1, workers=int(query_workers)
         )[1]
         np.add.at(result, support_local[np.asarray(nearest, dtype=np.int64)], cv[full_local])
     if np.any(result <= 0.0):
@@ -520,5 +521,6 @@ def conservative_selected_control_volume(
         "selected_volume_m3": float(np.sum(result)),
         "relative_volume_error": relative_error,
         "label_or_temperature_used": False,
+        "query_workers": int(query_workers),
         "weights_sha256": array_sha256(result),
     }

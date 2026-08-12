@@ -90,7 +90,7 @@ def main()->int:
         anchor_indices,distance=highn._anchor_indices(anchor,coords,float(binding['numeric_tolerances']['anchor_to_solver_coordinate_max_distance_m']))
         if distance!=0.0:raise RuntimeError('anchor drift')
         phase=time.perf_counter();selected,_=deterministic_nested_query_prefix(sample_id=anchor.sample_id,anchor_indices=anchor_indices,full_q=full_q,target_count=16384,geometry_cache=geometry)
-        selected_cv,_=conservative_selected_control_volume(full_coords=coords,full_control_volume=cv,full_layer_id=layer,selected_indices=selected);stages['support_plus_cv']=time.perf_counter()-phase
+        selected_cv,_=conservative_selected_control_volume(full_coords=coords,full_control_volume=cv,full_layer_id=layer,selected_indices=selected,query_workers=1);stages['support_plus_cv']=time.perf_counter()-phase
         anchor_support={'selected_indices':anchor_indices,'operator_control_volume':np.asarray(anchor.operator_point_weights,dtype=np.float64),'k_xyz':np.asarray(anchor.condition.condition_features[:,:3],dtype=np.float64),'q_W_m3':np.asarray(anchor.condition.condition_features[:,3],dtype=np.float64),'layer_id':layer[anchor_indices]}
         query_support={'selected_indices':selected,'operator_control_volume':selected_cv,'k_xyz':full_k[selected],'q_W_m3':full_q[selected],'layer_id':layer[selected]}
         anchor_example=highn._query_example(anchor,anchor_support,coords);query_example=highn._query_example(anchor,query_support,coords)
