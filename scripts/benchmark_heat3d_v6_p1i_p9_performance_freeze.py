@@ -58,6 +58,11 @@ def complete_hash(row: dict[str, Any]) -> dict[str, str]:
     return {key: tree_sha(value) for key, value in scopes.items()}
 
 
+def prepare_hash_worker(index: int) -> dict[str, Any]:
+    row = p8.prepare_worker(index)
+    return {"sample_id": row["sample_id"], "hashes": complete_hash(row)}
+
+
 def parse() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--mode", choices=("neural", "fvm"), required=True)
@@ -74,7 +79,7 @@ def serialized_state(state: dict[str, Any]) -> dict[str, str]:
     return result
 
 
-def prepare_runner(state: dict[str, Any], backend: str) -> tuple[Callable[[list[int]], list[dict[str, Any]]], Callable[[], None], float]:
+def prepare_runner(state: dict[str, Any], backend: str, *, hash_only: bool = False) -> tuple[Callable[[list[int]], list[dict[str, Any]]], Callable[[], None], float]:
     if backend == "serial":
         p8.prepare_case(state, 0)
         return lambda indices: [p8.prepare_case(state, index) for index in indices], lambda: None, 0.0
@@ -87,7 +92,8 @@ def prepare_runner(state: dict[str, Any], backend: str) -> tuple[Callable[[list[
     ready = {future.result() for future in [pool.submit(p8.worker_ready) for _ in range(workers * 4)]}
     if len(ready) != workers: raise RuntimeError(f"{backend}: worker readiness failed")
     list(pool.map(p8.prepare_worker, [0] * workers))
-    return lambda indices: list(pool.map(p8.prepare_worker, indices)), lambda: pool.shutdown(), time.perf_counter() - started
+    function = prepare_hash_worker if hash_only else p8.prepare_worker
+    return lambda indices: list(pool.map(function, indices)), lambda: pool.shutdown(), time.perf_counter() - started
 
 
 def neural(args: argparse.Namespace) -> int:
@@ -95,8 +101,8 @@ def neural(args: argparse.Namespace) -> int:
     orders = [np.random.default_rng(seed).permutation(32).tolist() for seed in protocol["randomized_order_seeds"]]
     reference_hashes = None; backend_rows = []
     for backend in protocol["neural"]["persistent_preprocessing_backends"]:
-        run, close, startup = prepare_runner(state, backend); started = time.perf_counter(); rows = run(orders[0]); elapsed = time.perf_counter() - started; close()
-        hashes = {row["sample_id"]: complete_hash(row) for row in rows}
+        run, close, startup = prepare_runner(state, backend, hash_only=backend.startswith("process")); started = time.perf_counter(); rows = run(orders[0]); elapsed = time.perf_counter() - started; close()
+        hashes = {row["sample_id"]: (row["hashes"] if "hashes" in row else complete_hash(row)) for row in rows}
         reference_hashes = hashes if reference_hashes is None else reference_hashes
         exact = hashes == reference_hashes
         backend_rows.append({"backend": backend, "startup_and_untimed_warmup_seconds": startup, "steady_wall_seconds": elapsed, "samples_per_second": 32 / elapsed, "full_payload_exact_vs_serial": exact, "hashes": hashes})
