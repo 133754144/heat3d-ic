@@ -112,6 +112,8 @@ def init_prepare_worker(serialized:dict[str,str])->None:
     os.environ.update(OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',NUMEXPR_NUM_THREADS='1',JAX_PLATFORMS='cpu',CUDA_VISIBLE_DEVICES='')
     ns=argparse.Namespace(**{key:(Path(value) if key not in {'checkpoint_sha256','checkpoint_epoch','sample_count'} else value) for key,value in serialized.items()});ns.checkpoint_epoch=int(ns.checkpoint_epoch);ns.sample_count=int(ns.sample_count)
     global _PREPARE_STATE;_PREPARE_STATE=runtime_state(ns)
+    _PREPARE_STATE['anchor_targets']=json.loads(serialized['_anchor_targets_json'])
+    _PREPARE_STATE['query_targets']=json.loads(serialized['_query_targets_json'])
 
 def prepare_worker(index:int)->dict[str,Any]:return prepare_case(_PREPARE_STATE,index)
 
@@ -122,7 +124,7 @@ def run_backend(state:dict[str,Any],backend:str,count:int)->tuple[list[dict[str,
         workers=int(backend[6:]);
         with ThreadPoolExecutor(max_workers=workers) as pool:rows=list(pool.map(lambda index:prepare_case(state,index),indices))
     else:
-        workers=int(backend[7:]);ctx=mp.get_context('spawn');serialized={key:str(getattr(state['args'],key)) for key in ('protocol','binding','artifact_root','dataset_root','manifest','full_fields','run_dir','native_padding_result','query_padding_result','checkpoint_sha256','checkpoint_epoch','sample_count')}
+        workers=int(backend[7:]);ctx=mp.get_context('spawn');serialized={key:str(getattr(state['args'],key)) for key in ('protocol','binding','artifact_root','dataset_root','manifest','full_fields','run_dir','native_padding_result','query_padding_result','checkpoint_sha256','checkpoint_epoch','sample_count')};serialized['_anchor_targets_json']=json.dumps(state['anchor_targets']);serialized['_query_targets_json']=json.dumps(state['query_targets'])
         os.environ.update(JAX_PLATFORMS='cpu',CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',NUMEXPR_NUM_THREADS='1')
         pool_start=time.perf_counter();pool=ProcessPoolExecutor(max_workers=workers,mp_context=ctx,initializer=init_prepare_worker,initargs=(serialized,));ready={future.result() for future in [pool.submit(worker_ready) for _ in range(workers*4)]};
         if len(ready)!=workers:raise RuntimeError(f'{backend}: persistent workers did not all initialize')
