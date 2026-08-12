@@ -15,6 +15,12 @@ def main():
   d=json.loads(a.direct.read_text());req(d['status'] in {'passed_smoke','passed'},'direct');req(d['resolution']==240825 and d['output_mode']=='direct','direct mode');req(d['role_contract']==role,'direct role');checked.append('direct')
  if a.closeout:
   d=json.loads(a.closeout.read_text());req(d['status']=='completed','closeout');req(d['role_contract']==role,'closeout role')
+  req(d['historical_u2']['status']=='completed_no_go_unchanged','historical U2 changed')
+  req(d['identity_gate']['passed'] and d['identity_gate']['all_layer_and_output_arrays_bitwise_exact'],'identity')
+  req(d['u1_32768']['batch_sizes_attempted']==[1,4,8,16] and d['u1_32768']['all_batches_passed_without_OOM'],'actual batches')
+  req(d['direct_240825']['smoke_passed'] and d['direct_240825']['valid32_passed'],'direct gate')
+  req(d['direct_240825']['output_nodes_all_samples']==240825,'direct shape')
+  req(d['decision']['paper_mainline']=='E16384' and d['decision']['P7']=='GO','decision')
   if a.csv:req(len(list(csv.DictReader(a.csv.open())))==len(d['rows']),'CSV')
   checked.append('closeout')
  print(json.dumps({'u3_protocol_checked':True,'checked':checked}));return 0
