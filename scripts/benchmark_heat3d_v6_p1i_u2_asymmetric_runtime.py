@@ -228,9 +228,9 @@ def main() -> int:
             reference_local=host_tree(u1._dummy_local_p2r(builder,asymmetric))
             reference_inputs=host_tree(reference_output_group["inputs"])
             reference_kwargs=host_tree(u1._model_kwargs(anchor_group,reference_output_group))
-        reference_device=jax.device_put((inputs_in,reference_inputs,reference_graphs,reference_local,reference_kwargs),gpu);block(reference_device)
-        ri,ro,rg,rl,rkw=reference_device;reference_values=split_forward(params,ri,ro,rg,rl,rkw);block(reference_values)
-        minimal_np=np.asarray(values);reference_np=np.asarray(reference_values);packing_prediction_exact=bool(np.array_equal(minimal_np,reference_np))
+        paired_host=(stack([inputs_in,inputs_in]),stack([inputs_out,reference_inputs]),stack([graphs,reference_graphs]),stack([local,reference_local]),stack([kwargs,reference_kwargs]));paired_device=jax.device_put(paired_host,gpu);block(paired_device)
+        pi,po,pg,pl,pkw=paired_device;paired_values=split_forward(params,pi,po,pg,pl,pkw);block(paired_values)
+        paired_np=np.asarray(paired_values);minimal_np=paired_np[:1];reference_np=paired_np[1:];packing_prediction_exact=bool(np.array_equal(minimal_np,reference_np))
         packing_prediction_max_abs=float(np.max(np.abs(minimal_np.astype(np.float64)-reference_np.astype(np.float64))))
         if not packing_prediction_exact:raise RuntimeError(f"{anchor.sample_id}: minimal packing prediction drift")
         return {"sample_id":anchor.sample_id,"inputs_in":inputs_in,"inputs_out":inputs_out,"graphs":graphs,"local":local,
