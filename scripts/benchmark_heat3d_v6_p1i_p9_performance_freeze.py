@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import sys
 import time
+import gc
 from typing import Any, Callable
 
 import jax
@@ -100,6 +101,8 @@ def neural(args: argparse.Namespace) -> int:
         exact = hashes == reference_hashes
         backend_rows.append({"backend": backend, "startup_and_untimed_warmup_seconds": startup, "steady_wall_seconds": elapsed, "samples_per_second": 32 / elapsed, "full_payload_exact_vs_serial": exact, "hashes": hashes})
         if not exact: raise RuntimeError(f"{backend}: complete prepared payload exact gate failed")
+        del rows
+        gc.collect()
     winner = max(backend_rows, key=lambda row: row["samples_per_second"])["backend"]
 
     runtime = state["runtime"]; model = GraphNeuralOperator(**runtime["model_config"]); params = highn.runner._device_params(runtime["checkpoint"]["params"]); gpu = jax.devices("gpu")[0]
@@ -112,15 +115,16 @@ def neural(args: argparse.Namespace) -> int:
     def host_batch(rows): return (p8.stack([r["anchor"] for r in rows]), p8.stack([r["query"] for r in rows]), np.concatenate([r["weights"] for r in rows]), np.concatenate([r["indices"] for r in rows]), np.concatenate([r["map_weights"] for r in rows]))
     run, close, winner_startup = prepare_runner(state, winner)
     warm_rows = run([0] * 32)
-    compiled = {}
-    for size in (1, 16, 32):
-        host = host_batch(warm_rows[:size]); device = jax.device_put(host, gpu); p8.block(device); prediction = forward(params, *device); p8.block(prediction); compiled[size] = (host, device)
     resident = {}
     for size in (1, 16, 32):
-        device = compiled[size][1]; values = []
+        host = host_batch(warm_rows[:size]); device = jax.device_put(host, gpu); p8.block(device); prediction = forward(params, *device); p8.block(prediction); values = []
         for _ in range(protocol["neural"]["resident_repeats"]):
             started = time.perf_counter(); prediction = forward(params, *device); p8.block(prediction); values.append(time.perf_counter() - started)
         resident[str(size)] = stats(values)
+        del host, device, prediction
+        gc.collect()
+    del warm_rows
+    gc.collect()
     repeat_rows = []; b1_values = []
     for repeat_index, order in enumerate(orders):
         b1_elapsed = []
