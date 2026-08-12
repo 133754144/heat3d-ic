@@ -332,6 +332,49 @@ def _prepare_output_query_group_minimal(
             "native_physics": group["native_physics"]}
 
 
+def _prepare_output_query_group_lean(
+    *, example: Any, anchor: Any, runtime: Mapping[str, Any],
+    builder: Heat3DGraphBuilder, metadata: Any,
+    edge_targets: Mapping[str, int | None],
+) -> dict[str, Any]:
+    """Build only the tensors consumed by the frozen split output path.
+
+    Unlike ``_prepare_output_query_group_minimal``, this path never creates a
+    supervised target, output-derived global/scale context, or unused regional
+    attention payload.  Graph padding and input normalization use the same
+    frozen helpers and operation order as the historical group builder.
+    """
+    bridge = highn.runner._bridge_for(example)
+    raw_u = bridge.legacy_inputs.u
+    raw_c = bridge.legacy_inputs.c
+    raw_coords = bridge.legacy_inputs.x_inp
+    condition = highn.runner.normalize_condition(raw_c, runtime["stats"])
+    coords = highn.runner._normalize_coords(raw_coords, runtime["stats"])
+    inputs = highn.runner.Inputs(
+        u=raw_u, c=condition, x_inp=coords, x_out=coords, t=None, tau=None,
+    )
+    cached = highn._LoadedMetadataBuilder(builder, metadata)
+    padded = qualification.FixedEdgeTargetBuilder(cached, edge_targets)
+    padded_metadata = padded.build_metadata(
+        highn.runner._graph_coords_for_example(example, runtime["stats"]),
+        key=highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"])),
+    )
+    graphs = padded.build_graphs(padded_metadata)
+    relative = example.get_relative_bc_feature_view()
+    reference = float(relative.t_ref_value)
+    count = int(example.condition.coords.shape[0])
+    native_physics = {
+        "control_volumes": jnp.asarray(
+            np.asarray(example.v6_operator_point_weights(), dtype=np.float32)[None, :]
+        ),
+        "reference_temperature": jnp.full((1, count), reference, dtype=jnp.float32),
+        "dirichlet_mask": jnp.zeros((1, count), dtype=jnp.float32),
+        "prescribed_temperature": jnp.full((1, count), reference, dtype=jnp.float32),
+    }
+    del anchor  # The split output side intentionally consumes anchor context only via kwargs.
+    return {"inputs": inputs, "graphs": graphs, "native_physics": native_physics}
+
+
 def _parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     for name in (

@@ -1,0 +1,39 @@
+{
+  "schema_version": "heat3d_v6_p1i_u5_direct_timing_freeze_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "5d8ee4314c09180746d1a8c9e212cf03e1142e95",
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "population": "frozen_valid32",
+  "routes": ["E16384_reconstruction", "E240825_direct", "U_direct240825"],
+  "same_session": true,
+  "repeats": 20,
+  "timing": {
+    "host": "wsl2",
+    "gpu": "RTX 5070",
+    "cpu": "Ryzen 7 9700X",
+    "synchronize_gpu": true,
+    "metrics_hash_serialization_outside_span": true,
+    "historical_latency_reuse_for_pareto": false
+  },
+  "lean_output_query": {
+    "mode": "lean_output_query_v2",
+    "forbidden": "prepare_full_output_group_then_drop_fields",
+    "constructed": ["inputs", "graphs", "control_volumes", "reference_temperature", "dirichlet_mask", "prescribed_temperature"],
+    "cpu_same_session_prediction_bitwise_exact": true
+  },
+  "pareto_domain": "same_240825_full_field_output",
+  "accuracy_provenance": "frozen_valid32_current_route_predictions; lean packing must be bitwise exact",
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false
+  }
+}

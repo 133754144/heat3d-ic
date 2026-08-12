@@ -190,9 +190,10 @@ def main() -> int:
             phase=time.perf_counter(); anchor_group=host_tree(highn._prepare_group(
                 example=anchor,anchor=anchor,runtime=runtime,builder=builder,metadata=native,
                 edge_targets=p5r._compatible_targets(native_targets,native))); anchor_pack_s=time.perf_counter()-phase
-            phase=time.perf_counter(); output_group_full=highn._prepare_group(
+            phase=time.perf_counter(); output_group_lean=u1._prepare_output_query_group_lean(
                 example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
-                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric)); output_group_raw={"inputs":output_group_full["inputs"],"graphs":output_group_full["graphs"],"native_physics":output_group_full["native_physics"]};output_group=host_tree(output_group_raw); query_pack_s=time.perf_counter()-phase
+                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric));
+            output_group=host_tree(output_group_lean); query_pack_s=time.perf_counter()-phase
             detail_started=time.perf_counter()
             phase=time.perf_counter(); graphs_raw=output_group["graphs"]; graph_extraction_s=time.perf_counter()-phase
             phase=time.perf_counter(); local_raw=u1._dummy_local_p2r(builder,asymmetric); dummy_local_p2r_s=time.perf_counter()-phase
@@ -222,6 +223,9 @@ def main() -> int:
         # group must produce exactly the same output as minimal packing. This is
         # deliberately after the production timing cutoff.
         with jax.default_device(cpu):
+            output_group_full=highn._prepare_group(
+                example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
+                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric))
             reference_output_group=host_tree(output_group_full)
             reference_graphs=host_tree(reference_output_group["graphs"])
             reference_local=host_tree(u1._dummy_local_p2r(builder,asymmetric))
@@ -305,7 +309,7 @@ def main() -> int:
         "accuracy":{"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
-        "packing_optimization":{"mode":"minimal_output_query_v1","output_fields_copied":["inputs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_copied":True,"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
+        "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"]} for r in prepared],
         "role_contract":protocol["role_contract"]}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
