@@ -41,9 +41,9 @@ def block(tree:Any)->None:jax.tree_util.tree_map(lambda x:x.block_until_ready() 
 def host_tree(tree:Any)->Any:return jax.tree_util.tree_map(lambda x:np.asarray(jax.device_get(x)),tree)
 def stack(trees:list[Any])->Any:return jax.tree_util.tree_map(lambda *xs:np.concatenate([np.asarray(x) for x in xs],axis=0),*trees)
 
-def tree_sha(tree:Any)->str:
+def graph_semantic_sha(tree:Any)->str:
     digest=hashlib.sha256()
-    for leaf in jax.tree_util.tree_leaves(tree):
+    for leaf in jax.tree_util.tree_leaves(tree['metadata']):
         array=np.ascontiguousarray(np.asarray(leaf));digest.update(str(array.dtype).encode());digest.update(str(array.shape).encode());digest.update(array.tobytes())
     return digest.hexdigest()
 
@@ -51,7 +51,7 @@ def prepared_hash(payload:dict[str,Any])->str:
     digest=hashlib.sha256()
     for key in ('selected','selected_cv','indices','map_weights'):
         digest.update(bytes.fromhex(bytes_sha(payload[key])))
-    digest.update(bytes.fromhex(tree_sha(payload['anchor'])));digest.update(bytes.fromhex(tree_sha(payload['query'])))
+    digest.update(bytes.fromhex(graph_semantic_sha(payload['anchor'])));digest.update(bytes.fromhex(graph_semantic_sha(payload['query'])))
     return digest.hexdigest()
 
 def worker_ready(delay:float=1.0)->int:
