@@ -54,7 +54,7 @@ def prepared_hash(payload:dict[str,Any])->str:
     digest.update(bytes.fromhex(tree_sha(payload['anchor'])));digest.update(bytes.fromhex(tree_sha(payload['query'])))
     return digest.hexdigest()
 
-def worker_ready(delay:float=0.1)->int:
+def worker_ready(delay:float=1.0)->int:
     time.sleep(delay);return os.getpid()
 
 def parse()->argparse.Namespace:
@@ -111,7 +111,7 @@ def prepare_case(state:dict[str,Any],index:int)->dict[str,Any]:
 def init_prepare_worker(serialized:dict[str,str])->None:
     os.environ.update(OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',NUMEXPR_NUM_THREADS='1',JAX_PLATFORMS='cpu',CUDA_VISIBLE_DEVICES='')
     ns=argparse.Namespace(**{key:(Path(value) if key not in {'checkpoint_sha256','checkpoint_epoch','sample_count'} else value) for key,value in serialized.items()});ns.checkpoint_epoch=int(ns.checkpoint_epoch);ns.sample_count=int(ns.sample_count)
-    global _PREPARE_STATE;_PREPARE_STATE=runtime_state(ns);ensure_edge_envelope(_PREPARE_STATE)
+    global _PREPARE_STATE;_PREPARE_STATE=runtime_state(ns)
 
 def prepare_worker(index:int)->dict[str,Any]:return prepare_case(_PREPARE_STATE,index)
 
@@ -124,7 +124,7 @@ def run_backend(state:dict[str,Any],backend:str,count:int)->tuple[list[dict[str,
     else:
         workers=int(backend[7:]);ctx=mp.get_context('spawn');serialized={key:str(getattr(state['args'],key)) for key in ('protocol','binding','artifact_root','dataset_root','manifest','full_fields','run_dir','native_padding_result','query_padding_result','checkpoint_sha256','checkpoint_epoch','sample_count')}
         os.environ.update(JAX_PLATFORMS='cpu',CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',NUMEXPR_NUM_THREADS='1')
-        pool_start=time.perf_counter();pool=ProcessPoolExecutor(max_workers=workers,mp_context=ctx,initializer=init_prepare_worker,initargs=(serialized,));ready={future.result() for future in [pool.submit(worker_ready) for _ in range(workers)]};
+        pool_start=time.perf_counter();pool=ProcessPoolExecutor(max_workers=workers,mp_context=ctx,initializer=init_prepare_worker,initargs=(serialized,));ready={future.result() for future in [pool.submit(worker_ready) for _ in range(workers*4)]};
         if len(ready)!=workers:raise RuntimeError(f'{backend}: persistent workers did not all initialize')
         startup=time.perf_counter()-pool_start
         steady=time.perf_counter();rows=list(pool.map(prepare_worker,indices));wall=time.perf_counter()-steady;pool.shutdown();return rows,startup,wall
@@ -164,7 +164,7 @@ def fvm(args:argparse.Namespace)->int:
     protocol=json.loads(args.protocol.read_text());counts=[int(x) for x in args.process_counts.split(',')];serialized={key:str(getattr(args,key)) for key in ('dataset_root','manifest','full_fields')};ctx=mp.get_context('spawn');rows=[]
     for count in counts:
         os.environ.update(JAX_PLATFORMS='cpu',CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',NUMEXPR_NUM_THREADS='1')
-        startup_start=time.perf_counter();pool=ProcessPoolExecutor(max_workers=count,mp_context=ctx,initializer=init_fvm_worker,initargs=(serialized,));ready={future.result() for future in [pool.submit(worker_ready) for _ in range(count)]};
+        startup_start=time.perf_counter();pool=ProcessPoolExecutor(max_workers=count,mp_context=ctx,initializer=init_fvm_worker,initargs=(serialized,));ready={future.result() for future in [pool.submit(worker_ready) for _ in range(count*4)]};
         if len(ready)!=count:raise RuntimeError(f'FVM p{count}: persistent workers did not all initialize')
         startup=time.perf_counter()-startup_start;steady_start=time.perf_counter();measurements=list(pool.map(fvm_worker,range(args.sample_count)));steady=time.perf_counter()-steady_start;shutdown_start=time.perf_counter();pool.shutdown();shutdown=time.perf_counter()-shutdown_start;rows.append({'process_count':count,'threads_per_process':1,'persistent_worker_pool':True,'worker_pids':sorted(ready),'sample_count':args.sample_count,'status':'passed','startup_seconds':startup,'steady_wall_seconds':steady,'shutdown_seconds_outside_steady':shutdown,'samples_per_second':args.sample_count/steady,'average_per_case_seconds':steady/args.sample_count,'measurements':measurements})
     saturation=max(rows,key=lambda row:row['samples_per_second']);result={'schema_version':'heat3d_v6_p1i_p8_persistent_fvm_v1','status':'passed','sample_count':args.sample_count,'rows':rows,'saturation':saturation,'process_counts':counts,'threads_per_process':1,'startup_separate_from_steady':True,'protocol_sha256':sha256(args.protocol),'role_contract':{'accessed_roles':['valid_iid'],'training':False,'test':False,'sealed':False,'checkpoint_modified':False,'dataset_modified':False,'graph_semantics_modified':False}};args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+'\n');print(json.dumps({'status':'passed','saturation_processes':saturation['process_count'],'samples_per_s':saturation['samples_per_second']}));return 0
