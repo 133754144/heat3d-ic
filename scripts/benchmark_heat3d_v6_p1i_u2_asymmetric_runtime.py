@@ -189,9 +189,9 @@ def main() -> int:
             phase=time.perf_counter(); anchor_group=host_tree(highn._prepare_group(
                 example=anchor,anchor=anchor,runtime=runtime,builder=builder,metadata=native,
                 edge_targets=p5r._compatible_targets(native_targets,native))); anchor_pack_s=time.perf_counter()-phase
-            phase=time.perf_counter(); output_group_raw=u1._prepare_output_query_group_minimal(
+            phase=time.perf_counter(); output_group_full=highn._prepare_group(
                 example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
-                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric)); output_group=host_tree(output_group_raw); query_pack_s=time.perf_counter()-phase
+                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric)); output_group_raw={"inputs":output_group_full["inputs"],"graphs":output_group_full["graphs"],"native_physics":output_group_full["native_physics"]};output_group=host_tree(output_group_raw); query_pack_s=time.perf_counter()-phase
             detail_started=time.perf_counter()
             phase=time.perf_counter(); graphs_raw=output_group["graphs"]; graph_extraction_s=time.perf_counter()-phase
             phase=time.perf_counter(); local_raw=u1._dummy_local_p2r(builder,asymmetric); dummy_local_p2r_s=time.perf_counter()-phase
@@ -221,9 +221,7 @@ def main() -> int:
         # group must produce exactly the same output as minimal packing. This is
         # deliberately after the production timing cutoff.
         with jax.default_device(cpu):
-            reference_output_group=host_tree(highn._prepare_group(
-                example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
-                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric)))
+            reference_output_group=host_tree(output_group_full)
             reference_graphs=host_tree(reference_output_group["graphs"])
             reference_local=host_tree(u1._dummy_local_p2r(builder,asymmetric))
             reference_inputs=host_tree(reference_output_group["inputs"])
