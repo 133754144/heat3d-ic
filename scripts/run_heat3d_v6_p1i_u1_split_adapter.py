@@ -227,7 +227,15 @@ def _dummy_local_p2r(builder: Heat3DGraphBuilder, metadata: Any) -> Any:
         r2r_edge_domains=metadata.r2r_edge_domains,
         r2p_edge_indices=None,
     )
-    return builder.build_graphs(local).p2r
+    # Exact specialization of ``build_graphs(local).p2r``. Building the full
+    # graph set also constructs unused r2r/r2p graphs for this output-local
+    # encoder transform.
+    return builder.builder._build_p2r_graph(
+        local.x_pnodes_inp,
+        local.x_rnodes,
+        local.p2r_edge_indices,
+        local.r_rnodes,
+    )
 
 
 def _edge_targets(path: Path) -> dict[str, int | None]:
