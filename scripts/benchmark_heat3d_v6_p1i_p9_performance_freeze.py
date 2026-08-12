@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 import time
 import gc
+import ctypes
 from typing import Any, Callable
 
 import jax
@@ -32,6 +33,15 @@ from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 def stats(values: list[float]) -> dict[str, float | int]:
     array = np.asarray(values, dtype=np.float64)
     return {"count": len(values), "median_seconds": float(np.median(array)), "mean_seconds": float(np.mean(array)), "std_seconds": float(np.std(array)), "p95_seconds": float(np.quantile(array, 0.95))}
+
+
+def release_host_memory(*values: Any) -> None:
+    del values
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except (OSError, AttributeError):
+        pass
 
 
 def tree_sha(tree: Any) -> str:
@@ -183,11 +193,17 @@ def neural(args: argparse.Namespace) -> int:
         b1_elapsed = []
         for index in order:
             started = time.perf_counter(); row = run([index])[0]; host = host_batch([row]); device = jax.device_put(host, gpu); p8.block(device); prediction = forward(params, *device); p8.block(prediction); b1_elapsed.append(time.perf_counter() - started)
+            del row, host, device, prediction
+            release_host_memory()
         b1_values.extend(b1_elapsed)
         batch16 = []
         for start in (0, 16):
             tick = time.perf_counter(); rows = run(order[start:start + 16]); host = host_batch(rows); device = jax.device_put(host, gpu); p8.block(device); prediction = forward(params, *device); p8.block(prediction); batch16.append(time.perf_counter() - tick)
+            del rows, host, device, prediction
+            release_host_memory()
         tick = time.perf_counter(); rows = run(order); host = host_batch(rows); device = jax.device_put(host, gpu); p8.block(device); prediction = forward(params, *device); p8.block(prediction); batch32 = time.perf_counter() - tick
+        del rows, host, device, prediction
+        release_host_memory()
         repeat_rows.append({"repeat": repeat_index, "order_seed": protocol["randomized_order_seeds"][repeat_index], "order": order, "fresh_b1": stats(b1_elapsed), "two_B16_wall_seconds": float(sum(batch16)), "B16_individual_seconds": batch16, "B32_wall_seconds": batch32, "two_B16_samples_per_second": 32 / sum(batch16), "B32_samples_per_second": 32 / batch32, "marginal_added_case_seconds": (batch32 - float(np.median(batch16))) / 16.0})
     close()
     result = {"schema_version": "heat3d_v6_p1i_p9_neural_v1", "status": "passed", "winner": winner, "backend_comparison": backend_rows, "complete_payload_hash_exact": True, "winner_startup_and_warmup_seconds": winner_startup, "fresh_b1": stats(b1_values), "resident_inference": resident, "repeat_rows": repeat_rows, "full_valid32_two_B16": stats([row["two_B16_wall_seconds"] for row in repeat_rows]), "full_valid32_B32": stats([row["B32_wall_seconds"] for row in repeat_rows]), "marginal_added_case": stats([row["marginal_added_case_seconds"] for row in repeat_rows]), "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)), "protocol_sha256": p8.sha256(args.protocol), "role_contract": protocol["role_contract"]}
