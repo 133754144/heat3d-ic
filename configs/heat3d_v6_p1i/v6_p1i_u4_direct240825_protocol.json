@@ -17,7 +17,8 @@
     "scope": "240825_output_query_only",
     "remove_fields": ["output_global_context", "output_scale_context", "output_scale_region_weights", "output_log_s_phys"],
     "retain": ["output_inputs", "output_control_volumes", "output_reference_temperature", "output_dirichlet_mask", "output_prescribed_temperature", "output_graphs", "output_local_p2r"],
-    "exact_gates": ["1024_to_1024_identity", "240825_prediction_bitwise", "checkpoint_sha256"]
+    "exact_gates": ["1024_to_1024_identity", "240825_deterministic_CPU_prediction_bitwise", "checkpoint_sha256"],
+    "gpu_replay": "historical frozen tolerance; report only because reduction nondeterminism is nonzero"
   },
   "comparison_routes": ["native1024_reconstruction", "E240825_direct", "E16384_reconstruction", "U_direct240825"],
   "primary_direct_decision": "accuracy_latency_Pareto_on_same_240825_output_domain",

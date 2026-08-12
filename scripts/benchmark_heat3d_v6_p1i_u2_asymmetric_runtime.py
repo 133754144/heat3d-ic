@@ -226,15 +226,15 @@ def main() -> int:
             reference_local=host_tree(u1._dummy_local_p2r(builder,asymmetric))
             reference_inputs=host_tree(reference_output_group["inputs"])
             reference_kwargs=host_tree(u1._model_kwargs(anchor_group,reference_output_group))
-        paired_host=(stack([inputs_in,inputs_in]),stack([inputs_out,reference_inputs]),stack([graphs,reference_graphs]),stack([local,reference_local]),stack([kwargs,reference_kwargs]));paired_device=jax.device_put(paired_host,gpu);block(paired_device)
-        pi,po,pg,pl,pkw=paired_device;paired_values=split_forward(params,pi,po,pg,pl,pkw);block(paired_values)
+        paired_host=(stack([inputs_in,inputs_in]),stack([inputs_out,reference_inputs]),stack([graphs,reference_graphs]),stack([local,reference_local]),stack([kwargs,reference_kwargs]));cpu_params=jax.device_put(runtime["checkpoint"]["params"],cpu);paired_device=jax.device_put(paired_host,cpu);block(paired_device)
+        pi,po,pg,pl,pkw=paired_device;paired_values=split_forward(cpu_params,pi,po,pg,pl,pkw);block(paired_values)
         paired_np=np.asarray(paired_values);minimal_np=paired_np[:1];reference_np=paired_np[1:];packing_prediction_exact=bool(np.array_equal(minimal_np,reference_np))
         packing_prediction_max_abs=float(np.max(np.abs(minimal_np.astype(np.float64)-reference_np.astype(np.float64))))
         if not packing_prediction_exact:raise RuntimeError(f"{anchor.sample_id}: minimal packing prediction drift")
         return {"sample_id":anchor.sample_id,"inputs_in":inputs_in,"inputs_out":inputs_out,"graphs":graphs,"local":local,
                 "kwargs":kwargs,"map_indices":map_indices,"map_weights":map_weights,"device":device,"selected":selected,
                 "selected_cv":selected_cv,"full_q":full_q,"support_delta":values,"full_delta":full_value,
-                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs},
+                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","equivalence_backend":"deterministic_cpu","prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs},
                 "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
                           "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
                           "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
