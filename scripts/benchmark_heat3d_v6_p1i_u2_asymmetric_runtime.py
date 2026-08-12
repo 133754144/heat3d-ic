@@ -216,17 +216,34 @@ def main() -> int:
         ii,io,g,l,kw,mi,mw=device
         phase=time.perf_counter(); values=split_forward(params,ii,io,g,l,kw);block(values);forward_s=time.perf_counter()-phase
         phase=time.perf_counter(); full_value=reconstruct(values,mi,mw);block(full_value);recon_s=time.perf_counter()-phase
+        production_elapsed=time.perf_counter()-total_start
+        # Qualification-only same-launch reference: the historical full output
+        # group must produce exactly the same output as minimal packing. This is
+        # deliberately after the production timing cutoff.
+        with jax.default_device(cpu):
+            reference_output_group=host_tree(highn._prepare_group(
+                example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
+                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric)))
+            reference_graphs=host_tree(reference_output_group["graphs"])
+            reference_local=host_tree(u1._dummy_local_p2r(builder,asymmetric))
+            reference_inputs=host_tree(reference_output_group["inputs"])
+            reference_kwargs=host_tree(u1._model_kwargs(anchor_group,reference_output_group))
+        reference_device=jax.device_put((inputs_in,reference_inputs,reference_graphs,reference_local,reference_kwargs),gpu);block(reference_device)
+        ri,ro,rg,rl,rkw=reference_device;reference_values=split_forward(params,ri,ro,rg,rl,rkw);block(reference_values)
+        minimal_np=np.asarray(values);reference_np=np.asarray(reference_values);packing_prediction_exact=bool(np.array_equal(minimal_np,reference_np))
+        packing_prediction_max_abs=float(np.max(np.abs(minimal_np.astype(np.float64)-reference_np.astype(np.float64))))
+        if not packing_prediction_exact:raise RuntimeError(f"{anchor.sample_id}: minimal packing prediction drift")
         return {"sample_id":anchor.sample_id,"inputs_in":inputs_in,"inputs_out":inputs_out,"graphs":graphs,"local":local,
                 "kwargs":kwargs,"map_indices":map_indices,"map_weights":map_weights,"device":device,"selected":selected,
                 "selected_cv":selected_cv,"full_q":full_q,"support_delta":values,"full_delta":full_value,
-                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed},
+                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs},
                 "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
                           "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
                           "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
                           "reconstruction_apply":recon_s,"dummy_local_p2r":dummy_local_p2r_s,
                           "graph_extraction":graph_extraction_s,"host_tree":host_tree_s,"inputs":inputs_s,
                           "kwargs":kwargs_s,"profiled_other":other_s,
-                          "matched_continuous_e2e":time.perf_counter()-total_start},
+                          "matched_continuous_e2e":production_elapsed},
                 "shape":{"output_nodes":int(np.asarray(values).shape[1]),"regional_nodes":int(np.asarray(asymmetric.x_rnodes).shape[1]-1),
                          "p2r_edges":int(np.asarray(asymmetric.p2r_edge_indices).shape[1]),
                          "r2r_edges":int(np.asarray(asymmetric.r2r_edge_indices).shape[1]),
@@ -289,7 +306,7 @@ def main() -> int:
         "accuracy":{"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
-        "packing_optimization":{"mode":"minimal_output_query_v1","output_fields_copied":["inputs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_copied":True},
+        "packing_optimization":{"mode":"minimal_output_query_v1","output_fields_copied":["inputs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_copied":True,"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"]} for r in prepared],
         "role_contract":protocol["role_contract"]}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
