@@ -69,6 +69,7 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--sample-count", type=int, choices=[1, 32], default=32)
     parser.add_argument("--repeats", type=int, default=20)
     parser.add_argument("--batch-sizes", default=None)
+    parser.add_argument("--prediction-output", type=Path)
     return parser.parse_args()
 
 
@@ -308,6 +309,15 @@ def main() -> int:
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"]} for r in prepared],
         "role_contract":protocol["role_contract"]}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
+    if args.prediction_output is not None:
+        args.prediction_output.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            args.prediction_output,
+            sample_ids=np.asarray([row["sample_id"] for row in prepared]),
+            full_deltaT_K=np.stack([
+                np.asarray(row["full_delta"], dtype=np.float32)[0] for row in prepared
+            ]),
+        )
     print(json.dumps({"status":result["status"],"resolution":args.resolution,"pg":result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],"e2e":timing["matched_continuous_e2e"]["median_seconds"]}))
     return 0
 

@@ -164,6 +164,7 @@ def _parse() -> argparse.Namespace:
     parser.add_argument("--route", required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--sample-count", type=int, choices=[1, 32], default=32)
+    parser.add_argument("--prediction-output", type=Path)
     return parser.parse_args()
 
 
@@ -234,6 +235,7 @@ def main() -> int:
     support_metric_rows: list[dict[str, Any]] = []
     full_metric_rows: list[dict[str, Any]] = []
     oracle_metric_rows: list[dict[str, Any]] = []
+    full_predictions: list[np.ndarray] = []
     stage_values: dict[str, list[float]] = {
         key: [] for key in (
             "support_plus_cv", "graph", "reconstruction_map", "group_and_h2d",
@@ -483,6 +485,7 @@ def main() -> int:
             full_row = highn._metric_row(full_np, truth, cv, coords, layer, full_q)
             support_metric_rows.append(support_row)
             full_metric_rows.append(full_row)
+            full_predictions.append(full_np.astype(np.float32, copy=False))
             if mapping is None:
                 oracle_full = truth
             else:
@@ -561,6 +564,13 @@ def main() -> int:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    if args.prediction_output is not None:
+        args.prediction_output.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            args.prediction_output,
+            sample_ids=np.asarray([anchor.sample_id for anchor in anchors]),
+            full_deltaT_K=np.stack(full_predictions),
+        )
     print(json.dumps({
         "status": result["status"], "route": args.route,
         "full_pg_pct": result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],
