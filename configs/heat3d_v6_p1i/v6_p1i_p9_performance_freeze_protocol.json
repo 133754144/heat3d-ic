@@ -12,6 +12,8 @@
   "randomized_order_seeds": [20260813, 20260814, 20260815],
   "neural": {
     "persistent_preprocessing_backends": ["serial", "thread2", "thread4", "thread8", "process2", "process4", "process8"],
+    "deployment_backend": "process4",
+    "deployment_backend_rule": "fastest exact backend that remains RAM-resident beside GPU runtime for full valid32",
     "kdtree_workers_per_case": 1,
     "exact_hash_scope": ["selected_indices", "selected_cv", "reconstruction_map", "anchor_group_all_leaves", "query_group_all_leaves", "inputs", "graphs", "native_physics", "global_context", "scale_context", "qk_features"],
     "untimed_worker_warmup": true,

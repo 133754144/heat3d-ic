@@ -166,7 +166,10 @@ def neural(args: argparse.Namespace) -> int:
         if serial_hashes is None or row["hashes"] != serial_hashes:
             raise RuntimeError(f"{backend}: exact artifact differs from serial")
         backend_rows.append(row)
-    winner = max(backend_rows, key=lambda row: row["samples_per_second"])["backend"]
+    throughput_winner = max(backend_rows, key=lambda row: row["samples_per_second"])["backend"]
+    winner = protocol["neural"].get("deployment_backend", throughput_winner)
+    if winner not in {row["backend"] for row in backend_rows}:
+        raise RuntimeError(f"deployment backend {winner} lacks an exact artifact")
 
     runtime = state["runtime"]; model = GraphNeuralOperator(**runtime["model_config"]); params = highn.runner._device_params(runtime["checkpoint"]["params"]); gpu = jax.devices("gpu")[0]
     @jax.jit
@@ -206,7 +209,7 @@ def neural(args: argparse.Namespace) -> int:
         release_host_memory()
         repeat_rows.append({"repeat": repeat_index, "order_seed": protocol["randomized_order_seeds"][repeat_index], "order": order, "fresh_b1": stats(b1_elapsed), "two_B16_wall_seconds": float(sum(batch16)), "B16_individual_seconds": batch16, "B32_wall_seconds": batch32, "two_B16_samples_per_second": 32 / sum(batch16), "B32_samples_per_second": 32 / batch32, "marginal_added_case_seconds": (batch32 - float(np.median(batch16))) / 16.0})
     close()
-    result = {"schema_version": "heat3d_v6_p1i_p9_neural_v1", "status": "passed", "winner": winner, "backend_comparison": backend_rows, "complete_payload_hash_exact": True, "winner_startup_and_warmup_seconds": winner_startup, "fresh_b1": stats(b1_values), "resident_inference": resident, "repeat_rows": repeat_rows, "full_valid32_two_B16": stats([row["two_B16_wall_seconds"] for row in repeat_rows]), "full_valid32_B32": stats([row["B32_wall_seconds"] for row in repeat_rows]), "marginal_added_case": stats([row["marginal_added_case_seconds"] for row in repeat_rows]), "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)), "protocol_sha256": p8.sha256(args.protocol), "role_contract": protocol["role_contract"]}
+    result = {"schema_version": "heat3d_v6_p1i_p9_neural_v1", "status": "passed", "winner": winner, "throughput_only_winner": throughput_winner, "deployment_backend_selection": protocol["neural"].get("deployment_backend_rule"), "backend_comparison": backend_rows, "complete_payload_hash_exact": True, "winner_startup_and_warmup_seconds": winner_startup, "fresh_b1": stats(b1_values), "resident_inference": resident, "repeat_rows": repeat_rows, "full_valid32_two_B16": stats([row["two_B16_wall_seconds"] for row in repeat_rows]), "full_valid32_B32": stats([row["B32_wall_seconds"] for row in repeat_rows]), "marginal_added_case": stats([row["marginal_added_case_seconds"] for row in repeat_rows]), "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)), "protocol_sha256": p8.sha256(args.protocol), "role_contract": protocol["role_contract"]}
     args.output.parent.mkdir(parents=True, exist_ok=True); args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n"); print(json.dumps({"status": "passed", "winner": winner, "B32_samples_s": 32 / result["full_valid32_B32"]["median_seconds"]})); return 0
 
 
