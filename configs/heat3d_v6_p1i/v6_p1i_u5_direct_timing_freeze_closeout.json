@@ -1,0 +1,75 @@
+{
+  "decision": "U_direct240825_on_same_output_pareto",
+  "lean_output_query": {
+    "cpu_prediction_bitwise_exact": true,
+    "full_output_group_never_constructed_in_production_path": true,
+    "mode": "lean_output_query_v2"
+  },
+  "protocol_sha256": "fad6e4784babc585864b611ab6fc65ddecec7d86518eed2f44e00681cbb77dcb",
+  "result": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_u5_runtime_raw/same_session.json",
+    "sha256": "0e2ebf13a52614af052c2c3e2ecfb7062ccf60078b4bd9340ba654ed89922a61"
+  },
+  "role_contract": {
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid"
+    ],
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "rows": [
+    {
+      "execution_commit": "44c897aafa8fe7ce40cceeb714f14f5efd9f8ef6",
+      "fresh_median_s": 3.0403386504622176,
+      "fresh_p95_s": 3.650991693825927,
+      "interface_K": 0.38573772763589265,
+      "output_domain": "240825_full_field",
+      "peak_K": 4.018083183794059,
+      "peak_vram_bytes": 300780544,
+      "pg_pct": 2.702278749639563,
+      "raw_K": 2.2848086313706393,
+      "route": "E16384_reconstruction",
+      "runtime_artifact": "/tmp/v6_p1i_u5_same_session_44c897a/E16384_reconstruction.json",
+      "runtime_sha256": "1f64afc569f190ad1ff46801e06932a0a74ad93426d0e7fceff90b0a9f6cad03",
+      "source_K": 3.872084902441454
+    },
+    {
+      "execution_commit": "44c897aafa8fe7ce40cceeb714f14f5efd9f8ef6",
+      "fresh_median_s": 1.0879864998860285,
+      "fresh_p95_s": 1.1253143512178212,
+      "interface_K": 0.4743568100108813,
+      "output_domain": "240825_full_field",
+      "peak_K": 7.206491873209678,
+      "peak_vram_bytes": 4090319360,
+      "pg_pct": 3.067115754991304,
+      "raw_K": 2.4884034913743225,
+      "route": "E240825_direct",
+      "runtime_artifact": "/tmp/v6_p1i_u5_same_session_44c897a/E240825_direct.json",
+      "runtime_sha256": "dcfe701e416978800ca114e512f0a2a59ae5f10b3f5a5fe01cf1b520c6b36598",
+      "source_K": 4.734638128740339
+    },
+    {
+      "execution_commit": "44c897aafa8fe7ce40cceeb714f14f5efd9f8ef6",
+      "fresh_median_s": 0.6582150295143947,
+      "fresh_p95_s": 0.6923901275498793,
+      "interface_K": 0.43634084886286023,
+      "output_domain": "240825_full_field",
+      "peak_K": 3.6218003795974165,
+      "peak_vram_bytes": 6098136064,
+      "pg_pct": 2.8188215987281566,
+      "raw_K": 2.318094455192952,
+      "route": "U_direct240825",
+      "runtime_artifact": "/tmp/v6_p1i_u5_same_session_44c897a/U_direct240825.json",
+      "runtime_sha256": "75fd05a4a98e4a41aa770c948d7f47a43e2309758ee3ad39b8d0ed04a53920e6",
+      "source_K": 3.855983082965825
+    }
+  ],
+  "same_session": true,
+  "schema_version": "heat3d_v6_p1i_u5_direct_timing_freeze_closeout_v1",
+  "status": "completed_frozen"
+}
