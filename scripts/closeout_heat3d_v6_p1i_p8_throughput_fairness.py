@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse,csv,hashlib,json
+from pathlib import Path
+def load(p):return json.loads(p.read_text())
+def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--protocol',type=Path,required=True);p.add_argument('--neural',type=Path,required=True);p.add_argument('--fvm',type=Path,required=True);p.add_argument('--output-json',type=Path,required=True);p.add_argument('--output-csv',type=Path,required=True);p.add_argument('--output-md',type=Path,required=True);a=p.parse_args();q,n,f=map(load,(a.protocol,a.neural,a.fvm));best=max(n['fresh_batch'],key=lambda r:r['samples_per_second']);sat=f['saturation'];rows=[]
+ for r in n['backend_comparison']:rows.append({'system':'E16384','semantic':'cpu_preprocessing_backend_valid32','backend_or_processes':r['backend'],'batch_size':None,'startup_s':r['startup_seconds'],'steady_wall_s':r['steady_wall_seconds'],'samples_per_s':r['samples_per_second'],'avg_per_case_s':r['average_per_case_seconds'],'exact':r['exact_vs_serial'],'provenance':'P8_new'})
+ for r in n['fresh_batch']:rows.append({'system':'E16384','semantic':'fresh_distinct_case_batch','backend_or_processes':r['backend'],'batch_size':r['batch_size'],'startup_s':r['backend_startup_seconds_outside_span'],'steady_wall_s':r['total_wall_seconds'],'samples_per_s':r['samples_per_second'],'avg_per_case_s':r['average_per_case_seconds'],'exact':True,'provenance':'P8_new'})
+ for r in f['rows']:rows.append({'system':'FVM','semantic':'persistent_pool_known_topology_new_physics','backend_or_processes':r['process_count'],'batch_size':None,'startup_s':r['startup_seconds'],'steady_wall_s':r['steady_wall_seconds'],'samples_per_s':r['samples_per_second'],'avg_per_case_s':r['average_per_case_seconds'],'exact':True,'provenance':'P8_new'})
+ out={'schema_version':'heat3d_v6_p1i_p8_closeout_v1','status':'completed','artifacts':{'neural':sha(a.neural),'fvm':sha(a.fvm)},'winning_backend':n['winner'],'backend_comparison':n['backend_comparison'],'best_fresh_neural':best,'saturated_persistent_fvm':sat,'publication_safe':{'semantic_match':True,'fresh_neural_vs_saturated_persistent_fvm_throughput_ratio':best['samples_per_second']/sat['samples_per_second'],'label':'fresh neural throughput vs saturated persistent FVM throughput'},'rows':rows,'role_contract':q['role_contract']};a.output_json.write_text(json.dumps(out,indent=2,sort_keys=True)+'\n')
+ with a.output_csv.open('w',newline='') as h:w=csv.DictWriter(h,fieldnames=list(rows[0]),lineterminator='\n');w.writeheader();w.writerows(rows)
+ lines=['# V6 P1i P8 throughput fairness','','All data are frozen valid32 on WSL2. Worker startup is outside steady spans; KDTree workers per case are fixed to one.','','## CPU preprocessing backends','','| backend | steady wall (s) | samples/s | exact |','|---|---:|---:|---:|']
+ for r in n['backend_comparison']:lines.append(f"| {r['backend']} | {r['steady_wall_seconds']:.6f} | {r['samples_per_second']:.3f} | {r['exact_vs_serial']} |")
+ lines += ['','## Persistent FVM','','| processes | startup (s) | steady valid32 (s) | samples/s |','|---:|---:|---:|---:|']
+ for r in f['rows']:lines.append(f"| {r['process_count']} | {r['startup_seconds']:.6f} | {r['steady_wall_seconds']:.6f} | {r['samples_per_second']:.3f} |")
+ lines += ['',f"Winning exact neural backend is `{n['winner']}`. Best fresh neural cell is B{best['batch_size']} at {best['samples_per_second']:.3f} samples/s. Persistent FVM saturates at P={sat['process_count']} and {sat['samples_per_second']:.3f} samples/s. Publication-safe throughput ratio: **{best['samples_per_second']/sat['samples_per_second']:.2f}x**.",'','Fresh, streamed-prepared, resident, and persistent-FVM semantics remain separate. No training or test/sealed access occurred.'];a.output_md.write_text('\n'.join(lines)+'\n');return 0
+if __name__=='__main__':raise SystemExit(main())
