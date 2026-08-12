@@ -189,15 +189,17 @@ def main() -> int:
             phase=time.perf_counter(); anchor_group=host_tree(highn._prepare_group(
                 example=anchor,anchor=anchor,runtime=runtime,builder=builder,metadata=native,
                 edge_targets=p5r._compatible_targets(native_targets,native))); anchor_pack_s=time.perf_counter()-phase
-            phase=time.perf_counter(); output_group=host_tree(highn._prepare_group(
+            phase=time.perf_counter(); output_group_raw=u1._prepare_output_query_group_minimal(
                 example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
-                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric))); query_pack_s=time.perf_counter()-phase
+                edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric)); output_group=host_tree(output_group_raw); query_pack_s=time.perf_counter()-phase
             detail_started=time.perf_counter()
             phase=time.perf_counter(); graphs_raw=output_group["graphs"]; graph_extraction_s=time.perf_counter()-phase
             phase=time.perf_counter(); local_raw=u1._dummy_local_p2r(builder,asymmetric); dummy_local_p2r_s=time.perf_counter()-phase
             phase=time.perf_counter(); graphs=host_tree(graphs_raw); local=host_tree(local_raw); host_tree_s=time.perf_counter()-phase
             phase=time.perf_counter(); inputs_in=host_tree(anchor_group["inputs"]); inputs_out=host_tree(output_group["inputs"]); inputs_s=time.perf_counter()-phase
             phase=time.perf_counter(); kwargs=host_tree(u1._model_kwargs(anchor_group,output_group)); kwargs_s=time.perf_counter()-phase
+            output_group_keys_used = ["inputs", "graphs", "native_physics.control_volumes", "native_physics.reference_temperature", "native_physics.dirichlet_mask", "native_physics.prescribed_temperature"]
+            output_group_keys_removed = ["global_context", "qk_region_features", "scale_context", "scale_region_source_weights", "scale_region_volume_weights"]
             detail_total_s=time.perf_counter()-detail_started
             other_s=max(0.0,detail_total_s-(graph_extraction_s+dummy_local_p2r_s+host_tree_s+inputs_s+kwargs_s))
         phase=time.perf_counter(); mapping=None if direct else build_reconstruction_map(
@@ -217,6 +219,7 @@ def main() -> int:
         return {"sample_id":anchor.sample_id,"inputs_in":inputs_in,"inputs_out":inputs_out,"graphs":graphs,"local":local,
                 "kwargs":kwargs,"map_indices":map_indices,"map_weights":map_weights,"device":device,"selected":selected,
                 "selected_cv":selected_cv,"full_q":full_q,"support_delta":values,"full_delta":full_value,
+                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed},
                 "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
                           "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
                           "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
@@ -283,10 +286,11 @@ def main() -> int:
         "checkpoint_parameter_sha256_before": checkpoint_parameter_sha256_before,
         "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
         "checkpoint_parameters_unchanged":checkpoint_parameter_sha256_before==highn._tree_sha256(runtime["checkpoint"]["params"]),
-        "accuracy":{"support":qualification.metric_accumulate(metric_support,full=False),"full_field":qualification.metric_accumulate(metric_full,full=True)},
+        "accuracy":{"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
-        "padding":{"tracked_native":tracked_native,"actual_native":native_targets,"tracked_query":tracked_query,"actual_query":query_targets},
-        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"]} for r in prepared],
+        "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
+        "packing_optimization":{"mode":"minimal_output_query_v1","output_fields_copied":["inputs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_copied":True},
+        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"]} for r in prepared],
         "role_contract":protocol["role_contract"]}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     print(json.dumps({"status":result["status"],"resolution":args.resolution,"pg":result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],"e2e":timing["matched_continuous_e2e"]["median_seconds"]}))

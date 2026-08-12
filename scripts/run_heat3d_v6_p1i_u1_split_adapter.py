@@ -315,6 +315,25 @@ def _model_kwargs(anchor_group: Mapping[str, Any], output_group: Mapping[str, An
     }
 
 
+def _prepare_output_query_group_minimal(
+    *, example: Any, anchor: Any, runtime: Mapping[str, Any],
+    builder: Heat3DGraphBuilder, metadata: Any,
+    edge_targets: Mapping[str, int | None],
+) -> dict[str, Any]:
+    """Prepare only fields consumed by the frozen asymmetric output path."""
+    cached = highn._LoadedMetadataBuilder(builder, metadata)
+    padded = qualification.FixedEdgeTargetBuilder(cached, edge_targets)
+    groups = runner._make_v6_padded_groups_with_progress(
+        [example], runtime["stats"], padded, "p1i_u4_output_query_minimal",
+        False, "off", int(runtime["run_config"]["graph_seed"]), batch_size=1,
+        drop_last=False,
+    )
+    runner._attach_native_physics_to_groups(groups, {example.sample_id: example})
+    group = groups[0]
+    return {"inputs": group["inputs"], "graphs": group["graphs"],
+            "native_physics": group["native_physics"]}
+
+
 def _parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     for name in (
