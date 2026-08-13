@@ -92,6 +92,7 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--population-mode", choices=["frozen_valid32", "remaining_valid96"], default="frozen_valid32")
     parser.add_argument("--population-preflight", type=Path)
     parser.add_argument("--order-seed", type=int)
+    parser.add_argument("--asymmetric-mode", choices=["u_v1", "u_v2"], default="u_v1")
     return parser.parse_args()
 
 
@@ -100,7 +101,7 @@ def main() -> int:
     if jax.devices()[0].platform != "gpu":
         raise RuntimeError("U2 requires GPU")
     protocol = json.loads(args.protocol.read_text())
-    if protocol["status"] != "preregistered_before_execution":
+    if protocol["status"] not in {"preregistered_before_execution", "geometry_audit_frozen_before_execution"}:
         raise RuntimeError("U2 protocol not frozen")
     direct = args.resolution == 240825
     runtime = p5r._runtime(args)
@@ -165,11 +166,22 @@ def main() -> int:
         with jax.default_device(cpu):
             anchor_coords = highn.runner._graph_coords_for_example(anchor, runtime["stats"])
             native = builder.build_metadata(anchor_coords, key=graph_key); block(native)
-            asymmetric, audit = u1.prior_u1._strict_asymmetric_metadata(
-                builder, native, anchor_coords,
-                highn.runner._graph_coords_for_example(query_example, runtime["stats"]))
-            if not audit["query_inside_native_domain"]:
+            query_coords = highn.runner._graph_coords_for_example(query_example, runtime["stats"])
+            if args.asymmetric_mode == "u_v2":
+                asymmetric, audit = u1.prior_u1._u_v2_asymmetric_metadata(
+                    builder, native, anchor_coords, query_coords,
+                    numerical_tolerance=float(protocol["u_v2"]["normalized_numerical_tolerance"]),
+                    maximum_normalized_overshoot=float(protocol["u_v2"]["maximum_normalized_overshoot"]),
+                )
+            else:
+                asymmetric, audit = u1.prior_u1._strict_asymmetric_metadata(
+                    builder, native, anchor_coords, query_coords)
+            if args.asymmetric_mode == "u_v1" and not audit["query_inside_native_domain"]:
                 raise RuntimeError("query outside native domain")
+            if args.asymmetric_mode == "u_v2" and (
+                not all(audit["native_exact"].values()) or audit["repaired_uncovered_count"] != 0
+            ):
+                raise RuntimeError("U-v2 qualification graph gate failed")
             for targets, metadata in ((native_targets, native), (query_targets, asymmetric)):
                 for field in qualification.EDGE_FIELDS:
                     value = getattr(metadata, field)
@@ -215,10 +227,17 @@ def main() -> int:
             anchor_coords = highn.runner._graph_coords_for_example(anchor, runtime["stats"])
             phase=time.perf_counter(); native=builder.build_metadata(anchor_coords,key=graph_key);block(native)
             anchor_graph_s=time.perf_counter()-phase
-            phase=time.perf_counter(); asymmetric,audit=u1.prior_u1._strict_asymmetric_metadata(
-                builder,native,anchor_coords,highn.runner._graph_coords_for_example(query_example,runtime["stats"]));block(asymmetric)
+            phase=time.perf_counter(); query_coords=highn.runner._graph_coords_for_example(query_example,runtime["stats"])
+            if args.asymmetric_mode == "u_v2":
+                asymmetric,audit=u1.prior_u1._u_v2_asymmetric_metadata(
+                    builder,native,anchor_coords,query_coords,
+                    numerical_tolerance=float(protocol["u_v2"]["normalized_numerical_tolerance"]),
+                    maximum_normalized_overshoot=float(protocol["u_v2"]["maximum_normalized_overshoot"]));block(asymmetric)
+            else:
+                asymmetric,audit=u1.prior_u1._strict_asymmetric_metadata(builder,native,anchor_coords,query_coords);block(asymmetric)
             query_graph_s=time.perf_counter()-phase
-            if not audit["query_inside_native_domain"]: raise RuntimeError("query domain")
+            if args.asymmetric_mode == "u_v1" and not audit["query_inside_native_domain"]: raise RuntimeError("query domain")
+            if args.asymmetric_mode == "u_v2" and (not all(audit["native_exact"].values()) or audit["repaired_uncovered_count"] != 0): raise RuntimeError("U-v2 graph gate")
             phase=time.perf_counter(); anchor_group=host_tree(highn._prepare_group(
                 example=anchor,anchor=anchor,runtime=runtime,builder=builder,metadata=native,
                 edge_targets=p5r._compatible_targets(native_targets,native))); anchor_pack_s=time.perf_counter()-phase
@@ -280,8 +299,9 @@ def main() -> int:
                           "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
                           "reconstruction_apply":recon_s,"dummy_local_p2r":dummy_local_p2r_s,
                           "graph_extraction":graph_extraction_s,"host_tree":host_tree_s,"inputs":inputs_s,
-                          "kwargs":kwargs_s,"profiled_other":other_s,
+                "kwargs":kwargs_s,"profiled_other":other_s,
                           "matched_continuous_e2e":production_elapsed},
+                "asymmetric_graph_audit":audit,
                 "shape":{"output_nodes":int(np.asarray(values).shape[1]),"regional_nodes":int(np.asarray(asymmetric.x_rnodes).shape[1]-1),
                          "p2r_edges":int(np.asarray(asymmetric.p2r_edge_indices).shape[1]),
                          "r2r_edges":int(np.asarray(asymmetric.r2r_edge_indices).shape[1]),
@@ -338,6 +358,7 @@ def main() -> int:
             support_row=highn._metric_row(support_np,truth[row["selected"]],row["selected_cv"],coords[row["selected"]],layer[row["selected"]],row["full_q"][row["selected"]]);full_row=highn._metric_row(full_np,truth,cv,coords,layer,row["full_q"]);metric_support.append(support_row);metric_full.append(full_row);row["full_field_metrics"]=qualification.metric_accumulate([full_row],full=True);row["full_field_metric_components"]=metric_components(full_row)
     result={"schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1","status":"passed" if args.sample_count in (32,96) else "passed_smoke",
         "resolution":args.resolution,"output_mode":"direct" if direct else "reconstruction","sample_count":args.sample_count,
+        "inference_strategy":"U-v2" if args.asymmetric_mode=="u_v2" else "U-v1",
         "protocol_sha256":sha256(args.protocol),"checkpoint_sha256":args.checkpoint_sha256,
         "checkpoint_parameter_sha256_before": checkpoint_parameter_sha256_before,
         "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
@@ -347,7 +368,7 @@ def main() -> int:
         "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
-        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
+        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "role_contract":protocol["role_contract"],"population_mode":args.population_mode}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     if args.prediction_output is not None:

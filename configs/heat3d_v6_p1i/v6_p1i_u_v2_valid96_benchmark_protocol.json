@@ -1,0 +1,64 @@
+{
+  "schema_version": "heat3d_v6_p1i_u_v2_valid96_benchmark_protocol_v1",
+  "status": "preregistered_after_geometry_audit_before_accuracy_or_timing",
+  "baseline_commit": "42c0fcacdf6aecac11368f1f111194b5feead2b8",
+  "geometry_audit": {
+    "sha256": "e82eaa81f055b46429af22f9565f2c44b1af10f87578f17d3d63ebf8d53805ff",
+    "sample_count": 96,
+    "temperature_labels_read": false,
+    "outside_sample_count": 3,
+    "outside_node_count_total": 22230,
+    "outside_node_ratio_mean": 0.0009615384615384616,
+    "maximum_normalized_overshoot": 0.015873015873015817,
+    "native_exact_all": true,
+    "repaired_uncovered_count_total": 0
+  },
+  "u_v2": {
+    "name": "U-v2-direct240825",
+    "normalized_numerical_tolerance": 1e-6,
+    "maximum_normalized_overshoot": 0.25,
+    "normalization": "native1024_anchor_bbox_affine_unclamped",
+    "repair": "frozen_R2P_nearest_rnode_repair_after_unchanged_radius_predicate",
+    "native1024_p2r_r2r_rnodes": "bitwise_exact",
+    "forbidden": ["coordinate_clamp", "anchor_insertion", "graph_policy_change", "radius_change", "accuracy_driven_adjustment"]
+  },
+  "population": {
+    "role": "valid96_diagnostic_characterization",
+    "definition": "formal_valid128-frozen_valid32",
+    "sample_count": 96,
+    "selection_or_tuning": false
+  },
+  "routes": ["E16384_reconstruction", "U-v2-direct240825", "E240825_direct_control", "FVM240825"],
+  "output_nodes": 240825,
+  "seeds": [0],
+  "accuracy_metrics": ["point_global_true_rms_relative_rmse_pct", "raw_cv_weighted_rmse_K", "source_rmse_K", "peak_rmse_K", "interface_drop_rmse_K"],
+  "paired_bootstrap": {"seed": 20260814, "replicates": 20000, "confidence": 0.95, "unit": "sample"},
+  "timing": {
+    "boundary": "in_memory_k_q_BC_to_synchronized_240825_result",
+    "randomized_order_seeds": [20260814, 20260815, 20260816],
+    "fresh_single_case": true,
+    "resident_core": true,
+    "batch_scale_marginal_fresh_case_estimate": "measured_B32_minus_measured_B16_divided_by_16",
+    "closed_loop_added_case_latency": "queue_depth_1_complete_before_next_submit",
+    "saturated_streaming": {"fixed_queue_depth": 2, "report": ["submit_to_result", "inter_completion", "samples_per_second"]},
+    "neural_and_FVM_same_arrival_protocol": true,
+    "qualification_hash_CPU_equivalence_outside_service_wall": true,
+    "gpu_synchronize": true
+  },
+  "interpretation": {
+    "E16384": "production_reference_strategy_frozen",
+    "U-v2": "parallel_direct_inference_strategy_diagnostic_characterization",
+    "E240825": "architecture_control",
+    "FVM240825": "physical_reference"
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "E16384_modified": false,
+    "accuracy_driven_optimization": false
+  }
+}
