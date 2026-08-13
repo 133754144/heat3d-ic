@@ -67,6 +67,7 @@ def route_timing(payloads: list[dict[str, Any]], route: str) -> dict[str, Any]:
         latency=completion-submitted
         q2.append(float(np.median(latency)));q295.append(float(np.quantile(latency,.95)))
         throughput.append(float(len(values)/completion[-1]))
+    peak_vram=max(int(payload.get("peak_vram_bytes",payload.get("memory",{}).get("peak_bytes_in_use",0))) for payload in payloads)
     return {
         "randomized_order_count":3,
         "fresh_single_case":{"median_seconds":float(np.median(fresh)),"p95_seconds":float(max(fresh95))},
@@ -74,6 +75,7 @@ def route_timing(payloads: list[dict[str, Any]], route: str) -> dict[str, Any]:
         "batch_scale_marginal_fresh_case_estimate":{"definition":"actual_distinct_case_B32_minus_B16_divided_by_16","median_seconds":float(np.median(marginal)),"p95_seconds":float(max(marginal))},
         "closed_loop_added_case_latency":{"queue_depth":1,"median_seconds":float(np.median(q1)),"p95_seconds":float(max(q195))},
         "saturated_streaming":{"queue_depth":2,"worker_count":1,"arrival":"two_submitted_then_refill_after_completion","median_submit_to_result_seconds":float(np.median(q2)),"p95_submit_to_result_seconds":float(max(q295)),"median_throughput_samples_per_second":float(np.median(throughput))},
+        "peak_vram_bytes":peak_vram,
         "note":"Q2 arrival trace uses uninterrupted measured per-case service spans; no qualification, hash, metrics, or serialization is in service wall",
     }
 
@@ -135,6 +137,15 @@ def main() -> int:
     marginal=[float(row["marginal_B16_to_B32_seconds"]) for row in fvm_batch["rows"]]
     satlat=[rep["stream_submit_to_result"]["median_seconds"] for rep in sat["repeats"]];sat95=[rep["stream_submit_to_result"]["p95_seconds"] for rep in sat["repeats"]];satthr=[rep["streaming_samples_per_second"] for rep in sat["repeats"]]
     fvm_t={"randomized_order_count":3,"fresh_single_case":{"median_seconds":float(np.median(fresh)),"p95_seconds":float(max(fresh95))},"resident_core":{"definition":"prepared_system_solve_only_not_E2E","median_seconds":float(np.median(resident)),"p95_seconds":float(max(resident95))},"batch_scale_marginal_fresh_case_estimate":{"definition":"per_case_distribution_proxy_no_FVM_B16_B32_batch_API","median_seconds":float(np.median(marginal)),"p95_seconds":float(max(marginal))},"closed_loop_added_case_latency":{"queue_depth":1,"median_seconds":float(np.median(fresh)),"p95_seconds":float(max(fresh95))},"saturated_streaming":{"queue_depth":fvm["queue_depth"],"worker_count":fvm["saturation_process_count"],"median_submit_to_result_seconds":float(np.median(satlat)),"p95_submit_to_result_seconds":float(max(sat95)),"median_throughput_samples_per_second":float(np.median(satthr))}}
+    for route in routes.values():
+        timing=route["timing"]
+        timing["ratios_vs_FVM"]={
+            "fresh_speedup":fvm_t["fresh_single_case"]["median_seconds"]/timing["fresh_single_case"]["median_seconds"],
+            "resident_core_ratio":fvm_t["resident_core"]["median_seconds"]/timing["resident_core"]["median_seconds"],
+            "B16_to_B32_marginal_speedup":fvm_t["batch_scale_marginal_fresh_case_estimate"]["median_seconds"]/timing["batch_scale_marginal_fresh_case_estimate"]["median_seconds"],
+            "closed_loop_Q1_speedup":fvm_t["closed_loop_added_case_latency"]["median_seconds"]/timing["closed_loop_added_case_latency"]["median_seconds"],
+            "saturated_throughput_ratio":timing["saturated_streaming"]["median_throughput_samples_per_second"]/fvm_t["saturated_streaming"]["median_throughput_samples_per_second"],
+        }
     comparisons={"U-v2_minus_E16384":paired(uq,eq,protocol["paired_bootstrap"]["seed"],protocol["paired_bootstrap"]["replicates"]),"U-v2_minus_E240825":paired(uq,cq,protocol["paired_bootstrap"]["seed"],protocol["paired_bootstrap"]["replicates"])}
     artifacts=[a.protocol,a.u_qualification,a.e16384_qualification,a.e240825_qualification,*a.u_timing,*a.e16384_timing,*a.e240825_timing,a.fvm,a.fvm_batch]
     result={"schema_version":"heat3d_v6_p1i_u_v2_valid96_closeout_v1","status":"passed_final_freeze","population":"valid96_diagnostic_characterization","output_nodes":240825,"routes":routes,"FVM240825":{"accuracy_role":"reference_solution_zero_surrogate_error","timing":fvm_t},"paired_statistics":comparisons,"decision":{"production_reference":"E16384-reconstruction","parallel_direct_strategy":"U-v2-direct240825","architecture_control":"E240825-direct","valid32_architecture_optimization_closed":True,"test_or_sealed_opened":False},"artifacts":[{"path":str(x),"sha256":sha(x),"bytes":x.stat().st_size} for x in artifacts],"role_contract":protocol["role_contract"]}
@@ -142,8 +153,8 @@ def main() -> int:
     rows=[]
     for name,row in routes.items():
         acc=row["accuracy"];tim=row["timing"]
-        rows.append({"strategy":name,"domain":"240825_solver_nodes","PG_pct":acc[METRICS[0]],"raw_K":acc[METRICS[1]],"source_K":acc[METRICS[2]],"peak_K":acc[METRICS[3]],"interface_K":acc[METRICS[4]],"fresh_median_s":tim["fresh_single_case"]["median_seconds"],"fresh_p95_s":tim["fresh_single_case"]["p95_seconds"],"resident_median_s":tim["resident_core"]["median_seconds"],"marginal_B16_to_B32_s":tim["batch_scale_marginal_fresh_case_estimate"]["median_seconds"],"closed_loop_Q1_median_s":tim["closed_loop_added_case_latency"]["median_seconds"],"saturated_Q2_submit_median_s":tim["saturated_streaming"]["median_submit_to_result_seconds"],"saturated_throughput_samples_s":tim["saturated_streaming"]["median_throughput_samples_per_second"]})
-    rows.append({"strategy":"FVM240825","domain":"240825_solver_nodes_reference","PG_pct":0.0,"raw_K":0.0,"source_K":0.0,"peak_K":0.0,"interface_K":0.0,"fresh_median_s":fvm_t["fresh_single_case"]["median_seconds"],"fresh_p95_s":fvm_t["fresh_single_case"]["p95_seconds"],"resident_median_s":fvm_t["resident_core"]["median_seconds"],"marginal_B16_to_B32_s":fvm_t["batch_scale_marginal_fresh_case_estimate"]["median_seconds"],"closed_loop_Q1_median_s":fvm_t["closed_loop_added_case_latency"]["median_seconds"],"saturated_Q2_submit_median_s":fvm_t["saturated_streaming"]["median_submit_to_result_seconds"],"saturated_throughput_samples_s":fvm_t["saturated_streaming"]["median_throughput_samples_per_second"]})
+        rows.append({"strategy":name,"domain":"240825_solver_nodes","PG_pct":acc[METRICS[0]],"raw_K":acc[METRICS[1]],"source_K":acc[METRICS[2]],"peak_K":acc[METRICS[3]],"interface_K":acc[METRICS[4]],"fresh_median_s":tim["fresh_single_case"]["median_seconds"],"fresh_p95_s":tim["fresh_single_case"]["p95_seconds"],"resident_median_s":tim["resident_core"]["median_seconds"],"marginal_B16_to_B32_s":tim["batch_scale_marginal_fresh_case_estimate"]["median_seconds"],"closed_loop_Q1_median_s":tim["closed_loop_added_case_latency"]["median_seconds"],"saturated_Q2_submit_median_s":tim["saturated_streaming"]["median_submit_to_result_seconds"],"saturated_throughput_samples_s":tim["saturated_streaming"]["median_throughput_samples_per_second"],"peak_vram_bytes":tim["peak_vram_bytes"],**tim["ratios_vs_FVM"]})
+    rows.append({"strategy":"FVM240825","domain":"240825_solver_nodes_reference","PG_pct":0.0,"raw_K":0.0,"source_K":0.0,"peak_K":0.0,"interface_K":0.0,"fresh_median_s":fvm_t["fresh_single_case"]["median_seconds"],"fresh_p95_s":fvm_t["fresh_single_case"]["p95_seconds"],"resident_median_s":fvm_t["resident_core"]["median_seconds"],"marginal_B16_to_B32_s":fvm_t["batch_scale_marginal_fresh_case_estimate"]["median_seconds"],"closed_loop_Q1_median_s":fvm_t["closed_loop_added_case_latency"]["median_seconds"],"saturated_Q2_submit_median_s":fvm_t["saturated_streaming"]["median_submit_to_result_seconds"],"saturated_throughput_samples_s":fvm_t["saturated_streaming"]["median_throughput_samples_per_second"],"peak_vram_bytes":"N/A","fresh_speedup":1.0,"resident_core_ratio":1.0,"B16_to_B32_marginal_speedup":1.0,"closed_loop_Q1_speedup":1.0,"saturated_throughput_ratio":1.0})
     with a.output_csv.open("w",newline="") as h:
         w=csv.DictWriter(h,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
     lines=["# P1i U-v2 valid96 performance closeout","","所有 accuracy 均为 frozen valid96 diagnostic/characterization；未访问 test/sealed，未训练。E16384 保持 production/reference，U-v2 是并列 direct inference strategy，E240825 仅作 architecture control。","","| strategy | PG % | raw K | source K | peak K | interface K | fresh med s | resident med s | Q1 med s | Q2 throughput/s |","|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]

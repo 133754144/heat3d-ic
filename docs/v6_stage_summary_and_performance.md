@@ -50,33 +50,33 @@ FVM240825 生成冻结 full-field 标签，是 reference solution。surrogate �
 | E240825 direct | architecture control | 240825 / 256 | 3.067098 | 2.488382 | 4.734604 | 7.206920 | 0.474357 | post-freeze unified |
 | U-direct240825 | 1024 编码/处理，全场解码 | 240825 / 256 | 2.818831 | 2.318101 | 3.856026 | 3.622174 | 0.436350 | post-freeze unified |
 
-历史 B/E resolution rows 用于架构沿革；最终 timing 不再复用 P5-R 或 P9/U5 的旧 latency。
+历史 B/E resolution rows 用于架构沿革；最终 timing 不再复用 P5-R 或 P9/U5 的旧 latency。下表为最终的 valid96 同一 harness 数据，替代此前 valid32 post-freeze timing 表。
 
 ## 统一 240825 输出域性能
 
-同一 WSL2 主机使用 RTX 5070 GPU 与 Ryzen 7 9700X CPU。三组 randomized valid32 order 为 `20260813/20260814/20260815`。GPU 在计时终点显式同步；accuracy/hash/equivalence/oracle/serialization 均不进入 production span。randomized order 的 support、真实 graph、native anchor k/q/CV、功率与体积守恒语义一致；group tree hash 中与顺序有关的 `sample_idx` 叶不被误作物理漂移。
+同一 WSL2 主机使用 RTX 5070 GPU 与 Ryzen 7 9700X CPU。三组 randomized valid96 order 为 `20260814/20260815/20260816`。GPU 在计时终点显式同步；accuracy/hash/equivalence/oracle/serialization 均不进入 service span。randomized order 的 population、support、真实 graph、native anchor k/q/CV、功率与体积守恒语义一致。
 
 四层时间语义：
 
 1. **fresh_single_case**：新 k/q/BC 从连续 CPU preprocessing 到同步的 240825 结果。
 2. **resident_core**：neural prepared/resident inference；FVM 是 prepared-system solve-only，明确不是 E2E。
-3. **batch_scale_marginal_fresh_case_estimate**：由完整队列 wall-time 与首例 fresh median 计算的预注册估计量。
-4. **true_streaming_added_case_latency**：persistent service 中不同新 k/q/BC 从 submit 到 240825 结果；另报 inter-completion 与吞吐。
+3. **batch_scale_marginal_fresh_case_estimate**：真实不同工况 `B16→B32` 的 `(T32−T16)/16`；不是重复同一输入。
+4. **closed_loop_added_case_latency / saturated_streaming**：Q=1 必须完成后再提交；Q=2 则先提交两个请求、每完成一个补一个，另报 submit latency 与吞吐。
 
-| strategy | fresh median / p95 s | resident median / p95 s | batch marginal estimate s | streaming submit→result median / p95 s | inter-completion median s | throughput samples/s | VRAM GiB |
+| strategy | fresh median / p95 s | resident median s | B16→B32 marginal s | Q1 median s | Q2 submit median s | Q2 throughput/s | VRAM GiB |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| E16384-reconstruction | 3.133268 / 3.544013 | 0.007229 / 0.008303 | 2.928158 | 3.180663 / 3.588221 | 3.229037 | 0.340977 | 0.280 |
-| U-direct240825 | 0.570639 / 0.601810 | 0.057747 / 0.106274 | 4.283055 | 0.610898 / 0.642747 | 4.290773 | 0.239973 | 5.679 |
-| E240825-direct control | 2.403566 / 2.600600 | 0.093565 / 0.094630 | 2.433372 | 2.445728 / 2.643123 | 2.646846 | 0.411038 | 3.810 |
-| FVM240825 | 1.646838 / 1.888548 | 1.626559 / 1.886173 solve-only | 1.075313 | 18.470985 / 34.134949 | 1.124629 | 0.899688 | N/A |
+| E16384-reconstruction | 2.383024 / 3.625292 | 0.008487 | 2.643485 | 2.424122 | 4.681357 | 0.414672 | 0.302 |
+| U-v2-direct240825 | 3.229151 / 3.917655 | 0.056936 | 3.495064 | 3.271916 | 6.322536 | 0.310909 | 3.721 |
+| E240825-direct control | 2.042407 / 2.636335 | 0.094279 | 2.046555 | 2.087861 | 4.025304 | 0.504750 | 3.822 |
+| FVM240825 | 1.713886 / 1.906241 | 1.498608 solve-only | 1.111950 | 1.713886 | 2.211494 | 0.904681 | N/A |
 
 FVM P2 是该 23 GiB 主机上能常驻且实测的饱和配置；P4/P8 因 prepared-system worker residency 失败而不作为结果。队列中的 FVM submit→result 包含排队等待，因此不能与 inter-completion 混为一谈。
 
-- fresh single-case：U-direct 相对 FVM 为 `2.886×`；E16384 与 E240825 分别只有 `0.526×`、`0.685×`，即 fresh E2E 比 FVM 慢。
-- resident-core 比率：E16384/U/E240825 相对 FVM solve-only 分别约 `225.0×/28.2×/17.4×`；这只是 prepared core ratio，不能称作 E2E speedup。
-- true streaming throughput：E16384/U/E240825 分别为 saturated FVM 的 `0.379×/0.267×/0.457×`。本协议下 neural streaming throughput 没有超过 FVM。
+- fresh single-case：E16384/U-v2/E240825 相对 FVM speedup 分别为 `0.719×/0.531×/0.839×`；三条 neural fresh route 均慢于 FVM。
+- resident-core 比率：E16384/U-v2/E240825 相对 FVM solve-only 分别约 `176.6×/26.3×/15.9×`；这只是 prepared core ratio，不能称作 E2E speedup。
+- saturated throughput：E16384/U-v2/E240825 分别为 FVM 的 `0.458×/0.344×/0.558×`。本协议下 neural streaming throughput 没有超过 persistent FVM。
 
-因此可发表优势必须限定为：U 的低 fresh latency、neural resident core 的低成本、GPU 并行潜力以及同 checkpoint 跨输出分辨率；不能继续沿用旧 P9 的 `3.40×` fresh-throughput 结论，也不能把 resident ratio 说成 production E2E speedup。
+因此可发表优势必须限定为：controlled-error、neural resident core 的低成本、GPU 并行潜力以及同 checkpoint 跨输出分辨率；不能继续沿用旧 P9 的 `3.40×` fresh-throughput 结论，也不能把 resident ratio 说成 production E2E speedup。
 
 ## 独立 valid96 确认
 
@@ -84,10 +84,11 @@ FVM P2 是该 23 GiB 主机上能常驻且实测的饱和配置；P4/P8 因 prep
 |---|---:|---:|---:|---:|---:|
 | E16384-reconstruction | 3.356615 ± 0.061438 | 2.456785 ± 0.047238 | 4.095412 ± 0.079811 | 5.312322 ± 0.162981 | 0.419341 ± 0.036215 |
 | E240825-direct control | 4.267199 ± 0.028495 | 2.882178 ± 0.075719 | 6.136646 ± 0.127421 | 10.323850 ± 0.397988 | 0.573623 ± 0.051114 |
+| U-v2 direct (seed0 diagnostic) | 3.460815 | 2.435950 | 4.228456 | 5.725792 | 0.387372 |
 
 E16384 − E240825 的 paired bootstrap 95% CI 在三 seed、全部五项指标上均严格小于零。例如 PG 差值为 seed0 `−0.8702 pp`（CI `[-1.1076,-0.6565]`）、seed1 `−0.9789 pp`（`[-1.2451,-0.7459]`）、seed2 `−0.8826 pp`（`[-1.1254,-0.6665]`）。这支持 E16384 的独立确认。
 
-历史 U-v1 在 seed0 valid96 遇到 formal-valid query 超出 native domain，执行在任何 accuracy 统计前 fail-closed。随后预注册的 geometry-only audit 证明越界只发生于 3/96 样本、共 22,230/23,119,200 查询节点，最大 normalized overshoot 为 0.015873。U-v2 未回到 valid32 调优，也未改 graph policy/radius/checkpoint；其 valid96 结果仅作 diagnostic/characterization，并与本轮统一 timing matrix 一起冻结。
+历史 U-v1 在 seed0 valid96 遇到 formal-valid query 超出 native domain，执行在任何 accuracy 统计前 fail-closed。随后预注册的 geometry-only audit 证明越界只发生于 3/96 样本、共 22,230/23,119,200 查询节点，最大 normalized overshoot 为 0.015873。U-v2 未回到 valid32 调优，也未改 graph policy/radius/checkpoint；其 valid96 结果仅作 diagnostic/characterization。U-v2−E16384 的 PG 为 `+0.09336 pp`（95% CI `[+0.04449,+0.15736]`），raw CV RMSE 为 `−0.04365 K`（`[-0.07617,-0.00237]`）；source/peak/interface CI 跨零。U-v2 显著优于 E240825 control，但不足以取代 E16384 production/reference。
 
 ## 可发表优势与边界
 
@@ -95,7 +96,7 @@ E16384 − E240825 的 paired bootstrap 95% CI 在三 seed、全部五项指标�
 
 - E16384 提供约 `3.36%` valid96 full-field PG 的 controlled-error surrogate，并跨三 seed 稳定优于同架构的 E240825-direct control。
 - GPU resident core 具有毫秒级延迟和低边际计算潜力，适合在 support/graph 已准备的 parametric sweep 与 design-space exploration。
-- 同一 checkpoint 可进行 fixed-resolution encoding 与不同输出分辨率查询；U 在 valid32 证明可直接生成 240825-node 输出，但尚不能覆盖完整 formal-valid population。
+- 同一 checkpoint 可进行 fixed-resolution encoding 与不同输出分辨率查询；U-v2 已在 valid96 直接生成 240825-node 输出，但该结果只作 characterization，不作为新模型选择。
 - surrogate 避免每个工况都执行完整物理线性求解，适合批量 GPU 推理研究；然而本轮真实 fresh streaming 吞吐没有超过 persistent FVM。
 
 限制同样明确：FVM 精度和物理一致性占优；surrogate 存在约 2.7%–4.3% 的 population/route-dependent PG，source/peak 误差更大；模型仅覆盖冻结 P1i layered perfect-contact 分布。不同 timing 层不可互换，prepared resident core 不能代表 fresh production E2E。
@@ -104,8 +105,8 @@ E16384 − E240825 的 paired bootstrap 95% CI 在三 seed、全部五项指标�
 
 - **GO — E16384-reconstruction**：唯一 production/reference architecture；valid32 选择已关闭，valid96 三 seed 独立确认通过。
 - **CONTROL — E240825-direct**：仅保留 architecture control；精度被 E16384 明确支配。
-- **NO-GO for formal deployment — U-direct240825**：保留 valid32 cross-resolution decoding 证明，但 formal-valid native-domain gate 失败，不能晋级生产。
+- **DIAGNOSTIC — U-v2-direct240825**：valid96 query-domain repair 与 accuracy/timing 均冻结；作为 parallel direct inference strategy 保留，不取代 E16384 production/reference。
 - **B strategy**：作为历史 adaptive inference strategy 保留，不再搜索或优化。
 - **Performance freeze**：采用本报告四层统一 240825-node timing；废弃与该边界冲突的旧 P9/U5 latency 或 speedup 组合。
 
-机器可读证据见 `configs/heat3d_v6_p1i/v6_p1i_post_freeze_confirmation_closeout.json`；统一表见 `docs/v6_p1i_post_freeze_performance.csv` 与 `docs/v6_p1i_post_freeze_confirmation.csv`。从此不得依据 valid32 继续优化 architecture/route/graph/packing/model；test/sealed 仍保持关闭。
+机器可读证据见 `configs/heat3d_v6_p1i/v6_p1i_u_v2_valid96_closeout.json`；统一表见 `docs/v6_p1i_u_v2_valid96_performance.csv`。从此不得依据 valid32 继续优化 architecture/route/graph/packing/model；test/sealed 仍保持关闭。

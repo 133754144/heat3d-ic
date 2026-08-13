@@ -1,0 +1,385 @@
+{
+  "FVM240825": {
+    "accuracy_role": "reference_solution_zero_surrogate_error",
+    "timing": {
+      "batch_scale_marginal_fresh_case_estimate": {
+        "definition": "per_case_distribution_proxy_no_FVM_B16_B32_batch_API",
+        "median_seconds": 1.111949585887487,
+        "p95_seconds": 1.132353451626841
+      },
+      "closed_loop_added_case_latency": {
+        "median_seconds": 1.7138861099956557,
+        "p95_seconds": 1.9062405356671661,
+        "queue_depth": 1
+      },
+      "fresh_single_case": {
+        "median_seconds": 1.7138861099956557,
+        "p95_seconds": 1.9062405356671661
+      },
+      "randomized_order_count": 3,
+      "resident_core": {
+        "definition": "prepared_system_solve_only_not_E2E",
+        "median_seconds": 1.4986079735681415,
+        "p95_seconds": 1.547285298933275
+      },
+      "saturated_streaming": {
+        "median_submit_to_result_seconds": 2.211494248593226,
+        "median_throughput_samples_per_second": 0.9046814606306947,
+        "p95_submit_to_result_seconds": 2.4692191820940934,
+        "queue_depth": 2,
+        "worker_count": 2
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "bytes": 3454,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_valid96_benchmark_protocol.json",
+      "sha256": "6c0cb492f98aef2278aa5eb69e20f8239fe9fd79d9ac9d575a061947971f3c98"
+    },
+    {
+      "bytes": 498961,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/valid96_seed0_qualification.json",
+      "sha256": "a82e51306390b2988e18a1825f3132c851070aa5e882932bdbf61a9390227bbf"
+    },
+    {
+      "bytes": 269876,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_post_freeze_raw/confirmation_seed0/seed0_E16384_reconstruction.json",
+      "sha256": "95028df4bc9fab7466c0d4383b069908bf086554657c67751ae2dc808465c090"
+    },
+    {
+      "bytes": 269849,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_post_freeze_raw/confirmation_seed0/seed0_E240825_direct.json",
+      "sha256": "7f9a894fb4352f4b0c6ad1daa930464a22f5123c9cca8175b09f80dd3e3514e4"
+    },
+    {
+      "bytes": 403884,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_clean_timing_20260814.json",
+      "sha256": "ce906f96b3054ffd6993f8fb0bd45a1af5f1e4f1874f706aab675ebe86601440"
+    },
+    {
+      "bytes": 403906,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_clean_timing_20260815.json",
+      "sha256": "b20f4c1153f44a221da9c08c49c24f3dbedca9b0a7d13b0922d56bfb587260e1"
+    },
+    {
+      "bytes": 403810,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_clean_timing_20260816.json",
+      "sha256": "9f032511fe3082482a14259165eec7c6c0178339eb033ea46363b403018a1f45"
+    },
+    {
+      "bytes": 175507,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_serial_timing_E16384_reconstruction_20260814.json",
+      "sha256": "0a04a2f96574d0153682108e7ee87f2a6eec99a0fb1e77897a9db9b506f7154d"
+    },
+    {
+      "bytes": 175494,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_serial_timing_E16384_reconstruction_20260815.json",
+      "sha256": "efb08deedddb15fb8f0dd9f5cec66fa33ea9c980c5229c19b5816394de9ac245"
+    },
+    {
+      "bytes": 175535,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_serial_timing_E16384_reconstruction_20260816.json",
+      "sha256": "9b7a9a5ebe93252087b38507e1e3345eaff55fafb7aae36cb2183d3f54881dbc"
+    },
+    {
+      "bytes": 175754,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_serial_timing_E240825_direct_20260814.json",
+      "sha256": "6ca3215ae330ebc08a994ca371164a38d527acd7ec155290d3df46ecd276e87b"
+    },
+    {
+      "bytes": 175723,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_serial_timing_E240825_direct_20260815.json",
+      "sha256": "0ec3003e744bbf02ed83c05515f6fec2036c517f121f7c2df1686e6ec0d0c966"
+    },
+    {
+      "bytes": 175729,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_serial_timing_E240825_direct_20260816.json",
+      "sha256": "86fc4006750a5ebaf38f698346cdf9cb7948fb502651cbca8927e1647b770305"
+    },
+    {
+      "bytes": 33988,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_valid96_fvm_v2.json",
+      "sha256": "c2e19d8b4e19bfd267a72595854dd84ad576534b4cbbb3a1ff6074e1179bd1cb"
+    },
+    {
+      "bytes": 1094,
+      "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_raw/timing/v6_p1i_u_v2_serial_fvm_batch_prefix.json",
+      "sha256": "5344a94751f8d9b9667846848becfea316ab3b432325031daf85b18acaa01889"
+    }
+  ],
+  "decision": {
+    "architecture_control": "E240825-direct",
+    "parallel_direct_strategy": "U-v2-direct240825",
+    "production_reference": "E16384-reconstruction",
+    "test_or_sealed_opened": false,
+    "valid32_architecture_optimization_closed": true
+  },
+  "output_nodes": 240825,
+  "paired_statistics": {
+    "U-v2_minus_E16384": {
+      "interface_drop_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -0.013171789656060922,
+          0.01583822465249125
+        ],
+        "left_minus_right": 0.001164829828921854,
+        "left_win_rate": 0.5208333333333334
+      },
+      "peak_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -0.24398732875377904,
+          0.6754554329186684
+        ],
+        "left_minus_right": 0.22607577736957296,
+        "left_win_rate": 0.5520833333333334
+      },
+      "point_global_true_rms_relative_rmse_pct": {
+        "bootstrap_95pct_CI": [
+          0.044486984844791765,
+          0.15735718506998034
+        ],
+        "left_minus_right": 0.09335694922463844,
+        "left_win_rate": 0.3854166666666667
+      },
+      "raw_cv_weighted_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -0.07616611649954222,
+          -0.0023689098521884064
+        ],
+        "left_minus_right": -0.04364842722076068,
+        "left_win_rate": 0.7708333333333334
+      },
+      "source_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -0.01601403199014277,
+          0.2881141959213221
+        ],
+        "left_minus_right": 0.14085228084608126,
+        "left_win_rate": 0.4479166666666667
+      }
+    },
+    "U-v2_minus_E240825": {
+      "interface_drop_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -0.16487869850790085,
+          -0.11240693570389668
+        ],
+        "left_minus_right": -0.13886575523428568,
+        "left_win_rate": 0.8645833333333334
+      },
+      "peak_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -5.695698013364316,
+          -3.9200679198713146
+        ],
+        "left_minus_right": -4.808610399889851,
+        "left_win_rate": 0.9895833333333334
+      },
+      "point_global_true_rms_relative_rmse_pct": {
+        "bootstrap_95pct_CI": [
+          -0.9771840241613068,
+          -0.5856949269609594
+        ],
+        "left_minus_right": -0.7768531777509255,
+        "left_win_rate": 0.9479166666666666
+      },
+      "raw_cv_weighted_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -0.6237809538739687,
+          -0.38663498322825557
+        ],
+        "left_minus_right": -0.5025970825565973,
+        "left_win_rate": 0.9583333333333334
+      },
+      "source_rmse_K": {
+        "bootstrap_95pct_CI": [
+          -2.2209499045936414,
+          -1.350004055726777
+        ],
+        "left_minus_right": -1.7816339079724441,
+        "left_win_rate": 0.9479166666666666
+      }
+    }
+  },
+  "population": "valid96_diagnostic_characterization",
+  "role_contract": {
+    "E16384_modified": false,
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid"
+    ],
+    "accuracy_driven_optimization": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "routes": {
+    "E16384-reconstruction": {
+      "accuracy": {
+        "background_rmse_K": 2.471893199451925,
+        "bottom_rmse_K": 1.5269581029758774,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.3862066809958976,
+        "layer_mean_rmse_K": 2.3482180457147854,
+        "peak_rmse_K": 5.499716179896907,
+        "point_global_true_rms_relative_rmse_pct": 3.367457635538948,
+        "raw_cv_weighted_rmse_K": 2.479598423158912,
+        "sample_count": 96,
+        "sample_first_cv_relative_rmse_pct": 3.040926211672756,
+        "source_rmse_K": 4.087603797006549,
+        "top_rmse_K": 2.2804276711930664
+      },
+      "timing": {
+        "batch_scale_marginal_fresh_case_estimate": {
+          "definition": "actual_distinct_case_B32_minus_B16_divided_by_16",
+          "median_seconds": 2.643485293039703,
+          "p95_seconds": 2.8107579237548634
+        },
+        "closed_loop_added_case_latency": {
+          "median_seconds": 2.424122100463137,
+          "p95_seconds": 3.6672874207724817,
+          "queue_depth": 1
+        },
+        "fresh_single_case": {
+          "median_seconds": 2.3830243170959875,
+          "p95_seconds": 3.6252922254498117
+        },
+        "note": "Q2 arrival trace uses uninterrupted measured per-case service spans; no qualification, hash, metrics, or serialization is in service wall",
+        "peak_vram_bytes": 323998976,
+        "randomized_order_count": 3,
+        "ratios_vs_FVM": {
+          "B16_to_B32_marginal_speedup": 0.4206377046300392,
+          "closed_loop_Q1_speedup": 0.7070131119501826,
+          "fresh_speedup": 0.7192063033935968,
+          "resident_core_ratio": 176.57364304188553,
+          "saturated_throughput_ratio": 0.45836222794664433
+        },
+        "resident_core": {
+          "median_seconds": 0.008487155544571579,
+          "p95_seconds": 0.013025070074945688
+        },
+        "saturated_streaming": {
+          "arrival": "two_submitted_then_refill_after_completion",
+          "median_submit_to_result_seconds": 4.681356558925472,
+          "median_throughput_samples_per_second": 0.4146718098767096,
+          "p95_submit_to_result_seconds": 6.9859374755760655,
+          "queue_depth": 2,
+          "worker_count": 1
+        }
+      }
+    },
+    "E240825-direct-control": {
+      "accuracy": {
+        "background_rmse_K": 2.9216014268369412,
+        "bottom_rmse_K": 1.9282004302799882,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.5262372660591051,
+        "layer_mean_rmse_K": 2.56451426788974,
+        "peak_rmse_K": 10.534402357156331,
+        "point_global_true_rms_relative_rmse_pct": 4.237667762514514,
+        "raw_cv_weighted_rmse_K": 2.9385470784947483,
+        "sample_count": 96,
+        "sample_first_cv_relative_rmse_pct": 3.7241624322993085,
+        "source_rmse_K": 6.010089985825075,
+        "top_rmse_K": 1.7877985165964472
+      },
+      "timing": {
+        "batch_scale_marginal_fresh_case_estimate": {
+          "definition": "actual_distinct_case_B32_minus_B16_divided_by_16",
+          "median_seconds": 2.0465547820640495,
+          "p95_seconds": 2.2147193438140675
+        },
+        "closed_loop_added_case_latency": {
+          "median_seconds": 2.087860601837747,
+          "p95_seconds": 2.6780519759631716,
+          "queue_depth": 1
+        },
+        "fresh_single_case": {
+          "median_seconds": 2.0424070054432377,
+          "p95_seconds": 2.636334730894305
+        },
+        "note": "Q2 arrival trace uses uninterrupted measured per-case service spans; no qualification, hash, metrics, or serialization is in service wall",
+        "peak_vram_bytes": 4103411968,
+        "randomized_order_count": 3,
+        "ratios_vs_FVM": {
+          "B16_to_B32_marginal_speedup": 0.5433275452152969,
+          "closed_loop_Q1_speedup": 0.8208814843706919,
+          "fresh_speedup": 0.8391501328716373,
+          "resident_core_ratio": 15.895525978271541,
+          "saturated_throughput_ratio": 0.5579307269583595
+        },
+        "resident_core": {
+          "median_seconds": 0.09427860239520669,
+          "p95_seconds": 0.09494292287854478
+        },
+        "saturated_streaming": {
+          "arrival": "two_submitted_then_refill_after_completion",
+          "median_submit_to_result_seconds": 4.0253038693917915,
+          "median_throughput_samples_per_second": 0.504749584995434,
+          "p95_submit_to_result_seconds": 5.012843494769186,
+          "queue_depth": 2,
+          "worker_count": 1
+        }
+      }
+    },
+    "U-v2-direct240825": {
+      "accuracy": {
+        "background_rmse_K": 2.4270749828006335,
+        "bottom_rmse_K": 1.5679654159301282,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.38737151082481946,
+        "layer_mean_rmse_K": 2.4673462401768744,
+        "peak_rmse_K": 5.72579195726648,
+        "point_global_true_rms_relative_rmse_pct": 3.460814584763588,
+        "raw_cv_weighted_rmse_K": 2.4359499959381514,
+        "sample_count": 96,
+        "sample_first_cv_relative_rmse_pct": 2.978072694705974,
+        "source_rmse_K": 4.228456077852633,
+        "top_rmse_K": 2.3074075714253284
+      },
+      "timing": {
+        "batch_scale_marginal_fresh_case_estimate": {
+          "definition": "actual_distinct_case_B32_minus_B16_divided_by_16",
+          "median_seconds": 3.495064221249777,
+          "p95_seconds": 3.504488434686209
+        },
+        "closed_loop_added_case_latency": {
+          "median_seconds": 3.2719160970300436,
+          "p95_seconds": 3.9591748294769786,
+          "queue_depth": 1
+        },
+        "fresh_single_case": {
+          "median_seconds": 3.229150996543467,
+          "p95_seconds": 3.917654587130528
+        },
+        "note": "Q2 arrival trace uses uninterrupted measured per-case service spans; no qualification, hash, metrics, or serialization is in service wall",
+        "peak_vram_bytes": 3995909632,
+        "randomized_order_count": 3,
+        "ratios_vs_FVM": {
+          "B16_to_B32_marginal_speedup": 0.3181485419143092,
+          "closed_loop_Q1_speedup": 0.5238172554459358,
+          "fresh_speedup": 0.5307544031945938,
+          "resident_core_ratio": 26.320791138389126,
+          "saturated_throughput_ratio": 0.3436669782323436
+        },
+        "resident_core": {
+          "median_seconds": 0.05693628150038421,
+          "p95_seconds": 0.05984043545322493
+        },
+        "saturated_streaming": {
+          "arrival": "two_submitted_then_refill_after_completion",
+          "median_submit_to_result_seconds": 6.3225358235649765,
+          "median_throughput_samples_per_second": 0.31090914383777374,
+          "p95_submit_to_result_seconds": 7.389878948102705,
+          "queue_depth": 2,
+          "worker_count": 1
+        }
+      }
+    }
+  },
+  "schema_version": "heat3d_v6_p1i_u_v2_valid96_closeout_v1",
+  "status": "passed_final_freeze"
+}
