@@ -1,0 +1,57 @@
+{
+  "schema_version": "heat3d_v6_p1i_post_freeze_confirmation_protocol_v1",
+  "status": "preregistered_before_execution",
+  "baseline_commit": "ded92ad485c003781cdae6d4d45a05c11d1b33c1",
+  "freeze_scope": {
+    "no_valid32_route_graph_packing_or_model_optimization": true,
+    "training": false,
+    "test": false,
+    "sealed": false
+  },
+  "inference_strategies": {
+    "B": "adaptive query support with Nr=N/8 then 240825 reconstruction",
+    "E": "fixed Nr=256 query support then 240825 reconstruction",
+    "U": "native1024 encode/process and asymmetric direct full-grid decode"
+  },
+  "performance": {
+    "population": "frozen_valid32",
+    "sample_count": 32,
+    "routes": ["E16384_reconstruction", "U_direct240825", "FVM240825", "E240825_direct_control"],
+    "output_nodes": 240825,
+    "randomized_order_seeds": [20260813, 20260814, 20260815],
+    "persistent_service": true,
+    "untimed_warmup": true,
+    "gpu_synchronize": true,
+    "timing_layers": ["fresh_single_case", "resident_core", "batch_scale_marginal_fresh_case_estimate", "true_streaming_added_case_latency"],
+    "streaming_definition": "different new k/q/BC; submit to synchronized 240825 result; also record inter-completion interval",
+    "production_exclusions": ["accuracy metrics", "hashing", "equivalence audit", "oracle", "serialization"],
+    "fvm_resident_core": "prepared-system solve-only; explicitly not end-to-end"
+  },
+  "confirmation": {
+    "formal_population": "valid_iid_128",
+    "development_population": "frozen_valid32",
+    "independent_population": "valid96=formal_valid128-valid32",
+    "population_rule": "set difference after proving valid32 subset; preserve formal manifest order",
+    "routes": ["E16384_reconstruction", "U_direct240825", "E240825_direct_control"],
+    "seeds": [0, 1, 2],
+    "primary_seed": 0,
+    "additional_seeds_rule": "run seed1/2 only with their frozen point-global checkpoints and identical route semantics",
+    "metrics": ["point_global_true_rms_relative_rmse_pct", "raw_cv_weighted_rmse_K", "source_rmse_K", "peak_rmse_K", "interface_drop_rmse_K"],
+    "paired_bootstrap": {"seed": 20260813, "replicates": 20000, "confidence": 0.95, "unit": "sample", "difference": "left_minus_right"},
+    "selection_or_tuning": false
+  },
+  "checkpoint_sha256": {
+    "seed0": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "seed1": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7",
+    "seed2": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49"
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "route_graph_packing_model_modified": false
+  }
+}
