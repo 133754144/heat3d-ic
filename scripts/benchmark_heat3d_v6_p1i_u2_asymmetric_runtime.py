@@ -414,7 +414,7 @@ def main() -> int:
     prepared=[]
     for number,anchor in enumerate(anchors,1):
         prepared.append(prepare_one(anchor,retain_device=False))
-        print(f"[U-v2] {number}/{len(anchors)}",flush=True)
+        print(f"[{args.asymmetric_mode}] {number}/{len(anchors)}",flush=True)
     if any(row["shape"]["output_nodes"] != args.resolution for row in prepared): raise RuntimeError("output shape")
     if any(not np.all(np.isfinite(np.asarray(row["full_prediction"]))) for row in prepared): raise RuntimeError("nonfinite")
     stage_keys=list(prepared[0]["stages"]); timing={k:dist([r["stages"][k] for r in prepared]) for k in stage_keys}
@@ -423,7 +423,9 @@ def main() -> int:
         phase=time.perf_counter(); value=split_forward(params,ii,io,g,l,kw);full_value=reconstruct(value,mi,mw);block(full_value)
         replay.append(time.perf_counter()-phase)
     batch_rows=[]
-    if args.batch_sizes is not None:
+    if args.timing_regression_audit:
+        sizes=[]
+    elif args.batch_sizes is not None:
         sizes=[int(value) for value in args.batch_sizes.split(",")]
     elif not direct:
         sizes=protocol.get("batch_sizes_32768",protocol.get("u1_32768",{}).get("batch_sizes",[1]))
