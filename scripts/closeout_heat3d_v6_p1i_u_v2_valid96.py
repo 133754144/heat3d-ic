@@ -119,8 +119,8 @@ def main() -> int:
     p.add_argument("--protocol",type=Path,required=True);p.add_argument("--u-qualification",type=Path,required=True)
     p.add_argument("--e16384-qualification",type=Path,required=True);p.add_argument("--e240825-qualification",type=Path,required=True)
     p.add_argument("--u-timing",type=Path,action="append",required=True);p.add_argument("--e16384-timing",type=Path,action="append",required=True);p.add_argument("--e240825-timing",type=Path,action="append",required=True)
-    p.add_argument("--fvm",type=Path,required=True);p.add_argument("--output-json",type=Path,required=True);p.add_argument("--output-csv",type=Path,required=True);p.add_argument("--output-md",type=Path,required=True)
-    a=p.parse_args();protocol=load(a.protocol);uq=load(a.u_qualification);eq=load(a.e16384_qualification);cq=load(a.e240825_qualification);fvm=load(a.fvm)
+    p.add_argument("--fvm",type=Path,required=True);p.add_argument("--fvm-batch",type=Path,required=True);p.add_argument("--output-json",type=Path,required=True);p.add_argument("--output-csv",type=Path,required=True);p.add_argument("--output-md",type=Path,required=True)
+    a=p.parse_args();protocol=load(a.protocol);uq=load(a.u_qualification);eq=load(a.e16384_qualification);cq=load(a.e240825_qualification);fvm=load(a.fvm);fvm_batch=load(a.fvm_batch)
     for payload in (uq,eq,cq):
         if payload.get("status")!="passed" or payload.get("sample_count")!=96 or payload.get("population_mode")!="remaining_valid96":raise RuntimeError("qualification binding failed")
     routes={
@@ -131,14 +131,12 @@ def main() -> int:
     p1=next(row for row in fvm["rows"] if row["process_count"]==1);sat=next(row for row in fvm["rows"] if row["process_count"]==fvm["saturation_process_count"])
     fresh=[rep["fresh_single_case"]["median_seconds"] for rep in p1["repeats"]];fresh95=[rep["fresh_single_case"]["p95_seconds"] for rep in p1["repeats"]]
     resident=[rep["resident_core_solve_only"]["median_seconds"] for rep in p1["repeats"]];resident95=[rep["resident_core_solve_only"]["p95_seconds"] for rep in p1["repeats"]]
-    marginal=[]
-    for rep in p1["repeats"]:
-        # Solver records actual per-case service distribution; the frozen orders bind distinct physics.
-        m=float(rep["fresh_single_case"]["mean_seconds"]);marginal.append(m)
+    if fvm_batch.get("status")!="passed" or fvm_batch.get("process_count")!=fvm["saturation_process_count"]:raise RuntimeError("FVM B16/B32 batch binding failed")
+    marginal=[float(row["marginal_B16_to_B32_seconds"]) for row in fvm_batch["rows"]]
     satlat=[rep["stream_submit_to_result"]["median_seconds"] for rep in sat["repeats"]];sat95=[rep["stream_submit_to_result"]["p95_seconds"] for rep in sat["repeats"]];satthr=[rep["streaming_samples_per_second"] for rep in sat["repeats"]]
     fvm_t={"randomized_order_count":3,"fresh_single_case":{"median_seconds":float(np.median(fresh)),"p95_seconds":float(max(fresh95))},"resident_core":{"definition":"prepared_system_solve_only_not_E2E","median_seconds":float(np.median(resident)),"p95_seconds":float(max(resident95))},"batch_scale_marginal_fresh_case_estimate":{"definition":"per_case_distribution_proxy_no_FVM_B16_B32_batch_API","median_seconds":float(np.median(marginal)),"p95_seconds":float(max(marginal))},"closed_loop_added_case_latency":{"queue_depth":1,"median_seconds":float(np.median(fresh)),"p95_seconds":float(max(fresh95))},"saturated_streaming":{"queue_depth":fvm["queue_depth"],"worker_count":fvm["saturation_process_count"],"median_submit_to_result_seconds":float(np.median(satlat)),"p95_submit_to_result_seconds":float(max(sat95)),"median_throughput_samples_per_second":float(np.median(satthr))}}
     comparisons={"U-v2_minus_E16384":paired(uq,eq,protocol["paired_bootstrap"]["seed"],protocol["paired_bootstrap"]["replicates"]),"U-v2_minus_E240825":paired(uq,cq,protocol["paired_bootstrap"]["seed"],protocol["paired_bootstrap"]["replicates"])}
-    artifacts=[a.protocol,a.u_qualification,a.e16384_qualification,a.e240825_qualification,*a.u_timing,*a.e16384_timing,*a.e240825_timing,a.fvm]
+    artifacts=[a.protocol,a.u_qualification,a.e16384_qualification,a.e240825_qualification,*a.u_timing,*a.e16384_timing,*a.e240825_timing,a.fvm,a.fvm_batch]
     result={"schema_version":"heat3d_v6_p1i_u_v2_valid96_closeout_v1","status":"passed_final_freeze","population":"valid96_diagnostic_characterization","output_nodes":240825,"routes":routes,"FVM240825":{"accuracy_role":"reference_solution_zero_surrogate_error","timing":fvm_t},"paired_statistics":comparisons,"decision":{"production_reference":"E16384-reconstruction","parallel_direct_strategy":"U-v2-direct240825","architecture_control":"E240825-direct","valid32_architecture_optimization_closed":True,"test_or_sealed_opened":False},"artifacts":[{"path":str(x),"sha256":sha(x),"bytes":x.stat().st_size} for x in artifacts],"role_contract":protocol["role_contract"]}
     a.output_json.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     rows=[]
