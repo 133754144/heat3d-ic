@@ -101,7 +101,10 @@ def main() -> int:
     if jax.devices()[0].platform != "gpu":
         raise RuntimeError("U2 requires GPU")
     protocol = json.loads(args.protocol.read_text())
-    if protocol["status"] not in {"preregistered_before_execution", "geometry_audit_frozen_before_execution"}:
+    if protocol["status"] not in {
+        "preregistered_before_execution", "geometry_audit_frozen_before_execution",
+        "preregistered_after_geometry_audit_before_accuracy_or_timing",
+    }:
         raise RuntimeError("U2 protocol not frozen")
     direct = args.resolution == 240825
     runtime = p5r._runtime(args)
