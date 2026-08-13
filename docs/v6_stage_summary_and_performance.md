@@ -4,7 +4,7 @@
 
 V6 的论文主线最终冻结为 `P1i formal1024_v1 + V6_06/07/08 三 seed + E16384-reconstruction`。seed0 point-global-best e559 checkpoint 是 reference，seed1/2 是独立重复。`frozen valid32` 的 route/graph/packing/model 调优自本报告起永久关闭。
 
-B、E、U 被统一定义为三种并列的 **inference strategies**：B 使用随 N 增长的区域节点，E 固定 `Nr=256` 后重建至完整场，U 在 native 1024 编码/处理后直接解码到完整场。它们是策略定义，不等于都已取得部署资格。独立 valid96 确认显示 E 可稳定执行并保持三 seed 优势；U 在正式 valid population 中出现 `query outside native domain`，按预注册硬门 fail-closed。因此 production/reference 只冻结 E16384，U 仅保留 valid32 架构可行性证据，E240825-direct 仅作 architecture control。
+B、E、U 被统一定义为三种并列的 **inference strategies**：B 使用随 N 增长的区域节点，E 固定 `Nr=256` 后重建至完整场，U 在 native 1024 编码/处理后直接解码到完整场。它们是策略定义，不等于都已取得部署资格。独立 valid96 确认显示 E 可稳定执行并保持三 seed 优势；历史 U-v1 在正式 valid population 中出现 `query outside native domain` 并按预注册硬门 fail-closed。U-v2 只修复该查询域适用性：保持 native1024 图、checkpoint 与图策略完全不变，以无 clamp 的 native-bbox 仿射坐标和冻结 R2P nearest-repair 支持有限 query-domain extrapolation。production/reference 仍冻结 E16384；U-v2 仅为并列 direct inference strategy 的 valid96 diagnostic/characterization，E240825-direct 仅作 architecture control。
 
 全程没有训练、checkpoint/model/dataset/manifest 修改，也没有访问 test 或 sealed IID。FVM 是物理 reference；本文不宣称 surrogate 精度优于 FVM。
 
@@ -85,7 +85,7 @@ FVM P2 是该 23 GiB 主机上能常驻且实测的饱和配置；P4/P8 因 prep
 
 E16384 − E240825 的 paired bootstrap 95% CI 在三 seed、全部五项指标上均严格小于零。例如 PG 差值为 seed0 `−0.8702 pp`（CI `[-1.1076,-0.6565]`）、seed1 `−0.9789 pp`（`[-1.2451,-0.7459]`）、seed2 `−0.8826 pp`（`[-1.1254,-0.6665]`）。这支持 E16384 的独立确认。
 
-U-direct 在 seed0 valid96 遇到 formal-valid query 超出 native domain，执行在任何 accuracy 统计前 fail-closed。没有 U valid96 指标或 CI，也没有继续 seed1/2；这不是负性能结果，而是 formal-population 适用性失败。禁止通过回到 valid32 修改 route、graph、packing 或模型来消除此结果。
+历史 U-v1 在 seed0 valid96 遇到 formal-valid query 超出 native domain，执行在任何 accuracy 统计前 fail-closed。随后预注册的 geometry-only audit 证明越界只发生于 3/96 样本、共 22,230/23,119,200 查询节点，最大 normalized overshoot 为 0.015873。U-v2 未回到 valid32 调优，也未改 graph policy/radius/checkpoint；其 valid96 结果仅作 diagnostic/characterization，并与本轮统一 timing matrix 一起冻结。
 
 ## 可发表优势与边界
 
