@@ -1,0 +1,48 @@
+{
+  "schema_version": "heat3d_v6_p1i_u_v2_timing_regression_protocol_v1",
+  "status": "preregistered_before_timing_control_or_optimization",
+  "baseline_commit": "bc6aaf09a4ffa9178f7af0a36d41400924b83453",
+  "population": {
+    "historical_control": "first_8_frozen_valid32_in_frozen_order",
+    "characterization": "remaining_valid96_after_control_and_exact_gate_only"
+  },
+  "timer_contract": {
+    "start": "in_memory_k_q_BC",
+    "end": "synchronized_240825_prediction",
+    "outside_span": ["input_io", "JIT_warmup", "qualification", "hash", "metrics", "serialization"],
+    "exclusive_stages": ["support_plus_cv", "anchor_graph", "query_graph", "reconstruction_map", "anchor_group_pack", "query_group_pack", "h2d_enqueue", "h2d_sync", "asymmetric_forward", "reconstruction_apply"],
+    "residual_gate": "0 <= E2E-sum(exclusive) <= max(0.025_seconds,0.05*E2E)",
+    "device_spans_explicitly_synchronized": true
+  },
+  "historical_control_gate": {
+    "route": "U-v1-direct240825",
+    "sample_count": 8,
+    "anchor_graph_median_seconds_max": 0.08,
+    "query_graph_median_seconds_max": 0.30,
+    "fresh_e2e_median_seconds_max": 1.20,
+    "basis": "preexisting_U5_and_post_freeze_valid32_raw_stage_scale_before_U-v2_results",
+    "fail_action": "stop_before_valid96"
+  },
+  "u_v2_exact_optimization": {
+    "golden": "preoptimization_current_U-v2_R2P_edge_array",
+    "allowed": "evaluate_frozen_distance_and_default_numpy_argsort_only_for_uncovered_rows",
+    "min_coverage": 1,
+    "hard_gates": ["r2p_indices_array_equal", "r2p_indices_sha256_equal", "prediction_exact_within_frozen_backend_tolerance", "native_graph_bitwise_exact"],
+    "query_graph_stage_split": ["radius_edges", "uncovered_scan", "nearest_repair", "packing_and_block"]
+  },
+  "characterization": {
+    "seeds": [1, 2],
+    "population": "remaining_valid96",
+    "attribution": ["covered", "repaired_inside", "repaired_outside", "repair_distance"]
+  },
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "E_architecture_modified": false,
+    "accuracy_driven_optimization": false
+  }
+}

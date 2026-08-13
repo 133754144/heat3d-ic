@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import json
 import os
@@ -106,7 +107,7 @@ def parse() -> argparse.Namespace:
         parser.add_argument(f"--{name.replace('_','-')}", dest=name, type=Path, required=True)
     parser.add_argument("--resolution", type=int, choices=[32768, 240825], required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
-    parser.add_argument("--sample-count", type=int, choices=[1, 32, 96], default=32)
+    parser.add_argument("--sample-count", type=int, choices=[1, 4, 8, 32, 96], default=32)
     parser.add_argument("--repeats", type=int, default=20)
     parser.add_argument("--batch-sizes", default=None)
     parser.add_argument("--prediction-output", type=Path)
@@ -116,6 +117,7 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--asymmetric-mode", choices=["u_v1", "u_v2"], default="u_v1")
     parser.add_argument("--timing-only", action="store_true")
     parser.add_argument("--qualification-result", type=Path)
+    parser.add_argument("--timing-regression-audit", action="store_true")
     return parser.parse_args()
 
 
@@ -256,6 +258,7 @@ def main() -> int:
                           "k_xyz": np.asarray(anchor.condition.condition_features[:,:3], dtype=np.float64),
                           "q_W_m3": np.asarray(anchor.condition.condition_features[:,3], dtype=np.float64),
                           "layer_id": layer[anchor_indices]}
+        gc_before = gc.get_count()
         total_start = time.perf_counter(); phase = time.perf_counter()
         selected, selected_cv = support(anchor, full_q); support_s = time.perf_counter()-phase
         query_support = {"selected_indices": selected, "operator_control_volume": selected_cv,
@@ -309,6 +312,19 @@ def main() -> int:
         phase=time.perf_counter(); values=split_forward(params,ii,io,g,l,kw);block(values);forward_s=time.perf_counter()-phase
         phase=time.perf_counter(); full_value=reconstruct(values,mi,mw);block(full_value);recon_s=time.perf_counter()-phase
         production_elapsed=time.perf_counter()-total_start
+        exclusive_stage_sum = sum((
+            support_s, anchor_graph_s, query_graph_s, map_s,
+            anchor_pack_s, query_pack_s, enqueue_s, sync_s, forward_s, recon_s,
+        ))
+        timing_residual = production_elapsed - exclusive_stage_sum
+        timing_residual_limit = max(0.025, production_elapsed * 0.05)
+        if args.timing_regression_audit and (
+            timing_residual < -1.0e-6 or timing_residual > timing_residual_limit
+        ):
+            raise RuntimeError(
+                f"{anchor.sample_id}: exclusive timing residual {timing_residual} "
+                f"exceeds limit {timing_residual_limit}"
+            )
         completion_offset=time.perf_counter()-service_started;previous=completion_offsets[-1] if completion_offsets else 0.0;completion_offsets.append(completion_offset)
         # Qualification-only same-launch reference: the historical full output
         # group must produce exactly the same output as minimal packing. This is
@@ -371,7 +387,20 @@ def main() -> int:
                           "reconstruction_apply":recon_s,"dummy_local_p2r":dummy_local_p2r_s,
                           "graph_extraction":graph_extraction_s,"host_tree":host_tree_s,"inputs":inputs_s,
                 "kwargs":kwargs_s,"profiled_other":other_s,
+                          "exclusive_stage_sum":exclusive_stage_sum,
+                          "e2e_minus_exclusive_stages":timing_residual,
                           "matched_continuous_e2e":production_elapsed},
+                "timing_audit":{
+                    "gc_count_before":list(gc_before),
+                    "gc_count_after":list(gc.get_count()),
+                    "cpu_device":str(cpu),"gpu_device":str(gpu),
+                    "default_backend":jax.default_backend(),
+                    "all_device_spans_synchronized":True,
+                    "jit_warmup_outside_aggregate":True,
+                    "input_io_outside_span":True,
+                    "qualification_hash_metrics_serialization_outside_span":True,
+                    "exclusive_residual_limit_seconds":timing_residual_limit,
+                },
                 "asymmetric_graph_audit":audit,
                 "shape":{"output_nodes":int(np.asarray(values).shape[1]),"regional_nodes":int(np.asarray(asymmetric.x_rnodes).shape[1]-1),
                          "p2r_edges":int(np.asarray(asymmetric.p2r_edge_indices).shape[1]),
@@ -444,8 +473,9 @@ def main() -> int:
         "saturated_streaming":fixed_depth_queue_trace([float(r["stages"]["matched_continuous_e2e"]) for r in prepared],depth=2),
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":all(r["packing_audit"]["host_payload_bitwise_exact"] for r in prepared),"prediction_audit_count":sum(int(r["packing_audit"]["prediction_audit_executed"]) for r in prepared),"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
-        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
+        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},
+        "timing_regression_audit":args.timing_regression_audit,
         "role_contract":protocol["role_contract"],"population_mode":args.population_mode}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     if args.prediction_output is not None:

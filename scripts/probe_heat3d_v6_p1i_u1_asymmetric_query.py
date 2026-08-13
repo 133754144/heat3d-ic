@@ -151,23 +151,34 @@ def _u_v2_asymmetric_metadata(
     base_radii = np.asarray(native.r_rnodes)[0, :-1]
     impl = builder.builder
     radii = impl._get_effective_support_radii(base_radii, impl.overlap_factor_r2p)
+    phase_started = time.perf_counter()
     raw = impl._get_supported_pnodes_by_rnodes(
         centers=centers, points=query_normalized, radii=radii,
         apply_legacy_hard_reset=(impl.radius_policy == "legacy_kdtree_mean4"),
     )
+    radius_edges_seconds = time.perf_counter() - phase_started
+    phase_started = time.perf_counter()
     raw_array = np.asarray(raw)
     raw_degree = np.bincount(raw_array[:, 0], minlength=len(query_normalized))
+    uncovered = np.flatnonzero(raw_degree < impl.min_physical_coverage)
+    uncovered_scan_seconds = time.perf_counter() - phase_started
     # U-v2 explicitly reuses the frozen nearest-rnode repair primitive for
     # uncovered output-query nodes. The training graph config says
     # coverage_repair_policy=none because native1024 needed no repair; gating
     # this extrapolation repair on that historical no-op flag would leave the
     # newly permitted out-of-domain query nodes disconnected.
-    repaired = impl._repair_physical_node_coverage(
-        edge_indices=raw, centers=centers, points=query_normalized,
+    phase_started = time.perf_counter()
+    repaired = _repair_uncovered_physical_nodes_exact(
+        edge_indices=raw,
+        centers=centers,
+        points=query_normalized,
+        min_physical_coverage=impl.min_physical_coverage,
+        nodes_to_repair=uncovered,
     )
+    nearest_repair_seconds = time.perf_counter() - phase_started
+    phase_started = time.perf_counter()
     repaired_array = np.asarray(repaired)
     repaired_degree = np.bincount(repaired_array[:, 0], minlength=len(query_normalized))
-    uncovered = np.flatnonzero(raw_degree < impl.min_physical_coverage)
     if np.any(repaired_degree < impl.min_physical_coverage):
         raise RuntimeError("U-v2 nearest R2P repair left uncovered output nodes")
     r2p = np.flip(repaired_array, axis=-1)
@@ -185,6 +196,7 @@ def _u_v2_asymmetric_metadata(
         r2r_edge_domains=native.r2r_edge_domains,
         r2p_edge_indices=jnp.asarray(r2p[None, ...]),
     )
+    packing_seconds = time.perf_counter() - phase_started
     outside = np.any(overshoot > numerical_tolerance, axis=1)
     numerical_only = np.any(overshoot > 0.0, axis=1) & ~outside
     nearest_distance = np.zeros(len(query_normalized), dtype=np.float64)
@@ -215,9 +227,72 @@ def _u_v2_asymmetric_metadata(
         "repair_edge_count": int(len(repaired_array) - len(raw_array)),
         "repair_nearest_distance_max": float(np.max(nearest_distance)),
         "r2p_real_edges": int(len(r2p) - 1),
+        "query_graph_stage_seconds": {
+            "radius_edges": float(radius_edges_seconds),
+            "uncovered_scan": float(uncovered_scan_seconds),
+            "nearest_repair": float(nearest_repair_seconds),
+            "packing_enqueue": float(packing_seconds),
+        },
     }
     audit["native_exact"] = _native_exact(native, metadata)
     return metadata, audit
+
+
+def _repair_uncovered_physical_nodes_exact(
+    *,
+    edge_indices: Any,
+    centers: Any,
+    points: Any,
+    min_physical_coverage: int,
+    nodes_to_repair: np.ndarray | None = None,
+) -> Any:
+    """Apply the frozen nearest repair only to uncovered point rows.
+
+    The historical primitive computes and sorts the full ``Nquery x Nr``
+    distance matrix even when only a small subset is uncovered.  Distance and
+    ``np.argsort`` semantics are unchanged here, but they are evaluated only
+    for the rows that can contribute new edges.  Canonical append order remains
+    point order followed by the historical per-row nearest order.
+    """
+    edges = np.asarray(edge_indices)
+    points_array = np.asarray(points)
+    centers_array = np.asarray(centers)
+    degree = np.bincount(edges[:, 0], minlength=len(points_array))
+    if nodes_to_repair is None:
+        nodes_to_repair = np.flatnonzero(degree < min_physical_coverage)
+    else:
+        nodes_to_repair = np.asarray(nodes_to_repair, dtype=np.int64)
+    if nodes_to_repair.size == 0:
+        return edge_indices
+    if min_physical_coverage > len(centers_array):
+        raise ValueError("min_physical_coverage exceeds regional-node count")
+
+    # This intentionally calls the same distance primitive and default
+    # np.argsort as the frozen reference, only on the uncovered rows.
+    repair_points = points_array[nodes_to_repair]
+    distance = np.asarray(
+        np.linalg.norm(repair_points[:, None] - centers_array[None, :], axis=-1)
+    )
+    nearest_order = np.argsort(distance, axis=1)
+    existing = {(int(pnode), int(rnode)) for pnode, rnode in edges}
+    additions: list[tuple[int, int]] = []
+    for row_index, pnode_value in enumerate(nodes_to_repair):
+        pnode = int(pnode_value)
+        needed = min_physical_coverage - int(degree[pnode])
+        for rnode_value in nearest_order[row_index]:
+            edge = (pnode, int(rnode_value))
+            if edge in existing:
+                continue
+            additions.append(edge)
+            existing.add(edge)
+            needed -= 1
+            if needed == 0:
+                break
+    if not additions:
+        return edge_indices
+    return jnp.concatenate(
+        [edge_indices, jnp.asarray(additions, dtype=edge_indices.dtype)], axis=0
+    )
 
 
 def _native_exact(native: Any, asymmetric: Any) -> dict[str, bool]:
