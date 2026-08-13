@@ -11,6 +11,13 @@
     "native1024_p2r_r2r_rnodes": "bitwise_exact",
     "forbidden": ["coordinate_clamp", "anchor_insertion", "graph_policy_change", "radius_change"]
   },
+  "implementation_amendment": {
+    "reason": "initial geometry-only audit revealed that historical coverage_repair_policy=none conditionally skipped the user-required frozen nearest-rnode R2P repair primitive",
+    "scope": "call the existing nearest-rnode repair primitive only after the unchanged radius predicate for U-v2 output queries",
+    "accuracy_or_temperature_observed_before_amendment": false,
+    "native1024_graph_changed": false,
+    "radius_or_graph_policy_changed": false
+  },
   "population": "valid96=formal_valid128-frozen_valid32",
   "temperature_labels_read": false,
   "role_contract": {

@@ -157,11 +157,14 @@ def _u_v2_asymmetric_metadata(
     )
     raw_array = np.asarray(raw)
     raw_degree = np.bincount(raw_array[:, 0], minlength=len(query_normalized))
-    repaired = raw
-    if impl.coverage_repair_policy == "nearest_rnode" and impl.repair_r2p:
-        repaired = impl._repair_physical_node_coverage(
-            edge_indices=repaired, centers=centers, points=query_normalized,
-        )
+    # U-v2 explicitly reuses the frozen nearest-rnode repair primitive for
+    # uncovered output-query nodes. The training graph config says
+    # coverage_repair_policy=none because native1024 needed no repair; gating
+    # this extrapolation repair on that historical no-op flag would leave the
+    # newly permitted out-of-domain query nodes disconnected.
+    repaired = impl._repair_physical_node_coverage(
+        edge_indices=raw, centers=centers, points=query_normalized,
+    )
     repaired_array = np.asarray(repaired)
     repaired_degree = np.bincount(repaired_array[:, 0], minlength=len(query_normalized))
     uncovered = np.flatnonzero(raw_degree < impl.min_physical_coverage)
