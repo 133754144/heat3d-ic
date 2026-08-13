@@ -267,17 +267,22 @@ def main() -> int:
         builder = Heat3DGraphBuilder(**graph_config)
         with jax.default_device(cpu):
             anchor_coords = highn.runner._graph_coords_for_example(anchor, runtime["stats"])
-            phase=time.perf_counter(); native=builder.build_metadata(anchor_coords,key=graph_key);block(native)
-            anchor_graph_s=time.perf_counter()-phase
+            phase=time.perf_counter(); native=builder.build_metadata(anchor_coords,key=graph_key)
+            anchor_graph_build_s=time.perf_counter()-phase
+            phase=time.perf_counter();block(native);anchor_graph_sync_s=time.perf_counter()-phase
+            anchor_graph_s=anchor_graph_build_s+anchor_graph_sync_s
+            anchor_graph_internal=dict(getattr(builder.builder,"last_build_timings",{}))
             phase=time.perf_counter(); query_coords=highn.runner._graph_coords_for_example(query_example,runtime["stats"])
+            query_coords_s=time.perf_counter()-phase;phase=time.perf_counter()
             if args.asymmetric_mode == "u_v2":
                 asymmetric,audit=u1.prior_u1._u_v2_asymmetric_metadata(
                     builder,native,anchor_coords,query_coords,
                     numerical_tolerance=float(protocol["u_v2"]["normalized_numerical_tolerance"]),
-                    maximum_normalized_overshoot=float(protocol["u_v2"]["maximum_normalized_overshoot"]));block(asymmetric)
+                    maximum_normalized_overshoot=float(protocol["u_v2"]["maximum_normalized_overshoot"]));query_graph_build_s=time.perf_counter()-phase
             else:
-                asymmetric,audit=u1.prior_u1._strict_asymmetric_metadata(builder,native,anchor_coords,query_coords);block(asymmetric)
-            query_graph_s=time.perf_counter()-phase
+                asymmetric,audit=u1.prior_u1._strict_asymmetric_metadata(builder,native,anchor_coords,query_coords);query_graph_build_s=time.perf_counter()-phase
+            phase=time.perf_counter();block(asymmetric);query_graph_sync_s=time.perf_counter()-phase
+            query_graph_s=query_coords_s+query_graph_build_s+query_graph_sync_s
             if args.asymmetric_mode == "u_v1" and not audit["query_inside_native_domain"]: raise RuntimeError("query domain")
             if args.asymmetric_mode == "u_v2" and (not all(audit["native_exact"].values()) or audit["repaired_uncovered_count"] != 0): raise RuntimeError("U-v2 graph gate")
             phase=time.perf_counter(); anchor_group=host_tree(highn._prepare_group(
@@ -400,6 +405,15 @@ def main() -> int:
                     "input_io_outside_span":True,
                     "qualification_hash_metrics_serialization_outside_span":True,
                     "exclusive_residual_limit_seconds":timing_residual_limit,
+                    "anchor_graph_breakdown_seconds":{
+                        "build_enqueue":anchor_graph_build_s,"block":anchor_graph_sync_s,
+                        "builder_internal":anchor_graph_internal,
+                    },
+                    "query_graph_breakdown_seconds":{
+                        "coordinate_prepare":query_coords_s,"build_enqueue":query_graph_build_s,
+                        "block":query_graph_sync_s,
+                        "u_v2_internal":audit.get("query_graph_stage_seconds"),
+                    },
                 },
                 "asymmetric_graph_audit":audit,
                 "shape":{"output_nodes":int(np.asarray(values).shape[1]),"regional_nodes":int(np.asarray(asymmetric.x_rnodes).shape[1]-1),
@@ -411,9 +425,10 @@ def main() -> int:
     value=split_forward(params,ii,io,g,l,kw);block(reconstruct(value,mi,mw))
     # Qualification and JIT compile are outside persistent service timing.
     service_started=time.perf_counter();completion_offsets.clear()
-    prepared=[]
+    prepared=[];post_result_cleanup=[]
     for number,anchor in enumerate(anchors,1):
         prepared.append(prepare_one(anchor,retain_device=False))
+        phase=time.perf_counter();gc.collect();post_result_cleanup.append(time.perf_counter()-phase)
         print(f"[{args.asymmetric_mode}] {number}/{len(anchors)}",flush=True)
     if any(row["shape"]["output_nodes"] != args.resolution for row in prepared): raise RuntimeError("output shape")
     if any(not np.all(np.isfinite(np.asarray(row["full_prediction"]))) for row in prepared): raise RuntimeError("nonfinite")
@@ -478,6 +493,7 @@ def main() -> int:
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},
         "timing_regression_audit":args.timing_regression_audit,
+        "post_result_gc_collect_outside_production_span":dist(post_result_cleanup),
         "role_contract":protocol["role_contract"],"population_mode":args.population_mode}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     if args.prediction_output is not None:
