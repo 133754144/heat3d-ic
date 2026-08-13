@@ -93,6 +93,8 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--population-preflight", type=Path)
     parser.add_argument("--order-seed", type=int)
     parser.add_argument("--asymmetric-mode", choices=["u_v1", "u_v2"], default="u_v1")
+    parser.add_argument("--timing-only", action="store_true")
+    parser.add_argument("--qualification-result", type=Path)
     return parser.parse_args()
 
 
@@ -104,6 +106,7 @@ def main() -> int:
     if protocol["status"] not in {
         "preregistered_before_execution", "geometry_audit_frozen_before_execution",
         "preregistered_after_geometry_audit_before_accuracy_or_timing",
+        "qualification_passed_timing_matrix_pending",
     }:
         raise RuntimeError("U2 protocol not frozen")
     direct = args.resolution == 240825
@@ -155,9 +158,19 @@ def main() -> int:
             full_coords=coords, full_control_volume=cv, full_layer_id=layer, selected_indices=selected)
         return selected, selected_cv
 
-    # Shape envelope is qualification-only and outside all timed spans.
+    # Shape envelope is qualification-only and outside all timed spans.  A
+    # timing-only replay may bind the already-qualified valid96 envelope and
+    # therefore does not rebuild any graph before the service measurement.
     tracked_native = dict(native_targets); tracked_query = dict(query_targets)
-    for anchor in anchors:
+    if args.timing_only:
+        if args.qualification_result is None:
+            raise RuntimeError("timing-only requires --qualification-result")
+        qualified = json.loads(args.qualification_result.read_text())
+        if qualified.get("status") != "passed" or qualified.get("sample_count") != 96:
+            raise RuntimeError("timing-only qualification result is not frozen valid96")
+        native_targets = {k: (None if v is None else int(v)) for k, v in qualified["padding"]["actual_padding_envelope"]["native"].items()}
+        query_targets = {k: (None if v is None else int(v)) for k, v in qualified["padding"]["actual_padding_envelope"]["query"].items()}
+    for anchor in ([] if args.timing_only else anchors):
         with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
             full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
             full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
@@ -282,7 +295,7 @@ def main() -> int:
         # group is needed once for the deterministic prediction audit; all other
         # samples use an exact structural payload gate that does not instantiate
         # duplicate 240825-node arrays.
-        prediction_audit_executed = not packing_prediction_audit_done
+        prediction_audit_executed = (not args.timing_only) and (not packing_prediction_audit_done)
         if prediction_audit_executed:
             with jax.default_device(cpu):
                 output_group_full=highn._prepare_group(
@@ -317,15 +330,17 @@ def main() -> int:
             if not packing_prediction_exact:raise RuntimeError(f"{anchor.sample_id}: minimal packing prediction drift")
             packing_prediction_audit_done = True
         support_np=np.asarray(values,dtype=np.float32)[0];full_np=np.asarray(full_value,dtype=np.float32)[0]
-        with h5py.File(args.full_fields,"r") as archive:
-            truth=np.asarray(archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]],dtype=np.float64)
-        support_row=highn._metric_row(support_np,truth[selected],selected_cv,coords[selected],layer[selected],full_q[selected])
-        full_row=highn._metric_row(full_np,truth,cv,coords,layer,full_q)
+        support_row = full_row = None
+        if not args.timing_only:
+            with h5py.File(args.full_fields,"r") as archive:
+                truth=np.asarray(archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]],dtype=np.float64)
+            support_row=highn._metric_row(support_np,truth[selected],selected_cv,coords[selected],layer[selected],full_q[selected])
+            full_row=highn._metric_row(full_np,truth,cv,coords,layer,full_q)
         return {"sample_id":anchor.sample_id,"inputs_in":inputs_in if retain_device else None,"inputs_out":inputs_out if retain_device else None,"graphs":graphs if retain_device else None,"local":local if retain_device else None,
                 "kwargs":kwargs if retain_device else None,"map_indices":map_indices if retain_device else None,"map_weights":map_weights if retain_device else None,"device":device if retain_device else None,"selected":selected,
                 "selected_cv":selected_cv,"full_q":full_q,"support_prediction":support_np,"full_prediction":full_np,
                 "support_metric_row":support_row,"full_metric_row":full_row,
-                "full_field_metrics":qualification.metric_accumulate([full_row],full=True),"full_field_metric_components":metric_components(full_row),
+                "full_field_metrics":None if full_row is None else qualification.metric_accumulate([full_row],full=True),"full_field_metric_components":None if full_row is None else metric_components(full_row),
                 "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","host_payload_bitwise_exact":host_payload_exact,"equivalence_backend":"deterministic_cpu","prediction_audit_executed":prediction_audit_executed,"prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs},
                 "streaming":{"submit_offset_seconds":submit_offset,"completion_offset_seconds":completion_offset,"submit_to_result_seconds":completion_offset-submit_offset,"inter_completion_seconds":completion_offset-previous},
                 "prepared_payload_sha256":tree_sha((inputs_in,inputs_out,graphs,local,kwargs,map_indices,map_weights)),
@@ -394,7 +409,7 @@ def main() -> int:
             "marginal_per_case_seconds":None if b==1 else (wall-t1)/(b-1),
             "peak_vram_bytes":int(candidate.publication._device_memory().get("peak_bytes_in_use",0))})
 
-    metric_support=[row["support_metric_row"] for row in prepared];metric_full=[row["full_metric_row"] for row in prepared]
+    metric_support=[row["support_metric_row"] for row in prepared if row["support_metric_row"] is not None];metric_full=[row["full_metric_row"] for row in prepared if row["full_metric_row"] is not None]
     result={"schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1","status":"passed" if args.sample_count in (32,96) else "passed_smoke",
         "resolution":args.resolution,"output_mode":"direct" if direct else "reconstruction","sample_count":args.sample_count,
         "inference_strategy":"U-v2" if args.asymmetric_mode=="u_v2" else "U-v1",
@@ -402,12 +417,13 @@ def main() -> int:
         "checkpoint_parameter_sha256_before": checkpoint_parameter_sha256_before,
         "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
         "checkpoint_parameters_unchanged":checkpoint_parameter_sha256_before==highn._tree_sha256(runtime["checkpoint"]["params"]),
-        "accuracy":{"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
+        "accuracy":None if args.timing_only else {"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
         "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":all(r["packing_audit"]["host_payload_bitwise_exact"] for r in prepared),"prediction_audit_count":sum(int(r["packing_audit"]["prediction_audit_executed"]) for r in prepared),"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
+        "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},
         "role_contract":protocol["role_contract"],"population_mode":args.population_mode}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     if args.prediction_output is not None:
@@ -419,7 +435,7 @@ def main() -> int:
                 np.asarray(row["full_prediction"], dtype=np.float32) for row in prepared
             ]),
         )
-    print(json.dumps({"status":result["status"],"resolution":args.resolution,"pg":result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],"e2e":timing["matched_continuous_e2e"]["median_seconds"]}))
+    print(json.dumps({"status":result["status"],"resolution":args.resolution,"pg":None if args.timing_only else result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],"e2e":timing["matched_continuous_e2e"]["median_seconds"]}))
     return 0
 
 
