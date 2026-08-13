@@ -1,0 +1,2576 @@
+{
+  "accuracy": {
+    "full_field": {
+      "background_rmse_K": 2.3104267674043686,
+      "bottom_rmse_K": 1.5696195304915335,
+      "domain": "full_240825",
+      "interface_drop_rmse_K": 0.43634993765217656,
+      "layer_mean_rmse_K": 2.285263307180168,
+      "peak_rmse_K": 3.6214446022118634,
+      "point_global_true_rms_relative_rmse_pct": 2.8188302704806736,
+      "raw_cv_weighted_rmse_K": 2.3181070686885037,
+      "sample_count": 32,
+      "sample_first_cv_relative_rmse_pct": 2.80032935346909,
+      "source_rmse_K": 3.855982949943219,
+      "top_rmse_K": 2.1482861254776155
+    },
+    "query_full_grid": {
+      "background_rmse_K": 2.3104267674043686,
+      "bottom_rmse_K": 1.5696195304915335,
+      "domain": "query_full_grid_240825",
+      "interface_drop_rmse_K": 0.43634993765217656,
+      "layer_mean_rmse_K": 2.285263307180168,
+      "peak_rmse_K": 3.6214446022118634,
+      "point_global_true_rms_relative_rmse_pct": 2.8188302704806736,
+      "raw_cv_weighted_rmse_K": 2.3181070686885037,
+      "sample_count": 32,
+      "sample_first_cv_relative_rmse_pct": 2.80032935346909,
+      "source_rmse_K": 3.855982949943219,
+      "top_rmse_K": 2.1482861254776155
+    }
+  },
+  "batch": [
+    {
+      "average_per_case_seconds": 0.05849887151271105,
+      "batch_size": 1,
+      "batch_wall_seconds": 0.05849887151271105,
+      "marginal_per_case_seconds": null,
+      "peak_vram_bytes": 6098137344,
+      "prepared_group_steady_inference": {
+        "count": 20,
+        "mean_seconds": 0.058735562593210486,
+        "median_seconds": 0.05849887151271105,
+        "p95_seconds": 0.05985876297345385,
+        "std_seconds": 0.0007026141592213173
+      },
+      "resident_forward_only": {
+        "count": 20,
+        "mean_seconds": 0.058753875840920955,
+        "median_seconds": 0.058730577933602035,
+        "p95_seconds": 0.05965685321716592,
+        "std_seconds": 0.0005993147245335896
+      },
+      "samples_per_second": 17.094346850480918,
+      "status": "passed",
+      "streamed_prepared_host_batch": {
+        "count": 20,
+        "mean_seconds": 0.06938773808069527,
+        "median_seconds": 0.06912866653874516,
+        "p95_seconds": 0.07088592002401128,
+        "std_seconds": 0.0008418815721156695
+      }
+    }
+  ],
+  "checkpoint_parameter_sha256_after": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+  "checkpoint_parameter_sha256_before": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+  "checkpoint_parameters_unchanged": true,
+  "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+  "memory": {
+    "bytes_in_use": 2895090688,
+    "bytes_limit": 9615360000,
+    "device": "cuda:0",
+    "peak_bytes_in_use": 6098137344,
+    "platform": "gpu"
+  },
+  "output_mode": "direct",
+  "packing_optimization": {
+    "full_output_group_never_constructed_in_production_path": true,
+    "mode": "lean_output_query_v2",
+    "output_fields_constructed": [
+      "inputs",
+      "graphs",
+      "control_volumes",
+      "reference_temperature",
+      "dirichlet_mask",
+      "prescribed_temperature"
+    ],
+    "output_unused_context_not_constructed": true,
+    "prediction_bitwise_exact_vs_U3": true,
+    "same_launch_reference_outside_production_timing": true
+  },
+  "padding": {
+    "actual_padding_envelope": {
+      "native": {
+        "p2r_edge_indices": 2911,
+        "r2p_edge_indices": 2905,
+        "r2r_edge_domains": 4201,
+        "r2r_edge_indices": 4201
+      },
+      "query": {
+        "p2r_edge_indices": 2002581,
+        "r2p_edge_indices": 2002581,
+        "r2r_edge_domains": 4201,
+        "r2r_edge_indices": 4201
+      }
+    },
+    "effective_padding_envelope": {
+      "native": {
+        "p2r_edge_indices": 2911,
+        "r2p_edge_indices": 2905,
+        "r2r_edge_domains": 4201,
+        "r2r_edge_indices": 4201
+      },
+      "query": {
+        "p2r_edge_indices": 2002581,
+        "r2p_edge_indices": 2002581,
+        "r2r_edge_domains": 4201,
+        "r2r_edge_indices": 4201
+      }
+    },
+    "tracked_padding_envelope": {
+      "native": {
+        "p2r_edge_indices": 2905,
+        "r2p_edge_indices": 2905,
+        "r2r_edge_domains": 4201,
+        "r2r_edge_indices": 4201
+      },
+      "query": {
+        "p2r_edge_indices": 2002581,
+        "r2p_edge_indices": 2002581,
+        "r2r_edge_domains": 4201,
+        "r2r_edge_indices": 4201
+      }
+    }
+  },
+  "population_mode": "frozen_valid32",
+  "protocol_sha256": "fad6e4784babc585864b611ab6fc65ddecec7d86518eed2f44e00681cbb77dcb",
+  "resolution": 240825,
+  "role_contract": {
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid"
+    ],
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "runtime": {
+    "fresh_sample": {
+      "anchor_graph": {
+        "count": 32,
+        "mean_seconds": 0.02254934565280564,
+        "median_seconds": 0.022160769440233707,
+        "p95_seconds": 0.024999530520290136,
+        "std_seconds": 0.0018406592717740754
+      },
+      "anchor_group_pack": {
+        "count": 32,
+        "mean_seconds": 0.15188730477530044,
+        "median_seconds": 0.16896997054573148,
+        "p95_seconds": 0.18231445914134384,
+        "std_seconds": 0.04243995814807081
+      },
+      "asymmetric_forward": {
+        "count": 32,
+        "mean_seconds": 0.09515034229116281,
+        "median_seconds": 0.1038515210384503,
+        "p95_seconds": 0.1054718920844607,
+        "std_seconds": 0.013965940249296004
+      },
+      "dummy_local_p2r": {
+        "count": 32,
+        "mean_seconds": 0.005305845457769465,
+        "median_seconds": 0.0033808709122240543,
+        "p95_seconds": 0.004501421563327312,
+        "std_seconds": 0.010379260102254664
+      },
+      "graph_extraction": {
+        "count": 32,
+        "mean_seconds": 8.530696504749358e-07,
+        "median_seconds": 8.030328899621964e-07,
+        "p95_seconds": 1.1889496818184853e-06,
+        "std_seconds": 2.1781072885900095e-07
+      },
+      "h2d_enqueue": {
+        "count": 32,
+        "mean_seconds": 0.008329734431754332,
+        "median_seconds": 0.008215841953642666,
+        "p95_seconds": 0.008963886951096355,
+        "std_seconds": 0.00035289630345245035
+      },
+      "h2d_sync": {
+        "count": 32,
+        "mean_seconds": 0.0011669018640532158,
+        "median_seconds": 0.0011676859576255083,
+        "p95_seconds": 0.0014357697451487183,
+        "std_seconds": 0.00022100637954228065
+      },
+      "host_tree": {
+        "count": 32,
+        "mean_seconds": 0.00017456537898397073,
+        "median_seconds": 0.0001697890693321824,
+        "p95_seconds": 0.0001928239595144987,
+        "std_seconds": 1.708415646548776e-05
+      },
+      "inputs": {
+        "count": 32,
+        "mean_seconds": 2.5646688300184906e-05,
+        "median_seconds": 2.2818567231297493e-05,
+        "p95_seconds": 2.5376374833285808e-05,
+        "std_seconds": 1.5174499851293458e-05
+      },
+      "kwargs": {
+        "count": 32,
+        "mean_seconds": 1.98762136278674e-05,
+        "median_seconds": 1.9695027731359005e-05,
+        "p95_seconds": 2.1036528050899505e-05,
+        "std_seconds": 9.202605058373035e-07
+      },
+      "matched_continuous_e2e": {
+        "count": 32,
+        "mean_seconds": 0.5558050562467542,
+        "median_seconds": 0.5688652954995632,
+        "p95_seconds": 0.6018103201990016,
+        "std_seconds": 0.05377351817545025
+      },
+      "profiled_other": {
+        "count": 32,
+        "mean_seconds": 1.5277109923772514e-06,
+        "median_seconds": 1.473352313041687e-06,
+        "p95_seconds": 1.9512372091412544e-06,
+        "std_seconds": 2.8677172493146146e-07
+      },
+      "query_graph": {
+        "count": 32,
+        "mean_seconds": 0.08623360920319101,
+        "median_seconds": 0.08642604411579669,
+        "p95_seconds": 0.09001412572106346,
+        "std_seconds": 0.0028142505012409493
+      },
+      "query_group_pack": {
+        "count": 32,
+        "mean_seconds": 0.13296180038014427,
+        "median_seconds": 0.13489684998057783,
+        "p95_seconds": 0.1486631424166262,
+        "std_seconds": 0.011897413940306193
+      },
+      "reconstruction_apply": {
+        "count": 32,
+        "mean_seconds": 0.0004731254593934864,
+        "median_seconds": 0.00033191998954862356,
+        "p95_seconds": 0.0015085386810824275,
+        "std_seconds": 0.00039044866186185764
+      },
+      "reconstruction_map": {
+        "count": 32,
+        "mean_seconds": 3.394379746168852e-07,
+        "median_seconds": 2.7299392968416214e-07,
+        "p95_seconds": 6.834394298493862e-07,
+        "std_seconds": 1.889339685579328e-07
+      },
+      "support_plus_cv": {
+        "count": 32,
+        "mean_seconds": 0.03462399380077841,
+        "median_seconds": 0.034558387007564306,
+        "p95_seconds": 0.035120723233558235,
+        "std_seconds": 0.0003205313514675926
+      }
+    },
+    "same_input_replay": {
+      "count": 20,
+      "mean_seconds": 0.06414435362676159,
+      "median_seconds": 0.05941267451271415,
+      "p95_seconds": 0.10627371065784245,
+      "std_seconds": 0.014158749919452979
+    }
+  },
+  "sample_count": 32,
+  "samples": [
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 3.2986821697130932,
+        "bottom_rmse_K": 1.7594912463330854,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.44059338319539904,
+        "layer_mean_rmse_K": 3.5155847780530327,
+        "peak_rmse_K": 4.041694641113281,
+        "point_global_true_rms_relative_rmse_pct": 4.438193062607336,
+        "raw_cv_weighted_rmse_K": 3.3033247360311417,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 4.453885902830146,
+        "source_rmse_K": 4.246981503496378,
+        "top_rmse_K": 3.6526839002433613
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "33d474b453ea012826d1ab4e5ffbb716acdb7ef2bd17e46e8ce26bd2dbdb3b4d",
+      "sample_id": "v6p1if1_0907",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2410,
+        "r2p_edges": 417117,
+        "r2r_edges": 4043,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.021269198041409254,
+        "anchor_group_pack": 0.01571066677570343,
+        "asymmetric_forward": 0.05839397991076112,
+        "dummy_local_p2r": 0.0033861438278108835,
+        "graph_extraction": 6.100162863731384e-07,
+        "h2d_enqueue": 0.00855425396002829,
+        "h2d_sync": 0.001128616975620389,
+        "host_tree": 0.00018895603716373444,
+        "inputs": 2.3266999050974846e-05,
+        "kwargs": 2.0301900804042816e-05,
+        "matched_continuous_e2e": 0.331967166159302,
+        "profiled_other": 1.7343554645776749e-06,
+        "query_graph": 0.0893420041538775,
+        "query_group_pack": 0.08335043513216078,
+        "reconstruction_apply": 0.00035897991620004177,
+        "reconstruction_map": 2.791639417409897e-07,
+        "support_plus_cv": 0.03428059187717736
+      },
+      "streaming": {
+        "completion_offset_seconds": 0.3728713830932975,
+        "inter_completion_seconds": 0.3728713830932975,
+        "submit_offset_seconds": 8.348142728209496e-06,
+        "submit_to_result_seconds": 0.37286303495056927
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 0.688098527708688,
+        "bottom_rmse_K": 0.48267149314386343,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.23711342799301457,
+        "layer_mean_rmse_K": 0.34569581904899227,
+        "peak_rmse_K": 0.0316162109375,
+        "point_global_true_rms_relative_rmse_pct": 1.2613202789058264,
+        "raw_cv_weighted_rmse_K": 0.6903841448538824,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.2480412120113316,
+        "source_rmse_K": 1.0987482031404185,
+        "top_rmse_K": 0.6033087433823128
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "c42914c5565cb2d4b684e208181f731589fcf1fc1a842252990040de219d2b0d",
+      "sample_id": "v6p1if1_0365",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2479,
+        "r2p_edges": 422221,
+        "r2r_edges": 4167,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.021881964057683945,
+        "anchor_group_pack": 0.1700712009333074,
+        "asymmetric_forward": 0.10552909597754478,
+        "dummy_local_p2r": 0.0034250980243086815,
+        "graph_extraction": 1.1438969522714615e-06,
+        "h2d_enqueue": 0.00814028107561171,
+        "h2d_sync": 0.0012243769597262144,
+        "host_tree": 0.00017036311328411102,
+        "inputs": 2.3305881768465042e-05,
+        "kwargs": 1.91607978194952e-05,
+        "matched_continuous_e2e": 0.5869617210701108,
+        "profiled_other": 1.857290044426918e-06,
+        "query_graph": 0.0864597880281508,
+        "query_group_pack": 0.1384501929860562,
+        "reconstruction_apply": 0.00036103115417063236,
+        "reconstruction_map": 7.008202373981476e-07,
+        "support_plus_cv": 0.03490044013597071
+      },
+      "streaming": {
+        "completion_offset_seconds": 4.708901579026133,
+        "inter_completion_seconds": 4.336030195932835,
+        "submit_offset_seconds": 4.081195306032896,
+        "submit_to_result_seconds": 0.6277062729932368
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.5403287182102579,
+        "bottom_rmse_K": 0.696993627751773,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.2998505200147627,
+        "layer_mean_rmse_K": 1.2590278476089076,
+        "peak_rmse_K": 1.0533370971679688,
+        "point_global_true_rms_relative_rmse_pct": 2.4603169124478583,
+        "raw_cv_weighted_rmse_K": 1.5403520655998553,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 2.63712841926237,
+        "source_rmse_K": 1.5476031662868286,
+        "top_rmse_K": 2.2673320648172095
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "8aa02d49c6b04ea61d9e26ea14f0489a2ee9a9191e6e4f17bfa5904f099728a3",
+      "sample_id": "v6p1if1_0632",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2769,
+        "r2p_edges": 447546,
+        "r2r_edges": 4097,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02323478809557855,
+        "anchor_group_pack": 0.17252446501515806,
+        "asymmetric_forward": 0.105315743945539,
+        "dummy_local_p2r": 0.003458417020738125,
+        "graph_extraction": 7.699709385633469e-07,
+        "h2d_enqueue": 0.008406303124502301,
+        "h2d_sync": 0.0010422831401228905,
+        "host_tree": 0.00018396205268800259,
+        "inputs": 2.251099795103073e-05,
+        "kwargs": 1.9130995497107506e-05,
+        "matched_continuous_e2e": 0.58986612316221,
+        "profiled_other": 1.4437828212976456e-06,
+        "query_graph": 0.08866006718017161,
+        "query_group_pack": 0.13384498888626695,
+        "reconstruction_apply": 0.0015399400144815445,
+        "reconstruction_map": 3.748573362827301e-07,
+        "support_plus_cv": 0.03509472403675318
+      },
+      "streaming": {
+        "completion_offset_seconds": 9.055924514075741,
+        "inter_completion_seconds": 4.347022935049608,
+        "submit_offset_seconds": 8.425139924045652,
+        "submit_to_result_seconds": 0.630784590030089
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.7358306857208232,
+        "bottom_rmse_K": 0.3778932938391669,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.4811914426069825,
+        "layer_mean_rmse_K": 1.0306754787833354,
+        "peak_rmse_K": 0.2821502685546875,
+        "point_global_true_rms_relative_rmse_pct": 2.6250285856309388,
+        "raw_cv_weighted_rmse_K": 1.7354864608900813,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 2.740058782238311,
+        "source_rmse_K": 1.6654358949206745,
+        "top_rmse_K": 2.3890818544545858
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "ed45b35af338f4d2c652a39b92e8fe417836d74639e0b64b0d5c290a82f0425d",
+      "sample_id": "v6p1if1_0124",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2803,
+        "r2p_edges": 457394,
+        "r2r_edges": 4135,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.023319898871704936,
+        "anchor_group_pack": 0.16467822110280395,
+        "asymmetric_forward": 0.0962784281000495,
+        "dummy_local_p2r": 0.0032304059714078903,
+        "graph_extraction": 8.989591151475906e-07,
+        "h2d_enqueue": 0.008019736967980862,
+        "h2d_sync": 0.001204820116981864,
+        "host_tree": 0.00016201799735426903,
+        "inputs": 2.288585528731346e-05,
+        "kwargs": 1.9558938220143318e-05,
+        "matched_continuous_e2e": 0.577188041061163,
+        "profiled_other": 1.3373792171478271e-06,
+        "query_graph": 0.08868349413387477,
+        "query_group_pack": 0.14039393002167344,
+        "reconstruction_apply": 0.00021813507191836834,
+        "reconstruction_map": 2.0279549062252045e-07,
+        "support_plus_cv": 0.03504191990941763
+      },
+      "streaming": {
+        "completion_offset_seconds": 13.368360287044197,
+        "inter_completion_seconds": 4.312435772968456,
+        "submit_offset_seconds": 12.748924890067428,
+        "submit_to_result_seconds": 0.619435396976769
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 3.7336174848417167,
+        "bottom_rmse_K": 3.4065581131934555,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.7024345870819125,
+        "layer_mean_rmse_K": 3.656769492003058,
+        "peak_rmse_K": 7.415657043457031,
+        "point_global_true_rms_relative_rmse_pct": 4.8493254532757515,
+        "raw_cv_weighted_rmse_K": 3.7547720864812355,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 4.804890106386821,
+        "source_rmse_K": 6.71901285170268,
+        "top_rmse_K": 1.38126869545928
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "36f595ac2961898f503a37799940e561fa794bffb60ab3be714b4b97cb44db31",
+      "sample_id": "v6p1if1_0041",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2324,
+        "r2p_edges": 389396,
+        "r2r_edges": 4195,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.0212168178986758,
+        "anchor_group_pack": 0.1599852629005909,
+        "asymmetric_forward": 0.09140852908603847,
+        "dummy_local_p2r": 0.003515800926834345,
+        "graph_extraction": 8.051283657550812e-07,
+        "h2d_enqueue": 0.008457858115434647,
+        "h2d_sync": 0.0011302169878035784,
+        "host_tree": 0.00016882596537470818,
+        "inputs": 2.2836029529571533e-05,
+        "kwargs": 1.980084925889969e-05,
+        "matched_continuous_e2e": 0.558056617854163,
+        "profiled_other": 1.5872064977884293e-06,
+        "query_graph": 0.08171175909228623,
+        "query_group_pack": 0.13964854390360415,
+        "reconstruction_apply": 0.00036030705086886883,
+        "reconstruction_map": 5.799811333417892e-07,
+        "support_plus_cv": 0.03436448983848095
+      },
+      "streaming": {
+        "completion_offset_seconds": 17.647246432024986,
+        "inter_completion_seconds": 4.278886144980788,
+        "submit_offset_seconds": 17.048985440982506,
+        "submit_to_result_seconds": 0.5982609910424799
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.020007656549063,
+        "bottom_rmse_K": 1.3973255289915258,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.32759842498050645,
+        "layer_mean_rmse_K": 1.8331495106535858,
+        "peak_rmse_K": 1.167205810546875,
+        "point_global_true_rms_relative_rmse_pct": 1.5749472852732285,
+        "raw_cv_weighted_rmse_K": 2.0223448811055347,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.5862909919287485,
+        "source_rmse_K": 2.4513714847688943,
+        "top_rmse_K": 1.5857738979478029
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "ec24d3b84a41504c69a74f905d7cd78401b1a7b4bdff941ac259ca0fdd4936cb",
+      "sample_id": "v6p1if1_1003",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2405,
+        "r2p_edges": 390016,
+        "r2r_edges": 4039,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.022199713857844472,
+        "anchor_group_pack": 0.1630403739400208,
+        "asymmetric_forward": 0.1054250888992101,
+        "dummy_local_p2r": 0.003654703963547945,
+        "graph_extraction": 1.2440141290426254e-06,
+        "h2d_enqueue": 0.008334883954375982,
+        "h2d_sync": 0.001096752006560564,
+        "host_tree": 0.00017960695549845695,
+        "inputs": 0.00010997406207025051,
+        "kwargs": 2.4016015231609344e-05,
+        "matched_continuous_e2e": 0.576934824930504,
+        "profiled_other": 1.4889519661664963e-06,
+        "query_graph": 0.08487828890793025,
+        "query_group_pack": 0.1353963401634246,
+        "reconstruction_apply": 0.001530783949419856,
+        "reconstruction_map": 6.440095603466034e-07,
+        "support_plus_cv": 0.03466647886671126
+      },
+      "streaming": {
+        "completion_offset_seconds": 21.984555086120963,
+        "inter_completion_seconds": 4.3373086540959775,
+        "submit_offset_seconds": 21.367190717021003,
+        "submit_to_result_seconds": 0.6173643690999597
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.2802591247579413,
+        "bottom_rmse_K": 1.3412843371659495,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.2896085618637175,
+        "layer_mean_rmse_K": 0.39812799611677757,
+        "peak_rmse_K": 0.260009765625,
+        "point_global_true_rms_relative_rmse_pct": 1.2161716818096238,
+        "raw_cv_weighted_rmse_K": 1.2841831348736428,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.1782995953383895,
+        "source_rmse_K": 2.9274661100336545,
+        "top_rmse_K": 1.7901851700867117
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "0c626322fffcfe88cd815d85c843d07ba657e6cc70e097bab1166f83a75f36c9",
+      "sample_id": "v6p1if1_0091",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2564,
+        "r2p_edges": 380851,
+        "r2r_edges": 4147,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.022213937947526574,
+        "anchor_group_pack": 0.16507087601348758,
+        "asymmetric_forward": 0.06055163708515465,
+        "dummy_local_p2r": 0.0032568760216236115,
+        "graph_extraction": 9.010545909404755e-07,
+        "h2d_enqueue": 0.008052468998357654,
+        "h2d_sync": 0.001280756201595068,
+        "host_tree": 0.0001600850373506546,
+        "inputs": 2.2042077034711838e-05,
+        "kwargs": 1.9456958398222923e-05,
+        "matched_continuous_e2e": 0.5274268130306154,
+        "profiled_other": 1.4577526599168777e-06,
+        "query_graph": 0.08136234013363719,
+        "query_group_pack": 0.13440160197205842,
+        "reconstruction_apply": 0.0002800871152430773,
+        "reconstruction_map": 3.650784492492676e-07,
+        "support_plus_cv": 0.03462867112830281
+      },
+      "streaming": {
+        "completion_offset_seconds": 26.265396055066958,
+        "inter_completion_seconds": 4.280840968945995,
+        "submit_offset_seconds": 25.69745196099393,
+        "submit_to_result_seconds": 0.5679440940730274
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 3.3877219031436505,
+        "bottom_rmse_K": 1.755005317498561,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.6059161740832927,
+        "layer_mean_rmse_K": 3.6918777442378996,
+        "peak_rmse_K": 4.9127655029296875,
+        "point_global_true_rms_relative_rmse_pct": 5.2263661341310215,
+        "raw_cv_weighted_rmse_K": 3.39081299240185,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 5.1939460482308455,
+        "source_rmse_K": 4.057326500101657,
+        "top_rmse_K": 4.218196646552059
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "7d8a9c07de3167e1596edfa252cc6c444b561bcd2e78b151e95682b1a1f64647",
+      "sample_id": "v6p1if1_0286",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2786,
+        "r2p_edges": 463306,
+        "r2r_edges": 4109,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.022961311042308807,
+        "anchor_group_pack": 0.16573396185413003,
+        "asymmetric_forward": 0.10465098707936704,
+        "dummy_local_p2r": 0.0034712159540504217,
+        "graph_extraction": 6.740447133779526e-07,
+        "h2d_enqueue": 0.008088769856840372,
+        "h2d_sync": 0.001124402042478323,
+        "host_tree": 0.00017126300372183323,
+        "inputs": 2.374988980591297e-05,
+        "kwargs": 1.9449042156338692e-05,
+        "matched_continuous_e2e": 0.565121830906719,
+        "profiled_other": 1.2300442904233932e-06,
+        "query_graph": 0.08815433387644589,
+        "query_group_pack": 0.11970851197838783,
+        "reconstruction_apply": 0.0003124179784208536,
+        "reconstruction_map": 3.748573362827301e-07,
+        "support_plus_cv": 0.03456409904174507
+      },
+      "streaming": {
+        "completion_offset_seconds": 30.610804136143997,
+        "inter_completion_seconds": 4.345408081077039,
+        "submit_offset_seconds": 30.005146379116923,
+        "submit_to_result_seconds": 0.6056577570270747
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 0.6532416067920264,
+        "bottom_rmse_K": 0.4408270563246241,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.07640716067499201,
+        "layer_mean_rmse_K": 0.42745813744299693,
+        "peak_rmse_K": 1.5818710327148438,
+        "point_global_true_rms_relative_rmse_pct": 1.3923583556114303,
+        "raw_cv_weighted_rmse_K": 0.6570478697805392,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.3580840853220697,
+        "source_rmse_K": 1.1886907471782389,
+        "top_rmse_K": 0.5532292251892814
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "cd98d32247b1a5a941a02a08ddd21239ab6fc96d0c4d3b9cb72cdea9e19615c3",
+      "sample_id": "v6p1if1_0915",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2891,
+        "r2p_edges": 451080,
+        "r2r_edges": 4157,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02147468109615147,
+        "anchor_group_pack": 0.16651186207309365,
+        "asymmetric_forward": 0.10527278296649456,
+        "dummy_local_p2r": 0.0034393989481031895,
+        "graph_extraction": 1.5399418771266937e-06,
+        "h2d_enqueue": 0.008073498960584402,
+        "h2d_sync": 0.0010934430174529552,
+        "host_tree": 0.00016700499691069126,
+        "inputs": 2.270098775625229e-05,
+        "kwargs": 1.9866041839122772e-05,
+        "matched_continuous_e2e": 0.586073991144076,
+        "profiled_other": 1.927139237523079e-06,
+        "query_graph": 0.08664121595211327,
+        "query_group_pack": 0.14251380506902933,
+        "reconstruction_apply": 0.0002800819929689169,
+        "reconstruction_map": 3.5320408642292023e-07,
+        "support_plus_cv": 0.03455159394070506
+      },
+      "streaming": {
+        "completion_offset_seconds": 34.938540913164616,
+        "inter_completion_seconds": 4.327736777020618,
+        "submit_offset_seconds": 34.311888857977465,
+        "submit_to_result_seconds": 0.6266520551871508
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.356450030376135,
+        "bottom_rmse_K": 1.2170104343740964,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.3141573425586871,
+        "layer_mean_rmse_K": 2.4317456697620017,
+        "peak_rmse_K": 0.7574462890625,
+        "point_global_true_rms_relative_rmse_pct": 4.013292513186135,
+        "raw_cv_weighted_rmse_K": 2.35730013063174,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 4.03193658047283,
+        "source_rmse_K": 2.636319557608022,
+        "top_rmse_K": 2.397919552341627
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "8e6a231fe2b8985a4ab400294f09a7f8e5e7d66fd9364b9f738cef4e98b40a34",
+      "sample_id": "v6p1if1_0572",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2480,
+        "r2p_edges": 368669,
+        "r2r_edges": 4089,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02634033700451255,
+        "anchor_group_pack": 0.16513410699553788,
+        "asymmetric_forward": 0.0983154010027647,
+        "dummy_local_p2r": 0.0044310730881989,
+        "graph_extraction": 1.0940711945295334e-06,
+        "h2d_enqueue": 0.00898128910921514,
+        "h2d_sync": 0.00011399481445550919,
+        "host_tree": 0.00019126618281006813,
+        "inputs": 2.2185035049915314e-05,
+        "kwargs": 1.936894841492176e-05,
+        "matched_continuous_e2e": 0.5685323751531541,
+        "profiled_other": 1.5816185623407364e-06,
+        "query_graph": 0.08426978415809572,
+        "query_group_pack": 0.12883817520923913,
+        "reconstruction_apply": 0.00037779216654598713,
+        "reconstruction_map": 1.4086253941059113e-07,
+        "support_plus_cv": 0.034966214094311
+      },
+      "streaming": {
+        "completion_offset_seconds": 39.28399183717556,
+        "inter_completion_seconds": 4.345450924010947,
+        "submit_offset_seconds": 38.6742950740736,
+        "submit_to_result_seconds": 0.6096967631019652
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 3.4679472232960715,
+        "bottom_rmse_K": 2.890588138528445,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.47631260118285434,
+        "layer_mean_rmse_K": 3.6957141738341543,
+        "peak_rmse_K": 7.317771911621094,
+        "point_global_true_rms_relative_rmse_pct": 3.569071059116155,
+        "raw_cv_weighted_rmse_K": 3.4862672788884765,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 3.4709141415902653,
+        "source_rmse_K": 6.35169648699206,
+        "top_rmse_K": 2.6264707781674894
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "fb558c01f2fe7a6301acf2650afe6e01949ba411d4121f474fcb21a577daa6fa",
+      "sample_id": "v6p1if1_0522",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2826,
+        "r2p_edges": 467729,
+        "r2r_edges": 4063,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02189556392841041,
+        "anchor_group_pack": 0.1725077440496534,
+        "asymmetric_forward": 0.07981338305398822,
+        "dummy_local_p2r": 0.004587403032928705,
+        "graph_extraction": 6.828922778367996e-07,
+        "h2d_enqueue": 0.008120863931253552,
+        "h2d_sync": 0.0012905530165880919,
+        "host_tree": 0.00016586319543421268,
+        "inputs": 2.110120840370655e-05,
+        "kwargs": 1.8677208572626114e-05,
+        "matched_continuous_e2e": 0.5682168668136001,
+        "profiled_other": 1.7622951418161392e-06,
+        "query_graph": 0.0896445990074426,
+        "query_group_pack": 0.138322512852028,
+        "reconstruction_apply": 0.00035317917354404926,
+        "reconstruction_map": 1.380685716867447e-07,
+        "support_plus_cv": 0.03543628891929984
+      },
+      "streaming": {
+        "completion_offset_seconds": 43.62734897597693,
+        "inter_completion_seconds": 4.343357138801366,
+        "submit_offset_seconds": 43.01669740001671,
+        "submit_to_result_seconds": 0.6106515759602189
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.7546448488625366,
+        "bottom_rmse_K": 2.060508672301983,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.7066800371109492,
+        "layer_mean_rmse_K": 2.7636259133063836,
+        "peak_rmse_K": 6.6551513671875,
+        "point_global_true_rms_relative_rmse_pct": 2.7657860907249443,
+        "raw_cv_weighted_rmse_K": 2.7720687261764323,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 2.6672801889959485,
+        "source_rmse_K": 5.299998077669583,
+        "top_rmse_K": 1.5120919104814172
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "62a63fbe1ed7d1db7f4cb36cd461711b8eb50fd1db3b974db200fc5f84a233e6",
+      "sample_id": "v6p1if1_0708",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2104,
+        "r2p_edges": 364433,
+        "r2r_edges": 4173,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.022392390994355083,
+        "anchor_group_pack": 0.18111757701262832,
+        "asymmetric_forward": 0.10466205980628729,
+        "dummy_local_p2r": 0.06307070888578892,
+        "graph_extraction": 5.119945853948593e-07,
+        "h2d_enqueue": 0.007963694166392088,
+        "h2d_sync": 0.001170742092654109,
+        "host_tree": 0.00019472790881991386,
+        "inputs": 2.349400892853737e-05,
+        "kwargs": 1.8987106159329414e-05,
+        "matched_continuous_e2e": 0.6357740319799632,
+        "profiled_other": 1.9010622054338455e-06,
+        "query_graph": 0.08159440103918314,
+        "query_group_pack": 0.12236738810315728,
+        "reconstruction_apply": 0.00033139996230602264,
+        "reconstruction_map": 1.708976924419403e-07,
+        "support_plus_cv": 0.03451180597767234
+      },
+      "streaming": {
+        "completion_offset_seconds": 48.01909495797008,
+        "inter_completion_seconds": 4.391745981993154,
+        "submit_offset_seconds": 47.34302888507955,
+        "submit_to_result_seconds": 0.676066072890535
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.6353461305553636,
+        "bottom_rmse_K": 0.7974906647175452,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.2448844331583422,
+        "layer_mean_rmse_K": 1.5609666910949422,
+        "peak_rmse_K": 0.9581985473632812,
+        "point_global_true_rms_relative_rmse_pct": 3.8282440682863905,
+        "raw_cv_weighted_rmse_K": 1.6343693720543042,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 4.042553296501838,
+        "source_rmse_K": 1.4071163116135716,
+        "top_rmse_K": 1.788791473101492
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "7c3ed0c4d35947716d6c404e6a75c200dfe303562c874d8d7631c7b73228c951",
+      "sample_id": "v6p1if1_0846",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2671,
+        "r2p_edges": 437443,
+        "r2r_edges": 4119,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.022121825022622943,
+        "anchor_group_pack": 0.16786874015815556,
+        "asymmetric_forward": 0.10471881600096822,
+        "dummy_local_p2r": 0.0033318770583719015,
+        "graph_extraction": 1.035863533616066e-06,
+        "h2d_enqueue": 0.008221810916438699,
+        "h2d_sync": 0.0013591998722404242,
+        "host_tree": 0.00016451813280582428,
+        "inputs": 2.2969907149672508e-05,
+        "kwargs": 1.96059700101614e-05,
+        "matched_continuous_e2e": 0.5721773658879101,
+        "profiled_other": 1.2700911611318588e-06,
+        "query_graph": 0.0850234730169177,
+        "query_group_pack": 0.12860365607775748,
+        "reconstruction_apply": 0.00029075611382722855,
+        "reconstruction_map": 1.8184073269367218e-07,
+        "support_plus_cv": 0.03431433509103954
+      },
+      "streaming": {
+        "completion_offset_seconds": 52.29207419115119,
+        "inter_completion_seconds": 4.272979233181104,
+        "submit_offset_seconds": 51.67974454816431,
+        "submit_to_result_seconds": 0.6123296429868788
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 0.6286527861474939,
+        "bottom_rmse_K": 0.509638847790712,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.1197372003012764,
+        "layer_mean_rmse_K": 0.11451510119559535,
+        "peak_rmse_K": 0.5019683837890625,
+        "point_global_true_rms_relative_rmse_pct": 0.8472464675482039,
+        "raw_cv_weighted_rmse_K": 0.6307270455394386,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 0.8352854153171538,
+        "source_rmse_K": 1.038127800744749,
+        "top_rmse_K": 0.5905387074363045
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "7d0ffef4b13f8231c49462d46d0aa583d80e84063b58ce2b8c07ed6f7d8038e9",
+      "sample_id": "v6p1if1_0817",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2663,
+        "r2p_edges": 445998,
+        "r2r_edges": 4057,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02148442785255611,
+        "anchor_group_pack": 0.16738058510236442,
+        "asymmetric_forward": 0.104298016987741,
+        "dummy_local_p2r": 0.003667132928967476,
+        "graph_extraction": 7.560010999441147e-07,
+        "h2d_enqueue": 0.008702147053554654,
+        "h2d_sync": 0.0011384391691535711,
+        "host_tree": 0.0001691428478807211,
+        "inputs": 2.2532884031534195e-05,
+        "kwargs": 1.9210856407880783e-05,
+        "matched_continuous_e2e": 0.5815692970063537,
+        "profiled_other": 1.6603153198957443e-06,
+        "query_graph": 0.08639230020344257,
+        "query_group_pack": 0.13772107986733317,
+        "reconstruction_apply": 0.00037657911889255047,
+        "reconstruction_map": 6.700865924358368e-07,
+        "support_plus_cv": 0.034127698047086596
+      },
+      "streaming": {
+        "completion_offset_seconds": 56.56828453205526,
+        "inter_completion_seconds": 4.276210340904072,
+        "submit_offset_seconds": 55.94658292713575,
+        "submit_to_result_seconds": 0.6217016049195081
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.4835302898819913,
+        "bottom_rmse_K": 1.040633875653759,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.29021597822375506,
+        "layer_mean_rmse_K": 0.691971286232766,
+        "peak_rmse_K": 1.359954833984375,
+        "point_global_true_rms_relative_rmse_pct": 1.2952303284632876,
+        "raw_cv_weighted_rmse_K": 1.487820450892619,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.302568050954569,
+        "source_rmse_K": 2.5415214507018606,
+        "top_rmse_K": 2.413446004216837
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "f8cbb189620261db9b04c413128e778ec2f9bab3a0bbe135d1f77a3f7b641550",
+      "sample_id": "v6p1if1_0869",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2818,
+        "r2p_edges": 459261,
+        "r2r_edges": 4167,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02226042398251593,
+        "anchor_group_pack": 0.07145868288353086,
+        "asymmetric_forward": 0.10422780294902623,
+        "dummy_local_p2r": 0.0035121941473335028,
+        "graph_extraction": 1.0118819773197174e-06,
+        "h2d_enqueue": 0.00877469521947205,
+        "h2d_sync": 0.0010735869873315096,
+        "host_tree": 0.00016982411034405231,
+        "inputs": 2.311798743903637e-05,
+        "kwargs": 1.984904520213604e-05,
+        "matched_continuous_e2e": 0.48567636706866324,
+        "profiled_other": 2.1848827600479126e-06,
+        "query_graph": 0.08615866000764072,
+        "query_group_pack": 0.13715607393532991,
+        "reconstruction_apply": 0.0003324400167912245,
+        "reconstruction_map": 1.8114224076271057e-07,
+        "support_plus_cv": 0.034436347894370556
+      },
+      "streaming": {
+        "completion_offset_seconds": 60.752850875025615,
+        "inter_completion_seconds": 4.184566342970356,
+        "submit_offset_seconds": 60.22700297902338,
+        "submit_to_result_seconds": 0.525847896002233
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.6526388409626427,
+        "bottom_rmse_K": 1.1971561957329024,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.4828068637135855,
+        "layer_mean_rmse_K": 2.3592652718025646,
+        "peak_rmse_K": 2.6112136840820312,
+        "point_global_true_rms_relative_rmse_pct": 4.212196435611166,
+        "raw_cv_weighted_rmse_K": 2.6527659759015894,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 4.408764352836371,
+        "source_rmse_K": 2.7004161436678498,
+        "top_rmse_K": 2.7828423705914176
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "621df981be5ec147d9163fdd5eaeecb6c42d033b1b654a74df7279cbf1029ed2",
+      "sample_id": "v6p1if1_0991",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2395,
+        "r2p_edges": 392174,
+        "r2r_edges": 4109,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.023705783067271113,
+        "anchor_group_pack": 0.07303042407147586,
+        "asymmetric_forward": 0.09773452603258193,
+        "dummy_local_p2r": 0.0032303740736097097,
+        "graph_extraction": 6.218906491994858e-07,
+        "h2d_enqueue": 0.007961283903568983,
+        "h2d_sync": 0.0011984510347247124,
+        "host_tree": 0.0001707039773464203,
+        "inputs": 2.2246968001127243e-05,
+        "kwargs": 1.92869920283556e-05,
+        "matched_continuous_e2e": 0.5035621840506792,
+        "profiled_other": 1.7050188034772873e-06,
+        "query_graph": 0.08351738285273314,
+        "query_group_pack": 0.15198141988366842,
+        "reconstruction_apply": 0.000314278993755579,
+        "reconstruction_map": 1.8603168427944183e-07,
+        "support_plus_cv": 0.03507199604064226
+      },
+      "streaming": {
+        "completion_offset_seconds": 64.9710778889712,
+        "inter_completion_seconds": 4.2182270139455795,
+        "submit_offset_seconds": 64.42606247705407,
+        "submit_to_result_seconds": 0.5450154119171202
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.84962978039193,
+        "bottom_rmse_K": 2.0556888810424185,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.41378191241900475,
+        "layer_mean_rmse_K": 2.728608921771571,
+        "peak_rmse_K": 1.13177490234375,
+        "point_global_true_rms_relative_rmse_pct": 4.1895284727787585,
+        "raw_cv_weighted_rmse_K": 2.8561227559469593,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 4.380398959768063,
+        "source_rmse_K": 4.492443594511297,
+        "top_rmse_K": 2.1572094356428333
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "53d520852c208de3e55b30390753087118a17e9fb688492c29558b33d5d7633c",
+      "sample_id": "v6p1if1_0203",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2606,
+        "r2p_edges": 441783,
+        "r2r_edges": 4101,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.023895927937701344,
+        "anchor_group_pack": 0.17700459994375706,
+        "asymmetric_forward": 0.10347523912787437,
+        "dummy_local_p2r": 0.003375597996637225,
+        "graph_extraction": 6.880145519971848e-07,
+        "h2d_enqueue": 0.008949648821726441,
+        "h2d_sync": 0.0011502830311655998,
+        "host_tree": 0.000176579924300313,
+        "inputs": 2.4137087166309357e-05,
+        "kwargs": 2.0225998014211655e-05,
+        "matched_continuous_e2e": 0.604842065833509,
+        "profiled_other": 1.6391277313232422e-06,
+        "query_graph": 0.0871944259852171,
+        "query_group_pack": 0.14785787998698652,
+        "reconstruction_apply": 0.00035612983629107475,
+        "reconstruction_map": 5.359761416912079e-07,
+        "support_plus_cv": 0.03515250002965331
+      },
+      "streaming": {
+        "completion_offset_seconds": 69.32116625015624,
+        "inter_completion_seconds": 4.350088361185044,
+        "submit_offset_seconds": 68.67519120499492,
+        "submit_to_result_seconds": 0.6459750451613218
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.481367956506661,
+        "bottom_rmse_K": 0.96421893186487,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.3620830611025533,
+        "layer_mean_rmse_K": 2.303860390317626,
+        "peak_rmse_K": 2.354156494140625,
+        "point_global_true_rms_relative_rmse_pct": 4.561162769309971,
+        "raw_cv_weighted_rmse_K": 2.4815991324394786,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 5.0004511788398185,
+        "source_rmse_K": 2.560432937528943,
+        "top_rmse_K": 2.457059256568012
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "99fafb393e09614017c6aec48942d5113e83b79d8b8bf48dc96035a112a670b5",
+      "sample_id": "v6p1if1_0543",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2683,
+        "r2p_edges": 402622,
+        "r2r_edges": 4201,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.023724833969026804,
+        "anchor_group_pack": 0.06842818506993353,
+        "asymmetric_forward": 0.1050156969577074,
+        "dummy_local_p2r": 0.003183402819558978,
+        "graph_extraction": 9.639188647270203e-07,
+        "h2d_enqueue": 0.007993443170562387,
+        "h2d_sync": 0.0015234320890158415,
+        "host_tree": 0.0001681509893387556,
+        "inputs": 2.1840911358594894e-05,
+        "kwargs": 1.9463011994957924e-05,
+        "matched_continuous_e2e": 0.4708553799428046,
+        "profiled_other": 1.0924413800239563e-06,
+        "query_graph": 0.08462063106708229,
+        "query_group_pack": 0.12556422408670187,
+        "reconstruction_apply": 0.0002844249829649925,
+        "reconstruction_map": 1.708976924419403e-07,
+        "support_plus_cv": 0.034617722034454346
+      },
+      "streaming": {
+        "completion_offset_seconds": 73.48763948911801,
+        "inter_completion_seconds": 4.166473238961771,
+        "submit_offset_seconds": 72.97605101414956,
+        "submit_to_result_seconds": 0.5115884749684483
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.4688671738255916,
+        "bottom_rmse_K": 1.5403524563331406,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.5129576935104391,
+        "layer_mean_rmse_K": 1.292510544430358,
+        "peak_rmse_K": 5.005409240722656,
+        "point_global_true_rms_relative_rmse_pct": 2.0083097963851366,
+        "raw_cv_weighted_rmse_K": 1.494065382768201,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.6997002975939361,
+        "source_rmse_K": 4.726989725071314,
+        "top_rmse_K": 0.7854124666353882
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "3625aff561300b363582f627da28dfc698e483a14c445f18a8180e684d2d863a",
+      "sample_id": "v6p1if1_0854",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2824,
+        "r2p_edges": 450847,
+        "r2r_edges": 4139,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02115357294678688,
+        "anchor_group_pack": 0.17115475703030825,
+        "asymmetric_forward": 0.10445663006976247,
+        "dummy_local_p2r": 0.00327495695091784,
+        "graph_extraction": 9.960494935512543e-07,
+        "h2d_enqueue": 0.008203375153243542,
+        "h2d_sync": 0.001550666056573391,
+        "host_tree": 0.0001745459157973528,
+        "inputs": 2.2344989702105522e-05,
+        "kwargs": 1.9355909898877144e-05,
+        "matched_continuous_e2e": 0.5847772799897939,
+        "profiled_other": 1.176958903670311e-06,
+        "query_graph": 0.0881134569644928,
+        "query_group_pack": 0.13558638095855713,
+        "reconstruction_apply": 0.000525810057297349,
+        "reconstruction_map": 2.5704503059387207e-07,
+        "support_plus_cv": 0.034658768912777305
+      },
+      "streaming": {
+        "completion_offset_seconds": 77.80570628214628,
+        "inter_completion_seconds": 4.318066793028265,
+        "submit_offset_seconds": 77.18041067314334,
+        "submit_to_result_seconds": 0.6252956090029329
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.566146832828676,
+        "bottom_rmse_K": 1.3613153537515381,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.31699356448160965,
+        "layer_mean_rmse_K": 2.734451183245175,
+        "peak_rmse_K": 1.5389404296875,
+        "point_global_true_rms_relative_rmse_pct": 2.759803708697857,
+        "raw_cv_weighted_rmse_K": 2.5661975989842385,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 2.687123355921428,
+        "source_rmse_K": 2.588484253085172,
+        "top_rmse_K": 3.2248009827944033
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "50580dc6fe3a0a8e48617d99ba80cfb543cee41b712621127ed864a4c9b6d8be",
+      "sample_id": "v6p1if1_0118",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2862,
+        "r2p_edges": 455945,
+        "r2r_edges": 4131,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.021716252900660038,
+        "anchor_group_pack": 0.17382850591093302,
+        "asymmetric_forward": 0.10438678786158562,
+        "dummy_local_p2r": 0.003420199966058135,
+        "graph_extraction": 6.819609552621841e-07,
+        "h2d_enqueue": 0.009191122837364674,
+        "h2d_sync": 0.0011402200907468796,
+        "host_tree": 0.00018172687850892544,
+        "inputs": 2.474500797688961e-05,
+        "kwargs": 2.1246029064059258e-05,
+        "matched_continuous_e2e": 0.580520958872512,
+        "profiled_other": 1.3241078704595566e-06,
+        "query_graph": 0.08826798805966973,
+        "query_group_pack": 0.12621538992971182,
+        "reconstruction_apply": 0.0014903380069881678,
+        "reconstruction_map": 6.831251084804535e-07,
+        "support_plus_cv": 0.03453375492244959
+      },
+      "streaming": {
+        "completion_offset_seconds": 82.01970536913723,
+        "inter_completion_seconds": 4.2139990869909525,
+        "submit_offset_seconds": 81.39873349713162,
+        "submit_to_result_seconds": 0.6209718720056117
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.2205961941850774,
+        "bottom_rmse_K": 0.6667761253622316,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.3592053910882847,
+        "layer_mean_rmse_K": 1.3727468787230463,
+        "peak_rmse_K": 3.1366043090820312,
+        "point_global_true_rms_relative_rmse_pct": 3.0778339770847754,
+        "raw_cv_weighted_rmse_K": 1.2310409536710707,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 2.622193038031893,
+        "source_rmse_K": 3.3442268982996595,
+        "top_rmse_K": 0.9751484990215679
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "25a2f91c5ef54641845fbb16a4458b5c8a29e254333b1f3cb224fd5c0ca064b3",
+      "sample_id": "v6p1if1_0930",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2434,
+        "r2p_edges": 393817,
+        "r2r_edges": 4147,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.022379806032404304,
+        "anchor_group_pack": 0.07054651901125908,
+        "asymmetric_forward": 0.09675770904868841,
+        "dummy_local_p2r": 0.003254001960158348,
+        "graph_extraction": 7.038470357656479e-07,
+        "h2d_enqueue": 0.008209872990846634,
+        "h2d_sync": 0.0013640460092574358,
+        "host_tree": 0.0001672541256994009,
+        "inputs": 2.2463034838438034e-05,
+        "kwargs": 2.0330073311924934e-05,
+        "matched_continuous_e2e": 0.4796802559867501,
+        "profiled_other": 1.3529788702726364e-06,
+        "query_graph": 0.08338588895276189,
+        "query_group_pack": 0.14328650292009115,
+        "reconstruction_apply": 0.000288686016574502,
+        "reconstruction_map": 2.2398307919502258e-07,
+        "support_plus_cv": 0.03416909393854439
+      },
+      "streaming": {
+        "completion_offset_seconds": 86.20249085500836,
+        "inter_completion_seconds": 4.182785485871136,
+        "submit_offset_seconds": 85.68193955114111,
+        "submit_to_result_seconds": 0.5205513038672507
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.156213643816186,
+        "bottom_rmse_K": 0.8997538396397793,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.1607321826987583,
+        "layer_mean_rmse_K": 1.2055533688632614,
+        "peak_rmse_K": 2.7689895629882812,
+        "point_global_true_rms_relative_rmse_pct": 2.679443757261737,
+        "raw_cv_weighted_rmse_K": 1.158997207260879,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 2.6546351637430523,
+        "source_rmse_K": 1.7980154861789075,
+        "top_rmse_K": 1.34928467699679
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "5e82db0bd9dcc4cec514a4e7ff9b6cc3db34fe8a6c6d90e895336014d42b562f",
+      "sample_id": "v6p1if1_0029",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2911,
+        "r2p_edges": 496646,
+        "r2r_edges": 4095,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02315300004556775,
+        "anchor_group_pack": 0.1294989618472755,
+        "asymmetric_forward": 0.10482232901267707,
+        "dummy_local_p2r": 0.0034903769847005606,
+        "graph_extraction": 8.009374141693115e-07,
+        "h2d_enqueue": 0.00791353709064424,
+        "h2d_sync": 0.0011918412055820227,
+        "host_tree": 0.0001668690238147974,
+        "inputs": 2.3778993636369705e-05,
+        "kwargs": 2.0381063222885132e-05,
+        "matched_continuous_e2e": 0.5639245121274143,
+        "profiled_other": 1.1320225894451141e-06,
+        "query_graph": 0.08998310985043645,
+        "query_group_pack": 0.1496473520528525,
+        "reconstruction_apply": 0.0002625731285661459,
+        "reconstruction_map": 3.210734575986862e-07,
+        "support_plus_cv": 0.03433122090063989
+      },
+      "streaming": {
+        "completion_offset_seconds": 90.43963805306703,
+        "inter_completion_seconds": 4.237147198058665,
+        "submit_offset_seconds": 89.83401755103841,
+        "submit_to_result_seconds": 0.6056205020286143
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.0580584421266763,
+        "bottom_rmse_K": 1.1806548778293129,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.22497736156969345,
+        "layer_mean_rmse_K": 0.7011220094047227,
+        "peak_rmse_K": 1.4406890869140625,
+        "point_global_true_rms_relative_rmse_pct": 0.7035360299052018,
+        "raw_cv_weighted_rmse_K": 1.0660262421047468,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 0.7265848696174179,
+        "source_rmse_K": 2.27285891904431,
+        "top_rmse_K": 1.1384761241888646
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "78e9114c5222184386347ee3bdf2282eceb6602a6d8c2fcb57d28dccd374f8c6",
+      "sample_id": "v6p1if1_0003",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2436,
+        "r2p_edges": 419413,
+        "r2r_edges": 4103,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.020643669879063964,
+        "anchor_group_pack": 0.18024043086916208,
+        "asymmetric_forward": 0.07729068282060325,
+        "dummy_local_p2r": 0.0033116762060672045,
+        "graph_extraction": 7.478520274162292e-07,
+        "h2d_enqueue": 0.007664858130738139,
+        "h2d_sync": 0.00121005205437541,
+        "host_tree": 0.0001697540283203125,
+        "inputs": 2.3115891963243484e-05,
+        "kwargs": 1.9781989976763725e-05,
+        "matched_continuous_e2e": 0.5691982158459723,
+        "profiled_other": 1.8391292542219162e-06,
+        "query_graph": 0.08492275094613433,
+        "query_group_pack": 0.14333932707086205,
+        "reconstruction_apply": 0.00026788306422531605,
+        "reconstruction_map": 2.7799978852272034e-07,
+        "support_plus_cv": 0.034224080154672265
+      },
+      "streaming": {
+        "completion_offset_seconds": 94.75018692598678,
+        "inter_completion_seconds": 4.310548872919753,
+        "submit_offset_seconds": 94.14078277815133,
+        "submit_to_result_seconds": 0.6094041478354484
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 3.575593866794421,
+        "bottom_rmse_K": 2.1698561753034133,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 1.0268949665582294,
+        "layer_mean_rmse_K": 4.200762900762568,
+        "peak_rmse_K": 5.0727996826171875,
+        "point_global_true_rms_relative_rmse_pct": 5.162909836270949,
+        "raw_cv_weighted_rmse_K": 3.596231100996393,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 4.746484350346998,
+        "source_rmse_K": 6.3069125270489055,
+        "top_rmse_K": 2.557604234419439
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "f09e137fa7b6d5c075c5125eb2485a7a7efa29b083dee67813985b5f1300588f",
+      "sample_id": "v6p1if1_0308",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2545,
+        "r2p_edges": 469953,
+        "r2r_edges": 4159,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.023902507033199072,
+        "anchor_group_pack": 0.17614648211747408,
+        "asymmetric_forward": 0.08744978602044284,
+        "dummy_local_p2r": 0.003280653851106763,
+        "graph_extraction": 9.969808161258698e-07,
+        "h2d_enqueue": 0.008363887900486588,
+        "h2d_sync": 0.001092148944735527,
+        "host_tree": 0.00016960082575678825,
+        "inputs": 2.2801104933023453e-05,
+        "kwargs": 1.9801082089543343e-05,
+        "matched_continuous_e2e": 0.5758152948692441,
+        "profiled_other": 1.3550743460655212e-06,
+        "query_graph": 0.09005203400738537,
+        "query_group_pack": 0.13353074295446277,
+        "reconstruction_apply": 0.00029287301003932953,
+        "reconstruction_map": 1.9511207938194275e-07,
+        "support_plus_cv": 0.03502799803391099
+      },
+      "streaming": {
+        "completion_offset_seconds": 99.04106254316866,
+        "inter_completion_seconds": 4.290875617181882,
+        "submit_offset_seconds": 98.42430036119185,
+        "submit_to_result_seconds": 0.6167621819768101
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 0.7449164285751192,
+        "bottom_rmse_K": 0.33975503104200816,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.14246879791181996,
+        "layer_mean_rmse_K": 0.49675744602556654,
+        "peak_rmse_K": 3.0407142639160156,
+        "point_global_true_rms_relative_rmse_pct": 2.6054194206714785,
+        "raw_cv_weighted_rmse_K": 0.7541324298889082,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 2.4878979094007705,
+        "source_rmse_K": 2.9762537840677448,
+        "top_rmse_K": 0.4134944876717137
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "d9103e812ffcea1f80edb196a0380baaf953f2be84e0467028d91bc31c499c63",
+      "sample_id": "v6p1if1_0599",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2656,
+        "r2p_edges": 404373,
+        "r2r_edges": 4085,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.022305237129330635,
+        "anchor_group_pack": 0.17309030913747847,
+        "asymmetric_forward": 0.08656441792845726,
+        "dummy_local_p2r": 0.003308352082967758,
+        "graph_extraction": 8.658971637487411e-07,
+        "h2d_enqueue": 0.008069055853411555,
+        "h2d_sync": 0.0012152960989624262,
+        "host_tree": 0.00017244997434318066,
+        "inputs": 2.366793341934681e-05,
+        "kwargs": 1.9541941583156586e-05,
+        "matched_continuous_e2e": 0.5557841171976179,
+        "profiled_other": 1.6801059246063232e-06,
+        "query_graph": 0.08460923098027706,
+        "query_group_pack": 0.12522152718156576,
+        "reconstruction_apply": 0.0003200832288712263,
+        "reconstruction_map": 1.511070877313614e-07,
+        "support_plus_cv": 0.0347194520290941
+      },
+      "streaming": {
+        "completion_offset_seconds": 103.36754065798596,
+        "inter_completion_seconds": 4.3264781148172915,
+        "submit_offset_seconds": 102.77089748112485,
+        "submit_to_result_seconds": 0.5966431768611073
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 5.575200272509975,
+        "bottom_rmse_K": 3.0287998266654186,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.8311706814314119,
+        "layer_mean_rmse_K": 5.576774847676899,
+        "peak_rmse_K": 7.813079833984375,
+        "point_global_true_rms_relative_rmse_pct": 4.985575488178524,
+        "raw_cv_weighted_rmse_K": 5.590982524656486,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 5.280447119011078,
+        "source_rmse_K": 8.018447032609576,
+        "top_rmse_K": 4.599472022463756
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "59efce07858dc03a0d1f84055af0f9c817f27fdc60a2db7666f9752b4bd06cae",
+      "sample_id": "v6p1if1_0175",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2398,
+        "r2p_edges": 442749,
+        "r2r_edges": 4129,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.021887050941586494,
+        "anchor_group_pack": 0.18377731507644057,
+        "asymmetric_forward": 0.08603350888006389,
+        "dummy_local_p2r": 0.00315887201577425,
+        "graph_extraction": 9.848736226558685e-07,
+        "h2d_enqueue": 0.008086810121312737,
+        "h2d_sync": 0.0012372259516268969,
+        "host_tree": 0.00016629393212497234,
+        "inputs": 2.1907035261392593e-05,
+        "kwargs": 1.929490827023983e-05,
+        "matched_continuous_e2e": 0.5674870349466801,
+        "profiled_other": 1.3383105397224426e-06,
+        "query_graph": 0.08747624699026346,
+        "query_group_pack": 0.12384647293947637,
+        "reconstruction_apply": 0.0014181060250848532,
+        "reconstruction_map": 1.8207356333732605e-07,
+        "support_plus_cv": 0.03430545795708895
+      },
+      "streaming": {
+        "completion_offset_seconds": 107.65625759214163,
+        "inter_completion_seconds": 4.288716934155673,
+        "submit_offset_seconds": 107.04860210302286,
+        "submit_to_result_seconds": 0.6076554891187698
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.076135916873159,
+        "bottom_rmse_K": 1.486813767780645,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.1576103745363274,
+        "layer_mean_rmse_K": 0.27281266369355206,
+        "peak_rmse_K": 1.38140869140625,
+        "point_global_true_rms_relative_rmse_pct": 0.7592683283838005,
+        "raw_cv_weighted_rmse_K": 1.0790552924244419,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 0.7505468122354964,
+        "source_rmse_K": 1.77677549053804,
+        "top_rmse_K": 1.3056222351216649
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "60a9bea455b02231fe72fbcefebc906b43bbfc54587c11ebd6ad198e611ae705",
+      "sample_id": "v6p1if1_0347",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2446,
+        "r2p_edges": 425435,
+        "r2r_edges": 4115,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.021857428131625056,
+        "anchor_group_pack": 0.17200212785974145,
+        "asymmetric_forward": 0.08542464300990105,
+        "dummy_local_p2r": 0.0033169910311698914,
+        "graph_extraction": 1.101987436413765e-06,
+        "h2d_enqueue": 0.0086717470549047,
+        "h2d_sync": 0.001147779868915677,
+        "host_tree": 0.00017141085118055344,
+        "inputs": 2.2420194000005722e-05,
+        "kwargs": 2.033403143286705e-05,
+        "matched_continuous_e2e": 0.5674089931417257,
+        "profiled_other": 9.718351066112518e-07,
+        "query_graph": 0.08502925001084805,
+        "query_group_pack": 0.1314969549421221,
+        "reconstruction_apply": 0.00028466712683439255,
+        "reconstruction_map": 1.7206184566020966e-07,
+        "support_plus_cv": 0.03437429293990135
+      },
+      "streaming": {
+        "completion_offset_seconds": 111.9286800220143,
+        "inter_completion_seconds": 4.272422429872677,
+        "submit_offset_seconds": 111.32106805196963,
+        "submit_to_result_seconds": 0.6076119700446725
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.3709196802645862,
+        "bottom_rmse_K": 0.9509015740938596,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.17900028728922115,
+        "layer_mean_rmse_K": 0.8481141009760313,
+        "peak_rmse_K": 5.901123046875,
+        "point_global_true_rms_relative_rmse_pct": 1.5666060151076917,
+        "raw_cv_weighted_rmse_K": 1.3774620307938892,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.5492666504679784,
+        "source_rmse_K": 2.26176871038455,
+        "top_rmse_K": 1.0723018765921617
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "d0180e22a46edaa5e7d35073ed98ecf741e5c0cae509a3f057b22a1a3a7ae192",
+      "sample_id": "v6p1if1_0109",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2456,
+        "r2p_edges": 454750,
+        "r2r_edges": 4123,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.02166574797593057,
+        "anchor_group_pack": 0.17889653192833066,
+        "asymmetric_forward": 0.1008544908836484,
+        "dummy_local_p2r": 0.003298126859590411,
+        "graph_extraction": 6.731133908033371e-07,
+        "h2d_enqueue": 0.008651640033349395,
+        "h2d_sync": 0.0011135460808873177,
+        "host_tree": 0.00025753420777618885,
+        "inputs": 2.614804543554783e-05,
+        "kwargs": 2.0865118131041527e-05,
+        "matched_continuous_e2e": 0.579257579986006,
+        "profiled_other": 1.980690285563469e-06,
+        "query_graph": 0.08716961904428899,
+        "query_group_pack": 0.12595402798615396,
+        "reconstruction_apply": 0.00033907010219991207,
+        "reconstruction_map": 1.8114224076271057e-07,
+        "support_plus_cv": 0.03479423117823899
+      },
+      "streaming": {
+        "completion_offset_seconds": 116.17930036899634,
+        "inter_completion_seconds": 4.250620346982032,
+        "submit_offset_seconds": 115.55962257203646,
+        "submit_to_result_seconds": 0.619677796959877
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 0.8596970125879987,
+        "bottom_rmse_K": 0.6316615927712395,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.2263450089155479,
+        "layer_mean_rmse_K": 0.43762850511744017,
+        "peak_rmse_K": 2.1970901489257812,
+        "point_global_true_rms_relative_rmse_pct": 1.146530743970037,
+        "raw_cv_weighted_rmse_K": 0.8620607421684838,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.1778870173785179,
+        "source_rmse_K": 1.2927132276075213,
+        "top_rmse_K": 1.0720530603022846
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "3800b8848159e57baf2688f9b12d0a5f6c8920c282621f8519ccd13f16df6b6b",
+      "sample_id": "v6p1if1_0511",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2496,
+        "r2p_edges": 371007,
+        "r2r_edges": 4149,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.020865846890956163,
+        "anchor_group_pack": 0.17540819407440722,
+        "asymmetric_forward": 0.06077886186540127,
+        "dummy_local_p2r": 0.0032360239420086145,
+        "graph_extraction": 6.631016731262207e-07,
+        "h2d_enqueue": 0.008609343087300658,
+        "h2d_sync": 0.0011222830507904291,
+        "host_tree": 0.00015935907140374184,
+        "inputs": 2.1903077140450478e-05,
+        "kwargs": 1.9902829080820084e-05,
+        "matched_continuous_e2e": 0.5426317930687219,
+        "profiled_other": 1.786043867468834e-06,
+        "query_graph": 0.0812644159886986,
+        "query_group_pack": 0.13539209798909724,
+        "reconstruction_apply": 0.00026721321046352386,
+        "reconstruction_map": 2.6798807084560394e-07,
+        "support_plus_cv": 0.03430695389397442
+      },
+      "streaming": {
+        "completion_offset_seconds": 120.40990197611973,
+        "inter_completion_seconds": 4.23060160712339,
+        "submit_offset_seconds": 119.82712700008415,
+        "submit_to_result_seconds": 0.58277497603558
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.122004831832058,
+        "bottom_rmse_K": 1.7982088450819698,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.5883275189326697,
+        "layer_mean_rmse_K": 2.3108543434965316,
+        "peak_rmse_K": 3.7462387084960938,
+        "point_global_true_rms_relative_rmse_pct": 3.3961872115887997,
+        "raw_cv_weighted_rmse_K": 2.1295844384549305,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 3.070786713047235,
+        "source_rmse_K": 3.434565103609838,
+        "top_rmse_K": 1.1885237292000952
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "6f25021dcf2a8cb63c83f4069aa043a048a30430e4827b6073ee6753a6083ddf",
+      "sample_id": "v6p1if1_0697",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2838,
+        "r2p_edges": 511237,
+        "r2r_edges": 4111,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.030495907180011272,
+        "anchor_group_pack": 0.17489571287296712,
+        "asymmetric_forward": 0.1044422360137105,
+        "dummy_local_p2r": 0.0034346389584243298,
+        "graph_extraction": 7.159542292356491e-07,
+        "h2d_enqueue": 0.008547929115593433,
+        "h2d_sync": 0.0012567969970405102,
+        "host_tree": 0.00016832887195050716,
+        "inputs": 2.2788066416978836e-05,
+        "kwargs": 1.9764062017202377e-05,
+        "matched_continuous_e2e": 0.5940199599135667,
+        "profiled_other": 1.4421530067920685e-06,
+        "query_graph": 0.09349989681504667,
+        "query_group_pack": 0.1260877780150622,
+        "reconstruction_apply": 0.00041424110531806946,
+        "reconstruction_map": 4.0605664253234863e-07,
+        "support_plus_cv": 0.034552674973383546
+      },
+      "streaming": {
+        "completion_offset_seconds": 124.69982918608002,
+        "inter_completion_seconds": 4.289927209960297,
+        "submit_offset_seconds": 124.06548391398974,
+        "submit_to_result_seconds": 0.634345272090286
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 2.078384726495339,
+        "bottom_rmse_K": 2.3239767273250416,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.36217700084130217,
+        "layer_mean_rmse_K": 1.8465016315286702,
+        "peak_rmse_K": 0.6005096435546875,
+        "point_global_true_rms_relative_rmse_pct": 1.8669718005019418,
+        "raw_cv_weighted_rmse_K": 2.08053971570724,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 1.7423696658888206,
+        "source_rmse_K": 3.286239511475058,
+        "top_rmse_K": 2.3551846490902393
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "bfe83e53cc5e3455be0e6e3b5a90944d1d7a44839161f0bb2c9aaca17eb5025a",
+      "sample_id": "v6p1if1_0928",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2456,
+        "r2p_edges": 407806,
+        "r2r_edges": 4091,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.021056422032415867,
+        "anchor_group_pack": 0.12461859500035644,
+        "asymmetric_forward": 0.10456313192844391,
+        "dummy_local_p2r": 0.0033110419753938913,
+        "graph_extraction": 5.981419235467911e-07,
+        "h2d_enqueue": 0.008030512137338519,
+        "h2d_sync": 0.0011899778619408607,
+        "host_tree": 0.00016406597569584846,
+        "inputs": 2.2306805476546288e-05,
+        "kwargs": 1.9625993445515633e-05,
+        "matched_continuous_e2e": 0.535122939851135,
+        "profiled_other": 1.4309771358966827e-06,
+        "query_graph": 0.0847374340519309,
+        "query_group_pack": 0.13667134405113757,
+        "reconstruction_apply": 0.0003955450374633074,
+        "reconstruction_map": 6.088521331548691e-07,
+        "support_plus_cv": 0.03448056289926171
+      },
+      "streaming": {
+        "completion_offset_seconds": 128.9088261630386,
+        "inter_completion_seconds": 4.208996976958588,
+        "submit_offset_seconds": 128.33325109118596,
+        "submit_to_result_seconds": 0.5755750718526542
+      }
+    },
+    {
+      "full_field_metrics": {
+        "background_rmse_K": 1.0653977206237322,
+        "bottom_rmse_K": 0.762471825905207,
+        "domain": "full_240825",
+        "interface_drop_rmse_K": 0.15614555769577107,
+        "layer_mean_rmse_K": 1.0607188819014148,
+        "peak_rmse_K": 2.243724822998047,
+        "point_global_true_rms_relative_rmse_pct": 3.0769348906409513,
+        "raw_cv_weighted_rmse_K": 1.0691560128034883,
+        "sample_count": 1,
+        "sample_first_cv_relative_rmse_pct": 3.0738390395003736,
+        "source_rmse_K": 2.142522115280201,
+        "top_rmse_K": 0.8634888555296178
+      },
+      "packing_audit": {
+        "equivalence_backend": "deterministic_cpu",
+        "output_group_keys_not_copied": [
+          "global_context",
+          "qk_region_features",
+          "scale_context",
+          "scale_region_source_weights",
+          "scale_region_volume_weights"
+        ],
+        "output_group_keys_used": [
+          "inputs",
+          "graphs",
+          "native_physics.control_volumes",
+          "native_physics.reference_temperature",
+          "native_physics.dirichlet_mask",
+          "native_physics.prescribed_temperature"
+        ],
+        "prediction_bitwise_exact": true,
+        "prediction_max_abs_K": 0.0,
+        "same_launch_reference": "historical_full_output_group"
+      },
+      "prepared_payload_sha256": "c1159cd532627cc3827ca6c41cbdb00f60242716624fb03e884e4db4a845b235",
+      "sample_id": "v6p1if1_1017",
+      "shape": {
+        "output_nodes": 240825,
+        "p2r_edges": 2620,
+        "r2p_edges": 428005,
+        "r2r_edges": 4107,
+        "regional_nodes": 256
+      },
+      "stages": {
+        "anchor_graph": 0.020902787102386355,
+        "anchor_group_pack": 0.18903177417814732,
+        "asymmetric_forward": 0.10589852300472558,
+        "dummy_local_p2r": 0.003463317174464464,
+        "graph_extraction": 8.139759302139282e-07,
+        "h2d_enqueue": 0.008540879003703594,
+        "h2d_sync": 0.0011646298225969076,
+        "host_tree": 0.00017403601668775082,
+        "inputs": 2.340506762266159e-05,
+        "kwargs": 2.039712853729725e-05,
+        "matched_continuous_e2e": 0.5993298010434955,
+        "profiled_other": 1.2156087905168533e-06,
+        "query_graph": 0.08665522304363549,
+        "query_group_pack": 0.13238095305860043,
+        "reconstruction_apply": 0.0003141809720546007,
+        "reconstruction_map": 6.838236004114151e-07,
+        "support_plus_cv": 0.03476134198717773
+      },
+      "streaming": {
+        "completion_offset_seconds": 133.21692719799466,
+        "inter_completion_seconds": 4.308101034956053,
+        "submit_offset_seconds": 132.576822220115,
+        "submit_to_result_seconds": 0.6401049778796732
+      }
+    }
+  ],
+  "schema_version": "heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1",
+  "status": "passed",
+  "streaming": {
+    "inter_completion": {
+      "count": 32,
+      "mean_seconds": 4.163028974937333,
+      "median_seconds": 4.289322072057985,
+      "p95_seconds": 4.348402376810554,
+      "std_seconds": 0.6829987434932933
+    },
+    "order_seed": 20260814,
+    "samples_per_second": 0.24020971413369832,
+    "submit_to_result": {
+      "count": 32,
+      "mean_seconds": 0.5965167311514961,
+      "median_seconds": 0.610174169531092,
+      "p95_seconds": 0.6427465081564151,
+      "std_seconds": 0.05374366929496347
+    },
+    "wall_seconds": 133.21692719799466
+  }
+}
