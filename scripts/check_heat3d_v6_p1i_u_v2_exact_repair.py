@@ -5,10 +5,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+import sys
 
 import jax
 import numpy as np
+
+ROOT = Path(os.environ.get("HEAT3D_REPO_ROOT", Path(__file__).resolve().parents[1])).resolve()
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from rigno.models.rigno import RegionInteractionGraphBuilder
 from scripts.probe_heat3d_v6_p1i_u1_asymmetric_query import (
@@ -27,7 +33,7 @@ def main() -> int:
     args = parser.parse_args()
     rng = np.random.default_rng(20260817)
     rows = []
-    for count, centers_count in ((1024, 256), (8192, 256), (240825, 256)):
+    for count, centers_count in ((1024, 256), (8192, 256), (32768, 256)):
         points = rng.uniform(-1.02, 1.02, size=(count, 3)).astype(np.float32)
         centers = rng.uniform(-1.0, 1.0, size=(centers_count, 3)).astype(np.float32)
         # Construct a sparse frozen-order edge array with deliberate uncovered
