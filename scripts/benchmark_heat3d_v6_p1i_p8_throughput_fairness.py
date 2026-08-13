@@ -165,12 +165,26 @@ def init_fvm_worker(serialized:dict[str,str])->None:
     os.environ.update(OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',NUMEXPR_NUM_THREADS='1',JAX_PLATFORMS='cpu',CUDA_VISIBLE_DEVICES='')
     args=argparse.Namespace(**{key:(Path(value) if key in {'dataset_root','manifest','full_fields'} else value) for key,value in serialized.items()});data=qualification.FamilyData(family='p1i',dataset_root=args.dataset_root,manifest_path=args.manifest,full_fields_path=args.full_fields,randomblock_config=None);rows=data.selected_rows(32);physics=data.physics(rows[0]);mesh=qualification.prior.core.build_mesh(physics);shared=data.full_shared()
     if not np.array_equal(mesh['coords'],shared['coords']):raise RuntimeError('FVM mesh drift')
-    global _FVM_STATE;_FVM_STATE={'data':data,'rows':rows,'mesh':mesh}
+    global _FVM_STATE;_FVM_STATE={'data':data,'rows':rows,'mesh':mesh,'prepared':{}}
+    if serialized.get('prepare_all')=='true':
+        for index in range(len(rows)):
+            row=rows[index];example,_=data.load_example(row);k,q=data.full_kq(row);top_h=float(example.condition.condition_features[0,8]);bottom_h=float(example.condition.condition_features[0,9]);_FVM_STATE['prepared'][index]=qualification.prior._assemble(mesh,k,q,top_h,bottom_h)
 
 def fvm_worker(index:int)->dict[str,Any]:
     state=_FVM_STATE;row=state['rows'][index];start=time.perf_counter();example,_=state['data'].load_example(row);k,q=state['data'].full_kq(row);data_s=time.perf_counter()-start;phase=time.perf_counter();top_h=float(example.condition.condition_features[0,8]);bottom_h=float(example.condition.condition_features[0,9]);system=qualification.prior._assemble(state['mesh'],k,q,top_h,bottom_h);assembly=time.perf_counter()-phase;phase=time.perf_counter();temperature=qualification.prior._solve(*system);solve=time.perf_counter()-phase
     if not np.all(np.isfinite(temperature)):raise RuntimeError('nonfinite FVM')
     return {'sample_id':row['sample_id'],'data_seconds':data_s,'assembly_seconds':assembly,'linear_solve_seconds':solve,'continuous_compute_seconds':data_s+assembly+solve}
+
+def fvm_prepare_worker(index:int)->dict[str,Any]:
+    state=_FVM_STATE;row=state['rows'][index];example,_=state['data'].load_example(row);k,q=state['data'].full_kq(row);top_h=float(example.condition.condition_features[0,8]);bottom_h=float(example.condition.condition_features[0,9]);system=qualification.prior._assemble(state['mesh'],k,q,top_h,bottom_h);return {'sample_id':row['sample_id'],'system':system}
+
+def fvm_solve_prepared(system:Any)->np.ndarray:
+    temperature=qualification.prior._solve(*system)
+    if not np.all(np.isfinite(temperature)):raise RuntimeError('nonfinite prepared FVM')
+    return temperature
+
+def fvm_solve_cached_worker(index:int)->dict[str,Any]:
+    started=time.perf_counter();temperature=fvm_solve_prepared(_FVM_STATE['prepared'][index]);return {'sample_id':_FVM_STATE['rows'][index]['sample_id'],'solve_seconds':time.perf_counter()-started,'finite':bool(np.all(np.isfinite(temperature)))}
 
 def fvm(args:argparse.Namespace)->int:
     protocol=json.loads(args.protocol.read_text());counts=[int(x) for x in args.process_counts.split(',')];serialized={key:str(getattr(args,key)) for key in ('dataset_root','manifest','full_fields')};ctx=mp.get_context('spawn');rows=[]

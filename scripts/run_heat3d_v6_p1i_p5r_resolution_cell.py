@@ -65,6 +65,16 @@ def _stats(values: list[float]) -> dict[str, float | int]:
     }
 
 
+def _tree_sha256(value: Any) -> str:
+    digest = hashlib.sha256()
+    leaves, treedef = jax.tree_util.tree_flatten(value)
+    digest.update(str(treedef).encode())
+    for leaf in leaves:
+        array = np.ascontiguousarray(np.asarray(leaf))
+        digest.update(str(array.dtype).encode()); digest.update(str(array.shape).encode()); digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
 def _block_tree(tree: Any) -> None:
     jax.tree_util.tree_map(
         lambda value: value.block_until_ready() if hasattr(value, "block_until_ready") else value,
@@ -170,8 +180,12 @@ def _parse() -> argparse.Namespace:
         parser.add_argument(f"--{name.replace('_', '-')}", dest=name, type=Path, required=True)
     parser.add_argument("--route", required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
-    parser.add_argument("--sample-count", type=int, choices=[1, 32], default=32)
+    parser.add_argument("--sample-count", type=int, choices=[1, 32, 96], default=32)
     parser.add_argument("--prediction-output", type=Path)
+    parser.add_argument("--population-mode", choices=["frozen_valid32", "remaining_valid96"], default="frozen_valid32")
+    parser.add_argument("--population-preflight", type=Path)
+    parser.add_argument("--order-seed", type=int)
+    parser.add_argument("--timing-repeats", type=int, default=20)
     return parser.parse_args()
 
 
@@ -194,13 +208,30 @@ def main() -> int:
     binding = json.loads(args.binding.read_text())
     runtime = _runtime(args)
     dataset = highn._dataset(args)
-    anchors = highn._valid_examples(dataset, binding)
-    if len(anchors) != 32:
-        raise RuntimeError("P5-R requires frozen valid32")
-    preflight = json.loads((args.artifact_root / "actual_data_preflight.json").read_text())
+    if args.population_mode == "frozen_valid32":
+        anchors = highn._valid_examples(dataset, binding)
+        expected_count = 32
+        preflight_path = args.artifact_root / "actual_data_preflight.json"
+    else:
+        ordered_ids = sorted(dataset.split_ids["valid_iid"], key=lambda value: hashlib.sha256(value.encode()).hexdigest())
+        valid32 = binding["development_subset"]["sample_ids"]
+        if ordered_ids[:32] != valid32:
+            raise RuntimeError("valid32 is not the frozen subset of formal valid128")
+        index = dataset.sample_index_by_id()
+        anchors = [dataset[index[sample_id]] for sample_id in ordered_ids[32:]]
+        expected_count = 96
+        if args.population_preflight is None:
+            raise RuntimeError("remaining_valid96 requires --population-preflight")
+        preflight_path = args.population_preflight
+    if len(anchors) != expected_count:
+        raise RuntimeError(f"P5-R population count drifted: {len(anchors)} != {expected_count}")
+    preflight = json.loads(preflight_path.read_text())
     if preflight["sample_ids"] != [anchor.sample_id for anchor in anchors]:
-        raise RuntimeError("P5-R valid32 order drifted")
+        raise RuntimeError("P5-R population order drifted")
     anchors = anchors[: args.sample_count]
+    if args.order_seed is not None:
+        order = np.random.default_rng(args.order_seed).permutation(len(anchors))
+        anchors = [anchors[int(index)] for index in order]
     frozen_supports = {
         row["sample_id"]: row for row in preflight.get("supports", {}).get(str(resolution), [])
     }
@@ -251,9 +282,13 @@ def main() -> int:
     }
     compile_done = False
     peak_vram = 0
+    resident_payload = None
+    service_started = time.perf_counter()
+    completion_offsets: list[float] = []
 
     with h5py.File(args.full_fields, "r") as temperature_archive:
         for number, anchor in enumerate(anchors, start=1):
+            submit_offset = time.perf_counter() - service_started
             physics_path = Path(physics_rows[anchor.sample_id]["physics_cache_file"])
             with np.load(physics_path, allow_pickle=False) as physics:
                 full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
@@ -389,6 +424,11 @@ def main() -> int:
                 if device_map is not None:
                     jax.block_until_ready(device_map.reconstruct(query_warm))
                 compile_done = True
+                # Qualification/JIT warmup is outside both fresh and streaming
+                # service timing. Reset before replaying the first real case.
+                service_started = time.perf_counter()
+                submit_offset = 0.0
+                completion_offsets.clear()
                 # Repeat the complete first-case preprocessing after JIT warm-up;
                 # otherwise its continuous span would silently omit CPU stages.
                 total_started = time.perf_counter()
@@ -481,6 +521,10 @@ def main() -> int:
             jax.block_until_ready(full_delta)
             reconstruction_seconds = time.perf_counter() - phase
             continuous_seconds = time.perf_counter() - total_started
+            completion_offset = time.perf_counter() - service_started
+            completion_offsets.append(completion_offset)
+            if resident_payload is None:
+                resident_payload = (anchor_group, query_group, device_weights, anchor_scale, device_map)
 
             support_np = np.asarray(support_delta, dtype=np.float64)
             full_np = np.asarray(full_delta, dtype=np.float64)
@@ -538,16 +582,41 @@ def main() -> int:
                 "selected_power_W": float(np.sum(query_support["q_W_m3"] * selected_cv)),
                 "full_power_W": float(np.sum(full_q * cv)),
                 "graph_hash": a4._canonical_hash(query_metadata),
+                "anchor_group_sha256": _tree_sha256(anchor_group),
+                "query_group_sha256": _tree_sha256(query_group),
+                "input_physics_context_sha256": _tree_sha256((anchor_group, query_group, device_weights)),
                 "regional_node_count": int(np.asarray(query_metadata.x_rnodes).shape[1] - 1),
                 "p2r_edges": int(np.asarray(query_metadata.p2r_edge_indices).shape[1]),
                 "r2r_edges": int(np.asarray(query_metadata.r2r_edge_indices).shape[1]),
                 "timing": stages,
+                "streaming": {
+                    "submit_offset_seconds": submit_offset,
+                    "completion_offset_seconds": completion_offset,
+                    "submit_to_result_seconds": completion_offset - submit_offset,
+                    "inter_completion_seconds": completion_offset if len(completion_offsets) == 1 else completion_offset - completion_offsets[-2],
+                },
+                "full_field_metrics": qualification.metric_accumulate([full_row], full=True),
             })
             print(f"[P5-R] {args.route} {number}/32", flush=True)
 
+    if resident_payload is None:
+        raise RuntimeError("no resident payload")
+    resident_seconds = []
+    resident_anchor, resident_query, resident_weights, resident_scale, resident_map = resident_payload
+    for _ in range(args.timing_repeats):
+        phase = time.perf_counter()
+        anchor_raw, anchor_scale = anchor_forward(params, resident_anchor)
+        jax.block_until_ready(anchor_raw)
+        if resolution == 1024:
+            resident_support = anchor_raw - highn.REFERENCE_K
+        else:
+            resident_support = query_forward(params, resident_query, resident_weights, anchor_scale)
+        resident_full = resident_support if resident_map is None else resident_map.reconstruct(resident_support)
+        jax.block_until_ready(resident_full)
+        resident_seconds.append(time.perf_counter() - phase)
     result = {
         "schema_version": "heat3d_v6_p1i_p5r_resolution_cell_v1",
-        "status": "passed" if args.sample_count == 32 else "passed_smoke",
+        "status": "passed" if args.sample_count in (32, 96) else "passed_smoke",
         "route": route,
         "sample_count": args.sample_count,
         "sample_ids": [anchor.sample_id for anchor in anchors],
@@ -559,6 +628,14 @@ def main() -> int:
             "oracle_reconstruction_floor": qualification.metric_accumulate(oracle_metric_rows, full=True),
         },
         "timing": {key: _stats(values) for key, values in stage_values.items()},
+        "resident_core": _stats(resident_seconds),
+        "streaming": {
+            "submit_to_result": _stats([row["streaming"]["submit_to_result_seconds"] for row in rows]),
+            "inter_completion": _stats([row["streaming"]["inter_completion_seconds"] for row in rows]),
+            "wall_seconds": completion_offsets[-1],
+            "samples_per_second": len(rows) / completion_offsets[-1],
+            "order_seed": args.order_seed,
+        },
         "graph": {
             "regional_node_count_mean": float(np.mean([row["regional_node_count"] for row in rows])),
             "p2r_edges_mean": float(np.mean([row["p2r_edges"] for row in rows])),
@@ -568,6 +645,7 @@ def main() -> int:
         "padding_envelopes": {"anchor": anchor_targets, "query": query_targets},
         "samples": rows,
         "role_contract": protocol["role_contract"],
+        "population_mode": args.population_mode,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")

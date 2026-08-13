@@ -58,6 +58,12 @@ def host_tree(tree: Any) -> Any:
 def stack(trees: list[Any]) -> Any:
     return jax.tree_util.tree_map(lambda *xs: np.concatenate([np.asarray(x) for x in xs], axis=0), *trees)
 
+def tree_sha(tree: Any) -> str:
+    digest=hashlib.sha256();leaves,treedef=jax.tree_util.tree_flatten(tree);digest.update(str(treedef).encode())
+    for leaf in leaves:
+        array=np.ascontiguousarray(np.asarray(leaf));digest.update(str(array.dtype).encode());digest.update(str(array.shape).encode());digest.update(array.tobytes())
+    return digest.hexdigest()
+
 
 def parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -66,10 +72,13 @@ def parse() -> argparse.Namespace:
         parser.add_argument(f"--{name.replace('_','-')}", dest=name, type=Path, required=True)
     parser.add_argument("--resolution", type=int, choices=[32768, 240825], required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
-    parser.add_argument("--sample-count", type=int, choices=[1, 32], default=32)
+    parser.add_argument("--sample-count", type=int, choices=[1, 32, 96], default=32)
     parser.add_argument("--repeats", type=int, default=20)
     parser.add_argument("--batch-sizes", default=None)
     parser.add_argument("--prediction-output", type=Path)
+    parser.add_argument("--population-mode", choices=["frozen_valid32", "remaining_valid96"], default="frozen_valid32")
+    parser.add_argument("--population-preflight", type=Path)
+    parser.add_argument("--order-seed", type=int)
     return parser.parse_args()
 
 
@@ -85,13 +94,21 @@ def main() -> int:
     checkpoint_parameter_sha256_before = highn._tree_sha256(runtime["checkpoint"]["params"])
     binding = json.loads(args.binding.read_text())
     dataset = highn._dataset(args)
-    anchors = highn._valid_examples(dataset, binding)
-    if len(anchors) != 32:
-        raise RuntimeError("U2 requires frozen valid32")
-    preflight = json.loads((args.artifact_root / "actual_data_preflight.json").read_text())
-    if preflight["sample_ids"] != [x.sample_id for x in anchors]:
-        raise RuntimeError("valid32 order drift")
+    if args.population_mode == "frozen_valid32":
+        anchors = highn._valid_examples(dataset, binding); expected_count=32
+        preflight_path=args.artifact_root/"actual_data_preflight.json"
+    else:
+        ordered_ids=sorted(dataset.split_ids["valid_iid"],key=lambda value:hashlib.sha256(value.encode()).hexdigest())
+        if ordered_ids[:32] != binding["development_subset"]["sample_ids"]: raise RuntimeError("valid32 subset drift")
+        index=dataset.sample_index_by_id();anchors=[dataset[index[sample_id]] for sample_id in ordered_ids[32:]];expected_count=96
+        if args.population_preflight is None: raise RuntimeError("remaining_valid96 requires preflight")
+        preflight_path=args.population_preflight
+    if len(anchors)!=expected_count: raise RuntimeError("population count drift")
+    preflight = json.loads(preflight_path.read_text())
+    if preflight["sample_ids"] != [x.sample_id for x in anchors]: raise RuntimeError("population order drift")
     anchors = anchors[:args.sample_count]
+    if args.order_seed is not None:
+        order=np.random.default_rng(args.order_seed).permutation(len(anchors));anchors=[anchors[int(index)] for index in order]
     physics_rows = {row["sample_id"]: row for row in preflight["samples"]}
     full, archive_lookup = highn._full_shared(args)
     coords = np.asarray(full["coords"], dtype=np.float64); cv = np.asarray(full["cv"], dtype=np.float64)
@@ -162,7 +179,9 @@ def main() -> int:
         gathered = values[jnp.arange(values.shape[0])[:,None,None], indices]
         return jnp.sum(gathered * weights.astype(values.dtype), axis=2)
 
+    service_started=time.perf_counter(); completion_offsets=[]
     def prepare_one(anchor: Any) -> dict[str, Any]:
+        submit_offset=time.perf_counter()-service_started
         with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
             full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
             full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
@@ -219,6 +238,7 @@ def main() -> int:
         phase=time.perf_counter(); values=split_forward(params,ii,io,g,l,kw);block(values);forward_s=time.perf_counter()-phase
         phase=time.perf_counter(); full_value=reconstruct(values,mi,mw);block(full_value);recon_s=time.perf_counter()-phase
         production_elapsed=time.perf_counter()-total_start
+        completion_offset=time.perf_counter()-service_started;previous=completion_offsets[-1] if completion_offsets else 0.0;completion_offsets.append(completion_offset)
         # Qualification-only same-launch reference: the historical full output
         # group must produce exactly the same output as minimal packing. This is
         # deliberately after the production timing cutoff.
@@ -240,6 +260,8 @@ def main() -> int:
                 "kwargs":kwargs,"map_indices":map_indices,"map_weights":map_weights,"device":device,"selected":selected,
                 "selected_cv":selected_cv,"full_q":full_q,"support_delta":values,"full_delta":full_value,
                 "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","equivalence_backend":"deterministic_cpu","prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs},
+                "streaming":{"submit_offset_seconds":submit_offset,"completion_offset_seconds":completion_offset,"submit_to_result_seconds":completion_offset-submit_offset,"inter_completion_seconds":completion_offset-previous},
+                "prepared_payload_sha256":tree_sha((inputs_in,inputs_out,graphs,local,kwargs,map_indices,map_weights)),
                 "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
                           "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
                           "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
@@ -254,6 +276,8 @@ def main() -> int:
 
     warm=prepare_one(anchors[0]); ii,io,g,l,kw,mi,mw=warm["device"]
     value=split_forward(params,ii,io,g,l,kw);block(reconstruct(value,mi,mw))
+    # Qualification and JIT compile are outside persistent service timing.
+    service_started=time.perf_counter();completion_offsets.clear()
     prepared=[prepare_one(anchor) for anchor in anchors]
     if any(row["shape"]["output_nodes"] != args.resolution for row in prepared): raise RuntimeError("output shape")
     if any(not np.all(np.isfinite(np.asarray(row["full_delta"]))) for row in prepared): raise RuntimeError("nonfinite")
@@ -298,9 +322,8 @@ def main() -> int:
         for anchor,row in zip(anchors,prepared,strict=True):
             truth=np.asarray(archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]],dtype=np.float64)
             support_np=np.asarray(row["support_delta"],dtype=np.float64)[0];full_np=np.asarray(row["full_delta"],dtype=np.float64)[0]
-            metric_support.append(highn._metric_row(support_np,truth[row["selected"]],row["selected_cv"],coords[row["selected"]],layer[row["selected"]],row["full_q"][row["selected"]]))
-            metric_full.append(highn._metric_row(full_np,truth,cv,coords,layer,row["full_q"]))
-    result={"schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1","status":"passed" if args.sample_count==32 else "passed_smoke",
+            support_row=highn._metric_row(support_np,truth[row["selected"]],row["selected_cv"],coords[row["selected"]],layer[row["selected"]],row["full_q"][row["selected"]]);full_row=highn._metric_row(full_np,truth,cv,coords,layer,row["full_q"]);metric_support.append(support_row);metric_full.append(full_row);row["full_field_metrics"]=qualification.metric_accumulate([full_row],full=True)
+    result={"schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1","status":"passed" if args.sample_count in (32,96) else "passed_smoke",
         "resolution":args.resolution,"output_mode":"direct" if direct else "reconstruction","sample_count":args.sample_count,
         "protocol_sha256":sha256(args.protocol),"checkpoint_sha256":args.checkpoint_sha256,
         "checkpoint_parameter_sha256_before": checkpoint_parameter_sha256_before,
@@ -308,10 +331,11 @@ def main() -> int:
         "checkpoint_parameters_unchanged":checkpoint_parameter_sha256_before==highn._tree_sha256(runtime["checkpoint"]["params"]),
         "accuracy":{"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
+        "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
-        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"]} for r in prepared],
-        "role_contract":protocol["role_contract"]}
+        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"]} for r in prepared],
+        "role_contract":protocol["role_contract"],"population_mode":args.population_mode}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     if args.prediction_output is not None:
         args.prediction_output.parent.mkdir(parents=True, exist_ok=True)
