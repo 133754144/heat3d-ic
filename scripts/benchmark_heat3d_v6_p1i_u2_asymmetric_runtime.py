@@ -228,6 +228,41 @@ def main() -> int:
                         targets[field] = max(int(targets.get(field) or 0), int(np.asarray(value).shape[1]))
     asymmetric_targets = u1._combined_targets(native_targets, query_targets)
 
+    # Sample-varying native/query edge shapes cause CPU-JAX compilation in
+    # r2r packing.  The publication timer explicitly excludes JIT, so compile
+    # every measured shape once without retaining/reusing the resulting graph.
+    # The timed path still performs a fresh graph build from coordinates.
+    if args.timing_regression_audit:
+        for anchor in anchors:
+            with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
+                full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
+            selected, selected_cv = support(anchor, full_q)
+            query_support = {
+                "selected_indices": selected,
+                "operator_control_volume": selected_cv,
+                "k_xyz": np.zeros((len(selected), 3), dtype=np.float64),
+                "q_W_m3": full_q[selected],
+                "layer_id": layer[selected],
+            }
+            query_example = highn._query_example(anchor, query_support, coords)
+            compile_builder = Heat3DGraphBuilder(**graph_config)
+            with jax.default_device(cpu):
+                anchor_coords = highn.runner._graph_coords_for_example(anchor, runtime["stats"])
+                native = compile_builder.build_metadata(anchor_coords, key=graph_key); block(native)
+                query_coords = highn.runner._graph_coords_for_example(query_example, runtime["stats"])
+                if args.asymmetric_mode == "u_v2":
+                    asymmetric, _ = u1.prior_u1._u_v2_asymmetric_metadata(
+                        compile_builder, native, anchor_coords, query_coords,
+                        numerical_tolerance=float(protocol["u_v2"]["normalized_numerical_tolerance"]),
+                        maximum_normalized_overshoot=float(protocol["u_v2"]["maximum_normalized_overshoot"]),
+                    )
+                else:
+                    asymmetric, _ = u1.prior_u1._strict_asymmetric_metadata(
+                        compile_builder, native, anchor_coords, query_coords
+                    )
+                block(asymmetric)
+        gc.collect()
+
     @jax.jit
     def split_forward(model_params: Any, inputs_in: Any, inputs_out: Any, graphs: Any, local_p2r: Any, kwargs: Any) -> Any:
         output = model.apply(
