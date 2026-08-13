@@ -123,10 +123,20 @@ def bootstrap_difference(
     output = {}
     observed_left = aggregate_components(left)
     observed_right = aggregate_components(right)
+    left_columns = {key: np.asarray([float(row[key]) for row in left]) for key in left[0]}
+    right_columns = {key: np.asarray([float(row[key]) for row in right]) for key in right[0]}
+    def sampled(columns: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        total = lambda key: np.sum(columns[key][draws], axis=1)
+        return {
+            "point_global_true_rms_relative_rmse_pct": np.sqrt(total("point_sse") / total("point_energy")) * 100.0,
+            "raw_cv_weighted_rmse_K": np.sqrt(total("weighted_sse") / total("volume")),
+            "source_rmse_K": np.sqrt(total("source_sse") / total("source_volume")),
+            "peak_rmse_K": np.sqrt(total("peak_error_squared") / len(left)),
+            "interface_drop_rmse_K": np.sqrt(total("interface_error_squared_sum") / total("interface_error_count")),
+        }
+    left_samples = sampled(left_columns); right_samples = sampled(right_columns)
     for metric in METRICS:
-        deltas = np.empty(repeats, dtype=np.float64)
-        for number, indices in enumerate(draws):
-            deltas[number] = aggregate_components(left, indices)[metric] - aggregate_components(right, indices)[metric]
+        deltas = left_samples[metric] - right_samples[metric]
         output[metric] = {
             "left_minus_right": observed_left[metric] - observed_right[metric],
             "bootstrap_95pct_CI": [float(np.quantile(deltas, 0.025)), float(np.quantile(deltas, 0.975))],
