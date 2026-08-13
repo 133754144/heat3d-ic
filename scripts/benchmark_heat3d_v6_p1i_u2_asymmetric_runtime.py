@@ -64,6 +64,19 @@ def tree_sha(tree: Any) -> str:
         array=np.ascontiguousarray(np.asarray(leaf));digest.update(str(array.dtype).encode());digest.update(str(array.shape).encode());digest.update(array.tobytes())
     return digest.hexdigest()
 
+def metric_components(row: dict[str, Any]) -> dict[str, float | int]:
+    prediction=np.asarray(row["prediction"],dtype=np.float64);truth=np.asarray(row["truth"],dtype=np.float64)
+    weights=np.asarray(row["weights"],dtype=np.float64);layers=np.asarray(row["layer"],dtype=np.int32)
+    q=np.asarray(row["q"],dtype=np.float64);error=prediction-truth;source=q>0.0;means=[]
+    for layer_id in sorted(np.unique(layers)):
+        mask=layers==layer_id;means.append(float(np.sum(weights[mask]*error[mask])/np.sum(weights[mask])))
+    interface=np.diff(means)
+    return {"point_sse":float(np.sum(error*error)),"point_energy":float(np.sum(truth*truth)),
+        "weighted_sse":float(np.sum(weights*error*error)),"volume":float(np.sum(weights)),
+        "source_sse":float(np.sum(weights[source]*error[source]**2)),"source_volume":float(np.sum(weights[source])),
+        "peak_error_squared":float((np.max(prediction)-np.max(truth))**2),
+        "interface_error_squared_sum":float(np.sum(interface*interface)),"interface_error_count":int(interface.size)}
+
 
 def parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -322,7 +335,7 @@ def main() -> int:
         for anchor,row in zip(anchors,prepared,strict=True):
             truth=np.asarray(archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]],dtype=np.float64)
             support_np=np.asarray(row["support_delta"],dtype=np.float64)[0];full_np=np.asarray(row["full_delta"],dtype=np.float64)[0]
-            support_row=highn._metric_row(support_np,truth[row["selected"]],row["selected_cv"],coords[row["selected"]],layer[row["selected"]],row["full_q"][row["selected"]]);full_row=highn._metric_row(full_np,truth,cv,coords,layer,row["full_q"]);metric_support.append(support_row);metric_full.append(full_row);row["full_field_metrics"]=qualification.metric_accumulate([full_row],full=True)
+            support_row=highn._metric_row(support_np,truth[row["selected"]],row["selected_cv"],coords[row["selected"]],layer[row["selected"]],row["full_q"][row["selected"]]);full_row=highn._metric_row(full_np,truth,cv,coords,layer,row["full_q"]);metric_support.append(support_row);metric_full.append(full_row);row["full_field_metrics"]=qualification.metric_accumulate([full_row],full=True);row["full_field_metric_components"]=metric_components(full_row)
     result={"schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1","status":"passed" if args.sample_count in (32,96) else "passed_smoke",
         "resolution":args.resolution,"output_mode":"direct" if direct else "reconstruction","sample_count":args.sample_count,
         "protocol_sha256":sha256(args.protocol),"checkpoint_sha256":args.checkpoint_sha256,
@@ -334,7 +347,7 @@ def main() -> int:
         "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
-        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"]} for r in prepared],
+        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "role_contract":protocol["role_contract"],"population_mode":args.population_mode}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     if args.prediction_output is not None:

@@ -75,6 +75,33 @@ def _tree_sha256(value: Any) -> str:
     return digest.hexdigest()
 
 
+def _metric_components(row: dict[str, Any]) -> dict[str, float | int]:
+    """Scalar sufficient statistics used for paired population bootstrap."""
+    prediction = np.asarray(row["prediction"], dtype=np.float64)
+    truth = np.asarray(row["truth"], dtype=np.float64)
+    weights = np.asarray(row["weights"], dtype=np.float64)
+    layers = np.asarray(row["layer"], dtype=np.int32)
+    q = np.asarray(row["q"], dtype=np.float64)
+    error = prediction - truth
+    source = q > 0.0
+    layer_means = []
+    for layer_id in sorted(np.unique(layers)):
+        mask = layers == layer_id
+        layer_means.append(float(np.sum(weights[mask] * error[mask]) / np.sum(weights[mask])))
+    interface = np.diff(layer_means)
+    return {
+        "point_sse": float(np.sum(error * error)),
+        "point_energy": float(np.sum(truth * truth)),
+        "weighted_sse": float(np.sum(weights * error * error)),
+        "volume": float(np.sum(weights)),
+        "source_sse": float(np.sum(weights[source] * error[source] ** 2)),
+        "source_volume": float(np.sum(weights[source])),
+        "peak_error_squared": float((np.max(prediction) - np.max(truth)) ** 2),
+        "interface_error_squared_sum": float(np.sum(interface * interface)),
+        "interface_error_count": int(interface.size),
+    }
+
+
 def _block_tree(tree: Any) -> None:
     jax.tree_util.tree_map(
         lambda value: value.block_until_ready() if hasattr(value, "block_until_ready") else value,
@@ -596,6 +623,7 @@ def main() -> int:
                     "inter_completion_seconds": completion_offset if len(completion_offsets) == 1 else completion_offset - completion_offsets[-2],
                 },
                 "full_field_metrics": qualification.metric_accumulate([full_row], full=True),
+                "full_field_metric_components": _metric_components(full_row),
             })
             print(f"[P5-R] {args.route} {number}/32", flush=True)
 
