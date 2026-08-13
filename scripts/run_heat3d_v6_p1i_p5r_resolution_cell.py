@@ -8,6 +8,7 @@ are used only for the fixed padding envelope and for exact-support qualification
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 import math
@@ -214,6 +215,8 @@ def _parse() -> argparse.Namespace:
     parser.add_argument("--population-preflight", type=Path)
     parser.add_argument("--order-seed", type=int)
     parser.add_argument("--timing-repeats", type=int, default=20)
+    parser.add_argument("--timing-only", action="store_true")
+    parser.add_argument("--qualification-result", type=Path)
     return parser.parse_args()
 
 
@@ -282,7 +285,21 @@ def main() -> int:
     # The frozen valid32 targets are only a JIT shape envelope. Qualify the
     # actual population before inference and expand that envelope without
     # changing any real edge, graph seed, or graph policy.
-    if args.population_mode == "remaining_valid96":
+    if args.timing_only:
+        if args.qualification_result is None:
+            raise RuntimeError("timing-only requires --qualification-result")
+        qualified = json.loads(args.qualification_result.read_text())
+        if qualified.get("status") != "passed" or qualified.get("sample_ids") != [anchor.sample_id for anchor in anchors]:
+            raise RuntimeError("timing-only qualification result does not bind the requested population")
+        query_targets = {
+            key: (None if value is None else int(value))
+            for key, value in qualified["padding_envelopes"]["query"].items()
+        }
+        anchor_targets = {
+            key: (None if value is None else int(value))
+            for key, value in qualified["padding_envelopes"]["anchor"].items()
+        }
+    elif args.population_mode == "remaining_valid96":
         cpu = jax.devices("cpu")[0]
         for anchor in anchors:
             with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
@@ -363,14 +380,15 @@ def main() -> int:
     service_started = time.perf_counter()
     completion_offsets: list[float] = []
 
-    with h5py.File(args.full_fields, "r") as temperature_archive:
+    archive_context = nullcontext(None) if args.timing_only else h5py.File(args.full_fields, "r")
+    with archive_context as temperature_archive:
         for number, anchor in enumerate(anchors, start=1):
             submit_offset = time.perf_counter() - service_started
             physics_path = Path(physics_rows[anchor.sample_id]["physics_cache_file"])
             with np.load(physics_path, allow_pickle=False) as physics:
                 full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
                 full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
-            truth = np.asarray(
+            truth = None if args.timing_only else np.asarray(
                 temperature_archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]],
                 dtype=np.float64,
             )
@@ -607,23 +625,24 @@ def main() -> int:
             full_np = np.asarray(full_delta, dtype=np.float64)
             if not np.all(np.isfinite(full_np)):
                 raise RuntimeError(f"P5-R nonfinite prediction: {args.route}/{anchor.sample_id}")
-            support_row = highn._metric_row(
-                support_np, truth[selected], selected_cv, coords[selected], layer[selected], full_q[selected],
-            )
-            full_row = highn._metric_row(full_np, truth, cv, coords, layer, full_q)
-            support_metric_rows.append(support_row)
-            full_metric_rows.append(full_row)
-            full_predictions.append(full_np.astype(np.float32, copy=False))
-            if mapping is None:
-                oracle_full = truth
-            else:
-                oracle_full = np.sum(
-                    truth[selected][np.asarray(mapping.neighbor_local_indices)]
-                    * np.asarray(mapping.neighbor_weights), axis=1,
+            if not args.timing_only:
+                support_row = highn._metric_row(
+                    support_np, truth[selected], selected_cv, coords[selected], layer[selected], full_q[selected],
                 )
-            oracle_metric_rows.append(highn._metric_row(
-                oracle_full, truth, cv, coords, layer, full_q,
-            ))
+                full_row = highn._metric_row(full_np, truth, cv, coords, layer, full_q)
+                support_metric_rows.append(support_row)
+                full_metric_rows.append(full_row)
+                full_predictions.append(full_np.astype(np.float32, copy=False))
+                if mapping is None:
+                    oracle_full = truth
+                else:
+                    oracle_full = np.sum(
+                        truth[selected][np.asarray(mapping.neighbor_local_indices)]
+                        * np.asarray(mapping.neighbor_weights), axis=1,
+                    )
+                oracle_metric_rows.append(highn._metric_row(
+                    oracle_full, truth, cv, coords, layer, full_q,
+                ))
             device_memory = candidate.publication._device_memory()
             peak_vram = max(peak_vram, int(device_memory.get("peak_bytes_in_use", 0)))
             stages = {
@@ -672,8 +691,8 @@ def main() -> int:
                     "submit_to_result_seconds": completion_offset - submit_offset,
                     "inter_completion_seconds": completion_offset if len(completion_offsets) == 1 else completion_offset - completion_offsets[-2],
                 },
-                "full_field_metrics": qualification.metric_accumulate([full_row], full=True),
-                "full_field_metric_components": _metric_components(full_row),
+                "full_field_metrics": None if args.timing_only else qualification.metric_accumulate([full_row], full=True),
+                "full_field_metric_components": None if args.timing_only else _metric_components(full_row),
             })
             print(f"[P5-R] {args.route} {number}/32", flush=True)
 
@@ -700,7 +719,7 @@ def main() -> int:
         "sample_ids": [anchor.sample_id for anchor in anchors],
         "checkpoint_sha256": args.checkpoint_sha256,
         "protocol_sha256": _sha256(args.protocol),
-        "accuracy": {
+        "accuracy": None if args.timing_only else {
             "support": qualification.metric_accumulate(support_metric_rows, full=False),
             "full_field": qualification.metric_accumulate(full_metric_rows, full=True),
             "oracle_reconstruction_floor": qualification.metric_accumulate(oracle_metric_rows, full=True),
@@ -724,11 +743,17 @@ def main() -> int:
         "samples": rows,
         "role_contract": protocol["role_contract"],
         "population_mode": args.population_mode,
+        "timing_only": args.timing_only,
+        "qualification_result": None if args.qualification_result is None else {
+            "path": str(args.qualification_result), "sha256": _sha256(args.qualification_result),
+        },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     if args.prediction_output is not None:
         args.prediction_output.parent.mkdir(parents=True, exist_ok=True)
+        if args.timing_only:
+            raise RuntimeError("timing-only must not write predictions")
         np.savez_compressed(
             args.prediction_output,
             sample_ids=np.asarray([anchor.sample_id for anchor in anchors]),
@@ -736,7 +761,7 @@ def main() -> int:
         )
     print(json.dumps({
         "status": result["status"], "route": args.route,
-        "full_pg_pct": result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],
+        "full_pg_pct": None if args.timing_only else result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],
         "continuous_median_s": result["timing"]["matched_continuous_e2e"]["median_seconds"],
     }))
     return 0
