@@ -278,6 +278,47 @@ def main() -> int:
     graph_key = highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
     query_targets = _edge_targets(args.padding_result)
     anchor_targets = _edge_targets(args.native_padding_result)
+    # The frozen valid32 targets are only a JIT shape envelope. Qualify the
+    # actual population before inference and expand that envelope without
+    # changing any real edge, graph seed, or graph policy.
+    if args.population_mode == "remaining_valid96":
+        cpu = jax.devices("cpu")[0]
+        for anchor in anchors:
+            with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
+                full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
+                full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
+            anchor_indices, _ = highn._anchor_indices(
+                anchor, coords, float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]),
+            )
+            if direct:
+                selected = np.arange(len(coords), dtype=np.int64); selected_cv = cv
+            else:
+                selected, _ = deterministic_nested_query_prefix(
+                    sample_id=anchor.sample_id, anchor_indices=anchor_indices, full_q=full_q,
+                    target_count=resolution, geometry_cache=geometry,
+                )
+                selected_cv, _ = conservative_selected_control_volume(
+                    full_coords=coords, full_control_volume=cv, full_layer_id=layer, selected_indices=selected,
+                )
+            query_support = {"selected_indices": selected, "operator_control_volume": selected_cv,
+                "k_xyz": full_k[selected], "q_W_m3": full_q[selected], "layer_id": layer[selected]}
+            query_example = highn._query_example(anchor, query_support, coords)
+            anchor_builder = Heat3DGraphBuilder(**dict(runtime["graph_config"], subsample_factor=4.0,
+                discrete_graph_backend="sparse_kdtree_v1", reuse_exact_p2r_for_r2p=True))
+            query_builder = _builder(route, runtime, anchor, graph_key)
+            with jax.default_device(cpu):
+                metadata_rows = (
+                    (anchor_targets, anchor_builder.build_metadata(
+                        highn.runner._graph_coords_for_example(anchor, runtime["stats"]), key=graph_key)),
+                    (query_targets, query_builder.build_metadata(
+                        highn.runner._graph_coords_for_example(query_example, runtime["stats"]), key=graph_key)),
+                )
+                _block_tree(tuple(metadata for _, metadata in metadata_rows))
+            for targets, metadata in metadata_rows:
+                for field in qualification.EDGE_FIELDS:
+                    value = getattr(metadata, field)
+                    if value is not None:
+                        targets[field] = max(int(targets.get(field) or 0), int(np.asarray(value).shape[1]))
     model = GraphNeuralOperator(**runtime["model_config"])
     params = highn.runner._device_params(runtime["checkpoint"]["params"])
 
