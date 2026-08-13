@@ -277,8 +277,8 @@ def main() -> int:
         paired[f"seed{seed}"] = {}
         for left, right in (("U_direct240825", "E16384_reconstruction"), ("U_direct240825", "E240825_direct"), ("E16384_reconstruction", "E240825_direct")):
             paired[f"seed{seed}"][f"{left}_minus_{right}"] = bootstrap_difference(
-                components[left], components[right], int(protocol["confirmation"]["paired_bootstrap_seed"]),
-                int(protocol["confirmation"]["paired_bootstrap_repeats"]),
+                components[left], components[right], int(protocol["confirmation"]["paired_bootstrap"]["seed"]),
+                int(protocol["confirmation"]["paired_bootstrap"]["replicates"]),
             )
         for route, result in routes.items():
             accuracy = result["accuracy"]["full_field"]
