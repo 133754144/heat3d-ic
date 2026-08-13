@@ -309,7 +309,10 @@ def main() -> int:
         if args.qualification_result is None:
             raise RuntimeError("timing-only requires --qualification-result")
         qualified = json.loads(args.qualification_result.read_text())
-        if qualified.get("status") != "passed" or qualified.get("sample_ids") != [anchor.sample_id for anchor in anchors]:
+        qualified_ids = qualified.get("sample_ids", [])
+        requested_ids = [anchor.sample_id for anchor in anchors]
+        if (qualified.get("status") != "passed" or len(qualified_ids) != len(requested_ids)
+                or set(qualified_ids) != set(requested_ids)):
             raise RuntimeError("timing-only qualification result does not bind the requested population")
         query_targets = {
             key: (None if value is None else int(value))
