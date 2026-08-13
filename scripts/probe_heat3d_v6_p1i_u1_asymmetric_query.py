@@ -114,6 +114,109 @@ def _strict_asymmetric_metadata(
     return metadata, audit
 
 
+def _u_v2_asymmetric_metadata(
+    builder: Heat3DGraphBuilder,
+    native: Any,
+    anchor_graph_coords: np.ndarray,
+    query_graph_coords: np.ndarray,
+    *,
+    numerical_tolerance: float,
+    maximum_normalized_overshoot: float,
+) -> tuple[Any, dict[str, Any]]:
+    """Build only R2P while permitting bounded, unclamped query extrapolation.
+
+    The native 1024 P2R/R2R/rnodes are copied bitwise. Query coordinates use
+    the historical anchor-domain affine normalization without clipping. Nodes
+    missed by the frozen radius predicate use the already frozen nearest-rnode
+    R2P repair semantics.
+    """
+    anchor = np.asarray(anchor_graph_coords, dtype=np.float64)
+    query = np.asarray(query_graph_coords, dtype=np.float64)
+    lower = anchor.min(axis=0); upper = anchor.max(axis=0); extent = upper - lower
+    if np.any(extent <= 0.0):
+        raise RuntimeError("degenerate native anchor domain")
+    query_normalized = 2.0 * (query - lower) / extent - 1.0
+    lower_overshoot = np.maximum(-1.0 - query_normalized, 0.0)
+    upper_overshoot = np.maximum(query_normalized - 1.0, 0.0)
+    overshoot = np.maximum(lower_overshoot, upper_overshoot)
+    maximum = float(np.max(overshoot))
+    if not np.all(np.isfinite(query_normalized)):
+        raise RuntimeError("nonfinite U-v2 normalized query coordinates")
+    if maximum > maximum_normalized_overshoot:
+        raise RuntimeError(
+            f"U-v2 normalized query overshoot {maximum} exceeds frozen cap "
+            f"{maximum_normalized_overshoot}"
+        )
+    centers = np.asarray(native.x_rnodes)[0, :-1]
+    base_radii = np.asarray(native.r_rnodes)[0, :-1]
+    impl = builder.builder
+    radii = impl._get_effective_support_radii(base_radii, impl.overlap_factor_r2p)
+    raw = impl._get_supported_pnodes_by_rnodes(
+        centers=centers, points=query_normalized, radii=radii,
+        apply_legacy_hard_reset=(impl.radius_policy == "legacy_kdtree_mean4"),
+    )
+    raw_array = np.asarray(raw)
+    raw_degree = np.bincount(raw_array[:, 0], minlength=len(query_normalized))
+    repaired = raw
+    if impl.coverage_repair_policy == "nearest_rnode" and impl.repair_r2p:
+        repaired = impl._repair_physical_node_coverage(
+            edge_indices=repaired, centers=centers, points=query_normalized,
+        )
+    repaired_array = np.asarray(repaired)
+    repaired_degree = np.bincount(repaired_array[:, 0], minlength=len(query_normalized))
+    uncovered = np.flatnonzero(raw_degree < impl.min_physical_coverage)
+    if np.any(repaired_degree < impl.min_physical_coverage):
+        raise RuntimeError("U-v2 nearest R2P repair left uncovered output nodes")
+    r2p = np.flip(repaired_array, axis=-1)
+    r2p = np.concatenate((r2p, np.asarray([[len(centers), len(query_normalized)]])), axis=0)
+    dtype = np.uint16 if max(len(centers) + 1, len(query_normalized) + 1) < np.iinfo(np.uint16).max else np.uint32
+    r2p = r2p.astype(dtype)
+    x_out = np.concatenate((query_normalized, np.zeros((1, 3), dtype=query_normalized.dtype)))
+    metadata = type(native)(
+        x_pnodes_inp=native.x_pnodes_inp,
+        x_pnodes_out=jnp.asarray(x_out[None, ...]),
+        x_rnodes=native.x_rnodes,
+        r_rnodes=native.r_rnodes,
+        p2r_edge_indices=native.p2r_edge_indices,
+        r2r_edge_indices=native.r2r_edge_indices,
+        r2r_edge_domains=native.r2r_edge_domains,
+        r2p_edge_indices=jnp.asarray(r2p[None, ...]),
+    )
+    outside = np.any(overshoot > numerical_tolerance, axis=1)
+    numerical_only = np.any(overshoot > 0.0, axis=1) & ~outside
+    nearest_distance = np.zeros(len(query_normalized), dtype=np.float64)
+    if uncovered.size:
+        delta = query_normalized[uncovered, None, :] - centers[None, :, :]
+        nearest_distance[uncovered] = np.min(np.linalg.norm(delta, axis=-1), axis=1)
+    audit = {
+        "mode": "u_v2_bounded_query_extrapolation_nearest_r2p_repair",
+        "domain_from_native_anchor_only": True,
+        "query_coordinates_clamped": False,
+        "native_nodes_added": False,
+        "native_graph_policy_or_radius_changed": False,
+        "numerical_tolerance": float(numerical_tolerance),
+        "maximum_normalized_overshoot_cap": float(maximum_normalized_overshoot),
+        "anchor_bbox_min": lower.tolist(), "anchor_bbox_max": upper.tolist(),
+        "query_bbox_min": query.min(axis=0).tolist(), "query_bbox_max": query.max(axis=0).tolist(),
+        "query_normalized_min": query_normalized.min(axis=0).tolist(),
+        "query_normalized_max": query_normalized.max(axis=0).tolist(),
+        "per_axis_lower_overshoot_max": lower_overshoot.max(axis=0).tolist(),
+        "per_axis_upper_overshoot_max": upper_overshoot.max(axis=0).tolist(),
+        "maximum_normalized_overshoot": maximum,
+        "outside_node_count": int(np.count_nonzero(outside)),
+        "outside_node_ratio": float(np.mean(outside)),
+        "numerical_only_outside_count": int(np.count_nonzero(numerical_only)),
+        "raw_uncovered_count": int(uncovered.size),
+        "raw_uncovered_ratio": float(uncovered.size / len(query_normalized)),
+        "repaired_uncovered_count": int(np.count_nonzero(repaired_degree < impl.min_physical_coverage)),
+        "repair_edge_count": int(len(repaired_array) - len(raw_array)),
+        "repair_nearest_distance_max": float(np.max(nearest_distance)),
+        "r2p_real_edges": int(len(r2p) - 1),
+    }
+    audit["native_exact"] = _native_exact(native, metadata)
+    return metadata, audit
+
+
 def _native_exact(native: Any, asymmetric: Any) -> dict[str, bool]:
     fields = (
         "x_pnodes_inp", "x_rnodes", "r_rnodes", "p2r_edge_indices",

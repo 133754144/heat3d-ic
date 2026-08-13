@@ -1,0 +1,25 @@
+{
+  "schema_version": "heat3d_v6_p1i_u_v2_protocol_v1",
+  "status": "geometry_audit_frozen_before_execution",
+  "baseline_commit": "42c0fcacdf6aecac11368f1f111194b5feead2b8",
+  "u_v2": {
+    "name": "U-v2",
+    "normalized_numerical_tolerance": 1e-6,
+    "maximum_normalized_overshoot": 0.25,
+    "normalization": "native1024_anchor_bbox_affine_unclamped",
+    "repair": "frozen_R2P_nearest_rnode_repair",
+    "native1024_p2r_r2r_rnodes": "bitwise_exact",
+    "forbidden": ["coordinate_clamp", "anchor_insertion", "graph_policy_change", "radius_change"]
+  },
+  "population": "valid96=formal_valid128-frozen_valid32",
+  "temperature_labels_read": false,
+  "role_contract": {
+    "accessed_roles": ["train_inputs_for_frozen_standardizer", "valid_iid_inputs", "full_field_mesh_without_temperature"],
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "E16384_modified": false
+  }
+}
