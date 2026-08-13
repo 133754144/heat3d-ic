@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -319,6 +320,14 @@ def main() -> int:
                     value = getattr(metadata, field)
                     if value is not None:
                         targets[field] = max(int(targets.get(field) or 0), int(np.asarray(value).shape[1]))
+        # CPU and GPU normalization can move a few threshold edges while the
+        # graph semantics remain frozen. This report-only cross-backend effect
+        # needs a shape envelope, not a graph-policy change. Dummy edges remain
+        # masked by the existing padded-graph implementation.
+        for targets in (anchor_targets, query_targets):
+            for field, value in list(targets.items()):
+                if value is not None:
+                    targets[field] = int(value) + max(64, int(math.ceil(0.001 * int(value))))
     model = GraphNeuralOperator(**runtime["model_config"])
     params = highn.runner._device_params(runtime["checkpoint"]["params"])
 
