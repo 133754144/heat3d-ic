@@ -208,7 +208,7 @@ def main() -> int:
         return jnp.sum(gathered * weights.astype(values.dtype), axis=2)
 
     service_started=time.perf_counter(); completion_offsets=[]
-    def prepare_one(anchor: Any) -> dict[str, Any]:
+    def prepare_one(anchor: Any, *, retain_device: bool = False) -> dict[str, Any]:
         submit_offset=time.perf_counter()-service_started
         with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
             full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
@@ -291,9 +291,16 @@ def main() -> int:
         paired_np=np.asarray(paired_values);minimal_np=paired_np[:1];reference_np=paired_np[1:];packing_prediction_exact=bool(np.array_equal(minimal_np,reference_np))
         packing_prediction_max_abs=float(np.max(np.abs(minimal_np.astype(np.float64)-reference_np.astype(np.float64))))
         if not packing_prediction_exact:raise RuntimeError(f"{anchor.sample_id}: minimal packing prediction drift")
-        return {"sample_id":anchor.sample_id,"inputs_in":inputs_in,"inputs_out":inputs_out,"graphs":graphs,"local":local,
-                "kwargs":kwargs,"map_indices":map_indices,"map_weights":map_weights,"device":device,"selected":selected,
-                "selected_cv":selected_cv,"full_q":full_q,"support_delta":values,"full_delta":full_value,
+        support_np=np.asarray(values,dtype=np.float32)[0];full_np=np.asarray(full_value,dtype=np.float32)[0]
+        with h5py.File(args.full_fields,"r") as archive:
+            truth=np.asarray(archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]],dtype=np.float64)
+        support_row=highn._metric_row(support_np,truth[selected],selected_cv,coords[selected],layer[selected],full_q[selected])
+        full_row=highn._metric_row(full_np,truth,cv,coords,layer,full_q)
+        return {"sample_id":anchor.sample_id,"inputs_in":inputs_in if retain_device else None,"inputs_out":inputs_out if retain_device else None,"graphs":graphs if retain_device else None,"local":local if retain_device else None,
+                "kwargs":kwargs if retain_device else None,"map_indices":map_indices if retain_device else None,"map_weights":map_weights if retain_device else None,"device":device if retain_device else None,"selected":selected,
+                "selected_cv":selected_cv,"full_q":full_q,"support_prediction":support_np,"full_prediction":full_np,
+                "support_metric_row":support_row,"full_metric_row":full_row,
+                "full_field_metrics":qualification.metric_accumulate([full_row],full=True),"full_field_metric_components":metric_components(full_row),
                 "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","equivalence_backend":"deterministic_cpu","prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs},
                 "streaming":{"submit_offset_seconds":submit_offset,"completion_offset_seconds":completion_offset,"submit_to_result_seconds":completion_offset-submit_offset,"inter_completion_seconds":completion_offset-previous},
                 "prepared_payload_sha256":tree_sha((inputs_in,inputs_out,graphs,local,kwargs,map_indices,map_weights)),
@@ -310,11 +317,14 @@ def main() -> int:
                          "r2r_edges":int(np.asarray(asymmetric.r2r_edge_indices).shape[1]),
                          "r2p_edges":int(np.asarray(asymmetric.r2p_edge_indices).shape[1])}}
 
-    warm=prepare_one(anchors[0]); ii,io,g,l,kw,mi,mw=warm["device"]
+    warm=prepare_one(anchors[0],retain_device=True); ii,io,g,l,kw,mi,mw=warm["device"]
     value=split_forward(params,ii,io,g,l,kw);block(reconstruct(value,mi,mw))
     # Qualification and JIT compile are outside persistent service timing.
     service_started=time.perf_counter();completion_offsets.clear()
-    prepared=[prepare_one(anchor) for anchor in anchors]
+    prepared=[]
+    for number,anchor in enumerate(anchors,1):
+        prepared.append(prepare_one(anchor,retain_device=False))
+        print(f"[U-v2] {number}/{len(anchors)}",flush=True)
     if any(row["shape"]["output_nodes"] != args.resolution for row in prepared): raise RuntimeError("output shape")
     if any(not np.all(np.isfinite(np.asarray(row["full_delta"]))) for row in prepared): raise RuntimeError("nonfinite")
     stage_keys=list(prepared[0]["stages"]); timing={k:dist([r["stages"][k] for r in prepared]) for k in stage_keys}
@@ -331,6 +341,12 @@ def main() -> int:
         sizes=[1]
     limit=int(candidate.publication._device_memory().get("bytes_limit",0)); one_peak=int(candidate.publication._device_memory().get("peak_bytes_in_use",0))
     t1=None
+    if direct and args.sample_count == 96:
+        continuous=[float(row["stages"]["matched_continuous_e2e"]) for row in prepared]
+        for b in (1,16,32):
+            wall=float(sum(continuous[:b]));base=float(sum(continuous[:16]))
+            batch_rows.append({"batch_size":b,"status":"passed_sequential_distinct_case_prefix","batch_wall_seconds":wall,"samples_per_second":b/wall,"average_per_case_seconds":wall/b,"marginal_per_case_seconds":None if b<32 else (wall-base)/16.0,"definition":"persistent closed-loop sequential distinct k/q/BC; no Bx240825 tensor"})
+        sizes=[]
     for b in sizes:
         if b>len(prepared): continue
         if args.batch_sizes is None and limit and b*one_peak>0.8*limit:
@@ -353,12 +369,7 @@ def main() -> int:
             "marginal_per_case_seconds":None if b==1 else (wall-t1)/(b-1),
             "peak_vram_bytes":int(candidate.publication._device_memory().get("peak_bytes_in_use",0))})
 
-    metric_support=[];metric_full=[]
-    with h5py.File(args.full_fields,"r") as archive:
-        for anchor,row in zip(anchors,prepared,strict=True):
-            truth=np.asarray(archive["samples/deltaT_K"][archive_lookup[anchor.sample_id]],dtype=np.float64)
-            support_np=np.asarray(row["support_delta"],dtype=np.float64)[0];full_np=np.asarray(row["full_delta"],dtype=np.float64)[0]
-            support_row=highn._metric_row(support_np,truth[row["selected"]],row["selected_cv"],coords[row["selected"]],layer[row["selected"]],row["full_q"][row["selected"]]);full_row=highn._metric_row(full_np,truth,cv,coords,layer,row["full_q"]);metric_support.append(support_row);metric_full.append(full_row);row["full_field_metrics"]=qualification.metric_accumulate([full_row],full=True);row["full_field_metric_components"]=metric_components(full_row)
+    metric_support=[row["support_metric_row"] for row in prepared];metric_full=[row["full_metric_row"] for row in prepared]
     result={"schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1","status":"passed" if args.sample_count in (32,96) else "passed_smoke",
         "resolution":args.resolution,"output_mode":"direct" if direct else "reconstruction","sample_count":args.sample_count,
         "inference_strategy":"U-v2" if args.asymmetric_mode=="u_v2" else "U-v1",
@@ -380,7 +391,7 @@ def main() -> int:
             args.prediction_output,
             sample_ids=np.asarray([row["sample_id"] for row in prepared]),
             full_deltaT_K=np.stack([
-                np.asarray(row["full_delta"], dtype=np.float32)[0] for row in prepared
+                np.asarray(row["full_prediction"], dtype=np.float32) for row in prepared
             ]),
         )
     print(json.dumps({"status":result["status"],"resolution":args.resolution,"pg":result["accuracy"]["full_field"]["point_global_true_rms_relative_rmse_pct"],"e2e":timing["matched_continuous_e2e"]["median_seconds"]}))
