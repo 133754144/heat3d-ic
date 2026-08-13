@@ -67,6 +67,26 @@ def _stats(values: list[float]) -> dict[str, float | int]:
     }
 
 
+def _fixed_depth_queue_trace(service_seconds: list[float], depth: int = 2) -> dict[str, Any]:
+    """Replay an exact fixed-depth arrival schedule on the measured serial service trace."""
+    completion = np.cumsum(np.asarray(service_seconds, dtype=np.float64))
+    submitted = np.zeros_like(completion)
+    if len(completion) > depth:
+        submitted[depth:] = completion[:-depth]
+    latency = completion - submitted
+    inter = np.diff(np.concatenate(([0.0], completion)))
+    return {
+        "queue_depth": depth,
+        "worker_count": 1,
+        "arrival_rule": "submit_depth_at_t0_then_refill_one_after_each_completion",
+        "source": "uninterrupted_measured_distinct_case_service_spans",
+        "submit_to_result": _stats(latency.tolist()),
+        "inter_completion": _stats(inter.tolist()),
+        "wall_seconds": float(completion[-1]),
+        "samples_per_second": float(len(completion) / completion[-1]),
+    }
+
+
 def _tree_sha256(value: Any) -> str:
     digest = hashlib.sha256()
     leaves, treedef = jax.tree_util.tree_flatten(value)
@@ -733,6 +753,19 @@ def main() -> int:
             "samples_per_second": len(rows) / completion_offsets[-1],
             "order_seed": args.order_seed,
         },
+        "saturated_streaming": _fixed_depth_queue_trace(
+            [float(row["timing"]["matched_continuous_e2e"]) for row in rows], depth=2,
+        ),
+        "batch": [
+            {
+                "batch_size": batch_size,
+                "batch_wall_seconds": float(sum(
+                    float(row["timing"]["matched_continuous_e2e"]) for row in rows[:batch_size]
+                )),
+                "definition": "measured sequential distinct-case prefix in one persistent service",
+            }
+            for batch_size in (1, 16, 32)
+        ],
         "graph": {
             "regional_node_count_mean": float(np.mean([row["regional_node_count"] for row in rows])),
             "p2r_edges_mean": float(np.mean([row["p2r_edges"] for row in rows])),

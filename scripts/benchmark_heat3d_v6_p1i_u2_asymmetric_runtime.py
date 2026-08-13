@@ -47,6 +47,27 @@ def dist(values: list[float]) -> dict[str, Any]:
             "std_seconds": float(np.std(x)), "p95_seconds": float(np.quantile(x, .95))}
 
 
+def fixed_depth_queue_trace(service_seconds: list[float], depth: int = 2) -> dict[str, Any]:
+    """Apply the frozen fixed-depth arrival rule to measured serial service spans."""
+    services = np.asarray(service_seconds, dtype=np.float64)
+    completion = np.cumsum(services)
+    submitted = np.zeros_like(completion)
+    if len(completion) > depth:
+        submitted[depth:] = completion[:-depth]
+    latency = completion - submitted
+    inter = np.diff(np.concatenate(([0.0], completion)))
+    return {
+        "queue_depth": depth,
+        "worker_count": 1,
+        "arrival_rule": "submit_depth_at_t0_then_refill_one_after_each_completion",
+        "source": "uninterrupted_measured_distinct_case_service_spans",
+        "submit_to_result": dist(latency.tolist()),
+        "inter_completion": dist(inter.tolist()),
+        "wall_seconds": float(completion[-1]),
+        "samples_per_second": float(len(completion) / completion[-1]),
+    }
+
+
 def block(tree: Any) -> None:
     jax.tree_util.tree_map(lambda x: x.block_until_ready() if hasattr(x, "block_until_ready") else x, tree)
 
@@ -420,6 +441,7 @@ def main() -> int:
         "accuracy":None if args.timing_only else {"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
         "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
+        "saturated_streaming":fixed_depth_queue_trace([float(r["stages"]["matched_continuous_e2e"]) for r in prepared],depth=2),
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":all(r["packing_audit"]["host_payload_bitwise_exact"] for r in prepared),"prediction_audit_count":sum(int(r["packing_audit"]["prediction_audit_executed"]) for r in prepared),"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
