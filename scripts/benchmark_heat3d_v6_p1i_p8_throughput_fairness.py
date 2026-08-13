@@ -163,12 +163,14 @@ def neural(args:argparse.Namespace)->int:
 
 def init_fvm_worker(serialized:dict[str,str])->None:
     os.environ.update(OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',MKL_NUM_THREADS='1',NUMEXPR_NUM_THREADS='1',JAX_PLATFORMS='cpu',CUDA_VISIBLE_DEVICES='')
-    args=argparse.Namespace(**{key:(Path(value) if key in {'dataset_root','manifest','full_fields'} else value) for key,value in serialized.items()});data=qualification.FamilyData(family='p1i',dataset_root=args.dataset_root,manifest_path=args.manifest,full_fields_path=args.full_fields,randomblock_config=None);rows=data.selected_rows(32);physics=data.physics(rows[0]);mesh=qualification.prior.core.build_mesh(physics);shared=data.full_shared()
+    args=argparse.Namespace(**{key:(Path(value) if key in {'dataset_root','manifest','full_fields'} else value) for key,value in serialized.items()});data=qualification.FamilyData(family='p1i',dataset_root=args.dataset_root,manifest_path=args.manifest,full_fields_path=args.full_fields,randomblock_config=None);rows=data.selected_rows(int(serialized.get('selected_count','32')));physics=data.physics(rows[0]);mesh=qualification.prior.core.build_mesh(physics);shared=data.full_shared()
     if not np.array_equal(mesh['coords'],shared['coords']):raise RuntimeError('FVM mesh drift')
     global _FVM_STATE;_FVM_STATE={'data':data,'rows':rows,'mesh':mesh,'prepared':{}}
     if serialized.get('prepare_all')=='true':
         for index in range(len(rows)):
             row=rows[index];example,_=data.load_example(row);k,q=data.full_kq(row);top_h=float(example.condition.condition_features[0,8]);bottom_h=float(example.condition.condition_features[0,9]);_FVM_STATE['prepared'][index]=qualification.prior._assemble(mesh,k,q,top_h,bottom_h)
+    for index in [int(value) for value in serialized.get('prepare_indices','').split(',') if value]:
+        row=rows[index];example,_=data.load_example(row);k,q=data.full_kq(row);top_h=float(example.condition.condition_features[0,8]);bottom_h=float(example.condition.condition_features[0,9]);_FVM_STATE['prepared'][index]=qualification.prior._assemble(mesh,k,q,top_h,bottom_h)
 
 def fvm_worker(index:int)->dict[str,Any]:
     state=_FVM_STATE;row=state['rows'][index];start=time.perf_counter();example,_=state['data'].load_example(row);k,q=state['data'].full_kq(row);data_s=time.perf_counter()-start;phase=time.perf_counter();top_h=float(example.condition.condition_features[0,8]);bottom_h=float(example.condition.condition_features[0,9]);system=qualification.prior._assemble(state['mesh'],k,q,top_h,bottom_h);assembly=time.perf_counter()-phase;phase=time.perf_counter();temperature=qualification.prior._solve(*system);solve=time.perf_counter()-phase
