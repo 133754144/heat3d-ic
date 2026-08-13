@@ -717,7 +717,7 @@ def main() -> int:
                 "full_field_metrics": None if args.timing_only else qualification.metric_accumulate([full_row], full=True),
                 "full_field_metric_components": None if args.timing_only else _metric_components(full_row),
             })
-            print(f"[P5-R] {args.route} {number}/32", flush=True)
+            print(f"[P5-R] {args.route} {number}/{len(anchors)}", flush=True)
 
     if resident_payload is None:
         raise RuntimeError("no resident payload")
