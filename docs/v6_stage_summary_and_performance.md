@@ -1,5 +1,7 @@
 # V6 阶段总结与最终架构/性能冻结
 
+本次 post-freeze 收口继续执行“停止 valid32 架构调优”的治理约束。统一时间层使用固定术语：Fresh single-case latency、Warm/resident latency、Marginal added-case latency、Batch throughput；所有主路线最终输出域均为 240825 solver nodes。
+
 ## 最终冻结结论
 
 V6 的论文主线最终冻结为 `P1i formal1024_v1 + V6_06/07/08 三 seed + E16384-reconstruction`。seed0 point-global-best e559 checkpoint 是 reference，seed1/2 是独立重复。`frozen valid32` 的 route/graph/packing/model 调优自本报告起永久关闭。
