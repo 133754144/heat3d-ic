@@ -290,8 +290,12 @@ def _repair_uncovered_physical_nodes_exact(
                 break
     if not additions:
         return edge_indices
-    return jnp.concatenate(
-        [edge_indices, jnp.asarray(additions, dtype=edge_indices.dtype)], axis=0
+    # Keep sample-varying repair shapes on the host.  A JAX concatenate here
+    # compiles once per distinct uncovered-node count and contaminated the
+    # U-v2 fresh-service graph span.  The completed metadata is transferred to
+    # the device after the edge set has been frozen.
+    return np.concatenate(
+        [edges, np.asarray(additions, dtype=edges.dtype)], axis=0
     )
 
 

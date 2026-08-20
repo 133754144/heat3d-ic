@@ -332,7 +332,11 @@ class RegionInteractionGraphBuilder:
       radii = np.zeros(shape=(centers_array.shape[0],), dtype=points_array.dtype)
       np.maximum.at(radii, nearest_rnodes, nearest_distance)
     radii = np.nextafter(radii, np.asarray(np.inf, dtype=radii.dtype))
-    return jnp.asarray(radii)
+    # Keep graph construction on the host.  Returning a JAX array here causes
+    # downstream eager JAX primitives to compile once for every sample-varying
+    # edge shape.  The metadata is transferred to JAX exactly once after all
+    # variable-shape host packing is complete.
+    return radii
 
   def _get_effective_support_radii(self,
     r_rnodes: Array,
@@ -340,12 +344,13 @@ class RegionInteractionGraphBuilder:
   ) -> Array:
     """Returns final radii before physical-to-regional edge construction."""
 
+    radii = np.asarray(r_rnodes)
     if self.radius_policy == "discrete_physical_coverage":
       # This monotone policy deliberately bypasses the legacy global clip and
       # non-monotone hard reset. It uses the minimal 1x coverage radius to
       # retain the guarantee without inheriting the legacy overlap edge cost.
-      return self.discrete_coverage_multiplier * r_rnodes
-    return jnp.clip(overlap_factor * r_rnodes, a_min=0, a_max=r_rnodes.max())
+      return self.discrete_coverage_multiplier * radii
+    return np.clip(overlap_factor * radii, a_min=0, a_max=radii.max())
 
   def _get_supported_pnodes_by_rnodes(self,
     centers: Array,
@@ -423,7 +428,7 @@ class RegionInteractionGraphBuilder:
           )
         else:
           edges = np.empty((0, 2), dtype=np.int64)
-        return jnp.asarray(edges, dtype=jnp.int32)
+        return np.asarray(edges, dtype=np.int32)
 
       if self.discrete_graph_backend == "gpu_tiled_exact_v1":
         # The radius itself remains the frozen sparse-KDTree coverage result.
@@ -466,7 +471,7 @@ class RegionInteractionGraphBuilder:
           edges = edges[order]
         else:
           edges = np.empty((0, 2), dtype=np.int64)
-        return jnp.asarray(edges, dtype=jnp.int32)
+        return np.asarray(edges, dtype=np.int32)
 
       edge_blocks = []
       for start in range(0, len(points_array), self.discrete_graph_chunk_size):
@@ -482,7 +487,7 @@ class RegionInteractionGraphBuilder:
         edges = np.concatenate(edge_blocks, axis=0)
       else:
         edges = np.empty((0, 2), dtype=np.int64)
-      return jnp.asarray(edges, dtype=jnp.int32)
+      return np.asarray(edges, dtype=np.int32)
 
     # Get relative coordinates
     rel = points[:, None] - centers
@@ -539,8 +544,8 @@ class RegionInteractionGraphBuilder:
 
     if not additions:
       return edge_indices
-    return jnp.concatenate(
-      [edge_indices, jnp.asarray(additions, dtype=edge_indices.dtype)],
+    return np.concatenate(
+      [edges, np.asarray(additions, dtype=edges.dtype)],
       axis=0,
     )
 
@@ -583,9 +588,13 @@ class RegionInteractionGraphBuilder:
       domains.append(domains_level)
 
     # Remove repeated edges
-    edges = jnp.concatenate(edges)
-    domains = jnp.concatenate(domains)
-    _, unique_idx = jnp.unique(edges, axis=0, return_index=True)
+    # Delaunay is a host operation.  Keep the sample-varying edge count on the
+    # host as well: jnp.unique(axis=0) otherwise triggers a CPU-XLA compile for
+    # each distinct edge shape.  NumPy preserves the same lexicographic unique
+    # values and first-occurrence indices used by JAX here.
+    edges = np.concatenate(edges).astype(np.int32, copy=False)
+    domains = np.concatenate(domains).astype(np.int32, copy=False)
+    _, unique_idx = np.unique(edges, axis=0, return_index=True)
     edges = edges[unique_idx]
     domains = domains[unique_idx]
 
@@ -682,24 +691,34 @@ class RegionInteractionGraphBuilder:
         )
     _timings["coverage_repair_seconds"] = time.perf_counter() - _phase_started
     _phase_started = time.perf_counter()
-    r2p_edge_indices = jnp.flip(r2p_edge_indices, axis=-1)
+    # From this point through padding, all arrays can have sample-varying edge
+    # dimensions.  Use host NumPy primitives and perform one final device
+    # transfer below, avoiding per-edge-shape CPU-JAX compilation.
+    x_inp = np.asarray(x_inp)
+    x_out = np.asarray(x_out)
+    x_rnodes = np.asarray(x_rnodes)
+    r_rnodes = np.asarray(r_rnodes)
+    p2r_edge_indices = np.asarray(p2r_edge_indices)
+    r2r_edge_indices = np.asarray(r2r_edge_indices)
+    r2r_edge_domains = np.asarray(r2r_edge_domains)
+    r2p_edge_indices = np.flip(np.asarray(r2p_edge_indices), axis=-1)
 
     # Add dummy nodes and edges
-    p2r_edge_indices = jnp.concatenate([p2r_edge_indices, jnp.array([[x_inp.shape[0], x_rnodes.shape[0]]])], axis=0)
-    r2r_edge_indices = jnp.concatenate([r2r_edge_indices, jnp.array([[x_rnodes.shape[0], x_rnodes.shape[0]]])], axis=0)
-    r2r_edge_domains = jnp.concatenate([r2r_edge_domains, jnp.array([[0, 0]])], axis=0)
-    r2p_edge_indices = jnp.concatenate([r2p_edge_indices, jnp.array([[x_rnodes.shape[0], x_out.shape[0]]])], axis=0)
-    x_inp = jnp.concatenate([x_inp, jnp.zeros(shape=(1, x_inp.shape[-1]))], axis=0)
-    x_out = jnp.concatenate([x_out, jnp.zeros(shape=(1, x_out.shape[-1]))], axis=0)
-    x_rnodes = jnp.concatenate([x_rnodes, jnp.zeros(shape=(1, x_rnodes.shape[-1]))], axis=0)
-    r_rnodes = jnp.concatenate([r_rnodes, jnp.zeros(shape=(1,))], axis=0)
+    p2r_edge_indices = np.concatenate([p2r_edge_indices, np.asarray([[x_inp.shape[0], x_rnodes.shape[0]]], dtype=p2r_edge_indices.dtype)], axis=0)
+    r2r_edge_indices = np.concatenate([r2r_edge_indices, np.asarray([[x_rnodes.shape[0], x_rnodes.shape[0]]], dtype=r2r_edge_indices.dtype)], axis=0)
+    r2r_edge_domains = np.concatenate([r2r_edge_domains, np.asarray([[0, 0]], dtype=r2r_edge_domains.dtype)], axis=0)
+    r2p_edge_indices = np.concatenate([r2p_edge_indices, np.asarray([[x_rnodes.shape[0], x_out.shape[0]]], dtype=r2p_edge_indices.dtype)], axis=0)
+    x_inp = np.concatenate([x_inp, np.zeros(shape=(1, x_inp.shape[-1]), dtype=x_inp.dtype)], axis=0)
+    x_out = np.concatenate([x_out, np.zeros(shape=(1, x_out.shape[-1]), dtype=x_out.dtype)], axis=0)
+    x_rnodes = np.concatenate([x_rnodes, np.zeros(shape=(1, x_rnodes.shape[-1]), dtype=x_rnodes.dtype)], axis=0)
+    r_rnodes = np.concatenate([r_rnodes, np.zeros(shape=(1,), dtype=r_rnodes.dtype)], axis=0)
 
     # Convert dtypes to save memory
-    r2r_edge_domains = r2r_edge_domains.astype(jnp.uint8)
-    if (max(x_inp.shape[0], x_out.shape[0]) < jnp.iinfo(jnp.uint16).max):
-      p2r_edge_indices=p2r_edge_indices.astype(jnp.uint16)
-      r2r_edge_indices=r2r_edge_indices.astype(jnp.uint16)
-      r2p_edge_indices=r2p_edge_indices.astype(jnp.uint16)
+    r2r_edge_domains = r2r_edge_domains.astype(np.uint8)
+    if (max(x_inp.shape[0], x_out.shape[0]) < np.iinfo(np.uint16).max):
+      p2r_edge_indices=p2r_edge_indices.astype(np.uint16)
+      r2r_edge_indices=r2r_edge_indices.astype(np.uint16)
+      r2p_edge_indices=r2p_edge_indices.astype(np.uint16)
     # Ommit storing duplicated edge indices
     if (
       (_reuse_reverse or self.overlap_factor_p2r == self.overlap_factor_r2p)
@@ -713,14 +732,14 @@ class RegionInteractionGraphBuilder:
 
     # Store the graph data
     graph_metadata = RegionInteractionGraphMetadata(
-      x_pnodes_inp=jnp.expand_dims(x_inp, axis=0),
-      x_pnodes_out=jnp.expand_dims(x_out, axis=0),
-      x_rnodes=jnp.expand_dims(x_rnodes, axis=0),
-      r_rnodes=jnp.expand_dims(r_rnodes, axis=0),
-      p2r_edge_indices=jnp.expand_dims(p2r_edge_indices, axis=0),
-      r2r_edge_indices=jnp.expand_dims(r2r_edge_indices, axis=0),
-      r2r_edge_domains=jnp.expand_dims(r2r_edge_domains, axis=0),
-      r2p_edge_indices=(jnp.expand_dims(r2p_edge_indices, axis=0) if (r2p_edge_indices is not None) else None),
+      x_pnodes_inp=jnp.asarray(np.expand_dims(x_inp, axis=0)),
+      x_pnodes_out=jnp.asarray(np.expand_dims(x_out, axis=0)),
+      x_rnodes=jnp.asarray(np.expand_dims(x_rnodes, axis=0)),
+      r_rnodes=jnp.asarray(np.expand_dims(r_rnodes, axis=0)),
+      p2r_edge_indices=jnp.asarray(np.expand_dims(p2r_edge_indices, axis=0)),
+      r2r_edge_indices=jnp.asarray(np.expand_dims(r2r_edge_indices, axis=0)),
+      r2r_edge_domains=jnp.asarray(np.expand_dims(r2r_edge_domains, axis=0)),
+      r2p_edge_indices=(jnp.asarray(np.expand_dims(r2p_edge_indices, axis=0)) if (r2p_edge_indices is not None) else None),
     )
 
     _timings["packing_seconds"] = time.perf_counter() - _phase_started
