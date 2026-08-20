@@ -130,6 +130,7 @@ def main() -> int:
         return jnp.sum(gathered * map_weights.astype(support.dtype), axis=1)
 
     def prepare_host(anchor: Any) -> tuple[dict[str, Any], dict[str, float]]:
+        prepare_started = time.perf_counter()
         stages: dict[str, float] = {}
         full_k, full_q = physics_memory[anchor.sample_id]
         anchor_indices, distance = highn._anchor_indices(
@@ -211,6 +212,11 @@ def main() -> int:
             "weights": np.asarray(selected_cv, dtype=np.float32),
             "map_indices": map_indices, "map_weights": map_weights,
         }
+        classified = float(sum(stages.values()))
+        host_assembly = time.perf_counter() - prepare_started - classified
+        if host_assembly < -1.0e-6:
+            raise RuntimeError(f"{anchor.sample_id}: negative host assembly residual")
+        stages["host_assembly"] = max(0.0, host_assembly)
         return payload, stages
 
     def service_one(anchor: Any) -> dict[str, Any]:
