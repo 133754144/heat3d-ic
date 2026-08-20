@@ -41,6 +41,7 @@ def main():
     require(smoke["publication_numbers_generated"] is False,"publication number leak")
     require(set(smoke["exactness_coverage"])=={"1024","16384","240825"},"exactness resolution keys")
     for resolution,row in smoke["exactness_coverage"].items():
+        require(row.get("graph_metadata_edge_hash_exact") is True,f"{resolution} graph exactness missing")
         for key,value in row.items():
             if key not in {"source"}: require(value is True,f"{resolution} exactness {key}")
     pids=[row["pid"] for row in smoke["rows"]]

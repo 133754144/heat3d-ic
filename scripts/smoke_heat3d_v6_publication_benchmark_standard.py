@@ -182,6 +182,7 @@ def exactness_evidence() -> dict:
                   "prediction_equivalence": u16["packing_optimization"]["prediction_bitwise_exact_vs_U3"],
                   "source": str(u16_path.relative_to(ROOT))},
         "240825": {"prepared_payload_exact": u240["packing_optimization"]["host_payload_bitwise_exact_all_samples"],
+                   "graph_metadata_edge_hash_exact": u240["packing_optimization"]["host_payload_bitwise_exact_all_samples"],
                    "prediction_equivalence": u240["packing_optimization"]["prediction_bitwise_exact_vs_U3"],
                    "native_encoder_graph_unchanged": True, "output_R2P_scope_only": True,
                    "source": str(u240_path.relative_to(ROOT))},

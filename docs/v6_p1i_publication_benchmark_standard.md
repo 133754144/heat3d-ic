@@ -62,3 +62,20 @@ smoke 原始记录：
 
 角色合同：不训练、不访问 test/sealed、不调 accuracy、不运行完整 valid32/valid96
 矩阵，不改 checkpoint/dataset/graph policy。
+
+## Smoke closeout
+
+冻结协议提交后在 WSL2/RTX 5070 上执行了 15 个独立 Python processes（五路线
+×三个固定 seeds），每个进程只使用四个 valid32 input tokens。15 个 PID 全部
+唯一；专用 warmup case `v6p1if1_0389` 来自 train split、未读取 target，且其
+shape 与 timed shapes 不同。E/U CPU policy 完全一致；所有 Q2 都由两个真实
+workers 并发执行、没有 Q2 population 的 serial prepass，最小重叠时间大于零。
+原 residual hard gate 在 cold/fresh/cache-hot 三类均可执行并通过。
+
+1024/16384/240825 的 graph/payload/prediction exactness evidence 均绑定到已有冻结
+artifact；smoke 不重跑 accuracy。原始 smoke SHA256 为
+`83b91811378d47b13d73e863ed3126bb46970a1a532e2f4125951bd377599ae3`。
+
+结论：`benchmark_standard_freeze = GO`；
+`publication_timing_freeze = NO_GO_pending_full_measurement`。smoke 内部微型耗时
+不可引用为正式 latency，也未计算 speedup。
