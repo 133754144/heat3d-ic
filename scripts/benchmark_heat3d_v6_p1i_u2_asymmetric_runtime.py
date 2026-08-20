@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import gc
 import hashlib
 import json
@@ -118,6 +119,8 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--timing-only", action="store_true")
     parser.add_argument("--qualification-result", type=Path)
     parser.add_argument("--timing-regression-audit", action="store_true")
+    parser.add_argument("--true-concurrent-depth", type=int, choices=[1, 2], default=1)
+    parser.add_argument("--concurrent-only", action="store_true")
     return parser.parse_args()
 
 
@@ -153,6 +156,15 @@ def main() -> int:
     if args.order_seed is not None:
         order=np.random.default_rng(args.order_seed).permutation(len(anchors));anchors=[anchors[int(index)] for index in order]
     physics_rows = {row["sample_id"]: row for row in preflight["samples"]}
+    # Production timing starts from in-memory k/q/BC.  Cache reads are an
+    # untimed prerequisite, not part of fresh_single_case or streaming spans.
+    physics_memory: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    for anchor in anchors:
+        with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
+            physics_memory[anchor.sample_id] = (
+                np.asarray(physics["k_xyz"], dtype=np.float64),
+                np.asarray(physics["q_W_m3"], dtype=np.float64),
+            )
     full, archive_lookup = highn._full_shared(args)
     coords = np.asarray(full["coords"], dtype=np.float64); cv = np.asarray(full["cv"], dtype=np.float64)
     layer = np.asarray(full["layer"], dtype=np.int32)
@@ -234,8 +246,7 @@ def main() -> int:
     # The timed path still performs a fresh graph build from coordinates.
     if args.timing_regression_audit:
         for anchor in anchors:
-            with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
-                full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
+            _, full_q = physics_memory[anchor.sample_id]
             selected, selected_cv = support(anchor, full_q)
             query_support = {
                 "selected_indices": selected,
@@ -283,9 +294,7 @@ def main() -> int:
     def prepare_one(anchor: Any, *, retain_device: bool = False) -> dict[str, Any]:
         nonlocal packing_prediction_audit_done
         submit_offset=time.perf_counter()-service_started
-        with np.load(physics_rows[anchor.sample_id]["physics_cache_file"], allow_pickle=False) as physics:
-            full_k = np.asarray(physics["k_xyz"], dtype=np.float64)
-            full_q = np.asarray(physics["q_W_m3"], dtype=np.float64)
+        full_k, full_q = physics_memory[anchor.sample_id]
         anchor_indices, _ = highn._anchor_indices(
             anchor, coords, float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]))
         anchor_support = {"selected_indices": anchor_indices,
@@ -461,10 +470,72 @@ def main() -> int:
     # Qualification and JIT compile are outside persistent service timing.
     service_started=time.perf_counter();completion_offsets.clear()
     prepared=[];post_result_cleanup=[]
-    for number,anchor in enumerate(anchors,1):
-        prepared.append(prepare_one(anchor,retain_device=False))
-        phase=time.perf_counter();gc.collect();post_result_cleanup.append(time.perf_counter()-phase)
-        print(f"[{args.asymmetric_mode}] {number}/{len(anchors)}",flush=True)
+    if not args.concurrent_only:
+        for number,anchor in enumerate(anchors,1):
+            prepared.append(prepare_one(anchor,retain_device=False))
+            phase=time.perf_counter();gc.collect();post_result_cleanup.append(time.perf_counter()-phase)
+            print(f"[{args.asymmetric_mode}] {number}/{len(anchors)}",flush=True)
+
+    true_concurrent = None
+    concurrent_prepared: list[dict[str, Any]] = []
+    if args.true_concurrent_depth == 2:
+        # A real bounded-Q2 service: submit two distinct cases, then submit one
+        # new case only after one completes.  This is deliberately not an
+        # offline replay of serial stage timings.
+        concurrent_started = time.perf_counter()
+        submission: dict[Any, tuple[int, float]] = {}
+        completion_rows: list[dict[str, Any]] = []
+        next_index = 0
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="u-v2-q2") as pool:
+            while next_index < min(2, len(anchors)):
+                submitted = time.perf_counter()
+                future = pool.submit(prepare_one, anchors[next_index], retain_device=False)
+                submission[future] = (next_index, submitted)
+                next_index += 1
+            while submission:
+                done, _ = wait(tuple(submission), return_when=FIRST_COMPLETED)
+                for future in done:
+                    index, submitted = submission.pop(future)
+                    row = future.result()
+                    completed = time.perf_counter()
+                    concurrent_prepared.append(row)
+                    completion_rows.append({
+                        "sample_id": row["sample_id"],
+                        "input_index": index,
+                        "submit_offset_seconds": submitted - concurrent_started,
+                        "completion_offset_seconds": completed - concurrent_started,
+                        "submit_to_result_seconds": completed - submitted,
+                    })
+                    if next_index < len(anchors):
+                        new_submitted = time.perf_counter()
+                        new_future = pool.submit(prepare_one, anchors[next_index], retain_device=False)
+                        submission[new_future] = (next_index, new_submitted)
+                        next_index += 1
+        completion_rows.sort(key=lambda row: row["completion_offset_seconds"])
+        completion = [float(row["completion_offset_seconds"]) for row in completion_rows]
+        inter = np.diff(np.asarray([0.0] + completion, dtype=np.float64)).tolist()
+        prefix16 = completion[15] if len(completion) >= 16 else None
+        prefix32 = completion[31] if len(completion) >= 32 else None
+        true_concurrent = {
+            "queue_depth": 2,
+            "worker_count": 2,
+            "actual_concurrent_execution": True,
+            "distinct_k_q_bc": True,
+            "arrival_rule": "submit_Q2_then_refill_one_after_each_completion",
+            "submit_to_result": dist([float(row["submit_to_result_seconds"]) for row in completion_rows]),
+            "inter_completion": dist(inter),
+            "wall_seconds": float(completion[-1]),
+            "samples_per_second": float(len(completion) / completion[-1]),
+            "B16_wall_seconds": prefix16,
+            "B32_wall_seconds": prefix32,
+            "actual_B16_to_B32_marginal_seconds": (
+                None if prefix16 is None or prefix32 is None else (prefix32 - prefix16) / 16.0
+            ),
+            "completion_rows": completion_rows,
+        }
+        if args.concurrent_only:
+            prepared = concurrent_prepared
+    if not prepared: raise RuntimeError("no measured cases")
     if any(row["shape"]["output_nodes"] != args.resolution for row in prepared): raise RuntimeError("output shape")
     if any(not np.all(np.isfinite(np.asarray(row["full_prediction"]))) for row in prepared): raise RuntimeError("nonfinite")
     stage_keys=list(prepared[0]["stages"]); timing={k:dist([r["stages"][k] for r in prepared]) for k in stage_keys}
@@ -522,13 +593,20 @@ def main() -> int:
         "accuracy":None if args.timing_only else {"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
         "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
-        "saturated_streaming":fixed_depth_queue_trace([float(r["stages"]["matched_continuous_e2e"]) for r in prepared],depth=2),
+        "saturated_streaming":dict(
+            fixed_depth_queue_trace([float(r["stages"]["matched_continuous_e2e"]) for r in prepared],depth=2),
+            status="deprecated_serial_trace_not_concurrent",
+        ),
+        "true_concurrent_streaming":true_concurrent,
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":all(r["packing_audit"]["host_payload_bitwise_exact"] for r in prepared),"prediction_audit_count":sum(int(r["packing_audit"]["prediction_audit_executed"]) for r in prepared),"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},
         "timing_regression_audit":args.timing_regression_audit,
-        "post_result_gc_collect_outside_production_span":dist(post_result_cleanup),
+        "concurrent_only":args.concurrent_only,
+        "post_result_gc_collect_outside_production_span":(
+            None if not post_result_cleanup else dist(post_result_cleanup)
+        ),
         "role_contract":protocol["role_contract"],"population_mode":args.population_mode}
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(result,indent=2,sort_keys=True)+"\n")
     if args.prediction_output is not None:
