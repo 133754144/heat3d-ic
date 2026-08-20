@@ -79,8 +79,9 @@ def main() -> int:
     state = p8.runtime_state(args)
     runtime = state["runtime"]
     checkpoint_before = highn._tree_sha256(runtime["checkpoint"]["params"])
-    if checkpoint_before != args.checkpoint_sha256:
-        raise RuntimeError("checkpoint SHA drift")
+    # p5r._runtime already verifies the checkpoint file against the registered
+    # file SHA supplied on the command line.  The tree SHA is a separate
+    # before/after immutability witness and must not be compared to file bytes.
     resolution = 16384 if args.route.startswith("E16384") else 240825
     direct = resolution == 240825
     query_config = dict(runtime["graph_config"])
