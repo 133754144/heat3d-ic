@@ -45,6 +45,21 @@
     "E_and_U_graph_policy": "unchanged",
     "accuracy_driven_tuning": false
   },
+  "u_v2": {
+    "name": "U-v2_bounded_query_extrapolation_nearest_r2p_repair",
+    "native1024_p2r_r2r_rnodes": "bitwise_exact",
+    "normalization": "native1024_anchor_bbox_affine_unclamped",
+    "normalized_numerical_tolerance": 0.000001,
+    "maximum_normalized_overshoot": 0.25,
+    "repair": "frozen_R2P_nearest_rnode_repair_after_unchanged_radius_predicate",
+    "forbidden": [
+      "coordinate_clamp",
+      "anchor_insertion",
+      "graph_policy_change",
+      "radius_change",
+      "accuracy_driven_adjustment"
+    ]
+  },
   "evidence_correction": {
     "deprecated": [
       "E16384_fresh_2.383_seconds",
