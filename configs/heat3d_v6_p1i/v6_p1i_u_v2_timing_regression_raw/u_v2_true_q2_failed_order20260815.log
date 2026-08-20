@@ -1,0 +1,24 @@
+E0820 14:30:15.004708 3391443 cuda_timer.cc:87] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
+E0820 14:30:17.133423 3391453 cuda_timer.cc:87] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
+E0820 14:30:17.468891 3391450 cuda_timer.cc:87] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
+E0820 14:30:17.916472 3391443 cuda_timer.cc:87] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
+Traceback (most recent call last):
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py", line 625, in <module>
+    if __name__ == "__main__": raise SystemExit(main())
+                                                ~~~~^^
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py", line 499, in main
+    row = future.result()
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/concurrent/futures/_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/concurrent/futures/_base.py", line 395, in __get_result
+    raise self._exception
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/concurrent/futures/thread.py", line 86, in run
+    result = ctx.run(self.task)
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/concurrent/futures/thread.py", line 73, in run
+    return fn(*args, **kwargs)
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py", line 373, in prepare_one
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: v6p1if1_0841: exclusive timing residual 0.10882434621453285 exceeds limit 0.09252085769549012
