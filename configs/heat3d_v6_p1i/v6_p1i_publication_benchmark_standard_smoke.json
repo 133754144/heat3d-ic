@@ -1,0 +1,2217 @@
+{
+  "E_U_CPU_policy_equal": true,
+  "all_Q2_real_concurrent": true,
+  "all_Q2_without_serial_prepass": true,
+  "all_processes_independent": true,
+  "all_residual_gates_executable": true,
+  "all_smoke_rows_passed": true,
+  "all_warmup_shapes_disjoint": true,
+  "all_warmups_excluded": true,
+  "benchmark_standard_freeze": "GO",
+  "exactness_coverage": {
+    "1024": {
+      "graph_metadata_edge_hash_exact": true,
+      "prediction_bitwise_exact": true,
+      "prepared_group_exact": true,
+      "source": "configs/heat3d_v6_p1i/v6_p1i_anchor_query_r0_raw/v6_p1i_r0_v3_seed0_cpu.json"
+    },
+    "16384": {
+      "graph_metadata_edge_hash_exact": true,
+      "prediction_equivalence": true,
+      "prepared_payload_exact": true,
+      "source": "configs/heat3d_v6_p1i/v6_p1i_performance_final_correction_raw/v6_final_Uv2_16384_valid32_order20260814.json"
+    },
+    "240825": {
+      "graph_metadata_edge_hash_exact": true,
+      "native_encoder_graph_unchanged": true,
+      "output_R2P_scope_only": true,
+      "prediction_equivalence": true,
+      "prepared_payload_exact": true,
+      "source": "configs/heat3d_v6_p1i/v6_p1i_performance_final_correction_raw/v6_final_Uv2_240825_valid32_order20260814.json"
+    }
+  },
+  "packing_cache_audit": {
+    "allowed_service_startup": [
+      "imports",
+      "CUDA_context",
+      "checkpoint",
+      "immutable_mesh_partition",
+      "normalization",
+      "dedicated_nonpopulation_kernel_compile"
+    ],
+    "case_specific_fresh": [
+      "support_CV",
+      "graph_metadata_edges",
+      "dynamic_context",
+      "group_pack",
+      "H2D",
+      "forward",
+      "reconstruction"
+    ],
+    "known_support_cache_only": [
+      "static_graph",
+      "static_structural_pack",
+      "reconstruction_map"
+    ],
+    "locations": {
+      "TypedGraph": {
+        "first_shape_cache_cost_class": "packing_structure_case_specific",
+        "line_numbers": [
+          12,
+          23,
+          32,
+          34,
+          36,
+          847,
+          861,
+          869,
+          887,
+          895,
+          909,
+          965,
+          982,
+          1075,
+          1093,
+          1180,
+          1202
+        ],
+        "path": "rigno/models/rigno.py"
+      },
+      "build_graphs": {
+        "first_shape_cache_cost_class": "case_specific",
+        "line_numbers": [
+          88
+        ],
+        "path": "rigno/graphBuilder_Heat3D.py"
+      },
+      "prepare_group": {
+        "first_shape_cache_cost_class": "case_specific",
+        "line_numbers": [
+          695
+        ],
+        "path": "scripts/run_heat3d_v6_p1i_anchor_high_n_development.py"
+      }
+    },
+    "route_specific_prewarm_allowed": false
+  },
+  "protocol": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_standard_v1.json",
+  "publication_numbers_generated": false,
+  "publication_timing_freeze": "NO_GO_pending_full_measurement",
+  "role_contract": {
+    "accessed_roles": [
+      "train_input_warmup_only",
+      "valid_iid_inputs_smoke_only"
+    ],
+    "accuracy_tuning": false,
+    "final_speedup_generated": false,
+    "full_valid32_or_valid96_timing": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "route_order_process_count": 15,
+  "rows": [
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0008289502002298832,
+        "rows": [
+          {
+            "begin": 2243314.23728577,
+            "elapsed": 0.0009604701772332191,
+            "end": 2243314.23824624,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0632"
+          },
+          {
+            "begin": 2243314.237053753,
+            "elapsed": 0.0010609673336148262,
+            "end": 2243314.23811472,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0124"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07270748075097799,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0907",
+          "stages": {
+            "H2D_and_sync": 0.00041881809011101723,
+            "dynamic_prepare": 0.00013924529775977135,
+            "host_scheduler": 1.9134022295475006e-06,
+            "synchronized_core": 0.07214750396087766
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.001900521107017994,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.0014886916615068913,
+            "dynamic_prepare": 0.00016052601858973503,
+            "host_scheduler": 3.1962990760803223e-06,
+            "synchronized_core": 0.0002481071278452873
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0632",
+            "v6p1if1_0124"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0365",
+          "cold": [
+            "v6p1if1_0907"
+          ],
+          "fresh": [
+            "v6p1if1_0365"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005434798076748848,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.00027802493423223495,
+            "dynamic_prepare": 7.296912372112274e-05,
+            "host_scheduler": 9.308569133281708e-07,
+            "synchronized_core": 0.00019155489280819893
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.0001775277778506279,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 2.0644802758470178,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 11.293065071105957,
+        "prediction_b": 11.293065071105957,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372",
+        "prepared_payload_hash_b": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372"
+      },
+      "order_seed": 20260814,
+      "peak_RAM_bytes": 1150517248,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3630702,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "E16384_reconstruction",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0907",
+        "v6p1if1_0365",
+        "v6p1if1_0632",
+        "v6p1if1_0124"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0010423348285257816,
+        "rows": [
+          {
+            "begin": 2243315.758164206,
+            "elapsed": 0.0011195661500096321,
+            "end": 2243315.759283772,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243315.757939831,
+            "elapsed": 0.0012667099945247173,
+            "end": 2243315.759206541,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0003"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07244523894041777,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0522",
+          "stages": {
+            "H2D_and_sync": 0.0005168290808796883,
+            "dynamic_prepare": 0.00014414312317967415,
+            "host_scheduler": 3.3257529139518738e-06,
+            "synchronized_core": 0.07178094098344445
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0018999939784407616,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.0014912285842001438,
+            "dynamic_prepare": 0.00016020284965634346,
+            "host_scheduler": 3.7886202335357666e-06,
+            "synchronized_core": 0.0002447739243507385
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0003"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0572",
+          "cold": [
+            "v6p1if1_0522"
+          ],
+          "fresh": [
+            "v6p1if1_0572"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005633519031107426,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.00028531579300761223,
+            "dynamic_prepare": 8.831731975078583e-05,
+            "host_scheduler": 9.909272193908691e-07,
+            "synchronized_core": 0.00018872786313295364
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00017716595903038979,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8352679572999477,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 7.6235456466674805,
+        "prediction_b": 7.6235456466674805,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a",
+        "prepared_payload_hash_b": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a"
+      },
+      "order_seed": 20260815,
+      "peak_RAM_bytes": 1153265664,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3630789,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "E16384_reconstruction",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0522",
+        "v6p1if1_0572",
+        "v6p1if1_0308",
+        "v6p1if1_0003"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0007951860316097736,
+        "rows": [
+          {
+            "begin": 2243316.932442229,
+            "elapsed": 0.0009177690371870995,
+            "end": 2243316.933359998,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243316.932204955,
+            "elapsed": 0.0010324600152671337,
+            "end": 2243316.933237415,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0869"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07851437898352742,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0286",
+          "stages": {
+            "H2D_and_sync": 0.000487607903778553,
+            "dynamic_prepare": 0.00015086587518453598,
+            "host_scheduler": 2.986285835504532e-06,
+            "synchronized_core": 0.07787291891872883
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008587110787630081,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.000446150079369545,
+            "dynamic_prepare": 0.00016133533790707588,
+            "host_scheduler": 2.975575625896454e-06,
+            "synchronized_core": 0.0002482500858604908
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0869"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0599",
+          "cold": [
+            "v6p1if1_0286"
+          ],
+          "fresh": [
+            "v6p1if1_0599"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005678609013557434,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.00028658704832196236,
+            "dynamic_prepare": 7.473118603229523e-05,
+            "host_scheduler": 1.0435469448566437e-06,
+            "synchronized_core": 0.00020549912005662918
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00019192416220903397,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8567367298528552,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 5.564236640930176,
+        "prediction_b": 5.564236640930176,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644",
+        "prepared_payload_hash_b": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644"
+      },
+      "order_seed": 20260816,
+      "peak_RAM_bytes": 1154088960,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3630876,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "E16384_reconstruction",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0286",
+        "v6p1if1_0599",
+        "v6p1if1_0308",
+        "v6p1if1_0869"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0009219669736921787,
+        "rows": [
+          {
+            "begin": 2243318.065695535,
+            "elapsed": 0.0010126340202987194,
+            "end": 2243318.066708169,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0632"
+          },
+          {
+            "begin": 2243318.065462549,
+            "elapsed": 0.0011549526825547218,
+            "end": 2243318.066617502,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0124"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.0769210490398109,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0907",
+          "stages": {
+            "H2D_and_sync": 0.0007128501310944557,
+            "dynamic_prepare": 0.00020829401910305023,
+            "host_scheduler": 4.400033503770828e-06,
+            "synchronized_core": 0.07599550485610962
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008931467309594154,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.0004617050290107727,
+            "dynamic_prepare": 0.00015739910304546356,
+            "host_scheduler": 2.7534551918506622e-06,
+            "synchronized_core": 0.0002712891437113285
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0632",
+            "v6p1if1_0124"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0365",
+          "cold": [
+            "v6p1if1_0907"
+          ],
+          "fresh": [
+            "v6p1if1_0365"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005759168416261673,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.000274845864623785,
+            "dynamic_prepare": 7.756706327199936e-05,
+            "host_scheduler": 9.019859135150909e-07,
+            "synchronized_core": 0.00022260192781686783
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00018333690240979195,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8292534612119198,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 11.293066024780273,
+        "prediction_b": 11.293066024780273,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372",
+        "prepared_payload_hash_b": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372"
+      },
+      "order_seed": 20260814,
+      "peak_RAM_bytes": 1157246976,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3630963,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "U_v2_16384_reconstruction",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0907",
+        "v6p1if1_0365",
+        "v6p1if1_0632",
+        "v6p1if1_0124"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0012353039346635342,
+        "rows": [
+          {
+            "begin": 2243319.239507881,
+            "elapsed": 0.0013474621810019016,
+            "end": 2243319.240855343,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243319.239280303,
+            "elapsed": 0.0014628819189965725,
+            "end": 2243319.240743185,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0003"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07898316998034716,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0522",
+          "stages": {
+            "H2D_and_sync": 0.0015536639839410782,
+            "dynamic_prepare": 0.00018208706751465797,
+            "host_scheduler": 3.666616976261139e-06,
+            "synchronized_core": 0.07724375231191516
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008425647392868996,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.00044373515993356705,
+            "dynamic_prepare": 0.000158682931214571,
+            "host_scheduler": 2.664513885974884e-06,
+            "synchronized_core": 0.00023748213425278664
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0003"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0572",
+          "cold": [
+            "v6p1if1_0522"
+          ],
+          "fresh": [
+            "v6p1if1_0572"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0006157769821584225,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.000336384866386652,
+            "dynamic_prepare": 8.732592687010765e-05,
+            "host_scheduler": 9.82079654932022e-07,
+            "synchronized_core": 0.0001910841092467308
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.0001836898736655712,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8613492767326534,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 7.623545169830322,
+        "prediction_b": 7.623545169830322,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a",
+        "prepared_payload_hash_b": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a"
+      },
+      "order_seed": 20260815,
+      "peak_RAM_bytes": 1153077248,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631051,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "U_v2_16384_reconstruction",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0522",
+        "v6p1if1_0572",
+        "v6p1if1_0308",
+        "v6p1if1_0003"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0011331639252603054,
+        "rows": [
+          {
+            "begin": 2243320.383826438,
+            "elapsed": 0.0011331639252603054,
+            "end": 2243320.384959602,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243320.383593625,
+            "elapsed": 0.0015048570930957794,
+            "end": 2243320.385098482,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0869"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07208564691245556,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0286",
+          "stages": {
+            "H2D_and_sync": 0.00037429388612508774,
+            "dynamic_prepare": 0.0001384238712489605,
+            "host_scheduler": 2.062879502773285e-06,
+            "synchronized_core": 0.07157086627557874
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008858977816998959,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.0004628123715519905,
+            "dynamic_prepare": 0.00016106711700558662,
+            "host_scheduler": 3.0854716897010803e-06,
+            "synchronized_core": 0.00025893282145261765
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0869"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0599",
+          "cold": [
+            "v6p1if1_0286"
+          ],
+          "fresh": [
+            "v6p1if1_0599"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005627679638564587,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.0002871430478990078,
+            "dynamic_prepare": 7.594376802444458e-05,
+            "host_scheduler": 9.019859135150909e-07,
+            "synchronized_core": 0.0001987791620194912
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00019574817270040512,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8400074848905206,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 5.564235210418701,
+        "prediction_b": 5.564235210418701,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644",
+        "prepared_payload_hash_b": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644"
+      },
+      "order_seed": 20260816,
+      "peak_RAM_bytes": 1153126400,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631139,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "U_v2_16384_reconstruction",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0286",
+        "v6p1if1_0599",
+        "v6p1if1_0308",
+        "v6p1if1_0869"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0018684561364352703,
+        "rows": [
+          {
+            "begin": 2243321.50209911,
+            "elapsed": 0.001984110102057457,
+            "end": 2243321.50408322,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0632"
+          },
+          {
+            "begin": 2243321.50185999,
+            "elapsed": 0.0021075760014355183,
+            "end": 2243321.503967566,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0124"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.06936447415500879,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0907",
+          "stages": {
+            "H2D_and_sync": 0.0014584087766706944,
+            "dynamic_prepare": 0.00014098919928073883,
+            "host_scheduler": 2.995133399963379e-06,
+            "synchronized_core": 0.0677620810456574
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0019668443128466606,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.0015236851759254932,
+            "dynamic_prepare": 0.00016720779240131378,
+            "host_scheduler": 3.186054527759552e-06,
+            "synchronized_core": 0.00027276528999209404
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0632",
+            "v6p1if1_0124"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0365",
+          "cold": [
+            "v6p1if1_0907"
+          ],
+          "fresh": [
+            "v6p1if1_0365"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0006802058778703213,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.00038299988955259323,
+            "dynamic_prepare": 7.778778672218323e-05,
+            "host_scheduler": 1.2624077498912811e-06,
+            "synchronized_core": 0.00021815579384565353
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00019266828894615173,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8095633829943836,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 11.293065071105957,
+        "prediction_b": 11.293065071105957,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372",
+        "prepared_payload_hash_b": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372"
+      },
+      "order_seed": 20260814,
+      "peak_RAM_bytes": 1154879488,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631226,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "U_v2_direct240825",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0907",
+        "v6p1if1_0365",
+        "v6p1if1_0632",
+        "v6p1if1_0124"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0009835469536483288,
+        "rows": [
+          {
+            "begin": 2243322.679733665,
+            "elapsed": 0.001093314029276371,
+            "end": 2243322.680826979,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243322.679463972,
+            "elapsed": 0.0012532402761280537,
+            "end": 2243322.680717212,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0003"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07805522065609694,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0522",
+          "stages": {
+            "H2D_and_sync": 0.0016297176480293274,
+            "dynamic_prepare": 0.00018912600353360176,
+            "host_scheduler": 3.6871060729026794e-06,
+            "synchronized_core": 0.0762326898984611
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.000896848738193512,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.00047191930934786797,
+            "dynamic_prepare": 0.0001682671718299389,
+            "host_scheduler": 3.5064294934272766e-06,
+            "synchronized_core": 0.00025315582752227783
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0003"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0572",
+          "cold": [
+            "v6p1if1_0522"
+          ],
+          "fresh": [
+            "v6p1if1_0572"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005620839074254036,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.0002976558171212673,
+            "dynamic_prepare": 7.616262882947922e-05,
+            "host_scheduler": 1.0230578482151031e-06,
+            "synchronized_core": 0.00018724240362644196
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00017463881522417068,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8773517226800323,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 7.623545169830322,
+        "prediction_b": 7.623545169830322,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a",
+        "prepared_payload_hash_b": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a"
+      },
+      "order_seed": 20260815,
+      "peak_RAM_bytes": 1151586304,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631314,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "U_v2_direct240825",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0522",
+        "v6p1if1_0572",
+        "v6p1if1_0308",
+        "v6p1if1_0003"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0008569080382585526,
+        "rows": [
+          {
+            "begin": 2243323.803043092,
+            "elapsed": 0.0009997417218983173,
+            "end": 2243323.804042834,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243323.802815348,
+            "elapsed": 0.0010846522636711597,
+            "end": 2243323.8039,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0869"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.0751436180435121,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0286",
+          "stages": {
+            "H2D_and_sync": 0.000423261895775795,
+            "dynamic_prepare": 0.00013884063810110092,
+            "host_scheduler": 3.027264028787613e-06,
+            "synchronized_core": 0.07457848824560642
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0020641321316361427,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.0015011769719421864,
+            "dynamic_prepare": 0.0001654517836868763,
+            "host_scheduler": 3.947410732507706e-06,
+            "synchronized_core": 0.00039355596527457237
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0869"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0599",
+          "cold": [
+            "v6p1if1_0286"
+          ],
+          "fresh": [
+            "v6p1if1_0599"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0007237228564918041,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.00041514215990900993,
+            "dynamic_prepare": 0.00010063964873552322,
+            "host_scheduler": 1.942738890647888e-06,
+            "synchronized_core": 0.00020599830895662308
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00018503796309232712,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8247339641675353,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 5.564236640930176,
+        "prediction_b": 5.564236640930176,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644",
+        "prepared_payload_hash_b": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644"
+      },
+      "order_seed": 20260816,
+      "peak_RAM_bytes": 1155252224,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631401,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "U_v2_direct240825",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0286",
+        "v6p1if1_0599",
+        "v6p1if1_0308",
+        "v6p1if1_0869"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.001111603807657957,
+        "rows": [
+          {
+            "begin": 2243324.948045724,
+            "elapsed": 0.0011743567883968353,
+            "end": 2243324.949220081,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0632"
+          },
+          {
+            "begin": 2243324.947799591,
+            "elapsed": 0.001357736997306347,
+            "end": 2243324.949157328,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0124"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07564269099384546,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0907",
+          "stages": {
+            "H2D_and_sync": 0.0004620160907506943,
+            "dynamic_prepare": 0.00014048395678400993,
+            "host_scheduler": 2.766028046607971e-06,
+            "synchronized_core": 0.07503742491826415
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008564982563257217,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.0004419572651386261,
+            "dynamic_prepare": 0.00017109280452132225,
+            "host_scheduler": 2.6351772248744965e-06,
+            "synchronized_core": 0.0002408130094408989
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0632",
+            "v6p1if1_0124"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0365",
+          "cold": [
+            "v6p1if1_0907"
+          ],
+          "fresh": [
+            "v6p1if1_0365"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005428018048405647,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.0002767709083855152,
+            "dynamic_prepare": 7.361872121691704e-05,
+            "host_scheduler": 9.122304618358612e-07,
+            "synchronized_core": 0.00019149994477629662
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00017970893532037735,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.832777454983443,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 11.293066024780273,
+        "prediction_b": 11.293066024780273,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372",
+        "prepared_payload_hash_b": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372"
+      },
+      "order_seed": 20260814,
+      "peak_RAM_bytes": 1156780032,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631488,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "E240825_direct_control",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0907",
+        "v6p1if1_0365",
+        "v6p1if1_0632",
+        "v6p1if1_0124"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0009227218106389046,
+        "rows": [
+          {
+            "begin": 2243326.058778873,
+            "elapsed": 0.001251828856766224,
+            "end": 2243326.060030702,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243326.0585541,
+            "elapsed": 0.0011474951170384884,
+            "end": 2243326.059701595,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0003"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.06695106299594045,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0522",
+          "stages": {
+            "H2D_and_sync": 0.0005011497996747494,
+            "dynamic_prepare": 0.00014055799692869186,
+            "host_scheduler": 3.1660310924053192e-06,
+            "synchronized_core": 0.0663061891682446
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008988669142127037,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.00046746106818318367,
+            "dynamic_prepare": 0.00018077529966831207,
+            "host_scheduler": 3.2545067369937897e-06,
+            "synchronized_core": 0.00024737603962421417
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0003"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0572",
+          "cold": [
+            "v6p1if1_0522"
+          ],
+          "fresh": [
+            "v6p1if1_0572"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005352036096155643,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.00026835594326257706,
+            "dynamic_prepare": 7.204711437225342e-05,
+            "host_scheduler": 8.814968168735504e-07,
+            "synchronized_core": 0.00019391905516386032
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00017818016931414604,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8040159326046705,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 7.6235456466674805,
+        "prediction_b": 7.6235456466674805,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a",
+        "prepared_payload_hash_b": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a"
+      },
+      "order_seed": 20260815,
+      "peak_RAM_bytes": 1153146880,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631575,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "E240825_direct_control",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0522",
+        "v6p1if1_0572",
+        "v6p1if1_0308",
+        "v6p1if1_0003"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0010287337936460972,
+        "rows": [
+          {
+            "begin": 2243327.225049741,
+            "elapsed": 0.001079740934073925,
+            "end": 2243327.226129482,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243327.224814192,
+            "elapsed": 0.0012642829678952694,
+            "end": 2243327.226078475,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0869"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07306085620075464,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0286",
+          "stages": {
+            "H2D_and_sync": 0.0005043558776378632,
+            "dynamic_prepare": 0.0001417398452758789,
+            "host_scheduler": 2.87545844912529e-06,
+            "synchronized_core": 0.07241188501939178
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008717500604689121,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.00045907869935035706,
+            "dynamic_prepare": 0.0001617581583559513,
+            "host_scheduler": 2.4549663066864014e-06,
+            "synchronized_core": 0.00024845823645591736
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0869"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0599",
+          "cold": [
+            "v6p1if1_0286"
+          ],
+          "fresh": [
+            "v6p1if1_0599"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005448726005852222,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.0002750488929450512,
+            "dynamic_prepare": 7.611466571688652e-05,
+            "host_scheduler": 9.117648005485535e-07,
+            "synchronized_core": 0.00019279727712273598
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.0001892009750008583,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8625763896852732,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 5.564236640930176,
+        "prediction_b": 5.564236640930176,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644",
+        "prepared_payload_hash_b": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644"
+      },
+      "order_seed": 20260816,
+      "peak_RAM_bytes": 1151627264,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631662,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "E240825_direct_control",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0286",
+        "v6p1if1_0599",
+        "v6p1if1_0308",
+        "v6p1if1_0869"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0010458971373736858,
+        "rows": [
+          {
+            "begin": 2243328.351860521,
+            "elapsed": 0.0011328980326652527,
+            "end": 2243328.352993419,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0632"
+          },
+          {
+            "begin": 2243328.35162632,
+            "elapsed": 0.0012800982221961021,
+            "end": 2243328.352906418,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0124"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07166762603446841,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0907",
+          "stages": {
+            "H2D_and_sync": 0.00041862716898322105,
+            "dynamic_prepare": 0.00014520669355988503,
+            "host_scheduler": 3.097113221883774e-06,
+            "synchronized_core": 0.07110069505870342
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008705588988959789,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.000457612331956625,
+            "dynamic_prepare": 0.0001605059951543808,
+            "host_scheduler": 3.005377948284149e-06,
+            "synchronized_core": 0.000249435193836689
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0632",
+            "v6p1if1_0124"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0365",
+          "cold": [
+            "v6p1if1_0907"
+          ],
+          "fresh": [
+            "v6p1if1_0365"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0006087692454457283,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0365",
+          "stages": {
+            "H2D_and_sync": 0.00032401690259575844,
+            "dynamic_prepare": 7.435167208313942e-05,
+            "host_scheduler": 1.0016374289989471e-06,
+            "synchronized_core": 0.0002093990333378315
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.00020074192434549332,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8179833111353219,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 11.293065071105957,
+        "prediction_b": 11.293065071105957,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372",
+        "prepared_payload_hash_b": "33f95701610ac8c7fc534433b459a3c0df1c0f6d0c7abbb84a1e1394537bc372"
+      },
+      "order_seed": 20260814,
+      "peak_RAM_bytes": 1153241088,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631748,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "FVM240825_reference",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0907",
+        "v6p1if1_0365",
+        "v6p1if1_0632",
+        "v6p1if1_0124"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0009641069918870926,
+        "rows": [
+          {
+            "begin": 2243329.501163574,
+            "elapsed": 0.0010826382786035538,
+            "end": 2243329.502246212,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243329.500936687,
+            "elapsed": 0.0011909939348697662,
+            "end": 2243329.502127681,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0003"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.07748062210157514,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0522",
+          "stages": {
+            "H2D_and_sync": 0.0004157121293246746,
+            "dynamic_prepare": 0.0001330929808318615,
+            "host_scheduler": 3.307126462459564e-06,
+            "synchronized_core": 0.07692850986495614
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0008648629300296307,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.0004421328194439411,
+            "dynamic_prepare": 0.00015880214050412178,
+            "host_scheduler": 3.255903720855713e-06,
+            "synchronized_core": 0.00026067206636071205
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0003"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0572",
+          "cold": [
+            "v6p1if1_0522"
+          ],
+          "fresh": [
+            "v6p1if1_0572"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005445131100714207,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0572",
+          "stages": {
+            "H2D_and_sync": 0.0002757897600531578,
+            "dynamic_prepare": 7.553398609161377e-05,
+            "host_scheduler": 8.936040103435516e-07,
+            "synchronized_core": 0.00019229575991630554
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.0001859636977314949,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.840043465141207,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 7.623545169830322,
+        "prediction_b": 7.623545169830322,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a",
+        "prepared_payload_hash_b": "666036d785eab62c2698af945b624f3bd099fc03ee0ffac7d2504be8ec3dc34a"
+      },
+      "order_seed": 20260815,
+      "peak_RAM_bytes": 1156390912,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631836,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "FVM240825_reference",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0522",
+        "v6p1if1_0572",
+        "v6p1if1_0308",
+        "v6p1if1_0003"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    },
+    {
+      "Q2": {
+        "actual_concurrent_execution": true,
+        "distinct_k_q_BC_tokens": true,
+        "overlap_seconds": 0.0008547049947082996,
+        "rows": [
+          {
+            "begin": 2243330.61110907,
+            "elapsed": 0.0009954818524420261,
+            "end": 2243330.612104552,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0308"
+          },
+          {
+            "begin": 2243330.610880435,
+            "elapsed": 0.0010833400301635265,
+            "end": 2243330.611963775,
+            "residual_seconds": 0.0,
+            "sample_id": "v6p1if1_0869"
+          }
+        ],
+        "serial_prepass_of_Q2_samples": false,
+        "worker_count": 2
+      },
+      "classification": {
+        "cold_service_first_case": {
+          "elapsed_seconds": 0.06713178707286716,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0286",
+          "stages": {
+            "H2D_and_sync": 0.0005458579398691654,
+            "dynamic_prepare": 0.0001867450773715973,
+            "host_scheduler": 2.9159709811210632e-06,
+            "synchronized_core": 0.06639626808464527
+          }
+        },
+        "fresh_distinct_case": {
+          "elapsed_seconds": 0.0019182623364031315,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.0015041599981486797,
+            "dynamic_prepare": 0.0001671179197728634,
+            "host_scheduler": 2.8954818844795227e-06,
+            "synchronized_core": 0.00024408893659710884
+          }
+        },
+        "pools": {
+          "Q2_no_serial_prepass": [
+            "v6p1if1_0308",
+            "v6p1if1_0869"
+          ],
+          "cache_hot_repeat_of": "v6p1if1_0599",
+          "cold": [
+            "v6p1if1_0286"
+          ],
+          "fresh": [
+            "v6p1if1_0599"
+          ]
+        },
+        "repeat_case_cache_hot": {
+          "elapsed_seconds": 0.0005803881213068962,
+          "finite": true,
+          "residual_limit_seconds": 0.025,
+          "residual_seconds": 0.0,
+          "sample_id": "v6p1if1_0599",
+          "stages": {
+            "H2D_and_sync": 0.0003125700168311596,
+            "dynamic_prepare": 7.837917655706406e-05,
+            "host_scheduler": 8.898787200450897e-07,
+            "synchronized_core": 0.00018854904919862747
+          }
+        },
+        "resident_core": {
+          "elapsed_seconds": 0.0001791110262274742,
+          "prepared_device_payload": true
+        }
+      },
+      "cold_process_start_to_first_result_seconds": 0.8082811608910561,
+      "cpu_policy": {
+        "graph_workers": 1,
+        "kdtree_workers": 1,
+        "q2_service_workers": 2,
+        "reconstruction_workers": 1,
+        "support_workers": 1
+      },
+      "device": "cuda:0",
+      "exactness_smoke": {
+        "prediction_a": 5.564235210418701,
+        "prediction_b": 5.564235210418701,
+        "prediction_bitwise_exact": true,
+        "prepared_payload_byte_exact": true,
+        "prepared_payload_hash_a": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644",
+        "prepared_payload_hash_b": "295a7fa0162833d6318c1d601efda5c1ae11c5ff696b3f31beaa649691fbb644"
+      },
+      "order_seed": 20260816,
+      "peak_RAM_bytes": 1151299584,
+      "peak_VRAM_bytes": 16780544,
+      "pid": 3631922,
+      "ppid": 3630684,
+      "publication_timing_eligible": false,
+      "python_executable": "/home/xyh/miniconda3/envs/rigno/bin/python",
+      "resource_policy_passed": true,
+      "role_contract": {
+        "accuracy_metrics": false,
+        "sealed": false,
+        "speedup_generated": false,
+        "test": false,
+        "training": false
+      },
+      "route": "FVM240825_reference",
+      "status": "passed_smoke",
+      "stderr_tail": "",
+      "thread_env": {
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1"
+      },
+      "timed_sample_ids": [
+        "v6p1if1_0286",
+        "v6p1if1_0599",
+        "v6p1if1_0308",
+        "v6p1if1_0869"
+      ],
+      "timed_shape": [
+        257
+      ],
+      "warmup_sample_id": "v6p1if1_0389",
+      "warmup_shape": [
+        17
+      ],
+      "warmup_shape_disjoint": true,
+      "warmup_split": "train_input_only",
+      "warmup_target_read": false
+    }
+  ],
+  "schema_version": "heat3d_v6_publication_benchmark_standard_smoke_v1",
+  "status": "passed"
+}

@@ -74,7 +74,7 @@ workers 并发执行、没有 Q2 population 的 serial prepass，最小重叠时
 
 1024/16384/240825 的 graph/payload/prediction exactness evidence 均绑定到已有冻结
 artifact；smoke 不重跑 accuracy。原始 smoke SHA256 为
-`83b91811378d47b13d73e863ed3126bb46970a1a532e2f4125951bd377599ae3`。
+`337c505d299da174412a4110c4a5aefd6156fe7dadbba2d12d1044b17d020d37`。
 
 结论：`benchmark_standard_freeze = GO`；
 `publication_timing_freeze = NO_GO_pending_full_measurement`。smoke 内部微型耗时
