@@ -1,0 +1,254 @@
+{
+  "artifacts": {
+    "geometry_audit": {
+      "path": "/tmp/v6_p1i_u_v2_geometry_exact_repair_valid96.json",
+      "sha256": "18c0754d91d0079570bd2bfa8ee2108144504d2a396e04661e7fa46160aaf4ba"
+    },
+    "predictions": [
+      {
+        "path": "/tmp/v6_p1i_u_v2_valid96_seed0_v4_predictions.npz",
+        "seed": "seed0",
+        "sha256": "ab3100c8ed0073f0c1cd27f1cdbcf5eb9fe1e312d823f6bd1908439279cdd2a1"
+      },
+      {
+        "path": "/tmp/v6_p1i_u_v2_valid96_seed1_exact_predictions.npz",
+        "seed": "seed1",
+        "sha256": "75a6696b2dc6f567070e151743a4aa915816d1d0bfb55e2423d1f67e7f499638"
+      },
+      {
+        "path": "/tmp/v6_p1i_u_v2_valid96_seed2_exact_predictions.npz",
+        "seed": "seed2",
+        "sha256": "0972eb4e916d43801c23a0575448a3d574dab544258e5245db0ea6bdcbdde617"
+      }
+    ]
+  },
+  "classification": {
+    "covered": "raw radius R2P degree >= 1",
+    "numerical_tolerance": 1e-06,
+    "repaired_inside": "raw degree 0 and query within native bbox tolerance",
+    "repaired_outside": "raw degree 0 and query outside native bbox tolerance"
+  },
+  "outside_node_count": 22230,
+  "population": "frozen_valid96_diagnostic_characterization",
+  "raw_uncovered_node_count": 3300250,
+  "repair_distance_quantiles": [
+    1.6029078064860869e-09,
+    0.20437353551696147,
+    0.25838844977237735,
+    0.3136956553991671,
+    0.8376929995460061
+  ],
+  "role_contract": {
+    "E16384_modified": false,
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid_inputs",
+      "full_field_mesh_without_temperature"
+    ],
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "sample_count": 96,
+  "schema_version": "heat3d_v6_p1i_u_v2_repair_error_attribution_v1",
+  "status": "passed",
+  "summary": {
+    "seed0": {
+      "categories": {
+        "covered": {
+          "cv_bias_K": -1.7525764145683853,
+          "cv_rmse_K": 2.446940850546194,
+          "node_count": 19818950,
+          "volume_fraction": 0.8322102785586353,
+          "weighted_sse_fraction": 0.8397369821982037
+        },
+        "repaired_inside": {
+          "cv_bias_K": -1.7168793095187571,
+          "cv_rmse_K": 2.3817111371685047,
+          "node_count": 3291110,
+          "volume_fraction": 0.16758759578544924,
+          "weighted_sse_fraction": 0.1602076711859302
+        },
+        "repaired_outside": {
+          "cv_bias_K": -0.3613753604842211,
+          "cv_rmse_K": 1.274685905137974,
+          "node_count": 9140,
+          "volume_fraction": 0.00020212565591473292,
+          "weighted_sse_fraction": 5.534661586587135e-05
+        }
+      },
+      "repair_distance_bins": [
+        {
+          "absolute_error_mean_K": 1.9582978176952313,
+          "absolute_error_p95_K": 5.423747253417957,
+          "bin": 1,
+          "distance_max": 0.20437353551696147,
+          "distance_min": 1.6029078064860869e-09,
+          "node_count": 825062
+        },
+        {
+          "absolute_error_mean_K": 1.8867061585187008,
+          "absolute_error_p95_K": 5.030120086669921,
+          "bin": 2,
+          "distance_max": 0.25838844977237735,
+          "distance_min": 0.20437353551696147,
+          "node_count": 825063
+        },
+        {
+          "absolute_error_mean_K": 1.8765422427809242,
+          "absolute_error_p95_K": 4.968497085571288,
+          "bin": 3,
+          "distance_max": 0.3136956553991671,
+          "distance_min": 0.25838844977237735,
+          "node_count": 825062
+        },
+        {
+          "absolute_error_mean_K": 1.8509742053048301,
+          "absolute_error_p95_K": 4.945802307128901,
+          "bin": 4,
+          "distance_max": 0.8376929995460061,
+          "distance_min": 0.3136956553991671,
+          "node_count": 825063
+        }
+      ],
+      "repair_distance_vs_absolute_error": {
+        "pearson_p": 0.0,
+        "pearson_r": -0.03042039420662148,
+        "spearman_p": 7.645452192863926e-54,
+        "spearman_r": -0.008504000053321487
+      }
+    },
+    "seed1": {
+      "categories": {
+        "covered": {
+          "cv_bias_K": -1.602779277661201,
+          "cv_rmse_K": 2.353750134950216,
+          "node_count": 19818950,
+          "volume_fraction": 0.8322102785586353,
+          "weighted_sse_fraction": 0.8419149707418775
+        },
+        "repaired_inside": {
+          "cv_bias_K": -1.5512006239526646,
+          "cv_rmse_K": 2.2724314880117924,
+          "node_count": 3291110,
+          "volume_fraction": 0.16758759578544924,
+          "weighted_sse_fraction": 0.15802940625094508
+        },
+        "repaired_outside": {
+          "cv_bias_K": 0.08758602505718913,
+          "cv_rmse_K": 1.2276068151793809,
+          "node_count": 9140,
+          "volume_fraction": 0.00020212565591473292,
+          "weighted_sse_fraction": 5.56230071778678e-05
+        }
+      },
+      "repair_distance_bins": [
+        {
+          "absolute_error_mean_K": 1.9426126602972795,
+          "absolute_error_p95_K": 5.561780166625974,
+          "bin": 1,
+          "distance_max": 0.20437353551696147,
+          "distance_min": 1.6029078064860869e-09,
+          "node_count": 825062
+        },
+        {
+          "absolute_error_mean_K": 1.8232634970951451,
+          "absolute_error_p95_K": 5.16013946533203,
+          "bin": 2,
+          "distance_max": 0.25838844977237735,
+          "distance_min": 0.20437353551696147,
+          "node_count": 825063
+        },
+        {
+          "absolute_error_mean_K": 1.776376430771659,
+          "absolute_error_p95_K": 5.066197967529295,
+          "bin": 3,
+          "distance_max": 0.3136956553991671,
+          "distance_min": 0.25838844977237735,
+          "node_count": 825062
+        },
+        {
+          "absolute_error_mean_K": 1.7560841053774823,
+          "absolute_error_p95_K": 5.148348236083979,
+          "bin": 4,
+          "distance_max": 0.8376929995460061,
+          "distance_min": 0.3136956553991671,
+          "node_count": 825063
+        }
+      ],
+      "repair_distance_vs_absolute_error": {
+        "pearson_p": 0.0,
+        "pearson_r": -0.04599297290239317,
+        "spearman_p": 0.0,
+        "spearman_r": -0.03011239380006485
+      }
+    },
+    "seed2": {
+      "categories": {
+        "covered": {
+          "cv_bias_K": -1.7526718401112886,
+          "cv_rmse_K": 2.4213838893774193,
+          "node_count": 19818950,
+          "volume_fraction": 0.8322102785586353,
+          "weighted_sse_fraction": 0.8397327534597484
+        },
+        "repaired_inside": {
+          "cv_bias_K": -1.7153671581753427,
+          "cv_rmse_K": 2.356703308970239,
+          "node_count": 3291110,
+          "volume_fraction": 0.16758759578544924,
+          "weighted_sse_fraction": 0.16018889823136914
+        },
+        "repaired_outside": {
+          "cv_bias_K": -0.5137526753941555,
+          "cv_rmse_K": 1.5007685912385114,
+          "node_count": 9140,
+          "volume_fraction": 0.00020212565591473292,
+          "weighted_sse_fraction": 7.834830888216346e-05
+        }
+      },
+      "repair_distance_bins": [
+        {
+          "absolute_error_mean_K": 1.9852518439262565,
+          "absolute_error_p95_K": 5.392142105102538,
+          "bin": 1,
+          "distance_max": 0.20437353551696147,
+          "distance_min": 1.6029078064860869e-09,
+          "node_count": 825062
+        },
+        {
+          "absolute_error_mean_K": 1.9034475185541457,
+          "absolute_error_p95_K": 5.008071136474609,
+          "bin": 2,
+          "distance_max": 0.25838844977237735,
+          "distance_min": 0.20437353551696147,
+          "node_count": 825063
+        },
+        {
+          "absolute_error_mean_K": 1.8660464756288793,
+          "absolute_error_p95_K": 4.82155532836914,
+          "bin": 3,
+          "distance_max": 0.3136956553991671,
+          "distance_min": 0.25838844977237735,
+          "node_count": 825062
+        },
+        {
+          "absolute_error_mean_K": 1.8751217392012547,
+          "absolute_error_p95_K": 4.890889739990232,
+          "bin": 4,
+          "distance_max": 0.8376929995460061,
+          "distance_min": 0.3136956553991671,
+          "node_count": 825063
+        }
+      ],
+      "repair_distance_vs_absolute_error": {
+        "pearson_p": 0.0,
+        "pearson_r": -0.029013572255079122,
+        "spearman_p": 2.2601958092788103e-63,
+        "spearman_r": -0.009250055815975317
+      }
+    }
+  }
+}
