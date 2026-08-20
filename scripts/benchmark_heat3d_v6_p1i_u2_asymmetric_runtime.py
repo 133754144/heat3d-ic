@@ -106,7 +106,7 @@ def parse() -> argparse.Namespace:
     for name in ("protocol", "binding", "artifact_root", "dataset_root", "manifest", "full_fields",
                  "run_dir", "native_padding_result", "query_padding_result", "output"):
         parser.add_argument(f"--{name.replace('_','-')}", dest=name, type=Path, required=True)
-    parser.add_argument("--resolution", type=int, choices=[32768, 240825], required=True)
+    parser.add_argument("--resolution", type=int, choices=[16384, 32768, 240825], required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--sample-count", type=int, choices=[1, 4, 8, 32, 96], default=32)
     parser.add_argument("--repeats", type=int, default=20)
