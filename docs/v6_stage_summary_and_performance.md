@@ -10,6 +10,24 @@ B、E、U 被统一定义为三种并列的 **inference strategies**：B 使用�
 
 全程没有训练、checkpoint/model/dataset/manifest 修改，也没有访问 test 或 sealed IID。FVM 是物理 reference；本文不宣称 surrogate 精度优于 FVM。
 
+## 2026-08-20 最终性能修正（authoritative）
+
+最终计时已统一到同一 harness 和同一边界：`in-memory k/q/BC → CPU graph/pack → H2D → synchronized 240825-node result`。qualification、hash、equivalence、accuracy metric 与 serialization 均位于 service span 外。共享 sample-varying edge shape 已改为 NumPy/SciPy host construction，并以 1024/8192/16384 的 metadata/edge/hash byte-exact gate 验证；不再使用 route-specific shape prewarm。
+
+旧 E16384 `2.383 s`、E240825 `2.042 s` 及其派生 speedup 因 **shared shape-compile contamination** 正式废弃。旧 U-v2 `1.520 s` 仅称为历史 **steady-shape fresh**，不能代表 unseen-shape first-hit。历史和本轮修正前的 Q2 failed orders 均保留；hard gate 未放宽，修正是将此前遗漏的 host assembly/scheduler 时间显式纳入 exclusive stage。
+
+Native1024 encoder graph、P2R/R2R、regional nodes 与 checkpoint 均未改变。U-v2 只扩展 **output-query R2P** 的 bounded extrapolation 与冻结 nearest-coverage repair semantics；不 clamp、不增加 anchor、不改 radius/graph policy。
+
+| strategy（均输出 240825 nodes） | valid96 PG % | raw K | corrected fresh median/p95 s | resident core s | true B16→B32 marginal s | Q2 throughput samples/s | fresh/Q2 speedup vs FVM |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| E16384-reconstruction | 3.367458 | 2.479598 | 0.597254 / 0.909310 | 0.006530 | 0.469394 | 2.155918 | 2.84× / 2.25× |
+| U-v2 16384-reconstruction | 3.408652 | 2.495660 | 0.773560 / 0.836815 | 0.004025 | 0.558722 | 1.793984 | 2.19× / 1.87× |
+| U-v2 direct240825 | 3.460815 | 2.435950 | 1.301386 / 1.499812 | 0.059734 | 0.841621 | 1.190373 | 1.30× / 1.24× |
+| E240825-direct control | 4.237668 | 2.938547 | 1.134628 / 1.364165 | 0.095696 | 0.686596 | 1.422087 | 1.49× / 1.49× |
+| FVM240825 reference | — | — | 1.693831 / 1.918837 | 1.765871 solve-only | 1.043293 | 0.957572 | 1.00× / 1.00× |
+
+上表 accuracy 为 seed0 valid96，timing 为 frozen valid32 的三个 randomized orders，两类 population 不混合统计。所有 Neural 与 FVM Q2 orders 均通过未改变的 gate，因此 publication speedup 只允许使用本表。`resident core` 不是 E2E；FVM 行是 reference/—，不宣称 surrogate 精度优于物理解。
+
 ## 阶段演进与物理含义
 
 1. P1h 建立共享 1024 support 与 full-field sidecar；P1i 扩展为连续物理输入，同时保持 perfect interface contact，`R_contact=0`。
@@ -52,7 +70,7 @@ FVM240825 生成冻结 full-field 标签，是 reference solution。surrogate �
 
 历史 B/E resolution rows 用于架构沿革；最终 timing 不再复用 P5-R 或 P9/U5 的旧 latency。下表为最终的 valid96 同一 harness 数据，替代此前 valid32 post-freeze timing 表。
 
-## 统一 240825 输出域性能
+## 已废弃的 post-freeze 计时（历史记录，不用于发布）
 
 同一 WSL2 主机使用 RTX 5070 GPU 与 Ryzen 7 9700X CPU。三组 randomized valid96 order 为 `20260814/20260815/20260816`。GPU 在计时终点显式同步；accuracy/hash/equivalence/oracle/serialization 均不进入 service span。randomized order 的 population、support、真实 graph、native anchor k/q/CV、功率与体积守恒语义一致。
 
@@ -65,14 +83,14 @@ FVM240825 生成冻结 full-field 标签，是 reference solution。surrogate �
 
 | strategy | fresh median / p95 s | resident median s | B16→B32 marginal s | Q1 median s | Q2 status / throughput | VRAM GiB |
 |---|---:|---:|---:|---:|---|---:|
-| E16384-reconstruction | 2.383024 / 3.625292 | 0.008487 | 2.643485 | 2.424122 | deprecated serial trace / N/A | 0.302 |
-| U-v2-direct240825 | 1.520111 / 1.727624 | 0.059666 | 1.539729 | 1.520111 | not qualified: 1 pass + 1 residual-gate failure; pass-only 1.015156/s | 3.721 |
-| E240825-direct control | 2.042407 / 2.636335 | 0.094279 | 2.046555 | 2.087861 | deprecated serial trace / N/A | 3.822 |
+| E16384-reconstruction | **DEPRECATED** 2.383024 / 3.625292 | 0.008487 | 2.643485 | 2.424122 | deprecated serial trace / N/A | 0.302 |
+| U-v2-direct240825 | **DEPRECATED** 1.520111 / 1.727624 | 0.059666 | 1.539729 | 1.520111 | not qualified: 1 pass + 1 residual-gate failure; pass-only 1.015156/s | 3.721 |
+| E240825-direct control | **DEPRECATED** 2.042407 / 2.636335 | 0.094279 | 2.046555 | 2.087861 | deprecated serial trace / N/A | 3.822 |
 | FVM240825 | 1.713886 / 1.906241 | 1.498608 solve-only | 1.111950 | 1.713886 | qualified actual P2 / 0.904681/s | N/A |
 
 FVM P2 是该 23 GiB 主机上能常驻且实测的饱和配置；P4/P8 因 prepared-system worker residency 失败而不作为结果。队列中的 FVM submit→result 包含排队等待，因此不能与 inter-completion 混为一谈。
 
-- fresh single-case：E16384/U-v2/E240825 相对 FVM speedup 分别为 `0.719×/1.127×/0.839×`。修正后的 U-v2 fresh B1 快于 FVM；E16384 与 E240825 仍慢于 FVM。
+- 历史 fresh single-case speedup `0.719×/1.127×/0.839×` **全部废弃**；不得用于论文或后续推导，权威值以上方最终性能修正表为准。
 - resident-core 比率：E16384/U-v2/E240825 相对 FVM solve-only 分别约 `176.6×/25.1×/15.9×`；这只是 prepared core ratio，不能称作 E2E speedup。
 - 旧 E16384/E240825/U-v2 neural Q2 均由 serial trace 离线重放，现统一废弃。U-v2 的真实 Q2 首个顺序为 `1.015156 sample/s`，但第二顺序触发 residual hard gate，未取得 publication qualification；不得用该 pass-only 数字计算正式 speedup。FVM `0.904681 sample/s` 来自真实 persistent P2，继续有效。
 
@@ -108,6 +126,6 @@ E16384 − E240825 的 paired bootstrap 95% CI 在三 seed、全部五项指标�
 - **CONTROL — E240825-direct**：仅保留 architecture control；精度被 E16384 明确支配。
 - **DIAGNOSTIC — U-v2-direct240825**：valid96 query-domain repair 与 accuracy/timing 均冻结；作为 parallel direct inference strategy 保留，不取代 E16384 production/reference。
 - **B strategy**：作为历史 adaptive inference strategy 保留，不再搜索或优化。
-- **Performance freeze**：采用 `v6_p1i_u_v2_timing_regression_closeout.json` 的 corrected U-v2 serial timing；旧 U-v2 `3.229151 s` fresh latency 与全部 neural serial-trace Q2 均废弃。FVM accuracy 只写作 reference/—，不再写成零误差模型行。
+- **Performance freeze**：采用 `v6_p1i_performance_final_correction_closeout.json` 与 `docs/v6_p1i_performance_final_correction.csv` 的统一 harness 结果。旧 E `2.383/2.042 s`、旧 U `1.520/3.229151 s` 及全部 neural serial-trace Q2 均废弃。FVM accuracy 只写作 reference/—，不再写成零误差模型行。
 
-机器可读 accuracy 证据见 `configs/heat3d_v6_p1i/v6_p1i_u_v2_valid96_closeout.json`；最终 timing regression 与 corrected performance 证据见 `configs/heat3d_v6_p1i/v6_p1i_u_v2_timing_regression_closeout.json`、`docs/v6_p1i_u_v2_corrected_performance.csv`。从此不得依据 valid32 继续优化 architecture/route/graph/packing/model；test/sealed 仍保持关闭。
+机器可读 accuracy 证据见 `configs/heat3d_v6_p1i/v6_p1i_u_v2_valid96_closeout.json`；最终 performance 证据见 `configs/heat3d_v6_p1i/v6_p1i_performance_final_correction_closeout.json` 与 `docs/v6_p1i_performance_final_correction.csv`。从此不得依据 valid32 继续优化 architecture/route/graph/packing/model；test/sealed 仍保持关闭。

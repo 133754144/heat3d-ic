@@ -1,0 +1,542 @@
+{
+  "output_nodes": 240825,
+  "population_mode": "frozen_valid32",
+  "process_count_cap_reason": "persistent prepared-system workers are bounded by host RAM; cap is resource-feasibility, not performance selection",
+  "queue_depth": 2,
+  "randomized_order_count": 3,
+  "role_contract": {
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid"
+    ],
+    "accuracy_driven_tuning": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "manifest_modified": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "rows": [
+    {
+      "fresh_population_wall": {
+        "count": 3,
+        "mean_seconds": 54.96645859442651,
+        "median_seconds": 54.90216621989384,
+        "p95_seconds": 55.0907940289937,
+        "std_seconds": 0.10296464669162843
+      },
+      "fresh_throughput": {
+        "count": 3,
+        "mean_seconds": 0.5821752567002411,
+        "median_seconds": 0.5828549618941042,
+        "p95_seconds": 0.5830146618457751,
+        "std_seconds": 0.0010891322495563069
+      },
+      "process_count": 1,
+      "repeats": [
+        {
+          "fresh_samples_per_second": 0.5828549618941042,
+          "fresh_single_case": {
+            "count": 32,
+            "mean_seconds": 1.7139954604499508,
+            "median_seconds": 1.6938305476214737,
+            "p95_seconds": 1.918836720706895,
+            "std_seconds": 0.11564474382248438
+          },
+          "fresh_wall_seconds": 54.90216621989384,
+          "order": [
+            30,
+            18,
+            12,
+            7,
+            2,
+            28,
+            19,
+            6,
+            22,
+            4,
+            24,
+            26,
+            3,
+            27,
+            23,
+            16,
+            31,
+            11,
+            9,
+            25,
+            20,
+            15,
+            14,
+            0,
+            13,
+            21,
+            5,
+            17,
+            1,
+            29,
+            10,
+            8
+          ],
+          "order_seed": 20260814,
+          "repeat": 0,
+          "resident_core_solve_only": {
+            "count": 32,
+            "mean_seconds": 1.7648039527848596,
+            "median_seconds": 1.7658707592636347,
+            "p95_seconds": 1.77660787969362,
+            "std_seconds": 0.00966870098750336
+          },
+          "resident_core_wall_seconds": 56.48247276106849,
+          "stream_inter_completion": {
+            "count": 32,
+            "mean_seconds": 1.7169996230659308,
+            "median_seconds": 1.7047309833578765,
+            "p95_seconds": 1.9329086838290095,
+            "std_seconds": 0.1116591611017075
+          },
+          "stream_submit_to_result": {
+            "count": 32,
+            "mean_seconds": 3.382176929633715,
+            "median_seconds": 3.413603018037975,
+            "p95_seconds": 3.746674000285566,
+            "std_seconds": 0.3422435097233725
+          },
+          "streaming_samples_per_second": 0.5824112913701357,
+          "streaming_wall_seconds": 54.94398970995098
+        },
+        {
+          "fresh_samples_per_second": 0.5830324062848496,
+          "fresh_single_case": {
+            "count": 32,
+            "mean_seconds": 1.7134292247064877,
+            "median_seconds": 1.6857510169502348,
+            "p95_seconds": 1.898292343551293,
+            "std_seconds": 0.11069089031108806
+          },
+          "fresh_wall_seconds": 54.88545688893646,
+          "order": [
+            24,
+            4,
+            0,
+            14,
+            23,
+            17,
+            19,
+            9,
+            13,
+            10,
+            22,
+            27,
+            15,
+            5,
+            12,
+            6,
+            1,
+            2,
+            8,
+            25,
+            18,
+            26,
+            3,
+            30,
+            7,
+            28,
+            31,
+            21,
+            16,
+            20,
+            29,
+            11
+          ],
+          "order_seed": 20260815,
+          "repeat": 1,
+          "resident_core_solve_only": {
+            "count": 32,
+            "mean_seconds": 1.760201188895735,
+            "median_seconds": 1.7572436546906829,
+            "p95_seconds": 1.7788436140399426,
+            "std_seconds": 0.012202694541856195
+          },
+          "resident_core_wall_seconds": 56.334589508827776,
+          "stream_inter_completion": {
+            "count": 32,
+            "mean_seconds": 1.7131124321604148,
+            "median_seconds": 1.6840093983337283,
+            "p95_seconds": 1.9382216281956062,
+            "std_seconds": 0.11326798827668498
+          },
+          "stream_submit_to_result": {
+            "count": 32,
+            "mean_seconds": 3.374069802433951,
+            "median_seconds": 3.4147630154620856,
+            "p95_seconds": 3.620875192503445,
+            "std_seconds": 0.2904279903710751
+          },
+          "streaming_samples_per_second": 0.5837328135799779,
+          "streaming_wall_seconds": 54.819601118098944
+        },
+        {
+          "fresh_samples_per_second": 0.5806384019217693,
+          "fresh_single_case": {
+            "count": 32,
+            "mean_seconds": 1.7205228715902194,
+            "median_seconds": 1.7022329636383802,
+            "p95_seconds": 1.9428659974830225,
+            "std_seconds": 0.11782244339373628
+          },
+          "fresh_wall_seconds": 55.111752674449235,
+          "order": [
+            6,
+            13,
+            0,
+            23,
+            4,
+            25,
+            21,
+            28,
+            5,
+            1,
+            2,
+            26,
+            11,
+            17,
+            24,
+            7,
+            12,
+            16,
+            22,
+            31,
+            30,
+            10,
+            3,
+            15,
+            14,
+            8,
+            9,
+            20,
+            19,
+            27,
+            29,
+            18
+          ],
+          "order_seed": 20260816,
+          "repeat": 2,
+          "resident_core_solve_only": {
+            "count": 32,
+            "mean_seconds": 1.763288396090502,
+            "median_seconds": 1.7661855830810964,
+            "p95_seconds": 1.778884179564193,
+            "std_seconds": 0.014931640207263194
+          },
+          "resident_core_wall_seconds": 56.43364239204675,
+          "stream_inter_completion": {
+            "count": 32,
+            "mean_seconds": 1.7072406296647387,
+            "median_seconds": 1.6861326610669494,
+            "p95_seconds": 1.9072932498529553,
+            "std_seconds": 0.11195701750162027
+          },
+          "stream_submit_to_result": {
+            "count": 32,
+            "mean_seconds": 3.3599415707576554,
+            "median_seconds": 3.3770994171500206,
+            "p95_seconds": 3.6945043146377428,
+            "std_seconds": 0.33906348393315805
+          },
+          "streaming_samples_per_second": 0.5857404936928149,
+          "streaming_wall_seconds": 54.63170182798058
+        }
+      ],
+      "resident_population_wall": {
+        "count": 3,
+        "mean_seconds": 56.416901553981006,
+        "median_seconds": 56.43364239204675,
+        "p95_seconds": 56.47758972416632,
+        "std_seconds": 0.061522656085274775
+      },
+      "startup_and_prepare_all_seconds": 0.7904273900203407,
+      "streaming_population_wall": {
+        "count": 3,
+        "mean_seconds": 54.7984308853435,
+        "median_seconds": 54.819601118098944,
+        "p95_seconds": 54.93155085076578,
+        "std_seconds": 0.1283668294967725
+      },
+      "streaming_throughput": {
+        "count": 3,
+        "mean_seconds": 0.5839615328809762,
+        "median_seconds": 0.5837328135799779,
+        "p95_seconds": 0.5855397256815312,
+        "std_seconds": 0.0013687296824233268
+      },
+      "untimed_warmup": true
+    },
+    {
+      "fresh_population_wall": {
+        "count": 3,
+        "mean_seconds": 36.13970581892257,
+        "median_seconds": 36.00332110002637,
+        "p95_seconds": 36.60397306066007,
+        "std_seconds": 0.38999776247212153
+      },
+      "fresh_throughput": {
+        "count": 3,
+        "mean_seconds": 0.8855552937773975,
+        "median_seconds": 0.8888068939833599,
+        "p95_seconds": 0.8945858836411134,
+        "std_seconds": 0.009507392862494371
+      },
+      "process_count": 2,
+      "repeats": [
+        {
+          "fresh_samples_per_second": 0.8726309937457464,
+          "fresh_single_case": {
+            "count": 32,
+            "mean_seconds": 2.266144675333635,
+            "median_seconds": 2.256428249180317,
+            "p95_seconds": 2.553841468831524,
+            "std_seconds": 0.1811382013365024
+          },
+          "fresh_wall_seconds": 36.67071216739714,
+          "order": [
+            30,
+            18,
+            12,
+            7,
+            2,
+            28,
+            19,
+            6,
+            22,
+            4,
+            24,
+            26,
+            3,
+            27,
+            23,
+            16,
+            31,
+            11,
+            9,
+            25,
+            20,
+            15,
+            14,
+            0,
+            13,
+            21,
+            5,
+            17,
+            1,
+            29,
+            10,
+            8
+          ],
+          "order_seed": 20260814,
+          "repeat": 0,
+          "resident_core_solve_only": {
+            "count": 32,
+            "mean_seconds": 2.412198513164185,
+            "median_seconds": 2.3630814554635435,
+            "p95_seconds": 2.6548414319287987,
+            "std_seconds": 0.1107302495283428
+          },
+          "resident_core_wall_seconds": 38.67095123697072,
+          "stream_inter_completion": {
+            "count": 32,
+            "mean_seconds": 1.12717282428639,
+            "median_seconds": 1.1064837714657187,
+            "p95_seconds": 2.2831339303404095,
+            "std_seconds": 0.851189920607706
+          },
+          "stream_submit_to_result": {
+            "count": 32,
+            "mean_seconds": 2.2280412764230277,
+            "median_seconds": 2.200815605930984,
+            "p95_seconds": 2.5207368610892447,
+            "std_seconds": 0.17097746700646313
+          },
+          "streaming_samples_per_second": 0.8871753630939714,
+          "streaming_wall_seconds": 36.069531832356006
+        },
+        {
+          "fresh_samples_per_second": 0.8888068939833599,
+          "fresh_single_case": {
+            "count": 32,
+            "mean_seconds": 2.2196618724847212,
+            "median_seconds": 2.2218949873931706,
+            "p95_seconds": 2.4977238154038788,
+            "std_seconds": 0.15599682790797395
+          },
+          "fresh_wall_seconds": 36.00332110002637,
+          "order": [
+            24,
+            4,
+            0,
+            14,
+            23,
+            17,
+            19,
+            9,
+            13,
+            10,
+            22,
+            27,
+            15,
+            5,
+            12,
+            6,
+            1,
+            2,
+            8,
+            25,
+            18,
+            26,
+            3,
+            30,
+            7,
+            28,
+            31,
+            21,
+            16,
+            20,
+            29,
+            11
+          ],
+          "order_seed": 20260815,
+          "repeat": 1,
+          "resident_core_solve_only": {
+            "count": 32,
+            "mean_seconds": 2.2974548364582006,
+            "median_seconds": 2.288002570392564,
+            "p95_seconds": 2.3889620813773944,
+            "std_seconds": 0.0415845483993637
+          },
+          "resident_core_wall_seconds": 36.76512622507289,
+          "stream_inter_completion": {
+            "count": 32,
+            "mean_seconds": 1.1322603431908647,
+            "median_seconds": 1.168197259074077,
+            "p95_seconds": 1.9594859157688915,
+            "std_seconds": 0.5967683666749691
+          },
+          "stream_submit_to_result": {
+            "count": 32,
+            "mean_seconds": 2.2270196315075736,
+            "median_seconds": 2.2193102440796793,
+            "p95_seconds": 2.4810494921635837,
+            "std_seconds": 0.16029431715531425
+          },
+          "streaming_samples_per_second": 0.8831890540428882,
+          "streaming_wall_seconds": 36.232333104126155
+        },
+        {
+          "fresh_samples_per_second": 0.895227993603086,
+          "fresh_single_case": {
+            "count": 32,
+            "mean_seconds": 2.226616089887102,
+            "median_seconds": 2.1819466401357204,
+            "p95_seconds": 2.55090610422194,
+            "std_seconds": 0.17372589479666775
+          },
+          "fresh_wall_seconds": 35.7450841893442,
+          "order": [
+            6,
+            13,
+            0,
+            23,
+            4,
+            25,
+            21,
+            28,
+            5,
+            1,
+            2,
+            26,
+            11,
+            17,
+            24,
+            7,
+            12,
+            16,
+            22,
+            31,
+            30,
+            10,
+            3,
+            15,
+            14,
+            8,
+            9,
+            20,
+            19,
+            27,
+            29,
+            18
+          ],
+          "order_seed": 20260816,
+          "repeat": 2,
+          "resident_core_solve_only": {
+            "count": 32,
+            "mean_seconds": 2.289154789497843,
+            "median_seconds": 2.2838211262132972,
+            "p95_seconds": 2.317806433397345,
+            "std_seconds": 0.01992393478671675
+          },
+          "resident_core_wall_seconds": 36.65226273005828,
+          "stream_inter_completion": {
+            "count": 32,
+            "mean_seconds": 1.1025175980030326,
+            "median_seconds": 1.0631222694646567,
+            "p95_seconds": 2.2214226817479354,
+            "std_seconds": 0.9299020317032685
+          },
+          "stream_submit_to_result": {
+            "count": 32,
+            "mean_seconds": 2.203051282209344,
+            "median_seconds": 2.162531506503001,
+            "p95_seconds": 2.4651862083701417,
+            "std_seconds": 0.14832483139960234
+          },
+          "streaming_samples_per_second": 0.9070149556957453,
+          "streaming_wall_seconds": 35.28056488931179
+        }
+      ],
+      "resident_population_wall": {
+        "count": 3,
+        "mean_seconds": 37.36278006403396,
+        "median_seconds": 36.76512622507289,
+        "p95_seconds": 38.48036873578094,
+        "std_seconds": 0.9261635584149548
+      },
+      "startup_and_prepare_all_seconds": 0.8389994679018855,
+      "streaming_population_wall": {
+        "count": 3,
+        "mean_seconds": 35.860809941931315,
+        "median_seconds": 36.069531832356006,
+        "p95_seconds": 36.21605297694914,
+        "std_seconds": 0.41564352061157134
+      },
+      "streaming_throughput": {
+        "count": 3,
+        "mean_seconds": 0.8924597909442017,
+        "median_seconds": 0.8871753630939714,
+        "p95_seconds": 0.905030996435568,
+        "std_seconds": 0.010419925804954079
+      },
+      "untimed_warmup": true
+    }
+  ],
+  "sample_count": 32,
+  "sample_ids": null,
+  "saturation_process_count": 2,
+  "schema_version": "heat3d_v6_p1i_post_freeze_fvm_v2",
+  "status": "passed",
+  "tested_process_counts": [
+    1,
+    2
+  ]
+}
