@@ -1,0 +1,159 @@
+{
+  "schema_version": "heat3d_v6_publication_benchmark_standard_v1",
+  "status": "frozen_before_publication_measurement",
+  "baseline_commit": "05b32ce58b7762098a9311b3da8972578049a686",
+  "benchmark_standard_freeze": "GO_after_checker_and_smoke",
+  "publication_timing_freeze": "NO_GO_pending_full_measurement",
+  "routes": [
+    "E16384_reconstruction",
+    "U_v2_16384_reconstruction",
+    "U_v2_direct240825",
+    "E240825_direct_control",
+    "FVM240825_reference"
+  ],
+  "output_domain": {
+    "node_count": 240825,
+    "timing_boundary": "in_memory_k_q_BC_to_synchronized_240825_result",
+    "excluded_from_service_span": [
+      "input_file_IO",
+      "accuracy_metrics",
+      "qualification",
+      "hashing",
+      "equivalence_audit",
+      "serialization"
+    ]
+  },
+  "hardware_and_resources": {
+    "host": "WSL2_same_host_for_all_routes",
+    "gpu": "RTX_5070",
+    "cpu": "Ryzen_7_9700X",
+    "neural_cpu_policy": {
+      "support_workers": 1,
+      "kdtree_workers": 1,
+      "graph_workers": 1,
+      "reconstruction_workers": 1,
+      "q2_service_workers": 2,
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1,
+      "NUMEXPR_NUM_THREADS": 1
+    },
+    "fvm_policy": {
+      "persistent_processes": 2,
+      "threads_per_process": 1,
+      "q2_queue_depth": 2
+    },
+    "required_resource_reports": ["cpu_workers_or_processes", "peak_VRAM_bytes", "peak_RAM_bytes"]
+  },
+  "lifecycle": {
+    "randomized_order_seeds": [20260814, 20260815, 20260816],
+    "independent_python_process_per_route_and_order": true,
+    "required_process_count": 15,
+    "warmup_case": {
+      "selection": "lowest_SHA256_sample_id_from_train_split",
+      "target_or_metrics_forbidden": true,
+      "must_not_belong_to_timed_population": true,
+      "model_kernel_JIT_only": true,
+      "timed_case_graph_or_packing_shape_prewarm_forbidden": true
+    },
+    "route_specific_shape_prewarm_forbidden": true
+  },
+  "timing_pools": {
+    "cold_service_first_case": "first distinct case in a virgin route_order Python process after dedicated nonpopulation model-kernel warmup; includes allowed service startup and first case-specific graph/pack/H2D/forward/reconstruction",
+    "fresh_distinct_case": "different k_q_BC cases with no case-specific graph_payload_or_prediction cache hit",
+    "repeat_case_cache_hot": "exact same case repeated with explicitly declared allowed case cache",
+    "resident_core": "prepared payload already device resident; synchronized neural core or prepared FVM solve only; never called E2E",
+    "true_B16_to_B32_marginal": "(continuous_B32_wall-continuous_B16_wall)/16 on 32 distinct cases",
+    "Q1": "submit one distinct case only after previous 240825 result completes",
+    "Q2": "submit two distinct cases, then refill one only after a completion; report submit_to_result, inter_completion, and samples_per_second"
+  },
+  "required_reports": [
+    "cold_service_first_case_seconds",
+    "fresh_distinct_case_median_and_p95_seconds",
+    "repeat_case_cache_hot_median_and_p95_seconds",
+    "resident_core_median_and_p95_seconds",
+    "true_B16_to_B32_marginal_seconds",
+    "Q1_median_and_p95_seconds",
+    "Q2_submit_to_result_median_and_p95_seconds",
+    "Q2_inter_completion_median_and_p95_seconds",
+    "Q2_samples_per_second",
+    "CPU_workers_or_processes",
+    "peak_VRAM_bytes",
+    "peak_RAM_bytes"
+  ],
+  "fairness_gates": {
+    "E_and_U_identical_neural_CPU_policy": true,
+    "Q2_serial_population_prepass_forbidden": true,
+    "cold_fresh_and_cache_hot_pools_disjoint": true,
+    "device_timing_explicitly_synchronized": true,
+    "exclusive_residual_hard_gate": "0 <= residual <= max(0.025_seconds, 0.05_times_E2E)",
+    "residual_gate_relaxation_forbidden": true,
+    "publication_claim_requires_all_three_orders_pass": true
+  },
+  "exactness_gates": {
+    "resolutions": [1024, 16384, 240825],
+    "graph_metadata_edge_hash_byte_exact": true,
+    "prepared_payload_byte_exact": true,
+    "prediction_equivalence": {
+      "deterministic_CPU": "bitwise_exact",
+      "GPU": "frozen_numeric_tolerance_with_max_and_RMSE_report"
+    },
+    "checkpoint_unchanged": true
+  },
+  "cache_policy": {
+    "allowed_service_startup": [
+      "Python_import_and_runtime_initialization",
+      "CUDA_context_initialization",
+      "checkpoint_load",
+      "immutable_solver_mesh_and_layer_partition_load",
+      "static_normalization_load",
+      "JAX_compilation_cache_load_or_dedicated_nonpopulation_kernel_compile"
+    ],
+    "case_specific_fresh_cost": [
+      "support_and_control_volume",
+      "sample_varying_graph_metadata_and_edges",
+      "dynamic_k_q_BC_context",
+      "TypedGraph_group_packing",
+      "H2D",
+      "forward",
+      "reconstruction_apply"
+    ],
+    "known_support_cache_hot_only": [
+      "static_graph_artifact",
+      "static_prepared_payload_structure",
+      "reconstruction_map"
+    ],
+    "forbidden": [
+      "prewarm_timed_sample",
+      "prewarm_timed_graph_shape",
+      "prewarm_timed_packing_shape",
+      "reuse_case_specific_cache_in_fresh_distinct_pool",
+      "route_specific_hidden_prewarm"
+    ]
+  },
+  "smoke": {
+    "sample_count": 4,
+    "population": "frozen_valid32_inputs_only",
+    "full_population_measurement_forbidden": true,
+    "publication_latency_or_speedup_forbidden": true,
+    "each_route_order_process_required": true,
+    "checks": [
+      "independent_process_lifecycle",
+      "warmup_not_in_timed_samples",
+      "E_U_CPU_policy_equal",
+      "cold_fresh_cache_hot_disjoint",
+      "real_Q2_overlap_and_distinct_inputs",
+      "residual_hard_gate_executable",
+      "exactness_evidence_coverage"
+    ]
+  },
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "accuracy_tuning": false,
+    "full_valid32_or_valid96_timing": false,
+    "final_speedup_generated": false,
+    "accessed_roles": ["train_input_warmup_only", "valid_iid_inputs_smoke_only"]
+  }
+}
