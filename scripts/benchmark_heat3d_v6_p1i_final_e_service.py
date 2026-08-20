@@ -65,6 +65,7 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--route", choices=("E16384_reconstruction", "E240825_direct_control"), required=True)
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--resident-repeats", type=int, default=20)
+    parser.add_argument("--sample-count", type=int, choices=(4, 8, 32), default=32)
     return parser.parse_args()
 
 
@@ -259,7 +260,7 @@ def main() -> int:
     steady_values: list[float] = []
     order_seeds = protocol["timing"]["randomized_order_seeds"]
     for order_seed in order_seeds:
-        order = np.random.default_rng(order_seed).permutation(32).tolist()
+        order = np.random.default_rng(order_seed).permutation(32)[:args.sample_count].tolist()
         rows = []
         for position, index in enumerate(order):
             row = service_one(anchors[index]); rows.append(row)
@@ -278,7 +279,7 @@ def main() -> int:
         q2_failed = None
         try:
             with ThreadPoolExecutor(max_workers=2, thread_name_prefix="final-e-q2") as pool:
-                while next_position < 2:
+                while next_position < min(2, len(order)):
                     submitted = time.perf_counter()
                     future = pool.submit(service_one, anchors[order[next_position]])
                     inflight[future] = (next_position, submitted); next_position += 1
@@ -301,7 +302,7 @@ def main() -> int:
             q2_failed = f"{type(exc).__name__}: {exc}"
         completions.sort(key=lambda row: row["completion_offset_seconds"])
         completion_offsets = [row["completion_offset_seconds"] for row in completions]
-        if q2_failed is None and len(completions) == 32:
+        if q2_failed is None and len(completions) == len(order):
             inter = np.diff(np.asarray([0.0] + completion_offsets)).tolist()
             q2_orders.append({
                 "status": "passed", "order_seed": order_seed, "order": order,
@@ -309,9 +310,11 @@ def main() -> int:
                 "submit_to_result": stats([row["submit_to_result_seconds"] for row in completions]),
                 "inter_completion": stats(inter),
                 "wall_seconds": completion_offsets[-1],
-                "samples_per_second": 32.0 / completion_offsets[-1],
-                "true_B16_to_B32_marginal_seconds":
-                    (completion_offsets[31] - completion_offsets[15]) / 16.0,
+                "samples_per_second": len(order) / completion_offsets[-1],
+                "true_B16_to_B32_marginal_seconds": (
+                    (completion_offsets[31] - completion_offsets[15]) / 16.0
+                    if len(order) == 32 else None
+                ),
             })
         else:
             q2_orders.append({
@@ -328,8 +331,13 @@ def main() -> int:
     }
     result = {
         "schema_version": "heat3d_v6_p1i_final_e_service_v1",
-        "status": "passed" if q2_all_passed else "passed_serial_Q2_not_qualified",
+        "status": (
+            "passed" if q2_all_passed and args.sample_count == 32
+            else "passed_smoke" if q2_all_passed
+            else "passed_serial_Q2_not_qualified"
+        ),
         "route": args.route, "resolution": resolution, "output_nodes": 240825,
+        "sample_count": args.sample_count,
         "timing_boundary": protocol["timing"]["boundary"],
         "unseen_shape_first_hit": stats(first_hit_values),
         "steady_shape_fresh": stats(steady_values),
