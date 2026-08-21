@@ -3,8 +3,9 @@
 
 This runner deliberately emits no publication latency or speedup table.  Each
 route/order/service-mode cell runs in its own Python process.  The FVM service
-uses in-memory physics payloads and a persistent P1/P2 worker pool; neural
-routes delegate to their frozen real production implementations.
+uses in-memory physics payloads and either an in-process persistent P1 service
+or a persistent P2 worker pool; neural routes delegate to their frozen real
+production implementations.
 """
 from __future__ import annotations
 
@@ -137,6 +138,8 @@ def _fvm_case(
 
 
 def fvm_worker(args: argparse.Namespace) -> int:
+    os.environ.update(THREAD_ENV)
+    os.environ.update(JAX_PLATFORMS="cpu", CUDA_VISIBLE_DEVICES="")
     protocol = json.loads(args.protocol.read_text())
     binding = json.loads(args.binding.read_text())
     import benchmark_heat3d_v6_inference_qualification as qualification
@@ -163,25 +166,23 @@ def fvm_worker(args: argparse.Namespace) -> int:
             "top_h": float(meta["top_h_W_m2K"]),
             "bottom_h": float(meta["bottom_h_W_m2K"]),
         })
-    process_count = 1 if args.service_mode == "serial" else 2
     serialized = {
         "dataset_root": str(args.dataset_root), "manifest": str(args.manifest),
         "full_fields": str(args.full_fields),
     }
-    pool = ProcessPoolExecutor(
-        max_workers=process_count, mp_context=mp.get_context("spawn"),
-        initializer=_init_fvm, initargs=(serialized,),
-    )
-    worker_pids = sorted({future.result() for future in [
-        pool.submit(_fvm_ready) for _ in range(process_count * 3)]})
-    if len(worker_pids) != process_count:
-        raise RuntimeError("FVM persistent worker count drift")
     rows_out: list[dict[str, Any]] = []
     q2 = None
+    pool = None
     if args.service_mode == "serial":
+        # The FVM worker command is itself the independent lifecycle/service.
+        # Fresh/Q1 therefore execute directly in this process: no ProcessPool,
+        # IPC, serialization, or child scheduling belongs to the timing span.
+        _init_fvm(serialized)
+        process_count = 1
+        worker_pids = [os.getpid()]
         for payload in payloads:
             submitted = time.perf_counter()
-            row = pool.submit(_fvm_case, payload, False, args.formal_measurement).result()
+            row = _fvm_case(payload, False, args.formal_measurement)
             completed = time.perf_counter()
             row["submit_to_result_seconds"] = completed - submitted
             rows_out.append(row)
@@ -190,10 +191,19 @@ def fvm_worker(args: argparse.Namespace) -> int:
             repeated = payloads[0]
             for _ in range(args.cache_hot_repeats):
                 submitted = time.perf_counter()
-                row = pool.submit(_fvm_case, repeated, True).result()
+                row = _fvm_case(repeated, True)
                 row["submit_to_result_seconds"] = time.perf_counter() - submitted
                 cache_hot_rows.append(row)
     else:
+        process_count = 2
+        pool = ProcessPoolExecutor(
+            max_workers=process_count, mp_context=mp.get_context("spawn"),
+            initializer=_init_fvm, initargs=(serialized,),
+        )
+        worker_pids = sorted({future.result() for future in [
+            pool.submit(_fvm_ready) for _ in range(process_count * 3)]})
+        if len(worker_pids) != process_count:
+            raise RuntimeError("FVM persistent worker count drift")
         began = time.perf_counter()
         pending: dict[Any, tuple[int, float]] = {}
         cursor = 0
@@ -235,13 +245,25 @@ def fvm_worker(args: argparse.Namespace) -> int:
                 (ordered_completion[31] - ordered_completion[15]) / 16.0
                 if len(ordered_completion) >= 32 else None),
         }
-    summed_hwm_upper_bound = _hwm_bytes(os.getpid()) + sum(_hwm_bytes(pid) for pid in worker_pids)
-    pool.shutdown()
+    if args.service_mode == "serial":
+        memory_value = _hwm_bytes(os.getpid())
+        memory_field = "service_process_HWM_bytes"
+        memory_semantics = "single_in_process_persistent_P1_service_VmHWM"
+    else:
+        memory_value = _hwm_bytes(os.getpid()) + sum(_hwm_bytes(pid) for pid in worker_pids)
+        memory_field = "summed_process_HWM_upper_bound_bytes"
+        memory_semantics = "sum_of_parent_and_worker_VmHWM_not_simultaneous_RSS"
+        assert pool is not None
+        pool.shutdown()
     result = {
         "schema_version": "heat3d_v6_publication_fvm_service_smoke_v1_1",
         "status": "passed_smoke", "route": args.route,
         "service_mode": args.service_mode, "process_id": os.getpid(),
         "worker_pids": worker_pids, "worker_count": process_count,
+        "execution_model": (
+            "in_process_persistent_P1_one_thread"
+            if args.service_mode == "serial" else "persistent_P2_each_one_thread"),
+        "IPC_used_in_fresh_Q1": False,
         "order_seed": args.order_seed,
         "ordered_sample_ids": [payload["sample_id"] for payload in payloads],
         "rows": rows_out, "Q2": q2,
@@ -258,11 +280,11 @@ def fvm_worker(args: argparse.Namespace) -> int:
                 if args.formal_measurement and args.service_mode == "serial"
                 else "not_measured_in_conformance_smoke"),
         },
-        "aggregate_service_worker_peak_RAM_bytes": summed_hwm_upper_bound,
+        "aggregate_service_worker_peak_RAM_bytes": memory_value,
         "memory_measurement": {
-            "field": "summed_process_HWM_upper_bound_bytes",
-            "value": summed_hwm_upper_bound,
-            "semantics": "sum_of_parent_and_worker_VmHWM_not_simultaneous_RSS",
+            "field": memory_field,
+            "value": memory_value,
+            "semantics": memory_semantics,
         },
         "repeat_case_cache_hot": (
             stats([row["submit_to_result_seconds"] for row in cache_hot_rows])
@@ -394,10 +416,15 @@ def orchestrate(args: argparse.Namespace) -> int:
     if args.formal_measurement:
         seal = json.loads(args.pre_measurement_seal.read_text())
         if (seal["pre_measurement_seal"] != "GO"
+                or seal["ready_for_authoritative_valid32"] != "GO"
                 or seal["publication_timing_freeze"] != "NO_GO_ready_for_full_valid32"
                 or seal["protocol_sha256"] != file_sha256(
                     ROOT / "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json")):
             raise RuntimeError("formal measurement pre-measurement seal drift")
+        for relative, expected in seal["frozen_implementation_sha256"].items():
+            candidate = ROOT / relative
+            if not candidate.is_file() or file_sha256(candidate) != expected:
+                raise RuntimeError(f"formal implementation SHA drift: {relative}")
         if args.sample_count != 32:
             raise RuntimeError("formal measurement requires frozen valid32")
     elif args.sample_count < 2 or args.sample_count > 4:
@@ -443,7 +470,7 @@ def orchestrate(args: argparse.Namespace) -> int:
         "protocol_sha256": file_sha256(args.protocol),
         "sample_count": args.sample_count, "process_records": process_records,
         "rows": rows, "failure": failure,
-        "publication_numbers_generated": False,
+        "publication_numbers_generated": bool(args.formal_measurement),
         "role_contract": protocol["role_contract"],
     }
     if failure is None:
@@ -470,12 +497,26 @@ def orchestrate(args: argparse.Namespace) -> int:
         if any(row.get("service_mode") == "Q2" and row["route"].startswith("U")
                and not row["concurrent_only"] for row in rows):
             raise RuntimeError("U Q2 process traversed serial population")
+        fvm_serial = next(row for row in rows
+                          if row["route"] == "FVM240825_reference"
+                          and row["service_mode"] == "serial")
+        if not (
+            fvm_serial["execution_model"] == "in_process_persistent_P1_one_thread"
+            and fvm_serial["worker_pids"] == [fvm_serial["process_id"]]
+            and fvm_serial["worker_count"] == 1
+            and not fvm_serial["IPC_used_in_fresh_Q1"]
+        ):
+            raise RuntimeError("FVM Fresh/Q1 is not an in-process persistent P1 service")
         exactness = exactness_gate(rows)
         result.update({
             "status": "passed",
             "benchmark_protocol_v1_1": "GO",
             "benchmark_implementation_freeze": "GO",
-            "publication_timing_freeze": "NO_GO_pending_full_valid32",
+            "publication_timing_freeze": (
+                "NO_GO_pending_collector" if args.formal_measurement
+                else "NO_GO_pending_full_valid32"),
+            "authoritative_full_valid32": (
+                "completed_hard_gates_passed" if args.formal_measurement else "not_executed_smoke"),
             "independent_process_count": 30,
             "independent_process_lifecycle": True,
             "same_seed_cross_route_order_exact": True,

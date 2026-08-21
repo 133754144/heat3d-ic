@@ -92,10 +92,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
+    parser.add_argument("--fvm-p1-sanity", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     args.protocol = args.protocol.resolve()
     args.candidate = args.candidate.resolve()
+    args.fvm_p1_sanity = args.fvm_p1_sanity.resolve()
     args.output = args.output.resolve()
     protocol = json.loads(args.protocol.read_text())
     golden = protocol["golden_exactness"]
@@ -110,6 +112,17 @@ def main() -> int:
         raise RuntimeError("golden record count drift")
     if candidate_records != reference_records:
         raise RuntimeError("candidate graph/edge/metadata/payload differs from historical golden")
+    sanity = json.loads(args.fvm_p1_sanity.read_text())
+    if not (
+        sanity["status"] == "passed_smoke"
+        and sanity["service_mode"] == "serial"
+        and sanity["execution_model"] == "in_process_persistent_P1_one_thread"
+        and sanity["worker_pids"] == [sanity["process_id"]]
+        and sanity["worker_count"] == 1
+        and not sanity["IPC_used_in_fresh_Q1"]
+        and len(sanity["rows"]) in (1, 2)
+    ):
+        raise RuntimeError("FVM in-process persistent P1 sanity did not pass")
     frozen_files = [
         args.protocol,
         ROOT / "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_standard_v1_1.json",
@@ -118,11 +131,13 @@ def main() -> int:
         ROOT / "scripts/smoke_heat3d_v6_publication_benchmark_conformance_v1_1.py",
         ROOT / "scripts/collect_heat3d_v6_publication_benchmark_v1_1.py",
         ROOT / "scripts/check_heat3d_v6_publication_benchmark_pre_measurement.py",
+        ROOT / "scripts/manifest_heat3d_v6_publication_benchmark_artifacts.py",
     ]
     result = {
         "schema_version": "heat3d_v6_publication_benchmark_pre_measurement_seal_v1",
         "status": "passed",
         "pre_measurement_seal": "GO",
+        "ready_for_authoritative_valid32": "GO",
         "publication_timing_freeze": "NO_GO_ready_for_full_valid32",
         "protocol_sha256": sha_file(args.protocol),
         "historical_golden": {
@@ -142,8 +157,16 @@ def main() -> int:
         "FVM_contract": protocol["FVM_contract"],
         "complete_workloads": protocol["complete_workloads"],
         "formal_runner_static_gate": "passed",
+        "FVM_in_process_P1_sanity": {
+            "status": "passed", "case_count": len(sanity["rows"]),
+            "artifact_path": str(args.fvm_p1_sanity.relative_to(ROOT)),
+            "artifact_sha256": sha_file(args.fvm_p1_sanity),
+            "process_id": sanity["process_id"], "worker_pids": sanity["worker_pids"],
+            "IPC_used_in_fresh_Q1": sanity["IPC_used_in_fresh_Q1"],
+        },
         "new_benchmark_execution": {
-            "case_count": 0, "reason": "recent_real_route_smoke_reused_and_implementation_only_seal",
+            "case_count": len(sanity["rows"]),
+            "reason": "FVM_in_process_persistent_P1_sanity_only",
             "full_valid32_timing": False, "latency_or_speedup_generated": False,
         },
         "role_contract": protocol["role_contract"],

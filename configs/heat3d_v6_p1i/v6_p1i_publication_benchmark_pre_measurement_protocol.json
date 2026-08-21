@@ -26,11 +26,13 @@
   "analysis_freeze": {
     "route_seed_unit": "each_route_x_each_seed_independently",
     "within_unit_statistics": ["median", "p95"],
-    "speedup_pairing": "same_seed_FVM_over_neural_before_aggregation",
-    "three_seed_aggregation": "median_of_three_paired_seed_ratios",
-    "confidence_interval": "paired_seed_bootstrap_percentile_95pct",
+    "speedup_pairing": "same_sample_id_then_same_seed_FVM_over_neural_before_three_repeat_summary",
+    "three_seed_aggregation": "median_and_min_max_of_three_lifecycle_point_estimates",
+    "confidence_interval": "fresh_and_Q1_only_paired_32_sample_workload_bootstrap_within_each_seed",
     "bootstrap_seed": 20260821,
     "bootstrap_resamples": 20000,
+    "Q2_and_B16_to_B32_uncertainty": "three_lifecycle_median_and_min_max_no_n3_bootstrap_CI",
+    "three_seed_bootstrap_forbidden": true,
     "pooled_96_ratio_forbidden": true,
     "post_hoc_aggregation_change_forbidden": true
   },
@@ -72,7 +74,16 @@
     "entrypoint": "scripts/smoke_heat3d_v6_publication_benchmark_conformance_v1_1.py",
     "required_flag": "--formal-measurement",
     "sample_count": 32,
-    "independent_lifecycles": 30
+    "independent_lifecycles": 30,
+    "formal_entry_immutability_gate": [
+      "protocol_sha256",
+      "E_runner_sha256",
+      "U_runner_sha256",
+      "unified_harness_sha256",
+      "collector_sha256",
+      "checker_sha256"
+    ],
+    "fail_before_output_root_creation_on_SHA_drift": true
   },
   "freeze_decision": {
     "pre_measurement_seal": "GO_only_if_checker_passes",

@@ -28,12 +28,16 @@ def main() -> int:
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--seal", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
+    parser.add_argument("--authoritative-raw", type=Path)
+    parser.add_argument("--collector-result", type=Path)
+    parser.add_argument("--artifact-sha-manifest", type=Path)
     args = parser.parse_args()
     protocol = json.loads(args.protocol.read_text())
     seal = json.loads(args.seal.read_text())
     require(protocol["status"] == "frozen_before_full_valid32_measurement", "protocol status")
     require(seal["status"] == "passed", "seal status")
     require(seal["pre_measurement_seal"] == "GO", "seal GO")
+    require(seal["ready_for_authoritative_valid32"] == "GO", "authoritative valid32 readiness")
     require(seal["publication_timing_freeze"] == "NO_GO_ready_for_full_valid32", "timing status")
     golden = protocol["golden_exactness"]
     blob = subprocess.check_output(
@@ -67,7 +71,9 @@ def main() -> int:
                   "actual_B16_to_B32_marginal_seconds", "actual_concurrent_execution"):
         require(token in u_text, f"U workload implementation: {token}")
     for token in ("--formal-measurement", "summed_process_HWM_upper_bound_bytes",
-                  "prepared_system_solve_only", "serial_prepass_of_Q2_samples"):
+                  "service_process_HWM_bytes", "in_process_persistent_P1_one_thread",
+                  "prepared_system_solve_only", "serial_prepass_of_Q2_samples",
+                  "formal implementation SHA drift"):
         require(token in runner_text, f"unified runner workload implementation: {token}")
     require(protocol["FVM_contract"]["fresh_Q1"] == "persistent_in_process_P1_one_thread", "FVM P1")
     require(protocol["FVM_contract"]["Q2"] == "persistent_P2_each_one_thread", "FVM P2")
@@ -79,18 +85,67 @@ def main() -> int:
         require(sha(ROOT / rel) == expected, f"frozen file SHA: {rel}")
     collector = (ROOT / "scripts/collect_heat3d_v6_publication_benchmark_v1_1.py").read_text()
     for token in ("BOOTSTRAP_SEED = 20260821", "BOOTSTRAP_RESAMPLES = 20000",
-                  "median_of_three_ratios", "pooled_96_ratio_used"):
+                  "paired_workload_bootstrap", "three_seed_bootstrap_used",
+                  "Q2_and_B16_to_B32", "pooled_96_ratio_used"):
         require(token in collector, f"collector freeze: {token}")
+    sanity_record = seal["FVM_in_process_P1_sanity"]
+    sanity_path = ROOT / sanity_record["artifact_path"]
+    sanity = json.loads(sanity_path.read_text())
+    require(sha(sanity_path) == sanity_record["artifact_sha256"], "FVM sanity SHA")
+    require(sanity["execution_model"] == "in_process_persistent_P1_one_thread", "FVM sanity model")
+    require(sanity["worker_pids"] == [sanity["process_id"]], "FVM sanity PID")
+    require(sanity["worker_count"] == 1 and not sanity["IPC_used_in_fresh_Q1"], "FVM sanity no IPC")
+    require(len(sanity["rows"]) in (1, 2), "FVM sanity case count")
     for key in ("training", "test", "sealed", "accuracy_tuning",
                 "full_valid32_timing_executed_in_this_seal",
                 "formal_latency_or_speedup_generated_in_this_seal"):
         require(seal["role_contract"][key] is False, f"forbidden role: {key}")
     require(seal["new_benchmark_execution"]["case_count"] <= 2, "low-cost seal")
+    optional = (args.authoritative_raw, args.collector_result, args.artifact_sha_manifest)
+    require(all(value is None for value in optional) or all(value is not None for value in optional),
+            "authoritative closeout inputs must be supplied together")
+    authoritative_checked = False
+    if args.authoritative_raw is not None:
+        raw = json.loads(args.authoritative_raw.read_text())
+        collected = json.loads(args.collector_result.read_text())
+        manifest = json.loads(args.artifact_sha_manifest.read_text())
+        require(raw["status"] == "passed", "authoritative raw hard gates")
+        require(raw["authoritative_full_valid32"] == "completed_hard_gates_passed", "valid32 completion")
+        require(raw["publication_timing_freeze"] == "NO_GO_pending_collector", "raw freeze state")
+        require(raw["sample_count"] == 32 and len(raw["rows"]) == 30, "30-cell valid32 matrix")
+        require(raw["independent_process_count"] == 30, "independent process count")
+        require(len({row["process_id"] for row in raw["rows"]}) == 30, "independent process PIDs")
+        require(raw["same_seed_cross_route_order_exact"], "cross-route sample order")
+        require(raw["Q2_without_serial_prepass"], "Q2 no serial prepass")
+        require(raw["role_contract"]["test"] is False and raw["role_contract"]["sealed"] is False,
+                "authoritative forbidden roles")
+        for row in raw["rows"]:
+            require(row["status"].startswith("passed"), f"cell status: {row['route']}")
+            if row["route"] == "FVM240825_reference" and row["service_mode"] == "serial":
+                require(row["execution_model"] == "in_process_persistent_P1_one_thread", "formal FVM P1")
+                require(row["worker_pids"] == [row["process_id"]], "formal FVM P1 PID")
+                require(not row["IPC_used_in_fresh_Q1"], "formal FVM P1 IPC")
+        require(collected["publication_timing_freeze"] == "GO", "collector publication freeze")
+        require(collected["aggregation_contract"]["bootstrap_seed"] == 20260821, "collector bootstrap seed")
+        require(collected["aggregation_contract"]["bootstrap_resamples"] == 20000, "collector resamples")
+        require(not collected["aggregation_contract"]["pooled_96_ratio_used"], "collector pooled96")
+        require(collected["aggregation_contract"]["three_lifecycle_repeats"] ==
+                "median_and_min_max_only", "three lifecycle uncertainty")
+        entries = manifest["artifacts"]
+        require(len(entries) >= 61, "raw/log/SHA artifact coverage")
+        for entry in entries:
+            path = ROOT / entry["path"]
+            require(path.is_file(), f"artifact exists: {entry['path']}")
+            require(path.stat().st_size == entry["size_bytes"], f"artifact size: {entry['path']}")
+            require(sha(path) == entry["sha256"], f"artifact SHA: {entry['path']}")
+        authoritative_checked = True
     print(json.dumps({
         "status": "passed", "pre_measurement_seal": "GO",
+        "ready_for_authoritative_valid32": "GO",
         "publication_timing_freeze": "NO_GO_ready_for_full_valid32",
         "golden_records": 12, "formal_latency_generated": False,
         "training": False, "test": False, "sealed": False,
+        "authoritative_valid32_checked": authoritative_checked,
     }))
     return 0
 

@@ -3,6 +3,7 @@
 ## Decision
 
 - `pre_measurement_seal = GO`
+- `ready_for_authoritative_valid32 = GO`
 - `publication_timing_freeze = NO_GO_ready_for_full_valid32`
 
 This seal does not contain publication latency, speedup, or a new full-valid32
@@ -26,12 +27,13 @@ reference.
 
 ## Frozen analysis
 
-Each route and seed is summarized independently with median and p95. FVM to
-neural latency ratios, and neural to FVM throughput ratios, are formed only
-within the same randomized seed. The published center is the median of those
-three paired ratios. The paired percentile bootstrap uses seed `20260821` and
-20,000 resamples. Pooled-96 ratios and post-hoc changes to aggregation are
-forbidden.
+Each route and seed is summarized independently with median and p95. Fresh/Q1
+uncertainty uses the same 32 ordered sample IDs for FVM and each neural route,
+then performs a paired workload bootstrap within each seed using seed
+`20260821` and 20,000 resamples. The three randomized lifecycles are summarized
+with median and min--max only. Q2 throughput and B16-to-B32 likewise report the
+three-repeat median/range and do not call an n=3 bootstrap a 95% interval.
+Pooled-96 ratios and post-hoc changes to aggregation are forbidden.
 
 ## Frozen workload and lifecycle
 
@@ -57,17 +59,17 @@ machine-readable seal with canonical hashes. A train-only target-free static
 JIT envelope remains permitted; graph or packing shapes from timed cases may
 not be prewarmed.
 
-Neural routes use the single service process HWM. FVM currently cannot sample
-a reliable simultaneous parent-plus-worker RSS peak, so its memory field is
-explicitly named `summed_process_HWM_upper_bound_bytes`. It must not be
-reported as simultaneous aggregate RSS.
+Neural routes and FVM serial use the single service process HWM. FVM Q2 cannot
+sample a reliable simultaneous parent-plus-worker RSS peak, so its memory
+field is explicitly named `summed_process_HWM_upper_bound_bytes`. It must not
+be reported as simultaneous aggregate RSS.
 
 ## Scope
 
 No training, test/sealed access, accuracy tuning, full-valid32 timing, or
 formal latency/speedup generation occurred. The recent real-route conformance
-smoke from commit `519963c3` was reused; no additional inference case was run
-for this seal.
+smoke from commit `519963c3` was reused. The only new execution is the tracked
+one- or two-case FVM in-process persistent-P1 sanity bound into the seal.
 
 Machine-readable files:
 
