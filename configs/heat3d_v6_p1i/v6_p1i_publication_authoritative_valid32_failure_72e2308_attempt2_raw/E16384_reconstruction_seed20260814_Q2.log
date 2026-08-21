@@ -1,0 +1,45 @@
+E0822 00:56:32.116692 3718648 cuda_timer.cc:87] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
+E0822 00:56:32.246194 3718649 cuda_timer.cc:87] Delay kernel timed out: measured time has sub-optimal accuracy. There may be a missing warmup execution, please investigate in Nsight Systems.
+/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/_core/fromnumeric.py:3824: RuntimeWarning: Mean of empty slice
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/_core/_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/_core/_methods.py:219: RuntimeWarning: Degrees of freedom <= 0 for slice
+  ret = _var(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/_core/_methods.py:178: RuntimeWarning: invalid value encountered in divide
+  arrmean = um.true_divide(arrmean, div, out=arrmean,
+/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/_core/_methods.py:211: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+Traceback (most recent call last):
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/benchmark_heat3d_v6_p1i_final_e_service.py", line 584, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/benchmark_heat3d_v6_p1i_final_e_service.py", line 535, in main
+    "resident_core": stats(
+                     ~~~~~^
+        valid_resident_values if args.publication_v1_1 else warmup_resident_values),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/benchmark_heat3d_v6_p1i_final_e_service.py", line 44, in stats
+    "p95_seconds": float(np.quantile(array, 0.95)),
+                         ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/lib/_function_base_impl.py", line 4496, in quantile
+    return _quantile_unchecked(
+        a, q, axis, out, overwrite_input, method, keepdims, weights, weak_q)
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/lib/_function_base_impl.py", line 4510, in _quantile_unchecked
+    return _ureduce(a,
+                    func=_quantile_ureduce_func,
+    ...<6 lines>...
+                    method=method,
+                    weak_q=weak_q)
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/lib/_function_base_impl.py", line 3880, in _ureduce
+    r = func(a, **kwargs)
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/lib/_function_base_impl.py", line 4669, in _quantile_ureduce_func
+    result = _quantile(arr,
+                       quantiles=q,
+    ...<3 lines>...
+                       weights=wgt,
+                       weak_q=weak_q)
+  File "/home/xyh/miniconda3/envs/rigno/lib/python3.14/site-packages/numpy/lib/_function_base_impl.py", line 4793, in _quantile
+    slices_having_nans = np.isnan(arr[-1, ...])
+                                  ~~~^^^^^^^^^
+IndexError: index -1 is out of bounds for axis 0 with size 0

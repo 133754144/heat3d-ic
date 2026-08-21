@@ -1,0 +1,62 @@
+{
+  "schema_version": "heat3d_v6_publication_authoritative_valid32_attempt2_closeout_v1",
+  "status": "failed_fail_closed_q2_result_assembly",
+  "execution_commit": "72e2308",
+  "final_padding_gate": {
+    "envelope_qualification": "GO_frozen_reused_not_rerun",
+    "padding_numerical_equivalence": "GO",
+    "ready_for_authoritative_valid32": "GO",
+    "result_path": "configs/heat3d_v6_p1i/v6_p1i_publication_final_padding_gate_raw/final_padding_gate.json",
+    "result_sha256": "785f4fd6d22ee610140af4266f1b127d7812512a127e7028087a6734b2dd6c0c"
+  },
+  "seal": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_seal_final_padding.json",
+    "sha256": "8f0df360e61f719af9db681d0a269aeffdec4ac59694d61393a1ea7c85ea61c0",
+    "pre_measurement_seal": "GO",
+    "ready_for_authoritative_valid32": "GO"
+  },
+  "authoritative_attempt2": {
+    "attempted": true,
+    "completed": false,
+    "publication_results_generated": false,
+    "planned_cells": 30,
+    "completed_cells": 5,
+    "attempted_processes": 6,
+    "failed_cell": {
+      "route": "E16384_reconstruction",
+      "seed": 20260814,
+      "service_mode": "Q2",
+      "returncode": 1,
+      "wall_seconds": 20.650582015980035,
+      "failure_type": "empty_resident_core_statistics_in_Q2_result_assembly",
+      "exception": "IndexError: index -1 is out of bounds for axis 0 with size 0"
+    },
+    "raw_path": "configs/heat3d_v6_p1i/v6_p1i_publication_authoritative_valid32_failure_72e2308_attempt2_raw/authoritative_valid32_raw.json",
+    "raw_sha256": "bc0e7224e43878cc25eef5b0eb3084ca11bd0673021a3eed688347c41d1670e3",
+    "failure_manifest": "configs/heat3d_v6_p1i/v6_p1i_publication_authoritative_valid32_failure_72e2308_attempt2_manifest.json"
+  },
+  "decision": {
+    "publication_timing_freeze": "NO_GO",
+    "collector_executed": false,
+    "authoritative_checker_eligible": false,
+    "single_cell_rerun": false,
+    "implementation_changed_after_failure": false,
+    "performance_claim_allowed": false
+  },
+  "failure_interpretation": {
+    "padding_capacity_failure": false,
+    "padding_numerical_equivalence_failure": false,
+    "runtime_performance_failure": false,
+    "result_assembly_contract_failure": true,
+    "details": "The independent Q2 process completed its measured path but the E route attempted to compute resident_core statistics from an empty Q2-only resident pool. The fail-closed contract stopped the matrix before any publication aggregation."
+  },
+  "role_contract": {
+    "training": false,
+    "accuracy_tuning": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "graph_policy_modified": false,
+    "route_semantics_modified": false
+  }
+}
