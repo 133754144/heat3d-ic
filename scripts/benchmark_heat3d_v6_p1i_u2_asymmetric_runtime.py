@@ -87,6 +87,22 @@ def tree_sha(tree: Any) -> str:
         array=np.ascontiguousarray(np.asarray(leaf));digest.update(str(array.dtype).encode());digest.update(str(array.shape).encode());digest.update(array.tobytes())
     return digest.hexdigest()
 
+def metadata_hashes(metadata: Any) -> dict[str, Any]:
+    fields = (
+        "x_pnodes_inp", "x_pnodes_out", "x_rnodes", "r_rnodes",
+        "p2r_edge_indices", "p2r_domains", "r2r_edge_indices",
+        "r2r_domains", "r2p_edge_indices", "r2p_domains",
+    )
+    rows: dict[str, Any] = {}
+    for field in fields:
+        value = getattr(metadata, field, None)
+        rows[field] = None if value is None else tree_sha(np.asarray(value))
+    rows["combined_sha256"] = tree_sha(tuple(
+        np.asarray(getattr(metadata, field))
+        for field in fields if getattr(metadata, field, None) is not None
+    ))
+    return rows
+
 def metric_components(row: dict[str, Any]) -> dict[str, float | int]:
     prediction=np.asarray(row["prediction"],dtype=np.float64);truth=np.asarray(row["truth"],dtype=np.float64)
     weights=np.asarray(row["weights"],dtype=np.float64);layers=np.asarray(row["layer"],dtype=np.int32)
@@ -121,6 +137,7 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--timing-regression-audit", action="store_true")
     parser.add_argument("--true-concurrent-depth", type=int, choices=[1, 2], default=1)
     parser.add_argument("--concurrent-only", action="store_true")
+    parser.add_argument("--standard-v1-1-smoke", action="store_true")
     return parser.parse_args()
 
 
@@ -132,7 +149,7 @@ def main() -> int:
     if protocol["status"] not in {
         "preregistered_before_execution", "geometry_audit_frozen_before_execution",
         "preregistered_after_geometry_audit_before_accuracy_or_timing",
-        "qualification_passed_timing_matrix_pending",
+        "qualification_passed_timing_matrix_pending", "frozen_before_real_route_conformance_smoke",
     }:
         raise RuntimeError("U2 protocol not frozen")
     direct = args.resolution == 240825
@@ -152,9 +169,12 @@ def main() -> int:
     if len(anchors)!=expected_count: raise RuntimeError("population count drift")
     preflight = json.loads(preflight_path.read_text())
     if preflight["sample_ids"] != [x.sample_id for x in anchors]: raise RuntimeError("population order drift")
-    anchors = anchors[:args.sample_count]
+    population_anchors = list(anchors)
     if args.order_seed is not None:
-        order=np.random.default_rng(args.order_seed).permutation(len(anchors));anchors=[anchors[int(index)] for index in order]
+        order=np.random.default_rng(args.order_seed).permutation(len(population_anchors))[:args.sample_count]
+        anchors=[population_anchors[int(index)] for index in order]
+    else:
+        anchors=population_anchors[:args.sample_count]
     physics_rows = {row["sample_id"]: row for row in preflight["samples"]}
     # Production timing starts from in-memory k/q/BC.  Cache reads are an
     # untimed prerequisite, not part of fresh_single_case or streaming spans.
@@ -168,6 +188,16 @@ def main() -> int:
     full, archive_lookup = highn._full_shared(args)
     coords = np.asarray(full["coords"], dtype=np.float64); cv = np.asarray(full["cv"], dtype=np.float64)
     layer = np.asarray(full["layer"], dtype=np.int32)
+    train_dataset = highn.Heat3DV6DualRobinDataset(
+        args.dataset_root, args.manifest, include_roles={"train"})
+    warmup_id = min(
+        train_dataset.split_ids["train"],
+        key=lambda value: hashlib.sha256(value.encode()).hexdigest(),
+    )
+    warmup_anchor = train_dataset[train_dataset.sample_index_by_id()[warmup_id]]
+    _, warmup_k, warmup_q, _ = highn._physics_fields(
+        warmup_anchor, {"coords": coords, "cv": cv, "layer": layer})
+    physics_memory[warmup_id] = (warmup_k, warmup_q)
     boundaries = highn._boundaries(anchors[0], float(np.min(coords[:,2])))
     geometry = prepare_nested_query_geometry_cache(
         full_coords=coords, full_control_volume=cv, full_layer_id=layer, layer_boundaries_m=boundaries)
@@ -261,9 +291,14 @@ def main() -> int:
 
     service_started=time.perf_counter(); completion_offsets=[]
     packing_prediction_audit_done = False
-    def prepare_one(anchor: Any, *, retain_device: bool = False) -> dict[str, Any]:
-        nonlocal packing_prediction_audit_done
+    exactness_audit_done = False
+    def prepare_one(
+        anchor: Any, *, retain_device: bool = False, qualification_audit: bool = True,
+    ) -> dict[str, Any]:
+        nonlocal packing_prediction_audit_done, exactness_audit_done
         submit_offset=time.perf_counter()-service_started
+        total_start = time.perf_counter()
+        phase=time.perf_counter()
         full_k, full_q = physics_memory[anchor.sample_id]
         anchor_indices, _ = highn._anchor_indices(
             anchor, coords, float(binding["numeric_tolerances"]["anchor_to_solver_coordinate_max_distance_m"]))
@@ -272,13 +307,16 @@ def main() -> int:
                           "k_xyz": np.asarray(anchor.condition.condition_features[:,:3], dtype=np.float64),
                           "q_W_m3": np.asarray(anchor.condition.condition_features[:,3], dtype=np.float64),
                           "layer_id": layer[anchor_indices]}
+        input_lookup_anchor_support_s=time.perf_counter()-phase
         gc_before = gc.get_count()
-        total_start = time.perf_counter(); phase = time.perf_counter()
+        phase = time.perf_counter()
         selected, selected_cv = support(anchor, full_q); support_s = time.perf_counter()-phase
+        phase=time.perf_counter()
         query_support = {"selected_indices": selected, "operator_control_volume": selected_cv,
                          "k_xyz": full_k[selected], "q_W_m3": full_q[selected], "layer_id": layer[selected]}
         query_example = highn._query_example(anchor, query_support, coords)
         builder = Heat3DGraphBuilder(**graph_config)
+        query_support_example_builder_s=time.perf_counter()-phase
         with jax.default_device(cpu):
             anchor_coords = highn.runner._graph_coords_for_example(anchor, runtime["stats"])
             phase=time.perf_counter(); native=builder.build_metadata(anchor_coords,key=graph_key)
@@ -306,7 +344,6 @@ def main() -> int:
                 example=query_example,anchor=anchor,runtime=runtime,builder=builder,metadata=asymmetric,
                 edge_targets=p5r._compatible_targets(asymmetric_targets,asymmetric));
             output_group=host_tree(output_group_lean); query_pack_s=time.perf_counter()-phase
-            detail_started=time.perf_counter()
             phase=time.perf_counter(); graphs_raw=output_group["graphs"]; graph_extraction_s=time.perf_counter()-phase
             phase=time.perf_counter(); local_raw=u1._dummy_local_p2r(builder,asymmetric); dummy_local_p2r_s=time.perf_counter()-phase
             phase=time.perf_counter(); graphs=host_tree(graphs_raw); local=host_tree(local_raw); host_tree_s=time.perf_counter()-phase
@@ -314,17 +351,17 @@ def main() -> int:
             phase=time.perf_counter(); kwargs=host_tree(u1._model_kwargs(anchor_group,output_group)); kwargs_s=time.perf_counter()-phase
             output_group_keys_used = ["inputs", "graphs", "native_physics.control_volumes", "native_physics.reference_temperature", "native_physics.dirichlet_mask", "native_physics.prescribed_temperature"]
             output_group_keys_removed = ["global_context", "qk_region_features", "scale_context", "scale_region_source_weights", "scale_region_volume_weights"]
-            detail_total_s=time.perf_counter()-detail_started
-            other_s=max(0.0,detail_total_s-(graph_extraction_s+dummy_local_p2r_s+host_tree_s+inputs_s+kwargs_s))
         phase=time.perf_counter(); mapping=None if direct else build_reconstruction_map(
             coords=coords,layer_id=layer,boundaries=boundaries,support_indices=selected,
             empty_domain_fallback="same_layer",prepared_partition=partition,query_workers=-1)[0]
         map_s=time.perf_counter()-phase
+        phase=time.perf_counter()
         if direct:
             map_indices=np.zeros((1,1,1),dtype=np.int32); map_weights=np.ones((1,1,1),dtype=np.float64)
         else:
             map_indices=np.asarray(mapping.neighbor_local_indices,dtype=np.int32)[None,:,:]
             map_weights=np.asarray(mapping.neighbor_weights,dtype=np.float64)[None,:,:]
+        map_array_materialization_s=time.perf_counter()-phase
         phase=time.perf_counter(); device=jax.device_put((inputs_in,inputs_out,graphs,local,kwargs,map_indices,map_weights),gpu)
         enqueue_s=time.perf_counter()-phase; phase=time.perf_counter();block(device);sync_s=time.perf_counter()-phase
         ii,io,g,l,kw,mi,mw=device
@@ -334,20 +371,11 @@ def main() -> int:
         classified_stage_sum = sum((
             support_s, anchor_graph_s, query_graph_s, map_s,
             anchor_pack_s, query_pack_s, enqueue_s, sync_s, forward_s, recon_s,
+            input_lookup_anchor_support_s, query_support_example_builder_s,
+            graph_extraction_s, dummy_local_p2r_s, host_tree_s, inputs_s, kwargs_s,
+            map_array_materialization_s,
         ))
-        # The original exclusive list omitted Python assembly between timed
-        # phases (support dictionaries/examples, compatible targets, map-array
-        # materialization) and, under Q2, runnable-thread scheduling gaps.  Do
-        # not relax the residual gate: classify that real service time, then
-        # apply the unchanged gate to the genuinely unaccounted remainder.
-        host_assembly_and_scheduler_s = production_elapsed - classified_stage_sum
-        if host_assembly_and_scheduler_s < -1.0e-6:
-            raise RuntimeError(
-                f"{anchor.sample_id}: negative host assembly timing "
-                f"{host_assembly_and_scheduler_s}"
-            )
-        host_assembly_and_scheduler_s = max(0.0, host_assembly_and_scheduler_s)
-        exclusive_stage_sum = classified_stage_sum + host_assembly_and_scheduler_s
+        exclusive_stage_sum = classified_stage_sum
         timing_residual = production_elapsed - exclusive_stage_sum
         timing_residual_limit = max(0.025, production_elapsed * 0.05)
         if args.timing_regression_audit and (
@@ -364,7 +392,11 @@ def main() -> int:
         # group is needed once for the deterministic prediction audit; all other
         # samples use an exact structural payload gate that does not instantiate
         # duplicate 240825-node arrays.
-        prediction_audit_executed = (not args.timing_only) and (not packing_prediction_audit_done)
+        prediction_audit_executed = (
+            (not packing_prediction_audit_done)
+            and qualification_audit
+            and ((not args.timing_only) or args.standard_v1_1_smoke)
+        )
         if prediction_audit_executed:
             with jax.default_device(cpu):
                 output_group_full=highn._prepare_group(
@@ -377,10 +409,10 @@ def main() -> int:
                 reference_kwargs=host_tree(u1._model_kwargs(anchor_group,reference_output_group))
         else:
             reference_inputs, reference_graphs, reference_local, reference_kwargs = inputs_out, graphs, local, kwargs
-        host_payload_exact = bool(
-            tree_sha((inputs_out, graphs, local, kwargs))
-            == tree_sha((reference_inputs, reference_graphs, reference_local, reference_kwargs))
-        )
+        candidate_payload_sha256 = tree_sha((inputs_out, graphs, local, kwargs))
+        reference_payload_sha256 = tree_sha(
+            (reference_inputs, reference_graphs, reference_local, reference_kwargs))
+        host_payload_exact = bool(candidate_payload_sha256 == reference_payload_sha256)
         if not host_payload_exact:
             raise RuntimeError(f"{anchor.sample_id}: minimal packing payload drift")
         # A same-launch deterministic CPU prediction comparison qualifies the
@@ -398,6 +430,36 @@ def main() -> int:
             packing_prediction_max_abs=float(np.max(np.abs(minimal_np.astype(np.float64)-reference_np.astype(np.float64))))
             if not packing_prediction_exact:raise RuntimeError(f"{anchor.sample_id}: minimal packing prediction drift")
             packing_prediction_audit_done = True
+        exactness_audit_executed = (
+            args.standard_v1_1_smoke and qualification_audit and not exactness_audit_done)
+        graph_candidate_hashes = graph_reference_hashes = None
+        if exactness_audit_executed:
+            with jax.default_device(cpu):
+                native_reference = builder.build_metadata(anchor_coords, key=graph_key)
+                block(native_reference)
+                query_coords_reference = highn.runner._graph_coords_for_example(
+                    query_example, runtime["stats"])
+                if args.asymmetric_mode == "u_v2":
+                    asymmetric_reference, _ = u1.prior_u1._u_v2_asymmetric_metadata(
+                        builder, native_reference, anchor_coords, query_coords_reference,
+                        numerical_tolerance=float(protocol["u_v2"]["normalized_numerical_tolerance"]),
+                        maximum_normalized_overshoot=float(protocol["u_v2"]["maximum_normalized_overshoot"]),
+                    )
+                else:
+                    asymmetric_reference, _ = u1.prior_u1._strict_asymmetric_metadata(
+                        builder, native_reference, anchor_coords, query_coords_reference)
+                block(asymmetric_reference)
+            graph_candidate_hashes = {
+                "native1024": metadata_hashes(native),
+                "query": metadata_hashes(asymmetric),
+            }
+            graph_reference_hashes = {
+                "native1024": metadata_hashes(native_reference),
+                "query": metadata_hashes(asymmetric_reference),
+            }
+            if graph_candidate_hashes != graph_reference_hashes:
+                raise RuntimeError(f"{anchor.sample_id}: graph metadata/edge replay drift")
+            exactness_audit_done = True
         support_np=np.asarray(values,dtype=np.float32)[0];full_np=np.asarray(full_value,dtype=np.float32)[0]
         support_row = full_row = None
         if not args.timing_only:
@@ -410,16 +472,17 @@ def main() -> int:
                 "selected_cv":selected_cv,"full_q":full_q,"support_prediction":support_np,"full_prediction":full_np,
                 "support_metric_row":support_row,"full_metric_row":full_row,
                 "full_field_metrics":None if full_row is None else qualification.metric_accumulate([full_row],full=True),"full_field_metric_components":None if full_row is None else metric_components(full_row),
-                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","host_payload_bitwise_exact":host_payload_exact,"equivalence_backend":"deterministic_cpu","prediction_audit_executed":prediction_audit_executed,"prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs},
+                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","host_payload_bitwise_exact":host_payload_exact,"candidate_payload_sha256":candidate_payload_sha256,"reference_payload_sha256":reference_payload_sha256,"equivalence_backend":"deterministic_cpu","prediction_audit_executed":prediction_audit_executed,"prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs,"graph_exactness_audit_executed":exactness_audit_executed,"graph_candidate_hashes":graph_candidate_hashes,"graph_reference_hashes":graph_reference_hashes},
                 "streaming":{"submit_offset_seconds":submit_offset,"completion_offset_seconds":completion_offset,"submit_to_result_seconds":completion_offset-submit_offset,"inter_completion_seconds":completion_offset-previous},
                 "prepared_payload_sha256":tree_sha((inputs_in,inputs_out,graphs,local,kwargs,map_indices,map_weights)),
                 "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
                           "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
                           "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
                           "reconstruction_apply":recon_s,"dummy_local_p2r":dummy_local_p2r_s,
-                          "host_assembly_and_scheduler":host_assembly_and_scheduler_s,
                           "graph_extraction":graph_extraction_s,"host_tree":host_tree_s,"inputs":inputs_s,
-                "kwargs":kwargs_s,"profiled_other":other_s,
+                "kwargs":kwargs_s,"input_lookup_and_anchor_support":input_lookup_anchor_support_s,
+                          "query_support_example_builder":query_support_example_builder_s,
+                          "map_array_materialization":map_array_materialization_s,
                           "exclusive_stage_sum":exclusive_stage_sum,
                           "e2e_minus_exclusive_stages":timing_residual,
                           "matched_continuous_e2e":production_elapsed},
@@ -449,7 +512,7 @@ def main() -> int:
                          "r2r_edges":int(np.asarray(asymmetric.r2r_edge_indices).shape[1]),
                          "r2p_edges":int(np.asarray(asymmetric.r2p_edge_indices).shape[1])}}
 
-    warm=prepare_one(anchors[0],retain_device=True); ii,io,g,l,kw,mi,mw=warm["device"]
+    warm=prepare_one(warmup_anchor,retain_device=True,qualification_audit=False); ii,io,g,l,kw,mi,mw=warm["device"]
     value=split_forward(params,ii,io,g,l,kw);block(reconstruct(value,mi,mw))
     # Qualification and JIT compile are outside persistent service timing.
     service_started=time.perf_counter();completion_offsets.clear()
@@ -473,7 +536,9 @@ def main() -> int:
         with ThreadPoolExecutor(max_workers=2, thread_name_prefix="u-v2-q2") as pool:
             while next_index < min(2, len(anchors)):
                 submitted = time.perf_counter()
-                future = pool.submit(prepare_one, anchors[next_index], retain_device=False)
+                future = pool.submit(
+                    prepare_one, anchors[next_index], retain_device=False,
+                    qualification_audit=False)
                 submission[future] = (next_index, submitted)
                 next_index += 1
             while submission:
@@ -492,7 +557,9 @@ def main() -> int:
                     })
                     if next_index < len(anchors):
                         new_submitted = time.perf_counter()
-                        new_future = pool.submit(prepare_one, anchors[next_index], retain_device=False)
+                        new_future = pool.submit(
+                            prepare_one, anchors[next_index], retain_device=False,
+                            qualification_audit=False)
                         submission[new_future] = (next_index, new_submitted)
                         next_index += 1
         completion_rows.sort(key=lambda row: row["completion_offset_seconds"])
@@ -587,7 +654,11 @@ def main() -> int:
         "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},
         "timing_regression_audit":args.timing_regression_audit,
-        "concurrent_only":args.concurrent_only,
+        "concurrent_only":args.concurrent_only,"process_id":os.getpid(),
+        "ordered_sample_ids":[anchor.sample_id for anchor in anchors],
+        "warmup":{"kind":"train_input_static_padded_envelope","source_sample_id":warmup_id,
+                  "source_split":"train","target_read":False,"source_is_timed":False,
+                  "timed_graph_or_packing_prebuilt":False},
         "post_result_gc_collect_outside_production_span":(
             None if not post_result_cleanup else dist(post_result_cleanup)
         ),

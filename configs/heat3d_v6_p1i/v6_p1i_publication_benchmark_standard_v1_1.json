@@ -84,6 +84,12 @@
     "prewritten_boolean_without_hash_evidence_forbidden": true,
     "checkpoint_unchanged": true
   },
+  "u_v2": {
+    "normalization": "native1024_anchor_bbox_affine_unclamped",
+    "normalized_numerical_tolerance": 0.000001,
+    "maximum_normalized_overshoot": 0.25,
+    "repair": "frozen_R2P_nearest_rnode_repair_after_unchanged_radius_predicate"
+  },
   "report_fields": [
     "cold_service_first_case", "fresh_distinct_median_p95", "repeat_case_cache_hot",
     "resident_core", "true_B16_to_B32_marginal", "Q1", "Q2_submit_to_result",

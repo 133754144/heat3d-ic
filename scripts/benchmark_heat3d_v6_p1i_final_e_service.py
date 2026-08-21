@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import gc
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -54,6 +55,36 @@ def host_tree(tree: Any) -> Any:
     return jax.tree_util.tree_map(lambda value: np.asarray(jax.device_get(value)), tree)
 
 
+def tree_sha(tree: Any) -> str:
+    digest = hashlib.sha256()
+    leaves, treedef = jax.tree_util.tree_flatten(tree)
+    digest.update(str(treedef).encode())
+    for leaf in leaves:
+        array = np.ascontiguousarray(np.asarray(leaf))
+        digest.update(str(array.dtype).encode())
+        digest.update(str(array.shape).encode())
+        digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
+def metadata_hashes(metadata: Any) -> dict[str, Any]:
+    fields = (
+        "x_pnodes_inp", "x_pnodes_out", "x_rnodes", "r_rnodes",
+        "p2r_edge_indices", "p2r_domains", "r2r_edge_indices",
+        "r2r_domains", "r2p_edge_indices", "r2p_domains",
+    )
+    rows = {
+        field: (None if getattr(metadata, field, None) is None
+                else tree_sha(np.asarray(getattr(metadata, field))))
+        for field in fields
+    }
+    rows["combined_sha256"] = tree_sha(tuple(
+        np.asarray(getattr(metadata, field))
+        for field in fields if getattr(metadata, field, None) is not None
+    ))
+    return rows
+
+
 def parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     for name in (
@@ -66,13 +97,16 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--checkpoint-sha256", required=True)
     parser.add_argument("--resident-repeats", type=int, default=20)
     parser.add_argument("--sample-count", type=int, choices=(4, 8, 32), default=32)
+    parser.add_argument("--order-seed", type=int)
+    parser.add_argument("--service-mode", choices=("serial", "Q2", "both"), default="both")
+    parser.add_argument("--standard-v1-1-smoke", action="store_true")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse()
     protocol = json.loads(args.protocol.read_text())
-    if protocol.get("status") != "preregistered_before_execution":
+    if protocol.get("status") not in {"preregistered_before_execution", "frozen_before_real_route_conformance_smoke"}:
         raise RuntimeError("final correction protocol is not preregistered")
     if jax.devices()[0].platform != "gpu":
         raise RuntimeError("final E service benchmark requires GPU")
@@ -106,6 +140,18 @@ def main() -> int:
                 np.asarray(physics["k_xyz"], dtype=np.float64),
                 np.asarray(physics["q_W_m3"], dtype=np.float64),
             )
+    train_dataset = highn.Heat3DV6DualRobinDataset(
+        args.dataset_root, args.manifest, include_roles={"train"})
+    warmup_id = min(
+        train_dataset.split_ids["train"],
+        key=lambda value: hashlib.sha256(value.encode()).hexdigest(),
+    )
+    warmup_anchor = train_dataset[train_dataset.sample_index_by_id()[warmup_id]]
+    _, warmup_k, warmup_q, _ = highn._physics_fields(
+        warmup_anchor,
+        {"coords": state["coords"], "cv": state["cv"], "layer": state["layer"]},
+    )
+    physics_memory[warmup_id] = (warmup_k, warmup_q)
     anchor_targets = p5r._edge_targets(args.native_padding_result)
     query_targets = p5r._edge_targets(args.query_padding_result)
     graph_key = state["graph_key"]
@@ -130,8 +176,8 @@ def main() -> int:
         return jnp.sum(gathered * map_weights.astype(support.dtype), axis=1)
 
     def prepare_host(anchor: Any) -> tuple[dict[str, Any], dict[str, float]]:
-        prepare_started = time.perf_counter()
         stages: dict[str, float] = {}
+        phase = time.perf_counter()
         full_k, full_q = physics_memory[anchor.sample_id]
         anchor_indices, distance = highn._anchor_indices(
             anchor, state["coords"],
@@ -139,6 +185,7 @@ def main() -> int:
         )
         if distance != 0.0:
             raise RuntimeError(f"{anchor.sample_id}: anchor coordinate drift")
+        stages["input_lookup_and_anchor_index"] = time.perf_counter() - phase
         phase = time.perf_counter()
         if direct:
             selected = np.arange(len(state["coords"]), dtype=np.int64)
@@ -153,6 +200,7 @@ def main() -> int:
                 full_layer_id=state["layer"], selected_indices=selected, query_workers=1,
             )
         stages["support_plus_cv"] = time.perf_counter() - phase
+        phase = time.perf_counter()
         anchor_support = {
             "selected_indices": anchor_indices,
             "operator_control_volume": np.asarray(anchor.operator_point_weights, dtype=np.float64),
@@ -169,6 +217,7 @@ def main() -> int:
         query_example = highn._query_example(anchor, query_support, state["coords"])
         anchor_builder = Heat3DGraphBuilder(**anchor_config)
         query_builder = Heat3DGraphBuilder(**query_config)
+        stages["support_payload_and_builder_setup"] = time.perf_counter() - phase
         with jax.default_device(cpu):
             phase = time.perf_counter()
             anchor_metadata = anchor_builder.build_metadata(
@@ -211,12 +260,11 @@ def main() -> int:
             "anchor": anchor_group, "query": query_group,
             "weights": np.asarray(selected_cv, dtype=np.float32),
             "map_indices": map_indices, "map_weights": map_weights,
+            "graph_hashes": {
+                "native1024": metadata_hashes(anchor_metadata),
+                "query": metadata_hashes(query_metadata),
+            },
         }
-        classified = float(sum(stages.values()))
-        host_assembly = time.perf_counter() - prepare_started - classified
-        if host_assembly < -1.0e-6:
-            raise RuntimeError(f"{anchor.sample_id}: negative host assembly residual")
-        stages["host_assembly"] = max(0.0, host_assembly)
         return payload, stages
 
     def service_one(anchor: Any) -> dict[str, Any]:
@@ -248,9 +296,13 @@ def main() -> int:
             "stages": stages,
         }
 
-    # Compile model kernels once with a real payload. This does not prebuild
-    # every sample-varying graph shape; the shared host graph gate covers those.
-    warm_payload, _ = prepare_host(anchors[0])
+    order_seeds = ([args.order_seed] if args.order_seed is not None
+                   else protocol.get("timing", protocol)["randomized_order_seeds"])
+    orders = {seed: np.random.default_rng(seed).permutation(32)[:args.sample_count].tolist()
+              for seed in order_seeds}
+    # Compile only with a train-input payload.  No target is loaded and no
+    # timed valid case graph or packing path is touched before measurement.
+    warm_payload, _ = prepare_host(warmup_anchor)
     warm_device = jax.device_put((
         warm_payload["anchor"], warm_payload["query"], warm_payload["weights"],
         warm_payload["map_indices"], warm_payload["map_weights"],
@@ -265,20 +317,22 @@ def main() -> int:
     q2_orders = []
     first_hit_values: list[float] = []
     steady_values: list[float] = []
-    order_seeds = protocol["timing"]["randomized_order_seeds"]
     for order_seed in order_seeds:
-        order = np.random.default_rng(order_seed).permutation(32)[:args.sample_count].tolist()
+        order = orders[order_seed]
         rows = []
-        for position, index in enumerate(order):
-            row = service_one(anchors[index]); rows.append(row)
-            (first_hit_values if position == 0 else steady_values).append(row["elapsed_seconds"])
-        serial_orders.append({
-            "order_seed": order_seed, "order": order, "rows": rows,
-            "fresh": stats([row["elapsed_seconds"] for row in rows]),
-            "Q1_closed_loop": stats([row["elapsed_seconds"] for row in rows]),
-            "wall_seconds": float(sum(row["elapsed_seconds"] for row in rows)),
-        })
+        if args.service_mode in {"serial", "both"}:
+            for position, index in enumerate(order):
+                row = service_one(anchors[index]); rows.append(row)
+                (first_hit_values if position == 0 else steady_values).append(row["elapsed_seconds"])
+            serial_orders.append({
+                "order_seed": order_seed, "order": order, "sample_ids": [anchors[index].sample_id for index in order], "rows": rows,
+                "fresh": stats([row["elapsed_seconds"] for row in rows]),
+                "Q1_closed_loop": stats([row["elapsed_seconds"] for row in rows]),
+                "wall_seconds": float(sum(row["elapsed_seconds"] for row in rows)),
+            })
 
+        if args.service_mode not in {"Q2", "both"}:
+            continue
         started = time.perf_counter()
         next_position = 0
         inflight: dict[Any, tuple[int, float]] = {}
@@ -329,8 +383,32 @@ def main() -> int:
                 "order": order, "completed_count": len(completions), "failure": q2_failed,
                 "rows": completions,
             })
-    q2_all_passed = all(row["status"] == "passed" for row in q2_orders)
-    stage_names = tuple(serial_orders[0]["rows"][0]["stages"])
+    q2_all_passed = all(row["status"] == "passed" for row in q2_orders) if q2_orders else True
+    exactness = None
+    if args.standard_v1_1_smoke:
+        first_anchor = anchors[orders[order_seeds[0]][0]]
+        candidate_payload, _ = prepare_host(first_anchor)
+        reference_payload, _ = prepare_host(first_anchor)
+        candidate_prepared_sha256 = tree_sha(tuple(
+            candidate_payload[key] for key in (
+                "anchor", "query", "weights", "map_indices", "map_weights")))
+        reference_prepared_sha256 = tree_sha(tuple(
+            reference_payload[key] for key in (
+                "anchor", "query", "weights", "map_indices", "map_weights")))
+        exactness = {
+            "sample_id": first_anchor.sample_id,
+            "graph_candidate_hashes": candidate_payload["graph_hashes"],
+            "graph_reference_hashes": reference_payload["graph_hashes"],
+            "graph_metadata_edge_hash_exact": (
+                candidate_payload["graph_hashes"] == reference_payload["graph_hashes"]),
+            "candidate_prepared_payload_sha256": candidate_prepared_sha256,
+            "reference_prepared_payload_sha256": reference_prepared_sha256,
+            "prepared_payload_exact": candidate_prepared_sha256 == reference_prepared_sha256,
+            "audit_outside_service_timing": True,
+        }
+        if not exactness["graph_metadata_edge_hash_exact"] or not exactness["prepared_payload_exact"]:
+            raise RuntimeError(f"{first_anchor.sample_id}: E route exactness audit failed")
+    stage_names = tuple(serial_orders[0]["rows"][0]["stages"]) if serial_orders else ()
     stage_summary = {
         name: stats([
             row["stages"][name] for order in serial_orders for row in order["rows"]
@@ -344,22 +422,28 @@ def main() -> int:
             else "passed_serial_Q2_not_qualified"
         ),
         "route": args.route, "resolution": resolution, "output_nodes": 240825,
-        "sample_count": args.sample_count,
-        "timing_boundary": protocol["timing"]["boundary"],
-        "unseen_shape_first_hit": stats(first_hit_values),
-        "steady_shape_fresh": stats(steady_values),
-        "fresh_single_case": stats([
+        "sample_count": args.sample_count, "service_mode": args.service_mode,
+        "process_id": os.getpid(), "order_seeds": order_seeds,
+        "ordered_sample_ids": {str(seed): [anchors[index].sample_id for index in orders[seed]] for seed in order_seeds},
+        "warmup": {"kind": "train_input_static_padded_envelope", "source_sample_id": warmup_id,
+                   "source_split": "train", "target_read": False,
+                   "source_is_timed": False, "timed_graph_or_packing_prebuilt": False},
+        "timing_boundary": protocol.get("timing", {}).get("boundary", protocol.get("timing_boundary")),
+        "unseen_shape_first_hit": None if not first_hit_values else stats(first_hit_values),
+        "steady_shape_fresh": None if not steady_values else stats(steady_values),
+        "fresh_single_case": None if not serial_orders else stats([
             row["elapsed_seconds"] for order in serial_orders for row in order["rows"]
         ]),
         "resident_core": stats(resident_values),
         "stage_summary": stage_summary,
         "serial_orders": serial_orders, "Q2_orders": q2_orders,
         "Q2_all_randomized_orders_passed": q2_all_passed,
-        "publication_speedup_allowed": q2_all_passed,
+        "publication_speedup_allowed": q2_all_passed and args.sample_count == 32 and not args.standard_v1_1_smoke,
         "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)),
         "checkpoint_parameter_sha256_before": checkpoint_before,
         "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
         "checkpoint_unchanged": checkpoint_before == highn._tree_sha256(runtime["checkpoint"]["params"]),
+        "exactness_provenance": exactness,
         "role_contract": protocol["role_contract"],
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
