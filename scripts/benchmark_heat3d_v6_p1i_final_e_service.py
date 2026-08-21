@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import resource
 import sys
 import time
 from typing import Any
@@ -53,6 +54,11 @@ def block(tree: Any) -> None:
 
 def host_tree(tree: Any) -> Any:
     return jax.tree_util.tree_map(lambda value: np.asarray(jax.device_get(value)), tree)
+
+
+def peak_ram_bytes() -> int:
+    value = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return int(value * 1024 if sys.platform.startswith("linux") else value)
 
 
 def tree_sha(tree: Any) -> str:
@@ -140,13 +146,16 @@ def main() -> int:
                 np.asarray(physics["k_xyz"], dtype=np.float64),
                 np.asarray(physics["q_W_m3"], dtype=np.float64),
             )
-    train_dataset = highn.Heat3DV6DualRobinDataset(
-        args.dataset_root, args.manifest, include_roles={"train"})
-    warmup_id = min(
-        train_dataset.split_ids["train"],
-        key=lambda value: hashlib.sha256(value.encode()).hexdigest(),
+    train_rows = [
+        row for row in state["dataset"].manifest["samples"]
+        if str(row["split_role"]) == "train"
+    ]
+    warmup_row = min(
+        train_rows,
+        key=lambda row: hashlib.sha256(str(row["sample_id"]).encode()).hexdigest(),
     )
-    warmup_anchor = train_dataset[train_dataset.sample_index_by_id()[warmup_id]]
+    warmup_id = str(warmup_row["sample_id"])
+    warmup_anchor = state["dataset"]._load_sample(warmup_row)
     _, warmup_k, warmup_q, _ = highn._physics_fields(
         warmup_anchor,
         {"coords": state["coords"], "cv": state["cv"], "layer": state["layer"]},
@@ -371,6 +380,8 @@ def main() -> int:
                             "submit_offset_seconds": submitted - started,
                             "completion_offset_seconds": completed - started,
                             "submit_to_result_seconds": completed - submitted,
+                            "service_residual_seconds": row["residual_seconds"],
+                            "service_residual_limit_seconds": row["residual_limit_seconds"],
                         })
                         if next_position < len(order):
                             submitted = time.perf_counter()
@@ -456,10 +467,21 @@ def main() -> int:
         ]),
         "resident_core": stats(resident_values),
         "stage_summary": stage_summary,
+        "timing_pool_classification": {
+            "cold_service_first_case": "first_serial_row" if serial_orders else "not_measured_in_Q2_process",
+            "fresh_distinct_case": "serial_rows" if serial_orders else "Q2_distinct_rows",
+            "repeat_case_cache_hot": "not_measured_in_conformance_smoke",
+            "resident_core": "train_warmup_prepared_device_payload_only",
+            "pools_mixed": False,
+        },
         "serial_orders": serial_orders, "Q2_orders": q2_orders,
         "Q2_all_randomized_orders_passed": q2_all_passed,
         "publication_speedup_allowed": q2_all_passed and args.sample_count == 32 and not args.standard_v1_1_smoke,
         "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)),
+        "aggregate_service_worker_peak_RAM_bytes": peak_ram_bytes(),
+        "cpu_policy": protocol["resources"]["neural"],
+        "thread_env": {key: os.environ.get(key) for key in (
+            "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS")},
         "checkpoint_parameter_sha256_before": checkpoint_before,
         "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
         "checkpoint_unchanged": checkpoint_before == highn._tree_sha256(runtime["checkpoint"]["params"]),

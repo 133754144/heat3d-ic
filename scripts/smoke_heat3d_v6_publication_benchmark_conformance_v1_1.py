@@ -139,14 +139,14 @@ def fvm_worker(args: argparse.Namespace) -> int:
     ordered_rows = [rows[index] for index in order]
     payloads = []
     for row in ordered_rows:
-        example, _ = data.load_example(row)
+        meta = json.loads((data.sample_dir(row) / "sample_meta.json").read_text())
         k, source = data.full_kq(row)
         payloads.append({
             "sample_id": str(row["sample_id"]),
             "k_xyz": np.asarray(k, dtype=np.float64),
             "q_W_m3": np.asarray(source, dtype=np.float64),
-            "top_h": float(example.condition.condition_features[0, 8]),
-            "bottom_h": float(example.condition.condition_features[0, 9]),
+            "top_h": float(meta["top_h_W_m2K"]),
+            "bottom_h": float(meta["bottom_h_W_m2K"]),
         })
     process_count = 1 if args.service_mode == "serial" else 2
     serialized = {

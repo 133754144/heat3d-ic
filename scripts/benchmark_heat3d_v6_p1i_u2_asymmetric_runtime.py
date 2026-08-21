@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import resource
 import sys
 import time
 from typing import Any
@@ -76,6 +77,10 @@ def block(tree: Any) -> None:
 
 def host_tree(tree: Any) -> Any:
     return jax.tree_util.tree_map(lambda x: np.asarray(jax.device_get(x)), tree)
+
+def peak_ram_bytes() -> int:
+    value = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return int(value * 1024 if sys.platform.startswith("linux") else value)
 
 
 def stack(trees: list[Any]) -> Any:
@@ -188,13 +193,16 @@ def main() -> int:
     full, archive_lookup = highn._full_shared(args)
     coords = np.asarray(full["coords"], dtype=np.float64); cv = np.asarray(full["cv"], dtype=np.float64)
     layer = np.asarray(full["layer"], dtype=np.int32)
-    train_dataset = highn.Heat3DV6DualRobinDataset(
-        args.dataset_root, args.manifest, include_roles={"train"})
-    warmup_id = min(
-        train_dataset.split_ids["train"],
-        key=lambda value: hashlib.sha256(value.encode()).hexdigest(),
+    train_rows = [
+        row for row in dataset.manifest["samples"]
+        if str(row["split_role"]) == "train"
+    ]
+    warmup_row = min(
+        train_rows,
+        key=lambda row: hashlib.sha256(str(row["sample_id"]).encode()).hexdigest(),
     )
-    warmup_anchor = train_dataset[train_dataset.sample_index_by_id()[warmup_id]]
+    warmup_id = str(warmup_row["sample_id"])
+    warmup_anchor = dataset._load_sample(warmup_row)
     _, warmup_k, warmup_q, _ = highn._physics_fields(
         warmup_anchor, {"coords": coords, "cv": cv, "layer": layer})
     physics_memory[warmup_id] = (warmup_k, warmup_q)
@@ -220,7 +228,8 @@ def main() -> int:
             sample_id=anchor.sample_id, anchor_indices=anchor_indices, full_q=full_q,
             target_count=args.resolution, geometry_cache=geometry)
         selected_cv, _ = conservative_selected_control_volume(
-            full_coords=coords, full_control_volume=cv, full_layer_id=layer, selected_indices=selected)
+            full_coords=coords, full_control_volume=cv, full_layer_id=layer,
+            selected_indices=selected, query_workers=1)
         return selected, selected_cv
 
     # Shape envelope is qualification-only and outside all timed spans.  A
@@ -353,7 +362,7 @@ def main() -> int:
             output_group_keys_removed = ["global_context", "qk_region_features", "scale_context", "scale_region_source_weights", "scale_region_volume_weights"]
         phase=time.perf_counter(); mapping=None if direct else build_reconstruction_map(
             coords=coords,layer_id=layer,boundaries=boundaries,support_indices=selected,
-            empty_domain_fallback="same_layer",prepared_partition=partition,query_workers=-1)[0]
+            empty_domain_fallback="same_layer",prepared_partition=partition,query_workers=1)[0]
         map_s=time.perf_counter()-phase
         phase=time.perf_counter()
         if direct:
@@ -643,6 +652,7 @@ def main() -> int:
         "checkpoint_parameters_unchanged":checkpoint_parameter_sha256_before==highn._tree_sha256(runtime["checkpoint"]["params"]),
         "accuracy":None if args.timing_only else {"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
         "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
+        "timing_pool_classification":{"cold_service_first_case":"first_serial_row" if not args.concurrent_only else "not_measured_in_Q2_process","fresh_distinct_case":"serial_rows" if not args.concurrent_only else "Q2_distinct_rows","repeat_case_cache_hot":"not_measured_in_conformance_smoke","resident_core":"train_warmup_prepared_device_payload_only","pools_mixed":False},
         "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
         "saturated_streaming":dict(
             fixed_depth_queue_trace([float(r["stages"]["matched_continuous_e2e"]) for r in prepared],depth=2),
@@ -651,7 +661,9 @@ def main() -> int:
         "true_concurrent_streaming":true_concurrent,
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":all(r["packing_audit"]["host_payload_bitwise_exact"] for r in prepared),"prediction_audit_count":sum(int(r["packing_audit"]["prediction_audit_executed"]) for r in prepared),"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
-        "memory":candidate.publication._device_memory(),"samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
+        "memory":candidate.publication._device_memory(),"aggregate_service_worker_peak_RAM_bytes":peak_ram_bytes(),
+        "cpu_policy":protocol["resources"]["neural"],"thread_env":{key:os.environ.get(key) for key in ("OMP_NUM_THREADS","OPENBLAS_NUM_THREADS","MKL_NUM_THREADS","NUMEXPR_NUM_THREADS")},
+        "samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},
         "timing_regression_audit":args.timing_regression_audit,
         "concurrent_only":args.concurrent_only,"process_id":os.getpid(),
