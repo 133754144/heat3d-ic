@@ -1,0 +1,66 @@
+{
+  "schema_version": "heat3d_v6_publication_authoritative_valid32_attempt3_closeout_v1",
+  "status": "failed_fail_closed_q2_lifecycle_hard_gate",
+  "execution_commit": "f1b55a07df39634fff23dd48002770d094b10fa2",
+  "schema_gate": {
+    "benchmark_lifecycle_schema": "GO",
+    "fixture_count": 10,
+    "collector_full_30_cell_fixture_matrix_parsed": true,
+    "gpu_smoke_executed": false,
+    "artifact_path": "configs/heat3d_v6_p1i/v6_p1i_publication_lifecycle_schema_regression.json"
+  },
+  "seal": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_seal_lifecycle_schema.json",
+    "sha256": "483df09eec2e39f1f4539a4cebc57950d12de728f937d88aefd31c14ddbd6bf3",
+    "pre_measurement_seal": "GO",
+    "ready_for_authoritative_valid32": "GO"
+  },
+  "authoritative_attempt3": {
+    "formal_measurement_attempted": true,
+    "formal_matrix_completed": false,
+    "publication_results_generated": false,
+    "planned_cells": 30,
+    "completed_cells": 15,
+    "attempted_processes": 16,
+    "failed_cell": {
+      "route": "E16384_reconstruction",
+      "seed": 20260815,
+      "service_mode": "Q2",
+      "returncode": 1,
+      "wall_seconds": 19.810187770985067,
+      "exception": "RuntimeError: Q2 lifecycle did not produce one passed order",
+      "inner_Q2_failure_persisted": false,
+      "cuda_timer_warning_isolated_as_failure": false
+    },
+    "raw_path": "configs/heat3d_v6_p1i/v6_p1i_publication_authoritative_valid32_failure_f1b55a0_attempt3_raw/authoritative_valid32_raw.json",
+    "raw_sha256": "8ec5a3d1bc1254b8c588c5b0caf5a62ec96f023e89dd4401fd0afb57694ee808",
+    "failure_manifest": "configs/heat3d_v6_p1i/v6_p1i_publication_authoritative_valid32_failure_f1b55a0_attempt3_manifest.json",
+    "failure_manifest_sha256": "a1235f8bd3fa5d519450667f5edc01e23248b72ba2c0f2c368467886b17e431b"
+  },
+  "decision": {
+    "publication_timing_freeze": "NO_GO",
+    "collector_executed": false,
+    "authoritative_checker_eligible": false,
+    "single_cell_rerun": false,
+    "implementation_changed_after_failure": false,
+    "outlier_removed": false,
+    "partial_performance_claim_allowed": false
+  },
+  "failure_interpretation": {
+    "lifecycle_schema_regression": false,
+    "padding_or_graph_requalified": false,
+    "formal_Q2_hard_gate_passed": false,
+    "details": "The schema-only fixture gate passed before launch. Attempt 3 completed 15 formal cells, then the E16384 seed-20260815 Q2 lifecycle failed to produce one passed order. The formal runner stopped before later cells. The inner caught Q2 exception was not serialized because the route failed before writing its cell JSON; the preserved log proves the outer lifecycle hard gate. CUDA timer warnings are present but were not used as an isolated failure condition."
+  },
+  "role_contract": {
+    "training": false,
+    "accuracy_tuning": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "padding_policy_modified": false,
+    "route_semantics_modified": false
+  }
+}
