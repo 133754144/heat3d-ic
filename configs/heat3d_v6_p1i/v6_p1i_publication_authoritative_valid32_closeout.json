@@ -1,0 +1,70 @@
+{
+  "schema_version": "heat3d_v6_publication_authoritative_valid32_closeout_v1",
+  "status": "failed_fail_closed_first_cell",
+  "publication_timing_freeze": "NO_GO",
+  "launch_commit": "69be90898536042c9e406832ff47bcd89c5ad05b",
+  "base_commit": "d5e5e7c059e2321c73a43921839a33fba7b84482",
+  "pre_measurement_seal": {
+    "status": "GO",
+    "ready_for_authoritative_valid32": "GO",
+    "sha256": "6b4dab54789750b81a5b149310d9f093f478f5b4bafa68c13fdedaa97bf9aff8"
+  },
+  "planned_matrix": {
+    "routes": 5,
+    "randomized_seeds": [20260814, 20260815, 20260816],
+    "service_modes": ["serial", "Q2"],
+    "independent_processes": 30,
+    "sample_count": 32
+  },
+  "execution": {
+    "formal_entry_SHA_gate": "passed",
+    "attempted_cells": 1,
+    "completed_cells": 0,
+    "remaining_cells_not_started": 29,
+    "failed_cell": {
+      "route": "E16384_reconstruction",
+      "order_seed": 20260814,
+      "service_mode": "serial",
+      "returncode": 1,
+      "wall_seconds": 32.1815650309436,
+      "hard_gate": "static_padding_envelope_capacity",
+      "field": "p2r_edge_indices",
+      "real_edge_count": 2911,
+      "frozen_target": 2905,
+      "exception": "RuntimeError: p2r_edge_indices: edge count 2911 exceeds target 2905"
+    },
+    "failure_action": "stopped_without_rerun_or_implementation_change",
+    "single_cell_rerun": false,
+    "remaining_matrix_started": false
+  },
+  "collector": {
+    "executed": true,
+    "exit_code": 1,
+    "result": "correctly_rejected_incomplete_failed_matrix",
+    "message": "authoritative raw matrix did not pass hard gates",
+    "publication_table_generated": false,
+    "speedup_generated": false
+  },
+  "checker": {
+    "pre_measurement_checker_exit_code": 0,
+    "pre_measurement_seal_still_valid": true,
+    "authoritative_result_checker_not_eligible": true
+  },
+  "evidence_manifest": "configs/heat3d_v6_p1i/v6_p1i_publication_authoritative_valid32_failure_69be908_manifest.json",
+  "interpretation": {
+    "performance_conclusion_allowed": false,
+    "failed_padding_capacity_is_not_a_latency_or_accuracy_result": true,
+    "publication_speedup_claim_allowed": false,
+    "future_repair_requires_new_protocol_amendment_and_new_measurement": true
+  },
+  "role_contract": {
+    "training": false,
+    "accuracy_tuning": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "route_semantics_modified": false
+  }
+}
