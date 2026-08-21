@@ -27,6 +27,13 @@ import benchmark_heat3d_v6_p1i_p8_throughput_fairness as p8  # noqa: E402
 import run_heat3d_v6_p1i_anchor_high_n_development as highn  # noqa: E402
 import run_heat3d_v6_p1i_graph_scale_candidate as candidate  # noqa: E402
 import run_heat3d_v6_p1i_p5r_resolution_cell as p5r  # noqa: E402
+from heat3d_v6_publication_lifecycle_schema import (  # noqa: E402
+    provenance as lifecycle_provenance,
+    q2_metrics,
+    serial_metrics,
+    timing_stats,
+    validate_cell,
+)
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
 from rigno.heat3d_v6_full_field import build_reconstruction_map  # noqa: E402
 from rigno.heat3d_v6_p1i_anchor_query import (  # noqa: E402
@@ -37,12 +44,7 @@ from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 
 
 def stats(values: list[float]) -> dict[str, float | int]:
-    array = np.asarray(values, dtype=np.float64)
-    return {
-        "count": int(array.size), "median_seconds": float(np.median(array)),
-        "mean_seconds": float(np.mean(array)), "std_seconds": float(np.std(array)),
-        "p95_seconds": float(np.quantile(array, 0.95)),
-    }
+    return timing_stats(values)
 
 
 def block(tree: Any) -> None:
@@ -354,9 +356,10 @@ def main() -> int:
     ), gpu)
     block(warm_device); block(forward(params, *warm_device))
     warmup_resident_values = []
-    for _ in range(args.resident_repeats):
-        phase = time.perf_counter(); prediction = forward(params, *warm_device); block(prediction)
-        warmup_resident_values.append(time.perf_counter() - phase)
+    if not args.publication_v1_1 and args.service_mode in {"serial", "both"}:
+        for _ in range(args.resident_repeats):
+            phase = time.perf_counter(); prediction = forward(params, *warm_device); block(prediction)
+            warmup_resident_values.append(time.perf_counter() - phase)
 
     serial_orders = []
     q2_orders = []
@@ -509,6 +512,25 @@ def main() -> int:
             row["stages"][name] for order in serial_orders for row in order["rows"]
         ]) for name in stage_names
     }
+    lifecycle_metrics = None
+    if args.service_mode == "serial" and args.publication_v1_1:
+        flat_serial_rows = [row for order in serial_orders for row in order["rows"]]
+        lifecycle_metrics = serial_metrics(
+            cold_seconds=float(flat_serial_rows[0]["elapsed_seconds"]),
+            fresh_q1=stats([row["elapsed_seconds"] for row in flat_serial_rows]),
+            cache_hot=stats(cache_hot_values),
+            resident=stats(valid_resident_values),
+        )
+    elif args.service_mode == "Q2" and args.publication_v1_1:
+        if len(q2_orders) != 1 or q2_orders[0].get("status") != "passed":
+            raise RuntimeError("Q2 lifecycle did not produce one passed order")
+        q2_row = q2_orders[0]
+        lifecycle_metrics = q2_metrics(
+            submit_to_result=q2_row["submit_to_result"],
+            inter_completion=q2_row["inter_completion"],
+            throughput_samples_per_second=q2_row["samples_per_second"],
+            b16_to_b32_marginal_seconds=q2_row["true_B16_to_B32_marginal_seconds"],
+        )
     result = {
         "schema_version": "heat3d_v6_p1i_final_e_service_v1",
         "status": (
@@ -532,26 +554,30 @@ def main() -> int:
         "fresh_single_case": None if not serial_orders else stats([
             row["elapsed_seconds"] for order in serial_orders for row in order["rows"]
         ]),
-        "resident_core": stats(
-            valid_resident_values if args.publication_v1_1 else warmup_resident_values),
+        "resident_core": (
+            stats(valid_resident_values)
+            if args.service_mode == "serial" and valid_resident_values else None),
         "repeat_case_cache_hot": (
-            stats(cache_hot_values) if args.publication_v1_1
-            else "not_measured_in_conformance_smoke"),
+            stats(cache_hot_values)
+            if args.service_mode == "serial" and cache_hot_values else None),
+        "lifecycle_metrics": lifecycle_metrics,
         "stage_summary": stage_summary,
         "timing_pool_classification": {
-            "cold_service_first_case": "first_serial_row" if serial_orders else "not_measured_in_Q2_process",
-            "fresh_distinct_case": "serial_rows" if serial_orders else "Q2_distinct_rows",
+            "cold_service_first_case": "first_serial_row" if serial_orders else None,
+            "fresh_distinct_case": "serial_rows" if serial_orders else None,
             "repeat_case_cache_hot": (
                 "separate_post_fresh_declared_case_cache_pool"
-                if args.publication_v1_1 else "not_measured_in_conformance_smoke"),
+                if args.service_mode == "serial" and args.publication_v1_1 else None),
             "resident_core": (
                 "separate_valid_prepared_device_payload_pool"
-                if args.publication_v1_1 else "train_warmup_prepared_device_payload_only"),
+                if args.service_mode == "serial" and args.publication_v1_1 else None),
             "pools_mixed": False,
         },
         "serial_orders": serial_orders, "Q2_orders": q2_orders,
         "Q2_all_randomized_orders_passed": q2_all_passed,
-        "publication_speedup_allowed": q2_all_passed and args.sample_count == 32 and not args.standard_v1_1_smoke,
+        "publication_speedup_allowed": False,
+        "measurement_provenance": lifecycle_provenance(
+            attempted=bool(args.publication_v1_1), matrix_completed=False, generated=False),
         "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)),
         "aggregate_service_worker_peak_RAM_bytes": peak_ram_bytes(),
         "memory_measurement": {
@@ -568,8 +594,10 @@ def main() -> int:
         "exactness_provenance": exactness,
         "role_contract": protocol["role_contract"],
     }
+    if args.publication_v1_1:
+        validate_cell(result, formal=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    args.output.write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n")
     print(json.dumps({
         "status": result["status"], "route": args.route,
         "fresh_median_s": (

@@ -16,6 +16,8 @@ from typing import Any
 
 import numpy as np
 
+from heat3d_v6_publication_lifecycle_schema import validate_cell
+
 ROUTES = (
     "E16384_reconstruction", "U_v2_16384_reconstruction",
     "U_v2_direct240825", "E240825_direct_control", "FVM240825_reference",
@@ -74,8 +76,10 @@ def ordered_ids(row: dict[str, Any]) -> list[str]:
 
 
 def normalize(row: dict[str, Any]) -> dict[str, Any]:
+    validate_cell(row, formal=True)
     route = row["route"]
     mode = row["service_mode"]
+    lifecycle = row["lifecycle_metrics"]
     if route.startswith("E"):
         peak_vram = int(row["peak_vram_bytes"])
     elif route.startswith("U"):
@@ -96,38 +100,19 @@ def normalize(row: dict[str, Any]) -> dict[str, Any]:
         normalized.update(
             ordered_sample_ids=[item["sample_id"] for item in samples],
             paired_workload_samples=samples,
-            cold_service_first_case_seconds=float(samples[0]["fresh_seconds"]),
-            fresh_distinct_case=summary([item["fresh_seconds"] for item in samples]),
-            Q1_closed_loop=summary([item["Q1_seconds"] for item in samples]),
-            repeat_case_cache_hot=_stats_pair(row["repeat_case_cache_hot"]),
-            resident_core=_stats_pair(row["resident_core"]),
-        )
-    elif route.startswith("E"):
-        q2 = row["Q2_orders"][0]
-        normalized.update(
-            ordered_sample_ids=ordered_ids(row),
-            Q2_submit_to_result=_stats_pair(q2["submit_to_result"]),
-            Q2_inter_completion=_stats_pair(q2["inter_completion"]),
-            Q2_samples_per_second=float(q2["samples_per_second"]),
-            true_B16_to_B32_marginal_seconds=float(q2["true_B16_to_B32_marginal_seconds"]),
-        )
-    elif route.startswith("U"):
-        q2 = row["true_concurrent_streaming"]
-        normalized.update(
-            ordered_sample_ids=ordered_ids(row),
-            Q2_submit_to_result=_stats_pair(q2["submit_to_result"]),
-            Q2_inter_completion=_stats_pair(q2["inter_completion"]),
-            Q2_samples_per_second=float(q2["samples_per_second"]),
-            true_B16_to_B32_marginal_seconds=float(q2["actual_B16_to_B32_marginal_seconds"]),
+            cold_service_first_case_seconds=float(lifecycle["cold"]["seconds"]),
+            fresh_distinct_case=_stats_pair(lifecycle["fresh_Q1"]),
+            Q1_closed_loop=_stats_pair(lifecycle["fresh_Q1"]),
+            repeat_case_cache_hot=_stats_pair(lifecycle["cache_hot"]),
+            resident_core=_stats_pair(lifecycle["resident"]),
         )
     else:
-        q2 = row["Q2"]
         normalized.update(
             ordered_sample_ids=ordered_ids(row),
-            Q2_submit_to_result=_stats_pair(q2["submit_to_result"]),
-            Q2_inter_completion=_stats_pair(q2["inter_completion"]),
-            Q2_samples_per_second=float(q2["samples_per_second"]),
-            true_B16_to_B32_marginal_seconds=float(q2["true_B16_to_B32_marginal_seconds"]),
+            Q2_submit_to_result=_stats_pair(lifecycle["submit_to_result"]),
+            Q2_inter_completion=_stats_pair(lifecycle["inter_completion"]),
+            Q2_samples_per_second=float(lifecycle["throughput_samples_per_second"]),
+            true_B16_to_B32_marginal_seconds=float(lifecycle["B16_to_B32_marginal_seconds"]),
         )
     return normalized
 
@@ -170,6 +155,10 @@ def repeat_summary(values: list[float], unit: str) -> dict[str, Any]:
 
 
 def write_csv(path: Path, normalized: list[dict[str, Any]]) -> None:
+    def statistic(row: dict[str, Any], key: str, field: str) -> Any:
+        value = row.get(key)
+        return None if value is None else value.get(field)
+
     fields = [
         "route", "order_seed", "service_mode", "cold_first_s", "fresh_median_s",
         "fresh_p95_s", "cache_hot_median_s", "resident_median_s", "Q1_median_s",
@@ -184,15 +173,15 @@ def write_csv(path: Path, normalized: list[dict[str, Any]]) -> None:
                 "route": row["route"], "order_seed": row["order_seed"],
                 "service_mode": row["service_mode"],
                 "cold_first_s": row.get("cold_service_first_case_seconds"),
-                "fresh_median_s": row.get("fresh_distinct_case", {}).get("median_seconds"),
-                "fresh_p95_s": row.get("fresh_distinct_case", {}).get("p95_seconds"),
-                "cache_hot_median_s": row.get("repeat_case_cache_hot", {}).get("median_seconds"),
-                "resident_median_s": row.get("resident_core", {}).get("median_seconds"),
-                "Q1_median_s": row.get("Q1_closed_loop", {}).get("median_seconds"),
-                "Q1_p95_s": row.get("Q1_closed_loop", {}).get("p95_seconds"),
-                "Q2_submit_median_s": row.get("Q2_submit_to_result", {}).get("median_seconds"),
-                "Q2_submit_p95_s": row.get("Q2_submit_to_result", {}).get("p95_seconds"),
-                "Q2_inter_median_s": row.get("Q2_inter_completion", {}).get("median_seconds"),
+                "fresh_median_s": statistic(row, "fresh_distinct_case", "median_seconds"),
+                "fresh_p95_s": statistic(row, "fresh_distinct_case", "p95_seconds"),
+                "cache_hot_median_s": statistic(row, "repeat_case_cache_hot", "median_seconds"),
+                "resident_median_s": statistic(row, "resident_core", "median_seconds"),
+                "Q1_median_s": statistic(row, "Q1_closed_loop", "median_seconds"),
+                "Q1_p95_s": statistic(row, "Q1_closed_loop", "p95_seconds"),
+                "Q2_submit_median_s": statistic(row, "Q2_submit_to_result", "median_seconds"),
+                "Q2_submit_p95_s": statistic(row, "Q2_submit_to_result", "p95_seconds"),
+                "Q2_inter_median_s": statistic(row, "Q2_inter_completion", "median_seconds"),
                 "Q2_samples_per_second": row.get("Q2_samples_per_second"),
                 "B16_to_B32_marginal_s": row.get("true_B16_to_B32_marginal_seconds"),
                 "peak_VRAM_bytes": row["peak_VRAM_bytes"], "peak_RAM_bytes": row["peak_RAM_bytes"],
@@ -225,6 +214,10 @@ def main() -> int:
     args = parser.parse_args()
     raw = json.loads(args.input.read_text())
     require(raw["status"] == "passed", "authoritative raw matrix did not pass hard gates")
+    require(raw.get("formal_measurement_attempted") is True, "formal measurement was not attempted")
+    require(raw.get("formal_matrix_completed") is True, "formal matrix did not complete")
+    require(raw.get("publication_results_generated") is False,
+            "publication result provenance must remain false before collector")
     rows = raw["rows"]
     require(len(rows) == 30, "formal matrix must contain 30 independent lifecycle rows")
     normalized = [normalize(row) for row in rows]
@@ -274,6 +267,9 @@ def main() -> int:
         "schema_version": "heat3d_v6_publication_benchmark_final_collector_v1_2",
         "status": "collected_authoritative_valid32_without_pooled_96",
         "publication_timing_freeze": "GO",
+        "formal_measurement_attempted": True,
+        "formal_matrix_completed": True,
+        "publication_results_generated": True,
         "route_seed_statistics": normalized,
         "three_lifecycle_repeat_summary": lifecycle,
         "paired_speedups": paired,
@@ -288,7 +284,7 @@ def main() -> int:
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    args.output.write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n")
     if args.output_csv:
         args.output_csv.parent.mkdir(parents=True, exist_ok=True)
         write_csv(args.output_csv, normalized)

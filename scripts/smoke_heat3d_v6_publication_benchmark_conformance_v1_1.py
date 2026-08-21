@@ -23,6 +23,14 @@ from typing import Any
 
 import numpy as np
 
+from heat3d_v6_publication_lifecycle_schema import (
+    provenance as lifecycle_provenance,
+    q2_metrics,
+    serial_metrics,
+    timing_stats,
+    validate_cell,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 ROUTES = (
     "E16384_reconstruction",
@@ -49,12 +57,7 @@ def file_sha256(path: Path) -> str:
 
 
 def stats(values: list[float]) -> dict[str, Any]:
-    array = np.asarray(values, dtype=np.float64)
-    return {
-        "count": int(array.size),
-        "median_seconds": float(np.median(array)),
-        "p95_seconds": float(np.quantile(array, 0.95)),
-    }
+    return timing_stats(values)
 
 
 def _hwm_bytes(pid: int) -> int:
@@ -171,6 +174,8 @@ def fvm_worker(args: argparse.Namespace) -> int:
         "full_fields": str(args.full_fields),
     }
     rows_out: list[dict[str, Any]] = []
+    cache_hot_rows: list[dict[str, Any]] = []
+    resident_rows: list[dict[str, Any]] = []
     q2 = None
     pool = None
     if args.service_mode == "serial":
@@ -186,7 +191,6 @@ def fvm_worker(args: argparse.Namespace) -> int:
             completed = time.perf_counter()
             row["submit_to_result_seconds"] = completed - submitted
             rows_out.append(row)
-        cache_hot_rows = []
         if args.formal_measurement:
             repeated = payloads[0]
             for _ in range(args.cache_hot_repeats):
@@ -194,6 +198,10 @@ def fvm_worker(args: argparse.Namespace) -> int:
                 row = _fvm_case(repeated, True)
                 row["submit_to_result_seconds"] = time.perf_counter() - submitted
                 cache_hot_rows.append(row)
+            # Resident is an independent prepared-system solve-only pool.  It
+            # must not alias or fall back to the cache-hot measurements.
+            for _ in range(args.cache_hot_repeats):
+                resident_rows.append(_fvm_case(repeated, True))
     else:
         process_count = 2
         pool = ProcessPoolExecutor(
@@ -255,9 +263,27 @@ def fvm_worker(args: argparse.Namespace) -> int:
         memory_semantics = "sum_of_parent_and_worker_VmHWM_not_simultaneous_RSS"
         assert pool is not None
         pool.shutdown()
+    lifecycle_metrics = None
+    if args.formal_measurement and args.service_mode == "serial":
+        lifecycle_metrics = serial_metrics(
+            cold_seconds=float(rows_out[0]["submit_to_result_seconds"]),
+            fresh_q1=stats([row["submit_to_result_seconds"] for row in rows_out]),
+            cache_hot=stats([row["submit_to_result_seconds"] for row in cache_hot_rows]),
+            resident=stats([row["stages"]["solve"] for row in resident_rows]),
+        )
+    elif args.formal_measurement and args.service_mode == "Q2":
+        if q2 is None:
+            raise RuntimeError("FVM Q2 lifecycle missing result")
+        lifecycle_metrics = q2_metrics(
+            submit_to_result=q2["submit_to_result"],
+            inter_completion=q2["inter_completion"],
+            throughput_samples_per_second=q2["samples_per_second"],
+            b16_to_b32_marginal_seconds=q2["true_B16_to_B32_marginal_seconds"],
+        )
     result = {
         "schema_version": "heat3d_v6_publication_fvm_service_smoke_v1_1",
-        "status": "passed_smoke", "route": args.route,
+        "status": ("passed" if args.formal_measurement and args.sample_count == 32 else "passed_smoke"),
+        "route": args.route, "sample_count": args.sample_count,
         "service_mode": args.service_mode, "process_id": os.getpid(),
         "worker_pids": worker_pids, "worker_count": process_count,
         "execution_model": (
@@ -269,16 +295,16 @@ def fvm_worker(args: argparse.Namespace) -> int:
         "rows": rows_out, "Q2": q2,
         "warmup": {"kind": "not_applicable_no_JIT", "timed_case_prepass": False},
         "classification": {
-            "cold_service_first_case": "first_row",
-            "fresh_distinct_case": "all_rows",
+            "cold_service_first_case": "first_row" if args.service_mode == "serial" else None,
+            "fresh_distinct_case": "all_rows" if args.service_mode == "serial" else None,
             "repeat_case_cache_hot": (
                 "separate_post_fresh_prepared_system_cache_pool"
                 if args.formal_measurement and args.service_mode == "serial"
-                else "not_measured_in_conformance_smoke"),
+                else None),
             "resident_core": (
                 "prepared_system_solve_only"
                 if args.formal_measurement and args.service_mode == "serial"
-                else "not_measured_in_conformance_smoke"),
+                else None),
         },
         "aggregate_service_worker_peak_RAM_bytes": memory_value,
         "memory_measurement": {
@@ -289,17 +315,22 @@ def fvm_worker(args: argparse.Namespace) -> int:
         "repeat_case_cache_hot": (
             stats([row["submit_to_result_seconds"] for row in cache_hot_rows])
             if args.formal_measurement and args.service_mode == "serial"
-            else "not_measured_in_conformance_smoke"),
+            else None),
         "resident_core": (
-            stats([row["stages"]["solve"] for row in cache_hot_rows])
+            stats([row["stages"]["solve"] for row in resident_rows])
             if args.formal_measurement and args.service_mode == "serial"
-            else "not_measured_in_conformance_smoke"),
+            else None),
+        "lifecycle_metrics": lifecycle_metrics,
+        "measurement_provenance": lifecycle_provenance(
+            attempted=bool(args.formal_measurement), matrix_completed=False, generated=False),
         "thread_env": THREAD_ENV,
         "publication_timing_eligible": False,
         "role_contract": protocol["role_contract"],
     }
+    if args.formal_measurement:
+        validate_cell(result, formal=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    args.output.write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n")
     print(json.dumps({"status": result["status"], "pid": os.getpid()}))
     return 0
 
@@ -417,6 +448,7 @@ def orchestrate(args: argparse.Namespace) -> int:
         seal = json.loads(args.pre_measurement_seal.read_text())
         if (seal["pre_measurement_seal"] != "GO"
                 or seal["ready_for_authoritative_valid32"] != "GO"
+                or seal.get("benchmark_lifecycle_schema") != "GO"
                 or seal["publication_timing_freeze"] != "NO_GO_ready_for_full_valid32"
                 or seal["protocol_sha256"] != file_sha256(
                     ROOT / "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json")):
@@ -459,6 +491,7 @@ def orchestrate(args: argparse.Namespace) -> int:
                 row["order_seed"] = seed
                 row["artifact_path"] = str(output)
                 row["artifact_sha256"] = file_sha256(output)
+                validate_cell(row, formal=bool(args.formal_measurement))
                 rows.append(row)
             if failure:
                 break
@@ -470,7 +503,10 @@ def orchestrate(args: argparse.Namespace) -> int:
         "protocol_sha256": file_sha256(args.protocol),
         "sample_count": args.sample_count, "process_records": process_records,
         "rows": rows, "failure": failure,
-        "publication_numbers_generated": bool(args.formal_measurement),
+        "publication_numbers_generated": False,
+        "formal_measurement_attempted": bool(args.formal_measurement),
+        "formal_matrix_completed": False,
+        "publication_results_generated": False,
         "role_contract": protocol["role_contract"],
     }
     if failure is None:
@@ -510,6 +546,7 @@ def orchestrate(args: argparse.Namespace) -> int:
         exactness = exactness_gate(rows)
         result.update({
             "status": "passed",
+            "formal_matrix_completed": bool(args.formal_measurement),
             "benchmark_protocol_v1_1": "GO",
             "benchmark_implementation_freeze": "GO",
             "publication_timing_freeze": (
@@ -527,7 +564,7 @@ def orchestrate(args: argparse.Namespace) -> int:
             "exactness_provenance": exactness,
         })
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
+    args.output.write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n")
     print(json.dumps({"status": result["status"], "rows": len(rows), "failure": failure}))
     return 0 if result["status"] == "passed" else 1
 

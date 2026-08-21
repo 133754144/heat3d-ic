@@ -1,0 +1,692 @@
+{
+  "FVM_contract": {
+    "B16_to_B32": "persistent_P2_each_one_thread",
+    "Q2": "persistent_P2_each_one_thread",
+    "fresh_Q1": "persistent_in_process_P1_one_thread",
+    "resident": "prepared_system_solve_only",
+    "timing_boundary": "in_memory_k_q_BC_to_synchronized_240825_result"
+  },
+  "FVM_in_process_P1_sanity": {
+    "IPC_used_in_fresh_Q1": false,
+    "artifact_path": "configs/heat3d_v6_p1i/v6_p1i_publication_fvm_p1_sanity.json",
+    "artifact_sha256": "d1091b7472f60d2417cee7d919009c158bfd73a7146c23612f6180f95a2dce73",
+    "case_count": 2,
+    "process_id": 3690330,
+    "status": "passed",
+    "worker_pids": [
+      3690330
+    ]
+  },
+  "analysis_freeze": {
+    "Q2_and_B16_to_B32_uncertainty": "three_lifecycle_median_and_min_max_no_n3_bootstrap_CI",
+    "bootstrap_resamples": 20000,
+    "bootstrap_seed": 20260821,
+    "confidence_interval": "fresh_and_Q1_only_paired_32_sample_workload_bootstrap_within_each_seed",
+    "pooled_96_ratio_forbidden": true,
+    "post_hoc_aggregation_change_forbidden": true,
+    "route_seed_unit": "each_route_x_each_seed_independently",
+    "speedup_pairing": "same_sample_id_then_same_seed_FVM_over_neural_before_three_repeat_summary",
+    "three_seed_aggregation": "median_and_min_max_of_three_lifecycle_point_estimates",
+    "three_seed_bootstrap_forbidden": true,
+    "within_unit_statistics": [
+      "median",
+      "p95"
+    ]
+  },
+  "benchmark_lifecycle_schema": "GO",
+  "complete_workloads": [
+    "cold_service_first_case",
+    "fresh_distinct_case",
+    "repeat_case_cache_hot",
+    "resident_core",
+    "true_B16_to_B32_marginal",
+    "Q1_closed_loop",
+    "real_Q2"
+  ],
+  "final_padding_gate": {
+    "envelope_qualification": "GO_frozen_reused_not_rerun",
+    "neural_routes": [
+      "E16384_reconstruction",
+      "U_v2_16384_reconstruction",
+      "E240825_direct_control",
+      "U_v2_direct240825"
+    ],
+    "numeric_gate": "max_abs_K<=max(1e-3,20*same_shape_floor_K)",
+    "padding_golden_path": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_adjusted_golden_0350536.json",
+    "padding_golden_sha256": "28fbf68cb76c5e8ff31faa469481560153b73dab33c0d335a017be3b2cca9dfb",
+    "padding_manifest_path": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_envelope_manifest.json",
+    "padding_manifest_sha256": "992c27cfc16d28c945507db29add1df7b6b7259b94a12d34881dcd6e7014dcba",
+    "padding_numerical_equivalence": "GO",
+    "result_path": "configs/heat3d_v6_p1i/v6_p1i_publication_final_padding_gate_raw/final_padding_gate.json",
+    "result_sha256": "785f4fd6d22ee610140af4266f1b127d7812512a127e7028087a6734b2dd6c0c",
+    "sample_ids": [
+      "v6p1if1_0308",
+      "v6p1if1_0029"
+    ],
+    "status": "passed"
+  },
+  "formal_runner_static_gate": "passed",
+  "frozen_implementation_sha256": {
+    "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json": "9bc90625becdb4bb8b258a106a29f9aa087301ed1292b53a546a3836e7cd9abf",
+    "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_standard_v1_1.json": "325dd80dffadae0f56c547ec84902a717a59615c9d32bac2036d121bae17790b",
+    "scripts/benchmark_heat3d_v6_p1i_final_e_service.py": "c44628a18c530e73ad336bf47c5e2592c3289b7f180ff9c95fd4387220762297",
+    "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py": "849ba1d7660da825bd9b3d3400d6870508d7a46f082f31306f112e6b3245f072",
+    "scripts/build_heat3d_v6_publication_padding_golden.py": "49e5e0fc79ee628b66b50d4f42314d3fd2c9d362b6777827ae41ceb7f1bdd0e8",
+    "scripts/check_heat3d_v6_publication_benchmark_pre_measurement.py": "d5317861b4683dcf8c7e74ce45a8d0b5f81a56643463b1c4eb615d61ace31d2d",
+    "scripts/check_heat3d_v6_publication_final_padding_gate.py": "826cc8e7a4e547599b0cf654695160cb6ca7904c284d520216e51d31d4512e9b",
+    "scripts/check_heat3d_v6_publication_lifecycle_schema.py": "a0c4649a435d2cff0dce62e51dd3206dffd0da7e95abc32eb39a12fea03167a0",
+    "scripts/collect_heat3d_v6_publication_benchmark_v1_1.py": "455680823359eed38585a2d2a949db69c35791e4fcf0aa643931459b0e0807e4",
+    "scripts/freeze_heat3d_v6_publication_padding_envelopes.py": "688f55b818b53353af48fe65e80f56f0ed210580e5e892509c8119623c988c45",
+    "scripts/heat3d_v6_publication_lifecycle_schema.py": "0d87e57e8b6374ac52718af4544cec1fb64288cac34c16a3b5198da3f6642348",
+    "scripts/manifest_heat3d_v6_publication_benchmark_artifacts.py": "6488d2ab533d747ef586070048ea1e087fd5d8cb235072cf195625fc67f28eea",
+    "scripts/run_heat3d_v6_publication_final_padding_gate.py": "413b8bbc5838bcd0306c15d116d4f1bc45e0374a0631ba6e15e9d31abc640795",
+    "scripts/seal_heat3d_v6_publication_lifecycle_schema.py": "6e823b721ab2c8c2b7dc627052733ebec39889fe11b8fac63950e458ae8b0a57",
+    "scripts/smoke_heat3d_v6_publication_benchmark_conformance_v1_1.py": "97bb0d328cc68bf75da3105d89a3f68a47e3b3047216245238dea7691056ad2a"
+  },
+  "historical_golden": {
+    "candidate_reference_direct_SHA_equal": true,
+    "current_implementation_self_replay_is_only_reference": false,
+    "previous_historical_source_commit": "519963c3ce2f0a04c9b51ec2998c13ca0753190a",
+    "previous_historical_source_path": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_conformance_v1_1_smoke.json",
+    "previous_historical_source_sha256": "257fe38b21d8aee630569a7e96eaaa390b4db346d7fe82aecac15f4e7770e3c1",
+    "real_graph_hashes_inherited_from_previous_historical_golden": true,
+    "record_count": 12,
+    "records": [
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "879b6449040c342bb832b968a33412483212cbdbcf83f5e8d4cb040666f5feaa",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a0f7cdfc27af69510290b6a95f39527ce4bac053909b6264232648fe3b8d2b87",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ceb80578cf2674bb2a801b5c91637c9a4a356d0c47bf0253265352467764d50b",
+          "r_rnodes": "b534c86a88df4c542b66e3427868c7441d19b8230bf1cc11a22fd8d3309ce408",
+          "x_pnodes_inp": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_pnodes_out": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_rnodes": "cfa2d7f4938eaafb98a129d3c2e51480769fa92d320a8d42105ecb0672d0e417"
+        },
+        "order_seed": 20260814,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "8c72ff70a63693a1577638d5645cb21e7b7380735bdedec42a398faaf4027456",
+        "query_graph_hashes": {
+          "combined_sha256": "e9a4014680b1c59544876a8009ce6fb06533731f12f06ef12b0e97d133dc43d3",
+          "p2r_domains": null,
+          "p2r_edge_indices": "854429a86b5096a1da91fce75b4577e0a9f251338b36a260b4c75c74ed3c2a82",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "5402cb4776aad5cbd0f42b0053cccc77266cfbdad6567a950c6f73adc1d27980",
+          "r_rnodes": "d63a769407b1919755c074ba2b56805bbe02fa86a56da194e20b1e10c093706a",
+          "x_pnodes_inp": "8350de732ddfe71fbd73b7087bfb8f5834f3114bdf1f19051e324ccca0256226",
+          "x_pnodes_out": "8350de732ddfe71fbd73b7087bfb8f5834f3114bdf1f19051e324ccca0256226",
+          "x_rnodes": "1e07488720d3745ce1c1722030245c88194f89cd2fee12d7c297d7283066499b"
+        },
+        "record_sha256": "974ad8c076887617ae1288eae84cbf50f045c2a0f0e62c570bfb6d2e49f8f813",
+        "resolution": 16384,
+        "route": "E16384_reconstruction",
+        "sample_id": "v6p1if1_0907"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "879b6449040c342bb832b968a33412483212cbdbcf83f5e8d4cb040666f5feaa",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a0f7cdfc27af69510290b6a95f39527ce4bac053909b6264232648fe3b8d2b87",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ceb80578cf2674bb2a801b5c91637c9a4a356d0c47bf0253265352467764d50b",
+          "r_rnodes": "b534c86a88df4c542b66e3427868c7441d19b8230bf1cc11a22fd8d3309ce408",
+          "x_pnodes_inp": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_pnodes_out": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_rnodes": "cfa2d7f4938eaafb98a129d3c2e51480769fa92d320a8d42105ecb0672d0e417"
+        },
+        "order_seed": 20260814,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "fc59a7e07ca1f8f7b344bbfa53ae2bdea314e9a23e8a4fd11f7720ec3373d285",
+        "query_graph_hashes": {
+          "combined_sha256": "d1a732d27e8cfb4e9503eca551799fb1881b128e1c3adf1b313c10819ec52e9a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a0f7cdfc27af69510290b6a95f39527ce4bac053909b6264232648fe3b8d2b87",
+          "r2p_domains": null,
+          "r2p_edge_indices": "b8cab0d3be92c2b6fcd02f436081c1e8d31abf85c45e7b4adee7801d991b74cb",
+          "r2r_domains": null,
+          "r2r_edge_indices": "ceb80578cf2674bb2a801b5c91637c9a4a356d0c47bf0253265352467764d50b",
+          "r_rnodes": "b534c86a88df4c542b66e3427868c7441d19b8230bf1cc11a22fd8d3309ce408",
+          "x_pnodes_inp": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_pnodes_out": "2517c7900517281ef328aa193f280a17bd2e4a6ee8ab101b68ce5ebd459347bf",
+          "x_rnodes": "cfa2d7f4938eaafb98a129d3c2e51480769fa92d320a8d42105ecb0672d0e417"
+        },
+        "record_sha256": "4868e534fded3c73ac352696363e539df44cc5f0a164ec3808106b43e1e8f29c",
+        "resolution": 16384,
+        "route": "U_v2_16384_reconstruction",
+        "sample_id": "v6p1if1_0907"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "879b6449040c342bb832b968a33412483212cbdbcf83f5e8d4cb040666f5feaa",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a0f7cdfc27af69510290b6a95f39527ce4bac053909b6264232648fe3b8d2b87",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ceb80578cf2674bb2a801b5c91637c9a4a356d0c47bf0253265352467764d50b",
+          "r_rnodes": "b534c86a88df4c542b66e3427868c7441d19b8230bf1cc11a22fd8d3309ce408",
+          "x_pnodes_inp": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_pnodes_out": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_rnodes": "cfa2d7f4938eaafb98a129d3c2e51480769fa92d320a8d42105ecb0672d0e417"
+        },
+        "order_seed": 20260814,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "0727b4f6e9b8a99f3bbc392303dd05e0bad56d16aacf5b4e92d64fdfd95eae05",
+        "query_graph_hashes": {
+          "combined_sha256": "fb8d1491d641cc7ef02fd9e317876924e43da1e777d15458e30a4385d5ad983a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "053285f1d073318b5e5a0e9b4d7df4a1aec9ec4d4c79bd3b572314583b651c9f",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ac56e165baccd167e0d9e49b3954e88ccf87c087d655edd89ad05bbacd79d114",
+          "r_rnodes": "297a99da18fa4f1371c340cc254e0639bfbf45092a47dc157bc4b4a3be769d1a",
+          "x_pnodes_inp": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_pnodes_out": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_rnodes": "f13c724b8501449d08e2d28fff28ef1ff5c0ae88d7e9ccc8c5066b54f0339400"
+        },
+        "record_sha256": "6d4e647955ff7d23468c752e1b712218425505305cabc779eab2cc5270f8a146",
+        "resolution": 240825,
+        "route": "E240825_direct_control",
+        "sample_id": "v6p1if1_0907"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "879b6449040c342bb832b968a33412483212cbdbcf83f5e8d4cb040666f5feaa",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a0f7cdfc27af69510290b6a95f39527ce4bac053909b6264232648fe3b8d2b87",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ceb80578cf2674bb2a801b5c91637c9a4a356d0c47bf0253265352467764d50b",
+          "r_rnodes": "b534c86a88df4c542b66e3427868c7441d19b8230bf1cc11a22fd8d3309ce408",
+          "x_pnodes_inp": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_pnodes_out": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_rnodes": "cfa2d7f4938eaafb98a129d3c2e51480769fa92d320a8d42105ecb0672d0e417"
+        },
+        "order_seed": 20260814,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "218627cebc4f4e946e287d3a7d6f9fbc7d059e71224556a37fc9b91275887efd",
+        "query_graph_hashes": {
+          "combined_sha256": "eae91b5a2a840b38f8bffaeb73476f67352d016e4250bfadabf9725c2c03ce9f",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a0f7cdfc27af69510290b6a95f39527ce4bac053909b6264232648fe3b8d2b87",
+          "r2p_domains": null,
+          "r2p_edge_indices": "a143b4917f0c70c0b131febc763c0448928482c5445066340c8edb4641ee1d24",
+          "r2r_domains": null,
+          "r2r_edge_indices": "ceb80578cf2674bb2a801b5c91637c9a4a356d0c47bf0253265352467764d50b",
+          "r_rnodes": "b534c86a88df4c542b66e3427868c7441d19b8230bf1cc11a22fd8d3309ce408",
+          "x_pnodes_inp": "d6800257d22183ad60ac13735d3c1233a90e9eb37b49da98d2ae0760c55282ac",
+          "x_pnodes_out": "272f24d7b28e0fd39051a615187e19f783342d0fa9b221697dc72e29e6729299",
+          "x_rnodes": "cfa2d7f4938eaafb98a129d3c2e51480769fa92d320a8d42105ecb0672d0e417"
+        },
+        "record_sha256": "3bb84adee0c01e95c0f6cc650d1586f32f0fd972850e869b07b99cd2a7255867",
+        "resolution": 240825,
+        "route": "U_v2_direct240825",
+        "sample_id": "v6p1if1_0907"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "fef1e183a26a2d5317b0eac38260d6e2561367aa90e1e36a8536a569032f489c",
+          "p2r_domains": null,
+          "p2r_edge_indices": "b73c8c4cdfdf2d2900e789f7d43bfe41415133d904dfa56a0fcd741ae3d18567",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "5eba1422e679e0b7c504e76e18c93447ad3821c3a154e9507032cd27167ee207",
+          "r_rnodes": "e1efcdb3925a305ae50689e0477882d7bd0a3bd746e2913027f524b65f01fec0",
+          "x_pnodes_inp": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_pnodes_out": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_rnodes": "bd9942774862c42a96fd67c46befd7bc76adebe1b8d79fc0f46a7c2cdbe76d95"
+        },
+        "order_seed": 20260815,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "513ab086712e0d00e3e076b550124aa2814354f078faa84bf358e43cd4b6d258",
+        "query_graph_hashes": {
+          "combined_sha256": "bcef6f8425df1735aa42a0e8b98da72eafaf30d56b658af883ce9a91468220cb",
+          "p2r_domains": null,
+          "p2r_edge_indices": "f669ecd3e45513f39d813004ce6a4309c05dc50f35a7cf3c9305f845451c3687",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "cae4ced145ce5dc50482043aebcddd2a55f5d4def402f85acc80ed53448f6209",
+          "r_rnodes": "c6716a6dbb0d6d8eae155fc6bbeb80ddbade20a6a7ac48803fa892cc11a1b065",
+          "x_pnodes_inp": "70ac7dff91a800a3d26bde29a3b8cf58bdfaf62da0d0d2bfc6a79161401554de",
+          "x_pnodes_out": "70ac7dff91a800a3d26bde29a3b8cf58bdfaf62da0d0d2bfc6a79161401554de",
+          "x_rnodes": "6da7313759a740efa7ff80566c7e278c39081cbd20ed558f494c0aa1a4bd5c1e"
+        },
+        "record_sha256": "efb9facf9702f2601328c1ad63888b6fe417aefdae714820831dc9cef713f9c4",
+        "resolution": 16384,
+        "route": "E16384_reconstruction",
+        "sample_id": "v6p1if1_0522"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "fef1e183a26a2d5317b0eac38260d6e2561367aa90e1e36a8536a569032f489c",
+          "p2r_domains": null,
+          "p2r_edge_indices": "b73c8c4cdfdf2d2900e789f7d43bfe41415133d904dfa56a0fcd741ae3d18567",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "5eba1422e679e0b7c504e76e18c93447ad3821c3a154e9507032cd27167ee207",
+          "r_rnodes": "e1efcdb3925a305ae50689e0477882d7bd0a3bd746e2913027f524b65f01fec0",
+          "x_pnodes_inp": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_pnodes_out": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_rnodes": "bd9942774862c42a96fd67c46befd7bc76adebe1b8d79fc0f46a7c2cdbe76d95"
+        },
+        "order_seed": 20260815,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "d6944ab2b384241b703793010f7a0a7dd80a3dcf8fabafc2b365287c007ca9f1",
+        "query_graph_hashes": {
+          "combined_sha256": "45f1a6bb5646475c01191581303660b69755cfcce5f4adcf378c953a519ab5aa",
+          "p2r_domains": null,
+          "p2r_edge_indices": "b73c8c4cdfdf2d2900e789f7d43bfe41415133d904dfa56a0fcd741ae3d18567",
+          "r2p_domains": null,
+          "r2p_edge_indices": "d97f9554c81fc305dbc6741d21f8c6b88ac2a1480688488e824fbe8a15c83ca1",
+          "r2r_domains": null,
+          "r2r_edge_indices": "5eba1422e679e0b7c504e76e18c93447ad3821c3a154e9507032cd27167ee207",
+          "r_rnodes": "e1efcdb3925a305ae50689e0477882d7bd0a3bd746e2913027f524b65f01fec0",
+          "x_pnodes_inp": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_pnodes_out": "961742a33497504b9fbd9e51b718c4b845c43c812e22bbc753437793985f9219",
+          "x_rnodes": "bd9942774862c42a96fd67c46befd7bc76adebe1b8d79fc0f46a7c2cdbe76d95"
+        },
+        "record_sha256": "e21fcef516eebe60a107c2e430b81931744220740dbd9bc71822b4c1f22c5d4d",
+        "resolution": 16384,
+        "route": "U_v2_16384_reconstruction",
+        "sample_id": "v6p1if1_0522"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "fef1e183a26a2d5317b0eac38260d6e2561367aa90e1e36a8536a569032f489c",
+          "p2r_domains": null,
+          "p2r_edge_indices": "b73c8c4cdfdf2d2900e789f7d43bfe41415133d904dfa56a0fcd741ae3d18567",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "5eba1422e679e0b7c504e76e18c93447ad3821c3a154e9507032cd27167ee207",
+          "r_rnodes": "e1efcdb3925a305ae50689e0477882d7bd0a3bd746e2913027f524b65f01fec0",
+          "x_pnodes_inp": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_pnodes_out": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_rnodes": "bd9942774862c42a96fd67c46befd7bc76adebe1b8d79fc0f46a7c2cdbe76d95"
+        },
+        "order_seed": 20260815,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "ac7512b9ba80674c82a43e2ee12754ab287d4edf7cb7b5b55caecab0523b3610",
+        "query_graph_hashes": {
+          "combined_sha256": "fb8d1491d641cc7ef02fd9e317876924e43da1e777d15458e30a4385d5ad983a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "053285f1d073318b5e5a0e9b4d7df4a1aec9ec4d4c79bd3b572314583b651c9f",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ac56e165baccd167e0d9e49b3954e88ccf87c087d655edd89ad05bbacd79d114",
+          "r_rnodes": "297a99da18fa4f1371c340cc254e0639bfbf45092a47dc157bc4b4a3be769d1a",
+          "x_pnodes_inp": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_pnodes_out": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_rnodes": "f13c724b8501449d08e2d28fff28ef1ff5c0ae88d7e9ccc8c5066b54f0339400"
+        },
+        "record_sha256": "8fd97cd631824a2ba47c30a7e36cb208d9594a9185ada1869a5d0c13ae1036e2",
+        "resolution": 240825,
+        "route": "E240825_direct_control",
+        "sample_id": "v6p1if1_0522"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "fef1e183a26a2d5317b0eac38260d6e2561367aa90e1e36a8536a569032f489c",
+          "p2r_domains": null,
+          "p2r_edge_indices": "b73c8c4cdfdf2d2900e789f7d43bfe41415133d904dfa56a0fcd741ae3d18567",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "5eba1422e679e0b7c504e76e18c93447ad3821c3a154e9507032cd27167ee207",
+          "r_rnodes": "e1efcdb3925a305ae50689e0477882d7bd0a3bd746e2913027f524b65f01fec0",
+          "x_pnodes_inp": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_pnodes_out": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_rnodes": "bd9942774862c42a96fd67c46befd7bc76adebe1b8d79fc0f46a7c2cdbe76d95"
+        },
+        "order_seed": 20260815,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "fe4352092c1090d328276aeeaf79907629cbaec89f7f17e34bc716a010a1e180",
+        "query_graph_hashes": {
+          "combined_sha256": "705da80fb97046326fabcb0a2a8069009088787a640d04868277f4d6d5ad8a77",
+          "p2r_domains": null,
+          "p2r_edge_indices": "b73c8c4cdfdf2d2900e789f7d43bfe41415133d904dfa56a0fcd741ae3d18567",
+          "r2p_domains": null,
+          "r2p_edge_indices": "4786dc6f81338a8400ba65ad1591726b00040dd2ec11e70af2d9e606a14e6bc3",
+          "r2r_domains": null,
+          "r2r_edge_indices": "5eba1422e679e0b7c504e76e18c93447ad3821c3a154e9507032cd27167ee207",
+          "r_rnodes": "e1efcdb3925a305ae50689e0477882d7bd0a3bd746e2913027f524b65f01fec0",
+          "x_pnodes_inp": "21d90d315258e920966630ae5a1fdf6759b1dc42fa26c68523494ad908b7b426",
+          "x_pnodes_out": "272f24d7b28e0fd39051a615187e19f783342d0fa9b221697dc72e29e6729299",
+          "x_rnodes": "bd9942774862c42a96fd67c46befd7bc76adebe1b8d79fc0f46a7c2cdbe76d95"
+        },
+        "record_sha256": "9eb7558eb12866210420500ba103abc7d95756b014ac5ad57f6304044c087278",
+        "resolution": 240825,
+        "route": "U_v2_direct240825",
+        "sample_id": "v6p1if1_0522"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "5aaf9628a70220a2f68deadbefa2e604d9823ec8425b22956aac52caf412483a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "024e2a54d7ffb5f872c650e12b2a3513320a44bb1dc6634d1b4ae6066a2824f4",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "51fdbb19107915fc17b691d15e211daf7c49ef94884bed39a607f61550051e53",
+          "r_rnodes": "de4a563e8b9f9f252afdd1bf34ff005b42dd9c9a7ea4b60fc69e68f260f6032e",
+          "x_pnodes_inp": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_pnodes_out": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_rnodes": "bcc5ce8ea453379b8533753200c6b3ab4374aa6d43ecdc2e7fc1a4e64728e565"
+        },
+        "order_seed": 20260816,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "201e9ba4787ded82824030eca844ff6cad88cbd55e5bc151fb817ca6993c86ea",
+        "query_graph_hashes": {
+          "combined_sha256": "a42effd20c7c5c22455bef3afe8dafe902b3fe569348a242b5b8b9009ddef9fb",
+          "p2r_domains": null,
+          "p2r_edge_indices": "be50fcd4cf0b3af1ba3c77e1aea9a0e66f61fbb328bd9fbcb6070636e7a04e8c",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "34997fb792d57e0b525676e374468d876e43438a472702d6e22fa0eaceea931f",
+          "r_rnodes": "48e7165592f9ca712a9a13bf1941de7cfa6e17af9a88d00cbfc373d7e31e99d7",
+          "x_pnodes_inp": "5956f5e9ba01372f1672b223c6acf49f63e5d0e37506351a41d9c224131e67b3",
+          "x_pnodes_out": "5956f5e9ba01372f1672b223c6acf49f63e5d0e37506351a41d9c224131e67b3",
+          "x_rnodes": "5a692486c43c5cb6d49d34ac8372912e5457e455ec3730415c79d76e2936d047"
+        },
+        "record_sha256": "b68695fb75535c6995e9df72f296a68cf68b13991670969a6be8da24a69355e7",
+        "resolution": 16384,
+        "route": "E16384_reconstruction",
+        "sample_id": "v6p1if1_0286"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "5aaf9628a70220a2f68deadbefa2e604d9823ec8425b22956aac52caf412483a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "024e2a54d7ffb5f872c650e12b2a3513320a44bb1dc6634d1b4ae6066a2824f4",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "51fdbb19107915fc17b691d15e211daf7c49ef94884bed39a607f61550051e53",
+          "r_rnodes": "de4a563e8b9f9f252afdd1bf34ff005b42dd9c9a7ea4b60fc69e68f260f6032e",
+          "x_pnodes_inp": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_pnodes_out": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_rnodes": "bcc5ce8ea453379b8533753200c6b3ab4374aa6d43ecdc2e7fc1a4e64728e565"
+        },
+        "order_seed": 20260816,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "05ab228c0ecc8f21f4bdab43865f083b76f57bd8801e44a22d9f64422012b09f",
+        "query_graph_hashes": {
+          "combined_sha256": "3be842c92ad8a5065b423e827dfa845e4c73f7bc7eb8d05d2cd2fefb91c12462",
+          "p2r_domains": null,
+          "p2r_edge_indices": "024e2a54d7ffb5f872c650e12b2a3513320a44bb1dc6634d1b4ae6066a2824f4",
+          "r2p_domains": null,
+          "r2p_edge_indices": "728471386a973b109f670733c81fa56b58f6faaa85beebca4fbb980870bc91ae",
+          "r2r_domains": null,
+          "r2r_edge_indices": "51fdbb19107915fc17b691d15e211daf7c49ef94884bed39a607f61550051e53",
+          "r_rnodes": "de4a563e8b9f9f252afdd1bf34ff005b42dd9c9a7ea4b60fc69e68f260f6032e",
+          "x_pnodes_inp": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_pnodes_out": "e37a83c3d7b454700f83d5dd98936ca0482610291b1d2e67d0f46cc886231769",
+          "x_rnodes": "bcc5ce8ea453379b8533753200c6b3ab4374aa6d43ecdc2e7fc1a4e64728e565"
+        },
+        "record_sha256": "f0ce0deb545306110a4e2d77756b96411e44a7ac7735f6fb616f2c3d57b59077",
+        "resolution": 16384,
+        "route": "U_v2_16384_reconstruction",
+        "sample_id": "v6p1if1_0286"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "5aaf9628a70220a2f68deadbefa2e604d9823ec8425b22956aac52caf412483a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "024e2a54d7ffb5f872c650e12b2a3513320a44bb1dc6634d1b4ae6066a2824f4",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "51fdbb19107915fc17b691d15e211daf7c49ef94884bed39a607f61550051e53",
+          "r_rnodes": "de4a563e8b9f9f252afdd1bf34ff005b42dd9c9a7ea4b60fc69e68f260f6032e",
+          "x_pnodes_inp": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_pnodes_out": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_rnodes": "bcc5ce8ea453379b8533753200c6b3ab4374aa6d43ecdc2e7fc1a4e64728e565"
+        },
+        "order_seed": 20260816,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "3e5edf5ac2c28429a5ce22d835e0d50377530b8d69723fa1a8f770c063f6a525",
+        "query_graph_hashes": {
+          "combined_sha256": "fb8d1491d641cc7ef02fd9e317876924e43da1e777d15458e30a4385d5ad983a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "053285f1d073318b5e5a0e9b4d7df4a1aec9ec4d4c79bd3b572314583b651c9f",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ac56e165baccd167e0d9e49b3954e88ccf87c087d655edd89ad05bbacd79d114",
+          "r_rnodes": "297a99da18fa4f1371c340cc254e0639bfbf45092a47dc157bc4b4a3be769d1a",
+          "x_pnodes_inp": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_pnodes_out": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_rnodes": "f13c724b8501449d08e2d28fff28ef1ff5c0ae88d7e9ccc8c5066b54f0339400"
+        },
+        "record_sha256": "efbb8c062b31ba0c5835021e8378b192abd8a3d010ee52582bb26c31d50b6bc8",
+        "resolution": 240825,
+        "route": "E240825_direct_control",
+        "sample_id": "v6p1if1_0286"
+      },
+      {
+        "model_inference_executed": false,
+        "native1024_graph_hashes": {
+          "combined_sha256": "5aaf9628a70220a2f68deadbefa2e604d9823ec8425b22956aac52caf412483a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "024e2a54d7ffb5f872c650e12b2a3513320a44bb1dc6634d1b4ae6066a2824f4",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "51fdbb19107915fc17b691d15e211daf7c49ef94884bed39a607f61550051e53",
+          "r_rnodes": "de4a563e8b9f9f252afdd1bf34ff005b42dd9c9a7ea4b60fc69e68f260f6032e",
+          "x_pnodes_inp": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_pnodes_out": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_rnodes": "bcc5ce8ea453379b8533753200c6b3ab4374aa6d43ecdc2e7fc1a4e64728e565"
+        },
+        "order_seed": 20260816,
+        "padding_adjusted": true,
+        "prepared_payload_sha256": "958e5aa3002dcfea7a1f1df26c2adc118414f17e7b8fb14f4b34123e0727e0e5",
+        "query_graph_hashes": {
+          "combined_sha256": "77f750280b40ebaa7fd0507d45c72c8b4e0992feb0bef196037d0250f37fce39",
+          "p2r_domains": null,
+          "p2r_edge_indices": "024e2a54d7ffb5f872c650e12b2a3513320a44bb1dc6634d1b4ae6066a2824f4",
+          "r2p_domains": null,
+          "r2p_edge_indices": "2c619dbd8a481a1396b84c8bf60d77685c1597a6af2495a1e974e0ab0fab4fa5",
+          "r2r_domains": null,
+          "r2r_edge_indices": "51fdbb19107915fc17b691d15e211daf7c49ef94884bed39a607f61550051e53",
+          "r_rnodes": "de4a563e8b9f9f252afdd1bf34ff005b42dd9c9a7ea4b60fc69e68f260f6032e",
+          "x_pnodes_inp": "b3f36ba59c6bc5fca5fc675270add2a5fbdf4e6b9c21c8ca0e8f3d173ac5ac98",
+          "x_pnodes_out": "272f24d7b28e0fd39051a615187e19f783342d0fa9b221697dc72e29e6729299",
+          "x_rnodes": "bcc5ce8ea453379b8533753200c6b3ab4374aa6d43ecdc2e7fc1a4e64728e565"
+        },
+        "record_sha256": "eb2c801f96d1d232bd166f276e7c745583754b6620469ee4fa9a091398e9574b",
+        "resolution": 240825,
+        "route": "U_v2_direct240825",
+        "sample_id": "v6p1if1_0286"
+      }
+    ],
+    "source_kind": "padding_adjusted_prepared_payload_golden_bound_to_historical_real_graphs",
+    "source_path": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_adjusted_golden_0350536.json",
+    "source_sha256": "28fbf68cb76c5e8ff31faa469481560153b73dab33c0d335a017be3b2cca9dfb"
+  },
+  "lifecycle_schema_regression": {
+    "artifact_path": "configs/heat3d_v6_p1i/v6_p1i_publication_lifecycle_schema_regression.json",
+    "artifact_sha256": "69099d1a7acceb49ca11594096d04f70f5be8f660b5ee418b22d622fb2d20eaa",
+    "collector_parsed_all_10": true,
+    "fixture_count": 10,
+    "gpu_smoke_executed": false
+  },
+  "measurement_provenance_initial_state": {
+    "formal_matrix_completed": false,
+    "formal_measurement_attempted": false,
+    "publication_results_generated": false
+  },
+  "new_benchmark_execution": {
+    "case_count": 8,
+    "full_valid32_timing": false,
+    "latency_or_speedup_generated": false,
+    "reason": "final_padding_prediction_equivalence_only",
+    "route_process_count": 4
+  },
+  "pre_measurement_seal": "GO",
+  "prior_versioned_seal": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_seal_final_padding.json",
+    "sha256": "8f0df360e61f719af9db681d0a269aeffdec4ac59694d61393a1ea7c85ea61c0"
+  },
+  "protocol_sha256": "9bc90625becdb4bb8b258a106a29f9aa087301ed1292b53a546a3836e7cd9abf",
+  "publication_timing_freeze": "NO_GO_ready_for_full_valid32",
+  "ready_for_authoritative_valid32": "GO",
+  "role_contract": {
+    "accuracy_tuning": false,
+    "formal_latency_or_speedup_generated_in_this_seal": false,
+    "full_valid32_timing_executed_in_this_seal": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "runtime_state": {
+    "E16384_reconstruction": {
+      "padding_envelope": {
+        "anchor": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "query": {
+          "p2r_edge_indices": 107645,
+          "r2p_edge_indices": 107645,
+          "r2r_edge_domains": 3573,
+          "r2r_edge_indices": 3573
+        }
+      },
+      "state_sha256": "eead3b19704f5c9d41fd0035e41af4fcbee9e87f65ef52bca75f610469bcf8ee",
+      "tensor_envelope": {
+        "anchor_physical_nodes": 1024,
+        "batch_size": 1,
+        "output_nodes": 240825,
+        "query_physical_nodes": 16384,
+        "reconstruction_map_shape": [
+          240825,
+          8
+        ],
+        "regional_nodes": 256
+      }
+    },
+    "E240825_direct_control": {
+      "padding_envelope": {
+        "anchor": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "query": {
+          "p2r_edge_indices": 2003165,
+          "r2p_edge_indices": 2002581,
+          "r2r_edge_domains": 3571,
+          "r2r_edge_indices": 3571
+        }
+      },
+      "state_sha256": "6195d3c501ebdc69721a238df3b02df7b8e5311932471e4fb265d2851d2dc668",
+      "tensor_envelope": {
+        "anchor_physical_nodes": 1024,
+        "batch_size": 1,
+        "output_nodes": 240825,
+        "query_physical_nodes": 240825,
+        "reconstruction_map_shape": null,
+        "regional_nodes": 256
+      }
+    },
+    "FVM240825_reference": {
+      "padding_envelope": null,
+      "state_sha256": "1ab0a76be1aeb6fc90a7afc77e6444c8593458e140b24461b071858e0484ad5a",
+      "tensor_envelope": {
+        "solver_nodes": 240825,
+        "workers_Q2": 2,
+        "workers_serial": 1
+      }
+    },
+    "U_v2_16384_reconstruction": {
+      "padding_envelope": {
+        "native": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "query": {
+          "p2r_edge_indices": 107645,
+          "r2p_edge_indices": 107645,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        }
+      },
+      "state_sha256": "4c4d0d208e7fb3043a3f2486ce175909241884718e454543152c8f33535524df",
+      "tensor_envelope": {
+        "anchor_physical_nodes": 1024,
+        "batch_size": 1,
+        "output_nodes": 240825,
+        "query_physical_nodes": 16384,
+        "reconstruction_map_shape": [
+          1,
+          240825,
+          8
+        ],
+        "regional_nodes": 256
+      }
+    },
+    "U_v2_direct240825": {
+      "padding_envelope": {
+        "native": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "query": {
+          "p2r_edge_indices": 2002581,
+          "r2p_edge_indices": 2002581,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        }
+      },
+      "state_sha256": "f7c2ee46c666d407525e1dd638052e8eb41e85128a10fc6d8f0c8712d6468ef7",
+      "tensor_envelope": {
+        "anchor_physical_nodes": 1024,
+        "batch_size": 1,
+        "output_nodes": 240825,
+        "query_physical_nodes": 240825,
+        "reconstruction_map_shape": null,
+        "regional_nodes": 256
+      }
+    }
+  },
+  "schema_version": "heat3d_v6_publication_benchmark_pre_measurement_seal_v3_lifecycle_schema",
+  "source_previous_seal": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_seal.json",
+    "retained_unchanged": true,
+    "sha256": "6b4dab54789750b81a5b149310d9f093f478f5b4bafa68c13fdedaa97bf9aff8"
+  },
+  "status": "passed"
+}

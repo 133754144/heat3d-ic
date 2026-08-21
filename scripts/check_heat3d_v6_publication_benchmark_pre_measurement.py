@@ -10,6 +10,7 @@ import subprocess
 from typing import Any
 
 from seal_heat3d_v6_publication_benchmark_pre_measurement import exact_records
+from heat3d_v6_publication_lifecycle_schema import validate_cell
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -39,6 +40,16 @@ def main() -> int:
     require(seal["pre_measurement_seal"] == "GO", "seal GO")
     require(seal["ready_for_authoritative_valid32"] == "GO", "authoritative valid32 readiness")
     require(seal["publication_timing_freeze"] == "NO_GO_ready_for_full_valid32", "timing status")
+    require(seal.get("benchmark_lifecycle_schema") == "GO", "lifecycle schema gate")
+    schema_record = seal["lifecycle_schema_regression"]
+    schema_path = ROOT / schema_record["artifact_path"]
+    require(schema_path.is_file() and sha(schema_path) == schema_record["artifact_sha256"],
+            "lifecycle schema fixture SHA")
+    schema_result = json.loads(schema_path.read_text())
+    require(schema_result["status"] == "passed", "lifecycle fixture status")
+    require(schema_result["fixture_count"] == 10, "lifecycle fixture count")
+    require(schema_result["collector_parsed_all_10"], "collector fixture parsing")
+    require(schema_result["benchmark_lifecycle_schema"] == "GO", "lifecycle fixture GO")
     golden = protocol["golden_exactness"]
     blob = subprocess.check_output(
         ("git", "show", f"{golden['source_commit']}:{golden['source_path']}"), cwd=ROOT)
@@ -145,6 +156,10 @@ def main() -> int:
         collected = json.loads(args.collector_result.read_text())
         manifest = json.loads(args.artifact_sha_manifest.read_text())
         require(raw["status"] == "passed", "authoritative raw hard gates")
+        require(raw["formal_measurement_attempted"] is True, "formal measurement attempted")
+        require(raw["formal_matrix_completed"] is True, "formal matrix completed")
+        require(raw["publication_results_generated"] is False,
+                "raw matrix must predate publication result generation")
         require(raw["authoritative_full_valid32"] == "completed_hard_gates_passed", "valid32 completion")
         require(raw["publication_timing_freeze"] == "NO_GO_pending_collector", "raw freeze state")
         require(raw["sample_count"] == 32 and len(raw["rows"]) == 30, "30-cell valid32 matrix")
@@ -155,12 +170,17 @@ def main() -> int:
         require(raw["role_contract"]["test"] is False and raw["role_contract"]["sealed"] is False,
                 "authoritative forbidden roles")
         for row in raw["rows"]:
-            require(row["status"].startswith("passed"), f"cell status: {row['route']}")
+            require(row["status"] == "passed", f"formal cell status: {row['route']}")
+            validate_cell(row, formal=True)
             if row["route"] == "FVM240825_reference" and row["service_mode"] == "serial":
                 require(row["execution_model"] == "in_process_persistent_P1_one_thread", "formal FVM P1")
                 require(row["worker_pids"] == [row["process_id"]], "formal FVM P1 PID")
                 require(not row["IPC_used_in_fresh_Q1"], "formal FVM P1 IPC")
         require(collected["publication_timing_freeze"] == "GO", "collector publication freeze")
+        require(collected["formal_measurement_attempted"] is True, "collector attempted provenance")
+        require(collected["formal_matrix_completed"] is True, "collector matrix provenance")
+        require(collected["publication_results_generated"] is True,
+                "collector publication provenance")
         require(collected["aggregation_contract"]["bootstrap_seed"] == 20260821, "collector bootstrap seed")
         require(collected["aggregation_contract"]["bootstrap_resamples"] == 20000, "collector resamples")
         require(not collected["aggregation_contract"]["pooled_96_ratio_used"], "collector pooled96")
@@ -177,6 +197,7 @@ def main() -> int:
     print(json.dumps({
         "status": "passed", "pre_measurement_seal": "GO",
         "ready_for_authoritative_valid32": "GO",
+        "benchmark_lifecycle_schema": "GO",
         "publication_timing_freeze": "NO_GO_ready_for_full_valid32",
         "golden_records": 12, "formal_latency_generated": False,
         "training": False, "test": False, "sealed": False,
