@@ -87,6 +87,9 @@ def _init_fvm(serialized: dict[str, str]) -> None:
 
 
 def _fvm_ready() -> int:
+    # Keep readiness tasks alive briefly so a P2 pool must schedule both
+    # persistent workers; this is untimed service startup, not a case prepass.
+    time.sleep(0.1)
     return os.getpid()
 
 
