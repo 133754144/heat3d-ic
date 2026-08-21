@@ -1,19 +1,50 @@
 {
-  "capacity_derivation": "max_over_frozen_valid32_plus_one_target_free_train_static_warmup",
-  "dummy_capacity_only": true,
-  "envelope_qualification": "GO",
-  "graph_cache": {
-    "edge_targets": {
+  "capacity_derivation": "elementwise_max_previous_same_semantic_frozen_capacity_qualified_valid32_max_train_only_warmup",
+  "capacity_inputs": {
+    "monotonic_envelope": {
+      "p2r_edge_indices": 3074,
+      "r2p_edge_indices": 2905,
+      "r2r_edge_domains": 4217,
+      "r2r_edge_indices": 4217
+    },
+    "previous_same_semantic_frozen_capacity": {
+      "p2r_edge_indices": 3074,
+      "r2p_edge_indices": 2905,
+      "r2r_edge_domains": 4217,
+      "r2r_edge_indices": 4217
+    },
+    "qualified_valid32_max": {
       "p2r_edge_indices": 2911,
       "r2p_edge_indices": null,
       "r2r_edge_domains": 4201,
       "r2r_edge_indices": 4201
+    },
+    "train_only_warmup": {
+      "p2r_edge_indices": 2679,
+      "r2p_edge_indices": null,
+      "r2r_edge_domains": 4175,
+      "r2r_edge_indices": 4175
     }
   },
+  "dummy_capacity_only": true,
+  "envelope_qualification": "GO",
+  "graph_cache": {
+    "edge_targets": {
+      "p2r_edge_indices": 3074,
+      "r2p_edge_indices": 2905,
+      "r2r_edge_domains": 4217,
+      "r2r_edge_indices": 4217
+    }
+  },
+  "monotonic_expansion_only": true,
   "real_graph_semantics_changed": false,
   "route": "native1024_anchor",
   "schema_version": "heat3d_v6_padding_envelope_v1",
+  "source_previous_seal": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_seal.json",
+  "source_previous_seal_sha256": "6b4dab54789750b81a5b149310d9f093f478f5b4bafa68c13fdedaa97bf9aff8",
   "source_qualification": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_envelope_raw/v6_graph_envelope_qualification_5739e4e.json",
+  "source_qualification_run": "configs/heat3d_v6_p1i/v6_p1i_publication_graph_envelope_raw/v6_graph_envelope_qual_run_a_5739e4e.json",
+  "source_qualification_run_sha256": "39a866a75ba0342b7c9c77cfbb87c71763db44a0e1480f916cea134052ac3bb0",
   "source_qualification_sha256": "0defe9892e60cf456ff56ed5094d2270ece040169ee0ebb937a2e76337929eda",
   "status": "passed"
 }
