@@ -1,0 +1,320 @@
+{
+  "checkpoint_parameter_tree_sha256_after": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+  "checkpoint_parameter_tree_sha256_before": "b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85",
+  "checkpoint_unchanged": true,
+  "dummy_capacity_only": true,
+  "padding_numerical_equivalence": "GO",
+  "real_edges_changed": false,
+  "records": [
+    {
+      "comparisons": {
+        "historical_frozen_to_new_monotonic": {
+          "RMSE_K": 0.002849759136340046,
+          "anchor_scale": {
+            "RMSE_K": 6.866455078125e-05,
+            "max_abs_K": 6.866455078125e-05
+          },
+          "final240825": {
+            "RMSE_K": 0.002849762092950859,
+            "max_abs_K": 0.022125244140625
+          },
+          "max_abs_K": 0.022125244140625,
+          "query": {
+            "RMSE_K": 0.002849762092950859,
+            "max_abs_K": 0.022125244140625
+          }
+        },
+        "same_shape_repeat": {
+          "RMSE_K": 0.002828702516480715,
+          "anchor_scale": {
+            "RMSE_K": 0.0001373291015625,
+            "max_abs_K": 0.0001373291015625
+          },
+          "final240825": {
+            "RMSE_K": 0.0028287054460290812,
+            "max_abs_K": 0.017913818359375
+          },
+          "max_abs_K": 0.017913818359375,
+          "query": {
+            "RMSE_K": 0.0028287054460290812,
+            "max_abs_K": 0.017913818359375
+          }
+        }
+      },
+      "frozen_tolerance_formula": "max(1e-3,20*same_shape_floor_K)",
+      "historical_capacity": {
+        "native": {
+          "p2r_edge_indices": 2905,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4201,
+          "r2r_edge_indices": 4201
+        },
+        "query": {
+          "p2r_edge_indices": 2003165,
+          "r2p_edge_indices": 2002581,
+          "r2r_edge_domains": 3571,
+          "r2r_edge_indices": 3571
+        }
+      },
+      "historical_capacity_can_contain_real_graph": true,
+      "new_monotonic_capacity": {
+        "native": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "query": {
+          "p2r_edge_indices": 2003165,
+          "r2p_edge_indices": 2002581,
+          "r2r_edge_domains": 3571,
+          "r2r_edge_indices": 3571
+        }
+      },
+      "passed": true,
+      "real_edge_counts": {
+        "native1024": {
+          "p2r_edge_indices": 2545,
+          "r2p_edge_indices": null,
+          "r2r_edge_domains": 4159,
+          "r2r_edge_indices": 4159
+        },
+        "query": {
+          "p2r_edge_indices": 2003165,
+          "r2p_edge_indices": null,
+          "r2r_edge_domains": 3571,
+          "r2r_edge_indices": 3571
+        }
+      },
+      "real_graph_hashes_after": {
+        "native1024": {
+          "combined_sha256": "445513633cdb56182b17345f8f846e6c24bde4a4724ed3782009f9044f7c6c73",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a480ee0327c5c00b212acd68fa59b69a75e3a6d2138f63e047e54c3591c56944",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "bb3baf1b3b33486ac8c4575fd2eb0f02cbd0daf6170448921fbf69088264bc1c",
+          "r_rnodes": "07f775a69444c49577bab53551092a9a4ae186d0b506a1a714149b70b125e972",
+          "x_pnodes_inp": "d82aa224ffb0acb7a96137c94d19565cbaad9149c28f70efd3a83df46566517a",
+          "x_pnodes_out": "d82aa224ffb0acb7a96137c94d19565cbaad9149c28f70efd3a83df46566517a",
+          "x_rnodes": "99c5ba4150170ddc620821e7642f76e66873039ef300f576d06f1bdbd625cc1c"
+        },
+        "query": {
+          "combined_sha256": "fb8d1491d641cc7ef02fd9e317876924e43da1e777d15458e30a4385d5ad983a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "053285f1d073318b5e5a0e9b4d7df4a1aec9ec4d4c79bd3b572314583b651c9f",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ac56e165baccd167e0d9e49b3954e88ccf87c087d655edd89ad05bbacd79d114",
+          "r_rnodes": "297a99da18fa4f1371c340cc254e0639bfbf45092a47dc157bc4b4a3be769d1a",
+          "x_pnodes_inp": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_pnodes_out": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_rnodes": "f13c724b8501449d08e2d28fff28ef1ff5c0ae88d7e9ccc8c5066b54f0339400"
+        }
+      },
+      "real_graph_hashes_before": {
+        "native1024": {
+          "combined_sha256": "445513633cdb56182b17345f8f846e6c24bde4a4724ed3782009f9044f7c6c73",
+          "p2r_domains": null,
+          "p2r_edge_indices": "a480ee0327c5c00b212acd68fa59b69a75e3a6d2138f63e047e54c3591c56944",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "bb3baf1b3b33486ac8c4575fd2eb0f02cbd0daf6170448921fbf69088264bc1c",
+          "r_rnodes": "07f775a69444c49577bab53551092a9a4ae186d0b506a1a714149b70b125e972",
+          "x_pnodes_inp": "d82aa224ffb0acb7a96137c94d19565cbaad9149c28f70efd3a83df46566517a",
+          "x_pnodes_out": "d82aa224ffb0acb7a96137c94d19565cbaad9149c28f70efd3a83df46566517a",
+          "x_rnodes": "99c5ba4150170ddc620821e7642f76e66873039ef300f576d06f1bdbd625cc1c"
+        },
+        "query": {
+          "combined_sha256": "fb8d1491d641cc7ef02fd9e317876924e43da1e777d15458e30a4385d5ad983a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "053285f1d073318b5e5a0e9b4d7df4a1aec9ec4d4c79bd3b572314583b651c9f",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ac56e165baccd167e0d9e49b3954e88ccf87c087d655edd89ad05bbacd79d114",
+          "r_rnodes": "297a99da18fa4f1371c340cc254e0639bfbf45092a47dc157bc4b4a3be769d1a",
+          "x_pnodes_inp": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_pnodes_out": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_rnodes": "f13c724b8501449d08e2d28fff28ef1ff5c0ae88d7e9ccc8c5066b54f0339400"
+        }
+      },
+      "real_graph_hashes_exact": true,
+      "required_comparisons": [
+        "historical_frozen_to_new_monotonic"
+      ],
+      "same_shape_floor_K": 0.017913818359375,
+      "sample_id": "v6p1if1_0308",
+      "sample_role": "historical_witness",
+      "tolerance_K": 0.3582763671875
+    },
+    {
+      "comparisons": {
+        "exact_real_edge_to_new_monotonic": {
+          "RMSE_K": 0.001420261041711643,
+          "anchor_scale": {
+            "RMSE_K": 2.288818359375e-05,
+            "max_abs_K": 2.288818359375e-05
+          },
+          "final240825": {
+            "RMSE_K": 0.001420262515698408,
+            "max_abs_K": 0.009120941162109375
+          },
+          "max_abs_K": 0.009120941162109375,
+          "query": {
+            "RMSE_K": 0.001420262515698408,
+            "max_abs_K": 0.009120941162109375
+          }
+        },
+        "historical_frozen_to_new_monotonic": {
+          "status": "not_applicable_historical_capacity_cannot_contain_real_graph"
+        },
+        "same_shape_repeat": {
+          "RMSE_K": 0.0014240113822459348,
+          "anchor_scale": {
+            "RMSE_K": 1.1444091796875e-05,
+            "max_abs_K": 1.1444091796875e-05
+          },
+          "final240825": {
+            "RMSE_K": 0.0014240128604133514,
+            "max_abs_K": 0.00959014892578125
+          },
+          "max_abs_K": 0.00959014892578125,
+          "query": {
+            "RMSE_K": 0.0014240128604133514,
+            "max_abs_K": 0.00959014892578125
+          }
+        }
+      },
+      "frozen_tolerance_formula": "max(1e-3,20*same_shape_floor_K)",
+      "historical_capacity": {
+        "native": {
+          "p2r_edge_indices": 2905,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4201,
+          "r2r_edge_indices": 4201
+        },
+        "query": {
+          "p2r_edge_indices": 2003165,
+          "r2p_edge_indices": 2002581,
+          "r2r_edge_domains": 3571,
+          "r2r_edge_indices": 3571
+        }
+      },
+      "historical_capacity_can_contain_real_graph": false,
+      "new_monotonic_capacity": {
+        "native": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "query": {
+          "p2r_edge_indices": 2003165,
+          "r2p_edge_indices": 2002581,
+          "r2r_edge_domains": 3571,
+          "r2r_edge_indices": 3571
+        }
+      },
+      "passed": true,
+      "real_edge_counts": {
+        "native1024": {
+          "p2r_edge_indices": 2911,
+          "r2p_edge_indices": null,
+          "r2r_edge_domains": 4095,
+          "r2r_edge_indices": 4095
+        },
+        "query": {
+          "p2r_edge_indices": 2003165,
+          "r2p_edge_indices": null,
+          "r2r_edge_domains": 3571,
+          "r2r_edge_indices": 3571
+        }
+      },
+      "real_graph_hashes_after": {
+        "native1024": {
+          "combined_sha256": "3ea308bcedeacb5078c5d7b92d60a40e09beebb1b2ec66d0090cfd26ec05bb67",
+          "p2r_domains": null,
+          "p2r_edge_indices": "ea39f0f8b6c04a0186e5ba96b2705715910c3f9ff46c19091ef82b2b69cf1849",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "0afed147b971e0688de045ee8fb32283d3d7786cbed3b6aa37f824297aed38d7",
+          "r_rnodes": "5e83afecc3c3ab747b18983c4c520b39400c1f9220055c70913dd3574b3ff3d6",
+          "x_pnodes_inp": "1334ff9f8bf9980e8cc0068731d3d019d58aea62af090b22caf095cc4f839965",
+          "x_pnodes_out": "1334ff9f8bf9980e8cc0068731d3d019d58aea62af090b22caf095cc4f839965",
+          "x_rnodes": "7f3de5bd38cd5e6cbdc08695c27de580fbd379dd66bb4c08c8449f226f10ba55"
+        },
+        "query": {
+          "combined_sha256": "fb8d1491d641cc7ef02fd9e317876924e43da1e777d15458e30a4385d5ad983a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "053285f1d073318b5e5a0e9b4d7df4a1aec9ec4d4c79bd3b572314583b651c9f",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ac56e165baccd167e0d9e49b3954e88ccf87c087d655edd89ad05bbacd79d114",
+          "r_rnodes": "297a99da18fa4f1371c340cc254e0639bfbf45092a47dc157bc4b4a3be769d1a",
+          "x_pnodes_inp": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_pnodes_out": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_rnodes": "f13c724b8501449d08e2d28fff28ef1ff5c0ae88d7e9ccc8c5066b54f0339400"
+        }
+      },
+      "real_graph_hashes_before": {
+        "native1024": {
+          "combined_sha256": "3ea308bcedeacb5078c5d7b92d60a40e09beebb1b2ec66d0090cfd26ec05bb67",
+          "p2r_domains": null,
+          "p2r_edge_indices": "ea39f0f8b6c04a0186e5ba96b2705715910c3f9ff46c19091ef82b2b69cf1849",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "0afed147b971e0688de045ee8fb32283d3d7786cbed3b6aa37f824297aed38d7",
+          "r_rnodes": "5e83afecc3c3ab747b18983c4c520b39400c1f9220055c70913dd3574b3ff3d6",
+          "x_pnodes_inp": "1334ff9f8bf9980e8cc0068731d3d019d58aea62af090b22caf095cc4f839965",
+          "x_pnodes_out": "1334ff9f8bf9980e8cc0068731d3d019d58aea62af090b22caf095cc4f839965",
+          "x_rnodes": "7f3de5bd38cd5e6cbdc08695c27de580fbd379dd66bb4c08c8449f226f10ba55"
+        },
+        "query": {
+          "combined_sha256": "fb8d1491d641cc7ef02fd9e317876924e43da1e777d15458e30a4385d5ad983a",
+          "p2r_domains": null,
+          "p2r_edge_indices": "053285f1d073318b5e5a0e9b4d7df4a1aec9ec4d4c79bd3b572314583b651c9f",
+          "r2p_domains": null,
+          "r2p_edge_indices": null,
+          "r2r_domains": null,
+          "r2r_edge_indices": "ac56e165baccd167e0d9e49b3954e88ccf87c087d655edd89ad05bbacd79d114",
+          "r_rnodes": "297a99da18fa4f1371c340cc254e0639bfbf45092a47dc157bc4b4a3be769d1a",
+          "x_pnodes_inp": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_pnodes_out": "0140b06e5be25bb08d6284609419fbbc087cf2af38b1aef04aa6e84e9f6071ad",
+          "x_rnodes": "f13c724b8501449d08e2d28fff28ef1ff5c0ae88d7e9ccc8c5066b54f0339400"
+        }
+      },
+      "real_graph_hashes_exact": true,
+      "required_comparisons": [
+        "exact_real_edge_to_new_monotonic"
+      ],
+      "same_shape_floor_K": 0.00959014892578125,
+      "sample_id": "v6p1if1_0029",
+      "sample_role": "max_edge_witness",
+      "tolerance_K": 0.191802978515625
+    }
+  ],
+  "role_contract": {
+    "accessed_roles": [
+      "valid_iid_inputs"
+    ],
+    "accuracy_tuning": false,
+    "sealed": false,
+    "temperature_truth_read": false,
+    "test": false,
+    "training": false
+  },
+  "route": "E240825_direct_control",
+  "sample_ids": [
+    "v6p1if1_0308",
+    "v6p1if1_0029"
+  ],
+  "schema_version": "heat3d_v6_publication_final_padding_route_gate_v1",
+  "status": "passed"
+}

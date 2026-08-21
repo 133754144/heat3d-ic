@@ -46,8 +46,41 @@ def main() -> int:
     reference_records = exact_records(json.loads(blob))
     candidate_records = exact_records(json.loads(args.candidate.read_text()))
     require(candidate_records == reference_records, "candidate/reference direct SHA records")
-    require(seal["historical_golden"]["records"] == reference_records, "seal/reference records")
-    require(seal["historical_golden"]["source_sha256"] == golden["source_sha256"], "golden binding")
+    final_padding = seal.get("final_padding_gate")
+    if final_padding is None:
+        require(seal["historical_golden"]["records"] == reference_records,
+                "seal/reference records")
+        require(seal["historical_golden"]["source_sha256"] == golden["source_sha256"],
+                "golden binding")
+    else:
+        padding_golden_path = ROOT / final_padding["padding_golden_path"]
+        padding_golden = json.loads(padding_golden_path.read_text())
+        require(sha(padding_golden_path) == final_padding["padding_golden_sha256"],
+                "padding-adjusted golden SHA")
+        require(seal["historical_golden"]["records"] == padding_golden["records"],
+                "seal/padding-adjusted records")
+        require(seal["historical_golden"]["source_sha256"] == sha(padding_golden_path),
+                "padding-adjusted golden binding")
+        old_by_key = {
+            (row["route"], row["order_seed"], row["sample_id"]): row
+            for row in reference_records
+        }
+        require(len(padding_golden["records"]) == len(old_by_key),
+                "padding-adjusted record count")
+        for row in padding_golden["records"]:
+            old = old_by_key[(row["route"], row["order_seed"], row["sample_id"])]
+            require(row["native1024_graph_hashes"] == old["native1024_graph_hashes"],
+                    "padding-adjusted native real graph drift")
+            require(row["query_graph_hashes"] == old["query_graph_hashes"],
+                    "padding-adjusted query real graph drift")
+        padding_manifest = ROOT / final_padding["padding_manifest_path"]
+        padding_result = ROOT / final_padding["result_path"]
+        require(sha(padding_manifest) == final_padding["padding_manifest_sha256"],
+                "final padding manifest SHA")
+        require(sha(padding_result) == final_padding["result_sha256"],
+                "final padding result SHA")
+        gate = json.loads(padding_result.read_text())
+        require(gate["padding_numerical_equivalence"] == "GO", "padding numerical gate")
     require(seal["historical_golden"]["record_count"] == 12, "golden record count")
     require(seal["historical_golden"]["candidate_reference_direct_SHA_equal"], "direct golden compare marker")
     require(not seal["historical_golden"]["current_implementation_self_replay_is_only_reference"], "self replay reference")
@@ -100,7 +133,9 @@ def main() -> int:
                 "full_valid32_timing_executed_in_this_seal",
                 "formal_latency_or_speedup_generated_in_this_seal"):
         require(seal["role_contract"][key] is False, f"forbidden role: {key}")
-    require(seal["new_benchmark_execution"]["case_count"] <= 2, "low-cost seal")
+    maximum_seal_cases = 8 if final_padding is not None else 2
+    require(seal["new_benchmark_execution"]["case_count"] <= maximum_seal_cases,
+            "low-cost seal")
     optional = (args.authoritative_raw, args.collector_result, args.artifact_sha_manifest)
     require(all(value is None for value in optional) or all(value is not None for value in optional),
             "authoritative closeout inputs must be supplied together")
