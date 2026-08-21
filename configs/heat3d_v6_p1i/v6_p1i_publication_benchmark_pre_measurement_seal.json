@@ -6,15 +6,28 @@
     "resident": "prepared_system_solve_only",
     "timing_boundary": "in_memory_k_q_BC_to_synchronized_240825_result"
   },
+  "FVM_in_process_P1_sanity": {
+    "IPC_used_in_fresh_Q1": false,
+    "artifact_path": "configs/heat3d_v6_p1i/v6_p1i_publication_fvm_p1_sanity.json",
+    "artifact_sha256": "d1091b7472f60d2417cee7d919009c158bfd73a7146c23612f6180f95a2dce73",
+    "case_count": 2,
+    "process_id": 3690330,
+    "status": "passed",
+    "worker_pids": [
+      3690330
+    ]
+  },
   "analysis_freeze": {
+    "Q2_and_B16_to_B32_uncertainty": "three_lifecycle_median_and_min_max_no_n3_bootstrap_CI",
     "bootstrap_resamples": 20000,
     "bootstrap_seed": 20260821,
-    "confidence_interval": "paired_seed_bootstrap_percentile_95pct",
+    "confidence_interval": "fresh_and_Q1_only_paired_32_sample_workload_bootstrap_within_each_seed",
     "pooled_96_ratio_forbidden": true,
     "post_hoc_aggregation_change_forbidden": true,
     "route_seed_unit": "each_route_x_each_seed_independently",
-    "speedup_pairing": "same_seed_FVM_over_neural_before_aggregation",
-    "three_seed_aggregation": "median_of_three_paired_seed_ratios",
+    "speedup_pairing": "same_sample_id_then_same_seed_FVM_over_neural_before_three_repeat_summary",
+    "three_seed_aggregation": "median_and_min_max_of_three_lifecycle_point_estimates",
+    "three_seed_bootstrap_forbidden": true,
     "within_unit_statistics": [
       "median",
       "p95"
@@ -31,13 +44,14 @@
   ],
   "formal_runner_static_gate": "passed",
   "frozen_implementation_sha256": {
-    "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json": "3cefb4a48b84cb00d59ddd4fb1019887caaa37dbb1a4cf910c351fa26f906894",
+    "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json": "9bc90625becdb4bb8b258a106a29f9aa087301ed1292b53a546a3836e7cd9abf",
     "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_standard_v1_1.json": "325dd80dffadae0f56c547ec84902a717a59615c9d32bac2036d121bae17790b",
     "scripts/benchmark_heat3d_v6_p1i_final_e_service.py": "57b85b6412fb560da3d8d25cad1ce1616dd3ff816cc81cc40d2732270184d9a0",
     "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py": "d5f4ded41421a491ccecbe33ab75d23d7e1d8dddb2903de12174f912571b9c84",
-    "scripts/check_heat3d_v6_publication_benchmark_pre_measurement.py": "b5717603f8ad8ff7253a5df9f8be3d677764b1b21df44011de700f06932264ff",
-    "scripts/collect_heat3d_v6_publication_benchmark_v1_1.py": "8ea882e069aa7c132f6785e4be1f2a9053327b7df5af1aeddb740f4e98809f2d",
-    "scripts/smoke_heat3d_v6_publication_benchmark_conformance_v1_1.py": "d7010b44589e31bfe88b1dc91c58f9d0a114e6a451fc22a55f81321f10cc11fb"
+    "scripts/check_heat3d_v6_publication_benchmark_pre_measurement.py": "1ad15af2daf611dec66b82c5f26733339bb69ca0e50f355da2f80be0f505ebc2",
+    "scripts/collect_heat3d_v6_publication_benchmark_v1_1.py": "568f3266a38ead41c8e9b410371ccb0e5210110bd669f3d327935d0a1c26a523",
+    "scripts/manifest_heat3d_v6_publication_benchmark_artifacts.py": "6488d2ab533d747ef586070048ea1e087fd5d8cb235072cf195625fc67f28eea",
+    "scripts/smoke_heat3d_v6_publication_benchmark_conformance_v1_1.py": "070c4f51540d23b37dca0b168e88ea60d2cb57f59c70bf301c56ff3808a410c5"
   },
   "historical_golden": {
     "candidate_reference_direct_SHA_equal": true,
@@ -458,14 +472,15 @@
     "source_sha256": "257fe38b21d8aee630569a7e96eaaa390b4db346d7fe82aecac15f4e7770e3c1"
   },
   "new_benchmark_execution": {
-    "case_count": 0,
+    "case_count": 2,
     "full_valid32_timing": false,
     "latency_or_speedup_generated": false,
-    "reason": "recent_real_route_smoke_reused_and_implementation_only_seal"
+    "reason": "FVM_in_process_persistent_P1_sanity_only"
   },
   "pre_measurement_seal": "GO",
-  "protocol_sha256": "3cefb4a48b84cb00d59ddd4fb1019887caaa37dbb1a4cf910c351fa26f906894",
+  "protocol_sha256": "9bc90625becdb4bb8b258a106a29f9aa087301ed1292b53a546a3836e7cd9abf",
   "publication_timing_freeze": "NO_GO_ready_for_full_valid32",
+  "ready_for_authoritative_valid32": "GO",
   "role_contract": {
     "accuracy_tuning": false,
     "formal_latency_or_speedup_generated_in_this_seal": false,

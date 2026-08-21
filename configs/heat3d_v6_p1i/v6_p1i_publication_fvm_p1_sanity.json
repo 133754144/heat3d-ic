@@ -1,0 +1,94 @@
+{
+  "IPC_used_in_fresh_Q1": false,
+  "Q2": null,
+  "aggregate_service_worker_peak_RAM_bytes": 440352768,
+  "classification": {
+    "cold_service_first_case": "first_row",
+    "fresh_distinct_case": "all_rows",
+    "repeat_case_cache_hot": "separate_post_fresh_prepared_system_cache_pool",
+    "resident_core": "prepared_system_solve_only"
+  },
+  "execution_model": "in_process_persistent_P1_one_thread",
+  "memory_measurement": {
+    "field": "service_process_HWM_bytes",
+    "semantics": "single_in_process_persistent_P1_service_VmHWM",
+    "value": 440352768
+  },
+  "order_seed": 20260814,
+  "ordered_sample_ids": [
+    "v6p1if1_0907",
+    "v6p1if1_0365"
+  ],
+  "process_id": 3690330,
+  "publication_timing_eligible": false,
+  "repeat_case_cache_hot": {
+    "count": 2,
+    "median_seconds": 1.8627527335193008,
+    "p95_seconds": 1.8740141881862655
+  },
+  "resident_core": {
+    "count": 2,
+    "median_seconds": 1.8626573765650392,
+    "p95_seconds": 1.873918219981715
+  },
+  "role_contract": {
+    "accessed_roles": [
+      "train_input_warmup_without_target",
+      "valid_iid_inputs_smoke_only"
+    ],
+    "accuracy_tuning": false,
+    "formal_speedup_generated": false,
+    "full_valid32_or_valid96_timing": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "route": "FVM240825_reference",
+  "rows": [
+    {
+      "residual_limit_seconds": 0.09549092389643193,
+      "residual_seconds": 5.027279257774353e-06,
+      "sample_id": "v6p1if1_0907",
+      "service_seconds": 1.9098184779286385,
+      "stages": {
+        "assembly": 0.05794734600931406,
+        "payload_decode": 1.1529773473739624e-06,
+        "prepared_system_lookup": 0.0,
+        "solve": 1.8518649516627192
+      },
+      "submit_to_result_seconds": 1.9099216740578413,
+      "worker_pid": 3690330
+    },
+    {
+      "residual_limit_seconds": 0.09944684479851276,
+      "residual_seconds": 2.5229528546333313e-06,
+      "sample_id": "v6p1if1_0365",
+      "service_seconds": 1.9889368959702551,
+      "stages": {
+        "assembly": 0.03449131967499852,
+        "payload_decode": 2.195127308368683e-06,
+        "prepared_system_lookup": 0.0,
+        "solve": 1.9544408582150936
+      },
+      "submit_to_result_seconds": 1.9890338513068855,
+      "worker_pid": 3690330
+    }
+  ],
+  "schema_version": "heat3d_v6_publication_fvm_service_smoke_v1_1",
+  "service_mode": "serial",
+  "status": "passed_smoke",
+  "thread_env": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "warmup": {
+    "kind": "not_applicable_no_JIT",
+    "timed_case_prepass": false
+  },
+  "worker_count": 1,
+  "worker_pids": [
+    3690330
+  ]
+}
