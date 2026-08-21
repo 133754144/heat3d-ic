@@ -243,8 +243,17 @@ def main() -> int:
         if args.qualification_result is None:
             raise RuntimeError("timing-only requires --qualification-result")
         qualified = json.loads(args.qualification_result.read_text())
-        if qualified.get("status") != "passed" or qualified.get("sample_count") != 96:
-            raise RuntimeError("timing-only qualification result is not frozen valid96")
+        valid96_qualification = (
+            qualified.get("status") == "passed" and qualified.get("sample_count") == 96)
+        frozen_envelope_qualification = (
+            qualified.get("status") == "passed"
+            and qualified.get("envelope_qualification") == "GO"
+            and qualified.get("sample_count") == 32
+            and qualified.get("train_only_warmup_count") == 1
+            and qualified.get("dummy_capacity_only") is True
+            and qualified.get("real_graph_semantics_changed") is False)
+        if not (valid96_qualification or frozen_envelope_qualification):
+            raise RuntimeError("timing-only qualification result is not a frozen envelope")
         native_targets = {k: (None if v is None else int(v)) for k, v in qualified["padding"]["actual_padding_envelope"]["native"].items()}
         query_targets = {k: (None if v is None else int(v)) for k, v in qualified["padding"]["actual_padding_envelope"]["query"].items()}
     for anchor in ([] if args.timing_only else anchors):

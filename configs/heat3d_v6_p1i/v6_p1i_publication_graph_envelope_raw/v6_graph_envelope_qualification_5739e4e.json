@@ -1,0 +1,69 @@
+{
+  "attempt1_semantics_amendment": {
+    "attempted": true,
+    "completed": false,
+    "completed_cells": 0,
+    "failure_artifact_unchanged": true,
+    "publication_results_generated": false,
+    "remaining_cells_not_started": 29
+  },
+  "capacity_derivation": "max_over_frozen_valid32_plus_one_target_free_train_static_warmup",
+  "dummy_capacity_only": true,
+  "envelope_qualification": "GO",
+  "historical_real_unpadded_graph_golden_exact": true,
+  "independent_process_count": 2,
+  "manual_capacity_override": false,
+  "padding_envelopes": {
+    "E16384_reconstruction": {
+      "p2r_edge_indices": 107105,
+      "r2p_edge_indices": null,
+      "r2r_edge_domains": 3573,
+      "r2r_edge_indices": 3573
+    },
+    "E240825_direct_control": {
+      "p2r_edge_indices": 2003165,
+      "r2p_edge_indices": null,
+      "r2r_edge_domains": 3571,
+      "r2r_edge_indices": 3571
+    },
+    "U_v2_16384_reconstruction": {
+      "p2r_edge_indices": 2911,
+      "r2p_edge_indices": 41886,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    },
+    "U_v2_direct240825": {
+      "p2r_edge_indices": 2911,
+      "r2p_edge_indices": 536317,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    },
+    "native1024_anchor": {
+      "p2r_edge_indices": 2911,
+      "r2p_edge_indices": null,
+      "r2r_edge_domains": 4201,
+      "r2r_edge_indices": 4201
+    }
+  },
+  "per_sample_count_hash_metadata_exact": true,
+  "qualification_runs": [
+    {
+      "path": "/tmp/v6_graph_envelope_qual_run_a_5739e4e.json",
+      "sha256": "39a866a75ba0342b7c9c77cfbb87c71763db44a0e1480f916cea134052ac3bb0"
+    },
+    {
+      "path": "/tmp/v6_graph_envelope_qual_run_b_5739e4e.json",
+      "sha256": "39a866a75ba0342b7c9c77cfbb87c71763db44a0e1480f916cea134052ac3bb0"
+    }
+  ],
+  "ready_for_padding_equivalence": "GO",
+  "role_contract": {
+    "accuracy_tuning": false,
+    "model_inference": false,
+    "sealed": false,
+    "test": false,
+    "training": false
+  },
+  "schema_version": "heat3d_v6_publication_graph_envelope_qualification_v1",
+  "status": "passed"
+}
