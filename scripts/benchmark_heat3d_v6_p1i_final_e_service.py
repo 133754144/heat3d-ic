@@ -175,7 +175,9 @@ def main() -> int:
         gathered = support[map_indices]
         return jnp.sum(gathered * map_weights.astype(support.dtype), axis=1)
 
-    def prepare_host(anchor: Any) -> tuple[dict[str, Any], dict[str, float]]:
+    def prepare_host(
+        anchor: Any, *, allow_static_envelope_widen: bool = False,
+    ) -> tuple[dict[str, Any], dict[str, float]]:
         stages: dict[str, float] = {}
         phase = time.perf_counter()
         full_k, full_q = physics_memory[anchor.sample_id]
@@ -229,6 +231,19 @@ def main() -> int:
                 highn.runner._graph_coords_for_example(query_example, runtime["stats"]), key=graph_key)
             block(query_metadata)
             stages["query_graph"] = time.perf_counter() - phase
+            if allow_static_envelope_widen:
+                for targets, metadata in (
+                    (anchor_targets, anchor_metadata), (query_targets, query_metadata)):
+                    for field in (
+                        "p2r_edge_indices", "p2r_domains", "r2r_edge_indices",
+                        "r2r_domains", "r2p_edge_indices", "r2p_domains",
+                    ):
+                        value = getattr(metadata, field, None)
+                        if value is not None:
+                            targets[field] = max(
+                                int(targets.get(field) or 0),
+                                int(np.asarray(value).shape[1]),
+                            )
             phase = time.perf_counter()
             anchor_group = host_tree(highn._model_group(highn._prepare_group(
                 example=anchor_example, anchor=anchor, runtime=runtime,
@@ -302,7 +317,9 @@ def main() -> int:
               for seed in order_seeds}
     # Compile only with a train-input payload.  No target is loaded and no
     # timed valid case graph or packing path is touched before measurement.
-    warm_payload, _ = prepare_host(warmup_anchor)
+    envelope_before_warmup = {"anchor": dict(anchor_targets), "query": dict(query_targets)}
+    warm_payload, _ = prepare_host(warmup_anchor, allow_static_envelope_widen=True)
+    envelope_after_warmup = {"anchor": dict(anchor_targets), "query": dict(query_targets)}
     warm_device = jax.device_put((
         warm_payload["anchor"], warm_payload["query"], warm_payload["weights"],
         warm_payload["map_indices"], warm_payload["map_weights"],
@@ -427,7 +444,10 @@ def main() -> int:
         "ordered_sample_ids": {str(seed): [anchors[index].sample_id for index in orders[seed]] for seed in order_seeds},
         "warmup": {"kind": "train_input_static_padded_envelope", "source_sample_id": warmup_id,
                    "source_split": "train", "target_read": False,
-                   "source_is_timed": False, "timed_graph_or_packing_prebuilt": False},
+                   "source_is_timed": False, "timed_graph_or_packing_prebuilt": False,
+                   "padding_envelope_before": envelope_before_warmup,
+                   "padding_envelope_after": envelope_after_warmup,
+                   "padding_widening_semantics": "max_frozen_valid_and_train_warmup_actual"},
         "timing_boundary": protocol.get("timing", {}).get("boundary", protocol.get("timing_boundary")),
         "unseen_shape_first_hit": None if not first_hit_values else stats(first_hit_values),
         "steady_shape_fresh": None if not steady_values else stats(steady_values),
