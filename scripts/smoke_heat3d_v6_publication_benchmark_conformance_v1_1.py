@@ -83,7 +83,7 @@ def _init_fvm(serialized: dict[str, str]) -> None:
     if not np.array_equal(mesh["coords"], data.full_shared()["coords"]):
         raise RuntimeError("FVM mesh/full-field coordinate drift")
     global _FVM_STATE
-    _FVM_STATE = {"qualification": qualification, "mesh": mesh}
+    _FVM_STATE = {"qualification": qualification, "mesh": mesh, "systems": {}}
 
 
 def _fvm_ready() -> int:
@@ -93,7 +93,10 @@ def _fvm_ready() -> int:
     return os.getpid()
 
 
-def _fvm_case(payload: dict[str, Any]) -> dict[str, Any]:
+def _fvm_case(
+    payload: dict[str, Any], use_cached_system: bool = False,
+    cache_system: bool = False,
+) -> dict[str, Any]:
     q = _FVM_STATE["qualification"]
     started = time.perf_counter()
     phase = time.perf_counter()
@@ -101,16 +104,24 @@ def _fvm_case(payload: dict[str, Any]) -> dict[str, Any]:
     source = np.asarray(payload["q_W_m3"], dtype=np.float64)
     decode = time.perf_counter() - phase
     phase = time.perf_counter()
-    system = q.prior._assemble(
-        _FVM_STATE["mesh"], k, source,
-        float(payload["top_h"]), float(payload["bottom_h"]),
-    )
-    assembly = time.perf_counter() - phase
+    if use_cached_system:
+        system = _FVM_STATE["systems"][payload["sample_id"]]
+        assembly = 0.0
+        prepared_system_lookup = time.perf_counter() - phase
+    else:
+        system = q.prior._assemble(
+            _FVM_STATE["mesh"], k, source,
+            float(payload["top_h"]), float(payload["bottom_h"]),
+        )
+        if cache_system:
+            _FVM_STATE["systems"][payload["sample_id"]] = system
+        assembly = time.perf_counter() - phase
+        prepared_system_lookup = 0.0
     phase = time.perf_counter()
     temperature = q.prior._solve(*system)
     solve = time.perf_counter() - phase
     total = time.perf_counter() - started
-    residual = total - (decode + assembly + solve)
+    residual = total - (decode + assembly + prepared_system_lookup + solve)
     limit = max(0.025, 0.05 * total)
     if residual < -1.0e-6 or residual > limit:
         raise RuntimeError(f"FVM residual {residual} exceeds {limit}")
@@ -119,7 +130,8 @@ def _fvm_case(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "sample_id": payload["sample_id"], "worker_pid": os.getpid(),
         "service_seconds": total,
-        "stages": {"payload_decode": decode, "assembly": assembly, "solve": solve},
+        "stages": {"payload_decode": decode, "assembly": assembly,
+                   "prepared_system_lookup": prepared_system_lookup, "solve": solve},
         "residual_seconds": residual, "residual_limit_seconds": limit,
     }
 
@@ -169,10 +181,18 @@ def fvm_worker(args: argparse.Namespace) -> int:
     if args.service_mode == "serial":
         for payload in payloads:
             submitted = time.perf_counter()
-            row = pool.submit(_fvm_case, payload).result()
+            row = pool.submit(_fvm_case, payload, False, args.formal_measurement).result()
             completed = time.perf_counter()
             row["submit_to_result_seconds"] = completed - submitted
             rows_out.append(row)
+        cache_hot_rows = []
+        if args.formal_measurement:
+            repeated = payloads[0]
+            for _ in range(args.cache_hot_repeats):
+                submitted = time.perf_counter()
+                row = pool.submit(_fvm_case, repeated, True).result()
+                row["submit_to_result_seconds"] = time.perf_counter() - submitted
+                cache_hot_rows.append(row)
     else:
         began = time.perf_counter()
         pending: dict[Any, tuple[int, float]] = {}
@@ -207,8 +227,15 @@ def fvm_worker(args: argparse.Namespace) -> int:
             "submit_to_result": stats([row["submit_to_result_seconds"] for row in rows_out]),
             "inter_completion": stats(inter),
             "samples_per_second": len(rows_out) / ordered_completion[-1],
+            "B16_wall_seconds": (
+                ordered_completion[15] if len(ordered_completion) >= 16 else None),
+            "B32_wall_seconds": (
+                ordered_completion[31] if len(ordered_completion) >= 32 else None),
+            "true_B16_to_B32_marginal_seconds": (
+                (ordered_completion[31] - ordered_completion[15]) / 16.0
+                if len(ordered_completion) >= 32 else None),
         }
-    aggregate_peak = _hwm_bytes(os.getpid()) + sum(_hwm_bytes(pid) for pid in worker_pids)
+    summed_hwm_upper_bound = _hwm_bytes(os.getpid()) + sum(_hwm_bytes(pid) for pid in worker_pids)
     pool.shutdown()
     result = {
         "schema_version": "heat3d_v6_publication_fvm_service_smoke_v1_1",
@@ -222,10 +249,29 @@ def fvm_worker(args: argparse.Namespace) -> int:
         "classification": {
             "cold_service_first_case": "first_row",
             "fresh_distinct_case": "all_rows",
-            "repeat_case_cache_hot": "not_measured_in_conformance_smoke",
-            "resident_core": "not_measured_in_conformance_smoke",
+            "repeat_case_cache_hot": (
+                "separate_post_fresh_prepared_system_cache_pool"
+                if args.formal_measurement and args.service_mode == "serial"
+                else "not_measured_in_conformance_smoke"),
+            "resident_core": (
+                "prepared_system_solve_only"
+                if args.formal_measurement and args.service_mode == "serial"
+                else "not_measured_in_conformance_smoke"),
         },
-        "aggregate_service_worker_peak_RAM_bytes": aggregate_peak,
+        "aggregate_service_worker_peak_RAM_bytes": summed_hwm_upper_bound,
+        "memory_measurement": {
+            "field": "summed_process_HWM_upper_bound_bytes",
+            "value": summed_hwm_upper_bound,
+            "semantics": "sum_of_parent_and_worker_VmHWM_not_simultaneous_RSS",
+        },
+        "repeat_case_cache_hot": (
+            stats([row["submit_to_result_seconds"] for row in cache_hot_rows])
+            if args.formal_measurement and args.service_mode == "serial"
+            else "not_measured_in_conformance_smoke"),
+        "resident_core": (
+            stats([row["stages"]["solve"] for row in cache_hot_rows])
+            if args.formal_measurement and args.service_mode == "serial"
+            else "not_measured_in_conformance_smoke"),
         "thread_env": THREAD_ENV,
         "publication_timing_eligible": False,
         "role_contract": protocol["role_contract"],
@@ -245,14 +291,18 @@ def route_command(args: argparse.Namespace, route: str, seed: int, mode: str, ou
         "--checkpoint-sha256", args.checkpoint_sha256,
         "--sample-count", str(args.sample_count), "--output", str(output),
     ]
+    if args.formal_measurement:
+        common.extend(("--golden-seal", str(args.pre_measurement_seal)))
     if route.startswith("E"):
         padding = args.e16384_padding_result if route.startswith("E16384") else args.e240825_padding_result
-        return [
+        command = [
             sys.executable, str(ROOT / "scripts/benchmark_heat3d_v6_p1i_final_e_service.py"),
             *common, "--query-padding-result", str(padding), "--route", route,
             "--order-seed", str(seed), "--service-mode", mode,
-            "--resident-repeats", "2", "--standard-v1-1-smoke",
+            "--resident-repeats", "2" if not args.formal_measurement else "20",
         ]
+        command.append("--publication-v1-1" if args.formal_measurement else "--standard-v1-1-smoke")
+        return command
     if route.startswith("U"):
         resolution = 16384 if "16384" in route else 240825
         qualification_path = args.u16384_qualification if resolution == 16384 else args.u240825_qualification
@@ -263,12 +313,13 @@ def route_command(args: argparse.Namespace, route: str, seed: int, mode: str, ou
             "--population-mode", "frozen_valid32", "--timing-only",
             "--qualification-result", str(qualification_path), "--timing-regression-audit",
             "--order-seed", str(seed), "--repeats", "2", "--batch-sizes", "1",
-            "--standard-v1-1-smoke", "--true-concurrent-depth", "1" if mode == "serial" else "2",
+            "--true-concurrent-depth", "1" if mode == "serial" else "2",
         ]
+        command.append("--publication-v1-1" if args.formal_measurement else "--standard-v1-1-smoke")
         if mode == "Q2":
             command.append("--concurrent-only")
         return command
-    return [
+    command = [
         sys.executable, str(Path(__file__).resolve()), "--fvm-worker",
         "--protocol", str(args.protocol), "--binding", str(args.binding),
         "--dataset-root", str(args.dataset_root), "--manifest", str(args.manifest),
@@ -276,6 +327,9 @@ def route_command(args: argparse.Namespace, route: str, seed: int, mode: str, ou
         "--order-seed", str(seed), "--service-mode", mode,
         "--sample-count", str(args.sample_count), "--output", str(output),
     ]
+    if args.formal_measurement:
+        command.extend(("--formal-measurement", "--cache-hot-repeats", "20"))
+    return command
 
 
 def ordered_ids(row: dict[str, Any], seed: int) -> list[str]:
@@ -337,7 +391,16 @@ def orchestrate(args: argparse.Namespace) -> int:
     protocol = json.loads(args.protocol.read_text())
     if protocol["status"] != "frozen_before_real_route_conformance_smoke":
         raise RuntimeError("protocol v1.1 is not frozen before conformance smoke")
-    if args.sample_count < 2 or args.sample_count > 4:
+    if args.formal_measurement:
+        seal = json.loads(args.pre_measurement_seal.read_text())
+        if (seal["pre_measurement_seal"] != "GO"
+                or seal["publication_timing_freeze"] != "NO_GO_ready_for_full_valid32"
+                or seal["protocol_sha256"] != file_sha256(
+                    ROOT / "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json")):
+            raise RuntimeError("formal measurement pre-measurement seal drift")
+        if args.sample_count != 32:
+            raise RuntimeError("formal measurement requires frozen valid32")
+    elif args.sample_count < 2 or args.sample_count > 4:
         raise RuntimeError("conformance smoke is limited to 2-4 valid32 inputs")
     args.output_root.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
@@ -446,6 +509,9 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--order-seed", type=int)
     parser.add_argument("--service-mode", choices=("serial", "Q2"))
     parser.add_argument("--sample-count", type=int, default=4)
+    parser.add_argument("--formal-measurement", action="store_true")
+    parser.add_argument("--cache-hot-repeats", type=int, default=20)
+    parser.add_argument("--pre-measurement-seal", type=Path)
     return parser.parse_args()
 
 
@@ -462,4 +528,6 @@ if __name__ == "__main__":
     )
     if any(getattr(parsed, name) is None for name in required):
         raise SystemExit(f"orchestrator requires: {', '.join(required)}")
+    if parsed.formal_measurement and parsed.pre_measurement_seal is None:
+        raise SystemExit("formal measurement requires --pre-measurement-seal")
     raise SystemExit(orchestrate(parsed))

@@ -1,0 +1,89 @@
+{
+  "schema_version": "heat3d_v6_publication_benchmark_pre_measurement_protocol_v1",
+  "status": "frozen_before_full_valid32_measurement",
+  "baseline_commit": "519963c3ce2f0a04c9b51ec2998c13ca0753190a",
+  "inherits": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_standard_v1_1.json",
+  "routes": [
+    "E16384_reconstruction",
+    "U_v2_16384_reconstruction",
+    "U_v2_direct240825",
+    "E240825_direct_control",
+    "FVM240825_reference"
+  ],
+  "golden_exactness": {
+    "source_commit": "519963c3ce2f0a04c9b51ec2998c13ca0753190a",
+    "source_path": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_conformance_v1_1_smoke.json",
+    "source_sha256": "257fe38b21d8aee630569a7e96eaaa390b4db346d7fe82aecac15f4e7770e3c1",
+    "resolutions": [16384, 240825],
+    "required_record_count": 12,
+    "reference_semantics": "immutable_historical_git_object_not_current_implementation_self_replay",
+    "direct_fields": [
+      "native1024_graph_metadata_and_edge_component_sha256",
+      "query_graph_metadata_and_edge_component_sha256",
+      "prepared_payload_sha256"
+    ]
+  },
+  "analysis_freeze": {
+    "route_seed_unit": "each_route_x_each_seed_independently",
+    "within_unit_statistics": ["median", "p95"],
+    "speedup_pairing": "same_seed_FVM_over_neural_before_aggregation",
+    "three_seed_aggregation": "median_of_three_paired_seed_ratios",
+    "confidence_interval": "paired_seed_bootstrap_percentile_95pct",
+    "bootstrap_seed": 20260821,
+    "bootstrap_resamples": 20000,
+    "pooled_96_ratio_forbidden": true,
+    "post_hoc_aggregation_change_forbidden": true
+  },
+  "FVM_contract": {
+    "fresh_Q1": "persistent_in_process_P1_one_thread",
+    "resident": "prepared_system_solve_only",
+    "Q2": "persistent_P2_each_one_thread",
+    "B16_to_B32": "persistent_P2_each_one_thread",
+    "timing_boundary": "in_memory_k_q_BC_to_synchronized_240825_result"
+  },
+  "complete_workloads": [
+    "cold_service_first_case",
+    "fresh_distinct_case",
+    "repeat_case_cache_hot",
+    "resident_core",
+    "true_B16_to_B32_marginal",
+    "Q1_closed_loop",
+    "real_Q2"
+  ],
+  "pool_separation": {
+    "cold_and_fresh": "serial_lifecycle_distinct_case_pool",
+    "cache_hot": "serial_lifecycle_separate_post_fresh_repeat_pool",
+    "resident": "serial_lifecycle_separate_prepared_payload_or_system_pool",
+    "Q2": "independent_Q2_lifecycle_without_serial_prepass",
+    "mixed_pool_forbidden": true
+  },
+  "runtime_state": {
+    "source": "historical_v1_1_real_route_smoke_at_source_commit",
+    "route_specific_padding_and_tensor_envelopes_frozen": true,
+    "train_only_static_JIT_envelope_allowed": true,
+    "timed_case_shape_prewarm_forbidden": true,
+    "memory_reporting": {
+      "single_process_neural": "service_process_HWM_bytes",
+      "multi_process_FVM": "summed_process_HWM_upper_bound_bytes",
+      "simultaneous_aggregate_RSS_claimed": false
+    }
+  },
+  "formal_runner": {
+    "entrypoint": "scripts/smoke_heat3d_v6_publication_benchmark_conformance_v1_1.py",
+    "required_flag": "--formal-measurement",
+    "sample_count": 32,
+    "independent_lifecycles": 30
+  },
+  "freeze_decision": {
+    "pre_measurement_seal": "GO_only_if_checker_passes",
+    "publication_timing_freeze": "NO_GO_ready_for_full_valid32"
+  },
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "accuracy_tuning": false,
+    "full_valid32_timing_executed_in_this_seal": false,
+    "formal_latency_or_speedup_generated_in_this_seal": false
+  }
+}

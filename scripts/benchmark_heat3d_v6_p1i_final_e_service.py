@@ -106,14 +106,24 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--order-seed", type=int)
     parser.add_argument("--service-mode", choices=("serial", "Q2", "both"), default="both")
     parser.add_argument("--standard-v1-1-smoke", action="store_true")
+    parser.add_argument("--publication-v1-1", action="store_true")
+    parser.add_argument("--cache-hot-repeats", type=int, default=20)
+    parser.add_argument("--golden-seal", type=Path)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse()
     protocol = json.loads(args.protocol.read_text())
-    if protocol.get("status") not in {"preregistered_before_execution", "frozen_before_real_route_conformance_smoke"}:
+    if protocol.get("status") not in {
+        "preregistered_before_execution", "frozen_before_real_route_conformance_smoke",
+        "pre_measurement_sealed",
+    }:
         raise RuntimeError("final correction protocol is not preregistered")
+    if args.publication_v1_1 and (args.standard_v1_1_smoke or args.sample_count != 32):
+        raise RuntimeError("publication v1.1 requires a distinct full-valid32 lifecycle")
+    if args.publication_v1_1 and args.golden_seal is None:
+        raise RuntimeError("publication v1.1 requires historical golden seal")
     if jax.devices()[0].platform != "gpu":
         raise RuntimeError("final E service benchmark requires GPU")
     state = p8.runtime_state(args)
@@ -291,9 +301,18 @@ def main() -> int:
         }
         return payload, stages
 
-    def service_one(anchor: Any) -> dict[str, Any]:
+    host_payload_cache: dict[str, dict[str, Any]] = {}
+
+    def service_one(anchor: Any, *, cache_hot: bool = False) -> dict[str, Any]:
         started = time.perf_counter()
-        payload, stages = prepare_host(anchor)
+        if cache_hot:
+            phase = time.perf_counter()
+            payload = host_payload_cache[anchor.sample_id]
+            stages = {"declared_case_cache_lookup": time.perf_counter() - phase}
+        else:
+            payload, stages = prepare_host(anchor)
+            if args.publication_v1_1 and args.service_mode in {"serial", "both"}:
+                host_payload_cache[anchor.sample_id] = payload
         phase = time.perf_counter()
         device = jax.device_put((
             payload["anchor"], payload["query"], payload["weights"],
@@ -334,15 +353,17 @@ def main() -> int:
         warm_payload["map_indices"], warm_payload["map_weights"],
     ), gpu)
     block(warm_device); block(forward(params, *warm_device))
-    resident_values = []
+    warmup_resident_values = []
     for _ in range(args.resident_repeats):
         phase = time.perf_counter(); prediction = forward(params, *warm_device); block(prediction)
-        resident_values.append(time.perf_counter() - phase)
+        warmup_resident_values.append(time.perf_counter() - phase)
 
     serial_orders = []
     q2_orders = []
     first_hit_values: list[float] = []
     steady_values: list[float] = []
+    cache_hot_values: list[float] = []
+    valid_resident_values: list[float] = []
     for order_seed in order_seeds:
         order = orders[order_seed]
         rows = []
@@ -356,6 +377,22 @@ def main() -> int:
                 "Q1_closed_loop": stats([row["elapsed_seconds"] for row in rows]),
                 "wall_seconds": float(sum(row["elapsed_seconds"] for row in rows)),
             })
+            if args.publication_v1_1:
+                repeated_anchor = anchors[order[0]]
+                for _ in range(args.cache_hot_repeats):
+                    cache_hot_values.append(
+                        service_one(repeated_anchor, cache_hot=True)["elapsed_seconds"])
+                cached = host_payload_cache[repeated_anchor.sample_id]
+                resident_device = jax.device_put((
+                    cached["anchor"], cached["query"], cached["weights"],
+                    cached["map_indices"], cached["map_weights"],
+                ), gpu)
+                block(resident_device)
+                for _ in range(args.resident_repeats):
+                    phase = time.perf_counter()
+                    resident_prediction = forward(params, *resident_device)
+                    block(resident_prediction)
+                    valid_resident_values.append(time.perf_counter() - phase)
 
         if args.service_mode not in {"Q2", "both"}:
             continue
@@ -436,6 +473,36 @@ def main() -> int:
         }
         if not exactness["graph_metadata_edge_hash_exact"] or not exactness["prepared_payload_exact"]:
             raise RuntimeError(f"{first_anchor.sample_id}: E route exactness audit failed")
+    if args.publication_v1_1:
+        first_anchor = anchors[orders[order_seeds[0]][0]]
+        candidate_payload, _ = prepare_host(first_anchor)
+        candidate_prepared_sha256 = tree_sha(tuple(
+            candidate_payload[key] for key in (
+                "anchor", "query", "weights", "map_indices", "map_weights")))
+        frozen = json.loads(args.golden_seal.read_text())["historical_golden"]["records"]
+        matches = [row for row in frozen if row["route"] == args.route
+                   and row["order_seed"] == order_seeds[0]
+                   and row["sample_id"] == first_anchor.sample_id]
+        if len(matches) != 1:
+            raise RuntimeError("E historical golden record missing")
+        golden = matches[0]
+        if (candidate_payload["graph_hashes"]["native1024"] != golden["native1024_graph_hashes"]
+                or candidate_payload["graph_hashes"]["query"] != golden["query_graph_hashes"]
+                or candidate_prepared_sha256 != golden["prepared_payload_sha256"]):
+            raise RuntimeError(f"{first_anchor.sample_id}: E historical golden drift")
+        exactness = {
+            "sample_id": first_anchor.sample_id,
+            "graph_candidate_hashes": candidate_payload["graph_hashes"],
+            "graph_reference_hashes": {
+                "native1024": golden["native1024_graph_hashes"],
+                "query": golden["query_graph_hashes"],
+            },
+            "candidate_prepared_payload_sha256": candidate_prepared_sha256,
+            "reference_prepared_payload_sha256": golden["prepared_payload_sha256"],
+            "historical_golden_record_sha256": golden["record_sha256"],
+            "reference_semantics": "immutable_historical_git_bound_golden",
+            "audit_outside_service_timing": True,
+        }
     stage_names = tuple(serial_orders[0]["rows"][0]["stages"]) if serial_orders else ()
     stage_summary = {
         name: stats([
@@ -465,13 +532,21 @@ def main() -> int:
         "fresh_single_case": None if not serial_orders else stats([
             row["elapsed_seconds"] for order in serial_orders for row in order["rows"]
         ]),
-        "resident_core": stats(resident_values),
+        "resident_core": stats(
+            valid_resident_values if args.publication_v1_1 else warmup_resident_values),
+        "repeat_case_cache_hot": (
+            stats(cache_hot_values) if args.publication_v1_1
+            else "not_measured_in_conformance_smoke"),
         "stage_summary": stage_summary,
         "timing_pool_classification": {
             "cold_service_first_case": "first_serial_row" if serial_orders else "not_measured_in_Q2_process",
             "fresh_distinct_case": "serial_rows" if serial_orders else "Q2_distinct_rows",
-            "repeat_case_cache_hot": "not_measured_in_conformance_smoke",
-            "resident_core": "train_warmup_prepared_device_payload_only",
+            "repeat_case_cache_hot": (
+                "separate_post_fresh_declared_case_cache_pool"
+                if args.publication_v1_1 else "not_measured_in_conformance_smoke"),
+            "resident_core": (
+                "separate_valid_prepared_device_payload_pool"
+                if args.publication_v1_1 else "train_warmup_prepared_device_payload_only"),
             "pools_mixed": False,
         },
         "serial_orders": serial_orders, "Q2_orders": q2_orders,
@@ -479,6 +554,11 @@ def main() -> int:
         "publication_speedup_allowed": q2_all_passed and args.sample_count == 32 and not args.standard_v1_1_smoke,
         "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)),
         "aggregate_service_worker_peak_RAM_bytes": peak_ram_bytes(),
+        "memory_measurement": {
+            "field": "service_process_HWM_bytes",
+            "value": peak_ram_bytes(),
+            "semantics": "single_process_service_HWM",
+        },
         "cpu_policy": protocol["resources"]["neural"],
         "thread_env": {key: os.environ.get(key) for key in (
             "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS")},

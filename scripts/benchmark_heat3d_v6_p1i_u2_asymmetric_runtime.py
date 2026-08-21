@@ -142,6 +142,9 @@ def parse() -> argparse.Namespace:
     parser.add_argument("--timing-regression-audit", action="store_true")
     parser.add_argument("--true-concurrent-depth", type=int, choices=[1, 2], default=1)
     parser.add_argument("--concurrent-only", action="store_true")
+    parser.add_argument("--publication-v1-1", action="store_true")
+    parser.add_argument("--cache-hot-repeats", type=int, default=20)
+    parser.add_argument("--golden-seal", type=Path)
     parser.add_argument("--standard-v1-1-smoke", action="store_true")
     return parser.parse_args()
 
@@ -440,8 +443,11 @@ def main() -> int:
             if not packing_prediction_exact:raise RuntimeError(f"{anchor.sample_id}: minimal packing prediction drift")
             packing_prediction_audit_done = True
         exactness_audit_executed = (
-            args.standard_v1_1_smoke and qualification_audit and not exactness_audit_done)
+            (args.standard_v1_1_smoke or args.publication_v1_1)
+            and qualification_audit and not exactness_audit_done)
         graph_candidate_hashes = graph_reference_hashes = None
+        historical_golden_record_sha256 = None
+        reference_semantics = "same_launch_replay"
         if exactness_audit_executed:
             with jax.default_device(cpu):
                 native_reference = builder.build_metadata(anchor_coords, key=graph_key)
@@ -468,6 +474,27 @@ def main() -> int:
             }
             if graph_candidate_hashes != graph_reference_hashes:
                 raise RuntimeError(f"{anchor.sample_id}: graph metadata/edge replay drift")
+            if args.publication_v1_1:
+                route_name = (
+                    "U_v2_direct240825" if args.resolution == 240825
+                    else "U_v2_16384_reconstruction")
+                frozen = json.loads(args.golden_seal.read_text())["historical_golden"]["records"]
+                matches = [row for row in frozen if row["route"] == route_name
+                           and row["order_seed"] == args.order_seed
+                           and row["sample_id"] == anchor.sample_id]
+                if len(matches) != 1:
+                    raise RuntimeError("U-v2 historical golden record missing")
+                golden = matches[0]
+                graph_reference_hashes = {
+                    "native1024": golden["native1024_graph_hashes"],
+                    "query": golden["query_graph_hashes"],
+                }
+                reference_payload_sha256 = golden["prepared_payload_sha256"]
+                historical_golden_record_sha256 = golden["record_sha256"]
+                reference_semantics = "immutable_historical_git_bound_golden"
+                if (graph_candidate_hashes != graph_reference_hashes
+                        or candidate_payload_sha256 != reference_payload_sha256):
+                    raise RuntimeError(f"{anchor.sample_id}: U-v2 historical golden drift")
             exactness_audit_done = True
         support_np=np.asarray(values,dtype=np.float32)[0];full_np=np.asarray(full_value,dtype=np.float32)[0]
         support_row = full_row = None
@@ -481,7 +508,7 @@ def main() -> int:
                 "selected_cv":selected_cv,"full_q":full_q,"support_prediction":support_np,"full_prediction":full_np,
                 "support_metric_row":support_row,"full_metric_row":full_row,
                 "full_field_metrics":None if full_row is None else qualification.metric_accumulate([full_row],full=True),"full_field_metric_components":None if full_row is None else metric_components(full_row),
-                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","host_payload_bitwise_exact":host_payload_exact,"candidate_payload_sha256":candidate_payload_sha256,"reference_payload_sha256":reference_payload_sha256,"equivalence_backend":"deterministic_cpu","prediction_audit_executed":prediction_audit_executed,"prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs,"graph_exactness_audit_executed":exactness_audit_executed,"graph_candidate_hashes":graph_candidate_hashes,"graph_reference_hashes":graph_reference_hashes},
+                "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","host_payload_bitwise_exact":host_payload_exact,"candidate_payload_sha256":candidate_payload_sha256,"reference_payload_sha256":reference_payload_sha256,"equivalence_backend":"deterministic_cpu","prediction_audit_executed":prediction_audit_executed,"prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs,"graph_exactness_audit_executed":exactness_audit_executed,"graph_candidate_hashes":graph_candidate_hashes,"graph_reference_hashes":graph_reference_hashes,"historical_golden_record_sha256":historical_golden_record_sha256,"reference_semantics":reference_semantics},
                 "streaming":{"submit_offset_seconds":submit_offset,"completion_offset_seconds":completion_offset,"submit_to_result_seconds":completion_offset-submit_offset,"inter_completion_seconds":completion_offset-previous},
                 "prepared_payload_sha256":tree_sha((inputs_in,inputs_out,graphs,local,kwargs,map_indices,map_weights)),
                 "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
@@ -526,9 +553,14 @@ def main() -> int:
     # Qualification and JIT compile are outside persistent service timing.
     service_started=time.perf_counter();completion_offsets.clear()
     prepared=[];post_result_cleanup=[]
+    if args.publication_v1_1 and (args.standard_v1_1_smoke or args.sample_count != 32):
+        raise RuntimeError("publication v1.1 requires a distinct full-valid32 lifecycle")
+    if args.publication_v1_1 and args.golden_seal is None:
+        raise RuntimeError("publication v1.1 requires historical golden seal")
     if not args.concurrent_only:
         for number,anchor in enumerate(anchors,1):
-            prepared.append(prepare_one(anchor,retain_device=False))
+            prepared.append(prepare_one(
+                anchor, retain_device=(args.publication_v1_1 and number == 1)))
             phase=time.perf_counter();gc.collect();post_result_cleanup.append(time.perf_counter()-phase)
             print(f"[{args.asymmetric_mode}] {number}/{len(anchors)}",flush=True)
 
@@ -603,6 +635,34 @@ def main() -> int:
     for _ in range(args.repeats):
         phase=time.perf_counter(); value=split_forward(params,ii,io,g,l,kw);full_value=reconstruct(value,mi,mw);block(full_value)
         replay.append(time.perf_counter()-phase)
+    cache_hot=[]; cache_hot_rows=[]; valid_resident=[]
+    if args.publication_v1_1 and not args.concurrent_only:
+        cached=prepared[0]
+        declared_case_cache={cached["sample_id"]:(
+            cached["inputs_in"],cached["inputs_out"],cached["graphs"],cached["local"],
+            cached["kwargs"],cached["map_indices"],cached["map_weights"])}
+        for _ in range(args.cache_hot_repeats):
+            started=time.perf_counter();phase=time.perf_counter()
+            cached_host=declared_case_cache[cached["sample_id"]];lookup=time.perf_counter()-phase
+            phase=time.perf_counter();cached_device=jax.device_put(cached_host,gpu);enqueue=time.perf_counter()-phase
+            phase=time.perf_counter();block(cached_device);h2d_sync=time.perf_counter()-phase
+            cii,cio,cg,cl,ckw,cmi,cmw=cached_device
+            phase=time.perf_counter();cvalue=split_forward(params,cii,cio,cg,cl,ckw);block(cvalue);forward_s=time.perf_counter()-phase
+            phase=time.perf_counter();cfull=reconstruct(cvalue,cmi,cmw);block(cfull);recon_s=time.perf_counter()-phase
+            elapsed=time.perf_counter()-started;named=lookup+enqueue+h2d_sync+forward_s+recon_s
+            residual=elapsed-named;limit=max(0.025,0.05*elapsed)
+            if residual < -1.0e-6 or residual > limit:
+                raise RuntimeError(f"cache-hot residual {residual} exceeds {limit}")
+            cache_hot.append(elapsed);cache_hot_rows.append({
+                "elapsed_seconds":elapsed,"named_stage_sum_seconds":named,
+                "residual_seconds":residual,"residual_limit_seconds":limit,
+                "stages":{"declared_case_cache_lookup":lookup,"h2d_enqueue":enqueue,
+                          "h2d_sync":h2d_sync,"asymmetric_forward":forward_s,
+                          "reconstruction_apply":recon_s}})
+        resident_device=cached["device"];rii,rio,rg,rl,rkw,rmi,rmw=resident_device
+        for _ in range(args.repeats):
+            phase=time.perf_counter();rvalue=split_forward(params,rii,rio,rg,rl,rkw)
+            rfull=reconstruct(rvalue,rmi,rmw);block(rfull);valid_resident.append(time.perf_counter()-phase)
     batch_rows=[]
     if args.timing_regression_audit:
         sizes=[]
@@ -651,8 +711,11 @@ def main() -> int:
         "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
         "checkpoint_parameters_unchanged":checkpoint_parameter_sha256_before==highn._tree_sha256(runtime["checkpoint"]["params"]),
         "accuracy":None if args.timing_only else {"query_full_grid":dict(qualification.metric_accumulate(metric_support,full=True),domain="query_full_grid_240825"),"full_field":qualification.metric_accumulate(metric_full,full=True)},
-        "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay)},"batch":batch_rows,
-        "timing_pool_classification":{"cold_service_first_case":"first_serial_row" if not args.concurrent_only else "not_measured_in_Q2_process","fresh_distinct_case":"serial_rows" if not args.concurrent_only else "Q2_distinct_rows","repeat_case_cache_hot":"not_measured_in_conformance_smoke","resident_core":"train_warmup_prepared_device_payload_only","pools_mixed":False},
+        "runtime":{"fresh_sample":timing,"same_input_replay":dist(replay),
+                   "repeat_case_cache_hot":dist(cache_hot) if cache_hot else "not_measured_in_conformance_smoke",
+                   "repeat_case_cache_hot_rows":cache_hot_rows,
+                   "resident_core":dist(valid_resident) if valid_resident else dist(replay)},"batch":batch_rows,
+        "timing_pool_classification":{"cold_service_first_case":"first_serial_row" if not args.concurrent_only else "not_measured_in_Q2_process","fresh_distinct_case":"serial_rows" if not args.concurrent_only else "Q2_distinct_rows","repeat_case_cache_hot":"separate_post_fresh_declared_case_cache_pool" if args.publication_v1_1 and not args.concurrent_only else "not_measured_in_conformance_smoke","resident_core":"separate_valid_prepared_device_payload_pool" if args.publication_v1_1 and not args.concurrent_only else "train_warmup_prepared_device_payload_only","pools_mixed":False},
         "streaming":{"submit_to_result":dist([r["streaming"]["submit_to_result_seconds"] for r in prepared]),"inter_completion":dist([r["streaming"]["inter_completion_seconds"] for r in prepared]),"wall_seconds":completion_offsets[-1],"samples_per_second":len(prepared)/completion_offsets[-1],"order_seed":args.order_seed},
         "saturated_streaming":dict(
             fixed_depth_queue_trace([float(r["stages"]["matched_continuous_e2e"]) for r in prepared],depth=2),
@@ -662,6 +725,7 @@ def main() -> int:
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
         "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":all(r["packing_audit"]["host_payload_bitwise_exact"] for r in prepared),"prediction_audit_count":sum(int(r["packing_audit"]["prediction_audit_executed"]) for r in prepared),"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
         "memory":candidate.publication._device_memory(),"aggregate_service_worker_peak_RAM_bytes":peak_ram_bytes(),
+        "memory_measurement":{"field":"service_process_HWM_bytes","value":peak_ram_bytes(),"semantics":"single_process_service_HWM"},
         "cpu_policy":protocol["resources"]["neural"],"thread_env":{key:os.environ.get(key) for key in ("OMP_NUM_THREADS","OPENBLAS_NUM_THREADS","MKL_NUM_THREADS","NUMEXPR_NUM_THREADS")},
         "samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},
