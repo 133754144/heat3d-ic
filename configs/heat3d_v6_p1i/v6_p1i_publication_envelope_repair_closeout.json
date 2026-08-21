@@ -1,0 +1,81 @@
+{
+  "schema_version": "heat3d_v6_publication_envelope_repair_closeout_v1",
+  "status": "failed_fail_closed_prediction_equivalence",
+  "base_commit": "1c948dbd80d2803c65ce16d1714c189f5818503f",
+  "graph_qualification_commit": "5739e4e55d2dd703611aa6aa876d00fb657c0082",
+  "padding_gate_commit": "69728288228140410cb853ebc98f94f082b05ac0",
+  "envelope_qualification": "GO",
+  "ready_for_authoritative_valid32": "NO_GO_padding_prediction_equivalence_failed",
+  "publication_timing_freeze": "NO_GO",
+  "graph_only_qualification": {
+    "independent_processes": 2,
+    "sample_count": 32,
+    "train_only_static_warmup_count": 1,
+    "routes": 5,
+    "records_per_process": 165,
+    "run_a_sha256": "39a866a75ba0342b7c9c77cfbb87c71763db44a0e1480f916cea134052ac3bb0",
+    "run_b_sha256": "39a866a75ba0342b7c9c77cfbb87c71763db44a0e1480f916cea134052ac3bb0",
+    "two_process_payload_exact": true,
+    "historical_real_unpadded_graph_golden_exact": true,
+    "model_inference_executed": false,
+    "temperature_truth_read": false
+  },
+  "derived_native1024_envelope": {
+    "p2r_edge_indices": 2911,
+    "r2r_edge_indices": 4201,
+    "r2r_edge_domains": 4201,
+    "r2p_edge_indices": null,
+    "derivation": "actual_max_over_valid32_plus_target_free_train_warmup",
+    "manual_2905_to_2911_override": false
+  },
+  "padding_adjusted_prepared_golden": {
+    "status": "passed_graph_and_pack_only",
+    "record_count": 12,
+    "sha256": "e3354b97e43645770952354cd36b84945ea07578314bc450cab1157cdfdc081d",
+    "model_inference_executed": false
+  },
+  "prediction_equivalence": {
+    "planned_sample_count": 2,
+    "attempted_sample_count": 1,
+    "completed_sample_count": 0,
+    "failed_sample_id": "v6p1if1_0308",
+    "route": "E16384_reconstruction",
+    "reference": "real_edges_with_exact_edge_count_capacity",
+    "candidate": "same_real_edges_with_qualified_dummy_capacity",
+    "frozen_max_abs_tolerance_K": 1e-06,
+    "failure": "dummy padding changed prediction",
+    "failure_log": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_prediction_equivalence_failure.log",
+    "failure_log_sha256": "35221b07c690b4984bfb0652c64770cd0dde7966a45935396745b6c96580254a",
+    "numeric_delta_not_persisted": true,
+    "failure_before_result_write": true,
+    "single_case_rerun": false,
+    "second_case_started": false
+  },
+  "authoritative_attempt2": {
+    "started": false,
+    "completed_cells": 0,
+    "reason": "A-stage prediction equivalence hard gate failed"
+  },
+  "attempt1_semantics_amendment": {
+    "attempted": true,
+    "completed": false,
+    "publication_results_generated": false,
+    "historical_raw_artifact_modified": false
+  },
+  "decision": {
+    "seal_updated": false,
+    "frozen_tolerance_relaxed": false,
+    "model_or_graph_policy_changed": false,
+    "next_action_requires_explicit_new_protocol": true
+  },
+  "role_contract": {
+    "training": false,
+    "accuracy_tuning": false,
+    "test": false,
+    "sealed": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "route_semantics_modified": false
+  }
+}
