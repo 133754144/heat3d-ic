@@ -450,7 +450,9 @@ def main() -> int:
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps({
         "status": result["status"], "route": args.route,
-        "fresh_median_s": result["fresh_single_case"]["median_seconds"],
+        "fresh_median_s": (
+            None if result["fresh_single_case"] is None
+            else result["fresh_single_case"]["median_seconds"]),
         "Q2_all_passed": q2_all_passed,
     }))
     return 0

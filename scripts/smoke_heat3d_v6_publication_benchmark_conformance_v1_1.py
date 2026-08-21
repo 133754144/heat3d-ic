@@ -361,6 +361,9 @@ def orchestrate(args: argparse.Namespace) -> int:
                     failure = {**record, "stderr_tail": completed.stderr[-4000:]}
                     break
                 row = json.loads(output.read_text())
+                row["route"] = route
+                row["service_mode"] = mode
+                row["order_seed"] = seed
                 row["artifact_path"] = str(output)
                 row["artifact_sha256"] = file_sha256(output)
                 rows.append(row)
