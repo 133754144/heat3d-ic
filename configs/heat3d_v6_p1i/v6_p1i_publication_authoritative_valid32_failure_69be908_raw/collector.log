@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/collect_heat3d_v6_publication_benchmark_v1_1.py", line 302, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/collect_heat3d_v6_publication_benchmark_v1_1.py", line 227, in main
+    require(raw["status"] == "passed", "authoritative raw matrix did not pass hard gates")
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/xyh/myCodeGitOnly/heat3d-ic/scripts/collect_heat3d_v6_publication_benchmark_v1_1.py", line 30, in require
+    raise RuntimeError(message)
+RuntimeError: authoritative raw matrix did not pass hard gates
