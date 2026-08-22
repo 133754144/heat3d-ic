@@ -37,6 +37,7 @@ from heat3d_v6_publication_lifecycle_schema import (  # noqa: E402
     timing_stats,
     validate_cell,
 )
+from heat3d_v6_publication_runtime_isolation import failure_record  # noqa: E402
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
 from rigno.heat3d_v6_full_field import build_reconstruction_map, prepare_reconstruction_domain_partition  # noqa: E402
 from rigno.heat3d_v6_p1i_anchor_query import (  # noqa: E402
@@ -320,6 +321,7 @@ def main() -> int:
     exactness_audit_done = False
     def prepare_one(
         anchor: Any, *, retain_device: bool = False, qualification_audit: bool = True,
+        production_completion_only: bool = False, record_completion: bool = True,
     ) -> dict[str, Any]:
         nonlocal packing_prediction_audit_done, exactness_audit_done
         submit_offset=time.perf_counter()-service_started
@@ -407,11 +409,77 @@ def main() -> int:
         if args.timing_regression_audit and (
             timing_residual < -1.0e-6 or timing_residual > timing_residual_limit
         ):
-            raise RuntimeError(
+            error = RuntimeError(
                 f"{anchor.sample_id}: exclusive timing residual {timing_residual} "
                 f"exceeds limit {timing_residual_limit}"
             )
-        completion_offset=time.perf_counter()-service_started;previous=completion_offsets[-1] if completion_offsets else 0.0;completion_offsets.append(completion_offset)
+            error.failure_observability = {
+                "sample_id": anchor.sample_id,
+                "failure_stage": "timing_residual_hard_gate",
+                "residual_seconds": timing_residual,
+                "residual_limit_seconds": timing_residual_limit,
+            }
+            raise error
+        completion_offset=time.perf_counter()-service_started
+        previous=completion_offsets[-1] if completion_offsets else 0.0
+        if record_completion:
+            completion_offsets.append(completion_offset)
+        stage_payload={"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
+                       "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
+                       "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
+                       "reconstruction_apply":recon_s,"dummy_local_p2r":dummy_local_p2r_s,
+                       "graph_extraction":graph_extraction_s,"host_tree":host_tree_s,"inputs":inputs_s,
+                       "kwargs":kwargs_s,"input_lookup_and_anchor_support":input_lookup_anchor_support_s,
+                       "query_support_example_builder":query_support_example_builder_s,
+                       "map_array_materialization":map_array_materialization_s,
+                       "exclusive_stage_sum":exclusive_stage_sum,
+                       "e2e_minus_exclusive_stages":timing_residual,
+                       "matched_continuous_e2e":production_elapsed}
+        shape_payload={"output_nodes":int(values.shape[1]),
+                       "regional_nodes":int(asymmetric.x_rnodes.shape[1]-1),
+                       "p2r_edges":int(asymmetric.p2r_edge_indices.shape[1]),
+                       "r2r_edges":int(asymmetric.r2r_edge_indices.shape[1]),
+                       "r2p_edges":int(asymmetric.r2p_edge_indices.shape[1])}
+        timing_payload={
+            "gc_count_before":list(gc_before), "gc_count_after":list(gc.get_count()),
+            "cpu_device":str(cpu), "gpu_device":str(gpu),
+            "default_backend":jax.default_backend(), "all_device_spans_synchronized":True,
+            "jit_warmup_outside_aggregate":True, "input_io_outside_span":True,
+            "qualification_hash_metrics_serialization_outside_span":True,
+            "exclusive_residual_limit_seconds":timing_residual_limit,
+            "anchor_graph_breakdown_seconds":{"build_enqueue":anchor_graph_build_s,"block":anchor_graph_sync_s,
+                                               "builder_internal":anchor_graph_internal},
+            "query_graph_breakdown_seconds":{"coordinate_prepare":query_coords_s,"build_enqueue":query_graph_build_s,
+                                              "block":query_graph_sync_s,
+                                              "u_v2_internal":audit.get("query_graph_stage_seconds")},
+        }
+        if production_completion_only:
+            return {
+                "sample_id":anchor.sample_id,
+                "inputs_in":inputs_in if retain_device else None,
+                "inputs_out":inputs_out if retain_device else None,
+                "graphs":graphs if retain_device else None,
+                "local":local if retain_device else None,
+                "kwargs":kwargs if retain_device else None,
+                "map_indices":map_indices if retain_device else None,
+                "map_weights":map_weights if retain_device else None,
+                "device":device if retain_device else None,
+                "selected":selected,"selected_cv":selected_cv,"full_q":full_q,
+                "support_prediction":values,"full_prediction":full_value,
+                "support_metric_row":None,"full_metric_row":None,
+                "full_field_metrics":None,"full_field_metric_components":None,
+                "packing_audit":{"host_payload_bitwise_exact":None,
+                                 "prediction_audit_executed":False,
+                                 "prediction_bitwise_exact":None,
+                                 "graph_exactness_audit_executed":False},
+                "streaming":{"submit_offset_seconds":submit_offset,
+                             "completion_offset_seconds":completion_offset,
+                             "submit_to_result_seconds":completion_offset-submit_offset,
+                             "inter_completion_seconds":completion_offset-previous},
+                "prepared_payload_sha256":None,"stages":stage_payload,
+                "timing_audit":timing_payload,"asymmetric_graph_audit":audit,
+                "shape":shape_payload,
+            }
         # Qualification-only same-launch reference: the historical full output
         # group must produce exactly the same output as minimal packing. This is
         # deliberately after the production timing cutoff.  The expensive full
@@ -525,44 +593,12 @@ def main() -> int:
                 "packing_audit":{"output_group_keys_used":output_group_keys_used,"output_group_keys_not_copied":output_group_keys_removed,"same_launch_reference":"historical_full_output_group","host_payload_bitwise_exact":host_payload_exact,"candidate_payload_sha256":candidate_payload_sha256,"reference_payload_sha256":reference_payload_sha256,"equivalence_backend":"deterministic_cpu","prediction_audit_executed":prediction_audit_executed,"prediction_bitwise_exact":packing_prediction_exact,"prediction_max_abs_K":packing_prediction_max_abs,"graph_exactness_audit_executed":exactness_audit_executed,"graph_candidate_hashes":graph_candidate_hashes,"graph_reference_hashes":graph_reference_hashes,"historical_golden_record_sha256":historical_golden_record_sha256,"reference_semantics":reference_semantics},
                 "streaming":{"submit_offset_seconds":submit_offset,"completion_offset_seconds":completion_offset,"submit_to_result_seconds":completion_offset-submit_offset,"inter_completion_seconds":completion_offset-previous},
                 "prepared_payload_sha256":tree_sha((inputs_in,inputs_out,graphs,local,kwargs,map_indices,map_weights)),
-                "stages":{"support_plus_cv":support_s,"anchor_graph":anchor_graph_s,"query_graph":query_graph_s,
-                          "reconstruction_map":map_s,"anchor_group_pack":anchor_pack_s,"query_group_pack":query_pack_s,
-                          "h2d_enqueue":enqueue_s,"h2d_sync":sync_s,"asymmetric_forward":forward_s,
-                          "reconstruction_apply":recon_s,"dummy_local_p2r":dummy_local_p2r_s,
-                          "graph_extraction":graph_extraction_s,"host_tree":host_tree_s,"inputs":inputs_s,
-                "kwargs":kwargs_s,"input_lookup_and_anchor_support":input_lookup_anchor_support_s,
-                          "query_support_example_builder":query_support_example_builder_s,
-                          "map_array_materialization":map_array_materialization_s,
-                          "exclusive_stage_sum":exclusive_stage_sum,
-                          "e2e_minus_exclusive_stages":timing_residual,
-                          "matched_continuous_e2e":production_elapsed},
-                "timing_audit":{
-                    "gc_count_before":list(gc_before),
-                    "gc_count_after":list(gc.get_count()),
-                    "cpu_device":str(cpu),"gpu_device":str(gpu),
-                    "default_backend":jax.default_backend(),
-                    "all_device_spans_synchronized":True,
-                    "jit_warmup_outside_aggregate":True,
-                    "input_io_outside_span":True,
-                    "qualification_hash_metrics_serialization_outside_span":True,
-                    "exclusive_residual_limit_seconds":timing_residual_limit,
-                    "anchor_graph_breakdown_seconds":{
-                        "build_enqueue":anchor_graph_build_s,"block":anchor_graph_sync_s,
-                        "builder_internal":anchor_graph_internal,
-                    },
-                    "query_graph_breakdown_seconds":{
-                        "coordinate_prepare":query_coords_s,"build_enqueue":query_graph_build_s,
-                        "block":query_graph_sync_s,
-                        "u_v2_internal":audit.get("query_graph_stage_seconds"),
-                    },
-                },
+                "stages":stage_payload,"timing_audit":timing_payload,
                 "asymmetric_graph_audit":audit,
-                "shape":{"output_nodes":int(np.asarray(values).shape[1]),"regional_nodes":int(np.asarray(asymmetric.x_rnodes).shape[1]-1),
-                         "p2r_edges":int(np.asarray(asymmetric.p2r_edge_indices).shape[1]),
-                         "r2r_edges":int(np.asarray(asymmetric.r2r_edge_indices).shape[1]),
-                         "r2p_edges":int(np.asarray(asymmetric.r2p_edge_indices).shape[1])}}
+                "shape":shape_payload}
 
-    warm=prepare_one(warmup_anchor,retain_device=True,qualification_audit=False); ii,io,g,l,kw,mi,mw=warm["device"]
+    warm=prepare_one(warmup_anchor,retain_device=True,qualification_audit=False,
+                     production_completion_only=True,record_completion=False); ii,io,g,l,kw,mi,mw=warm["device"]
     value=split_forward(params,ii,io,g,l,kw);block(reconstruct(value,mi,mw))
     # Qualification and JIT compile are outside persistent service timing.
     service_started=time.perf_counter();completion_offsets.clear()
@@ -574,7 +610,9 @@ def main() -> int:
     if not args.concurrent_only:
         for number,anchor in enumerate(anchors,1):
             prepared.append(prepare_one(
-                anchor, retain_device=(args.publication_v1_1 and number == 1)))
+                anchor, retain_device=(args.publication_v1_1 and number == 1),
+                qualification_audit=not args.publication_v1_1,
+                production_completion_only=bool(args.publication_v1_1)))
             phase=time.perf_counter();gc.collect();post_result_cleanup.append(time.perf_counter()-phase)
             print(f"[{args.asymmetric_mode}] {number}/{len(anchors)}",flush=True)
 
@@ -588,35 +626,61 @@ def main() -> int:
         submission: dict[Any, tuple[int, float]] = {}
         completion_rows: list[dict[str, Any]] = []
         next_index = 0
-        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="u-v2-q2") as pool:
-            while next_index < min(2, len(anchors)):
-                submitted = time.perf_counter()
-                future = pool.submit(
-                    prepare_one, anchors[next_index], retain_device=False,
-                    qualification_audit=False)
-                submission[future] = (next_index, submitted)
-                next_index += 1
-            while submission:
-                done, _ = wait(tuple(submission), return_when=FIRST_COMPLETED)
-                for future in done:
-                    index, submitted = submission.pop(future)
-                    row = future.result()
-                    completed = time.perf_counter()
-                    concurrent_prepared.append(row)
-                    completion_rows.append({
-                        "sample_id": row["sample_id"],
-                        "input_index": index,
-                        "submit_offset_seconds": submitted - concurrent_started,
-                        "completion_offset_seconds": completed - concurrent_started,
-                        "submit_to_result_seconds": completed - submitted,
-                    })
-                    if next_index < len(anchors):
-                        new_submitted = time.perf_counter()
-                        new_future = pool.submit(
-                            prepare_one, anchors[next_index], retain_device=False,
-                            qualification_audit=False)
-                        submission[new_future] = (next_index, new_submitted)
-                        next_index += 1
+        q2_failure = None
+        try:
+            with ThreadPoolExecutor(max_workers=2, thread_name_prefix="u-v2-q2") as pool:
+                while next_index < min(2, len(anchors)):
+                    submitted = time.perf_counter()
+                    future = pool.submit(
+                        prepare_one, anchors[next_index], retain_device=False,
+                        qualification_audit=False, production_completion_only=True)
+                    submission[future] = (next_index, submitted)
+                    next_index += 1
+                while submission:
+                    done, _ = wait(tuple(submission), return_when=FIRST_COMPLETED)
+                    for future in done:
+                        index, submitted = submission.pop(future)
+                        row = future.result()
+                        completed = time.perf_counter()
+                        concurrent_prepared.append(row)
+                        completion_rows.append({
+                            "sample_id": row["sample_id"],
+                            "input_index": index,
+                            "submit_offset_seconds": submitted - concurrent_started,
+                            "completion_offset_seconds": completed - concurrent_started,
+                            "submit_to_result_seconds": completed - submitted,
+                        })
+                        if next_index < len(anchors):
+                            new_submitted = time.perf_counter()
+                            new_future = pool.submit(
+                                prepare_one, anchors[next_index], retain_device=False,
+                                qualification_audit=False, production_completion_only=True)
+                            submission[new_future] = (next_index, new_submitted)
+                            next_index += 1
+        except Exception as exc:
+            q2_failure = failure_record(
+                exc, sample_id=anchors[index].sample_id, order_position=int(index),
+                completed_rows=completion_rows,
+                failure_stage="Q2_service_future_result")
+        if q2_failure is not None:
+            failure_result = {
+                "schema_version":"heat3d_v6_p1i_u2_asymmetric_runtime_cell_v1",
+                "status":"failed_hard_gate",
+                "route":"U_v2_direct240825" if direct else "U_v2_16384_reconstruction",
+                "service_mode":"Q2","resolution":args.resolution,
+                "sample_count":args.sample_count,"process_id":os.getpid(),
+                "ordered_sample_ids":[anchor.sample_id for anchor in anchors],
+                "failure_observability":q2_failure,
+                "true_concurrent_streaming":{"status":"failed_hard_gate",
+                                             "queue_depth":2,"worker_count":2,
+                                             "completion_rows":completion_rows},
+                "measurement_provenance":lifecycle_provenance(
+                    attempted=bool(args.publication_v1_1), matrix_completed=False, generated=False),
+                "role_contract":protocol["role_contract"],
+            }
+            args.output.parent.mkdir(parents=True,exist_ok=True)
+            args.output.write_text(json.dumps(failure_result,indent=2,sort_keys=True,allow_nan=False)+"\n")
+            return 1
         completion_rows.sort(key=lambda row: row["completion_offset_seconds"])
         completion = [float(row["completion_offset_seconds"]) for row in completion_rows]
         inter = np.diff(np.asarray([0.0] + completion, dtype=np.float64)).tolist()
@@ -641,6 +705,25 @@ def main() -> int:
         }
         if args.concurrent_only:
             prepared = concurrent_prepared
+    # Production HWM is frozen before any graph/payload/golden hash audit or
+    # host-side prediction materialization.  Formal serial cells execute one
+    # dedicated untimed audit after all service measurements; Q2 cells carry
+    # no exactness audit in their completion/refill path.
+    service_hwm_bytes = peak_ram_bytes()
+    untimed_exactness_audit = None
+    if args.publication_v1_1 and not args.concurrent_only:
+        audit_row = prepare_one(
+            anchors[0], retain_device=False, qualification_audit=True,
+            production_completion_only=False, record_completion=False)
+        prepared[0]["packing_audit"] = audit_row["packing_audit"]
+        prepared[0]["prepared_payload_sha256"] = audit_row["prepared_payload_sha256"]
+        untimed_exactness_audit = {
+            "sample_id": audit_row["sample_id"],
+            "packing_audit": audit_row["packing_audit"],
+            "prepared_payload_sha256": audit_row["prepared_payload_sha256"],
+            "outside_production_timing": True,
+            "outside_Q2_completion_and_refill": True,
+        }
     if not prepared: raise RuntimeError("no measured cases")
     if any(row["shape"]["output_nodes"] != args.resolution for row in prepared): raise RuntimeError("output shape")
     if any(not np.all(np.isfinite(np.asarray(row["full_prediction"]))) for row in prepared): raise RuntimeError("nonfinite")
@@ -755,9 +838,10 @@ def main() -> int:
         "saturated_streaming":None,
         "true_concurrent_streaming":true_concurrent,
         "padding":{"tracked_padding_envelope":{"native":tracked_native,"query":tracked_query},"actual_padding_envelope":{"native":native_targets,"query":query_targets},"effective_padding_envelope":{"native":native_targets,"query":query_targets}},
-        "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":all(r["packing_audit"]["host_payload_bitwise_exact"] for r in prepared),"prediction_audit_count":sum(int(r["packing_audit"]["prediction_audit_executed"]) for r in prepared),"prediction_bitwise_exact_vs_U3":all(r["packing_audit"]["prediction_bitwise_exact"] for r in prepared),"same_launch_reference_outside_production_timing":True},
-        "memory":candidate.publication._device_memory(),"aggregate_service_worker_peak_RAM_bytes":peak_ram_bytes(),
-        "memory_measurement":{"field":"service_process_HWM_bytes","value":peak_ram_bytes(),"semantics":"single_process_service_HWM"},
+        "packing_optimization":{"mode":"lean_output_query_v2","full_output_group_never_constructed_in_production_path":True,"output_fields_constructed":["inputs","graphs","control_volumes","reference_temperature","dirichlet_mask","prescribed_temperature"],"output_unused_context_not_constructed":True,"host_payload_bitwise_exact_all_samples":None if args.concurrent_only else bool(untimed_exactness_audit and untimed_exactness_audit["packing_audit"]["host_payload_bitwise_exact"]),"prediction_audit_count":0 if untimed_exactness_audit is None else int(untimed_exactness_audit["packing_audit"]["prediction_audit_executed"]),"prediction_bitwise_exact_vs_U3":None if untimed_exactness_audit is None else untimed_exactness_audit["packing_audit"]["prediction_bitwise_exact"],"same_launch_reference_outside_production_timing":True},
+        "untimed_exactness_audit":untimed_exactness_audit,
+        "memory":candidate.publication._device_memory(),"aggregate_service_worker_peak_RAM_bytes":service_hwm_bytes,
+        "memory_measurement":{"field":"service_process_HWM_bytes","value":service_hwm_bytes,"semantics":"single_process_service_HWM_captured_before_untimed_audit"},
         "cpu_policy":protocol["resources"]["neural"],"thread_env":{key:os.environ.get(key) for key in ("OMP_NUM_THREADS","OPENBLAS_NUM_THREADS","MKL_NUM_THREADS","NUMEXPR_NUM_THREADS")},
         "samples":[{"sample_id":r["sample_id"],"stages":r["stages"],"shape":r["shape"],"packing_audit":r["packing_audit"],"asymmetric_graph_audit":r["asymmetric_graph_audit"],"timing_audit":r["timing_audit"],"streaming":r["streaming"],"prepared_payload_sha256":r["prepared_payload_sha256"],"full_field_metrics":r["full_field_metrics"],"full_field_metric_components":r["full_field_metric_components"]} for r in prepared],
         "timing_only":args.timing_only,"qualification_result":None if args.qualification_result is None else {"path":str(args.qualification_result),"sha256":sha256(args.qualification_result)},

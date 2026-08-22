@@ -1,0 +1,34 @@
+{
+  "benchmark_runtime_isolation": "GO",
+  "checks": {
+    "E_failure_written_before_validation": true,
+    "E_hash_opt_in_untimed": true,
+    "FVM_case_worker_pid_authoritative": true,
+    "U_Q2_returns_before_post_result_audit": true,
+    "formal_role_not_smoke": true,
+    "immediate_cell_validation": true,
+    "outer_failure_embeds_inner_artifact": true,
+    "service_HWM_precedes_untimed_audit": true
+  },
+  "failure_observability_fixture": {
+    "completed_count": 1,
+    "completed_rows": [
+      {
+        "sample_id": "completed_fixture"
+      }
+    ],
+    "failure_stage": "timing_residual_hard_gate",
+    "order_position": 7,
+    "original_exception": "synthetic residual violation",
+    "original_exception_type": "RuntimeError",
+    "residual_limit_seconds": 0.025,
+    "residual_seconds": 0.125,
+    "sample_id": "fixture_sample"
+  },
+  "gpu_execution": false,
+  "schema_version": "heat3d_v6_publication_runtime_isolation_gate_v1",
+  "sealed": false,
+  "status": "passed",
+  "test": false,
+  "training": false
+}

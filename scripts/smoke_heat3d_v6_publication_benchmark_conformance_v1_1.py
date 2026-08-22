@@ -208,9 +208,9 @@ def fvm_worker(args: argparse.Namespace) -> int:
             max_workers=process_count, mp_context=mp.get_context("spawn"),
             initializer=_init_fvm, initargs=(serialized,),
         )
-        worker_pids = sorted({future.result() for future in [
+        startup_worker_pids = sorted({future.result() for future in [
             pool.submit(_fvm_ready) for _ in range(process_count * 3)]})
-        if len(worker_pids) != process_count:
+        if len(startup_worker_pids) != process_count:
             raise RuntimeError("FVM persistent worker count drift")
         began = time.perf_counter()
         pending: dict[Any, tuple[int, float]] = {}
@@ -237,6 +237,12 @@ def fvm_worker(args: argparse.Namespace) -> int:
                     pending[pool.submit(_fvm_case, payloads[cursor])] = (cursor, new_submitted)
                     cursor += 1
         rows_out.sort(key=lambda row: row["completion_offset_seconds"])
+        # Case-bearing worker PIDs, not readiness-task scheduling, are the
+        # authoritative P2 participation evidence.
+        worker_pids = sorted({int(row["worker_pid"]) for row in rows_out})
+        if len(worker_pids) != process_count:
+            raise RuntimeError(
+                f"FVM P2 case worker participation drift: {worker_pids}")
         ordered_completion = [row["completion_offset_seconds"] for row in rows_out]
         inter = np.diff(np.asarray([0.0] + ordered_completion)).tolist()
         q2 = {
@@ -286,6 +292,9 @@ def fvm_worker(args: argparse.Namespace) -> int:
         "route": args.route, "sample_count": args.sample_count,
         "service_mode": args.service_mode, "process_id": os.getpid(),
         "worker_pids": worker_pids, "worker_count": process_count,
+        "startup_barrier_worker_pids": (
+            worker_pids if args.service_mode == "serial" else startup_worker_pids),
+        "case_worker_pid_evidence": sorted({int(row["worker_pid"]) for row in rows_out}),
         "execution_model": (
             "in_process_persistent_P1_one_thread"
             if args.service_mode == "serial" else "persistent_P2_each_one_thread"),
@@ -392,6 +401,36 @@ def ordered_ids(row: dict[str, Any], seed: int) -> list[str]:
     return list(value)
 
 
+def validate_completed_cell(
+    row: dict[str, Any], *, route: str, seed: int, mode: str,
+    expected_ids: list[str], formal: bool,
+) -> None:
+    """Fail immediately after every cell on lifecycle/order/resource drift."""
+    validate_cell(row, formal=formal)
+    if row.get("route") != route or row.get("service_mode") != mode:
+        raise RuntimeError(f"{route}/{seed}/{mode}: route or mode identity drift")
+    if ordered_ids(row, seed) != expected_ids:
+        raise RuntimeError(f"{route}/{seed}/{mode}: ordered sample IDs drift")
+    if formal and row.get("status") != "passed":
+        raise RuntimeError(f"{route}/{seed}/{mode}: formal status is not passed")
+    provenance = row.get("measurement_provenance", {})
+    if formal and not provenance.get("formal_measurement_attempted"):
+        raise RuntimeError(f"{route}/{seed}/{mode}: formal provenance missing")
+    if mode == "Q2":
+        if route.startswith("E") and row.get("serial_orders"):
+            raise RuntimeError(f"{route}/{seed}: Q2 traversed serial population")
+        if route.startswith("U") and not row.get("concurrent_only"):
+            raise RuntimeError(f"{route}/{seed}: U Q2 is not concurrent-only")
+        if route.startswith("FVM") and len(row.get("case_worker_pid_evidence", [])) != 2:
+            raise RuntimeError(f"{route}/{seed}: FVM P2 did not use two case workers")
+    if not route.startswith("FVM"):
+        warmup = row.get("warmup", {})
+        if warmup.get("source_split") != "train" or warmup.get("target_read"):
+            raise RuntimeError(f"{route}/{seed}/{mode}: warmup role drift")
+        if warmup.get("timed_graph_or_packing_prebuilt"):
+            raise RuntimeError(f"{route}/{seed}/{mode}: timed case prewarmed")
+
+
 def exactness_gate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     r0_path = ROOT / "configs/heat3d_v6_p1i/v6_p1i_anchor_query_r0_raw/v6_p1i_r0_v3_seed0_cpu.json"
     r0 = json.loads(r0_path.read_text())
@@ -449,6 +488,7 @@ def orchestrate(args: argparse.Namespace) -> int:
         if (seal["pre_measurement_seal"] != "GO"
                 or seal["ready_for_authoritative_valid32"] != "GO"
                 or seal.get("benchmark_lifecycle_schema") != "GO"
+                or seal.get("benchmark_runtime_isolation") != "GO"
                 or seal["publication_timing_freeze"] != "NO_GO_ready_for_full_valid32"
                 or seal["protocol_sha256"] != file_sha256(
                     ROOT / "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json")):
@@ -483,7 +523,18 @@ def orchestrate(args: argparse.Namespace) -> int:
                 }
                 process_records.append(record)
                 if completed.returncode != 0 or not output.exists():
-                    failure = {**record, "stderr_tail": completed.stderr[-4000:]}
+                    persisted = None
+                    if output.exists():
+                        try:
+                            persisted = json.loads(output.read_text())
+                        except Exception as exc:
+                            persisted = {"parse_error": f"{type(exc).__name__}: {exc}"}
+                    failure = {
+                        **record, "stderr_tail": completed.stderr[-4000:],
+                        "inner_failure_artifact": persisted,
+                        "inner_failure_artifact_sha256": (
+                            file_sha256(output) if output.exists() else None),
+                    }
                     break
                 row = json.loads(output.read_text())
                 row["route"] = route
@@ -491,7 +542,12 @@ def orchestrate(args: argparse.Namespace) -> int:
                 row["order_seed"] = seed
                 row["artifact_path"] = str(output)
                 row["artifact_sha256"] = file_sha256(output)
-                validate_cell(row, formal=bool(args.formal_measurement))
+                expected_order = np.random.default_rng(seed).permutation(32)[:args.sample_count].tolist()
+                binding_ids = json.loads(args.binding.read_text())["development_subset"]["sample_ids"]
+                expected_ids = [binding_ids[int(index)] for index in expected_order]
+                validate_completed_cell(
+                    row, route=route, seed=seed, mode=mode,
+                    expected_ids=expected_ids, formal=bool(args.formal_measurement))
                 rows.append(row)
             if failure:
                 break
@@ -560,7 +616,9 @@ def orchestrate(args: argparse.Namespace) -> int:
             "E_U_CPU_resource_policy_equal": True,
             "Q2_without_serial_prepass": True,
             "cold_fresh_cache_hot_classification_separate": True,
-            "real_route_smoke_only": True,
+            "real_route_smoke_only": not bool(args.formal_measurement),
+            "measurement_role": (
+                "formal_full_valid32" if args.formal_measurement else "conformance_smoke"),
             "exactness_provenance": exactness,
         })
     args.output.parent.mkdir(parents=True, exist_ok=True)

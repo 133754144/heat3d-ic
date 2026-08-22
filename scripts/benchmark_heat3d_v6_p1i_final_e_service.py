@@ -34,6 +34,7 @@ from heat3d_v6_publication_lifecycle_schema import (  # noqa: E402
     timing_stats,
     validate_cell,
 )
+from heat3d_v6_publication_runtime_isolation import failure_record  # noqa: E402
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
 from rigno.heat3d_v6_full_field import build_reconstruction_map  # noqa: E402
 from rigno.heat3d_v6_p1i_anchor_query import (  # noqa: E402
@@ -198,6 +199,7 @@ def main() -> int:
 
     def prepare_host(
         anchor: Any, *, allow_static_envelope_widen: bool = False,
+        include_untimed_hash_audit: bool = False,
     ) -> tuple[dict[str, Any], dict[str, float]]:
         stages: dict[str, float] = {}
         phase = time.perf_counter()
@@ -296,11 +298,12 @@ def main() -> int:
             "anchor": anchor_group, "query": query_group,
             "weights": np.asarray(selected_cv, dtype=np.float32),
             "map_indices": map_indices, "map_weights": map_weights,
-            "graph_hashes": {
+        }
+        if include_untimed_hash_audit:
+            payload["graph_hashes"] = {
                 "native1024": metadata_hashes(anchor_metadata),
                 "query": metadata_hashes(query_metadata),
-            },
-        }
+            }
         return payload, stages
 
     host_payload_cache: dict[str, dict[str, Any]] = {}
@@ -330,8 +333,15 @@ def main() -> int:
         residual = elapsed - exclusive
         limit = max(0.025, 0.05 * elapsed)
         if residual < -1.0e-6 or residual > limit:
-            raise RuntimeError(
+            error = RuntimeError(
                 f"{anchor.sample_id}: exclusive timing residual {residual} exceeds limit {limit}")
+            error.failure_observability = {
+                "sample_id": anchor.sample_id,
+                "failure_stage": "timing_residual_hard_gate",
+                "residual_seconds": residual,
+                "residual_limit_seconds": limit,
+            }
+            raise error
         if not np.all(np.isfinite(np.asarray(prediction))):
             raise RuntimeError(f"{anchor.sample_id}: nonfinite prediction")
         return {
@@ -427,8 +437,12 @@ def main() -> int:
                             submitted = time.perf_counter()
                             future = pool.submit(service_one, anchors[order[next_position]])
                             inflight[future] = (next_position, submitted); next_position += 1
-        except Exception as exc:  # retain the exact failed randomized order
-            q2_failed = f"{type(exc).__name__}: {exc}"
+        except Exception as exc:  # persist the original failure, never a secondary summary
+            failed_position = int(position)
+            q2_failed = failure_record(
+                exc, sample_id=anchors[order[failed_position]].sample_id,
+                order_position=failed_position, completed_rows=completions,
+                failure_stage="service_future_result")
         completions.sort(key=lambda row: row["completion_offset_seconds"])
         completion_offsets = [row["completion_offset_seconds"] for row in completions]
         if q2_failed is None and len(completions) == len(order):
@@ -452,11 +466,14 @@ def main() -> int:
                 "rows": completions,
             })
     q2_all_passed = all(row["status"] == "passed" for row in q2_orders) if q2_orders else True
+    # Capture service HWM before untimed graph/payload/golden audits allocate
+    # temporary hash buffers.
+    service_hwm_bytes = peak_ram_bytes()
     exactness = None
     if args.standard_v1_1_smoke:
         first_anchor = anchors[orders[order_seeds[0]][0]]
-        candidate_payload, _ = prepare_host(first_anchor)
-        reference_payload, _ = prepare_host(first_anchor)
+        candidate_payload, _ = prepare_host(first_anchor, include_untimed_hash_audit=True)
+        reference_payload, _ = prepare_host(first_anchor, include_untimed_hash_audit=True)
         candidate_prepared_sha256 = tree_sha(tuple(
             candidate_payload[key] for key in (
                 "anchor", "query", "weights", "map_indices", "map_weights")))
@@ -478,7 +495,7 @@ def main() -> int:
             raise RuntimeError(f"{first_anchor.sample_id}: E route exactness audit failed")
     if args.publication_v1_1:
         first_anchor = anchors[orders[order_seeds[0]][0]]
-        candidate_payload, _ = prepare_host(first_anchor)
+        candidate_payload, _ = prepare_host(first_anchor, include_untimed_hash_audit=True)
         candidate_prepared_sha256 = tree_sha(tuple(
             candidate_payload[key] for key in (
                 "anchor", "query", "weights", "map_indices", "map_weights")))
@@ -522,21 +539,20 @@ def main() -> int:
             resident=stats(valid_resident_values),
         )
     elif args.service_mode == "Q2" and args.publication_v1_1:
-        if len(q2_orders) != 1 or q2_orders[0].get("status") != "passed":
-            raise RuntimeError("Q2 lifecycle did not produce one passed order")
-        q2_row = q2_orders[0]
-        lifecycle_metrics = q2_metrics(
-            submit_to_result=q2_row["submit_to_result"],
-            inter_completion=q2_row["inter_completion"],
-            throughput_samples_per_second=q2_row["samples_per_second"],
-            b16_to_b32_marginal_seconds=q2_row["true_B16_to_B32_marginal_seconds"],
-        )
+        if len(q2_orders) == 1 and q2_orders[0].get("status") == "passed":
+            q2_row = q2_orders[0]
+            lifecycle_metrics = q2_metrics(
+                submit_to_result=q2_row["submit_to_result"],
+                inter_completion=q2_row["inter_completion"],
+                throughput_samples_per_second=q2_row["samples_per_second"],
+                b16_to_b32_marginal_seconds=q2_row["true_B16_to_B32_marginal_seconds"],
+            )
     result = {
         "schema_version": "heat3d_v6_p1i_final_e_service_v1",
         "status": (
             "passed" if q2_all_passed and args.sample_count == 32
             else "passed_smoke" if q2_all_passed
-            else "passed_serial_Q2_not_qualified"
+            else "failed_hard_gate"
         ),
         "route": args.route, "resolution": resolution, "output_nodes": 240825,
         "sample_count": args.sample_count, "service_mode": args.service_mode,
@@ -579,11 +595,11 @@ def main() -> int:
         "measurement_provenance": lifecycle_provenance(
             attempted=bool(args.publication_v1_1), matrix_completed=False, generated=False),
         "peak_vram_bytes": int(candidate.publication._device_memory().get("peak_bytes_in_use", 0)),
-        "aggregate_service_worker_peak_RAM_bytes": peak_ram_bytes(),
+        "aggregate_service_worker_peak_RAM_bytes": service_hwm_bytes,
         "memory_measurement": {
             "field": "service_process_HWM_bytes",
-            "value": peak_ram_bytes(),
-            "semantics": "single_process_service_HWM",
+            "value": service_hwm_bytes,
+            "semantics": "single_process_service_HWM_captured_before_untimed_audit",
         },
         "cpu_policy": protocol["resources"]["neural"],
         "thread_env": {key: os.environ.get(key) for key in (
@@ -594,7 +610,7 @@ def main() -> int:
         "exactness_provenance": exactness,
         "role_contract": protocol["role_contract"],
     }
-    if args.publication_v1_1:
+    if args.publication_v1_1 and q2_all_passed:
         validate_cell(result, formal=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n")
@@ -605,7 +621,7 @@ def main() -> int:
             else result["fresh_single_case"]["median_seconds"]),
         "Q2_all_passed": q2_all_passed,
     }))
-    return 0
+    return 0 if q2_all_passed else 1
 
 
 if __name__ == "__main__":

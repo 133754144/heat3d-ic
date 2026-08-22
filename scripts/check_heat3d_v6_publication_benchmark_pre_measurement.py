@@ -41,6 +41,18 @@ def main() -> int:
     require(seal["ready_for_authoritative_valid32"] == "GO", "authoritative valid32 readiness")
     require(seal["publication_timing_freeze"] == "NO_GO_ready_for_full_valid32", "timing status")
     require(seal.get("benchmark_lifecycle_schema") == "GO", "lifecycle schema gate")
+    require(seal.get("benchmark_runtime_isolation") == "GO", "runtime isolation gate")
+    runtime_record = seal["runtime_isolation_regression"]
+    runtime_path = ROOT / runtime_record["artifact_path"]
+    require(runtime_path.is_file() and sha(runtime_path) == runtime_record["artifact_sha256"],
+            "runtime isolation fixture SHA")
+    runtime_result = json.loads(runtime_path.read_text())
+    require(runtime_result["status"] == "passed", "runtime isolation fixture status")
+    require(runtime_result["benchmark_runtime_isolation"] == "GO", "runtime isolation GO")
+    require(runtime_record["audit_outside_production_timing"], "audit timing isolation")
+    require(runtime_record["audit_outside_Q2_completion_refill"], "audit Q2 isolation")
+    require(runtime_record["service_HWM_captured_before_untimed_audit"], "HWM isolation")
+    require(runtime_record["inner_failure_artifact_verified"], "failure observability")
     schema_record = seal["lifecycle_schema_regression"]
     schema_path = ROOT / schema_record["artifact_path"]
     require(schema_path.is_file() and sha(schema_path) == schema_record["artifact_sha256"],
@@ -198,6 +210,7 @@ def main() -> int:
         "status": "passed", "pre_measurement_seal": "GO",
         "ready_for_authoritative_valid32": "GO",
         "benchmark_lifecycle_schema": "GO",
+        "benchmark_runtime_isolation": "GO",
         "publication_timing_freeze": "NO_GO_ready_for_full_valid32",
         "golden_records": 12, "formal_latency_generated": False,
         "training": False, "test": False, "sealed": False,
