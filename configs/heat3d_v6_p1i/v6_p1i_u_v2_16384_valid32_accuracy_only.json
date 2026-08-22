@@ -1,0 +1,79 @@
+{
+  "schema_version": "heat3d_v6_p1i_u_v2_16384_valid32_accuracy_only_v1",
+  "status": "passed_accuracy_only",
+  "host": "devbox",
+  "base_commit": "2ca9bcca61d5ef66de52b2cbdfd8171374da964b",
+  "route": "U_v2_16384_reconstruction",
+  "checkpoint_epoch": 559,
+  "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+  "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+  "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+  "source_artifact": {
+    "path": "/tmp/v6_p1i_publication_u_v2_16384_valid32_accuracy_only_2ca9bcca.json",
+    "sha256": "85e89e1062e3474d2929a0df9d85187f50ddc16ae8d281494918e8302f336653"
+  },
+  "sample_count": 32,
+  "ordered_sample_ids": [
+    "v6p1if1_0907",
+    "v6p1if1_0365",
+    "v6p1if1_0632",
+    "v6p1if1_0124",
+    "v6p1if1_0041",
+    "v6p1if1_1003",
+    "v6p1if1_0091",
+    "v6p1if1_0286",
+    "v6p1if1_0915",
+    "v6p1if1_0572",
+    "v6p1if1_0522",
+    "v6p1if1_0708",
+    "v6p1if1_0846",
+    "v6p1if1_0817",
+    "v6p1if1_0869",
+    "v6p1if1_0991",
+    "v6p1if1_0203",
+    "v6p1if1_0543",
+    "v6p1if1_0854",
+    "v6p1if1_0118",
+    "v6p1if1_0930",
+    "v6p1if1_0029",
+    "v6p1if1_0003",
+    "v6p1if1_0308",
+    "v6p1if1_0599",
+    "v6p1if1_0175",
+    "v6p1if1_0347",
+    "v6p1if1_0109",
+    "v6p1if1_0511",
+    "v6p1if1_0697",
+    "v6p1if1_0928",
+    "v6p1if1_1017"
+  ],
+  "accuracy": {
+    "full_field": {
+      "point_global_true_rms_relative_rmse_pct": 2.6908852170063957,
+      "sample_first_cv_relative_rmse_pct": 2.749638827068666,
+      "raw_cv_weighted_rmse_K": 2.279714917315074,
+      "source_rmse_K": 3.83322981086294,
+      "peak_rmse_K": 3.6074792112059955,
+      "interface_drop_rmse_K": 0.39638151799628246,
+      "background_rmse_K": 2.2719035421453797,
+      "top_surface_rmse_K": 2.131206125128643,
+      "bottom_surface_rmse_K": 1.507858583997638,
+      "sample_count": 32
+    }
+  },
+  "role_contract": {
+    "training": false,
+    "timing_claimed": false,
+    "test": false,
+    "sealed": false,
+    "accessed_roles": [
+      "train_inputs_for_frozen_standardizer",
+      "valid_iid"
+    ]
+  },
+  "notes": [
+    "This compact tracked evidence preserves the aggregate accuracy, frozen sample order, and SHA256 of the complete remote source artifact.",
+    "Incidental runtime fields produced by the existing evaluator are excluded and are not publication timing evidence.",
+    "No other route accuracy was recomputed."
+  ]
+}
