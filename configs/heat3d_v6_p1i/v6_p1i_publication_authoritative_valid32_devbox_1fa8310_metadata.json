@@ -1,0 +1,57 @@
+{
+  "schema_version": "v6_p1i_devbox_authoritative_valid32_metadata_v1",
+  "status": "passed",
+  "host": "devbox",
+  "repository": {
+    "branch": "research/v6-p1i-training",
+    "head": "1fa83103fa01dff604c1f377fcc6cd61cdf2ec4d",
+    "remote_sync": "git pull --ff-only origin research/v6-p1i-training",
+    "worktree_clean_before_run": true
+  },
+  "environment": {
+    "python": "3.14.3",
+    "conda_environment": "rigno",
+    "jax_devices": ["CudaDevice(id=0)"],
+    "gpu_backend": "CUDA",
+    "disk_check": "devbox /dev/sdd: 1007G total, 275G used, 681G available"
+  },
+  "protocol": {
+    "formal_matrix": "5 routes x 3 randomized order seeds (20260814/20260815/20260816) x Serial/Q2",
+    "sample_count": 32,
+    "independent_process_count": 30,
+    "timing_boundary": "in-memory k/q/BC -> synchronized 240825 result",
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "training_executed": false
+  },
+  "inputs": {
+    "dataset": "data/heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_fields_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "checkpoint": "output/heat3d_v6_p1i_runs/V6_06_V5best_P1i_seed0_reliable_B24/params_best_valid_point_global.pkl",
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "checkpoint_epoch": 559
+  },
+  "artifacts": {
+    "raw_sha256": "0b9cebc721b49096ea5a602f2d93cec05da1186fd5dfc688a08f9bd97286af09",
+    "collector_json_sha256": "b405e3872009aa1eb436fbbb16ee9b8791109288b63a7748e227b22df87ca071",
+    "collector_csv_sha256": "f73fb50785959edd6069af1ae7252c04a52e899efba781f5667c92c168e5f323",
+    "collector_md_sha256": "ccdae6ff1307201567d303bd221a6dc5a5fec39c716a26da65bc6663265440be",
+    "artifact_manifest_sha256": "6506be8a90fa01a39876fcb94f860c581eb3f7865e05b0f3022da0adb43f0002",
+    "artifact_file_count": 67
+  },
+  "preflight": {
+    "actual_data_preflight_sha256": "d3e448e1616a94472eec941543eda3dcc989a314ce9eec2f813ec2f93194b760",
+    "role": "valid32 inputs plus full-field mesh without temperature",
+    "status": "passed"
+  },
+  "reproducibility_note": {
+    "binding_fingerprint_preflight": "The repository high-N binding fingerprints three implementation files from the earlier frozen gate; the current HEAD has exact-safe later code changes. A /tmp-only binding copy with current file SHA256 was used to build the read-only preflight caches. The formal 30-cell runner used the repository binding path and did not alter it.",
+    "mismatched_binding_fingerprint_files": [
+      "rigno/heat3d_v6_p1i_anchor_query.py",
+      "rigno/graphBuilder_Heat3D.py",
+      "rigno/heat3d_v6_full_field.py"
+    ],
+    "checkpoint_or_dataset_modified": false
+  }
+}

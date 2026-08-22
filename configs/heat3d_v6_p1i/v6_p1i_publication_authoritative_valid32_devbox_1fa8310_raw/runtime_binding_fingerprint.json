@@ -1,0 +1,156 @@
+{
+  "code_fingerprints": {
+    "adapter_and_selector": {
+      "path": "rigno/heat3d_v6_p1i_anchor_query.py",
+      "sha256": "196a13e823b1af512e0192be72c2a8c4c8ee1bfd67f3e5b7a3f9dc5495e4d7f9"
+    },
+    "full_kq_reconstruction": {
+      "path": "scripts/benchmark_heat3d_v6_p1i_resolution.py",
+      "sha256": "9818b25f45210ff573e68338d85933d15d5545d8e93bde34ee6d9a47e523c59c"
+    },
+    "graph_builder": {
+      "path": "rigno/graphBuilder_Heat3D.py",
+      "sha256": "4d40e0f851e5b04f30d30192e13c2c533735490cc9a120d91489b9d3702eadd5"
+    },
+    "mesh_core": {
+      "path": "scripts/heat3d_v6_p1i_continuous_core.py",
+      "sha256": "d9a16ad59ffc4bb2c0bbf6457aaa53c1f5ce6d916d75a753b83fe15d8df9145a"
+    },
+    "reconstruction": {
+      "path": "rigno/heat3d_v6_full_field.py",
+      "sha256": "45d8e8ea8d06f022d6d405cb22d2e6dd05ebfb1e93fcc1a54901646312c4a2c8"
+    }
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "solver_node_count": 240825,
+    "support_family": "sample_varying_source_aware_1024_solver_nodes"
+  },
+  "development_subset": {
+    "count": 32,
+    "model_error_or_temperature_used": false,
+    "role": "valid_iid",
+    "sample_ids": [
+      "v6p1if1_0308",
+      "v6p1if1_0511",
+      "v6p1if1_0041",
+      "v6p1if1_0846",
+      "v6p1if1_0572",
+      "v6p1if1_0347",
+      "v6p1if1_0286",
+      "v6p1if1_0124",
+      "v6p1if1_1017",
+      "v6p1if1_0854",
+      "v6p1if1_0928",
+      "v6p1if1_0543",
+      "v6p1if1_0632",
+      "v6p1if1_0599",
+      "v6p1if1_0003",
+      "v6p1if1_0029",
+      "v6p1if1_0991",
+      "v6p1if1_0109",
+      "v6p1if1_0365",
+      "v6p1if1_0091",
+      "v6p1if1_0930",
+      "v6p1if1_0175",
+      "v6p1if1_0915",
+      "v6p1if1_0869",
+      "v6p1if1_0522",
+      "v6p1if1_0118",
+      "v6p1if1_0708",
+      "v6p1if1_0817",
+      "v6p1if1_1003",
+      "v6p1if1_0697",
+      "v6p1if1_0907",
+      "v6p1if1_0203"
+    ],
+    "selection_rule": "ascending SHA256(sample_id), first 32",
+    "selection_seed": null
+  },
+  "execution_contract": {
+    "high_n_inference_executed_this_closeout": false,
+    "sealed_accessed": false,
+    "test_accessed": false,
+    "training_executed": false
+  },
+  "graph_cache_contract": {
+    "backend": "sparse_kdtree_v1",
+    "cache_key": [
+      "ordered_support_hash",
+      "resolved_graph_config_hash",
+      "graph_seed",
+      "graph_builder_code_sha256"
+    ],
+    "cached_uncached_real_edge_hash_must_match": true,
+    "graph_config_and_seed": "from each frozen checkpoint run_config"
+  },
+  "high_n_fields": {
+    "anchor_context_and_scale": "always exact original 1024 anchors with frozen train-only normalization",
+    "coords_control_volume_layer": "direct shared/coords_m, shared/control_volume_m3, shared/layer_id from frozen full_fields.h5",
+    "effective_operator_cv": "rigno.heat3d_v6_p1i_anchor_query.conservative_selected_control_volume; same-layer nearest partition of all solver CV",
+    "full_field_sidecar_persists_k_q": false,
+    "k_q_fallback": "deterministically reconstruct full solver-node k/q from frozen sample_meta physics using fingerprinted mesh and _continuous_fields; fail closed on fingerprint or power-audit drift",
+    "selected_k_q": "direct values at selected solver indices; no interpolation from old 1024 support",
+    "temperature_label_used": false
+  },
+  "nested_support": {
+    "algorithm": "anchored_stratified_deficit_round_robin_v1",
+    "fallback": "exhausted strata/layers removed; active weights renormalized; no replacement or target-dependent retry",
+    "implementation": "rigno.heat3d_v6_p1i_anchor_query.deterministic_nested_query_order",
+    "ordering": "exact original 1024 anchor indices in original order, then one deterministic added-node sequence; N uses the first N indices",
+    "selection_seed": 20260808,
+    "stratum_fractions": {
+      "interface": 0.15,
+      "robin": 0.1,
+      "source": 0.35,
+      "volume": 0.4
+    },
+    "target_temperature_prediction_or_error_used": false,
+    "within_stratum": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+  },
+  "numeric_tolerances": {
+    "R0_adapter_vs_reference_full_field_max_abs_K": 0.0,
+    "R0_adapter_vs_reference_prediction_max_abs_K": 0.0,
+    "R0_adapter_vs_reference_scale_max_abs": 0.0,
+    "all_outputs_finite": true,
+    "anchor_to_solver_coordinate_max_distance_m": 1e-14,
+    "cached_uncached_prediction_max_abs_K": 1e-06,
+    "full_kq_power_relative_error": 1e-12,
+    "operator_volume_relative_error": 1e-12
+  },
+  "prior_protocol_path": "configs/heat3d_v6_p1i/v6_p1i_anchor_query_resolution_protocol.json",
+  "prior_protocol_sha256": "481a5bee5e188d01401934d5d61e433f2726ef1c7fe8ce35eb4616420934307f",
+  "r0_closeout_path": "configs/heat3d_v6_p1i/v6_p1i_anchor_query_r0_closeout.json",
+  "r0_closeout_sha256": "7907945ede35f66251a17f25dafcde069b405900fdfc9b6a079e2b05d0cb04dd",
+  "reconstruction_contract": {
+    "cache_key": [
+      "full_coords_hash",
+      "ordered_support_hash",
+      "layer_hash",
+      "interface_definition_hash",
+      "reconstruction_code_sha256"
+    ],
+    "cached_uncached_map_and_prediction_must_match": true,
+    "method": "layer/interface-aware inverse-distance reconstruction with per-domain same-layer fallback"
+  },
+  "resolutions": {
+    "mandatory": [
+      1024,
+      4096,
+      8192,
+      16384
+    ],
+    "optional_enters_mandatory_ranking": false,
+    "optional_valid_only": 32768
+  },
+  "schema_version": "heat3d_v6_p1i_high_n_implementation_binding_v1",
+  "status": "frozen_after_three_seed_r0_pass",
+  "timing_contract": {
+    "R0_may_be_reported_as_production_timing": false,
+    "R0_validation_cost": "duplicate reference+adapter graphs/forwards plus hashes and 240825 reconstruction audits; validation only",
+    "production_timing": "future single workflow wall clock with graph/cache and reconstruction boundaries explicitly separated"
+  }
+}
