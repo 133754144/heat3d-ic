@@ -64,7 +64,7 @@ The dominant measured stages are preprocessing (support/input, graph, packing, a
 
 ## Accuracy-only addition
 
-U-v2 16384 valid32 was absent from tracked aggregate accuracy evidence, so one seed0 frozen-route accuracy-only evaluation was run on `devbox`. No timing result from that execution is used. PG `2.690885%`, raw `2.279715 K`, source `3.833230 K`, peak `3.607479 K`, interface `0.396382 K`.
+U-v2 16384 valid32 was absent from tracked aggregate accuracy evidence, so one `model_seed0` frozen-route accuracy-only evaluation was run on `devbox`. No timing result from that execution is used. PG `2.690885%`, raw `2.279715 K`, source `3.833230 K`, peak `3.607479 K`, interface `0.396382 K`.
 
 ## Frozen claims
 

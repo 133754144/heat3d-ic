@@ -6,7 +6,7 @@
     "route": "U_v2_16384_reconstruction",
     "sample_count": 32,
     "timing_claimed": false,
-    "tracked_compact_artifact_sha256": "a7d9cbe16896dbc9c4415f6ba7df728cee1c0866b8e1c4e2d764dc9d2b9fcb47"
+    "tracked_compact_artifact_sha256": "361a852a4f2856726cf52822a41863a54ad585bf39fde57551393c0ef139ba5a"
   },
   "base_commit": "2ca9bcca61d5ef66de52b2cbdfd8171374da964b",
   "claims": {
@@ -819,7 +819,7 @@
   ],
   "pareto_data": [
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "fresh_median_s": 0.8832465254236013,
       "fresh_speedup_vs_fvm": 2.0013168422384684,
       "point_global_rmse_pct": 2.7022701863666154,
@@ -831,7 +831,7 @@
       "vram_bytes": 443188736.0
     },
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "fresh_median_s": 0.8661765540018678,
       "fresh_speedup_vs_fvm": 1.9763314924381818,
       "point_global_rmse_pct": 2.6908852170063957,
@@ -843,7 +843,7 @@
       "vram_bytes": 314090240.0
     },
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "fresh_median_s": 1.309088043635711,
       "fresh_speedup_vs_fvm": 1.2923099591481455,
       "point_global_rmse_pct": 2.81884946262079,
@@ -855,7 +855,7 @@
       "vram_bytes": 3995909632.0
     },
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "fresh_median_s": 1.3102346409577876,
       "fresh_speedup_vs_fvm": 1.3219975757612379,
       "point_global_rmse_pct": 3.0670958565907793,
@@ -881,6 +881,7 @@
   ],
   "performance_roles": {
     "cross_host_seed_pooling": false,
+    "paired_speedup_definition": "within each lifecycle seed and identical ordered sample IDs compute FVM/neural paired workload ratio first; report median and min-max over the three lifecycle seeds; never pool 96 samples across machines",
     "primary": "WSL2_Attempt4",
     "replication": "devbox_overclock_enabled_hardware_state"
   },
@@ -1552,7 +1553,7 @@
   "status": "passed",
   "strategy_table": [
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "b16_to_b32_marginal_s": 0.567697766731726,
       "fresh_median_s": 0.8832465254236013,
       "fresh_p95_median_s": 0.982959209359251,
@@ -1571,7 +1572,7 @@
       "vram_bytes": 443188736.0
     },
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "b16_to_b32_marginal_s": 0.5616106673260219,
       "fresh_median_s": 0.8661765540018678,
       "fresh_p95_median_s": 0.9114785658428445,
@@ -1590,7 +1591,7 @@
       "vram_bytes": 314090240.0
     },
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "b16_to_b32_marginal_s": 0.8553287149989046,
       "fresh_median_s": 1.309088043635711,
       "fresh_p95_median_s": 1.5273324431385844,
@@ -1609,7 +1610,7 @@
       "vram_bytes": 3995909632.0
     },
     {
-      "accuracy_population": "frozen_valid32_seed0",
+      "accuracy_population": "frozen_valid32_model_seed0",
       "b16_to_b32_marginal_s": 0.7300854247296229,
       "fresh_median_s": 1.3102346409577876,
       "fresh_p95_median_s": 1.3755142256850377,

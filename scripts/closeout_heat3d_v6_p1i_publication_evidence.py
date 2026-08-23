@@ -327,7 +327,7 @@ def main() -> int:
         acc = accuracy[route]
         strategy_rows.append({
             "route": route,
-            "accuracy_population": "frozen_valid32_seed0" if route != "FVM240825_reference" else "reference",
+            "accuracy_population": "frozen_valid32_model_seed0" if route != "FVM240825_reference" else "reference",
             "point_global_rmse_pct": acc.get("point_global_true_rms_relative_rmse_pct"),
             "raw_cv_rmse_K": acc.get("raw_cv_weighted_rmse_K"),
             "source_rmse_K": acc.get("source_rmse_K"),
@@ -385,7 +385,8 @@ def main() -> int:
         "base_commit": "2ca9bcca61d5ef66de52b2cbdfd8171374da964b",
         "publication_evidence_completeness": "GO",
         "performance_roles": {"primary": "WSL2_Attempt4", "replication": "devbox_overclock_enabled_hardware_state",
-                              "cross_host_seed_pooling": False},
+                              "cross_host_seed_pooling": False,
+                              "paired_speedup_definition": "within each lifecycle seed and identical ordered sample IDs compute FVM/neural paired workload ratio first; report median and min-max over the three lifecycle seeds; never pool 96 samples across machines"},
         "frozen_inputs": {
             "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
             "checkpoint_epoch": 559,
@@ -520,7 +521,7 @@ def main() -> int:
             lines.append(f"- {machine} `{route}`: {top}.")
     lines += ["", "The dominant measured stages are preprocessing (support/input, graph, packing, and reconstruction-map), while NN/reconstruction is smaller; this supports the bounded claim `preprocessing-bound`, not a universal hardware claim.", "",
               "## Accuracy-only addition", "",
-              f"U-v2 16384 valid32 was absent from tracked aggregate accuracy evidence, so one seed0 frozen-route accuracy-only evaluation was run on `{u16384['host']}`. No timing result from that execution is used. PG `{accuracy['U_v2_16384_reconstruction']['point_global_true_rms_relative_rmse_pct']:.6f}%`, raw `{accuracy['U_v2_16384_reconstruction']['raw_cv_weighted_rmse_K']:.6f} K`, source `{accuracy['U_v2_16384_reconstruction']['source_rmse_K']:.6f} K`, peak `{accuracy['U_v2_16384_reconstruction']['peak_rmse_K']:.6f} K`, interface `{accuracy['U_v2_16384_reconstruction']['interface_drop_rmse_K']:.6f} K`.", "",
+              f"U-v2 16384 valid32 was absent from tracked aggregate accuracy evidence, so one `model_seed0` frozen-route accuracy-only evaluation was run on `{u16384['host']}`. No timing result from that execution is used. PG `{accuracy['U_v2_16384_reconstruction']['point_global_true_rms_relative_rmse_pct']:.6f}%`, raw `{accuracy['U_v2_16384_reconstruction']['raw_cv_weighted_rmse_K']:.6f} K`, source `{accuracy['U_v2_16384_reconstruction']['source_rmse_K']:.6f} K`, peak `{accuracy['U_v2_16384_reconstruction']['peak_rmse_K']:.6f} K`, interface `{accuracy['U_v2_16384_reconstruction']['interface_drop_rmse_K']:.6f} K`.", "",
               "## Frozen claims", "",
               "- 16k + reconstruction is the main accuracy-latency Pareto family in this valid32 evidence.",
               "- E/U 16384 are in the same E2E performance class on both machines; neither machine is pooled as extra seeds.",
