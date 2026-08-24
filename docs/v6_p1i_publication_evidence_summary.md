@@ -78,3 +78,18 @@ Final: `publication evidence completeness = GO`.
 ## P6-A confirmatory amendment
 
 The earlier valid32 closeout statement that test/sealed confirmation remained pending is superseded only for the corrected `test_iid` holdout. After route and checkpoint freeze, `E16384_reconstruction` with `model_seed0` was evaluated once on all 128 ordered test samples: full-field PG `2.992001%`, sample-first `2.948519%`, raw CV RMSE `2.389097 K`, source `3.940479 K`, peak `5.726285 K`, and interface `0.355507 K`. The result is descriptive confirmation and was not used for selection, tuning, or threshold revision. `sealed IID` remains ungenerated and unopened.
+
+## Final peak error-tail amendment
+
+Offline analysis of the frozen valid32 and confirmatory test128 artifacts uses
+the preregistered 180 K temperature-rise scale, not a split-specific maximum.
+The formal dataset's observed maximum peak ΔT is 173.098431 K. Peak RMSE is
+4.018012 K (2.232229% of 180 K) on valid32 and 5.726285 K (3.181269% of
+180 K) on test128. Test sample-wise peak relative error is 3.993478% median,
+9.133358% p90, 10.437191% p95 and 15.987477% maximum. The largest ten test
+samples contribute 52.30% of total test peak-error SSE and 95.45% of the excess
+SSE relative to the valid32 mean-SSE reference. The confirmatory increase is
+therefore classified as `primarily_tail_driven_with_modest_broad_shift`.
+This is an applicability-boundary claim only; it cannot alter the frozen model,
+route, thresholds or selection. Full evidence is in
+`docs/v6_p1i_error_tail_closeout.md`; sealed IID remains unopened.

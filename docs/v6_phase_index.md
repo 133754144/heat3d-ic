@@ -97,3 +97,14 @@ The legacy random-block-v2 transfer and timing records remain reproducibility
 evidence for an engineering diagnostic. They no longer hold a current formal
 OOD or independent-benchmark role and must not be used for new selection,
 tuning, production or generalization claims.
+
+## P1i final closeout
+
+P1i scientific development is closed. After route/checkpoint freeze,
+`E16384_reconstruction` with `model_seed0` was evaluated once on the corrected
+confirmatory `test_iid=128`; it was not used for selection or tuning. The final
+offline peak-tail analysis uses a fixed 180 K normalization scale and records a
+primarily tail-driven test peak-RMSE increase as an applicability boundary.
+The separately preregistered sealed IID set remains ungenerated and unopened.
+See `docs/v6_p1i_closeout.md`, `docs/v6_p1i_error_tail_closeout.md`, and
+`docs/v6_p1i_handoff.md`.
