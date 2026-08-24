@@ -74,3 +74,7 @@ U-v2 16384 valid32 was absent from tracked aggregate accuracy evidence, so one `
 - The evidence is complete for publication-table construction on valid32. Generalization beyond this scope still requires the separately governed test/sealed confirmation; FVM retains reference physics fidelity.
 
 Final: `publication evidence completeness = GO`.
+
+## P6-A confirmatory amendment
+
+The earlier valid32 closeout statement that test/sealed confirmation remained pending is superseded only for the corrected `test_iid` holdout. After route and checkpoint freeze, `E16384_reconstruction` with `model_seed0` was evaluated once on all 128 ordered test samples: full-field PG `2.992001%`, sample-first `2.948519%`, raw CV RMSE `2.389097 K`, source `3.940479 K`, peak `5.726285 K`, and interface `0.355507 K`. The result is descriptive confirmation and was not used for selection, tuning, or threshold revision. `sealed IID` remains ungenerated and unopened.

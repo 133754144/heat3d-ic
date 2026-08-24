@@ -30,8 +30,16 @@ def main() -> int:
     require(payload["performance_roles"]["cross_host_seed_pooling"] is False, "host pooling")
     require(payload["role_contract"] == {
         "accuracy_only_route_count": 1, "machines_pooled_as_six_seeds": False,
-        "sealed": False, "test": False, "timing_rerun": False, "training": False,
+        "sealed": False, "test": True, "test_confirmatory_route_count": 1,
+        "timing_rerun": False, "training": False,
     }, "role contract")
+    confirmation = payload["p6a_confirmatory_test_iid"]
+    require(confirmation["status"] == "passed_frozen_test_iid_confirmatory", "test confirmation")
+    require(confirmation["route"] == "E16384_reconstruction", "test route")
+    require(confirmation["model_seed_label"] == "model_seed0", "test model seed")
+    require(confirmation["sample_count"] == 128 and confirmation["selection_or_tuning_use"] is False,
+            "test population/selection")
+    require(confirmation["sealed_iid_opened"] is False, "sealed opening")
     require(payload["accuracy_only_inference"]["timing_claimed"] is False, "accuracy timing claim")
     require(payload["frozen_inputs"]["sample_order_cross_host_exact"] is True, "sample order")
     require(payload["frozen_inputs"]["cpu_policy_cross_host_exact"] is True, "CPU policy")
@@ -79,10 +87,11 @@ def main() -> int:
         require(hashlib.sha256(path.read_bytes()).hexdigest() == digest, f"manifest SHA drift: {relative}")
     text = (ROOT / "docs/v6_p1i_publication_evidence_summary.md").read_text()
     for token in ("WSL2 Attempt 4", "independent, overclock-enabled", "preprocessing-bound",
-                  "publication evidence completeness = GO", "test/sealed"):
+                  "publication evidence completeness = GO", "P6-A confirmatory amendment",
+                  "sealed IID` remains ungenerated and unopened"):
         require(token in text, f"missing report token: {token}")
     print(json.dumps({"status": "passed", "routes": 5, "lifecycle_rows": 10,
-                      "stage_rows": 56, "training": False, "test": False, "sealed": False}))
+                      "stage_rows": 56, "training": False, "test": True, "sealed": False}))
     return 0
 
 

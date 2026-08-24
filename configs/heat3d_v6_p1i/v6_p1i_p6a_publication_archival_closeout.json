@@ -1,0 +1,74 @@
+{
+  "model_seed_label": "model_seed0",
+  "paired_speedup_definition": "within each lifecycle seed and identical ordered sample IDs compute FVM/neural paired workload ratio first; report median and min-max over the three lifecycle seeds; never pool 96 samples across machines",
+  "paper_tables": {
+    "claims": "configs/heat3d_v6_p1i/v6_p1i_p6a_claim_evidence_mapping.csv",
+    "lifecycle": "configs/heat3d_v6_p1i/v6_p1i_p6a_supplementary_lifecycle_table.csv",
+    "main": "configs/heat3d_v6_p1i/v6_p1i_p6a_publication_main_table.csv",
+    "replication": "configs/heat3d_v6_p1i/v6_p1i_p6a_replication_table.csv",
+    "stage": "configs/heat3d_v6_p1i/v6_p1i_p6a_stage_decomposition_table.csv"
+  },
+  "publication_evidence_completeness": "GO",
+  "role_contract": {
+    "model_or_route_selection": false,
+    "sealed_iid": false,
+    "test_iid": true,
+    "timing_rerun": false,
+    "training": false
+  },
+  "schema_version": "heat3d_v6_p1i_p6a_publication_archival_closeout_v1",
+  "sealed_iid": {
+    "labels_generated": false,
+    "labels_opened": false,
+    "opened": false
+  },
+  "status": "passed",
+  "test_iid_confirmatory": {
+    "accuracy": {
+      "background_rmse_K": 2.3816978134722127,
+      "bottom_rmse_K": 1.5716466458865652,
+      "domain": "full_240825",
+      "interface_drop_rmse_K": 0.35550676075661686,
+      "layer_mean_rmse_K": 2.2263745724584214,
+      "peak_rmse_K": 5.726284777743643,
+      "point_global_true_rms_relative_rmse_pct": 2.99200090751355,
+      "raw_cv_weighted_rmse_K": 2.389097281297028,
+      "sample_count": 128,
+      "sample_first_cv_relative_rmse_pct": 2.9485186876901066,
+      "source_rmse_K": 3.940478825326559,
+      "top_rmse_K": 2.156246897551553
+    },
+    "evaluator_sha256": "941a104545b873d7e00bca8c4e4c2720cd61be8783e3eb258e7103d9b0347b8a",
+    "execution_attempts": [
+      {
+        "jax_platforms": "gpu",
+        "reason": "ROCm backend unavailable",
+        "status": "failed_before_label_access"
+      },
+      {
+        "jax_platforms": "cuda",
+        "reason": "CPU graph backend hidden",
+        "status": "failed_before_label_access"
+      },
+      {
+        "jax_platforms": "cuda,cpu",
+        "reason": null,
+        "status": "passed"
+      }
+    ],
+    "execution_commit": "49188c6cbc1f6fa4bbd5414fd978c769272b79fc",
+    "execution_host": "devbox",
+    "path": "configs/heat3d_v6_p1i/v6_p1i_e16384_test_iid_confirmatory.json",
+    "protocol_sha256": "5ef1d9ff2cdb21eede42ee540d34b5b76a4449ad939828595a2567d0e1af65e7",
+    "route": "E16384_reconstruction",
+    "sample_count": 128,
+    "selection_or_tuning_use": false,
+    "sha256": "4c460dc8a7a5e5d57d577fc9339240dc0b03934cacd86d11308ab125b5dcfbe1"
+  },
+  "u16384_complete_source": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_u_v2_16384_valid32_accuracy_only_full.json",
+    "per_sample_rows": 32,
+    "sha256": "85e89e1062e3474d2929a0df9d85187f50ddc16ae8d281494918e8302f336653"
+  },
+  "wsl2_nn_tail": "WSL2 E16384 NN/reconstruction median=0.007738753 s and p95=0.085637189 s; the observed upper tail is retained without exclusion or replacement"
+}

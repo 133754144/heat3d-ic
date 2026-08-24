@@ -12,7 +12,7 @@
   "claims": {
     "E_and_U_16384_same_e2e_class": true,
     "U_direct_better_accuracy_at_approximately_equal_direct_latency_than_E_direct": true,
-    "claim_boundary": "valid32 timing/accuracy evidence only; test and sealed remain unopened",
+    "claim_boundary": "valid32 timing/accuracy evidence plus one-time corrected confirmatory test_iid evaluation of the already-frozen E16384 route; sealed IID remains unopened",
     "preprocessing_bound_supported": true,
     "sixteen_k_fresh_speedup_cross_machine_range": [
       1.792673955946745,
@@ -817,6 +817,30 @@
       "vram_bytes_min": null
     }
   ],
+  "p6a_confirmatory_test_iid": {
+    "accuracy": {
+      "background_rmse_K": 2.3816978134722127,
+      "bottom_rmse_K": 1.5716466458865652,
+      "domain": "full_240825",
+      "interface_drop_rmse_K": 0.35550676075661686,
+      "layer_mean_rmse_K": 2.2263745724584214,
+      "peak_rmse_K": 5.726284777743643,
+      "point_global_true_rms_relative_rmse_pct": 2.99200090751355,
+      "raw_cv_weighted_rmse_K": 2.389097281297028,
+      "sample_count": 128,
+      "sample_first_cv_relative_rmse_pct": 2.9485186876901066,
+      "source_rmse_K": 3.940478825326559,
+      "top_rmse_K": 2.156246897551553
+    },
+    "artifact_path": "configs/heat3d_v6_p1i/v6_p1i_e16384_test_iid_confirmatory.json",
+    "artifact_sha256": "4c460dc8a7a5e5d57d577fc9339240dc0b03934cacd86d11308ab125b5dcfbe1",
+    "model_seed_label": "model_seed0",
+    "route": "E16384_reconstruction",
+    "sample_count": 128,
+    "sealed_iid_opened": false,
+    "selection_or_tuning_use": false,
+    "status": "passed_frozen_test_iid_confirmatory"
+  },
   "pareto_data": [
     {
       "accuracy_population": "frozen_valid32_model_seed0",
@@ -927,7 +951,8 @@
     "accuracy_only_route_count": 1,
     "machines_pooled_as_six_seeds": false,
     "sealed": false,
-    "test": false,
+    "test": true,
+    "test_confirmatory_route_count": 1,
     "timing_rerun": false,
     "training": false
   },
