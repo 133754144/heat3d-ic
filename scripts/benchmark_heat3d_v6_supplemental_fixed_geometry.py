@@ -968,30 +968,42 @@ def run_case(
     gpu: Any,
     hash_payload: bool = False,
 ) -> dict[str, Any]:
+    def record_bundle(name: str, phase_started: float, values: Mapping[str, float]) -> None:
+        """Record directly measured call-wrapper time not covered by inner stages."""
+        call_elapsed = time.perf_counter() - phase_started
+        stages.update(values)
+        inner_elapsed = float(sum(values.values()))
+        stages[f"{name}_call_overhead"] = max(0.0, call_elapsed - inner_elapsed)
+
     started = time.perf_counter()
     stages: dict[str, float] = {}
     phase = time.perf_counter()
     anchor = materialize_anchor(case)
     stages["dynamic_anchor_assembly"] = time.perf_counter() - phase
+    phase = time.perf_counter()
     if mode == "fresh_new_case":
         selected, selected_cv, values = support_for_case(
             case, resolution=int(spec["resolution"]), direct=bool(spec["direct"]),
             full=full, geometry_cache=geometry_cache,
         )
-        stages.update(values)
     else:
         selected = np.asarray(setup["selected"])
         selected_cv = np.asarray(setup["selected_cv"])
+        values = {}
+    record_bundle("support", phase, values)
     phase = time.perf_counter()
     query = query_example(case, anchor, selected, selected_cv, full)
     stages["dynamic_query_assembly"] = time.perf_counter() - phase
+    phase = time.perf_counter()
     if mode == "fresh_new_case":
         graphs, values = build_graphs(
             spec=spec, anchor=anchor, query=query, runtime=runtime, graph_key=graph_key,
         )
-        stages.update(values)
     else:
         graphs = setup["graphs"]
+        values = {}
+    record_bundle("graph", phase, values)
+    phase = time.perf_counter()
     if mode == "full_static_reuse":
         packed, values = pack_full_static(
             spec=spec, anchor=anchor, query=query, runtime=runtime,
@@ -1001,26 +1013,29 @@ def run_case(
         packed, values = pack_standard(
             spec=spec, anchor=anchor, query=query, runtime=runtime, graphs=graphs,
         )
-    stages.update(values)
+    record_bundle("packing", phase, values)
+    phase = time.perf_counter()
     if mode == "full_static_reuse":
         mapping = setup["mapping"]
-        stages["reconstruction_map_cache_lookup"] = 0.0
+        values = {"reconstruction_map_cache_lookup": 0.0}
     else:
         mapping, values = build_mapping(
             spec=spec, selected=selected, full=full, partition=partition,
             boundaries=boundaries,
         )
-        stages.update(values)
+    record_bundle("mapping", phase, values)
+    phase = time.perf_counter()
     device, values, prepared_audit = device_payload(
         spec=spec, packed=packed, mapping=mapping, query_cv=selected_cv,
         graphs=graphs, gpu=gpu, hash_payload=hash_payload,
     )
-    stages.update(values)
+    record_bundle("device_payload", phase, values)
+    phase = time.perf_counter()
     prediction, values = predict_device(
         spec=spec, device=device, params=params, e_forward=e_forward,
         u_forward=u_forward, reconstruct=reconstruct,
     )
-    stages.update(values)
+    record_bundle("prediction", phase, values)
     elapsed = time.perf_counter() - started
     stage_sum = float(sum(stages.values()))
     residual = elapsed - stage_sum
