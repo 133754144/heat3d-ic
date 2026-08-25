@@ -1158,6 +1158,17 @@ def main() -> int:
             "static_identities": identities, "passed": passed,
         })
         if not passed:
+            failure = {
+                "schema_version": "heat3d_v6_p1i_fixed_geometry_runtime_failure_v1",
+                "status": "failed_correctness_gate",
+                "route": args.route,
+                "case": correctness_rows[-1],
+                "setup": compact_setup(setup),
+                "protocol_sha256": sha256_file(args.protocol),
+            }
+            failure_path = args.output.with_suffix(args.output.suffix + ".failed.json")
+            failure_path.parent.mkdir(parents=True, exist_ok=True)
+            failure_path.write_text(json.dumps(failure, indent=2, sort_keys=True) + "\n")
             raise SupplementalRuntimeError(f"{case['case_id']}: correctness gate failed")
 
     timing_rows = []
