@@ -204,13 +204,23 @@ def build_training_command(
         command.append("--pooled-latent-stop-gradient")
     elif model.get("pooled_latent_stop_gradient") is False:
         command.append("--no-pooled-latent-stop-gradient")
-    _append_option(command, "--batch-size", run.get("batch_size"))
+    batch_size = run.get("batch_size")
+    micro_batch_size = run.get("micro_batch_size")
+    validation_batch_size = run.get("validation_batch_size")
+    prediction_batch_size = run.get("prediction_batch_size")
+    # Batch defaults are resolved here as well as in the runner so dry-run
+    # commands faithfully expose the contract used by a future YAML.
+    if micro_batch_size is None:
+        micro_batch_size = batch_size
+    if validation_batch_size is None:
+        validation_batch_size = 32
+    if prediction_batch_size is None:
+        prediction_batch_size = 32
+    _append_option(command, "--batch-size", batch_size)
     if dataset_loader is not None:
-        _append_option(
-            command, "--micro-batch-size", run.get("micro_batch_size")
-        )
-    _append_option(command, "--validation-batch-size", run.get("validation_batch_size"))
-    _append_option(command, "--prediction-batch-size", run.get("prediction_batch_size"))
+        _append_option(command, "--micro-batch-size", micro_batch_size)
+    _append_option(command, "--validation-batch-size", validation_batch_size)
+    _append_option(command, "--prediction-batch-size", prediction_batch_size)
     _append_option(command, "--init-mode", run.get("init_mode"))
     _append_option(command, "--init-checkpoint", run.get("init_checkpoint"))
     _append_option(command, "--checkpoint-load-strict", run.get("checkpoint_load_strict"))
@@ -317,6 +327,12 @@ def build_training_command(
     elif export.get("save_best_predictions") is True:
         command.append("--save-best-predictions")
     _append_option(command, "--best-predictions-name", export.get("best_predictions_name"))
+    if export.get("reliable_checkpointing") is True:
+        command.append("--reliable-checkpointing")
+    _append_option(command, "--latest-checkpoint-name", export.get("latest_checkpoint_name"))
+    _append_option(command, "--latest-checkpoint-every", export.get("latest_checkpoint_every"))
+    if export.get("inject_post_checkpoint_metadata_failure") is True:
+        command.append("--inject-post-checkpoint-metadata-failure")
     if export.get("save_point_global_best_checkpoint") is True:
         command.append("--save-point-global-best-checkpoint")
     _append_option(

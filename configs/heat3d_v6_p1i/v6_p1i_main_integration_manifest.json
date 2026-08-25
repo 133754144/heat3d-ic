@@ -1,0 +1,143 @@
+{
+  "schema_version": "heat3d_v6_p1i_main_integration_manifest_v1",
+  "status": "integration_validation_in_progress",
+  "audit": {
+    "base_commit": "332ef3f463d91442632c3ebddd4f7549c7895b8d",
+    "base_ref": "origin/main",
+    "source_branch": "research/v6-p1i-training",
+    "source_head_before_integration": "4660644acabc64359ae157e41f431901308c3281",
+    "changed_path_count_before_integration": 1277,
+    "direct_branch_merge": "NO_GO",
+    "allowlist_integration": "GO_in_clean_checkout_validation"
+  },
+  "allowlist": {
+    "stable_runtime_code": [
+      "rigno/graphBuilder_Heat3D.py",
+      "rigno/heat3d_graph_cache.py",
+      "rigno/heat3d_v1_normalization.py",
+      "rigno/heat3d_v1_training_semantics.py",
+      "rigno/heat3d_v2_runner_command.py",
+      "rigno/heat3d_v4_split_map.py",
+      "rigno/heat3d_v5_scale_pooling.py",
+      "rigno/heat3d_v6_dataset.py",
+      "rigno/heat3d_v6_full_field.py",
+      "rigno/heat3d_v6_global_context.py",
+      "rigno/heat3d_v6_gpu_reconstruction.py",
+      "rigno/heat3d_v6_graph_scale.py",
+      "rigno/heat3d_v6_p1i_anchor_query.py",
+      "rigno/models/rigno.py",
+      "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+      "scripts/run_heat3d_v4_config.py",
+      "scripts/check_heat3d_v4_registry.py",
+      "scripts/run_heat3d_v4_controlled_training.py",
+      "scripts/run_heat3d_v6_production_highres_inference.py",
+      "scripts/evaluate_heat3d_v6_p1i_e16384_test_confirmatory.py"
+    ],
+    "canonical_configs_and_bindings": [
+      "configs/heat3d_v6/V6_03_V5best_P1h.yaml",
+      "configs/heat3d_v6/v6_layer_canonical_default.yaml",
+      "configs/heat3d_v6/v6_p1h_shared_support1024_manifest.json",
+      "configs/heat3d_v6/v6_source_aware_resolution_ladder.json",
+      "configs/heat3d_v6/v6_production_highres_inference.yaml",
+      "configs/heat3d_v6/v6_production_graph_cache_manifest_v2.json",
+      "configs/heat3d_v6/v6_production_bundle_manifest.json",
+      "configs/heat3d_v6_p1i/V6_06_V5best_P1i_seed0_reliable_B24.yaml",
+      "configs/heat3d_v6_p1i/V6_05_V5best_P1i_seed0_B24.yaml",
+      "configs/heat3d_v6_p1i/V6_07_V5best_P1i_seed1_reliable_B24.yaml",
+      "configs/heat3d_v6_p1i/V6_08_V5best_P1i_seed2_reliable_B24.yaml",
+      "configs/heat3d_v6_p1i/v6_dataset_role_governance.json",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_acceptance.json",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_split_manifest.json",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_freeze_manifest.json",
+      "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_full_field_sidecar_manifest.json",
+      "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+      "configs/heat3d_v6_p1i/v6_p1i_sealed_iid_confirmatory_preregistration.json"
+    ],
+    "phase_index_and_governance": [
+      "configs/heat3d_v6/v6_phase_index.json",
+      "configs/heat3d_v6/v6_governance_amendment.json",
+      "configs/heat3d_v6/v6_training_dataset_lifecycle.csv",
+      "configs/heat3d_v6/v6_model_lifecycle.csv",
+      "configs/heat3d_v6/v6_run_artifact_freeze.json",
+      "docs/v6_phase_index.md",
+      "docs/v6_governance_amendment.md",
+      "docs/v6_total_closeout.md"
+    ],
+    "compact_results": [
+      "configs/heat3d_v6_p1i/v6_p1i_master_strategy_table.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_cross_machine_replication.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_stage_decomposition.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_pareto_data.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_p6a_publication_main_table.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_p6a_supplementary_lifecycle_table.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_p6a_replication_table.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_p6a_stage_decomposition_table.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_p6a_claim_evidence_mapping.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_publication_evidence_summary.json",
+      "configs/heat3d_v6_p1i/v6_p1i_error_tail_closeout.json",
+      "configs/heat3d_v6_p1i/v6_p1i_error_tail_samples.csv",
+      "configs/heat3d_v6_p1i/v6_p1i_final_closeout_sha256.txt"
+    ],
+    "closeout_and_handoff": [
+      "docs/v6_p1i_publication_evidence_summary.md",
+      "docs/v6_p1i_p6a_publication_tables.md",
+      "docs/v6_p1i_error_tail_closeout.md",
+      "docs/v6_p1i_closeout.md",
+      "docs/v6_p1i_handoff.md",
+      "docs/v6_p1i_main_integration_plan.md"
+    ],
+    "integration_and_closeout_checkers": [
+      "scripts/check_heat3d_v6_core_integration.py",
+      "scripts/check_heat3d_v6_production_inference_preflight.py",
+      "scripts/check_heat3d_v6_shared_support_runner_reuse.py",
+      "scripts/closeout_heat3d_v6_p1i_error_tail.py",
+      "scripts/check_heat3d_v6_p1i_final_closeout.py",
+      "scripts/check_heat3d_v6_p1i_main_integration.py",
+      "configs/heat3d_v6_p1i/v6_p1i_main_integration_manifest.json",
+      "configs/heat3d_v6_p1i/v6_p1i_main_integration_receipt.json"
+    ]
+  },
+  "denylist_patterns": [
+    "data/**",
+    "output/**",
+    "checkpoints/**",
+    "logs/**",
+    "**/*.log",
+    "**/predictions*.npz",
+    "configs/heat3d_v6_p1i/**/*_raw/**",
+    "configs/heat3d_v6_p1i/**/*failure*/**",
+    "configs/heat3d_v6_p1i/**/*attempt*/**",
+    "configs/heat3d_v6_p1i/**/*smoke*/**",
+    "configs/heat3d_v6_p1i/**/*diagnostic*/**",
+    "docs/figures/**",
+    "docs/**/*.png",
+    "docs/**/*.svg"
+  ],
+  "explicit_exclusions": {
+    "full_test_per_sample_payload": "configs/heat3d_v6_p1i/v6_p1i_e16384_test_iid_confirmatory.json remains on the research evidence branch; main receives only compact aggregate/tail tables",
+    "formal_sample_qc_table": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_samples.csv remains in the research/HF evidence archive; main receives immutable manifests and compact results",
+    "historical_failures": "all failed benchmark attempts and raw payloads remain immutable on research/v6-p1i-training and are not main runtime assets"
+  },
+  "validation_notes": {
+    "source_research_tree_core_integration_checker": "not_applicable_research_tree_contains_excluded_artifacts",
+    "completed_run_closeout_checker": "passed",
+    "final_offline_closeout_checker": "passed",
+    "publication_evidence_checkers": "passed",
+    "strict_allowlist_json_yaml_csv_validation": "passed"
+  },
+  "execution_contract": {
+    "merge_main_in_this_task": false,
+    "integrate_in_separate_branch": true,
+    "copy_allowlisted_paths_only": true,
+    "require_clean_checkout": true,
+    "require_no_denylist_match": true,
+    "require_v5_regression": true,
+    "require_v6_core_and_closeout_checkers": true,
+    "require_config_dry_run": true,
+    "require_python_compile": true,
+    "require_json_yaml_csv_validation": true,
+    "require_git_diff_check": true
+  }
+}

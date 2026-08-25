@@ -28,10 +28,12 @@ P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID = (
     "heat3d_v6_p1g_geometry_deconfounded1024_v0"
 )
 SHARED_SUPPORT_V6_DATASET_ID = "heat3d_v6_p1h_shared_support1024_v0"
+CONTINUOUS_PHYSICS_V6_DATASET_ID = "heat3d_v6_p1i_continuous_physics1024_v1"
 CANONICAL_V6_DATASET_ID = SHARED_SUPPORT_V6_DATASET_ID
 SUPPORTED_V6_DATASET_IDS = {
     P1G_GEOMETRY_ADAPTIVE_V6_DATASET_ID,
     CANONICAL_V6_DATASET_ID,
+    CONTINUOUS_PHYSICS_V6_DATASET_ID,
 }
 V6_DUAL_ROBIN_CONDITION_FEATURES = (
     "k_x",
@@ -55,6 +57,7 @@ class V6DualRobinExample:
     condition: V1SteadyConditionInput
     target: V1SteadyTarget
     meta: dict[str, Any]
+    operator_point_weights: np.ndarray
 
     def get_relative_bc_feature_view(self) -> V1RelativeBCFeatureView:
         return V1RelativeBCFeatureView(
@@ -105,19 +108,31 @@ class V6DualRobinExample:
         )
 
     def v6_operator_point_weights(self) -> np.ndarray:
-        """Return the frozen P1g equal-weight operator-point measure."""
+        """Return the dataset-declared label-independent operator measure."""
 
-        count = int(self.condition.coords.shape[0])
-        return np.full(count, 1.0 / count, dtype=np.float64)
+        weights = np.asarray(self.operator_point_weights, dtype=np.float64).reshape(-1)
+        if weights.shape != (self.condition.coords.shape[0],) or np.any(weights <= 0.0):
+            raise ValueError("V6 operator weights must be positive [N]")
+        return weights / np.sum(weights)
 
     def v6_global_context_inputs(self) -> dict[str, Any]:
         view = self.get_relative_bc_feature_view()
         adapter = self.meta["v6_adapter"]
         sources = self.meta.get("sources") or []
-        total_power = float(sum(float(row["source_power_W"]) for row in sources))
-        total_thickness = float(
-            sum(float(row["thickness_m"]) for row in self.meta["layers_bottom_to_top"])
+        if sources:
+            total_power = float(sum(float(row["source_power_W"]) for row in sources))
+        else:
+            total_power = float(self.meta["package_total_power_W"])
+        physics = self.meta.get("physics") or {}
+        layers = self.meta.get("layers_bottom_to_top") or physics.get(
+            "layers_bottom_to_top"
         )
+        if not layers:
+            raise ValueError(f"{self.sample_id}: missing V6 layer stack metadata")
+        total_thickness = float(
+            sum(float(row["thickness_m"]) for row in layers)
+        )
+        footprint = physics.get("footprint_m", (0.01, 0.01))
         return {
             "coords": self.condition.coords,
             "raw_condition": view.condition_features,
@@ -127,7 +142,11 @@ class V6DualRobinExample:
             "bottom_T_inf_K": float(adapter["bottom_T_inf_K"]),
             "operator_point_weights": self.v6_operator_point_weights(),
             "package_total_power_W": total_power,
-            "package_extents_m": (0.01, 0.01, total_thickness),
+            "package_extents_m": (
+                float(footprint[0]),
+                float(footprint[1]),
+                total_thickness,
+            ),
         }
 
 
@@ -147,21 +166,25 @@ class Heat3DV6DualRobinDataset:
         self._validate_manifest()
         self.split_ids = self._split_ids_from_manifest()
         allowed = None if include_roles is None else set(include_roles)
-        if allowed is not None and not allowed <= {"train", "valid", "test"}:
+        if allowed is not None and not allowed <= {"train", "valid_iid", "test_iid"}:
             raise ValueError(f"unsupported V6 materialized roles: {sorted(allowed)}")
         rows = self.manifest["samples"]
-        self.materialized_roles = {str(row["split_role"]) for row in rows} if allowed is None else allowed
+        self.materialized_roles = (
+            {self._canonical_split_role(row) for row in rows}
+            if allowed is None
+            else allowed
+        )
         self.samples = [
             self._load_sample(row)
             for row in rows
-            if allowed is None or str(row["split_role"]) in allowed
+            if allowed is None or self._canonical_split_role(row) in allowed
         ]
 
     def _validate_manifest(self) -> None:
         if self.manifest.get("dataset_id") not in SUPPORTED_V6_DATASET_IDS:
             raise ValueError(
-                "V6 training loader accepts only frozen P1g-v0 or P1h-v0; found "
-                f"{self.manifest.get('dataset_id')!r}"
+                "V6 training loader accepts only explicitly registered frozen datasets; "
+                f"found {self.manifest.get('dataset_id')!r}"
             )
         rows = self.manifest.get("samples")
         if not isinstance(rows, list) or len(rows) != 1024:
@@ -171,14 +194,11 @@ class Heat3DV6DualRobinDataset:
             raise ValueError("canonical V6 manifest sample IDs must be nonempty and unique")
 
     def _split_ids_from_manifest(self) -> dict[str, list[str]]:
-        role_map = {"train": "train", "valid": "valid_iid", "test": "test_iid"}
         splits = {name: [] for name in EXPECTED_SPLIT_COUNTS}
         group_roles: dict[str, str] = {}
         for row in self.manifest["samples"]:
-            role = role_map.get(str(row.get("split_role")))
-            if role is None:
-                raise ValueError(f"unsupported V6 manifest split_role={row.get('split_role')!r}")
-            group_id = str(row.get("group_id") or "")
+            role = self._canonical_split_role(row)
+            group_id = str(row.get("group_id") or row.get("sample_id") or "")
             if not group_id:
                 raise ValueError(f"{row.get('sample_id')}: missing group_id")
             previous = group_roles.setdefault(group_id, role)
@@ -190,14 +210,33 @@ class Heat3DV6DualRobinDataset:
             raise ValueError(f"V6 manifest split counts drifted: {counts}")
         return splits
 
+    def _canonical_split_role(self, row: dict[str, Any]) -> str:
+        raw_role = str(row.get("split_role"))
+        if self.manifest.get("dataset_id") == CONTINUOUS_PHYSICS_V6_DATASET_ID:
+            role_map = {
+                "train": "train",
+                "valid_iid": "valid_iid",
+                "test_iid": "test_iid",
+            }
+        else:
+            role_map = {"train": "train", "valid": "valid_iid", "test": "test_iid"}
+        role = role_map.get(raw_role)
+        if role is None:
+            raise ValueError(f"unsupported V6 manifest split_role={raw_role!r}")
+        return role
+
     def _load_sample(self, row: dict[str, Any]) -> V6DualRobinExample:
         sample_id = str(row["sample_id"])
-        sample_dir = self.datadir / str(row.get("sample_dir") or sample_id)
+        relative = Path(str(row.get("sample_dir") or row.get("relative_path") or sample_id))
+        if self.datadir.name == "samples" and relative.parts[:1] == ("samples",):
+            relative = Path(*relative.parts[1:])
+        sample_dir = self.datadir / relative
         meta = json.loads((sample_dir / "sample_meta.json").read_text(encoding="utf-8"))
         dataset_id = str(self.manifest["dataset_id"])
         if meta.get("dataset_id") != dataset_id:
             raise ValueError(f"{sample_id}: sample/manifest dataset_id mismatch")
-        bc = meta.get("boundary_conditions") or {}
+        physics = meta.get("physics") or {}
+        bc = meta.get("boundary_conditions") or physics.get("boundary_conditions") or {}
         top = bc.get("top") or {}
         bottom = bc.get("bottom") or {}
         if top.get("type") != "robin" or bottom.get("type") != "robin":
@@ -206,8 +245,11 @@ class Heat3DV6DualRobinDataset:
         coords = _load_matrix(sample_dir / "coords.npy", 3)
         k_field = _load_matrix(sample_dir / "k_field.npy", 3)
         q_field = _load_matrix(sample_dir / "q_field.npy", 1)
-        flags = _load_matrix(sample_dir / "bc_features.npy", 4)
-        temperature = _load_matrix(sample_dir / "temperature.npy", 1)
+        stored_bc = np.asarray(np.load(sample_dir / "bc_features.npy"), dtype=np.float64)
+        if stored_bc.ndim != 2 or stored_bc.shape[1] not in {4, 7}:
+            raise ValueError(f"{sample_id}: expected BC features [N,4] or [N,7]")
+        flags = stored_bc[:, :4]
+        temperature = _load_column(sample_dir / "temperature.npy")
         count = coords.shape[0]
         if count != 1024 or any(
             array.shape[0] != count for array in (k_field, q_field, flags, temperature)
@@ -216,13 +258,29 @@ class Heat3DV6DualRobinDataset:
         if not np.allclose(np.sum(flags, axis=1), 1.0, atol=0.0, rtol=0.0):
             raise ValueError(f"{sample_id}: four BC flags must be one-hot")
 
-        top_h = float(top["h_W_m2K"])
-        bottom_h = float(bottom["h_W_m2K"])
-        top_tinf = float(top["T_inf_K"])
-        bottom_tinf = float(bottom["T_inf_K"])
+        if dataset_id == CONTINUOUS_PHYSICS_V6_DATASET_ID:
+            top_h = float(meta["top_h_W_m2K"])
+            bottom_h = float(meta["bottom_h_W_m2K"])
+            top_tinf = bottom_tinf = float(physics["ambient_K"])
+        else:
+            top_h = float(top["h_W_m2K"])
+            bottom_h = float(bottom["h_W_m2K"])
+            top_tinf = float(top["T_inf_K"])
+            bottom_tinf = float(bottom["T_inf_K"])
         if min(top_h, bottom_h) <= 0.0:
             raise ValueError(f"{sample_id}: Robin h values must be positive")
         top_offset = top_tinf - bottom_tinf
+        if stored_bc.shape[1] == 7:
+            expected_bc = np.column_stack(
+                (
+                    flags,
+                    np.full(count, top_h),
+                    np.full(count, bottom_h),
+                    np.full(count, top_offset),
+                )
+            )
+            if not np.allclose(stored_bc, expected_bc, rtol=0.0, atol=1.0e-10):
+                raise ValueError(f"{sample_id}: stored P1i BC broadcasts drifted")
         broadcast = np.column_stack(
             (
                 np.full(count, top_h),
@@ -236,14 +294,24 @@ class Heat3DV6DualRobinDataset:
         enriched_meta = dict(meta)
         enriched_meta["v6_adapter"] = {
             "dataset_id": dataset_id,
-            "manifest_split_role": str(row["split_role"]),
-            "group_id": str(row["group_id"]),
+            "manifest_split_role": self._canonical_split_role(row),
+            "group_id": str(row.get("group_id") or sample_id),
             "reference_temperature_K": bottom_tinf,
             "top_T_inf_K": top_tinf,
             "bottom_T_inf_K": bottom_tinf,
             "bottom_boundary_semantics": "robin_not_dirichlet",
-            "operator_point_measure": "equal_weight_frozen_irregular_1024",
+            "operator_point_measure": (
+                "control_volume_frozen_irregular_1024"
+                if dataset_id == CONTINUOUS_PHYSICS_V6_DATASET_ID
+                else "equal_weight_frozen_irregular_1024"
+            ),
         }
+        if dataset_id == CONTINUOUS_PHYSICS_V6_DATASET_ID:
+            operator_point_weights = np.asarray(
+                np.load(sample_dir / "control_volume.npy"), dtype=np.float64
+            ).reshape(-1)
+        else:
+            operator_point_weights = np.ones(count, dtype=np.float64)
         return V6DualRobinExample(
             sample_id=sample_id,
             condition=V1SteadyConditionInput(
@@ -254,6 +322,7 @@ class Heat3DV6DualRobinDataset:
             ),
             target=V1SteadyTarget(target_u=temperature),
             meta=enriched_meta,
+            operator_point_weights=operator_point_weights,
         )
 
     def __len__(self) -> int:
@@ -270,4 +339,13 @@ def _load_matrix(path: Path, width: int) -> np.ndarray:
     value = np.asarray(np.load(path), dtype=np.float64)
     if value.ndim != 2 or value.shape[1] != width or not np.all(np.isfinite(value)):
         raise ValueError(f"{path}: expected finite [N,{width}], found {value.shape}")
+    return value
+
+
+def _load_column(path: Path) -> np.ndarray:
+    value = np.asarray(np.load(path), dtype=np.float64)
+    if value.ndim == 1:
+        value = value[:, None]
+    if value.ndim != 2 or value.shape[1] != 1 or not np.all(np.isfinite(value)):
+        raise ValueError(f"{path}: expected finite [N] or [N,1], found {value.shape}")
     return value

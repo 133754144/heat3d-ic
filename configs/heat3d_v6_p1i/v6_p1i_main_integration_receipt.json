@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v6_p1i_main_integration_receipt_v1",
+  "status": "validation_pending",
+  "base": {
+    "ref": "origin/main",
+    "commit": "332ef3f463d91442632c3ebddd4f7549c7895b8d"
+  },
+  "source": {
+    "branch": "research/v6-p1i-training",
+    "commit": "4660644acabc64359ae157e41f431901308c3281",
+    "scientific_status": "CLOSED"
+  },
+  "integration": {
+    "branch": "integration/v6-p1i-main",
+    "whole_history_merge": false,
+    "strict_allowlist_only": true,
+    "allowlist_path_count": 75,
+    "denylist_match_count": 0,
+    "content_commit": null,
+    "pull_request": null,
+    "merged_main_commit": null
+  },
+  "roles": {
+    "p1h": "canonical_v6_layer",
+    "p1i": "canonical_formal_v6_randomblock",
+    "e16384": "frozen_noninferiority_latency_pareto_reference",
+    "resolution_32768": "exploratory_marginal_accuracy_only",
+    "sealed_iid": "post_development_final_confirmation_unopened"
+  },
+  "excluded_artifacts": [
+    "data",
+    "checkpoints",
+    "predictions",
+    "logs",
+    "raw_payloads",
+    "failure_payloads",
+    "smoke_payloads",
+    "large_diagnostics"
+  ],
+  "validation": {
+    "exact_staged_path_audit": "pending",
+    "v5_regressions": "pending",
+    "v6_p1i_checkers": "pending",
+    "config_dry_run": "pending",
+    "python_compile": "pending",
+    "json_yaml_csv": "pending",
+    "git_diff_check": "pending",
+    "clean_checkout_replay": "pending",
+    "sealed_iid_accessed": false,
+    "training_executed": false
+  }
+}

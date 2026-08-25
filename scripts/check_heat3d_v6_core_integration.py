@@ -57,6 +57,7 @@ def _canonical_json_sha(value: object) -> str:
 
 def _scientific_payload(config: dict) -> dict:
     payload = copy.deepcopy(config)
+    payload.pop("config_id", None)
     payload.pop("description", None)
     payload.pop("metadata", None)
     payload.get("export", {}).pop("output_dir", None)
@@ -207,6 +208,19 @@ def main() -> int:
     )
     expected_terms = dict(manifest["governance"])
     expected_terms.pop("true_ood_available")
+    expected_terms.update({
+        "resolution_16384": (
+            "frozen P1i reference operating point selected by preregistered "
+            "non-inferiority plus latency-Pareto criteria"
+        ),
+        "resolution_32768": (
+            "exploratory only; marginal point-global improvement with no "
+            "consistent source, peak, latency, or memory benefit"
+        ),
+        "sealed_iid": (
+            "post-development final confirmation; ungenerated and unopened"
+        ),
+    })
     assert phase["governance_terms"] == expected_terms
     assert manifest["governance"]["true_ood_available"] is False
     assert phase["test_and_hard"]["hard_used_for_selection"] is False

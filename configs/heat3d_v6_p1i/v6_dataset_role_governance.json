@@ -1,0 +1,70 @@
+{
+  "schema_version": "heat3d_v6_dataset_role_governance_v1",
+  "status": "frozen",
+  "effective_from_commit_parent": "5ae734eddeb96e8448fc7bdfb36dff3328bf80d8",
+  "canonical_roles": {
+    "formal_v6_layer": {
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5",
+      "status": "unchanged"
+    },
+    "formal_v6_randomblock": {
+      "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+      "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+      "hf_revision": "p1i-formal1024-v1-27d2ea3b",
+      "role_semantics": "formal V6 random-block training and evaluation family",
+      "not_roles": [
+        "out_of_distribution_benchmark",
+        "independent_benchmark"
+      ]
+    }
+  },
+  "deprecated_dataset": {
+    "dataset_id": "heat3d_v6_randomblock_formal1024_v2",
+    "manifest_sha256": "cdd1e9ad57b442c6b3840a74740335cbfd90f96c420da118b6b515c0e09ddc8c",
+    "status": "deprecated_engineering_history",
+    "superseded_by": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "historical_artifacts_mutable": false,
+    "current_formal_ood_role": false,
+    "current_independent_benchmark_role": false
+  },
+  "immutable_history_bindings": [
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+      "sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_freeze_manifest.json",
+      "sha256": "8a22c1a9c5281817bf4a80598fc56190ace2c16f9b9600a1861ad0c7d821585c"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_external_archive_verification.json",
+      "sha256": "299027051503e941a01cb832af944a7df3ecad5e2dd10df7344de8c5512827b8"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_randomblock_transfer.json",
+      "sha256": "0d3dff0378c928368d55e9afaaf64635f74e881e2d76e0213ab303d11dd35130"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_inference_qualification_randomblock_scope.json",
+      "sha256": "eb7c59e9e86f01ac88a5d6aa07fd7f8a0b3a27ac3edf6232564eae8b90d81809"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_inference_qualification_randomblock_raw.json",
+      "sha256": "71136a3dd7b171df9465baa68482f0eba264ab87866723710c7d4c08dd224885"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_inference_qualification_closeout.json",
+      "sha256": "62bdc4da5707f565e98327367c30a010c81120d2a5a0419bd7423d4382092c19"
+    }
+  ],
+  "access_and_action_contract": {
+    "training_executed": false,
+    "inference_executed": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "historical_artifacts_modified": false
+  }
+}

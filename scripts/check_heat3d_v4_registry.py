@@ -538,11 +538,24 @@ def resolve_inherited_yaml(
     if not isinstance(extends, str) or not extends:
         raise ValueError("inherited YAML requires a non-empty extends field")
     base_path = (generated_path.parent / extends).resolve()
-    base_config = load_v2_config(base_path)
+    with base_path.open("r", encoding="utf-8") as handle:
+        base_payload = yaml.safe_load(handle)
+    if (
+        isinstance(base_payload, Mapping)
+        and base_payload.get("schema_version") == INHERITED_SCHEMA_VERSION
+    ):
+        base_config = resolve_inherited_yaml(base_payload, base_path)
+    else:
+        base_config = load_v2_config(base_path)
     overrides = inherited.get("overrides") or {}
     if not isinstance(overrides, Mapping):
         raise ValueError("inherited YAML overrides field must be a mapping")
-    return _deep_merge(base_config, overrides)
+    resolved = _deep_merge(base_config, overrides)
+    config_id = inherited.get("config_id")
+    if not isinstance(config_id, str) or not config_id:
+        raise ValueError("inherited YAML requires a non-empty config_id field")
+    resolved["config_id"] = config_id
+    return resolved
 
 
 def runner_control_warnings(rows: list[dict[str, str]]) -> list[str]:

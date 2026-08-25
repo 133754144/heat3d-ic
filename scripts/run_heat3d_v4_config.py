@@ -4,6 +4,9 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
+import json
+import os
 import shlex
 import subprocess
 import sys
@@ -32,14 +35,62 @@ def main() -> int:
     config_path = _selected_config_path(args.config)
     if not config_path.is_file():
         raise SystemExit(f"config not found: {args.config}")
+    resolved_config = _load_config(config_path)
     command = build_training_command(
-        _load_config(config_path),
+        resolved_config,
         python_executable=args.python_executable,
     )
     print(shlex.join(command), flush=True)
     if args.dry_run:
         return 0
+    _write_pretraining_contract(config_path, resolved_config, command)
     return subprocess.call(command)
+
+
+def _atomic_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + f".tmp-{os.getpid()}")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
+def _write_pretraining_contract(
+    config_path: Path, resolved_config: dict, command: list[str]
+) -> None:
+    export = resolved_config.get("export") or {}
+    output_text = export.get("output_dir")
+    if not output_text:
+        raise ValueError("resolved config is missing export.output_dir")
+    output_dir = Path(str(output_text))
+    if not output_dir.is_absolute():
+        output_dir = REPO_ROOT / output_dir
+    git_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    command_text = shlex.join(command)
+    _atomic_text(
+        output_dir / "resolved_config_pretraining.yaml",
+        yaml.safe_dump(resolved_config, sort_keys=False),
+    )
+    _atomic_text(output_dir / "resolved_command.txt", command_text + "\n")
+    provenance = {
+        "schema_version": "heat3d_pretraining_contract_v1",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "config_path": str(config_path),
+        "config_id": resolved_config.get("config_id"),
+        "git_commit": git_commit,
+        "command": command,
+        "command_shell": command_text,
+        "test_and_sealed_access": "closed",
+    }
+    _atomic_text(
+        output_dir / "pretraining_provenance.json",
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n",
+    )
 
 
 def _parse_args() -> argparse.Namespace:
