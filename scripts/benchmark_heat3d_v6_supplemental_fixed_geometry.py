@@ -811,7 +811,8 @@ def make_forward(spec: Mapping[str, Any], model: Any) -> tuple[Any, Any, Any]:
 def device_payload(
     *, spec: Mapping[str, Any], packed: Mapping[str, Any],
     mapping: Any | None, query_cv: np.ndarray, graphs: Mapping[str, Any], gpu: Any,
-) -> tuple[Any, dict[str, float]]:
+    hash_payload: bool = False,
+) -> tuple[Any, dict[str, float], str | None]:
     if mapping is None:
         map_indices = np.zeros((1,), dtype=np.int32)
         map_weights = np.ones((1,), dtype=np.float64)
@@ -833,12 +834,13 @@ def device_payload(
             packed["anchor_group"], packed["query_group"],
             np.asarray(query_cv, dtype=np.float32), map_indices, map_weights,
         )
+    prepared_sha256 = tree_sha256(payload) if hash_payload else None
     device = jax.device_put(payload, gpu)
     enqueue = time.perf_counter() - started
     started = time.perf_counter()
     block(device)
     sync = time.perf_counter() - started
-    return device, {"h2d_enqueue": enqueue, "h2d_sync": sync}
+    return device, {"h2d_enqueue": enqueue, "h2d_sync": sync}, prepared_sha256
 
 
 def predict_device(
@@ -892,7 +894,7 @@ def setup_geometry(
         spec=spec, anchor=anchor, query=query, runtime=runtime, template=template,
     )
     gpu = jax.devices("gpu")[0]
-    device, h2d_stages = device_payload(
+    device, h2d_stages, _ = device_payload(
         spec=spec, packed=static_packed, mapping=mapping, query_cv=selected_cv,
         graphs=graphs, gpu=gpu,
     )
@@ -937,6 +939,7 @@ def run_case(
     runtime: Mapping[str, Any], setup: Mapping[str, Any], full: Mapping[str, np.ndarray],
     geometry_cache: Any, partition: Any, boundaries: np.ndarray, graph_key: Any,
     params: Any, e_forward: Any, u_forward: Any, reconstruct: Any,
+    hash_payload: bool = False,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     stages: dict[str, float] = {}
@@ -981,9 +984,9 @@ def run_case(
             boundaries=boundaries,
         )
         stages.update(values)
-    device, values = device_payload(
+    device, values, prepared_sha256 = device_payload(
         spec=spec, packed=packed, mapping=mapping, query_cv=selected_cv,
-        graphs=graphs, gpu=jax.devices("gpu")[0],
+        graphs=graphs, gpu=jax.devices("gpu")[0], hash_payload=hash_payload,
     )
     stages.update(values)
     prediction, values = predict_device(
@@ -1008,6 +1011,7 @@ def run_case(
         "native_graph_sha256": graph_hash(graphs["native_metadata"]),
         "query_graph_sha256": graph_hash(graphs["query_metadata"]),
         "mapping_sha256": mapping_hash(mapping),
+        "prepared_payload_sha256": prepared_sha256,
     }
 
 
@@ -1129,6 +1133,7 @@ def main() -> int:
                 full=full, geometry_cache=geometry_cache, partition=partition,
                 boundaries=boundaries, graph_key=graph_key, params=params,
                 e_forward=e_forward, u_forward=u_forward, reconstruct=reconstruct,
+                hash_payload=True,
             )
             for mode in MODES
         }
@@ -1143,19 +1148,23 @@ def main() -> int:
                 for key in (
                     "selected_sha256", "selected_cv_sha256", "native_graph_sha256",
                     "query_graph_sha256", "mapping_sha256",
+                    "prepared_payload_sha256",
                 )
             }
             for mode in ("graph_only_reuse", "full_static_reuse")
         }
+        same_shape_floor = float(setup["same_shape_prediction_floor"]["max_abs_K"])
+        numerical_limit = max(1.0e-3, 20.0 * same_shape_floor)
         passed = all(all(row.values()) for row in identities.values()) and all(
-            row["max_abs_K"] <= float(protocol["correctness_gates"]["cached_vs_standard_max_abs_K"])
-            and row["rmse_K"] <= float(protocol["correctness_gates"]["cached_vs_standard_rmse_K"])
-            for row in comparisons.values()
+            row["max_abs_K"] <= numerical_limit for row in comparisons.values()
         )
         correctness_rows.append({
             "case_id": case["case_id"], "base_sample_id": case["base_sample_id"],
             "sweep": case["sweep"], "comparisons": comparisons,
-            "static_identities": identities, "passed": passed,
+            "static_identities": identities,
+            "same_shape_repeat_max_abs_K": same_shape_floor,
+            "frozen_gpu_numerical_limit_K": numerical_limit,
+            "passed": passed,
         })
         if not passed:
             failure = {

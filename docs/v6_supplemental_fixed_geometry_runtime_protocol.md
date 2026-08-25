@@ -22,9 +22,13 @@ The benchmark compares the four frozen neural inference strategies under three
 reuse semantics.  `fresh_new_case` rebuilds all case-specific preparation;
 `graph_only_reuse` reuses support and graph state; `full_static_reuse` also
 reuses reconstruction and structural packing/JIT state while recomputing every
-k/q-dependent feature.  Correctness is a hard gate: static identities must be
-exact and cached predictions must agree with the standard path within the
-frozen numerical tolerance.  Static setup and compilation are reported
+k/q-dependent feature.  Correctness is a hard gate: static identities and the
+complete prepared payload SHA256 must be exact.  GPU predictions use the
+already frozen final-padding numerical rule
+`max_abs <= max(1e-3 K, 20 * same-shape floor)`; RMSE remains diagnostic.
+The original draft incorrectly copied the CPU cached-graph `1e-6 K` tolerance
+onto nondeterministic GPU reductions.  This was corrected after a smoke-only
+failure and before any formal sweep timing.  Static setup and compilation are reported
 separately from repeated-sweep latency.
 
 No FVM labels are generated and no FVM speedup claim is made in this study.

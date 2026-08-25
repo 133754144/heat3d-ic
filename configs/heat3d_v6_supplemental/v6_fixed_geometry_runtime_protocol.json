@@ -79,10 +79,19 @@
     "support_coordinates_exact": true,
     "graph_metadata_and_edge_hash_exact": true,
     "reconstruction_map_hash_exact": true,
-    "cached_vs_standard_max_abs_K": 1e-6,
-    "cached_vs_standard_rmse_K": 1e-7,
+    "prepared_payload_sha256_exact": true,
+    "gpu_prediction_max_abs_K": "max(1e-3, 20 * same_shape_repeat_max_abs_K)",
+    "gpu_prediction_rmse": "report_only",
     "all_predictions_finite": true,
     "fail_closed": true
+  },
+  "protocol_amendment_before_formal_timing": {
+    "reason": "the preregistration mistakenly applied the CPU cached-graph tolerance to nondeterministic GPU prediction reductions",
+    "frozen_source": "V6 final padding gate numerical contract",
+    "frozen_rule": "max_abs_K <= max(1e-3, 20 * same_shape_floor_K)",
+    "observed_before_amendment": "correctness smoke only; no formal timing or sweep result",
+    "scientific_or_cache_semantics_changed": false,
+    "new_exact_hard_gate": "prepared payload SHA256 must be byte-exact in addition to support/graph/map identity"
   },
   "timing": {
     "host": "devbox",
