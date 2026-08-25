@@ -641,22 +641,26 @@ def _context(
     encoded = highn.common.standardize_v6_contexts(
         [row], runtime["run_config"]["global_context"]["standardizer"]
     )[0]
-    return row, jnp.asarray(encoded[None, :], dtype=jnp.float32)
+    with jax.default_device(jax.devices("cpu")[0]):
+        packed = jnp.asarray(encoded[None, :], dtype=jnp.float32)
+    return row, packed
 
 
 def _dynamic_inputs(
     example: V6DualRobinExample, runtime: Mapping[str, Any], template_inputs: Any
 ) -> Inputs:
     bridge = highn.runner._bridge_for(example)
-    condition = highn.runner.normalize_condition(bridge.legacy_inputs.c, runtime["stats"])
-    return Inputs(
-        u=bridge.legacy_inputs.u,
-        c=condition,
-        x_inp=template_inputs.x_inp,
-        x_out=template_inputs.x_out,
-        t=None,
-        tau=None,
-    )
+    with jax.default_device(jax.devices("cpu")[0]):
+        # Preserve the frozen single-example concat operation as well as the
+        # CPU device used by _make_batch_group_with_seed.
+        raw_u = jnp.concatenate([bridge.legacy_inputs.u], axis=0)
+        raw_c = jnp.concatenate([bridge.legacy_inputs.c], axis=0)
+        condition = highn.runner.normalize_condition(raw_c, runtime["stats"])
+        return Inputs(
+            u=raw_u, c=condition,
+            x_inp=template_inputs.x_inp, x_out=template_inputs.x_out,
+            t=None, tau=None,
+        )
 
 
 def _dynamic_native_physics(
@@ -664,15 +668,16 @@ def _dynamic_native_physics(
 ) -> dict[str, Any]:
     count = int(example.condition.coords.shape[0])
     reference = float(example.meta["v6_adapter"]["reference_temperature_K"])
-    return {
-        "control_volumes": jnp.asarray(
-            example.v6_operator_point_weights()[None, :], dtype=jnp.float32
-        ),
-        "log_s_phys": jnp.asarray([float(context_row["log_s_phys_K"])], dtype=jnp.float32),
-        "reference_temperature": jnp.full((1, count), reference, dtype=jnp.float32),
-        "dirichlet_mask": jnp.zeros((1, count), dtype=jnp.float32),
-        "prescribed_temperature": jnp.full((1, count), reference, dtype=jnp.float32),
-    }
+    with jax.default_device(jax.devices("cpu")[0]):
+        return {
+            "control_volumes": jnp.asarray(
+                example.v6_operator_point_weights()[None, :], dtype=jnp.float32
+            ),
+            "log_s_phys": jnp.asarray([float(context_row["log_s_phys_K"])], dtype=jnp.float32),
+            "reference_temperature": jnp.full((1, count), reference, dtype=jnp.float32),
+            "dirichlet_mask": jnp.zeros((1, count), dtype=jnp.float32),
+            "prescribed_temperature": jnp.full((1, count), reference, dtype=jnp.float32),
+        }
 
 
 def _dynamic_qk(
@@ -689,7 +694,8 @@ def _dynamic_qk(
         rnode_count=rnodes,
         feature_version=runtime["model_config"]["qk_region_feature_version"],
     )
-    return jnp.asarray(value[None, :, :], dtype=jnp.float32)
+    with jax.default_device(jax.devices("cpu")[0]):
+        return jnp.asarray(value[None, :, :], dtype=jnp.float32)
 
 
 def pack_standard(
