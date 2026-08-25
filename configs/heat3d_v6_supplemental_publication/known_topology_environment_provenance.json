@@ -1,0 +1,996 @@
+{
+  "evidence_scope": {
+    "artifact_root": "output/v6_supplemental_publication_8a81261",
+    "collection_is_closeout_only": true,
+    "cuda_evidenced_log_count": 62,
+    "execution_contract_source": "existing_S3_runner_JSON_and_logs",
+    "gpu_inference_executed_by_collector": false,
+    "gpu_runtime_record_count": 64,
+    "hardware_observation_source": "same_host_procfs_and_Windows_CIM_at_closeout",
+    "host_observation_time_utc": "2026-08-25T11:46:55Z",
+    "input_plan_count": 32,
+    "machine_role_source": "SSH_alias_and_user_authorized_execution_host",
+    "physics_experiment_executed_by_collector": false,
+    "runner_json_count": 64,
+    "runner_log_count": 64
+  },
+  "execution_commit": "8a812619ab0112b4ecfc37ef18189f731180059d",
+  "execution_embedded_contract": {
+    "cpu_policy": {
+      "MKL_NUM_THREADS": 1,
+      "NUMEXPR_NUM_THREADS": 1,
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "graph_workers": 1,
+      "kdtree_workers": 1,
+      "reconstruction_workers": 1,
+      "service_workers_Q2": 2,
+      "service_workers_serial": 1,
+      "support_workers": 1
+    },
+    "independent_process_count": 64,
+    "thread_env": {
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null
+    },
+    "worker_policy": "one_independent_process_per_route_geometry_mode; graph/kdtree/reconstruction/support workers=1"
+  },
+  "machine": {
+    "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+    "cpu_cores": {
+      "Name": "AMD Ryzen 7 9700X 8-Core Processor             ",
+      "NumberOfCores": 8,
+      "NumberOfLogicalProcessors": 16
+    },
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "gpu_driver": "32.0.15.9186",
+    "hostname": "XYH-Desktop",
+    "memory_total_kib": 24168632,
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "role": "devbox"
+  },
+  "schema_version": "heat3d_v6_supplemental_environment_provenance_v1",
+  "software": {
+    "backend": "CUDA",
+    "backend_evidence": "all_64_S3_results_record_GPU_runtime; 62_of_64_logs_explicitly_name_CUDA",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "numpy": "2.4.2",
+    "python": "3.14.3",
+    "scipy": "1.17.1"
+  },
+  "source_artifact_set_sha256": "9575aeafba14749a6134575cfcab9dc7e37379f1048472ab86341a46c66ad69a",
+  "source_artifacts": [
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_0/input_plan.json",
+      "sha256": "6b775fb502a1b337d79e11190de14abc4aee2918cf2fade0fc470e9ea24e970e"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_0/fresh/fresh_new_case.json",
+      "sha256": "d8010bf510624a8ddfcf82d363dcc7f733bc0a22303aa2750f9ea7869fea2243",
+      "size_bytes": 22982
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_0/fresh/fresh_new_case.log",
+      "sha256": "3b01add384f343b0e2e2db92fb81fe841df7e81a3329f3b24d0ed7dd6cc3feb6",
+      "size_bytes": 504
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_0/known/known_topology_new_physics.json",
+      "sha256": "05274e3c53cd6f199fa298cbf02e5f7fa5b866e87a98dc03dfb1b962cb43475d",
+      "size_bytes": 23067
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_0/known/known_topology_new_physics.log",
+      "sha256": "5ce364c7fb69196cb3a2b0243164a909d231047aa05267dcbaf7b8b88f0d51fa",
+      "size_bytes": 1269
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_1/input_plan.json",
+      "sha256": "bd717b73446c5096d19f3f635e85680ce27ae5c34088f4f2782040d316593051"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_1/fresh/fresh_new_case.json",
+      "sha256": "94d23764c51bdf605df89f2e59e7ace2d21fb1004fa1991fb85799d607906e45",
+      "size_bytes": 22966
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_1/fresh/fresh_new_case.log",
+      "sha256": "812a3b41a1a48dad68ea567f7031b43c2616a779977a38992f68905a2e04cdcd",
+      "size_bytes": 1650
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_1/known/known_topology_new_physics.json",
+      "sha256": "a84ec83033daf0da8ceed91f776eb75df40bfffa5bf1e69fb450a2aa72efe1fc",
+      "size_bytes": 23070
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_1/known/known_topology_new_physics.log",
+      "sha256": "cb1a7867595974941671e1aa783c6a4691e205a2ec0bf64881aec01a583eddf0",
+      "size_bytes": 1651
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_2/input_plan.json",
+      "sha256": "015aec1af8e8839d32ce59eb32ecd274315f195446ee1bf7deb54ce137db8527"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_2/fresh/fresh_new_case.json",
+      "sha256": "2625c5a385f70c495067ebf6bb3ef7e9bcd35107b2188d1fba452f2ab5cafb6e",
+      "size_bytes": 22957
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_2/fresh/fresh_new_case.log",
+      "sha256": "337609106f12166c2de3fcf7086b71b0a8823584861faabfad35a6e63e32f032",
+      "size_bytes": 1459
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_2/known/known_topology_new_physics.json",
+      "sha256": "6cd54d4baab34c7bc7556ef9af7bc34d8ce1bdc1dca5a059dc540854781dca38",
+      "size_bytes": 23079
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_2/known/known_topology_new_physics.log",
+      "sha256": "34613bdd07247f649e94a585508a7fbda5b36c1d9587989d132cb6a2c2238b93",
+      "size_bytes": 1460
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_3/input_plan.json",
+      "sha256": "9e74f2681d629dbefb94d312d88aa9635e6a9eddeee5cea7c73c70a3ef4805ac"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_3/fresh/fresh_new_case.json",
+      "sha256": "eacf1956729c250bab5cbcf855fb7bf796233438c42b243fd00e0df4f2f4c069",
+      "size_bytes": 22961
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_3/fresh/fresh_new_case.log",
+      "sha256": "c6921728dc93abab1db39749b2cd7ed055ac1b086669541c88532e1823d2b342",
+      "size_bytes": 1650
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_3/known/known_topology_new_physics.json",
+      "sha256": "baf8df1eb60401df65dd41b4459ffb6f3c5b484734d64acdc11ed4a132ae9114",
+      "size_bytes": 23050
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_3/known/known_topology_new_physics.log",
+      "sha256": "72e7fed5ded72514a844e8a4f42afee32211fdd78d90e21bc59f34b7acfac06e",
+      "size_bytes": 1651
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_4/input_plan.json",
+      "sha256": "d519a136234250bba94b5a81a91ff5c05500a7ab2c5644dbe576584eddd72bec"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_4/fresh/fresh_new_case.json",
+      "sha256": "e70c485491f65b77ebdacc72b1dd86e88a73c34c9ebd11de26950e21783bfcdc",
+      "size_bytes": 22951
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_4/fresh/fresh_new_case.log",
+      "sha256": "2980953d6d1a4edc43d1a71972973540816ee39b8b3755d59f546fc1710bea81",
+      "size_bytes": 1650
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_4/known/known_topology_new_physics.json",
+      "sha256": "5801323a2a3444e51740860b6de34426f79e2b0acac83217202d9d6e974d985a",
+      "size_bytes": 23057
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_4/known/known_topology_new_physics.log",
+      "sha256": "2b01e2369d5d9aa77f2987419c04ec0f9c63d63c728d2c25f4332fcfd5420a65",
+      "size_bytes": 1651
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_5/input_plan.json",
+      "sha256": "d080b98c1920ab714123df1bdd770e5fde1e9d2df62d32778b85be7084628aaa"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_5/fresh/fresh_new_case.json",
+      "sha256": "0556f6aa3e99b0f59f926777401d66bc01bdc1c41553f8ad256f315bb7f057e4",
+      "size_bytes": 22954
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_5/fresh/fresh_new_case.log",
+      "sha256": "7118a92d8a9c61f031531d3f7a46b16586278e1500011581b109ff091992775b",
+      "size_bytes": 886
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_5/known/known_topology_new_physics.json",
+      "sha256": "33108af0be4fd46e083f4eab7823a8fb4d6faac7eb14780a7bc151022b3b792c",
+      "size_bytes": 23066
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_5/known/known_topology_new_physics.log",
+      "sha256": "4c4e03b97ced7f94b2ab4a8a12a81acf0e4b739f6c324e3c2a0aa8fed22ccd45",
+      "size_bytes": 1460
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_6/input_plan.json",
+      "sha256": "2b009dd76b73027f182184109f6142fb8f9f354150903419e6b64e98d612d9d1"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_6/fresh/fresh_new_case.json",
+      "sha256": "39b81473c08c17553e3b0ef5146d27b24635719053e45bf011ce8af38d2289d3",
+      "size_bytes": 22976
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_6/fresh/fresh_new_case.log",
+      "sha256": "1c8f1f48327c699e3ac59deecec28c045830614fd91dd87253fc387ddd9855ed",
+      "size_bytes": 695
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_6/known/known_topology_new_physics.json",
+      "sha256": "edad70563ef035a2ea1d75eaa1d3452741eac953dbc607a7f0ae30781674cfaf",
+      "size_bytes": 23061
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_6/known/known_topology_new_physics.log",
+      "sha256": "28f6a744b3946c66bdf2b9760b2c398d76e3eeea2de9a549db1f3df8314fe3fc",
+      "size_bytes": 1460
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_7/input_plan.json",
+      "sha256": "e7cc7b026fd9ef47e3910fca92195274ca260c22dbfa7c838af762f730cc259f"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_7/fresh/fresh_new_case.json",
+      "sha256": "4648f4049b0d33d34dfab3f0d0fed515128ee3cd9aa0a4f952237ed38ee96274",
+      "size_bytes": 22958
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_7/fresh/fresh_new_case.log",
+      "sha256": "8a0492e18e25802416229cd74500c5e85938b06ff2eff78404dba9bcec9a99f3",
+      "size_bytes": 1458
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_7/known/known_topology_new_physics.json",
+      "sha256": "eef8a3dc612d4159cd813ec8f133c217be693e3fad4ee2612dab0f3136b3a26d",
+      "size_bytes": 23067
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E16384_reconstruction/group_7/known/known_topology_new_physics.log",
+      "sha256": "411e82972b809a9c5a05ce55dadb148a86805daf0fc9c27d915693d0d779ea8d",
+      "size_bytes": 1651
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_0/input_plan.json",
+      "sha256": "176f8323111f40bf95dc4de0a87f50054a092ab067b3e241cb6e498c41d4cc96"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_0/fresh/fresh_new_case.json",
+      "sha256": "b66a20b546da68bee909b5a3bc7bbf35044a0351151eef3cdb7783edaa4e6896",
+      "size_bytes": 39821
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_0/fresh/fresh_new_case.log",
+      "sha256": "5c85e63abee17e194d54773e251e0099e8373772bcc42037c7a1429ebc70a871",
+      "size_bytes": 513
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_0/known/known_topology_new_physics.json",
+      "sha256": "fec3788c0f25f50ae0e3c107471cd004eca0147dee185c8d0e28230954784a72",
+      "size_bytes": 39906
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_0/known/known_topology_new_physics.log",
+      "sha256": "179509a24b9e25ebe92be02868cc043fd931720fc6b136caa7701fee221a8d7a",
+      "size_bytes": 323
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_1/input_plan.json",
+      "sha256": "74f9288631ba863ad30011c959dd9d83b8dbc6b709fd56c9e7e132e269dee2f3"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_1/fresh/fresh_new_case.json",
+      "sha256": "6265d2b64c30cbcf370faf2a270225cc08fdb7405666c17c1e2df2681873b4d9",
+      "size_bytes": 39831
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_1/fresh/fresh_new_case.log",
+      "sha256": "2a357b8d1eb9b15f1fd2d013fb18dbc581aeaf0159e7e95aa14ce10d6c31637f",
+      "size_bytes": 1086
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_1/known/known_topology_new_physics.json",
+      "sha256": "5cdb93f9225dd2f31137f8ded0d9b4e7c4a8267d70e2acf7f9f391721ba6a03d",
+      "size_bytes": 39900
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_1/known/known_topology_new_physics.log",
+      "sha256": "a9175d9d096f4460ba6289f14661310853ab56c8fb5ceaa6a8faee320e9361f7",
+      "size_bytes": 896
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_2/input_plan.json",
+      "sha256": "de949dba942ed8cda8092c7acaa631f406f57300c660cf46ae56cd9d12bf51d7"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_2/fresh/fresh_new_case.json",
+      "sha256": "792281b637a843f8ab2f32377c4f0f9a050c0cbe2d4206c5fccfc7ee9f6eb27e",
+      "size_bytes": 39814
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_2/fresh/fresh_new_case.log",
+      "sha256": "d2b76398e4e8d89b8e2b8d90133deb38b97931ec55527cfae215c12ad8d4150b",
+      "size_bytes": 513
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_2/known/known_topology_new_physics.json",
+      "sha256": "dffab962d4322c91ba0ee9bc2c17dd02f875a4cdbdf0c580b93b1685bc0c4461",
+      "size_bytes": 39896
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_2/known/known_topology_new_physics.log",
+      "sha256": "154f5ac75812121c7405089c6f4a49e443567a6c614bfeae45b78e86246160f9",
+      "size_bytes": 2233
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_3/input_plan.json",
+      "sha256": "4b9aa6d4f9a9294b6d7446ace0c5f6130e99b4e2c4b4c1255c2bfaf30a67a2f7"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_3/fresh/fresh_new_case.json",
+      "sha256": "3238d04383a334d1639a4198d41c5afa5a3909bbb5f9302f44af43788f88e5ad",
+      "size_bytes": 39829
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_3/fresh/fresh_new_case.log",
+      "sha256": "d8a482305364d4c6ac65bf9b95d114ee55a938c5815fb23cd642acb4290b629b",
+      "size_bytes": 131
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_3/known/known_topology_new_physics.json",
+      "sha256": "b4178652a60e7ea0893a4ceb5e0b012ae443b8142af69a5ac6f87aa9a132f106",
+      "size_bytes": 39894
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_3/known/known_topology_new_physics.log",
+      "sha256": "de2dda96be887fb97c40508238cee1eea9cdf9e52ca8eba014d406d387f1f1d6",
+      "size_bytes": 896
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_4/input_plan.json",
+      "sha256": "ce37f5761335990c02f6813f2b4d9a93696b9a1d66da1667eb7aedcfd77fbe03"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_4/fresh/fresh_new_case.json",
+      "sha256": "35270394b259a84f5b093e1b7ac029f96f7d92d48a5ea903884160f2421b3e3b",
+      "size_bytes": 39828
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_4/fresh/fresh_new_case.log",
+      "sha256": "bf614e9bf2f18f9ea18174cdba524f3e119f309114bab75467351fcd891e5f78",
+      "size_bytes": 1086
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_4/known/known_topology_new_physics.json",
+      "sha256": "9745c4d45787fdda41d3c47b830e47db6403eb60faa6d1024203ef88beb246c4",
+      "size_bytes": 39904
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_4/known/known_topology_new_physics.log",
+      "sha256": "450089b4743c676a6066f1ad41436fa70adacfd731b769dd906324889a211cac",
+      "size_bytes": 514
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_5/input_plan.json",
+      "sha256": "d3ac0b15b2cbd450d9f6dc7380624379c5114824b7e53aae1a9decfebce64ab5"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_5/fresh/fresh_new_case.json",
+      "sha256": "57036dfc97eb9790122b37d05f9d0e6826543e8fa0d4b822f1bf6bb0caf09ddd",
+      "size_bytes": 39825
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_5/fresh/fresh_new_case.log",
+      "sha256": "f406f668230958cc0efd0545e57279fdab8ec598e3e432afdce9fbd91b919bec",
+      "size_bytes": 895
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_5/known/known_topology_new_physics.json",
+      "sha256": "cc3e843a88b64c67b2e60811e5b0bd19cc93bf8928d9a4672c8a6822a50cdc25",
+      "size_bytes": 39900
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_5/known/known_topology_new_physics.log",
+      "sha256": "3961300985444d7d3b53a02101cfd2945869bd53cf4fc9b4390093b77ea749ae",
+      "size_bytes": 705
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_6/input_plan.json",
+      "sha256": "5abcd2d9bd1208943baddc20186ba7267e55f430ea39026859ae19d233a96720"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_6/fresh/fresh_new_case.json",
+      "sha256": "6921ca5685e0d236a39d29b60176146dee4565d251ab019312ed0762c8e4f7ba",
+      "size_bytes": 39812
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_6/fresh/fresh_new_case.log",
+      "sha256": "63f28e08afde714059019abb259d722b606ad15584f2d002a65393c717ad0b79",
+      "size_bytes": 1086
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_6/known/known_topology_new_physics.json",
+      "sha256": "1e9dfe7e20ff0edd5cd944e44460291ec0e1d9d0baa7538bb5dbdbf6dac2208e",
+      "size_bytes": 39903
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_6/known/known_topology_new_physics.log",
+      "sha256": "f76a7f5a92fda4e7948de862087975b15c6301f907c4ffa74d2d23be4ea88b27",
+      "size_bytes": 132
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_7/input_plan.json",
+      "sha256": "ff792147453143c58973872642035455a8c502e4eb39516ed4d5aab72a4c1155"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_7/fresh/fresh_new_case.json",
+      "sha256": "6146f898b1ed42d5f5ad973e4e5a4ff40abcf12ba36ef2ea50526d92ad621dd4",
+      "size_bytes": 39827
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_7/fresh/fresh_new_case.log",
+      "sha256": "396f88a98471c8a65aa431c84f1461bd570f7c95dc2fc72b5aac9c4874ed3dad",
+      "size_bytes": 703
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_7/known/known_topology_new_physics.json",
+      "sha256": "c203669b2de861563dbcd6245dc9b6a0065f20bbc9574bbaadc160a7237d05f9",
+      "size_bytes": 39924
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction/group_7/known/known_topology_new_physics.log",
+      "sha256": "f23ebba740e49ec1a792f7568a1345f5d9dab99beb35574e4ba65c7b8ef53826",
+      "size_bytes": 896
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_0/input_plan.json",
+      "sha256": "76ab6ce3ccee12c97a51d5c38818e9e13035eb4861e167d984156fd4b02e678e"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_0/fresh/fresh_new_case.json",
+      "sha256": "fbf20bb421295f2e89b01f4b572de0f344937b9daafff0d95c232b8517ede28a",
+      "size_bytes": 39822
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_0/fresh/fresh_new_case.log",
+      "sha256": "13b709c019bd520fe008861212af839ef7ce92346a754f618583a95b2b953b5d",
+      "size_bytes": 514
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_0/known/known_topology_new_physics.json",
+      "sha256": "78dd8e3638075853fc7829a1ee016b58aa7cebbfeb3deca9dcfe8ecc88fe8957",
+      "size_bytes": 39866
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_0/known/known_topology_new_physics.log",
+      "sha256": "c7640901df03c32bef8fab31d0e60a05458a83cca20200e0ceda141e55c76483",
+      "size_bytes": 1278
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_1/input_plan.json",
+      "sha256": "dfe18b57ae946bb00a71fec681b452c2bb962d5c9f25941ff3324fae5a081a64"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_1/fresh/fresh_new_case.json",
+      "sha256": "d843671e3e2fa71655172d7d07a5b19c775e5f5304d07e171d8f3fa6298eaf59",
+      "size_bytes": 39833
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_1/fresh/fresh_new_case.log",
+      "sha256": "986e950f88a13b6f4f20e6feffcc3249125b97a294ac47df0e37cf8dc6f965a9",
+      "size_bytes": 1087
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_1/known/known_topology_new_physics.json",
+      "sha256": "352f89386b065198e1a91efd29b6618030da606123bd8d13b92490053400e8da",
+      "size_bytes": 39888
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_1/known/known_topology_new_physics.log",
+      "sha256": "149e3d4f281c722d19584cf4cbfb60ce2b6f57ccbb64994ab59f731f3a0a82c5",
+      "size_bytes": 897
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_2/input_plan.json",
+      "sha256": "9eee424c98dac8d7f96a4ca3cb6ba022c63512ad776df93fdd956b5b196e28b0"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_2/fresh/fresh_new_case.json",
+      "sha256": "f7f1ac883b52b73f4f5fc6080079390d6e847e59c0c45fcfac72257cfaeb1637",
+      "size_bytes": 39840
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_2/fresh/fresh_new_case.log",
+      "sha256": "4755592c592ad50f5fe798334e9c4c3d598ad409671a02f24b9e002c5f6dea6c",
+      "size_bytes": 1087
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_2/known/known_topology_new_physics.json",
+      "sha256": "e36ce70fe7cb16b57b0da69576657ff5a696576dbf1ab3498894b7eb384d8eb2",
+      "size_bytes": 39881
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_2/known/known_topology_new_physics.log",
+      "sha256": "5433c0c2eea9d19d5ebc6bebe8aafc8afcd3dcd32d37fcd97146bd638735c692",
+      "size_bytes": 324
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_3/input_plan.json",
+      "sha256": "36f5436c196ad5795aa8ae8701e1470776a2348bf22e47b2bfcee78acc1e4327"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_3/fresh/fresh_new_case.json",
+      "sha256": "a44637d9146ad333f9707ffa002ac13ec9dacb58f35852122850634f281a2ccc",
+      "size_bytes": 39827
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_3/fresh/fresh_new_case.log",
+      "sha256": "0cc1c107cce619aa8aa2a16c0cc7cd50bb15f6b18f0871bf204f9182b0cb42fa",
+      "size_bytes": 705
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_3/known/known_topology_new_physics.json",
+      "sha256": "d8232f24103ed12a207ea0b35a9feea5f5b1ce494631574cbe7ec7376848c8c3",
+      "size_bytes": 39868
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_3/known/known_topology_new_physics.log",
+      "sha256": "388e5a45df6304c8e8b69c1550231eaecefa2f97bfe69a2ebfbf03527efc330a",
+      "size_bytes": 1087
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_4/input_plan.json",
+      "sha256": "7f22e4e533b7e4d2f4214a602d659f961ec3e34a838bf5a429becc838d99c632"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_4/fresh/fresh_new_case.json",
+      "sha256": "8a3b36f65f22ffd39dbb43ba79e835df0bafccd42d96fe4afc11e8325def7815",
+      "size_bytes": 39832
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_4/fresh/fresh_new_case.log",
+      "sha256": "f3d21fbb1ec2cfb1261dc9cd36713df46566bbc8541fe09b3ffed383a0b7e4ca",
+      "size_bytes": 513
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_4/known/known_topology_new_physics.json",
+      "sha256": "5e7bf12303257a23721e6daee8b5abeddc0b359587b1613589663c55ddaa172f",
+      "size_bytes": 39857
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_4/known/known_topology_new_physics.log",
+      "sha256": "cc3b5a44bdc0587c5b855f8c285d50fb9c302d0ba370d23fd826b515930cf59d",
+      "size_bytes": 704
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_5/input_plan.json",
+      "sha256": "a4c97c68dbdf96c9d0cf9979250158c187a7cce553c16586cf7e036d7478adb9"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_5/fresh/fresh_new_case.json",
+      "sha256": "49689babbfff5c72cabf50e11e4da0781efa877d4f619f1212df175ae139410e",
+      "size_bytes": 39807
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_5/fresh/fresh_new_case.log",
+      "sha256": "38ed4292401086838dba22b7aaeafe07b7bc1f47083ea3cfe633f97c074103cd",
+      "size_bytes": 1278
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_5/known/known_topology_new_physics.json",
+      "sha256": "c6917bb5bced63bbda090e960c34840f2f7cc8f4a284577722b092ec54828ebb",
+      "size_bytes": 39886
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_5/known/known_topology_new_physics.log",
+      "sha256": "9e2b0c71b55d8af1a2aa6ad6aea636bbca122f1aebc27c7b50b56188808a24ea",
+      "size_bytes": 706
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_6/input_plan.json",
+      "sha256": "bf5410ed816f84df0e0429037a0432cb38524b8987db3432abdf9b35f04bc7d5"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_6/fresh/fresh_new_case.json",
+      "sha256": "3ea85175455b5dd01d949a653553145d4218ba4409b129b69ff0506d03149ac3",
+      "size_bytes": 39815
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_6/fresh/fresh_new_case.log",
+      "sha256": "ee70a51b304e23cf2fd316d20a657995f0f1f8d9e0d3a1d7cf4db4c40757bf16",
+      "size_bytes": 1086
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_6/known/known_topology_new_physics.json",
+      "sha256": "0cc2eec8176141d1ec5518cf1441abe7afa7425bccc909c2b7b5c3886514aad6",
+      "size_bytes": 39888
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_6/known/known_topology_new_physics.log",
+      "sha256": "e0a68cb2c7e0d29c0a88355b293ea8973ca519e48911b85649ab824ac28632a4",
+      "size_bytes": 1470
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_7/input_plan.json",
+      "sha256": "e919579c4b20effb84e53ae4b6e454e85ea1e5f67f19ae8f10691ebce7f2072a"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_7/fresh/fresh_new_case.json",
+      "sha256": "5c3337f341746391d622e2611bc768d596c0fc5362c2a19951732f5f7513280e",
+      "size_bytes": 39815
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_7/fresh/fresh_new_case.log",
+      "sha256": "7af79fb98ee70d68f079ace4672e16eabcf1ecfb9ec7d45b75f345757a4b866b",
+      "size_bytes": 1277
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_7/known/known_topology_new_physics.json",
+      "sha256": "dfc7999f9bb7d6ccd5810ada112f1282ae22f7ed9755787180e90acaad26dc23",
+      "size_bytes": 39859
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825/group_7/known/known_topology_new_physics.log",
+      "sha256": "1bc226041b5e77f415dfa5b34f13a35a335e307723b29d9b2469ba5b46fcb0d5",
+      "size_bytes": 515
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_0/input_plan.json",
+      "sha256": "b40714b47f78b2257da2f22f3716c38cbf49d0140cf01a277bff01b7e3f7c787"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_0/fresh/fresh_new_case.json",
+      "sha256": "a1b8ab3eba9fcd2d09951ade97d1fd9d5cde0b9ef50be9e6d8d42af8b7ca3468",
+      "size_bytes": 22989
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_0/fresh/fresh_new_case.log",
+      "sha256": "29c0ec36d3df304975c17381ae61fcc148d1b5e9b53d22c314a9ad4631bae8d7",
+      "size_bytes": 1842
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_0/known/known_topology_new_physics.json",
+      "sha256": "d9637f798979801426cf02c8b46a11086c15123ab25d9573a31be37d91854131",
+      "size_bytes": 23035
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_0/known/known_topology_new_physics.log",
+      "sha256": "13c79d1ca8d8bd2040850c3eaa2a1af5edc93783a8affe7eb26b45ab9b7b5b55",
+      "size_bytes": 1842
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_1/input_plan.json",
+      "sha256": "4d795e8dc2c8d7ef985d43a22f119f67b9e8e956855df9e515ae253d30d79b74"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_1/fresh/fresh_new_case.json",
+      "sha256": "77929d10aa5a305fc956061b73d6c44b9ca126258dc52db2e113502e49300cd0",
+      "size_bytes": 22988
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_1/fresh/fresh_new_case.log",
+      "sha256": "4847cdca557d6a913fa641794ba4e34c60e759e2bc062857f89a9976e4406d50",
+      "size_bytes": 1651
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_1/known/known_topology_new_physics.json",
+      "sha256": "885fdc0bcee039f2fdc1a2ca6cbffbbd1be82ab8454c35db9cbf3e0d1fc6068c",
+      "size_bytes": 23063
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_1/known/known_topology_new_physics.log",
+      "sha256": "38b0d6e7c4f8141ba3449524edc6ec1829f040b3ad623490a4ce31ce43473764",
+      "size_bytes": 2416
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_2/input_plan.json",
+      "sha256": "1a909204e03a2249efeaaa976cc0c6954ce8236a46c6b75c1bc8171eaf2191c9"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_2/fresh/fresh_new_case.json",
+      "sha256": "107b997514118ad9452509e4ec51613a376eb043baa183e7c4fa5856673e3af8",
+      "size_bytes": 22974
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_2/fresh/fresh_new_case.log",
+      "sha256": "d1876bac39338a3fa6f1564358d27fbad25c821c03e4d20625b8f231a3889b10",
+      "size_bytes": 2223
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_2/known/known_topology_new_physics.json",
+      "sha256": "f06e0faf5ebac637a20d6473f14676893e802744d0c262e05abc14bda3616cde",
+      "size_bytes": 23043
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_2/known/known_topology_new_physics.log",
+      "sha256": "0d0f9c2fc0e21029842b4df25adf45785f8d68557396b4141c126549e5a51359",
+      "size_bytes": 2224
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_3/input_plan.json",
+      "sha256": "1579e4c17fbe61e9dbf2a3f89a2c1abb2b925b86fbd2062e09150e0d758f89a2"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_3/fresh/fresh_new_case.json",
+      "sha256": "34b139c7172847a1cacb654ce7594b6ab8cab9bd1a653ffa3d1416aed6571c89",
+      "size_bytes": 22970
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_3/fresh/fresh_new_case.log",
+      "sha256": "74a29ae2c5c184d728d55ff13cf805a2652544093bf4c4a23d0ffffde1c60d70",
+      "size_bytes": 1460
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_3/known/known_topology_new_physics.json",
+      "sha256": "565aeb51b21878d14f3f64e0fcc57fbb6dfa8d6352a561ed358fb422d39c2547",
+      "size_bytes": 23049
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_3/known/known_topology_new_physics.log",
+      "sha256": "37d541099111c4ff6dccaf5c3e4af079056f997987d0a2234bd55d1d1cd25814",
+      "size_bytes": 2224
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_4/input_plan.json",
+      "sha256": "57e1f3fc0bd34e88647166c1354c68db70fedd344b42725d0b01854ebc1b5ca4"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_4/fresh/fresh_new_case.json",
+      "sha256": "867fcc0cb90f295e39615bb928e128e9eda58de64ae1fd6cea259bffd4a55095",
+      "size_bytes": 22996
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_4/fresh/fresh_new_case.log",
+      "sha256": "3fcd8f71de5e33bf2911c7579e26795def10ccc452583f8a470c68655af91511",
+      "size_bytes": 1651
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_4/known/known_topology_new_physics.json",
+      "sha256": "b415dd97d09d9c5ab3a513ca4598d803ffeb037b593d27e23e7d6840f7cbf8eb",
+      "size_bytes": 23050
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_4/known/known_topology_new_physics.log",
+      "sha256": "df602145f04d398981c026d980712bb33ddb86a9dbc10515035a37ae1ed19bee",
+      "size_bytes": 1269
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_5/input_plan.json",
+      "sha256": "3917e2f03c118a7962e16153e2248237fecac84a864c12ecb97be12bccdaebbd"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_5/fresh/fresh_new_case.json",
+      "sha256": "ed294453afb80cc0b1fe978049985981cf549635fffb3d7584a8be1b171716a6",
+      "size_bytes": 22984
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_5/fresh/fresh_new_case.log",
+      "sha256": "ce96533785906362f48d3fd4ecec41272b707f44010cbd95ed4d283d28afe400",
+      "size_bytes": 2414
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_5/known/known_topology_new_physics.json",
+      "sha256": "75f1ddeee167dd0ade45d0a15bff22d9451bbc0a0edd65cd7e4cd162226679cf",
+      "size_bytes": 23034
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_5/known/known_topology_new_physics.log",
+      "sha256": "f8d8938cb4cb8cf7b64ffe47f934c41970e03d9fe2f1494e247665876f3144d2",
+      "size_bytes": 1461
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_6/input_plan.json",
+      "sha256": "ddcefff8276ce4036528a19fa66eedb594657c82b51e1c642efa3dfe1ebc95c0"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_6/fresh/fresh_new_case.json",
+      "sha256": "6314bc1ee78465e4c7aa4d6df2315c8febbee5bf96bf10a955be934ea045d10f",
+      "size_bytes": 22998
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_6/fresh/fresh_new_case.log",
+      "sha256": "d39ce2196c20ce9e6a3e33550bf3c6d2536afb20b783d0d78a6948749785caef",
+      "size_bytes": 1842
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_6/known/known_topology_new_physics.json",
+      "sha256": "127d5990651d6c633f92784182cd7a21b6df91cf4b249235ef1993483fafa415",
+      "size_bytes": 23050
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_6/known/known_topology_new_physics.log",
+      "sha256": "52495d315e28e97b1ce2c65acbb75bd05589db7f8892855a54299e458cde386c",
+      "size_bytes": 2797
+    },
+    {
+      "kind": "input_plan",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_7/input_plan.json",
+      "sha256": "df02bd4916df64698ca060890d671768c8d837a2d82d7fde677a796d0c5745cb"
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_7/fresh/fresh_new_case.json",
+      "sha256": "b39fdae5bfe722d8eb8524052563183c87a0cbde0530b618c46fe93349a90010",
+      "size_bytes": 22991
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_7/fresh/fresh_new_case.log",
+      "sha256": "555043a91951fee5ae1232aacddc35905f266e2744ded598ca05eb63a00b8834",
+      "size_bytes": 1842
+    },
+    {
+      "kind": "runner_json",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_7/known/known_topology_new_physics.json",
+      "sha256": "7c2cc1642bd1200c9457a6b863c9526e5b4bdbc71ef36f3106d225af74fd3e68",
+      "size_bytes": 23035
+    },
+    {
+      "kind": "runner_log",
+      "path": "output/v6_supplemental_publication_8a81261/work/S3/E240825_direct_control/group_7/known/known_topology_new_physics.log",
+      "sha256": "cc9110627e5c2aba20d8bd4411706de23fc6cb1e88ed6e3a58c0cdcd92aa5b66",
+      "size_bytes": 1651
+    }
+  ],
+  "status": "complete_from_existing_artifacts_no_inference"
+}

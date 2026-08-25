@@ -1,0 +1,120 @@
+{
+  "schema_version": "heat3d_v6_p1i_supplemental_known_topology_v1",
+  "status": "s0_passed_ready_for_gpu",
+  "base_main_commit": "6922e80c392385a8ae3d09b720c5307aaee1fffd",
+  "frozen_publication_commit": "04dc85c6ec1b620f026ea546f28a045cd43bbc9c",
+  "frozen_publication_runtime_protocol": {
+    "path": "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_standard_v1_1.json",
+    "sha256": "325dd80dffadae0f56c547ec84902a717a59615c9d32bac2036d121bae17790b"
+  },
+  "invalidated_attempt": {
+    "head": "171cd5e468fdae3ee599eac11bc1508097f7dd7e",
+    "disposition": "invalidated_timing_attempt_preserved_unmodified_never_merge",
+    "reuse_of_timing_speedup_setup_break_even": false
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "allowed_role": "train",
+    "temperature_labels_allowed": false
+  },
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "checkpoint_name": "params_best_valid_point_global.pkl",
+    "checkpoint_epoch": 559,
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "model_seed_role": "model_seed0_reference"
+  },
+  "geometries": [
+    {"sample_id": "v6p1if1_0079", "source_count": 3, "k_region_count": 7},
+    {"sample_id": "v6p1if1_0971", "source_count": 5, "k_region_count": 4},
+    {"sample_id": "v6p1if1_0393", "source_count": 7, "k_region_count": 3},
+    {"sample_id": "v6p1if1_0056", "source_count": 10, "k_region_count": 5}
+  ],
+  "parameter_domain": {
+    "total_power_W": [1.7, 20.0],
+    "q_nonzero_W_m3": [100000000.0, 80000000000.0],
+    "local_k_W_mK": [20.0, 400.0]
+  },
+  "sweeps": {
+    "K_only": {
+      "k_target_quantiles": [0.2, 0.4, 0.6, 0.8],
+      "base_to_target_blend": 0.5,
+      "q_multiplier": 1.0
+    },
+    "K_plus_Q_scale": {
+      "k_target_quantiles": [0.2, 0.4, 0.6, 0.8],
+      "base_to_target_blend": 0.5,
+      "q_multipliers": [0.8, 0.95, 1.05, 1.2]
+    }
+  },
+  "routes": [
+    "E16384_reconstruction",
+    "U_v2_16384_reconstruction",
+    "U_v2_direct240825",
+    "E240825_direct_control"
+  ],
+  "allowed_static_reuse": [
+    "support_indices",
+    "operator_control_volume",
+    "graph_metadata",
+    "reconstruction_map"
+  ],
+  "dynamic_path_must_remain_frozen": [
+    "packing",
+    "normalization",
+    "global_context",
+    "QK_features",
+    "native_physics",
+    "H2D",
+    "forward",
+    "reconstruction_apply",
+    "synchronization",
+    "timing_boundary"
+  ],
+  "timing": {
+    "boundary": "in_memory_k_q_BC_to_synchronized_240825_result",
+    "order_seed": 20260825,
+    "formal_cases_per_sweep": 16,
+    "modes": ["fresh_new_case", "known_topology_new_physics"],
+    "statistics": ["median", "p95", "throughput_samples_per_second"]
+  },
+  "numerical_equivalence": {
+    "frozen_formula": "max_abs_K <= max(1e-3, 20 * same_shape_floor_K)",
+    "source_commit": "04dc85c6ec1b620f026ea546f28a045cd43bbc9c",
+    "source_path": "configs/heat3d_v6_p1i/v6_p1i_publication_final_padding_gate_raw/final_padding_gate.json",
+    "source_sha256": "785f4fd6d22ee610140af4266f1b127d7812512a127e7028087a6734b2dd6c0c",
+    "same_shape_floor_K_by_route": {
+      "E16384_reconstruction": 0.00917816162109375,
+      "U_v2_16384_reconstruction": 0.012786865234375,
+      "U_v2_direct240825": 0.018646240234375,
+      "E240825_direct_control": 0.017913818359375
+    },
+    "route_floor_selection": "maximum_of_two_frozen_witness_cases"
+  },
+  "gate_order": ["S0", "S1", "S2", "S3"],
+  "S0": {
+    "status": "PASS",
+    "numeric_primitives_ast_exact": true,
+    "shared_code_exact": true,
+    "forbidden_roles_accessed": false,
+    "execution_files_sha256": {
+      "scripts/benchmark_heat3d_v6_p1i_final_e_service.py": "009fa1d39673e841740fde083a02f7879d9aae89b58b6cf70e8d85418524e868",
+      "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py": "ee7712855d53d448e1dbce99e0d8e3752c6fd9963ee4f565f473d4782b1912f4",
+      "scripts/heat3d_v6_supplemental_input_adapter.py": "508ec17ae94bbf4a60c8c3ad8aeab29d1bc247a8fdd8afd560ca63ea5eb417b0",
+      "scripts/heat3d_v6_supplemental_runtime.py": "da2f24bd262937dc329d2314f28c26f160cf8d121116c974479ae14a55063bb5",
+      "scripts/run_heat3d_v6_supplemental_publication_known_topology.py": "eaac2e400ea37aeefc8ae942a0c6482bb40a508882ac08cd55a3cb0c237e0521"
+    }
+  },
+  "guardrails": {
+    "training": false,
+    "FVM": false,
+    "valid_access": false,
+    "test_access": false,
+    "sealed_access": false,
+    "temperature_labels": false,
+    "resident_optimization": false,
+    "accuracy_selection": false
+  }
+}
