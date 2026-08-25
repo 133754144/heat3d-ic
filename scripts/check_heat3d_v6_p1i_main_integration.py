@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import fnmatch
 import hashlib
+import csv
 import json
 from pathlib import Path
 import subprocess
@@ -45,6 +46,12 @@ def main() -> int:
     )
     require(receipt["integration"]["whole_history_merge"] is False, "whole merge")
     require(receipt["integration"]["strict_allowlist_only"] is True, "allowlist")
+    require(receipt["integration"]["pull_request"] == {
+        "number": 3,
+        "url": "https://github.com/133754144/heat3d-ic/pull/3",
+        "state": "open",
+        "required_merge_method": "merge_commit",
+    }, "pull request binding")
 
     allowlist = [
         path for paths in manifest["allowlist"].values() for path in paths
@@ -66,14 +73,22 @@ def main() -> int:
     ]
     if staged:
         require(set(staged) <= set(allowlist), "staged path outside allowlist")
+        committed = [
+            row
+            for row in git(
+                "diff", "--name-only", receipt["base"]["commit"], "HEAD"
+            ).splitlines()
+            if row
+        ]
+        integrated_paths = sorted(set(committed) | set(staged))
         require(
-            canonical_lines_sha(staged)
+            canonical_lines_sha(integrated_paths)
             == receipt["integration"]["staged_path_list_sha256"],
-            "staged list SHA",
+            "integrated path list SHA",
         )
         require(
-            len(staged) == receipt["integration"]["staged_path_count"],
-            "staged count",
+            len(integrated_paths) == receipt["integration"]["staged_path_count"],
+            "integrated path count",
         )
     else:
         committed = [
@@ -128,6 +143,25 @@ def main() -> int:
         == "frozen_noninferiority_latency_pareto_reference",
         "E16384 decision",
     )
+    with (ROOT / "configs/heat3d_v6/v6_model_lifecycle.csv").open() as handle:
+        lifecycle = {row["config_id"]: row for row in csv.DictReader(handle)}
+    require(
+        lifecycle["V6_06_V5best_P1i_seed0_reliable_B24"]["run_role"]
+        == "reference_seed0",
+        "V6_06 lifecycle",
+    )
+    for config_id, role in (
+        ("V6_07_V5best_P1i_seed1_reliable_B24", "replication_seed1"),
+        ("V6_08_V5best_P1i_seed2_reliable_B24", "replication_seed2"),
+    ):
+        require(lifecycle[config_id]["run_role"] == role, f"{config_id} lifecycle")
+    for relative in (
+        "docs/v6_total_closeout.md",
+        "docs/v6_p1i_closeout.md",
+    ):
+        text = (ROOT / relative).read_text()
+        require("E240825_direct_control" in text, f"canonical route: {relative}")
+        require("`E240825_direct`" not in text, f"legacy route: {relative}")
 
     validation = receipt["validation"]
     for key in (

@@ -29,7 +29,7 @@ reconstruction to the 240,825-node solver field.
 - `U_v2_16384_reconstruction` and `U_v2_direct240825` remain parallel valid-only
   inference strategies; U-v2 uses bounded output-query extrapolation and the
   frozen R2P nearest-coverage repair.
-- `E240825_direct` is an architecture control, not the reference route.
+- `E240825_direct_control` is an architecture control, not the reference route.
 - 32,768 nodes gave only a marginal point-global improvement over 16,384 while
   source/peak error and runtime/memory did not improve consistently. It remains
   exploratory scalability evidence, not a production operating point.

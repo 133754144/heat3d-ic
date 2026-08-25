@@ -41,7 +41,8 @@ used for selection or tuning, and sealed IID remains ungenerated and unopened.
    samples explain 95.45% of excess peak-error SSE relative to the valid32 mean
    SSE, with a smaller broad shift in the median.
 5. U-v2 remains a valid-only parallel/direct inference characterization, not
-   the confirmatory production route. E240825 remains an architecture control.
+   the confirmatory production route. `E240825_direct_control` remains an
+   architecture control.
 6. FVM is the reference physical solver; surrogate error is always measured
    against it. Neural speed claims are workload- and hardware-bounded and do
    not imply greater physical fidelity.
