@@ -965,6 +965,7 @@ def run_case(
     runtime: Mapping[str, Any], setup: Mapping[str, Any], full: Mapping[str, np.ndarray],
     geometry_cache: Any, partition: Any, boundaries: np.ndarray, graph_key: Any,
     params: Any, e_forward: Any, u_forward: Any, reconstruct: Any,
+    gpu: Any,
     hash_payload: bool = False,
 ) -> dict[str, Any]:
     started = time.perf_counter()
@@ -1012,7 +1013,7 @@ def run_case(
         stages.update(values)
     device, values, prepared_audit = device_payload(
         spec=spec, packed=packed, mapping=mapping, query_cv=selected_cv,
-        graphs=graphs, gpu=jax.devices("gpu")[0], hash_payload=hash_payload,
+        graphs=graphs, gpu=gpu, hash_payload=hash_payload,
     )
     stages.update(values)
     prediction, values = predict_device(
@@ -1127,6 +1128,11 @@ def main() -> int:
     spec = route_spec(args.route)
     params_before = highn._tree_sha256(runtime["checkpoint"]["params"])
     params = highn.runner._device_params(runtime["checkpoint"]["params"])
+    # Resolve the production device once, outside every per-case timing span.
+    # Repeated jax.devices() calls can occasionally synchronize runtime state;
+    # that service-level lookup is neither dynamic-physics preparation nor
+    # model execution and previously appeared as an unexplained timing residual.
+    gpu = jax.devices("gpu")[0]
     model = GraphNeuralOperator(**runtime["model_config"])
     e_forward, u_forward, reconstruct = make_forward(spec, model)
     graph_key = highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
@@ -1160,6 +1166,7 @@ def main() -> int:
                 full=full, geometry_cache=geometry_cache, partition=partition,
                 boundaries=boundaries, graph_key=graph_key, params=params,
                 e_forward=e_forward, u_forward=u_forward, reconstruct=reconstruct,
+                gpu=gpu,
                 hash_payload=True,
             )
             for mode in MODES
@@ -1238,6 +1245,7 @@ def main() -> int:
                             geometry_cache=geometry_cache, partition=partition,
                             boundaries=boundaries, graph_key=graph_key, params=params,
                             e_forward=e_forward, u_forward=u_forward, reconstruct=reconstruct,
+                            gpu=gpu,
                         )
                         result.pop("prediction")
                         result["order_seed"] = int(seed)
@@ -1267,7 +1275,7 @@ def main() -> int:
         "route": args.route, "resolution": spec["resolution"],
         "protocol_sha256": sha256_file(args.protocol),
         "execution_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
-        "host": "devbox", "device": str(jax.devices("gpu")[0]),
+        "host": "devbox", "device": str(gpu),
         "input_audit": input_audit,
         "temperature_files_opened": 0,
         "accessed_roles": ["train_inputs", "shared_full_mesh_without_temperature"],
