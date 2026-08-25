@@ -1,0 +1,33 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_07_V5best_P1i_seed1_reliable_B24
+extends: V6_06_V5best_P1i_seed0_reliable_B24.yaml
+overrides:
+  description: >-
+    Frozen P1i formal1024_v1 seed1 replication. The only scientific difference
+    from V6_06 is the synchronized optimizer/model/batch-order/graph seed value.
+  optimizer:
+    seed: 1
+    model_seed: 1
+    batch_order_seed: 1
+    graph_seed: 1
+  run:
+    batch_build_seed: 1
+  export:
+    output_dir: output/heat3d_v6_p1i_runs/V6_07_V5best_P1i_seed1_reliable_B24
+    run_name: V6_07_V5best_P1i_seed1_reliable_B24
+  metadata:
+    phase: v6_p1i_training_closeout
+    baseline_config_id: V6_06_V5best_P1i_seed0_reliable_B24
+    dataset_id: heat3d_v6_p1i_continuous_physics1024_v1
+    initialization: random
+    execution_status: prepared_not_started
+    training_started: false
+    execution_host: wsl2
+    training_commit: null
+    runner_pid: null
+    tmux_session: V6_07_P1i_seed1
+    launch_timestamp_utc: null
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v6_p1i_logs/V6_07_V5best_P1i_seed1_reliable_B24.log
+    split_access_policy: train_valid_only_test_and_sealed_closed
+    checkpoint_contract: atomic_optimizer_aware_best_latest_final_v2

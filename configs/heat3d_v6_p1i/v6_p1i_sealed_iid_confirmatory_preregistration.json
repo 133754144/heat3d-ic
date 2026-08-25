@@ -1,0 +1,34 @@
+{
+  "schema_version": "heat3d_v6_p1i_sealed_iid_confirmatory_preregistration_v1",
+  "status": "definition_frozen_labels_not_generated_or_opened",
+  "dataset_family": "heat3d_v6_p1i_continuous_physics",
+  "parent_input_contract": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml",
+  "parent_input_contract_sha256": "1e15a77fe51eea7ec64614566bb6bb12bfcf05948f3b7c8c6f3c85ec759a58f8",
+  "sample_count": 128,
+  "sample_id_format": "v6p1isealed1_{index:04d}",
+  "sampling": {
+    "method": "scrambled_sobol",
+    "seed": 1612819,
+    "dimensions": 1024,
+    "scramble": true,
+    "sobol_indices": [0, 127]
+  },
+  "role": "sealed_iid_confirmatory",
+  "physics_and_generation_rule": "exact_inheritance_from_formal1024_v1",
+  "overlap_guards": {
+    "formal1024_sample_id_overlap": 0,
+    "formal1024_sobol_seed_equal": false
+  },
+  "opening_condition": "seed0 training and checkpoint selection are complete and all model choices are frozen",
+  "forbidden_before_opening": [
+    "FVM label generation",
+    "temperature or DeltaT statistics",
+    "plots",
+    "model inference",
+    "loss architecture or hyperparameter decisions"
+  ],
+  "labels_generated": false,
+  "labels_opened": false,
+  "target_statistics_computed": false,
+  "model_inference_runs": 0
+}

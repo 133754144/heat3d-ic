@@ -1,4 +1,5 @@
 from typing import Tuple, Union, NamedTuple
+import time
 
 from flax import linen as nn
 import flax.typing
@@ -88,6 +89,7 @@ class RegionInteractionGraphBuilder:
     discrete_graph_backend: str = "dense_reference",
     discrete_graph_chunk_size: int = 1024,
     discrete_coverage_multiplier: float = 1.0,
+    reuse_exact_p2r_for_r2p: bool = False,
   ):
     """
     Class for building the graphs that are used in RIGNO.
@@ -150,11 +152,13 @@ class RegionInteractionGraphBuilder:
     if int(node_coordinate_freqs) < 1:
       raise ValueError("node_coordinate_freqs must be at least 1")
     if discrete_graph_backend not in {
-      "dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1"
+      "dense_reference", "chunked_numpy_v1", "sparse_kdtree_v1",
+      "gpu_tiled_exact_v1",
     }:
       raise ValueError(
         "discrete_graph_backend must be one of "
-        "{'dense_reference', 'chunked_numpy_v1', 'sparse_kdtree_v1'}, "
+        "{'dense_reference', 'chunked_numpy_v1', 'sparse_kdtree_v1', "
+        "'gpu_tiled_exact_v1'}, "
         f"found {discrete_graph_backend!r}"
       )
     if int(discrete_graph_chunk_size) < 1:
@@ -180,6 +184,7 @@ class RegionInteractionGraphBuilder:
     self.discrete_graph_backend = discrete_graph_backend
     self.discrete_graph_chunk_size = int(discrete_graph_chunk_size)
     self.discrete_coverage_multiplier = float(discrete_coverage_multiplier)
+    self.reuse_exact_p2r_for_r2p = bool(reuse_exact_p2r_for_r2p)
 
     # Domain shifts for periodic BC
     # self._domain_shifts = jnp.concatenate([
@@ -303,7 +308,8 @@ class RegionInteractionGraphBuilder:
       tree = cKDTree(np.asarray(centers_array, dtype=np.float64))
       candidate_count = min(16, len(centers_array))
       _, nearest_candidates = tree.query(
-        np.asarray(points_array, dtype=np.float64), k=candidate_count
+        np.asarray(points_array, dtype=np.float64), k=candidate_count,
+        workers=-1,
       )
       nearest_candidates = np.asarray(nearest_candidates, dtype=np.int64)
       if candidate_count == 1:
@@ -326,7 +332,11 @@ class RegionInteractionGraphBuilder:
       radii = np.zeros(shape=(centers_array.shape[0],), dtype=points_array.dtype)
       np.maximum.at(radii, nearest_rnodes, nearest_distance)
     radii = np.nextafter(radii, np.asarray(np.inf, dtype=radii.dtype))
-    return jnp.asarray(radii)
+    # Keep graph construction on the host.  Returning a JAX array here causes
+    # downstream eager JAX primitives to compile once for every sample-varying
+    # edge shape.  The metadata is transferred to JAX exactly once after all
+    # variable-shape host packing is complete.
+    return radii
 
   def _get_effective_support_radii(self,
     r_rnodes: Array,
@@ -334,12 +344,13 @@ class RegionInteractionGraphBuilder:
   ) -> Array:
     """Returns final radii before physical-to-regional edge construction."""
 
+    radii = np.asarray(r_rnodes)
     if self.radius_policy == "discrete_physical_coverage":
       # This monotone policy deliberately bypasses the legacy global clip and
       # non-monotone hard reset. It uses the minimal 1x coverage radius to
       # retain the guarantee without inheriting the legacy overlap edge cost.
-      return self.discrete_coverage_multiplier * r_rnodes
-    return jnp.clip(overlap_factor * r_rnodes, a_min=0, a_max=r_rnodes.max())
+      return self.discrete_coverage_multiplier * radii
+    return np.clip(overlap_factor * radii, a_min=0, a_max=radii.max())
 
   def _get_supported_pnodes_by_rnodes(self,
     centers: Array,
@@ -373,7 +384,7 @@ class RegionInteractionGraphBuilder:
     if (
       self.radius_policy == "discrete_physical_coverage"
       and self.discrete_graph_backend
-      in {"chunked_numpy_v1", "sparse_kdtree_v1"}
+      in {"chunked_numpy_v1", "sparse_kdtree_v1", "gpu_tiled_exact_v1"}
     ):
       centers_array = np.asarray(centers)
       points_array = np.asarray(points)
@@ -382,18 +393,22 @@ class RegionInteractionGraphBuilder:
         from scipy.spatial import cKDTree
 
         point_tree = cKDTree(np.asarray(points_array, dtype=np.float64))
+        query_radii = np.asarray(radii_array, dtype=np.float64) + np.maximum(
+          np.asarray(1.0e-7, dtype=np.float64),
+          np.abs(np.asarray(radii_array, dtype=np.float64)) * 1.0e-6,
+        )
+        candidate_lists = point_tree.query_ball_point(
+          np.asarray(centers_array, dtype=np.float64),
+          query_radii,
+          workers=-1,
+          return_sorted=True,
+        )
         point_parts = []
         center_parts = []
-        for center_index, (center, radius) in enumerate(
-          zip(centers_array, radii_array)
+        for center_index, (center, radius, candidate_list) in enumerate(
+          zip(centers_array, radii_array, candidate_lists)
         ):
-          query_radius = float(radius) + max(1.0e-7, abs(float(radius)) * 1.0e-6)
-          candidates = np.asarray(
-            point_tree.query_ball_point(
-              np.asarray(center, dtype=np.float64), query_radius
-            ),
-            dtype=np.int64,
-          )
+          candidates = np.asarray(candidate_list, dtype=np.int64)
           if not len(candidates):
             continue
           reference_distance = np.linalg.norm(
@@ -413,7 +428,50 @@ class RegionInteractionGraphBuilder:
           )
         else:
           edges = np.empty((0, 2), dtype=np.int64)
-        return jnp.asarray(edges, dtype=jnp.int32)
+        return np.asarray(edges, dtype=np.int32)
+
+      if self.discrete_graph_backend == "gpu_tiled_exact_v1":
+        # The radius itself remains the frozen sparse-KDTree coverage result.
+        # Only the final point/center predicate is evaluated on the GPU in
+        # bounded tiles.  Results are brought back and lexicographically sorted
+        # to the exact canonical sparse backend order before graph packing.
+        centers_device = jax.device_put(jnp.asarray(centers_array))
+        shortlist_slack = np.maximum(
+          np.asarray(1.0e-7, dtype=radii_array.dtype),
+          np.abs(radii_array) * np.asarray(1.0e-6, dtype=radii_array.dtype),
+        )
+        shortlist_radii_device = jax.device_put(
+          jnp.asarray(radii_array + shortlist_slack)
+        )
+        edge_blocks = []
+        for start in range(0, len(points_array), self.discrete_graph_chunk_size):
+          block = jax.device_put(jnp.asarray(
+            points_array[start : start + self.discrete_graph_chunk_size]
+          ))
+          distance = jnp.linalg.norm(
+            block[:, None, :] - centers_device[None, :, :], axis=-1
+          )
+          point_index, center_index = jnp.where(distance <= shortlist_radii_device)
+          point_index, center_index = jax.device_get((point_index, center_index))
+          if len(point_index):
+            # Reapply the frozen NumPy float32 predicate to the compact GPU
+            # shortlist.  This makes the optimization edge-exact at boundary
+            # ties rather than accepting platform-dependent GPU norms.
+            reference_distance = np.linalg.norm(
+              points_array[point_index + start] - centers_array[center_index],
+              axis=1,
+            )
+            keep = reference_distance <= radii_array[center_index]
+            edge_blocks.append(np.column_stack(
+              (point_index[keep] + start, center_index[keep])
+            ))
+        if edge_blocks:
+          edges = np.concatenate(edge_blocks, axis=0)
+          order = np.lexsort((edges[:, 1], edges[:, 0]))
+          edges = edges[order]
+        else:
+          edges = np.empty((0, 2), dtype=np.int64)
+        return np.asarray(edges, dtype=np.int32)
 
       edge_blocks = []
       for start in range(0, len(points_array), self.discrete_graph_chunk_size):
@@ -429,7 +487,7 @@ class RegionInteractionGraphBuilder:
         edges = np.concatenate(edge_blocks, axis=0)
       else:
         edges = np.empty((0, 2), dtype=np.int64)
-      return jnp.asarray(edges, dtype=jnp.int32)
+      return np.asarray(edges, dtype=np.int32)
 
     # Get relative coordinates
     rel = points[:, None] - centers
@@ -486,8 +544,8 @@ class RegionInteractionGraphBuilder:
 
     if not additions:
       return edge_indices
-    return jnp.concatenate(
-      [edge_indices, jnp.asarray(additions, dtype=edge_indices.dtype)],
+    return np.concatenate(
+      [edges, np.asarray(additions, dtype=edges.dtype)],
       axis=0,
     )
 
@@ -530,9 +588,13 @@ class RegionInteractionGraphBuilder:
       domains.append(domains_level)
 
     # Remove repeated edges
-    edges = jnp.concatenate(edges)
-    domains = jnp.concatenate(domains)
-    _, unique_idx = jnp.unique(edges, axis=0, return_index=True)
+    # Delaunay is a host operation.  Keep the sample-varying edge count on the
+    # host as well: jnp.unique(axis=0) otherwise triggers a CPU-XLA compile for
+    # each distinct edge shape.  NumPy preserves the same lexicographic unique
+    # values and first-occurrence indices used by JAX here.
+    edges = np.concatenate(edges).astype(np.int32, copy=False)
+    domains = np.concatenate(domains).astype(np.int32, copy=False)
+    _, unique_idx = np.unique(edges, axis=0, return_index=True)
     edges = edges[unique_idx]
     domains = domains[unique_idx]
 
@@ -541,12 +603,17 @@ class RegionInteractionGraphBuilder:
   def build_metadata(self, x_inp: Array, x_out: Array, domain: Array, rmesh_correction_dsf: int = 1, key: Union[flax.typing.PRNGKey, None] = None) -> RegionInteractionGraphMetadata:
     """Returns the metadata that is needed for building all RIGNO graphs."""
 
+    _timing_started = time.perf_counter()
+    _timings = {}
+
     # Normalize coordinates in [-1, +1) —— 归一化
     x_inp = 2 * (x_inp - domain[0]) / (domain[1] - domain[0]) - 1
     x_out = 2 * (x_out - domain[0]) / (domain[1] - domain[0]) - 1
+    _timings["coordinate_normalization_seconds"] = time.perf_counter() - _timing_started
 
     # Randomly sub-sample pmesh to get rmesh —— 随机采样
     if key is None: key = jax.random.PRNGKey(0)
+    _phase_started = time.perf_counter()
     x_rnodes = _subsample_pointset(key=key, x=x_inp, factor=self.subsample_factor)
 
     # Downsample or upsample the rmesh —— 参数rmesh_correction_dsf不为1时微调网格密度
@@ -554,8 +621,10 @@ class RegionInteractionGraphBuilder:
       x_rnodes = _subsample_pointset(key=key, x=x_rnodes, factor=rmesh_correction_dsf)
     elif rmesh_correction_dsf < 1:
       x_rnodes = _upsample_pointset(key=key, x=x_rnodes, factor=(1 / rmesh_correction_dsf))
+    _timings["regional_prepare_seconds"] = time.perf_counter() - _phase_started
 
     # Compute minimum support radius of each rmesh node —— 计算每个区域节点的“最小支持半径”
+    _phase_started = time.perf_counter()
     if self.radius_policy == "discrete_physical_coverage":
       coverage_points = jnp.concatenate([x_inp, x_out], axis=0)
       r_rnodes = self._compute_discrete_physical_coverage_radius(
@@ -564,15 +633,20 @@ class RegionInteractionGraphBuilder:
       )
     else:
       r_rnodes = self._compute_minimum_support_radius(x_rnodes)
+    _timings["coverage_radius_seconds"] = time.perf_counter() - _phase_started
 
     # Get edge indices
+    _phase_started = time.perf_counter()
     p2r_edge_indices = self._get_supported_pnodes_by_rnodes(
       centers=x_rnodes, # 区域节点坐标
       points=x_inp,     # 物理节点坐标
       radii=self._get_effective_support_radii(r_rnodes, self.overlap_factor_p2r),
       apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
     ) # 返回哪些物理点连到哪些区域点
+    _timings["p2r_seconds"] = time.perf_counter() - _phase_started
+    _phase_started = time.perf_counter()
     r2r_edge_indices, r2r_edge_domains = self._get_r2r_edges(x_rnodes)
+    _timings["r2r_seconds"] = time.perf_counter() - _phase_started
     r2p_points = (
       x_inp
       if (
@@ -581,13 +655,27 @@ class RegionInteractionGraphBuilder:
       )
       else x_out
     )
-    r2p_edge_indices = self._get_supported_pnodes_by_rnodes(
-      centers=x_rnodes,
-      points=r2p_points,
-      radii=self._get_effective_support_radii(r_rnodes, self.overlap_factor_r2p),
-      apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
+    _phase_started = time.perf_counter()
+    p2r_radii = self._get_effective_support_radii(r_rnodes, self.overlap_factor_p2r)
+    r2p_radii = self._get_effective_support_radii(r_rnodes, self.overlap_factor_r2p)
+    _reuse_reverse = (
+      self.reuse_exact_p2r_for_r2p
+      and np.array_equal(np.asarray(x_inp), np.asarray(r2p_points))
+      and np.array_equal(np.asarray(p2r_radii), np.asarray(r2p_radii))
     )
+    if _reuse_reverse:
+      r2p_edge_indices = p2r_edge_indices
+    else:
+      r2p_edge_indices = self._get_supported_pnodes_by_rnodes(
+        centers=x_rnodes,
+        points=r2p_points,
+        radii=r2p_radii,
+        apply_legacy_hard_reset=(self.radius_policy == "legacy_kdtree_mean4"),
+      )
+    _timings["r2p_seconds"] = time.perf_counter() - _phase_started
+    _timings["r2p_reused_from_p2r"] = bool(_reuse_reverse)
 
+    _phase_started = time.perf_counter()
     if self.coverage_repair_policy == "nearest_rnode":
       if self.repair_p2r:
         p2r_edge_indices = self._repair_physical_node_coverage(
@@ -601,27 +689,39 @@ class RegionInteractionGraphBuilder:
           centers=x_rnodes,
           points=x_out,
         )
-    r2p_edge_indices = jnp.flip(r2p_edge_indices, axis=-1)
+    _timings["coverage_repair_seconds"] = time.perf_counter() - _phase_started
+    _phase_started = time.perf_counter()
+    # From this point through padding, all arrays can have sample-varying edge
+    # dimensions.  Use host NumPy primitives and perform one final device
+    # transfer below, avoiding per-edge-shape CPU-JAX compilation.
+    x_inp = np.asarray(x_inp)
+    x_out = np.asarray(x_out)
+    x_rnodes = np.asarray(x_rnodes)
+    r_rnodes = np.asarray(r_rnodes)
+    p2r_edge_indices = np.asarray(p2r_edge_indices)
+    r2r_edge_indices = np.asarray(r2r_edge_indices)
+    r2r_edge_domains = np.asarray(r2r_edge_domains)
+    r2p_edge_indices = np.flip(np.asarray(r2p_edge_indices), axis=-1)
 
     # Add dummy nodes and edges
-    p2r_edge_indices = jnp.concatenate([p2r_edge_indices, jnp.array([[x_inp.shape[0], x_rnodes.shape[0]]])], axis=0)
-    r2r_edge_indices = jnp.concatenate([r2r_edge_indices, jnp.array([[x_rnodes.shape[0], x_rnodes.shape[0]]])], axis=0)
-    r2r_edge_domains = jnp.concatenate([r2r_edge_domains, jnp.array([[0, 0]])], axis=0)
-    r2p_edge_indices = jnp.concatenate([r2p_edge_indices, jnp.array([[x_rnodes.shape[0], x_out.shape[0]]])], axis=0)
-    x_inp = jnp.concatenate([x_inp, jnp.zeros(shape=(1, x_inp.shape[-1]))], axis=0)
-    x_out = jnp.concatenate([x_out, jnp.zeros(shape=(1, x_out.shape[-1]))], axis=0)
-    x_rnodes = jnp.concatenate([x_rnodes, jnp.zeros(shape=(1, x_rnodes.shape[-1]))], axis=0)
-    r_rnodes = jnp.concatenate([r_rnodes, jnp.zeros(shape=(1,))], axis=0)
+    p2r_edge_indices = np.concatenate([p2r_edge_indices, np.asarray([[x_inp.shape[0], x_rnodes.shape[0]]], dtype=p2r_edge_indices.dtype)], axis=0)
+    r2r_edge_indices = np.concatenate([r2r_edge_indices, np.asarray([[x_rnodes.shape[0], x_rnodes.shape[0]]], dtype=r2r_edge_indices.dtype)], axis=0)
+    r2r_edge_domains = np.concatenate([r2r_edge_domains, np.asarray([[0, 0]], dtype=r2r_edge_domains.dtype)], axis=0)
+    r2p_edge_indices = np.concatenate([r2p_edge_indices, np.asarray([[x_rnodes.shape[0], x_out.shape[0]]], dtype=r2p_edge_indices.dtype)], axis=0)
+    x_inp = np.concatenate([x_inp, np.zeros(shape=(1, x_inp.shape[-1]), dtype=x_inp.dtype)], axis=0)
+    x_out = np.concatenate([x_out, np.zeros(shape=(1, x_out.shape[-1]), dtype=x_out.dtype)], axis=0)
+    x_rnodes = np.concatenate([x_rnodes, np.zeros(shape=(1, x_rnodes.shape[-1]), dtype=x_rnodes.dtype)], axis=0)
+    r_rnodes = np.concatenate([r_rnodes, np.zeros(shape=(1,), dtype=r_rnodes.dtype)], axis=0)
 
     # Convert dtypes to save memory
-    r2r_edge_domains = r2r_edge_domains.astype(jnp.uint8)
-    if (max(x_inp.shape[0], x_out.shape[0]) < jnp.iinfo(jnp.uint16).max):
-      p2r_edge_indices=p2r_edge_indices.astype(jnp.uint16)
-      r2r_edge_indices=r2r_edge_indices.astype(jnp.uint16)
-      r2p_edge_indices=r2p_edge_indices.astype(jnp.uint16)
+    r2r_edge_domains = r2r_edge_domains.astype(np.uint8)
+    if (max(x_inp.shape[0], x_out.shape[0]) < np.iinfo(np.uint16).max):
+      p2r_edge_indices=p2r_edge_indices.astype(np.uint16)
+      r2r_edge_indices=r2r_edge_indices.astype(np.uint16)
+      r2p_edge_indices=r2p_edge_indices.astype(np.uint16)
     # Ommit storing duplicated edge indices
     if (
-      self.overlap_factor_p2r == self.overlap_factor_r2p
+      (_reuse_reverse or self.overlap_factor_p2r == self.overlap_factor_r2p)
       and np.array_equal(
         np.asarray(r2p_edge_indices),
         np.flip(np.asarray(p2r_edge_indices), axis=-1),
@@ -632,15 +732,19 @@ class RegionInteractionGraphBuilder:
 
     # Store the graph data
     graph_metadata = RegionInteractionGraphMetadata(
-      x_pnodes_inp=jnp.expand_dims(x_inp, axis=0),
-      x_pnodes_out=jnp.expand_dims(x_out, axis=0),
-      x_rnodes=jnp.expand_dims(x_rnodes, axis=0),
-      r_rnodes=jnp.expand_dims(r_rnodes, axis=0),
-      p2r_edge_indices=jnp.expand_dims(p2r_edge_indices, axis=0),
-      r2r_edge_indices=jnp.expand_dims(r2r_edge_indices, axis=0),
-      r2r_edge_domains=jnp.expand_dims(r2r_edge_domains, axis=0),
-      r2p_edge_indices=(jnp.expand_dims(r2p_edge_indices, axis=0) if (r2p_edge_indices is not None) else None),
+      x_pnodes_inp=jnp.asarray(np.expand_dims(x_inp, axis=0)),
+      x_pnodes_out=jnp.asarray(np.expand_dims(x_out, axis=0)),
+      x_rnodes=jnp.asarray(np.expand_dims(x_rnodes, axis=0)),
+      r_rnodes=jnp.asarray(np.expand_dims(r_rnodes, axis=0)),
+      p2r_edge_indices=jnp.asarray(np.expand_dims(p2r_edge_indices, axis=0)),
+      r2r_edge_indices=jnp.asarray(np.expand_dims(r2r_edge_indices, axis=0)),
+      r2r_edge_domains=jnp.asarray(np.expand_dims(r2r_edge_domains, axis=0)),
+      r2p_edge_indices=(jnp.asarray(np.expand_dims(r2p_edge_indices, axis=0)) if (r2p_edge_indices is not None) else None),
     )
+
+    _timings["packing_seconds"] = time.perf_counter() - _phase_started
+    _timings["total_seconds"] = time.perf_counter() - _timing_started
+    self.last_build_timings = _timings
 
     return graph_metadata
 

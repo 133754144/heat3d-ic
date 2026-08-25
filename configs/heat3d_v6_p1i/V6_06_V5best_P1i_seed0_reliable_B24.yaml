@@ -1,0 +1,31 @@
+schema_version: heat3d_v4_inherited_config_v0
+config_id: V6_06_V5best_P1i_seed0_reliable_B24
+extends: V6_05_V5best_P1i_seed0_B24.yaml
+overrides:
+  description: >-
+    Frozen P1i formal1024_v1 seed0 retraining contract with atomic
+    optimizer-aware best/latest/final checkpoints. Dataset, split, architecture,
+    loss, B24 execution, e600 budget, validation-only selection and all seeds
+    are identical to the archived V6_05 run; initialization remains random.
+  export:
+    output_dir: output/heat3d_v6_p1i_runs/V6_06_V5best_P1i_seed0_reliable_B24
+    run_name: V6_06_V5best_P1i_seed0_reliable_B24
+    reliable_checkpointing: true
+    latest_checkpoint_name: params_latest.pkl
+    latest_checkpoint_every: 10
+  metadata:
+    phase: v6_p1i_training_closeout
+    baseline_config_id: V6_05_V5best_P1i_seed0_B24
+    dataset_id: heat3d_v6_p1i_continuous_physics1024_v1
+    initialization: random
+    execution_status: prepared_not_started
+    training_started: false
+    execution_host: devbox
+    training_commit: null
+    runner_pid: null
+    tmux_session: V6_06_P1i_seed0
+    launch_timestamp_utc: null
+    launch_policy: explicit_user_instruction_only
+    log_path: output/heat3d_v6_p1i_logs/V6_06_V5best_P1i_seed0_reliable_B24.log
+    split_access_policy: train_valid_only_test_and_sealed_closed
+    checkpoint_contract: atomic_optimizer_aware_best_latest_final_v2

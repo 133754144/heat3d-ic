@@ -2,7 +2,19 @@
   "canonical_dataset": {
     "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
     "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5",
-    "status": "canonical"
+    "status": "canonical_v6_layer"
+  },
+  "canonical_roles": {
+    "formal_v6_layer": {
+      "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
+      "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5"
+    },
+    "formal_v6_randomblock": {
+      "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+      "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "role_scope": "formal random-block dataset; not an OOD or independent benchmark designation"
+    }
   },
   "canonical_model": {
     "checkpoint_epoch": 111,
@@ -55,12 +67,27 @@
       "dataset_id": "heat3d_v6_p1h_shared_support1024_v0",
       "phase": "P1h-v0",
       "status": "canonical"
+    },
+    {
+      "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "phase": "P1i-v1",
+      "status": "canonical_role_formal_v6_randomblock"
+    },
+    {
+      "dataset_id": "heat3d_v6_randomblock_formal1024_v2",
+      "manifest_sha256": "cdd1e9ad57b442c6b3840a74740335cbfd90f96c420da118b6b515c0e09ddc8c",
+      "phase": "legacy-randomblock-v2",
+      "status": "deprecated_engineering_history",
+      "superseded_by": "heat3d_v6_p1i_continuous_physics1024_v1"
     }
   ],
   "governance_terms": {
     "fvm": "legal structured-FVM mesh sensitivity",
     "hard": "preregistered IID stress subgroup within the already-opened corrected confirmatory holdout",
-    "resolution_16384": "highest IID-average full-field accuracy mode"
+    "resolution_16384": "frozen P1i reference operating point selected by preregistered non-inferiority plus latency-Pareto criteria",
+    "resolution_32768": "exploratory only; marginal point-global improvement with no consistent source, peak, latency, or memory benefit",
+    "sealed_iid": "post-development final confirmation; ungenerated and unopened"
   },
   "inference_evolution": [
     {
@@ -87,11 +114,11 @@
       "resolution": 8192
     },
     {
-      "decision": "iid_average_best_full_field_accuracy",
+      "decision": "frozen_noninferiority_latency_pareto_reference",
       "resolution": 16384
     },
     {
-      "decision": "experimental_excluded",
+      "decision": "experimental_marginal_accuracy_only_excluded",
       "resolution": 32768
     }
   ],
@@ -115,6 +142,21 @@
       "config_id": "V6_04_V5best_P1h_DualAttention",
       "dataset": "P1h-v0",
       "decision": "retained_ablation_not_canonical"
+    },
+    {
+      "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+      "dataset": "P1i-v1",
+      "decision": "formal_v6_randomblock_reference_seed0"
+    },
+    {
+      "config_id": "V6_07_V5best_P1i_seed1_reliable_B24",
+      "dataset": "P1i-v1",
+      "decision": "formal_v6_randomblock_replication_seed1"
+    },
+    {
+      "config_id": "V6_08_V5best_P1i_seed2_reliable_B24",
+      "dataset": "P1i-v1",
+      "decision": "formal_v6_randomblock_replication_seed2"
     }
   ],
   "protocol_deviation": {
@@ -124,6 +166,15 @@
     },
     "used_for_selection": false
   },
+  "p1i_final_closeout": {
+    "closeout_status": "scientific_development_closed",
+    "confirmatory_route": "E16384_reconstruction_model_seed0",
+    "corrected_test_iid_opened": true,
+    "error_tail_role": "applicability_boundary_only",
+    "report": "docs/v6_p1i_closeout.md",
+    "sealed_iid_opened": false,
+    "sealed_iid_role": "post_development_final_confirmation"
+  },
   "schema_version": "heat3d_v6_phase_index_v1",
   "status": "closed",
   "test_and_hard": {
@@ -131,6 +182,8 @@
     "hard_used_for_selection": false,
     "test_role": "corrected_confirmatory_holdout",
     "test_used_for_selection": false,
-    "true_ood_available": false
+    "true_ood_available": false,
+    "current_independent_ood_benchmark": null,
+    "legacy_randomblock_v2_current_benchmark_role": false
   }
 }

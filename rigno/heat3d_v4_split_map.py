@@ -35,7 +35,11 @@ def load_sample_split_map(path: str | Path | None) -> dict[str, str]:
     if path is None:
         return {}
     loaded = load_json(path)
-    mapping = loaded.get("sample_splits", loaded) if isinstance(loaded, Mapping) else None
+    mapping = (
+        loaded.get("sample_splits", loaded.get("assignment", loaded))
+        if isinstance(loaded, Mapping)
+        else None
+    )
     if not isinstance(mapping, Mapping):
         raise ValueError(f"split_map must be a mapping or contain sample_splits: {path}")
 

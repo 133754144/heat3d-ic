@@ -1,0 +1,59 @@
+{
+  "schema_version": "heat3d_v6_p1i_main_integration_receipt_v1",
+  "status": "validated_ready_for_pr",
+  "base": {
+    "ref": "origin/main",
+    "commit": "332ef3f463d91442632c3ebddd4f7549c7895b8d"
+  },
+  "source": {
+    "branch": "research/v6-p1i-training",
+    "commit": "4660644acabc64359ae157e41f431901308c3281",
+    "scientific_status": "CLOSED"
+  },
+  "integration": {
+    "branch": "integration/v6-p1i-main",
+    "whole_history_merge": false,
+    "strict_allowlist_only": true,
+    "allowlist_path_count": 75,
+    "denylist_match_count": 0,
+    "staged_path_count": 56,
+    "staged_path_list_sha256": "6508d5ae779d02b7909bfac9beefec109c9f35cf25fca0358310021475716c57",
+    "content_commit": "cdd6f4b6e970e11a4213fe28cc664e57454fcec4",
+    "pull_request": {
+      "number": 3,
+      "url": "https://github.com/133754144/heat3d-ic/pull/3",
+      "state": "open",
+      "required_merge_method": "merge_commit"
+    },
+    "merged_main_commit": null
+  },
+  "roles": {
+    "p1h": "canonical_v6_layer",
+    "p1i": "canonical_formal_v6_randomblock",
+    "e16384": "frozen_noninferiority_latency_pareto_reference",
+    "resolution_32768": "exploratory_marginal_accuracy_only",
+    "sealed_iid": "post_development_final_confirmation_unopened"
+  },
+  "excluded_artifacts": [
+    "data",
+    "checkpoints",
+    "predictions",
+    "logs",
+    "raw_payloads",
+    "failure_payloads",
+    "smoke_payloads",
+    "large_diagnostics"
+  ],
+  "validation": {
+    "exact_staged_path_audit": "passed",
+    "v5_regressions": "passed",
+    "v6_p1i_checkers": "passed",
+    "config_dry_run": "passed",
+    "python_compile": "passed",
+    "json_yaml_csv": "passed",
+    "git_diff_check": "passed",
+    "clean_checkout_replay": "passed",
+    "sealed_iid_accessed": false,
+    "training_executed": false
+  }
+}
