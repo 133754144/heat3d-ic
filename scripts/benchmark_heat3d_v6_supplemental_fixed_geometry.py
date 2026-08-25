@@ -434,10 +434,19 @@ def prepare_cases(
                 query_q = full_q.copy() if sweep_name == "K_only" else full_q * alpha
                 total_power = base_power * alpha
                 positive = query_q > 0.0
+                source_region_q = np.asarray([
+                    float(row["q_W_m3"]) * alpha
+                    for row in base.meta["region_rows"] if row["family"] == "q"
+                ], dtype=np.float64)
                 if not (float(power_bounds[0]) <= total_power <= float(power_bounds[1])):
                     raise SupplementalRuntimeError(f"{base.sample_id}/{sweep_name}: power left formal range")
-                if np.min(query_q[positive]) < float(q_bounds[0]) - 1e-6 or np.max(query_q) > float(q_bounds[1]) + 1e-6:
-                    raise SupplementalRuntimeError(f"{base.sample_id}/{sweep_name}: q left formal range")
+                if (
+                    source_region_q.size != int(base.meta["source_region_count"])
+                    or np.min(source_region_q) < float(q_bounds[0]) - 1e-6
+                    or np.max(source_region_q) > float(q_bounds[1]) + 1e-6
+                    or np.max(query_q) > float(q_bounds[1]) + 1e-6
+                ):
+                    raise SupplementalRuntimeError(f"{base.sample_id}/{sweep_name}: source-region q left formal range")
                 if not np.array_equal(positive, base_positive):
                     raise SupplementalRuntimeError(f"{base.sample_id}/{sweep_name}: q source mask drift")
                 if sweep_name == "K_only" and (
@@ -464,6 +473,8 @@ def prepare_cases(
                     "full_q": query_q,
                     "total_power_W": total_power,
                     "q_mask_sha256": array_sha256(positive),
+                    "source_region_q_min_W_m3": float(np.min(source_region_q)),
+                    "source_region_q_max_W_m3": float(np.max(source_region_q)),
                     "normalized_q_max_abs_drift": normalized_drift,
                     "anchor_k_audit": anchor_k_audit,
                     "query_k_audit": query_k_audit,
