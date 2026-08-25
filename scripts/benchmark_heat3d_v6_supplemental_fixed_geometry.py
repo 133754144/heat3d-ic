@@ -1051,9 +1051,9 @@ def historical_devbox(route: str) -> dict[str, Any] | None:
             if row.get("machine") == "devbox" and row.get("route") == route:
                 return {
                     "source": str(path.relative_to(ROOT)),
-                    "fresh_median_s": float(row["fresh_median_s"]),
-                    "fresh_p95_s": float(row["fresh_p95_s"]),
-                    "role": row["machine_role"],
+                    "fresh_median_s": float(row["fresh_s_median"]),
+                    "fresh_p95_s": float(row["fresh_p95_s_median"]),
+                    "role": row["evidence_role"],
                 }
     return None
 
