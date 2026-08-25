@@ -103,6 +103,24 @@ def tree_sha256(value: Any) -> str:
     return digest.hexdigest()
 
 
+def tree_leaf_audit(value: Any) -> list[dict[str, Any]]:
+    rows = []
+    for path, leaf in jax.tree_util.tree_flatten_with_path(value)[0]:
+        label = "/".join(
+            str(getattr(entry, "key", getattr(entry, "idx", getattr(entry, "name", entry))))
+            for entry in path
+        )
+        if leaf is None or not hasattr(leaf, "shape"):
+            rows.append({"path": label, "scalar_repr": repr(leaf)})
+            continue
+        array = np.asarray(leaf)
+        rows.append({
+            "path": label, "shape": list(array.shape), "dtype": str(array.dtype),
+            "sha256": array_sha256(array),
+        })
+    return rows
+
+
 def block(value: Any) -> None:
     jax.tree_util.tree_map(
         lambda leaf: leaf.block_until_ready()
@@ -834,13 +852,15 @@ def device_payload(
             packed["anchor_group"], packed["query_group"],
             np.asarray(query_cv, dtype=np.float32), map_indices, map_weights,
         )
-    prepared_sha256 = tree_sha256(payload) if hash_payload else None
+    prepared_audit = None
+    if hash_payload:
+        prepared_audit = {"sha256": tree_sha256(payload), "leaves": tree_leaf_audit(payload)}
     device = jax.device_put(payload, gpu)
     enqueue = time.perf_counter() - started
     started = time.perf_counter()
     block(device)
     sync = time.perf_counter() - started
-    return device, {"h2d_enqueue": enqueue, "h2d_sync": sync}, prepared_sha256
+    return device, {"h2d_enqueue": enqueue, "h2d_sync": sync}, prepared_audit
 
 
 def predict_device(
@@ -984,7 +1004,7 @@ def run_case(
             boundaries=boundaries,
         )
         stages.update(values)
-    device, values, prepared_sha256 = device_payload(
+    device, values, prepared_audit = device_payload(
         spec=spec, packed=packed, mapping=mapping, query_cv=selected_cv,
         graphs=graphs, gpu=jax.devices("gpu")[0], hash_payload=hash_payload,
     )
@@ -1011,7 +1031,8 @@ def run_case(
         "native_graph_sha256": graph_hash(graphs["native_metadata"]),
         "query_graph_sha256": graph_hash(graphs["query_metadata"]),
         "mapping_sha256": mapping_hash(mapping),
-        "prepared_payload_sha256": prepared_sha256,
+        "prepared_payload_sha256": None if prepared_audit is None else prepared_audit["sha256"],
+        "prepared_payload_leaf_audit": prepared_audit,
     }
 
 
@@ -1167,11 +1188,26 @@ def main() -> int:
             "passed": passed,
         })
         if not passed:
+            prepared_differences = {}
+            reference_leaves = {
+                row["path"]: row for row in standard["prepared_payload_leaf_audit"]["leaves"]
+            }
+            for mode in ("graph_only_reuse", "full_static_reuse"):
+                candidate_leaves = {
+                    row["path"]: row for row in results[mode]["prepared_payload_leaf_audit"]["leaves"]
+                }
+                prepared_differences[mode] = [
+                    {"path": path, "reference": reference_leaves.get(path),
+                     "candidate": candidate_leaves.get(path)}
+                    for path in sorted(set(reference_leaves) | set(candidate_leaves))
+                    if reference_leaves.get(path) != candidate_leaves.get(path)
+                ]
             failure = {
                 "schema_version": "heat3d_v6_p1i_fixed_geometry_runtime_failure_v1",
                 "status": "failed_correctness_gate",
                 "route": args.route,
                 "case": correctness_rows[-1],
+                "prepared_payload_leaf_differences": prepared_differences,
                 "setup": compact_setup(setup),
                 "protocol_sha256": sha256_file(args.protocol),
             }
