@@ -160,7 +160,7 @@ def main() -> int:
     require(manifest["audit"]["direct_branch_merge"] == "NO_GO", "direct merge gate")
     require(
         manifest["audit"]["allowlist_integration"]
-        == "GO_in_clean_checkout_validation",
+        == "GO_validated_ready_for_pr",
         "allowlist gate",
     )
     allowlist = [
