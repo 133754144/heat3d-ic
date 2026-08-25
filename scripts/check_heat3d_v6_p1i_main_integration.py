@@ -37,7 +37,7 @@ def main() -> int:
     manifest = json.loads(MANIFEST_PATH.read_text())
     receipt = json.loads(RECEIPT_PATH.read_text())
     require(manifest["status"] == "validated_ready_for_pr", "manifest status")
-    require(receipt["status"] == "validated_ready_for_pr", "receipt status")
+    require(receipt["status"] == "merged_main_verified", "receipt status")
     require(receipt["base"]["commit"] == manifest["audit"]["base_commit"], "base")
     require(
         receipt["source"]["commit"]
@@ -49,9 +49,34 @@ def main() -> int:
     require(receipt["integration"]["pull_request"] == {
         "number": 3,
         "url": "https://github.com/133754144/heat3d-ic/pull/3",
-        "state": "open",
+        "state": "merged",
         "required_merge_method": "merge_commit",
+        "head_commit": "e1e89f6608ff353bee26534d8cde14b17804255a",
+        "merge_commit": "2205883c23f387a08aa7c5ef8b2f5e06688f4793",
+        "merged_at_utc": "2026-08-25T04:48:10Z",
     }, "pull request binding")
+    merge_commit = receipt["integration"]["merged_main_commit"]
+    require(
+        merge_commit == "2205883c23f387a08aa7c5ef8b2f5e06688f4793",
+        "merged main commit",
+    )
+    require(
+        git("rev-parse", f"{merge_commit}^1") == receipt["base"]["commit"],
+        "merge first parent",
+    )
+    require(
+        git("rev-parse", f"{merge_commit}^2")
+        == receipt["integration"]["pull_request"]["head_commit"],
+        "merge second parent",
+    )
+    require(
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", merge_commit, "HEAD"],
+            cwd=ROOT,
+            check=False,
+        ).returncode == 0,
+        "merge commit ancestry",
+    )
 
     allowlist = [
         path for paths in manifest["allowlist"].values() for path in paths
@@ -177,6 +202,9 @@ def main() -> int:
         require(validation[key] == "passed", f"validation: {key}")
     require(validation["sealed_iid_accessed"] is False, "sealed access")
     require(validation["training_executed"] is False, "training")
+    require(validation["merge_method"] == "merge_commit_verified", "merge method")
+    require(validation["post_merge_main_checks"] == "passed", "post-merge checks")
+    require(validation["pr_head_second_parent_verified"] is True, "PR second parent")
 
     print(json.dumps({
         "status": "passed",

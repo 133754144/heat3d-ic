@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v6_p1i_main_integration_receipt_v1",
-  "status": "validated_ready_for_pr",
+  "status": "merged_main_verified",
   "base": {
     "ref": "origin/main",
     "commit": "332ef3f463d91442632c3ebddd4f7549c7895b8d"
@@ -22,10 +22,13 @@
     "pull_request": {
       "number": 3,
       "url": "https://github.com/133754144/heat3d-ic/pull/3",
-      "state": "open",
-      "required_merge_method": "merge_commit"
+      "state": "merged",
+      "required_merge_method": "merge_commit",
+      "head_commit": "e1e89f6608ff353bee26534d8cde14b17804255a",
+      "merge_commit": "2205883c23f387a08aa7c5ef8b2f5e06688f4793",
+      "merged_at_utc": "2026-08-25T04:48:10Z"
     },
-    "merged_main_commit": null
+    "merged_main_commit": "2205883c23f387a08aa7c5ef8b2f5e06688f4793"
   },
   "roles": {
     "p1h": "canonical_v6_layer",
@@ -53,6 +56,9 @@
     "json_yaml_csv": "passed",
     "git_diff_check": "passed",
     "clean_checkout_replay": "passed",
+    "merge_method": "merge_commit_verified",
+    "post_merge_main_checks": "passed",
+    "pr_head_second_parent_verified": true,
     "sealed_iid_accessed": false,
     "training_executed": false
   }
