@@ -1,0 +1,103 @@
+{
+  "schema_version": "heat3d_v6_p1i_fixed_geometry_publication_runtime_gate_v1",
+  "status": "failed_closed_before_gpu_null_gate",
+  "base_main_commit": "6922e80c392385a8ae3d09b720c5307aaee1fffd",
+  "invalidated_timing_attempt": {
+    "branch": "research/v6-supplemental-fixed-geometry",
+    "head": "171cd5e468fdae3ee599eac11bc1508097f7dd7e",
+    "disposition": "invalidated_timing_attempt_preserved_unmodified_never_merge",
+    "timing_speedup_setup_and_break_even_excluded": true
+  },
+  "publication_runtime_provenance": {
+    "frozen_runtime_commit": "04dc85c6ec1b620f026ea546f28a045cd43bbc9c",
+    "primary_measurement_role": "WSL2_Attempt4",
+    "primary_measurement_commit": "04dc85c6ec1b620f026ea546f28a045cd43bbc9c",
+    "devbox_replication_commit": "1fa83103fa01dff604c1f377fcc6cd61cdf2ec4d",
+    "runner_content_identical_across_measurement_commits": true,
+    "routes": {
+      "E16384_reconstruction": {
+        "runner": "scripts/benchmark_heat3d_v6_p1i_final_e_service.py",
+        "function": "main",
+        "sha256": "ef8087d3ffe19d4d3d044097baa14d5de39f029652cab8a4064105d53695f326"
+      },
+      "E240825_direct_control": {
+        "runner": "scripts/benchmark_heat3d_v6_p1i_final_e_service.py",
+        "function": "main",
+        "sha256": "ef8087d3ffe19d4d3d044097baa14d5de39f029652cab8a4064105d53695f326"
+      },
+      "U_v2_16384_reconstruction": {
+        "runner": "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py",
+        "function": "main",
+        "sha256": "ec916aa2e4bf37cbc2fb27d6a862f610b185e9b918781ae82b3c6c4e5fb6a834"
+      },
+      "U_v2_direct240825": {
+        "runner": "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py",
+        "function": "main",
+        "sha256": "ec916aa2e4bf37cbc2fb27d6a862f610b185e9b918781ae82b3c6c4e5fb6a834"
+      }
+    },
+    "shared_code_sha256": {
+      "configs/heat3d_v6_p1i/v6_p1i_publication_benchmark_pre_measurement_protocol.json": "9bc90625becdb4bb8b258a106a29f9aa087301ed1292b53a546a3836e7cd9abf",
+      "rigno/graphBuilder_Heat3D.py": "4d40e0f851e5b04f30d30192e13c2c533735490cc9a120d91489b9d3702eadd5",
+      "rigno/heat3d_v6_full_field.py": "45d8e8ea8d06f022d6d405cb22d2e6dd05ebfb1e93fcc1a54901646312c4a2c8",
+      "rigno/heat3d_v6_p1i_anchor_query.py": "196a13e823b1af512e0192be72c2a8c4c8ee1bfd67f3e5b7a3f9dc5495e4d7f9",
+      "rigno/models/rigno.py": "f564e3870c02f3674ebb13bf3ce7380773e100383b8d7ad2eaaa7f25ae92f41c",
+      "scripts/benchmark_heat3d_v6_p1i_p8_throughput_fairness.py": "984bf65388bec43e35faae1cb656ef52a65f063e8059c421cc1ffeb051ca6a1a",
+      "scripts/heat3d_v6_publication_lifecycle_schema.py": "0d87e57e8b6374ac52718af4544cec1fb64288cac34c16a3b5198da3f6642348",
+      "scripts/heat3d_v6_publication_runtime_isolation.py": "4d5304efe3c48a68128047114dd9706275b92fa10ce865b8735702ae5573ef40",
+      "scripts/run_heat3d_v6_p1i_anchor_high_n_development.py": "b01cc805fc60accdd73bee1b83ace5127173bbc4ade350ce3ecd0cbf96e53054",
+      "scripts/run_heat3d_v6_p1i_graph_scale_candidate.py": "3b73c8fe2729f3039dadfc9e587a12053a847fb55bcf872e804b261cdc6f22e1",
+      "scripts/run_heat3d_v6_p1i_p5r_resolution_cell.py": "1528d36a51264afe454bb29bad570f3d0f0d3d8af496f4ebc42400892891609c",
+      "scripts/run_heat3d_v6_p1i_u1_split_adapter.py": "02def0dd0a03ff1ea80a66310ffea1bff6ae0e16baa932286008b4d878c7e81c"
+    }
+  },
+  "frozen_input_design": {
+    "role": "train_only",
+    "geometry_selection": "static_source_count_strata_then_min_sha256_sample_id",
+    "geometries": [
+      {"sample_id": "v6p1if1_0079", "source_count": 3, "k_region_count": 7},
+      {"sample_id": "v6p1if1_0971", "source_count": 5, "k_region_count": 4},
+      {"sample_id": "v6p1if1_0393", "source_count": 7, "k_region_count": 3},
+      {"sample_id": "v6p1if1_0056", "source_count": 10, "k_region_count": 5}
+    ],
+    "K_only": "k changes within formal P1i bounds; q is bitwise fixed",
+    "K_plus_Q_scale": "k changes within formal P1i bounds; q_new=alpha*q_base with alpha>0 and invariant normalized q/mask"
+  },
+  "capability_audit": {
+    "E_runner_public_sample_count_choices": [4, 8, 32],
+    "U_runner_public_sample_count_choices": [1, 4, 8, 32, 96],
+    "fresh_new_case_available": true,
+    "known_topology_new_physics_available_for_all_four_routes": false,
+    "same_input_cache_hot_is_not_known_topology_new_physics": true,
+    "reason": [
+      "E and U publication runners rebuild production graph/packing in fresh service paths",
+      "E cache-hot retrieves the complete cached payload by sample_id and does not update k/q/BC",
+      "U cache-hot likewise reuses the complete prepared host payload",
+      "prepare_host/service_one and prepare_one are nested closures, not frozen public functions",
+      "the historical known-support runner is not the final publication runner and does not cover the four frozen routes"
+    ],
+    "required_but_forbidden_change": "adding graph-only dynamic-physics cache/timing state or extracting/refactoring frozen nested functions"
+  },
+  "null_gate": {
+    "requested_population": "one train geometry x four routes x identity k/q case",
+    "status": "FAIL_PRE_EXECUTION_CAPABILITY",
+    "gpu_inference_executed": false,
+    "support_equivalence": "N/A_BLOCKED",
+    "graph_equivalence": "N/A_BLOCKED",
+    "reconstruction_map_equivalence": "N/A_BLOCKED",
+    "model_input_equivalence": "N/A_BLOCKED",
+    "prediction_equivalence": "N/A_BLOCKED",
+    "timing_boundary_equivalence": "FAIL_NO_FROZEN_KNOWN_TOPOLOGY_NEW_PHYSICS_ENTRYPOINT",
+    "difference": "the requested one-case two-workload adapter cannot be expressed through the frozen publication runner interfaces without changing cache/timing behavior"
+  },
+  "execution": {
+    "formal_sweep_started": false,
+    "smoke_started": false,
+    "training_started": false,
+    "test_accessed": false,
+    "sealed_accessed": false,
+    "new_FVM_labels_generated": false,
+    "new_timing_results_generated": false,
+    "unified_execution_commit": null
+  }
+}
