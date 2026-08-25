@@ -1291,9 +1291,9 @@ def main() -> int:
         "checkpoint_parameter_sha256_after": highn._tree_sha256(runtime["checkpoint"]["params"]),
         "checkpoint_unchanged": params_before == highn._tree_sha256(runtime["checkpoint"]["params"]),
         "guardrails": {
-            "training": false, "temperature_labels_read": false,
-            "test_iid_accessed": false, "sealed_iid_accessed": false,
-            "FVM_run": false,
+            "training": False, "temperature_labels_read": False,
+            "test_iid_accessed": False, "sealed_iid_accessed": False,
+            "FVM_run": False,
         },
     }
     if not result["checkpoint_unchanged"]:
