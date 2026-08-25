@@ -1,0 +1,104 @@
+{
+  "schema_version": "heat3d_v6_p1i_fixed_geometry_runtime_protocol_v1",
+  "status": "preregistered_before_supplemental_execution",
+  "base_main_commit": "6922e80c392385a8ae3d09b720c5307aaee1fffd",
+  "frozen_runtime_source_commit": "4660644acabc64359ae157e41f431901308c3281",
+  "scientific_immutability": {
+    "training": false,
+    "checkpoint_modified": false,
+    "dataset_modified": false,
+    "graph_policy_modified": false,
+    "reconstruction_modified": false,
+    "temperature_labels_read": false,
+    "test_iid_accessed": false,
+    "sealed_iid_accessed": false
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "allowed_input_roles": ["train"],
+    "forbidden_roles": ["valid_iid", "test_iid", "sealed_iid"]
+  },
+  "checkpoint": {
+    "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "checkpoint_name": "params_best_valid_point_global.pkl",
+    "checkpoint_epoch": 559,
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "model_seed_role": "model_seed0_reference"
+  },
+  "representative_geometry_selection": {
+    "method": "train_only_static_source_count_strata_then_min_sha256_sample_id_v1",
+    "temperature_model_error_or_runtime_used": false,
+    "source_count_strata": [3, 5, 7, 10],
+    "samples": [
+      {"sample_id": "v6p1if1_0079", "source_count": 3, "k_region_count": 7},
+      {"sample_id": "v6p1if1_0971", "source_count": 5, "k_region_count": 4},
+      {"sample_id": "v6p1if1_0393", "source_count": 7, "k_region_count": 3},
+      {"sample_id": "v6p1if1_0056", "source_count": 10, "k_region_count": 5}
+    ]
+  },
+  "parameter_domain": {
+    "total_power_W": [1.7, 20.0],
+    "q_nonzero_W_m3": [100000000.0, 80000000000.0],
+    "local_k_W_mK": [20.0, 400.0],
+    "background_k_source": "physics.layers_bottom_to_top[*].sampling in formal1024 config",
+    "bc_frozen_per_geometry": true,
+    "source_mask_frozen_per_geometry": true
+  },
+  "sweeps": {
+    "K_only": {
+      "k_target_quantiles": [0.2, 0.4, 0.6, 0.8],
+      "base_to_target_blend": 0.5,
+      "q_multiplier": 1.0,
+      "q_array_must_be_bitwise_base": true
+    },
+    "K_plus_Q_scale": {
+      "k_target_quantiles": [0.2, 0.4, 0.6, 0.8],
+      "base_to_target_blend": 0.5,
+      "q_multipliers": [0.8, 0.95, 1.05, 1.2],
+      "q_new_definition": "q_new = alpha * q_base",
+      "positive_alpha_required": true,
+      "zero_nonzero_mask_bitwise_exact": true,
+      "normalized_positive_spatial_distribution_tolerance": 1e-12
+    }
+  },
+  "routes": [
+    "E16384_reconstruction",
+    "U_v2_16384_reconstruction",
+    "U_v2_direct240825",
+    "E240825_direct_control"
+  ],
+  "reuse_modes": {
+    "fresh_new_case": "rebuild deterministic support/CV, graph, group packing and reconstruction map before synchronized prediction",
+    "graph_only_reuse": "reuse fixed support/CV and graph metadata; rebuild dynamic group packing and reconstruction map before synchronized prediction",
+    "full_static_reuse": "reuse support/CV, graph, reconstruction map, structural packing and compiled executable; update only k/q-dependent condition, Global Context, native physics, QK/scale tensors"
+  },
+  "correctness_gates": {
+    "support_indices_exact": true,
+    "support_coordinates_exact": true,
+    "graph_metadata_and_edge_hash_exact": true,
+    "reconstruction_map_hash_exact": true,
+    "cached_vs_standard_max_abs_K": 1e-6,
+    "cached_vs_standard_rmse_K": 1e-7,
+    "all_predictions_finite": true,
+    "fail_closed": true
+  },
+  "timing": {
+    "host": "devbox",
+    "boundary": "in_memory_dynamic_k_q_BC_to_synchronized_240825_result",
+    "randomized_order_seeds": [20260825, 20260826, 20260827],
+    "cases_per_sweep": 16,
+    "repetitions_per_case": 3,
+    "statistics": ["median", "p95", "throughput_samples_per_second"],
+    "untimed": ["checkpoint_load", "static_setup", "JIT_compile", "correctness_hashing", "JSON_serialization"],
+    "historical_comparison_host": "devbox",
+    "historical_stage_table": "configs/heat3d_v6_p1i/v6_p1i_p6a_stage_decomposition_table.csv"
+  },
+  "outputs": {
+    "raw_directory": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw",
+    "summary_json": "configs/heat3d_v6_supplemental/v6_fixed_geometry_runtime_closeout.json",
+    "summary_csv": "configs/heat3d_v6_supplemental/v6_fixed_geometry_runtime_summary.csv",
+    "closeout_markdown": "docs/v6_supplemental_fixed_geometry_runtime_closeout.md"
+  }
+}
