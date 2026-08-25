@@ -37,10 +37,15 @@ from heat3d_v6_publication_lifecycle_schema import (  # noqa: E402
 )
 from heat3d_v6_publication_runtime_isolation import failure_record  # noqa: E402
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
-from rigno.heat3d_v6_full_field import build_reconstruction_map  # noqa: E402
+from rigno.heat3d_v6_dataset import Heat3DV6DualRobinDataset  # noqa: E402
+from rigno.heat3d_v6_full_field import (  # noqa: E402
+    build_reconstruction_map,
+    prepare_reconstruction_domain_partition,
+)
 from rigno.heat3d_v6_p1i_anchor_query import (  # noqa: E402
     conservative_selected_control_volume,
     deterministic_nested_query_prefix,
+    prepare_nested_query_geometry_cache,
 )
 from rigno.models.rigno import RIGNO as GraphNeuralOperator  # noqa: E402
 
@@ -138,13 +143,36 @@ def main() -> int:
         raise RuntimeError("publication v1.1 requires historical golden seal")
     if jax.devices()[0].platform != "gpu":
         raise RuntimeError("final E service benchmark requires GPU")
-    state = p8.runtime_state(args)
     supplemental_plan = None
     if args.supplemental_input_plan is not None:
         supplemental_plan = supplemental.load_plan(
             args.supplemental_input_plan, args.dataset_root, args.manifest)
-        state["anchors"] = supplemental_plan["anchors"]
-        state["physics"] = supplemental_plan["physics"]
+        runtime = p5r._runtime(args)
+        binding = json.loads(args.binding.read_text(encoding="utf-8"))
+        dataset = Heat3DV6DualRobinDataset(
+            args.dataset_root, args.manifest, include_roles={"train"})
+        full, _ = highn._full_shared(args)
+        coords = np.asarray(full["coords"], dtype=np.float64)
+        cv = np.asarray(full["cv"], dtype=np.float64)
+        layer = np.asarray(full["layer"], dtype=np.int32)
+        anchors = supplemental_plan["anchors"]
+        boundaries = highn._boundaries(anchors[0], float(np.min(coords[:, 2])))
+        geometry = prepare_nested_query_geometry_cache(
+            full_coords=coords, full_control_volume=cv, full_layer_id=layer,
+            layer_boundaries_m=boundaries,
+        )
+        partition = prepare_reconstruction_domain_partition(
+            coords=coords, layer_id=layer, boundaries=boundaries)
+        graph_key = highn.runner._metadata_key(int(runtime["run_config"]["graph_seed"]))
+        state = {
+            "runtime": runtime, "binding": binding, "dataset": dataset,
+            "anchors": anchors, "physics": supplemental_plan["physics"],
+            "full": full, "coords": coords, "cv": cv, "layer": layer,
+            "boundaries": boundaries, "geometry": geometry,
+            "partition": partition, "graph_key": graph_key,
+        }
+    else:
+        state = p8.runtime_state(args)
     supplemental_capture: dict[str, dict[str, Any]] = {}
     if supplemental_plan is not None:
         def _capture_supplemental(**row: Any) -> None:

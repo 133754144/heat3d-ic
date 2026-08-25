@@ -40,6 +40,7 @@ from heat3d_v6_publication_lifecycle_schema import (  # noqa: E402
 )
 from heat3d_v6_publication_runtime_isolation import failure_record  # noqa: E402
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder  # noqa: E402
+from rigno.heat3d_v6_dataset import Heat3DV6DualRobinDataset  # noqa: E402
 from rigno.heat3d_v6_full_field import build_reconstruction_map, prepare_reconstruction_domain_partition  # noqa: E402
 from rigno.heat3d_v6_p1i_anchor_query import (  # noqa: E402
     conservative_selected_control_volume,
@@ -178,17 +179,20 @@ def main() -> int:
     runtime = p5r._runtime(args)
     checkpoint_parameter_sha256_before = highn._tree_sha256(runtime["checkpoint"]["params"])
     binding = json.loads(args.binding.read_text())
-    dataset = highn._dataset(args)
     supplemental_plan = None
     if args.supplemental_input_plan is not None:
         supplemental_plan = supplemental.load_plan(
             args.supplemental_input_plan, args.dataset_root, args.manifest)
+        dataset = Heat3DV6DualRobinDataset(
+            args.dataset_root, args.manifest, include_roles={"train"})
         anchors = supplemental_plan["anchors"]; expected_count = 4
         preflight_path = None
     elif args.population_mode == "frozen_valid32":
+        dataset = highn._dataset(args)
         anchors = highn._valid_examples(dataset, binding); expected_count=32
         preflight_path=args.artifact_root/"actual_data_preflight.json"
     else:
+        dataset = highn._dataset(args)
         ordered_ids=sorted(dataset.split_ids["valid_iid"],key=lambda value:hashlib.sha256(value.encode()).hexdigest())
         if ordered_ids[:32] != binding["development_subset"]["sample_ids"]: raise RuntimeError("valid32 subset drift")
         index=dataset.sample_index_by_id();anchors=[dataset[index[sample_id]] for sample_id in ordered_ids[32:]];expected_count=96
