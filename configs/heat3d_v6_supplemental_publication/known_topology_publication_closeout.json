@@ -1,5 +1,9 @@
 {
   "execution_commit": "8a812619ab0112b4ecfc37ef18189f731180059d",
+  "environment_provenance": {
+    "path": "configs/heat3d_v6_supplemental_publication/known_topology_environment_provenance.json",
+    "sha256": "2c068b9f08ad09254c8094cff80b15b7ce5b21531c10735a36928a83d611f73b"
+  },
   "frozen_execution_files_sha256": {
     "scripts/benchmark_heat3d_v6_p1i_final_e_service.py": "009fa1d39673e841740fde083a02f7879d9aae89b58b6cf70e8d85418524e868",
     "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py": "ee7712855d53d448e1dbce99e0d8e3752c6fd9963ee4f565f473d4782b1912f4",
@@ -579,6 +583,15 @@
       "throughput_samples_per_second": 1.9507039301807163
     }
   ],
+  "claim_scope": {
+    "runtime_only": true,
+    "geometry_population": "four_train_only_fixed_geometries",
+    "physics_population": "new_k_or_new_k_plus_positive_q_scale",
+    "accuracy_claim": false,
+    "labels_or_valid_test_sealed_access": false,
+    "randomized_workload_order_count": 1,
+    "known_topology_semantics": "new_physics_not_resident_not_cache_hot"
+  },
   "schema_version": "heat3d_v6_supplemental_known_topology_closeout_v1",
   "status": "passed"
 }
