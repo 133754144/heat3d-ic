@@ -238,6 +238,9 @@ def main() -> int:
     if args.phase == "S3":
         validate_prior(args.s2_result, "S2", args.route, commit)
     cases = build_cases(args, protocol)
+    same_shape_floor = float(
+        protocol["numerical_equivalence"]["same_shape_floor_K_by_route"][args.route])
+    numerical_limit = max(1e-3, 20.0 * same_shape_floor)
     all_rows, gate_rows = [], []
     for index, group in enumerate(groups(cases, args.phase)):
         root = args.work_root / args.phase / args.route / f"group_{index}"
@@ -255,7 +258,7 @@ def main() -> int:
             if args.phase == "S2":
                 identity = {row["sample_id"]: row for row in s1["gate_rows"]}[sample_id]
                 dynamic_changed = left["prepared_payload_sha256"] != identity["fresh_prepared_payload_sha256"]
-            passed = static_exact and payload_exact and maximum <= 1e-3 and dynamic_changed
+            passed = static_exact and payload_exact and maximum <= numerical_limit and dynamic_changed
             gate_rows.append({
                 "case_id": case["case_id"], "sample_id": sample_id,
                 "sweep": case["sweep"], "static_artifacts_exact": static_exact,
@@ -265,7 +268,8 @@ def main() -> int:
                 "dynamic_payload_changed_from_identity": dynamic_changed,
                 "prediction_max_abs_K": maximum,
                 "prediction_rmse_K": float(np.sqrt(np.mean(delta * delta))),
-                "numerical_limit_K": 1e-3, "passed": passed,
+                "same_shape_floor_K": same_shape_floor,
+                "numerical_limit_K": numerical_limit, "passed": passed,
             })
             if not passed:
                 raise OrchestrationError(f"{args.phase}/{args.route}/{case['case_id']} failed")

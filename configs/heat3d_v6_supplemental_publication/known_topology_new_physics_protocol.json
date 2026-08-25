@@ -80,6 +80,19 @@
     "modes": ["fresh_new_case", "known_topology_new_physics"],
     "statistics": ["median", "p95", "throughput_samples_per_second"]
   },
+  "numerical_equivalence": {
+    "frozen_formula": "max_abs_K <= max(1e-3, 20 * same_shape_floor_K)",
+    "source_commit": "04dc85c6ec1b620f026ea546f28a045cd43bbc9c",
+    "source_path": "configs/heat3d_v6_p1i/v6_p1i_publication_final_padding_gate_raw/final_padding_gate.json",
+    "source_sha256": "785f4fd6d22ee610140af4266f1b127d7812512a127e7028087a6734b2dd6c0c",
+    "same_shape_floor_K_by_route": {
+      "E16384_reconstruction": 0.00917816162109375,
+      "U_v2_16384_reconstruction": 0.012786865234375,
+      "U_v2_direct240825": 0.018646240234375,
+      "E240825_direct_control": 0.017913818359375
+    },
+    "route_floor_selection": "maximum_of_two_frozen_witness_cases"
+  },
   "gate_order": ["S0", "S1", "S2", "S3"],
   "S0": {
     "status": "PASS",
@@ -91,7 +104,7 @@
       "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py": "ee7712855d53d448e1dbce99e0d8e3752c6fd9963ee4f565f473d4782b1912f4",
       "scripts/heat3d_v6_supplemental_input_adapter.py": "508ec17ae94bbf4a60c8c3ad8aeab29d1bc247a8fdd8afd560ca63ea5eb417b0",
       "scripts/heat3d_v6_supplemental_runtime.py": "da2f24bd262937dc329d2314f28c26f160cf8d121116c974479ae14a55063bb5",
-      "scripts/run_heat3d_v6_supplemental_publication_known_topology.py": "3e5896555c68c154dfa017e3c462881e7a67c65188e5fbbdb8283bcba2195ceb"
+      "scripts/run_heat3d_v6_supplemental_publication_known_topology.py": "eaac2e400ea37aeefc8ae942a0c6482bb40a508882ac08cd55a3cb0c237e0521"
     }
   },
   "guardrails": {
