@@ -1,0 +1,120 @@
+{
+  "schema_version": "heat3d_v6_publication_benchmark_standard_v1_1",
+  "status": "frozen_before_real_route_conformance_smoke",
+  "baseline_commit": "4e0c751267b093d29b61e18989285d5054ab736e",
+  "routes": [
+    "E16384_reconstruction",
+    "U_v2_16384_reconstruction",
+    "U_v2_direct240825",
+    "E240825_direct_control",
+    "FVM240825_reference"
+  ],
+  "timing_boundary": "in_memory_k_q_BC_to_synchronized_240825_result",
+  "randomized_order_seeds": [20260814, 20260815, 20260816],
+  "lifecycle": {
+    "independent_process_dimensions": ["route", "order_seed", "service_mode"],
+    "service_modes": ["serial", "Q2"],
+    "required_full_measurement_processes": 30,
+    "serial_and_Q2_never_share_process": true,
+    "same_seed_ordered_sample_ids_identical_across_routes": true,
+    "dedicated_warmup": {
+      "source": "train_input_or_synthetic_static_padded_envelope",
+      "target_read": false,
+      "timed_case_overlap": false,
+      "timed_case_graph_shape_prewarm": false,
+      "timed_case_packing_shape_prewarm": false,
+      "route_specific_prewarm": false
+    }
+  },
+  "resources": {
+    "host": "WSL2_RTX5070_Ryzen7_9700X",
+    "neural": {
+      "support_workers": 1,
+      "kdtree_workers": 1,
+      "graph_workers": 1,
+      "reconstruction_workers": 1,
+      "service_workers_serial": 1,
+      "service_workers_Q2": 2,
+      "OMP_NUM_THREADS": 1,
+      "OPENBLAS_NUM_THREADS": 1,
+      "MKL_NUM_THREADS": 1,
+      "NUMEXPR_NUM_THREADS": 1
+    },
+    "FVM": {
+      "serial_Q1_fresh": "P1_persistent_one_thread",
+      "Q2": "P2_persistent_each_one_thread",
+      "worker_aggregate_RAM_peak_required": true
+    },
+    "GPU_synchronization": "every_H2D_forward_reconstruction_timing_endpoint_block_until_ready"
+  },
+  "timing_pools": {
+    "cold_service_first_case": "first distinct timed case in virgin route_seed_mode process after only allowed static padded JIT warmup",
+    "fresh_distinct_case": "distinct k_q_BC with no case_specific cache hit",
+    "repeat_case_cache_hot": "same case replay with declared graph_payload_map cache hit",
+    "resident_core": "prepared device payload synchronized core only; not E2E",
+    "true_B16_to_B32_marginal": "(B32_continuous_wall-B16_continuous_wall)/16",
+    "Q1": "complete_before_next_distinct_submit",
+    "Q2": "two_concurrent_distinct_requests_refill_after_completion"
+  },
+  "residual_gate": {
+    "formula": "E2E_minus_sum_of_directly_timed_named_stages",
+    "limit": "0 <= residual <= max(0.025_seconds, 0.05_times_E2E)",
+    "synthetic_other_or_residual_stage_forbidden": true,
+    "relaxation_forbidden": true
+  },
+  "fairness": {
+    "E_U_same_CPU_policy": true,
+    "Q2_serial_prepass_of_Q2_population_forbidden": true,
+    "cold_fresh_cache_hot_pools_separate": true,
+    "qualification_hash_metrics_IO_serialization_outside_service_span": true,
+    "RAM_definition": "aggregate_peak_RSS_of_parent_service_plus_all_workers",
+    "speedup": {
+      "latency_ratio_per_seed": "FVM_seconds_divided_by_neural_seconds",
+      "throughput_ratio_per_seed": "neural_samples_per_second_divided_by_FVM_samples_per_second",
+      "aggregation": "median_of_three_paired_seed_ratios",
+      "CI": "paired_seed_bootstrap_percentile_95pct_fixed_seed_20260821",
+      "unpaired_aggregate_ratio_forbidden": true
+    }
+  },
+  "exactness": {
+    "resolutions": [1024, 16384, 240825],
+    "graph": "candidate_and_reference_metadata_and_each_edge_array_byte_hash_compared_directly",
+    "prepared_payload": "separate_candidate_reference_tree_hash_and_byte_comparison",
+    "prediction": "CPU_bitwise_or_frozen_GPU_max_RMSE_tolerance",
+    "prewritten_boolean_without_hash_evidence_forbidden": true,
+    "checkpoint_unchanged": true
+  },
+  "u_v2": {
+    "normalization": "native1024_anchor_bbox_affine_unclamped",
+    "normalized_numerical_tolerance": 0.000001,
+    "maximum_normalized_overshoot": 0.25,
+    "repair": "frozen_R2P_nearest_rnode_repair_after_unchanged_radius_predicate"
+  },
+  "report_fields": [
+    "cold_service_first_case", "fresh_distinct_median_p95", "repeat_case_cache_hot",
+    "resident_core", "true_B16_to_B32_marginal", "Q1", "Q2_submit_to_result",
+    "Q2_inter_completion", "Q2_samples_per_second", "CPU_workers_or_processes",
+    "peak_VRAM_bytes", "aggregate_service_worker_peak_RAM_bytes"
+  ],
+  "smoke": {
+    "sample_count": 4,
+    "real_routes_only": true,
+    "full_valid32_or_valid96_forbidden": true,
+    "fail_fast": true,
+    "formal_latency_or_speedup_forbidden": true
+  },
+  "freeze_outputs": {
+    "benchmark_protocol_v1_1": "GO_only_if_all_checks_pass",
+    "benchmark_implementation_freeze": "GO_only_if_all_real_route_smokes_pass",
+    "publication_timing_freeze": "NO_GO_pending_full_valid32"
+  },
+  "role_contract": {
+    "training": false,
+    "test": false,
+    "sealed": false,
+    "accuracy_tuning": false,
+    "full_valid32_or_valid96_timing": false,
+    "formal_speedup_generated": false,
+    "accessed_roles": ["train_input_warmup_without_target", "valid_iid_inputs_smoke_only"]
+  }
+}
