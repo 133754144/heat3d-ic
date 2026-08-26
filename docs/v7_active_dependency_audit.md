@@ -1,6 +1,6 @@
 # V7 active dependency audit
 
-状态：V7-D0 静态审计记录；与 V7-G0a 联动，未实施重构。
+状态：V7-D0/G0a 静态依赖审计交付已完成；G0 Code gate 未通过；未实施重构。
 
 审计对象是当前 V6/P1i 的正式训练、checkpoint inference、high-N query、
 full-field reconstruction、metrics 和 timing 路径。审计依据是仓库中的
@@ -20,7 +20,7 @@ materialization、metrics 和 timing 仍分散在多个 `scripts/` 文件中。
 因此：
 
 - D0 文档边界已记录；
-- G0a **未完成**；
+- G0a 静态依赖审计交付**已完成**，但审计结论是 G0 Code gate **未通过**；
 - 本轮不开始 G0b，不抽取模块，不改变 import graph，不删除历史代码；
 - 后续只应在新的明确授权下按本文件的最小 extract-core/preserve-legacy
   边界推进。
@@ -400,12 +400,13 @@ held-out/sealed labels。
 | 项目 | 状态 | 证据 |
 | --- | --- | --- |
 | D0 研究边界与术语 | 完成（文档层） | README 与 [V7 research contract](v7_research_contract.md) 已区分 V6 evidence、Level-A、Level-B 与 V7 objectives |
-| production path 不依赖 smoke/check/development | 未完成 | high-N/production 仍 import V3 smoke hook；high-N 文件本身为 development-named |
+| G0a 静态依赖审计交付 | 完成 | 本文已记录 active call graph、分类、private API、monkey patch、重复实现与后续边界 |
+| G0 Code gate：production path 不依赖 smoke/check/development | 未通过 | high-N/production 仍 import V3 smoke hook；high-N 文件本身为 development-named |
 | 不依赖跨脚本 private API | 未完成 | V6 paths 调用 V1 runner、qualification、common、U1/high-N private symbols |
 | 不使用 monkey patch/runtime mutation | 未完成 | V3 hook 给 `runner_module._bridge_for` 赋新 closure |
 | feature/normalization/checkpoint/metrics/reconstruction 单一 core | 未完成 | 本文“重复实现与语义分散”所列多组路径 |
 | 本轮禁止事项 | 已遵守 | 未训练、未推理、未求解、未生成数据、未评估模型、未访问 held-out/sealed labels、未改模型/冻结 artifact |
 
-结论：**V7-G0a 未完成，不能进入正式 V7 baseline/ablation/OOD evaluation。**
+结论：**V7-G0a 静态审计已完成，但 G0 Code gate 未通过，不能进入正式 V7 baseline/ablation/OOD evaluation。**
 本文件只冻结问题清单和后续最小边界；下一阶段若要开始 G0b，必须另行授权，
 并继续保持 V6 frozen artifacts 与 sealed data 不变。
