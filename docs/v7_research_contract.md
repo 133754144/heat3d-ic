@@ -38,7 +38,7 @@ V7 的任何主张都必须同时写明：数据角色、split、模型/seed、q
 
 Level-A 只回答“算子在其 native 离散/支撑上的预测是否准确”，不包含高-N 查询和 240,825 节点 reconstruction：
 
-- 主数据角色：V7 注册的 native P1i-compatible 数据；V6/P1i 已打开的 `test_iid` 只能作为历史 confirmatory evidence，不能重新选择模型、路由、阈值或 claim。
+- 主数据角色：V7 注册的 native P1i-compatible 数据；V6/P1i 已打开的 `test_iid` held-out test set 只能作为历史 confirmatory evidence，不能重新选择模型、路由、阈值或 claim。
 - native 参考：原生 1,024 点 source-aware 支撑/输出及对应 FVM 标签；若改变 native 点数或支撑语义，必须注册为新 variant。
 - primary metric：point-global relative RMSE，明确写出分子/分母和权重；默认沿用 V6 的非 CV-weighted 定义。
 - secondary metrics：sample-first CV-relative RMSE、raw CV RMSE、source-region RMSE、peak RMSE、interface/layer RMSE、bias；不得将这些指标统称为“RMSE”。`valid_base_mse` 仅作为 legacy control，除非另行 preregistered，不是 Level-A 的物理门槛。
@@ -80,7 +80,7 @@ V6/P1i scientific development 已 CLOSED。V7 继承其证据，但不修订其�
 
 | Gate | 冻结问题 | 必须达到的证据 | 不通过的含义 |
 |---|---|---|---|
-| **G0 Code** | 是否得到独立、干净的 publication runtime？ | production path 不依赖 `check_*`、`*_smoke.py`、`*_development.py`、私有跨脚本 API 或隐式 monkey patch；明确 `experiment_role`；clean import/dry-run 可执行 | 不进入正式实验；所有结果只能是历史/诊断证据 |
+| **G0 Code** | 是否得到独立、干净的 reproducible ML pipeline？ | production path 不依赖 `check_*`、`*_smoke.py`、`*_development.py`、私有跨脚本 API 或隐式 monkey patch；明确 `experiment_role`；clean import/dry-run 可执行 | 不进入正式实验；所有结果只能是历史/诊断证据 |
 | **G1 Native** | source-aware / context / scale 是否优于 vanilla RIGNO？ | Level-A native accuracy；3 seeds；vanilla RIGNO、关键 support/context/scale/reconstruction 消融；参数量、训练预算、split 和指标同口径 | 方法贡献不成立，只能称特定回归管线 |
 | **G2 Baselines** | 与 RIGNO、thermal SOTA/强基线是否公平？ | 至少两类代表性强基线；优先覆盖 vanilla RIGNO、FNO/DeepONet、GINO/Transolver、DeepOHeat 系、Therm-FM/DeepOHeat-v2 相关设定；同一 split、label budget、参数量范围、训练预算、硬件和 wall-clock 边界 | 无法声称 SOTA、优于竞品或方法必要性 |
 | **G3 Resolution** | conditioning-query decoupling 是否在 16k/32k/[64k] 成立？ | Level-B 的 E/U Pareto；误差、重建 floor、fresh/resident/Q2、RAM/VRAM、失败/超时均完整；32k 不得只留最好值，64k 为 optional exploratory | 跨分辨率贡献不足；64k 不得写成生产能力 |
@@ -88,8 +88,8 @@ V6/P1i scientific development 已 CLOSED。V7 继承其证据，但不修订其�
 | **G5 Generalization** | source / geometry / physics OOD 是否可解释？ | 预注册 geometry OOD、source OOD、material/Robin/strong-cooling physics OOD；报告均值、尾部、失败案例和适用域 | 泛化主张受限；不得写 arbitrary geometry/cross-chip transfer |
 | **G6 External Case** | 是否至少有外部/公开/工业风格案例？ | 至少一个 public benchmark 或 F2F-style/package case；独立输入、标签、基线和 timing；与 P1i 主表分开 | DAC/ICCAD/DATE 的真实应用证据不足 |
 | **G7 Design Loop** | repeated-query thermal optimization 是否产生真实收益？ | 至少一个布局、功率分配或热约束优化循环；代理、选择性 FVM/trust gate 和 solve-at-every-step 的 accuracy/peak/location/total wall-clock 对照 | EDA 故事停留在预测器，不能声称 design-scale benefit |
-| **G8 Sealed** | 新 V7 sealed test 能否一次性提供最终确认？ | 所有选择、调参、route freeze 和 gate 记录完成后，单次打开新命名 sealed test；保存 raw receipt、失败样本和完整指标；V6 sealed IID 仍不动 | publication evidence 不冻结；不得挑选结果或反复查看标签 |
-| **G9 Artifact** | clean checkout 是否能复现主结果？ | 依赖边界、标准 tests/CI 或等价检查、最小 dry-run、checkpoint inference、hash manifest、主表自动生成、无大文件入源码 | artifact/reproduction risk；不能称 publication-ready |
+| **G8 Sealed** | 新 V7 sealed held-out test set 能否一次性提供最终确认？ | 所有选择、调参、route freeze 和 gate 记录完成后，单次打开新命名 sealed held-out test set；保存 raw receipt、失败样本和完整指标；V6 sealed IID 仍不动 | publication evidence 不冻结；不得挑选结果或反复查看标签 |
+| **G9 Artifact** | clean checkout 是否能复现主结果？ | 依赖边界、标准 test suite/CI 或等价检查、最小 dry-run、reference inference pipeline、hash manifest、主表自动生成、无大文件入源码 | artifact/reproduction risk；不能称 publication-ready |
 
 Gate 依赖顺序为 `G0 -> G1/G2 -> G3/G4/G5 -> G6/G7 -> G8 -> G9`。允许并行开发，但不得在前置 gate 未通过时将后置 gate 的 exploratory 输出写成主结论。G8 是最后的证据打开动作，不是调参工具。
 
@@ -196,16 +196,16 @@ V7 对它的转译是：
 - 明确 Level-A/Level-B、E/U、resolution、external benchmark 和 sealed semantics。
 - 不训练、不推理、不求解、不生成数据、不访问 sealed labels。
 
-### V7.1：publication runtime 解耦（G0）
+### V7.1：reference inference pipeline 解耦（G0）
 
 - 将正式训练/推理所需的 model config、normalization、checkpoint load、features、grouping、metrics、reconstruction 收口到稳定库模块。
-- 保留 legacy/smoke 脚本作为兼容层或历史证据，但不让 production/import graph 依赖它们。
+- 保留 legacy/smoke 脚本作为兼容层或历史证据，但不让 production/import graph 依赖它们；正式路径应成为 reproducible ML pipeline。
 - 用 explicit dependency injection 替代跨脚本私有 API 和 monkey patch；所有运行写明 `experiment_role`。
 
 ### V7.2：native baselines 与机制消融（G1/G2）
 
 - 在同一 registered native split、label budget、parameter/training budget 与硬件上完成 vanilla RIGNO、support/context/scale/reconstruction 消融。
-- 选择至少两类代表性 external/strong baselines；对 DeepOHeat 系、Therm-FM、DeepOHeat-v2 只在可复核且边界对齐时进行直接 comparison，否则保留为 literature target。
+- 选择至少两类代表性 external baselines/strong baselines；对 DeepOHeat 系、Therm-FM、DeepOHeat-v2 只在可复核且边界对齐时进行直接 comparison，否则保留为 literature target。
 - 形成 seed 统计、统一主表和 negative-result 表。
 
 ### V7.3：高-N、物理与 OOD（G3/G4/G5）
