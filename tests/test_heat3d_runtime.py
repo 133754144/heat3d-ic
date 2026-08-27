@@ -57,16 +57,25 @@ class StableRuntimeStaticTests(unittest.TestCase):
             self.assertNotIn("sys.path", source)
             self.assertNotIn("install_checkpoint_feature_hooks", source)
 
-    def test_u_runtime_exposes_separate_conditioning_and_query_resolutions(self) -> None:
+    def test_eu_runtime_contract_names_all_resolution_roles(self) -> None:
         from rigno.heat3d_runtime.u_split import UHighNRuntime, u_v2_asymmetric_metadata
 
         self.assertTrue(UHighNRuntime)
         self.assertTrue(u_v2_asymmetric_metadata)
-        source = (RUNTIME_ROOT / "u_split.py").read_text(encoding="utf-8")
-        self.assertIn("conditioning_resolution", source)
-        self.assertIn("query_resolution", source)
-        self.assertIn('"direct_query": True', source)
-        self.assertNotIn("reconstruction_only", source)
+        manifest = json.loads(
+            (ROOT / "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            manifest["common"]["resolution_schema"]["required_fields"],
+            [
+                "anchor_context_resolution",
+                "encoder_input_resolution",
+                "output_query_resolution",
+                "reconstruction_resolution",
+            ],
+        )
 
     def test_frozen_eu_contract_keeps_resolution_roles_explicit(self) -> None:
         manifest = json.loads(
@@ -76,17 +85,116 @@ class StableRuntimeStaticTests(unittest.TestCase):
         )
         self.assertEqual(manifest["status"], "frozen_from_v6_p1i_evidence")
         self.assertFalse(manifest["common"]["validity"]["u_is_reconstruction_only"])
-        for route_name in ("E16384_reconstruction", "U_v2_16384_reconstruction"):
+        expected = {
+            "E16384_reconstruction": (1024, 16384, 16384, 240825),
+            "E32768_direct_compatibility": (1024, 32768, 32768, 240825),
+            "U_v2_16384_reconstruction": (1024, 1024, 16384, 240825),
+        }
+        for route_name, values in expected.items():
             route = manifest["strategies"][route_name]
-            self.assertIn("conditioning_resolution", route)
-            self.assertIn("query_resolution", route)
+            self.assertEqual(
+                tuple(route[field] for field in manifest["common"]["resolution_schema"]["required_fields"]),
+                values,
+            )
             self.assertTrue(route["direct_query"])
-            self.assertEqual(route["conditioning_resolution"], 1024)
-            self.assertEqual(route["query_resolution"], 16384)
+            self.assertNotIn("conditioning_resolution", route)
+            self.assertNotIn("query_resolution", route)
         self.assertNotEqual(
-            manifest["strategies"]["U_v2_16384_reconstruction"]["conditioning_resolution"],
-            manifest["strategies"]["U_v2_16384_reconstruction"]["query_resolution"],
+            manifest["strategies"]["U_v2_16384_reconstruction"]["encoder_input_resolution"],
+            manifest["strategies"]["U_v2_16384_reconstruction"]["output_query_resolution"],
         )
+
+    def test_semantic_preflight_is_fail_closed(self) -> None:
+        from rigno.heat3d_runtime.preflight import (
+            SemanticContractError,
+            validate_semantic_contract,
+        )
+
+        run_config = {
+            "graph_config": {
+                "discrete_graph_backend": "sparse_kdtree_v1",
+                "coverage_repair_policy": "frozen",
+                "discrete_coverage_multiplier": 1,
+                "discrete_graph_chunk_size": 1,
+                "min_physical_coverage": 1,
+                "node_coordinate_encoding": "raw",
+                "node_coordinate_freqs": [],
+                "radius_policy": "frozen",
+                "repair_p2r": False,
+                "repair_r2p": False,
+            },
+            "graph_seed": 7,
+            "global_context": {
+                "standardizer": {"feature_names": ["x"]},
+                "target_or_label_derived_inputs": False,
+            },
+            "scale_context": {"target_or_label_derived_inputs": False},
+            "input_feature_schema": "legacy_bc_flags",
+            "coord_policy": "sample_local_isotropic",
+            "extent_feature_policy": "log_extent_broadcast",
+            "normalization_profile": "semantic_normalization_v1",
+            "condition_feature_transform": "semantic_v1",
+        }
+        model_config = {
+            key: "none"
+            for key in (
+                "qk_region_feature_version",
+                "decoder_bypass_mode",
+                "decoder_bypass_features",
+                "decoder_bypass_feature_source",
+                "decoder_bypass_output_space",
+                "native_output_mode",
+                "global_context_mode",
+                "scale_context_mode",
+                "scale_pooling",
+                "shape_attention_mode",
+                "scale_attention_mode",
+                "scale_deepsets_mode",
+            )
+        }
+        model_config.update({"decoder_bypass_num_features": 0, "decoder_bypass_local_feature_names": []})
+        model_config.update({"global_context_feature_dim": 0})
+        stats = {
+            "input_feature_schema": "legacy_bc_flags",
+            "coord_policy": "sample_local_isotropic",
+            "extent_feature_policy": "log_extent_broadcast",
+            "normalization_profile": "semantic_normalization_v1",
+            "feature_names": ["x"],
+            "condition_feature_transforms": ["identity"],
+            "condition_mean": [0.0],
+            "condition_std": [1.0],
+            "coord_min": [0.0],
+            "coord_span": [1.0],
+        }
+        route = {
+            "strategy_name": "U-v2",
+            "anchor_context_resolution": 1024,
+            "encoder_input_resolution": 1024,
+            "output_query_resolution": 16384,
+            "direct_query": True,
+            "reconstruction_resolution": 240825,
+            "fixed_edge_targets": {"native": {"p2r_edge_indices": 1}},
+        }
+        broken = dict(route)
+        del broken["output_query_resolution"]
+        with self.assertRaises(SemanticContractError):
+            validate_semantic_contract(
+                run_config=run_config,
+                model_config=model_config,
+                stats=stats,
+                execution_role="production_inference",
+                route_contract=broken,
+            )
+        broken_config = dict(run_config)
+        del broken_config["graph_seed"]
+        with self.assertRaises(SemanticContractError):
+            validate_semantic_contract(
+                run_config=broken_config,
+                model_config=model_config,
+                stats=stats,
+                execution_role="production_inference",
+                route_contract=route,
+            )
 
     def test_e_high_n_graph_policy_does_not_collapse_query_resolution(self) -> None:
         from rigno.heat3d_runtime.high_n import HighNRuntime

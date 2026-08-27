@@ -40,11 +40,26 @@ def file_sha256(path: str | Path) -> str:
 
 def materialize_checkpoint_stats(
     checkpoint_stats: Mapping[str, Any],
+    *,
+    strict_semantic_contract: bool = False,
 ) -> dict[str, Any]:
     """Materialize the frozen stats payload without changing its values."""
 
     stats = dict(checkpoint_stats)
-    stats["feature_names"] = tuple(stats.get("feature_names") or ())
+    if strict_semantic_contract:
+        for field in (
+            "feature_names",
+            "input_feature_schema",
+            "coord_policy",
+            "extent_feature_policy",
+            "normalization_profile",
+            "condition_feature_transforms",
+        ):
+            if field not in stats or stats[field] is None:
+                raise ValueError(
+                    f"checkpoint normalization is missing semantic field: {field}"
+                )
+    stats["feature_names"] = tuple(stats["feature_names"] if strict_semantic_contract else (stats.get("feature_names") or ()))
     if stats.get("condition_feature_transforms"):
         stats["condition_feature_transforms"] = tuple(
             stats["condition_feature_transforms"]
@@ -78,6 +93,8 @@ def materialize_checkpoint_stats(
 def resolve_model_config(
     checkpoint_model_config: Mapping[str, Any],
     stats: Mapping[str, Any],
+    *,
+    strict_semantic_contract: bool = False,
 ) -> dict[str, Any]:
     """Resolve checkpoint-dependent decoder-bypass feature indices.
 
@@ -87,19 +104,51 @@ def resolve_model_config(
     """
 
     resolved = dict(checkpoint_model_config)
-    mode = str(resolved.get("decoder_bypass_mode", DECODER_BYPASS_MODE_NONE))
+    if strict_semantic_contract:
+        required = (
+            "qk_region_feature_version",
+            "decoder_bypass_mode",
+            "decoder_bypass_features",
+            "decoder_bypass_feature_source",
+            "decoder_bypass_output_space",
+            "decoder_bypass_num_features",
+        )
+        missing = [name for name in required if name not in resolved or resolved[name] is None]
+        if missing:
+            raise ValueError(f"model config is missing semantic fields: {missing}")
+    mode = str(
+        resolved["decoder_bypass_mode"]
+        if strict_semantic_contract
+        else resolved.get("decoder_bypass_mode", DECODER_BYPASS_MODE_NONE)
+    )
     if mode == DECODER_BYPASS_MODE_NONE:
         resolved["decoder_bypass_feature_indices"] = ()
         resolved["decoder_bypass_feature_names"] = ()
         resolved["decoder_bypass_num_features"] = 0
         return resolved
 
-    feature_names = tuple(stats.get("feature_names") or ())
-    feature_mode = str(resolved.get("decoder_bypass_features", "none"))
+    feature_names = tuple(
+        stats["feature_names"]
+        if strict_semantic_contract
+        else (stats.get("feature_names") or ())
+    )
+    feature_mode = str(
+        resolved["decoder_bypass_features"]
+        if strict_semantic_contract
+        else resolved.get("decoder_bypass_features", "none")
+    )
     if feature_mode == DECODER_BYPASS_FEATURES_FULL_CONDITION:
         required = decoder_bypass_required_full_condition_features(
-            input_feature_schema=str(stats.get("input_feature_schema", "legacy_bc_flags")),
-            extent_feature_policy=str(stats.get("extent_feature_policy", "none")),
+            input_feature_schema=str(
+                stats["input_feature_schema"]
+                if strict_semantic_contract
+                else stats.get("input_feature_schema", "legacy_bc_flags")
+            ),
+            extent_feature_policy=str(
+                stats["extent_feature_policy"]
+                if strict_semantic_contract
+                else stats.get("extent_feature_policy", "none")
+            ),
             dual_robin="bottom_h" in feature_names,
         )
         missing = [name for name in required if name not in feature_names]
@@ -110,7 +159,11 @@ def resolve_model_config(
             )
         selected = feature_names
     elif feature_mode == DECODER_BYPASS_FEATURES_EXPLICIT_LOCAL_CONDITION:
-        selected = tuple(resolved.get("decoder_bypass_local_feature_names") or ())
+        selected = tuple(
+            resolved["decoder_bypass_local_feature_names"]
+            if strict_semantic_contract
+            else (resolved.get("decoder_bypass_local_feature_names") or ())
+        )
         if not selected:
             raise ValueError(
                 "explicit_local_condition requires decoder_bypass_local_feature_names"
@@ -199,6 +252,7 @@ def load_checkpoint(
     *,
     expected_sha256: str | None = None,
     expected_epoch: int | None = None,
+    strict_semantic_contract: bool = False,
 ) -> CheckpointBundle:
     """Load and interpret one existing parameter checkpoint."""
 
@@ -223,8 +277,15 @@ def load_checkpoint(
         raise ValueError(
             f"checkpoint epoch mismatch: expected={expected_epoch} observed={epoch}"
         )
-    stats = materialize_checkpoint_stats(payload["train_only_normalization"])
-    model_config = resolve_model_config(payload["model_config"], stats)
+    stats = materialize_checkpoint_stats(
+        payload["train_only_normalization"],
+        strict_semantic_contract=strict_semantic_contract,
+    )
+    model_config = resolve_model_config(
+        payload["model_config"],
+        stats,
+        strict_semantic_contract=strict_semantic_contract,
+    )
     metadata = {
         key: payload[key]
         for key in ("configuration_hash", "model_config_hash", "train_stats_hash", "param_count")

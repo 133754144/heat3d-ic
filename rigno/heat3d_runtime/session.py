@@ -19,6 +19,7 @@ from rigno.heat3d_runtime.checkpoint import (
 )
 from rigno.heat3d_runtime.features import FeatureTransform
 from rigno.heat3d_runtime.grouping import GroupBuilder
+from rigno.heat3d_runtime.preflight import validate_semantic_contract
 from rigno.models.rigno import RIGNO
 
 
@@ -46,6 +47,8 @@ class RuntimeSession:
     group_builder: GroupBuilder
     model: RIGNO
     params: Any
+    execution_role: str
+    semantic_contract: dict[str, Any]
 
     @classmethod
     def from_paths(
@@ -55,19 +58,29 @@ class RuntimeSession:
         *,
         expected_sha256: str | None = None,
         expected_epoch: int | None = None,
+        execution_role: str = "production_inference",
+        route_contract: Mapping[str, Any] | None = None,
     ) -> "RuntimeSession":
+        run_config = load_run_config(run_config_path)
         checkpoint = load_checkpoint(
             checkpoint_path,
             expected_sha256=expected_sha256,
             expected_epoch=expected_epoch,
+            strict_semantic_contract=True,
         )
-        run_config = load_run_config(run_config_path)
-        graph_config = dict(run_config.get("graph_config") or {})
+        semantic_contract = validate_semantic_contract(
+            run_config=run_config,
+            model_config=checkpoint.model_config,
+            stats=checkpoint.stats,
+            execution_role=execution_role,
+            route_contract=route_contract,
+        )
+        graph_config = dict(run_config["graph_config"])
         if not graph_config:
             raise ValueError("resolved run_config is missing graph_config")
         model_config = dict(checkpoint.model_config)
         feature_transform = FeatureTransform(checkpoint.stats)
-        graph_seed = int(run_config.get("graph_seed", 0))
+        graph_seed = int(run_config["graph_seed"])
         group_builder = GroupBuilder(
             feature_transform=feature_transform,
             graph_config=graph_config,
@@ -83,6 +96,8 @@ class RuntimeSession:
             group_builder=group_builder,
             model=model,
             params=device_params(checkpoint.params),
+            execution_role=execution_role,
+            semantic_contract=semantic_contract,
         )
 
     @classmethod
@@ -93,6 +108,8 @@ class RuntimeSession:
         *,
         expected_sha256: str | None = None,
         expected_epoch: int | None = None,
+        execution_role: str = "production_inference",
+        route_contract: Mapping[str, Any] | None = None,
     ) -> "RuntimeSession":
         """Construct a session from an in-memory resolved run config."""
 
@@ -100,9 +117,17 @@ class RuntimeSession:
             checkpoint_path,
             expected_sha256=expected_sha256,
             expected_epoch=expected_epoch,
+            strict_semantic_contract=True,
         )
         config = dict(run_config)
-        graph_config = dict(config.get("graph_config") or {})
+        semantic_contract = validate_semantic_contract(
+            run_config=config,
+            model_config=checkpoint.model_config,
+            stats=checkpoint.stats,
+            execution_role=execution_role,
+            route_contract=route_contract,
+        )
+        graph_config = dict(config["graph_config"])
         if not graph_config:
             raise ValueError("resolved run_config is missing graph_config")
         feature_transform = FeatureTransform(checkpoint.stats)
@@ -116,10 +141,12 @@ class RuntimeSession:
             group_builder=GroupBuilder(
                 feature_transform=feature_transform,
                 graph_config=graph_config,
-                graph_seed=int(config.get("graph_seed", 0)),
+                graph_seed=int(config["graph_seed"]),
             ),
             model=RIGNO(**model_config),
             params=device_params(checkpoint.params),
+            execution_role=execution_role,
+            semantic_contract=semantic_contract,
         )
 
     def build_group(
@@ -166,18 +193,18 @@ class RuntimeSession:
             raise ValueError("context_examples must align one-to-one with examples")
         model_config = self.model_config
         context_enabled = (
-            model_config.get("native_output_mode") == "native_shape_scale"
-            or model_config.get("global_context_mode", "none") != "none"
+            model_config["native_output_mode"] == "native_shape_scale"
+            or model_config["global_context_mode"] != "none"
         )
-        context_payload = self.run_config.get("global_context") or {}
-        standardizer = context_payload.get("standardizer")
+        context_payload = self.run_config["global_context"]
+        standardizer = context_payload["standardizer"] if context_enabled else None
         if context_enabled:
             if not isinstance(standardizer, Mapping):
                 raise ValueError("native/global-context model requires a frozen standardizer")
             context = self.feature_transform.standardize_global_contexts(
                 context_examples, standardizer
             )
-            expected = int(model_config.get("global_context_feature_dim", 0))
+            expected = int(model_config["global_context_feature_dim"])
             if context.shape != (len(examples), expected):
                 raise ValueError(
                     f"global context shape mismatch: got={context.shape} "
@@ -185,7 +212,7 @@ class RuntimeSession:
                 )
             group["global_context"] = jnp.asarray(context, dtype=jnp.float32)
 
-        if model_config.get("native_output_mode") == "native_shape_scale":
+        if model_config["native_output_mode"] == "native_shape_scale":
             physics = [self.feature_transform.native_physics(example) for example in examples]
             group["native_physics"] = {
                 key: jnp.stack([row[key] for row in physics], axis=0)
@@ -193,9 +220,9 @@ class RuntimeSession:
             }
 
         if (
-            model_config.get("scale_pooling") == "qk_gated"
-            or model_config.get("shape_attention_mode") != "none"
-            or model_config.get("scale_attention_mode") != "none"
+            model_config["scale_pooling"] == "qk_gated"
+            or model_config["shape_attention_mode"] != "none"
+            or model_config["scale_attention_mode"] != "none"
         ):
             p2r = np.asarray(group["metadata"].p2r_edge_indices)
             rnode_count = int(np.asarray(group["metadata"].x_rnodes).shape[1] - 1)
@@ -210,7 +237,7 @@ class RuntimeSession:
             ]
             group["qk_region_features"] = jnp.asarray(np.stack(rows), dtype=jnp.float32)
 
-        if model_config.get("scale_deepsets_mode", "none") != "none":
+        if model_config["scale_deepsets_mode"] != "none":
             p2r = np.asarray(group["metadata"].p2r_edge_indices)
             rnode_count = int(np.asarray(group["metadata"].x_rnodes).shape[1] - 1)
             weights = [
@@ -224,8 +251,8 @@ class RuntimeSession:
                 np.stack([row[1] for row in weights]), dtype=jnp.float32
             )
 
-        if model_config.get("scale_context_mode", "none") != "none":
-            scale_standardizer = context_payload.get("scale_standardizer")
+        if model_config["scale_context_mode"] != "none":
+            scale_standardizer = context_payload["scale_standardizer"]
             if not isinstance(scale_standardizer, Mapping):
                 raise ValueError("configured scale context requires a frozen standardizer")
             group["scale_context"] = jnp.asarray(
@@ -275,7 +302,7 @@ class RuntimeSession:
     ) -> dict[str, dict[str, Any]]:
         """Run native-1024 inference and return predictions without metrics."""
 
-        if self.model_config.get("native_output_mode") != "native_shape_scale":
+        if self.model_config["native_output_mode"] != "native_shape_scale":
             raise ValueError("native-1024 reference inference requires native_shape_scale")
         if batch_size < 1:
             raise ValueError("batch_size must be >= 1")
@@ -306,12 +333,14 @@ class RuntimeSession:
         return {
             "runtime": "rigno.heat3d_runtime",
             "runtime_api": "RuntimeSession",
+            "execution_role": self.execution_role,
             "checkpoint": self.checkpoint.descriptor(),
             "run_config": {
                 "graph_config": self.graph_config,
-                "graph_seed": self.run_config.get("graph_seed", 0),
+                "graph_seed": self.run_config["graph_seed"],
             },
             "model_config": self.model_config,
+            "semantic_contract": self.semantic_contract,
         }
 
 

@@ -56,6 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--full-fields", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--run-config", type=Path, required=True)
+    parser.add_argument("--eu-contract", type=Path, required=True)
     parser.add_argument("--support-root", type=Path, required=True)
     parser.add_argument("--native-padding", type=Path, required=True)
     parser.add_argument("--query-padding", type=Path, required=True)
@@ -76,7 +77,19 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if args.max_samples < 1:
             raise ValueError("--max-samples must be >= 1")
         examples = examples[: int(args.max_samples)]
-    session = RuntimeSession.from_paths(args.checkpoint, args.run_config)
+    eu_payload = json.loads(args.eu_contract.read_text(encoding="utf-8"))
+    route_name = (
+        "U_v2_16384_reconstruction"
+        if args.resolution == 16384
+        else "U_v2_direct240825"
+    )
+    route_contract = eu_payload["strategies"][route_name]
+    session = RuntimeSession.from_paths(
+        args.checkpoint,
+        args.run_config,
+        execution_role="production_inference",
+        route_contract=route_contract,
+    )
     geometry = FullFieldGeometry.load(args.full_fields)
     runtime = UHighNRuntime.from_session(session, geometry)
     native_targets = _edge_targets(args.native_padding)
@@ -101,8 +114,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         cases.append(
             {
                 "sample_id": str(anchor.sample_id),
-                "conditioning_resolution": 1024,
-                "query_resolution": int(args.resolution),
+                "anchor_context_resolution": 1024,
+                "encoder_input_resolution": 1024,
+                "output_query_resolution": int(args.resolution),
+                "reconstruction_resolution": 240825,
                 "direct_query": True,
                 "support_indices_sha256": support.descriptor()["selected_indices_sha256"],
                 "query_coordinates_sha256": array_sha256(np.asarray(case.query.condition.coords)),
@@ -115,14 +130,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
     return {
         "status": "inference_complete",
+        "execution_role": "production_inference",
         "experiment_role": "v7_u_v2_reference_inference",
         "dataset_role": "valid_iid",
         "dataset_id": dataset.manifest["dataset_id"],
         "sample_count": len(cases),
-        "conditioning_resolution": 1024,
-        "query_resolution": int(args.resolution),
+        "anchor_context_resolution": 1024,
+        "encoder_input_resolution": 1024,
+        "output_query_resolution": int(args.resolution),
         "direct_query": True,
-        "reconstruction_resolution": None,
+        "reconstruction_resolution": 240825,
         "device": str(jax.devices()[0]),
         "backend": str(jax.default_backend()),
         "checkpoint": session.checkpoint.descriptor(),

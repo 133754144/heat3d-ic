@@ -59,9 +59,9 @@ class FeatureTransform:
             raw_condition,
             tuple(relative.condition_feature_names),
             raw_coords,
-            input_feature_schema=str(self.stats.get("input_feature_schema", "legacy_bc_flags")),
-            coord_policy=str(self.stats.get("coord_policy", "train_minmax_to_unit_box")),
-            extent_feature_policy=str(self.stats.get("extent_feature_policy", "none")),
+            input_feature_schema=str(self.stats["input_feature_schema"]),
+            coord_policy=str(self.stats["coord_policy"]),
+            extent_feature_policy=str(self.stats["extent_feature_policy"]),
         )
         n_points = raw_coords.shape[0]
         raw_c = jnp.asarray(transformed.reshape(1, 1, n_points, -1), dtype=jnp.float32)
@@ -79,7 +79,7 @@ class FeatureTransform:
             t=None,
             tau=None,
         )
-        if str(self.stats.get("coord_policy")) == "sample_local_isotropic":
+        if str(self.stats["coord_policy"]) == "sample_local_isotropic":
             graph_coords = np.asarray(normalized_coords).reshape(n_points, 3)
         else:
             graph_coords = raw_coords
@@ -103,7 +103,7 @@ class FeatureTransform:
         standardizer: Mapping[str, Any],
     ) -> np.ndarray:
         rows = [self.global_context_row(example) for example in examples]
-        if tuple(standardizer.get("feature_names") or ()) != GLOBAL_CONTEXT_FEATURES_V6:
+        if tuple(standardizer["feature_names"]) != GLOBAL_CONTEXT_FEATURES_V6:
             raise ValueError("V6 global-context standardizer schema drifted")
         return standardize_v6_contexts(rows, standardizer)
 

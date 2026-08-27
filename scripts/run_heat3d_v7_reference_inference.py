@@ -57,13 +57,18 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         examples = examples[: int(args.max_samples)]
     if not examples:
         raise ValueError("valid_iid fixture contains no examples")
-    session = RuntimeSession.from_paths(args.checkpoint, args.run_config)
+    session = RuntimeSession.from_paths(
+        args.checkpoint,
+        args.run_config,
+        execution_role="production_inference",
+    )
     predictions = session.predict_native_1024(examples, batch_size=int(args.batch_size))
     node_counts = sorted(
         {int(np.asarray(row["raw_temperature"]).shape[0]) for row in predictions.values()}
     )
     return {
         "status": "inference_complete",
+        "execution_role": "production_inference",
         "experiment_role": "reference_inference",
         "dataset_role": "valid_iid",
         "dataset_id": dataset.manifest["dataset_id"],

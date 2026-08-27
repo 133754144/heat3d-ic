@@ -1,0 +1,97 @@
+{
+  "schema_version": "heat3d_v7_g0b2d_historical_reconciliation_v1",
+  "execution_role": "compatibility_audit",
+  "status": "partial_observation_fail_closed",
+  "purpose": "Read-only reconciliation record for devbox V6/P1i high-resolution artifacts. This manifest never promotes temporary fixtures to historical evidence.",
+  "devbox": {
+    "repository": "/home/xyh/myCodeGitOnly/heat3d-ic",
+    "repository_commit_observed": "6345ba0a22d437d1ea849f05d489028d838e0934",
+    "historical_supplemental_capture": "output/v6_supplemental_publication_8a81261",
+    "historical_execution_commit": "8a812619ab0112b4ecfc37ef18189f731180059d",
+    "historical_execution_commit_exists": true,
+    "repository_worktree_had_untracked_config": true
+  },
+  "frozen_binding_checks": {
+    "checkpoint_sha256": {
+      "expected": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+      "observed": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+      "matched": true,
+      "epoch": 559
+    },
+    "dataset_manifest_sha256": {
+      "expected": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "observed": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "matched": true
+    },
+    "full_field_sha256": {
+      "expected": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+      "observed": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+      "matched": true,
+      "temperature_dataset_read": false
+    }
+  },
+  "historical_route_observations": {
+    "E16384": {
+      "route": "E16384_reconstruction",
+      "sample_ids": ["v6p1if1_0056", "v6p1if1_0079", "v6p1if1_0971", "v6p1if1_0393"],
+      "result_json_sha256": "1023228ec69c47b14684f5343dded8123f967cda634e31ee4ab6af4d79243841",
+      "input_plan_sha256": "b1e8f4eece29d9e8dc8986429b8d1e5e0bf8ee0a80d449ea4a07357ccd372146",
+      "fresh_receipt_sha256": "2cd77cca651549520db96e86d6b9687160f84c904aa2ab7da59708f755d988f9",
+      "prediction_artifact_sha256": "d4a768930226c8d96f708497de5755e407d050659018ba4cea35e4b3d1bccd9a",
+      "protocol_sha256": "7519a6d374782063e3e11de7b769d039b98220a39aa3123fc98e586d0239b27d",
+      "checkpoint_binding": "parameter-tree before/after SHA is b4c1c9b0874a928100bb2edcb6b276ec5fbc9bd5a4e5797619ab1c1c17af2f85; no direct file-SHA field in the E receipt",
+      "available": ["sample_order", "input_plan", "full_kq_input_hashes", "full_field_prediction_artifact", "route_receipt", "padding_via_tracked_envelope"],
+      "missing_for_binary_reconciliation": ["support_indices", "query_coordinates", "raw_graph_metadata", "padded_graph_metadata", "graph_tensors", "model_visible_tensors", "anchor_prediction", "anchor_scale", "reconstruction_map"]
+    },
+    "U_v2_16384": {
+      "route": "U_v2_16384_reconstruction",
+      "sample_ids": ["v6p1if1_0056", "v6p1if1_0079", "v6p1if1_0971", "v6p1if1_0393"],
+      "result_json_sha256": "f5f9af00032fdf519559e917f4eb1fa6d68a09d4079fc7fa91738b1d6f660801",
+      "input_plan_sha256": "dd7cd540a682ead634f75a779758c9f23b506470a2d8c986f61fc70c8332dab5",
+      "fresh_receipt_sha256": "167f55d0dcb123308af95dbc9f272e229563857533238da33e0acf4de00ea0cc",
+      "prediction_artifact_sha256": "3022ecb0a92f97168ce5a7124e57a62b40f82581b3fc55abf27a6854b3331b36",
+      "protocol_sha256": "325dd80dffadae0f56c547ec84902a717a59615c9d32bac2036d121bae17790b",
+      "checkpoint_binding": "file SHA256 matches the frozen V6/P1i checkpoint",
+      "padding": {
+        "native": {"p2r_edge_indices": 3074, "r2p_edge_indices": 2905, "r2r_edge_domains": 4217, "r2r_edge_indices": 4217},
+        "query": {"p2r_edge_indices": 107645, "r2p_edge_indices": 107645, "r2r_edge_domains": 4217, "r2r_edge_indices": 4217}
+      },
+      "available": ["sample_order", "input_plan", "full_kq_input_hashes", "full_field_prediction_artifact", "route_receipt", "padding", "same-launch packing audit"],
+      "missing_for_binary_reconciliation": ["support_indices", "query_coordinates", "raw_graph_metadata", "padded_graph_metadata", "graph_tensors", "complete model-visible tensors", "anchor_prediction", "anchor_scale", "reconstruction_map"]
+    },
+    "E32768": {
+      "route": "E32768_direct_compatibility",
+      "available": false,
+      "historical_artifact_found": false
+    }
+  },
+  "three_way_reconciliation": {
+    "historical_artifact": "not_complete: devbox capture contains route receipts, input plans and prediction arrays but not the identity-level support/graph/model-visible/reconstruction artifacts required by the V6 binding",
+    "temporary_fixture": "available in-memory only and separately labeled V7 Refactor Compatibility Fixture",
+    "v7_stable_runtime": "can be compared against temporary valid_iid fixture; historical binary equivalence remains unproven",
+    "fail_closed": true,
+    "historical_artifact_reconciliation": "pending_missing_identity_artifacts"
+  },
+  "temporary_fixture_provenance": {
+    "temporary_compatibility_fixture_due_to_wsl2_unavailable": true,
+    "wsl2_mirror_reconciliation": "pending",
+    "temporary_fixture_replaces_v6_evidence": false,
+    "publication_headline_eligible": false,
+    "g3_eligible": false,
+    "final_test_eligible": false
+  },
+  "deferred_reconciliation_checklist": [
+    "When WSL2 is restored, compare the mirror against the devbox binding and this manifest.",
+    "Obtain identity-level support/order, query-coordinate, raw/padded graph, model-visible, anchor-scale and reconstruction-map artifacts.",
+    "Verify every historical artifact SHA against the V6/P1i binding before changing status to complete.",
+    "Keep any missing or mismatched item fail-closed; do not alter the legacy contract or tolerances."
+  ],
+  "prohibited_access": {
+    "test_iid": false,
+    "sealed_labels": false,
+    "temperature_labels": false,
+    "training": false,
+    "solver": false,
+    "data_generation": false
+  }
+}

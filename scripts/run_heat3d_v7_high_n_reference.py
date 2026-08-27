@@ -28,6 +28,22 @@ from rigno.heat3d_v6_p1i_anchor_query import array_sha256
 ALLOWED_RESOLUTIONS = (1024, 16384, 32768)
 
 
+def _route_contract(path: Path | None, resolution: int) -> dict[str, object] | None:
+    if resolution == 1024:
+        return None
+    if path is None:
+        raise ValueError("high-resolution production inference requires --eu-contract")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    route_name = {
+        16384: "E16384_reconstruction",
+        32768: "E32768_direct_compatibility",
+    }[int(resolution)]
+    route = payload["strategies"][route_name]
+    if not isinstance(route, dict):
+        raise ValueError(f"E/U contract route is not an object: {route_name}")
+    return route
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-root", type=Path, required=True)
@@ -35,6 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--full-fields", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--run-config", type=Path, required=True)
+    parser.add_argument("--eu-contract", type=Path)
     parser.add_argument("--support-root", type=Path)
     parser.add_argument("--anchor-predictions", type=Path)
     parser.add_argument("--resolution", type=int, choices=ALLOWED_RESOLUTIONS, default=1024)
@@ -88,7 +105,13 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     if not examples:
         raise ValueError("valid_iid fixture contains no examples")
 
-    session = RuntimeSession.from_paths(args.checkpoint, args.run_config)
+    route_contract = _route_contract(args.eu_contract, args.resolution)
+    session = RuntimeSession.from_paths(
+        args.checkpoint,
+        args.run_config,
+        execution_role="production_inference",
+        route_contract=route_contract,
+    )
     geometry = FullFieldGeometry.load(args.full_fields)
     runtime = HighNRuntime.from_session(session, geometry)
     anchor_scales = (
@@ -107,6 +130,12 @@ def run(args: argparse.Namespace) -> dict[str, object]:
             anchor,
             args.resolution,
             support_path=support_path,
+            edge_targets=(
+                None
+                if route_contract is None
+                or not isinstance(route_contract.get("fixed_edge_targets"), dict)
+                else route_contract["fixed_edge_targets"]
+            ),
             cache_dir=args.graph_cache_dir,
             write_cache=bool(args.write_graph_cache),
         )

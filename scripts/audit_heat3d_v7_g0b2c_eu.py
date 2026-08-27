@@ -427,7 +427,14 @@ def _hash_map(mapping: Any) -> str:
     return digest.hexdigest()
 
 
-def _reconstruction_compare(anchor: Any, full: Mapping[str, np.ndarray], support_indices: np.ndarray) -> dict[str, Any]:
+def _reconstruction_compare(
+    anchor: Any,
+    full: Mapping[str, np.ndarray],
+    support_indices: np.ndarray,
+    *,
+    old_values: np.ndarray | None = None,
+    new_values: np.ndarray | None = None,
+) -> dict[str, Any]:
     boundaries = highn._boundaries(anchor, float(np.min(full["coords"][:, 2])))
     old_map, _ = build_reconstruction_map(
         coords=full["coords"], layer_id=full["layer"], boundaries=boundaries,
@@ -437,12 +444,18 @@ def _reconstruction_compare(anchor: Any, full: Mapping[str, np.ndarray], support
         coords=full["coords"], layer_id=full["layer"], boundaries=boundaries,
         support_indices=support_indices.astype(np.int32), empty_domain_fallback="same_layer", query_workers=1,
     )
-    values = np.linspace(-1.0, 1.0, len(support_indices), dtype=np.float64)
+    if old_values is None:
+        old_values = np.linspace(-1.0, 1.0, len(support_indices), dtype=np.float64)
+    if new_values is None:
+        new_values = old_values
     return {
         "map_hash_old": _hash_map(old_map),
         "map_hash_new": _hash_map(new_map),
         "map_equal": _hash_map(old_map) == _hash_map(new_map),
-        "reconstructed_field": _diff(old_map.reconstruct(values), new_map.reconstruct(values)),
+        "reconstructed_field": _diff(
+            old_map.reconstruct(np.asarray(old_values, dtype=np.float64)),
+            new_map.reconstruct(np.asarray(new_values, dtype=np.float64)),
+        ),
     }
 
 
@@ -461,6 +474,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     stable_session = RuntimeSession.from_paths(
         args.checkpoint,
         args.run_config,
+        execution_role="compatibility_audit",
         expected_sha256=freeze_manifest["frozen_artifacts"]["checkpoint"]["checkpoint_sha256"],
         expected_epoch=int(freeze_manifest["frozen_artifacts"]["checkpoint"]["epoch"]),
     )
@@ -588,7 +602,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     old_e_direct = highn._anchor_scale(old_e_raw, old_anchor_scale, fixed_support_arrays["operator_control_volume"])
     new_e_direct = stable_e.apply_anchor_scale(new_e_raw, new_anchor_scale, fixed_support_arrays["operator_control_volume"])
     e_reconstruction = _reconstruction_compare(
-        anchor, full, np.asarray(fixed_support_arrays["selected_indices"], dtype=np.int64)
+        anchor,
+        full,
+        np.asarray(fixed_support_arrays["selected_indices"], dtype=np.int64),
+        old_values=old_e_direct,
+        new_values=new_e_direct,
     )
 
     # U old/new: native conditioning tensors are compared separately from the
@@ -665,12 +683,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     new_u_output = stable_u.apply(u_case)
     jax.block_until_ready(old_u_output["raw_temperature"])
     jax.block_until_ready(new_u_output["raw_temperature"])
+    old_u_direct = np.asarray(old_u_output["raw_temperature"], dtype=np.float64)[0, 0, :, 0]
+    new_u_direct = np.asarray(new_u_output["raw_temperature"], dtype=np.float64)[0, 0, :, 0]
     u_reconstruction = _reconstruction_compare(
-        anchor, full, np.asarray(fixed_support_arrays["selected_indices"], dtype=np.int64)
+        anchor,
+        full,
+        np.asarray(fixed_support_arrays["selected_indices"], dtype=np.int64),
+        old_values=old_u_direct,
+        new_values=new_u_direct,
     )
 
-    # 32768 is a compatibility smoke only: compare support/query/graph/model
-    # input materialization, without a prediction or metric claim.
+    # 32768 is a compatibility forward only: compare the direct model output
+    # and reconstruction without reading labels or making an accuracy claim.
     support32768, audit32768 = _temporary_support(
         anchor, full, binding, E32768_RESOLUTION, physics_cache
     )
@@ -691,9 +715,31 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         edge_targets=e327_targets,
     )
     e327_case = _stable_e_case(stable_e, anchor, support32768, E32768_RESOLUTION, e327_targets)
+    old_e327_output = _model_outputs(runtime, old_e327_group)
+    new_e327_output = stable_session.apply(e327_case.group)
+    jax.block_until_ready(new_e327_output["raw_temperature"])
+    old_e327_raw = np.asarray(old_e327_output["raw_temperature"], dtype=np.float64)[0, 0, :, 0]
+    new_e327_raw = np.asarray(new_e327_output["raw_temperature"], dtype=np.float64)[0, 0, :, 0]
+    old_e327_direct = highn._anchor_scale(
+        old_e327_raw,
+        old_anchor_scale,
+        support32768["operator_control_volume"],
+    )
+    new_e327_direct = stable_e.apply_anchor_scale(
+        new_e327_raw,
+        new_anchor_scale,
+        support32768["operator_control_volume"],
+    )
+    e327_reconstruction = _reconstruction_compare(
+        anchor,
+        full,
+        np.asarray(support32768["selected_indices"], dtype=np.int64),
+        old_values=old_e327_direct,
+        new_values=new_e327_direct,
+    )
 
     return {
-        "schema_version": "heat3d_v7_g0b2c_receipt_v1",
+        "schema_version": "heat3d_v7_g0b2d_receipt_v1",
         "status": "compatibility_audit_complete",
         "fixture_label": "V7 Refactor Compatibility Fixture",
         "git_sha": args.git_sha,
@@ -711,7 +757,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "temporary_fixture_provenance": {
             "temporary_compatibility_fixture_due_to_wsl2_unavailable": True,
-            "wsl2_historical_artifact_reconciliation": "pending",
+            "historical_artifact_reconciliation": "pending_devbox_artifacts_not_found",
+            "wsl2_mirror_reconciliation": "pending",
             "support_and_query_label_independent": True,
             "temperature_label_read": False,
             "test_iid_or_sealed_labels_accessed": False,
@@ -727,9 +774,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "backend": str(jax.default_backend()),
             "devices": [str(device) for device in jax.devices()],
             "jax_version": getattr(jax, "__version__", "unknown"),
-            "conditioning_resolution": 1024,
-            "e_query_resolution": E_RESOLUTION,
-            "u_query_resolution": U_RESOLUTION,
+            "anchor_context_resolution": 1024,
+            "encoder_input_resolution": {"E": E_RESOLUTION, "U_v2": 1024},
+            "output_query_resolution": {"E": E_RESOLUTION, "U_v2": U_RESOLUTION},
             "direct_query": {"E": True, "U": True},
             "reconstruction_resolution": 240825,
         },
@@ -749,8 +796,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             },
             "E16384": {
                 "status": "equivalence_complete_with_temporary_fixture",
-                "conditioning_resolution": 1024,
-                "query_resolution": E_RESOLUTION,
+                "anchor_context_resolution": 1024,
+                "encoder_input_resolution": E_RESOLUTION,
+                "output_query_resolution": E_RESOLUTION,
+                "reconstruction_resolution": 240825,
                 "direct_query": True,
                 "support": fixed_support_audit,
                 "raw_metadata_old": _metadata_fields(old_e_meta),
@@ -770,8 +819,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "U_v2_16384": {
                 "status": "equivalence_complete_with_temporary_fixture",
                 "strategy": "U-v2",
-                "conditioning_resolution": 1024,
-                "query_resolution": U_RESOLUTION,
+                "anchor_context_resolution": 1024,
+                "encoder_input_resolution": 1024,
+                "output_query_resolution": U_RESOLUTION,
+                "reconstruction_resolution": 240825,
                 "direct_query": True,
                 "reconstruction_only": False,
                 "native_conditioning": _group_compare(old_u_anchor_group, u_case.native_group),
@@ -805,9 +856,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 ),
             },
             "E32768": {
-                "status": "compatibility_smoke_complete_no_forward",
-                "conditioning_resolution": 1024,
-                "query_resolution": E32768_RESOLUTION,
+                "status": "equivalence_complete_with_temporary_fixture",
+                "anchor_context_resolution": 1024,
+                "encoder_input_resolution": E32768_RESOLUTION,
+                "output_query_resolution": E32768_RESOLUTION,
+                "reconstruction_resolution": 240825,
                 "direct_query": True,
                 "support": audit32768,
                 "raw_metadata_hash_old": _metadata_hash(old_e327_meta),
@@ -816,7 +869,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "padded_model_input": _group_compare(old_e327_group, e327_case.group),
                 "group_hashes_old": _group_digests(old_e327_group),
                 "group_hashes_new": _group_digests(e327_case.group),
-                "prediction_executed": False,
+                "old_new_prediction": _output_summary(old_e327_output, new_e327_output),
+                "query_scale": _diff(old_e327_output["s_hat"], new_e327_output["s_hat"]),
+                "anchor_scale": _diff(np.asarray([old_anchor_scale]), np.asarray([new_anchor_scale])),
+                "final_direct_prediction": _diff(old_e327_direct, new_e327_direct),
+                "reconstruction": e327_reconstruction,
+                "prediction_executed": True,
                 "metrics_executed": False,
             },
         },

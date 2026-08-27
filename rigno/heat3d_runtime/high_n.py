@@ -343,7 +343,7 @@ class HighNRuntime:
             group_builder=GroupBuilder(
                 feature_transform=session.feature_transform,
                 graph_config=graph_config,
-                graph_seed=int(session.run_config.get("graph_seed", 0)),
+                graph_seed=int(session.run_config["graph_seed"]),
             ),
         )
         return cls(
@@ -465,7 +465,7 @@ class HighNRuntime:
         key_payload = cache_key_payload(
             support_hash=support_hash,
             graph_config=dict(builder.config),
-            graph_seed=int(self.session.run_config.get("graph_seed", 0)),
+            graph_seed=int(self.session.run_config["graph_seed"]),
             graph_builder_fingerprint=self.graph_builder_fingerprint,
         )
         key = cache_key(key_payload)
@@ -483,7 +483,7 @@ class HighNRuntime:
         else:
             metadata = builder.build_metadata(
                 graph_coords,
-                key=jax.random.PRNGKey(int(self.session.run_config.get("graph_seed", 0))),
+                key=jax.random.PRNGKey(int(self.session.run_config["graph_seed"])),
             )
             load_audit = None
             if write_cache:
@@ -493,7 +493,7 @@ class HighNRuntime:
         if cache_hit:
             fresh = builder.build_metadata(
                 graph_coords,
-                key=jax.random.PRNGKey(int(self.session.run_config.get("graph_seed", 0))),
+                key=jax.random.PRNGKey(int(self.session.run_config["graph_seed"])),
             )
         fresh_metadata_hash = None if fresh is None else metadata_hash(fresh)
         observed_metadata_hash = metadata_hash(metadata)
@@ -604,7 +604,7 @@ class HighNRuntime:
                 group_builder=GroupBuilder(
                     feature_transform=self.session.feature_transform,
                     graph_config=query_graph_config,
-                    graph_seed=int(self.session.run_config.get("graph_seed", 0)),
+                    graph_seed=int(self.session.run_config["graph_seed"]),
                 ),
             )
         group = group_session.build_group_from_metadata(

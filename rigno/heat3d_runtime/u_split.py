@@ -394,7 +394,7 @@ class UHighNRuntime:
             group_builder=GroupBuilder(
                 feature_transform=session.feature_transform,
                 graph_config=graph_config,
-                graph_seed=int(session.run_config.get("graph_seed", 0)),
+                graph_seed=int(session.run_config["graph_seed"]),
             ),
         )
         return cls(

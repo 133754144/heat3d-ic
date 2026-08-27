@@ -31,6 +31,9 @@ __all__ = [
     "compare_named_arrays",
     "compare_metadata",
     "snapshot_group",
+    "EXECUTION_ROLES",
+    "SemanticContractError",
+    "validate_semantic_contract",
 ]
 
 _EXPORTS = {
@@ -68,6 +71,15 @@ _EXPORTS = {
         "compare_metadata",
     ),
     "snapshot_group": ("rigno.heat3d_runtime.equivalence", "snapshot_group"),
+    "EXECUTION_ROLES": ("rigno.heat3d_runtime.preflight", "EXECUTION_ROLES"),
+    "SemanticContractError": (
+        "rigno.heat3d_runtime.preflight",
+        "SemanticContractError",
+    ),
+    "validate_semantic_contract": (
+        "rigno.heat3d_runtime.preflight",
+        "validate_semantic_contract",
+    ),
 }
 
 

@@ -224,6 +224,101 @@ ladder；(3) GPU backend repeatability policy 尚未冻结；(4) metrics/timing 
 形成单一 public evaluation core。上述 blocker 不表示本轮 stable native-1024
 cutover 失败，也不允许提前进入 G0b-3 性能优化或 publication claim。
 
+## V7-G0b-2d schema correction and historical reconciliation
+
+本节是本轮的 authoritative update。此前 G0b-2c receipt 中的
+`conditioning_resolution`/`query_resolution` 只作为历史证据字段保留，不能再
+作为 V7 G3 主比较变量。新的 machine-readable contract 在
+[`v7_g0b2c_eu_contract_manifest.json`](../configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json)
+中使用四个显式字段：
+
+| route | anchor_context_resolution | encoder_input_resolution | output_query_resolution | reconstruction_resolution |
+| --- | ---: | ---: | ---: | ---: |
+| E16384 | 1024 | 16384 | 16384 | 240825 |
+| E32768 compatibility | 1024 | 32768 | 32768 | 240825 |
+| U-v2 16384 | 1024 | 1024 | 16384 | 240825 |
+
+因此 U-v2 保留 native 1024 encoder/conditioning semantics，同时执行 16384
+direct output query；它不是 reconstruction-only route。旧字段仅在
+`deprecated_compatibility_fields` 中允许显式 legacy parsing，并标记为
+`ambiguous_deprecated`，不可用于 G3 主变量。每份 G0b-2d receipt 还必须记录
+`strategy`、上述四个字段、`direct_query` 和 `execution_role`。
+
+devbox 的只读搜索找到了
+`output/v6_supplemental_publication_8a81261` 下的 E16384、U-v2 16384 和
+240825 route receipts、input plans、full-field prediction arrays 与 U-v2
+padding record。checkpoint SHA256、dataset manifest SHA256 和 full-field SHA256
+均与 V6/P1i freeze manifest 相符；U-v2 receipt 也显式记录了 frozen checkpoint
+SHA。可是这些目录没有保存 V6 binding 所需的 identity-level support/order、
+query coordinates、raw/padded graph metadata、完整 model-visible tensors、
+anchor prediction/scale 或 reconstruction map；E receipt 还只保存了 parameter
+tree before/after SHA，而非 checkpoint file SHA。devbox capture 因此只能作为
+历史 route observation，不能完成三方 binary reconciliation。
+
+本轮的机器可读记录是
+[`v7_g0b2d_historical_reconciliation_manifest.json`](v7_g0b2d_historical_reconciliation_manifest.json)。
+其状态为 `partial_observation_fail_closed`，并明确区分：
+
+```text
+historical_artifact_reconciliation = pending_missing_identity_artifacts
+wsl2_mirror_reconciliation = pending
+```
+
+WSL2 镜像核查不是当前唯一 blocker，但在镜像恢复后仍必须执行。临时夹具仍
+仅标记为 `V7 Refactor Compatibility Fixture`，不替代 V6 evidence，不具备
+publication headline、G3 或 final-test 资格。
+
+## G0b-2d E32768 forward compatibility
+
+test-only harness 现在对一个 frozen `valid_iid` sample 执行 E32768 的 old/new
+CPU forward compatibility comparison，比较 support/query、raw 与 padded graph
+metadata、graphs/model inputs、raw prediction、query `s_hat`、anchor scale、
+anchor-scaled direct prediction 和 reconstruction map/field。它不读取 target，
+不计算 metrics，不把该结果升级为 valid32 accuracy study。该 forward 使用
+temporary fixture，因为 devbox 没有历史 E32768 artifact；历史 E32768 状态仍为
+`historical_artifact_found=false`。
+
+## Production semantic-contract preflight
+
+`rigno.heat3d_runtime.preflight.validate_semantic_contract` 是纯验证层；
+`RuntimeSession` 在构造 `FeatureTransform`、`GroupBuilder` 和 `RIGNO.apply`
+之前调用它。production/compatibility session 的 checkpoint stats、run config、
+model config 与可选 E/U route contract 必须显式包含语义关键字段；缺失字段直接
+抛出 `SemanticContractError`，不会以 `legacy_default` 静默补齐。当前检查覆盖：
+
+| acceptance item | result | evidence |
+| --- | --- | --- |
+| production import graph excludes `*_smoke.py`, `check_*`, `*_development.py` | PASS for V7 entrypoints; legacy V6 excluded | `rigno/heat3d_runtime/`, `scripts/run_heat3d_v7_*` |
+| cross-script private `_...` API | PASS for V7 production entrypoints; audit harness remains compatibility-only | V7 entrypoint AST/import checks |
+| monkey patch/module-state rewrite | PASS | explicit `FeatureTransform`; no hook installation or `sys.path` mutation |
+| semantic-critical config missing | PASS fail-closed negative tests | `tests/test_heat3d_runtime.py`, `preflight.py` |
+| frozen checkpoint/sample old-new equivalence | native control PASS; high-N temporary fixture PASS; historical binary closure pending | G0b-2d receipt and reconciliation manifest |
+| provenance role | PASS structurally | `execution_role` is one of `publication_training`, `production_inference`, `compatibility_audit`; this receipt is `compatibility_audit` |
+
+V6 frozen evidence generators and historical scripts remain outside the V7
+production graph. They may be reached only by the test-only compatibility audit. The
+`u_split.py` dependency on RIGNO library-internal `_...` methods is recorded technical
+debt; this round does not refactor it.
+
+## V7-G0b-2d evidence boundary and blockers
+
+The new receipt is [`v7_g0b2d_receipt.json`](v7_g0b2d_receipt.json). It records the
+four-field route contract, devbox reconciliation state, temporary-fixture provenance,
+E32768 forward result, production preflight result and prohibited-action flags. No
+large NPZ/cache is committed. No training, solver, data generation, test/sealed-label
+access, model change, graph/sampling/reconstruction semantic change, batching/cache/JIT
+optimization, timing cutover or G1 experiment is included.
+
+The remaining G0 blockers are:
+
+1. Obtain and bind the missing identity-level historical E/U artifacts before calling
+   historical reconciliation complete.
+2. Replace the still-legacy V6 publication/high-N/timing dependency edges with
+   equivalence-verified adapters; the V7 entrypoints themselves have passed the
+   production import-graph check.
+3. Complete the formal G0 acceptance matrix for the legacy exclusion boundary and
+   freeze the GPU repeatability policy separately from CPU semantic equivalence.
+
 ## 审计方法与证据边界
 
 ### 追踪范围

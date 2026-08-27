@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g0b2c_eu_contract_v1",
+  "schema_version": "heat3d_v7_g0b2d_eu_contract_v2",
   "status": "frozen_from_v6_p1i_evidence",
   "purpose": "Machine-readable restoration of the historical V6/P1i E/U route semantics for V7 compatibility work.",
   "evidence": {
@@ -15,8 +15,32 @@
   },
   "common": {
     "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
-    "conditioning_resolution": 1024,
-    "conditioning_input_resolution": 1024,
+    "resolution_schema": {
+      "required_fields": [
+        "anchor_context_resolution",
+        "encoder_input_resolution",
+        "output_query_resolution",
+        "reconstruction_resolution"
+      ],
+      "deprecated_compatibility_fields": {
+        "conditioning_resolution": {
+          "status": "ambiguous_deprecated",
+          "allowed_for_legacy_parsing": true,
+          "g3_comparison_variable": false
+        },
+        "conditioning_input_resolution": {
+          "status": "ambiguous_deprecated",
+          "allowed_for_legacy_parsing": true,
+          "g3_comparison_variable": false
+        },
+        "query_resolution": {
+          "status": "ambiguous_deprecated",
+          "allowed_for_legacy_parsing": true,
+          "g3_comparison_variable": false
+        }
+      },
+      "semantic_rule": "E/U differ in encoder input resolution and conditioning semantics; reconstruction resolution is a downstream role and does not define U."
+    },
     "conditioning_support_rule": {
       "name": "source_aware_anchor_support",
       "anchor_count": 1024,
@@ -46,8 +70,9 @@
     "E16384_reconstruction": {
       "strategy_name": "E",
       "strategy_version": "V6/P1i E16384 frozen reference route",
-      "conditioning_resolution": 1024,
-      "query_resolution": 16384,
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 16384,
+      "output_query_resolution": 16384,
       "direct_query": true,
       "conditioning_input_semantics": "A source-aware 1024 anchor group provides the frozen native input, context and anchor scale; the E query group is a direct high-resolution model query.",
       "query_rule": "The 16384 query support is the label-independent prefix of the deterministic nested support order.",
@@ -65,11 +90,29 @@
       "reconstruction_role": "The direct E16384 prediction is reconstructed to the full solver field for the frozen publication/reference route; the direct query remains a first-class model output.",
       "publication_role": "frozen V6/P1i reference operating point, not a new V7 result"
     },
+    "E32768_direct_compatibility": {
+      "strategy_name": "E",
+      "strategy_version": "V7 compatibility route preserving the frozen E high-N semantics",
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 32768,
+      "output_query_resolution": 32768,
+      "direct_query": true,
+      "conditioning_input_semantics": "The anchor-derived context and scale remain native-1024; the E encoder/query group is the label-independent nested 32768 support prefix.",
+      "query_rule": "Direct 32768 query using the deterministic nested support order and the existing sparse_kdtree_v1 graph policy; compatibility-only until a historical E32768 artifact is bound.",
+      "graph_semantics": "Reuse the E direct-query graph semantics and per-edge fixed padding when a frozen envelope is available; no graph algorithm or sampling change.",
+      "global_context_rule": "Anchor-derived native context and q-k/scale context are held fixed for the query.",
+      "anchor_scale_rule": "Apply the native 1024 anchor scale to the direct high-resolution shape output.",
+      "fixed_edge_targets": "compatibility fixture: sample-derived envelope; historical E32768 envelope unresolved",
+      "reconstruction_resolution": 240825,
+      "reconstruction_role": "Optional downstream reconstruction only; direct 32768 output remains the compatibility observation.",
+      "publication_role": "V7 Refactor Compatibility Fixture only; not publication, G3, or final-test evidence"
+    },
     "E240825_direct_control": {
       "strategy_name": "E",
       "strategy_version": "V6/P1i E240825 direct control",
-      "conditioning_resolution": 1024,
-      "query_resolution": 240825,
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 240825,
+      "output_query_resolution": 240825,
       "direct_query": true,
       "conditioning_input_semantics": "The same native 1024 anchor conditioning contract as E16384.",
       "query_rule": "Direct high-resolution query at the full solver-node resolution under the registered E240825 envelope.",
@@ -83,8 +126,9 @@
     "U_v2_16384_reconstruction": {
       "strategy_name": "U-v2",
       "strategy_version": "V6/P1i U-v2 bounded output-query extrapolation with frozen R2P nearest repair",
-      "conditioning_resolution": 1024,
-      "query_resolution": 16384,
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 1024,
+      "output_query_resolution": 16384,
       "direct_query": true,
       "conditioning_input_semantics": "The native 1024 graph, encoder input, processor input, global context and anchor scale are retained exactly.",
       "query_rule": "The high-resolution output query is built from the label-independent nested support prefix and is passed directly to the output-side decoder path.",
@@ -119,8 +163,9 @@
     "U_v2_direct240825": {
       "strategy_name": "U-v2",
       "strategy_version": "V6/P1i U-v2 direct full-field query",
-      "conditioning_resolution": 1024,
-      "query_resolution": 240825,
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 1024,
+      "output_query_resolution": 240825,
       "direct_query": true,
       "conditioning_input_semantics": "The historical native 1024 conditioning path is unchanged.",
       "query_rule": "Direct high-resolution output query at 240825 nodes using the U-v2 output-side graph contract.",
@@ -134,18 +179,19 @@
     }
   },
   "matched_query_interface": {
-    "formula": "E(N_cond,E -> N_q) vs U(N_cond,U -> N_q)",
+    "formula": "E(N_anchor=1024, N_encoder,E -> N_query) vs U(N_anchor=1024, N_encoder,U -> N_query)",
     "required_fields": [
       "strategy",
-      "conditioning_resolution",
-      "query_resolution",
+      "anchor_context_resolution",
+      "encoder_input_resolution",
+      "output_query_resolution",
       "direct_query",
       "reconstruction_resolution"
     ],
-    "fair_comparison_rule": "Future E/U comparisons must match query_resolution and record conditioning_resolution separately; this freeze does not measure latency or make a performance claim."
+    "fair_comparison_rule": "Future E/U comparisons must match output_query_resolution and record anchor_context_resolution and encoder_input_resolution separately; this freeze does not measure latency or make a performance claim."
   },
   "unresolved": [
-    "The missing historical WSL2 binary support/graph/reconstruction artifacts prevent binary fingerprint reconciliation in this checkout.",
+    "The current checkout does not contain the devbox historical high-resolution support/graph/reconstruction bindings; reconciliation is performed only when matching immutable artifacts are found.",
     "The historical protocol and R0 closeout files referenced by the V6 binding are not present in the current checkout; their exact contents are not inferred here.",
     "This manifest restores route semantics from tracked docs, bindings and padding envelopes; it is not a replacement for the pending historical artifact reconciliation."
   ]
