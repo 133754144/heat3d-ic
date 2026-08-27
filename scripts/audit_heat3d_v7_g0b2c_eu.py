@@ -612,6 +612,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         runner._graph_coords_for_example(anchor, runtime["stats"]),
         runner._graph_coords_for_example(old_u_query_example, runtime["stats"]),
     )
+    old_anchor_graph_coords = runner._graph_coords_for_example(anchor, runtime["stats"])
+    old_query_graph_coords = runner._graph_coords_for_example(old_u_query_example, runtime["stats"])
+    new_anchor_graph_coords = stable_session.feature_transform.transform(anchor).graph_coords
+    new_query_graph_coords = stable_session.feature_transform.transform(u_case.query).graph_coords
     old_u_native_targets = {
         field: (
             u_native_targets.get(field)
@@ -765,6 +769,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "query_metadata_hash_new": _metadata_hash(u_case.query_metadata),
                 "query_metadata_hash_equal": _metadata_hash(old_u_query_meta) == _metadata_hash(u_case.query_metadata),
                 "query_metadata_fields": _metadata_compare(old_u_query_meta, u_case.query_metadata),
+                "graph_coordinate_sources": {
+                    "anchor": _diff(old_anchor_graph_coords, new_anchor_graph_coords),
+                    "query": _diff(old_query_graph_coords, new_query_graph_coords),
+                },
                 "old_new_prediction": _output_summary(old_u_output, new_u_output),
                 "query_scale": _diff(old_u_output["s_hat"], new_u_output["s_hat"]),
                 "reconstruction": u_reconstruction,

@@ -246,12 +246,14 @@ def u_v2_asymmetric_metadata(
 
     anchor = np.asarray(anchor_graph_coords, dtype=np.float64)
     query = np.asarray(query_graph_coords, dtype=np.float64)
-    lower = anchor.min(axis=0)
-    upper = anchor.max(axis=0)
-    extent = upper - lower
+    domain = np.stack((anchor.min(axis=0), anchor.max(axis=0)))
+    extent = domain[1] - domain[0]
     if np.any(extent <= 0.0):
         raise ValueError("degenerate native anchor domain")
-    query_normalized = 2.0 * (query - lower) / extent - 1.0
+    # Keep the historical operation order (domain stack, subtraction and
+    # division) because KD-tree boundary predicates are sensitive to the last
+    # float32 bit even when the mathematical expression is equivalent.
+    query_normalized = 2.0 * (query - domain[0]) / (domain[1] - domain[0]) - 1.0
     overshoot = np.maximum(np.maximum(-1.0 - query_normalized, 0.0), np.maximum(query_normalized - 1.0, 0.0))
     maximum = float(np.max(overshoot))
     if not np.all(np.isfinite(query_normalized)):
