@@ -15,6 +15,14 @@ from rigno.heat3d_runtime.features import FeatureTransform
 from rigno.heat3d_v6_dataset import V6DualRobinExample
 
 
+EDGE_FIELDS = (
+    "p2r_edge_indices",
+    "r2r_edge_indices",
+    "r2r_edge_domains",
+    "r2p_edge_indices",
+)
+
+
 @dataclass(frozen=True)
 class GroupBuilder:
     """Build dense JAX graph groups without importing any script module."""
@@ -23,7 +31,13 @@ class GroupBuilder:
     graph_config: dict[str, Any]
     graph_seed: int = 0
 
-    def build(self, examples: list[V6DualRobinExample], *, name: str) -> dict[str, Any]:
+    def build(
+        self,
+        examples: list[V6DualRobinExample],
+        *,
+        name: str,
+        edge_targets: dict[str, int | None] | None = None,
+    ) -> dict[str, Any]:
         if not examples:
             raise ValueError("cannot build an empty Heat3D model group")
         transformed = [self.feature_transform.transform(example) for example in examples]
@@ -37,17 +51,79 @@ class GroupBuilder:
             [row.graph_coords for row in transformed],
             graph_seed=int(self.graph_seed),
         )
+        if edge_targets is not None:
+            metadata = _pad_metadata(metadata, edge_targets)
         graphs = builder.build_graphs(metadata)
-        return {
-            "name": str(name),
-            "sample_ids": tuple(example.sample_id for example in examples),
-            "split": examples[0].meta.get("split"),
-            "inputs": inputs,
-            "graphs": graphs,
-            "metadata": metadata,
-            "shared_metadata": shared,
-            "feature_names": feature_names,
+        return _assemble_group(examples, inputs, metadata, graphs, name, feature_names, shared)
+
+    def build_from_metadata(
+        self,
+        examples: list[V6DualRobinExample],
+        metadata: Any,
+        *,
+        name: str,
+        edge_targets: dict[str, int | None] | None = None,
+    ) -> dict[str, Any]:
+        """Build a group from precomputed metadata without changing graph semantics."""
+
+        if not examples:
+            raise ValueError("cannot build an empty Heat3D model group")
+        transformed = [self.feature_transform.transform(example) for example in examples]
+        feature_names = transformed[0].feature_names
+        if any(row.feature_names != feature_names for row in transformed[1:]):
+            raise ValueError(f"{name}: feature-name mismatch")
+        inputs = _concatenate_inputs([row.inputs for row in transformed])
+        if edge_targets is not None:
+            metadata = _pad_metadata(metadata, edge_targets)
+        builder = Heat3DGraphBuilder(**dict(self.graph_config))
+        graphs = builder.build_graphs(metadata)
+        shared = False
+        return _assemble_group(examples, inputs, metadata, graphs, name, feature_names, shared)
+
+
+def _assemble_group(
+    examples: list[V6DualRobinExample],
+    inputs: Any,
+    metadata: Any,
+    graphs: Any,
+    name: str,
+    feature_names: tuple[str, ...],
+    shared: bool,
+) -> dict[str, Any]:
+    return {
+        "name": str(name),
+        "sample_ids": tuple(example.sample_id for example in examples),
+        "split": examples[0].meta.get("split"),
+        "inputs": inputs,
+        "graphs": graphs,
+        "metadata": metadata,
+        "shared_metadata": shared,
+        "feature_names": feature_names,
+    }
+
+
+def _pad_metadata(metadata: Any, edge_targets: dict[str, int | None]) -> Any:
+    replacements: dict[str, Any] = {}
+    for field in EDGE_FIELDS:
+        value = getattr(metadata, field)
+        target = edge_targets.get(field)
+        if value is None:
+            if target is not None:
+                raise ValueError(f"{field}: target set for absent edge family")
+            replacements[field] = None
+            continue
+        if target is None or int(value.shape[1]) > int(target):
+            raise ValueError(f"{field}: edge count exceeds fixed target")
+        pad_count = int(target) - int(value.shape[1])
+        replacements[field] = value if not pad_count else jnp.concatenate(
+            [value, jnp.repeat(value[:, -1:, :], pad_count, axis=1)], axis=1
+        )
+    return type(metadata)(
+        **{
+            field: replacements.get(field, getattr(metadata, field))
+            for field in metadata._fields
         }
+    )
 
 
 def _concatenate_inputs(inputs: list[Any]) -> Any:

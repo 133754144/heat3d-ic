@@ -127,10 +127,43 @@ class RuntimeSession:
         examples: list[Any],
         *,
         name: str = "v7_reference_valid_iid",
+        context_examples: list[Any] | None = None,
     ) -> dict[str, Any]:
         """Build one model-input group and attach all configured raw-input features."""
 
         group = self.group_builder.build(examples, name=name)
+        return self._attach_features(group, examples, context_examples=context_examples)
+
+    def build_group_from_metadata(
+        self,
+        examples: list[Any],
+        metadata: Any,
+        *,
+        name: str = "v7_reference_valid_iid",
+        edge_targets: dict[str, int | None] | None = None,
+        context_examples: list[Any] | None = None,
+    ) -> dict[str, Any]:
+        """Build a group from stable graph metadata, including fixed edge padding."""
+
+        group = self.group_builder.build_from_metadata(
+            examples,
+            metadata,
+            name=name,
+            edge_targets=edge_targets,
+        )
+        return self._attach_features(group, examples, context_examples=context_examples)
+
+    def _attach_features(
+        self,
+        group: dict[str, Any],
+        examples: list[Any],
+        *,
+        context_examples: list[Any] | None,
+    ) -> dict[str, Any]:
+        if context_examples is None:
+            context_examples = examples
+        if len(context_examples) != len(examples):
+            raise ValueError("context_examples must align one-to-one with examples")
         model_config = self.model_config
         context_enabled = (
             model_config.get("native_output_mode") == "native_shape_scale"
@@ -141,7 +174,9 @@ class RuntimeSession:
         if context_enabled:
             if not isinstance(standardizer, Mapping):
                 raise ValueError("native/global-context model requires a frozen standardizer")
-            context = self.feature_transform.standardize_global_contexts(examples, standardizer)
+            context = self.feature_transform.standardize_global_contexts(
+                context_examples, standardizer
+            )
             expected = int(model_config.get("global_context_feature_dim", 0))
             if context.shape != (len(examples), expected):
                 raise ValueError(
