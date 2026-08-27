@@ -440,11 +440,14 @@ class UHighNRuntime:
             query_graph_coords,
         )
         combined = _combined_edge_targets(native_edge_targets, query_edge_targets)
+        native_compatible = HighNRuntime.compatible_edge_targets(
+            native_record.metadata, native_edge_targets
+        )
         native_group = self.session.build_group_from_metadata(
             [anchor],
             native_record.metadata,
             name="v7_u_v2_native_conditioning_valid_iid",
-            edge_targets=dict(native_edge_targets),
+            edge_targets=native_compatible,
             context_examples=[anchor],
         )
         query_group = self.session.build_group_from_metadata(
