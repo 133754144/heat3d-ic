@@ -191,7 +191,7 @@ def _args(args: argparse.Namespace) -> SimpleNamespace:
 
 def _load_inputs(args: argparse.Namespace) -> tuple[dict[str, Any], Any, list[Any], dict[str, np.ndarray], dict[str, int]]:
     paths = _args(args)
-    binding = json.loads(args.binding.read_text(encoding="utf-8"))
+    binding = json.loads(args.v6_binding.read_text(encoding="utf-8"))
     runtime = highn._checkpoint_runtime(paths)
     dataset = highn._dataset(paths)
     examples = highn._valid_examples(dataset, binding)
@@ -398,7 +398,10 @@ def _reconstruction_compare(anchor: Any, full: Mapping[str, np.ndarray], support
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    binding = json.loads(args.binding.read_text(encoding="utf-8"))
+    binding = json.loads(args.v6_binding.read_text(encoding="utf-8"))
+    freeze_manifest = json.loads(args.binding.read_text(encoding="utf-8"))
+    if freeze_manifest.get("status") != "frozen_read_only":
+        raise RuntimeError("V7 legacy freeze manifest is not read-only/frozen")
     runtime, _dataset, examples, full, archive_lookup = _load_inputs(args)
     by_id = {str(row.sample_id): row for row in examples}
     anchor = by_id[FIXED_SAMPLE]
@@ -599,6 +602,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "status": "compatibility_audit_complete",
         "fixture_label": "V7 Refactor Compatibility Fixture",
         "git_sha": args.git_sha,
+        "legacy_freeze_manifest_sha256": _sha256(args.binding),
+        "v6_implementation_binding_sha256": _sha256(args.v6_binding),
         "checkpoint_sha256": binding["frozen_artifacts"]["checkpoint"]["checkpoint_sha256"],
         "checkpoint_epoch": int(binding["frozen_artifacts"]["checkpoint"]["epoch"]),
         "dataset": {
@@ -725,6 +730,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binding", type=Path, required=True)
+    parser.add_argument("--v6-binding", type=Path, required=True)
     parser.add_argument("--dataset-root", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--full-fields", type=Path, required=True)
