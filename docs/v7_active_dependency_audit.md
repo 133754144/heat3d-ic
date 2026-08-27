@@ -21,9 +21,79 @@ materialization、metrics 和 timing 仍分散在多个 `scripts/` 文件中。
 
 - D0 文档边界已记录；
 - G0a 静态依赖审计交付**已完成**，但审计结论是 G0 Code gate **未通过**；
-- 本轮不开始 G0b，不抽取模块，不改变 import graph，不删除历史代码；
+- G0b-1 已新增稳定 V7 inference runtime，但 runtime numerical equivalence
+  仍需在可用的冻结 checkpoint/`valid_iid` fixture 上执行后才能升级 G0；
+- 历史 smoke/development/check 脚本未修改、未删除，且尚未被旧 V6 入口自动
+  切换；它们仍是 legacy/reference path；
 - 后续只应在新的明确授权下按本文件的最小 extract-core/preserve-legacy
-  边界推进。
+  边界继续推进，不得借 G0b-1 开始 G0b-2 性能优化或高-N 路径重写。
+
+## G0b-1 stable V7 runtime（本轮交付）
+
+本轮在 `rigno/heat3d_runtime/` 建立了不依赖 `scripts/` 的 Heat3D 专用
+inference core。它只复用稳定 `rigno/` library semantics，不导入
+`*_smoke.py`、`check_*`、`*_development.py`，不修改 `sys.path`，也不向其
+他模块写入 hook 或替换 symbol。
+
+新依赖方向为：
+
+```text
+scripts/run_heat3d_v7_reference_inference.py
+  -> rigno.heat3d_runtime.RuntimeSession
+     -> checkpoint.py: checkpoint loading, stats materialization,
+        decoder-bypass config resolution, device placement
+     -> features.py: explicit V6 feature transform, normalization,
+        global/native/qk/scale input assembly
+     -> grouping.py: V6 Inputs + graph metadata/graph construction
+     -> rigno/heat3d_v6_* + rigno/heat3d_v5_* + rigno/models/rigno.py
+```
+
+首批 public API 为 `CheckpointBundle`、`load_checkpoint`、
+`materialize_checkpoint_stats`、`resolve_model_config`、`device_params`、`FeatureTransform`、
+`GroupBuilder`、`RuntimeSession.from_paths`、
+`RuntimeSession.from_checkpoint_and_config`、`RuntimeSession.build_group`、
+`RuntimeSession.apply`、`RuntimeSession.predict_native_1024`、
+`compare_metadata`、`compare_named_arrays` 和 `snapshot_group`。显式 transform
+直接构造 model-visible `Inputs`，保留 V6 zero-delta bridge、归一化、global
+context、native physics、q--k regional features 和 scale weights 的输入
+语义，但不读取 `example.target`。
+
+`scripts/run_heat3d_v7_reference_inference.py` 是新的 reference inference
+入口：它的 split CLI 只允许 `valid_iid`，默认只打印 provenance/count summary，
+不计算 metrics、不调用 solver、不生成数据、不写 output artifact。它是入口
+适配器，不是 runtime core；runtime core 本身不反向导入任何 script。
+
+### G0b-1 equivalence boundary
+
+`rigno/heat3d_runtime/equivalence.py` 提供 old/new named-tensor comparison 和
+snapshot flattening，覆盖 checkpoint interpretation（由
+`CheckpointBundle.descriptor()` 提供）、normalization/feature tensors、
+global/native/context/scale、graph/model input，以及 prediction/scale output
+的记录接口。除 prediction 使用已有 V6 adapter/reference 的 `1e-6` K 语义外，
+默认比较为 exact `0.0` max-abs/RMSE；调用方只能显式收紧，不会被工具自动
+放宽。当前实现不伪造 old/new 数字：若冻结 checkpoint 或 valid fixture 不在
+本 checkout，报告必须是 `runtime equivalence pending server validation`。
+
+### G0b-1 replacement map and remaining legacy use
+
+| 原 active smoke/private dependency | V7 stable replacement | 当前状态 |
+| --- | --- | --- |
+| V3 `install_checkpoint_feature_hooks` monkey patch | `FeatureTransform.transform` + checkpoint-configured transform | 新 V7 entrypoint 已替代；旧 V6 脚本仍保留原依赖 |
+| `runner._load_params_checkpoint`, `_device_params` | `load_checkpoint`, `device_params` | 新 V7 runtime 已替代 |
+| `common._materialize_checkpoint_stats` | `materialize_checkpoint_stats` | 新 V7 runtime 已替代 |
+| `runner._resolve_decoder_bypass_model_config` | `resolve_model_config` | 新 V7 runtime 已替代 |
+| `runner._make_v6_padded_groups_with_progress` 与 `_attach_*` | `GroupBuilder` + `FeatureTransform` | 新 V7 runtime 已替代 |
+| `runner._model_apply` | `RuntimeSession.apply` | 新 V7 runtime 已替代 |
+| V6 old high-N/production scripts | 未切换；仍为 legacy/reference | 保留，待后续授权后再决定 adapter 边界 |
+
+因此，**新的 V7 reference path 不再使用 smoke 级别模块**；当前正式 V6
+high-N/production/timing 旧路径仍使用 V3 smoke hook 和 V1 runner private
+helpers，见上文 active call graph。这种依赖本身没有证据表明会必然降低模型
+精度；但 monkey patch 和跨脚本私有 API 可能改变 feature view、normalization
+或 model-input assembly 的运行时状态，因而带来静默输入漂移和复现风险，间接
+可能改变预测。G0b-1 本轮未运行模型，也没有实际性能/精度差值；必须等同一
+冻结 checkpoint 与 `valid_iid` fixture 上的 old/new tensor + prediction
+equivalence 完成后，才能判断是否存在数值影响。
 
 ## 审计方法与证据边界
 
