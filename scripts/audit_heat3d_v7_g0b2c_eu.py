@@ -595,13 +595,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         runner._graph_coords_for_example(anchor, runtime["stats"]),
         runner._graph_coords_for_example(old_u_query_example, runtime["stats"]),
     )
+    old_u_native_targets = {
+        field: (
+            u_native_targets.get(field)
+            if getattr(old_u_native_meta, field) is not None
+            else None
+        )
+        for field in qualification.EDGE_FIELDS
+    }
     old_u_anchor_group = highn._prepare_group(
         example=anchor,
         anchor=anchor,
         runtime=runtime,
         builder=old_u_builder,
         metadata=old_u_native_meta,
-        edge_targets=u_native_targets,
+        edge_targets=old_u_native_targets,
     )
     old_u_query_group = legacy_u._prepare_output_query_group_lean(
         example=old_u_query_example,
