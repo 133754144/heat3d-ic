@@ -70,7 +70,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     dataset = Heat3DV6DualRobinDataset(
         args.dataset_root, args.manifest, include_roles={"valid_iid"}
     )
-    if dataset.manifest.get("dataset_id") != CONTINUOUS_PHYSICS_V6_DATASET_ID:
+    if dataset.manifest["dataset_id"] != CONTINUOUS_PHYSICS_V6_DATASET_ID:
         raise ValueError("V7 U-v2 reference requires frozen V6/P1i continuous dataset")
     examples = list(dataset.samples)
     if args.max_samples is not None:

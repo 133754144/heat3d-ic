@@ -2,8 +2,9 @@
 
 状态：`V7 Refactor Compatibility Fixture`，不是 V6 historical evidence。
 
-本轮恢复了 V6/P1i E/U 的 route contract，但 devbox 上未发现可供本轮读取的
-历史 high-N binary support、graph-cache 或 reconstruction-map artifacts；WSL2
+本轮恢复了 V6/P1i E/U 的 route contract。devbox 已找到历史 route receipts、
+input plans、padding record 和 prediction arrays，但未找到可供 binary reconciliation
+的 identity-level support、graph-cache 或 reconstruction-map artifacts；WSL2
 在本轮不可访问。因此允许建立的临时 fixture 只从 `valid_iid` sample 的
 label-independent geometry、material/source/BC metadata 和已冻结的 route contract
 在内存或 `/tmp` 中构造，用于验证 V7 refactor 的行为等价边界。它不读取
@@ -15,7 +16,8 @@ labels，也不写入 `data/`、`output/`、`checkpoints/` 或 `logs/`。
 ```json
 {
   "temporary_compatibility_fixture_due_to_wsl2_unavailable": true,
-  "wsl2_historical_artifact_reconciliation": "pending",
+  "historical_artifact_reconciliation": "pending_missing_identity_artifacts",
+  "wsl2_mirror_reconciliation": "pending",
   "fixture_label": "V7 Refactor Compatibility Fixture",
   "historical_evidence_replacement": false,
   "publication_headline_eligible": false,

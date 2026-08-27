@@ -477,8 +477,10 @@ class UHighNRuntime:
         audit = dict(audit)
         audit.update(
             {
-                "conditioning_resolution": 1024,
-                "query_resolution": resolution,
+                "anchor_context_resolution": 1024,
+                "encoder_input_resolution": 1024,
+                "output_query_resolution": resolution,
+                "reconstruction_resolution": 240825,
                 "direct_query": True,
                 "native_edge_counts": self._edge_counts(native_record.metadata),
                 "query_edge_counts": self._edge_counts(query_metadata),

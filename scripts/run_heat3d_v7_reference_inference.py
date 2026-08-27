@@ -48,7 +48,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         args.manifest,
         include_roles={"valid_iid"},
     )
-    if dataset.manifest.get("dataset_id") != CONTINUOUS_PHYSICS_V6_DATASET_ID:
+    if dataset.manifest["dataset_id"] != CONTINUOUS_PHYSICS_V6_DATASET_ID:
         raise ValueError("reference inference requires frozen V6/P1i continuous_physics1024_v1")
     examples = list(dataset.samples)
     if args.max_samples is not None:

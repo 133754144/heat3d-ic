@@ -32,8 +32,10 @@ materialization、metrics 和 timing 仍分散在多个 `scripts/` 文件中。
 - 历史 smoke/development/check 脚本未修改、未删除，且尚未被旧 V6 入口自动
   切换；新的 V7 native/high-N reference path 已切断这些依赖，但旧 V6
   production/timing path 仍是 legacy/reference path；
-- 16k/32k 等价性没有因缺少冻结 support/anchor artifacts 而被补造；稳定入口
-  按 contract fail-closed，待 artifacts 可审计获得后再验证。
+- G0b-2d 已在临时、label-independent fixture 上完成 E16384/U-v2 16384
+  与 E32768 的 CPU compatibility closure；稳定入口仍按 contract fail-closed，
+  因 devbox 缺少 identity-level artifacts，historical binary reconciliation
+  尚未完成。
 
 ## G0b-1 stable V7 runtime（本轮交付）
 
@@ -181,15 +183,19 @@ GPU 的非零变化发生在相同 model-visible inputs 和相同 graph hash 已
   tensor hash 为
   `5dce892465c2adf4ac3380d5ecbeb81d60380d1893dcf9752d368a65b88c4757`；未写
   graph cache。
-- **E16384 small / extended：pending**。devbox 当前 checkout 没有冻结的
-  `support/16384/<sample_id>.npz`、anchor prediction artifact 或既有 high-N
-  preflight/cache evidence；入口会在 artifact 缺失时拒绝运行。本轮不生成
-  support、不调用 continuous solver、不访问非 `valid_iid` labels。
-- **E32768：pending**。同样缺少既有 valid-only support/anchor artifacts；不能
-  用 native-1024 结果替代 high-resolution evidence。
+- **E16384 small / extended：temporary compatibility closure**。G0b-2d 在
+  `valid_iid` 上完成了 stable/legacy CPU 等价比较；devbox 仍没有可绑定的
+  identity-level support、anchor prediction、graph/padding 或 reconstruction
+  map evidence，因此 historical closure 仍 pending。本轮不生成 support、不调用
+  continuous solver、不访问非 `valid_iid` labels。
+- **E32768：temporary compatibility forward closure**。G0b-2d 对一个固定
+  `valid_iid` sample 完成 graph/model input、forward、scale、direct prediction
+  和 reconstruction-map 的 CPU exact comparison；历史 E32768 artifact 仍缺失，
+  该结果不替代 historical high-resolution evidence。
 
-因此本轮可以证明 stable API 和 native control 的 cutover，不能声称 16k/32k
-high-resolution equivalence 已完成。
+因此本轮可以证明 stable API、native control 和 temporary high-resolution
+compatibility closure；不能宣称 historical 16k/32k binary reconciliation 或
+accuracy/latency claim 已完成。
 
 ### 当前局限与只审计不实施的优化候选
 
@@ -215,14 +221,15 @@ high-resolution equivalence 已完成。
 | V3 `install_checkpoint_feature_hooks` | 已由显式 `FeatureTransform` 替代 | 仍由 anchor high-N、production highres、qualification 路径使用 |
 | V1 runner checkpoint/private model helpers | 已由 `CheckpointBundle`、`load_checkpoint`、`RuntimeSession.apply` 替代 | 仍是旧 reference/production/timing 的 active compatibility edge |
 | V1 `_make_v6_padded_groups_with_progress` 与 `_attach_*` | 已由 `GroupBuilder`/`FeatureTransform` 替代 | 旧 V6 path 仍调用 |
-| high-N support/graph/reconstruction orchestration | `HighNRuntime` 已提供 stable adapter；native 1024 已实跑 | 16k/32k 还没有 artifact，旧 high-N route 未被自动切换 |
+| high-N support/graph/reconstruction orchestration | `HighNRuntime` 已提供 stable adapter；native 1024 与 temporary high-N fixture 已实跑 | historical 16k/32k identity artifacts 缺失，旧 high-N route 未被自动切换 |
 | scripts/private metric/timing helpers | V7 reference entrypoint 不导入 | qualification/E/U/production wrappers 仍使用，尚未抽取 |
 
 当前 G0 blocker 是：(1) 旧 V6 publication/timing path 尚未全部切到 stable
-runtime；(2) 16k/32k frozen valid-only artifacts 缺失，无法完成 high-resolution
-ladder；(3) GPU backend repeatability policy 尚未冻结；(4) metrics/timing 尚未
-形成单一 public evaluation core。上述 blocker 不表示本轮 stable native-1024
-cutover 失败，也不允许提前进入 G0b-3 性能优化或 publication claim。
+runtime；(2) historical identity-level E/U artifacts 缺失，无法完成 binary
+reconciliation closure；(3) GPU backend repeatability policy 尚未冻结；(4)
+metrics/timing 尚未形成单一 public evaluation core。上述 blocker 不表示本轮
+stable native-1024 或 temporary compatibility closure 失败，也不允许提前进入
+G0c/G1、性能优化或 publication claim。
 
 ## V7-G0b-2d schema correction and historical reconciliation
 
@@ -701,9 +708,10 @@ determinism policy；本轮不运行 solver，也不接触任何 held-out/sealed
 | feature/normalization/checkpoint/metrics/reconstruction 单一 core | 未完成 | 本文“重复实现与语义分散”所列多组路径 |
 | 本轮禁止事项 | 已遵守 | 未训练、未求解、未生成数据、未访问 `test_iid`/held-out/sealed labels、未改模型/冻结 artifact；仅运行冻结 `valid_iid` 的 CPU/GPU repeatability control 与 native-1024 stable cutover |
 
-结论：**V7-G0b-2 已完成 stable native/high-N runtime 边界、CPU semantic
-equivalence 和 GPU repeatability characterization，但 G0 Code gate 仍未通过，
-16k/32k high-resolution ladder 仍 pending。** GPU 默认 backend 的重复 apply
+结论：**V7-G0b-2d 已完成 stable native/high-N runtime 边界、CPU semantic
+equivalence、temporary E/U high-N compatibility closure 和 GPU repeatability
+characterization，但 G0 Code gate 仍未通过，formal 16k/32k historical ladder
+仍 pending。** GPU 默认 backend 的重复 apply
 尚未满足严格 reproducibility/equivalence，需要后续单独冻结 backend/determinism
 policy；本轮不做该项优化或修复。本文件继续冻结 V6 artifacts、sealed data、
 历史 legacy 路径和 extract-core / preserve-legacy 边界。
@@ -719,16 +727,17 @@ sealed-data provenance 没有被修改。
 [`v7_g0b2c_eu_contract_manifest.json`](../configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json)。
 其关键边界是：
 
-- E：`conditioning_resolution=1024`；E16384 以
-  `query_resolution=16384` 做 direct high-resolution query，E32768 使用
-  `query_resolution=32768` 的相同 resolution/256 regional-mesh 规则；
-- U-v2：`conditioning_resolution=1024`，保留 native conditioning graph、
-  context 和 anchor scale，再以 `query_resolution=16384` 做 output-side
-  direct query。U-v2 不是 reconstruction-only route；
-- E/U 都显式保存 `conditioning_resolution`、`query_resolution`、
-  `direct_query` 和 `reconstruction_resolution`。未来 matched-query 比较固定为
-  `E(N_cond,E -> N_q)` 对 `U(N_cond,U -> N_q)`；本轮没有 latency 或 superiority
-  claim；
+- E：`anchor_context_resolution=1024`；E16384 以
+  `encoder_input_resolution=16384`、`output_query_resolution=16384` 做 direct
+  high-resolution query，E32768 使用对应的 `32768/32768` 规则；
+- U-v2：`anchor_context_resolution=1024`、
+  `encoder_input_resolution=1024`，保留 native conditioning graph、context 和
+  anchor scale，再以 `output_query_resolution=16384` 做 output-side direct
+  query。U-v2 不是 reconstruction-only route；
+- E/U 都显式保存 `anchor_context_resolution`、`encoder_input_resolution`、
+  `output_query_resolution`、`reconstruction_resolution` 和 `direct_query`。未来
+  matched-query 比较固定为 `E(N_anchor, N_encoder,E -> N_query)` 对
+  `U(N_anchor, N_encoder,U -> N_query)`；本轮没有 latency 或 superiority claim；
 - global context、q-k/scale features 和 anchor scale 均来自 native 1024
   conditioning side；reconstruction 是 direct prediction 之后的可选/共同下游；
 - fixed edge targets 保留 V6 route envelope。E16384 的 fixed targets 为
@@ -744,7 +753,8 @@ high-resolution binary support/graph/reconstruction artifacts 未找到。WSL2 �
 
 ```text
 temporary_compatibility_fixture_due_to_wsl2_unavailable = true
-wsl2_historical_artifact_reconciliation = pending
+historical_artifact_reconciliation = pending_missing_identity_artifacts
+wsl2_mirror_reconciliation = pending
 fixture_label = V7 Refactor Compatibility Fixture
 ```
 
@@ -768,7 +778,7 @@ metadata、reconstruction maps 和 hashes；完成前状态保持 pending。
 | native-1024 | complete | support、raw metadata、inputs、graphs、native physics、context/scale、prediction 和 `s_hat` 均 `max_abs=0`、`RMSE=0`；prediction SHA 为 `7b559765309c31be16400679db84998c8e61c6e9c4a034c6a41185d0941962fd` |
 | E16384 | complete with temporary fixture | support/metadata、fixed padding、model-visible tensors、raw prediction、query/anchor scale、final direct prediction 和 reconstruction field 均 `max_abs=0`、`RMSE=0`；prediction SHA 为 `59a27149604f7c2f0874e5cf38c8d36d05862ca15b2e22a048b0550518e3b61c` |
 | U-v2 16384 | complete with temporary fixture | native conditioning 与 high-resolution direct-query metadata/graphs/model-visible tensors、raw prediction、query scale 和 reconstruction field 均 exact；prediction SHA 为 `65a9b1c8719431510dd7997d958ad7e99930e0b63e44c8be80c70b161c463066` |
-| E32768 | compatibility smoke only | 1 个固定 `valid_iid` sample 的 support、raw metadata、fixed model-input materialization exact；未 forward，未计算 metrics |
+| E32768 | temporary compatibility forward | 1 个固定 `valid_iid` sample 的 support、raw/padded metadata、model-visible tensors、prediction、scale 和 reconstruction map exact；未计算 metrics |
 
 E16384 的 temporary support fingerprints 为 support indices
 `2bc5c34317d70d7a5b67b0b218c13ff1cf0f02b51e226c1156c0712ae3584427`、query
@@ -826,8 +836,8 @@ KD-tree、padding 或 reconstruction semantics。
 | --- | --- |
 | E/U historical contract parsing 与 explicit resolution separation | 完成；manifest 已冻结 |
 | native-1024、E16384、U-v2 16384 CPU old/new equivalence | 完成，但 E/U high-N 证据仍标记 temporary fixture |
-| E32768 G0 compatibility smoke | 完成；无 forward/metrics |
-| WSL2 historical artifact reconciliation | 未完成，`pending` |
+| E32768 G0 compatibility forward | 完成；temporary fixture 限定，无 metrics/accuracy claim |
+| historical identity-level artifact reconciliation | 未完成，`pending_missing_identity_artifacts`；WSL2 mirror 独立为 `pending` |
 | G0 Code：全部 formal production/timing path 脱离 smoke/check/development/private API | 未通过；旧 V6 path 仍保留 legacy dependencies |
 | G1 experiments / publication / final test | 未开始；本轮没有性能或 accuracy claim |
 

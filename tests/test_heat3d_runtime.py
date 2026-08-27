@@ -195,6 +195,30 @@ class StableRuntimeStaticTests(unittest.TestCase):
                 execution_role="production_inference",
                 route_contract=route,
             )
+        for mapping, field in (
+            (model_config, "qk_region_feature_version"),
+            (stats, "normalization_profile"),
+        ):
+            broken_mapping = dict(mapping)
+            del broken_mapping[field]
+            with self.assertRaises(SemanticContractError):
+                validate_semantic_contract(
+                    run_config=run_config,
+                    model_config=broken_mapping if mapping is model_config else model_config,
+                    stats=broken_mapping if mapping is stats else stats,
+                    execution_role="production_inference",
+                    route_contract=route,
+                )
+        broken_route = dict(route)
+        broken_route["conditioning_resolution"] = 1024
+        with self.assertRaises(SemanticContractError):
+            validate_semantic_contract(
+                run_config=run_config,
+                model_config=model_config,
+                stats=stats,
+                execution_role="production_inference",
+                route_contract=broken_route,
+            )
 
     def test_e_high_n_graph_policy_does_not_collapse_query_resolution(self) -> None:
         from rigno.heat3d_runtime.high_n import HighNRuntime

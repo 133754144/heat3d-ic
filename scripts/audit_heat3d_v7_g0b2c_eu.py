@@ -757,7 +757,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "temporary_fixture_provenance": {
             "temporary_compatibility_fixture_due_to_wsl2_unavailable": True,
-            "historical_artifact_reconciliation": "pending_devbox_artifacts_not_found",
+            "historical_artifact_reconciliation": "pending_missing_identity_artifacts",
             "wsl2_mirror_reconciliation": "pending",
             "support_and_query_label_independent": True,
             "temperature_label_read": False,

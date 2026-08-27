@@ -95,7 +95,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         args.manifest,
         include_roles={"valid_iid"},
     )
-    if dataset.manifest.get("dataset_id") != CONTINUOUS_PHYSICS_V6_DATASET_ID:
+    if dataset.manifest["dataset_id"] != CONTINUOUS_PHYSICS_V6_DATASET_ID:
         raise ValueError("high-N reference requires frozen V6/P1i continuous_physics1024_v1")
     examples = list(dataset.samples)
     if args.max_samples is not None:
@@ -126,16 +126,14 @@ def run(args: argparse.Namespace) -> dict[str, object]:
             if args.resolution == 1024
             else _support_path(args.support_root, args.resolution, str(anchor.sample_id))
         )
+        fixed_targets = None if route_contract is None else route_contract["fixed_edge_targets"]
+        if fixed_targets is not None and not isinstance(fixed_targets, dict):
+            raise ValueError("production E route requires explicit fixed_edge_targets mapping")
         case = runtime.build_case(
             anchor,
             args.resolution,
             support_path=support_path,
-            edge_targets=(
-                None
-                if route_contract is None
-                or not isinstance(route_contract.get("fixed_edge_targets"), dict)
-                else route_contract["fixed_edge_targets"]
-            ),
+            edge_targets=fixed_targets,
             cache_dir=args.graph_cache_dir,
             write_cache=bool(args.write_graph_cache),
         )

@@ -1,0 +1,197 @@
+{
+  "schema_version": "heat3d_v7_g0b2d_receipt_v1",
+  "phase": "V7-G0b-2d",
+  "status": "compatibility_audit_complete_with_fail_closed_historical_reconciliation",
+  "execution_role": "compatibility_audit",
+  "evidence_execution_git_sha": "73f19a5",
+  "legacy_freeze_manifest_sha256": "f398c0aa4090e25fca3b4b965c457ffa60224a54272d81d2810518ab92eef891",
+  "eu_contract_manifest": {
+    "path": "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json",
+    "schema_version": "heat3d_v7_g0b2d_eu_contract_v2",
+    "sha256": "6c901805514848287af79e471a231e9874244c7ce26d5904d889f1d513073cb3",
+    "authoritative_resolution_fields": [
+      "anchor_context_resolution",
+      "encoder_input_resolution",
+      "output_query_resolution",
+      "reconstruction_resolution"
+    ]
+  },
+  "historical_reconciliation_manifest": {
+    "path": "docs/v7_g0b2d_historical_reconciliation_manifest.json",
+    "sha256": "4656d98ac056e6ad84ede6f9a04a1d63362960dce340f1679980b34531d6d50c",
+    "status": "partial_observation_fail_closed",
+    "historical_artifact_reconciliation": "pending_missing_identity_artifacts",
+    "wsl2_mirror_reconciliation": "pending"
+  },
+  "frozen_checkpoint": {
+    "family": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "dataset": {
+    "id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "full_field_node_count": 240825,
+    "valid32_ids": [
+      "v6p1if1_0308", "v6p1if1_0511", "v6p1if1_0041", "v6p1if1_0846",
+      "v6p1if1_0572", "v6p1if1_0347", "v6p1if1_0286", "v6p1if1_0124",
+      "v6p1if1_1017", "v6p1if1_0854", "v6p1if1_0928", "v6p1if1_0543",
+      "v6p1if1_0632", "v6p1if1_0599", "v6p1if1_0003", "v6p1if1_0029",
+      "v6p1if1_0991", "v6p1if1_0109", "v6p1if1_0365", "v6p1if1_0091",
+      "v6p1if1_0930", "v6p1if1_0175", "v6p1if1_0915", "v6p1if1_0869",
+      "v6p1if1_0522", "v6p1if1_0118", "v6p1if1_0708", "v6p1if1_0817",
+      "v6p1if1_1003", "v6p1if1_0697", "v6p1if1_0907", "v6p1if1_0203"
+    ],
+    "fixed_forward_sample_id": "v6p1if1_0003",
+    "labels_read": false,
+    "test_iid_accessed": false,
+    "sealed_labels_accessed": false
+  },
+  "runtime": {
+    "legacy_identity": "V1/V3/V6 script reference path in compatibility-only harness",
+    "v7_identity": "rigno.heat3d_runtime.RuntimeSession + HighNRuntime + UHighNRuntime",
+    "backend": "cpu",
+    "device": "TFRT_CPU_0",
+    "jax_version": "0.9.1",
+    "anchor_context_resolution": 1024,
+    "reconstruction_resolution": 240825,
+    "direct_query": {"E": true, "U-v2": true}
+  },
+  "resolution_contract": {
+    "E16384": {
+      "strategy": "E",
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 16384,
+      "output_query_resolution": 16384,
+      "reconstruction_resolution": 240825,
+      "direct_query": true
+    },
+    "E32768": {
+      "strategy": "E",
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 32768,
+      "output_query_resolution": 32768,
+      "reconstruction_resolution": 240825,
+      "direct_query": true
+    },
+    "U-v2_16384": {
+      "strategy": "U-v2",
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 1024,
+      "output_query_resolution": 16384,
+      "reconstruction_resolution": 240825,
+      "direct_query": true
+    }
+  },
+  "resolution_ladder": {
+    "native_1024": {
+      "status": "equivalence_complete",
+      "sample_id": "v6p1if1_0003",
+      "support_hash": "71e9d11396821ca08828509c144f634f8267d80cd055162f5026f11e904e56af",
+      "graph_hash_old": "ec22f07f83040268c976d4967d942ce082364da06eab6d1b2805f09d29859b6f",
+      "graph_hash_new": "ec22f07f83040268c976d4967d942ce082364da06eab6d1b2805f09d29859b6f",
+      "model_visible_tensors_max_abs": 0.0,
+      "prediction_max_abs": 0.0,
+      "prediction_rmse": 0.0,
+      "anchor_scale_max_abs": 0.0
+    },
+    "E16384": {
+      "status": "equivalence_complete_with_temporary_fixture",
+      "sample_id": "v6p1if1_0003",
+      "support_indices_hash": "2bc5c34317d70d7a5b67b0b218c13ff1cf0f02b51e226c1156c0712ae3584427",
+      "query_coordinates_hash": "6bbb729925f844c90b3dc589027ab44273a09b6a2bebd78d7a6bdfd3f861dc74",
+      "raw_graph_hash_old": "cde2efe680beea7e42adaa9ee5a595b933eeba5c672657b8c907557b4273c3c5",
+      "raw_graph_hash_new": "cde2efe680beea7e42adaa9ee5a595b933eeba5c672657b8c907557b4273c3c5",
+      "fixed_edge_targets": {"p2r_edge_indices": 107645, "r2p_edge_indices": 107645, "r2r_edge_domains": 3573, "r2r_edge_indices": 3573},
+      "model_visible_tensors_max_abs": 0.0,
+      "raw_prediction_max_abs": 0.0,
+      "query_scale_max_abs": 0.0,
+      "anchor_scale_max_abs": 0.0,
+      "direct_prediction_max_abs": 0.0,
+      "reconstruction_map_hash_old": "f4c058e83a2ed59a8228e84e85ab570b405db102386890e4dd925f556386f4b7",
+      "reconstruction_map_hash_new": "f4c058e83a2ed59a8228e84e85ab570b405db102386890e4dd925f556386f4b7",
+      "reconstructed_field_max_abs": 0.0
+    },
+    "U-v2_16384": {
+      "status": "equivalence_complete_with_temporary_fixture",
+      "sample_id": "v6p1if1_0003",
+      "conditioning_support_is_native_1024": true,
+      "query_support_hash": "2bc5c34317d70d7a5b67b0b218c13ff1cf0f02b51e226c1156c0712ae3584427",
+      "native_graph_hash_old": "02c50da492a42c58a7a4423d1c80c730770879f69389ec4c67f7059b4fa5b1a",
+      "native_graph_hash_new": "02c50da492a42c58a7a4423d1c80c730770879f69389ec4c67f7059b4fa5b1a",
+      "query_graph_hash_old": "c490182419f75a6a4ea84b7d110c5c10c47928c999dd1ee731019497180a4f16",
+      "query_graph_hash_new": "c490182419f75a6a4ea84b7d110c5c10c47928c999dd1ee731019497180a4f16",
+      "fixed_edge_targets": {
+        "native": {"p2r_edge_indices": 3074, "r2p_edge_indices": 2905, "r2r_edge_domains": 4217, "r2r_edge_indices": 4217},
+        "query": {"p2r_edge_indices": 107645, "r2p_edge_indices": 107645, "r2r_edge_domains": 4217, "r2r_edge_indices": 4217}
+      },
+      "model_visible_tensors_max_abs": 0.0,
+      "raw_prediction_max_abs": 0.0,
+      "query_scale_max_abs": 0.0,
+      "reconstruction_map_hash_old": "f4c058e83a2ed59a8228e84e85ab570b405db102386890e4dd925f556386f4b7",
+      "reconstruction_map_hash_new": "f4c058e83a2ed59a8228e84e85ab570b405db102386890e4dd925f556386f4b7",
+      "reconstructed_field_max_abs": 0.0
+    },
+    "E32768": {
+      "status": "equivalence_complete_with_temporary_fixture",
+      "sample_id": "v6p1if1_0003",
+      "support_indices_hash": "ca8f4f894987c65d91f745dfad81d5afffbc133f5adead6a7ad893e9101f986d",
+      "query_coordinates_hash": "253528e394c9f14f32d15f68245fb53eb1c3b57208f30f4afa52844e5c598702",
+      "raw_graph_hash_old": "60f35bd4693a0eff0e61d6ac9d49b157df29927f31095e206a6951174fdd5ad6",
+      "raw_graph_hash_new": "60f35bd4693a0eff0e61d6ac9d49b157df29927f31095e206a6951174fdd5ad6",
+      "model_visible_tensors_max_abs": 0.0,
+      "raw_prediction_sha256_old": "66af9e4ed15cac69c588896f1f01f3e7a32001f52b5aee1860a0c7d6280301be",
+      "raw_prediction_sha256_new": "66af9e4ed15cac69c588896f1f01f3e7a32001f52b5aee1860a0c7d6280301be",
+      "raw_prediction_max_abs": 0.0,
+      "query_scale_max_abs": 0.0,
+      "anchor_scale_max_abs": 0.0,
+      "direct_prediction_max_abs": 0.0,
+      "reconstruction_map_hash_old": "f4cdf6a174c652003c36082cc6fe4081fdeef5c48cddb02bbc5f1c968d25d8b4",
+      "reconstruction_map_hash_new": "f4cdf6a174c652003c36082cc6fe4081fdeef5c48cddb02bbc5f1c968d25d8b4",
+      "reconstructed_field_max_abs": 0.0,
+      "metrics_executed": false,
+      "historical_artifact_found": false
+    }
+  },
+  "production_preflight": {
+    "status": "pass",
+    "validator": "rigno.heat3d_runtime.preflight.validate_semantic_contract",
+    "critical_fields_fail_closed": true,
+    "negative_tests_missing_or_deprecated_fields": "pass",
+    "production_import_graph_excludes_smoke_check_development": true,
+    "cross_script_private_api_in_production_graph": false,
+    "monkey_patch_or_module_state_rewrite": false,
+    "formal_training_runner_created": false,
+    "u_split_library_internal_private_api_technical_debt": true
+  },
+  "equivalence_policy": {
+    "cpu_is_semantic_oracle": true,
+    "exact_tolerance": {"max_abs": 0.0, "rmse": 0.0},
+    "prediction_tolerance": {"max_abs": 1.0e-6, "rmse": 1.0e-6},
+    "tolerance_forced_pass": false,
+    "formal_latency_measured": false,
+    "performance_claim": false
+  },
+  "prohibited_action_flags": {
+    "training": false,
+    "solver": false,
+    "data_generation": false,
+    "test_iid_access": false,
+    "sealed_label_access": false,
+    "v6_frozen_artifacts_modified": false,
+    "legacy_files_modified": false,
+    "model_loss_or_graph_semantics_modified": false,
+    "sampling_modified": false,
+    "reconstruction_algorithm_modified": false,
+    "batching_cache_jit_optimization": false,
+    "metrics_timing_formal_cutover": false,
+    "g1_experiment": false
+  },
+  "remaining_blockers": [
+    "Identity-level historical E/U support, query, raw/padded graph, model-visible, anchor-scale and reconstruction-map artifacts are missing; historical reconciliation remains pending.",
+    "E32768 historical artifact is absent; only temporary valid_iid forward equivalence is complete.",
+    "V6 publication/high-N/timing legacy dependency edges remain outside the V7 production graph and require a later equivalence-verified cutover.",
+    "GPU repeatability policy and formal metrics/timing core remain outside this G0b-2d scope."
+  ]
+}
