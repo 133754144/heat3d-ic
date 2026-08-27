@@ -36,6 +36,8 @@ __all__ = [
     "validate_semantic_contract",
     "load_registered_route",
     "bind_registered_route",
+    "EvaluationSample",
+    "EvaluationCore",
 ]
 
 _EXPORTS = {
@@ -90,6 +92,8 @@ _EXPORTS = {
         "rigno.heat3d_runtime.preflight",
         "bind_registered_route",
     ),
+    "EvaluationSample": ("rigno.heat3d_runtime.evaluation", "EvaluationSample"),
+    "EvaluationCore": ("rigno.heat3d_runtime.evaluation", "EvaluationCore"),
 }
 
 

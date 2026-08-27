@@ -10,6 +10,7 @@ import unittest
 import numpy as np
 
 from rigno.heat3d_runtime.equivalence import compare_metadata, compare_named_arrays
+from rigno.heat3d_runtime.evaluation import EvaluationCore, EvaluationSample
 from rigno.heat3d_runtime.features import FeatureTransform
 from rigno.heat3d_v1_normalization import normalize_coords
 from rigno.heat3d_v1_native_supervised import V1SteadyConditionInput, V1SteadyTarget
@@ -449,6 +450,67 @@ class StableRuntimeStaticTests(unittest.TestCase):
         np.testing.assert_array_equal(
             np.asarray(observed.graph_coords), np.asarray(expected_graph).reshape(3, 3)
         )
+
+    def test_evaluation_core_keeps_v6_sufficient_statistics(self) -> None:
+        coords = np.asarray(
+            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0]],
+            dtype=np.float64,
+        )
+        kwargs = {
+            "truth_deltaT_K": np.asarray([1.0, 2.0, 3.0, 4.0]),
+            "control_volumes_m3": np.asarray([1.0, 2.0, 1.0, 2.0]),
+            "coords": coords,
+            "layer_id": np.asarray([0, 0, 1, 1]),
+            "q_W_m3": np.asarray([1.0, 0.0, 1.0, 0.0]),
+        }
+        samples = [
+            EvaluationSample(
+                sample_id="valid-a",
+                prediction_deltaT_K=np.asarray([1.5, 1.5, 3.5, 3.5]),
+                **kwargs,
+            ),
+            EvaluationSample(
+                sample_id="valid-b",
+                prediction_deltaT_K=np.asarray([0.5, 2.5, 2.5, 4.5]),
+                **kwargs,
+            ),
+        ]
+        result = EvaluationCore().evaluate(samples)
+        stats = result["sufficient_statistics"]
+        expected_errors = [
+            np.asarray([0.5, -0.5, 0.5, -0.5]),
+            np.asarray([-0.5, 0.5, -0.5, 0.5]),
+        ]
+        self.assertEqual(stats["point_count"], 8)
+        self.assertEqual(stats["sample_cv_relative_rmse_count"], 2)
+        self.assertEqual(stats["interface_error_count"], 2)
+        self.assertAlmostEqual(
+            stats["point_sse"], sum(float(np.sum(error * error)) for error in expected_errors)
+        )
+        self.assertAlmostEqual(
+            result["metrics"]["point_global_relative_rmse_pct"],
+            np.sqrt(stats["point_sse"] / stats["point_truth_energy"]) * 100.0,
+        )
+        self.assertAlmostEqual(
+            result["metrics"]["interface_RMSE_K"], 0.0, places=12
+        )
+
+    def test_evaluation_core_rejects_non_valid_truth(self) -> None:
+        with self.assertRaises(ValueError):
+            EvaluationCore().evaluate(
+                [
+                    {
+                        "sample_id": "test-only",
+                        "split": "test_iid",
+                        "prediction_deltaT_K": [1.0],
+                        "truth_deltaT_K": [1.0],
+                        "control_volumes_m3": [1.0],
+                        "coords": [[0.0, 0.0, 0.0]],
+                        "layer_id": [0],
+                        "q_W_m3": [0.0],
+                    }
+                ]
+            )
 
 
 if __name__ == "__main__":
