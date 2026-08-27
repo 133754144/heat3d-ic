@@ -24,6 +24,7 @@ from rigno.heat3d_runtime.checkpoint import file_sha256
 from rigno.heat3d_v6_dataset import Heat3DV6DualRobinDataset
 
 import benchmark_heat3d_v6_inference_qualification as qualification
+import evaluate_heat3d_v6_common_valid_probe as common
 import run_heat3d_v1_medium_controlled_training_export as legacy_runner
 from run_heat3d_v3_final_probe_checkpoint_smoke import install_checkpoint_feature_hooks
 
@@ -190,7 +191,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if int(legacy_checkpoint["epoch"]) != int(args.checkpoint_epoch):
         raise ValueError("legacy checkpoint epoch mismatch")
     stats = legacy_checkpoint["train_only_normalization"]
-    stats = qualification._materialize_checkpoint_stats(stats)
+    stats = common._materialize_checkpoint_stats(stats)
     install_checkpoint_feature_hooks(stats)
     legacy_model_config = legacy_runner._resolve_decoder_bypass_model_config(
         dict(legacy_checkpoint["model_config"]), stats
@@ -213,7 +214,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     legacy_group = legacy_groups[0]
     context_payload = json.loads(args.run_config.read_text(encoding="utf-8"))["global_context"]
-    context = qualification.common.standardize_v6_contexts(
+    context = common.standardize_v6_contexts(
         [legacy_runner._global_context_row_for_example(example)],
         context_payload["standardizer"],
     )
