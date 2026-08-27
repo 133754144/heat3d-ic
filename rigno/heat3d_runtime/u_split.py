@@ -218,10 +218,10 @@ def _repair_uncovered(
     nearest_order = np.argsort(distance, axis=1)
     existing = {(int(point), int(region)) for point, region in edges}
     additions: list[tuple[int, int]] = []
-    for point_value in uncovered:
+    for row, point_value in enumerate(uncovered):
         point = int(point_value)
         needed = int(min_physical_coverage) - int(degree[point])
-        for region_value in nearest_order[point]:
+        for region_value in nearest_order[row]:
             edge = (point, int(region_value))
             if edge in existing:
                 continue
