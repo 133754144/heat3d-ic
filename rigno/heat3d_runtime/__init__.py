@@ -34,6 +34,8 @@ __all__ = [
     "EXECUTION_ROLES",
     "SemanticContractError",
     "validate_semantic_contract",
+    "load_registered_route",
+    "bind_registered_route",
 ]
 
 _EXPORTS = {
@@ -79,6 +81,14 @@ _EXPORTS = {
     "validate_semantic_contract": (
         "rigno.heat3d_runtime.preflight",
         "validate_semantic_contract",
+    ),
+    "load_registered_route": (
+        "rigno.heat3d_runtime.preflight",
+        "load_registered_route",
+    ),
+    "bind_registered_route": (
+        "rigno.heat3d_runtime.preflight",
+        "bind_registered_route",
     ),
 }
 

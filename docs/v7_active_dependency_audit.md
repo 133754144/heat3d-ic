@@ -323,8 +323,91 @@ The remaining G0 blockers are:
 2. Replace the still-legacy V6 publication/high-N/timing dependency edges with
    equivalence-verified adapters; the V7 entrypoints themselves have passed the
    production import-graph check.
-3. Complete the formal G0 acceptance matrix for the legacy exclusion boundary and
-   freeze the GPU repeatability policy separately from CPU semantic equivalence.
+3. Complete the formal G0 acceptance matrix for the legacy exclusion boundary;
+   GPU repeatability policy is now frozen separately from CPU semantic equivalence
+   in G0b-2e.
+
+## V7-G0b-2e：route binding hardening and historical behavioral reconciliation
+
+Machine-readable receipt: [`v7_g0b2e_receipt.json`](v7_g0b2e_receipt.json)。
+
+### Registered route binding
+
+V7 E/U production entrypoints now require an explicit registered `route_id` for every
+high-resolution request, together with the requested strategy, all four resolution
+roles and the fixed padding envelope. The binder compares each requested value with
+the registered route before constructing `RuntimeSession`; it does not infer a route
+from output resolution. The registered route itself must satisfy:
+
+- E：`encoder_input_resolution == output_query_resolution`；
+- U-v2：`encoder_input_resolution == anchor_context_resolution == 1024`；
+- `output_query_resolution == requested output resolution`；
+- fixed edge-target envelope equality；
+- route ID equality and explicit registration。
+
+Consequently, `U@32768` fails closed: neither `U_v2_32768` nor another implicit
+resolution alias is registered. Passing `U_v2_direct240825` with output resolution
+32768 also fails. E32768 remains compatibility-only because its registered envelope
+is unresolved; no scientific U32768 route was added.
+
+Positive binding gates cover E16384 and U-v2 16384. Negative tests cover unknown route,
+strategy mismatch, route ID mismatch, each resolution mismatch, padding mismatch,
+deprecated/unresolved envelope and the U@32768 fallback case. The V7 production
+import graph remains free of smoke/check/development modules, script-private imports
+and monkey patches.
+
+### Historical behavioral reconciliation
+
+The devbox capture contains historical execution commit
+`8a812619ab0112b4ecfc37ef18189f731180059d`, E16384/U-v2 16384 input plans, route
+receipts and GPU prediction artifacts. Every available replay plan is bound to the
+four train geometries `v6p1if1_0056`, `v6p1if1_0079`, `v6p1if1_0971` and
+`v6p1if1_0393`; none is a frozen `valid_iid` plan. Because this round is restricted
+to frozen `valid_iid`, historical replay was not executed. This is a concrete
+fail-closed boundary, not an inferred numerical mismatch.
+
+The two reconciliation dimensions are therefore recorded separately:
+
+```text
+historical_behavioral_reconciliation = pending_replay_not_executed_valid_iid_boundary
+historical_identity_artifact_reconciliation = unavailable_missing_original_artifacts
+```
+
+The first is not promoted to complete: no historical replay ↔ V7 replay bridge was
+executed under the allowed population. The second is an archival limitation: the
+devbox capture lacks identity-level support/order, query-coordinate, raw/padded graph,
+model-visible, anchor-scale and reconstruction-map artifacts. Existing temporary
+fixture equivalence remains separate and does not substitute for either bridge.
+
+### Frozen GPU equivalence policy
+
+No new GPU experiment was run. The frozen policy is:
+
+| role | policy |
+| --- | --- |
+| CPU deterministic backend | semantic-equivalence oracle |
+| normal GPU backend | production/timing backend |
+| GPU equivalence | use the existing repeatability envelope; do not reinterpret it as binary identity |
+| deterministic GPU mode | optional diagnostic only; never a formal timing mode |
+
+### G0 acceptance update
+
+| acceptance item | result |
+| --- | --- |
+| production import excludes smoke/check/development | PASS for V7 entrypoints |
+| no cross-script private API | PASS for V7 production graph |
+| no monkey patch/module-state rewrite | PASS |
+| semantic-critical fields fail closed | PASS, including negative tests |
+| registered route binding fail closed | PASS, including U@32768 fallback rejection |
+| CPU old/new equivalence | PASS for native and temporary valid-only compatibility fixtures |
+| historical behavioral reconciliation | PENDING: only train-bound historical plans were available |
+| historical identity artifacts | UNAVAILABLE: original identity-level artifacts missing |
+| GPU policy | FROZEN as the existing envelope policy above |
+| provenance role | PASS: this receipt is `compatibility_audit`; formal V7 inference is `production_inference` |
+
+No feature, graph, sampling, reconstruction, batching, cache, JIT, metrics/timing
+core or model semantics were changed. Historical V6 scripts remain read-only
+compatibility oracles outside the V7 production graph.
 
 ## 审计方法与证据边界
 
@@ -841,8 +924,10 @@ KD-tree、padding 或 reconstruction semantics。
 | G0 Code：全部 formal production/timing path 脱离 smoke/check/development/private API | 未通过；旧 V6 path 仍保留 legacy dependencies |
 | G1 experiments / publication / final test | 未开始；本轮没有性能或 accuracy claim |
 
-结论：**V7-G0b-2c 的 contract freeze、compatibility fixture 和 CPU
-high-resolution equivalence closure 已完成（temporary-fixture 限定）；整体 G0
-仍被 WSL2 historical reconciliation 以及旧 V6 formal dependency graph 阻塞。**
+结论：**V7-G0b-2e 的 route-binding hardening 已完成；E/U historical
+behavioral reconciliation 因 devbox 仅提供 train-bound replay plans 而按
+valid_iid 边界 fail-closed，identity-level artifacts 仍是 archival limitation。
+整体 G0 仍受旧 V6 formal dependency graph、historical replay population 和
+formal metrics/timing core 约束；WSL2 mirror pending 不再作为唯一 hard blocker。**
 本轮未训练、未运行 solver、未生成数据、未访问 held-out/sealed labels、未修改
 模型或 V6 frozen artifacts。

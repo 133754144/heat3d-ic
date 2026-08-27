@@ -21,6 +21,7 @@ from rigno.heat3d_runtime import (
     RuntimeSession,
     SupportArtifact,
     UHighNRuntime,
+    bind_registered_route,
 )
 from rigno.heat3d_v6_dataset import (
     CONTINUOUS_PHYSICS_V6_DATASET_ID,
@@ -29,13 +30,27 @@ from rigno.heat3d_v6_dataset import (
 from rigno.heat3d_v6_p1i_anchor_query import array_sha256
 
 
-def _edge_targets(path: Path) -> dict[str, int | None]:
+def _edge_targets(path: Path, section: str) -> dict[str, int | None]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if "graph_cache" in payload:
         values = payload["graph_cache"]["edge_targets"]
     else:
-        values = payload["padding"]["actual_padding_envelope"]["query"]
+        values = payload["padding"]["actual_padding_envelope"][section]
+    if not isinstance(values, dict) or not values:
+        raise ValueError(f"padding envelope is not a non-empty mapping: {path}:{section}")
     return {str(key): None if value is None else int(value) for key, value in values.items()}
+
+
+def _combined_edge_targets(
+    native_targets: dict[str, int | None],
+    query_targets: dict[str, int | None],
+) -> dict[str, int | None]:
+    return {
+        "p2r_edge_indices": native_targets["p2r_edge_indices"],
+        "r2p_edge_indices": query_targets["r2p_edge_indices"],
+        "r2r_edge_domains": query_targets["r2r_edge_domains"],
+        "r2r_edge_indices": query_targets["r2r_edge_indices"],
+    }
 
 
 def _support_path(root: Path, resolution: int, sample_id: str) -> Path:
@@ -57,6 +72,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--run-config", type=Path, required=True)
     parser.add_argument("--eu-contract", type=Path, required=True)
+    parser.add_argument("--route-id", required=True)
+    parser.add_argument("--strategy", required=True)
+    parser.add_argument("--anchor-context-resolution", type=int, required=True)
+    parser.add_argument("--encoder-input-resolution", type=int, required=True)
+    parser.add_argument("--output-query-resolution", type=int, required=True)
+    parser.add_argument("--reconstruction-resolution", type=int, required=True)
     parser.add_argument("--support-root", type=Path, required=True)
     parser.add_argument("--native-padding", type=Path, required=True)
     parser.add_argument("--query-padding", type=Path, required=True)
@@ -77,13 +98,25 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if args.max_samples < 1:
             raise ValueError("--max-samples must be >= 1")
         examples = examples[: int(args.max_samples)]
-    eu_payload = json.loads(args.eu_contract.read_text(encoding="utf-8"))
-    route_name = (
-        "U_v2_16384_reconstruction"
-        if args.resolution == 16384
-        else "U_v2_direct240825"
+    native_targets = _edge_targets(args.native_padding, "native")
+    query_targets = _edge_targets(args.query_padding, "query")
+    if int(args.output_query_resolution) != int(args.resolution):
+        raise ValueError("--resolution must equal --output-query-resolution")
+    requested_targets = {
+        "native": native_targets,
+        "query": query_targets,
+        "combined_model_input": _combined_edge_targets(native_targets, query_targets),
+    }
+    route_contract = bind_registered_route(
+        contract_path=args.eu_contract,
+        route_id=str(args.route_id),
+        requested_strategy=str(args.strategy),
+        anchor_context_resolution=int(args.anchor_context_resolution),
+        encoder_input_resolution=int(args.encoder_input_resolution),
+        output_query_resolution=int(args.output_query_resolution),
+        reconstruction_resolution=int(args.reconstruction_resolution),
+        fixed_edge_targets=requested_targets,
     )
-    route_contract = eu_payload["strategies"][route_name]
     session = RuntimeSession.from_paths(
         args.checkpoint,
         args.run_config,
@@ -92,8 +125,6 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     geometry = FullFieldGeometry.load(args.full_fields)
     runtime = UHighNRuntime.from_session(session, geometry)
-    native_targets = _edge_targets(args.native_padding)
-    query_targets = _edge_targets(args.query_padding)
     cases = []
     for anchor in examples:
         support = SupportArtifact.load(
@@ -114,6 +145,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         cases.append(
             {
                 "sample_id": str(anchor.sample_id),
+                "route_id": route_contract["route_id"],
+                "strategy": route_contract["strategy_name"],
                 "anchor_context_resolution": 1024,
                 "encoder_input_resolution": 1024,
                 "output_query_resolution": int(args.resolution),
@@ -135,6 +168,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "dataset_role": "valid_iid",
         "dataset_id": dataset.manifest["dataset_id"],
         "sample_count": len(cases),
+        "route_id": route_contract["route_id"],
+        "strategy": route_contract["strategy_name"],
         "anchor_context_resolution": 1024,
         "encoder_input_resolution": 1024,
         "output_query_resolution": int(args.resolution),

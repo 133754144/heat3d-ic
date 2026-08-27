@@ -1,0 +1,134 @@
+{
+  "schema_version": "heat3d_v7_g0b2e_receipt_v1",
+  "phase": "V7-G0b-2e",
+  "status": "route_binding_hardened_behavioral_reconciliation_fail_closed",
+  "execution_role": "compatibility_audit",
+  "implementation_parent_git_sha": "8e6e536",
+  "eu_contract_manifest": {
+    "path": "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json",
+    "sha256": "36627435f1386c043abc3fb4da07b275d310bab3257b5173bb85558bb056dc67",
+    "route_id_is_explicit": true,
+    "required_route_fields": [
+      "route_id",
+      "strategy_name",
+      "anchor_context_resolution",
+      "encoder_input_resolution",
+      "output_query_resolution",
+      "reconstruction_resolution",
+      "fixed_edge_targets"
+    ]
+  },
+  "route_binding": {
+    "production_entrypoints": [
+      "scripts/run_heat3d_v7_high_n_reference.py",
+      "scripts/run_heat3d_v7_u_high_n_reference.py"
+    ],
+    "requested_output_must_equal_registered_output": true,
+    "registered_route_must_be_explicit": true,
+    "positive_gates": {
+      "E16384_reconstruction": "pass",
+      "U_v2_16384_reconstruction": "pass"
+    },
+    "negative_gates": {
+      "unknown_route_id": "pass_fail_closed",
+      "strategy_mismatch": "pass_fail_closed",
+      "route_id_mismatch": "pass_fail_closed",
+      "anchor_context_resolution_mismatch": "pass_fail_closed",
+      "encoder_input_resolution_mismatch": "pass_fail_closed",
+      "output_query_resolution_mismatch": "pass_fail_closed",
+      "reconstruction_resolution_mismatch": "pass_fail_closed",
+      "fixed_padding_envelope_mismatch": "pass_fail_closed",
+      "unresolved_registered_padding_envelope": "pass_fail_closed",
+      "U32768_implicit_resolution_fallback": "pass_fail_closed"
+    },
+    "route_rules": {
+      "E_encoder_equals_output": true,
+      "U_v2_encoder_equals_anchor_equals_1024": true,
+      "U32768_scientific_route_created": false,
+      "U_v2_direct240825_bound_to_32768": false
+    }
+  },
+  "historical_behavioral_reconciliation": {
+    "status": "pending_replay_not_executed_valid_iid_boundary",
+    "historical_execution_commit": "8a812619ab0112b4ecfc37ef18189f731180059d",
+    "routes": ["E16384_reconstruction", "U_v2_16384_reconstruction"],
+    "historical_saved_prediction_backend": "CUDA",
+    "available_historical_sources": [
+      "execution commit",
+      "input plans",
+      "route receipts",
+      "prediction artifacts"
+    ],
+    "available_plan_sample_ids": [
+      "v6p1if1_0056",
+      "v6p1if1_0079",
+      "v6p1if1_0971",
+      "v6p1if1_0393"
+    ],
+    "available_plan_sample_role": "train",
+    "allowed_population": "frozen_valid_iid_only",
+    "replay_executed": false,
+    "behavioral_bridge_complete": false,
+    "fail_closed_reason": "All available historical E/U replay plans bind train geometries; no frozen valid_iid historical replay plan was found, so replay was not executed under this round's population boundary.",
+    "binary_identity_vs_behavioral_equivalence": "not_claimed"
+  },
+  "historical_identity_artifact_reconciliation": {
+    "status": "unavailable_missing_original_artifacts",
+    "archival_limitation": true,
+    "missing_artifacts": [
+      "support/order identity",
+      "query coordinates",
+      "raw and padded graph metadata",
+      "graph tensors",
+      "model-visible tensors",
+      "anchor prediction and scale",
+      "reconstruction map"
+    ],
+    "temporary_fixture_is_substitute": false,
+    "g0_hard_blocker": false
+  },
+  "archival_limitations": [
+    "The devbox capture does not preserve the original identity-level graph/support/reconstruction artifacts required for binary artifact reconciliation."
+  ],
+  "gpu_policy": {
+    "new_determinism_experiment_run": false,
+    "cpu_deterministic_backend": "semantic-equivalence oracle",
+    "normal_gpu_backend": "production/timing backend",
+    "gpu_equivalence": "use existing repeatability envelope",
+    "deterministic_gpu_mode": "optional diagnostic only; not formal timing mode",
+    "binary_identity_claim_from_gpu_envelope": false
+  },
+  "acceptance_matrix": {
+    "production_import_excludes_smoke_check_development": true,
+    "production_graph_has_no_cross_script_private_api": true,
+    "production_graph_has_no_monkey_patch": true,
+    "semantic_critical_fields_fail_closed": true,
+    "registered_route_binding_fail_closed": true,
+    "cpu_old_new_equivalence": true,
+    "historical_behavioral_reconciliation": false,
+    "historical_identity_artifacts_available": false,
+    "gpu_policy_frozen": true,
+    "provenance_role_explicit": true
+  },
+  "provenance": {
+    "this_receipt": "compatibility_audit",
+    "v7_formal_inference_role": "production_inference",
+    "publication_training_runner_created": false
+  },
+  "prohibited_action_flags": {
+    "training": false,
+    "solver": false,
+    "new_data": false,
+    "test_iid_access": false,
+    "sealed_label_access": false,
+    "model_loss_graph_sampling_reconstruction_changed": false,
+    "metrics_timing_core_refactor": false,
+    "performance_optimization": false,
+    "g1": false
+  },
+  "remaining_g0_blockers": [
+    "No frozen valid_iid historical E/U replay plan was available for the behavioral bridge.",
+    "Legacy V6 publication/high-N/timing dependency edges remain outside the V7 production graph.",
+    "Formal metrics/timing core remains outside this G0b-2e cutover."
+  ]
+}

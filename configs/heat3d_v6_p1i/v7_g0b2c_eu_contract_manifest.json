@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g0b2d_eu_contract_v2",
+  "schema_version": "heat3d_v7_g0b2e_eu_contract_v3",
   "status": "frozen_from_v6_p1i_evidence",
   "purpose": "Machine-readable restoration of the historical V6/P1i E/U route semantics for V7 compatibility work.",
   "evidence": {
@@ -63,11 +63,12 @@
       "direct_query_allowed_for_E": true,
       "direct_query_allowed_for_U": true,
       "u_is_reconstruction_only": false,
-      "comparison_interface": "E(N_cond,E -> N_q) versus U(N_cond,U -> N_q) with the same explicitly recorded query resolution"
+      "comparison_interface": "E(N_anchor=1024, N_encoder,E -> N_query) versus U(N_anchor=1024, N_encoder,U -> N_query) with the same explicitly recorded output query resolution"
     }
   },
   "strategies": {
     "E16384_reconstruction": {
+      "route_id": "E16384_reconstruction",
       "strategy_name": "E",
       "strategy_version": "V6/P1i E16384 frozen reference route",
       "anchor_context_resolution": 1024,
@@ -91,6 +92,7 @@
       "publication_role": "frozen V6/P1i reference operating point, not a new V7 result"
     },
     "E32768_direct_compatibility": {
+      "route_id": "E32768_direct_compatibility",
       "strategy_name": "E",
       "strategy_version": "V7 compatibility route preserving the frozen E high-N semantics",
       "anchor_context_resolution": 1024,
@@ -108,6 +110,7 @@
       "publication_role": "V7 Refactor Compatibility Fixture only; not publication, G3, or final-test evidence"
     },
     "E240825_direct_control": {
+      "route_id": "E240825_direct_control",
       "strategy_name": "E",
       "strategy_version": "V6/P1i E240825 direct control",
       "anchor_context_resolution": 1024,
@@ -124,6 +127,7 @@
       "publication_role": "V6 architecture/control route; not a V7 claim"
     },
     "U_v2_16384_reconstruction": {
+      "route_id": "U_v2_16384_reconstruction",
       "strategy_name": "U-v2",
       "strategy_version": "V6/P1i U-v2 bounded output-query extrapolation with frozen R2P nearest repair",
       "anchor_context_resolution": 1024,
@@ -161,6 +165,7 @@
       "publication_role": "V6 valid-only parallel/direct characterization; not the confirmatory production route and not a V7 superiority claim"
     },
     "U_v2_direct240825": {
+      "route_id": "U_v2_direct240825",
       "strategy_name": "U-v2",
       "strategy_version": "V6/P1i U-v2 direct full-field query",
       "anchor_context_resolution": 1024,

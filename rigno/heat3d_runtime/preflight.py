@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import json
+from pathlib import Path
 from typing import Any
 
 
@@ -33,6 +35,7 @@ _STATS_FIELDS = (
     "extent_feature_policy",
     "normalization_profile",
     "feature_names",
+    "condition_feature_transforms",
     "condition_mean",
     "condition_std",
     "coord_min",
@@ -62,6 +65,7 @@ _GRAPH_FIELDS = (
     "repair_r2p",
 )
 _ROUTE_FIELDS = (
+    "route_id",
     "strategy_name",
     "anchor_context_resolution",
     "encoder_input_resolution",
@@ -107,17 +111,36 @@ def _validate_route(route_contract: Mapping[str, Any]) -> None:
             f"{present_deprecated}"
         )
     _require_fields(route_contract, _ROUTE_FIELDS, "route_contract")
+    route_id = route_contract["route_id"]
+    if not isinstance(route_id, str) or not route_id:
+        raise SemanticContractError("route_contract.route_id must be a non-empty string")
     strategy = str(route_contract["strategy_name"])
     if strategy not in {"E", "U-v2"}:
         raise SemanticContractError(f"route_contract.strategy_name is unsupported: {strategy!r}")
-    for field in (
+    resolutions = (
         "anchor_context_resolution",
         "encoder_input_resolution",
         "output_query_resolution",
         "reconstruction_resolution",
-    ):
-        if int(route_contract[field]) < 1:
+    )
+    for field in resolutions:
+        value = route_contract[field]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise SemanticContractError(f"route_contract.{field} must be positive")
+    if strategy == "E" and (
+        route_contract["encoder_input_resolution"]
+        != route_contract["output_query_resolution"]
+    ):
+        raise SemanticContractError("E route requires encoder_input_resolution == output_query_resolution")
+    if strategy == "U-v2" and (
+        route_contract["anchor_context_resolution"] != 1024
+        or route_contract["encoder_input_resolution"]
+        != route_contract["anchor_context_resolution"]
+    ):
+        raise SemanticContractError(
+            "U-v2 route requires encoder_input_resolution == "
+            "anchor_context_resolution == 1024"
+        )
     if not isinstance(route_contract["direct_query"], bool):
         raise SemanticContractError("route_contract.direct_query must be boolean")
     if int(route_contract["output_query_resolution"]) > 1024:
@@ -126,6 +149,110 @@ def _validate_route(route_contract: Mapping[str, Any]) -> None:
             raise SemanticContractError(
                 "high-resolution route requires explicit fixed_edge_targets"
             )
+
+
+def _canonical(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return tuple(sorted((str(key), _canonical(item)) for key, item in value.items()))
+    if isinstance(value, (tuple, list)):
+        return tuple(_canonical(item) for item in value)
+    return value
+
+
+def _resolve_fixed_edge_targets(contract_path: Path, route: dict[str, Any]) -> dict[str, Any]:
+    """Resolve a registered padding reference without accepting arbitrary defaults."""
+
+    value = route["fixed_edge_targets"]
+    if isinstance(value, Mapping):
+        return dict(value)
+    if not isinstance(value, str) or ":" not in value:
+        raise SemanticContractError(
+            "registered route fixed_edge_targets is unresolved; production binding is refused"
+        )
+    relative_path, selector = value.split(":", 1)
+    root = contract_path.resolve().parents[2]
+    source = (root / relative_path).resolve()
+    if not source.is_file() or root not in source.parents:
+        raise SemanticContractError(f"registered padding source is unavailable: {relative_path}")
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    selected: Any = payload
+    for component in selector.split("."):
+        if not isinstance(selected, Mapping) or component not in selected:
+            raise SemanticContractError(
+                f"registered padding selector is unresolved: {relative_path}:{selector}"
+            )
+        selected = selected[component]
+    if not isinstance(selected, Mapping) or not selected:
+        raise SemanticContractError(
+            f"registered padding envelope is not a non-empty mapping: {relative_path}:{selector}"
+        )
+    return dict(selected)
+
+
+def load_registered_route(contract_path: str | Path, route_id: str) -> dict[str, Any]:
+    """Load one route by explicit ID; unknown routes fail closed."""
+
+    path = Path(contract_path).resolve()
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    strategies = payload["strategies"]
+    if not isinstance(strategies, Mapping) or route_id not in strategies:
+        raise SemanticContractError(f"route_id is not registered: {route_id!r}")
+    raw_route = strategies[route_id]
+    if not isinstance(raw_route, Mapping):
+        raise SemanticContractError(f"registered route is not an object: {route_id!r}")
+    route = dict(raw_route)
+    if route.get("route_id") != route_id:
+        raise SemanticContractError(
+            f"registered route_id mismatch: key={route_id!r}, field={route.get('route_id')!r}"
+        )
+    route["fixed_edge_targets"] = _resolve_fixed_edge_targets(path, route)
+    _validate_route(route)
+    return route
+
+
+def bind_registered_route(
+    *,
+    contract_path: str | Path,
+    route_id: str,
+    requested_strategy: str,
+    anchor_context_resolution: int,
+    encoder_input_resolution: int,
+    output_query_resolution: int,
+    reconstruction_resolution: int,
+    fixed_edge_targets: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Require a production request to equal one registered route exactly."""
+
+    route = load_registered_route(contract_path, route_id)
+    requested = {
+        "strategy_name": requested_strategy,
+        "anchor_context_resolution": anchor_context_resolution,
+        "encoder_input_resolution": encoder_input_resolution,
+        "output_query_resolution": output_query_resolution,
+        "reconstruction_resolution": reconstruction_resolution,
+        "fixed_edge_targets": fixed_edge_targets,
+    }
+    if requested_strategy != route["strategy_name"]:
+        raise SemanticContractError(
+            f"route strategy mismatch: requested={requested_strategy!r}, "
+            f"registered={route['strategy_name']!r}"
+        )
+    for field in (
+        "anchor_context_resolution",
+        "encoder_input_resolution",
+        "output_query_resolution",
+        "reconstruction_resolution",
+    ):
+        if requested[field] != route[field]:
+            raise SemanticContractError(
+                f"route {field} mismatch: requested={requested[field]!r}, "
+                f"registered={route[field]!r}"
+            )
+    if output_query_resolution != route["output_query_resolution"]:
+        raise SemanticContractError("requested output resolution is not the registered route output")
+    if _canonical(fixed_edge_targets) != _canonical(route["fixed_edge_targets"]):
+        raise SemanticContractError("route fixed padding envelope mismatch")
+    return route
 
 
 def validate_semantic_contract(

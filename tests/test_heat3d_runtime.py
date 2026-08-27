@@ -56,6 +56,11 @@ class StableRuntimeStaticTests(unittest.TestCase):
             source = path.read_text(encoding="utf-8")
             self.assertNotIn("sys.path", source)
             self.assertNotIn("install_checkpoint_feature_hooks", source)
+            self.assertIn("bind_registered_route", source)
+        u_source = (ROOT / "scripts" / "run_heat3d_v7_u_high_n_reference.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn('else "U_v2_direct240825"', u_source)
 
     def test_eu_runtime_contract_names_all_resolution_roles(self) -> None:
         from rigno.heat3d_runtime.u_split import UHighNRuntime, u_v2_asymmetric_metadata
@@ -92,6 +97,7 @@ class StableRuntimeStaticTests(unittest.TestCase):
         }
         for route_name, values in expected.items():
             route = manifest["strategies"][route_name]
+            self.assertEqual(route["route_id"], route_name)
             self.assertEqual(
                 tuple(route[field] for field in manifest["common"]["resolution_schema"]["required_fields"]),
                 values,
@@ -103,6 +109,79 @@ class StableRuntimeStaticTests(unittest.TestCase):
             manifest["strategies"]["U_v2_16384_reconstruction"]["encoder_input_resolution"],
             manifest["strategies"]["U_v2_16384_reconstruction"]["output_query_resolution"],
         )
+
+    def test_registered_route_binding_is_exact_and_fail_closed(self) -> None:
+        from rigno.heat3d_runtime import bind_registered_route, load_registered_route
+        from rigno.heat3d_runtime.preflight import SemanticContractError
+
+        contract_path = ROOT / "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json"
+        e_route = load_registered_route(contract_path, "E16384_reconstruction")
+        bound = bind_registered_route(
+            contract_path=contract_path,
+            route_id="E16384_reconstruction",
+            requested_strategy="E",
+            anchor_context_resolution=1024,
+            encoder_input_resolution=16384,
+            output_query_resolution=16384,
+            reconstruction_resolution=240825,
+            fixed_edge_targets=e_route["fixed_edge_targets"],
+        )
+        self.assertEqual(bound["route_id"], "E16384_reconstruction")
+
+        u_route = load_registered_route(contract_path, "U_v2_16384_reconstruction")
+        u_bound = bind_registered_route(
+            contract_path=contract_path,
+            route_id="U_v2_16384_reconstruction",
+            requested_strategy="U-v2",
+            anchor_context_resolution=1024,
+            encoder_input_resolution=1024,
+            output_query_resolution=16384,
+            reconstruction_resolution=240825,
+            fixed_edge_targets=u_route["fixed_edge_targets"],
+        )
+        self.assertEqual(u_bound["encoder_input_resolution"], 1024)
+
+        mismatches = (
+            {"route_id": "U_v2_16384_reconstruction"},
+            {"requested_strategy": "U-v2"},
+            {"anchor_context_resolution": 2048},
+            {"encoder_input_resolution": 1024},
+            {"output_query_resolution": 32768},
+            {"reconstruction_resolution": 1024},
+            {"fixed_edge_targets": {"p2r_edge_indices": 1}},
+        )
+        for override in mismatches:
+            request = {
+                "route_id": "E16384_reconstruction",
+                "requested_strategy": "E",
+                "anchor_context_resolution": 1024,
+                "encoder_input_resolution": 16384,
+                "output_query_resolution": 16384,
+                "reconstruction_resolution": 240825,
+                "fixed_edge_targets": e_route["fixed_edge_targets"],
+            }
+            request.update(override)
+            with self.assertRaises(SemanticContractError):
+                bind_registered_route(contract_path=contract_path, **request)
+
+        with self.assertRaises(SemanticContractError):
+            load_registered_route(contract_path, "U_v2_32768")
+        with self.assertRaises(SemanticContractError):
+            bind_registered_route(
+                contract_path=contract_path,
+                route_id="U_v2_direct240825",
+                requested_strategy="U-v2",
+                anchor_context_resolution=1024,
+                encoder_input_resolution=1024,
+                output_query_resolution=32768,
+                reconstruction_resolution=240825,
+                fixed_edge_targets={
+                    "native": {}, "query": {}, "combined_model_input": {}
+                },
+            )
+
+        with self.assertRaises(SemanticContractError):
+            load_registered_route(contract_path, "E32768_direct_compatibility")
 
     def test_semantic_preflight_is_fail_closed(self) -> None:
         from rigno.heat3d_runtime.preflight import (
@@ -167,6 +246,7 @@ class StableRuntimeStaticTests(unittest.TestCase):
             "coord_span": [1.0],
         }
         route = {
+            "route_id": "U_v2_16384_reconstruction",
             "strategy_name": "U-v2",
             "anchor_context_resolution": 1024,
             "encoder_input_resolution": 1024,

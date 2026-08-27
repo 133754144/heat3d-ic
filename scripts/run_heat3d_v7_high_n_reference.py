@@ -17,7 +17,12 @@ from typing import Sequence
 import jax
 import numpy as np
 
-from rigno.heat3d_runtime import FullFieldGeometry, HighNRuntime, RuntimeSession
+from rigno.heat3d_runtime import (
+    FullFieldGeometry,
+    HighNRuntime,
+    RuntimeSession,
+    bind_registered_route,
+)
 from rigno.heat3d_v6_dataset import (
     CONTINUOUS_PHYSICS_V6_DATASET_ID,
     Heat3DV6DualRobinDataset,
@@ -28,20 +33,59 @@ from rigno.heat3d_v6_p1i_anchor_query import array_sha256
 ALLOWED_RESOLUTIONS = (1024, 16384, 32768)
 
 
-def _route_contract(path: Path | None, resolution: int) -> dict[str, object] | None:
-    if resolution == 1024:
-        return None
-    if path is None:
-        raise ValueError("high-resolution production inference requires --eu-contract")
+def _edge_targets(path: Path) -> dict[str, int | None]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    route_name = {
-        16384: "E16384_reconstruction",
-        32768: "E32768_direct_compatibility",
-    }[int(resolution)]
-    route = payload["strategies"][route_name]
-    if not isinstance(route, dict):
-        raise ValueError(f"E/U contract route is not an object: {route_name}")
-    return route
+    if "graph_cache" in payload:
+        values = payload["graph_cache"]["edge_targets"]
+    else:
+        values = payload["padding"]["actual_padding_envelope"]["query"]
+    if not isinstance(values, dict) or not values:
+        raise ValueError(f"padding envelope is not a non-empty mapping: {path}")
+    return {str(key): None if value is None else int(value) for key, value in values.items()}
+
+
+def _route_contract(args: argparse.Namespace) -> dict[str, object] | None:
+    resolution = int(args.resolution)
+    if resolution == 1024:
+        if any(
+            value is not None
+            for value in (
+                args.route_id,
+                args.strategy,
+                args.anchor_context_resolution,
+                args.encoder_input_resolution,
+                args.output_query_resolution,
+                args.reconstruction_resolution,
+                args.padding_envelope,
+            )
+        ):
+            raise ValueError("native 1024 has no high-resolution route binding arguments")
+        return None
+    required = {
+        "eu-contract": args.eu_contract,
+        "route-id": args.route_id,
+        "strategy": args.strategy,
+        "anchor-context-resolution": args.anchor_context_resolution,
+        "encoder-input-resolution": args.encoder_input_resolution,
+        "output-query-resolution": args.output_query_resolution,
+        "reconstruction-resolution": args.reconstruction_resolution,
+        "padding-envelope": args.padding_envelope,
+    }
+    missing = [name for name, value in required.items() if value is None]
+    if missing:
+        raise ValueError(f"production route binding requires explicit arguments: {missing}")
+    if int(args.output_query_resolution) != resolution:
+        raise ValueError("--resolution must equal --output-query-resolution")
+    return bind_registered_route(
+        contract_path=args.eu_contract,
+        route_id=str(args.route_id),
+        requested_strategy=str(args.strategy),
+        anchor_context_resolution=int(args.anchor_context_resolution),
+        encoder_input_resolution=int(args.encoder_input_resolution),
+        output_query_resolution=int(args.output_query_resolution),
+        reconstruction_resolution=int(args.reconstruction_resolution),
+        fixed_edge_targets=_edge_targets(args.padding_envelope),
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -55,6 +99,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--support-root", type=Path)
     parser.add_argument("--anchor-predictions", type=Path)
     parser.add_argument("--resolution", type=int, choices=ALLOWED_RESOLUTIONS, default=1024)
+    parser.add_argument("--route-id")
+    parser.add_argument("--strategy")
+    parser.add_argument("--anchor-context-resolution", type=int)
+    parser.add_argument("--encoder-input-resolution", type=int)
+    parser.add_argument("--output-query-resolution", type=int)
+    parser.add_argument("--reconstruction-resolution", type=int)
+    parser.add_argument("--padding-envelope", type=Path)
     parser.add_argument("--max-samples", type=int)
     parser.add_argument("--split", choices=("valid_iid",), default="valid_iid")
     parser.add_argument("--graph-cache-dir", type=Path)
@@ -105,7 +156,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     if not examples:
         raise ValueError("valid_iid fixture contains no examples")
 
-    route_contract = _route_contract(args.eu_contract, args.resolution)
+    route_contract = _route_contract(args)
     session = RuntimeSession.from_paths(
         args.checkpoint,
         args.run_config,
@@ -152,6 +203,8 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         case_summaries.append(
             {
                 "sample_id": str(anchor.sample_id),
+                "route_id": None if route_contract is None else route_contract["route_id"],
+                "strategy": None if route_contract is None else route_contract["strategy_name"],
                 "resolution": int(args.resolution),
                 "support_indices_sha256": case.group["support_indices_sha256"],
                 "graph_tensors_sha256": case.group["graph_tensors_sha256"],
@@ -169,6 +222,8 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "dataset_role": "valid_iid",
         "dataset_id": dataset.manifest["dataset_id"],
         "resolution": int(args.resolution),
+        "route_id": None if route_contract is None else route_contract["route_id"],
+        "strategy": None if route_contract is None else route_contract["strategy_name"],
         "sample_count": len(case_summaries),
         "device": str(jax.devices()[0]),
         "backend": str(jax.default_backend()),
