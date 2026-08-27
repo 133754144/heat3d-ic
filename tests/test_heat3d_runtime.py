@@ -8,7 +8,7 @@ import unittest
 
 import numpy as np
 
-from rigno.heat3d_runtime.equivalence import compare_named_arrays
+from rigno.heat3d_runtime.equivalence import compare_metadata, compare_named_arrays
 from rigno.heat3d_runtime.features import FeatureTransform
 from rigno.heat3d_v1_native_supervised import V1SteadyConditionInput, V1SteadyTarget
 from rigno.heat3d_v1_training_semantics import build_configured_zero_delta_bridge
@@ -55,6 +55,9 @@ class StableRuntimeStaticTests(unittest.TestCase):
             per_name_tolerance={"prediction": (1.0e-6, 1.0e-6)},
         )
         self.assertTrue(report.passed)
+
+    def test_metadata_comparison_normalizes_json_sequence_types(self) -> None:
+        self.assertTrue(compare_metadata({"features": ("k_x", "q")}, {"features": ["k_x", "q"]})["passed"])
 
     def test_explicit_transform_matches_frozen_zero_delta_inputs(self) -> None:
         coords = np.asarray(

@@ -10,7 +10,9 @@ implicitly.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from collections.abc import Mapping
+import json
+from typing import Any
 
 import numpy as np
 
@@ -59,11 +61,37 @@ def compare_metadata(
 
     keys = tuple(sorted(set(old) | set(new)))
     changed = {
-        key: {"old": old.get(key), "new": new.get(key)}
+        key: {
+            "old": _canonical_metadata(old.get(key)),
+            "new": _canonical_metadata(new.get(key)),
+        }
         for key in keys
-        if key not in old or key not in new or old[key] != new[key]
+        if key not in old
+        or key not in new
+        or _canonical_metadata(old[key]) != _canonical_metadata(new[key])
     }
     return {"passed": not changed, "changed": changed}
+
+
+def _canonical_metadata(value: Any) -> Any:
+    """Normalize tuple/list and NumPy scalar representations for JSON records."""
+
+    if isinstance(value, Mapping):
+        return {
+            str(key): _canonical_metadata(item)
+            for key, item in sorted(value.items(), key=lambda item: str(item[0]))
+        }
+    if isinstance(value, (tuple, list)):
+        return [_canonical_metadata(item) for item in value]
+    if isinstance(value, np.ndarray):
+        return [_canonical_metadata(item) for item in value.tolist()]
+    if isinstance(value, np.generic):
+        return value.item()
+    try:
+        json.dumps(value)
+    except TypeError:
+        return str(value)
+    return value
 
 
 def compare_named_arrays(
