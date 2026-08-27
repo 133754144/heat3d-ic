@@ -1,0 +1,403 @@
+{
+  "schema_version": "heat3d_v7_g0b2_receipt_v1",
+  "experiment_git_sha": "f0d912c",
+  "branch": "research/v7",
+  "experiment_scope": "GPU repeatability characterization and equivalent high-N stable-runtime cutover",
+  "prohibited_actions": {
+    "training_invoked": false,
+    "solver_invoked": false,
+    "data_generated": false,
+    "model_modified": false,
+    "graph_semantics_modified": false,
+    "sampling_modified": false,
+    "reconstruction_modified": false,
+    "batching_or_cache_optimization": false,
+    "test_iid_or_sealed_accessed": false,
+    "tolerance_relaxed": false,
+    "tolerance_forced_pass": false
+  },
+  "checkpoint": {
+    "path_on_devbox": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_06_V5best_P1i_seed0_reliable_B24/params_best_valid_point_global.pkl",
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "epoch": 559,
+    "checkpoint_kind": "point_global_best",
+    "normalization_profile": "semantic_normalization_v1",
+    "model_config_source": "checkpoint_and_run_config"
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "role": "valid_iid",
+    "dataset_root_on_devbox": "/home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_on_devbox": "/home/xyh/myCodeGitOnly/heat3d-ic/configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_on_devbox": "/home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "full_field_node_count": 240825,
+    "repeatability_sample_ids": [
+      "v6p1if1_0003"
+    ],
+    "frozen_valid_iid_sample_ids": [
+      "v6p1if1_0308",
+      "v6p1if1_0511",
+      "v6p1if1_0041",
+      "v6p1if1_0846",
+      "v6p1if1_0572",
+      "v6p1if1_0347",
+      "v6p1if1_0286",
+      "v6p1if1_0124",
+      "v6p1if1_1017",
+      "v6p1if1_0854",
+      "v6p1if1_0928",
+      "v6p1if1_0543",
+      "v6p1if1_0632",
+      "v6p1if1_0599",
+      "v6p1if1_0003",
+      "v6p1if1_0029",
+      "v6p1if1_0991",
+      "v6p1if1_0109",
+      "v6p1if1_0365",
+      "v6p1if1_0091",
+      "v6p1if1_0930",
+      "v6p1if1_0175",
+      "v6p1if1_0915",
+      "v6p1if1_0869",
+      "v6p1if1_0522",
+      "v6p1if1_0118",
+      "v6p1if1_0708",
+      "v6p1if1_0817",
+      "v6p1if1_1003",
+      "v6p1if1_0697",
+      "v6p1if1_0907",
+      "v6p1if1_0203"
+    ]
+  },
+  "runtime_environment": {
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "cpu": {
+      "backend": "cpu",
+      "devices": [
+        "TFRT_CPU_0"
+      ],
+      "repeats_per_runtime": 10,
+      "ordered_pair_count": 100
+    },
+    "gpu": {
+      "backend": "gpu",
+      "devices": [
+        "cuda:0"
+      ],
+      "repeats_per_runtime": 10,
+      "ordered_pair_count": 100,
+      "deterministic_control_run": false
+    }
+  },
+  "runtime_identity": {
+    "legacy": {
+      "name": "V6/P1i legacy reference control",
+      "entrypoint": "scripts/run_heat3d_v6_p1i_anchor_high_n_development.py",
+      "dependencies": [
+        "scripts.run_heat3d_v1_medium_controlled_training_export",
+        "scripts.run_heat3d_v3_final_probe_checkpoint_smoke",
+        "scripts.benchmark_heat3d_v6_inference_qualification"
+      ],
+      "role": "legacy control only"
+    },
+    "v7": {
+      "name": "V7 stable Heat3D runtime",
+      "package": "rigno.heat3d_runtime",
+      "entrypoint": "scripts/run_heat3d_v7_high_n_reference.py",
+      "public_api": [
+        "CheckpointBundle",
+        "load_checkpoint",
+        "materialize_checkpoint_stats",
+        "resolve_model_config",
+        "FeatureTransform",
+        "GroupBuilder",
+        "RuntimeSession",
+        "FullFieldGeometry",
+        "SupportArtifact",
+        "HighNCase",
+        "HighNRuntime"
+      ],
+      "forbidden_imports": [
+        "scripts",
+        "*_smoke.py",
+        "*_development.py",
+        "script-private symbols",
+        "sys.path mutation",
+        "module monkey patch"
+      ],
+      "role": "stable reference path"
+    }
+  },
+  "equivalence_statistics": {
+    "native_1024_control": {
+      "resolution": 1024,
+      "batch_size": 1,
+      "sample_id": "v6p1if1_0003",
+      "feature_group_graph": {
+        "cpu": {
+          "named_tensors_exact": true,
+          "max_abs": 0.0,
+          "rmse": 0.0,
+          "legacy_graph_tensors_sha256": "5dce892465c2adf4ac3380d5ecbeb81d60380d1893dcf9752d368a65b88c4757",
+          "v7_graph_tensors_sha256": "5dce892465c2adf4ac3380d5ecbeb81d60380d1893dcf9752d368a65b88c4757",
+          "graph_hash_exact": true
+        },
+        "gpu": {
+          "named_tensors_exact": true,
+          "max_abs": 0.0,
+          "rmse": 0.0,
+          "legacy_graph_tensors_sha256": "7c757534add8077a59e458504083dc3a09daa240f9107b9d58f8459a5965d770",
+          "v7_graph_tensors_sha256": "7c757534add8077a59e458504083dc3a09daa240f9107b9d58f8459a5965d770",
+          "graph_hash_exact": true
+        }
+      },
+      "legacy_vs_v7": {
+        "cpu": {
+          "ordered_pair_count": 100,
+          "prediction_max_abs_K": {
+            "min": 0.0,
+            "median": 0.0,
+            "mean": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "prediction_rmse_K": {
+            "min": 0.0,
+            "median": 0.0,
+            "mean": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "scale_max_abs": {
+            "min": 0.0,
+            "median": 0.0,
+            "mean": 0.0,
+            "p95": 0.0,
+            "max": 0.0
+          },
+          "strict_equivalence_passed": true
+        },
+        "gpu": {
+          "ordered_pair_count": 100,
+          "prediction_max_abs_K": {
+            "min": 0.005218505859375,
+            "p05": 0.00604248046875,
+            "median": 0.00714111328125,
+            "mean": 0.00726287841796875,
+            "p95": 0.00865631103515625,
+            "max": 0.009674072265625,
+            "worst_pair_index": 47
+          },
+          "prediction_rmse_K": {
+            "min": 0.0014629945283405569,
+            "p05": 0.0015815924294574372,
+            "median": 0.001661648391689135,
+            "mean": 0.0016667468826908913,
+            "p95": 0.001766142599792226,
+            "max": 0.0018008972268514405
+          },
+          "scale_max_abs": {
+            "min": 0.0,
+            "median": 0.00006103515625,
+            "mean": 0.0000811767578125,
+            "p95": 0.0001983642578125,
+            "max": 0.000274658203125
+          },
+          "strict_equivalence_passed": false
+        }
+      }
+    }
+  },
+  "gpu_repeatability": {
+    "comparison_definition": "against-first and all ordered pairs within one runtime; prediction in K",
+    "legacy": {
+      "against_first": {
+        "prediction_max_abs_K": {
+          "min": 0.0,
+          "p05": 0.00262298583984375,
+          "median": 0.006439208984375,
+          "mean": 0.006134033203125,
+          "p95": 0.007897949218749999,
+          "max": 0.00811767578125,
+          "worst_repeat_index": 4
+        },
+        "prediction_rmse_K": {
+          "min": 0.0,
+          "p05": 0.0007128468624037103,
+          "median": 0.0016309655312483481,
+          "mean": 0.0014814199403593085,
+          "p95": 0.001720582858944438,
+          "max": 0.0017499619671002113,
+          "worst_repeat_index": 4
+        },
+        "scale_max_abs": {
+          "min": 0.0,
+          "p05": 0.0,
+          "median": 0.00006103515625,
+          "mean": 0.00005950927734375,
+          "p95": 0.0001373291015625,
+          "max": 0.0001373291015625,
+          "worst_repeat_index": 3
+        }
+      },
+      "all_ordered_pairs": {
+        "prediction_max_abs_K": {
+          "min": 0.0,
+          "median": 0.0067291259765625,
+          "mean": 0.006339111328125,
+          "p95": 0.00830078125,
+          "max": 0.009033203125,
+          "worst_pair_index": 29
+        },
+        "prediction_rmse_K": {
+          "min": 0.0,
+          "median": 0.0016682130838334098,
+          "mean": 0.0015083133689806976,
+          "p95": 0.001753571615339788,
+          "max": 0.0018056107518377394,
+          "worst_pair_index": 34
+        },
+        "scale_max_abs": {
+          "min": 0.0,
+          "median": 0.00006866455078125,
+          "mean": 0.00008697509765625,
+          "p95": 0.0001983642578125,
+          "max": 0.000274658203125,
+          "worst_pair_index": 37
+        }
+      }
+    },
+    "v7": {
+      "against_first": {
+        "prediction_max_abs_K": {
+          "min": 0.0,
+          "median": 0.00665283203125,
+          "mean": 0.006072998046875,
+          "p95": 0.00779266357421875,
+          "max": 0.008026123046875,
+          "worst_repeat_index": 7
+        },
+        "prediction_rmse_K": {
+          "min": 0.0,
+          "median": 0.001643484694766906,
+          "mean": 0.0014884578634858832,
+          "p95": 0.0017083348817470056,
+          "max": 0.0017179153064698798,
+          "worst_repeat_index": 9
+        },
+        "scale_max_abs": {
+          "min": 0.0,
+          "median": 0.000030517578125,
+          "mean": 0.0000457763671875,
+          "p95": 0.00014343261718749987,
+          "max": 0.0001983642578125,
+          "worst_repeat_index": 9
+        }
+      },
+      "all_ordered_pairs": {
+        "prediction_max_abs_K": {
+          "min": 0.0,
+          "median": 0.00677490234375,
+          "mean": 0.006363525390625,
+          "p95": 0.00848388671875,
+          "max": 0.010009765625,
+          "worst_pair_index": 39
+        },
+        "prediction_rmse_K": {
+          "min": 0.0,
+          "median": 0.0016469699921024185,
+          "mean": 0.0014921180580855786,
+          "p95": 0.001718792327666486,
+          "max": 0.0017600340493438916,
+          "worst_pair_index": 69
+        },
+        "scale_max_abs": {
+          "min": 0.0,
+          "median": 0.00006103515625,
+          "mean": 0.0000677490234375,
+          "p95": 0.0001983642578125,
+          "max": 0.000274658203125,
+          "worst_pair_index": 79
+        }
+      }
+    },
+    "interpretation": {
+      "within_runtime_gpu_nonzero": true,
+      "model_visible_inputs_exact": true,
+      "graph_hash_exact_within_backend": true,
+      "attribution": "backend reduction/aggregation nondeterminism is supported with medium-high confidence, but the exact primitive was not isolated",
+      "deterministic_gpu_control_run": false,
+      "performance_claim": false
+    }
+  },
+  "resolution_ladder": {
+    "native_1024": {
+      "status": "complete",
+      "sample_id": "v6p1if1_0003",
+      "batch_size": 1,
+      "entrypoint": "scripts/run_heat3d_v7_high_n_reference.py",
+      "backend": "cpu",
+      "support_indices_sha256": "71e9d11396821ca08828509c144f634f8267d80cd055162f5026f11e904e56af",
+      "graph_tensors_sha256": "5dce892465c2adf4ac3380d5ecbeb81d60380d1893dcf9752d368a65b88c4757",
+      "graph_hash": "8f440c84d0191afc083919ffb8af3d3f5d680bcf793d87c7c34b4d68a2301b70",
+      "cache_written": false,
+      "prediction_artifact_written": false
+    },
+    "e16384_small": {
+      "status": "pending_missing_frozen_artifacts",
+      "required": [
+        "support/16384/<sample_id>.npz",
+        "frozen_1024_anchor_predictions.npz"
+      ],
+      "found_in_devbox_checkout": false,
+      "fail_closed": true
+    },
+    "e16384_extended": {
+      "status": "pending_missing_frozen_artifacts",
+      "required": [
+        "support/16384/<sample_id>.npz",
+        "frozen_1024_anchor_predictions.npz"
+      ],
+      "found_in_devbox_checkout": false,
+      "fail_closed": true
+    },
+    "e32768": {
+      "status": "pending_missing_frozen_artifacts",
+      "required": [
+        "support/32768/<sample_id>.npz",
+        "frozen_1024_anchor_predictions.npz"
+      ],
+      "found_in_devbox_checkout": false,
+      "fail_closed": true
+    }
+  },
+  "audit_notes": {
+    "legacy_dependencies_replaced_for_v7": [
+      "V3 install_checkpoint_feature_hooks -> FeatureTransform",
+      "V1 checkpoint/private model helpers -> CheckpointBundle/RuntimeSession",
+      "V1 padded group and attach helpers -> GroupBuilder/FeatureTransform",
+      "legacy high-N support/graph orchestration -> HighNRuntime adapter"
+    ],
+    "legacy_dependencies_still_active": [
+      "V6 anchor high-N development entrypoint",
+      "V6 production highres entrypoint",
+      "qualification and E/U timing wrappers",
+      "script-private metric/timing orchestration"
+    ],
+    "optimization_audit_only": [
+      "repeated FeatureTransform/raw extraction",
+      "batch-scoped Heat3DGraphBuilder construction",
+      "graph/KD-tree session reuse",
+      "reconstruction partition/map reuse",
+      "explicit compiled/JIT cache",
+      "high-N Python per-sample orchestration",
+      "fixed-shape/padding memory overhead",
+      "audit/reference path mixing",
+      "duplicate metrics/timing implementation",
+      "GPU nondeterministic reduction/aggregation"
+    ]
+  }
+}

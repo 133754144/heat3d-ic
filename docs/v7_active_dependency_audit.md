@@ -1,12 +1,13 @@
 # V7 active dependency audit
 
-状态：V7-D0/G0a 静态依赖审计交付已完成；G0b-1 stable runtime 已交付；G0
-Code gate 仍未通过；未实施重构。
+状态：V7-D0/G0a 静态依赖审计、G0b-1 stable runtime 和 G0b-2 native/high-N
+cutover audit 已交付；G0 Code gate 仍未通过；本轮未实施性能优化或历史代码
+重构。
 
 审计对象是当前 V6/P1i 的正式训练、checkpoint inference、high-N query、
 full-field reconstruction、metrics 和 timing 路径。审计依据是仓库中的
 import、symbol 定义、直接调用和运行时赋值关系。D0/G0a 静态阶段没有导入或
-执行目标模块；本轮 G0b-1 只在 devbox 上对冻结 `valid_iid` fixture 做了受限
+执行目标模块；本轮 G0b-1/G0b-2 只在 devbox 上对冻结 `valid_iid` fixture 做了受限
 的 old/new inference equivalence control，没有训练、solver、数据生成、模型
 评估，也没有访问任何 `test_iid`、held-out 或 sealed labels。
 
@@ -23,13 +24,16 @@ materialization、metrics 和 timing 仍分散在多个 `scripts/` 文件中。
 
 - D0 文档边界已记录；
 - G0a 静态依赖审计交付**已完成**，但审计结论是 G0 Code gate **未通过**；
-- G0b-1 已新增稳定 V7 inference runtime；devbox 上冻结 checkpoint 与
-  `valid_iid` fixture 已可用，CPU deterministic control 的 runtime equivalence
-  已通过，但默认加速器 backend 的重复 apply 尚未满足严格 equivalence；
+- G0b-1 已新增稳定 V7 inference runtime；G0b-2 又新增了不导入 script-private
+  API 的 anchor-derived high-N runtime 和 reference entrypoint。devbox 上冻结
+  checkpoint 与 `valid_iid` fixture 已可用；CPU deterministic control 与
+  native-1024 stable high-N entrypoint 已通过，GPU 则单独观察到 backend
+  reduction/aggregation 非确定性；
 - 历史 smoke/development/check 脚本未修改、未删除，且尚未被旧 V6 入口自动
-  切换；它们仍是 legacy/reference path；
-- 后续只应在新的明确授权下按本文件的最小 extract-core/preserve-legacy
-  边界继续推进，不得借 G0b-1 开始 G0b-2 性能优化或高-N 路径重写。
+  切换；新的 V7 native/high-N reference path 已切断这些依赖，但旧 V6
+  production/timing path 仍是 legacy/reference path；
+- 16k/32k 等价性没有因缺少冻结 support/anchor artifacts 而被补造；稳定入口
+  按 contract fail-closed，待 artifacts 可审计获得后再验证。
 
 ## G0b-1 stable V7 runtime（本轮交付）
 
@@ -114,6 +118,111 @@ helpers，见上文 active call graph。这种依赖本身没有证据表明会�
 模型性能；但它们确实提高了输入语义漂移与复现失败的风险。CPU control 已观察
 到 old/new 完全一致；默认加速器的非确定性则独立地阻塞严格 equivalence，不能
 被解释成模型质量下降，也不能被容差放宽掩盖。
+
+## G0b-2 GPU repeatability 与 high-N stable-runtime cutover
+
+本轮只做行为等价替代和问题审计，没有训练、solver、数据生成、模型/graph
+algorithm、sampling、batching、cache policy、reconstruction algorithm 或模型
+架构改动。所有运行均限制在冻结 `valid_iid`；`test_iid`、held-out/sealed labels
+均未访问。
+
+### 已交付的 stable high-N 边界
+
+`rigno.heat3d_runtime.high_n` 提供 `FullFieldGeometry`、`SupportArtifact`、
+`HighNCase` 和 `HighNRuntime`。它只接受已有 full-field geometry、已有
+source-aware support 和已有 graph metadata；不会生成 support、调用 solver 或
+写 prediction artifact。其 graph path 显式使用已有 `sparse_kdtree_v1` backend，
+通过 `RuntimeSession.build_group_from_metadata` 保留 V6 feature/group assembly，
+并将 reconstruction 委托给现有 `rigno.heat3d_v6_full_field` builder。已有的
+anchor-derived conditioning/context/scale、support order、边界特征和
+reconstruction semantics 未改变。
+
+新的 [`run_heat3d_v7_high_n_reference.py`](../scripts/run_heat3d_v7_high_n_reference.py)
+只允许 `valid_iid`，并对高于 1024 的 resolution 缺失 artifact fail-closed。其
+stable import direction 为：
+
+```text
+run_heat3d_v7_high_n_reference
+  -> rigno.heat3d_runtime.HighNRuntime
+  -> RuntimeSession -> FeatureTransform / GroupBuilder
+  -> heat3d_v6_p1i_anchor_query / graphBuilder_Heat3D / heat3d_v6_full_field
+  -> RIGNO
+```
+
+该入口不导入 V1 runner private API、V3 smoke hook、`*_smoke.py`、
+`*_development.py` 或其他 `scripts/` module，也不修改 `sys.path` 或 module
+state。旧 V1–V6 路径保持原样，仅作为 legacy/reference control。
+
+### Native-1024 equivalence 与 GPU repeatability
+
+机器可读证据保存在
+[`v7_g0b2_receipt.json`](v7_g0b2_receipt.json)。同一 frozen checkpoint、同一
+`valid_iid` sample `v6p1if1_0003`、同一构造后的 native-1024 graph/model-visible
+tensors 上，legacy 与 V7 各重复 10 次，并比较 100 个 ordered pairs：
+
+| backend / comparison | feature、group、graph | prediction repeatability | scale repeatability | strict old/new 判定 |
+| --- | --- | --- | --- | --- |
+| CPU legacy vs V7 | named tensors 与 graph hash exact；max-abs/RMSE 均 0 | 两路径 100 对均 0 K | 两路径 100 对均 0 | 通过 |
+| GPU legacy within-runtime | named tensors exact；graph hash exact | against-first max `0.00811767578125 K`；all-pairs max `0.009033203125 K` | all-pairs max `0.000274658203125` | repeatability envelope，不作 strict pass |
+| GPU V7 within-runtime | named tensors exact；graph hash exact | against-first max `0.008026123046875 K`；all-pairs max `0.010009765625 K` | all-pairs max `0.000274658203125` | repeatability envelope，不作 strict pass |
+| GPU legacy vs V7 | feature、group、graph hash exact | cross-runtime max `0.009674072265625 K`；RMSE max `0.0018008972268514405 K` | max `0.000274658203125` | 未通过 strict exactness |
+
+GPU 的非零变化发生在相同 model-visible inputs 和相同 graph hash 已固定之后，
+因此当前证据对“backend reduction/aggregation 非确定性”的归因强度为**中—高**；
+但本轮没有运行 deterministic-GPU control 或 profiler，不能定位到具体 primitive，
+也不能把它表述为模型性能下降。没有放宽 tolerance；receipt 中
+`tolerance_forced_pass=false`。CPU 仍是 semantic-equivalence oracle。
+
+### Resolution ladder 状态
+
+- **native 1024：完成**。稳定 high-N reference entrypoint 在 devbox CPU 上实际
+  执行，`v6p1if1_0003` 的 support hash 为
+  `71e9d11396821ca08828509c144f634f8267d80cd055162f5026f11e904e56af`，graph
+  tensor hash 为
+  `5dce892465c2adf4ac3380d5ecbeb81d60380d1893dcf9752d368a65b88c4757`；未写
+  graph cache。
+- **E16384 small / extended：pending**。devbox 当前 checkout 没有冻结的
+  `support/16384/<sample_id>.npz`、anchor prediction artifact 或既有 high-N
+  preflight/cache evidence；入口会在 artifact 缺失时拒绝运行。本轮不生成
+  support、不调用 continuous solver、不访问非 `valid_iid` labels。
+- **E32768：pending**。同样缺少既有 valid-only support/anchor artifacts；不能
+  用 native-1024 结果替代 high-resolution evidence。
+
+因此本轮可以证明 stable API 和 native control 的 cutover，不能声称 16k/32k
+high-resolution equivalence 已完成。
+
+### 当前局限与只审计不实施的优化候选
+
+下表记录当前行为、潜在成本、候选方向和语义变化风险；本轮不实施任何一项。
+
+| 项目 | current behavior | potential cost | candidate optimization direction | whether semantics may change |
+| --- | --- | --- | --- | --- |
+| repeated `FeatureTransform` / raw feature extraction | 每次 group/case 仍显式执行 feature transform 与 raw-field assembly | 重复 CPU/JAX materialization | 以 sample/geometry/feature-version 为 key 的 session memoization | 低，但 key 漂移或 stale cache 会改变输入 |
+| batch-scoped `Heat3DGraphBuilder` construction | `GroupBuilder`/high-N metadata path 按构造边界创建 builder | builder setup 与 Python orchestration 重复 | session-scoped builder/context | 低，需证明 config/seed 完全相同 |
+| graph/KD-tree reuse | graph cache 只有显式 artifact/cache-dir 才参与；默认 reference 不启用 resident reuse | high-N graph/KD-tree construction 成本高 | geometry/session-scoped graph/KD-tree reuse | 中，cache key/version 不完整会改变邻接 |
+| reconstruction partition/map reuse | `HighNRuntime.reconstruction` 调用既有 map builder；未建立稳定 session reuse contract | full-field query/map 构造重复 | reuse `ReconstructionDomainPartition`/map | 中，stale partition 或排序变化可改 output |
+| compiled/JIT executable cache | `RuntimeSession.apply` 没有明确的 keyed compiled executable cache | 重复 compile/warm-up 或 specialization | 按 device/model/group signature 建 cache | 低—中，shape/padding/device key 错误会改变行为 |
+| high-N Python per-sample orchestration | case/support/graph/model 调用仍逐 sample 组织 | Python dispatch 与 host-device sync | 批量或异步 orchestration | 中，可能改变 query order、padding 或 aggregation |
+| fixed-shape / padding memory | GroupBuilder 保留 V6 padded group contract | 高-N memory footprint 与 padding waste | shape buckets 或 mask-aware representation | 高，mask/dummy semantics 需重新证明 |
+| audit/reference path mixing | legacy V6 audit/production/timing 仍混合脚本 private API；V7 stable path 已分离 | provenance、复现和维护成本 | extract-core / preserve-legacy adapters | 高，替换时必须逐项做 equivalence |
+| metrics/timing duplicate implementation | qualification、production、resolution、high-N 仍有多处 metric/timing wrapper | aggregation boundary 和 lifecycle timing 漂移 | 统一命名的 metrics/timing core | 高，不能把不同 metric 定义静默合并 |
+| GPU nondeterministic reduction/aggregation | CPU exact；GPU 同进程 10× prediction max 约 `0.010009765625 K` | repeatability envelope 与严格 regression 判定受限 | deterministic control、稳定 reduction 或 backend policy | 高，可能牺牲性能；本轮不用于性能 claim |
+
+### G0b-2 dependency replacement status
+
+| dependency | 当前 V7 native/high-N 状态 | 旧 V6 formal path 状态 |
+| --- | --- | --- |
+| V3 `install_checkpoint_feature_hooks` | 已由显式 `FeatureTransform` 替代 | 仍由 anchor high-N、production highres、qualification 路径使用 |
+| V1 runner checkpoint/private model helpers | 已由 `CheckpointBundle`、`load_checkpoint`、`RuntimeSession.apply` 替代 | 仍是旧 reference/production/timing 的 active compatibility edge |
+| V1 `_make_v6_padded_groups_with_progress` 与 `_attach_*` | 已由 `GroupBuilder`/`FeatureTransform` 替代 | 旧 V6 path 仍调用 |
+| high-N support/graph/reconstruction orchestration | `HighNRuntime` 已提供 stable adapter；native 1024 已实跑 | 16k/32k 还没有 artifact，旧 high-N route 未被自动切换 |
+| scripts/private metric/timing helpers | V7 reference entrypoint 不导入 | qualification/E/U/production wrappers 仍使用，尚未抽取 |
+
+当前 G0 blocker 是：(1) 旧 V6 publication/timing path 尚未全部切到 stable
+runtime；(2) 16k/32k frozen valid-only artifacts 缺失，无法完成 high-resolution
+ladder；(3) GPU backend repeatability policy 尚未冻结；(4) metrics/timing 尚未
+形成单一 public evaluation core。上述 blocker 不表示本轮 stable native-1024
+cutover 失败，也不允许提前进入 G0b-3 性能优化或 publication claim。
 
 ## 审计方法与证据边界
 
@@ -479,11 +588,11 @@ preserve-legacy 的约束是：legacy 可继续被历史测试或显式 compatib
 
 ### 后续 G0b 的验收方向
 
-未来若获得单独授权，G0b 至少需要静态 import graph 检查、无 script-private
-imports、无 monkey patch、checkpoint provenance、clean-checkout dry-run，以及
-对冻结 fixture 的 output/metric equivalence 证据。那时才可讨论如何逐步启用
-新的 baseline/ablation/OOD evaluation；本轮不运行这些检查路径，也不接触任何
-held-out/sealed labels。
+G0b-2 已完成静态 import graph 检查、无 script-private imports、无 monkey patch、
+checkpoint provenance、clean-checkout 级别的入口检查，以及 native-1024 冻结
+fixture 的 output equivalence 证据。仍需在后续授权下完成旧 V6 formal path 的
+全面切换、16k/32k artifact ladder、统一 metrics/timing core 和 backend
+determinism policy；本轮不运行 solver，也不接触任何 held-out/sealed labels。
 
 ## G0a 判定
 
@@ -491,16 +600,15 @@ held-out/sealed labels。
 | --- | --- | --- |
 | D0 研究边界与术语 | 完成（文档层） | README 与 [V7 research contract](v7_research_contract.md) 已区分 V6 evidence、Level-A、Level-B 与 V7 objectives |
 | G0a 静态依赖审计交付 | 完成 | 本文已记录 active call graph、分类、private API、monkey patch、重复实现与后续边界 |
-| G0 Code gate：production path 不依赖 smoke/check/development | 未通过 | high-N/production 仍 import V3 smoke hook；high-N 文件本身为 development-named |
+| G0 Code gate：production path 不依赖 smoke/check/development | 未通过 | 新 V7 native/high-N reference 已切断这些依赖，但旧 high-N/production/timing formal path 仍 import V3 smoke hook，且旧 high-N 文件为 development-named |
 | 不依赖跨脚本 private API | 未完成 | V6 paths 调用 V1 runner、qualification、common、U1/high-N private symbols |
 | 不使用 monkey patch/runtime mutation | 未完成 | V3 hook 给 `runner_module._bridge_for` 赋新 closure |
 | feature/normalization/checkpoint/metrics/reconstruction 单一 core | 未完成 | 本文“重复实现与语义分散”所列多组路径 |
-| 本轮禁止事项 | 已遵守 | 未训练、未求解、未生成数据、未访问 `test_iid`/held-out/sealed labels、未改模型/冻结 artifact；仅运行冻结 `valid_iid` 的受限 equivalence control |
+| 本轮禁止事项 | 已遵守 | 未训练、未求解、未生成数据、未访问 `test_iid`/held-out/sealed labels、未改模型/冻结 artifact；仅运行冻结 `valid_iid` 的 CPU/GPU repeatability control 与 native-1024 stable cutover |
 
-结论：**V7-G0a 静态审计已完成；V7-G0b-1 的 stable runtime 与 CPU control
-equivalence 已交付，但 G0 Code gate 仍未通过，不能进入正式 V7
-baseline/ablation/OOD evaluation。** 默认加速器 backend 的重复 apply 尚未满足
-严格 reproducibility/equivalence，需要后续单独冻结 backend/determinism policy；
-本轮不做该项优化或修复。
-本文件只冻结问题清单和后续最小边界；下一阶段若要开始 G0b，必须另行授权，
-并继续保持 V6 frozen artifacts 与 sealed data 不变。
+结论：**V7-G0b-2 已完成 stable native/high-N runtime 边界、CPU semantic
+equivalence 和 GPU repeatability characterization，但 G0 Code gate 仍未通过，
+16k/32k high-resolution ladder 仍 pending。** GPU 默认 backend 的重复 apply
+尚未满足严格 reproducibility/equivalence，需要后续单独冻结 backend/determinism
+policy；本轮不做该项优化或修复。本文件继续冻结 V6 artifacts、sealed data、
+历史 legacy 路径和 extract-core / preserve-legacy 边界。

@@ -38,6 +38,23 @@ class StableRuntimeStaticTests(unittest.TestCase):
             self.assertNotIn("sys.path", source)
             self.assertNotIn("runner_module", source)
 
+    def test_high_n_reference_entrypoint_uses_stable_runtime_only(self) -> None:
+        path = ROOT / "scripts" / "run_heat3d_v7_high_n_reference.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        imported = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.extend(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom):
+                imported.append(node.module or "")
+        self.assertIn("rigno.heat3d_runtime", imported)
+        self.assertFalse(any(module.startswith("scripts") for module in imported))
+        self.assertFalse(any("smoke" in module.lower() for module in imported))
+        self.assertFalse(any("development" in module.lower() for module in imported))
+        source = path.read_text(encoding="utf-8")
+        self.assertNotIn("sys.path", source)
+        self.assertNotIn("install_checkpoint_feature_hooks", source)
+
     def test_equivalence_reports_actual_errors_without_widening(self) -> None:
         report = compare_named_arrays(
             {"normalized_c": np.asarray([1.0, 2.0])},
