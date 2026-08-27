@@ -51,6 +51,7 @@
       "direct_query": true,
       "conditioning_input_semantics": "A source-aware 1024 anchor group provides the frozen native input, context and anchor scale; the E query group is a direct high-resolution model query.",
       "query_rule": "The 16384 query support is the label-independent prefix of the deterministic nested support order.",
+      "regional_mesh_rule": "The native 1024 conditioning graph uses the frozen factor-4 regional mesh; a direct E query uses the historical resolution/256 regional-mesh factor (64 at 16384, 128 at 32768, 940.72265625 at 240825) with reuse_exact_p2r_for_r2p=true.",
       "graph_semantics": "One direct high-resolution E graph uses the existing sparse_kdtree_v1 graph builder and the registered E edge targets; no graph algorithm or sampling policy change.",
       "global_context_rule": "Anchor-derived native context and q-k/scale context are held fixed for the query.",
       "anchor_scale_rule": "Apply the native 1024 anchor scale to the direct high-resolution shape output according to the frozen shape-scale semantics.",

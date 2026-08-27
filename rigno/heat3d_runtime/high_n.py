@@ -374,6 +374,26 @@ class HighNRuntime:
             sha256="<anchor-embedded>",
         )
 
+    def graph_config_for_resolution(self, resolution: int) -> dict[str, Any]:
+        """Resolve the frozen E graph policy for a conditioning/query pair.
+
+        V6 uses factor four for the native 1024 conditioning graph and
+        resolution/256 for a direct E query.  Keeping this route policy
+        explicit prevents a high-resolution E query from accidentally reusing
+        the native regional mesh.  U-v2 has its own stable runtime because its
+        output query reuses the native regional graph.
+        """
+
+        resolved = dict(self.graph_config)
+        if int(resolution) > TRAINING_ANCHOR_COUNT:
+            resolved.update(
+                {
+                    "subsample_factor": float(int(resolution) / 256.0),
+                    "reuse_exact_p2r_for_r2p": True,
+                }
+            )
+        return resolved
+
     def query_example(
         self,
         anchor: V6DualRobinExample,
@@ -420,12 +440,14 @@ class HighNRuntime:
         example: V6DualRobinExample,
         *,
         support_hash: str,
+        graph_config: Mapping[str, Any] | None = None,
         cache_dir: str | Path | None = None,
         write_cache: bool = False,
     ) -> GraphBuildRecord:
         if len(support_hash) != 64:
             raise ValueError("support_hash must be a SHA256 value")
-        builder = Heat3DGraphBuilder(**self.graph_config)
+        resolved_graph_config = dict(graph_config or self.graph_config)
+        builder = Heat3DGraphBuilder(**resolved_graph_config)
         key_payload = cache_key_payload(
             support_hash=support_hash,
             graph_config=dict(builder.config),
@@ -555,10 +577,23 @@ class HighNRuntime:
         graph = self.graph_metadata(
             example,
             support_hash=support_hash,
+            graph_config=self.graph_config_for_resolution(resolution),
             cache_dir=cache_dir,
             write_cache=write_cache,
         )
-        group = self.session.build_group_from_metadata(
+        group_session = self.session
+        query_graph_config = self.graph_config_for_resolution(resolution)
+        if query_graph_config != self.session.graph_config:
+            group_session = replace(
+                self.session,
+                graph_config=query_graph_config,
+                group_builder=GroupBuilder(
+                    feature_transform=self.session.feature_transform,
+                    graph_config=query_graph_config,
+                    graph_seed=int(self.session.run_config.get("graph_seed", 0)),
+                ),
+            )
+        group = group_session.build_group_from_metadata(
             [example],
             graph.metadata,
             name=f"v7_high_n_valid_iid_{resolution}",

@@ -439,12 +439,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             example=stable_e.query_example(anchor=example, support=SupportArtifact.from_arrays(**support_arrays)),
             anchor=example,
             runtime=runtime,
-            graph_config=runtime["graph_config"],
+            graph_config=stable_e.graph_config_for_resolution(E_RESOLUTION),
             edge_targets=e_targets,
         )
         stable_e_meta = stable_e.graph_metadata(
             stable_e.query_example(example, SupportArtifact.from_arrays(**support_arrays)),
             support_hash=array_sha256(support_arrays["selected_indices"]),
+            graph_config=stable_e.graph_config_for_resolution(E_RESOLUTION),
         ).metadata
         old_u_native, _ = _legacy_metadata_and_group(
             example=example,
@@ -499,7 +500,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         example=highn._query_example(anchor, fixed_support_arrays, full["coords"]),
         anchor=anchor,
         runtime=runtime,
-        graph_config=runtime["graph_config"],
+        graph_config=stable_e.graph_config_for_resolution(E_RESOLUTION),
         edge_targets=e_targets,
     )
     e_case = _stable_e_case(stable_e, anchor, fixed_support_arrays, E_RESOLUTION, e_targets)
@@ -592,14 +593,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     support32768, audit32768 = _temporary_support(
         anchor, full, binding, E32768_RESOLUTION, physics_cache
     )
+    e327_example = highn._query_example(anchor, support32768, full["coords"])
+    e327_builder = Heat3DGraphBuilder(
+        **stable_e.graph_config_for_resolution(E32768_RESOLUTION)
+    )
+    e327_metadata = e327_builder.build_metadata(
+        runner._graph_coords_for_example(e327_example, runtime["stats"]),
+        key=runner._metadata_key(int(runtime["run_config"]["graph_seed"])),
+    )
+    e327_targets = _edge_counts(e327_metadata)
     old_e327_meta, old_e327_group = _legacy_metadata_and_group(
-        example=highn._query_example(anchor, support32768, full["coords"]),
+        example=e327_example,
         anchor=anchor,
         runtime=runtime,
-        graph_config=runtime["graph_config"],
-        edge_targets=e_targets,
+        graph_config=stable_e.graph_config_for_resolution(E32768_RESOLUTION),
+        edge_targets=e327_targets,
     )
-    e327_case = _stable_e_case(stable_e, anchor, support32768, E32768_RESOLUTION, e_targets)
+    e327_case = _stable_e_case(stable_e, anchor, support32768, E32768_RESOLUTION, e327_targets)
 
     return {
         "schema_version": "heat3d_v7_g0b2c_receipt_v1",
