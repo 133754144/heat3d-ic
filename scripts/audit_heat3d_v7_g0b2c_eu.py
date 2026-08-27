@@ -455,10 +455,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             example=example,
             anchor=example,
             runtime=runtime,
-            graph_config={**runtime["graph_config"], "subsample_factor": 4},
+            graph_config={
+                **runtime["graph_config"],
+                "subsample_factor": 4,
+                "reuse_exact_p2r_for_r2p": True,
+            },
             edge_targets=u_native_targets,
         )
-        u_builder = Heat3DGraphBuilder(**{**runtime["graph_config"], "subsample_factor": 4})
+        u_builder = Heat3DGraphBuilder(
+            **{
+                **runtime["graph_config"],
+                "subsample_factor": 4,
+                "reuse_exact_p2r_for_r2p": True,
+            }
+        )
         u_query = stable_e.query_example(example, SupportArtifact.from_arrays(**support_arrays))
         old_u_query, old_u_audit = prior_u1._strict_asymmetric_metadata(
             u_builder,
@@ -543,7 +553,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         native_edge_targets=u_native_targets,
         query_edge_targets=u_query_targets,
     )
-    old_u_builder = Heat3DGraphBuilder(**{**runtime["graph_config"], "subsample_factor": 4})
+    old_u_builder = Heat3DGraphBuilder(
+        **{
+            **runtime["graph_config"],
+            "subsample_factor": 4,
+            "reuse_exact_p2r_for_r2p": True,
+        }
+    )
     old_u_native_meta = old_u_builder.build_metadata(
         runner._graph_coords_for_example(anchor, runtime["stats"]),
         key=runner._metadata_key(int(runtime["run_config"]["graph_seed"])),
