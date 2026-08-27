@@ -459,6 +459,21 @@ class UHighNRuntime:
             edge_targets=combined,
             context_examples=[anchor],
         )
+        # The split U-v2 model consumes ``log_s_phys`` from the native
+        # conditioning side only.  Keep the output-side group limited to the
+        # physics fields that are actually model-visible there, matching the
+        # frozen lean reference path without changing any numerical input.
+        query_physics = query_group.get("native_physics")
+        if query_physics is not None:
+            query_group["native_physics"] = {
+                name: query_physics[name]
+                for name in (
+                    "control_volumes",
+                    "reference_temperature",
+                    "dirichlet_mask",
+                    "prescribed_temperature",
+                )
+            }
         audit = dict(audit)
         audit.update(
             {
