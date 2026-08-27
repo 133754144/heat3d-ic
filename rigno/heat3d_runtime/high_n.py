@@ -335,8 +335,18 @@ class HighNRuntime:
         *,
         graph_builder_fingerprint: str | None = None,
     ) -> "HighNRuntime":
+        # The frozen V6 high-N production path materializes this native graph
+        # contract explicitly, even though the training run config only keeps
+        # the dense-reference defaults.  Preserve those semantics in the
+        # stable runtime for both native anchor and direct-query branches.
         graph_config = dict(session.graph_config)
-        graph_config["discrete_graph_backend"] = SPARSE_GRAPH_BACKEND
+        graph_config.update(
+            {
+                "discrete_graph_backend": SPARSE_GRAPH_BACKEND,
+                "subsample_factor": 4.0,
+                "reuse_exact_p2r_for_r2p": True,
+            }
+        )
         configured_session = replace(
             session,
             graph_config=graph_config,

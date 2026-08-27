@@ -11,6 +11,7 @@ import numpy as np
 
 from rigno.heat3d_runtime.equivalence import compare_metadata, compare_named_arrays
 from rigno.heat3d_runtime.features import FeatureTransform
+from rigno.heat3d_v1_normalization import normalize_coords
 from rigno.heat3d_v1_native_supervised import V1SteadyConditionInput, V1SteadyTarget
 from rigno.heat3d_v1_training_semantics import build_configured_zero_delta_bridge
 from rigno.heat3d_v6_dataset import V6DualRobinExample
@@ -395,6 +396,59 @@ class StableRuntimeStaticTests(unittest.TestCase):
         self.assertTrue(np.array_equal(np.asarray(expected.legacy_inputs.c), np.asarray(observed.inputs.c)))
         expected_coords = 2.0 * np.asarray(expected.legacy_inputs.x_inp) - 1.0
         self.assertTrue(np.array_equal(expected_coords, np.asarray(observed.inputs.x_inp)))
+
+    def test_graph_coordinate_normalization_preserves_frozen_float64_order(self) -> None:
+        coords = np.asarray(
+            [[0.123456789012345, 0.23456789012345, 0.3456789012345],
+             [0.523456789012345, 0.53456789012345, 0.5456789012345],
+             [0.923456789012345, 0.83456789012345, 0.7456789012345]],
+            dtype=np.float64,
+        )
+        condition = np.zeros((3, 11), dtype=np.float64)
+        condition[:, 0:3] = 1.0
+        condition[:, 3] = 2.0
+        condition[:, 7] = 1.0
+        example = V6DualRobinExample(
+            sample_id="graph-coordinate-unit",
+            condition=V1SteadyConditionInput(
+                coords=coords,
+                condition_features=condition,
+                condition_feature_names=(
+                    "k_x", "k_y", "k_z", "q", "is_top", "is_bottom",
+                    "is_side", "is_interior", "top_h", "bottom_h",
+                    "top_T_inf_minus_T_ref",
+                ),
+                k_encoding_mode="diag3",
+            ),
+            target=V1SteadyTarget(target_u=np.full((3, 1), 300.0)),
+            meta={
+                "v6_adapter": {
+                    "reference_temperature_K": 300.0,
+                    "top_T_inf_K": 300.0,
+                    "bottom_T_inf_K": 300.0,
+                },
+                "package_total_power_W": 1.0,
+                "physics": {"footprint_m": (1.0, 1.0)},
+                "layers_bottom_to_top": [{"thickness_m": 1.0}],
+            },
+            operator_point_weights=np.ones(3),
+        )
+        stats = {
+            "input_feature_schema": "legacy_bc_flags",
+            "coord_policy": "sample_local_isotropic",
+            "extent_feature_policy": "none",
+            "normalization_profile": "legacy_zscore",
+            "feature_names": tuple(example.condition.condition_feature_names),
+            "condition_mean": np.zeros((1, 1, 1, 11), dtype=np.float32),
+            "condition_std": np.ones((1, 1, 1, 11), dtype=np.float32),
+            "coord_min": np.zeros(3, dtype=np.float64),
+            "coord_span": np.ones(3, dtype=np.float64),
+        }
+        observed = FeatureTransform(stats).transform(example)
+        expected_graph = normalize_coords(coords.reshape(1, 1, 3, 3), stats)
+        np.testing.assert_array_equal(
+            np.asarray(observed.graph_coords), np.asarray(expected_graph).reshape(3, 3)
+        )
 
 
 if __name__ == "__main__":

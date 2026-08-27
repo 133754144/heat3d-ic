@@ -65,9 +65,19 @@ class FeatureTransform:
         )
         n_points = raw_coords.shape[0]
         raw_c = jnp.asarray(transformed.reshape(1, 1, n_points, -1), dtype=jnp.float32)
+        # The frozen V6 runner normalizes model coordinates from its JAX
+        # bridge tensor, but computes graph coordinates from the raw NumPy
+        # coordinates before Heat3DGraphBuilder performs its float32 cast.
+        # Keeping these two arithmetic paths explicit is required for exact
+        # old/new graph metadata equivalence; converting raw coordinates to
+        # float32 before normalization changes regional nodes and KD-tree
+        # edge selection at tie-sensitive boundaries.
         normalized_coords = normalize_coords(
             jnp.asarray(raw_coords.reshape(1, 1, n_points, 3), dtype=jnp.float32),
             dict(self.stats),
+        )
+        graph_normalized_coords = normalize_coords(
+            raw_coords.reshape(1, 1, n_points, 3), dict(self.stats)
         )
         normalized_condition = normalize_condition(raw_c, dict(self.stats))
         zeros = jnp.zeros((1, 1, n_points, 1), dtype=jnp.float32)
@@ -80,7 +90,7 @@ class FeatureTransform:
             tau=None,
         )
         if str(self.stats["coord_policy"]) == "sample_local_isotropic":
-            graph_coords = np.asarray(normalized_coords).reshape(n_points, 3)
+            graph_coords = np.asarray(graph_normalized_coords).reshape(n_points, 3)
         else:
             graph_coords = raw_coords
         return TransformedExample(
