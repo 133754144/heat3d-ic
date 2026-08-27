@@ -39,21 +39,33 @@ class StableRuntimeStaticTests(unittest.TestCase):
             self.assertNotIn("runner_module", source)
 
     def test_high_n_reference_entrypoint_uses_stable_runtime_only(self) -> None:
-        path = ROOT / "scripts" / "run_heat3d_v7_high_n_reference.py"
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        imported = []
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                imported.extend(alias.name for alias in node.names)
-            elif isinstance(node, ast.ImportFrom):
-                imported.append(node.module or "")
-        self.assertIn("rigno.heat3d_runtime", imported)
-        self.assertFalse(any(module.startswith("scripts") for module in imported))
-        self.assertFalse(any("smoke" in module.lower() for module in imported))
-        self.assertFalse(any("development" in module.lower() for module in imported))
-        source = path.read_text(encoding="utf-8")
-        self.assertNotIn("sys.path", source)
-        self.assertNotIn("install_checkpoint_feature_hooks", source)
+        for filename in ("run_heat3d_v7_high_n_reference.py", "run_heat3d_v7_u_high_n_reference.py"):
+            path = ROOT / "scripts" / filename
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            imported = []
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    imported.extend(alias.name for alias in node.names)
+                elif isinstance(node, ast.ImportFrom):
+                    imported.append(node.module or "")
+            self.assertIn("rigno.heat3d_runtime", imported)
+            self.assertFalse(any(module.startswith("scripts") for module in imported))
+            self.assertFalse(any("smoke" in module.lower() for module in imported))
+            self.assertFalse(any("development" in module.lower() for module in imported))
+            source = path.read_text(encoding="utf-8")
+            self.assertNotIn("sys.path", source)
+            self.assertNotIn("install_checkpoint_feature_hooks", source)
+
+    def test_u_runtime_exposes_separate_conditioning_and_query_resolutions(self) -> None:
+        from rigno.heat3d_runtime.u_split import UHighNRuntime, u_v2_asymmetric_metadata
+
+        self.assertTrue(UHighNRuntime)
+        self.assertTrue(u_v2_asymmetric_metadata)
+        source = (RUNTIME_ROOT / "u_split.py").read_text(encoding="utf-8")
+        self.assertIn("conditioning_resolution", source)
+        self.assertIn("query_resolution", source)
+        self.assertIn('"direct_query": True', source)
+        self.assertNotIn("reconstruction_only", source)
 
     def test_equivalence_reports_actual_errors_without_widening(self) -> None:
         report = compare_named_arrays(

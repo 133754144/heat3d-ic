@@ -1,0 +1,151 @@
+{
+  "schema_version": "heat3d_v7_g0b2c_eu_contract_v1",
+  "status": "frozen_from_v6_p1i_evidence",
+  "purpose": "Machine-readable restoration of the historical V6/P1i E/U route semantics for V7 compatibility work.",
+  "evidence": {
+    "closeout": "docs/v6_p1i_closeout.md",
+    "handoff": "docs/v6_p1i_handoff.md",
+    "implementation_binding": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+    "padding_envelopes": [
+      "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_E16384.json",
+      "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U16384.json",
+      "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_E240825.json",
+      "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U240825.json"
+    ]
+  },
+  "common": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "conditioning_resolution": 1024,
+    "conditioning_input_resolution": 1024,
+    "conditioning_support_rule": {
+      "name": "source_aware_anchor_support",
+      "anchor_count": 1024,
+      "anchor_order": "original frozen 1024 solver-node order",
+      "selection_is_label_independent": true,
+      "full_field_coordinates": "shared/coords_m from frozen full_fields.h5",
+      "support_physics": "direct k/q at selected solver nodes, with same-layer conservative operator control volume",
+      "nested_high_n_rule": "anchored_stratified_deficit_round_robin_v1; N uses the first N entries after the original anchors"
+    },
+    "global_context_rule": "The model global context, q-k regional features and scale context are materialized from the exact native 1024 anchor conditioning group with frozen train-only normalization.",
+    "anchor_scale_rule": "The native 1024 forward supplies the anchor-derived shape scale; high-resolution routes do not replace it with a reconstruction-derived scale.",
+    "fixed_padding_rule": "Each route uses the registered per-edge-family fixed dummy capacity. Real edges are unchanged; dummy rows are padded to the route envelope.",
+    "reconstruction_rule": {
+      "method": "layer/interface-aware inverse-distance reconstruction with per-domain same-layer fallback",
+      "resolution": 240825,
+      "downstream_only": true,
+      "role": "Convert direct high-resolution support predictions to the 240825 solver field for the frozen V6 production/reference evaluation. Reconstruction is not the definition of U."
+    },
+    "validity": {
+      "direct_query_allowed_for_E": true,
+      "direct_query_allowed_for_U": true,
+      "u_is_reconstruction_only": false,
+      "comparison_interface": "E(N_cond,E -> N_q) versus U(N_cond,U -> N_q) with the same explicitly recorded query resolution"
+    }
+  },
+  "strategies": {
+    "E16384_reconstruction": {
+      "strategy_name": "E",
+      "strategy_version": "V6/P1i E16384 frozen reference route",
+      "conditioning_resolution": 1024,
+      "query_resolution": 16384,
+      "direct_query": true,
+      "conditioning_input_semantics": "A source-aware 1024 anchor group provides the frozen native input, context and anchor scale; the E query group is a direct high-resolution model query.",
+      "query_rule": "The 16384 query support is the label-independent prefix of the deterministic nested support order.",
+      "graph_semantics": "One direct high-resolution E graph uses the existing sparse_kdtree_v1 graph builder and the registered E edge targets; no graph algorithm or sampling policy change.",
+      "global_context_rule": "Anchor-derived native context and q-k/scale context are held fixed for the query.",
+      "anchor_scale_rule": "Apply the native 1024 anchor scale to the direct high-resolution shape output according to the frozen shape-scale semantics.",
+      "fixed_edge_targets": {
+        "p2r_edge_indices": 107645,
+        "r2p_edge_indices": 107645,
+        "r2r_edge_domains": 3573,
+        "r2r_edge_indices": 3573
+      },
+      "reconstruction_resolution": 240825,
+      "reconstruction_role": "The direct E16384 prediction is reconstructed to the full solver field for the frozen publication/reference route; the direct query remains a first-class model output.",
+      "publication_role": "frozen V6/P1i reference operating point, not a new V7 result"
+    },
+    "E240825_direct_control": {
+      "strategy_name": "E",
+      "strategy_version": "V6/P1i E240825 direct control",
+      "conditioning_resolution": 1024,
+      "query_resolution": 240825,
+      "direct_query": true,
+      "conditioning_input_semantics": "The same native 1024 anchor conditioning contract as E16384.",
+      "query_rule": "Direct high-resolution query at the full solver-node resolution under the registered E240825 envelope.",
+      "global_context_rule": "Anchor-derived native context and q-k/scale context are held fixed for the query.",
+      "anchor_scale_rule": "The scale remains anchor-derived; full-field reconstruction is not required to define the direct control.",
+      "fixed_edge_targets": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_E240825.json:graph_cache.edge_targets",
+      "reconstruction_resolution": 240825,
+      "reconstruction_role": "Optional common downstream reconstruction only when a full-field comparison is explicitly requested.",
+      "publication_role": "V6 architecture/control route; not a V7 claim"
+    },
+    "U_v2_16384_reconstruction": {
+      "strategy_name": "U-v2",
+      "strategy_version": "V6/P1i U-v2 bounded output-query extrapolation with frozen R2P nearest repair",
+      "conditioning_resolution": 1024,
+      "query_resolution": 16384,
+      "direct_query": true,
+      "conditioning_input_semantics": "The native 1024 graph, encoder input, processor input, global context and anchor scale are retained exactly.",
+      "query_rule": "The high-resolution output query is built from the label-independent nested support prefix and is passed directly to the output-side decoder path.",
+      "query_normalization_rule": "Native 1024 anchor bounding-box affine normalization, unclamped, with numerical tolerance 1e-6 and maximum normalized overshoot 0.25.",
+      "graph_semantics": "Native p2r/r2r/rnodes are copied without adding native nodes or changing native radii; output-side r2p uses the existing sparse_kdtree_v1 policy and frozen nearest repair.",
+      "global_context_rule": "Global context, q-k regional features and scale context come from the native 1024 anchor group.",
+      "anchor_scale_rule": "The scale/log-scale input is supplied from the native anchor conditioning path; it is not recomputed from reconstruction.",
+      "fixed_edge_targets": {
+        "native": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 2905,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "query": {
+          "p2r_edge_indices": 107645,
+          "r2p_edge_indices": 107645,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        },
+        "combined_model_input": {
+          "p2r_edge_indices": 3074,
+          "r2p_edge_indices": 107645,
+          "r2r_edge_domains": 4217,
+          "r2r_edge_indices": 4217
+        }
+      },
+      "reconstruction_resolution": 240825,
+      "reconstruction_role": "Optional/common downstream layer/interface-aware reconstruction of the direct U-v2 16384 prediction; it does not define the U route.",
+      "publication_role": "V6 valid-only parallel/direct characterization; not the confirmatory production route and not a V7 superiority claim"
+    },
+    "U_v2_direct240825": {
+      "strategy_name": "U-v2",
+      "strategy_version": "V6/P1i U-v2 direct full-field query",
+      "conditioning_resolution": 1024,
+      "query_resolution": 240825,
+      "direct_query": true,
+      "conditioning_input_semantics": "The historical native 1024 conditioning path is unchanged.",
+      "query_rule": "Direct high-resolution output query at 240825 nodes using the U-v2 output-side graph contract.",
+      "query_normalization_rule": "Native 1024 anchor bounding-box affine normalization, unclamped, with the frozen bounded extrapolation check.",
+      "global_context_rule": "Anchor-derived native context and scale context are unchanged.",
+      "anchor_scale_rule": "Anchor-derived scale is retained for the direct query.",
+      "fixed_edge_targets": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U240825.json:padding.actual_padding_envelope",
+      "reconstruction_resolution": 240825,
+      "reconstruction_role": "Optional/common full-field reconstruction only; direct query remains the U output.",
+      "publication_role": "V6 valid-only characterization; not a V7 claim"
+    }
+  },
+  "matched_query_interface": {
+    "formula": "E(N_cond,E -> N_q) vs U(N_cond,U -> N_q)",
+    "required_fields": [
+      "strategy",
+      "conditioning_resolution",
+      "query_resolution",
+      "direct_query",
+      "reconstruction_resolution"
+    ],
+    "fair_comparison_rule": "Future E/U comparisons must match query_resolution and record conditioning_resolution separately; this freeze does not measure latency or make a performance claim."
+  },
+  "unresolved": [
+    "The missing historical WSL2 binary support/graph/reconstruction artifacts prevent binary fingerprint reconciliation in this checkout.",
+    "The historical protocol and R0 closeout files referenced by the V6 binding are not present in the current checkout; their exact contents are not inferred here.",
+    "This manifest restores route semantics from tracked docs, bindings and padding envelopes; it is not a replacement for the pending historical artifact reconciliation."
+  ]
+}

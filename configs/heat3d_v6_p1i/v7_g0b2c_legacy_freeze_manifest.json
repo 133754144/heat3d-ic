@@ -1,0 +1,144 @@
+{
+  "schema_version": "heat3d_v7_g0b2c_legacy_freeze_v1",
+  "status": "frozen_read_only",
+  "purpose": "Read-only identity record for V6/P1i legacy reference files and frozen artifacts used by V7 compatibility work.",
+  "legacy_reference_commit_before_g0b2c": "efbc719",
+  "legacy_files": [
+    {
+      "path": "scripts/run_heat3d_v6_p1i_anchor_high_n_development.py",
+      "role": "V6 anchor-derived high-N development/reference",
+      "observed_sha256": "b01cc805fc60accdd73bee1b83ace5127173bbc4ade3503cecd0cbf96e53054",
+      "modified_this_turn": false
+    },
+    {
+      "path": "scripts/run_heat3d_v6_production_highres_inference.py",
+      "role": "V6 production high-resolution reference",
+      "observed_sha256": "18340a83365f8e0b3cd15e77ab6a934033a8c2ff61154382a751938e5a83dd4a",
+      "modified_this_turn": false
+    },
+    {
+      "path": "scripts/benchmark_heat3d_v6_p1i_final_e_service.py",
+      "role": "V6 E timing/reference wrapper",
+      "observed_sha256": "009fa1d39673e841740fde083a02f7879d9aae89b58b6cf70e8d85418524e868",
+      "modified_this_turn": false
+    },
+    {
+      "path": "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py",
+      "role": "V6 U-v2 timing/reference wrapper",
+      "observed_sha256": "ee7712855d53d448e1dbce99e0d8e3752c6fd9963ee4f565f473d4782b1912f4",
+      "modified_this_turn": false
+    },
+    {
+      "path": "scripts/benchmark_heat3d_v6_inference_qualification.py",
+      "role": "V6 qualification ModelRuntime",
+      "observed_sha256": "10d2d4907783162e0171c808a32be2cfefa3e33ca1fd03ceeb8666f70dfbf4e8",
+      "modified_this_turn": false
+    },
+    {
+      "path": "scripts/run_heat3d_v3_final_probe_checkpoint_smoke.py",
+      "role": "V3 checkpoint feature-hook compatibility module",
+      "observed_sha256": "2ea47d4a2279ec7c4b95efe7dbc337d1cd18e7cce6a12415ff1d0c4f45e4564f",
+      "modified_this_turn": false
+    },
+    {
+      "path": "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+      "role": "V1 private runner compatibility module",
+      "observed_sha256": "d1d5b4c6a6c137c591a5511d12d8b059d74604499af281bdf2a2e1a0ba4b4340",
+      "modified_this_turn": false
+    },
+    {
+      "path": "rigno/heat3d_v6_p1i_anchor_query.py",
+      "role": "V6 nested support and effective control-volume semantics",
+      "observed_sha256": "196a13e823b1af512e0192be72c2a8c4c8ee1bfd67f3e5b7a3f9dc5495e4d7f9",
+      "binding_recorded_sha256": "db2cc1f59a61419862ba8c58077a261ce51cb18e3561fae9a272a3c20f7a69c2",
+      "modified_this_turn": false,
+      "reconciliation_note": "Observed checkout SHA differs from the historical binding SHA; do not silently treat them as identical."
+    },
+    {
+      "path": "rigno/graphBuilder_Heat3D.py",
+      "role": "V6 sparse graph backend",
+      "observed_sha256": "4d40e0f851e5b04f30d30192e13c2c533735490cc9a120d91489b9d3702eadd5",
+      "binding_recorded_sha256": "fce189e90aa3e182a418cd1ef50a9b5d24558fc3d24e50f9d6d1e734c3129cc3",
+      "modified_this_turn": false
+    },
+    {
+      "path": "rigno/heat3d_v6_full_field.py",
+      "role": "V6 layer/interface-aware reconstruction and metrics",
+      "observed_sha256": "45d8e8ea8d06f022d6d405cb22d2e6dd05ebfb1e93fcc1a54901646312c4a2c8",
+      "binding_recorded_sha256": "8ffaa7680d1463c40fc57da9f3171cee75d0034e999854487b12a2f17be0e6d8",
+      "modified_this_turn": false
+    },
+    {
+      "path": "rigno/heat3d_v5_metrics.py",
+      "role": "V6 legacy metric wrapper dependency",
+      "observed_sha256": "df59fe9df738a6b2568a8eb6c67b3a8d303f8255b6122a54eccfe099b1bae265",
+      "modified_this_turn": false
+    },
+    {
+      "path": "scripts/benchmark_heat3d_v6_p1i_resolution.py",
+      "role": "historical full k/q reconstruction and resolution wrapper",
+      "observed_sha256": "9818b25f45210ff573e68338d85933d15d5545d8e93bde34ee6d9a47e523c59c",
+      "modified_this_turn": false
+    }
+  ],
+  "frozen_artifacts": {
+    "checkpoint": {
+      "remote_path": "output/heat3d_v6_p1i_runs/V6_06_V5best_P1i_seed0_reliable_B24/params_best_valid_point_global.pkl",
+      "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+      "epoch": 559,
+      "checkpoint_family": "V6_06_V5best_P1i_seed0_reliable_B24"
+    },
+    "dataset": {
+      "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+      "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "full_field_remote_path": "data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+      "full_field_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+      "full_field_node_count": 240825,
+      "full_field_temperature_not_read_this_turn": true
+    },
+    "valid32_ids": [
+      "v6p1if1_0308", "v6p1if1_0511", "v6p1if1_0041", "v6p1if1_0846",
+      "v6p1if1_0572", "v6p1if1_0347", "v6p1if1_0286", "v6p1if1_0124",
+      "v6p1if1_1017", "v6p1if1_0854", "v6p1if1_0928", "v6p1if1_0543",
+      "v6p1if1_0632", "v6p1if1_0599", "v6p1if1_0003", "v6p1if1_0029",
+      "v6p1if1_0991", "v6p1if1_0109", "v6p1if1_0365", "v6p1if1_0091",
+      "v6p1if1_0930", "v6p1if1_0175", "v6p1if1_0915", "v6p1if1_0869",
+      "v6p1if1_0522", "v6p1if1_0118", "v6p1if1_0708", "v6p1if1_0817",
+      "v6p1if1_1003", "v6p1if1_0697", "v6p1if1_0907", "v6p1if1_0203"
+    ],
+    "support_protocol_fingerprint": {
+      "algorithm": "anchored_stratified_deficit_round_robin_v1",
+      "selection_seed": 20260808,
+      "stratum_fractions": {"source": 0.35, "interface": 0.15, "robin": 0.1, "volume": 0.4},
+      "target_temperature_or_error_used": false,
+      "operator_cv": "same-layer nearest solver-CV partition"
+    },
+    "reconstruction_protocol_fingerprint": {
+      "method": "layer/interface-aware inverse-distance with per-domain same-layer fallback",
+      "cache_key": ["full_coords_hash", "ordered_support_hash", "layer_hash", "interface_definition_hash", "reconstruction_code_sha256"],
+      "target_temperature_or_error_used": false
+    },
+    "route_padding_fingerprints": {
+      "E16384": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_E16384.json",
+      "U_v2_16384": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U16384.json",
+      "E240825": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_E240825.json",
+      "U_v2_direct240825": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U240825.json"
+    }
+  },
+  "compatibility_freeze_guards": {
+    "legacy_files_modified_this_turn": false,
+    "v6_frozen_evidence_modified": false,
+    "training_executed": false,
+    "solver_executed": false,
+    "data_generated": false,
+    "test_iid_accessed": false,
+    "sealed_labels_accessed": false,
+    "publication_claim_changed": false
+  },
+  "unresolved": [
+    "Historical protocol and R0 closeout files referenced by the implementation binding are not present in this checkout.",
+    "The observed checkout fingerprints for adapter, graph builder and reconstruction differ from the binding-recorded historical fingerprints; WSL2 artifact reconciliation is required.",
+    "High-resolution binary support, graph and reconstruction artifacts were not found on devbox; temporary fixtures must remain separately labeled."
+  ]
+}

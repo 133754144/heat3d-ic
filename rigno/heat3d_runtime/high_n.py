@@ -201,6 +201,47 @@ class SupportArtifact:
     sha256: str
 
     @classmethod
+    def from_arrays(
+        cls,
+        *,
+        selected_indices: np.ndarray,
+        operator_control_volume: np.ndarray,
+        k_xyz: np.ndarray,
+        q_W_m3: np.ndarray,
+        layer_id: np.ndarray,
+        path: str | Path = "<in-memory-compatibility-fixture>",
+        sha256: str = "<in-memory>",
+    ) -> "SupportArtifact":
+        """Materialize a label-independent support fixture without writing it."""
+
+        selected = np.asarray(selected_indices, dtype=np.int64).reshape(-1)
+        operator_cv = np.asarray(operator_control_volume, dtype=np.float64).reshape(-1)
+        conductivity = np.asarray(k_xyz, dtype=np.float64)
+        source = np.asarray(q_W_m3, dtype=np.float64).reshape(-1)
+        layers = np.asarray(layer_id, dtype=np.int32).reshape(-1)
+        resolution = len(selected)
+        if (
+            len(np.unique(selected)) != resolution
+            or operator_cv.shape != (resolution,)
+            or conductivity.shape != (resolution, 3)
+            or source.shape != (resolution,)
+            or layers.shape != (resolution,)
+            or np.any(operator_cv <= 0.0)
+            or np.any(conductivity <= 0.0)
+            or np.any(source < 0.0)
+        ):
+            raise ValueError("in-memory support artifact shape/value contract is invalid")
+        return cls(
+            path=Path(path),
+            selected_indices=selected,
+            operator_control_volume=operator_cv,
+            k_xyz=conductivity,
+            q_W_m3=source,
+            layer_id=layers,
+            sha256=str(sha256),
+        )
+
+    @classmethod
     def load(cls, path: str | Path, *, expected_resolution: int | None = None) -> "SupportArtifact":
         support_path = Path(path).resolve()
         with np.load(support_path, allow_pickle=False) as payload:
@@ -475,6 +516,40 @@ class HighNRuntime:
                     f"missing pre-existing support artifact for resolution={resolution}"
                 )
             support = SupportArtifact.load(support_path, expected_resolution=resolution)
+            example = self.query_example(anchor, support)
+        return self.build_case_from_support(
+            anchor,
+            resolution,
+            support=support,
+            edge_targets=edge_targets,
+            cache_dir=cache_dir,
+            write_cache=write_cache,
+        )
+
+    def build_case_from_support(
+        self,
+        anchor: V6DualRobinExample,
+        resolution: int,
+        *,
+        support: SupportArtifact,
+        edge_targets: dict[str, int | None] | None = None,
+        cache_dir: str | Path | None = None,
+        write_cache: bool = False,
+    ) -> HighNCase:
+        """Build from an already-materialized support, including temp fixtures."""
+
+        resolution = int(resolution)
+        if resolution != len(support.selected_indices):
+            raise ValueError(
+                f"support resolution mismatch: support={len(support.selected_indices)} "
+                f"requested={resolution}"
+            )
+        if resolution == TRAINING_ANCHOR_COUNT:
+            expected = self.anchor_support(anchor)
+            if not np.array_equal(support.selected_indices, expected.selected_indices):
+                raise ValueError("native support does not match the anchor subset")
+            example = anchor
+        else:
             example = self.query_example(anchor, support)
         support_hash = array_sha256(support.selected_indices.astype(np.int32))
         graph = self.graph_metadata(

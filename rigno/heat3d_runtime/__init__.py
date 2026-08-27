@@ -24,6 +24,9 @@ __all__ = [
     "SupportArtifact",
     "HighNCase",
     "HighNRuntime",
+    "UHighNCase",
+    "UHighNRuntime",
+    "u_v2_asymmetric_metadata",
     "ComparisonReport",
     "compare_named_arrays",
     "compare_metadata",
@@ -49,6 +52,12 @@ _EXPORTS = {
     "SupportArtifact": ("rigno.heat3d_runtime.high_n", "SupportArtifact"),
     "HighNCase": ("rigno.heat3d_runtime.high_n", "HighNCase"),
     "HighNRuntime": ("rigno.heat3d_runtime.high_n", "HighNRuntime"),
+    "UHighNCase": ("rigno.heat3d_runtime.u_split", "UHighNCase"),
+    "UHighNRuntime": ("rigno.heat3d_runtime.u_split", "UHighNRuntime"),
+    "u_v2_asymmetric_metadata": (
+        "rigno.heat3d_runtime.u_split",
+        "u_v2_asymmetric_metadata",
+    ),
     "ComparisonReport": ("rigno.heat3d_runtime.equivalence", "ComparisonReport"),
     "compare_named_arrays": (
         "rigno.heat3d_runtime.equivalence",
