@@ -1,0 +1,57 @@
+{
+  "schema": "v6_hf_dataset_sync_manifest_v1",
+  "repo_id": "133754144X/heat3d-thermal-simulation",
+  "repo_type": "dataset",
+  "remote_latest_commit": "20934dcd79911b80287ae885749298371b9850ad",
+  "remote_commit_message": "Complete V6 P1i training subset and update dataset index",
+  "sync_scope": "final datasets adopted for V6 training and performance evaluation",
+  "datasets": {
+    "heat3d_v6_p1h_shared_support1024_v0": {
+      "role": "canonical V6-layer",
+      "hf_path": "subsets/heat3d_v6_p1h_shared_support1024_v0/",
+      "sync_action": "verified_existing_no_upload",
+      "sample_count": 1024,
+      "sample_tree_entries": 11267,
+      "manifest_path": "subsets/heat3d_v6_p1h_shared_support1024_v0/manifest.json",
+      "manifest_sha256": "324ca50a85698223d36c12a05d3e26b5cbc9aa00b559d067619baeb37f11e9d5",
+      "full_field_path": "subsets/heat3d_v6_p1h_shared_support1024_v0/full_fields.h5",
+      "full_field_size_bytes": 1284507133,
+      "full_field_sha256": "f58141b3f365c5c90a57ec3802ae57c7e7afbf83ba0ab988060a617164b14c00",
+      "shared_coordinate_sha256": "2bda8e710c8c9f15b180783dc12132280253124688d3e3177296e97527798745",
+      "shared_graph_sha256": "6d3d62830755872194766aad2a8ac7b0f1fabec57840dac78fcb2642a6ed771c"
+    },
+    "heat3d_v6_p1i_continuous_physics1024_v1": {
+      "role": "formal V6 random-block training/evaluation family",
+      "hf_path": "subsets/heat3d_v6_p1i_continuous_physics1024_v1/",
+      "sync_action": "completed_missing_samples_manifest_and_readme; preserved_existing_full_field",
+      "sample_count": 1024,
+      "sample_tree_entries": 10246,
+      "split_counts": {
+        "train": 768,
+        "valid_iid": 128,
+        "test_iid": 128
+      },
+      "manifest_path": "subsets/heat3d_v6_p1i_continuous_physics1024_v1/manifest.json",
+      "manifest_size_bytes": 1017832,
+      "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "full_field_path": "subsets/heat3d_v6_p1i_continuous_physics1024_v1/full_fields/full_fields.h5",
+      "full_field_size_bytes": 916402712,
+      "full_field_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+      "sidecar_path": "subsets/heat3d_v6_p1i_continuous_physics1024_v1/full_fields/sidecar_manifest.json",
+      "sidecar_size_bytes": 297242,
+      "sidecar_sha256": "4dc526c75aff4de702482f87c969ed3e427cf882c42444fb976917ab88a1a130",
+      "sample_payload_verification": {
+        "source": "devbox rsync staging",
+        "files_checked": 9216,
+        "sha256_mismatches": 0
+      }
+    }
+  },
+  "governance": {
+    "p1h_default_v6_layer": true,
+    "p1i_formal_randomblock": true,
+    "test_iid": "post-freeze confirmatory only; excluded from training and checkpoint selection",
+    "sealed_iid": "not uploaded or opened by this sync",
+    "historical_subsets": "preserved; no deletion or replacement"
+  }
+}
