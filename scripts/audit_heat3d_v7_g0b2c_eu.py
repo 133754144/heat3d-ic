@@ -137,6 +137,23 @@ def _metadata_fields(metadata: Any) -> dict[str, Any]:
     }
 
 
+def _metadata_compare(old: Any, new: Any) -> dict[str, dict[str, Any]]:
+    fields = (
+        "x_pnodes_inp",
+        "x_pnodes_out",
+        "x_rnodes",
+        "r_rnodes",
+        "p2r_edge_indices",
+        "r2r_edge_indices",
+        "r2r_edge_domains",
+        "r2p_edge_indices",
+    )
+    return {
+        field: _diff(getattr(old, field), getattr(new, field))
+        for field in fields
+    }
+
+
 def _edge_counts(metadata: Any) -> dict[str, int | None]:
     return {
         name: None if getattr(metadata, name) is None else int(getattr(metadata, name).shape[1])
@@ -747,6 +764,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "query_metadata_hash_old": _metadata_hash(old_u_query_meta),
                 "query_metadata_hash_new": _metadata_hash(u_case.query_metadata),
                 "query_metadata_hash_equal": _metadata_hash(old_u_query_meta) == _metadata_hash(u_case.query_metadata),
+                "query_metadata_fields": _metadata_compare(old_u_query_meta, u_case.query_metadata),
                 "old_new_prediction": _output_summary(old_u_output, new_u_output),
                 "query_scale": _diff(old_u_output["s_hat"], new_u_output["s_hat"]),
                 "reconstruction": u_reconstruction,
@@ -758,6 +776,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     "combined_model_input": u_combined_targets,
                 },
                 "legacy_query_audit": old_u_audit,
+                "query_native_physics_extra_fields_not_model_visible": sorted(
+                    set(old_u_query_group["native_physics"]) ^ set(u_case.query_group["native_physics"])
+                ),
             },
             "E32768": {
                 "status": "compatibility_smoke_complete_no_forward",
