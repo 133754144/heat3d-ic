@@ -584,7 +584,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         example=anchor,
         anchor=anchor,
         runtime=runtime,
-        graph_config=runtime["graph_config"],
+        # The frozen high-N publication binding materializes the native
+        # sparse/reused graph contract explicitly; the training run config's
+        # dense-reference defaults are not the native production oracle.
+        graph_config=stable_e.graph_config_for_resolution(1024),
         edge_targets=e_native_targets,
     )
     anchor_case = stable_e.build_case(anchor, 1024, edge_targets=e_native_targets)
