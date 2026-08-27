@@ -287,13 +287,17 @@ def _legacy_metadata_and_group(
     builder = Heat3DGraphBuilder(**dict(graph_config))
     coords = runner._graph_coords_for_example(example, runtime["stats"])
     metadata = builder.build_metadata(coords, key=runner._metadata_key(int(runtime["run_config"]["graph_seed"])))
+    compatible_targets = {
+        field: (edge_targets.get(field) if getattr(metadata, field) is not None else None)
+        for field in qualification.EDGE_FIELDS
+    }
     group = highn._prepare_group(
         example=example,
         anchor=anchor,
         runtime=runtime,
         builder=builder,
         metadata=metadata,
-        edge_targets=edge_targets,
+        edge_targets=compatible_targets,
     )
     return metadata, group
 

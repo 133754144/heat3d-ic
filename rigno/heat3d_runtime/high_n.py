@@ -394,6 +394,20 @@ class HighNRuntime:
             )
         return resolved
 
+    @staticmethod
+    def compatible_edge_targets(
+        metadata: Any,
+        edge_targets: Mapping[str, int | None] | None,
+    ) -> dict[str, int | None] | None:
+        """Keep registered capacities while omitting intentionally absent families."""
+
+        if edge_targets is None:
+            return None
+        return {
+            field: (edge_targets.get(field) if getattr(metadata, field) is not None else None)
+            for field in EDGE_FIELDS
+        }
+
     def query_example(
         self,
         anchor: V6DualRobinExample,
@@ -597,7 +611,7 @@ class HighNRuntime:
             [example],
             graph.metadata,
             name=f"v7_high_n_valid_iid_{resolution}",
-            edge_targets=edge_targets,
+            edge_targets=self.compatible_edge_targets(graph.metadata, edge_targets),
             context_examples=[anchor],
         )
         group["support_indices_sha256"] = support_hash
