@@ -402,14 +402,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     freeze_manifest = json.loads(args.binding.read_text(encoding="utf-8"))
     if freeze_manifest.get("status") != "frozen_read_only":
         raise RuntimeError("V7 legacy freeze manifest is not read-only/frozen")
+    if _sha256(args.manifest) != freeze_manifest["frozen_artifacts"]["dataset"]["manifest_sha256"]:
+        raise RuntimeError("formal dataset manifest SHA256 drifted")
+    if _sha256(args.full_fields) != freeze_manifest["frozen_artifacts"]["dataset"]["full_field_sha256"]:
+        raise RuntimeError("full-field geometry archive SHA256 drifted")
     runtime, _dataset, examples, full, archive_lookup = _load_inputs(args)
     by_id = {str(row.sample_id): row for row in examples}
     anchor = by_id[FIXED_SAMPLE]
     stable_session = RuntimeSession.from_paths(
         args.checkpoint,
         args.run_config,
-        expected_sha256=binding["frozen_artifacts"]["checkpoint"]["checkpoint_sha256"],
-        expected_epoch=int(binding["frozen_artifacts"]["checkpoint"]["epoch"]),
+        expected_sha256=freeze_manifest["frozen_artifacts"]["checkpoint"]["checkpoint_sha256"],
+        expected_epoch=int(freeze_manifest["frozen_artifacts"]["checkpoint"]["epoch"]),
     )
     geometry = FullFieldGeometry.load(args.full_fields)
     stable_e = HighNRuntime.from_session(stable_session, geometry)
@@ -604,12 +608,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "git_sha": args.git_sha,
         "legacy_freeze_manifest_sha256": _sha256(args.binding),
         "v6_implementation_binding_sha256": _sha256(args.v6_binding),
-        "checkpoint_sha256": binding["frozen_artifacts"]["checkpoint"]["checkpoint_sha256"],
-        "checkpoint_epoch": int(binding["frozen_artifacts"]["checkpoint"]["epoch"]),
+        "checkpoint_sha256": freeze_manifest["frozen_artifacts"]["checkpoint"]["checkpoint_sha256"],
+        "checkpoint_epoch": int(freeze_manifest["frozen_artifacts"]["checkpoint"]["epoch"]),
         "dataset": {
-            "id": binding["frozen_artifacts"]["dataset"]["dataset_id"],
-            "manifest_sha256": binding["frozen_artifacts"]["dataset"]["manifest_sha256"],
-            "full_field_sha256": binding["frozen_artifacts"]["dataset"]["full_field_sha256"],
+            "id": freeze_manifest["frozen_artifacts"]["dataset"]["dataset_id"],
+            "manifest_sha256": freeze_manifest["frozen_artifacts"]["dataset"]["manifest_sha256"],
+            "full_field_sha256": freeze_manifest["frozen_artifacts"]["dataset"]["full_field_sha256"],
             "full_field_node_count": int(len(full["coords"])),
             "valid32_ids": [str(row.sample_id) for row in examples],
             "archive_lookup_count": len(archive_lookup),
