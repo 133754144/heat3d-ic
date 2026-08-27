@@ -30,7 +30,11 @@ from rigno.heat3d_runtime import (
     SupportArtifact,
     UHighNRuntime,
 )
-from rigno.heat3d_runtime.u_split import u_v2_asymmetric_metadata
+from rigno.heat3d_runtime.u_split import (
+    U_V2_MAXIMUM_NORMALIZED_OVERSHOOT,
+    U_V2_NUMERICAL_TOLERANCE,
+    u_v2_asymmetric_metadata,
+)
 from rigno.heat3d_v6_full_field import build_reconstruction_map
 
 # Test-only legacy imports.  The V7 runtime package has no dependency on these
@@ -511,11 +515,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             }
         )
         u_query = stable_e.query_example(example, SupportArtifact.from_arrays(**support_arrays))
-        old_u_query, old_u_audit = prior_u1._strict_asymmetric_metadata(
+        old_u_query, old_u_audit = prior_u1._u_v2_asymmetric_metadata(
             u_builder,
             old_u_native,
             runner._graph_coords_for_example(example, runtime["stats"]),
             runner._graph_coords_for_example(u_query, runtime["stats"]),
+            numerical_tolerance=U_V2_NUMERICAL_TOLERANCE,
+            maximum_normalized_overshoot=U_V2_MAXIMUM_NORMALIZED_OVERSHOOT,
         )
         stable_u_native_meta = stable_u_builder.build_metadata(
             runner._graph_coords_for_example(example, runtime["stats"]),
@@ -606,11 +612,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         key=runner._metadata_key(int(runtime["run_config"]["graph_seed"])),
     )
     old_u_query_example = highn._query_example(anchor, fixed_support_arrays, full["coords"])
-    old_u_query_meta, old_u_audit = prior_u1._strict_asymmetric_metadata(
+    old_u_query_meta, old_u_audit = prior_u1._u_v2_asymmetric_metadata(
         old_u_builder,
         old_u_native_meta,
         runner._graph_coords_for_example(anchor, runtime["stats"]),
         runner._graph_coords_for_example(old_u_query_example, runtime["stats"]),
+        numerical_tolerance=U_V2_NUMERICAL_TOLERANCE,
+        maximum_normalized_overshoot=U_V2_MAXIMUM_NORMALIZED_OVERSHOOT,
     )
     old_anchor_graph_coords = runner._graph_coords_for_example(anchor, runtime["stats"])
     old_query_graph_coords = runner._graph_coords_for_example(old_u_query_example, runtime["stats"])
