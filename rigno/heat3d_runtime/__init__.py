@@ -38,6 +38,8 @@ __all__ = [
     "bind_registered_route",
     "EvaluationSample",
     "EvaluationCore",
+    "TimingCore",
+    "TimingLifecycle",
 ]
 
 _EXPORTS = {
@@ -94,6 +96,8 @@ _EXPORTS = {
     ),
     "EvaluationSample": ("rigno.heat3d_runtime.evaluation", "EvaluationSample"),
     "EvaluationCore": ("rigno.heat3d_runtime.evaluation", "EvaluationCore"),
+    "TimingCore": ("rigno.heat3d_runtime.timing", "TimingCore"),
+    "TimingLifecycle": ("rigno.heat3d_runtime.timing", "TimingLifecycle"),
 }
 
 

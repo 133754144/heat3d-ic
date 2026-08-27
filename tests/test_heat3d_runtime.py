@@ -512,6 +512,20 @@ class StableRuntimeStaticTests(unittest.TestCase):
                 ]
             )
 
+    def test_timing_core_freezes_boundary_and_excludes_evaluation(self) -> None:
+        from rigno.heat3d_runtime.timing import TimingCore
+
+        lifecycle = TimingCore.begin(state="fresh", query_count=1)
+        for stage in TimingCore.contract()["stage_order"]:
+            lifecycle.record(stage, 0.0)
+        record = lifecycle.complete()
+        TimingCore.validate_record(record)
+        self.assertFalse(record["excluded_from_latency"] == [])
+        self.assertFalse(TimingCore.contract()["truth_loading_in_latency"])
+        self.assertFalse(TimingCore.contract()["metrics_in_latency"])
+        with self.assertRaises(ValueError):
+            TimingCore.begin(state="fresh").record("metrics", 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()
