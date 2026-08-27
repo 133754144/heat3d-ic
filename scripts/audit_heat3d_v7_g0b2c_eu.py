@@ -31,7 +31,6 @@ from rigno.heat3d_runtime import (
     UHighNRuntime,
 )
 from rigno.heat3d_runtime.u_split import u_v2_asymmetric_metadata
-from rigno.heat3d_runtime.equivalence import compare_named_arrays
 from rigno.heat3d_v6_full_field import build_reconstruction_map
 
 # Test-only legacy imports.  The V7 runtime package has no dependency on these
@@ -82,13 +81,38 @@ def _tree_hash(value: Any) -> str:
 
 
 def _diff(left: Any, right: Any) -> dict[str, Any]:
-    report = compare_named_arrays({"value": left}, {"value": right})
-    row = report.comparisons[0]
+    left_leaves, left_def = jax.tree_util.tree_flatten(left)
+    right_leaves, right_def = jax.tree_util.tree_flatten(right)
+    if left_def != right_def or len(left_leaves) != len(right_leaves):
+        return {
+            "passed": False,
+            "max_abs": None,
+            "rmse": None,
+            "shape_equal": False,
+            "leaf_count_old": len(left_leaves),
+            "leaf_count_new": len(right_leaves),
+        }
+    maximum = 0.0
+    sum_squared = 0.0
+    count = 0
+    shape_equal = True
+    for old_leaf, new_leaf in zip(left_leaves, right_leaves, strict=True):
+        old_array = np.asarray(old_leaf)
+        new_array = np.asarray(new_leaf)
+        if old_array.shape != new_array.shape:
+            shape_equal = False
+            continue
+        delta = old_array.astype(np.float64) - new_array.astype(np.float64)
+        if delta.size:
+            maximum = max(maximum, float(np.max(np.abs(delta))))
+            sum_squared += float(np.sum(np.square(delta)))
+            count += int(delta.size)
+    rmse = float(np.sqrt(sum_squared / max(count, 1)))
     return {
-        "passed": bool(report.passed),
-        "max_abs": None if row.max_abs is None else float(row.max_abs),
-        "rmse": None if row.rmse is None else float(row.rmse),
-        "shape_equal": bool(row.shape_equal),
+        "passed": bool(shape_equal and maximum == 0.0),
+        "max_abs": maximum,
+        "rmse": rmse,
+        "shape_equal": bool(shape_equal),
     }
 
 
