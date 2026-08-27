@@ -1,12 +1,14 @@
 # V7 active dependency audit
 
-状态：V7-D0/G0a 静态依赖审计交付已完成；G0 Code gate 未通过；未实施重构。
+状态：V7-D0/G0a 静态依赖审计交付已完成；G0b-1 stable runtime 已交付；G0
+Code gate 仍未通过；未实施重构。
 
 审计对象是当前 V6/P1i 的正式训练、checkpoint inference、high-N query、
 full-field reconstruction、metrics 和 timing 路径。审计依据是仓库中的
-import、symbol 定义、直接调用和运行时赋值关系；没有导入或执行目标模块，
-没有训练、推理、solver、数据生成、模型评估，也没有访问任何 held-out 或
-sealed labels。
+import、symbol 定义、直接调用和运行时赋值关系。D0/G0a 静态阶段没有导入或
+执行目标模块；本轮 G0b-1 只在 devbox 上对冻结 `valid_iid` fixture 做了受限
+的 old/new inference equivalence control，没有训练、solver、数据生成、模型
+评估，也没有访问任何 `test_iid`、held-out 或 sealed labels。
 
 ## 结论摘要
 
@@ -21,8 +23,9 @@ materialization、metrics 和 timing 仍分散在多个 `scripts/` 文件中。
 
 - D0 文档边界已记录；
 - G0a 静态依赖审计交付**已完成**，但审计结论是 G0 Code gate **未通过**；
-- G0b-1 已新增稳定 V7 inference runtime，但 runtime numerical equivalence
-  仍需在可用的冻结 checkpoint/`valid_iid` fixture 上执行后才能升级 G0；
+- G0b-1 已新增稳定 V7 inference runtime；devbox 上冻结 checkpoint 与
+  `valid_iid` fixture 已可用，CPU deterministic control 的 runtime equivalence
+  已通过，但默认加速器 backend 的重复 apply 尚未满足严格 equivalence；
 - 历史 smoke/development/check 脚本未修改、未删除，且尚未被旧 V6 入口自动
   切换；它们仍是 legacy/reference path；
 - 后续只应在新的明确授权下按本文件的最小 extract-core/preserve-legacy
@@ -71,8 +74,24 @@ snapshot flattening，覆盖 checkpoint interpretation（由
 global/native/context/scale、graph/model input，以及 prediction/scale output
 的记录接口。除 prediction 使用已有 V6 adapter/reference 的 `1e-6` K 语义外，
 默认比较为 exact `0.0` max-abs/RMSE；调用方只能显式收紧，不会被工具自动
-放宽。当前实现不伪造 old/new 数字：若冻结 checkpoint 或 valid fixture 不在
-本 checkout，报告必须是 `runtime equivalence pending server validation`。
+放宽。
+
+本轮在 devbox 使用冻结 checkpoint
+`V6_06_V5best_P1i_seed0_reliable_B24/params_best_valid_point_global.pkl`（epoch
+559，SHA-256 为
+`51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e`）和冻结
+`valid_iid` native-1024 fixture 的 32-sample development subset，执行了 old/new
+control。CPU backend 下 checkpoint interpretation、352 组 model-visible
+inputs、800 组 graph tensors、64 组 predictions 和 32 组 scales 均为
+`max_abs=0.0`、`RMSE=0.0`，且 `test_iid_or_sealed_accessed=false`、
+`training_or_solver_invoked=false`。这证明当前 stable V7 runtime 在受控 CPU
+路径上与 legacy reference 的行为等价，但不是对所有 backend 的性能或数值
+复现声明。
+
+同一 checkpoint、同一输入在 devbox 默认加速器 backend 上重复 apply 也观察到
+约 `1e-2 K` 量级的变化，因此该 backend 当前不能作为严格 equivalence oracle；
+本轮不修改 backend、模型或容差。若冻结 checkpoint 或 valid fixture 不可用，
+报告仍必须是 `runtime equivalence pending server validation`，不得伪造数字。
 
 ### G0b-1 replacement map and remaining legacy use
 
@@ -91,9 +110,10 @@ high-N/production/timing 旧路径仍使用 V3 smoke hook 和 V1 runner private
 helpers，见上文 active call graph。这种依赖本身没有证据表明会必然降低模型
 精度；但 monkey patch 和跨脚本私有 API 可能改变 feature view、normalization
 或 model-input assembly 的运行时状态，因而带来静默输入漂移和复现风险，间接
-可能改变预测。G0b-1 本轮未运行模型，也没有实际性能/精度差值；必须等同一
-冻结 checkpoint 与 `valid_iid` fixture 上的 old/new tensor + prediction
-equivalence 完成后，才能判断是否存在数值影响。
+可能改变预测。当前没有证据表明这些 smoke/private dependencies 必然降低
+模型性能；但它们确实提高了输入语义漂移与复现失败的风险。CPU control 已观察
+到 old/new 完全一致；默认加速器的非确定性则独立地阻塞严格 equivalence，不能
+被解释成模型质量下降，也不能被容差放宽掩盖。
 
 ## 审计方法与证据边界
 
@@ -475,8 +495,12 @@ held-out/sealed labels。
 | 不依赖跨脚本 private API | 未完成 | V6 paths 调用 V1 runner、qualification、common、U1/high-N private symbols |
 | 不使用 monkey patch/runtime mutation | 未完成 | V3 hook 给 `runner_module._bridge_for` 赋新 closure |
 | feature/normalization/checkpoint/metrics/reconstruction 单一 core | 未完成 | 本文“重复实现与语义分散”所列多组路径 |
-| 本轮禁止事项 | 已遵守 | 未训练、未推理、未求解、未生成数据、未评估模型、未访问 held-out/sealed labels、未改模型/冻结 artifact |
+| 本轮禁止事项 | 已遵守 | 未训练、未求解、未生成数据、未访问 `test_iid`/held-out/sealed labels、未改模型/冻结 artifact；仅运行冻结 `valid_iid` 的受限 equivalence control |
 
-结论：**V7-G0a 静态审计已完成，但 G0 Code gate 未通过，不能进入正式 V7 baseline/ablation/OOD evaluation。**
+结论：**V7-G0a 静态审计已完成；V7-G0b-1 的 stable runtime 与 CPU control
+equivalence 已交付，但 G0 Code gate 仍未通过，不能进入正式 V7
+baseline/ablation/OOD evaluation。** 默认加速器 backend 的重复 apply 尚未满足
+严格 reproducibility/equivalence，需要后续单独冻结 backend/determinism policy；
+本轮不做该项优化或修复。
 本文件只冻结问题清单和后续最小边界；下一阶段若要开始 G0b，必须另行授权，
 并继续保持 V6 frozen artifacts 与 sealed data 不变。
