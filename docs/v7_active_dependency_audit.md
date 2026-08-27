@@ -931,3 +931,96 @@ valid_iid 边界 fail-closed，identity-level artifacts 仍是 archival limitati
 formal metrics/timing core 约束；WSL2 mirror pending 不再作为唯一 hard blocker。**
 本轮未训练、未运行 solver、未生成数据、未访问 held-out/sealed labels、未修改
 模型或 V6 frozen artifacts。
+
+## G0b-2f → G0c-1 → G0c-2 收口证据
+
+本节覆盖严格按顺序执行的三个 gate；前一 gate 的 PASS 是后一 gate 的前置条件。
+对应的 machine-readable receipts 是
+[`G0b-2f`](v7_g0b2f_receipt.json)、[`G0c-1`](v7_g0c1_receipt.json) 和
+[`G0c-2`](v7_g0c2_receipt.json)。本节 supersede 之前记录的“Evaluation/Timing
+Core 尚未形成”中间状态；历史 V1–V6 文件本身没有被修改。
+
+### G0b-2f：historical behavioral closure
+
+四个历史 train sample 仅用于 software equivalence，且使用不读取温度文件的
+`V7 Refactor Compatibility Fixture`：
+`v6p1if1_0079`、`v6p1if1_0971`、`v6p1if1_0393`、`v6p1if1_0056`。receipt 固定
+`execution_role=compatibility_audit`、`sample_role=train`、
+`labels_read=false`、`metrics_executed=false`、`model_selection=false`、
+`scientific_evidence_eligible=false`。这些样本不具有科学评价资格。
+
+在冻结 historical execution commit
+`8a812619ab0112b4ecfc37ef18189f731180059d`、checkpoint epoch 559 和原始 route
+契约下，CPU historical replay 与 V7 stable replay 的 native-1024、E16384、
+U-v2 16384、E32768 可比较项均为 `max_abs=0`、`RMSE=0`。比较覆盖 support/order、
+query、raw/padded metadata、model-visible groups、context/scale、raw/direct
+prediction、`s_hat` 和 deterministic reconstruction map/field。此处的
+`E32768` 是 compatibility forward，不是 valid32 accuracy study。
+
+devbox 保存的 CUDA prediction artifact 已确认处于
+`reconstructed_full_field` 阶段、表示为 `deltaT_K`；没有使用统一的 `1e-2 K`
+阈值强行判定，也没有把 CUDA artifact 的 binary identity 冒充为 behavioral
+identity。原始 graph/support/cache identity bundle 不完整，因此：
+
+```text
+historical_behavioral_reconciliation = complete
+historical_identity_artifact_reconciliation = unavailable_missing_original_artifacts
+```
+
+后者是 archival limitation，不再阻塞 G0。
+
+### G0c-1：Evaluation Core
+
+`rigno.heat3d_runtime.evaluation.EvaluationCore` 现在是唯一稳定评价实现。inference
+runtime 只产生 prediction；truth loading、可选/共同 reconstruction、metrics 和
+receipt 属于 Evaluation Core。Core 显式限制 `evaluation_split=valid_iid`，并以
+V6 定义冻结以下六项指标：point-global relative RMSE、sample-first relative
+RMSE、raw K/CV RMSE、source-region RMSE、peak RMSE、interface RMSE；同时保存
+SSE、count、denominator/normalization quantities 和 per-region accumulation。
+
+使用冻结 valid32 reference 做 legacy ↔ V7 replication，六项 metric 最大绝对差为
+`8.881784197001252e-16`；原始 sufficient statistics 也已保存于 receipt。该次
+执行是 `compatibility_audit`，不是新 scientific evaluation，不用于模型/route
+选择。旧 metrics wrappers 降级为 read-only historical oracle；正式 V7 evaluation
+边界只允许通过 Evaluation Core。
+
+### G0c-2：Timing Core
+
+`rigno.heat3d_runtime.timing.TimingCore` 统一并验证 lifecycle semantics，阶段顺序
+固定为 preprocessing/feature → graph build → compile/warmup → model forward →
+reconstruction → synchronized result。正式 workload boundary 是
+`k/q/BC -> preprocessing/graph -> model -> reconstruction -> synchronized
+240825 field`；truth loading、metrics、accuracy audit 明确排除。fresh、resident、
+Q1、Q2、throughput 的 lifecycle 状态验证通过。
+
+本 gate 只证明 timing boundary 与旧 V6 粗粒度字段的 correspondence；旧字段把
+compile/warmup 与 forward 部分合并，因此没有生成新的 latency 数值或 speedup
+claim。GPU policy 冻结为：CPU deterministic 是 semantic-equivalence oracle，
+normal GPU 是 production/timing backend，deterministic GPU 仅 optional diagnostic。
+旧 V6 timing wrappers 是 read-only historical oracle。
+
+### Final G0 acceptance matrix
+
+| acceptance item | status | evidence |
+| --- | --- | --- |
+| smoke/check/development excluded from V7 production graph | PASS | stable runtime/reference entrypoints static import audit |
+| cross-script private API | PASS for V7 production graph | no `scripts` private import; `u_split.py` library-internal `_...` technical debt remains outside this cutover |
+| monkey patch/module-state rewrite | PASS | explicit feature transform; no hook installation |
+| semantic-critical config fail-closed | PASS | production preflight and route binding |
+| route binding fail-closed | PASS | unregistered route and resolution/padding mismatch negative gates |
+| CPU old/new equivalence | PASS | G0b-2f receipt; all listed routes `0/0` |
+| historical behavioral reconciliation | PASS | G0b-2f receipt |
+| missing binary identity artifacts | archival limitation | original graph/support/cache identity bundle unavailable |
+| Evaluation Core | PASS | G0c-1 receipt; max metric diff `8.88e-16` |
+| Timing Core | PASS | G0c-2 lifecycle/boundary receipt; no formal latency |
+| GPU policy | frozen | no new nondeterminism experiment in this gate |
+| provenance roles | PASS | compatibility audit explicit; inference remains prediction-only |
+| test/sealed access | PASS | no test_iid or sealed labels touched |
+
+### Remaining G0 limitations and stop condition
+
+没有 stable V7 contract 的 hard blocker；仍保留三类明确限制：原始 historical
+binary identity 缺失是归档限制；旧 V6 formal wrappers 仍作为 read-only compatibility
+oracle，尚未删除或重构；旧 timing 字段较粗，尚不足以支持新的正式性能 claim。所有
+feature/graph/KD-tree/JIT/batching/padding/reconstruction 优化均 deferred。G0c-2
+完成后停止，不自动进入 G1。

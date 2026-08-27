@@ -1,0 +1,110 @@
+{
+  "schema_version": "heat3d_v7_g0b2f_historical_behavioral_closure_v1",
+  "gate": "G0b-2f",
+  "status": "PASS",
+  "evidence_git_sha": "a7a47c7c3662e43f473505a9a4aa9794b87affd3",
+  "execution_role": "compatibility_audit",
+  "sample_role": "train",
+  "labels_read": false,
+  "metrics_executed": false,
+  "model_selection": false,
+  "scientific_evidence_eligible": false,
+  "historical_behavioral_reconciliation": "complete",
+  "historical_identity_artifact_reconciliation": "unavailable_missing_original_artifacts",
+  "identity_status_note": "Original historical graph/support/cache binaries are not available as a complete identity-level bundle; this is an archival limitation and does not block the behavioral bridge.",
+  "historical_execution_commit": "8a812619ab0112b4ecfc37ef18189f731180059d",
+  "historical_checkpoint": {
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "dataset": {
+    "id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "split_accessed": "train_compatibility_only",
+    "test_iid_accessed": false,
+    "sealed_labels_accessed": false
+  },
+  "sample_ids": [
+    "v6p1if1_0079",
+    "v6p1if1_0971",
+    "v6p1if1_0393",
+    "v6p1if1_0056"
+  ],
+  "fixture": {
+    "label": "V7 Refactor Compatibility Fixture",
+    "label_independent": true,
+    "temperature_file_read": false,
+    "source_fields": ["sample metadata", "coords", "material", "q", "BC", "control volumes", "layer ids"],
+    "target_construction": "dummy target with no computational use"
+  },
+  "runtime": {
+    "legacy": "frozen historical replay at 8a812619 with frozen route/config/input plans",
+    "stable_v7": "rigno.heat3d_runtime at evidence_git_sha",
+    "backend": "cpu",
+    "device": "TFRT_CPU_0",
+    "semantic_oracle": "CPU deterministic backend",
+    "tolerance_forced_pass": false,
+    "exact_comparison": {
+      "native_1024": {"max_abs": 0.0, "rmse": 0.0},
+      "E16384": {"max_abs": 0.0, "rmse": 0.0},
+      "U_v2_16384": {"max_abs": 0.0, "rmse": 0.0},
+      "E32768": {"max_abs": 0.0, "rmse": 0.0}
+    },
+    "compared": [
+      "support/anchor order",
+      "query coordinates",
+      "raw and padded graph metadata",
+      "model-visible input groups",
+      "global/context/scale inputs",
+      "raw prediction",
+      "s_hat/anchor scale",
+      "direct-query prediction",
+      "deterministic reconstruction map and reconstructed field"
+    ]
+  },
+  "resolution_contract": {
+    "E16384": {
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 16384,
+      "output_query_resolution": 16384,
+      "reconstruction_resolution": 240825,
+      "direct_query": true
+    },
+    "U_v2_16384": {
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 1024,
+      "output_query_resolution": 16384,
+      "reconstruction_resolution": 240825,
+      "direct_query": true
+    },
+    "E32768": {
+      "anchor_context_resolution": 1024,
+      "encoder_input_resolution": 32768,
+      "output_query_resolution": 32768,
+      "reconstruction_resolution": 240825,
+      "direct_query": true
+    }
+  },
+  "saved_cuda_artifacts": {
+    "stage": "reconstructed_full_field",
+    "representation": "deltaT_K",
+    "device": "cuda:0",
+    "formal_binary_identity": false,
+    "used_for_pass": false,
+    "comparison_policy": "No blanket 1e-2 K threshold was applied. Saved CUDA artifacts are archival behavioral observations only; CPU old/new exactness and deterministic reconstruction establish the gate.",
+    "E16384_prediction_sha256": "d4a768930226c8d96f708497de5755e407d050659018ba4cea35e4b3d1bccd9a",
+    "U_v2_16384_prediction_sha256": "3022ecb0a92f97168ce5a7124e57a62b40f82581b3fc55abf27a6854b3331b36",
+    "full_field_count": 240825,
+    "reconstruction_map_old_new_exact": true
+  },
+  "prohibited_action_flags": {
+    "training": false,
+    "solver": false,
+    "new_data_generation": false,
+    "test_iid_access": false,
+    "sealed_label_access": false,
+    "model_selection": false,
+    "performance_optimization": false
+  }
+}

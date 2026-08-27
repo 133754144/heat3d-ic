@@ -1,0 +1,81 @@
+{
+  "schema_version": "heat3d_v7_g0c1_evaluation_core_v1",
+  "gate": "G0c-1",
+  "status": "PASS",
+  "evidence_git_sha": "a41b40e56c933ea02dee5893b9ec4d4e9765b29d",
+  "execution_role": "compatibility_audit",
+  "evaluation_split": "valid_iid",
+  "scientific_evidence_eligible": false,
+  "purpose": "frozen V6 valid32 result replication only; no model or route selection",
+  "inference_contract": {
+    "prediction_only": true,
+    "labels_read_by_inference": false,
+    "truth_loading_owned_by": "EvaluationCore",
+    "reconstruction_owned_by": "EvaluationCore optional/common evaluation stage"
+  },
+  "frozen_valid32_ids": [
+    "v6p1if1_0308", "v6p1if1_0511", "v6p1if1_0041", "v6p1if1_0846",
+    "v6p1if1_0572", "v6p1if1_0347", "v6p1if1_0286", "v6p1if1_0124",
+    "v6p1if1_1017", "v6p1if1_0854", "v6p1if1_0928", "v6p1if1_0543",
+    "v6p1if1_0632", "v6p1if1_0599", "v6p1if1_0003", "v6p1if1_0029",
+    "v6p1if1_0991", "v6p1if1_0109", "v6p1if1_0365", "v6p1if1_0091",
+    "v6p1if1_0930", "v6p1if1_0175", "v6p1if1_0915", "v6p1if1_0869",
+    "v6p1if1_0522", "v6p1if1_0118", "v6p1if1_0708", "v6p1if1_0817",
+    "v6p1if1_1003", "v6p1if1_0697", "v6p1if1_0907", "v6p1if1_0203"
+  ],
+  "metric_schema_version": "heat3d_v7_evaluation_core_v1_v6_definitions",
+  "metrics": [
+    "point_global_relative_RMSE",
+    "sample_first_relative_RMSE",
+    "raw_K_CV_RMSE",
+    "source_region_RMSE",
+    "peak_RMSE",
+    "interface_RMSE"
+  ],
+  "legacy_v7_comparison": {
+    "max_metric_abs_diff": 8.881784197001252e-16,
+    "raw_sufficient_statistics_compared": true,
+    "intermediate_exact_when_cpu_order_allows": true,
+    "registered_numeric_tolerance": "only floating-point aggregation order; no metric-definition change",
+    "values": {
+      "point_global_relative_RMSE": {"legacy": 1.7555746953948903, "v7": 1.7555746953948907, "abs_diff": 4.440892098500626e-16},
+      "sample_first_relative_RMSE": {"legacy": 1.4124053827914864, "v7": 1.4124053827914864, "abs_diff": 0.0},
+      "raw_K_CV_RMSE": {"legacy": 1.295794936709733, "v7": 1.295794936709733, "abs_diff": 0.0},
+      "source_region_RMSE": {"legacy": 2.6925555257299205, "v7": 2.6925555257299196, "abs_diff": 8.881784197001252e-16},
+      "peak_RMSE": {"legacy": 2.6372142574952573, "v7": 2.6372142574952577, "abs_diff": 4.440892098500626e-16},
+      "interface_RMSE": {"legacy": 0.652489258752879, "v7": 0.652489258752879, "abs_diff": 0.0}
+    },
+    "sufficient_statistics": {
+      "point_count": 32768,
+      "point_sse": 75030.47907347255,
+      "point_truth_energy": 243444010.9212811,
+      "cv_sse": 1.2409682577035535e-07,
+      "cv_truth_energy": 0.0005020731683747552,
+      "cv_volume": 7.390743255615235e-08,
+      "sample_cv_relative_rmse_count": 32,
+      "sample_cv_relative_rmse_sum": 0.45196972249327566,
+      "source_sse": 1.315042944229302e-08,
+      "source_volume": 1.8138885498046863e-09,
+      "peak_error_squared": 222.5567692779604,
+      "peak_count": 32,
+      "interface_error_sum_squared": 108.99001159369764,
+      "interface_count": 256
+    }
+  },
+  "runtime": {
+    "backend": "cpu",
+    "device": "TFRT_CPU_0",
+    "legacy_metrics_wrappers": "read_only_historical_oracle",
+    "formal_publication_evaluation_route": "EvaluationCore"
+  },
+  "prohibited_action_flags": {
+    "training": false,
+    "solver": false,
+    "new_data_generation": false,
+    "test_iid_access": false,
+    "sealed_label_access": false,
+    "model_selection": false,
+    "metric_definition_change": false,
+    "reconstruction_algorithm_change": false
+  }
+}

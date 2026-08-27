@@ -1,0 +1,55 @@
+{
+  "schema_version": "heat3d_v7_g0c2_timing_core_lifecycle_v1",
+  "gate": "G0c-2",
+  "status": "PASS",
+  "evidence_git_sha": "69c829cf0f1edeb1506c72290388591e6f16183d",
+  "execution_role": "compatibility_audit",
+  "purpose": "timing lifecycle semantics and legacy boundary correspondence only",
+  "formal_latency_measured": false,
+  "headline_speedup_claim": false,
+  "performance_optimization": false,
+  "backend_policy": {
+    "cpu_deterministic": "semantic-equivalence oracle",
+    "normal_gpu": "production/timing backend",
+    "deterministic_gpu": "optional diagnostic only; not a formal timing mode",
+    "new_gpu_determinism_experiment": false
+  },
+  "workload_boundary": [
+    "k/q/BC",
+    "preprocessing_feature",
+    "graph_build",
+    "model_forward",
+    "reconstruction",
+    "synchronized_result_240825_field"
+  ],
+  "stage_order": [
+    "preprocessing_feature",
+    "graph_build",
+    "compile_warmup",
+    "model_forward",
+    "reconstruction",
+    "synchronized_result"
+  ],
+  "excluded_from_latency": ["truth_loading", "metrics", "accuracy_audit"],
+  "lifecycle_states_validated": ["fresh", "resident", "Q1", "Q2", "throughput"],
+  "legacy_v7_boundary_correspondence": {
+    "status": "pass_with_coarse_legacy_fields",
+    "preprocessing_feature": "legacy data_seconds (load + feature coarse field)",
+    "graph_build": "legacy graph_seconds",
+    "compile_warmup": "legacy jit_or_forward_seconds (not separately retained)",
+    "model_forward": "legacy jit_or_forward_seconds (conflated with compile/warmup)",
+    "reconstruction": "legacy map_build_seconds + map_apply_seconds",
+    "synchronized_result": "legacy forward blocks until ready; no separate field",
+    "truth_metrics_accuracy_excluded": true
+  },
+  "old_wrapper_policy": "read_only_historical_oracle",
+  "prohibited_action_flags": {
+    "training": false,
+    "solver": false,
+    "new_data_generation": false,
+    "test_iid_access": false,
+    "sealed_label_access": false,
+    "model_or_graph_semantics_change": false,
+    "timing_optimization": false
+  }
+}
