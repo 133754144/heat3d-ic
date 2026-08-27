@@ -612,3 +612,132 @@ equivalence 和 GPU repeatability characterization，但 G0 Code gate 仍未通�
 尚未满足严格 reproducibility/equivalence，需要后续单独冻结 backend/determinism
 policy；本轮不做该项优化或修复。本文件继续冻结 V6 artifacts、sealed data、
 历史 legacy 路径和 extract-core / preserve-legacy 边界。
+
+## V7-G0b-2c：E/U contract freeze 与 high-resolution equivalence closure
+
+本节更新 G0b-2 的 pending 状态；历史 V1--V6 文件、V6 frozen evidence 和
+sealed-data provenance 没有被修改。
+
+### 冻结的 E/U contract
+
+机器可读的精确 contract 在
+[`v7_g0b2c_eu_contract_manifest.json`](../configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json)。
+其关键边界是：
+
+- E：`conditioning_resolution=1024`；E16384 以
+  `query_resolution=16384` 做 direct high-resolution query，E32768 使用
+  `query_resolution=32768` 的相同 resolution/256 regional-mesh 规则；
+- U-v2：`conditioning_resolution=1024`，保留 native conditioning graph、
+  context 和 anchor scale，再以 `query_resolution=16384` 做 output-side
+  direct query。U-v2 不是 reconstruction-only route；
+- E/U 都显式保存 `conditioning_resolution`、`query_resolution`、
+  `direct_query` 和 `reconstruction_resolution`。未来 matched-query 比较固定为
+  `E(N_cond,E -> N_q)` 对 `U(N_cond,U -> N_q)`；本轮没有 latency 或 superiority
+  claim；
+- global context、q-k/scale features 和 anchor scale 均来自 native 1024
+  conditioning side；reconstruction 是 direct prediction 之后的可选/共同下游；
+- fixed edge targets 保留 V6 route envelope。E16384 的 fixed targets 为
+  `p2r=107645`、`r2p=107645`、`r2r_domains=3573`、`r2r_indices=3573`；
+  U-v2 同时记录 native、query、combined model-input envelopes；真实 edge
+  顺序不变，dummy padding 只补到 envelope。
+
+### Temporary compatibility fixture 与证据边界
+
+devbox 已找到 V6/P1i checkpoint、1024 dataset 和共享 full-field geometry；历史
+high-resolution binary support/graph/reconstruction artifacts 未找到。WSL2 连接
+在本轮不可用，因此 receipt 和 fixture 明确记录：
+
+```text
+temporary_compatibility_fixture_due_to_wsl2_unavailable = true
+wsl2_historical_artifact_reconciliation = pending
+fixture_label = V7 Refactor Compatibility Fixture
+```
+
+fixture 只在 devbox 内存中从冻结 `valid_iid` sample metadata、共享 geometry 和
+label-independent nested-support protocol 构造；没有读取温度/target label，未
+访问 `test_iid` 或 sealed labels，未写入大型 NPZ/cache。它不是 V6 historical
+evidence 的替代物，也不具备 publication headline、G3 或 final-test 资格。
+WSL2 恢复后必须按
+[`v7_g0b2c_compatibility_fixture.md`](v7_g0b2c_compatibility_fixture.md) 的
+deferred reconciliation checklist 核对历史 binary artifacts、support/graph
+metadata、reconstruction maps 和 hashes；完成前状态保持 pending。
+
+### Equivalence closure
+
+最终 CPU semantic-oracle receipt 为
+[`v7_g0b2c_receipt.json`](v7_g0b2c_receipt.json)，执行环境为 devbox 的
+`jax=0.9.1`、`TFRT_CPU_0`。结果如下：
+
+| route | closure | 关键结果 |
+| --- | --- | --- |
+| native-1024 | complete | support、raw metadata、inputs、graphs、native physics、context/scale、prediction 和 `s_hat` 均 `max_abs=0`、`RMSE=0`；prediction SHA 为 `7b559765309c31be16400679db84998c8e61c6e9c4a034c6a41185d0941962fd` |
+| E16384 | complete with temporary fixture | support/metadata、fixed padding、model-visible tensors、raw prediction、query/anchor scale、final direct prediction 和 reconstruction field 均 `max_abs=0`、`RMSE=0`；prediction SHA 为 `59a27149604f7c2f0874e5cf38c8d36d05862ca15b2e22a048b0550518e3b61c` |
+| U-v2 16384 | complete with temporary fixture | native conditioning 与 high-resolution direct-query metadata/graphs/model-visible tensors、raw prediction、query scale 和 reconstruction field 均 exact；prediction SHA 为 `65a9b1c8719431510dd7997d958ad7e99930e0b63e44c8be80c70b161c463066` |
+| E32768 | compatibility smoke only | 1 个固定 `valid_iid` sample 的 support、raw metadata、fixed model-input materialization exact；未 forward，未计算 metrics |
+
+E16384 的 temporary support fingerprints 为 support indices
+`2bc5c34317d70d7a5b67b0b218c13ff1cf0f02b51e226c1156c0712ae3584427`、query
+coords `6bbb729925f844c90b3dc589027ab44273a09b6a2bebd78d7a6bdfd3f861dc74`；
+E reconstruction map old/new 都为
+`f4c058e83a2ed59a8228e84e85ab570b405db102386890e4dd925f556386f4b7`。U-v2
+的 query metadata fields（包括 `p2r`、`r2p`、`r2r`、`rnodes` 和 query
+coordinates）均 exact；其 output-side `r2p` 仍是 direct-query graph，不是
+reconstruction substitute。
+
+### G0b-2c 后的 dependency cutover
+
+新的 [V7 E reference entrypoint](../scripts/run_heat3d_v7_high_n_reference.py)、
+[V7 U reference entrypoint](../scripts/run_heat3d_v7_u_high_n_reference.py) 和
+`rigno.heat3d_runtime` 不 import `scripts/`、`*_smoke.py`、
+`*_development.py`，不修改 `sys.path`，不安装 V3 hook，也不依赖 V1 private
+runner。`RuntimeSession`、`FeatureTransform`、`GroupBuilder`、`HighNRuntime` 和
+`UHighNRuntime` 已承接 checkpoint/stats/config、显式 feature transform、V6
+feature/group assembly、device placement、model apply、E/U high-N metadata 和
+fixed padding。
+
+旧 V6 formal production/high-N/timing 路径仍保持原状，仍可到达：
+
+- V3 `install_checkpoint_feature_hooks` 及其对 V1 runner module 的 monkey patch；
+- V1 `_make_v6_padded_groups_with_progress`、`_attach_*`、`_model_apply` 等
+  private symbols；
+- qualification `ModelRuntime`、E/U timing wrappers、legacy metrics/timing
+  wrappers 和历史 development-named entrypoints。
+
+因此本轮完成的是 V7 compatibility cutover 与 CPU equivalence closure，不是
+整个 V6 formal path 的删除或重构；legacy freeze manifest 仍要求这些文件不改、
+不删。
+
+### Current limitations and deferred optimization candidates
+
+下表只记录审计结论；本轮没有实施任何优化，尤其没有改变 batching、cache、JIT、
+KD-tree、padding 或 reconstruction semantics。
+
+| 项目 | current behavior | potential cost | candidate direction | semantics may change |
+| --- | --- | --- | --- | --- |
+| repeated `FeatureTransform` / raw extraction | 每个 group/case 仍重复 materialize | 重复 CPU/JAX work | session/sample/geometry/version keyed memoization | 是，stale key 会改变输入 |
+| batch-scoped `Heat3DGraphBuilder` | 构造边界内重复创建 builder | setup 与 Python overhead | session-scoped builder | 低，但 config/seed 必须 exact |
+| graph/KD-tree reuse | 没有 session/geometry-scoped reuse contract | 重复 metadata/KD-tree construction | geometry/config fingerprint reuse | 是，geometry/config drift 会改 graph |
+| reconstruction partition/map | map 可复用边界依赖 route wrapper；各 wrapper 编排不同 | 重复 partition/map work | explicit route-scoped map cache | 是，map key 漏字段会改 full field |
+| compiled/JIT executable cache | 没有明确 keyed executable cache | 重复 compile/warm-up | device/model/shape/padding signature cache | 是，signature 错误会改执行路径 |
+| high-N Python orchestration | support、metadata、group 和 apply 仍多次跨 Python 边界 | high-N launch overhead | narrow reference executor | 是，调用顺序可能影响行为 |
+| fixed-shape/padding memory | 保留 V6 fixed edge-target dummy rows | 高-N memory/padding waste | shape buckets 或 mask-aware representation | 高，dummy semantics 必须重证 |
+| audit/reference mixing | legacy audit harness 允许 old imports；V7 reference path 不允许 | audit 依赖和 production 依赖容易混淆 | separate audit-only adapter boundary | 是，边界错误会污染 evidence |
+| metrics/timing duplication | qualification、E/U、production、resolution 各有 wrappers | 指标/时序定义漂移风险 | named metrics/timing core | 是，指标命名/聚合会变化 |
+| GPU reduction/aggregation | CPU semantic oracle exact；GPU repeatability 仍是 envelope | strict reproducibility 受 backend 影响 | deterministic control/backend policy | 是，可能改变性能与数值路径 |
+
+### G0 判定更新
+
+| 项目 | 状态 |
+| --- | --- |
+| E/U historical contract parsing 与 explicit resolution separation | 完成；manifest 已冻结 |
+| native-1024、E16384、U-v2 16384 CPU old/new equivalence | 完成，但 E/U high-N 证据仍标记 temporary fixture |
+| E32768 G0 compatibility smoke | 完成；无 forward/metrics |
+| WSL2 historical artifact reconciliation | 未完成，`pending` |
+| G0 Code：全部 formal production/timing path 脱离 smoke/check/development/private API | 未通过；旧 V6 path 仍保留 legacy dependencies |
+| G1 experiments / publication / final test | 未开始；本轮没有性能或 accuracy claim |
+
+结论：**V7-G0b-2c 的 contract freeze、compatibility fixture 和 CPU
+high-resolution equivalence closure 已完成（temporary-fixture 限定）；整体 G0
+仍被 WSL2 historical reconciliation 以及旧 V6 formal dependency graph 阻塞。**
+本轮未训练、未运行 solver、未生成数据、未访问 held-out/sealed labels、未修改
+模型或 V6 frozen artifacts。

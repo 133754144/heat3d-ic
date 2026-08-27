@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 import unittest
 
@@ -66,6 +67,37 @@ class StableRuntimeStaticTests(unittest.TestCase):
         self.assertIn("query_resolution", source)
         self.assertIn('"direct_query": True', source)
         self.assertNotIn("reconstruction_only", source)
+
+    def test_frozen_eu_contract_keeps_resolution_roles_explicit(self) -> None:
+        manifest = json.loads(
+            (ROOT / "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(manifest["status"], "frozen_from_v6_p1i_evidence")
+        self.assertFalse(manifest["common"]["validity"]["u_is_reconstruction_only"])
+        for route_name in ("E16384_reconstruction", "U_v2_16384_reconstruction"):
+            route = manifest["strategies"][route_name]
+            self.assertIn("conditioning_resolution", route)
+            self.assertIn("query_resolution", route)
+            self.assertTrue(route["direct_query"])
+            self.assertEqual(route["conditioning_resolution"], 1024)
+            self.assertEqual(route["query_resolution"], 16384)
+        self.assertNotEqual(
+            manifest["strategies"]["U_v2_16384_reconstruction"]["conditioning_resolution"],
+            manifest["strategies"]["U_v2_16384_reconstruction"]["query_resolution"],
+        )
+
+    def test_e_high_n_graph_policy_does_not_collapse_query_resolution(self) -> None:
+        from rigno.heat3d_runtime.high_n import HighNRuntime
+
+        runtime = object.__new__(HighNRuntime)
+        runtime.graph_config = {"subsample_factor": 4, "reuse_exact_p2r_for_r2p": False}
+        native = runtime.graph_config_for_resolution(1024)
+        high_n = runtime.graph_config_for_resolution(16384)
+        self.assertEqual(native["subsample_factor"], 4)
+        self.assertEqual(high_n["subsample_factor"], 64.0)
+        self.assertTrue(high_n["reuse_exact_p2r_for_r2p"])
 
     def test_equivalence_reports_actual_errors_without_widening(self) -> None:
         report = compare_named_arrays(
