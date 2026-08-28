@@ -1,0 +1,33 @@
+{
+  "schema_version": "heat3d_v7_1T_training_optimization_equivalence_v1",
+  "code_commit": "7897bd6",
+  "execution_host": "devbox",
+  "backend": "cpu",
+  "execution_role": "compatibility_audit",
+  "optimization": "fixed_batch_jit_executable_reuse",
+  "stable_runtime": "V7FormalTrainer(jit_cache=false)",
+  "optimized_runtime": "V7FormalTrainer(jit_cache=true)",
+  "scientific_evidence_eligible": false,
+  "test_or_sealed_accessed": false,
+  "steps": 3,
+  "sample_ids": {
+    "train": ["sample_000", "sample_001", "sample_002", "sample_003"],
+    "valid": ["sample_010", "sample_011"]
+  },
+  "policy": {
+    "prepared_and_state_shapes": "exact",
+    "max_abs_allowed_non_loss": 2.0e-6,
+    "max_abs_allowed_loss": 2.0e-7,
+    "rationale": "JAX eager and compiled CPU lowerings reassociate float32 reductions by a few ULPs"
+  },
+  "observed": {
+    "step_1": {"loss_abs": 1.1920928955078125e-7, "prediction_max_abs": 4.76837158203125e-7, "gradient_max_abs": 1.1920928955078125e-6, "update_max_abs": 1.4551915228366852e-11, "params_max_abs": 1.4551915228366852e-11},
+    "step_2": {"loss_abs": 1.1920928955078125e-7, "prediction_max_abs": 4.76837158203125e-7, "gradient_max_abs": 1.430511474609375e-6, "update_max_abs": 1.4551915228366852e-11, "params_max_abs": 2.1827872842550278e-11},
+    "step_3": {"loss_abs": 1.1920928955078125e-7, "prediction_max_abs": 4.76837158203125e-7, "gradient_max_abs": 1.6689300537109375e-6, "update_max_abs": 1.6370904631912708e-11, "params_max_abs": 2.1827872842550278e-11},
+    "validation_prediction_max_abs": 4.76837158203125e-7
+  },
+  "stable_compile_count": 0,
+  "optimized_compile_count": 1,
+  "pass": true,
+  "not_a_publication_tolerance": true
+}

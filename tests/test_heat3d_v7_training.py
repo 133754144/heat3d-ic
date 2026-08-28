@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import ast
+import pickle
 from pathlib import Path
 import tempfile
 import unittest
 
 import jax.numpy as jnp
 
-from rigno.heat3d_training import ManualGradientDescent, V7FormalTrainer
+from rigno.heat3d_training import (
+    ManualGradientDescent,
+    TrainingDependencies,
+    V7FormalTrainer,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,4 +47,32 @@ class V7TrainingStaticTests(unittest.TestCase):
     def test_checkpoint_roundtrip_dependency_is_explicit(self) -> None:
         self.assertTrue(hasattr(V7FormalTrainer, "write_checkpoint"))
         with tempfile.TemporaryDirectory() as temp_dir:
-            self.assertTrue(Path(temp_dir).is_dir())
+            checkpoint_path = Path(temp_dir) / "roundtrip.pkl"
+
+            def writer(path: Path, payload: dict) -> None:
+                with path.open("wb") as stream:
+                    pickle.dump(payload, stream)
+
+            dependencies = TrainingDependencies(
+                data_source=None,
+                feature_transform=None,
+                normalization=None,
+                graph_builder=None,
+                model=None,
+                model_apply=lambda params, batch, rng: None,
+                loss_fn=lambda prediction, batch: None,
+                optimizer=ManualGradientDescent(0.1),
+                batch_iterator=lambda batches: batches,
+                validation_fn=lambda params, batch: None,
+                checkpoint_writer=writer,
+                metrics_fn=lambda params, batch: {},
+            )
+            trainer = V7FormalTrainer(dependencies)
+            state = trainer.initialize({"x": jnp.asarray([2.0, -1.0])})
+            trainer.write_checkpoint(checkpoint_path, state, {"schema": "ci-test"})
+
+            with checkpoint_path.open("rb") as stream:
+                loaded = pickle.load(stream)
+            self.assertEqual(loaded["schema"], "ci-test")
+            self.assertEqual(loaded["step"], state.step)
+            self.assertTrue(bool(jnp.array_equal(loaded["params"]["x"], state.params["x"])))

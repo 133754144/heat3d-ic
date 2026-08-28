@@ -1,0 +1,40 @@
+{
+  "schema_version": "heat3d_v7_1T_training_equivalence_receipt_v1",
+  "code_commit": "bbf8bdc",
+  "execution_host": "devbox",
+  "backend": "cpu",
+  "jax_platform_policy": "JAX_PLATFORMS=cpu",
+  "execution_role": "compatibility_audit",
+  "sample_role": "train_plus_valid_fixture",
+  "labels_read": true,
+  "metrics_executed": false,
+  "model_selection": false,
+  "scientific_evidence_eligible": false,
+  "test_or_sealed_accessed": false,
+  "sample_ids": {
+    "train": ["sample_000", "sample_001", "sample_002", "sample_003"],
+    "valid": ["sample_010", "sample_011"]
+  },
+  "steps": 3,
+  "optimizer": "manual_gd",
+  "fixed_conditions": {
+    "initialization_seed": 0,
+    "batch_order": "manifest_order",
+    "graph_config": "legacy_kdtree_mean4/coverage_repair_none",
+    "optimizer_state": "empty_manual_gd_state",
+    "learning_rate": 1.0e-5
+  },
+  "comparison": {
+    "prepared_inputs": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "graph_tensors": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "normalized_targets": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "initial_params": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "steps": [
+      {"step": 1, "loss_abs": 0.0, "gradients_max_abs": 0.0, "updates_max_abs": 0.0, "params_max_abs": 0.0, "prediction_max_abs": 0.0},
+      {"step": 2, "loss_abs": 0.0, "gradients_max_abs": 0.0, "updates_max_abs": 0.0, "params_max_abs": 0.0, "prediction_max_abs": 0.0},
+      {"step": 3, "loss_abs": 0.0, "gradients_max_abs": 0.0, "updates_max_abs": 0.0, "params_max_abs": 0.0, "prediction_max_abs": 0.0}
+    ],
+    "validation_prediction": {"exact": true, "max_abs": 0.0, "rmse": 0.0}
+  },
+  "pass": true
+}

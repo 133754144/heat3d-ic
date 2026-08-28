@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_1T_training_dependency_audit_v1",
-  "audit_commit": "725b83b50958d4aff9c641398ec9e2a02f73b3f9",
+  "audit_commit": "3ef020de75c377193d04a1444cf83322999fb04a",
   "scope": "formal training dependency graph and V7 readiness boundary",
   "categories": {
     "production_dependency": [
@@ -56,14 +56,23 @@
     "features_normalization": "V7 uses library semantics explicitly; legacy V4 patch replaces private V1 functions",
     "graph": "V7 builds once before steps; legacy grouped helper remains compatibility-only",
     "batch": "V7 readiness fixture uses explicit full-batch TrainingBatch; G1 batching policy deferred",
-    "jit": "V7 optional per-batch executable reuse; optimization qualification pending actual profile",
-    "checkpoint": "V7 injected writer and round-trip path; legacy writer remains historical",
+    "jit": "V7 optional per-batch executable reuse; qualified against the stable eager reference under the frozen narrow CPU compiler-roundoff policy",
+    "checkpoint": "V7 injected writer with an exercised pickle round-trip test; legacy writer remains historical",
     "metrics": "V7 readiness diagnostics are injected and separate from EvaluationCore; formal publication metrics remain EvaluationCore"
   },
   "minimal_extract_core_preserve_legacy_boundary": {
     "extract": ["scoped dataset selection", "feature/normalization assembly", "graph preparation", "explicit train step", "checkpoint writer interface", "diagnostic interface"],
     "preserve": ["all V1-V6 scripts", "V4 monkey-patch implementation", "V1 private helper names", "historical receipts and artifacts"],
     "not_done": ["high-N KD-tree/reconstruction optimization", "G1 variants", "formal metric/timing cutover"],
+    "readiness_evidence": {
+      "training_step_equivalence": "PASS; 3 CPU deterministic steps; exact prepared inputs, graphs, targets, parameters, gradients, updates, losses, and validation prediction",
+      "short_profiling": "COMPLETE; stable eager and fixed-batch JIT-cache GPU profiles on devbox; no publication evidence",
+      "readiness_optimization": "PASS; fixed_batch_jit_executable_reuse; structure exact and observed CPU float32 roundoff within the frozen narrow policy",
+      "ci": "PENDING_FINAL_COMMIT; local runtime/import/unit, compileall, JSON, production-import, control-plane, and trainer dry-run checks pass",
+      "g1_started": false,
+      "test_or_sealed_accessed": false,
+      "frozen_v6_evidence_modified": false
+    },
     "scientific_semantics_changed": false
   }
 }

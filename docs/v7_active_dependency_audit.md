@@ -1281,7 +1281,26 @@ fail-closed 校验。V7.1-T readiness fixture 的 role 是 `readiness_fixture`�
 结果不具备 publication 或 G1 evidence 资格；seed 0/1/2 和 checkpoint selection rule
 仅作为未来注册约束。test_iid、sealed labels 和 frozen V6 paths 均列为禁止访问/写入。
 
-training-step equivalence、真实短训 profiling、必要的 semantics-preserving readiness
-optimization 以及 GitHub Actions green 仍需在同步后的 devbox commit 上实际完成并记录。
-当前 control-plane/static/unit 本地检查已通过，但不替代远程真实 fixture 和 GitHub
-Actions 结论；因此本节暂不宣称 `V7_formal_training_readiness=PASS`。
+training-step equivalence、真实短训 profiling 和 semantics-preserving readiness
+optimization 已在实际 devbox commit 上完成并记录。3-step CPU deterministic legacy ↔
+V7 comparison 对 prepared inputs、graphs、targets、initial/updated parameters、loss、
+gradients、updates、forward prediction 和 validation prediction 均为 exact；机器证据见
+[`v7_1T_training_equivalence_receipt.json`](v7_1T_training_equivalence_receipt.json)。
+
+短 profiling 使用同一 readiness fixture 完成 stable eager 与 fixed-batch JIT executable
+reuse 两个候选路径；它记录 data/feature/graph/model/step/validation/checkpoint 生命周期、
+compile count、graph-build count、shape signatures、host RSS 和 device memory，但不写入
+publication evidence。实际观察的 native readiness 瓶颈是首步 compile/forward-backward 与
+graph/feature preparation；不能将 high-N graph 成本外推为 native training 瓶颈。证据见
+[`v7_1T_training_profiling_receipt.json`](v7_1T_training_profiling_receipt.json)。
+
+唯一实施的 readiness optimization 是 fixed-batch JIT executable reuse。它保持 batch、
+graph、objective、optimizer 和 parameter structure exact；CPU compiled-vs-eager 的少量
+float32 reduction roundoff 落在已冻结的窄诊断 envelope 内，未被当作科学或 publication
+tolerance。证据见
+[`v7_1T_training_optimization_equivalence.json`](v7_1T_training_optimization_equivalence.json)。
+
+本地 runtime/import/unit、compileall、JSON、production-import、control-plane、trainer
+dry-run 及真实 checkpoint round-trip 均通过；GitHub Actions 的最终绿色状态须以包含本段
+和 final receipt 的最新 commit 的远程 run 为准。V7.1-T readiness 不启动 G1，不改变 V6
+frozen evidence；G1 仅在后续显式授权后进入。
