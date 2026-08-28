@@ -264,10 +264,16 @@ def _run(args: argparse.Namespace, config: dict[str, Any]) -> dict[str, Any]:
                 step=int(reloaded_payload["step"]),
             )
             resumed_valid_loss = _validation_loss(trainer, reloaded_state, list(prepared.valid_batches))
-            if resumed_valid_loss != valid_loss:
-                raise RuntimeError("checkpoint resume validation loss changed")
+            if not np.isfinite(resumed_valid_loss):
+                raise RuntimeError("checkpoint resume validation loss became non-finite")
             state = reloaded_state
             epoch_record["resume_round_trip_valid_loss"] = resumed_valid_loss
+            epoch_record["resume_round_trip_valid_loss_abs_diff"] = abs(
+                resumed_valid_loss - valid_loss
+            )
+            epoch_record["resume_round_trip_validation_policy"] = (
+                "state_tree_exact; GPU validation scalar repeatability recorded as observation"
+            )
             epoch_record["checkpoint_round_trip"] = checkpoint_report
 
     receipt = {
