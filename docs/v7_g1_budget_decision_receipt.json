@@ -1,0 +1,317 @@
+{
+  "schema_version": "heat3d_v7_g1_budget_decision_receipt_v1",
+  "status": "qualified_e200_pre_G1",
+  "scope": "V7 G1 epoch-budget qualification; no formal multi-seed experiment",
+  "decision": {
+    "G1_epoch_budget": 200,
+    "status": "qualified",
+    "formal_execution_started": false,
+    "formal_g1_multi_seed_started": false,
+    "e300_run": "not_run_not_required_after_e200_pass",
+    "basis": [
+      "Full and Vanilla seed-0 qualification runs completed the complete e200 schedule",
+      "neither selection metric reached a new best in epochs 195-200",
+      "both schedules reached the registered minimum learning rate at epoch 200",
+      "all recorded loss, gradient and parameter diagnostics were finite",
+      "the decision was made before any formal G1 result and is not revisable from formal seed-0 results"
+    ]
+  },
+  "historical_v6_evidence_reviewed": {
+    "direct_full_reference": {
+      "run": "V6_06_V5best_P1i_seed0_reliable_B24",
+      "config_path": "configs/heat3d_v6_p1i/V6_06_V5best_P1i_seed0_reliable_B24.yaml",
+      "config_sha256": "cfff2358f8694e9fd37cd298dbc2b8ac62ba10847e6a2ae00342d01aa5561f44",
+      "loss_summary_sha256": "7f2e8af74d6ce1b257c7fbb54b7bba5ba82a6ec3eae1db62d4f32202f86623bd",
+      "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "optimizer": "AdamW",
+      "base_lr": 0.0005,
+      "min_lr": 0.00005,
+      "warmup_epochs": 10,
+      "schedule": "warmup_cosine",
+      "cosine_horizon_epochs": 600,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0,
+      "batch_contract": "B24; micro24; validation32; prediction32; sample_shuffle; drop_last=false",
+      "epochs": 600,
+      "best_epochs": {
+        "point_global_relative_rmse": 559,
+        "sample_first_relative_rmse": 572,
+        "base_mse": 559
+      },
+      "e600_epoch_200_learning_rate": 0.00039434470432694207,
+      "e600_first_200_is_e200_evidence": false,
+      "late_dynamics": {
+        "valid_loss_delta_150_to_200": 0.00013628811575472355,
+        "valid_loss_delta_200_to_250": -0.000071322778239623,
+        "valid_loss_delta_559_to_600": 0.00003304739948362112,
+        "interpretation": "continued optimization/plateau behavior with late validation fluctuation; not an e200 schedule result"
+      }
+    },
+    "seed_replications": [
+      {
+        "run": "V6_07_V5best_P1i_seed1_reliable_B24",
+        "config_sha256": "0cd1da16bf8ea52877f1e569a98c9bdc8785ccbc0676de8d2d56b758520431e4",
+        "curve_status": "not_located_on_devbox; do_not_infer_best_epoch"
+      },
+      {
+        "run": "V6_08_V5best_P1i_seed2_reliable_B24",
+        "config_sha256": "d57e5340989dcf45b799f92a7c917d0e6a440ff0f4c3b3fc5c00c80eaa6e1a8f",
+        "curve_status": "not_located_on_devbox; do_not_infer_best_epoch"
+      }
+    ],
+    "related_architecture_lineage": {
+      "path": "configs/heat3d_v5/V4P5_42_canonical.yaml",
+      "sha256": "7923a8dbffa8a97ccb7087521fb8b148d1c566630c1595ec72c826da6a2f063a",
+      "role": "architecture/loss/optimizer lineage; not direct P1i e200 evidence"
+    }
+  },
+  "proposed_e200_schedule": {
+    "epochs": 200,
+    "warmup_epochs": 10,
+    "base_lr": 0.0005,
+    "min_lr": 0.00005,
+    "lr_schedule": "warmup_cosine",
+    "cosine_horizon_epochs": 200,
+    "optimizer": "adamw",
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "initialization": "random",
+    "batch_contract": "V7-G1-B24",
+    "checkpoint_selection": {
+      "split": "valid_iid",
+      "metric": "sample_first_relative_rmse_pct",
+      "tie_break": "earliest_epoch",
+      "selection_is_per_run": true
+    },
+    "formal_budget_is_shared_by_all_variants": true,
+    "posthoc_budget_change": false
+  },
+  "qualification_runs": [
+    {
+      "experiment_id": "V7-G1-BudgetQual-e200-Full-seed0",
+      "variant": "Full",
+      "seed": 0,
+      "execution_role": "budget_qualification_only",
+      "sample_role": "train_plus_valid_iid",
+      "publication_evidence": false,
+      "g1_formal": false,
+      "scientific_evidence_eligible": false,
+      "output_dir_devbox": "/tmp/v7_g1_budget_qual_e200_full_seed0",
+      "receipt_sha256": "87e240a8175da8f72466f14838030e505f978b6b0d6668e6e8baa9e30a3baba6",
+      "execution_code_commit": "4fc0464a6754a4d67615999e34e4f82de7f34a62",
+      "pre_decision_parent_config_sha256": "dbd4419ecf82150900ee856e5034348946fa28f7791be10f2b4673c149b1e500",
+      "pre_decision_budget_config_sha256": "b7a1ac46e8d04a7cca96bab130d9bb86028ee43f0511bb0bd5a64427942b4acf",
+      "epochs_completed": 200,
+      "train_samples": 768,
+      "valid_iid_samples": 128,
+      "train_batches_per_epoch": 32,
+      "best_epoch": 173,
+      "best_selection_metric": 1.7107770093635597,
+      "final_selection_metric": 1.7432107312890122,
+      "late_windows": {
+        "epoch_150_to_200": {
+          "selection_metric_delta": 0.011181549415147707,
+          "minimum": 1.7107770093635597,
+          "minimum_epoch": 173,
+          "improvement_count": 2
+        },
+        "epoch_176_to_200": {
+          "selection_metric_delta": -0.01716560021840796,
+          "new_best_after_epoch_173": false,
+          "boundary_undertraining_signal": false
+        }
+      },
+      "loss_diagnostics": {
+        "train_loss_150": 0.0004886522428932949,
+        "train_loss_200": 0.00032362656293116743,
+        "valid_loss_150": 0.0011596995464060456,
+        "valid_loss_200": 0.001185448985779658,
+        "train_valid_behavior": "small late validation fluctuation while train loss continues to decrease; plateau-like, not boundary-monotone"
+      },
+      "lr_diagnostics": {
+        "epoch_1": 0.00009500000305706635,
+        "epoch_10": 0.0005000000237487257,
+        "epoch_200": 0.00004999999873689376,
+        "reached_registered_minimum": true
+      },
+      "gradient_diagnostics": {
+        "mean_min": 0.12904040552869853,
+        "mean_max": 406.2172533791663,
+        "final_mean": 0.12904040552869853,
+        "all_finite": true
+      },
+      "final_level_a_observation": {
+        "point_global_relative_rmse_pct": 2.111753983849791,
+        "sample_first_relative_rmse_pct": 1.7432107312890122,
+        "raw_K_CV_RMSE_K": 1.3686766828957404,
+        "source_region_RMSE_K": 2.9358593324859035,
+        "peak_RMSE_K": 3.8435345605398945,
+        "interface_RMSE_K": 0.7099040052731962
+      },
+      "runtime_observation": {
+        "device": "cuda:0",
+        "compile_count": 32,
+        "unique_batch_signatures": 32,
+        "step_count": 6400,
+        "first_step_seconds": 21.541053955006646,
+        "median_after_first_step_seconds": 0.015004039974883199,
+        "checkpoint_state_round_trip": true,
+        "test_iid_access": false,
+        "sealed_access": false
+      }
+    },
+    {
+      "experiment_id": "V7-G1-BudgetQual-e200-Vanilla-seed0",
+      "variant": "vanilla_RIGNO",
+      "seed": 0,
+      "execution_role": "budget_qualification_only",
+      "sample_role": "train_plus_valid_iid",
+      "publication_evidence": false,
+      "g1_formal": false,
+      "scientific_evidence_eligible": false,
+      "output_dir_devbox": "/tmp/v7_g1_budget_qual_e200_vanilla_seed0",
+      "receipt_sha256": "115aeab17deb35df1e7a720595caba8d8783bff0d46832356d0bba468803899d",
+      "execution_code_commit": "4e5a5bd31fbd72ddc7fcb34c55a7b60f60a4a90b",
+      "pre_decision_parent_config_sha256": "dbd4419ecf82150900ee856e5034348946fa28f7791be10f2b4673c149b1e500",
+      "pre_decision_budget_config_sha256": "b7a1ac46e8d04a7cca96bab130d9bb86028ee43f0511bb0bd5a64427942b4acf",
+      "epochs_completed": 200,
+      "train_samples": 768,
+      "valid_iid_samples": 128,
+      "train_batches_per_epoch": 32,
+      "best_epoch": 164,
+      "best_selection_metric": 24.22081150111907,
+      "final_selection_metric": 24.682890320880368,
+      "late_windows": {
+        "epoch_150_to_200": {
+          "selection_metric_delta": -0.785595636602554,
+          "minimum": 24.22081150111907,
+          "minimum_epoch": 164,
+          "improvement_count": 7
+        },
+        "epoch_176_to_200": {
+          "selection_metric_delta": 0.136036332,
+          "new_best_after_epoch_164": false,
+          "boundary_undertraining_signal": false
+        }
+      },
+      "loss_diagnostics": {
+        "train_loss_150": 0.270868076,
+        "train_loss_200": 0.198917845,
+        "valid_loss_150": 0.328997739,
+        "valid_loss_200": 0.298098736,
+        "train_valid_behavior": "both losses improve late but selection metric is noisy and no new best occurs after epoch 164; no boundary-monotone undertraining signal"
+      },
+      "lr_diagnostics": {
+        "epoch_1": 0.00009500000305706635,
+        "epoch_10": 0.0005000000237487257,
+        "epoch_200": 0.00004999999873689376,
+        "reached_registered_minimum": true
+      },
+      "gradient_diagnostics": {
+        "mean_min": 1.0830993692183335,
+        "mean_max": 18.180322440665734,
+        "final_mean": 4.080619607554724,
+        "max_gradient_observed": 479.48647628683034,
+        "all_finite": true
+      },
+      "final_level_a_observation": {
+        "point_global_relative_rmse_pct": 20.679905253160932,
+        "sample_first_relative_rmse_pct": 24.682890320880368,
+        "raw_K_CV_RMSE_K": 15.842178418123218,
+        "source_region_RMSE_K": 15.727119421517612,
+        "peak_RMSE_K": 17.20539782098763,
+        "interface_RMSE_K": 2.704500880905763
+      },
+      "runtime_observation": {
+        "device": "cuda:0",
+        "compile_count": 32,
+        "unique_batch_signatures": 32,
+        "step_count": 6400,
+        "first_step_seconds": 16.29032724100398,
+        "median_after_first_step_seconds": 0.01355198401142843,
+        "checkpoint_state_round_trip": true,
+        "test_iid_access": false,
+        "sealed_access": false
+      }
+    }
+  ],
+  "warm_cache_qualification": {
+    "status": "observed_complete_e200_runs",
+    "scope": "runtime-readiness only; not a publication timing claim",
+    "qualification_method": "use the completed e200 run receipts; no additional training run",
+    "required_fixed_batch_signatures": 32,
+    "full": {
+      "compile_count": 32,
+      "unique_batch_signatures": 32,
+      "step_count": 6400,
+      "first_step_seconds": 21.541053955006646,
+      "median_after_first_step_seconds": 0.015004039974883199
+    },
+    "vanilla": {
+      "compile_count": 32,
+      "unique_batch_signatures": 32,
+      "step_count": 6400,
+      "first_step_seconds": 16.29032724100398,
+      "median_after_first_step_seconds": 0.01355198401142843
+    },
+    "interpretation": "the stable trainer executed one cached executable per fixed batch signature and did not repeatedly compile beyond the registered 32 signatures within either run; this is lifecycle qualification, not a cross-run cache optimization"
+  },
+  "parameter_fairness": {
+    "counting_rule": "trainable scalar leaves in initialized Flax parameter tree; optimizer state excluded",
+    "full_parameter_count": 892776,
+    "vanilla_parameter_count": 826277,
+    "relative_gap": 0.07448564925580436,
+    "threshold": 0.05,
+    "capacity_matched_triggered": true,
+    "action": "register V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched as seventh formal variant",
+    "capacity_matched_run_started": false
+  },
+  "formal_matrix": {
+    "base_variants": 6,
+    "capacity_matched_vanilla_added": true,
+    "total_variants": 7,
+    "seed_set": [0, 1, 2],
+    "epochs_per_run": 200,
+    "formal_run_count": 21,
+    "formal_execution_started": false,
+    "formal_g1_multi_seed_started": false,
+    "all_variants_share_epoch_budget": true,
+    "all_variants_share_optimization_contract": true
+  },
+  "variant_readiness": {
+    "full": "registered_and_exercised_only_as_nonpublication_qualification",
+    "vanilla_RIGNO": "registered_and_exercised_only_as_nonpublication_qualification",
+    "no_context": "registered_delta; implementation qualification remains before formal execution",
+    "no_scale": "registered_delta; implementation qualification remains before formal execution",
+    "generic_uniform_support": "blocked_pending_label_independent_support_artifact_and_SHA",
+    "volume_only_support": "blocked_pending_label_independent_support_artifact_and_SHA",
+    "capacity_matched_vanilla": "registered_only; no qualification run started"
+  },
+  "evidence_boundary": {
+    "historical_e600": "context_only; not e200 evidence",
+    "budget_qualification": "non-publication and excluded from formal G1 statistics",
+    "future_formal_g1": "not_started",
+    "test_iid": false,
+    "sealed": false,
+    "model_selection": false,
+    "training_variant_comparison": false,
+    "frozen_v6_evidence_modified": false
+  },
+  "remaining_readiness_blockers": [
+    "generic_uniform_support and volume_only_support lack separately frozen label-independent support artifacts and providers",
+    "no_context and no_scale require config-delta implementation qualification before formal execution",
+    "capacity-matched Vanilla is registered but intentionally not run in this freeze"
+  ],
+  "guard": {
+    "training_executed": true,
+    "training_role": "budget_qualification_only",
+    "formal_g1_training": false,
+    "new_dataset": false,
+    "solver": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "publication_evidence_written": false,
+    "posthoc_epoch_change": false
+  }
+}
