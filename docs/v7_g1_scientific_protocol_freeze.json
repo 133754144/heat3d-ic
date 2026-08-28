@@ -1,0 +1,73 @@
+{
+  "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v1",
+  "status": "qualification_pending",
+  "scope": "G1 protocol freeze; no formal multi-seed scientific experiment",
+  "historical_evidence": {
+    "direct_full_reference": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "reference_schedule": "warmup_cosine_horizon_600",
+    "reference_best_epochs": {
+      "point_global_relative_rmse": 559,
+      "sample_first_relative_rmse": 572,
+      "base_mse": 559
+    },
+    "seed1_seed2_best_epochs": "unresolved_not_located; do_not_infer",
+    "e600_first_200_is_e200_evidence": false,
+    "reason": "cosine horizon 600 and cosine horizon 200 produce different learning-rate trajectories"
+  },
+  "e200_optimization_contract": {
+    "epochs": 200,
+    "warmup_epochs": 10,
+    "base_lr": 0.0005,
+    "min_lr": 0.00005,
+    "lr_schedule": "warmup_cosine",
+    "cosine_horizon_epochs": 200,
+    "optimizer": "adamw",
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "batch_contract": "V7-G1-B24",
+    "checkpoint_selection": "valid_iid.sample_first_relative_rmse_pct; earliest tie",
+    "initialization": "random"
+  },
+  "qualification": {
+    "required_variants": ["Full", "vanilla_RIGNO"],
+    "seed": 0,
+    "role": "budget_qualification_only",
+    "publication_evidence": false,
+    "g1_formal": false,
+    "status": "registered_not_executed",
+    "decision": "pending_full_e200_and_vanilla_e200_curves"
+  },
+  "formal_matrix": {
+    "base_variants": [
+      "Full",
+      "vanilla_RIGNO",
+      "generic_uniform_support",
+      "volume_only_support",
+      "no_context",
+      "no_scale"
+    ],
+    "seed_set": [0, 1, 2],
+    "formal_execution_started": false,
+    "epoch_budget": null,
+    "run_count": null,
+    "capacity_matched_vanilla_trigger": null,
+    "capacity_matched_run_count": null
+  },
+  "evidence_boundary": {
+    "historical_e600_reference": "context_only; not e200 convergence evidence",
+    "qualification_pilots": "non_publication; not formal G1 evidence",
+    "future_formal_g1": "not_started",
+    "test_iid": false,
+    "sealed": false,
+    "frozen_v6_evidence_modified": false
+  },
+  "references": {
+    "epoch_budget_contract": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
+    "budget_qualification": "configs/heat3d_v7/v7_g1_budget_qualification.json",
+    "seed_bundle": "configs/heat3d_v7/v7_g1_seed_bundle.json",
+    "historical_dynamics": "docs/v7_g1_historical_training_dynamics.json",
+    "statistical_preregistration": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
+    "parameter_fairness": "configs/heat3d_v7/v7_parameter_fairness_contract.json",
+    "support_freeze": "configs/heat3d_v7/v7_support_artifact_freeze.json"
+  }
+}

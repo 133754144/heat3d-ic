@@ -97,6 +97,18 @@ class V7TrainingStaticTests(unittest.TestCase):
         )
         self.assertTrue(all(not row["g1_formal"] for row in budget["qualification_runs"]))
 
+    def test_synchronized_seed_bundle_is_pre_registered_only(self) -> None:
+        bundle = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_g1_seed_bundle.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(bundle["seed_set"], [0, 1, 2])
+        self.assertFalse(bundle["formal_execution_guard"]["multi_seed_started"])
+        self.assertEqual(
+            bundle["synchronization"]["batch_build_seed"]["value"], 0
+        )
+
     def test_e200_schedule_reaches_registered_minimum(self) -> None:
         config = json.loads(
             (ROOT / "configs/heat3d_v7/v7_g1_full_p1i.json").read_text(

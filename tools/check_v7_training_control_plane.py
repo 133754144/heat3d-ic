@@ -39,6 +39,7 @@ def main() -> None:
     prereg = _load("v7_g1_statistical_preregistration.json")
     support_freeze = _load("v7_support_artifact_freeze.json")
     seed_bundle = _load("v7_g1_seed_bundle.json")
+    protocol_freeze = _load_path("docs/v7_g1_scientific_protocol_freeze.json")
 
     required_metrics = {
         "point_global_relative_rmse_pct",
@@ -157,6 +158,10 @@ def main() -> None:
         raise ValueError("formal G1 multi-seed execution must remain closed")
     if seed_bundle.get("synchronization", {}).get("batch_build_seed", {}).get("value") != 0:
         raise ValueError("fixed B24 batch-build seed drifted")
+    if protocol_freeze.get("formal_matrix", {}).get("formal_execution_started") is not False:
+        raise ValueError("formal G1 execution must remain closed in protocol freeze")
+    if protocol_freeze.get("e200_optimization_contract", {}).get("cosine_horizon_epochs") != 200:
+        raise ValueError("protocol freeze e200 horizon drifted")
     if support_freeze.get("training_support_is_frozen") is not True or support_freeze.get("temperature_or_model_error_used") is not False:
         raise ValueError("support artifact freeze guard drifted")
     for path in (CONTROL / "v7_metric_contract.json", CONTROL / "v7_experiment_registry.json", CONTROL / "v7_claim_evidence_mapping.json", CONTROL / "v7_frozen_artifact_denylist.json"):

@@ -41,6 +41,7 @@ def main() -> None:
     support = _load(CONTROL / "v7_support_artifact_freeze.json")
     seed_bundle = _load(CONTROL / "v7_g1_seed_bundle.json")
     registry = _load(CONTROL / "v7_experiment_registry.json")
+    protocol_freeze = _load(ROOT / "docs" / "v7_g1_scientific_protocol_freeze.json")
 
     proposed = epoch["proposed_budget"]
     for key, expected in {
@@ -84,6 +85,14 @@ def main() -> None:
     _require(
         seed_bundle["synchronization"]["batch_build_seed"]["value"] == 0,
         "fixed B24 batch-build seed drifted",
+    )
+    _require(
+        protocol_freeze["formal_matrix"]["formal_execution_started"] is False,
+        "formal G1 execution must remain closed in protocol freeze",
+    )
+    _require(
+        protocol_freeze["e200_optimization_contract"]["cosine_horizon_epochs"] == 200,
+        "protocol freeze e200 horizon drifted",
     )
     _require(
         fairness["capacity_matched_trigger"]["relative_parameter_gap_threshold"] == 0.05,
