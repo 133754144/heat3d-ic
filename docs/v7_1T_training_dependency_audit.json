@@ -1,0 +1,69 @@
+{
+  "schema_version": "heat3d_v7_1T_training_dependency_audit_v1",
+  "audit_commit": "725b83b50958d4aff9c641398ec9e2a02f73b3f9",
+  "scope": "formal training dependency graph and V7 readiness boundary",
+  "categories": {
+    "production_dependency": [
+      {"file": "scripts/run_heat3d_v7_formal_training.py", "symbol": "main", "calls": "rigno.heat3d_training.load_selected_v1_examples/build_v1_training_stats/build_v1_training_batches", "direction": "entrypoint -> stable preparation"},
+      {"file": "scripts/run_heat3d_v7_formal_training.py", "symbol": "main", "calls": "rigno.heat3d_training.V7FormalTrainer", "direction": "entrypoint -> stable numerical lifecycle"},
+      {"file": "rigno/heat3d_training/prepare.py", "symbol": "load_selected_v1_examples", "calls": "rigno.heat3d_v1_supervised + rigno.heat3d_v1_native_supervised", "direction": "scoped train/valid loader -> library schema"},
+      {"file": "rigno/heat3d_training/prepare.py", "symbol": "build_v1_training_batches", "calls": "rigno.heat3d_v1_training_semantics + rigno.heat3d_v1_normalization + rigno.graphBuilder_Heat3D.Heat3DGraphBuilder", "direction": "explicit bridge/stats/features -> graph metadata/tensors"},
+      {"file": "rigno/heat3d_training/core.py", "symbol": "V7FormalTrainer.step", "calls": "injected model_apply/loss_fn/optimizer", "direction": "state -> prediction/loss/grad/update/state"},
+      {"file": "scripts/run_heat3d_v7_formal_training.py", "symbol": "RIGNO", "calls": "rigno.models.rigno.RIGNO", "direction": "explicit model construction -> injected trainer"}
+    ],
+    "compatibility-only": [
+      {"file": "rigno/heat3d_v2_runner_command.py", "symbol": "build_training_command", "calls": "scripts/run_heat3d_v4_controlled_training.py or scripts/run_heat3d_v1_medium_controlled_training_export.py", "direction": "V2 command planner -> legacy runner"},
+      {"file": "scripts/run_heat3d_v4_controlled_training.py", "symbol": "main/_install_profile_hooks", "calls": "run_heat3d_v1_medium_controlled_training_export plus private symbols", "direction": "V4 wrapper -> V1 runner + monkey patch"},
+      {"file": "scripts/run_heat3d_v1_medium_controlled_training_export.py", "symbol": "module import", "calls": "scripts/check_heat3d_v1_small_train_valid_smoke._metrics/_global_norm/_subset_split_ids/_selected_steps", "direction": "V1 runner -> check script private helpers"},
+      {"file": "scripts/run_heat3d_v3_final_probe_checkpoint_smoke.py", "symbol": "install_checkpoint_feature_hooks", "calls": "legacy runner module mutation", "direction": "V3 hook -> compatibility/reference paths only"},
+      {"file": "scripts/audit_heat3d_v7_training_equivalence.py", "symbol": "legacy oracle import", "calls": "scripts/check_heat3d_v1_small_train_valid_smoke._make_groups/MODEL_CONFIG", "direction": "audit -> legacy oracle; not production graph"}
+    ],
+    "test-only": [
+      {"file": "tests/test_heat3d_runtime.py", "symbol": "static import assertions", "calls": "AST inspection", "direction": "CI test -> production boundary"},
+      {"file": "tests/test_heat3d_v7_training.py", "symbol": "V7TrainingStaticTests", "calls": "V7 entrypoint/core boundary", "direction": "CI test -> readiness contract"}
+    ],
+    "dead-or-unused": [
+      {"file": "scripts/train_heat3d_operator.py", "symbol": "main", "calls": "rigno.dataset_Heat3D + rigno.heat3d_pipeline", "direction": "standalone historical trainer; not called by V2/V4/V7 formal entrypoint"},
+      {"file": "rigno/heat3d_v2_runner_command.py", "symbol": "comparison/diagnostic command constants", "calls": "legacy analysis scripts", "direction": "dry-run metadata only; no V7 execution"}
+    ],
+    "uncertain": [
+      {"file": "scripts/run_heat3d_v6_p1i_anchor_high_n_development.py", "symbol": "subprocess route helpers", "calls": "V6 high-N development commands", "direction": "historical V6 path; excluded from V7 training graph, future migration requires route-by-route audit"},
+      {"file": "scripts/benchmark_heat3d_v6_p1i_u2_asymmetric_runtime.py", "symbol": "runtime benchmark", "calls": "V6 development/qualification helpers", "direction": "historical timing/reference path; not a V7 formal trainer dependency"}
+    ]
+  },
+  "legacy_chain": [
+    "heat3d_v2_runner_command.build_training_command",
+    "scripts/run_heat3d_v4_controlled_training.py",
+    "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+    "scripts/check_heat3d_v1_small_train_valid_smoke.py private helpers"
+  ],
+  "v7_chain": [
+    "scripts/run_heat3d_v7_formal_training.py",
+    "rigno.heat3d_training.prepare",
+    "rigno.heat3d_training.core.V7FormalTrainer",
+    "rigno.models.rigno.RIGNO"
+  ],
+  "production_boundary": {
+    "smoke_imports": 0,
+    "check_imports": 0,
+    "development_imports": 0,
+    "cross_script_private_api": 0,
+    "monkey_patch": 0,
+    "legacy_wrappers": "read_only_historical_oracle"
+  },
+  "lifecycle_audit": {
+    "preprocessing": "V7 prepare.py explicit; legacy runner/check duplicated",
+    "features_normalization": "V7 uses library semantics explicitly; legacy V4 patch replaces private V1 functions",
+    "graph": "V7 builds once before steps; legacy grouped helper remains compatibility-only",
+    "batch": "V7 readiness fixture uses explicit full-batch TrainingBatch; G1 batching policy deferred",
+    "jit": "V7 optional per-batch executable reuse; optimization qualification pending actual profile",
+    "checkpoint": "V7 injected writer and round-trip path; legacy writer remains historical",
+    "metrics": "V7 readiness diagnostics are injected and separate from EvaluationCore; formal publication metrics remain EvaluationCore"
+  },
+  "minimal_extract_core_preserve_legacy_boundary": {
+    "extract": ["scoped dataset selection", "feature/normalization assembly", "graph preparation", "explicit train step", "checkpoint writer interface", "diagnostic interface"],
+    "preserve": ["all V1-V6 scripts", "V4 monkey-patch implementation", "V1 private helper names", "historical receipts and artifacts"],
+    "not_done": ["high-N KD-tree/reconstruction optimization", "G1 variants", "formal metric/timing cutover"],
+    "scientific_semantics_changed": false
+  }
+}

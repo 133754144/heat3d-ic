@@ -1,0 +1,31 @@
+{
+  "schema_version": "heat3d_v7_frozen_artifact_denylist_v1",
+  "status": "frozen_no_write",
+  "policy": "read_only; do_not_delete; do_not_clean; do_not_overwrite; do_not_regenerate_in_place",
+  "paths": [
+    "data/heat3d_v6_p1i_continuous_physics1024_v1/**",
+    "data/heat3d_v6_p1h_shared_support1024_v0/**",
+    "configs/heat3d_v6/**",
+    "configs/heat3d_v6_p1i/**",
+    "output/v6_supplemental_publication_8a81261/**",
+    "output/heat3d_v6_*/**",
+    "checkpoints/heat3d_v6_*/**",
+    "logs/heat3d_v6_*/**"
+  ],
+  "tracked_evidence": [
+    "configs/heat3d_v6/v6_*.csv",
+    "configs/heat3d_v6/v6_*.json",
+    "docs/v7_g0*_receipt.json",
+    "docs/v7_g0*_observation.json"
+  ],
+  "allowed_v7_outputs": [
+    "docs/v7_1T_*.json",
+    "docs/v7_1T_*.md",
+    "configs/heat3d_v7/**",
+    "rigno/heat3d_training/**",
+    "scripts/run_heat3d_v7_formal_training.py",
+    "tests/test_heat3d_v7_training.py",
+    "tools/check_v7_training_control_plane.py"
+  ],
+  "forbidden_split_access": ["test_iid", "test", "sealed", "hard"]
+}

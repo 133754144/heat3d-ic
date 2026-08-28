@@ -1,0 +1,63 @@
+{
+  "schema_version": "heat3d_v7_1T_devbox_state_v1",
+  "repo": "/home/xyh/myCodeGitOnly/heat3d-ic",
+  "branch": "research/v7",
+  "before_sync": {
+    "head": "8271d72255b6b07cc58c3a16b629cb7bd3068c87",
+    "working_tree": ["?? configs/heat3d_v6_supplemental/"]
+  },
+  "after_sync": {
+    "head": "725b83b50958d4aff9c641398ec9e2a02f73b3f9",
+    "fast_forward_only": true,
+    "working_tree_preserved": ["?? configs/heat3d_v6_supplemental/"]
+  },
+  "supplemental_files": [
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/E16384_reconstruction.json",
+      "sha256": "34518b4267a94be758445536bc401b5f042ba602891f45410bff7da34397dbff",
+      "content_role": "historical V6/P1i fixed-geometry runtime result; E16384 reconstruction",
+      "status": "untracked_historical_artifact_not_V7_production_config",
+      "execution_commit": "ebc7179f3187b639aafe2c106626e3b591d6bcc3",
+      "accessed_roles": ["train_inputs", "shared_full_mesh_without_temperature"],
+      "temperature_files_opened": 0,
+      "test_or_sealed_accessed": false,
+      "training_executed": false,
+      "fvm_executed": false
+    },
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/U_v2_16384_reconstruction.json",
+      "sha256": "c706f8edcc3d8e205096bf15fa0d3594995c7d7bdd5130213263b50f86d6d8a4",
+      "content_role": "historical V6/P1i fixed-geometry runtime result; U-v2 16384 reconstruction",
+      "status": "untracked_historical_artifact_not_V7_production_config",
+      "execution_commit": "ebc7179f3187b639aafe2c106626e3b591d6bcc3",
+      "accessed_roles": ["train_inputs", "shared_full_mesh_without_temperature"],
+      "temperature_files_opened": 0,
+      "test_or_sealed_accessed": false,
+      "training_executed": false,
+      "fvm_executed": false
+    },
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/E240825_direct_control.json",
+      "sha256": "61ccf44a8e898b97a47d38a192030890a19f190f602fa6ed1591918690bde644",
+      "content_role": "historical V6/P1i fixed-geometry runtime result; E 240825 direct control",
+      "status": "untracked_historical_artifact_not_V7_production_config",
+      "execution_commit": "fb4bcf918497ae6e86970c84d08ad458f433fdde",
+      "accessed_roles": ["train_inputs", "shared_full_mesh_without_temperature"],
+      "test_or_sealed_accessed": false,
+      "training_executed": false,
+      "fvm_executed": false
+    },
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/U_v2_direct240825.json",
+      "sha256": "82c0e09ff2829990663267cf48217e98058b94a869d2b9ca2d2ebc79a2c51e97",
+      "content_role": "historical V6/P1i fixed-geometry runtime result; U-v2 240825 direct",
+      "status": "untracked_historical_artifact_not_V7_production_config",
+      "execution_commit": "fb4bcf918497ae6e86970c84d08ad458f433fdde",
+      "accessed_roles": ["train_inputs", "shared_full_mesh_without_temperature"],
+      "test_or_sealed_accessed": false,
+      "training_executed": false,
+      "fvm_executed": false
+    }
+  ],
+  "processing_decision": "preserve_untracked; record provenance; do not register as V7 production code/config or copy into frozen V6 paths"
+}

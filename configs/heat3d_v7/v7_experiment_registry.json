@@ -1,0 +1,43 @@
+{
+  "schema_version": "heat3d_v7_experiment_registry_v1",
+  "status": "readiness_control_plane",
+  "default_branch": "research/v7",
+  "formal_training_entrypoint": "scripts/run_heat3d_v7_formal_training.py",
+  "library_training_core": "rigno.heat3d_training",
+  "registered_runs": [
+    {
+      "experiment_id": "V7.1-T-readiness-fixture",
+      "status": "readiness_only",
+      "experiment_role": "readiness_fixture",
+      "variant": "full_reference",
+      "dataset_role": "train_plus_valid_iid_only",
+      "seed": 0,
+      "steps": "3-10",
+      "multi_seed": false,
+      "publication_evidence": false,
+      "g1_eligible": false,
+      "profiling": true,
+      "optimization": "only_if_profile_justifies_semantics_preserving_readiness_change"
+    },
+    {
+      "experiment_id": "V7-G1-template",
+      "status": "planned_not_executed",
+      "experiment_role": "publication_training",
+      "variant": "config_selected",
+      "dataset_role": "train_plus_valid_iid_only",
+      "seed": "0|1|2",
+      "steps": "registered_experiment_only",
+      "multi_seed": true,
+      "publication_evidence": false,
+      "g1_eligible": true,
+      "execution_blocked_until": "V7_formal_training_readiness=PASS"
+    }
+  ],
+  "split_policy": {
+    "allowed_in_this_task": ["train", "valid_iid"],
+    "forbidden_in_this_task": ["test_iid", "sealed"],
+    "no_split_inference": "a runner must reject an unregistered split"
+  },
+  "metric_contract": "configs/heat3d_v7/v7_metric_contract.json",
+  "artifact_denylist": "configs/heat3d_v7/v7_frozen_artifact_denylist.json"
+}

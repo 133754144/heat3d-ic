@@ -1,0 +1,47 @@
+{
+  "schema_version": "heat3d_v7_claim_evidence_mapping_v1",
+  "status": "frozen_claim_control",
+  "claims": [
+    {
+      "claim_id": "C1-physics-conditioned-operator",
+      "status": "research_objective",
+      "required_gates": ["G1", "G4", "G5"],
+      "required_evidence": ["baseline", "ablation", "physics_residual", "OOD"],
+      "current_evidence": "none_from_V7.1-T"
+    },
+    {
+      "claim_id": "C2-source-aware-sparse-conditioning",
+      "status": "research_objective",
+      "required_gates": ["G1", "G2", "G4", "G5"],
+      "required_evidence": ["source_support_ablation", "matched_baseline", "source_OOD"],
+      "current_evidence": "none_from_V7.1-T"
+    },
+    {
+      "claim_id": "C3-resolution-decoupled-inference",
+      "status": "research_objective",
+      "required_gates": ["G3", "G4", "G6"],
+      "required_evidence": ["16k_32k_resolution_ladder", "query_conditioning_contract", "external_case"],
+      "current_evidence": "not_established_by_readiness_fixture"
+    },
+    {
+      "claim_id": "C4-deployment-scale-acceleration",
+      "status": "research_objective",
+      "required_gates": ["G2", "G3", "G6", "G7"],
+      "required_evidence": ["accuracy_qualified_FVM", "matched_boundaries", "timing_contract", "design_loop"],
+      "current_evidence": "not_established_by_readiness_fixture"
+    },
+    {
+      "claim_id": "V6/P1i-native-reference",
+      "status": "current_validated_historical_result",
+      "required_gates": ["G0", "G4"],
+      "required_evidence": ["frozen_V6_receipts"],
+      "current_evidence": "frozen_V6_artifacts_only"
+    }
+  ],
+  "prohibited_claims": [
+    "V7 generalization to test_iid or sealed data",
+    "V7 high-resolution accuracy or speedup from readiness fixture",
+    "V7 multi-seed publication result",
+    "V7 superiority over E/U/FVM"
+  ]
+}

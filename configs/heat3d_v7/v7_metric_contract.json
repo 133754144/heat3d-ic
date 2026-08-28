@@ -1,0 +1,116 @@
+{
+  "schema_version": "heat3d_v7_metric_contract_v1",
+  "status": "frozen_readiness_contract",
+  "scope": "formal_training_readiness_only; no G1 experiment is registered as executed",
+  "temperature_representation": {
+    "training_target": "normalized_deltaT",
+    "raw_metric_target": "deltaT_K",
+    "reference_temperature_K": 300.0,
+    "inference_adapter": "temperature_K - reference_temperature_K"
+  },
+  "common": {
+    "error": "prediction_deltaT_K - truth_deltaT_K",
+    "point_weight": "control_volume_m3",
+    "source_mask": "q_W_m3 > 0",
+    "interface_definition": "successive layer-volume-mean deltaT errors",
+    "peak_definition": "max(prediction_deltaT_K) - max(truth_deltaT_K)",
+    "aggregation": "sum sufficient statistics first; derive scalars once",
+    "rounding": "none before sufficient-statistic aggregation"
+  },
+  "level_a_training_resolution": {
+    "role": "training-resolution validation and checkpoint qualification",
+    "resolution_role": "native encoder/training resolution",
+    "metrics": [
+      {
+        "name": "point_global_relative_rmse_pct",
+        "formula": "100 * sqrt(sum_i(error_i^2) / sum_i(truth_i^2))",
+        "aggregation": "global point sum over the evaluation population",
+        "weight": "unit point weight",
+        "unit": "%"
+      },
+      {
+        "name": "sample_first_relative_rmse_pct",
+        "formula": "100 * mean_s(sqrt(sum_i(w_si*error_si^2) / sum_i(w_si*truth_si^2)))",
+        "aggregation": "arithmetic mean of per-sample control-volume relative RMSE",
+        "weight": "control_volume_m3 within sample; equal sample weight across samples",
+        "unit": "%"
+      },
+      {
+        "name": "raw_K_CV_RMSE_K",
+        "formula": "sqrt(sum_i(w_i*error_i^2) / sum_i(w_i))",
+        "aggregation": "population control-volume weighted sum",
+        "weight": "control_volume_m3",
+        "unit": "K"
+      },
+      {
+        "name": "source_region_RMSE_K",
+        "formula": "sqrt(sum_{q_i>0}(w_i*error_i^2) / sum_{q_i>0}(w_i))",
+        "aggregation": "population source-region control-volume weighted sum",
+        "weight": "control_volume_m3",
+        "unit": "K"
+      },
+      {
+        "name": "peak_RMSE_K",
+        "formula": "sqrt(mean_s((max(pred_s)-max(truth_s))^2))",
+        "aggregation": "mean over samples",
+        "weight": "equal sample weight",
+        "unit": "K"
+      },
+      {
+        "name": "interface_RMSE_K",
+        "formula": "sqrt(sum_b(interface_error_b^2) / count_b)",
+        "aggregation": "mean over observed layer interfaces",
+        "weight": "equal interface weight",
+        "unit": "K"
+      }
+    ]
+  },
+  "level_b_high_resolution": {
+    "role": "direct-query/high-resolution and frozen-reconstruction deployment evaluation",
+    "resolution_role": "output query and reconstructed full-field resolution",
+    "metrics": "level_a_training_resolution.metrics",
+    "additional_boundary": "reconstruction is included in prediction generation, never in metric definition",
+    "fvm_role": "reference solver only; no surrogate error is assigned to FVM"
+  },
+  "sufficient_statistics": [
+    "point_sse",
+    "point_truth_energy",
+    "point_count",
+    "cv_sse",
+    "cv_truth_energy",
+    "cv_volume",
+    "sample_cv_relative_rmse_sum",
+    "sample_cv_relative_rmse_count",
+    "source_sse",
+    "source_volume",
+    "peak_error_squared",
+    "peak_error_count",
+    "interface_error_sum_squared",
+    "interface_error_count"
+  ],
+  "split_roles": {
+    "train": "training labels allowed only for registered training runs",
+    "valid_iid": "held-out validation set; allowed for checkpoint qualification and frozen replication",
+    "test_iid": "sealed from this readiness task; no access",
+    "sealed": "sealed labels; no access"
+  },
+  "seeds": {
+    "registered_seed_set": [0, 1, 2],
+    "readiness_fixture_seed": 0,
+    "multi_seed_execution": "deferred_to_G1"
+  },
+  "checkpoint_selection_rule": {
+    "historical_reference": "frozen V6/P1i route registry and valid_iid selection metric",
+    "metric": "sample_first_relative_rmse_pct",
+    "tie_break": "earliest_epoch",
+    "readiness_policy": "no model selection; equivalence/profiling only"
+  },
+  "experiment_roles": [
+    "compatibility_audit",
+    "readiness_fixture",
+    "publication_training",
+    "production_inference",
+    "publication_evaluation"
+  ],
+  "frozen_artifact_policy": "v6_frozen_artifact_denylist.json is authoritative; no overwrite, rename, regeneration, or in-place metadata update"
+}

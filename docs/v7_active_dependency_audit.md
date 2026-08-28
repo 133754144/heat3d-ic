@@ -1237,3 +1237,51 @@ binary identity bundle 缺失仍是 archival limitation；V1–V6 wrappers 保�
 historical oracle，`rigno.heat3d_runtime` 保持 stable semantic/reference implementation。
 所有性能优化和 G1 均 deferred。最终状态为 `V7_G0_status=PASS`；test/sealed 未访问，
 training、solver 和 model selection 均为 false。
+
+## V7.1-T formal training readiness
+
+本节对应 V7.1-T readiness 控制面；它不改变上面的 V6/G0 冻结证据，也不启动 G1。
+devbox 状态、四个未跟踪 supplemental JSON 的名称/角色/SHA256 见
+[`v7_1T_devbox_state.json`](v7_1T_devbox_state.json)。devbox 已从旧 HEAD
+`8271d72255b6b07cc58c3a16b629cb7bd3068c87` 以 fast-forward 到
+`725b83b50958d4aff9c641398ec9e2a02f73b3f9`；未跟踪目录原样保留，判定为历史运行
+artifact，不登记为 V7 production config，也未写入、清理或删除。
+
+### Old versus V7 training dependency graph
+
+历史正式命令规划链为：
+
+`heat3d_v2_runner_command.build_training_command`
+→ `scripts/run_heat3d_v4_controlled_training.py`
+→ `scripts/run_heat3d_v1_medium_controlled_training_export.py`
+→ `scripts/check_heat3d_v1_small_train_valid_smoke.py` 的私有 helper。
+
+V4 wrapper 通过 `sys.path` 导入脚本并 monkey-patch V1 runner 的 `_bridge_for`、
+`_train_only_stats`、`_stats_payload`、`_checkpoint_run_metadata` 和 `_write_json`；V1
+runner 再跨脚本导入 check 模块的 `_metrics`、`_global_norm`、split/metadata helper。
+这条链保留为 read-only historical oracle。
+
+V7 唯一训练入口为 `scripts/run_heat3d_v7_formal_training.py`，依赖
+`rigno.heat3d_training.prepare` 和 `rigno.heat3d_training.core.V7FormalTrainer`，
+再显式注入 library-level dataset selection、feature/normalization、graph builder、
+RIGNO、loss、optimizer、batch、validation、checkpoint writer 和 diagnostics。其
+production import graph 不含 `check_*`、`*_smoke.py`、`*_development.py`，不修改
+`sys.path`，不写模块状态，也不调用跨脚本 private API。完整 machine-readable graph
+见 [`v7_1T_training_dependency_audit.json`](v7_1T_training_dependency_audit.json)。
+
+当前 readiness trainer 仍保留一处有意的语义边界：训练 fixture 使用显式 full-batch
+`TrainingBatch`，而 G1 的 batching policy 尚未注册；这不是 high-N 路径，也没有改变
+V6 graph/support/normalization/model/loss 语义。
+
+### V7.1-T control plane and status
+
+新增 `configs/heat3d_v7/` 下的 metric contract、experiment registry、claim/evidence
+mapping 和 frozen-artifact denylist，并由 `tools/check_v7_training_control_plane.py`
+fail-closed 校验。V7.1-T readiness fixture 的 role 是 `readiness_fixture`、seed 为 0、
+结果不具备 publication 或 G1 evidence 资格；seed 0/1/2 和 checkpoint selection rule
+仅作为未来注册约束。test_iid、sealed labels 和 frozen V6 paths 均列为禁止访问/写入。
+
+training-step equivalence、真实短训 profiling、必要的 semantics-preserving readiness
+optimization 以及 GitHub Actions green 仍需在同步后的 devbox commit 上实际完成并记录。
+当前 control-plane/static/unit 本地检查已通过，但不替代远程真实 fixture 和 GitHub
+Actions 结论；因此本节暂不宣称 `V7_formal_training_readiness=PASS`。
