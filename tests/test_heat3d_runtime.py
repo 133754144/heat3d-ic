@@ -541,9 +541,88 @@ class StableRuntimeStaticTests(unittest.TestCase):
         self.assertTrue(all(row["elapsed_seconds"] >= 0.0 for row in record["stages"]))
         self.assertEqual(record["latency_boundary"], TimingCore.contract()["workload_boundary"])
 
+    def test_temperature_representation_contract_and_reconstruction_regression(self) -> None:
+        from rigno.heat3d_runtime import (
+            ABSOLUTE_TEMPERATURE_K,
+            DELTA_T_K,
+            PredictionOnlyRecord,
+            load_temperature_contract,
+            temperature_K_to_deltaT_K,
+        )
+        from rigno.heat3d_runtime.temperature import (
+            FORMAL_RECONSTRUCTED_FULL_FIELD_STAGE,
+            HIGH_N_SCALED_STAGE,
+        )
+        from rigno.heat3d_v6_full_field import ReconstructionMap
+
+        contract = load_temperature_contract(
+            ROOT / "configs/heat3d_v6_p1i/v7_temperature_representation_contract.json"
+        )
+        self.assertEqual(contract["formal_evaluation_input"]["prediction_representation"], DELTA_T_K)
+        mapping = ReconstructionMap(
+            support_indices=np.asarray([0, 1], dtype=np.int32),
+            neighbor_local_indices=np.asarray([[0, 1], [1, 0]], dtype=np.int32),
+            neighbor_weights=np.asarray([[0.25, 0.75], [0.5, 0.5]], dtype=np.float64),
+            domain_code=np.asarray([0, 0], dtype=np.int16),
+            domain_names=("volume",),
+        )
+        support_temperature_K = np.asarray([303.0, 307.0], dtype=np.float64)
+        left = mapping.reconstruct(
+            temperature_K_to_deltaT_K(
+                support_temperature_K, reference_temperature_K=300.0
+            )
+        )
+        right = mapping.reconstruct(support_temperature_K) - 300.0
+        difference = left - right
+        self.assertLessEqual(float(np.max(np.abs(difference))), 1.0e-12)
+        self.assertLessEqual(float(np.sqrt(np.mean(difference * difference))), 1.0e-12)
+
+        common = {
+            "sample_id": "valid-temperature",
+            "prediction_deltaT_K": np.asarray([1.0, 2.0]),
+            "coords": np.asarray([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]]),
+            "control_volumes_m3": np.ones(2),
+            "layer_id": np.asarray([0, 0]),
+            "q_W_m3": np.asarray([1.0, 0.0]),
+            "route_id": "native_1024",
+            "anchor_context_resolution": 1024,
+            "encoder_input_resolution": 1024,
+            "output_query_resolution": 1024,
+            "reconstruction_resolution": 1024,
+            "direct_query": True,
+            "reference_temperature_K": 300.0,
+        }
+        with self.assertRaises(ValueError):
+            PredictionOnlyRecord(
+                **common,
+                prediction_representation=ABSOLUTE_TEMPERATURE_K,
+                prediction_stage=FORMAL_RECONSTRUCTED_FULL_FIELD_STAGE,
+            ).validated()
+        with self.assertRaises(ValueError):
+            PredictionOnlyRecord(
+                **common,
+                prediction_representation="",
+                prediction_stage=FORMAL_RECONSTRUCTED_FULL_FIELD_STAGE,
+            ).validated()
+        with self.assertRaises(ValueError):
+            PredictionOnlyRecord(
+                **common,
+                prediction_representation=DELTA_T_K,
+                prediction_stage=HIGH_N_SCALED_STAGE,
+            ).validated()
+
     def test_formal_orchestration_binds_route_and_loads_truth_after_prediction(self) -> None:
-        from rigno.heat3d_runtime import FormalEvaluationOrchestrator, PredictionOnlyRecord
+        from rigno.heat3d_runtime import (
+            FormalEvaluationOrchestrator,
+            PredictionOnlyRecord,
+            load_temperature_contract,
+        )
         from rigno.heat3d_runtime.evaluation import METRIC_SCHEMA_VERSION
+        from rigno.heat3d_runtime.temperature import FORMAL_DIRECT_QUERY_STAGE
+
+        temperature_contract = load_temperature_contract(
+            ROOT / "configs/heat3d_v6_p1i/v7_temperature_representation_contract.json"
+        )
 
         coords = np.asarray(
             [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0]],
@@ -563,6 +642,9 @@ class StableRuntimeStaticTests(unittest.TestCase):
             output_query_resolution=1024,
             reconstruction_resolution=1024,
             direct_query=True,
+            prediction_representation="deltaT_K",
+            reference_temperature_K=300.0,
+            prediction_stage=FORMAL_DIRECT_QUERY_STAGE,
             reconstruction_map_sha256="a" * 64,
             reconstruction_contract_sha256="b" * 64,
             checkpoint_sha256="c" * 64,
@@ -586,6 +668,10 @@ class StableRuntimeStaticTests(unittest.TestCase):
             "output_query_resolution": 1024,
             "reconstruction_resolution": 1024,
             "direct_query": True,
+            "prediction_representation": "deltaT_K",
+            "reference_temperature_K": 300.0,
+            "prediction_stage": FORMAL_DIRECT_QUERY_STAGE,
+            "temperature_representation_contract_sha256": temperature_contract["contract_sha256"],
             "prediction_artifact_sha256_by_sample": {
                 "valid-formal": record.prediction_artifact_sha256,
             },
@@ -610,12 +696,31 @@ class StableRuntimeStaticTests(unittest.TestCase):
                 "reconstruction_resolution": 1024,
                 "direct_query": True,
             },
+            temperature_contract=temperature_contract,
         )
         self.assertEqual(loaded, ["valid-formal"])
         self.assertTrue(result["prediction_only"])
         self.assertFalse(result["labels_read_by_inference"])
         self.assertEqual(result["truth_loaded_by"], "EvaluationCore")
         self.assertEqual(result["evaluation"]["metric_schema_version"], METRIC_SCHEMA_VERSION)
+        mismatched_reference = dict(receipt)
+        mismatched_reference["reference_temperature_K"] = 299.0
+        with self.assertRaises(ValueError):
+            FormalEvaluationOrchestrator().run(
+                [record],
+                truth_loader=truth_loader,
+                receipt=mismatched_reference,
+                route_contract={
+                    "route_id": "native_1024",
+                    "strategy_name": "native",
+                    "anchor_context_resolution": 1024,
+                    "encoder_input_resolution": 1024,
+                    "output_query_resolution": 1024,
+                    "reconstruction_resolution": 1024,
+                    "direct_query": True,
+                },
+                temperature_contract=temperature_contract,
+            )
         with self.assertRaises(ValueError):
             FormalEvaluationOrchestrator().run(
                 [record],
@@ -630,6 +735,7 @@ class StableRuntimeStaticTests(unittest.TestCase):
                     "reconstruction_resolution": 1024,
                     "direct_query": True,
                 },
+                temperature_contract=temperature_contract,
             )
 
 

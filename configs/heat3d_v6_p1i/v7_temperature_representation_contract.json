@@ -1,0 +1,23 @@
+{
+  "schema_version": "heat3d_v7_temperature_representation_v1",
+  "contract_id": "V7_temperature_representation_v1",
+  "reference_temperature_K": 300.0,
+  "prediction_stages": {
+    "model_raw": "absolute_temperature_K",
+    "high_n_scaled_output": "absolute_temperature_K",
+    "formal_direct_query": "deltaT_K",
+    "formal_reconstructed_full_field": "deltaT_K"
+  },
+  "adapter": {
+    "adapter_id": "temperature_K_to_deltaT_K",
+    "input_representation": "absolute_temperature_K",
+    "output_representation": "deltaT_K",
+    "formula": "deltaT_K = temperature_K - reference_temperature_K"
+  },
+  "formal_evaluation_input": {
+    "prediction_representation": "deltaT_K",
+    "reference_temperature_K": 300.0,
+    "prediction_stage": "formal_reconstructed_full_field"
+  },
+  "contract_sha256": "d53ec2cf4cdb16fd08525c5f17c19d78dcdae4341248f978728dfc0cd5f7926c"
+}

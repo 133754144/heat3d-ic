@@ -665,6 +665,14 @@ class HighNRuntime:
         anchor_scale: float,
         operator_weights: np.ndarray,
     ) -> np.ndarray:
+        """Return the high-N prediction as absolute ``temperature_K``.
+
+        Formal full-field evaluation must call the explicit
+        ``temperature_K_to_deltaT_K`` adapter before submitting a
+        ``PredictionOnlyRecord``.  This function deliberately preserves the
+        frozen V6/P1i numerical behavior and does not perform that conversion.
+        """
+
         raw = np.asarray(raw_temperature, dtype=np.float64)
         delta = raw - REFERENCE_K
         weights = np.asarray(operator_weights, dtype=np.float64).reshape(-1)

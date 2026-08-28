@@ -40,6 +40,12 @@ __all__ = [
     "EvaluationCore",
     "TimingCore",
     "TimingLifecycle",
+    "ABSOLUTE_TEMPERATURE_K",
+    "DELTA_T_K",
+    "TemperatureRepresentationError",
+    "temperature_K_to_deltaT_K",
+    "load_temperature_contract",
+    "validate_temperature_contract",
     "PredictionOnlyRecord",
     "FormalEvaluationOrchestrator",
 ]
@@ -100,6 +106,27 @@ _EXPORTS = {
     "EvaluationCore": ("rigno.heat3d_runtime.evaluation", "EvaluationCore"),
     "TimingCore": ("rigno.heat3d_runtime.timing", "TimingCore"),
     "TimingLifecycle": ("rigno.heat3d_runtime.timing", "TimingLifecycle"),
+    "ABSOLUTE_TEMPERATURE_K": (
+        "rigno.heat3d_runtime.temperature",
+        "ABSOLUTE_TEMPERATURE_K",
+    ),
+    "DELTA_T_K": ("rigno.heat3d_runtime.temperature", "DELTA_T_K"),
+    "TemperatureRepresentationError": (
+        "rigno.heat3d_runtime.temperature",
+        "TemperatureRepresentationError",
+    ),
+    "temperature_K_to_deltaT_K": (
+        "rigno.heat3d_runtime.temperature",
+        "temperature_K_to_deltaT_K",
+    ),
+    "load_temperature_contract": (
+        "rigno.heat3d_runtime.temperature",
+        "load_temperature_contract",
+    ),
+    "validate_temperature_contract": (
+        "rigno.heat3d_runtime.temperature",
+        "validate_temperature_contract",
+    ),
     "PredictionOnlyRecord": (
         "rigno.heat3d_runtime.orchestration",
         "PredictionOnlyRecord",

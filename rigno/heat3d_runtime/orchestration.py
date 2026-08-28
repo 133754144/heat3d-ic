@@ -21,6 +21,13 @@ from rigno.heat3d_runtime.evaluation import (
     EvaluationCore,
     EvaluationSample,
 )
+from rigno.heat3d_runtime.temperature import (
+    DELTA_T_K,
+    FORMAL_DIRECT_QUERY_STAGE,
+    FORMAL_RECONSTRUCTED_FULL_FIELD_STAGE,
+    validate_formal_prediction_representation,
+    validate_temperature_contract,
+)
 
 
 def _array_sha256(value: Any) -> str:
@@ -52,6 +59,9 @@ class PredictionOnlyRecord:
     output_query_resolution: int
     reconstruction_resolution: int
     direct_query: bool
+    prediction_representation: str
+    reference_temperature_K: float
+    prediction_stage: str
     reconstruction_map_sha256: str | None = None
     reconstruction_contract_sha256: str | None = None
     prediction_artifact_sha256: str | None = None
@@ -69,6 +79,18 @@ class PredictionOnlyRecord:
             raise ValueError("sample_id and route_id are required")
         if not isinstance(self.direct_query, bool):
             raise ValueError("direct_query must be boolean")
+        if self.prediction_representation != DELTA_T_K:
+            raise ValueError(
+                "formal PredictionOnlyRecord requires prediction_representation='deltaT_K'"
+            )
+        reference_temperature_K = float(self.reference_temperature_K)
+        if not np.isfinite(reference_temperature_K):
+            raise ValueError("reference_temperature_K must be finite")
+        if self.prediction_stage not in {
+            FORMAL_DIRECT_QUERY_STAGE,
+            FORMAL_RECONSTRUCTED_FULL_FIELD_STAGE,
+        }:
+            raise ValueError("formal PredictionOnlyRecord has an unregistered prediction_stage")
         prediction = np.asarray(self.prediction_deltaT_K, dtype=np.float64).reshape(-1)
         coords = np.asarray(self.coords, dtype=np.float64)
         weights = np.asarray(self.control_volumes_m3, dtype=np.float64).reshape(-1)
@@ -123,6 +145,9 @@ class PredictionOnlyRecord:
             output_query_resolution=int(self.output_query_resolution),
             reconstruction_resolution=int(self.reconstruction_resolution),
             direct_query=self.direct_query,
+            prediction_representation=self.prediction_representation,
+            reference_temperature_K=reference_temperature_K,
+            prediction_stage=self.prediction_stage,
             reconstruction_map_sha256=self.reconstruction_map_sha256,
             reconstruction_contract_sha256=self.reconstruction_contract_sha256,
             prediction_artifact_sha256=computed_prediction_sha256,
@@ -144,6 +169,9 @@ class PredictionOnlyRecord:
             "output_query_resolution": value.output_query_resolution,
             "reconstruction_resolution": value.reconstruction_resolution,
             "direct_query": value.direct_query,
+            "prediction_representation": value.prediction_representation,
+            "reference_temperature_K": value.reference_temperature_K,
+            "prediction_stage": value.prediction_stage,
             "prediction_artifact_sha256": value.prediction_artifact_sha256,
             "reconstruction_map_sha256": value.reconstruction_map_sha256,
             "reconstruction_contract_sha256": value.reconstruction_contract_sha256,
@@ -177,6 +205,7 @@ class FormalEvaluationOrchestrator:
         truth_loader: TruthLoader,
         receipt: Mapping[str, Any],
         route_contract: Mapping[str, Any],
+        temperature_contract: Mapping[str, Any],
     ) -> dict[str, Any]:
         """Join prediction-only inference records to frozen truth after inference."""
 
@@ -197,6 +226,7 @@ class FormalEvaluationOrchestrator:
             records,
             route_id=route_id,
             route_contract=route_contract,
+            temperature_contract=temperature_contract,
         )
 
         truth_rows = self.evaluation_core.load_valid_truth(sample_ids, truth_loader)
@@ -225,6 +255,9 @@ class FormalEvaluationOrchestrator:
             "inference_execution_role": self.inference_execution_role,
             "evaluation_split": self.evaluation_split,
             "route_id": route_id,
+            "prediction_representation": records[0].prediction_representation,
+            "reference_temperature_K": records[0].reference_temperature_K,
+            "prediction_stage": records[0].prediction_stage,
             "prediction_only": True,
             "labels_read_by_inference": False,
             "truth_loaded_by": "EvaluationCore",
@@ -241,6 +274,7 @@ def _validate_receipt_binding(
     *,
     route_id: str,
     route_contract: Mapping[str, Any],
+    temperature_contract: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Require a formal receipt to bind every semantic route dimension.
 
@@ -275,6 +309,10 @@ def _validate_receipt_binding(
         "output_query_resolution",
         "reconstruction_resolution",
         "direct_query",
+        "prediction_representation",
+        "reference_temperature_K",
+        "prediction_stage",
+        "temperature_representation_contract_sha256",
         "prediction_artifact_sha256_by_sample",
         "reconstruction_contract_sha256",
         "reconstruction_map_sha256_by_sample",
@@ -285,6 +323,12 @@ def _validate_receipt_binding(
         raise ValueError(f"formal receipt is missing required bindings: {missing}")
     if value["execution_role"] != "compatibility_audit":
         raise ValueError("formal replay receipt must use compatibility_audit role")
+    validated_temperature_contract = validate_temperature_contract(temperature_contract)
+    if (
+        value["temperature_representation_contract_sha256"]
+        != validated_temperature_contract["contract_sha256"]
+    ):
+        raise ValueError("formal receipt temperature representation contract binding does not match")
     if value["route_id"] != route_id or route_contract["route_id"] != route_id:
         raise ValueError("formal receipt route_id does not match predictions")
     expected = {
@@ -307,6 +351,23 @@ def _validate_receipt_binding(
         raise ValueError("formal receipt direct_query does not match registered route")
     if any(row.direct_query != value["direct_query"] for row in records):
         raise ValueError("formal predictions have inconsistent direct_query")
+    for field in (
+        "prediction_representation",
+        "reference_temperature_K",
+        "prediction_stage",
+    ):
+        expected_value = getattr(records[0], field)
+        if value[field] != expected_value:
+            raise ValueError(f"formal receipt {field} does not match predictions")
+        if any(getattr(row, field) != expected_value for row in records):
+            raise ValueError(f"formal predictions have inconsistent {field}")
+    for row in records:
+        validate_formal_prediction_representation(
+            prediction_representation=row.prediction_representation,
+            reference_temperature_K=row.reference_temperature_K,
+            prediction_stage=row.prediction_stage,
+            temperature_contract=validated_temperature_contract,
+        )
     for field in (
         "checkpoint_sha256",
         "checkpoint_epoch",
