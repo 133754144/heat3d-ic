@@ -1,0 +1,9 @@
+# Lightweight V7 CI contract (Python 3.11, CPU-only).
+# Keep this independent from requirements.txt: it is a reproducibility
+# contract for import/unit/static checks, not the frozen production environment.
+jax[cpu]==0.4.38
+flax==0.10.2
+h5py==3.12.1
+numpy==2.0.2
+optax==0.2.4
+scipy==1.14.1
