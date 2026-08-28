@@ -1,0 +1,128 @@
+{
+  "schema_version": "heat3d_v7_g0d_r_replay_final_closeout_v1",
+  "gate": "G0d-R",
+  "status": "FAIL_CLOSED",
+  "V7_G0_status": "FAIL",
+  "evidence_base_git_sha": "569cd11c329df81a5d1840fbc284a9313c7b8831",
+  "execution_role": "compatibility_audit",
+  "replay_kind": "deterministic_reproducibility_replay",
+  "scientific_evidence_eligible": false,
+  "model_selection": false,
+  "publication_evidence_touched": false,
+  "prohibited_action_flags": {
+    "training": false,
+    "solver": false,
+    "new_dataset": false,
+    "test_iid_access": false,
+    "sealed_label_access": false,
+    "timing_instrumentation": false,
+    "performance_benchmark": false,
+    "performance_optimization": false,
+    "G1_experiment": false
+  },
+  "frozen_inputs": {
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "checkpoint_epoch": 559,
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "split": "valid_iid",
+    "sample_role": "valid32",
+    "sample_count": 32,
+    "sample_ids": [
+      "v6p1if1_0308", "v6p1if1_0511", "v6p1if1_0041", "v6p1if1_0846",
+      "v6p1if1_0572", "v6p1if1_0347", "v6p1if1_0286", "v6p1if1_0124",
+      "v6p1if1_1017", "v6p1if1_0854", "v6p1if1_0928", "v6p1if1_0543",
+      "v6p1if1_0632", "v6p1if1_0599", "v6p1if1_0003", "v6p1if1_0029",
+      "v6p1if1_0991", "v6p1if1_0109", "v6p1if1_0365", "v6p1if1_0091",
+      "v6p1if1_0930", "v6p1if1_0175", "v6p1if1_0915", "v6p1if1_0869",
+      "v6p1if1_0522", "v6p1if1_0118", "v6p1if1_0708", "v6p1if1_0817",
+      "v6p1if1_1003", "v6p1if1_0697", "v6p1if1_0907", "v6p1if1_0203"
+    ]
+  },
+  "route_binding": {
+    "route_id": "E16384_reconstruction",
+    "anchor_context_resolution": 1024,
+    "encoder_input_resolution": 16384,
+    "output_query_resolution": 16384,
+    "reconstruction_resolution": 240825,
+    "direct_query": true,
+    "reconstruction_contract_sha256": "176ce2a2285487100235eb848bfc3fad63bc25eab269c067b4df471deaa046c0",
+    "prediction_artifact_sha256_by_sample_validated": true,
+    "reconstruction_map_sha256_by_sample_validated": true,
+    "formal_receipt_binding": "validated_by_FormalEvaluationOrchestrator",
+    "metric_schema_version": "heat3d_v7_evaluation_core_v1_v6_definitions"
+  },
+  "replay": {
+    "backend": "cpu",
+    "cpu_deterministic_oracle": true,
+    "truth_loaded_after_all_predictions": true,
+    "inference_labels_read": false,
+    "historical_identity_bundle": "unavailable_missing_original_artifacts",
+    "tracked_reference_sufficient_statistics": "unavailable_in_tracked_E16384_compact_publication_row",
+    "metric_compare_atol": 1e-10,
+    "tolerance_changed": false,
+    "pass": false,
+    "max_metric_abs_diff": 442.97612340379897,
+    "metrics": {
+      "point_global_relative_RMSE": {
+        "frozen_reference": 2.7022701863666154,
+        "replay": 339.6406761879336,
+        "abs_diff": 336.938406001567
+      },
+      "sample_first_relative_RMSE": {
+        "frozen_reference": 2.738521950937166,
+        "replay": 445.71464535473615,
+        "abs_diff": 442.97612340379897
+      },
+      "raw_K_CV_RMSE": {
+        "frozen_reference": 2.2848059780011063,
+        "replay": 298.5009611404868,
+        "abs_diff": 296.21615516248573
+      },
+      "source_region_RMSE": {
+        "frozen_reference": 3.872082355580685,
+        "replay": 297.560633135365,
+        "abs_diff": 293.6885507797843
+      },
+      "peak_RMSE": {
+        "frozen_reference": 4.01776869521727,
+        "replay": 297.2906214635188,
+        "abs_diff": 293.2728527683015
+      },
+      "interface_RMSE": {
+        "frozen_reference": 0.38573532298537117,
+        "replay": 0.3857716562069382,
+        "abs_diff": 3.6333221567041996e-05
+      }
+    },
+    "sufficient_statistics_recorded": true,
+    "sufficient_statistics_not_compared_to_reference": true
+  },
+  "timing_instrumentation": {
+    "status": "NOT_RUN_BLOCKED_BY_REPLAY",
+    "scientific_evidence_eligible": false,
+    "headline_performance_claim": false,
+    "frozen_timing_contract_changed": false,
+    "publication_performance_evidence_touched": false
+  },
+  "ci": {
+    "status": "NOT_RUN_BLOCKED_BY_REPLAY",
+    "green_required_for_G0": true
+  },
+  "acceptance": {
+    "formal_evaluation_replay": "FAIL_CLOSED",
+    "hard_blocker": "E16384 valid32 replay metrics are materially inconsistent with tracked frozen reference evidence",
+    "historical_behavioral_reconciliation": "previously_passed_and_unchanged",
+    "missing_historical_binary_identity": "archival_limitation",
+    "stable_runtime_role": "semantic_reference_implementation",
+    "historical_wrappers_role": "read_only_historical_oracle",
+    "G1_or_optimization_started": false
+  },
+  "access_audit": {
+    "test_iid_accessed": false,
+    "sealed_labels_accessed": false,
+    "labels_read_by_inference": false,
+    "metrics_executed_during_inference": false
+  },
+  "stop_condition": "Replay hard gate failed; do not run TimingCore actual instrumentation, do not claim G0 PASS, and do not enter G1."
+}

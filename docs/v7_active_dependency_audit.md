@@ -1082,3 +1082,46 @@ G0d-1 fail-closed 后已停止，不进入 G0d-2 actual instrumentation、G0d-3 
 判定或 G1。待获得可绑定的冻结 E16384 valid32 high-resolution artifact bundle
 后，按原顺序重新执行；不得放宽 tolerance、重定义 E/U contract 或覆盖历史性能
 证据。
+
+## V7-G0d-R：Replay-based Final Closeout（FAIL_CLOSED）
+
+本次 replay receipt 见 [`v7_g0d_r_replay_receipt.json`](v7_g0d_r_replay_receipt.json)。
+本地 checkout 曾缺少 V6/P1i frozen artifacts，已通过 devbox 读取真实冻结 checkpoint、
+manifest、full-field archive 和 valid32 ID binding；此前的本地缺失不被伪称为 replay
+证据。
+
+E16384 valid32 deterministic replay 使用 checkpoint epoch 559（SHA-256
+`51567afe...b90e`）、frozen valid_iid 32 IDs、`E16384_reconstruction` route 和
+240825 reconstruction。`FormalEvaluationOrchestrator` 已实际校验并绑定 checkpoint
+SHA/epoch、dataset/full-field SHA、route 与四分辨率角色、逐样本 prediction/map hash、
+reconstruction contract SHA 以及 EvaluationCore metric schema；inference 保持
+`production_inference` 语义，整个 G0 replay/evaluation receipt 标记为
+`compatibility_audit`，且 labels 不由 inference 读取。
+
+Replay 在 CPU deterministic oracle 上完成了 prediction 后再由 EvaluationCore 加载
+valid truth，但六项指标与 tracked frozen E16384 reference 明显不一致：point-global
+relative RMSE `2.7022701863666154 → 339.6406761879336`，sample-first relative
+RMSE `2.738521950937166 → 445.71464535473615`，raw CV RMSE
+`2.2848059780011063 → 298.5009611404868`，source RMSE
+`3.872082355580685 → 297.560633135365`，peak RMSE
+`4.01776869521727 → 297.2906214635188`，interface RMSE
+`0.38573532298537117 → 0.3857716562069382`。最大绝对差为
+`442.97612340379897`；比较容差 `1e-10` 未调整。该结果触发硬闸门
+`FAIL_CLOSED`，因此本轮没有执行真实 TimingCore instrumentation，也没有运行或认定
+GitHub CI green，更没有生成 G0 PASS 或新的性能证据。
+
+### G0d-R stop state
+
+| item | status |
+| --- | --- |
+| FormalEvaluation receipt/provenance binding | PASS at API/runtime validation level |
+| E16384 valid32 deterministic replay | FAIL_CLOSED |
+| Actual TimingCore instrumentation | NOT RUN; blocked by replay |
+| Frozen E/U timing/publication evidence | untouched |
+| GitHub lightweight CI green | not established; blocked by replay |
+| `V7_G0_status` | `FAIL` |
+| missing historical binary identity | archival limitation |
+
+不得通过放宽 tolerance、修改 route/model/reconstruction semantics 或把本次 replay
+改写成新的 publication evidence 来解除该 blocker。待定位 replay 与 frozen reference
+不一致的具体行为来源后，必须从同一 gate 顺序重新审计；在此之前不进入 G1 或性能优化。
