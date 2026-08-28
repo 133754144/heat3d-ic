@@ -1301,6 +1301,13 @@ tolerance。证据见
 [`v7_1T_training_optimization_equivalence.json`](v7_1T_training_optimization_equivalence.json)。
 
 本地 runtime/import/unit、compileall、JSON、production-import、control-plane、trainer
-dry-run 及真实 checkpoint round-trip 均通过；GitHub Actions 的最终绿色状态须以包含本段
-和 final receipt 的最新 commit 的远程 run 为准。V7.1-T readiness 不启动 G1，不改变 V6
-frozen evidence；G1 仅在后续显式授权后进入。
+dry-run 及真实 checkpoint round-trip 均通过。GitHub Actions run `33172477651` 对应
+`780919d1535d1cbe35903dba79637d06dc4b3958`，`runtime-import-unit` 与 `static-contract`
+均为 `success`；静态 job 实际覆盖 compileall、JSON、production-import、control-plane
+和 trainer dry-run。devbox 已进一步 fast-forward 到同一 `780919d`，四个 supplemental
+历史 artifact 仍保持未跟踪且未修改。
+
+因此 V7.1-T 的 machine-readable closeout 为
+[`v7_1T_final_readiness_receipt.json`](v7_1T_final_readiness_receipt.json)，状态为
+`V7_formal_training_readiness=PASS`。这只表示 formal training path 已具备进入后续实验
+的工程条件，不等于 G1 scientific result；G1 多种子训练仍未启动，需后续显式授权。

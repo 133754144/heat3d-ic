@@ -68,7 +68,7 @@
       "training_step_equivalence": "PASS; 3 CPU deterministic steps; exact prepared inputs, graphs, targets, parameters, gradients, updates, losses, and validation prediction",
       "short_profiling": "COMPLETE; stable eager and fixed-batch JIT-cache GPU profiles on devbox; no publication evidence",
       "readiness_optimization": "PASS; fixed_batch_jit_executable_reuse; structure exact and observed CPU float32 roundoff within the frozen narrow policy",
-      "ci": "PENDING_FINAL_COMMIT; local runtime/import/unit, compileall, JSON, production-import, control-plane, and trainer dry-run checks pass",
+      "ci": "PASS; GitHub Actions run 33172477651 on 780919d; runtime-import-unit and static-contract both success",
       "g1_started": false,
       "test_or_sealed_accessed": false,
       "frozen_v6_evidence_modified": false

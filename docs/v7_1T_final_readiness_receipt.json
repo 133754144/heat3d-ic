@@ -1,0 +1,110 @@
+{
+  "schema_version": "heat3d_v7_1T_final_readiness_receipt_v1",
+  "V7_formal_training_readiness": "PASS",
+  "branch": "research/v7",
+  "readiness_code_commit": "780919d1535d1cbe35903dba79637d06dc4b3958",
+  "scope": "formal training readiness only; no G1 multi-seed experiment",
+  "devbox": {
+    "repo": "/home/xyh/myCodeGitOnly/heat3d-ic",
+    "head": "780919d1535d1cbe35903dba79637d06dc4b3958",
+    "fast_forward_only": true,
+    "supplemental_untracked_preserved": true,
+    "supplemental_modified_or_deleted": false
+  },
+  "control_plane": {
+    "metric_contract": "configs/heat3d_v7/v7_metric_contract.json",
+    "experiment_registry": [
+      "configs/heat3d_v7/v7_experiment_registry.json",
+      "configs/heat3d_v7/v7_experiment_registry.csv"
+    ],
+    "claim_evidence_mapping": "configs/heat3d_v7/v7_claim_evidence_mapping.json",
+    "frozen_artifact_denylist": "configs/heat3d_v7/v7_frozen_artifact_denylist.json",
+    "checker": "tools/check_v7_training_control_plane.py",
+    "status": "PASS"
+  },
+  "dependency_boundary": {
+    "legacy_chain": [
+      "rigno.heat3d_v2_runner_command.build_training_command",
+      "scripts/run_heat3d_v4_controlled_training.py",
+      "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+      "scripts/check_heat3d_v1_small_train_valid_smoke.py private helpers"
+    ],
+    "v7_chain": [
+      "scripts/run_heat3d_v7_formal_training.py",
+      "rigno.heat3d_training.prepare",
+      "rigno.heat3d_training.core.V7FormalTrainer",
+      "rigno.models.rigno.RIGNO"
+    ],
+    "production_smoke_imports": 0,
+    "production_check_imports": 0,
+    "production_development_imports": 0,
+    "cross_script_private_api": 0,
+    "monkey_patch_or_module_state_rewrite": 0,
+    "legacy_wrappers": "read_only_historical_oracle"
+  },
+  "training_step_equivalence": {
+    "receipt": "docs/v7_1T_training_equivalence_receipt.json",
+    "execution_host": "devbox",
+    "backend": "cpu",
+    "code_commit": "bbf8bdc4e42ec6e86fc11ff0f48dec9fde05cfd6",
+    "steps": 3,
+    "sample_role": "train_plus_valid_fixture",
+    "all_compared_arrays_exact": true,
+    "loss_gradients_updates_and_validation_exact": true,
+    "status": "PASS"
+  },
+  "profiling": {
+    "receipt": "docs/v7_1T_training_profiling_receipt.json",
+    "execution_host": "devbox",
+    "backend": "gpu",
+    "device": "cuda:0",
+    "code_commit": "3ef020de75c377193d04a1444cf83322999fb04a",
+    "stable_reference": "completed",
+    "jit_candidate": "completed",
+    "publication_evidence_written": false,
+    "headline_performance_claim": false,
+    "observed_bottleneck": "native readiness fixture: first-step compile/forward-backward and feature/graph preparation; high-N cost not inferred",
+    "status": "COMPLETE"
+  },
+  "readiness_optimization": {
+    "receipt": "docs/v7_1T_training_optimization_equivalence.json",
+    "candidate": "fixed_batch_jit_executable_reuse",
+    "code_commit": "7897bd6987a024b3f1880f5a788237c03f30607e",
+    "structure_exact": true,
+    "numeric_policy": "frozen narrow CPU float32 compiler-roundoff diagnostic envelope; not publication tolerance",
+    "observed_max_abs_non_loss": 1.6689300537109375e-6,
+    "observed_max_abs_loss": 1.1920928955078125e-7,
+    "status": "PASS",
+    "prohibited_optimizations_touched": false
+  },
+  "ci": {
+    "workflow": ".github/workflows/v7-lightweight.yml",
+    "verified_head_sha": "780919d1535d1cbe35903dba79637d06dc4b3958",
+    "run_id": 33172477651,
+    "url": "https://github.com/133754144/heat3d-ic/actions/runs/33172477651",
+    "conclusion": "success",
+    "jobs": {
+      "runtime-import-unit": "success",
+      "static-contract": "success"
+    },
+    "checkpoint_roundtrip": "actual unit assertion passed",
+    "status": "GREEN"
+  },
+  "scientific_and_safety_guards": {
+    "frozen_v6_evidence_modified": false,
+    "test_or_sealed_accessed": false,
+    "solver_executed": false,
+    "new_dataset_generated": false,
+    "model_selection": false,
+    "publication_evidence_written": false,
+    "g1_started": false,
+    "g1_multi_seed_training": false
+  },
+  "remaining_technical_debt": [
+    "V1-V6 smoke/check/development wrappers remain as read-only historical oracles",
+    "V7 readiness fixture uses explicit full-batch semantics; G1 batching policy remains deferred",
+    "high-N KD-tree/reconstruction, Q1/Q2 serving, and publication timing remain out of scope",
+    "future G1 variants must be registry/config driven rather than copied runners"
+  ],
+  "g1_entry": "deferred; requires later explicit authorization"
+}
