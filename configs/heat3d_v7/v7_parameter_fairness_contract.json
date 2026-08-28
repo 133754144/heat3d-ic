@@ -1,0 +1,23 @@
+{
+  "schema_version": "heat3d_v7_parameter_fairness_contract_v1",
+  "status": "frozen_pre_G1",
+  "parent": "V7-G1-Full-P1i",
+  "counting": {
+    "unit": "trainable scalar leaves in initialized Flax parameter tree",
+    "initialization": "same first prepared B24 batch shape and same seed per comparison",
+    "include_optimizer_state": false,
+    "include_non_trainable_state": false
+  },
+  "capacity_matched_trigger": {
+    "relative_parameter_gap_threshold": 0.05,
+    "formula": "abs(full_count - vanilla_count) / full_count > 0.05",
+    "action": "register capacity-matched Vanilla as a seventh variant; do not silently alter the baseline",
+    "execution": "future formal G1 only; no capacity-matched run in this freeze"
+  },
+  "observed": {
+    "full_parameter_count": null,
+    "vanilla_parameter_count": null,
+    "relative_gap": null,
+    "capacity_matched_triggered": null
+  }
+}

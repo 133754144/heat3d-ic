@@ -28,13 +28,20 @@ from .p1i import (
     build_p1i_batches,
     load_selected_p1i_examples,
     loss_fn_full,
+    loss_fn_vanilla,
     make_gradient_transform,
     make_p1i_optimizer,
     model_apply_full,
+    model_apply_vanilla,
     model_init_full,
+    model_init_vanilla,
     prepare_p1i_data,
     tree_max_abs_difference,
+    tree_parameter_count,
+    tree_l2_norm,
+    learning_rate_for_epoch,
 )
+from .evaluation import evaluate_level_a_validation
 
 __all__ = [
     "ManualGradientDescent",
@@ -54,10 +61,17 @@ __all__ = [
     "build_p1i_batches",
     "load_selected_p1i_examples",
     "loss_fn_full",
+    "loss_fn_vanilla",
     "make_gradient_transform",
     "make_p1i_optimizer",
     "model_apply_full",
+    "model_apply_vanilla",
     "model_init_full",
+    "model_init_vanilla",
     "prepare_p1i_data",
     "tree_max_abs_difference",
+    "tree_parameter_count",
+    "tree_l2_norm",
+    "learning_rate_for_epoch",
+    "evaluate_level_a_validation",
 ]

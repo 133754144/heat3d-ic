@@ -29,6 +29,7 @@ from rigno.heat3d_v1_normalization import (
     legacy_train_only_stats,
     normalize_condition,
     normalize_coords,
+    normalized_delta_to_raw,
     normalize_target_delta,
 )
 from rigno.heat3d_v1_training_semantics import (
@@ -548,6 +549,81 @@ def model_init_full(model: Any, key: Any, batch: Any) -> Any:
     )
 
 
+def model_apply_vanilla(model: Any, params: Any, batch: Any, rng: Any = None) -> tuple[Any, ...]:
+    """Apply the capacity-matched RIGNO control without Full-only heads.
+
+    The control uses the same prepared graph, normalized operator inputs and
+    batching contract as Full, but calls the ordinary RIGNO operator.  It
+    therefore has no global FiLM context, native scale head, q/k regional
+    feature input, or decoder bypass.  The returned value is the legacy
+    normalized-DeltaT field and is converted to raw DeltaT only by the
+    explicit evaluation adapter.
+    """
+
+    predictions = []
+    for index, group in enumerate(batch.groups):
+        key = None if rng is None else jax.random.fold_in(rng, index)
+        predictions.append(
+            model.apply(
+                {"params": params},
+                inputs=group["inputs"],
+                graphs=group["graphs"],
+                key=key,
+                method=model.call,
+            )
+        )
+    return tuple(predictions)
+
+
+def model_init_vanilla(model: Any, key: Any, batch: Any) -> Any:
+    """Initialize the ordinary normalized-DeltaT RIGNO control."""
+
+    group = batch.groups[0]
+    return model.init(
+        key,
+        inputs=group["inputs"],
+        graphs=group["graphs"],
+        key=None,
+        method=model.call,
+    )
+
+
+def loss_fn_vanilla(
+    predictions: Sequence[Any],
+    batch: Any,
+    _loss_config: Mapping[str, Any] | None = None,
+) -> Any:
+    """Frozen base normalized-DeltaT MSE for the vanilla RIGNO control."""
+
+    del _loss_config
+    total = jnp.asarray(0.0, dtype=jnp.float32)
+    count = 0
+    for prediction, group in zip(predictions, batch.groups, strict=True):
+        target = group["target_normalized"]
+        total = total + jnp.sum(jnp.square(prediction - target))
+        count += int(np.prod(target.shape))
+    return total / max(count, 1)
+
+
+def prediction_to_raw_delta(
+    prediction: Any,
+    *,
+    variant: str,
+    stats: Mapping[str, Any],
+) -> np.ndarray:
+    """Convert one model output to raw DeltaT with an explicit variant rule."""
+
+    if variant == "Full":
+        if not isinstance(prediction, Mapping) or "deltaT_hat" not in prediction:
+            raise ValueError("Full prediction must contain native deltaT_hat")
+        return np.asarray(prediction["deltaT_hat"], dtype=np.float64)
+    if variant == "vanilla_RIGNO":
+        return np.asarray(
+            normalized_delta_to_raw(prediction, dict(stats)), dtype=np.float64
+        )
+    raise ValueError(f"unsupported V7 training prediction variant {variant!r}")
+
+
 def loss_fn_full(
     predictions: Sequence[Mapping[str, Any]],
     batch: Any,
@@ -748,6 +824,31 @@ def tree_max_abs_difference(left: Any, right: Any) -> float:
     return max(errors, default=0.0)
 
 
+def tree_parameter_count(params: Any) -> int:
+    """Count scalar parameters without depending on a model-private API."""
+
+    return int(sum(int(np.asarray(value).size) for value in tree.tree_leaves(params)))
+
+
+def tree_l2_norm(value: Any) -> float:
+    """Return a finite diagnostic norm for gradients, updates, or parameters."""
+
+    leaves = [np.asarray(leaf, dtype=np.float64) for leaf in tree.tree_leaves(value)]
+    return float(np.sqrt(sum(float(np.sum(np.square(leaf))) for leaf in leaves)))
+
+
+def learning_rate_for_epoch(
+    epoch: int, *, epochs: int, updates_per_epoch: int, config: Mapping[str, Any]
+) -> float:
+    """Materialize the registered schedule for a receipt without changing it."""
+
+    schedule = _learning_rate_schedule(
+        int(epochs), int(updates_per_epoch), config
+    )
+    count = max(int(epoch) - 1, 0) * int(updates_per_epoch)
+    return float(np.asarray(schedule(count)))
+
+
 def atomic_training_checkpoint(path: str | Path, *, state: Any, metadata: Mapping[str, Any]) -> dict[str, Any]:
     """Write and reload an optimizer-aware checkpoint for rehearsal QA."""
 
@@ -789,9 +890,16 @@ __all__ = [
     "prepare_p1i_data",
     "model_apply_full",
     "model_init_full",
+    "model_apply_vanilla",
+    "model_init_vanilla",
+    "loss_fn_vanilla",
+    "prediction_to_raw_delta",
     "loss_fn_full",
     "make_gradient_transform",
     "make_p1i_optimizer",
     "atomic_training_checkpoint",
     "tree_max_abs_difference",
+    "tree_parameter_count",
+    "tree_l2_norm",
+    "learning_rate_for_epoch",
 ]

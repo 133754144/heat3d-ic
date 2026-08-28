@@ -33,6 +33,11 @@ def main() -> None:
     claims = _load("v7_claim_evidence_mapping.json")
     denylist = _load("v7_frozen_artifact_denylist.json")
     p1i = _load_path("configs/heat3d_v7/v7_g1_full_p1i.json")
+    budget = _load("v7_g1_budget_qualification.json")
+    epoch_budget = _load("v7_g1_epoch_budget_contract.json")
+    fairness = _load("v7_parameter_fairness_contract.json")
+    prereg = _load("v7_g1_statistical_preregistration.json")
+    support_freeze = _load("v7_support_artifact_freeze.json")
 
     required_metrics = {
         "point_global_relative_rmse_pct",
@@ -64,6 +69,8 @@ def main() -> None:
         "V7-G1-Full-P1i:volume-only-support",
         "V7-G1-Full-P1i:no-context",
         "V7-G1-Full-P1i:no-scale",
+        "V7-G1-BudgetQual-e200-Full-seed0",
+        "V7-G1-BudgetQual-e200-Vanilla-seed0",
     }
     if {row["experiment_id"] for row in rows} != expected_ids:
         raise ValueError("CSV registry is not synchronized with JSON registry")
@@ -106,6 +113,45 @@ def main() -> None:
         if entry["experiment_id"].startswith("V7-G1-Full-P1i:"):
             if entry.get("status") != "planned_not_executed" or not entry.get("delta"):
                 raise ValueError(f"variant registration is not delta-only/planned: {entry['experiment_id']}")
+    if registry.get("formal_variant_count") != 6:
+        raise ValueError("formal G1 variant count must remain six")
+    if budget.get("status") != "registered_budget_qualification_only":
+        raise ValueError("budget qualification must remain non-publication")
+    candidates = {row["experiment_id"]: row for row in budget.get("qualification_runs", [])}
+    expected_qualification = {
+        "V7-G1-BudgetQual-e200-Full-seed0": "Full",
+        "V7-G1-BudgetQual-e200-Vanilla-seed0": "vanilla_RIGNO",
+    }
+    if {row.get("variant") for row in candidates.values()} != set(expected_qualification.values()):
+        raise ValueError("e200 qualification candidates are incomplete")
+    for experiment_id, variant in expected_qualification.items():
+        row = candidates.get(experiment_id)
+        if row is None or row.get("variant") != variant or row.get("seed") != 0:
+            raise ValueError(f"invalid qualification registration: {experiment_id}")
+        if row.get("epochs") != 200 or not row.get("budget_qualification_only"):
+            raise ValueError(f"qualification budget drifted: {experiment_id}")
+        if row.get("publication_evidence") or row.get("g1_formal"):
+            raise ValueError(f"qualification cannot be publication evidence: {experiment_id}")
+    proposed = epoch_budget.get("proposed_budget", {})
+    for key, value in {
+        "epochs": 200,
+        "warmup_epochs": 10,
+        "base_lr": 5.0e-4,
+        "min_lr": 5.0e-5,
+        "cosine_horizon_epochs": 200,
+        "optimizer": "adamw",
+        "weight_decay": 1.0e-4,
+        "gradient_clip_norm": 1.0,
+        "checkpoint_selection_metric": "sample_first_relative_rmse_pct",
+    }.items():
+        if proposed.get(key) != value:
+            raise ValueError(f"proposed e200 budget drifted: {key}")
+    if fairness.get("capacity_matched_trigger", {}).get("relative_parameter_gap_threshold") != 0.05:
+        raise ValueError("capacity-matched Vanilla trigger drifted")
+    if prereg.get("seed_set") != [0, 1, 2] or prereg.get("forbidden_roles") != ["test_iid", "sealed"]:
+        raise ValueError("G1 statistical preregistration seed/split policy drifted")
+    if support_freeze.get("training_support_is_frozen") is not True or support_freeze.get("temperature_or_model_error_used") is not False:
+        raise ValueError("support artifact freeze guard drifted")
     for path in (CONTROL / "v7_metric_contract.json", CONTROL / "v7_experiment_registry.json", CONTROL / "v7_claim_evidence_mapping.json", CONTROL / "v7_frozen_artifact_denylist.json"):
         if any(token in path.read_text(encoding="utf-8").lower() for token in ("test_iid_labels", "sealed_labels")):
             raise ValueError(f"forbidden label marker in {path}")

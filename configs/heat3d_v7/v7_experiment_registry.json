@@ -5,6 +5,11 @@
   "formal_training_entrypoint": "scripts/run_heat3d_v7_formal_p1i_training.py",
   "readiness_fixture_entrypoint": "scripts/run_heat3d_v7_formal_training.py",
   "library_training_core": "rigno.heat3d_training",
+  "budget_qualification_config": "configs/heat3d_v7/v7_g1_budget_qualification.json",
+  "epoch_budget_contract": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
+  "statistical_preregistration": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
+  "formal_variant_count": 6,
+  "formal_matrix_status": "blocked_until_budget_qualification_and_preregistration_closeout",
   "registered_runs": [
     {
       "experiment_id": "V7.1-T-readiness-fixture",
@@ -98,6 +103,34 @@
       "parent_experiment_id": "V7-G1-Full-P1i",
       "delta": {"scale_head": "disabled"},
       "shared_contract": "V7-G1-Full-P1i",
+      "execution_started": false
+    },
+    {
+      "experiment_id": "V7-G1-BudgetQual-e200-Full-seed0",
+      "status": "registered_not_executed",
+      "experiment_role": "budget_qualification_only",
+      "variant": "Full",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "config": "configs/heat3d_v7/v7_g1_budget_qualification.json",
+      "seed": 0,
+      "steps": "200_epochs_exact_schedule",
+      "multi_seed": false,
+      "publication_evidence": false,
+      "g1_formal": false,
+      "execution_started": false
+    },
+    {
+      "experiment_id": "V7-G1-BudgetQual-e200-Vanilla-seed0",
+      "status": "registered_not_executed",
+      "experiment_role": "budget_qualification_only",
+      "variant": "vanilla_RIGNO",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "config": "configs/heat3d_v7/v7_g1_budget_qualification.json",
+      "seed": 0,
+      "steps": "200_epochs_exact_schedule",
+      "multi_seed": false,
+      "publication_evidence": false,
+      "g1_formal": false,
       "execution_started": false
     }
   ],

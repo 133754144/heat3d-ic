@@ -1,0 +1,40 @@
+{
+  "schema_version": "heat3d_v7_g1_statistical_preregistration_v1",
+  "status": "pre_registered_not_executed",
+  "scope": "future formal G1 only; qualification pilots are excluded",
+  "parent_experiment_id": "V7-G1-Full-P1i",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "allowed_roles": {"train": 768, "valid_iid": 128},
+  "forbidden_roles": ["test_iid", "sealed"],
+  "seed_set": [0, 1, 2],
+  "optimization_contract_ref": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
+  "batch_contract_ref": "configs/heat3d_v7/v7_g1_full_p1i.json",
+  "checkpoint_selection": {
+    "metric": "sample_first_relative_rmse_pct",
+    "split": "valid_iid",
+    "tie_break": "earliest_epoch",
+    "selection_is_per_run": true,
+    "no_posthoc_budget_change": true
+  },
+  "primary_level_a_metrics": [
+    "point_global_relative_rmse_pct",
+    "sample_first_relative_rmse_pct",
+    "raw_K_CV_RMSE_K",
+    "source_region_RMSE_K",
+    "peak_RMSE_K",
+    "interface_RMSE_K"
+  ],
+  "reporting": {
+    "aggregate": "mean_and_sample_standard_deviation_over_registered_seeds",
+    "retain_per_seed": true,
+    "retain_sufficient_statistics": true,
+    "confidence_intervals": "not_primary; report only if pre-registered analysis later adds them",
+    "multiple_comparison_correction": "not_claimed_in_readiness_freeze"
+  },
+  "claim_boundary": {
+    "qualification_evidence": false,
+    "publication_evidence_until_G1": false,
+    "test_or_sealed_access": false,
+    "model_selection_across_variants": false
+  }
+}

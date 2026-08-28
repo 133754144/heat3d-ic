@@ -1,0 +1,171 @@
+{
+  "schema_version": "heat3d_v7_g1_training_dependency_audit_v1",
+  "status": "audited_pre_G1; qualification_entrypoint_added; formal_G1_not_started",
+  "scope": "V7 publication-training path and e200 budget qualification only",
+  "production_dependency": [
+    {
+      "file": "scripts/run_heat3d_v7_formal_p1i_training.py",
+      "symbol": "main/_resolve_registration/_run",
+      "calls": "rigno.heat3d_training.p1i + rigno.heat3d_training.evaluation + rigno.heat3d_training.core + rigno.models.rigno.RIGNO",
+      "direction": "registered V7 entrypoint -> explicit library preparation/training/Level-A validation",
+      "variants": ["Full", "vanilla_RIGNO"],
+      "execution_guard": "Full is rehearsal-only; e200 candidates are budget_qualification_only"
+    },
+    {
+      "file": "rigno/heat3d_training/p1i.py",
+      "symbol": "prepare_p1i_data",
+      "calls": "Heat3DV6DualRobinDataset._load_sample, legacy_train_only_stats, Heat3DGraphBuilder, explicit V6 context/qk/native feature assembly",
+      "direction": "registered train/valid loader -> fixed B24/B32 model-visible batches",
+      "split_boundary": "materializes only train and valid_iid; test_iid rows are counted but not loaded"
+    },
+    {
+      "file": "rigno/heat3d_training/core.py",
+      "symbol": "V7FormalTrainer.step",
+      "calls": "injected model_apply, loss_fn, optimizer, optional gradient transform",
+      "direction": "TrainingState + batch -> prediction/loss/gradient/update/new state"
+    },
+    {
+      "file": "rigno/heat3d_training/evaluation.py",
+      "symbol": "evaluate_level_a_validation",
+      "calls": "rigno.heat3d_runtime.evaluation.EvaluationCore",
+      "direction": "valid_iid prediction-only outputs + explicit validation truth -> frozen Level-A metrics/sufficient statistics"
+    },
+    {
+      "file": "rigno/heat3d_training/p1i.py",
+      "symbol": "atomic_training_checkpoint",
+      "calls": "explicit pickle writer and state-tree reload comparison",
+      "direction": "selected/final TrainingState -> isolated qualification artifact"
+    }
+  ],
+  "compatibility_only": [
+    {
+      "file": "rigno/heat3d_v2_runner_command.py",
+      "symbol": "build_training_command",
+      "calls": "V4/V1 historical runner chain",
+      "direction": "legacy command planner -> V1/V4 compatibility path; never imported by V7"
+    },
+    {
+      "file": "scripts/run_heat3d_v4_controlled_training.py",
+      "symbol": "legacy wrapper",
+      "calls": "V1 export runner and private/check helpers",
+      "direction": "historical oracle only; retained unchanged"
+    },
+    {
+      "file": "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+      "symbol": "historical training lifecycle",
+      "calls": "check_* private helpers and legacy metric/checkpoint wrappers",
+      "direction": "historical oracle only; excluded from production training graph"
+    },
+    {
+      "file": "scripts/run_heat3d_v3_final_probe_checkpoint_smoke.py",
+      "symbol": "install_checkpoint_feature_hooks",
+      "calls": "legacy module mutation",
+      "direction": "historical compatibility path only; V7 uses explicit FeatureTransform semantics"
+    }
+  ],
+  "test_only": [
+    {
+      "file": "tools/check_v7_training_control_plane.py",
+      "symbol": "main",
+      "calls": "JSON/CSV registry and split/denylist checks",
+      "direction": "CI control-plane validation -> no execution"
+    },
+    {
+      "file": "tools/check_v7_g1_protocol.py",
+      "symbol": "main",
+      "calls": "budget/variant/preregistration/support/static entrypoint checks",
+      "direction": "CI G1 protocol validation -> no execution"
+    },
+    {
+      "file": "tests/test_heat3d_v7_training.py",
+      "symbol": "V7TrainingStaticTests",
+      "calls": "stable APIs, B24, e200 schedule, checkpoint boundary",
+      "direction": "CI unit/static tests -> no dataset/test/sealed access"
+    }
+  ],
+  "dead_or_unused": [
+    {
+      "file": "scripts/train_heat3d_operator.py",
+      "symbol": "main",
+      "reason": "standalone historical trainer not called by the V7 entrypoint"
+    },
+    {
+      "file": "rigno/heat3d_v2_runner_command.py",
+      "symbol": "legacy comparison/diagnostic constants",
+      "reason": "not reachable from V7 formal training"
+    }
+  ],
+  "uncertain_or_deferred": [
+    {
+      "file": "rigno/heat3d_training/p1i.py",
+      "symbol": "prepared batch lifetime",
+      "current_behavior": "graph and feature batches are rebuilt once per process/run, not shared across independent variants or seeds",
+      "potential_cost": "repeated host preprocessing and graph construction across formal runs",
+      "candidate_direction": "future session-scoped support/graph/feature artifact reuse",
+      "semantics_may_change": true,
+      "this_round": "not optimized"
+    },
+    {
+      "file": "rigno/heat3d_training/core.py",
+      "symbol": "V7FormalTrainer._compiled_for",
+      "current_behavior": "one JIT executable entry per fixed batch_id when jit_cache=true",
+      "potential_cost": "32 executable compilations for the 32 distinct B24 batch signatures",
+      "candidate_direction": "future shape/signature cache qualification",
+      "semantics_may_change": true,
+      "this_round": "not optimized"
+    },
+    {
+      "file": "scripts/run_heat3d_v7_formal_p1i_training.py",
+      "symbol": "support variants",
+      "current_behavior": "generic_uniform_support and volume_only_support remain registered deltas without an implicit support provider",
+      "potential_cost": "those scientific ablations cannot be executed safely before their support artifact is frozen",
+      "candidate_direction": "register label-independent support artifacts and adapters before G1",
+      "semantics_may_change": true,
+      "this_round": "fail-closed; no hidden fallback"
+    }
+  ],
+  "efficiency_audit": {
+    "duplicate_graph_build_per_step": false,
+    "duplicate_feature_preprocessing_per_step": false,
+    "duplicate_validation_model_apply": false,
+    "duplicate_checkpoint_writer": false,
+    "smoke_style_compute_then_recompute": false,
+    "validation_output_loss_fusion": {
+      "change": "added explicit validation_outputs_fn boundary so validation prediction and loss are produced in one callback",
+      "semantic_equivalence": "same model_apply/loss functions; no graph/support/model/loss change",
+      "optimization_claim": false
+    },
+    "cross_run_feature_graph_cache": "not implemented",
+    "jit_executable_cache_across_runs": "not implemented",
+    "batching_orchestration_change": false
+  },
+  "production_boundary": {
+    "smoke_imports": 0,
+    "check_imports": 0,
+    "development_imports": 0,
+    "cross_script_private_api": 0,
+    "monkey_patch_or_module_state_rewrite": 0,
+    "legacy_wrappers": "read_only_historical_oracle"
+  },
+  "legacy_chain": [
+    "rigno.heat3d_v2_runner_command.build_training_command",
+    "scripts/run_heat3d_v4_controlled_training.py",
+    "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+    "scripts/check_heat3d_v1_small_train_valid_smoke.py private helpers"
+  ],
+  "v7_chain": [
+    "scripts/run_heat3d_v7_formal_p1i_training.py",
+    "rigno.heat3d_training.p1i",
+    "rigno.heat3d_training.core.V7FormalTrainer",
+    "rigno.heat3d_training.evaluation.evaluate_level_a_validation",
+    "rigno.heat3d_runtime.evaluation.EvaluationCore",
+    "rigno.models.rigno.RIGNO"
+  ],
+  "scientific_guards": {
+    "frozen_v6_artifacts_modified": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "formal_g1_multi_seed_started": false,
+    "budget_qualification_is_non_publication": true
+  }
+}

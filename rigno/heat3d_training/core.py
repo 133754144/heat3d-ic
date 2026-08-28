@@ -65,6 +65,7 @@ class TrainingDependencies:
     checkpoint_writer: Callable[[Path, Mapping[str, Any]], None]
     metrics_fn: Callable[[Any, Any], Mapping[str, Any]]
     gradient_transform: Callable[[Any], Any] | None = None
+    validation_outputs_fn: Callable[[Any, Any], tuple[Any, Any]] | None = None
 
 
 class ManualGradientDescent:
@@ -188,6 +189,22 @@ class V7FormalTrainer:
 
     def validate(self, state: TrainingState, batch: TrainingBatch) -> Any:
         return self.dependencies.validation_fn(state.params, batch)
+
+    def validate_with_outputs(self, state: TrainingState, batch: TrainingBatch) -> tuple[Any, Any]:
+        """Return ``(prediction, loss)`` when the explicit callback is supplied.
+
+        The callback is an optional boundary addition for formal validation;
+        the existing ``validation_fn`` remains the compatibility default.
+        Keeping the two values together prevents a publication trainer from
+        evaluating the same validation batch twice merely to compute the
+        checkpoint-selection metric.
+        """
+
+        callback = self.dependencies.validation_outputs_fn
+        if callback is None:
+            raise RuntimeError("validation_outputs_fn is not configured")
+        prediction, loss = callback(state.params, batch)
+        return prediction, loss
 
     def write_checkpoint(self, path: Path, state: TrainingState, metadata: Mapping[str, Any]) -> None:
         payload = dict(metadata)

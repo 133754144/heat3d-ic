@@ -1,0 +1,63 @@
+{
+  "schema_version": "heat3d_v7_g1_budget_qualification_v1",
+  "status": "registered_budget_qualification_only",
+  "experiment_role": "budget_qualification_only",
+  "parent_config": "configs/heat3d_v7/v7_g1_full_p1i.json",
+  "parent_experiment_id": "V7-G1-Full-P1i",
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "roles": {"train": 768, "valid_iid": 128},
+    "test_iid": "forbidden",
+    "sealed": "forbidden"
+  },
+  "budget_contract": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
+  "qualification_runs": [
+    {
+      "experiment_id": "V7-G1-BudgetQual-e200-Full-seed0",
+      "variant": "Full",
+      "seed": 0,
+      "status": "registered_not_executed",
+      "epochs": 200,
+      "budget_qualification_only": true,
+      "publication_evidence": false,
+      "g1_formal": false
+    },
+    {
+      "experiment_id": "V7-G1-BudgetQual-e200-Vanilla-seed0",
+      "variant": "vanilla_RIGNO",
+      "seed": 0,
+      "status": "registered_not_executed",
+      "epochs": 200,
+      "budget_qualification_only": true,
+      "publication_evidence": false,
+      "g1_formal": false
+    }
+  ],
+  "shared_contract": {
+    "batch_contract": "V7-G1-B24",
+    "random_initialization": true,
+    "optimizer_contract": {
+      "optimizer": "adamw",
+      "base_lr": 0.0005,
+      "min_lr": 0.00005,
+      "warmup_epochs": 10,
+      "lr_schedule": "warmup_cosine",
+      "cosine_horizon_epochs": 200,
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0
+    },
+    "checkpoint_selection": {
+      "split": "valid_iid",
+      "metric": "sample_first_relative_rmse_pct",
+      "tie_break": "earliest_epoch"
+    }
+  },
+  "execution_guard": {
+    "formal_g1_multi_seed": false,
+    "model_selection_across_variants": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "solver": false,
+    "new_data": false
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "schema_version": "heat3d_v7_g1_historical_training_dynamics_v1",
+  "status": "audited_for_budget_decision",
+  "scope": "historical V5/V6 evidence only; no new scientific evaluation",
+  "read_policy": {
+    "train_and_valid_curves_read": true,
+    "test_iid_enumerated": false,
+    "sealed_enumerated": false,
+    "model_selection_performed": false,
+    "training_started": false
+  },
+  "direct_current_full_reference": {
+    "run": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "config_path": "configs/heat3d_v6_p1i/V6_06_V5best_P1i_seed0_reliable_B24.yaml",
+    "config_sha256": "cfff2358f8694e9fd37cd298dbc2b8ac62ba10847e6a2ae00342d01aa5561f44",
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "batch_contract": {
+      "batch_size": 24,
+      "micro_batch_size": 24,
+      "validation_batch_size": 32,
+      "prediction_batch_size": 32,
+      "batch_plan": "sample_shuffle",
+      "shuffle_train_batches": true,
+      "drop_last": false,
+      "epoch_wise_batch_regrouping": false
+    },
+    "architecture": {
+      "operator": "RIGNO",
+      "node_latent_size": 96,
+      "edge_latent_size": 96,
+      "processor_steps": 6,
+      "mlp_hidden_layers": 2,
+      "native_output_mode": "native_shape_scale",
+      "native_branch_mode": "joint",
+      "global_context": "24-D V6 context with identity-initialized FiLM",
+      "scale_head": "physics_plus_pooled_latent; mean pooling; physics_gate",
+      "qk_region_feature_version": "sparse_safe_v2",
+      "decoder_bypass": "explicit_local_condition; post_decoder_residual"
+    },
+    "loss": {
+      "mode": "mse",
+      "base_space": "normalized_deltaT",
+      "components": {
+        "shape_cv": 1.5,
+        "log_scale": 0.5,
+        "relative_field": 1.0,
+        "raw_absolute": 1.0
+      },
+      "raw_loss_mode": "point_global_fixed_train_energy_sse",
+      "log_scale_weight_mode": "train_true_scale_squared_clipped",
+      "log_scale_clip": [0.25, 4.0]
+    },
+    "optimizer": {
+      "name": "adamw",
+      "base_lr": 0.0005,
+      "min_lr": 0.00005,
+      "warmup_epochs": 10,
+      "schedule": "warmup_cosine",
+      "weight_decay": 0.0001,
+      "gradient_clip_norm": 1.0,
+      "epochs": 600,
+      "random_initialization": true
+    },
+    "checkpoint_selection": {
+      "point_global_best_epoch": 559,
+      "sample_first_best_epoch": 572,
+      "base_mse_best_epoch": 559,
+      "final_epoch": 600,
+      "selection_metric_for_v7": "sample_first_relative_rmse_pct"
+    },
+    "milestones": [
+      {"epoch": 1, "train_loss": 7.623064815998077, "valid_loss": 0.6768802404403687, "lr": 0.000095},
+      {"epoch": 10, "train_loss": 0.008882095062290318, "valid_loss": 0.006460454314947128, "lr": 0.0005},
+      {"epoch": 25, "train_loss": 0.0040754190922598355, "valid_loss": 0.005863495171070099, "lr": 0.0004992827015819187},
+      {"epoch": 50, "train_loss": 0.0025025653776538093, "valid_loss": 0.0023097959347069263, "lr": 0.00049491576270902},
+      {"epoch": 100, "train_loss": 0.0015336080268752994, "valid_loss": 0.0016672464553266764, "lr": 0.0004746542168877286},
+      {"epoch": 150, "train_loss": 0.0007245762881211704, "valid_loss": 0.0014418337959796198, "lr": 0.00044032418394419014},
+      {"epoch": 200, "train_loss": 0.00040196386726165656, "valid_loss": 0.0015781219117343426, "lr": 0.00039434470432694207},
+      {"epoch": 250, "train_loss": 0.0002558576038609317, "valid_loss": 0.0015067991334944963, "lr": 0.0003399556881514147},
+      {"epoch": 300, "train_loss": 0.00017850317954071215, "valid_loss": 0.0013201222755014896, "lr": 0.00028098961732349933},
+      {"epoch": 400, "train_loss": 0.0000881593077792786, "valid_loss": 0.001231978414580226, "lr": 0.00016597605417515373},
+      {"epoch": 500, "train_loss": 0.000059810024481521396, "valid_loss": 0.0012212998699396849, "lr": 0.00008115033168639361},
+      {"epoch": 550, "train_loss": 0.000056181872309934994, "valid_loss": 0.0011939438991248608, "lr": 0.00005792722951673392},
+      {"epoch": 559, "train_loss": 0.000054491850164595235, "valid_loss": 0.0011786436662077904, "lr": 0.000055340603820966916},
+      {"epoch": 572, "train_loss": 0.00005774128487701091, "valid_loss": 0.001199563266709447, "lr": 0.000052496086773009},
+      {"epoch": 580, "train_loss": 0.00005507457547082595, "valid_loss": 0.0012018834240734577, "lr": 0.000051274666995271915},
+      {"epoch": 590, "train_loss": 0.00005227242377259245, "valid_loss": 0.0012078947620466352, "lr": 0.00005031889347692856},
+      {"epoch": 600, "train_loss": 0.000055536559329993906, "valid_loss": 0.0012116910656914115, "lr": 0.00005}
+    ],
+    "derived_diagnostics": {
+      "valid_loss_delta_150_to_200": 0.00013628811575472355,
+      "valid_loss_delta_200_to_250": -0.000071322778239623,
+      "valid_loss_delta_559_to_600": 0.00003304739948362112,
+      "train_loss_delta_150_to_200": -0.0003226124208595138,
+      "train_loss_delta_559_to_600": 0.0000010447091653986718,
+      "interpretation": "late training shows continued optimization/plateau behavior and a late validation regression after the point-global best; it does not identify an e200 schedule outcome"
+    },
+    "loss_summary_sha256_on_devbox": "7f2e8af74d6ce1b257c7fbb54b7bba5ba82a6ec3eae1db62d4f32202f86623bd"
+  },
+  "seed_replications": [
+    {
+      "run": "V6_07_V5best_P1i_seed1_reliable_B24",
+      "config_path": "configs/heat3d_v6_p1i/V6_07_V5best_P1i_seed1_reliable_B24.yaml",
+      "config_sha256": "0cd1da16bf8ea52877f1e569a98c9bdc8785ccbc0676de8d2d56b758520431e4",
+      "registered_seed": 1,
+      "historical_curve_status": "not_located_on_devbox; WSL2_unreachable",
+      "best_epoch": null,
+      "do_not_infer": true
+    },
+    {
+      "run": "V6_08_V5best_P1i_seed2_reliable_B24",
+      "config_path": "configs/heat3d_v6_p1i/V6_08_V5best_P1i_seed2_reliable_B24.yaml",
+      "config_sha256": "d57e5340989dcf45b799f92a7c917d0e6a440ff0f4c3b3fc5c00c80eaa6e1a8f",
+      "registered_seed": 2,
+      "historical_curve_status": "not_located_on_devbox; WSL2_unreachable",
+      "best_epoch": null,
+      "do_not_infer": true
+    }
+  ],
+  "related_earlier_evidence": [
+    {
+      "path": "configs/heat3d_v5/V4P5_42_canonical.yaml",
+      "sha256": "7923a8dbffa8a97ccb7087521fb8b148d1c566630c1595ec72c826da6a2f063a",
+      "role": "architecture/loss/optimizer lineage; not direct e200 P1i evidence"
+    },
+    {
+      "path": "docs/v2_m15_e200_results_review.md",
+      "role": "older model/dataset contextual e200 evidence only; not current P1i Full proof"
+    },
+    {
+      "path": "docs/v3_current_training_results_inventory.md",
+      "role": "older model-path e200 context only; not current P1i Full proof"
+    }
+  ],
+  "interpretation": {
+    "e600_first_200_is_e200_evidence": false,
+    "reason": "with the same base/min LR and warmup, e600 is still at LR 3.94344704326942e-4 at epoch 200, whereas a 200-epoch cosine reaches min LR 5e-5 at its endpoint",
+    "historical_support_for_warmup_and_lr": "supports retaining base LR 5e-4, min LR 5e-5, warmup 10, AdamW, clipping 1.0, and B24 as the single e200 candidate",
+    "e200_qualification_needed": true,
+    "reason": "current Full late best is far beyond e200 and seed1/seed2 curves plus Vanilla convergence are not available"
+  }
+}

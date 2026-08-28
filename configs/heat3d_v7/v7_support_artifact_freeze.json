@@ -1,0 +1,42 @@
+{
+  "schema_version": "heat3d_v7_support_artifact_freeze_v1",
+  "status": "frozen_reference_inputs",
+  "role": "label_independent_support_and_padding_contract",
+  "support_family": "sample_varying_source_aware_1024_solver_nodes",
+  "selection_algorithm": "retry_deterministic_geometry_only_v1",
+  "training_support_is_frozen": true,
+  "temperature_or_model_error_used": false,
+  "artifacts": [
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml",
+      "sha256": "1e15a77fe51eea7ec64614566bb6bb12bfcf05948f3b7c8c6f3c85ec759a58f8",
+      "role": "native_1024_dataset_projection_and_support_contract"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+      "sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede",
+      "role": "nested_support_and_graph/reconstruction binding"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_freeze_manifest.json",
+      "sha256": "8a22c1a9c5281817bf4a80598fc56190ace2c16f9b9600a1861ad0c7d821585c",
+      "role": "frozen dataset artifact index"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_native1024.json",
+      "sha256": "4583d8b096590406fdb7bd1824f008addcf4e2c9fe43764659af416d182ca9d6",
+      "role": "native fixed padding envelope"
+    },
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_E16384.json",
+      "sha256": "9024492798e834592384d5332c71244ae03b3fe08250f7299bde4477337b214e",
+      "role": "E16384 fixed padding envelope"
+    }
+  ],
+  "write_policy": "read_only; no regeneration or in-place update",
+  "future_variant_support": {
+    "generic_uniform_support": "requires separately registered support artifact",
+    "volume_only_support": "requires separately registered support artifact",
+    "current_formal_training_default": "source-aware frozen support only"
+  }
+}

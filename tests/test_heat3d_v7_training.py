@@ -12,9 +12,13 @@ import unittest
 import jax.numpy as jnp
 
 from rigno.heat3d_training import (
+    learning_rate_for_epoch,
     ManualGradientDescent,
     TrainingDependencies,
     V7FormalTrainer,
+    model_apply_vanilla,
+    model_init_vanilla,
+    loss_fn_vanilla,
 )
 
 
@@ -71,6 +75,49 @@ class V7TrainingStaticTests(unittest.TestCase):
         self.assertEqual(config["dataset"]["roles"]["valid_iid"], 128)
         self.assertEqual(config["dataset"]["label_access"]["test_iid"], "forbidden")
         self.assertEqual(config["dataset"]["label_access"]["sealed"], "forbidden")
+
+    def test_e200_budget_contract_is_explicit_and_not_formal_g1(self) -> None:
+        budget = json.loads(
+            (ROOT / "configs" / "heat3d_v7" / "v7_g1_budget_qualification.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        contract = json.loads(
+            (ROOT / "configs" / "heat3d_v7" / "v7_g1_epoch_budget_contract.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(budget["status"], "registered_budget_qualification_only")
+        self.assertEqual(contract["proposed_budget"]["epochs"], 200)
+        self.assertEqual(contract["proposed_budget"]["cosine_horizon_epochs"], 200)
+        self.assertEqual(contract["proposed_budget"]["warmup_epochs"], 10)
+        self.assertEqual(
+            {row["variant"] for row in budget["qualification_runs"]},
+            {"Full", "vanilla_RIGNO"},
+        )
+        self.assertTrue(all(not row["g1_formal"] for row in budget["qualification_runs"]))
+
+    def test_e200_schedule_reaches_registered_minimum(self) -> None:
+        config = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_g1_full_p1i.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        optimizer = config["optimizer"]
+        start = learning_rate_for_epoch(
+            1, epochs=200, updates_per_epoch=32, config=optimizer
+        )
+        end = learning_rate_for_epoch(
+            200, epochs=200, updates_per_epoch=32, config=optimizer
+        )
+        self.assertAlmostEqual(start, 9.5e-5, places=10)
+        self.assertAlmostEqual(end, optimizer["min_lr"], places=10)
+        self.assertNotEqual(start, end)
+
+    def test_vanilla_training_api_is_exported(self) -> None:
+        self.assertTrue(callable(model_apply_vanilla))
+        self.assertTrue(callable(model_init_vanilla))
+        self.assertTrue(callable(loss_fn_vanilla))
 
     def test_manual_gradient_descent_contract(self) -> None:
         optimizer = ManualGradientDescent(0.1)

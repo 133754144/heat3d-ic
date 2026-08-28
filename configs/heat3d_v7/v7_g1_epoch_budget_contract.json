@@ -1,0 +1,60 @@
+{
+  "schema_version": "heat3d_v7_g1_epoch_budget_contract_v1",
+  "status": "qualification_required_before_formal_G1",
+  "scope": "V7 G1 protocol freeze; no formal multi-seed execution",
+  "historical_reference": {
+    "run": "V6_06_V5best_P1i_seed0_reliable_B24",
+    "epochs": 600,
+    "schedule": "warmup_cosine",
+    "warning": "e600 first 200 epochs are not e200 evidence; the cosine horizon changes the LR trajectory"
+  },
+  "proposed_budget": {
+    "epochs": 200,
+    "warmup_epochs": 10,
+    "lr_schedule": "warmup_cosine",
+    "base_lr": 0.0005,
+    "min_lr": 0.00005,
+    "cosine_horizon_epochs": 200,
+    "optimizer": "adamw",
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "initialization": "random",
+    "batch_contract": "V7-G1-B24",
+    "checkpoint_selection_metric": "sample_first_relative_rmse_pct",
+    "checkpoint_tie_break": "earliest_epoch",
+    "lr_trajectory_definition": "warmup through epoch 10, cosine decay from base_lr to min_lr through epoch 200"
+  },
+  "qualification": {
+    "required_variants": ["Full", "vanilla_RIGNO"],
+    "required_seed": 0,
+    "experiment_role": "budget_qualification_only",
+    "publication_evidence": false,
+    "g1_formal": false,
+    "valid_split": "valid_iid",
+    "test_iid": "forbidden",
+    "sealed": "forbidden",
+    "qualification_decision": "pending"
+  },
+  "decision_rule": {
+    "late_window": [150, 200],
+    "final_window_fraction": 0.25,
+    "insufficient_if": [
+      "best checkpoint remains concentrated at epochs 195-200 with clear validation improvement at the boundary",
+      "validation primary/selection metric is still clearly monotonic improving through the final window",
+      "Vanilla RIGNO has not received a fair converged opportunity"
+    ],
+    "if_insufficient": "qualify_e300_only; do not default back to e600",
+    "pass_requires": [
+      "Full and Vanilla both have stable late validation behavior",
+      "no clear undertraining signal in either route",
+      "LR reaches the registered minimum at the selected horizon",
+      "train/valid behavior and gradient/loss diagnostics remain finite and stable"
+    ]
+  },
+  "decision_values": {
+    "G1_epoch_budget": null,
+    "status": "pending_qualification",
+    "formal_matrix": null,
+    "capacity_matched_vanilla_trigger": null
+  }
+}
