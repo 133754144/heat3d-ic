@@ -38,6 +38,7 @@ def main() -> None:
     fairness = _load("v7_parameter_fairness_contract.json")
     prereg = _load("v7_g1_statistical_preregistration.json")
     support_freeze = _load("v7_support_artifact_freeze.json")
+    seed_bundle = _load("v7_g1_seed_bundle.json")
 
     required_metrics = {
         "point_global_relative_rmse_pct",
@@ -150,6 +151,12 @@ def main() -> None:
         raise ValueError("capacity-matched Vanilla trigger drifted")
     if prereg.get("seed_set") != [0, 1, 2] or prereg.get("forbidden_roles") != ["test_iid", "sealed"]:
         raise ValueError("G1 statistical preregistration seed/split policy drifted")
+    if seed_bundle.get("seed_set") != [0, 1, 2]:
+        raise ValueError("G1 synchronized seed bundle drifted")
+    if seed_bundle.get("formal_execution_guard", {}).get("multi_seed_started") is not False:
+        raise ValueError("formal G1 multi-seed execution must remain closed")
+    if seed_bundle.get("synchronization", {}).get("batch_build_seed", {}).get("value") != 0:
+        raise ValueError("fixed B24 batch-build seed drifted")
     if support_freeze.get("training_support_is_frozen") is not True or support_freeze.get("temperature_or_model_error_used") is not False:
         raise ValueError("support artifact freeze guard drifted")
     for path in (CONTROL / "v7_metric_contract.json", CONTROL / "v7_experiment_registry.json", CONTROL / "v7_claim_evidence_mapping.json", CONTROL / "v7_frozen_artifact_denylist.json"):

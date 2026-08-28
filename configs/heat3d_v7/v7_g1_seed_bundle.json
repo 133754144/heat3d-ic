@@ -1,0 +1,34 @@
+{
+  "schema_version": "heat3d_v7_g1_seed_bundle_v1",
+  "status": "pre_registered_not_executed",
+  "scope": "future formal G1 only; budget qualification is seed0 and non-publication",
+  "seed_set": [0, 1, 2],
+  "synchronization": {
+    "run_seed_fields": [
+      "model_initialization_seed",
+      "optimizer_seed",
+      "batch_order_seed",
+      "graph_seed"
+    ],
+    "rule": "for each formal run, all run_seed_fields equal the registered seed",
+    "cross_variant_rule": "each variant uses the same registered seed set and seed mapping",
+    "batch_build_seed": {
+      "value": 0,
+      "role": "fixed B24 sample_shuffle population construction seed",
+      "not_a_run_seed_field": true
+    }
+  },
+  "qualification": {
+    "allowed_seeds": [0],
+    "role": "budget_qualification_only",
+    "publication_evidence": false,
+    "g1_formal": false
+  },
+  "formal_execution_guard": {
+    "multi_seed_started": false,
+    "test_iid": false,
+    "sealed": false,
+    "model_selection_across_seeds": false,
+    "posthoc_seed_removal": false
+  }
+}

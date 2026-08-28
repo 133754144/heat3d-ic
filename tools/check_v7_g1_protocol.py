@@ -39,6 +39,7 @@ def main() -> None:
     fairness = _load(CONTROL / "v7_parameter_fairness_contract.json")
     prereg = _load(CONTROL / "v7_g1_statistical_preregistration.json")
     support = _load(CONTROL / "v7_support_artifact_freeze.json")
+    seed_bundle = _load(CONTROL / "v7_g1_seed_bundle.json")
     registry = _load(CONTROL / "v7_experiment_registry.json")
 
     proposed = epoch["proposed_budget"]
@@ -75,6 +76,15 @@ def main() -> None:
     )
     _require(prereg["seed_set"] == [0, 1, 2], "formal seed set drifted")
     _require(prereg["forbidden_roles"] == ["test_iid", "sealed"], "split denylist drifted")
+    _require(seed_bundle["seed_set"] == [0, 1, 2], "synchronized seed bundle drifted")
+    _require(
+        seed_bundle["formal_execution_guard"]["multi_seed_started"] is False,
+        "formal G1 multi-seed execution is already open",
+    )
+    _require(
+        seed_bundle["synchronization"]["batch_build_seed"]["value"] == 0,
+        "fixed B24 batch-build seed drifted",
+    )
     _require(
         fairness["capacity_matched_trigger"]["relative_parameter_gap_threshold"] == 0.05,
         "capacity trigger drifted",
