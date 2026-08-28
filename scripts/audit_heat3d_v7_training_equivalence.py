@@ -101,6 +101,7 @@ def _legacy_replay(model: RIGNO, batch_groups: list[dict[str, Any]], steps: int,
     records = [{"step": 0, "params": params, "prediction": _apply(model, params, TrainingBatch("legacy", (), tuple(batch_groups)))}]
     for step in range(1, steps + 1):
         batch = TrainingBatch("legacy", (), tuple(batch_groups))
+        prediction_before_update = _apply(model, params, batch)
         def loss_fn(current_params):
             return _loss(_apply(model, current_params, batch), batch)
         loss, gradients = jax.value_and_grad(loss_fn)(params)
@@ -112,7 +113,7 @@ def _legacy_replay(model: RIGNO, batch_groups: list[dict[str, Any]], steps: int,
             "gradients": gradients,
             "updates": updates,
             "params": params,
-            "prediction": _apply(model, params, batch),
+            "prediction": prediction_before_update,
         })
     return records
 
