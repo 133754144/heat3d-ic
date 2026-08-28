@@ -1187,3 +1187,53 @@ actual TimingCore，也没有修复或认定 CI green，更没有生成 `V7_G0_s
 push 触发的 GitHub Actions run `33157823597` 实际为 RED：lightweight runtime unit import
 缺少 `h5py`；该状态已写入 G0e receipt，不被错误标为未运行。E/U science、timing lifecycle
 与 publication-performance evidence 均未改动；test/sealed 未访问。
+
+## V7 G0 final closeout（authoritative final state）
+
+本节是对前述 fail-closed 中间状态的最终更新，不创建新的 G0 子阶段。唯一的最终机器
+可读 receipt 是 [`v7_g0_final_acceptance_receipt.json`](v7_g0_final_acceptance_receipt.json)。
+
+### Independent CI closure
+
+新增独立的 [`requirements-ci.txt`](../requirements-ci.txt)，固定 CPU lightweight CI 的
+兼容版本并补齐 `h5py`；它不修改 `requirements.txt` 或冻结 production environment。
+workflow 已拆为互不依赖的 `runtime-import-unit` 和 `static-contract` 两个 job。
+最新提交 `60f76de75e514240cf0b105102ca58563608fc46` 对应 GitHub Actions run
+`33159784225`，实际 `conclusion=success`，两个 job 均为 `success`。
+
+### E16384 full32 same-backend semantic hard gate
+
+上一轮未显式约束 backend 的 devbox 进程实际报告为 `gpu`，因此该次结果没有用于裁决
+CPU gate。随后显式设置 `JAX_PLATFORMS=cpu`，在同一 CPU backend 上完成 legacy V6
+与 V7 stable 的 32 个 frozen `valid_iid` 样本比较。support/order、graph metadata/
+tensors、model-visible group、anchor scale、raw `temperature_K`、显式 `deltaT_K`、
+direct/reconstructed prediction、reconstruction map 和字段 hash 全部 exact；六项
+EvaluationCore metric 及 sufficient statistics 全部 exact。机器证据见
+[`v7_g0_final_same_backend_e16384_full32.json`](v7_g0_final_same_backend_e16384_full32.json)，
+因此 `same_backend_semantic_equivalence=PASS`，这是 E16384 migration 的唯一 semantic
+hard gate。
+
+历史 GPU publication scalar 仍只作为 observation：此前 corrected V7 CPU 与 frozen
+GPU scalar 的最大观察差为 `0.0018321513851073945`。没有创建 CPU→GPU scalar tolerance，
+没有修改或覆盖 frozen publication authority，状态为
+`cross_backend_publication_consistency=observed_non_authoritative`。
+
+### Actual TimingCore instrumentation
+
+在 CI green 与 CPU full32 semantic PASS 后，使用 1 个 frozen `valid_iid` 样本在正常
+GPU `cuda:0` 上实际执行 TimingCore：preprocessing/feature、graph build、compile/warmup、
+model forward、冻结 T→ΔT handoff、reconstruction 和 synchronized 240825 result 均
+由真实 callback 完成。truth、metrics、accuracy audit 未进入 latency；本次 receipt
+明确 `scientific_evidence_eligible=false`、`headline_performance_claim=false`，且未触及
+冻结 fresh/resident/Q1/Q2/throughput、workload boundary、sync 位置及已有 publication
+latency/speedup/Pareto evidence。证据见
+[`v7_g0_actual_timing_instrumentation.json`](v7_g0_actual_timing_instrumentation.json)。
+
+### Final status
+
+温度表征 incident 已由唯一显式 adapter 解决；publication contamination audit 支持
+`publication_evidence_contaminated=false` 和 `rollback_required=false`。原始 historical
+binary identity bundle 缺失仍是 archival limitation；V1–V6 wrappers 保持 read-only
+historical oracle，`rigno.heat3d_runtime` 保持 stable semantic/reference implementation。
+所有性能优化和 G1 均 deferred。最终状态为 `V7_G0_status=PASS`；test/sealed 未访问，
+training、solver 和 model selection 均为 false。

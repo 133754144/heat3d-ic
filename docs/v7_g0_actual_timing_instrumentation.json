@@ -1,0 +1,195 @@
+{
+  "accuracy_audit_in_latency": false,
+  "anchor_context_resolution": 1024,
+  "anchor_scale": 72.52257537841797,
+  "backend": "gpu",
+  "callback_outputs": {
+    "compile_warmup": {
+      "raw_shape": [
+        1,
+        1,
+        16384,
+        1
+      ]
+    },
+    "graph_build": {
+      "case_resolution": 16384
+    },
+    "model_forward": {
+      "raw_shape": [
+        1,
+        1,
+        16384,
+        1
+      ]
+    },
+    "preprocessing_feature": {
+      "feature_transform_executed": true,
+      "query_node_count": 16384
+    },
+    "reconstruction": {
+      "adapter_elapsed_seconds": 1.2923002941533923e-05,
+      "field_sha256": "6f6cef42da0333f2d6b5a768363085aff119d4f2fe760e47725d4065594b5b1c",
+      "mapping_sha256": "2a8c9f8b7278e672d922ec87102d5f45b9da48a645eea82d5407433f2ec9bfb8",
+      "reference_temperature_K": 300.0,
+      "representation": "deltaT_K"
+    },
+    "synchronized_result": {
+      "field_sha256": "6f6cef42da0333f2d6b5a768363085aff119d4f2fe760e47725d4065594b5b1c",
+      "finite": true,
+      "node_count": 240825,
+      "temperature_representation": "deltaT_K"
+    }
+  },
+  "checkpoint": {
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "device": "cuda:0",
+  "encoder_input_resolution": 16384,
+  "execution_role": "compatibility_audit",
+  "frozen_timing_contract_unchanged": true,
+  "graph_tensors_sha256": "28aeb2560dded445c4163303151c87b3b0b6537289a329057388b8c3f734f6fc",
+  "headline_performance_claim": false,
+  "labels_read": false,
+  "metrics_in_latency": false,
+  "model_selection": false,
+  "output_query_resolution": 16384,
+  "publication_performance_evidence_touched": false,
+  "reconstruction_resolution": 240825,
+  "route_id": "E16384_reconstruction",
+  "sample_id": "v6p1if1_0308",
+  "sample_role": "valid_iid",
+  "schema_version": "heat3d_v7_g0_actual_timing_instrumentation_v1",
+  "scientific_evidence_eligible": false,
+  "sealed_labels_accessed": false,
+  "status": "PASS",
+  "support_audit": {
+    "anchor_max_distance_m": 0.0,
+    "coords_sha256": "319142747012e16e8176dd8d5e39ffd95cc116a387d34340990870de2a278187",
+    "cv_audit": {
+      "algorithm": "same_layer_nearest_solver_cv_partition_v1",
+      "full_volume_m3": 4.175e-07,
+      "label_or_temperature_used": false,
+      "query_workers": -1,
+      "relative_volume_error": 0.0,
+      "selected_volume_m3": 4.175e-07,
+      "weights_sha256": "ee1efddd1cf80621da555f007451a199fac703b941d96437cea430cab365a638"
+    },
+    "fixture_label": "V7 Refactor Compatibility Fixture",
+    "k_sha256": "f9de3de8674dc25fc040c781dc21580dfa647c735d0823dd86bc8576724292c6",
+    "label_independent": true,
+    "layer_id_sha256": "e7672314214b608d84eff51d5d16f901399c72c9b85a2cb94e5e638ccb4a9248",
+    "operator_control_volume_sha256": "ee1efddd1cf80621da555f007451a199fac703b941d96437cea430cab365a638",
+    "q_sha256": "961eaae1ceeedebaee977ac033eab73e32c6e0b8f6e392609987e5ab3a486dca",
+    "resolution": 16384,
+    "sample_id": "v6p1if1_0308",
+    "selection_audit": {
+      "algorithm": "anchored_stratified_deficit_round_robin_v1",
+      "anchor_count": 1024,
+      "anchor_order_preserved": true,
+      "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+      "order_sha256": "dce8737b3ffe7b300b5efb8a441b9533ada9d8cb126189ef282f9a5302b28a9a",
+      "selection_seed": 20260808,
+      "stratum_candidate_counts": {
+        "interface": 32978,
+        "robin": 8298,
+        "source": 4948,
+        "volume": 193577
+      },
+      "stratum_fractions": {
+        "interface": 0.15,
+        "robin": 0.1,
+        "source": 0.35,
+        "volume": 0.4
+      },
+      "target_or_temperature_used": false,
+      "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+    },
+    "support_indices_sha256": "a82d1b7ea10402568a38b887db7986d4b6704e848e88325f65b6d0240ff352f0",
+    "temperature_label_read": false
+  },
+  "support_sha256": "26eb009d02370365c8d0d7d148b598e0d82dcf2eac431212241a0fc8552dad02",
+  "temperature_contract_sha256": "d53ec2cf4cdb16fd08525c5f17c19d78dcdae4341248f978728dfc0cd5f7926c",
+  "test_iid_accessed": false,
+  "timing_contract": {
+    "accuracy_audit_in_latency": false,
+    "excluded_from_latency": [
+      "truth_loading",
+      "metrics",
+      "accuracy_audit"
+    ],
+    "formal_performance_experiment": false,
+    "headline_speedup_claim": false,
+    "lifecycle_states": [
+      "fresh",
+      "resident",
+      "Q1",
+      "Q2",
+      "throughput"
+    ],
+    "metrics_in_latency": false,
+    "stage_order": [
+      "preprocessing_feature",
+      "graph_build",
+      "compile_warmup",
+      "model_forward",
+      "reconstruction",
+      "synchronized_result"
+    ],
+    "truth_loading_in_latency": false,
+    "workload_boundary": [
+      "k/q/BC",
+      "preprocessing_feature",
+      "graph_build",
+      "model_forward",
+      "reconstruction",
+      "synchronized_result_240825_field"
+    ]
+  },
+  "timing_record": {
+    "excluded_from_latency": [
+      "truth_loading",
+      "metrics",
+      "accuracy_audit"
+    ],
+    "latency_boundary": [
+      "k/q/BC",
+      "preprocessing_feature",
+      "graph_build",
+      "model_forward",
+      "reconstruction",
+      "synchronized_result_240825_field"
+    ],
+    "query_count": 1,
+    "stages": [
+      {
+        "elapsed_seconds": 0.47764337100670673,
+        "stage": "preprocessing_feature"
+      },
+      {
+        "elapsed_seconds": 2.5531350760138594,
+        "stage": "graph_build"
+      },
+      {
+        "elapsed_seconds": 5.761486586998217,
+        "stage": "compile_warmup"
+      },
+      {
+        "elapsed_seconds": 0.35408881001058035,
+        "stage": "model_forward"
+      },
+      {
+        "elapsed_seconds": 0.14681121401372366,
+        "stage": "reconstruction"
+      },
+      {
+        "elapsed_seconds": 0.000983075995463878,
+        "stage": "synchronized_result"
+      }
+    ],
+    "state": "fresh"
+  },
+  "training_or_solver_invoked": false,
+  "truth_loading_in_latency": false
+}
