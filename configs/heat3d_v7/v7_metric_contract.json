@@ -105,6 +105,15 @@
     "tie_break": "earliest_epoch",
     "readiness_policy": "no model selection; equivalence/profiling only"
   },
+  "readiness_optimization_equivalence": {
+    "candidate": "fixed_batch_jit_executable_reuse",
+    "semantic_oracle": "CPU deterministic eager V7FormalTrainer",
+    "shape_and_structure": "exact",
+    "numeric_policy": "narrow CPU float32 compiler-roundoff envelope; not a scientific tolerance and not a publication claim",
+    "max_abs_non_loss": 2.0e-6,
+    "max_abs_loss": 2.0e-7,
+    "rationale": "eager and compiled CPU lowerings may reassociate float32 reductions by a few ULPs"
+  },
   "experiment_roles": [
     "compatibility_audit",
     "readiness_fixture",
