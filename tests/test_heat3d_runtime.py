@@ -563,28 +563,53 @@ class StableRuntimeStaticTests(unittest.TestCase):
             output_query_resolution=1024,
             reconstruction_resolution=1024,
             direct_query=True,
+            reconstruction_map_sha256="a" * 64,
+            reconstruction_contract_sha256="b" * 64,
+            checkpoint_sha256="c" * 64,
+            checkpoint_epoch=559,
+            dataset_manifest_sha256="d" * 64,
+            full_field_archive_sha256="e" * 64,
+            frozen_valid32_ids=("valid-formal",),
         ).validated()
         truth = np.asarray([1.0, 2.0, 3.0, 4.0])
         loaded = []
         receipt = {
+            "execution_role": "compatibility_audit",
+            "checkpoint_sha256": "c" * 64,
+            "checkpoint_epoch": 559,
+            "dataset_manifest_sha256": "d" * 64,
+            "full_field_archive_sha256": "e" * 64,
+            "frozen_valid32_ids": ["valid-formal"],
             "route_id": "native_1024",
             "anchor_context_resolution": 1024,
             "encoder_input_resolution": 1024,
             "output_query_resolution": 1024,
             "reconstruction_resolution": 1024,
+            "direct_query": True,
             "prediction_artifact_sha256_by_sample": {
                 "valid-formal": record.prediction_artifact_sha256,
             },
             "reconstruction_contract_sha256": None,
+            "reconstruction_map_sha256_by_sample": {"valid-formal": "a" * 64},
             "metric_schema_version": METRIC_SCHEMA_VERSION,
         }
+        receipt["reconstruction_contract_sha256"] = "b" * 64
 
         def truth_loader(sample_id: str) -> dict[str, object]:
             loaded.append(sample_id)
             return {"truth_deltaT_K": truth, "split": "valid_iid"}
 
         result = FormalEvaluationOrchestrator().run(
-            [record], truth_loader=truth_loader, receipt=receipt
+            [record], truth_loader=truth_loader, receipt=receipt,
+            route_contract={
+                "route_id": "native_1024",
+                "strategy_name": "native",
+                "anchor_context_resolution": 1024,
+                "encoder_input_resolution": 1024,
+                "output_query_resolution": 1024,
+                "reconstruction_resolution": 1024,
+                "direct_query": True,
+            },
         )
         self.assertEqual(loaded, ["valid-formal"])
         self.assertTrue(result["prediction_only"])
@@ -596,6 +621,15 @@ class StableRuntimeStaticTests(unittest.TestCase):
                 [record],
                 truth_loader=truth_loader,
                 receipt={"route_id": "native_1024"},
+                route_contract={
+                    "route_id": "native_1024",
+                    "strategy_name": "native",
+                    "anchor_context_resolution": 1024,
+                    "encoder_input_resolution": 1024,
+                    "output_query_resolution": 1024,
+                    "reconstruction_resolution": 1024,
+                    "direct_query": True,
+                },
             )
 
 

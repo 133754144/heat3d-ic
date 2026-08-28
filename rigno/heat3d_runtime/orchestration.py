@@ -32,6 +32,10 @@ def _array_sha256(value: Any) -> str:
     return digest.hexdigest()
 
 
+def _is_sha256(value: str) -> bool:
+    return len(value) == 64 and all(character in "0123456789abcdef" for character in value.lower())
+
+
 @dataclass(frozen=True)
 class PredictionOnlyRecord:
     """Prediction and label-independent evaluation metadata from inference."""
@@ -51,6 +55,11 @@ class PredictionOnlyRecord:
     reconstruction_map_sha256: str | None = None
     reconstruction_contract_sha256: str | None = None
     prediction_artifact_sha256: str | None = None
+    checkpoint_sha256: str | None = None
+    checkpoint_epoch: int | None = None
+    dataset_manifest_sha256: str | None = None
+    full_field_archive_sha256: str | None = None
+    frozen_valid32_ids: tuple[str, ...] | None = None
     split: str = "valid_iid"
 
     def validated(self) -> "PredictionOnlyRecord":
@@ -78,6 +87,29 @@ class PredictionOnlyRecord:
             or not np.all(np.isfinite(q))
         ):
             raise ValueError("prediction-only record has invalid evaluation arrays")
+        computed_prediction_sha256 = _array_sha256(prediction)
+        if (
+            self.prediction_artifact_sha256 is not None
+            and self.prediction_artifact_sha256 != computed_prediction_sha256
+        ):
+            raise ValueError("prediction artifact SHA does not match prediction array")
+        if self.checkpoint_sha256 is not None and not _is_sha256(self.checkpoint_sha256):
+            raise ValueError("checkpoint_sha256 must be a SHA256 hex digest")
+        if self.dataset_manifest_sha256 is not None and not _is_sha256(
+            self.dataset_manifest_sha256
+        ):
+            raise ValueError("dataset_manifest_sha256 must be a SHA256 hex digest")
+        if self.full_field_archive_sha256 is not None and not _is_sha256(
+            self.full_field_archive_sha256
+        ):
+            raise ValueError("full_field_archive_sha256 must be a SHA256 hex digest")
+        if self.checkpoint_epoch is not None and int(self.checkpoint_epoch) < 0:
+            raise ValueError("checkpoint_epoch must be non-negative")
+        valid32_ids = None
+        if self.frozen_valid32_ids is not None:
+            valid32_ids = tuple(map(str, self.frozen_valid32_ids))
+            if not valid32_ids or len(set(valid32_ids)) != len(valid32_ids):
+                raise ValueError("frozen_valid32_ids must be a non-empty unique sequence")
         return PredictionOnlyRecord(
             sample_id=str(self.sample_id),
             prediction_deltaT_K=prediction,
@@ -93,9 +125,12 @@ class PredictionOnlyRecord:
             direct_query=self.direct_query,
             reconstruction_map_sha256=self.reconstruction_map_sha256,
             reconstruction_contract_sha256=self.reconstruction_contract_sha256,
-            prediction_artifact_sha256=(
-                self.prediction_artifact_sha256 or _array_sha256(prediction)
-            ),
+            prediction_artifact_sha256=computed_prediction_sha256,
+            checkpoint_sha256=self.checkpoint_sha256,
+            checkpoint_epoch=(None if self.checkpoint_epoch is None else int(self.checkpoint_epoch)),
+            dataset_manifest_sha256=self.dataset_manifest_sha256,
+            full_field_archive_sha256=self.full_field_archive_sha256,
+            frozen_valid32_ids=valid32_ids,
             split="valid_iid",
         )
 
@@ -113,6 +148,11 @@ class PredictionOnlyRecord:
             "reconstruction_map_sha256": value.reconstruction_map_sha256,
             "reconstruction_contract_sha256": value.reconstruction_contract_sha256,
             "prediction_node_count": int(value.prediction_deltaT_K.size),
+            "checkpoint_sha256": value.checkpoint_sha256,
+            "checkpoint_epoch": value.checkpoint_epoch,
+            "dataset_manifest_sha256": value.dataset_manifest_sha256,
+            "full_field_archive_sha256": value.full_field_archive_sha256,
+            "frozen_valid32_ids": list(value.frozen_valid32_ids or ()),
             "split": value.split,
         }
 
@@ -123,7 +163,8 @@ TruthLoader = Callable[[str], Mapping[str, Any]]
 class FormalEvaluationOrchestrator:
     """The only V7 accuracy orchestration boundary."""
 
-    execution_role = "production_inference"
+    execution_role = "compatibility_audit"
+    inference_execution_role = "production_inference"
     evaluation_split = "valid_iid"
 
     def __init__(self, evaluation_core: EvaluationCore | None = None) -> None:
@@ -135,6 +176,7 @@ class FormalEvaluationOrchestrator:
         *,
         truth_loader: TruthLoader,
         receipt: Mapping[str, Any],
+        route_contract: Mapping[str, Any],
     ) -> dict[str, Any]:
         """Join prediction-only inference records to frozen truth after inference."""
 
@@ -154,6 +196,7 @@ class FormalEvaluationOrchestrator:
             receipt,
             records,
             route_id=route_id,
+            route_contract=route_contract,
         )
 
         truth_rows = self.evaluation_core.load_valid_truth(sample_ids, truth_loader)
@@ -179,6 +222,7 @@ class FormalEvaluationOrchestrator:
         return {
             "schema_version": "heat3d_v7_formal_evaluation_orchestration_v1",
             "execution_role": self.execution_role,
+            "inference_execution_role": self.inference_execution_role,
             "evaluation_split": self.evaluation_split,
             "route_id": route_id,
             "prediction_only": True,
@@ -196,6 +240,7 @@ def _validate_receipt_binding(
     records: Sequence[PredictionOnlyRecord],
     *,
     route_id: str,
+    route_contract: Mapping[str, Any],
 ) -> dict[str, Any]:
     """Require a formal receipt to bind every semantic route dimension.
 
@@ -205,20 +250,42 @@ def _validate_receipt_binding(
     """
 
     value = dict(receipt)
+    contract_required = (
+        "route_id",
+        "strategy_name",
+        "anchor_context_resolution",
+        "encoder_input_resolution",
+        "output_query_resolution",
+        "reconstruction_resolution",
+        "direct_query",
+    )
+    missing_contract = [field for field in contract_required if field not in route_contract]
+    if missing_contract:
+        raise ValueError(f"formal route contract is missing required bindings: {missing_contract}")
     required = (
+        "execution_role",
+        "checkpoint_sha256",
+        "checkpoint_epoch",
+        "dataset_manifest_sha256",
+        "full_field_archive_sha256",
+        "frozen_valid32_ids",
         "route_id",
         "anchor_context_resolution",
         "encoder_input_resolution",
         "output_query_resolution",
         "reconstruction_resolution",
+        "direct_query",
         "prediction_artifact_sha256_by_sample",
         "reconstruction_contract_sha256",
+        "reconstruction_map_sha256_by_sample",
         "metric_schema_version",
     )
     missing = [field for field in required if field not in value]
     if missing:
         raise ValueError(f"formal receipt is missing required bindings: {missing}")
-    if value["route_id"] != route_id:
+    if value["execution_role"] != "compatibility_audit":
+        raise ValueError("formal replay receipt must use compatibility_audit role")
+    if value["route_id"] != route_id or route_contract["route_id"] != route_id:
         raise ValueError("formal receipt route_id does not match predictions")
     expected = {
         field: getattr(records[0], field)
@@ -232,13 +299,46 @@ def _validate_receipt_binding(
     for field, expected_value in expected.items():
         if value[field] != expected_value:
             raise ValueError(f"formal receipt {field} does not match predictions")
+        if route_contract[field] != expected_value:
+            raise ValueError(f"registered route contract {field} does not match predictions")
         if any(getattr(row, field) != expected_value for row in records):
             raise ValueError(f"formal predictions have inconsistent {field}")
+    if value["direct_query"] != route_contract["direct_query"]:
+        raise ValueError("formal receipt direct_query does not match registered route")
+    if any(row.direct_query != value["direct_query"] for row in records):
+        raise ValueError("formal predictions have inconsistent direct_query")
+    for field in (
+        "checkpoint_sha256",
+        "checkpoint_epoch",
+        "dataset_manifest_sha256",
+        "full_field_archive_sha256",
+    ):
+        observed = {getattr(row, field) for row in records}
+        if len(observed) != 1 or None in observed or value[field] != next(iter(observed)):
+            raise ValueError(f"formal receipt {field} does not match frozen predictions")
+    frozen_id_sets = {tuple(row.frozen_valid32_ids or ()) for row in records}
+    if len(frozen_id_sets) != 1 or not frozen_id_sets or () in frozen_id_sets:
+        raise ValueError("formal predictions are missing the frozen valid32 ID binding")
+    frozen_ids = next(iter(frozen_id_sets))
+    if tuple(value["frozen_valid32_ids"]) != frozen_ids:
+        raise ValueError("formal receipt frozen valid32 IDs do not match predictions")
     expected_prediction_hashes = {
         row.sample_id: row.prediction_artifact_sha256 for row in records
     }
     if value["prediction_artifact_sha256_by_sample"] != expected_prediction_hashes:
         raise ValueError("formal receipt prediction artifact binding does not match")
+    expected_map_hashes = {
+        row.sample_id: row.reconstruction_map_sha256 for row in records
+    }
+    if any(hash_value is None for hash_value in expected_map_hashes.values()):
+        raise ValueError("formal predictions are missing reconstruction map SHA bindings")
+    if value["reconstruction_map_sha256_by_sample"] != expected_map_hashes:
+        raise ValueError("formal receipt reconstruction map binding does not match")
+    contracts = {row.reconstruction_contract_sha256 for row in records}
+    if len(contracts) != 1 or None in contracts:
+        raise ValueError("formal predictions are missing reconstruction contract SHA")
+    if value["reconstruction_contract_sha256"] != next(iter(contracts)):
+        raise ValueError("formal receipt reconstruction contract binding does not match")
     if value["metric_schema_version"] != METRIC_SCHEMA_VERSION:
         raise ValueError("formal receipt metric schema does not match EvaluationCore")
     return value
