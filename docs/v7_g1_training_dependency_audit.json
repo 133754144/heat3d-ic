@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_training_dependency_audit_v1",
-  "status": "audited_pre_G1; qualification_entrypoint_added; formal_G1_not_started",
+  "status": "audited_pre_G1; e200_qualified; formal_G1_not_started",
   "scope": "V7 publication-training path and e200 budget qualification only",
   "production_dependency": [
     {
@@ -9,7 +9,8 @@
       "calls": "rigno.heat3d_training.p1i + rigno.heat3d_training.evaluation + rigno.heat3d_training.core + rigno.models.rigno.RIGNO",
       "direction": "registered V7 entrypoint -> explicit library preparation/training/Level-A validation",
       "variants": ["Full", "vanilla_RIGNO"],
-      "execution_guard": "Full is rehearsal-only; e200 candidates are budget_qualification_only"
+      "execution_guard": "Full formal and all variants remain unexecuted; completed e200 runs are budget_qualification_only",
+      "budget_decision_receipt": "docs/v7_g1_budget_decision_receipt.json"
     },
     {
       "file": "rigno/heat3d_training/p1i.py",
@@ -35,6 +36,16 @@
       "symbol": "atomic_training_checkpoint",
       "calls": "explicit pickle writer and state-tree reload comparison",
       "direction": "selected/final TrainingState -> isolated qualification artifact"
+    },
+    {
+      "file": "configs/heat3d_v7/v7_experiment_registry.json",
+      "symbol": "registered_runs",
+      "calls": "single registered V7 entrypoint with parent config plus variant delta",
+      "direction": "future formal G1 registry -> shared V7 trainer; no copied runner per variant",
+      "variants": 7,
+      "epoch_budget": 200,
+      "seed_set": [0, 1, 2],
+      "execution_started": false
     }
   ],
   "compatibility_only": [
@@ -122,6 +133,24 @@
       "candidate_direction": "register label-independent support artifacts and adapters before G1",
       "semantics_may_change": true,
       "this_round": "fail-closed; no hidden fallback"
+    },
+    {
+      "file": "configs/heat3d_v7/v7_support_artifact_freeze.json",
+      "symbol": "future_variant_support",
+      "current_behavior": "source-aware support is frozen for the Full parent; generic_uniform_support and volume_only_support have no separately registered provider",
+      "potential_cost": "the two support ablations cannot be executed without an auditable support artifact",
+      "candidate_direction": "freeze label-independent support artifacts and add one explicit provider per support delta",
+      "semantics_may_change": true,
+      "this_round": "not implemented; fail-closed"
+    },
+    {
+      "file": "configs/heat3d_v7/v7_parameter_fairness_contract.json",
+      "symbol": "capacity_matched_variant",
+      "current_behavior": "Full has 892776 and vanilla has 826277 trainable scalars; the 7.4486% gap exceeds the 5% trigger",
+      "potential_cost": "a vanilla comparison without matching would confound architecture and capacity",
+      "candidate_direction": "register and later qualify a capacity-matched Vanilla using the same parent contract",
+      "semantics_may_change": true,
+      "this_round": "registered only; no run"
     }
   ],
   "efficiency_audit": {
@@ -138,6 +167,17 @@
     "cross_run_feature_graph_cache": "not implemented",
     "jit_executable_cache_across_runs": "not implemented",
     "batching_orchestration_change": false
+  },
+  "qualification_evidence": {
+    "receipt": "docs/v7_g1_budget_decision_receipt.json",
+    "full_e200_status": "COMPLETE_nonpublication",
+    "vanilla_e200_status": "COMPLETE_nonpublication",
+    "full_best_epoch": 173,
+    "vanilla_best_epoch": 164,
+    "G1_epoch_budget": 200,
+    "formal_matrix_run_count": 21,
+    "formal_g1_multi_seed_started": false,
+    "warm_cache_qualification": "observed from completed e200 receipts; compile_count=unique_batch_signatures=32 for both"
   },
   "production_boundary": {
     "smoke_imports": 0,
@@ -166,6 +206,10 @@
     "test_iid_access": false,
     "sealed_access": false,
     "formal_g1_multi_seed_started": false,
-    "budget_qualification_is_non_publication": true
+    "budget_qualification_is_non_publication": true,
+    "e200_budget_qualified": true,
+    "formal_matrix_frozen": true,
+    "support_variant_providers_complete": false,
+    "g1_scientific_ready": false
   }
 }

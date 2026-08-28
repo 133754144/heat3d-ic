@@ -42,6 +42,8 @@ def main() -> None:
     seed_bundle = _load(CONTROL / "v7_g1_seed_bundle.json")
     registry = _load(CONTROL / "v7_experiment_registry.json")
     protocol_freeze = _load(ROOT / "docs" / "v7_g1_scientific_protocol_freeze.json")
+    budget_decision = _load(ROOT / "docs" / "v7_g1_budget_decision_receipt.json")
+    variant_matrix = _load(CONTROL / "v7_g1_variant_execution_matrix.json")
 
     proposed = epoch["proposed_budget"]
     for key, expected in {
@@ -95,6 +97,11 @@ def main() -> None:
         "protocol freeze e200 horizon drifted",
     )
     _require(
+        epoch["decision_values"]["G1_epoch_budget"] == 200
+        and epoch["qualification"]["qualification_decision"] == "PASS_e200",
+        "final e200 budget decision is not frozen",
+    )
+    _require(
         fairness["capacity_matched_trigger"]["relative_parameter_gap_threshold"] == 0.05,
         "capacity trigger drifted",
     )
@@ -108,13 +115,23 @@ def main() -> None:
         "V7-G1-Full-P1i:volume-only-support",
         "V7-G1-Full-P1i:no-context",
         "V7-G1-Full-P1i:no-scale",
+        "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
     }
     actual_ids = {
         str(row["experiment_id"])
         for row in registry.get("registered_runs", [])
         if str(row.get("experiment_id", "")).startswith("V7-G1-Full-P1i")
     }
-    _require(actual_ids == expected_ids, "formal G1 variant matrix is not six entries")
+    _require(actual_ids == expected_ids, "formal G1 variant matrix is not six base plus capacity-matched entry")
+    _require(registry.get("formal_variant_count") == 7, "formal G1 variant count is not seven")
+    _require(registry.get("formal_matrix", {}).get("run_count") == 21, "formal G1 run matrix is not 21")
+    _require(len(variant_matrix.get("base_variants", [])) == 6, "variant execution matrix base count drifted")
+    _require(
+        variant_matrix.get("capacity_matched_variant", {}).get("experiment_id")
+        == "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
+        "capacity-matched variant execution binding drifted",
+    )
+    _require(variant_matrix.get("formal_execution_started") is False, "variant matrix opened formal G1")
     csv_path = CONTROL / "v7_experiment_registry.csv"
     with csv_path.open(newline="", encoding="utf-8") as stream:
         csv_ids = {str(row["experiment_id"]) for row in csv.DictReader(stream)}
@@ -153,8 +170,23 @@ def main() -> None:
         if str(row.get("experiment_id", "")).startswith("V7-G1-BudgetQual-")
     }
     _require(
-        all(row.get("execution_started") is False for row in qualification_ids.values()),
-        "budget qualification is already marked executed in registry",
+        all(
+            row.get("status") == "completed_nonpublication"
+            and row.get("execution_started") is True
+            and row.get("publication_evidence") is False
+            and row.get("g1_formal") is False
+            for row in qualification_ids.values()
+        ),
+        "budget qualification completion/provenance drifted",
+    )
+    _require(
+        budget_decision["decision"]["G1_epoch_budget"] == 200
+        and budget_decision["decision"]["formal_execution_started"] is False,
+        "budget decision receipt opened formal G1",
+    )
+    _require(
+        protocol_freeze["evidence_boundary"]["G1_scientific_ready"] is False,
+        "unresolved variant providers must keep G1 scientific readiness closed",
     )
     print("V7 G1 protocol control plane: PASS")
 

@@ -6,6 +6,8 @@ import ast
 import json
 import pickle
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -87,7 +89,7 @@ class V7TrainingStaticTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertEqual(budget["status"], "registered_budget_qualification_only")
+        self.assertEqual(budget["status"], "completed_nonpublication_qualification")
         self.assertEqual(contract["proposed_budget"]["epochs"], 200)
         self.assertEqual(contract["proposed_budget"]["cosine_horizon_epochs"], 200)
         self.assertEqual(contract["proposed_budget"]["warmup_epochs"], 10)
@@ -96,6 +98,60 @@ class V7TrainingStaticTests(unittest.TestCase):
             {"Full", "vanilla_RIGNO"},
         )
         self.assertTrue(all(not row["g1_formal"] for row in budget["qualification_runs"]))
+        self.assertTrue(all(row["execution_started"] for row in budget["qualification_runs"]))
+        self.assertEqual(contract["decision_values"]["G1_epoch_budget"], 200)
+        self.assertEqual(contract["qualification"]["qualification_decision"], "PASS_e200")
+
+    def test_g1_matrix_is_frozen_but_not_started(self) -> None:
+        registry = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_experiment_registry.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(registry["base_formal_variant_count"], 6)
+        self.assertEqual(registry["formal_variant_count"], 7)
+        self.assertEqual(registry["formal_matrix"]["run_count"], 21)
+        self.assertFalse(registry["formal_matrix"]["formal_execution_started"])
+
+    def test_capacity_fairness_observation_is_registered(self) -> None:
+        fairness = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_parameter_fairness_contract.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertTrue(fairness["observed"]["capacity_matched_triggered"])
+        self.assertAlmostEqual(fairness["observed"]["relative_gap"], 0.07448564925580436)
+
+    def test_all_registered_variants_resolve_in_dry_run_only(self) -> None:
+        registry = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_experiment_registry.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        variant_ids = [
+            row["experiment_id"]
+            for row in registry["registered_runs"]
+            if row["experiment_id"].startswith("V7-G1-Full-P1i")
+        ]
+        self.assertEqual(len(variant_ids), 7)
+        for experiment_id in variant_ids:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "scripts.run_heat3d_v7_formal_p1i_training",
+                    "--experiment-id",
+                    experiment_id,
+                    "--dry-run",
+                ],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["experiment_id"], experiment_id)
+            self.assertEqual(payload["training_runs"], 0)
 
     def test_synchronized_seed_bundle_is_pre_registered_only(self) -> None:
         bundle = json.loads(

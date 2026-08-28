@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_epoch_budget_contract_v1",
-  "status": "qualification_required_before_formal_G1",
+  "status": "qualified_for_formal_G1; formal_execution_closed",
   "scope": "V7 G1 protocol freeze; no formal multi-seed execution",
   "historical_reference": {
     "run": "V6_06_V5best_P1i_seed0_reliable_B24",
@@ -33,7 +33,9 @@
     "valid_split": "valid_iid",
     "test_iid": "forbidden",
     "sealed": "forbidden",
-    "qualification_decision": "pending"
+    "qualification_decision": "PASS_e200",
+    "qualification_receipt": "docs/v7_g1_budget_decision_receipt.json",
+    "qualification_runs_completed": true
   },
   "decision_rule": {
     "late_window": [150, 200],
@@ -52,9 +54,18 @@
     ]
   },
   "decision_values": {
-    "G1_epoch_budget": null,
-    "status": "pending_qualification",
-    "formal_matrix": null,
-    "capacity_matched_vanilla_trigger": null
+    "G1_epoch_budget": 200,
+    "status": "qualified",
+    "formal_matrix": {
+      "base_variants": 6,
+      "capacity_matched_variant": true,
+      "total_variants": 7,
+      "seed_count": 3,
+      "run_count": 21,
+      "epoch_budget": 200,
+      "formal_execution_started": false
+    },
+    "capacity_matched_vanilla_trigger": true,
+    "e300_assessment": "not_required_after_e200_pass"
   }
 }

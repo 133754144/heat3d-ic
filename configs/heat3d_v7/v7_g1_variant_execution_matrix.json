@@ -1,0 +1,76 @@
+{
+  "schema_version": "heat3d_v7_g1_variant_execution_matrix_v1",
+  "status": "frozen_pre_G1; formal_execution_closed",
+  "parent_experiment_id": "V7-G1-Full-P1i",
+  "entrypoint": "scripts/run_heat3d_v7_formal_p1i_training.py",
+  "resolution_and_batch_contract": "inherited_from_parent_without_variant_specific_override",
+  "epoch_budget": 200,
+  "seed_set": [0, 1, 2],
+  "formal_execution_started": false,
+  "base_variants": [
+    {
+      "experiment_id": "V7-G1-Full-P1i",
+      "variant": "Full",
+      "delta": {},
+      "implementation_status": "stable_parent; nonpublication qualification exercised",
+      "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:vanilla-RIGNO",
+      "variant": "vanilla_RIGNO",
+      "delta": {
+        "full_only_conditioning": "disabled",
+        "native_shape_scale_head": "disabled",
+        "decoder_bypass": "disabled"
+      },
+      "implementation_status": "stable control; nonpublication qualification exercised",
+      "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:generic-uniform-support",
+      "variant": "generic_uniform_support",
+      "delta": {"support": "generic_uniform"},
+      "implementation_status": "registered_delta; provider_pending; fail_closed",
+      "support_artifact_ref": null
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:volume-only-support",
+      "variant": "volume_only_support",
+      "delta": {"support": "volume_only"},
+      "implementation_status": "registered_delta; provider_pending; fail_closed",
+      "support_artifact_ref": null
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:no-context",
+      "variant": "no_context",
+      "delta": {"global_context": "disabled"},
+      "implementation_status": "registered_delta; implementation_qualification_pending",
+      "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:no-scale",
+      "variant": "no_scale",
+      "delta": {"scale_head": "disabled"},
+      "implementation_status": "registered_delta; implementation_qualification_pending",
+      "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"
+    }
+  ],
+  "capacity_matched_variant": {
+    "experiment_id": "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
+    "variant": "vanilla_RIGNO_capacity_matched",
+    "delta": {
+      "capacity_matching": "required_by_parameter_fairness_trigger",
+      "base_variant": "vanilla_RIGNO"
+    },
+    "implementation_status": "registered_only; no run in this freeze",
+    "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"
+  },
+  "execution_policy": {
+    "dry_run": "all registered variants resolve through the same entrypoint for registry validation",
+    "non_dry_formal_run": "closed until explicit G1 authorization and all provider/implementation qualification gates pass",
+    "implicit_support_fallback": false,
+    "copied_runner_per_variant": false,
+    "test_iid": false,
+    "sealed": false
+  }
+}

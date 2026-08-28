@@ -37,6 +37,10 @@ LR `5e-5`、cosine horizon 200、weight decay `1e-4`、clip 1.0、B24、随机
 作为 checkpoint selection metric。历史审计 JSON 记录了精确 milestones、SHA 和
 尚未定位的 seed replication 状态。
 
-由于历史 seed1/2 curve 缺失且 Vanilla 没有当前 Full 语义下的历史收敛证据，仍
-需要 Full seed0 与 Vanilla seed0 的 `budget_qualification_only` e200 pilot；它们
-不计入正式 G1 三种子结果。
+由于历史 seed1/2 curve 缺失且 Vanilla 没有当前 Full 语义下的历史收敛证据，已
+执行 Full seed0 与 Vanilla seed0 的完整 `budget_qualification_only` e200 qualification。
+Full 的最佳选择点为 e173，Vanilla 为 e164；两者在 e195--e200 都没有新的边界
+最佳点，且 LR 已到达 `5e-5`。Full 末段呈稳定平台/小幅波动，Vanilla 末段较噪声
+但没有“仍在边界单调改善”的证据。因此 e200 通过预算资格判定；两份运行 receipt
+和非发表边界见 [v7_g1_budget_decision_receipt.json](v7_g1_budget_decision_receipt.json)。
+这些运行不计入正式 G1 三种子结果，也不构成 publication evidence。

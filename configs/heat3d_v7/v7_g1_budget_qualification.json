@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_budget_qualification_v1",
-  "status": "registered_budget_qualification_only",
+  "status": "completed_nonpublication_qualification",
   "experiment_role": "budget_qualification_only",
   "parent_config": "configs/heat3d_v7/v7_g1_full_p1i.json",
   "parent_experiment_id": "V7-G1-Full-P1i",
@@ -11,26 +11,36 @@
     "sealed": "forbidden"
   },
   "budget_contract": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
+  "decision_receipt": "docs/v7_g1_budget_decision_receipt.json",
+  "qualification_decision": "PASS_e200",
+  "formal_g1_epoch_budget": 200,
+  "formal_g1_execution_started": false,
   "qualification_runs": [
     {
       "experiment_id": "V7-G1-BudgetQual-e200-Full-seed0",
       "variant": "Full",
       "seed": 0,
-      "status": "registered_not_executed",
+      "status": "completed_nonpublication",
       "epochs": 200,
       "budget_qualification_only": true,
       "publication_evidence": false,
-      "g1_formal": false
+      "g1_formal": false,
+      "execution_started": true,
+      "receipt_path": "/tmp/v7_g1_budget_qual_e200_full_seed0/v7_g1_budget_qualification_receipt.json",
+      "receipt_sha256": "87e240a8175da8f72466f14838030e505f978b6b0d6668e6e8baa9e30a3baba6"
     },
     {
       "experiment_id": "V7-G1-BudgetQual-e200-Vanilla-seed0",
       "variant": "vanilla_RIGNO",
       "seed": 0,
-      "status": "registered_not_executed",
+      "status": "completed_nonpublication",
       "epochs": 200,
       "budget_qualification_only": true,
       "publication_evidence": false,
-      "g1_formal": false
+      "g1_formal": false,
+      "execution_started": true,
+      "receipt_path": "/tmp/v7_g1_budget_qual_e200_vanilla_seed0/v7_g1_budget_qualification_receipt.json",
+      "receipt_sha256": "115aeab17deb35df1e7a720595caba8d8783bff0d46832356d0bba468803899d"
     }
   ],
   "shared_contract": {
@@ -58,6 +68,9 @@
     "test_iid_access": false,
     "sealed_access": false,
     "solver": false,
-    "new_data": false
+    "new_data": false,
+    "qualification_complete": true,
+    "formal_epoch_budget_frozen": 200,
+    "formal_g1_started": false
   }
 }

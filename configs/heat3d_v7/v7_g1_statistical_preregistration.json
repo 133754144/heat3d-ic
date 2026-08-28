@@ -1,14 +1,21 @@
 {
   "schema_version": "heat3d_v7_g1_statistical_preregistration_v1",
-  "status": "pre_registered_not_executed",
+  "status": "pre_registered_frozen_not_executed",
   "scope": "future formal G1 only; qualification pilots are excluded",
   "parent_experiment_id": "V7-G1-Full-P1i",
   "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
   "allowed_roles": {"train": 768, "valid_iid": 128},
   "forbidden_roles": ["test_iid", "sealed"],
   "seed_set": [0, 1, 2],
+  "epoch_budget": 200,
+  "base_variant_count": 6,
+  "capacity_matched_vanilla_triggered": true,
+  "formal_variant_count": 7,
+  "planned_formal_run_count": 21,
+  "formal_execution_started": false,
   "optimization_contract_ref": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
   "batch_contract_ref": "configs/heat3d_v7/v7_g1_full_p1i.json",
+  "variant_matrix_ref": "configs/heat3d_v7/v7_g1_variant_execution_matrix.json",
   "checkpoint_selection": {
     "metric": "sample_first_relative_rmse_pct",
     "split": "valid_iid",
@@ -35,6 +42,7 @@
     "qualification_evidence": false,
     "publication_evidence_until_G1": false,
     "test_or_sealed_access": false,
-    "model_selection_across_variants": false
+    "model_selection_across_variants": false,
+    "budget_qualification_is_excluded": true
   }
 }

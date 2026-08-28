@@ -7,6 +7,8 @@ The entrypoint has two explicit, non-overlapping modes:
 * ``V7-G1-BudgetQual-e200-*`` is a seed-0, non-publication budget
   qualification.  It uses the complete e200 schedule and is never counted as
   formal G1 evidence.
+* Registered formal variants can be resolved through ``--dry-run`` for
+  registry validation, but all non-dry formal execution remains closed.
 
 All numerical dependencies are assembled from ``rigno.heat3d_training`` and
 the stable RIGNO library.  No historical script, smoke helper, development
@@ -57,6 +59,15 @@ REGISTRY_PATH = ROOT / "configs" / "heat3d_v7" / "v7_experiment_registry.json"
 FULL_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_full_p1i.json"
 BUDGET_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_budget_qualification.json"
 SUPPORTED_BUDGET_VARIANTS = {"Full", "vanilla_RIGNO"}
+FORMAL_VARIANT_BY_ID = {
+    "V7-G1-Full-P1i": "Full",
+    "V7-G1-Full-P1i:vanilla-RIGNO": "vanilla_RIGNO",
+    "V7-G1-Full-P1i:generic-uniform-support": "generic_uniform_support",
+    "V7-G1-Full-P1i:volume-only-support": "volume_only_support",
+    "V7-G1-Full-P1i:no-context": "no_context",
+    "V7-G1-Full-P1i:no-scale": "no_scale",
+    "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched": "vanilla_RIGNO_capacity_matched",
+}
 
 
 def _sha256(path: Path) -> str:
@@ -158,6 +169,23 @@ def _resolve_registration(
     entry = entries.get(args.experiment_id)
     if entry is None:
         raise ValueError(f"experiment is not registered: {args.experiment_id}")
+
+    if (
+        args.experiment_id in FORMAL_VARIANT_BY_ID
+        and args.experiment_id != "V7-G1-Full-P1i"
+    ):
+        config_path = (args.config or FULL_CONFIG_PATH).resolve()
+        config = _load_json(config_path)
+        if entry.get("status") not in {"registered_not_executed", "planned_not_executed"}:
+            raise ValueError("formal G1 variant is not in a planned state")
+        if config.get("experiment_id") != "V7-G1-Full-P1i":
+            raise ValueError("formal G1 variants must resolve to the frozen Full parent config")
+        if not args.dry_run:
+            raise ValueError(
+                "formal G1 execution is closed; use --dry-run for registry validation "
+                "until explicit scientific G1 authorization"
+            )
+        return config, entry, FORMAL_VARIANT_BY_ID[args.experiment_id], False
 
     if args.experiment_id == "V7-G1-Full-P1i":
         config_path = (args.config or FULL_CONFIG_PATH).resolve()

@@ -1,7 +1,7 @@
 {
   "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v1",
-  "status": "qualification_pending",
-  "scope": "G1 protocol freeze; no formal multi-seed scientific experiment",
+  "status": "qualified_pre_G1; formal_execution_closed",
+  "scope": "G1 scientific protocol freeze; no formal multi-seed scientific experiment",
   "historical_evidence": {
     "direct_full_reference": "V6_06_V5best_P1i_seed0_reliable_B24",
     "reference_schedule": "warmup_cosine_horizon_600",
@@ -34,8 +34,13 @@
     "role": "budget_qualification_only",
     "publication_evidence": false,
     "g1_formal": false,
-    "status": "registered_not_executed",
-    "decision": "pending_full_e200_and_vanilla_e200_curves"
+    "status": "completed_nonpublication",
+    "decision": "PASS_e200",
+    "receipt": "docs/v7_g1_budget_decision_receipt.json",
+    "full_best_epoch": 173,
+    "vanilla_best_epoch": 164,
+    "full_and_vanilla_boundary_undertraining_signal": false,
+    "e300_required": false
   },
   "formal_matrix": {
     "base_variants": [
@@ -48,18 +53,25 @@
     ],
     "seed_set": [0, 1, 2],
     "formal_execution_started": false,
-    "epoch_budget": null,
-    "run_count": null,
-    "capacity_matched_vanilla_trigger": null,
-    "capacity_matched_run_count": null
+    "epoch_budget": 200,
+    "run_count": 21,
+    "capacity_matched_vanilla_trigger": true,
+    "capacity_matched_run_count": 3,
+    "base_variant_count": 6,
+    "total_variant_count": 7,
+    "shared_optimization_contract": true,
+    "matrix_status": "frozen_not_executed"
   },
   "evidence_boundary": {
     "historical_e600_reference": "context_only; not e200 convergence evidence",
-    "qualification_pilots": "non_publication; not formal G1 evidence",
+    "qualification_pilots": "completed_non_publication; excluded from formal G1 evidence",
     "future_formal_g1": "not_started",
     "test_iid": false,
     "sealed": false,
-    "frozen_v6_evidence_modified": false
+    "frozen_v6_evidence_modified": false,
+    "G1_epoch_budget": 200,
+    "G1_scientific_ready": false,
+    "readiness_status": "blocked_by_unresolved_variant_support_providers"
   },
   "references": {
     "epoch_budget_contract": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
@@ -68,6 +80,13 @@
     "historical_dynamics": "docs/v7_g1_historical_training_dynamics.json",
     "statistical_preregistration": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
     "parameter_fairness": "configs/heat3d_v7/v7_parameter_fairness_contract.json",
-    "support_freeze": "configs/heat3d_v7/v7_support_artifact_freeze.json"
-  }
+    "support_freeze": "configs/heat3d_v7/v7_support_artifact_freeze.json",
+    "variant_execution_matrix": "configs/heat3d_v7/v7_g1_variant_execution_matrix.json",
+    "budget_decision": "docs/v7_g1_budget_decision_receipt.json"
+  },
+  "readiness_blockers": [
+    "generic_uniform_support and volume_only_support still require separately frozen label-independent support artifacts/providers",
+    "no_context and no_scale require config-delta implementation qualification before formal execution",
+    "capacity-matched Vanilla is registered but intentionally unexecuted in this freeze"
+  ]
 }

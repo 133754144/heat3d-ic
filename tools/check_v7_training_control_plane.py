@@ -40,6 +40,8 @@ def main() -> None:
     support_freeze = _load("v7_support_artifact_freeze.json")
     seed_bundle = _load("v7_g1_seed_bundle.json")
     protocol_freeze = _load_path("docs/v7_g1_scientific_protocol_freeze.json")
+    budget_decision = _load_path("docs/v7_g1_budget_decision_receipt.json")
+    variant_matrix = _load("v7_g1_variant_execution_matrix.json")
 
     required_metrics = {
         "point_global_relative_rmse_pct",
@@ -71,6 +73,7 @@ def main() -> None:
         "V7-G1-Full-P1i:volume-only-support",
         "V7-G1-Full-P1i:no-context",
         "V7-G1-Full-P1i:no-scale",
+        "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
         "V7-G1-BudgetQual-e200-Full-seed0",
         "V7-G1-BudgetQual-e200-Vanilla-seed0",
     }
@@ -115,10 +118,18 @@ def main() -> None:
         if entry["experiment_id"].startswith("V7-G1-Full-P1i:"):
             if entry.get("status") != "planned_not_executed" or not entry.get("delta"):
                 raise ValueError(f"variant registration is not delta-only/planned: {entry['experiment_id']}")
-    if registry.get("formal_variant_count") != 6:
-        raise ValueError("formal G1 variant count must remain six")
-    if budget.get("status") != "registered_budget_qualification_only":
-        raise ValueError("budget qualification must remain non-publication")
+    if registry.get("formal_variant_count") != 7 or registry.get("base_formal_variant_count") != 6:
+        raise ValueError("formal G1 variant count must be six base plus one capacity-matched variant")
+    if registry.get("formal_matrix", {}).get("run_count") != 21:
+        raise ValueError("formal G1 matrix must be frozen at 21 runs")
+    if len(variant_matrix.get("base_variants", [])) != 6:
+        raise ValueError("variant matrix must contain six base variants")
+    if variant_matrix.get("capacity_matched_variant", {}).get("experiment_id") != "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched":
+        raise ValueError("capacity-matched variant matrix binding drifted")
+    if variant_matrix.get("formal_execution_started") is not False:
+        raise ValueError("variant matrix opened formal G1")
+    if budget.get("status") != "completed_nonpublication_qualification":
+        raise ValueError("budget qualification completion state drifted")
     candidates = {row["experiment_id"]: row for row in budget.get("qualification_runs", [])}
     expected_qualification = {
         "V7-G1-BudgetQual-e200-Full-seed0": "Full",
@@ -134,6 +145,10 @@ def main() -> None:
             raise ValueError(f"qualification budget drifted: {experiment_id}")
         if row.get("publication_evidence") or row.get("g1_formal"):
             raise ValueError(f"qualification cannot be publication evidence: {experiment_id}")
+        if row.get("status") != "completed_nonpublication" or row.get("execution_started") is not True:
+            raise ValueError(f"completed qualification state drifted: {experiment_id}")
+        if len(str(row.get("receipt_sha256", ""))) != 64:
+            raise ValueError(f"qualification receipt binding missing: {experiment_id}")
     proposed = epoch_budget.get("proposed_budget", {})
     for key, value in {
         "epochs": 200,
@@ -148,6 +163,10 @@ def main() -> None:
     }.items():
         if proposed.get(key) != value:
             raise ValueError(f"proposed e200 budget drifted: {key}")
+    if epoch_budget.get("decision_values", {}).get("G1_epoch_budget") != 200:
+        raise ValueError("final G1 epoch budget is not 200")
+    if epoch_budget.get("qualification", {}).get("qualification_decision") != "PASS_e200":
+        raise ValueError("e200 qualification decision is not PASS_e200")
     if fairness.get("capacity_matched_trigger", {}).get("relative_parameter_gap_threshold") != 0.05:
         raise ValueError("capacity-matched Vanilla trigger drifted")
     if prereg.get("seed_set") != [0, 1, 2] or prereg.get("forbidden_roles") != ["test_iid", "sealed"]:
@@ -162,6 +181,14 @@ def main() -> None:
         raise ValueError("formal G1 execution must remain closed in protocol freeze")
     if protocol_freeze.get("e200_optimization_contract", {}).get("cosine_horizon_epochs") != 200:
         raise ValueError("protocol freeze e200 horizon drifted")
+    if protocol_freeze.get("formal_matrix", {}).get("run_count") != 21:
+        raise ValueError("protocol freeze matrix run count drifted")
+    if protocol_freeze.get("evidence_boundary", {}).get("G1_scientific_ready") is not False:
+        raise ValueError("G1 readiness must remain closed while variants are unresolved")
+    if budget_decision.get("decision", {}).get("G1_epoch_budget") != 200:
+        raise ValueError("budget decision receipt does not bind e200")
+    if budget_decision.get("formal_matrix", {}).get("formal_execution_started") is not False:
+        raise ValueError("budget decision receipt opened formal G1")
     if support_freeze.get("training_support_is_frozen") is not True or support_freeze.get("temperature_or_model_error_used") is not False:
         raise ValueError("support artifact freeze guard drifted")
     for path in (CONTROL / "v7_metric_contract.json", CONTROL / "v7_experiment_registry.json", CONTROL / "v7_claim_evidence_mapping.json", CONTROL / "v7_frozen_artifact_denylist.json"):

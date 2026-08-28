@@ -137,7 +137,10 @@
     "e600_first_200_is_e200_evidence": false,
     "reason": "with the same base/min LR and warmup, e600 is still at LR 3.94344704326942e-4 at epoch 200, whereas a 200-epoch cosine reaches min LR 5e-5 at its endpoint",
     "historical_support_for_warmup_and_lr": "supports retaining base LR 5e-4, min LR 5e-5, warmup 10, AdamW, clipping 1.0, and B24 as the single e200 candidate",
-    "e200_qualification_needed": true,
-    "reason": "current Full late best is far beyond e200 and seed1/seed2 curves plus Vanilla convergence are not available"
+    "e200_qualification_needed": false,
+    "reason": "historical evidence alone did not identify an e200 trajectory; the required Full and Vanilla seed-0 complete e200 qualification runs were therefore executed separately and passed the registered boundary rule",
+    "qualification_receipt": "docs/v7_g1_budget_decision_receipt.json",
+    "qualification_role": "budget_qualification_only",
+    "qualification_publication_evidence": false
   }
 }
