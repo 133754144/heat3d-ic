@@ -40,3 +40,7 @@ jobs:
         run: python tools/check_v7_training_control_plane.py
       - name: Formal trainer dry-run
         run: python -m scripts.run_heat3d_v7_formal_training --dry-run
+      - name: Registered Full P1i adapter dry-run
+        run: >-
+          python -m scripts.run_heat3d_v7_formal_p1i_training
+          --experiment-id V7-G1-Full-P1i --dry-run

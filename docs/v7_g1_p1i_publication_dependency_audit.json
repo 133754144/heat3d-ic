@@ -1,0 +1,118 @@
+{
+  "schema_version": "heat3d_v7_g1_p1i_publication_dependency_audit_v1",
+  "status": "audited_before_profile",
+  "production_training_graph": [
+    "scripts/run_heat3d_v7_formal_p1i_training.py",
+    "rigno.heat3d_training.p1i.prepare_p1i_data",
+    "rigno.heat3d_training.p1i.model_init_full",
+    "rigno.heat3d_training.p1i.model_apply_full",
+    "rigno.heat3d_training.p1i.loss_fn_full",
+    "rigno.heat3d_training.core.V7FormalTrainer",
+    "rigno.models.rigno.RIGNO",
+    "rigno.graphBuilder_Heat3D.Heat3DGraphBuilder"
+  ],
+  "legacy_oracle_graph": [
+    "rigno.heat3d_v2_runner_command.build_training_command",
+    "scripts/run_heat3d_v4_controlled_training.py",
+    "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+    "scripts/check_heat3d_v1_small_train_valid_smoke.py"
+  ],
+  "categories": {
+    "production_dependency": [
+      {
+        "file": "rigno/heat3d_training/p1i.py",
+        "symbols": ["load_selected_p1i_examples", "prepare_p1i_data", "build_p1i_batches", "model_apply_full", "loss_fn_full"],
+        "calls_to": ["rigno.heat3d_v6_dataset", "rigno.heat3d_v1_normalization", "rigno.graphBuilder_Heat3D", "rigno.models.rigno", "rigno.heat3d_v5_shape_scale"],
+        "role": "stable library-level P1i Full data, graph, feature, native shape-scale, loss and optimizer assembly"
+      },
+      {
+        "file": "rigno/heat3d_training/core.py",
+        "symbols": ["V7FormalTrainer", "TrainingDependencies", "TrainingState"],
+        "calls_to": ["jax.value_and_grad", "optax"],
+        "role": "explicit update, optimizer-state, JIT-cache and checkpoint boundary"
+      }
+    ],
+    "compatibility_only": [
+      {
+        "file": "scripts/run_heat3d_v1_medium_controlled_training_export.py",
+        "symbols": ["_make_v6_padded_groups_with_progress", "_model_apply", "_loss_components", "_fit_once"],
+        "direction": "legacy V6/P1i oracle -> static contract comparison only",
+        "production_import": false
+      },
+      {
+        "file": "scripts/check_heat3d_v1_small_train_valid_smoke.py",
+        "symbols": ["_train_only_stats", "_metrics", "_make_batch_group"],
+        "direction": "V1 readiness fixture only",
+        "production_import": false
+      }
+    ],
+    "test_only": [
+      {
+        "file": "tests/test_heat3d_v7_training.py",
+        "symbols": ["V7FormalTrainer", "ManualGradientDescent"],
+        "role": "small fixture, import boundary and checkpoint unit tests"
+      }
+    ],
+    "dead_or_unused": [
+      {
+        "symbol": "scripts/check_heat3d_v1_small_train_valid_smoke._train_only_stats",
+        "reason": "not reachable from V7 P1i production entrypoint"
+      },
+      {
+        "symbol": "scripts/run_heat3d_v1_medium_controlled_training_export._epoch_regroup_fn",
+        "reason": "disabled by the frozen P1i epoch_wise_batch_regrouping=false contract"
+      }
+    ],
+    "uncertain": [
+      {
+        "symbol": "rigno.graphBuilder_Heat3D.Heat3DGraphBuilder.discrete_graph_backend",
+        "reason": "dense_reference is frozen for semantic parity; whether a future backend is safe requires a separate equivalence qualification"
+      }
+    ]
+  },
+  "duplicate_or_costly_operations": [
+    {
+      "operation": "legacy sample scan calls build_metadata, then rebuilds metadata and graphs",
+      "current_behavior": "legacy graph-compatible grouping performs a metadata signature scan before actual group construction",
+      "potential_cost": "duplicate per-sample graph metadata work",
+      "candidate_direction": "keep stable V7 batch preparation as the only metadata/graph construction pass",
+      "semantics_may_change": false,
+      "v7_status": "removed_from_production_graph"
+    },
+    {
+      "operation": "raw global-context and q/k regional feature extraction",
+      "current_behavior": "historical helpers can recompute input-derived context/features while attaching group payloads",
+      "potential_cost": "repeated CPU preprocessing and host memory traversal",
+      "candidate_direction": "memoize immutable input-derived rows within one preparation session",
+      "semantics_may_change": false,
+      "v7_status": "session-scoped_reuse_in_progress"
+    },
+    {
+      "operation": "JIT executable lifecycle",
+      "current_behavior": "historical path may re-enter compile boundaries through separate eager/validation paths",
+      "potential_cost": "compile stalls across variants and seeds",
+      "candidate_direction": "reuse stable V7 fixed-batch executable per shape signature",
+      "semantics_may_change": false,
+      "v7_status": "stable_core_jit_cache_enabled_by_explicit_flag"
+    },
+    {
+      "operation": "checkpoint/metric/artifact writers",
+      "current_behavior": "legacy runner has multiple checkpoint and metric wrappers",
+      "potential_cost": "duplicate serialization and inconsistent provenance",
+      "candidate_direction": "one explicit V7 writer with optimizer-state round-trip",
+      "semantics_may_change": false,
+      "v7_status": "stable_rehearsal_writer_added"
+    }
+  ],
+  "production_boundary_audit": {
+    "smoke_imports": 0,
+    "check_imports": 0,
+    "development_imports": 0,
+    "cross_script_private_api": 0,
+    "monkey_patch": 0,
+    "sys_path_mutation": 0,
+    "historical_tree_modified": false,
+    "test_and_sealed_access": "closed"
+  },
+  "optimization_scope": "publication training path only; no high-N, reconstruction, serving, batching-policy, graph-algorithm or model/loss changes"
+}

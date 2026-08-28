@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import pickle
 from pathlib import Path
 import tempfile
@@ -36,6 +37,40 @@ class V7TrainingStaticTests(unittest.TestCase):
         source = path.read_text(encoding="utf-8")
         self.assertNotIn("sys.path", source)
         self.assertNotIn("monkey_patch", source)
+
+    def test_p1i_production_entrypoint_has_no_legacy_import(self) -> None:
+        path = ROOT / "scripts" / "run_heat3d_v7_formal_p1i_training.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        imported = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.extend(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom):
+                imported.append(node.module or "")
+        self.assertFalse(any(module.startswith("scripts") for module in imported))
+        self.assertFalse(any("smoke" in module.lower() for module in imported))
+        self.assertFalse(any("development" in module.lower() for module in imported))
+        source = path.read_text(encoding="utf-8")
+        self.assertNotIn("sys.path", source)
+        self.assertNotIn("monkey_patch", source)
+
+    def test_p1i_registered_batching_contract(self) -> None:
+        config = json.loads(
+            (ROOT / "configs" / "heat3d_v7" / "v7_g1_full_p1i.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        batching = config["batching"]
+        self.assertEqual(batching["batch_size"], 24)
+        self.assertEqual(batching["micro_batch_size"], 24)
+        self.assertEqual(batching["validation_batch_size"], 32)
+        self.assertEqual(batching["train_samples_per_epoch"] // batching["batch_size"], 32)
+        self.assertTrue(batching["shuffle_train_batches"])
+        self.assertFalse(batching["drop_last"])
+        self.assertEqual(config["dataset"]["roles"]["train"], 768)
+        self.assertEqual(config["dataset"]["roles"]["valid_iid"], 128)
+        self.assertEqual(config["dataset"]["label_access"]["test_iid"], "forbidden")
+        self.assertEqual(config["dataset"]["label_access"]["sealed"], "forbidden")
 
     def test_manual_gradient_descent_contract(self) -> None:
         optimizer = ManualGradientDescent(0.1)

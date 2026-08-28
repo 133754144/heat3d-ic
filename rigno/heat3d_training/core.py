@@ -64,6 +64,7 @@ class TrainingDependencies:
     validation_fn: Callable[[Any, Any], Any]
     checkpoint_writer: Callable[[Path, Mapping[str, Any]], None]
     metrics_fn: Callable[[Any, Any], Mapping[str, Any]]
+    gradient_transform: Callable[[Any], Any] | None = None
 
 
 class ManualGradientDescent:
@@ -141,6 +142,8 @@ class V7FormalTrainer:
             loss_with_aux,
             has_aux=True,
         )(params)
+        if self.dependencies.gradient_transform is not None:
+            gradients = self.dependencies.gradient_transform(gradients)
         updates, new_optimizer_state = self.dependencies.optimizer.update(
             gradients,
             optimizer_state,

@@ -2,7 +2,8 @@
   "schema_version": "heat3d_v7_experiment_registry_v1",
   "status": "readiness_control_plane",
   "default_branch": "research/v7",
-  "formal_training_entrypoint": "scripts/run_heat3d_v7_formal_training.py",
+  "formal_training_entrypoint": "scripts/run_heat3d_v7_formal_p1i_training.py",
+  "readiness_fixture_entrypoint": "scripts/run_heat3d_v7_formal_training.py",
   "library_training_core": "rigno.heat3d_training",
   "registered_runs": [
     {
@@ -31,6 +32,73 @@
       "publication_evidence": false,
       "g1_eligible": true,
       "execution_blocked_until": "V7_formal_training_readiness=PASS"
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i",
+      "status": "registered_not_executed",
+      "experiment_role": "publication_training",
+      "variant": "Full",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "config": "configs/heat3d_v7/v7_g1_full_p1i.json",
+      "dataset_role": "train_768_plus_valid_iid_128_only",
+      "seed": "0|1|2",
+      "steps": "600_epochs_registered_only",
+      "batching_contract": "B24_micro24_valid32_pred32_sample_shuffle_seed0",
+      "multi_seed": true,
+      "publication_evidence": false,
+      "g1_eligible": true,
+      "execution_blocked_until": "V7_G1_production_preflight=PASS",
+      "execution_started": false
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:vanilla-RIGNO",
+      "status": "planned_not_executed",
+      "experiment_role": "publication_training",
+      "variant": "vanilla_RIGNO",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "delta": {"support": "vanilla_baseline_registered_later"},
+      "shared_contract": "V7-G1-Full-P1i",
+      "execution_started": false
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:generic-uniform-support",
+      "status": "planned_not_executed",
+      "experiment_role": "publication_training",
+      "variant": "generic_uniform_support",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "delta": {"support": "generic_uniform"},
+      "shared_contract": "V7-G1-Full-P1i",
+      "execution_started": false
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:volume-only-support",
+      "status": "planned_not_executed",
+      "experiment_role": "publication_training",
+      "variant": "volume_only_support",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "delta": {"support": "volume_only"},
+      "shared_contract": "V7-G1-Full-P1i",
+      "execution_started": false
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:no-context",
+      "status": "planned_not_executed",
+      "experiment_role": "publication_training",
+      "variant": "no_context",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "delta": {"global_context": "disabled"},
+      "shared_contract": "V7-G1-Full-P1i",
+      "execution_started": false
+    },
+    {
+      "experiment_id": "V7-G1-Full-P1i:no-scale",
+      "status": "planned_not_executed",
+      "experiment_role": "publication_training",
+      "variant": "no_scale",
+      "parent_experiment_id": "V7-G1-Full-P1i",
+      "delta": {"scale_head": "disabled"},
+      "shared_contract": "V7-G1-Full-P1i",
+      "execution_started": false
     }
   ],
   "split_policy": {

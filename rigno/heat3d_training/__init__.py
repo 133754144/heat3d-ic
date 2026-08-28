@@ -20,6 +20,21 @@ from .prepare import (
     build_v1_training_stats,
     load_selected_v1_examples,
 )
+from .p1i import (
+    P1I_BATCH_CONTRACT,
+    P1I_DATASET_ID,
+    P1IPreparedData,
+    atomic_training_checkpoint,
+    build_p1i_batches,
+    load_selected_p1i_examples,
+    loss_fn_full,
+    make_gradient_transform,
+    make_p1i_optimizer,
+    model_apply_full,
+    model_init_full,
+    prepare_p1i_data,
+    tree_max_abs_difference,
+)
 
 __all__ = [
     "ManualGradientDescent",
@@ -32,4 +47,17 @@ __all__ = [
     "build_v1_training_batches",
     "build_v1_training_stats",
     "load_selected_v1_examples",
+    "P1I_BATCH_CONTRACT",
+    "P1I_DATASET_ID",
+    "P1IPreparedData",
+    "atomic_training_checkpoint",
+    "build_p1i_batches",
+    "load_selected_p1i_examples",
+    "loss_fn_full",
+    "make_gradient_transform",
+    "make_p1i_optimizer",
+    "model_apply_full",
+    "model_init_full",
+    "prepare_p1i_data",
+    "tree_max_abs_difference",
 ]

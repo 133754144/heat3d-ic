@@ -11,7 +11,10 @@ PRODUCTION_ROOTS = (
     ROOT / "rigno" / "heat3d_runtime",
     ROOT / "rigno" / "heat3d_training",
 )
-ENTRYPOINTS = (ROOT / "scripts" / "run_heat3d_v7_formal_training.py",)
+ENTRYPOINTS = (
+    ROOT / "scripts" / "run_heat3d_v7_formal_training.py",
+    ROOT / "scripts" / "run_heat3d_v7_formal_p1i_training.py",
+)
 FORBIDDEN_TERMS = ("smoke", "development")
 
 

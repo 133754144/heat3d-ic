@@ -1,0 +1,47 @@
+{
+  "schema_version": "heat3d_v7_g1_devbox_preflight_manifest_v1",
+  "execution_host": "devbox",
+  "repository": "/home/xyh/myCodeGitOnly/heat3d-ic",
+  "branch": "research/v7",
+  "head_at_preflight": "e95dc63e33e30591440d1491afcf5fa3ba4fb61b",
+  "fast_forward_only": true,
+  "supplemental_directory": "configs/heat3d_v6_supplemental/",
+  "supplemental_status": "untracked_historical_artifacts_preserved",
+  "supplemental_files": [
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/E16384_reconstruction.json",
+      "sha256": "34518b4267a94be758445536bc401b5f042ba602891f45410bff7da34397dbff",
+      "content_role": "E16384 fixed-geometry reconstruction runtime audit; train inputs and shared full mesh without temperature"
+    },
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/E240825_direct_control.json",
+      "sha256": "61ccf44a8e898b97a47d38a192030890a19f190f602fa6ed1591918690bde644",
+      "content_role": "E240825 direct-query control runtime audit; train inputs and shared full mesh without temperature"
+    },
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/U_v2_16384_reconstruction.json",
+      "sha256": "c706f8edcc3d8e205096bf15fa0d3594995c7d7bdd5130213263b50f86d6d8a4",
+      "content_role": "U-v2 16384 reconstruction runtime audit; train inputs and shared full mesh without temperature"
+    },
+    {
+      "path": "configs/heat3d_v6_supplemental/fixed_geometry_runtime_raw/U_v2_direct240825.json",
+      "sha256": "82c0e09ff2829990663267cf48217e98058b94a869d2b9ca2d2ebc79a2c51e97",
+      "content_role": "U-v2 direct 240825 runtime audit; train inputs and shared full mesh without temperature"
+    }
+  ],
+  "p1i_provenance": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "train_count": 768,
+    "valid_iid_count": 128,
+    "test_iid_and_sealed_access": "closed"
+  },
+  "environment_observation": {
+    "python": "3.14.3",
+    "jax_devices": ["CudaDevice(id=0)"],
+    "active_heat3d_processes": false,
+    "tmux_training_session": false
+  },
+  "registration_decision": "historical_runtime_artifacts_are_preserved_and_registered; not publication evidence"
+}
