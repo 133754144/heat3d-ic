@@ -1,0 +1,98 @@
+{
+  "anchor_context_resolution": 1024,
+  "anchor_scale": 72.52039337158203,
+  "checkpoint_epoch": 559,
+  "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+  "encoder_input_resolution": 16384,
+  "execution_role": "compatibility_audit",
+  "graph_tensors_sha256": "4684096211ca61e7ae81194c9e4886057d2f322e5ed4a0f686f162ae32a6b267",
+  "labels_read_by_inference": false,
+  "metrics_after_explicit_temperature_to_deltaT": {
+    "interface_RMSE_K": 0.7312708958971333,
+    "interface_drop_rmse_K": 0.7312708958971333,
+    "peak_RMSE_K": 3.6302486488706904,
+    "peak_rmse_K": 3.6302486488706904,
+    "point_global_relative_rmse_pct": 5.0395218428449775,
+    "raw_K_CV_RMSE_K": 3.6568503852938625,
+    "raw_cv_weighted_rmse_K": 3.6568503852938625,
+    "sample_first_cv_relative_rmse_pct": 4.826492691348069,
+    "sample_first_relative_rmse_pct": 4.826492691348069,
+    "source_region_RMSE_K": 6.580184335995517,
+    "source_rmse_K": 6.580184335995517
+  },
+  "metrics_before_absolute_as_deltaT": {
+    "interface_RMSE_K": 0.731270895897129,
+    "interface_drop_rmse_K": 0.731270895897129,
+    "peak_RMSE_K": 296.3697513511293,
+    "peak_rmse_K": 296.3697513511293,
+    "point_global_relative_rmse_pct": 357.38186161893697,
+    "raw_K_CV_RMSE_K": 296.97202262335344,
+    "raw_cv_weighted_rmse_K": 296.97202262335344,
+    "sample_first_cv_relative_rmse_pct": 391.95841932463605,
+    "sample_first_relative_rmse_pct": 391.95841932463605,
+    "source_region_RMSE_K": 294.022550004064,
+    "source_rmse_K": 294.022550004064
+  },
+  "metrics_executed": true,
+  "nested_support_audit": {
+    "algorithm": "anchored_stratified_deficit_round_robin_v1",
+    "anchor_count": 1024,
+    "anchor_order_preserved": true,
+    "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+    "order_sha256": "dce8737b3ffe7b300b5efb8a441b9533ada9d8cb126189ef282f9a5302b28a9a",
+    "selection_seed": 20260808,
+    "stratum_candidate_counts": {
+      "interface": 32978,
+      "robin": 8298,
+      "source": 4948,
+      "volume": 193577
+    },
+    "stratum_fractions": {
+      "interface": 0.15,
+      "robin": 0.1,
+      "source": 0.35,
+      "volume": 0.4
+    },
+    "target_or_temperature_used": false,
+    "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+  },
+  "output_query_resolution": 16384,
+  "power_relative_error": 0.0,
+  "prediction_representation_after": "deltaT_K",
+  "prediction_representation_before": "absolute_temperature_K",
+  "prediction_stage": "reconstructed_full_field",
+  "ranges": {
+    "corrected_prediction_deltaT_K": {
+      "max_K": 95.80195655132462,
+      "mean_K": 78.50382517568455,
+      "min_K": 36.30373729392102
+    },
+    "failed_prediction_absolute_K": {
+      "max_K": 395.8019565513246,
+      "mean_K": 378.50382517568454,
+      "min_K": 336.303737293921
+    },
+    "raw_temperature_K": {
+      "max_K": 385.85028076171875,
+      "mean_K": 368.2232573945075,
+      "min_K": 332.5325927734375
+    },
+    "truth_deltaT_K": {
+      "max_K": 99.43220520019531,
+      "mean_K": 82.10933664770769,
+      "min_K": 39.51763153076172
+    }
+  },
+  "reconstruction_map_sha256": "2a8c9f8b7278e672d922ec87102d5f45b9da48a645eea82d5407433f2ec9bfb8",
+  "reconstruction_resolution": 240825,
+  "reference_temperature_K": 300.0,
+  "route_id": "E16384_reconstruction",
+  "sample_id": "v6p1if1_0308",
+  "sample_role": "valid_iid",
+  "schema_version": "heat3d_v7_g0e_temperature_diagnosis_v1",
+  "sealed_labels_accessed": false,
+  "support_order_sha256": "a82d1b7ea10402568a38b887db7986d4b6704e848e88325f65b6d0240ff352f0",
+  "support_volume_relative_error": 0.0,
+  "test_iid_accessed": false,
+  "training_or_solver_invoked": false
+}

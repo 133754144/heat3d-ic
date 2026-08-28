@@ -59,6 +59,8 @@ class StableRuntimeStaticTests(unittest.TestCase):
             self.assertNotIn("sys.path", source)
             self.assertNotIn("install_checkpoint_feature_hooks", source)
             self.assertIn("bind_registered_route", source)
+            self.assertIn("temperature_representation_contract", source)
+            self.assertIn("absolute_temperature_K", source)
         u_source = (ROOT / "scripts" / "run_heat3d_v7_u_high_n_reference.py").read_text(
             encoding="utf-8"
         )

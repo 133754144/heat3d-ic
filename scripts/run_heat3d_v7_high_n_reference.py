@@ -213,6 +213,11 @@ def run(args: argparse.Namespace) -> dict[str, object]:
                 "query_scale": query_scale,
                 "prediction_shape": list(prediction.shape),
                 "prediction_sha256": array_sha256(prediction),
+                "prediction_representation": "absolute_temperature_K",
+                "reference_temperature_K": 300.0,
+                "prediction_stage": (
+                    "model_raw" if args.resolution == 1024 else "high_n_scaled_output"
+                ),
                 "graph": case.graph.audit,
             }
         )
@@ -235,6 +240,12 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         "training_or_solver_invoked": False,
         "support_generated": False,
         "prediction_artifact_written": False,
+        "temperature_representation_contract": {
+            "model_output": "absolute_temperature_K",
+            "formal_evaluation_adapter_required": "deltaT_K = temperature_K - reference_temperature_K",
+            "formal_evaluation_input": "deltaT_K",
+            "reference_temperature_K": 300.0,
+        },
     }
 
 

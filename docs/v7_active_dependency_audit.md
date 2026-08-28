@@ -1125,3 +1125,63 @@ GitHub CI green，更没有生成 G0 PASS 或新的性能证据。
 不得通过放宽 tolerance、修改 route/model/reconstruction semantics 或把本次 replay
 改写成新的 publication evidence 来解除该 blocker。待定位 replay 与 frozen reference
 不一致的具体行为来源后，必须从同一 gate 顺序重新审计；在此之前不进入 G1 或性能优化。
+
+## V7-G0e：Temperature Representation Reconciliation（fail-closed pending policy）
+
+本轮的总 receipt 是
+[`v7_g0e_temperature_representation_receipt.json`](v7_g0e_temperature_representation_receipt.json)，
+并保留三个相互独立的 machine-readable evidence：一个样本 T/ΔT 诊断
+[`v7_g0e_temperature_diagnosis.json`](v7_g0e_temperature_diagnosis.json)、legacy CPU
+与 stable V7 CPU 的逐阶段等价
+[`v7_g0e_stagewise_cpu_receipt.json`](v7_g0e_stagewise_cpu_receipt.json)，以及 corrected
+E16384 valid32 formal replay 的完整 hash/metric observation
+[`v7_g0e_e16384_replay_observation.json`](v7_g0e_e16384_replay_observation.json)。它们都
+是 `compatibility_audit`，不是新的 publication evidence。
+
+### Root cause 与 forward fix
+
+`HighNRuntime.apply_anchor_scale()` 的冻结数值语义是 absolute
+`temperature_K`。G0d-R 的临时 replay 先正确把该值减 300 K 做 reconstruction，却又加回
+300 K 后提交给名为 `prediction_deltaT_K` 的 formal record；这是首个实际错误 evaluation。
+一个 frozen valid32 sample 的诊断从 absolute-as-deltaT 的 point-global `357.3819%`、raw
+CV RMSE `296.9720 K` 恢复为显式转换后的 `5.0395%`、`3.6569 K`；这证明
+`root_cause=absolute_temperature_passed_as_deltaT`。
+
+新 contract
+[`v7_temperature_representation_contract.json`](../configs/heat3d_v6_p1i/v7_temperature_representation_contract.json)
+冻结：model raw / high-N scaled output 是 `absolute_temperature_K`；唯一 adapter 是
+`deltaT_K = temperature_K - reference_temperature_K`（reference `300 K`）；formal
+evaluation input 是 `deltaT_K`。`PredictionOnlyRecord` 现在强制 representation、reference
+temperature 和 prediction stage，非 `deltaT_K`、缺字段、reference mismatch 或把
+high-N absolute stage 当 formal reconstruction stage 都 fail-closed。重建算法没有修改。
+
+一个固定 valid32 sample 的 legacy CPU ↔ V7 CPU stage-wise gate 已 PASS：support、graph
+metadata/tensors、model-visible group、anchor scale、raw/anchor-scaled absolute temperature、
+explicit deltaT、reconstruction map 与 reconstructed deltaT 的可 exact 项均 exact。对同一
+reconstruction map，`R(T-300) == R(T)-300` 的浮点聚合残差为 max
+`1.7053025658242404e-13 K`、RMSE `3.6399016021672567e-14 K`。
+
+### 影响范围
+
+`b1729e4` 是 output representation 未显式标记的 latent ambiguity；`87ab34e` 的
+`PredictionOnlyRecord` 继承该 ambiguity；`569cd11` 只强化 provenance；`51f1b91` 记录的
+G0d-R replay 是第一个实际受影响 evaluation。没有回滚 branch。
+
+V6 publication full-field path 在 reconstruction 前已显式减 reference temperature；
+G0b-2f 保存的 CUDA reconstructed artifact 也明确是 `deltaT_K`，且其 CPU old/new
+equivalence 为 exact。G0c-1 是 native valid32 metric replication，G0c-2 仅验证 timing
+lifecycle，二者均不复用该错误 handoff。因此现有 publication evidence 未受污染，历史
+FAIL receipt 保留作为审计证据，修复采用 forward-fix。
+
+### corrected full32 observation 与停止条件
+
+corrected E16384 valid32 replay 已在 CPU deterministic backend 实际跑完：六项 scalar 与
+frozen table 的最大绝对差为 `0.0018321513851073945`，且 all-32 support/graph/anchor-scale/
+prediction/reconstruction hash 已写入 observation receipt。它不再有 300 K 偏置。
+
+但现有 frozen GPU policy 仅给出 field-level repeatability envelope，未注册
+CPU-to-historical-GPU **scalar metric** acceptance policy；原 valid32 GPU binary bundle 也仍是
+archival absence。为避免把 field-level envelope 擅自改写成新的 metric tolerance，这项
+publication-consistency gate 保持 `NOT_ADJUDICATED`，不是 PASS。严格顺序下没有运行
+actual TimingCore，也没有修复/认定 CI green，更没有生成 `V7_G0_status=PASS`。E/U
+science、timing lifecycle 与 publication-performance evidence 均未改动；test/sealed 未访问。

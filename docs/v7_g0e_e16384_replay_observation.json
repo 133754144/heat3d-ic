@@ -1,0 +1,3260 @@
+{
+  "checkpoint": {
+    "epoch": 559,
+    "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"
+  },
+  "dataset": {
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "sample_count": 32,
+    "sample_ids": [
+      "v6p1if1_0308",
+      "v6p1if1_0511",
+      "v6p1if1_0041",
+      "v6p1if1_0846",
+      "v6p1if1_0572",
+      "v6p1if1_0347",
+      "v6p1if1_0286",
+      "v6p1if1_0124",
+      "v6p1if1_1017",
+      "v6p1if1_0854",
+      "v6p1if1_0928",
+      "v6p1if1_0543",
+      "v6p1if1_0632",
+      "v6p1if1_0599",
+      "v6p1if1_0003",
+      "v6p1if1_0029",
+      "v6p1if1_0991",
+      "v6p1if1_0109",
+      "v6p1if1_0365",
+      "v6p1if1_0091",
+      "v6p1if1_0930",
+      "v6p1if1_0175",
+      "v6p1if1_0915",
+      "v6p1if1_0869",
+      "v6p1if1_0522",
+      "v6p1if1_0118",
+      "v6p1if1_0708",
+      "v6p1if1_0817",
+      "v6p1if1_1003",
+      "v6p1if1_0697",
+      "v6p1if1_0907",
+      "v6p1if1_0203"
+    ]
+  },
+  "equivalence": {
+    "cpu_deterministic_backend": true,
+    "historical_identity_bundle": "unavailable_missing_original_artifacts",
+    "max_metric_abs_diff": 0.0018321513851073945,
+    "metrics": {
+      "interface_RMSE": {
+        "abs_diff": 3.6333221558770834e-05,
+        "frozen_reference": 0.38573532298537117,
+        "replay": 0.38577165620692994
+      },
+      "peak_RMSE": {
+        "abs_diff": 0.00013187604304754075,
+        "frozen_reference": 4.01776869521727,
+        "replay": 4.017636819174222
+      },
+      "point_global_relative_RMSE": {
+        "abs_diff": 0.0016940249372185967,
+        "frozen_reference": 2.7022701863666154,
+        "replay": 2.703964211303834
+      },
+      "raw_K_CV_RMSE": {
+        "abs_diff": 0.0015815702171138035,
+        "frozen_reference": 2.2848059780011063,
+        "replay": 2.28638754821822
+      },
+      "sample_first_relative_RMSE": {
+        "abs_diff": 0.0018321513851073945,
+        "frozen_reference": 2.738521950937166,
+        "replay": 2.7403541023222733
+      },
+      "source_region_RMSE": {
+        "abs_diff": 0.0003195720166733196,
+        "frozen_reference": 3.872082355580685,
+        "replay": 3.871762783564012
+      }
+    },
+    "pass": null,
+    "publication_consistency_reason": "Existing frozen GPU policy is field-level repeatability only; no scalar-metric tolerance is registered.",
+    "publication_consistency_status": "NOT_ADJUDICATED_NO_FROZEN_CPU_TO_GPU_METRIC_ACCEPTANCE_POLICY",
+    "semantic_gate": "separate legacy_cpu_vs_v7_cpu exact stagewise receipt",
+    "sufficient_statistics": {
+      "background_sse": 6.909329522941214e-05,
+      "background_volume": 1.3310167694091797e-05,
+      "cv_sse": 6.984030875584824e-05,
+      "cv_truth_energy": 0.09452720739476994,
+      "cv_volume": 1.336e-05,
+      "interface_by_boundary": {
+        "interface_01": {
+          "count": 32,
+          "sse": 10.188613334414962
+        },
+        "interface_02": {
+          "count": 32,
+          "sse": 3.5777889474619746
+        },
+        "interface_03": {
+          "count": 32,
+          "sse": 0.3458372503234882
+        },
+        "interface_04": {
+          "count": 32,
+          "sse": 1.1454303355934712
+        },
+        "interface_05": {
+          "count": 32,
+          "sse": 3.940415409816861
+        },
+        "interface_06": {
+          "count": 32,
+          "sse": 2.495273919803324
+        },
+        "interface_07": {
+          "count": 32,
+          "sse": 9.742823605381268
+        },
+        "interface_08": {
+          "count": 32,
+          "sse": 6.661678504759912
+        }
+      },
+      "interface_error_count": 256,
+      "interface_error_sum_squared": 38.09786130755526,
+      "peak_error_count": 32,
+      "peak_error_squared": 516.5249795450997,
+      "point_count": 7706400,
+      "point_sse": 43500354.15101426,
+      "point_truth_energy": 59496430978.68762,
+      "sample_cv_relative_rmse_count": 32,
+      "sample_cv_relative_rmse_sum": 0.8769133127431274,
+      "source_sse": 7.470135264361114e-07,
+      "source_volume": 4.98323059082031e-08
+    },
+    "tracked_reference_sufficient_statistics": "unavailable_in_tracked_E16384_compact_publication_row"
+  },
+  "execution_role": "compatibility_audit",
+  "inference_execution_role": "production_inference",
+  "inference_labels_read": false,
+  "model_selection": false,
+  "publication_evidence_touched": false,
+  "reconstruction_contract": {
+    "empty_domain_fallback": "same_layer",
+    "implementation": "rigno.heat3d_v6_full_field.build_reconstruction_map",
+    "method": "layer/interface-aware inverse-distance reconstruction with per-domain same-layer fallback",
+    "resolution": 240825,
+    "route_id": "E16384_reconstruction"
+  },
+  "route_contract": {
+    "anchor_context_resolution": 1024,
+    "checkpoint_epoch": 559,
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "direct_query": true,
+    "encoder_input_resolution": 16384,
+    "execution_role": "compatibility_audit",
+    "frozen_valid32_ids": [
+      "v6p1if1_0308",
+      "v6p1if1_0511",
+      "v6p1if1_0041",
+      "v6p1if1_0846",
+      "v6p1if1_0572",
+      "v6p1if1_0347",
+      "v6p1if1_0286",
+      "v6p1if1_0124",
+      "v6p1if1_1017",
+      "v6p1if1_0854",
+      "v6p1if1_0928",
+      "v6p1if1_0543",
+      "v6p1if1_0632",
+      "v6p1if1_0599",
+      "v6p1if1_0003",
+      "v6p1if1_0029",
+      "v6p1if1_0991",
+      "v6p1if1_0109",
+      "v6p1if1_0365",
+      "v6p1if1_0091",
+      "v6p1if1_0930",
+      "v6p1if1_0175",
+      "v6p1if1_0915",
+      "v6p1if1_0869",
+      "v6p1if1_0522",
+      "v6p1if1_0118",
+      "v6p1if1_0708",
+      "v6p1if1_0817",
+      "v6p1if1_1003",
+      "v6p1if1_0697",
+      "v6p1if1_0907",
+      "v6p1if1_0203"
+    ],
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "metric_schema_version": "heat3d_v7_evaluation_core_v1_v6_definitions",
+    "output_query_resolution": 16384,
+    "prediction_artifact_sha256_by_sample": {
+      "v6p1if1_0003": "0a42d544d0065d8c31db964ebc4ce1c68cb5fc43eee9a7416f9cf9d814368669",
+      "v6p1if1_0029": "3a5e4156cc7e6596a0c3ee062571e02b683b426ed30bbabad7e5f9beab724f55",
+      "v6p1if1_0041": "95c04367f50d3049c3dfb150843a7a9445b16a7456afb5fef54a42d07cdc91f2",
+      "v6p1if1_0091": "fce3adc99f4819d074c11a4af1dbf671275fc1ae3b35969e1cde7771c04e2612",
+      "v6p1if1_0109": "e9dda12789cf2e818ed7d4aac598a6231fae68edf8ed94eaf085ce6071471c3f",
+      "v6p1if1_0118": "21901b0f68a318187aae20759208228da8411b01123d89e16700eacd9a4e49ce",
+      "v6p1if1_0124": "d11ef0cadc97b843f7ddfae640eb28f4390c4592b8f2a41bde1e0d66690746b3",
+      "v6p1if1_0175": "94758e3cc535ff4e15967fbc8fda180b2e62f06ca88f85f4a0a7588bff6b63fe",
+      "v6p1if1_0203": "91796b028f622b3ef37a9abbe52af43c9127805a05b0f626b070620ea488851c",
+      "v6p1if1_0286": "f27935bb6fbf5b1ac1f0e11406d3d8a2e7b4a3584162b828c3f0f84219f0869f",
+      "v6p1if1_0308": "627367b080dd4e5ff6c95a715ce154ca340452f963884d484af8e7a360c64672",
+      "v6p1if1_0347": "fe8692379886ed79c7d35692f96cd4e4ab0db74d34226db744d8a07ce649fdbb",
+      "v6p1if1_0365": "03504f8ffb1c2112140edf5046d2befc9623dd361855330b3287fd5a9f87491f",
+      "v6p1if1_0511": "7c4df43054da66b92198d8125db8ddb1a1a9b07fb5c9939ec0e1b485e88aca0b",
+      "v6p1if1_0522": "95f66b1c19a62a3e834b6c3e7107cd67ba62783b9f94d07f0a9fe12ce324c6b6",
+      "v6p1if1_0543": "34722e66a86d9ce1ed811267b34845fbbc5f3bf08f0221e2f3520ebe64636111",
+      "v6p1if1_0572": "e3590f90ae47ef526fd315ee4650cc4bc68f5b20464cf6ec7bba5538c863c2d7",
+      "v6p1if1_0599": "59c2d800030394aaa70ba5146ba9a1b9f7895491644079c00c77dad1c30181ea",
+      "v6p1if1_0632": "f3489c1dde478f5f834ed5733cc268c19d2e7e76145d54816274264825dfd1fe",
+      "v6p1if1_0697": "a7cb35352a1780d4faa46112db2804e7843f9aa36c2551df09ab8e02ddfef535",
+      "v6p1if1_0708": "35d4a4d494e1ea1ed3056840d5c151e6cda54de66a5eb554bfe39355db6f8570",
+      "v6p1if1_0817": "a8f6a9bfbbf1837ad57bd0c840fff176c1c51318ac6a15fb73c4b6722259952e",
+      "v6p1if1_0846": "7998fa2478879a64721011e62efb5ef9fa456bbf09e70a666666714f3d4788d8",
+      "v6p1if1_0854": "943db91cefbe527f1c20fe3613155cafa61ba134ea2a5d9600992fe2bafa873f",
+      "v6p1if1_0869": "1da68ff9300f0e7907b40c1ccda47bebe5def09a436258dc81b4841d6e3e653d",
+      "v6p1if1_0907": "fda14261098ea3cc3e60da4527fdc49c0421c0e227adac996b127b6f119f84ea",
+      "v6p1if1_0915": "54186b0fe3caf289a8c8820b47ee945b17455935cfd625bb62a3d791ae4170e3",
+      "v6p1if1_0928": "fac764c50c01a76c42d4f0fbc4784901e7d46489b9edc2f3190c8eec62805b19",
+      "v6p1if1_0930": "7ed7ec4d622a70f7d2f582b8ed079ef208545c25c68449d2cc74f2e3cb1a9569",
+      "v6p1if1_0991": "ec23a4f5aa520f87ceda78f4db5c42a0508b8e0cfe62ca7fac71c4321131d01a",
+      "v6p1if1_1003": "4139a5d84b37c25b2b07e27f0ad156e11810ca026d71656a0991ea7080911aba",
+      "v6p1if1_1017": "ee6aafe52dba458a4f7f064303464bd153665f3bdf92f25dc493e31e05095e0f"
+    },
+    "prediction_representation": "deltaT_K",
+    "prediction_stage": "formal_reconstructed_full_field",
+    "reconstruction_contract_sha256": "176ce2a2285487100235eb848bfc3fad63bc25eab269c067b4df471deaa046c0",
+    "reconstruction_map_sha256_by_sample": {
+      "v6p1if1_0003": "f4c058e83a2ed59a8228e84e85ab570b405db102386890e4dd925f556386f4b7",
+      "v6p1if1_0029": "1a9218cd60801d63fe444c739acbf07945793f18ca61af5fb14a97d98a47d4e1",
+      "v6p1if1_0041": "3adb52b1368fc87b1c2b7ab87dc2d030a7d3279923dc6fb9110ee532e3ca2100",
+      "v6p1if1_0091": "22b32f65cee1187b45f259368149f6054a48cc0edcb96b732fb37d2045c10e6b",
+      "v6p1if1_0109": "0567acbdfde61db2e59be4651b18925e70aa94a0335a4a66c473abf41fab7cb3",
+      "v6p1if1_0118": "a7ec92a7df9abb81405bfb762a25266c26086e58dabc6fe3fad6924182a68683",
+      "v6p1if1_0124": "43a563968da84f78a76a660f4fce2e97f82185033209b5b13fc71223821cad50",
+      "v6p1if1_0175": "18e78ebfd77c5ead041306bf9791f6fec2dfa9f3325effc36989981bb2551dec",
+      "v6p1if1_0203": "c4dcbe4ce8395c549fd916e327b1b270b07d2219f6eeab1f4ea19b626020a521",
+      "v6p1if1_0286": "a0172dfb72932f28e9f4a784c9ee83a3b14dfcd03360d5452474bcdd63e4a231",
+      "v6p1if1_0308": "2a8c9f8b7278e672d922ec87102d5f45b9da48a645eea82d5407433f2ec9bfb8",
+      "v6p1if1_0347": "c408d586eee6e34b1dcbed430b1522efcae53e67c6f920efdd620480a4e03554",
+      "v6p1if1_0365": "07cdd1481281ff898811055c65f7bb3e46a23f607dc7efe654b2986a44118162",
+      "v6p1if1_0511": "8b054dd4aca80a2b7d81b19344aa33a6efbb8e3dada5285f0963b002dc376e54",
+      "v6p1if1_0522": "a9c2774859b0227540d50969122bfafe3b24886585719bd818671e59889d3d32",
+      "v6p1if1_0543": "313c2121680ff4beb5075c96e7b23d64d3679d5cf742c31ab331a5e40ab262af",
+      "v6p1if1_0572": "34938a4a536830db1d4a7468d0ccf3e1b41a6ea6e35030beddd2570dd509711c",
+      "v6p1if1_0599": "45a1da36b111034eb579bdca2bc3d6004d42e3622c6272bde695f919d7761c05",
+      "v6p1if1_0632": "42a8df8bc69beb12ec011952b752fa7040a88cd9e1b3976d889b6d9109a0e979",
+      "v6p1if1_0697": "6596167c070b3bf21d487ab376553e0e3ade9c55265dc9535dfb1eb354c42b86",
+      "v6p1if1_0708": "8aebec78c9c0ce03bd552f443ee77dba104520123a8be885500d0116e5797375",
+      "v6p1if1_0817": "4a20ad4af8055afee10e593e2fcb609eece592ac438c0c4f8c572a01c9370701",
+      "v6p1if1_0846": "9384947160e95262f6ad0985d01dabd40c5c26cfce734ba3a117ac82924dcc38",
+      "v6p1if1_0854": "7d118a8d904f349ae93de1b3d6590bcb717cbbac52d1fd0b14ef407081df1236",
+      "v6p1if1_0869": "3136b0b446707f1f62f6a4192a8f3a375b83cee379037b3d14c332bd1f2ef439",
+      "v6p1if1_0907": "70ca121e32a1bd4ba4519332ee68fc99cceee87af5882e058af24d01b1c5f0dd",
+      "v6p1if1_0915": "9460d47c049bce939cf1d981e6ede12a377162e698302efbbc8647493125cb8e",
+      "v6p1if1_0928": "7bef3271ba56578211f9157cc4955975cc4b00031100de79778d1f06dd11a153",
+      "v6p1if1_0930": "7c041116319edc33f8eefe0c6d3e730c87c4a20bf88e53c6fe4fd414bc6601ec",
+      "v6p1if1_0991": "9ca665dbfbfddf81f1cfcbbc6b5656bdb09dc23957f52a2b48aaf43f9e1c0353",
+      "v6p1if1_1003": "e9c326acc346936979feb14d279fd70f88d4c93b9eb79b5ad60493ad139e2023",
+      "v6p1if1_1017": "4cee116fe7215891de315db3f18ad16c422b957d9e39513a4cc22b6a05ce598a"
+    },
+    "reconstruction_resolution": 240825,
+    "reference_temperature_K": 300.0,
+    "route_id": "E16384_reconstruction",
+    "temperature_representation_contract_sha256": "d53ec2cf4cdb16fd08525c5f17c19d78dcdae4341248f978728dfc0cd5f7926c"
+  },
+  "sample_evidence": [
+    {
+      "anchor_scale": 72.52039337158203,
+      "direct_deltaT_sha256": "dcc185b4f8c80dddd51dfcdb905201f8e65e67b495825f39b787a054ec8d41b2",
+      "direct_prediction_sha256": "b8047cff0798810d4f52f86de79fe94601b3b2486ecab48c075d4949ca85f975",
+      "graph_metadata_sha256": "888acdb99e3e59e8554e7218962e805d8c1553159db1866272258cbade335e02",
+      "graph_tensors_sha256": "4684096211ca61e7ae81194c9e4886057d2f322e5ed4a0f686f162ae32a6b267",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "dce8737b3ffe7b300b5efb8a441b9533ada9d8cb126189ef282f9a5302b28a9a",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 32978,
+          "robin": 8298,
+          "source": 4948,
+          "volume": 193577
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "ee1efddd1cf80621da555f007451a199fac703b941d96437cea430cab365a638",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 107105,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3511,
+        "r2r_edge_indices": 3511
+      },
+      "power_audit": {
+        "applied_power_W": 13.199944663154593,
+        "relative_power_error": 0.0,
+        "requested_power_W": 13.199944663154593,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.652371239367475,
+            "represented_volume_m3": 2.0415642263294277e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 336,
+            "power_W": 0.5781953741809547,
+            "represented_volume_m3": 1.068185907813505e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 1.0760344582154169,
+            "represented_volume_m3": 1.4638674771801202e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 1.6575355246679329,
+            "represented_volume_m3": 1.6990441864314237e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.3196473937984592,
+            "represented_volume_m3": 2.187435526930833e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 432,
+            "power_W": 0.9739623528946464,
+            "represented_volume_m3": 1.659640972152859e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.9057710960150049,
+            "represented_volume_m3": 1.5112969924153357e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.870235458687259,
+            "represented_volume_m3": 2.1011583360341382e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 480,
+            "power_W": 1.2648570636120888,
+            "represented_volume_m3": 1.8680713266842133e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 648,
+            "power_W": 1.9013347017153548,
+            "represented_volume_m3": 2.0756590467246392e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "319142747012e16e8176dd8d5e39ffd95cc116a387d34340990870de2a278187",
+      "query_k_sha256": "f9de3de8674dc25fc040c781dc21580dfa647c735d0823dd86bc8576724292c6",
+      "query_q_sha256": "961eaae1ceeedebaee977ac033eab73e32c6e0b8f6e392609987e5ab3a486dca",
+      "query_scale": 64.98715209960938,
+      "reconstructed_prediction_sha256": "627367b080dd4e5ff6c95a715ce154ca340452f963884d484af8e7a360c64672",
+      "reconstruction_map_sha256": "2a8c9f8b7278e672d922ec87102d5f45b9da48a645eea82d5407433f2ec9bfb8",
+      "sample_id": "v6p1if1_0308",
+      "support_indices_sha256": "a82d1b7ea10402568a38b887db7986d4b6704e848e88325f65b6d0240ff352f0",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 72.65607452392578,
+      "direct_deltaT_sha256": "0355e9a6f75dff42e342ec51b56cb3c5b3d3c7be55897c478b4e3a154373075c",
+      "direct_prediction_sha256": "e5e4e19449e45a4bf9f8336969c758557bbb6f1b1835489a4ae5f08582b65f96",
+      "graph_metadata_sha256": "c56e7a5ee4d7a95d15d0cbcd9ac0fd299cbb7de299d7f875a28bfd21bccb8f47",
+      "graph_tensors_sha256": "32aed1890d30b5a44482fb9e7c5c0b63ba29d798beb08b3c918075dcb63a1f70",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "936717766764a935eeecb29a36475ed86eaaffe4c99f5212f6ac1a8ba361b56a",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33121,
+          "robin": 8306,
+          "source": 3820,
+          "volume": 194554
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "f8d22347ccd7a08b1d3c9574e01caec405a20e054fb0c68d349ac49f29936d3c",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 94962,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3535,
+        "r2r_edge_indices": 3535
+      },
+      "power_audit": {
+        "applied_power_W": 5.794942290774134,
+        "relative_power_error": 0.0,
+        "requested_power_W": 5.794942290774134,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.5961074120719865,
+            "represented_volume_m3": 1.5500760003083466e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 336,
+            "power_W": 0.3735126840250096,
+            "represented_volume_m3": 1.1122806368679427e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 0.717704354118422,
+            "represented_volume_m3": 2.2597455390329514e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.8211015049877918,
+            "represented_volume_m3": 1.5799824659448406e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 640,
+            "power_W": 1.3880669023775878,
+            "represented_volume_m3": 2.2911741578089013e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.5087481076899116,
+            "represented_volume_m3": 1.5173330653631577e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.5349491156733989,
+            "represented_volume_m3": 1.7829963634511797e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.8547522098300256,
+            "represented_volume_m3": 1.480877656910495e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "8342218caeb256f484553d0f2e316aa8e95bf64faae162665246da4e57a5f102",
+      "query_k_sha256": "e3c57db9baa0df1f6e2facfecde8e209d7f6675d526dc03f8af3f5c25e235f62",
+      "query_q_sha256": "ccb58f047fcced5383ad0a4afb7e0c97bfff106673baf05e949ca0168d47f208",
+      "query_scale": 65.74705505371094,
+      "reconstructed_prediction_sha256": "7c4df43054da66b92198d8125db8ddb1a1a9b07fb5c9939ec0e1b485e88aca0b",
+      "reconstruction_map_sha256": "8b054dd4aca80a2b7d81b19344aa33a6efbb8e3dada5285f0963b002dc376e54",
+      "sample_id": "v6p1if1_0511",
+      "support_indices_sha256": "2d507bb8742733ebbf10bad00e54f854801c78ae3c6c89e87cd185ddbfb13cf8",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 74.84727478027344,
+      "direct_deltaT_sha256": "7b1a4d0d1055c74a9f65bc9b183d955801819e708c4e5057b0a7c1d03c776c59",
+      "direct_prediction_sha256": "2e5451fb4612d2711554216049a1c0fa8bb9a9218931e436bf8fd1e32e84c4bd",
+      "graph_metadata_sha256": "3aa5652fb6eeaf9d51b0ef4898501ed1b5982b88f3d92cfa4449d8499c52d68f",
+      "graph_tensors_sha256": "a04aa303409ad60df99d2975a350972c79ac0c98bf3200a97adc5b32301e667e",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "d5547d2c2781f84cfaf0db0a924752681c5a4b34dc453801722a55b17bfe342f",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33009,
+          "robin": 8298,
+          "source": 4571,
+          "volume": 193923
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "d02765aa3b00bfc77df333f61a7f093c50ef79b4db947209637d0caaf174972f",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 103045,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3559,
+        "r2r_edge_indices": 3559
+      },
+      "power_audit": {
+        "applied_power_W": 10.474792867852525,
+        "relative_power_error": 1.6958395853840193e-16,
+        "requested_power_W": 10.474792867852523,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 1.2205454481604099,
+            "represented_volume_m3": 2.0174002128647886e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 512,
+            "power_W": 0.8052070967770063,
+            "represented_volume_m3": 1.690414469839135e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 432,
+            "power_W": 1.3203788615846401,
+            "represented_volume_m3": 1.6129934266196788e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 432,
+            "power_W": 1.2761966867696632,
+            "represented_volume_m3": 1.5721261323185122e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 1.1952672934136164,
+            "represented_volume_m3": 2.611811795701796e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 336,
+            "power_W": 0.7054136926073591,
+            "represented_volume_m3": 1.245645675033766e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 1.1880922828339406,
+            "represented_volume_m3": 1.5371213472066095e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.4959506225710404,
+            "represented_volume_m3": 1.8935334258504355e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 1.267740883134848,
+            "represented_volume_m3": 2.438530180589401e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "c70fd282cd8d5528ad7fe37561da23980449bdd8c6a138e394457c5103e8e22c",
+      "query_k_sha256": "04d23a4af47a4affe694f7a38e8fc9595d297b18fc5ba337a43665da55369f18",
+      "query_q_sha256": "ea79e449a952eda0a03f8dfae3aa4c4a5f379e3b0250877e7afe69124effa960",
+      "query_scale": 67.93372344970703,
+      "reconstructed_prediction_sha256": "95c04367f50d3049c3dfb150843a7a9445b16a7456afb5fef54a42d07cdc91f2",
+      "reconstruction_map_sha256": "3adb52b1368fc87b1c2b7ab87dc2d030a7d3279923dc6fb9110ee532e3ca2100",
+      "sample_id": "v6p1if1_0041",
+      "support_indices_sha256": "706c787fba8414172544ecf6e8ce474899f04f7b245e58a1b3fdf5edd26ea921",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 38.890541076660156,
+      "direct_deltaT_sha256": "dfcf1b695c8699a83d7eac1dbc1af4d65135383ddee3c48ad12f823e32953033",
+      "direct_prediction_sha256": "2b4067069d09fffd5992bfd8211954ba3d7b4546d5bd72c15ebf4e7fba884e2c",
+      "graph_metadata_sha256": "9a5944e839fd1f3e91901247e8dfa98c6f8376b8b8d54caccff4e8360cce5f68",
+      "graph_tensors_sha256": "e11e4e646213e57099cc7ce67b3f263f7bb493384fe798bbf95ee2bb43efb8e7",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "18bec060a5202f2ca57754b3460d99f9c1804c9d980695024b71b584fd67000d",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33085,
+          "robin": 8305,
+          "source": 4091,
+          "volume": 194320
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "bbeb2a654d4d7da86d8695c55fda5571003b8bb61cf5ecfaf1d1630af6a47eda",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 96910,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3533,
+        "r2r_edge_indices": 3533
+      },
+      "power_audit": {
+        "applied_power_W": 4.554079009807283,
+        "relative_power_error": 0.0,
+        "requested_power_W": 4.554079009807283,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 0.4356302446207907,
+            "represented_volume_m3": 1.2748163184585484e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 0.5174370966351355,
+            "represented_volume_m3": 1.5018687194890635e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 720,
+            "power_W": 0.6003376220803758,
+            "represented_volume_m3": 2.6896528396106135e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.37252006944528526,
+            "represented_volume_m3": 1.67015213338483e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.5593791574490768,
+            "represented_volume_m3": 1.3609830309859878e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 0.5354738518223189,
+            "represented_volume_m3": 1.4448813543220663e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.7234797920882761,
+            "represented_volume_m3": 2.161979139032735e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 0.337573919902589,
+            "represented_volume_m3": 1.2190192294735158e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 432,
+            "power_W": 0.47224725576343474,
+            "represented_volume_m3": 1.5344005071075536e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "089856bbac307daef365a18701cebc8fdf6165b1213dda2a326fcef7ed3af3e7",
+      "query_k_sha256": "dd729cdf2e5779ddd585b1d8cc828c9b3ff8e45b3fea462534a57a235034eae2",
+      "query_q_sha256": "a2827e105dabf74845bea897ce98fe8cb97f166bbd77f05f4189e6c01ae82dcf",
+      "query_scale": 35.881126403808594,
+      "reconstructed_prediction_sha256": "7998fa2478879a64721011e62efb5ef9fa456bbf09e70a666666714f3d4788d8",
+      "reconstruction_map_sha256": "9384947160e95262f6ad0985d01dabd40c5c26cfce734ba3a117ac82924dcc38",
+      "sample_id": "v6p1if1_0846",
+      "support_indices_sha256": "7d6ef58dd295c65905e72cd98c5764e1a3b3acdbc14d6d2671d2bcf58355468d",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 56.21166229248047,
+      "direct_deltaT_sha256": "cf57fddee56f0ab1ad4e48bf54bd63a3ed6f024196daaeb68864b343bad1cd77",
+      "direct_prediction_sha256": "fc026c6af7c1727a90c5a48025bbf573b64ac7f1f1a9525a86003fc86ce0d741",
+      "graph_metadata_sha256": "394cae7926e9fa3dec41f937d909756e9217752504f22f22ae5dceef77e22343",
+      "graph_tensors_sha256": "6a63f0942cca0d70f9ed133f694e9e51604c6b3de099a138ea396954a6baec1d",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "7da2150f7d781a4e7a08fb9ac446dea3347c010473e5e00450f9018c78c0899a",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33280,
+          "robin": 8305,
+          "source": 2511,
+          "volume": 195705
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "aa96a1ef4a45ef2c56bf2cb48d69108bbd7dad14538a83c2150d35f38d3134ac",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 83509,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3489,
+        "r2r_edge_indices": 3489
+      },
+      "power_audit": {
+        "applied_power_W": 5.453447747938667,
+        "relative_power_error": 0.0,
+        "requested_power_W": 5.453447747938667,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 1.2071301684007565,
+            "represented_volume_m3": 1.624320868924797e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.1705168528619911,
+            "represented_volume_m3": 2.1794692129838272e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 480,
+            "power_W": 0.9113672400081808,
+            "represented_volume_m3": 1.6007588330088065e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.888632578593907,
+            "represented_volume_m3": 1.527881975419919e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 640,
+            "power_W": 1.2758009080738322,
+            "represented_volume_m3": 2.2541157747271508e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "a63fe6ca25e08c6d32d4dc5805762ccec685f622163a1f5821ec7bfb49e76044",
+      "query_k_sha256": "e00fa3e67bd474930e356bb302c215815c3e29ed78c51629f57b0e5d42f68dac",
+      "query_q_sha256": "b61129c98190856867f938f356e31ad8df8c82f0b49020d416e9c3855011edbe",
+      "query_scale": 50.9908332824707,
+      "reconstructed_prediction_sha256": "e3590f90ae47ef526fd315ee4650cc4bc68f5b20464cf6ec7bba5538c863c2d7",
+      "reconstruction_map_sha256": "34938a4a536830db1d4a7468d0ccf3e1b41a6ea6e35030beddd2570dd509711c",
+      "sample_id": "v6p1if1_0572",
+      "support_indices_sha256": "2aeed095e94eda088846bf6c72b433cad1df3a6e062d284bbb181f9c62ca67de",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 144.0781707763672,
+      "direct_deltaT_sha256": "56310572c23d7396679799b7094869e2da8315f6a781d2d69b016b3c32b0b24a",
+      "direct_prediction_sha256": "43479021475fecc72cc0ebf5cd47f38bda3c9fef36b94c86605f69a6afc24c5e",
+      "graph_metadata_sha256": "1b252fd28f5f6ab82e33864199e6d75a3a533f167afd529592886b7721f77b7e",
+      "graph_tensors_sha256": "51af36f4a18a62db43c9dffde9f7b001e93cc1d0193c6945e7d9cda14fcba356",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "9b47bff81640ea4a006b2db2440e1675ad900733faa3c22cd2de969427a017ad",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33244,
+          "robin": 8304,
+          "source": 2816,
+          "volume": 195437
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "b8fe73c5e02d42038dc8dee86f69837f31c6990e902403ccff8b573a8a95f67b",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 93388,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3573,
+        "r2r_edge_indices": 3573
+      },
+      "power_audit": {
+        "applied_power_W": 8.049232366812946,
+        "relative_power_error": 2.2068649014584114e-16,
+        "requested_power_W": 8.049232366812944,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.0798259101448058,
+            "represented_volume_m3": 1.7055174465505926e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 512,
+            "power_W": 1.0346195455170184,
+            "represented_volume_m3": 1.9392227132704965e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 800,
+            "power_W": 2.669979915365766,
+            "represented_volume_m3": 2.654156738371267e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 1.8001101913745243,
+            "represented_volume_m3": 1.6436389087368486e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 512,
+            "power_W": 1.4646968044108308,
+            "represented_volume_m3": 1.5912584678756354e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "3df0591b6bfb0c97d4ef44f47616d66f10f9dab25965436e83464f9d1c5c3768",
+      "query_k_sha256": "b776918ae039d9cad52b4088ab980ca76f7c5331cabe06dfbc0e2bd3895eee54",
+      "query_q_sha256": "3794251d7734ebb81d98a5ff54a2bf577816df66a2d70ab9dc3e3c9a99271114",
+      "query_scale": 129.8386993408203,
+      "reconstructed_prediction_sha256": "fe8692379886ed79c7d35692f96cd4e4ab0db74d34226db744d8a07ce649fdbb",
+      "reconstruction_map_sha256": "c408d586eee6e34b1dcbed430b1522efcae53e67c6f920efdd620480a4e03554",
+      "sample_id": "v6p1if1_0347",
+      "support_indices_sha256": "ec2cb4580b877c05a2a03334690d033ad79a7c7fc61813292feab0ce4df6e41a",
+      "support_volume_relative_error": 1.2680133940932638e-16
+    },
+    {
+      "anchor_scale": 62.044681549072266,
+      "direct_deltaT_sha256": "e31b305fcd27047432d590c58e40b1f403209d0cf9e8a54d133a53d50b532d82",
+      "direct_prediction_sha256": "656092cc8b91855f32832289f8357c4d0029bf8e16683d20bef3375c6ce840fa",
+      "graph_metadata_sha256": "fa70a0d700c6464f9b5664ebadd7a32cc2d170b422df533a9a6458045cc62ad3",
+      "graph_tensors_sha256": "9828d07a57e1a3df34cb3060aefe2c79a1157c8b1d845d18d190f3ce9c08ccc5",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "360a697c57d35e3a2ae84a48d95555aad61bf775218a633e54afe629a33bc267",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33124,
+          "robin": 8294,
+          "source": 3724,
+          "volume": 194659
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "8af767873b24110964579e322e55168d87a232ce4365e87524e339894adabc36",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 100367,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3521,
+        "r2r_edge_indices": 3521
+      },
+      "power_audit": {
+        "applied_power_W": 5.114794142683818,
+        "relative_power_error": 0.0,
+        "requested_power_W": 5.114794142683818,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 512,
+            "power_W": 0.8205447995584987,
+            "represented_volume_m3": 1.911845600954945e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 0.6671743206705734,
+            "represented_volume_m3": 1.9065231769533474e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 512,
+            "power_W": 0.7101559993060301,
+            "represented_volume_m3": 2.072527041187615e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 0.5148121109597686,
+            "represented_volume_m3": 1.2076460862518616e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 0.34743132609304156,
+            "represented_volume_m3": 1.3472082759506277e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.5957700771442039,
+            "represented_volume_m3": 1.4873888284100064e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 0.6267915996492702,
+            "represented_volume_m3": 1.7284936154317483e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.8321139093024316,
+            "represented_volume_m3": 1.7260376503710536e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "ccb03f158706a29cd0925bee6a5c74dc87c1561e813fd77a4a1b90eacc8b9813",
+      "query_k_sha256": "a4bb061b0706efe0f9083b1f8c2de011c1cf35f696801ed68d749cd80e6e3a35",
+      "query_q_sha256": "8959c07b400fcde010645f968959515f651f00a7388095c6dec5f55fb75bd060",
+      "query_scale": 55.810054779052734,
+      "reconstructed_prediction_sha256": "f27935bb6fbf5b1ac1f0e11406d3d8a2e7b4a3584162b828c3f0f84219f0869f",
+      "reconstruction_map_sha256": "a0172dfb72932f28e9f4a784c9ee83a3b14dfcd03360d5452474bcdd63e4a231",
+      "sample_id": "v6p1if1_0286",
+      "support_indices_sha256": "9c509f81c2e702b0668949ea814aa0fe6e323d397473ed63953c0f85b08f2462",
+      "support_volume_relative_error": 1.2680133940932638e-16
+    },
+    {
+      "anchor_scale": 62.20293045043945,
+      "direct_deltaT_sha256": "f88ecb55c99ffea2e3095ef2949c7b93cd1f2e999409bbc74e4c05c595e392c3",
+      "direct_prediction_sha256": "4aa4f0c7aa4f675d7e2b337e509f80e1016844a0433c56ac9f1a9e1247a77470",
+      "graph_metadata_sha256": "1cd5f82ef0ee90886ba17464844b71f84a4a7465551c8b6970d9746077b8238d",
+      "graph_tensors_sha256": "2486286afb592aedcd588207ba30e2db109567aa0f27bae3ca7e0b1f188fc119",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "259f7809a687bd724ab53dfdf8f797eebb93aeb3b45c5393af364f0a1a35b04c",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33046,
+          "robin": 8306,
+          "source": 4352,
+          "volume": 194097
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "1fdaae23097d1a4403df36c4b11b082853d63a6d12d6fc09be62cb06bce206b9",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 96644,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3505,
+        "r2r_edge_indices": 3505
+      },
+      "power_audit": {
+        "applied_power_W": 9.296011801182438,
+        "relative_power_error": 1.9108805769526888e-16,
+        "requested_power_W": 9.29601180118244,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.6955672904908861,
+            "represented_volume_m3": 1.3044210115171651e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 1.4485168498247027,
+            "represented_volume_m3": 1.8531432882764404e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 1.278215834078192,
+            "represented_volume_m3": 2.1471061930113366e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 0.8759678546398223,
+            "represented_volume_m3": 1.432798927497623e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 0.8135827144180727,
+            "represented_volume_m3": 1.8253761263422925e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 1.3023411327474905,
+            "represented_volume_m3": 2.322477205896202e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 336,
+            "power_W": 0.8819528691595812,
+            "represented_volume_m3": 1.2400491197635256e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 0.8756064914721359,
+            "represented_volume_m3": 1.925884679950537e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 480,
+            "power_W": 1.1242607643515552,
+            "represented_volume_m3": 1.862377428503499e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "3ecb7d1b12fd23d0c6c91aa64c53afaa32d9bf1d081e1ed1b8144a74664b7b1b",
+      "query_k_sha256": "c13d2198e2fe4653ee00b434d016ae3caead5734584c846821f5ca128e281e1b",
+      "query_q_sha256": "c3e619fe43efb64b3aba76dc62f7f71d612b8d25298e9d198d7389125e5bb9cc",
+      "query_scale": 56.177391052246094,
+      "reconstructed_prediction_sha256": "d11ef0cadc97b843f7ddfae640eb28f4390c4592b8f2a41bde1e0d66690746b3",
+      "reconstruction_map_sha256": "43a563968da84f78a76a660f4fce2e97f82185033209b5b13fc71223821cad50",
+      "sample_id": "v6p1if1_0124",
+      "support_indices_sha256": "595036435cfabf0e97509f49bba5e45cb8b7ca38460d1a5311b5ad481a082fe6",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 33.80934143066406,
+      "direct_deltaT_sha256": "b0eec3ab5bf6ad7be4ea5fa14864416bf74629cb80f643651c922f0cf4f986d0",
+      "direct_prediction_sha256": "fe66f682338edd6aa816e0ea101ab6b489beaa588fd45e1d6128004362dcdc8f",
+      "graph_metadata_sha256": "93fb625c07deeb2c7588b3f7cdedf2ee0fb17c10e137544b2956e37cb2c94362",
+      "graph_tensors_sha256": "a70de1f6d0c375763a2d37a378bf65b6bc06cc5ec615024e44dd3ec7ea623e17",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "3841b439809b8b07aafd2244c9f96a08a92c83cdd2483cae27a74ee87673d38f",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33359,
+          "robin": 8302,
+          "source": 2044,
+          "volume": 196096
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "04ac79f4f97f593ce1de10a98d1f74dbd47ad738b8a04786f16ec084932b4dac",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 78018,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3561,
+        "r2r_edge_indices": 3561
+      },
+      "power_audit": {
+        "applied_power_W": 3.9177920997654496,
+        "relative_power_error": 0.0,
+        "requested_power_W": 3.9177920997654496,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.7150458302575411,
+            "represented_volume_m3": 1.7683690097338877e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 336,
+            "power_W": 0.6531794789286053,
+            "represented_volume_m3": 1.317513233383773e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 336,
+            "power_W": 0.6582764095606178,
+            "represented_volume_m3": 1.1865827622954693e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 1.1448177269370954,
+            "represented_volume_m3": 1.5261059962065408e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 0.74647265408159,
+            "represented_volume_m3": 1.5917542106043157e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "703cd80d25f3760d7c5407a34d532cf5da37ca2fc36645f9e5fcf4f062c374c1",
+      "query_k_sha256": "f93b0c6898569b6a4758c6523f1b54179f146a0bc781aea7a2a9cf0a1aa7fcac",
+      "query_q_sha256": "d632211ab7ea921a876627fbda9fd06263d1ce0b5f25218a265ac61de107a34e",
+      "query_scale": 31.202890396118164,
+      "reconstructed_prediction_sha256": "ee6aafe52dba458a4f7f064303464bd153665f3bdf92f25dc493e31e05095e0f",
+      "reconstruction_map_sha256": "4cee116fe7215891de315db3f18ad16c422b957d9e39513a4cc22b6a05ce598a",
+      "sample_id": "v6p1if1_1017",
+      "support_indices_sha256": "d7c0004135c5104063fcedabe487736caece0d9e1c80fecb6ea5f2df9208699b",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 88.65011596679688,
+      "direct_deltaT_sha256": "324be9630e1fbacaaca443e490bf112b651696a98cd6e9d17903a7669c9f1752",
+      "direct_prediction_sha256": "23ce8ef3c9e8521b9bc1c5a82a22654373bc86356c75d671f1fd8e129e11b8f1",
+      "graph_metadata_sha256": "055b749aa9921ff8f63be3be12b024b5743548b2d4204f36352ee3dfdf97c3d4",
+      "graph_tensors_sha256": "e3f4e953d8cbeed26206f93325758d5f5f724c50e0f68d9abc86bc75eda95abe",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "1f96e617bd703164a11c6ec97dbaeebe5db6409dd189a7cf43551e9fcb712585",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33190,
+          "robin": 8302,
+          "source": 3226,
+          "volume": 195083
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "71d47e622e39fd16cafd9e05d13d4de083cbba3c0b091302d4273af6863dd2f0",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 84958,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3547,
+        "r2r_edge_indices": 3547
+      },
+      "power_audit": {
+        "applied_power_W": 12.436614381644258,
+        "relative_power_error": 1.4283283093685472e-16,
+        "requested_power_W": 12.43661438164426,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 1.743295376603514,
+            "represented_volume_m3": 1.3655029003100817e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 1.2573126626031421,
+            "represented_volume_m3": 1.5579917285261976e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 720,
+            "power_W": 2.4296893130646153,
+            "represented_volume_m3": 2.499064136931828e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 2.647351908160214,
+            "represented_volume_m3": 1.700386653101447e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 1.2272437369694535,
+            "represented_volume_m3": 1.5667295463668668e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 1.4950618439729957,
+            "represented_volume_m3": 1.5835103408676268e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 1.6366595402703243,
+            "represented_volume_m3": 1.344632809972948e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "4b63e398351bf31e77b6ec45bdb70883935af2425c904e1d1fb6f958cbdfba0f",
+      "query_k_sha256": "d137490e5c63abe1dc96c3bcdbddc3da485fa09dedf59db040376df40b2198c8",
+      "query_q_sha256": "0e9df4e7ea014a5901ee1f6d6eeec07f5a018b71504cfee17f008615008db0e3",
+      "query_scale": 80.98046875,
+      "reconstructed_prediction_sha256": "943db91cefbe527f1c20fe3613155cafa61ba134ea2a5d9600992fe2bafa873f",
+      "reconstruction_map_sha256": "7d118a8d904f349ae93de1b3d6590bcb717cbbac52d1fd0b14ef407081df1236",
+      "sample_id": "v6p1if1_0854",
+      "support_indices_sha256": "2dd7fcb4d40907b595402c1fb9aaf41a1602c6265ab916d4afcc50cccf59ab0f",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 118.01908874511719,
+      "direct_deltaT_sha256": "e9118a84d791fa24ede8b227cf3ac9126c404b27915f684c2a0f4a1474e8cd29",
+      "direct_prediction_sha256": "88a35a057fda4cbbce0e53fb569f0f6361ee9dca4aa6005433a8da087d3553d6",
+      "graph_metadata_sha256": "09aa4d79454ba87921fbbf0eeab7b40fdf66f18e5424f63dc05a9f665151b307",
+      "graph_tensors_sha256": "03a0b1d6044d87014091d227b918c70daf7e537a94b09e5fe2bc492060525830",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "1cfaad0315e03ebc1b0c79f1ba2dc43479a2b6484f682a6f52058bf2378ce58f",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33433,
+          "robin": 8302,
+          "source": 1235,
+          "volume": 196831
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "0b019de4c683ca0ccd7b930710f73ea0b70795f92bbe9eeffef90605473f03af",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 69798,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3515,
+        "r2r_edge_indices": 3515
+      },
+      "power_audit": {
+        "applied_power_W": 7.1380771406913635,
+        "relative_power_error": 1.2442824617808766e-16,
+        "requested_power_W": 7.138077140691364,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 1.717989313021434,
+            "represented_volume_m3": 1.3439182502911112e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 2.144110328254948,
+            "represented_volume_m3": 1.3356756482185765e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 3.275977499414981,
+            "represented_volume_m3": 1.9039388798320846e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "06e01902756855271330d4d2aef4b6619058a7fdf254eead7f59933d618379fb",
+      "query_k_sha256": "2bdc1df2a99b2eb2d9d6478f78bd18f4780c7239ad1c5a702b5b62c49e25ccfb",
+      "query_q_sha256": "f96bbf9f351dd24453fa401cd20422ae6cbd8c66011b40c2a18bfdbddbbce81c",
+      "query_scale": 105.61863708496094,
+      "reconstructed_prediction_sha256": "fac764c50c01a76c42d4f0fbc4784901e7d46489b9edc2f3190c8eec62805b19",
+      "reconstruction_map_sha256": "7bef3271ba56578211f9157cc4955975cc4b00031100de79778d1f06dd11a153",
+      "sample_id": "v6p1if1_0928",
+      "support_indices_sha256": "ab40d4cbba8c90d76f606cd574398f72a078e9284aae124c79a299c7ba233fc1",
+      "support_volume_relative_error": 1.2680133940932638e-16
+    },
+    {
+      "anchor_scale": 47.32051086425781,
+      "direct_deltaT_sha256": "fe0030f06116398bad07c2722ed0b00a058631966381b6c3f1e7d3f9675ddb91",
+      "direct_prediction_sha256": "87964faf619c7cc60eb14f1851ac8e902e63393320b86a30129ff18b4097c81d",
+      "graph_metadata_sha256": "80c5e00a114fbc5be7ccda1901fa32503ee1ec9806e876c0064a2eb74d2625d1",
+      "graph_tensors_sha256": "2ef8089234efcebd18b26b05b7e90a4875931f10d5140b8571f9c0adad05f16b",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "ed7bc5883d523623302f6a4b4a2f4d3443c551e28501099801f461b757ad8330",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33275,
+          "robin": 8301,
+          "source": 2476,
+          "volume": 195749
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "45160d6094525619fea5a20029a629832ede6c92ef10e3f6c8bebcb5660d394d",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 78198,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3485,
+        "r2r_edge_indices": 3485
+      },
+      "power_audit": {
+        "applied_power_W": 3.7625992100614276,
+        "relative_power_error": 0.0,
+        "requested_power_W": 3.7625992100614276,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 0.7735837076495854,
+            "represented_volume_m3": 1.5901540776346307e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.7951631469621411,
+            "represented_volume_m3": 1.6895736178145906e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 336,
+            "power_W": 0.3026693003654423,
+            "represented_volume_m3": 1.0303428475170679e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 0.421531139179766,
+            "represented_volume_m3": 1.3594176756410537e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.6608874020872798,
+            "represented_volume_m3": 2.191800374170719e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 0.8087645138172135,
+            "represented_volume_m3": 1.6695738575676401e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "5330b3ed1227f46f5d4042b134257a9a41582ce19741d7488fa3ec95372ac462",
+      "query_k_sha256": "b6e25255cc9ff9d6e4e373c1de5f7759000a0652a5937a1eae691dedd63d4a4e",
+      "query_q_sha256": "70c79a92609d8c8e2b97b12220e24d7aef3dbf29c70ae33e0244bd79b7e22f58",
+      "query_scale": 43.40815353393555,
+      "reconstructed_prediction_sha256": "34722e66a86d9ce1ed811267b34845fbbc5f3bf08f0221e2f3520ebe64636111",
+      "reconstruction_map_sha256": "313c2121680ff4beb5075c96e7b23d64d3679d5cf742c31ab331a5e40ab262af",
+      "sample_id": "v6p1if1_0543",
+      "support_indices_sha256": "941518db76ed7e91b51a759b042c18d7b6ad7eaf583fef6beab5fa95438cff19",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 57.167152404785156,
+      "direct_deltaT_sha256": "d3588c127b9c87c05d03b26cefde0a75ae3777046447335f91f09db7cbb132c4",
+      "direct_prediction_sha256": "a9cf854a1d80c7124cbe4d7af55238b508d726024b7cf65c7e7ecbcd049d2ede",
+      "graph_metadata_sha256": "52841033f34704a319716759aebf1fac2cad2de9144a7b6ff8a511de398e75a5",
+      "graph_tensors_sha256": "6b5331c2d840fd815439b04a6541de8e3e2fa937ab454595eddb5328ce9308ca",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "06f467a6f6e8bd544dc446487d1366cc1cf0668b8361bcebf6c49caac8d544fa",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33243,
+          "robin": 8301,
+          "source": 2833,
+          "volume": 195424
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "e395fd2aad125de34a27723050b85a6a7f0b2c02618650a8f0ae78727168ee57",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 81119,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3519,
+        "r2r_edge_indices": 3519
+      },
+      "power_audit": {
+        "applied_power_W": 7.731943860644219,
+        "relative_power_error": 1.148712970125113e-16,
+        "requested_power_W": 7.731943860644218,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 560,
+            "power_W": 1.748604307737035,
+            "represented_volume_m3": 1.747029958502516e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 0.8969631164213431,
+            "represented_volume_m3": 1.1958146472486916e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 1.5281880918001138,
+            "represented_volume_m3": 2.2532260672189763e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 0.9325060082324718,
+            "represented_volume_m3": 1.469384002366938e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.5630165357454289,
+            "represented_volume_m3": 1.9959030866372828e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 1.0626658007078265,
+            "represented_volume_m3": 1.4852783257504331e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "539f4d6cddaf2b243c99340b084c42601d52e7b4c98b58b57ce2af6603dc8f27",
+      "query_k_sha256": "bc8a328022be06131b0c5d542a1b6031c69c7313e43efcf8e4adca1afa185aa0",
+      "query_q_sha256": "c0bc3cd959156b97e1b5f8c415d06fedb3bb5ded2cdefc046127a7ca0f8d2539",
+      "query_scale": 51.95294189453125,
+      "reconstructed_prediction_sha256": "f3489c1dde478f5f834ed5733cc268c19d2e7e76145d54816274264825dfd1fe",
+      "reconstruction_map_sha256": "42a8df8bc69beb12ec011952b752fa7040a88cd9e1b3976d889b6d9109a0e979",
+      "sample_id": "v6p1if1_0632",
+      "support_indices_sha256": "b4214954a0cacd082e87a8f094f90e32aadaae5ab78342f887c8cf2a84c0805f",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 29.863235473632812,
+      "direct_deltaT_sha256": "efd86a8d7a6b882c097a06701b314887391557f821598f93959559c53516c2f3",
+      "direct_prediction_sha256": "de0a330279d5fa0b440f2ae5ae05a45915cb3a0be5698695b12159f493740364",
+      "graph_metadata_sha256": "bdaa99f5a6ffba39badd50030cd9ccccb41aec8af757663245607aa8faac20c8",
+      "graph_tensors_sha256": "04d8b28ef30da15c2472a9ce12cb06c7ba74bad174fe03b26b4b358ea308684f",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "1ec248cacbef5bbbaf060c5871f73f374cadfb673c543f8a213f1b591b7860e9",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33411,
+          "robin": 8306,
+          "source": 1462,
+          "volume": 196622
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "0934c87b16f5f79d9ea3512d11bd5f5e1ed6349fdfa573a507a25d36f4af3fe5",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 78744,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3545,
+        "r2r_edge_indices": 3545
+      },
+      "power_audit": {
+        "applied_power_W": 2.6568340712446754,
+        "relative_power_error": 0.0,
+        "requested_power_W": 2.6568340712446754,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 1.30481603143895,
+            "represented_volume_m3": 1.9848379753683436e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.7900125732638498,
+            "represented_volume_m3": 1.6983978729782404e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.5620054665418756,
+            "represented_volume_m3": 1.40892822213173e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "a073f6882df00828fb6e07209cfc43fa4f15b5b40e2a28013fdcf65fb1c3282e",
+      "query_k_sha256": "f5f9a214251411d15ee450bc18496b60c7abef164f510b3614a5f9118ac2b703",
+      "query_q_sha256": "942f91a9cde2dd3cebfc4e8482f337b65aa36cc761a1eabc24288f1483a34af3",
+      "query_scale": 27.454524993896484,
+      "reconstructed_prediction_sha256": "59c2d800030394aaa70ba5146ba9a1b9f7895491644079c00c77dad1c30181ea",
+      "reconstruction_map_sha256": "45a1da36b111034eb579bdca2bc3d6004d42e3622c6272bde695f919d7761c05",
+      "sample_id": "v6p1if1_0599",
+      "support_indices_sha256": "24ff4b51bca177855f1d9d7a8ff7a6978e3da37b120ceb3ef4fe461177d6b80e",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 145.97482299804688,
+      "direct_deltaT_sha256": "8e5db6143970c0dba0e5990ddbbe87fb7e2d1dcbc5d13f1bfbf7ce888f7ea357",
+      "direct_prediction_sha256": "1f66ae13f52d51fc491e5cf0f3ac770932b0b5077a6dc3d02693027bd013fb58",
+      "graph_metadata_sha256": "a605498bdc1f01cace59e9991194480e639fe5c58532388cd7a53272527b2a02",
+      "graph_tensors_sha256": "878e0961c2f72ab12742a64d51d369ec3c5523b4b132c14f3a75eeced91d8893",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "fb61c50243b3ed6a53115c2911b6d99755fd4ec04101410a003999aa51963a5b",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33136,
+          "robin": 8308,
+          "source": 3723,
+          "volume": 194634
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "b0d3c43fa1d0a85b50fd4cef45da629636373531aa248f62b1068a3a2a475516",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 92518,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3537,
+        "r2r_edge_indices": 3537
+      },
+      "power_audit": {
+        "applied_power_W": 7.977747186952669,
+        "relative_power_error": 1.1133198368992071e-16,
+        "requested_power_W": 7.977747186952668,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.1961549684250365,
+            "represented_volume_m3": 1.9569393215759946e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 512,
+            "power_W": 1.525768244286356,
+            "represented_volume_m3": 1.7797985766184644e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 0.910361223871473,
+            "represented_volume_m3": 1.8027692243693956e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 1.0201091208604143,
+            "represented_volume_m3": 1.4208286096120668e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 1.0966941003293273,
+            "represented_volume_m3": 1.984556779601664e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 512,
+            "power_W": 0.8423362217351607,
+            "represented_volume_m3": 1.434551307879473e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 720,
+            "power_W": 1.3863233074449017,
+            "represented_volume_m3": 2.436925361689297e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "6bbb729925f844c90b3dc589027ab44273a09b6a2bebd78d7a6bdfd3f861dc74",
+      "query_k_sha256": "dbbe98838c861d16f1c4a82b7ae9e8c96bb8a2f90b8c0bd2d343f0cab362e20f",
+      "query_q_sha256": "3145a94d8f18ba71256c90adb7cb000148538103f7108ddfcc9918d8bc539faa",
+      "query_scale": 134.47683715820312,
+      "reconstructed_prediction_sha256": "0a42d544d0065d8c31db964ebc4ce1c68cb5fc43eee9a7416f9cf9d814368669",
+      "reconstruction_map_sha256": "f4c058e83a2ed59a8228e84e85ab570b405db102386890e4dd925f556386f4b7",
+      "sample_id": "v6p1if1_0003",
+      "support_indices_sha256": "2bc5c34317d70d7a5b67b0b218c13ff1cf0f02b51e226c1156c0712ae3584427",
+      "support_volume_relative_error": 1.2680133940932638e-16
+    },
+    {
+      "anchor_scale": 42.582359313964844,
+      "direct_deltaT_sha256": "d54460b3c73ce51a6515bd5c05061c1487b3aa752a9c93bcfb36703837fa4cb0",
+      "direct_prediction_sha256": "3ad60533c2b490111b1fb28eb9f1678b89348561ba3c21c835451dc95b72c1eb",
+      "graph_metadata_sha256": "dd372011663066086e0fd09461457777d9833f7b445f3bdfd550fcaf789bb03f",
+      "graph_tensors_sha256": "23474ef03fd42f886a139dd8ca3754cac4fc00333631c63958e1a1377509ace5",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "949a6a0d13faed93d53162ba0fb5487290de3843272b1673d4783c95da615f7b",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33221,
+          "robin": 8301,
+          "source": 3028,
+          "volume": 195251
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "ab2d4ac0f319f85a71d4f5c2014457fba14e246be94a91fbc96dc803c175d45f",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 88516,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3473,
+        "r2r_edge_indices": 3473
+      },
+      "power_audit": {
+        "applied_power_W": 3.0604832685169785,
+        "relative_power_error": 0.0,
+        "requested_power_W": 3.0604832685169785,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 560,
+            "power_W": 0.5414988578776743,
+            "represented_volume_m3": 1.914288771714684e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.41951504228403264,
+            "represented_volume_m3": 1.4825532742867944e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 0.37616614141766325,
+            "represented_volume_m3": 1.5062102003530778e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.6609591044345795,
+            "represented_volume_m3": 2.178228619794397e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 720,
+            "power_W": 0.667501930097497,
+            "represented_volume_m3": 2.502309202823988e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.39484219240553226,
+            "represented_volume_m3": 1.310278884981733e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "dbc81318b3e3cc7ec7b5df3306a8614cb8e9eedd7e6f0924ee25d9244edf5eb2",
+      "query_k_sha256": "6a4917660e58af48d450fca0ecec80d04f33e1c49e6430ee551f4d0f461791b0",
+      "query_q_sha256": "597e529c09e8b9fc5182ae47e37fe6f6f21257ff569e0e644ff8c3928b6d2845",
+      "query_scale": 39.7723503112793,
+      "reconstructed_prediction_sha256": "3a5e4156cc7e6596a0c3ee062571e02b683b426ed30bbabad7e5f9beab724f55",
+      "reconstruction_map_sha256": "1a9218cd60801d63fe444c739acbf07945793f18ca61af5fb14a97d98a47d4e1",
+      "sample_id": "v6p1if1_0029",
+      "support_indices_sha256": "8700c29411b79e89979f4557e02c0bd1619d942da956bd17bb86056c1affc2b4",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 57.93081283569336,
+      "direct_deltaT_sha256": "9e04395f451142f7f1de2eaec9cb549c8360ab025522c3d43484b248a05b961e",
+      "direct_prediction_sha256": "605caf69dc0e469a4e90c2dd80c451b0f15c5cd04006a5513541bb3599492e09",
+      "graph_metadata_sha256": "bf100d19f0a5555eb2f0c60b6d94e75b1bbd95a56a45456e7ae71b65c004e25a",
+      "graph_tensors_sha256": "daa59526d9e3973c086e4fd1632f56fc1b7189815d02d772630ec6f0ee4c5efd",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "8e58301ff41b3dd3e94ee3e6a7136efe90b1d6847f16a90b1f1ba7c8e02c2fb8",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33310,
+          "robin": 8306,
+          "source": 2343,
+          "volume": 195842
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "0bc6af83ed9068af2f7cf7bc7bd247aba0661082aaa896c7053493cefcbe0d5a",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 83519,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3529,
+        "r2r_edge_indices": 3529
+      },
+      "power_audit": {
+        "applied_power_W": 9.382689950597921,
+        "relative_power_error": 1.8932276871059249e-16,
+        "requested_power_W": 9.38268995059792,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 1.5238070448429062,
+            "represented_volume_m3": 1.6716206814026667e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 1.370140800962721,
+            "represented_volume_m3": 1.3496727479112047e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 512,
+            "power_W": 2.300324108576973,
+            "represented_volume_m3": 1.693636589137414e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 1.5803642879774686,
+            "represented_volume_m3": 1.4224451153333992e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 512,
+            "power_W": 2.608053708237851,
+            "represented_volume_m3": 1.7761008591616217e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "2aca133f16ccface51f712473ddc7959e9bde5c38d012c53e1b40fba95e896fa",
+      "query_k_sha256": "ddc88e16bb3461d7ac73c6338315ef877e2b90e0d423ea9ac920fc902c2ce64b",
+      "query_q_sha256": "91f89fa3872932115fe2e1649b843602fea5c5374e7c0706aa3579799005b11e",
+      "query_scale": 52.380516052246094,
+      "reconstructed_prediction_sha256": "ec23a4f5aa520f87ceda78f4db5c42a0508b8e0cfe62ca7fac71c4321131d01a",
+      "reconstruction_map_sha256": "9ca665dbfbfddf81f1cfcbbc6b5656bdb09dc23957f52a2b48aaf43f9e1c0353",
+      "sample_id": "v6p1if1_0991",
+      "support_indices_sha256": "a3515a8b564fbafdb5a2a31e550838266e88231182c98d4cd2b26bc52c9c1ef8",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 87.9978256225586,
+      "direct_deltaT_sha256": "f478793973901ff74f15a1d494f6ada8289c713feebae2cf5709964f1866f7b6",
+      "direct_prediction_sha256": "6e648b50c98752ac34a4ed8a3c57a28898f8c25147a37dee8afdd40f00f965aa",
+      "graph_metadata_sha256": "4ab6fdc51b8ca821683fc72a449ac08f157255c9b406e5cdaff8633539635f4c",
+      "graph_tensors_sha256": "39283ac3eb57a1fb238e2247e3e42a0c9930fe98d000b1e0a660d5d12614d19e",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "0822b2f92688baa77469d04fb7c0bccfa8afcf145bfb55350b86a36591ff3807",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 32960,
+          "robin": 8302,
+          "source": 4987,
+          "volume": 193552
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "7a751fb70137891a8534590e04964373dcc298fad7dc75f2d944cf273232372c",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 99199,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3461,
+        "r2r_edge_indices": 3461
+      },
+      "power_audit": {
+        "applied_power_W": 6.257435501427002,
+        "relative_power_error": 0.0,
+        "requested_power_W": 6.257435501427002,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.672597112354496,
+            "represented_volume_m3": 1.457664687366168e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.6211722486738936,
+            "represented_volume_m3": 1.5541560392472712e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 384,
+            "power_W": 0.3972334422640164,
+            "represented_volume_m3": 1.3546796893899627e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.573605415990434,
+            "represented_volume_m3": 1.7821334139691676e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.4714796035052632,
+            "represented_volume_m3": 1.6935369773800958e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.669444027534445,
+            "represented_volume_m3": 1.7581469767115732e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.5664966531255218,
+            "represented_volume_m3": 1.8276942631598506e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 560,
+            "power_W": 0.6037700832222697,
+            "represented_volume_m3": 1.9565499995271544e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 1.1730101513718312,
+            "represented_volume_m3": 2.49217603034522e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 648,
+            "power_W": 0.5086267633848315,
+            "represented_volume_m3": 2.04998363953938e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "2b435099594cb3499b14aad15428c9153a7f5575a5964c5d93ac6b3f3705dc40",
+      "query_k_sha256": "f3ad5a81fdcbd6d32ab4ea89005fe3c33932e11698873a03bed744dbe4bc0fac",
+      "query_q_sha256": "4371ffe6f1edceb695499b3f5a632f950f231236403bee2b1ac31001e01012dd",
+      "query_scale": 81.24525451660156,
+      "reconstructed_prediction_sha256": "e9dda12789cf2e818ed7d4aac598a6231fae68edf8ed94eaf085ce6071471c3f",
+      "reconstruction_map_sha256": "0567acbdfde61db2e59be4651b18925e70aa94a0335a4a66c473abf41fab7cb3",
+      "sample_id": "v6p1if1_0109",
+      "support_indices_sha256": "92f1d484cf4183df620ac2dc736f6709b76001219fb91e2a3443db374ad28855",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 54.91748046875,
+      "direct_deltaT_sha256": "416b1f2491fa27218658f23a6111a7bc2ba5d035b4c9cc2ccecadc94841a0fe1",
+      "direct_prediction_sha256": "82b428c519cd47c618249715b2d4128c29056b88cd6953d8b2db02c13976df56",
+      "graph_metadata_sha256": "ea7b936bd7880ec8cd5255ff2eaea655c799b47ed00d7e02af892d22ab188d40",
+      "graph_tensors_sha256": "a3710f9e42e31238e952d9fbbdfad4e58502abd6f3d331dcd3c724c8c8f73495",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "06510fa075a7fd7ad5601ca84f52999635f2039634874c0b9902553dd2731966",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33104,
+          "robin": 8307,
+          "source": 3821,
+          "volume": 194569
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "e488bd6624bea40c8ebc74d6c39a0a1824ca3ad09b90b3aa39bf9dfe20f303dc",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 92011,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3527,
+        "r2r_edge_indices": 3527
+      },
+      "power_audit": {
+        "applied_power_W": 5.2064916603077975,
+        "relative_power_error": 0.0,
+        "requested_power_W": 5.2064916603077975,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.9735302183934168,
+            "represented_volume_m3": 2.095700462140594e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 0.47095912927541816,
+            "represented_volume_m3": 1.172237820052308e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 0.7019773674818721,
+            "represented_volume_m3": 2.1258900758563466e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 0.5831544601407791,
+            "represented_volume_m3": 1.6369916762577703e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 432,
+            "power_W": 0.7017545178903303,
+            "represented_volume_m3": 1.520032183519836e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.6589791356157533,
+            "represented_volume_m3": 1.6845441359920569e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 512,
+            "power_W": 0.6282936539194418,
+            "represented_volume_m3": 1.9995572040568208e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.48784317759078616,
+            "represented_volume_m3": 1.843494513829944e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "8eba3b0de67566e146095896f870be25e724b1519becbe7124e5c0f1ffd9dcab",
+      "query_k_sha256": "b2b2ead25e198aa4a613e9a3e0b68ffcbce5ab553655292f13b721b4c607b76f",
+      "query_q_sha256": "9a3f404dfd774246dc1efd4c83da410f49f26dcca5099f1cac3d019c06b30517",
+      "query_scale": 51.004364013671875,
+      "reconstructed_prediction_sha256": "03504f8ffb1c2112140edf5046d2befc9623dd361855330b3287fd5a9f87491f",
+      "reconstruction_map_sha256": "07cdd1481281ff898811055c65f7bb3e46a23f607dc7efe654b2986a44118162",
+      "sample_id": "v6p1if1_0365",
+      "support_indices_sha256": "af0e6f82154199138bc35c504f863b3c4cb569a3b71428c9b454c0797e74e234",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 108.66151428222656,
+      "direct_deltaT_sha256": "2986b6d4d9015f94f3d8c1f9f524d82ce010929ac0403a4dce94c47b20ccad68",
+      "direct_prediction_sha256": "49396afc508a6aca3d287b41a7539d93a14c81fd6fbbe0537a06a48c3e53871c",
+      "graph_metadata_sha256": "d626ae686c5603c16f88121088d5d18540817483ad89525f56f28b04224a5c39",
+      "graph_tensors_sha256": "b8321d9fbc775ce94678d46fee0a6f56018e2fe0562f40cc15532ac91a0f3d8b",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "c452b7f507ac9fecd778a0b9bb6a85434ce29d4e674f6d499ebc458bc959b953",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33427,
+          "robin": 8301,
+          "source": 1290,
+          "volume": 196783
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "83f3e6293174fd1e830c59df5bde5ebb7267081c34708451a747bcd17789728e",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 63690,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3499,
+        "r2r_edge_indices": 3499
+      },
+      "power_audit": {
+        "applied_power_W": 8.70655450299574,
+        "relative_power_error": 0.0,
+        "requested_power_W": 8.70655450299574,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 3.429369700080685,
+            "represented_volume_m3": 1.3410160533380522e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 3.358369710145734,
+            "represented_volume_m3": 1.7403996813818642e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 1.9188150927693213,
+            "represented_volume_m3": 1.2168458090673222e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "3136066f6e4b02b8e96e6cd52b2fbb8d6a3f7cb1ca8ddb45655918cc71c7ef5a",
+      "query_k_sha256": "fcdcd0995d91891eed8882f308d4519129620a6676557b4fe111512b1e51d976",
+      "query_q_sha256": "c6410264226f503164e543d18786577c4af26f2f903165a8dce5d658cb668fd1",
+      "query_scale": 97.18424987792969,
+      "reconstructed_prediction_sha256": "fce3adc99f4819d074c11a4af1dbf671275fc1ae3b35969e1cde7771c04e2612",
+      "reconstruction_map_sha256": "22b32f65cee1187b45f259368149f6054a48cc0edcb96b732fb37d2045c10e6b",
+      "sample_id": "v6p1if1_0091",
+      "support_indices_sha256": "9f1bf6dfa90d64688e3e02352a718d9d213329c4db437ecdaf8cf873b7f35776",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 45.97904586791992,
+      "direct_deltaT_sha256": "356a607d37b78ba3c18bb9af2dad1c804cc80d2f8aad93c21e56681d17dac6f7",
+      "direct_prediction_sha256": "d7ae749525264ee6a3354d9c6ab0b5253428df6b61b5d0393f049bdaa33b6f83",
+      "graph_metadata_sha256": "c5575aa7a24d74510eb08ab49372959e5c85dcaeb44ed6d47fd732ca036a5ea0",
+      "graph_tensors_sha256": "0e9b16f525aa5dd82a550485025c54060e3ca8c11f2a6d77be0e816ccbdd53e6",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "acaa9a97a924fca22eac302234bf2bbff9777b4d0ef5be441681715796c8e89d",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33312,
+          "robin": 8303,
+          "source": 2325,
+          "volume": 195861
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "e3d09f546ae1f3f19b36abfa4be61141b009ae4a2a1b79c0f7f0d8797c0f8a0e",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 76311,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3521,
+        "r2r_edge_indices": 3521
+      },
+      "power_audit": {
+        "applied_power_W": 5.471171815396781,
+        "relative_power_error": 0.0,
+        "requested_power_W": 5.471171815396781,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.7132418695221416,
+            "represented_volume_m3": 1.618716539323337e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 648,
+            "power_W": 1.4791669169170518,
+            "represented_volume_m3": 2.3251942390739462e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 512,
+            "power_W": 1.1396086936603353,
+            "represented_volume_m3": 1.7004017460802823e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 0.7076595588338181,
+            "represented_volume_m3": 1.0535781089049335e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 1.4314947764634343,
+            "represented_volume_m3": 1.6402640642892464e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "bd7abeaa32b3169fc182b27ff2e29befc3f98a597273bf719b1f090a45cf27fe",
+      "query_k_sha256": "9461dc285cd5099e58d267118f0cc69c6d275bd2984094e55bfa442d1e8f04ee",
+      "query_q_sha256": "6aa452945166329336d45a3921218a70e81cd45fde46e0931c5159db702b4867",
+      "query_scale": 41.96935272216797,
+      "reconstructed_prediction_sha256": "7ed7ec4d622a70f7d2f582b8ed079ef208545c25c68449d2cc74f2e3cb1a9569",
+      "reconstruction_map_sha256": "7c041116319edc33f8eefe0c6d3e730c87c4a20bf88e53c6fe4fd414bc6601ec",
+      "sample_id": "v6p1if1_0930",
+      "support_indices_sha256": "39b22f77f6486e1697884708a746f81c6d6b14c39a88e3b2716b0c3bc51088c8",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 100.48363494873047,
+      "direct_deltaT_sha256": "8fa2fcbee008426af81ab9a9dfa16d95dea38e58f72965f88c5159558d396444",
+      "direct_prediction_sha256": "39cc38b4dec3eb8a939adaacb17ee9ecb188f70cdbdb024b6def1ad8036c7ca8",
+      "graph_metadata_sha256": "11dbf780993871d1277d1095018eac4cf6dcd58f241ee1f883befe677394fe8a",
+      "graph_tensors_sha256": "c50357062bed020871ec48371368f3b95d7a074a64ac0c52ed1f1cb93c09f94f",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "a8f68692a2ad6d74d22c893c082dd8fea2406801215bab21390adc34d53f16bc",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 32992,
+          "robin": 8300,
+          "source": 4760,
+          "volume": 193749
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "3e809848812d4f08e4398ea97e777808778b87fbe7f40bce330c13414d02597c",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 104635,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3503,
+        "r2r_edge_indices": 3503
+      },
+      "power_audit": {
+        "applied_power_W": 8.29586979987016,
+        "relative_power_error": 0.0,
+        "requested_power_W": 8.29586979987016,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 0.6128730259629522,
+            "represented_volume_m3": 1.6274378539449138e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 648,
+            "power_W": 0.9335060701001231,
+            "represented_volume_m3": 2.4145647835618667e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 720,
+            "power_W": 1.4732236735905186,
+            "represented_volume_m3": 2.4064971124613554e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.7691391520980848,
+            "represented_volume_m3": 1.4850650902784229e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 560,
+            "power_W": 1.3712777780583851,
+            "represented_volume_m3": 1.962022657683957e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.8642668715159929,
+            "represented_volume_m3": 2.2561336511596365e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 0.7600623669187904,
+            "represented_volume_m3": 1.4613843532162794e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 336,
+            "power_W": 0.5297053941452521,
+            "represented_volume_m3": 1.1529265418335913e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 720,
+            "power_W": 0.9818154674800597,
+            "represented_volume_m3": 2.1643448319330333e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "88fe62d3adb8ab1365a4ecfdb02720977dd40a32ae0f422fec2d344fc29e70b8",
+      "query_k_sha256": "f2caabb7acb9b9f842b5cc5724f38c0656bc7e6a513a67a97bc74afa79ee6158",
+      "query_q_sha256": "e054b3b52488fa1f39b536fcb98422c93c2b88ac59bd23e343ede4af81d48b6a",
+      "query_scale": 92.7150650024414,
+      "reconstructed_prediction_sha256": "94758e3cc535ff4e15967fbc8fda180b2e62f06ca88f85f4a0a7588bff6b63fe",
+      "reconstruction_map_sha256": "18e78ebfd77c5ead041306bf9791f6fec2dfa9f3325effc36989981bb2551dec",
+      "sample_id": "v6p1if1_0175",
+      "support_indices_sha256": "8f1d2d7ea070a9727a9bb7f314bf4dcc4df6ce99a0736ecb724a3e66ba6cf653",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 47.93708801269531,
+      "direct_deltaT_sha256": "623db1571cd0fdbd0d217599b622849ff5e04c3831c6a5e3d399327a430c6ba4",
+      "direct_prediction_sha256": "a31dc29eaa002e76c0c369a910eb1baa032bc8a8bb9f14752837fa2ac227cad1",
+      "graph_metadata_sha256": "12b1f47f8773cfa9007f41d0e2bc1a19110020c149897146866a56facad2d945",
+      "graph_tensors_sha256": "bae99ab15585268956974f9497ef87700f4a1f523850b8f914d6d613eae67277",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "e58ea172d6a203cb92fa72440865a29dbe6334be299c3da61dc554df4937d093",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33030,
+          "robin": 8305,
+          "source": 4420,
+          "volume": 194046
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "ae75f7a306f316a70f6a6a2fcc335d40ba53f1b404b90ddaf09cf891fabd3a5e",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 103374,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3537,
+        "r2r_edge_indices": 3537
+      },
+      "power_audit": {
+        "applied_power_W": 3.8478997563714277,
+        "relative_power_error": 0.0,
+        "requested_power_W": 3.8478997563714277,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 480,
+            "power_W": 0.3274629522883725,
+            "represented_volume_m3": 1.7276112991183513e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.34536887648075804,
+            "represented_volume_m3": 1.317933060857006e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 640,
+            "power_W": 0.7134925320695521,
+            "represented_volume_m3": 2.4851658545418365e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.3844266482062601,
+            "represented_volume_m3": 1.5698161279364744e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 0.5608168753991986,
+            "represented_volume_m3": 1.9668345596318583e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 0.31370995325330586,
+            "represented_volume_m3": 1.895415220350682e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 720,
+            "power_W": 0.6813139773448489,
+            "represented_volume_m3": 2.42141228432831e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.2606056936353447,
+            "represented_volume_m3": 1.6132335867968796e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 336,
+            "power_W": 0.2607022476937866,
+            "represented_volume_m3": 1.1330650423921671e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "fdc638cb962dfe247d653056696b455cfabc83b1eb0e93ae5ba6acfe612b4d2e",
+      "query_k_sha256": "74f6abf4421ffb0a53a300511acc1acdb4af7b19888b387275ab78947a5ebf62",
+      "query_q_sha256": "93de880f563bec76df55fef8ab7b611ac32f65ec523f0a8a3b5ad58e37e3eeb3",
+      "query_scale": 43.85698699951172,
+      "reconstructed_prediction_sha256": "54186b0fe3caf289a8c8820b47ee945b17455935cfd625bb62a3d791ae4170e3",
+      "reconstruction_map_sha256": "9460d47c049bce939cf1d981e6ede12a377162e698302efbbc8647493125cb8e",
+      "sample_id": "v6p1if1_0915",
+      "support_indices_sha256": "781433b3a1cdaf06077e3ee2a2b530bd72c490f6285b146c1b8c861039d545f7",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 113.99906921386719,
+      "direct_deltaT_sha256": "0ea65ea4be1b4bae9e2cee4b60b3eae25eba79ef655994fdc54afe37e82bee81",
+      "direct_prediction_sha256": "df3d54d4d42c254480ef799d8f4589baf7114b0dfb7374fe81f6beafda092c3d",
+      "graph_metadata_sha256": "ac5a852d621517260177a7965f9bdb2096873ad8d5f866d160182dabd4a23497",
+      "graph_tensors_sha256": "f6a38e20f79dcb9984e2d9b1846ea9b676e3ccd9e331ce34d15e3ed0ac3af89a",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "ce1e6fd9647b72d57ce388b44cf09777f4ae1489ca5c25e7368652939cadcb02",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33250,
+          "robin": 8299,
+          "source": 2681,
+          "volume": 195571
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "60115f781057642b35aa0473e8a8f6b9d766b19b64cfbe0bc9fc2a8876f5afe8",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 89698,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3535,
+        "r2r_edge_indices": 3535
+      },
+      "power_audit": {
+        "applied_power_W": 11.840148033536321,
+        "relative_power_error": 1.5002826268462647e-16,
+        "requested_power_W": 11.84014803353632,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 1.6621134649713687,
+            "represented_volume_m3": 1.765874048038779e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 2.4348754045419,
+            "represented_volume_m3": 1.666854641074034e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 648,
+            "power_W": 3.730264568109205,
+            "represented_volume_m3": 2.2715227311634947e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 720,
+            "power_W": 2.2627693911447953,
+            "represented_volume_m3": 2.2325562228359037e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 1.7501252047690519,
+            "represented_volume_m3": 1.5870880560559073e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "1014169bcc05567ee43b3ce62e7c239871f30cf0d52bbb294d256c92a0972659",
+      "query_k_sha256": "8561f3747e6936727f400f6fdd0d1319093f8b0bfd69dc7c09226cae545a35db",
+      "query_q_sha256": "e2c6f1e5507275d40f143d9f20a03033c72f6d7009b51ae8173816f1b1e51a6f",
+      "query_scale": 104.1227798461914,
+      "reconstructed_prediction_sha256": "1da68ff9300f0e7907b40c1ccda47bebe5def09a436258dc81b4841d6e3e653d",
+      "reconstruction_map_sha256": "3136b0b446707f1f62f6a4192a8f3a375b83cee379037b3d14c332bd1f2ef439",
+      "sample_id": "v6p1if1_0869",
+      "support_indices_sha256": "3aafc79e429fbdd04d7b32653881ebb7fe1872b500dfd9c675f36be174e0fa59",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 97.0979995727539,
+      "direct_deltaT_sha256": "6c6b4aaa4d3ace9c949fd9c1d8edb37cda542d51f17de499782875778da7176e",
+      "direct_prediction_sha256": "e06bcddb078a9a9fbc99fa9f9ecce3431f16cef68bb3ae70a87f0699861a2895",
+      "graph_metadata_sha256": "6c44775449d7e715406e4031318cea28c979bc355102133007201f6ff77fbabf",
+      "graph_tensors_sha256": "bbca8430fea6cf49598ecf4757cef9ff2fdf18e1456e72ffd0f10cafbee41f2e",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "810847bc25643c1137a5745465a5da5cb5a2639d5a812d09e8a96b2ff4f166e5",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33097,
+          "robin": 8304,
+          "source": 3983,
+          "volume": 194417
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "8ad8259a9d10c4982ea37d06ddfc400eff3a79dea927d2f6124bfe71341277d9",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 94611,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3497,
+        "r2r_edge_indices": 3497
+      },
+      "power_audit": {
+        "applied_power_W": 7.069243059630338,
+        "relative_power_error": 0.0,
+        "requested_power_W": 7.069243059630338,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 560,
+            "power_W": 0.7646941344856337,
+            "represented_volume_m3": 2.1677418821134574e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 1.0064996790418046,
+            "represented_volume_m3": 2.0019829187846872e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 0.858167543161724,
+            "represented_volume_m3": 2.2196970338685185e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.8779920554331943,
+            "represented_volume_m3": 1.6110300532779163e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.859220379955766,
+            "represented_volume_m3": 1.6798153642024878e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.7442897974154637,
+            "represented_volume_m3": 1.7059911471667218e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.6018445810079481,
+            "represented_volume_m3": 1.3618134575621442e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.3565348891288034,
+            "represented_volume_m3": 2.173015917249709e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "05785bb8ad1c54ef15000dffc18595779c251e97c4de49234646cbeba34b7981",
+      "query_k_sha256": "12d005fb9fdb870244558c70c643027614b7812193cced8bbf246e8a4b11199b",
+      "query_q_sha256": "38700bbc58adeeb1c272c7c8617586831964a7248c07fa75a0a515979c5366ae",
+      "query_scale": 90.0934829711914,
+      "reconstructed_prediction_sha256": "95f66b1c19a62a3e834b6c3e7107cd67ba62783b9f94d07f0a9fe12ce324c6b6",
+      "reconstruction_map_sha256": "a9c2774859b0227540d50969122bfafe3b24886585719bd818671e59889d3d32",
+      "sample_id": "v6p1if1_0522",
+      "support_indices_sha256": "0d99f66b7f8fc1fb276d0ea3d9741e3ae206b7b0731fa429d10cfa0be49165f8",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 93.0350341796875,
+      "direct_deltaT_sha256": "6d9d1206831504e919b0bb51af270b609978faf93620be538b6cf9854b676dda",
+      "direct_prediction_sha256": "8803a65479c8d58a623411a0893affdf5052452a3fc07f56f170cd7e121228a7",
+      "graph_metadata_sha256": "72a42543068b65440f4c91813fa6ed51918acdf96085a8dae86a21b823c05ced",
+      "graph_tensors_sha256": "155e099bf44f0407811084c1b4de96e83d01e04f801861a63e359be6dd003c22",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "8ff7e15a23048fe8635026cf0a6a17d545ce2dcb15e058b8154d899e4ddc225f",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33352,
+          "robin": 8304,
+          "source": 1940,
+          "volume": 196205
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "0ddbe357c89a4dbd15403962be6c74af46a9d3725fc852fb5aeec62f32e21efa",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 79663,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3545,
+        "r2r_edge_indices": 3545
+      },
+      "power_audit": {
+        "applied_power_W": 6.363592453000437,
+        "relative_power_error": 1.395718576040093e-16,
+        "requested_power_W": 6.363592453000438,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 1.283858342549325,
+            "represented_volume_m3": 1.6115014627467587e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 512,
+            "power_W": 1.6893859117663765,
+            "represented_volume_m3": 1.790684970059186e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 1.3748705531027876,
+            "represented_volume_m3": 1.384668943884123e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 720,
+            "power_W": 2.0154776455819485,
+            "represented_volume_m3": 2.5040088148123225e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "cd086b26f4e1b2fa7a632d61eb6b059c9ef24585285102f5fd67055be817fcc3",
+      "query_k_sha256": "2f9d78d842de6de395ca7ee001c526668936b89681f724e507487fd6908cdaaf",
+      "query_q_sha256": "8b9f74761b45810e0fa8bcaf9b3a5bb21e7a9ac52b04e6907b79ff15bd5bca76",
+      "query_scale": 86.51258850097656,
+      "reconstructed_prediction_sha256": "21901b0f68a318187aae20759208228da8411b01123d89e16700eacd9a4e49ce",
+      "reconstruction_map_sha256": "a7ec92a7df9abb81405bfb762a25266c26086e58dabc6fe3fad6924182a68683",
+      "sample_id": "v6p1if1_0118",
+      "support_indices_sha256": "ea4c662ce784a98e16496827684d10680fe78d4488809703df21ab3767433666",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 101.57569885253906,
+      "direct_deltaT_sha256": "f4acd7ca934612c4fdbc5cd0e5b2556328ba0027de87c37791e377d9273df29e",
+      "direct_prediction_sha256": "2193c606c29aafe002dde86872c3a4b139342cf71cff214bd55310b9b6c367d2",
+      "graph_metadata_sha256": "3f9a6ea10bc76859419b0b856d78c0143f5527c3beab176a6d8d23323f63cc65",
+      "graph_tensors_sha256": "27de1d96ff0b08cd34fd3b3ca8569c133b2e128dc7e5d3414376b8906a7c28de",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "2f831799904171b478aea533cec8b686c034988d27fb8d37c67100305640f1b9",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33071,
+          "robin": 8306,
+          "source": 4199,
+          "volume": 194225
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "b89e38f82576f73cfe3688a26f94b39568ee440b4259edeebb4ad0125ae024e1",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 98634,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3559,
+        "r2r_edge_indices": 3559
+      },
+      "power_audit": {
+        "applied_power_W": 12.365978385031779,
+        "relative_power_error": 1.4364870971717178e-16,
+        "requested_power_W": 12.365978385031777,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 512,
+            "power_W": 1.921199481842208,
+            "represented_volume_m3": 1.9799073710187558e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 1.4076315685737713,
+            "represented_volume_m3": 1.9516999922715415e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.4557730664097057,
+            "represented_volume_m3": 1.8760732704919034e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 288,
+            "power_W": 0.7171608752644716,
+            "represented_volume_m3": 1.0116488309005414e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 1.1400615944616095,
+            "represented_volume_m3": 1.4711978156089044e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 1.3463978391405984,
+            "represented_volume_m3": 1.500565551728503e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 1.036785879477401,
+            "represented_volume_m3": 1.3409376834945545e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 720,
+            "power_W": 1.8564395228865078,
+            "represented_volume_m3": 2.456691385613006e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 480,
+            "power_W": 1.4845285569755062,
+            "represented_volume_m3": 1.6495801258362827e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "ea4a6117ffa6054261a4647cc002f311dd9796f8f77c18c3ee1b601c8c98571d",
+      "query_k_sha256": "a57dfba94b5dffb950efa04daf90c6a1162ab12ef2da9c764fe389c0b7d2eeaa",
+      "query_q_sha256": "47761a147a51ffb022a0d3530a1b6873356dfc93929bed9c806dbee11649baf9",
+      "query_scale": 91.11410522460938,
+      "reconstructed_prediction_sha256": "35d4a4d494e1ea1ed3056840d5c151e6cda54de66a5eb554bfe39355db6f8570",
+      "reconstruction_map_sha256": "8aebec78c9c0ce03bd552f443ee77dba104520123a8be885500d0116e5797375",
+      "sample_id": "v6p1if1_0708",
+      "support_indices_sha256": "d89cef49643811d4b13dd294ef74289a803147da379084bba46f6ea187b3cb08",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 75.3614730834961,
+      "direct_deltaT_sha256": "f2f6d78f1d53b0d6c80d70a4e44f8704a43289252cd0295faf55a311553b3306",
+      "direct_prediction_sha256": "69408da79c856a06f0a17ce42ba931ecf6e667adc9529a820dbb3df6f1585479",
+      "graph_metadata_sha256": "85e74d7d3a75a2e47b21ab38aa69a49e1abbb1d5a66f473d090cec758ac72b20",
+      "graph_tensors_sha256": "d7c6a26915d55cd630a0d07f2478e0f1c80fd6b54e02d613f405af362fcc9c9d",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "61e7a125f300d13a50bf596b68585e3c50f2f2f73bc94d4f4701a08529ac5c71",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33162,
+          "robin": 8298,
+          "source": 3378,
+          "volume": 194963
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "03d2cf77fd3fe90bd974c9c2cf3f747a4917abc2108f198ed8f0e90c26eccc21",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 87353,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3497,
+        "r2r_edge_indices": 3497
+      },
+      "power_audit": {
+        "applied_power_W": 5.624004220423576,
+        "relative_power_error": 0.0,
+        "requested_power_W": 5.624004220423576,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.5653476561256257,
+            "represented_volume_m3": 1.5534084412781714e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 1.1307843690296673,
+            "represented_volume_m3": 1.8655224845612305e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 0.7761832810393156,
+            "represented_volume_m3": 1.9743332841149086e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.44090349000384305,
+            "represented_volume_m3": 1.3345312829649491e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.6499611399184189,
+            "represented_volume_m3": 1.4564010125386243e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 720,
+            "power_W": 1.1124454488802011,
+            "represented_volume_m3": 2.6833851545663356e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 448,
+            "power_W": 0.948378835426505,
+            "represented_volume_m3": 1.5066596875483768e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "51e1e0bdf0352f9b2c5ab566d6345f2bcbb1e3c7f8246bce2fca5eaa3b2d0aca",
+      "query_k_sha256": "16a08b7e43267e9d78e809f89658eec7609c25a33da82f20ad49eb838f324fd5",
+      "query_q_sha256": "82b00cc8eab13f867ff71a225d0a411b566e5fc61b0ecacc6c5c939983bc0d9b",
+      "query_scale": 70.26957702636719,
+      "reconstructed_prediction_sha256": "a8f6a9bfbbf1837ad57bd0c840fff176c1c51318ac6a15fb73c4b6722259952e",
+      "reconstruction_map_sha256": "4a20ad4af8055afee10e593e2fcb609eece592ac438c0c4f8c572a01c9370701",
+      "sample_id": "v6p1if1_0817",
+      "support_indices_sha256": "a04296cf61415d35a81d30ddbcbf8d687fa474c098a3a9a53a0a204e0952d616",
+      "support_volume_relative_error": 1.2680133940932638e-16
+    },
+    {
+      "anchor_scale": 125.73218536376953,
+      "direct_deltaT_sha256": "cb205014b7e3a4728e9766fa499cecb3ed187e0359a4abc0bc8b15126b871a9a",
+      "direct_prediction_sha256": "79b1382afe38e2f949a74f205d6101c5ab567d8092fbdcb29ed9b39a76ada4fd",
+      "graph_metadata_sha256": "592a63dcc4523b1e29ebe2eb12d7fd146b2b137935d03d8e3976520ebb0d6a69",
+      "graph_tensors_sha256": "1c8749987a6655735e3606cd5e5731339cec5fbda2ff667683cec1292adde628",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "29ddb84e5b501a3c33e8893dde8134a8c21bbbe35b4bea90692589d9e4ce7614",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33045,
+          "robin": 8299,
+          "source": 4360,
+          "volume": 194097
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "2e4e83c6dfcc8dd95f83982afab9e25c3e717e676b7128ab2f6e7cf9cf9dd35e",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 93799,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3479,
+        "r2r_edge_indices": 3479
+      },
+      "power_audit": {
+        "applied_power_W": 7.760353570277156,
+        "relative_power_error": 1.1445076717920786e-16,
+        "requested_power_W": 7.7603535702771556,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 336,
+            "power_W": 0.638589601012076,
+            "represented_volume_m3": 1.2451402234674282e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.6949875808072963,
+            "represented_volume_m3": 1.61508058871573e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 0.8204019191007506,
+            "represented_volume_m3": 1.325885971781499e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 336,
+            "power_W": 0.6794332296156786,
+            "represented_volume_m3": 1.0881203262420406e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 384,
+            "power_W": 0.5991414552847769,
+            "represented_volume_m3": 1.5832834480240662e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 392,
+            "power_W": 0.549454469756295,
+            "represented_volume_m3": 1.3090640034523182e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 640,
+            "power_W": 0.9921752940003419,
+            "represented_volume_m3": 1.9176776411984177e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 432,
+            "power_W": 0.7783431057964546,
+            "represented_volume_m3": 1.6023260852766144e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 1.0312319380922708,
+            "represented_volume_m3": 2.2102473480144235e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.9765949768112158,
+            "represented_volume_m3": 2.2747936211344002e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "0aef2782030d278c7b2590b861fc34f90e60580b9fe752a485d2aef1ec117d18",
+      "query_k_sha256": "623c7195eb5a85b7282057808a3a61db4954787c68afb6e4c2509f8559e55c66",
+      "query_q_sha256": "5bc14af2d3d0c724370902af9f976a3d4b37c3e3ae0440bbbb3c6dcb1ea928d3",
+      "query_scale": 116.95121765136719,
+      "reconstructed_prediction_sha256": "4139a5d84b37c25b2b07e27f0ad156e11810ca026d71656a0991ea7080911aba",
+      "reconstruction_map_sha256": "e9c326acc346936979feb14d279fd70f88d4c93b9eb79b5ad60493ad139e2023",
+      "sample_id": "v6p1if1_1003",
+      "support_indices_sha256": "a8e2e56bdbe8398d3fdbf4771753a75d9df7321c06132e44400af59db2f2b188",
+      "support_volume_relative_error": 1.2680133940932638e-16
+    },
+    {
+      "anchor_scale": 67.47220611572266,
+      "direct_deltaT_sha256": "ade2f9e7cc7750f507ab063ca90da5a4290b623c10833ad7e8bc530e0b1a2a48",
+      "direct_prediction_sha256": "a2e8be2e5106ecf6fe60370e9dc3c89ec4819c8a3ea7986626830c576ccd29c2",
+      "graph_metadata_sha256": "3bb197d82ed1bd88e25d5cc96d1ccc9c3e3fed281a0f32b5b6671519f58d5d15",
+      "graph_tensors_sha256": "d23062eeebf73de7ad47b6d5746e1058db6a0d4b3b79bdd455c43ef22896d8ff",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "79dc28d79878fcf6cb7d149ef95c4b42b05317e0937d67fecdd266dde6f7d887",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33096,
+          "robin": 8300,
+          "source": 3945,
+          "volume": 194460
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "d1cd102396924adea7b5287e63bb9b2a7fd23d8f97f1bbda1801aa3079a5d24f",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 86816,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3543,
+        "r2r_edge_indices": 3543
+      },
+      "power_audit": {
+        "applied_power_W": 9.488757683673832,
+        "relative_power_error": 0.0,
+        "requested_power_W": 9.488757683673832,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 560,
+            "power_W": 1.2934317892054676,
+            "represented_volume_m3": 2.0052527543530586e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 392,
+            "power_W": 1.0001582059853278,
+            "represented_volume_m3": 1.5017043745089106e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 480,
+            "power_W": 1.1279190089389295,
+            "represented_volume_m3": 1.61771534315931e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 1.1301665902042768,
+            "represented_volume_m3": 1.9068182622724147e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 336,
+            "power_W": 0.6102954373881861,
+            "represented_volume_m3": 1.085259564110133e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 432,
+            "power_W": 1.3845468713450408,
+            "represented_volume_m3": 1.4812662395218477e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 384,
+            "power_W": 0.8178481382829478,
+            "represented_volume_m3": 1.416712692038874e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 504,
+            "power_W": 1.1796693074753009,
+            "represented_volume_m3": 1.7113829273381106e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 480,
+            "power_W": 0.9447223348483541,
+            "represented_volume_m3": 1.7168712951809563e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "f436ec48a35dfb9737691b7ea1db334955c79ed887fc259eaf70719dc9c6f5bb",
+      "query_k_sha256": "2ccb436c6f466f00dde6cb7b627e27b63a7e22fbc9e227566b836ab0fa7baaee",
+      "query_q_sha256": "b55829bcf05fc9f6f85eeafe94a0a217cfe3015cf43ac6758cfe02d8d32c9403",
+      "query_scale": 60.516944885253906,
+      "reconstructed_prediction_sha256": "a7cb35352a1780d4faa46112db2804e7843f9aa36c2551df09ab8e02ddfef535",
+      "reconstruction_map_sha256": "6596167c070b3bf21d487ab376553e0e3ade9c55265dc9535dfb1eb354c42b86",
+      "sample_id": "v6p1if1_0697",
+      "support_indices_sha256": "42e47b87cf0ff6c7ec2f729e4f231fd8069b41e08c6506a6f91195343cc6b967",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 70.92489624023438,
+      "direct_deltaT_sha256": "3729d148f02b6708710ef2d2d4e39df721937c64e67a2d759f8126695c356673",
+      "direct_prediction_sha256": "8dc2a5f3aae991d1ae69c95f9f3cd4b93676cbcda92ede72cc982cf42824c2cb",
+      "graph_metadata_sha256": "f2d6e71f224d4807d341573cd11b629fff913d8260bcc6a25e496f91f0ff3570",
+      "graph_tensors_sha256": "2b4b1e0ad8e7f7922584f04efb24c46204c8111367b418084259f41a15e1fef2",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "198c7531bfa00dce67d7c2a89e1a56d4f342c16b9589a8e53c07e6b40ce4b93c",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33102,
+          "robin": 8304,
+          "source": 3841,
+          "volume": 194554
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "c1d559e11b74dba4cce409bbd9b741d80ce4d81b0f2662a2e9ec203815ac89c0",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 88552,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3559,
+        "r2r_edge_indices": 3559
+      },
+      "power_audit": {
+        "applied_power_W": 4.7235675111334645,
+        "relative_power_error": 0.0,
+        "requested_power_W": 4.7235675111334645,
+        "sources": [
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 576,
+            "power_W": 0.7747345626109636,
+            "represented_volume_m3": 2.1762390906862427e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 512,
+            "power_W": 0.6417313578435464,
+            "represented_volume_m3": 1.8032141223445723e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 448,
+            "power_W": 0.42001635096375134,
+            "represented_volume_m3": 1.6442489393625522e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 640,
+            "power_W": 0.5729261419368442,
+            "represented_volume_m3": 2.1004498439720074e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 648,
+            "power_W": 0.7187855507832362,
+            "represented_volume_m3": 2.5408669713657475e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 504,
+            "power_W": 0.6790904695005536,
+            "represented_volume_m3": 1.9983838147808363e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 640,
+            "power_W": 0.9162830774945692,
+            "represented_volume_m3": 2.3215440553417266e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "ac969b1efc8d5e081138e96e1f316105e085a38759fe4cce68cf12954233de0c",
+      "query_k_sha256": "8e043245e27c4443e878ccbb6eca6af355a9f257efea2aa2c07b8e60479bce7f",
+      "query_q_sha256": "f10ecb97ca7459c85166f1dcadea5f6ea7d4a6b036299ceb09683e9a95fb1bf5",
+      "query_scale": 65.5134048461914,
+      "reconstructed_prediction_sha256": "fda14261098ea3cc3e60da4527fdc49c0421c0e227adac996b127b6f119f84ea",
+      "reconstruction_map_sha256": "70ca121e32a1bd4ba4519332ee68fc99cceee87af5882e058af24d01b1c5f0dd",
+      "sample_id": "v6p1if1_0907",
+      "support_indices_sha256": "247f0d2bc86408719b35924c7ba6d2373b9d75da436ac9c9fbea6da5671228a1",
+      "support_volume_relative_error": 0.0
+    },
+    {
+      "anchor_scale": 62.541770935058594,
+      "direct_deltaT_sha256": "531f112a7e564c901b758666df205c891b430f2c2f64640e3ecc87b75f37996b",
+      "direct_prediction_sha256": "cf3030b93db3502265d59d91b28e69022e9dcf59c6ac961c31883fb34cbe7c12",
+      "graph_metadata_sha256": "9b8e9b2dd13e820585251dffe00a51ecd5b7860c7eb078f36ee60ebc164a58fd",
+      "graph_tensors_sha256": "8b60082e714b6706322f090cb7b31ec125bbf129b1c3585636b713f401dbff21",
+      "nested_support_audit": {
+        "algorithm": "anchored_stratified_deficit_round_robin_v1",
+        "anchor_count": 1024,
+        "anchor_order_preserved": true,
+        "fallback": "exhausted strata/layers are removed and remaining weights renormalized",
+        "order_sha256": "b2e8e96f71e7b9fee573b45cf2da2a3cf835bc91a84653efcf94faae8096a2be",
+        "selection_seed": 20260808,
+        "stratum_candidate_counts": {
+          "interface": 33258,
+          "robin": 8301,
+          "source": 2728,
+          "volume": 195514
+        },
+        "stratum_fractions": {
+          "interface": 0.15,
+          "robin": 0.1,
+          "source": 0.35,
+          "volume": 0.4
+        },
+        "target_or_temperature_used": false,
+        "within_stratum_order": "per-layer SHA256(seed:sample_id:solver_index), volume-weighted deficit interleave"
+      },
+      "operator_cv_sha256": "5e03e66e1e658510dcfada83d6417d5467662651025f78b25c60a95437d22695",
+      "padding_edge_counts": {
+        "p2r_edge_indices": 81308,
+        "r2p_edge_indices": null,
+        "r2r_edge_domains": 3543,
+        "r2r_edge_indices": 3543
+      },
+      "power_audit": {
+        "applied_power_W": 9.848291786218809,
+        "relative_power_error": 0.0,
+        "requested_power_W": 9.848291786218809,
+        "sources": [
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 560,
+            "power_W": 1.9986724380599596,
+            "represented_volume_m3": 1.8977970575616102e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 720,
+            "power_W": 3.509142361230501,
+            "represented_volume_m3": 2.6904223833465576e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 336,
+            "power_W": 0.9477638688625969,
+            "represented_volume_m3": 1.355083260373025e-10
+          },
+          {
+            "layer": "silicon_die_lower",
+            "nonzero_node_count": 648,
+            "power_W": 1.8530718128417192,
+            "represented_volume_m3": 2.1339708516160933e-10
+          },
+          {
+            "layer": "silicon_die_upper",
+            "nonzero_node_count": 576,
+            "power_W": 1.5396413052240319,
+            "represented_volume_m3": 1.6962113609972026e-10
+          }
+        ]
+      },
+      "query_coords_sha256": "27754f9357806b762a32fd361e833bd1e91253a7b5a02d78b8cea06c2129ac87",
+      "query_k_sha256": "3c4cd93c753d433fbade279b7a8cd4da1363a1f7d4d599efaa15ce422809d08b",
+      "query_q_sha256": "2f5cca5baec2d5277c4de0993b4e98f700a4fe1ebcb3c38a32f287c65159167e",
+      "query_scale": 56.54798126220703,
+      "reconstructed_prediction_sha256": "91796b028f622b3ef37a9abbe52af43c9127805a05b0f626b070620ea488851c",
+      "reconstruction_map_sha256": "c4dcbe4ce8395c549fd916e327b1b270b07d2219f6eeab1f4ea19b626020a521",
+      "sample_id": "v6p1if1_0203",
+      "support_indices_sha256": "6b9e909447f1569e5d6366c3219a863a0f5718a2d6db6e686a41745e0f3cdc39",
+      "support_volume_relative_error": 0.0
+    }
+  ],
+  "schema_version": "heat3d_v7_g0e_e16384_formal_replay_observation_v1",
+  "scientific_evidence_eligible": false,
+  "sealed_labels_accessed": false,
+  "status": "OBSERVED_NOT_ADJUDICATED",
+  "test_iid_accessed": false,
+  "timing_instrumentation": null,
+  "training_or_solver_invoked": false,
+  "truth_loaded_after_all_predictions": true
+}
