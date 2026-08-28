@@ -40,6 +40,8 @@ __all__ = [
     "EvaluationCore",
     "TimingCore",
     "TimingLifecycle",
+    "PredictionOnlyRecord",
+    "FormalEvaluationOrchestrator",
 ]
 
 _EXPORTS = {
@@ -98,6 +100,14 @@ _EXPORTS = {
     "EvaluationCore": ("rigno.heat3d_runtime.evaluation", "EvaluationCore"),
     "TimingCore": ("rigno.heat3d_runtime.timing", "TimingCore"),
     "TimingLifecycle": ("rigno.heat3d_runtime.timing", "TimingLifecycle"),
+    "PredictionOnlyRecord": (
+        "rigno.heat3d_runtime.orchestration",
+        "PredictionOnlyRecord",
+    ),
+    "FormalEvaluationOrchestrator": (
+        "rigno.heat3d_runtime.orchestration",
+        "FormalEvaluationOrchestrator",
+    ),
 }
 
 

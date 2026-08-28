@@ -1,0 +1,83 @@
+{
+  "schema_version": "heat3d_v7_g0d_formal_orchestration_closeout_v1",
+  "gate": "G0d",
+  "status": "FAIL_CLOSED",
+  "V7_G0_status": "FAIL",
+  "evidence_base_git_sha": "4b3eeec72ffedd296799137b229ab389d91805cc",
+  "execution_role": "compatibility_audit",
+  "scientific_evidence_eligible": false,
+  "prohibited_action_flags": {
+    "training": false,
+    "solver": false,
+    "new_data_generation": false,
+    "test_iid_access": false,
+    "sealed_label_access": false,
+    "model_selection": false,
+    "performance_benchmark": false,
+    "timing_lifecycle_change": false,
+    "performance_optimization": false,
+    "G1_experiment": false
+  },
+  "G0d_1_formal_evaluation_orchestration": {
+    "status": "FAIL_CLOSED",
+    "formal_entrypoint": "rigno.heat3d_runtime.FormalEvaluationOrchestrator",
+    "prediction_only_inference": true,
+    "truth_loading_owner": "EvaluationCore",
+    "evaluation_split": "valid_iid",
+    "model_or_route_selection": false,
+    "native_reference": {
+      "status": "API_AND_UNIT_CONTRACT_PASS",
+      "runtime_artifact_replay": "not_run_after_high_resolution_hard_gate"
+    },
+    "E16384_valid32_reference": {
+      "status": "BLOCKED_MISSING_FROZEN_ARTIFACT",
+      "required": [
+        "frozen E16384 valid32 prediction artifact",
+        "E16384 valid32 support/query/graph/padding binding",
+        "E16384 valid32 reconstruction contract/map binding"
+      ],
+      "devbox_search_result": "No matching frozen valid32 high-resolution bundle was found; only four-train-sample supplemental high-resolution artifacts were present.",
+      "not_substituted_by": "docs/v7_g0c1_receipt.json is a 1024 support-level valid32 replication and is not relabeled as E16384.",
+      "hard_gate": true
+    },
+    "required_receipt_bindings_implemented": [
+      "checkpoint SHA/epoch",
+      "dataset and full-field SHA",
+      "frozen valid32 IDs",
+      "route_id",
+      "anchor_context_resolution",
+      "encoder_input_resolution",
+      "output_query_resolution",
+      "reconstruction_resolution",
+      "prediction artifact SHA",
+      "reconstruction contract/map SHA",
+      "EvaluationCore metric schema"
+    ]
+  },
+  "G0d_2_actual_timing_instrumentation": {
+    "status": "NOT_RUN_BLOCKED_BY_G0D_1",
+    "TimingCore_real_callback_unit_test": "PASS",
+    "V7_runtime_actual_instrumentation": "not_claimed",
+    "truth_metrics_accuracy_excluded": true,
+    "frozen_EU_timing_contract_changed": false,
+    "existing_publication_performance_evidence_touched": false,
+    "headline_performance_claim": false
+  },
+  "G0d_3_final_acceptance": {
+    "status": "FAIL_BLOCKED",
+    "hard_blocker": "G0d-1 E16384 valid32 frozen high-resolution evidence is unavailable on devbox and cannot be replaced by a train fixture or support-level valid32 receipt.",
+    "production_graph_static_checks": "unit-covered; no new closeout claim",
+    "CPU_semantic_equivalence": "previous G0c evidence retained; G0d high-resolution orchestration closure not complete",
+    "historical_behavioral_reconciliation": "previously PASS; unchanged",
+    "missing_historical_binary_identity": "archival limitation; unchanged",
+    "GPU_policy": "frozen; no new experiment",
+    "provenance_roles": "explicit; this receipt is compatibility_audit",
+    "test_or_sealed_untouched": true
+  },
+  "deferred_work": [
+    "Bind a real frozen E16384 valid32 high-resolution artifact bundle.",
+    "Re-run G0d-1 native and E16384 valid32 formal orchestration on that bundle.",
+    "Only after G0d-1 PASS, execute actual TimingCore instrumentation.",
+    "Do not enter G1 or performance optimization."
+  ]
+}

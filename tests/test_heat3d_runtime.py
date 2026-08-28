@@ -526,6 +526,78 @@ class StableRuntimeStaticTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             TimingCore.begin(state="fresh").record("metrics", 0.0)
 
+    def test_timing_core_runs_real_stage_callbacks_without_changing_boundary(self) -> None:
+        from rigno.heat3d_runtime.timing import TIMING_STAGE_ORDER, TimingCore
+
+        seen = []
+        steps = {
+            stage: (lambda prior, stage=stage: seen.append((stage, tuple(prior))) or stage)
+            for stage in TIMING_STAGE_ORDER
+        }
+        record, results = TimingCore.run(state="fresh", steps=steps)
+        self.assertEqual([row["stage"] for row in record["stages"]], list(TIMING_STAGE_ORDER))
+        self.assertEqual(list(results), list(TIMING_STAGE_ORDER))
+        self.assertEqual([row[0] for row in seen], list(TIMING_STAGE_ORDER))
+        self.assertTrue(all(row["elapsed_seconds"] >= 0.0 for row in record["stages"]))
+        self.assertEqual(record["latency_boundary"], TimingCore.contract()["workload_boundary"])
+
+    def test_formal_orchestration_binds_route_and_loads_truth_after_prediction(self) -> None:
+        from rigno.heat3d_runtime import FormalEvaluationOrchestrator, PredictionOnlyRecord
+        from rigno.heat3d_runtime.evaluation import METRIC_SCHEMA_VERSION
+
+        coords = np.asarray(
+            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0]],
+            dtype=np.float64,
+        )
+        prediction = np.asarray([1.5, 1.5, 3.5, 3.5])
+        record = PredictionOnlyRecord(
+            sample_id="valid-formal",
+            prediction_deltaT_K=prediction,
+            coords=coords,
+            control_volumes_m3=np.ones(4),
+            layer_id=np.asarray([0, 0, 1, 1]),
+            q_W_m3=np.asarray([1.0, 0.0, 1.0, 0.0]),
+            route_id="native_1024",
+            anchor_context_resolution=1024,
+            encoder_input_resolution=1024,
+            output_query_resolution=1024,
+            reconstruction_resolution=1024,
+            direct_query=True,
+        ).validated()
+        truth = np.asarray([1.0, 2.0, 3.0, 4.0])
+        loaded = []
+        receipt = {
+            "route_id": "native_1024",
+            "anchor_context_resolution": 1024,
+            "encoder_input_resolution": 1024,
+            "output_query_resolution": 1024,
+            "reconstruction_resolution": 1024,
+            "prediction_artifact_sha256_by_sample": {
+                "valid-formal": record.prediction_artifact_sha256,
+            },
+            "reconstruction_contract_sha256": None,
+            "metric_schema_version": METRIC_SCHEMA_VERSION,
+        }
+
+        def truth_loader(sample_id: str) -> dict[str, object]:
+            loaded.append(sample_id)
+            return {"truth_deltaT_K": truth, "split": "valid_iid"}
+
+        result = FormalEvaluationOrchestrator().run(
+            [record], truth_loader=truth_loader, receipt=receipt
+        )
+        self.assertEqual(loaded, ["valid-formal"])
+        self.assertTrue(result["prediction_only"])
+        self.assertFalse(result["labels_read_by_inference"])
+        self.assertEqual(result["truth_loaded_by"], "EvaluationCore")
+        self.assertEqual(result["evaluation"]["metric_schema_version"], METRIC_SCHEMA_VERSION)
+        with self.assertRaises(ValueError):
+            FormalEvaluationOrchestrator().run(
+                [record],
+                truth_loader=truth_loader,
+                receipt={"route_id": "native_1024"},
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

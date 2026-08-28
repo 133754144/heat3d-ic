@@ -1024,3 +1024,61 @@ binary identity 缺失是归档限制；旧 V6 formal wrappers 仍作为 read-on
 oracle，尚未删除或重构；旧 timing 字段较粗，尚不足以支持新的正式性能 claim。所有
 feature/graph/KD-tree/JIT/batching/padding/reconstruction 优化均 deferred。G0c-2
 完成后停止，不自动进入 G1。
+
+## V7-G0d：Formal Orchestration & G0 Closeout（fail-closed）
+
+本节是当前 G0 状态的最新覆盖结论；此前 G0b-2f、G0c-1 和 G0c-2 receipt
+保持为历史 gate 证据，不被重写。机器可读证据见
+[`v7_g0d_receipt.json`](v7_g0d_receipt.json)。
+
+### G0d-1 Formal Evaluation Orchestration
+
+新增的唯一正式评价边界是
+`rigno.heat3d_runtime.FormalEvaluationOrchestrator`：稳定 inference 只提交
+`PredictionOnlyRecord`，而 `EvaluationCore` 才能通过显式的 valid-only provider
+加载 truth，并负责冻结 reconstruction/metrics/receipt 连接。receipt 强制绑定
+route、四个分辨率角色、prediction artifact hash、reconstruction contract 字段
+和 `EvaluationCore` metric schema；缺失字段或不匹配会 fail-closed。
+
+该 API 的 unit/static contract 已通过。但 G0d-1 要求的冻结 **E16384
+valid32 high-resolution reference** 在 devbox 不存在：只找到 supplemental
+high-resolution artifacts（四个 train compatibility sample），没有可核验的
+E16384 valid32 prediction、support/query/graph/padding 和 reconstruction
+binding bundle。已有 `v7_g0c1_receipt.json` 的 valid32 是 1024
+support-level metric replication，不能重新命名为 E16384。因而没有把 train
+fixture、support-level receipt 或 temporary artifact 作为正式证据，G0d-1
+按 hard gate `FAIL_CLOSED`。
+
+### G0d-2 Actual Timing Instrumentation
+
+由于 G0d-1 未通过，严格 gate 顺序下没有执行 V7 runtime actual timing
+instrumentation；`TimingCore.run` 仅增加真实 callback 生命周期的 unit coverage，
+不构成 actual timing PASS。未触及 frozen E/U timing lifecycle、fresh/resident、
+Q1/Q2、throughput、workload boundary、sync 位置或任何既有 publication-eligible
+latency/speedup/Pareto receipt。旧 V6 timing wrappers 仍是 read-only historical
+oracle；没有新的 timing claim。
+
+### G0d-3 acceptance state
+
+当前 `V7_G0_status=FAIL`，唯一 hard blocker 是缺失冻结 E16384 valid32
+high-resolution evidence bundle。以下边界保持不变：
+
+- stable V7 runtime 不 import `scripts/`、`*_smoke.py`、`check_*` 或
+  `*_development.py`，不跨脚本调用 private API，也不 monkey-patch module state；
+- `EvaluationCore` 只接受 `valid_iid`，inference 不读取 labels；
+- 本 receipt 的 `execution_role=compatibility_audit`；正式 inference 的
+  `production_inference` role 在 API contract 中保持显式；
+- 历史 V1--V6 wrappers 不删、不改，继续作为 read-only compatibility oracle；
+- test/sealed labels 未访问，G1 和所有性能优化均未开始。
+
+轻量 CI 已加入 `.github/workflows/v7-lightweight.yml`，仅覆盖 stable runtime
+unit/import、compileall、JSON validation 和 production-import static audit；不
+包含 checkpoint、GPU 或 full-dataset integration。当前阶段不会因 CI 文件存在而
+宣称 G0 closed。
+
+### G0d stop condition
+
+G0d-1 fail-closed 后已停止，不进入 G0d-2 actual instrumentation、G0d-3 PASS
+判定或 G1。待获得可绑定的冻结 E16384 valid32 high-resolution artifact bundle
+后，按原顺序重新执行；不得放宽 tolerance、重定义 E/U contract 或覆盖历史性能
+证据。
