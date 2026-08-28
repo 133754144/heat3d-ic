@@ -13,6 +13,7 @@ import argparse
 import json
 from pathlib import Path
 import pickle
+import platform
 import resource
 import tempfile
 import time
@@ -137,6 +138,12 @@ def _device_memory() -> dict[str, Any]:
     return {"devices": result}
 
 
+def _host_peak_rss_bytes() -> int:
+    raw = int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    # Linux reports KiB; macOS reports bytes.
+    return raw if platform.system() == "Darwin" else raw * 1024
+
+
 def main() -> int:
     args = _parse_args()
     if args.steps < 1:
@@ -243,7 +250,7 @@ def main() -> int:
     step_times: list[float] = []
     compile_warmup_seconds = 0.0
     forward_backward_seconds = 0.0
-    optimizer_seconds = 0.0
+    optimizer_seconds = None
     for step_index in range(args.steps):
         key, step_key = jax.random.split(key)
         started = time.perf_counter()
@@ -258,7 +265,6 @@ def main() -> int:
             compile_warmup_seconds = elapsed
         else:
             forward_backward_seconds += elapsed
-        optimizer_seconds += 0.0
 
     validation_started = time.perf_counter()
     valid_metrics = trainer.validate(state, valid_batch)
@@ -277,11 +283,12 @@ def main() -> int:
         "compile_warmup_seconds": compile_warmup_seconds,
         "model_forward_backward_seconds": forward_backward_seconds,
         "optimizer_seconds": optimizer_seconds,
+        "optimizer_timing_status": "included_in_V7FormalTrainer_step; not separately observable inside compiled/eager closure",
         "step_wall_seconds": step_times,
         "total_step_wall_seconds": float(sum(step_times)),
         "compile_count": int(trainer.compile_count),
         "graph_rebuild_count": int(profile.get("graph_build_graphs_calls", 0)),
-        "host_peak_rss_bytes": int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss),
+        "host_peak_rss_bytes": _host_peak_rss_bytes(),
         "device_memory": _device_memory(),
         "valid_metrics": valid_metrics,
         "loss_history": loss_history,
