@@ -102,7 +102,15 @@
   },
   "deferred_after_hard_gate": {
     "TimingCore_actual_instrumentation": "not_run",
-    "CI_h5py_fix_and_green_verification": "not_run",
+    "CI_h5py_fix_and_green_verification": {
+      "status": "RED_MISSING_H5PY",
+      "github_actions_run_id": 33157823597,
+      "head_sha": "2476f4410332c00577887d7d7327d4773e18a94d",
+      "failed_stage": "Stable runtime import and unit tests",
+      "failure": "ModuleNotFoundError: No module named 'h5py'",
+      "green_required_for_G0": true,
+      "fix_not_applied_after_publication_consistency_hard_gate": true
+    },
     "G1_or_performance_optimization": "not_started"
   },
   "prohibited_action_flags": {

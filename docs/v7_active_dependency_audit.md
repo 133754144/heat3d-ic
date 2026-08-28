@@ -1183,5 +1183,7 @@ prediction/reconstruction hash 已写入 observation receipt。它不再有 300 
 CPU-to-historical-GPU **scalar metric** acceptance policy；原 valid32 GPU binary bundle 也仍是
 archival absence。为避免把 field-level envelope 擅自改写成新的 metric tolerance，这项
 publication-consistency gate 保持 `NOT_ADJUDICATED`，不是 PASS。严格顺序下没有运行
-actual TimingCore，也没有修复/认定 CI green，更没有生成 `V7_G0_status=PASS`。E/U
-science、timing lifecycle 与 publication-performance evidence 均未改动；test/sealed 未访问。
+actual TimingCore，也没有修复或认定 CI green，更没有生成 `V7_G0_status=PASS`。本次
+push 触发的 GitHub Actions run `33157823597` 实际为 RED：lightweight runtime unit import
+缺少 `h5py`；该状态已写入 G0e receipt，不被错误标为未运行。E/U science、timing lifecycle
+与 publication-performance evidence 均未改动；test/sealed 未访问。
