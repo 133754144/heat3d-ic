@@ -1,0 +1,80 @@
+{
+  "schema_version": "heat3d_v7_g1_p1i_rehearsal_receipt_tracked_v1",
+  "status": "COMPLETE",
+  "experiment_id": "V7-G1-Full-P1i",
+  "experiment_role": "publication_training",
+  "execution_role": "readiness_fixture",
+  "scientific_evidence_eligible": false,
+  "publication_evidence": false,
+  "headline_performance_claim": false,
+  "g1_scientific_experiment": false,
+  "execution_host": "devbox",
+  "execution_commit": "c5cbb06aea97a276eff65c09e4db0abfdf11c4a5",
+  "source_remote_receipt": "/tmp/v7_g1_p1i_rehearsal_c5cbb06/v7_g1_p1i_rehearsal_receipt.json",
+  "source_remote_receipt_sha256": "89dc98a8c5e05ef8000dd09cb3d64bfd2b09c94929411a008daa6069a37651de",
+  "runtime": {
+    "python": "3.14.3",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "device": ["cuda:0"]
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "train_count": 768,
+    "valid_iid_count": 128,
+    "test_iid_access": "closed",
+    "sealed_access": "closed"
+  },
+  "batching_contract": {
+    "batch_size": 24,
+    "micro_batch_size": 24,
+    "validation_batch_size": 32,
+    "prediction_batch_size": 32,
+    "batch_plan": "sample_shuffle",
+    "shuffle_train_batches": true,
+    "batch_build_seed": 0,
+    "sample_weight_policy": "none",
+    "drop_last": false,
+    "train_batches_per_epoch": 32
+  },
+  "profile": {
+    "epochs": 1,
+    "train_steps": 32,
+    "unique_batch_signatures": 32,
+    "compile_count": 32,
+    "model_init_seconds": 15.273345192021225,
+    "data_loading_and_preprocessing_seconds": 322.4420307879918,
+    "feature_preprocessing_seconds": 2.311746623046929,
+    "graph_preparation_seconds": 311.3145113179635,
+    "first_step_seconds": 23.539770184026565,
+    "median_after_first_step_seconds": 17.033665355993435,
+    "train_step_total_seconds": 533.9043271919072,
+    "validation_seconds": [24.284450536011718],
+    "epoch_wall_seconds": 559.0631190350105,
+    "host_max_rss_bytes": 11606933504,
+    "train_order_hash": "98cf65cc77a8d1853cdb9c98cb9ba95a052ff9fdb54b1394ab98a80ac2f59860",
+    "valid_loss": 1.0482425540685654,
+    "gpu_utilization": "unavailable_nvidia_smi_command",
+    "environment_observation": "repeated cuda_timer delay-kernel warnings; no semantic failure"
+  },
+  "checkpoint_resume": {
+    "passed": true,
+    "parameter_reload_max_abs": 0.0,
+    "optimizer_reload_max_abs": 0.0,
+    "resume_round_trip_valid_loss_abs_diff": 1.1473894119262695e-05,
+    "validation_scalar_policy": "GPU scalar repeatability is observation; state tree exactness is the round-trip gate"
+  },
+  "prohibited_actions": {
+    "test_iid": false,
+    "sealed": false,
+    "solver": false,
+    "new_data": false,
+    "model_selection": false,
+    "training_variant_comparison": false,
+    "g1_scientific_experiment": false,
+    "frozen_v6_evidence_modified": false,
+    "high_n_optimization": false
+  }
+}

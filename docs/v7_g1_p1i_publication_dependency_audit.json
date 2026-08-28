@@ -1,6 +1,9 @@
 {
   "schema_version": "heat3d_v7_g1_p1i_publication_dependency_audit_v1",
-  "status": "audited_before_profile",
+  "status": "profiled_and_rehearsed",
+  "profile_receipt": "docs/v7_g1_p1i_rehearsal_receipt.json",
+  "profile_execution_commit": "c5cbb06aea97a276eff65c09e4db0abfdf11c4a5",
+  "profile_status": "COMPLETE",
   "production_training_graph": [
     "scripts/run_heat3d_v7_formal_p1i_training.py",
     "rigno.heat3d_training.p1i.prepare_p1i_data",
@@ -85,7 +88,14 @@
       "potential_cost": "repeated CPU preprocessing and host memory traversal",
       "candidate_direction": "memoize immutable input-derived rows within one preparation session",
       "semantics_may_change": false,
-      "v7_status": "session-scoped_reuse_in_progress"
+      "v7_status": "session-scoped_reuse_complete",
+      "measured_observation": {
+        "feature_transform_calls": 896,
+        "graph_metadata_build_calls": 896,
+        "graph_build_calls": 36,
+        "unique_batch_signatures": 32,
+        "compile_count": 32
+      }
     },
     {
       "operation": "JIT executable lifecycle",
@@ -93,7 +103,13 @@
       "potential_cost": "compile stalls across variants and seeds",
       "candidate_direction": "reuse stable V7 fixed-batch executable per shape signature",
       "semantics_may_change": false,
-      "v7_status": "stable_core_jit_cache_enabled_by_explicit_flag"
+      "v7_status": "stable_core_jit_cache_enabled_by_explicit_flag",
+      "measured_observation": {
+        "jit_cache": true,
+        "compile_count": 32,
+        "first_step_seconds": 23.539770184026565,
+        "median_after_first_step_seconds": 17.033665355993435
+      }
     },
     {
       "operation": "checkpoint/metric/artifact writers",

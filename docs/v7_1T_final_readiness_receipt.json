@@ -106,5 +106,30 @@
     "high-N KD-tree/reconstruction, Q1/Q2 serving, and publication timing remain out of scope",
     "future G1 variants must be registry/config driven rather than copied runners"
   ],
-  "g1_entry": "deferred; requires later explicit authorization"
+  "g1_entry": "deferred; requires later explicit authorization",
+  "V7_G1_production_preflight": "PASS",
+  "current_preflight": {
+    "schema_version": "heat3d_v7_g1_production_preflight_trace_v1",
+    "status": "PASS",
+    "preflight_code_commit": "c5cbb06aea97a276eff65c09e4db0abfdf11c4a5",
+    "devbox_execution_commit": "c5cbb06aea97a276eff65c09e4db0abfdf11c4a5",
+    "devbox_fast_forward_only": true,
+    "devbox_supplemental_untracked_preserved": true,
+    "rehearsal_receipt": "docs/v7_g1_p1i_rehearsal_receipt.json",
+    "rehearsal_status": "COMPLETE",
+    "rehearsal_execution_role": "readiness_fixture",
+    "rehearsal_publication_evidence": false,
+    "rehearsal_g1_started": false,
+    "g1_ready_without_execution": true,
+    "ci": {
+      "workflow": ".github/workflows/v7-lightweight.yml",
+      "latest_verified_head_sha": "c5cbb06aea97a276eff65c09e4db0abfdf11c4a5",
+      "run_id": 33179711414,
+      "url": "https://github.com/133754144/heat3d-ic/actions/runs/33179711414",
+      "conclusion": "success",
+      "status": "GREEN"
+    },
+    "historical_fields_retained": true,
+    "traceability_note": "The original V7.1-T readiness evidence above is retained unchanged; this block records the later P1i preflight head, devbox rehearsal head, and CI head."
+  }
 }
