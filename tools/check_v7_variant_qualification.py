@@ -10,6 +10,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTROL = ROOT / "configs" / "heat3d_v7"
 RECEIPT_PATH = ROOT / "docs" / "v7_g1_variant_qualification_receipt.json"
+SEMANTIC_ANCHOR_PATH = ROOT / "docs" / "v7_g1_full_p1i_semantic_anchor_receipt.json"
+PROFILING_PATH = ROOT / "docs" / "v7_g1_synced_profiling_receipt.json"
+CLOSEOUT_PATH = ROOT / "docs" / "v7_g1_scientific_closeout_receipt.json"
 
 
 def _load(path: Path) -> dict:
@@ -91,6 +94,35 @@ def main() -> None:
     _require(protocol["variant_qualification"]["formal_execution_started"] is False, "protocol variant qualification opened formal G1")
     _require(protocol["evidence_boundary"]["G1_scientific_ready"] is False, "unresolved variants must keep scientific readiness closed")
     _require(RECEIPT_PATH.exists() and len(_sha256(RECEIPT_PATH)) == 64, "qualification receipt is not readable")
+    semantic = _load(SEMANTIC_ANCHOR_PATH)
+    _require(semantic.get("status") == "FAIL_CLOSED", "semantic anchor must remain fail-closed")
+    _require(semantic.get("execution_role") == "compatibility_audit", "semantic anchor role drifted")
+    _require(semantic.get("v7", {}).get("code_commit", "").__len__() == 40, "semantic anchor commit is not pinned")
+    equivalence = semantic.get("equivalence", {})
+    _require(equivalence.get("prepared_inputs", {}).get("graphs", {}).get("exact") is True, "semantic graph equivalence missing")
+    _require(equivalence.get("steps", {}).get("gradients", {}).get("exact") is True, "semantic gradient equivalence missing")
+    _require(equivalence.get("steps", {}).get("parameters", {}).get("exact") is True, "semantic parameter equivalence missing")
+    failure = semantic.get("failing_difference", {})
+    _require(failure.get("new_tolerance_registered") is False, "semantic anchor introduced an unregistered tolerance")
+    _require(float(failure.get("max_abs", 0.0)) > 0.0, "semantic anchor failure evidence missing")
+    _require(SEMANTIC_ANCHOR_PATH.exists() and len(_sha256(SEMANTIC_ANCHOR_PATH)) == 64, "semantic anchor receipt is not readable")
+    profiling = _load(PROFILING_PATH)
+    _require(profiling.get("status") == "COMPLETE_nonpublication_instrumentation", "synchronized profiling status drifted")
+    _require(profiling.get("timing_boundary", {}).get("step_end", "").startswith("after block_until_ready"), "profiling is not synchronized")
+    _require(profiling.get("observations", {}).get("performance_claim") is False, "profiling performance claim opened")
+    _require(profiling.get("observations", {}).get("scientific_evidence_eligible") is False, "profiling scientific evidence opened")
+    for name in ("Full", "vanilla_RIGNO"):
+        row = profiling.get("runs", {}).get(name, {})
+        _require(row.get("compile_count") == 32, f"profiling compile count missing: {name}")
+        _require(row.get("checkpoint_round_trip") is True, f"profiling checkpoint round-trip missing: {name}")
+    _require(PROFILING_PATH.exists() and len(_sha256(PROFILING_PATH)) == 64, "profiling receipt is not readable")
+    closeout = _load(CLOSEOUT_PATH)
+    _require(closeout.get("status") == "FAIL_CLOSED_pre_G1", "scientific closeout must remain fail-closed")
+    _require(closeout.get("readiness", {}).get("V7_G1_SCIENTIFIC_READY") == "FAIL_CLOSED", "scientific readiness was opened")
+    _require(closeout.get("scientific_protocol", {}).get("formal_matrix", {}).get("planned_runs") == 21, "formal matrix run count drifted")
+    _require(closeout.get("scientific_protocol", {}).get("formal_matrix", {}).get("formal_execution_started") is False, "formal G1 execution started")
+    _require(closeout.get("gates", {}).get("full_v6_v7_semantic_anchor", {}).get("new_tolerance_registered") is False, "closeout registered an unapproved semantic tolerance")
+    _require(CLOSEOUT_PATH.exists() and len(_sha256(CLOSEOUT_PATH)) == 64, "scientific closeout receipt is not readable")
     print("V7 variant qualification: PASS (supported variants); unresolved variants remain fail-closed")
 
 

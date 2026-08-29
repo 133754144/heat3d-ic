@@ -59,6 +59,21 @@ seed0 结果事后调整。
 fail-closed，不使用隐式 fallback。epoch budget 与 supported variant
 implementations 已资格验证，但 `G1 SCIENTIFIC READY` 仍未授予。
 
+## Full V6↔V7 semantic anchor and synchronized profiling
+
+固定 CPU compatibility audit 对 prepared support/input、graph metadata/tensors、
+global/native/q-k features、初始参数与 prediction、三步 gradients/updates/
+optimizer state/parameter evolution、step loss scalar 和 validation prediction
+均达到 exact。由于第 2 步 legacy loss wrapper 与 V7 直接组件求和的
+`total_loss` 仍有 `1.9073486328125e-6` 的 float32 聚合差异，semantic anchor
+保持 `FAIL_CLOSED`；没有注册新 tolerance 来强行通过。结构化证据见
+[v7_g1_full_p1i_semantic_anchor_receipt.json](v7_g1_full_p1i_semantic_anchor_receipt.json)。
+
+Full 与 canonical Vanilla 的一次 CUDA 彩排已使用实际 post-step
+`block_until_ready` 计时边界完成；truth/metrics 不在 step latency 内，publication
+和 scientific evidence 均关闭。既有 V6 evidence 和性能数字未改动。详细数据见
+[v7_g1_synced_profiling_receipt.json](v7_g1_synced_profiling_receipt.json)。
+
 机器可读控制面见
 `configs/heat3d_v7/v7_g1_epoch_budget_contract.json`、
 `configs/heat3d_v7/v7_g1_budget_qualification.json`、

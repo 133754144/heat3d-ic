@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_training_dependency_audit_v2",
-  "status": "audited_pre_G1; e200_qualified; supported_variants_qualified; formal_G1_not_started",
+  "status": "audited_pre_G1; e200_qualified; supported_variants_qualified; semantic_anchor_fail_closed; synchronized_profiling_complete; formal_G1_not_started",
   "scope": "V7 publication-training path, variant qualification, and pre-G1 semantic audits",
   "production_dependency": [
     {
@@ -208,6 +208,25 @@
     "step_end": "after block_until_ready over params, optimizer_state, loss, gradients, updates, prediction",
     "scientific_timing_claim": false,
     "high_n_or_serving_optimization": false
+  },
+  "full_p1i_semantic_anchor": {
+    "receipt": "docs/v7_g1_full_p1i_semantic_anchor_receipt.json",
+    "status": "FAIL_CLOSED",
+    "prepared_inputs_graph_features_exact": true,
+    "initial_params_prediction_loss_exact": true,
+    "three_step_gradients_updates_parameters_exact": true,
+    "validation_prediction_exact": true,
+    "blocking_difference": "legacy versus V7 float32 loss-wrapper total aggregation at step 2",
+    "blocking_max_abs": 1.9073486328125e-06,
+    "new_tolerance_registered": false
+  },
+  "synchronized_profiling": {
+    "receipt": "docs/v7_g1_synced_profiling_receipt.json",
+    "status": "COMPLETE_nonpublication_instrumentation",
+    "actual_callbacks": true,
+    "step_end_after_block_until_ready": true,
+    "publication_evidence_modified": false,
+    "performance_claim": false
   },
   "production_boundary": {
     "smoke_imports": 0,

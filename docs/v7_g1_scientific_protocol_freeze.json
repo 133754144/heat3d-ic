@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v2",
-  "status": "qualified_pre_G1; supported_variant_qualification_complete; formal_execution_closed",
+  "status": "qualified_pre_G1; supported_variant_qualification_complete; semantic_anchor_fail_closed; formal_execution_closed",
   "scope": "G1 scientific protocol freeze; no formal multi-seed scientific experiment",
   "historical_evidence": {
     "direct_full_reference": "V6_06_V5best_P1i_seed0_reliable_B24",
@@ -118,8 +118,24 @@
     "budget_decision": "docs/v7_g1_budget_decision_receipt.json",
     "variant_qualification": "docs/v7_g1_variant_qualification_receipt.json"
   },
+  "pre_g1_audits": {
+    "full_p1i_semantic_anchor": {
+      "receipt": "docs/v7_g1_full_p1i_semantic_anchor_receipt.json",
+      "status": "FAIL_CLOSED",
+      "model_visible_arrays_gradients_updates_parameters": "exact",
+      "blocking_difference": "legacy_vs_v7 float32 loss-wrapper total aggregation at step 2; max_abs=1.9073486328125e-6",
+      "new_tolerance_registered": false
+    },
+    "synchronized_profiling": {
+      "receipt": "docs/v7_g1_synced_profiling_receipt.json",
+      "status": "COMPLETE_nonpublication_instrumentation",
+      "timing_end_after_block_until_ready": true,
+      "publication_performance_evidence_modified": false
+    }
+  },
   "readiness_blockers": [
     "generic_uniform_support and volume_only_support still require separately frozen label-independent support artifacts/providers",
-    "no_context remains unresolved because native scale/context coupling has no uniquely frozen delta"
+    "no_context remains unresolved because native scale/context coupling has no uniquely frozen delta",
+    "Full V6↔V7 semantic anchor remains fail-closed until the legacy/V7 float32 loss aggregation difference is resolved without an unregistered tolerance"
   ]
 }

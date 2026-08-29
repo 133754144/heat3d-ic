@@ -1,0 +1,114 @@
+{
+  "schema_version": "heat3d_v7_g1_scientific_closeout_receipt_v1",
+  "status": "FAIL_CLOSED_pre_G1",
+  "scope": "scientific protocol freeze and nonpublication variant qualification; no formal G1 execution",
+  "source_control_commit": "70c5411988d50c01a6352a20bb303df966895f8b",
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "train": 768,
+    "valid_iid": 128,
+    "test_iid_labels_read": false,
+    "sealed_labels_read": false,
+    "test_iid_metadata_role_counted": true
+  },
+  "scientific_protocol": {
+    "epoch_budget": 200,
+    "warmup_epochs": 10,
+    "cosine_horizon_epochs": 200,
+    "seed_set": [0, 1, 2],
+    "synchronized_seed_fields": [
+      "model_initialization_seed",
+      "optimizer_seed",
+      "batch_build_seed",
+      "batch_order_seed",
+      "graph_seed"
+    ],
+    "checkpoint_selection": "valid_iid.sample_first_relative_rmse_pct; earliest tie",
+    "statistical_preregistration_sha256": "7c137eb4ba31964bc718a9fcb4573152aa247da174d14072be408ae9954c351d",
+    "formal_matrix": {
+      "base_variants": 6,
+      "capacity_matched_vanilla_included": true,
+      "total_variants": 7,
+      "planned_runs": 21,
+      "formal_execution_started": false
+    }
+  },
+  "gates": {
+    "support_semantics_frozen": {
+      "status": "PASS",
+      "name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+      "source_amplitude_awareness_claim": false,
+      "evidence": "docs/v7_g1_support_semantics_audit.json"
+    },
+    "seed_contract_frozen": {
+      "status": "PASS",
+      "evidence": "configs/heat3d_v7/v7_g1_seed_bundle.json"
+    },
+    "canonical_vanilla_fairness": {
+      "status": "PASS_nonpublication",
+      "basis": "bounded seed0 e200 budget qualification plus one-epoch canonical rehearsal; no posthoc tuning",
+      "evidence": "docs/v7_g1_budget_decision_receipt.json"
+    },
+    "capacity_matched_vanilla": {
+      "status": "PASS_nonpublication",
+      "node_latent_size": 100,
+      "edge_latent_size": 100,
+      "relative_parameter_gap_to_full": 0.003504747948253468,
+      "evidence": "docs/v7_g1_variant_qualification_receipt.json"
+    },
+    "no_scale": {
+      "status": "PASS_nonpublication",
+      "semantics": "physics scale retained; learned residual correction disabled",
+      "evidence": "docs/v7_g1_variant_qualification_receipt.json"
+    },
+    "generic_uniform_support": {
+      "status": "FAIL_CLOSED",
+      "reason": "label-independent provider/artifact not frozen"
+    },
+    "volume_only_support": {
+      "status": "FAIL_CLOSED",
+      "reason": "historical rejection is not an executable provider"
+    },
+    "no_context": {
+      "status": "FAIL_CLOSED",
+      "reason": "native scale/context coupling has no uniquely frozen delta"
+    },
+    "full_v6_v7_semantic_anchor": {
+      "status": "FAIL_CLOSED",
+      "evidence": "docs/v7_g1_full_p1i_semantic_anchor_receipt.json",
+      "model_visible_arrays_gradients_updates_parameters": "exact",
+      "blocking_difference": "legacy/V7 float32 loss-wrapper total aggregation at step 2",
+      "max_abs": 1.9073486328125e-06,
+      "new_tolerance_registered": false
+    },
+    "synchronized_profiling": {
+      "status": "PASS_instrumentation_only",
+      "evidence": "docs/v7_g1_synced_profiling_receipt.json",
+      "post_step_block_until_ready": true,
+      "performance_claim": false
+    }
+  },
+  "safety_and_evidence": {
+    "frozen_v6_evidence_modified": false,
+    "publication_evidence_modified": false,
+    "formal_g1_multi_seed_started": false,
+    "model_selection": false,
+    "solver": false,
+    "new_data_generated": false,
+    "historical_wrappers": "read_only_historical_oracle",
+    "stable_trainer": "semantic_reference_implementation"
+  },
+  "readiness": {
+    "V7_G1_SCIENTIFIC_READY": "FAIL_CLOSED",
+    "hard_blockers": [
+      "generic_uniform_support provider/artifact unresolved",
+      "volume_only_support provider unresolved",
+      "no_context scientific delta unresolved",
+      "Full V6↔V7 semantic anchor has an unregistered float32 total-loss aggregation difference"
+    ],
+    "formal_g1_allowed": false,
+    "optimization_and_g1": "deferred"
+  }
+}

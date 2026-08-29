@@ -1,0 +1,85 @@
+{
+  "schema_version": "heat3d_v7_g1_synced_profiling_summary_v1",
+  "status": "COMPLETE_nonpublication_instrumentation",
+  "scope": "one-epoch Full and canonical Vanilla CUDA rehearsal with synchronized step timing",
+  "execution_host": "devbox",
+  "backend": "cuda",
+  "device": "cuda:0",
+  "execution_role": "readiness_fixture",
+  "seed": 0,
+  "epochs": 1,
+  "train_samples": 768,
+  "valid_iid_samples": 128,
+  "train_batches_per_epoch": 32,
+  "validation_batches": 4,
+  "source_receipts": {
+    "Full": {
+      "path": "/tmp/v7_g1_synced_profile_full/v7_g1_p1i_rehearsal_receipt.json",
+      "sha256": "66d5efd423ed0222c8d7c614b4ca760133e2c414bafb85f68b6b1793e02c65d6",
+      "code_commit": "ecb8057f68166e1f504ea5a33d17d5d75f9bd5bc"
+    },
+    "vanilla_RIGNO": {
+      "path": "/tmp/v7_g1_synced_profile_vanilla/v7_g1_p1i_rehearsal_receipt.json",
+      "sha256": "78f28fbc885366eca042bd66f872360844c26e2efee7f81e33ca05e8f5f5b5e7",
+      "code_commit": "70c5411988d50c01a6352a20bb303df966895f8b"
+    }
+  },
+  "timing_boundary": {
+    "step_end": "after block_until_ready over params, optimizer_state, loss, gradients, updates, prediction",
+    "includes": ["prebuilt feature/graph use", "V7FormalTrainer.step", "optimizer update"],
+    "excludes": ["truth loading", "metrics", "accuracy audit"],
+    "historical_lifecycle_changed": false,
+    "publication_timing_updated": false
+  },
+  "runs": {
+    "Full": {
+      "parameter_count": 892776,
+      "compile_count": 32,
+      "unique_batch_signatures": 32,
+      "graph_build_calls": 36,
+      "graph_metadata_build_calls": 896,
+      "feature_transform_calls": 896,
+      "graph_preparation_seconds": 310.8742170280311,
+      "batch_build_seconds": 313.3537098081142,
+      "first_step_seconds": 22.651765716000227,
+      "median_after_first_step_seconds": 16.554082913004095,
+      "step_total_seconds": 529.6804798850208,
+      "validation_seconds": 24.20489452200127,
+      "epoch_wall_seconds": 578.3218431840069,
+      "host_max_rss_bytes": 11693334528,
+      "checkpoint_round_trip": true
+    },
+    "vanilla_RIGNO": {
+      "parameter_count": 826277,
+      "compile_count": 32,
+      "unique_batch_signatures": 32,
+      "graph_build_calls": 36,
+      "graph_metadata_build_calls": 896,
+      "feature_transform_calls": 896,
+      "graph_preparation_seconds": 315.49122707988136,
+      "batch_build_seconds": 317.9735717099684,
+      "first_step_seconds": 18.40279179799836,
+      "median_after_first_step_seconds": 14.322063970001182,
+      "step_total_seconds": 444.37182786199264,
+      "validation_seconds": 18.99268180099898,
+      "epoch_wall_seconds": 485.4759072189918,
+      "host_max_rss_bytes": 11016327168,
+      "checkpoint_round_trip": true
+    }
+  },
+  "observations": {
+    "timing_is_synchronized": true,
+    "actual_callbacks_executed": true,
+    "cuda_timer_delay_kernel_warnings": true,
+    "gpu_utilization_recorded": false,
+    "performance_claim": false,
+    "scientific_evidence_eligible": false,
+    "publication_evidence_modified": false,
+    "model_selection": false,
+    "formal_g1_started": false,
+    "test_iid_labels_read": false,
+    "sealed_labels_read": false,
+    "solver_executed": false,
+    "new_data_generated": false
+  }
+}

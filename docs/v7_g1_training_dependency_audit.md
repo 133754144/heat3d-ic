@@ -62,3 +62,17 @@ The entrypoint fails closed for these unresolved definitions; they are not
 silently mapped to the source-aware Full route. Consequently, the epoch budget
 and supported variant implementations are qualified, but `G1 SCIENTIFIC READY`
 is not yet granted.
+
+The fixed Full P1i semantic anchor is recorded in
+[v7_g1_full_p1i_semantic_anchor_receipt.json](v7_g1_full_p1i_semantic_anchor_receipt.json).
+Prepared/model-visible arrays, gradients, updates and parameter evolution are
+exact on CPU across three steps. The gate remains `FAIL_CLOSED` because one
+legacy-wrapper versus direct-component `total_loss` value differs by
+`1.9073486328125e-6` at step 2; no new tolerance is registered.
+
+The synchronized one-epoch Full and canonical Vanilla CUDA instrumentation is
+recorded in
+[v7_g1_synced_profiling_receipt.json](v7_g1_synced_profiling_receipt.json).
+Each actual step ends after `block_until_ready` over state and outputs, and
+truth/metrics are outside the timed step. CUDA delay-kernel warnings are kept as
+a timing-calibration limitation, not turned into a performance claim.

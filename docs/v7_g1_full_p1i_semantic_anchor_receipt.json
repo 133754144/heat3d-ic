@@ -1,0 +1,99 @@
+{
+  "schema_version": "heat3d_v7_full_p1i_semantic_anchor_summary_v1",
+  "status": "FAIL_CLOSED",
+  "scope": "Full P1i V6-to-V7 training-step compatibility audit; not scientific evidence",
+  "execution_role": "compatibility_audit",
+  "source_receipt": {
+    "host": "devbox",
+    "path": "/tmp/v7_g1_full_p1i_semantic_anchor_receipt.json",
+    "sha256": "5154ec0a41c49e38f00d4b163fe326556e5d4f9bb21fc2d3f890b3deb9eb169a"
+  },
+  "historical": {
+    "execution_commit": "8a812619ab0112b4ecfc37ef18189f731180059d",
+    "runner_blob_at_execution_commit": "c16b22d80a8f721c31264c0a22a30acdc6f53a31",
+    "runner_blob_current": "c16b22d80a8f721c31264c0a22a30acdc6f53a31",
+    "runner_source_reconciled": true,
+    "model_blob_at_execution_commit": "c434da5b60ef66f1a8621a7e513a22ee5fdc174a",
+    "model_source_delta_scope": "explicit no_scale branch only; Full default learned_residual path is compared"
+  },
+  "v7": {
+    "code_commit": "ecb8057f68166e1f504ea5a33d17d5d75f9bd5bc",
+    "runtime": "rigno.heat3d_training + rigno.models.rigno.RIGNO",
+    "entrypoint": "tools/audit_v7_full_p1i_semantic_anchor.py"
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "train_population": 768,
+    "valid_iid_population": 128,
+    "train_fixture_size": 24,
+    "valid_iid_fixture_size": 32,
+    "test_iid_sample_dirs_loaded": false,
+    "sealed_sample_dirs_loaded": false,
+    "test_iid_labels_read": false,
+    "sealed_labels_read": false
+  },
+  "fixture": {
+    "seed": 0,
+    "batch_build_seed": 0,
+    "graph_seed": 0,
+    "steps": 3,
+    "train_order_hash": "c23ab082ac72da0ff158210857315ed8afb302fb6d7610f1ced0bf70f5e424ae",
+    "optimizer": "adamw",
+    "schedule": "warmup_cosine; epochs=200; updates_per_epoch=32"
+  },
+  "equivalence": {
+    "prepared_inputs": {
+      "support_inputs": {"exact": true},
+      "metadata": {"exact": true},
+      "graphs": {"exact": true},
+      "global_context": {"exact": true},
+      "native_physics": {"exact": true},
+      "qk_region_features": {"exact": true},
+      "target_delta_and_normalization": {"exact": true}
+    },
+    "initial_params": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "initial_prediction": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "initial_loss_components": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "steps": {
+      "count": 3,
+      "model_visible_prediction": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+      "gradients": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+      "updates": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+      "parameters": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+      "optimizer_state": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+      "step_loss_scalar": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+      "common_loss_components": {"exact": true, "max_abs": 0.0, "rmse": 0.0}
+    },
+    "validation_prediction": {"exact": true, "max_abs": 0.0, "rmse": 0.0},
+    "support_graph_feature_hashes": {
+      "support_inputs": "76f5ff2d91888e0e42cc9dabadcc5f4d2d374c00abac54c32129f260a9cf0f16",
+      "graph_metadata": "91b696ad9d8236891f7bcd9d57a8678f9433eb1e77dceb35e506da9baabe1d5c",
+      "graph_tensors": "5963b63645f365513f0b3de37ea9f7f9b196662e377bad59fc22ec8eb1bd2065",
+      "global_context": "20f71689db019c2c8b5b54602422499bc8fdd2758ee92788f47badc7220239db",
+      "native_physics": "d04d713b65606432b26dbf7cdbb2445f2fa7f3fe2fe876402564af714414f6eb",
+      "qk_region_features": "0b7701f5fbf6a08145f66bcbb5f128a24f1b71374769d74b01a4f11435c00af8"
+    }
+  },
+  "failing_difference": {
+    "path": "comparison.steps[1].loss_components_before_update.total_loss",
+    "max_abs": 1.9073486328125e-06,
+    "rmse": 1.9073486328125e-06,
+    "shapes_match": true,
+    "reason": "float32 accumulation difference between the legacy weighted loss wrapper and direct V7 component total",
+    "new_tolerance_registered": false,
+    "gate_action": "fail_closed"
+  },
+  "policy": {
+    "same_cpu_backend_is_semantic_oracle": true,
+    "exact_required_for_model_visible_arrays_gradients_updates_parameters": true,
+    "train_valid_labels_read_for_loss_compatibility": true,
+    "metrics_executed": false,
+    "model_selection": false,
+    "scientific_evidence_eligible": false,
+    "formal_g1_started": false,
+    "solver_executed": false
+  },
+  "semantic_gate": "FAIL_CLOSED_pending_resolution_of_legacy_vs_v7_float32_loss_aggregation"
+}
