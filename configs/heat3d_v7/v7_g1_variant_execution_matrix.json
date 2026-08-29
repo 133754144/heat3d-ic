@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g1_variant_execution_matrix_v2",
+  "schema_version": "heat3d_v7_g1_variant_execution_matrix_v3",
   "status": "frozen_pre_G1; formal_execution_closed",
   "parent_experiment_id": "V7-G1-Full-P1i",
   "entrypoint": "scripts/run_heat3d_v7_formal_p1i_training.py",
@@ -27,34 +27,48 @@
       "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:generic-uniform-support",
-      "variant": "generic_uniform_support",
-      "delta": {"support": "generic_uniform"},
-      "implementation_status": "registered_delta; provider_pending; fail_closed",
-      "qualification_status": "blocked_unresolved_label_independent_provider",
-      "support_artifact_ref": null
+      "experiment_id": "V7-G1-Full-P1i:layout-agnostic-stratified-support",
+      "variant": "layout_agnostic_stratified_support",
+      "delta": {
+        "support_provider": "layout_agnostic_stratified_v1",
+        "support": "interface128_top64_bottom64_volume768_cv_weighted"
+      },
+      "implementation_status": "stable provider; nonpublication qualification required",
+      "qualification_status": "pending_nonpublication_qualification",
+      "support_artifact_ref": "configs/heat3d_v7/v7_g1_support_provider_contract.json"
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:volume-only-support",
-      "variant": "volume_only_support",
-      "delta": {"support": "volume_only"},
-      "implementation_status": "registered_delta; provider_pending; fail_closed",
-      "qualification_status": "blocked_unresolved_label_independent_provider; historical_rejection_not_provider",
-      "support_artifact_ref": null
+      "experiment_id": "V7-G1-Full-P1i:cv-only-support",
+      "variant": "cv_only_support",
+      "delta": {
+        "support_provider": "cv_only_v1",
+        "support": "global_cv_weighted_1024"
+      },
+      "implementation_status": "stable provider; nonpublication qualification required",
+      "qualification_status": "pending_nonpublication_qualification",
+      "support_artifact_ref": "configs/heat3d_v7/v7_g1_support_provider_contract.json"
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:no-context",
-      "variant": "no_context",
-      "delta": {"global_context": "disabled"},
-      "implementation_status": "registered_delta; native_context_coupling_unresolved; fail_closed",
-      "qualification_status": "blocked_unresolved_native_scale_context_coupling",
+      "experiment_id": "V7-G1-Full-P1i:no-film",
+      "variant": "no_film",
+      "delta": {
+        "global_context_mode": "film_to_none",
+        "global_context_tensor": "preserved_24d",
+        "native_scale_context_path": "preserved"
+      },
+      "implementation_status": "stable model delta; nonpublication qualification required",
+      "qualification_status": "pending_nonpublication_qualification",
       "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:no-scale",
-      "variant": "no_scale",
-      "delta": {"scale_head": "disabled"},
-      "implementation_status": "registered_delta; physics_scale_only; qualified_nonpublication_1epoch",
+      "experiment_id": "V7-G1-Full-P1i:physics-scale-only",
+      "variant": "physics_scale_only",
+      "delta": {
+        "learned_scale_correction": "disabled",
+        "physics_scale": "preserved",
+        "architecture": "native_shape_scale"
+      },
+      "implementation_status": "stable model delta; qualified_nonpublication_1epoch",
       "qualification_receipt_ref": "docs/v7_g1_variant_qualification_receipt.json",
       "qualification_status": "qualified_nonpublication_1epoch; physics_scale_only",
       "support_artifact_ref": "configs/heat3d_v7/v7_support_artifact_freeze.json"

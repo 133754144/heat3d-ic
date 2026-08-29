@@ -61,7 +61,10 @@ FULL_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_full_p1i.json"
 BUDGET_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_budget_qualification.json"
 SUPPORTED_BUDGET_VARIANTS = {"Full", "vanilla_RIGNO"}
 SUPPORTED_VARIANT_QUALIFICATION_VARIANTS = {
-    "no_scale",
+    "layout_agnostic_stratified_support",
+    "cv_only_support",
+    "no_film",
+    "physics_scale_only",
     "vanilla_RIGNO_capacity_matched",
 }
 # A one-to-three-epoch canonical Vanilla rehearsal is permitted only as a
@@ -70,16 +73,27 @@ SUPPORTED_NONPUBLICATION_REHEARSAL_VARIANTS = {
     "vanilla_RIGNO",
     *SUPPORTED_VARIANT_QUALIFICATION_VARIANTS,
 }
-NATIVE_VARIANTS = {"Full", "no_scale"}
+NATIVE_VARIANTS = {
+    "Full",
+    "no_scale",
+    "physics_scale_only",
+    "no_film",
+    "layout_agnostic_stratified_support",
+    "cv_only_support",
+}
 VANILLA_VARIANTS = {"vanilla_RIGNO", "vanilla_RIGNO_capacity_matched"}
 FORMAL_VARIANT_BY_ID = {
     "V7-G1-Full-P1i": "Full",
     "V7-G1-Full-P1i:vanilla-RIGNO": "vanilla_RIGNO",
-    "V7-G1-Full-P1i:generic-uniform-support": "generic_uniform_support",
-    "V7-G1-Full-P1i:volume-only-support": "volume_only_support",
-    "V7-G1-Full-P1i:no-context": "no_context",
-    "V7-G1-Full-P1i:no-scale": "no_scale",
+    "V7-G1-Full-P1i:layout-agnostic-stratified-support": "layout_agnostic_stratified_support",
+    "V7-G1-Full-P1i:cv-only-support": "cv_only_support",
+    "V7-G1-Full-P1i:no-film": "no_film",
+    "V7-G1-Full-P1i:physics-scale-only": "physics_scale_only",
     "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched": "vanilla_RIGNO_capacity_matched",
+}
+SUPPORT_PROVIDER_BY_VARIANT = {
+    "layout_agnostic_stratified_support": "layout_agnostic_stratified_v1",
+    "cv_only_support": "cv_only_v1",
 }
 
 
@@ -184,7 +198,7 @@ def _variant_model_config(parent: Mapping[str, Any], variant: str) -> dict[str, 
             }
         )
         return config
-    if variant == "no_scale":
+    if variant in {"no_scale", "physics_scale_only"}:
         # Keep the native shape/physical-scale route and remove the learned
         # residual correction; this is not a direct-output architecture.
         config.update(
@@ -199,15 +213,13 @@ def _variant_model_config(parent: Mapping[str, Any], variant: str) -> dict[str, 
             }
         )
         return config
-    if variant in {
-        "generic_uniform_support",
-        "volume_only_support",
-        "no_context",
-    }:
-        raise ValueError(
-            f"{variant} is fail-closed: its support/context contract is not "
-            "uniquely supported by the frozen P1i provider"
-        )
+    if variant == "no_film":
+        # Preserve the frozen 24-D context tensor and native shape-scale
+        # context path; disable only global FiLM modulation.
+        config.update({"global_context_mode": "none"})
+        return config
+    if variant in {"layout_agnostic_stratified_support", "cv_only_support"}:
+        return config
     raise ValueError(f"unregistered V7 training variant {variant!r}")
 
 
@@ -313,6 +325,9 @@ def _dry_run(
                 "test_iid_access": dataset["label_access"]["test_iid"],
                 "sealed_access": dataset["label_access"]["sealed"],
                 "batching": batching,
+                "support_provider": SUPPORT_PROVIDER_BY_VARIANT.get(
+                    variant, "historical_v6_stored_support"
+                ),
                 "epochs": 200 if budget_only else (args.epochs or 1),
                 "training_runs": 0,
                 "budget_qualification_only": budget_only,
@@ -472,6 +487,12 @@ def _run(
         # order, and model initialization all use the registered run seed.
         batch_build_seed=seed,
         graph_seed=seed,
+        support_provider_id=SUPPORT_PROVIDER_BY_VARIANT.get(variant),
+        full_field_archive_path=(
+            ROOT / dataset_config["full_field_archive_path"]
+            if SUPPORT_PROVIDER_BY_VARIANT.get(variant)
+            else None
+        ),
         profile=preparation_profile,
     )
     feature_names = tuple(prepared.stats["feature_names"])
@@ -721,6 +742,7 @@ def _run(
         "config_sha256": _sha256(FULL_CONFIG_PATH),
         "budget_config_sha256": _sha256(BUDGET_CONFIG_PATH) if budget_only else None,
         "dataset_id": dataset_config["dataset_id"],
+        "support_provider": prepared.support_provider_id,
         "dataset_manifest_sha256": dataset_config["manifest_sha256"],
         "full_field_archive_sha256": dataset_config["full_field_archive_sha256"],
         "split_counts": {

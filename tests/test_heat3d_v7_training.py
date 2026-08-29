@@ -12,8 +12,11 @@ import tempfile
 import unittest
 
 import jax.numpy as jnp
+import numpy as np
 
 from rigno.heat3d_training import (
+    CV_ONLY_PROVIDER,
+    LAYOUT_AGNOSTIC_PROVIDER,
     learning_rate_for_epoch,
     ManualGradientDescent,
     TrainingDependencies,
@@ -21,6 +24,7 @@ from rigno.heat3d_training import (
     model_apply_vanilla,
     model_init_vanilla,
     loss_fn_vanilla,
+    select_alternative_support,
 )
 
 
@@ -186,7 +190,7 @@ class V7TrainingStaticTests(unittest.TestCase):
         semantics = support["support_semantics"]
         self.assertEqual(
             semantics["canonical_name"],
-            "source-layout-aware block/interface/surface and CV-weighted geometry support",
+            "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
         )
         for key in (
             "numeric_q_values_used",
@@ -204,7 +208,7 @@ class V7TrainingStaticTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )["model"]
-        variant = _variant_model_config(parent, "no_scale")
+        variant = _variant_model_config(parent, "physics_scale_only")
         self.assertEqual(variant["native_output_mode"], "native_shape_scale")
         self.assertEqual(variant["learned_scale_correction_mode"], "physics_only")
         self.assertEqual(variant["scale_head_mode"], "physics_only")
@@ -224,7 +228,28 @@ class V7TrainingStaticTests(unittest.TestCase):
         self.assertEqual(variant["edge_latent_size"], 100)
         self.assertEqual(variant["native_output_mode"], "legacy_normalized_deltaT")
 
-    def test_unresolved_variants_fail_closed(self) -> None:
+    def test_registered_variant_deltas_are_explicit(self) -> None:
+        from scripts.run_heat3d_v7_formal_p1i_training import _variant_model_config
+
+        parent = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_g1_full_p1i.json").read_text(
+                encoding="utf-8"
+            )
+        )["model"]
+        self.assertEqual(
+            _variant_model_config(parent, "no_film")["global_context_mode"],
+            "none",
+        )
+        self.assertEqual(
+            _variant_model_config(parent, "no_film")["global_context_feature_dim"],
+            24,
+        )
+        self.assertEqual(
+            _variant_model_config(parent, "layout_agnostic_stratified_support"),
+            parent,
+        )
+
+    def test_unregistered_legacy_variant_names_fail_closed(self) -> None:
         from scripts.run_heat3d_v7_formal_p1i_training import _variant_model_config
 
         parent = json.loads(
@@ -239,6 +264,53 @@ class V7TrainingStaticTests(unittest.TestCase):
         ):
             with self.assertRaises(ValueError):
                 _variant_model_config(parent, variant_name)
+
+    def test_support_providers_are_deterministic_and_label_independent(self) -> None:
+        z_values = [0.0, 0.25, 0.75, 1.0, 1.25, 1.75, 2.0, 2.25, 2.75, 3.0,
+                    3.25, 3.75, 4.0, 4.25, 4.75, 5.0]
+        coords = np.asarray(
+            [
+                (x / 15.0, y / 15.0, z)
+                for z in z_values
+                for y in range(16)
+                for x in range(16)
+            ],
+            dtype=float,
+        )
+        cv = np.ones(len(coords))
+        boundaries = [float(value) for value in range(6)]
+        layout_left = select_alternative_support(
+            LAYOUT_AGNOSTIC_PROVIDER,
+            coords=coords,
+            control_volume=cv,
+            boundaries=boundaries,
+            sample_id="fixture",
+            seed=0,
+        )
+        layout_right = select_alternative_support(
+            LAYOUT_AGNOSTIC_PROVIDER,
+            coords=coords,
+            control_volume=cv,
+            boundaries=boundaries,
+            sample_id="fixture",
+            seed=0,
+        )
+        self.assertEqual(layout_left.index_sha256, layout_right.index_sha256)
+        self.assertEqual(layout_left.manifest()["strata_counts"], {
+            "bottom": 64,
+            "interface": 128,
+            "top": 64,
+            "volume": 768,
+        })
+        cv_only = select_alternative_support(
+            CV_ONLY_PROVIDER,
+            coords=coords,
+            control_volume=cv,
+            boundaries=None,
+            sample_id="fixture",
+            seed=0,
+        )
+        self.assertEqual(cv_only.manifest()["strata_counts"], {"volume": 1024})
 
     def test_supported_variant_qualification_is_nonpublication(self) -> None:
         receipt = json.loads(

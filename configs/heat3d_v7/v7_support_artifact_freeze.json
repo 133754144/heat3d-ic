@@ -1,12 +1,12 @@
 {
-  "schema_version": "heat3d_v7_support_artifact_freeze_v2",
+  "schema_version": "heat3d_v7_support_artifact_freeze_v3",
   "status": "frozen_reference_inputs",
   "role": "label_independent_support_and_padding_contract",
   "support_family": "sample_varying_source_layout_aware_geometry_1024_solver_nodes",
   "selection_algorithm": "retry_deterministic_geometry_only_v1",
   "training_support_is_frozen": true,
   "support_semantics": {
-    "canonical_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "canonical_name": "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
     "local_regions_historical_alias": "block_quota",
     "layout_inputs": ["q_block_layout_masks", "k_block_layout_masks", "coordinates", "layer_boundaries", "control_volume_weights"],
     "numeric_q_values_used": false,
@@ -60,8 +60,8 @@
   ],
   "write_policy": "read_only; no regeneration or in-place update",
   "future_variant_support": {
-    "generic_uniform_support": "requires separately registered label-independent support artifact and provider; not implied by this freeze",
-    "volume_only_support": "requires separately registered label-independent support artifact and provider; historical rejection is not a provider",
-    "current_formal_training_default": "source-aware frozen support only"
+    "layout_agnostic_stratified_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+    "cv_only_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+    "current_formal_training_default": "source-layout-aware frozen support only"
   }
 }

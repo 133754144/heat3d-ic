@@ -43,6 +43,24 @@ from .p1i import (
     learning_rate_for_epoch,
 )
 from .evaluation import evaluate_level_a_validation
+from .full_field import (
+    FullFieldGeometry,
+    FullFieldP1IData,
+    load_alternative_p1i_examples,
+    load_full_field_geometry,
+    materialize_full_input_fields,
+)
+from .support import (
+    CV_ONLY_PROVIDER,
+    LAYOUT_AGNOSTIC_PROVIDER,
+    SUPPORTED_ALTERNATIVE_PROVIDERS,
+    SUPPORT_PROVIDER_SCHEMA_VERSION,
+    SupportSelection,
+    select_alternative_support,
+    select_cv_only_support,
+    select_layout_agnostic_stratified_support,
+    support_provider_contract,
+)
 
 __all__ = [
     "ManualGradientDescent",
@@ -76,4 +94,18 @@ __all__ = [
     "tree_l2_norm",
     "learning_rate_for_epoch",
     "evaluate_level_a_validation",
+    "FullFieldGeometry",
+    "FullFieldP1IData",
+    "load_alternative_p1i_examples",
+    "load_full_field_geometry",
+    "materialize_full_input_fields",
+    "CV_ONLY_PROVIDER",
+    "LAYOUT_AGNOSTIC_PROVIDER",
+    "SUPPORTED_ALTERNATIVE_PROVIDERS",
+    "SUPPORT_PROVIDER_SCHEMA_VERSION",
+    "SupportSelection",
+    "select_alternative_support",
+    "select_cv_only_support",
+    "select_layout_agnostic_stratified_support",
+    "support_provider_contract",
 ]

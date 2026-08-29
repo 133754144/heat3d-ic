@@ -63,6 +63,8 @@ from rigno.heat3d_v6_global_context import (
 )
 from rigno.models.operator import Inputs
 
+from .full_field import FullFieldP1IData, load_alternative_p1i_examples
+
 
 P1I_DATASET_ID = CONTINUOUS_PHYSICS_V6_DATASET_ID
 P1I_SPLIT_COUNTS = {"train": 768, "valid_iid": 128}
@@ -92,6 +94,8 @@ class P1IPreparedData:
     context_standardizer: dict[str, Any]
     train_only_loss_references: dict[str, Any]
     preparation_profile: dict[str, Any]
+    support_provider_id: str = "historical_v6_stored_support"
+    full_field_data: FullFieldP1IData | None = None
 
 
 def _sample_root(subset: str | Path) -> Path:
@@ -620,7 +624,14 @@ def prediction_to_raw_delta(
 ) -> np.ndarray:
     """Convert one model output to raw DeltaT with an explicit variant rule."""
 
-    if variant in {"Full", "no_scale"}:
+    if variant in {
+        "Full",
+        "no_scale",
+        "physics_scale_only",
+        "no_film",
+        "layout_agnostic_stratified_support",
+        "cv_only_support",
+    }:
         if not isinstance(prediction, Mapping) or "deltaT_hat" not in prediction:
             raise ValueError("native prediction must contain deltaT_hat")
         return np.asarray(prediction["deltaT_hat"], dtype=np.float64)
@@ -748,14 +759,39 @@ def prepare_p1i_data(
     validation_batch_size: int = 32,
     batch_build_seed: int = 0,
     graph_seed: int = 0,
+    support_provider_id: str | None = None,
+    full_field_archive_path: str | Path | None = None,
     profile: dict[str, Any] | None = None,
 ) -> P1IPreparedData:
-    """Prepare the registered Full train/valid route once for a run."""
+    """Prepare the registered train/valid route once for a run.
+
+    A null support_provider_id retains the frozen V6 stored 1024-node support.
+    Alternative providers are explicit registry deltas and require the frozen
+    full-field archive; they are never an implicit fallback.
+    """
 
     started = time.perf_counter()
-    loaded = load_selected_p1i_examples(subset, manifest_path)
-    train_examples = tuple(loaded["train"])
-    valid_examples = tuple(loaded["valid_iid"])
+    full_field_data = None
+    if support_provider_id in {None, "historical_v6_stored_support"}:
+        loaded = load_selected_p1i_examples(subset, manifest_path)
+        train_examples = tuple(loaded["train"])
+        valid_examples = tuple(loaded["valid_iid"])
+        resolved_support_provider = "historical_v6_stored_support"
+    else:
+        if not full_field_archive_path:
+            raise ValueError(
+                "registered alternative support requires full_field_archive_path"
+            )
+        full_field_data = load_alternative_p1i_examples(
+            subset=subset,
+            manifest_path=manifest_path,
+            full_field_archive_path=full_field_archive_path,
+            provider_id=str(support_provider_id),
+            seed=int(batch_build_seed),
+        )
+        train_examples = full_field_data.train_examples
+        valid_examples = full_field_data.valid_examples
+        resolved_support_provider = str(support_provider_id)
     stats = legacy_train_only_stats(
         list(train_examples),
         coord_policy=COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
@@ -812,8 +848,11 @@ def prepare_p1i_data(
             "valid_batch_count": len(valid_batches),
             "train_sample_count": len(train_examples),
             "valid_sample_count": len(valid_examples),
+            "support_provider_id": resolved_support_provider,
             "test_and_sealed_access": "closed",
         },
+        support_provider_id=resolved_support_provider,
+        full_field_data=full_field_data,
     )
     if profile is not None:
         profile.update(prep.preparation_profile)
