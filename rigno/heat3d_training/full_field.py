@@ -287,7 +287,7 @@ def _full_field_context(
     """Build the frozen global context from the common full-field inputs.
 
     Alternative support providers may intentionally contain no source nodes
-    (the volume-only provider).  The V6 global context is a global physical
+    (the CV-only provider).  The V6 global context is a global physical
     input, so its source projection must use the shared 240825-node input
     field rather than the selected support subset.  This does not read the
     full-field target.

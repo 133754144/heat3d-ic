@@ -60,10 +60,10 @@ def main() -> None:
 
     variants = receipt.get("variants", {})
     required = {
-        "generic_uniform_support",
-        "volume_only_support",
-        "no_context",
-        "no_scale",
+        "layout_agnostic_stratified_support",
+        "cv_only_support",
+        "no_film",
+        "physics_scale_only",
         "vanilla_RIGNO_capacity_matched",
     }
     _require(required <= set(variants), "not all registered ablation variants are qualified")
@@ -73,24 +73,24 @@ def main() -> None:
         _require(row.get("observation_only") is True, f"qualification must be observation-only: {name}")
         _require(len(str(row.get("receipt_sha256", ""))) == 64, f"missing source receipt SHA: {name}")
     _require(
-        variants["generic_uniform_support"].get("provider_id") == "generic_uniform_v1",
-        "generic support provider binding drifted",
+        variants["layout_agnostic_stratified_support"].get("provider_id") == "layout_agnostic_stratified_v1",
+        "layout-agnostic support provider binding drifted",
     )
     _require(
-        variants["volume_only_support"].get("provider_id") == "volume_only_v1",
-        "volume-only support provider binding drifted",
+        variants["cv_only_support"].get("provider_id") == "cv_only_v1",
+        "CV-only support provider binding drifted",
     )
     _require(
-        variants["no_context"].get("implementation", "").startswith("fixed_zero_vector"),
-        "no_context does not use the frozen zero-context delta",
+        variants["no_film"].get("implementation", "").startswith("global_context_mode=none"),
+        "no_film does not use the one-field FiLM delta",
     )
     _require(
-        variants["no_scale"].get("implementation", "").startswith("native_shape_scale"),
-        "no_scale is not the native shape-scale route",
+        variants["physics_scale_only"].get("implementation", "").startswith("native_shape_scale"),
+        "physics_scale_only is not the native shape-scale route",
     )
     _require(
-        "learned residual correction disabled" in variants["no_scale"].get("implementation", ""),
-        "no_scale does not preserve physics-only scale semantics",
+        "learned residual correction disabled" in variants["physics_scale_only"].get("implementation", ""),
+        "physics_scale_only does not preserve physics-only scale semantics",
     )
     capacity = variants["vanilla_RIGNO_capacity_matched"]
     _require(
@@ -98,25 +98,25 @@ def main() -> None:
         "capacity-matched Vanilla width drifted",
     )
 
-    _require(matrix.get("schema_version") == "heat3d_v7_g1_variant_execution_matrix_v4", "variant matrix schema drifted")
+    _require(matrix.get("schema_version") == "heat3d_v7_g1_variant_execution_matrix_v5", "variant matrix schema drifted")
     _require(matrix.get("formal_execution_started") is False, "formal G1 execution opened")
     expected_ids = {
         "V7-G1-Full-P1i",
         "V7-G1-Full-P1i:vanilla-RIGNO",
-        "V7-G1-Full-P1i:generic-uniform-support",
-        "V7-G1-Full-P1i:volume-only-support",
-        "V7-G1-Full-P1i:no-context",
-        "V7-G1-Full-P1i:no-scale",
+        "V7-G1-Full-P1i:layout-agnostic-stratified-support",
+        "V7-G1-Full-P1i:cv-only-support",
+        "V7-G1-Full-P1i:no-film",
+        "V7-G1-Full-P1i:physics-scale-only",
         "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
     }
     matrix_ids = {row.get("experiment_id") for row in matrix.get("base_variants", [])}
     matrix_ids.add(matrix.get("capacity_matched_variant", {}).get("experiment_id"))
     _require(matrix_ids == expected_ids, "variant matrix IDs drifted")
-    no_scale = next(row for row in matrix["base_variants"] if row.get("variant") == "no_scale")
+    physics_scale_only = next(row for row in matrix["base_variants"] if row.get("variant") == "physics_scale_only")
     _require(
-        "physics_scale_only" in no_scale.get("qualification_status", "")
-        or "physics scale only" in str(variants["no_scale"].get("implementation", "")),
-        "matrix no_scale semantics drifted",
+        "physics_scale_only" in physics_scale_only.get("qualification_status", "")
+        or "physics scale only" in str(variants["physics_scale_only"].get("implementation", "")),
+        "matrix physics_scale_only semantics drifted",
     )
     _require(
         matrix["capacity_matched_variant"].get("qualification_status") == "qualified_nonpublication_1epoch; width_100",

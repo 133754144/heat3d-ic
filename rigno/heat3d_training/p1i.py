@@ -400,20 +400,13 @@ def attach_input_contexts(
         standardizer = fit_train_only_v6_standardizer(
             [rows[sample_id] for sample_id in train_ids], fit_sample_ids=train_ids
         )
-        if model_config.get("global_context_ablation") == "zero":
-            encoded = {
-                sample_id: np.zeros(24, dtype=np.float32)
-                for sample_id in rows
-            }
-            context_source = "fixed_zero_vector; frozen_24d_schema"
-        else:
-            encoded = {
-                sample_id: standardize_v6_contexts([row], standardizer)[0]
-                for sample_id, row in rows.items()
-            }
-            context_source = "train_only_standardized_v6_context"
+        encoded = {
+            sample_id: standardize_v6_contexts([row], standardizer)[0]
+            for sample_id, row in rows.items()
+        }
+        context_source = "train_only_standardized_v6_context"
     elif context_dim == 0 and not names:
-        standardizer = {"mode": "not_used; no_context_ablation"}
+        standardizer = {"mode": "not_used; empty_context"}
         encoded = {
             sample_id: np.zeros(0, dtype=np.float32)
             for sample_id in rows
@@ -435,7 +428,7 @@ def attach_input_contexts(
         "raw_context_by_id": rows,
         "fit_role": "train_only",
         "source": context_source,
-        "ablation": model_config.get("global_context_ablation"),
+        "ablation": None,
         "target_or_label_derived_inputs": False,
     }
 
@@ -666,11 +659,10 @@ def prediction_to_raw_delta(
 
     if variant in {
         "Full",
-        "no_scale",
         "physics_scale_only",
-        "no_context",
-        "generic_uniform_support",
-        "volume_only_support",
+        "no_film",
+        "layout_agnostic_stratified_support",
+        "cv_only_support",
     }:
         if not isinstance(prediction, Mapping) or "deltaT_hat" not in prediction:
             raise ValueError("native prediction must contain deltaT_hat")

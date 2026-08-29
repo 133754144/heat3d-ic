@@ -15,8 +15,8 @@ import jax.numpy as jnp
 import numpy as np
 
 from rigno.heat3d_training import (
-    GENERIC_UNIFORM_PROVIDER,
-    VOLUME_ONLY_PROVIDER,
+    CV_ONLY_PROVIDER,
+    LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
     learning_rate_for_epoch,
     ManualGradientDescent,
     TrainingDependencies,
@@ -200,7 +200,7 @@ class V7TrainingStaticTests(unittest.TestCase):
         ):
             self.assertFalse(semantics[key])
 
-    def test_no_scale_is_physics_scale_only(self) -> None:
+    def test_physics_scale_only_is_not_direct_output(self) -> None:
         from scripts.run_heat3d_v7_formal_p1i_training import _variant_model_config
 
         parent = json.loads(
@@ -237,15 +237,15 @@ class V7TrainingStaticTests(unittest.TestCase):
             )
         )["model"]
         self.assertEqual(
-            _variant_model_config(parent, "no_context")["global_context_mode"],
+            _variant_model_config(parent, "no_film")["global_context_mode"],
             "none",
         )
         self.assertEqual(
-            _variant_model_config(parent, "no_context")["global_context_feature_dim"],
+            _variant_model_config(parent, "no_film")["global_context_feature_dim"],
             24,
         )
         self.assertEqual(
-            _variant_model_config(parent, "generic_uniform_support"), parent,
+            _variant_model_config(parent, "layout_agnostic_stratified_support"), parent,
         )
 
     def test_unregistered_legacy_variant_names_fail_closed(self) -> None:
@@ -274,33 +274,41 @@ class V7TrainingStaticTests(unittest.TestCase):
         )
         cv = np.ones(len(coords))
         boundaries = [float(value) for value in range(6)]
-        generic_left = select_alternative_support(
-            GENERIC_UNIFORM_PROVIDER,
+        layout_left = select_alternative_support(
+            LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
             coords=coords,
             control_volume=cv,
             boundaries=boundaries,
             sample_id="fixture",
             seed=0,
         )
-        generic_right = select_alternative_support(
-            GENERIC_UNIFORM_PROVIDER,
+        layout_right = select_alternative_support(
+            LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
             coords=coords,
             control_volume=cv,
             boundaries=boundaries,
             sample_id="fixture",
             seed=0,
         )
-        self.assertEqual(generic_left.index_sha256, generic_right.index_sha256)
-        self.assertEqual(generic_left.manifest()["strata_counts"], {"uniform": 1024})
-        volume_only = select_alternative_support(
-            VOLUME_ONLY_PROVIDER,
+        self.assertEqual(layout_left.index_sha256, layout_right.index_sha256)
+        self.assertEqual(
+            layout_left.manifest()["strata_counts"],
+            {"bottom": 64, "interface": 128, "top": 64, "volume": 768},
+        )
+        self.assertEqual(
+            layout_left.manifest()["quotas"],
+            {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768},
+        )
+        cv_only = select_alternative_support(
+            CV_ONLY_PROVIDER,
             coords=coords,
             control_volume=cv,
             boundaries=boundaries,
             sample_id="fixture",
             seed=0,
         )
-        self.assertEqual(volume_only.manifest()["strata_counts"], {"volume": 1024})
+        self.assertEqual(cv_only.manifest()["strata_counts"], {"volume": 1024})
+        self.assertEqual(cv_only.manifest()["quotas"]["block"], 0)
 
     def test_supported_variant_qualification_is_nonpublication(self) -> None:
         receipt = json.loads(
@@ -311,17 +319,17 @@ class V7TrainingStaticTests(unittest.TestCase):
         self.assertEqual(receipt["execution_role"], "variant_qualification")
         self.assertFalse(receipt["publication_evidence"])
         self.assertFalse(receipt["g1_formal"])
-        self.assertEqual(receipt["variants"]["no_scale"]["status"], "COMPLETE")
+        self.assertEqual(receipt["variants"]["physics_scale_only"]["status"], "COMPLETE")
         self.assertEqual(
             receipt["variants"]["vanilla_RIGNO_capacity_matched"]["status"],
             "COMPLETE",
         )
         self.assertTrue(receipt["readiness"]["all_formal_variants_qualified"])
         for variant in (
-            "generic_uniform_support",
-            "volume_only_support",
-            "no_context",
-            "no_scale",
+            "layout_agnostic_stratified_support",
+            "cv_only_support",
+            "no_film",
+            "physics_scale_only",
             "vanilla_RIGNO_capacity_matched",
         ):
             self.assertEqual(receipt["variants"][variant]["status"], "COMPLETE")

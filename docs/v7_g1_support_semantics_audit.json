@@ -1,6 +1,6 @@
 {
-  "schema_version": "heat3d_v7_g1_support_semantics_audit_v1",
-  "status": "frozen_pre_G1; providers_qualified_nonpublication",
+  "schema_version": "heat3d_v7_g1_support_semantics_audit_v2",
+  "status": "frozen_pre_G1; final_provider_qualification_pending",
   "scope": "P1i support construction semantics and G1 support-ablation boundary",
   "historical_sources": [
     {
@@ -68,25 +68,29 @@
   "g1_support_ablation_contract": {
     "provider_contract": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
     "provider_contract_sha256": "e3c650ed13f7cf6f44c27455564ce4c671d9696b91f9322d7535a1ffa9ca15f3",
-    "generic_uniform_support": {
-      "intended_delta": "uniform 1024-node support over the fixed full-field geometry without q/k layout masks",
-      "provider_id": "generic_uniform_v1",
-      "provider_status": "registered; qualification_complete_nonpublication",
-      "selection_inputs": ["full_field_coords", "sample_id", "run_seed"],
-      "forbidden_inputs": ["q", "k", "control_volume", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
-      "execution": "same V7 registry entrypoint; nonpublication qualification only"
-    },
-    "volume_only_support": {
-      "intended_delta": "control-volume-weighted 1024-node support restricted to interior volume",
-      "provider_id": "volume_only_v1",
-      "provider_status": "registered; qualification_complete_nonpublication",
+    "layout_agnostic_stratified_support": {
+      "intended_delta": "fixed interface=128, top=64, bottom=64, CV-weighted interior volume=768 quotas with historical block quota=0",
+      "provider_id": "layout_agnostic_stratified_v1",
+      "provider_status": "registered; qualification_pending_nonpublication",
       "selection_inputs": ["full_field_coords", "full_field_control_volume", "layer_boundaries", "sample_id", "run_seed"],
-      "forbidden_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
+      "forbidden_inputs": ["q", "k", "q_block_layout_masks", "k_block_layout_masks", "temperature", "labels", "solver", "model_error"],
+      "stratum_order": ["interface", "top", "bottom", "volume"],
+      "quotas": {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768},
       "execution": "same V7 registry entrypoint; nonpublication qualification only"
     },
-    "no_context": {
-      "intended_delta": "replace train-standardized 24-D global-context values with a fixed zero vector and disable FiLM; retain native shape-scale path",
-      "provider_status": "registered; qualification_complete_nonpublication",
+    "cv_only_support": {
+      "intended_delta": "1024 control-volume-weighted interior-volume nodes; no block, interface, top, or bottom quota",
+      "provider_id": "cv_only_v1",
+      "provider_status": "registered; qualification_pending_nonpublication",
+      "selection_inputs": ["full_field_coords", "full_field_control_volume", "layer_boundaries", "sample_id", "run_seed"],
+      "forbidden_inputs": ["q", "k", "q_block_layout_masks", "k_block_layout_masks", "temperature", "labels", "solver", "model_error"],
+      "quotas": {"block": 0, "interface": 0, "top": 0, "bottom": 0, "volume": 1024},
+      "execution": "same V7 registry entrypoint; nonpublication qualification only"
+    },
+    "no_film": {
+      "intended_delta": "global_context_mode film -> none only; retain the train-standardized frozen 24-D physical context and native scale paths",
+      "provider_status": "registered; qualification_pending_nonpublication",
+      "context_tensor": "frozen standardized 24-D context retained",
       "execution": "same V7 registry entrypoint; nonpublication qualification only"
     },
     "physics_scale_only": {
@@ -103,8 +107,8 @@
     "domain_id": "heat3d_v6_p1i_full_field_240825",
     "support_attribution_variants": [
       "Full",
-      "generic_uniform_support",
-      "volume_only_support"
+      "layout_agnostic_stratified_support",
+      "cv_only_support"
     ],
     "same_valid_iid_population": true,
     "same_full_field_node_domain": true,

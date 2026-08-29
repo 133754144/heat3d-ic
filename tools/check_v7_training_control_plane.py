@@ -71,11 +71,11 @@ def main() -> None:
         "V7-G1-template",
         "V7-G1-Full-P1i",
         "V7-G1-Full-P1i:vanilla-RIGNO",
-        "V7-G1-Full-P1i:generic-uniform-support",
-        "V7-G1-Full-P1i:volume-only-support",
-        "V7-G1-Full-P1i:no-context",
-        "V7-G1-Full-P1i:no-scale",
         "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
+        "V7-G1-Full-P1i:layout-agnostic-stratified-support",
+        "V7-G1-Full-P1i:cv-only-support",
+        "V7-G1-Full-P1i:no-film",
+        "V7-G1-Full-P1i:physics-scale-only",
         "V7-G1-BudgetQual-e200-Full-seed0",
         "V7-G1-BudgetQual-e200-Vanilla-seed0",
     }
@@ -215,8 +215,8 @@ def main() -> None:
         if semantics.get(key) is not False:
             raise ValueError(f"support semantic dependency is not false: {key}")
     if set(support_provider_contract.get("alternative_providers", {})) != {
-        "generic_uniform_v1",
-        "volume_only_v1",
+        "layout_agnostic_stratified_v1",
+        "cv_only_v1",
     }:
         raise ValueError("support provider contract is incomplete")
     if (

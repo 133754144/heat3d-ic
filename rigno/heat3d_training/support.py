@@ -2,27 +2,27 @@
 
 The historical P1i support is a stored, sample-varying route and is consumed
 by the Full parent unchanged.  The providers in this module are deliberately
-geometry-only alternatives for the registered support ablations.  They are
-not replacements for the historical V6 selector and never inspect q values,
-temperature, labels, solver output, or model error.
+geometry-only alternatives for the registered support-attribution variants.
+They do not inspect q/k layout masks, numeric q values, temperature, labels,
+solver output, or model error.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
 
 
-SUPPORT_PROVIDER_SCHEMA_VERSION = "heat3d_v7_g1_support_provider_v2"
-GENERIC_UNIFORM_PROVIDER = "generic_uniform_v1"
-VOLUME_ONLY_PROVIDER = "volume_only_v1"
+SUPPORT_PROVIDER_SCHEMA_VERSION = "heat3d_v7_g1_support_provider_v3"
+LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER = "layout_agnostic_stratified_v1"
+CV_ONLY_PROVIDER = "cv_only_v1"
 SUPPORTED_ALTERNATIVE_PROVIDERS = (
-    GENERIC_UNIFORM_PROVIDER,
-    VOLUME_ONLY_PROVIDER,
+    LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+    CV_ONLY_PROVIDER,
 )
 
 
@@ -67,14 +67,20 @@ def _weighted_choice(
     )
 
 
-def _boundary_masks(
+def _validate_geometry(
     coords: np.ndarray,
+    control_volume: np.ndarray,
     boundaries: Sequence[float],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     points = np.asarray(coords, dtype=np.float64)
+    weights = np.asarray(control_volume, dtype=np.float64).reshape(-1)
     values = np.asarray(boundaries, dtype=np.float64).reshape(-1)
     if points.ndim != 2 or points.shape[1] != 3 or not np.all(np.isfinite(points)):
         raise ValueError("coords must be finite [N,3]")
+    if weights.shape != (points.shape[0],) or np.any(~np.isfinite(weights)):
+        raise ValueError("control_volume must be finite and aligned with coords")
+    if np.any(weights <= 0.0):
+        raise ValueError("control_volume must be positive")
     if values.size < 2 or not np.all(np.isfinite(values)):
         raise ValueError("layer boundaries must contain finite endpoints")
     z = points[:, 2]
@@ -83,11 +89,10 @@ def _boundary_masks(
     interfaces = np.zeros(points.shape[0], dtype=bool)
     for boundary in values[1:-1]:
         interfaces |= np.isclose(z, float(boundary), rtol=0.0, atol=1.0e-15)
-    # The strata are intentionally disjoint.  This makes the quota contract
-    # auditable and prevents a boundary point from being double counted.
+    # Strata are disjoint.  Boundary points are not double-counted.
     interfaces &= ~(top | bottom)
     volume = ~(top | bottom | interfaces)
-    return interfaces, top, bottom, volume
+    return points, weights, interfaces, top, bottom, volume
 
 
 @dataclass(frozen=True)
@@ -138,48 +143,7 @@ class SupportSelection:
         }
 
 
-def select_generic_uniform_support(
-    *,
-    coords: np.ndarray,
-    sample_id: str,
-    seed: int,
-) -> SupportSelection:
-    """Select a registered geometry-only uniform support.
-
-    This is the executable meaning of the G1 generic-support delta: 1024
-    nodes are sampled uniformly from the complete fixed full-field node set.
-    It does not inspect q/k layout masks, control-volume values, temperature,
-    labels, solver output, or model error.
-    """
-
-    points = np.asarray(coords, dtype=np.float64)
-    rng = np.random.default_rng(
-        _stable_seed(provider=GENERIC_UNIFORM_PROVIDER, sample_id=str(sample_id), seed=seed)
-    )
-    if points.ndim != 2 or points.shape[1] != 3 or not np.all(np.isfinite(points)):
-        raise ValueError("coords must be finite [N,3]")
-    if points.shape[0] < 1024:
-        raise ValueError("generic support requires at least 1024 nodes")
-    indices = np.asarray(
-        rng.choice(points.shape[0], size=1024, replace=False), dtype=np.int32
-    )
-    return SupportSelection(
-        provider_id=GENERIC_UNIFORM_PROVIDER,
-        sample_id=str(sample_id),
-        seed=int(seed),
-        indices=indices,
-        strata=np.full(1024, "uniform", dtype="U32"),
-        metadata={
-            "algorithm": "uniform_without_replacement_v1",
-            "selection_inputs": ["coords", "sample_id", "run_seed"],
-            "excluded_inputs": ["q", "k", "control_volume", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
-            "quotas": {"uniform": 1024},
-            "label_independent": True,
-        },
-    )
-
-
-def select_volume_only_support(
+def select_layout_agnostic_stratified_support(
     *,
     coords: np.ndarray,
     control_volume: np.ndarray,
@@ -187,44 +151,124 @@ def select_volume_only_support(
     sample_id: str,
     seed: int,
 ) -> SupportSelection:
-    """Select 1024 control-volume-weighted interior volume nodes.
+    """Select the preregistered layout-agnostic stratified support.
 
-    Surface and internal-interface nodes are excluded by the explicit
-    volume-only mask.  This is a registered ablation definition, not a claim
-    that the historical rejected probe is recoverable from its outcome text.
+    The exact quotas are interface=128, top=64, bottom=64, and interior
+    volume=768.  The historical block quota is explicitly zero.  Every
+    positive quota is sampled by control-volume-weighted choice.  No q/k
+    layout mask or source amplitude is an input to this provider.
     """
 
-    points = np.asarray(coords, dtype=np.float64)
-    weights = np.asarray(control_volume, dtype=np.float64).reshape(-1)
-    if points.ndim != 2 or points.shape[1] != 3 or not np.all(np.isfinite(points)):
-        raise ValueError("coords must be finite [N,3]")
-    if weights.shape != (points.shape[0],) or np.any(weights <= 0.0):
-        raise ValueError("control_volume must be positive and aligned with coords")
-    _interfaces, _top, _bottom, volume = _boundary_masks(points, boundaries)
-    candidates = np.flatnonzero(volume)
-    if candidates.size < 1024:
-        raise ValueError("volume-only support requires at least 1024 interior nodes")
+    _points, weights, interfaces, top, bottom, volume = _validate_geometry(
+        coords, control_volume, boundaries
+    )
+    quotas = {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768}
+    masks = {
+        "interface": interfaces,
+        "top": top,
+        "bottom": bottom,
+        "volume": volume,
+    }
     rng = np.random.default_rng(
-        _stable_seed(provider=VOLUME_ONLY_PROVIDER, sample_id=str(sample_id), seed=seed)
+        _stable_seed(
+            provider=LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+            sample_id=str(sample_id),
+            seed=seed,
+        )
     )
-    indices = _weighted_choice(
-        rng,
-        candidates,
-        1024,
-        weights[candidates],
-    )
+    selected: list[np.ndarray] = []
+    selected_strata: list[np.ndarray] = []
+    for name in ("interface", "top", "bottom", "volume"):
+        candidates = np.flatnonzero(masks[name])
+        choice = _weighted_choice(rng, candidates, quotas[name], weights[candidates])
+        selected.append(choice)
+        selected_strata.append(np.full(quotas[name], name, dtype="U32"))
     return SupportSelection(
-        provider_id=VOLUME_ONLY_PROVIDER,
+        provider_id=LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+        sample_id=str(sample_id),
+        seed=int(seed),
+        indices=np.concatenate(selected),
+        strata=np.concatenate(selected_strata),
+        metadata={
+            "algorithm": "layout_agnostic_cv_weighted_stratified_choice_v1",
+            "selection_inputs": [
+                "coords",
+                "control_volume",
+                "layer_boundaries",
+                "sample_id",
+                "run_seed",
+            ],
+            "excluded_inputs": [
+                "q",
+                "k",
+                "q_block_layout_masks",
+                "k_block_layout_masks",
+                "temperature",
+                "labels",
+                "solver",
+                "model_error",
+            ],
+            "quotas": quotas,
+            "stratum_order": ["interface", "top", "bottom", "volume"],
+            "volume_definition": "nodes outside top/bottom/internal-interface strata",
+            "layout_agnostic": True,
+            "label_independent": True,
+        },
+    )
+
+
+def select_cv_only_support(
+    *,
+    coords: np.ndarray,
+    control_volume: np.ndarray,
+    boundaries: Sequence[float],
+    sample_id: str,
+    seed: int,
+) -> SupportSelection:
+    """Select 1024 control-volume-weighted interior volume nodes only."""
+
+    _points, weights, _interfaces, _top, _bottom, volume = _validate_geometry(
+        coords, control_volume, boundaries
+    )
+    candidates = np.flatnonzero(volume)
+    rng = np.random.default_rng(
+        _stable_seed(provider=CV_ONLY_PROVIDER, sample_id=str(sample_id), seed=seed)
+    )
+    indices = _weighted_choice(rng, candidates, 1024, weights[candidates])
+    return SupportSelection(
+        provider_id=CV_ONLY_PROVIDER,
         sample_id=str(sample_id),
         seed=int(seed),
         indices=indices,
         strata=np.full(1024, "volume", dtype="U32"),
         metadata={
             "algorithm": "interior_volume_cv_weighted_choice_v1",
-            "selection_inputs": ["coords", "control_volume", "layer_boundaries", "sample_id", "run_seed"],
-            "excluded_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
-            "quotas": {"volume": 1024},
+            "selection_inputs": [
+                "coords",
+                "control_volume",
+                "layer_boundaries",
+                "sample_id",
+                "run_seed",
+            ],
+            "excluded_inputs": [
+                "q",
+                "k",
+                "q_block_layout_masks",
+                "k_block_layout_masks",
+                "temperature",
+                "labels",
+                "solver",
+                "model_error",
+            ],
+            "quotas": {
+                "block": 0,
+                "interface": 0,
+                "top": 0,
+                "bottom": 0,
+                "volume": 1024,
+            },
             "volume_definition": "nodes outside top/bottom/internal-interface strata",
+            "layout_agnostic": True,
             "label_independent": True,
         },
     )
@@ -241,16 +285,18 @@ def select_alternative_support(
 ) -> SupportSelection:
     """Resolve only explicitly registered alternative providers."""
 
-    if provider_id == GENERIC_UNIFORM_PROVIDER:
-        return select_generic_uniform_support(
+    if boundaries is None:
+        raise ValueError(f"{provider_id} requires layer boundaries")
+    if provider_id == LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER:
+        return select_layout_agnostic_stratified_support(
             coords=coords,
+            control_volume=control_volume,
+            boundaries=boundaries,
             sample_id=sample_id,
             seed=seed,
         )
-    if provider_id == VOLUME_ONLY_PROVIDER:
-        if boundaries is None:
-            raise ValueError("volume-only support requires layer boundaries")
-        return select_volume_only_support(
+    if provider_id == CV_ONLY_PROVIDER:
+        return select_cv_only_support(
             coords=coords,
             control_volume=control_volume,
             boundaries=boundaries,
@@ -266,36 +312,80 @@ def support_provider_contract() -> dict[str, Any]:
     return {
         "schema_version": SUPPORT_PROVIDER_SCHEMA_VERSION,
         "providers": {
-            GENERIC_UNIFORM_PROVIDER: {
-                "canonical_name": "generic uniform support",
-                "semantic_delta": "uniform 1024-node support over the fixed full-field geometry; no source-layout masks",
-                "quotas": {"uniform": 1024},
-                "input_features": ["coords", "sample_id", "run_seed"],
-                "forbidden_inputs": ["q", "k", "control_volume", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
+            LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER: {
+                "canonical_name": "layout-agnostic stratified support",
+                "semantic_delta": "fixed strata quotas with CV-weighted geometry-only selection and zero block quota",
+                "quotas": {
+                    "block": 0,
+                    "interface": 128,
+                    "top": 64,
+                    "bottom": 64,
+                    "volume": 768,
+                },
+                "input_features": [
+                    "coords",
+                    "control_volume",
+                    "layer_boundaries",
+                    "sample_id",
+                    "run_seed",
+                ],
+                "forbidden_inputs": [
+                    "q",
+                    "k",
+                    "q_block_layout_masks",
+                    "k_block_layout_masks",
+                    "temperature",
+                    "labels",
+                    "solver",
+                    "model_error",
+                ],
+                "label_independent": True,
             },
-            VOLUME_ONLY_PROVIDER: {
-                "canonical_name": "volume-only support",
-                "semantic_delta": "control-volume-weighted support restricted to interior volume nodes",
-                "quotas": {"volume": 1024},
-                "input_features": ["coords", "control_volume", "layer_boundaries", "sample_id", "run_seed"],
-                "forbidden_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
+            CV_ONLY_PROVIDER: {
+                "canonical_name": "CV-only support",
+                "semantic_delta": "1024 CV-weighted interior volume nodes with no boundary/interface/block quota",
+                "quotas": {
+                    "block": 0,
+                    "interface": 0,
+                    "top": 0,
+                    "bottom": 0,
+                    "volume": 1024,
+                },
+                "input_features": [
+                    "coords",
+                    "control_volume",
+                    "layer_boundaries",
+                    "sample_id",
+                    "run_seed",
+                ],
+                "forbidden_inputs": [
+                    "q",
+                    "k",
+                    "q_block_layout_masks",
+                    "k_block_layout_masks",
+                    "temperature",
+                    "labels",
+                    "solver",
+                    "model_error",
+                ],
+                "label_independent": True,
             },
         },
-        "determinism": "sha256(provider,sample_id,run_seed) -> numpy Generator; no replacement",
+        "determinism": "sha256(schema_version,provider,sample_id,run_seed) -> numpy Generator; no replacement",
         "training_support_default": "historical_v6_stored_support",
         "publication_evidence": False,
     }
 
 
 __all__ = [
-    "GENERIC_UNIFORM_PROVIDER",
-    "VOLUME_ONLY_PROVIDER",
+    "CV_ONLY_PROVIDER",
+    "LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER",
     "SUPPORTED_ALTERNATIVE_PROVIDERS",
     "SUPPORT_PROVIDER_SCHEMA_VERSION",
     "SupportSelection",
     "array_sha256",
     "select_alternative_support",
-    "select_generic_uniform_support",
-    "select_volume_only_support",
+    "select_cv_only_support",
+    "select_layout_agnostic_stratified_support",
     "support_provider_contract",
 ]

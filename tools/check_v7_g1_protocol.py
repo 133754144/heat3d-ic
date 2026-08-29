@@ -117,7 +117,7 @@ def main() -> None:
     _require(support["temperature_or_model_error_used"] is False, "support became label-dependent")
     _require(
         set(provider_contract.get("alternative_providers", {}))
-        == {"generic_uniform_v1", "volume_only_v1"},
+        == {"layout_agnostic_stratified_v1", "cv_only_v1"},
         "support provider contract is incomplete",
     )
     _require(
@@ -129,10 +129,10 @@ def main() -> None:
     expected_ids = {
         "V7-G1-Full-P1i",
         "V7-G1-Full-P1i:vanilla-RIGNO",
-        "V7-G1-Full-P1i:generic-uniform-support",
-        "V7-G1-Full-P1i:volume-only-support",
-        "V7-G1-Full-P1i:no-context",
-        "V7-G1-Full-P1i:no-scale",
+        "V7-G1-Full-P1i:layout-agnostic-stratified-support",
+        "V7-G1-Full-P1i:cv-only-support",
+        "V7-G1-Full-P1i:no-film",
+        "V7-G1-Full-P1i:physics-scale-only",
         "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
     }
     actual_ids = {
