@@ -8,7 +8,9 @@ The entrypoint has two explicit, non-overlapping modes:
   qualification.  It uses the complete e200 schedule and is never counted as
   formal G1 evidence.
 * Registered formal variants can be resolved through ``--dry-run`` for
-  registry validation, but all non-dry formal execution remains closed.
+  registry validation.  Non-dry formal execution requires ``--formal`` and
+  an exact manifest-bound launch contract; rehearsal and formal execution
+  remain separate modes.
 
 All numerical dependencies are assembled from ``rigno.heat3d_training`` and
 the stable RIGNO library.  No historical script, smoke helper, development
@@ -90,6 +92,9 @@ FORMAL_VARIANT_BY_ID = {
     "V7-G1-Full-P1i:no-film": "no_film",
     "V7-G1-Full-P1i:physics-scale-only": "physics_scale_only",
 }
+FORMAL_LAUNCH_MANIFEST_DEFAULT = (
+    ROOT / "configs" / "heat3d_v7" / "v7_g1_formal_launch_manifest.json"
+)
 SUPPORT_PROVIDER_BY_VARIANT = {
     "layout_agnostic_stratified_support": "layout_agnostic_stratified_v1",
     "cv_only_support": "cv_only_v1",
@@ -132,6 +137,12 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--no-jit-cache", action="store_false", dest="jit_cache")
     parser.add_argument("--profile", action="store_true")
     parser.add_argument("--rehearsal", action="store_true")
+    parser.add_argument(
+        "--formal",
+        action="store_true",
+        help="run one manifest-bound formal G1 seed (never a multi-seed process)",
+    )
+    parser.add_argument("--launch-manifest", type=Path, default=None)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -229,6 +240,148 @@ def _variant_model_config(parent: Mapping[str, Any], variant: str) -> dict[str, 
     raise ValueError(f"unregistered V7 training variant {variant!r}")
 
 
+def _git_stdout(*args: str) -> str:
+    return subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _validate_formal_request(
+    args: argparse.Namespace,
+    config: Mapping[str, Any],
+    entry: Mapping[str, Any],
+    variant: str,
+) -> dict[str, Any]:
+    """Validate one formal seed against the immutable launch manifest.
+
+    The manifest is deliberately separate from the scientific configuration:
+    the frozen scientific code SHA is its ancestor, while the manifest commit
+    may only change launch metadata.  This keeps the executable matrix
+    auditable without permitting a scientific code/config drift after freeze.
+    """
+
+    if not bool(getattr(args, "formal", False)):
+        raise ValueError("formal request validation requires --formal")
+    if bool(getattr(args, "rehearsal", False)):
+        raise ValueError("--formal and --rehearsal are mutually exclusive")
+    if args.experiment_id not in FORMAL_VARIANT_BY_ID:
+        raise ValueError("only the seven registered G1 variants may run formally")
+    if args.seed is None or args.epochs is None:
+        raise ValueError("formal G1 requires explicit --seed and --epochs")
+    if int(args.epochs) != 200 or int(args.seed) not in {0, 1, 2}:
+        raise ValueError("formal G1 is frozen to epochs=200 and seed in {0,1,2}")
+    if args.output_dir is None:
+        raise ValueError("formal G1 requires the manifest-bound --output-dir")
+    manifest_path = (
+        Path(getattr(args, "launch_manifest", None) or FORMAL_LAUNCH_MANIFEST_DEFAULT)
+        .resolve()
+    )
+    if not manifest_path.exists():
+        raise ValueError(f"formal launch manifest is missing: {manifest_path}")
+    launch = _load_json(manifest_path)
+    if launch.get("schema_version") != "heat3d_v7_g1_formal_launch_manifest_v1":
+        raise ValueError("formal launch manifest schema drifted")
+    if launch.get("status") != "frozen_launch_manifest":
+        raise ValueError("formal launch manifest is not frozen")
+    if launch.get("branch") != "research/v7":
+        raise ValueError("formal launch branch drifted")
+    frozen_code_sha = str(launch.get("g1_formal_code_sha", ""))
+    if len(frozen_code_sha) != 40 or any(
+        character not in "0123456789abcdef" for character in frozen_code_sha
+    ):
+        raise ValueError("formal code SHA is not pinned")
+    current_sha = _git_stdout("rev-parse", "HEAD")
+    subprocess.run(
+        ["git", "cat-file", "-e", f"{frozen_code_sha}^{{commit}}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "merge-base", "--is-ancestor", frozen_code_sha, current_sha],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    changed = [
+        name
+        for name in subprocess.run(
+            ["git", "diff", "--name-only", frozen_code_sha, current_sha],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        if name
+    ]
+    manifest_relative = str(manifest_path.relative_to(ROOT))
+    if changed not in ([], [manifest_relative]):
+        raise ValueError(
+            "scientific files changed after G1 freeze: " + ", ".join(changed)
+        )
+
+    matrix = launch.get("matrix", {})
+    if (
+        matrix.get("variants") != list(FORMAL_VARIANT_BY_ID.values())
+        or matrix.get("seeds") != [0, 1, 2]
+        or matrix.get("epochs") != 200
+        or matrix.get("run_count") != 21
+        or matrix.get("formal_execution_started") is not False
+    ):
+        raise ValueError("formal launch matrix drifted or was already opened")
+    dataset = launch.get("dataset", {})
+    config_dataset = config.get("dataset", {})
+    for key in ("dataset_id", "manifest_sha256", "full_field_archive_sha256"):
+        if dataset.get(key) != config_dataset.get(key):
+            raise ValueError(f"formal dataset binding drifted: {key}")
+    preregistration_path = (
+        ROOT / "configs" / "heat3d_v7" / "v7_g1_statistical_preregistration.json"
+    )
+    if launch.get("preregistration_file_sha256") != _sha256(preregistration_path):
+        raise ValueError("formal preregistration file SHA binding drifted")
+    preregistration = _load_json(preregistration_path)
+    if launch.get("preregistration_sha256") != preregistration.get(
+        "preregistration_sha256"
+    ):
+        raise ValueError("formal preregistration canonical SHA binding drifted")
+    if launch.get("support_provider_contract_sha256") != _sha256(
+        ROOT / "configs" / "heat3d_v7" / "v7_g1_support_provider_contract.json"
+    ):
+        raise ValueError("formal support-provider contract SHA binding drifted")
+    if launch.get("parent_config_sha256") != _sha256(FULL_CONFIG_PATH):
+        raise ValueError("formal parent config SHA binding drifted")
+    if entry.get("experiment_role") != "publication_training":
+        raise ValueError("formal run is not registered as publication_training")
+    rows = launch.get("runs", [])
+    row = next(
+        (
+            candidate
+            for candidate in rows
+            if candidate.get("experiment_id") == args.experiment_id
+            and int(candidate.get("seed", -1)) == int(args.seed)
+        ),
+        None,
+    )
+    if row is None or row.get("variant") != variant:
+        raise ValueError("formal run is not present in the frozen launch matrix")
+    expected_output = (
+        Path(str(launch["output_root"])) / str(row["run_id"])
+    ).resolve()
+    if Path(args.output_dir).resolve() != expected_output:
+        raise ValueError("formal output directory is not the unique manifest path")
+    if len(rows) != 21 or len({str(candidate.get("run_id")) for candidate in rows}) != 21:
+        raise ValueError("formal launch matrix run IDs are not unique")
+    if launch.get("test_iid_access") is not False or launch.get("sealed_access") is not False:
+        raise ValueError("formal launch manifest opened forbidden splits")
+    return launch
+
+
 def _resolve_registration(
     args: argparse.Namespace,
 ) -> tuple[dict[str, Any], dict[str, Any], str, bool]:
@@ -252,6 +405,9 @@ def _resolve_registration(
             raise ValueError("formal G1 variant is not in a planned state")
         if config.get("experiment_id") != "V7-G1-Full-P1i":
             raise ValueError("formal G1 variants must resolve to the frozen Full parent config")
+        if bool(getattr(args, "formal", False)):
+            _validate_formal_request(args, config, entry, variant)
+            return config, entry, variant, False
         if not args.dry_run:
             if (
                 args.rehearsal
@@ -273,6 +429,8 @@ def _resolve_registration(
             raise ValueError("Full P1i config and registry ID do not match")
         if config.get("experiment_role") != "publication_training":
             raise ValueError("Full P1i config must declare publication_training")
+        if bool(getattr(args, "formal", False)):
+            _validate_formal_request(args, config, entry, "Full")
         return config, entry, "Full", False
 
     if not args.experiment_id.startswith("V7-G1-BudgetQual-e200-"):
@@ -280,6 +438,8 @@ def _resolve_registration(
             "formal G1 execution is closed; only the Full rehearsal or registered "
             "e200 budget qualification can be invoked"
         )
+    if bool(getattr(args, "formal", False)):
+        raise ValueError("budget qualification registrations cannot run as formal G1")
     config_path = (args.config or BUDGET_CONFIG_PATH).resolve()
     budget = _load_json(config_path)
     candidates = {
@@ -338,7 +498,8 @@ def _dry_run(
                 "training_runs": 0,
                 "budget_qualification_only": budget_only,
                 "publication_evidence": False,
-                "g1_formal": False,
+                "g1_formal": bool(getattr(args, "formal", False)),
+                "formal_manifest_validation": bool(getattr(args, "formal", False)),
             },
             sort_keys=True,
         )
@@ -458,14 +619,34 @@ def _run(
     variant: str,
     budget_only: bool,
 ) -> dict[str, Any]:
-    if not args.rehearsal:
-        raise ValueError("all non-dry runs require explicit --rehearsal")
+    formal = bool(getattr(args, "formal", False))
+    if not formal and not args.rehearsal:
+        raise ValueError("all non-dry non-formal runs require explicit --rehearsal")
+    registry = _load_json(REGISTRY_PATH)
+    registry_entries = {
+        str(candidate.get("experiment_id")): candidate
+        for candidate in registry.get("registered_runs", [])
+    }
+    registered_entry = registry_entries.get(args.experiment_id)
+    if registered_entry is None:
+        raise ValueError("formal run registration disappeared before execution")
+    formal_manifest = (
+        _validate_formal_request(args, config, registered_entry, variant)
+        if formal
+        else None
+    )
     epochs = int(args.epochs if args.epochs is not None else (200 if budget_only else 1))
+    if formal and budget_only:
+        raise ValueError("formal G1 cannot use a budget qualification registration")
+    if formal and epochs != 200:
+        raise ValueError("formal G1 requires the frozen e200 schedule")
     if budget_only and epochs != 200:
         raise ValueError("e200 budget qualification requires exactly --epochs 200")
-    if not budget_only and not 1 <= epochs <= 3:
+    if not formal and not budget_only and not 1 <= epochs <= 3:
         raise ValueError("pre-G1 qualification rehearsal is limited to 1-3 epochs")
     seed = int(args.seed if args.seed is not None else 0)
+    if formal and args.seed is None:
+        raise ValueError("formal G1 requires an explicit registered seed")
     if budget_only and seed != 0:
         raise ValueError("budget qualification is registered for seed0 only")
 
@@ -554,6 +735,56 @@ def _run(
         )
     ).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    progress_path = output_dir / "v7_g1_progress.json"
+
+    def write_progress(
+        *,
+        status: str,
+        epoch: int,
+        best_epoch_value: int | None,
+        best_metric_value: float | None,
+        latest_metric: float | None = None,
+    ) -> None:
+        progress_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "heat3d_v7_g1_progress_v1",
+                    "status": status,
+                    "experiment_id": args.experiment_id,
+                    "variant": variant,
+                    "run_seed": seed,
+                    "epoch": epoch,
+                    "epochs": epochs,
+                    "best_epoch": best_epoch_value,
+                    "best_selection_metric": best_metric_value,
+                    "latest_selection_metric": latest_metric,
+                    "execution_role": (
+                        "publication_training"
+                        if formal
+                        else _execution_role(
+                            variant,
+                            budget_only=budget_only,
+                            registered_role=config["experiment_role"],
+                        )
+                    ),
+                    "g1_formal": formal,
+                    "test_iid_access": False,
+                    "sealed_access": False,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    write_progress(
+        status="RUNNING",
+        epoch=0,
+        best_epoch_value=None,
+        best_metric_value=None,
+    )
 
     history: list[dict[str, Any]] = []
     step_times: list[dict[str, Any]] = []
@@ -677,6 +908,13 @@ def _run(
             "sufficient_statistics": evaluation["sufficient_statistics"],
         }
         history.append(epoch_record)
+        write_progress(
+            status="RUNNING",
+            epoch=epoch,
+            best_epoch_value=best_epoch,
+            best_metric_value=best_metric,
+            latest_metric=metric,
+        )
 
     final_checkpoint_report = atomic_training_checkpoint(
         output_dir / "params_final.pkl",
@@ -746,12 +984,36 @@ def _run(
         ),
         "status": "COMPLETE",
         "budget_qualification_only": budget_only,
-        "g1_formal": False,
-        "rehearsal": not budget_only,
-        "publication_evidence": False,
-        "scientific_evidence_eligible": False,
+        "g1_formal": formal,
+        "formal_g1_run": formal,
+        "rehearsal": not budget_only and not formal,
+        "publication_evidence": formal,
+        "scientific_evidence_eligible": formal,
         "headline_performance_claim": False,
         "git_commit": commit,
+        "g1_formal_code_sha": (
+            formal_manifest["g1_formal_code_sha"] if formal_manifest is not None else None
+        ),
+        "launch_manifest_path": (
+            str(
+                Path(
+                    getattr(args, "launch_manifest", None)
+                    or FORMAL_LAUNCH_MANIFEST_DEFAULT
+                ).resolve()
+            )
+            if formal_manifest is not None
+            else None
+        ),
+        "formal_run_id": (
+            next(
+                row["run_id"]
+                for row in formal_manifest["runs"]
+                if row["experiment_id"] == args.experiment_id
+                and int(row["seed"]) == seed
+            )
+            if formal_manifest is not None
+            else None
+        ),
         "config_sha256": _sha256(FULL_CONFIG_PATH),
         "budget_config_sha256": _sha256(BUDGET_CONFIG_PATH) if budget_only else None,
         "dataset_id": dataset_config["dataset_id"],
@@ -836,6 +1098,7 @@ def _run(
             "solver": False,
             "new_data": False,
             "formal_g1_multi_seed": False,
+            "formal_g1_run": formal,
             "architecture_or_loss_change": False,
             "high_n_optimization": False,
         },
@@ -843,10 +1106,19 @@ def _run(
     receipt_path = output_dir / (
         "v7_g1_budget_qualification_receipt.json"
         if budget_only
+        else "v7_g1_formal_receipt.json"
+        if formal
         else "v7_g1_p1i_rehearsal_receipt.json"
     )
     receipt_path.write_text(
         json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    write_progress(
+        status="COMPLETE",
+        epoch=epochs,
+        best_epoch_value=best_epoch,
+        best_metric_value=best_metric,
+        latest_metric=(history[-1]["selection_metric"] if history else None),
     )
     print(json.dumps(receipt, indent=2, sort_keys=True))
     return receipt
