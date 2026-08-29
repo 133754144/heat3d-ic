@@ -377,16 +377,21 @@ def attach_input_contexts(
     """Attach train-only standardized 24-D context and return its provenance."""
 
     names = tuple(model_config.get("global_context_feature_names") or ())
-    rows = {str(example.sample_id): _context_row(example) for example in [*train_examples, *required_examples]}
+    example_ids = [str(example.sample_id) for example in [*train_examples, *required_examples]]
     if context_rows_by_id is not None:
         missing = sorted(
-            set(rows) - {str(sample_id) for sample_id in context_rows_by_id}
+            set(example_ids) - {str(sample_id) for sample_id in context_rows_by_id}
         )
         if missing:
             raise ValueError(f"full-field context rows missing samples: {missing[:3]}")
         rows = {
             sample_id: dict(context_rows_by_id[sample_id])
-            for sample_id in rows
+            for sample_id in example_ids
+        }
+    else:
+        rows = {
+            sample_id: _context_row(example)
+            for sample_id, example in zip(example_ids, [*train_examples, *required_examples], strict=True)
         }
     train_ids = [str(example.sample_id) for example in train_examples]
     context_dim = int(model_config.get("global_context_feature_dim", 24))
