@@ -382,8 +382,12 @@ def load_alternative_p1i_examples(
                         flags=flags,
                     )
                 )
-                full_truth[sample_id] = delta
-                full_q[sample_id] = q_field
+                # Full-domain truth/q are needed only for common-domain
+                # validation.  Training keeps only the projected support
+                # target, so do not retain 768 redundant 240825-node rows.
+                if role == "valid_iid":
+                    full_truth[sample_id] = delta
+                    full_q[sample_id] = q_field
                 selections[sample_id] = selection
     return FullFieldP1IData(
         train_examples=tuple(train_examples),
