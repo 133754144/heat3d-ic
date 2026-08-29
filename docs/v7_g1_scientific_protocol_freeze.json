@@ -1,6 +1,6 @@
 {
-  "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v1",
-  "status": "qualified_pre_G1; formal_execution_closed",
+  "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v2",
+  "status": "qualified_pre_G1; variant_qualification_in_progress; formal_execution_closed",
   "scope": "G1 scientific protocol freeze; no formal multi-seed scientific experiment",
   "historical_evidence": {
     "direct_full_reference": "V6_06_V5best_P1i_seed0_reliable_B24",
@@ -28,13 +28,22 @@
     "checkpoint_selection": "valid_iid.sample_first_relative_rmse_pct; earliest tie",
     "initialization": "random"
   },
+  "support_semantics": {
+    "contract": "docs/v7_g1_support_semantics_audit.json",
+    "canonical_full_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "source_amplitude_awareness_claim": false,
+    "native_selector_uses_numeric_q": false,
+    "native_selector_uses_temperature_labels_or_model_error": false,
+    "generic_and_volume_ablation_provider_status": "unresolved_not_registered",
+    "no_context_definition_status": "unresolved_due_to_native_scale_context_coupling"
+  },
   "qualification": {
-    "required_variants": ["Full", "vanilla_RIGNO"],
+    "required_variants": ["Full", "vanilla_RIGNO", "no_scale", "vanilla_RIGNO_capacity_matched"],
     "seed": 0,
     "role": "budget_qualification_only",
     "publication_evidence": false,
     "g1_formal": false,
-    "status": "completed_nonpublication",
+    "status": "completed_nonpublication_for_parent_controls; remaining_variant_qualification_in_progress",
     "decision": "PASS_e200",
     "receipt": "docs/v7_g1_budget_decision_receipt.json",
     "full_best_epoch": 173,
@@ -71,7 +80,7 @@
     "frozen_v6_evidence_modified": false,
     "G1_epoch_budget": 200,
     "G1_scientific_ready": false,
-    "readiness_status": "blocked_by_unresolved_variant_support_providers"
+    "readiness_status": "blocked_by_unresolved_support_providers_and_no_context_definition"
   },
   "references": {
     "epoch_budget_contract": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
@@ -81,6 +90,7 @@
     "statistical_preregistration": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
     "parameter_fairness": "configs/heat3d_v7/v7_parameter_fairness_contract.json",
     "support_freeze": "configs/heat3d_v7/v7_support_artifact_freeze.json",
+    "support_semantics_audit": "docs/v7_g1_support_semantics_audit.json",
     "variant_execution_matrix": "configs/heat3d_v7/v7_g1_variant_execution_matrix.json",
     "budget_decision": "docs/v7_g1_budget_decision_receipt.json"
   },

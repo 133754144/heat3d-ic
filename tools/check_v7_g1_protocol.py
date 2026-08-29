@@ -85,8 +85,15 @@ def main() -> None:
         "formal G1 multi-seed execution is already open",
     )
     _require(
-        seed_bundle["synchronization"]["batch_build_seed"]["value"] == 0,
-        "fixed B24 batch-build seed drifted",
+        "batch_build_seed" in seed_bundle["synchronization"]["run_seed_fields"],
+        "batch-build seed is not synchronized with the registered run seed",
+    )
+    _require(
+        support["support_semantics"]["numeric_q_values_used"] is False
+        and support["support_semantics"]["temperature_used"] is False
+        and support["support_semantics"]["labels_used"] is False
+        and support["support_semantics"]["model_error_used"] is False,
+        "support semantics became label/value dependent",
     )
     _require(
         protocol_freeze["formal_matrix"]["formal_execution_started"] is False,

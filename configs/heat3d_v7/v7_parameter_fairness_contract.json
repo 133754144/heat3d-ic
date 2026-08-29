@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_parameter_fairness_contract_v1",
+  "schema_version": "heat3d_v7_parameter_fairness_contract_v2",
   "status": "frozen_pre_G1",
   "parent": "V7-G1-Full-P1i",
   "counting": {
@@ -12,13 +12,20 @@
     "relative_parameter_gap_threshold": 0.05,
     "formula": "abs(full_count - vanilla_count) / full_count > 0.05",
     "action": "register capacity-matched Vanilla as a seventh variant; do not silently alter the baseline",
-    "execution": "future formal G1 only; no capacity-matched run in this freeze"
+    "execution": "nonpublication qualification only before formal G1; no formal capacity-matched run in this freeze"
   },
   "observed": {
     "full_parameter_count": 892776,
     "vanilla_parameter_count": 826277,
     "relative_gap": 0.07448564925580436,
     "capacity_matched_triggered": true,
+    "qualification_candidate": {
+      "node_latent_size": 100,
+      "edge_latent_size": 100,
+      "parameter_count": 895905,
+      "relative_gap_to_full": 0.003504747948253468,
+      "qualification_status": "pending_nonpublication_rehearsal"
+    },
     "capacity_matched_variant_id": "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
     "capacity_matched_run_started": false,
     "evidence": "docs/v7_g1_budget_decision_receipt.json"

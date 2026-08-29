@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g1_seed_bundle_v1",
+  "schema_version": "heat3d_v7_g1_seed_bundle_v2",
   "status": "pre_registered_not_executed",
   "scope": "future formal G1 only; budget qualification is seed0 and non-publication",
   "seed_set": [0, 1, 2],
@@ -7,16 +7,17 @@
     "run_seed_fields": [
       "model_initialization_seed",
       "optimizer_seed",
+      "batch_build_seed",
       "batch_order_seed",
       "graph_seed"
     ],
     "rule": "for each formal run, all run_seed_fields equal the registered seed",
     "cross_variant_rule": "each variant uses the same registered seed set and seed mapping",
-    "batch_build_seed": {
-      "value": 0,
-      "role": "fixed B24 sample_shuffle population construction seed",
-      "not_a_run_seed_field": true
-    }
+    "historical_basis": [
+      "configs/heat3d_v6_p1i/V6_07_V5best_P1i_seed1_reliable_B24.yaml",
+      "configs/heat3d_v6_p1i/V6_08_V5best_P1i_seed2_reliable_B24.yaml"
+    ],
+    "batch_build_seed_role": "sample_shuffle population construction seed; synchronized with the registered run seed"
   },
   "qualification": {
     "allowed_seeds": [0],

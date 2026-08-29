@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_claim_evidence_mapping_v1",
+  "schema_version": "heat3d_v7_claim_evidence_mapping_v2",
   "status": "frozen_claim_control",
   "claims": [
     {
@@ -10,11 +10,11 @@
       "current_evidence": "none_from_V7.1-T"
     },
     {
-      "claim_id": "C2-source-aware-sparse-conditioning",
+      "claim_id": "C2-source-layout-aware-sparse-conditioning",
       "status": "research_objective",
       "required_gates": ["G1", "G2", "G4", "G5"],
-      "required_evidence": ["source_support_ablation", "matched_baseline", "source_OOD"],
-      "current_evidence": "none_from_V7.1-T"
+      "required_evidence": ["source_layout_support_ablation", "matched_baseline", "source_OOD"],
+      "current_evidence": "support_semantics_audited; no_source_amplitude_claim; ablation_providers_pending"
     },
     {
       "claim_id": "C3-resolution-decoupled-inference",

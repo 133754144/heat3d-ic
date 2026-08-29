@@ -1,10 +1,35 @@
 {
-  "schema_version": "heat3d_v7_support_artifact_freeze_v1",
+  "schema_version": "heat3d_v7_support_artifact_freeze_v2",
   "status": "frozen_reference_inputs",
   "role": "label_independent_support_and_padding_contract",
-  "support_family": "sample_varying_source_aware_1024_solver_nodes",
+  "support_family": "sample_varying_source_layout_aware_geometry_1024_solver_nodes",
   "selection_algorithm": "retry_deterministic_geometry_only_v1",
   "training_support_is_frozen": true,
+  "support_semantics": {
+    "canonical_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "local_regions_historical_alias": "block_quota",
+    "layout_inputs": ["q_block_layout_masks", "k_block_layout_masks", "coordinates", "layer_boundaries", "control_volume_weights"],
+    "numeric_q_values_used": false,
+    "temperature_used": false,
+    "labels_used": false,
+    "model_error_used": false,
+    "selection_is_label_independent": true,
+    "selection_stages": [
+      "one deterministic geometry pick per q/k layout block",
+      "CV-weighted completion of block quota",
+      "CV-weighted interface quota",
+      "CV-weighted top and bottom surface quotas",
+      "CV-weighted remaining volume quota"
+    ],
+    "frozen_strata_counts": {
+      "volume": 512,
+      "block": 256,
+      "interface": 128,
+      "top": 64,
+      "bottom": 64
+    },
+    "claim_boundary": "source-region/layout-aware; not source-amplitude-aware"
+  },
   "temperature_or_model_error_used": false,
   "artifacts": [
     {
@@ -35,8 +60,8 @@
   ],
   "write_policy": "read_only; no regeneration or in-place update",
   "future_variant_support": {
-    "generic_uniform_support": "requires separately registered support artifact",
-    "volume_only_support": "requires separately registered support artifact",
+    "generic_uniform_support": "requires separately registered label-independent support artifact and provider; not implied by this freeze",
+    "volume_only_support": "requires separately registered label-independent support artifact and provider; historical rejection is not a provider",
     "current_formal_training_default": "source-aware frozen support only"
   }
 }

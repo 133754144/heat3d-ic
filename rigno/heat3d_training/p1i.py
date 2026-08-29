@@ -613,11 +613,11 @@ def prediction_to_raw_delta(
 ) -> np.ndarray:
     """Convert one model output to raw DeltaT with an explicit variant rule."""
 
-    if variant == "Full":
+    if variant in {"Full", "no_scale"}:
         if not isinstance(prediction, Mapping) or "deltaT_hat" not in prediction:
-            raise ValueError("Full prediction must contain native deltaT_hat")
+            raise ValueError("native prediction must contain deltaT_hat")
         return np.asarray(prediction["deltaT_hat"], dtype=np.float64)
-    if variant == "vanilla_RIGNO":
+    if variant in {"vanilla_RIGNO", "vanilla_RIGNO_capacity_matched"}:
         return np.asarray(
             normalized_delta_to_raw(prediction, dict(stats)), dtype=np.float64
         )

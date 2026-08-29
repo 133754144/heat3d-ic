@@ -1,0 +1,91 @@
+{
+  "schema_version": "heat3d_v7_g1_support_semantics_audit_v1",
+  "status": "frozen_pre_G1; scientific_support_ablation_providers_incomplete",
+  "scope": "P1i support construction semantics and G1 support-ablation boundary",
+  "historical_sources": [
+    {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1.yaml",
+      "symbols_or_fields": ["support_selection", "quotas.local_regions"],
+      "role": "registered V6 contract"
+    },
+    {
+      "path": "scripts/heat3d_v6_p1i_continuous_core.py",
+      "symbols_or_fields": ["validate_layout", "select_group_support", "build_case_fields"],
+      "role": "historical implementation oracle"
+    },
+    {
+      "path": "docs/v6_phase_index.md",
+      "symbols_or_fields": ["volume-only support rejection", "anchor-derived inference decision"],
+      "role": "historical decision evidence"
+    }
+  ],
+  "support_contract": {
+    "registered_name": "retry_deterministic_geometry_only_v1",
+    "accurate_scientific_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "local_regions_is_alias_for": "block quota",
+    "strata_counts": {
+      "volume": 512,
+      "block": 256,
+      "interface": 128,
+      "top": 64,
+      "bottom": 64
+    },
+    "generation_direction": [
+      "group q/k block layout -> layout masks",
+      "coordinates/layer boundaries/control-volume weights -> geometry pools",
+      "deterministic seed + group ID -> one pick per block and weighted completion",
+      "frozen strata quotas -> ordered support indices"
+    ],
+    "uses_layout_masks_from_heat_source_blocks": true,
+    "uses_numeric_q_values_for_1024_support": false,
+    "uses_temperature": false,
+    "uses_labels": false,
+    "uses_model_error": false,
+    "uses_solver_output": false,
+    "label_independent": true,
+    "support_order_is_frozen": true
+  },
+  "semantic_interpretation": {
+    "source_amplitude_aware": false,
+    "source_region_or_layout_aware": true,
+    "geometry_aware": true,
+    "h2_claim": "source-layout-aware sparse conditioning; source-amplitude awareness is not established",
+    "claim_change_required": true
+  },
+  "related_paths": [
+    {
+      "path": "scripts/heat3d_v6_p1i_anchor_query.py",
+      "role": "high-N query ordering only",
+      "numeric_q_used": true,
+      "must_not_be_conflated_with": "native 1024 select_group_support"
+    },
+    {
+      "path": "rigno/heat3d_training/p1i.py",
+      "role": "V7 native P1i batch preparation",
+      "support_provider": "frozen native 1024 projection; no implicit generic/volume provider"
+    }
+  ],
+  "g1_support_ablation_contract": {
+    "generic_uniform_support": {
+      "intended_delta": "geometry-only uniform/CV support without q/k block quotas",
+      "provider_status": "unresolved_not_registered",
+      "execution": "fail_closed"
+    },
+    "volume_only_support": {
+      "intended_delta": "volume-only support as separately registered historical ablation",
+      "provider_status": "unresolved_not_registered; historical rejection is not a provider",
+      "execution": "fail_closed"
+    },
+    "source_layout_aware_full": {
+      "provider_status": "frozen",
+      "execution": "canonical Full parent"
+    }
+  },
+  "scientific_guards": {
+    "support_algorithm_modified": false,
+    "v6_evidence_modified": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "formal_g1_started": false
+  }
+}

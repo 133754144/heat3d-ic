@@ -1314,6 +1314,10 @@ class RIGNO(AbstractOperator):
   shape_scale_epsilon: float = 1.0e-12
   scale_head_hidden_size: int = 64
   scale_head_init: str = 'identity'
+  # Explicit physics-scale-only ablation.  This controls whether the learned
+  # residual correction exists; ``scale_head_mode`` only describes the inputs
+  # of an enabled learned head.
+  learned_scale_correction_mode: str = 'learned_residual'
   scale_head_mode: str = 'physics_only'
   scale_pooling: str = 'mean'
   scale_head_depth: int = 1
@@ -1425,7 +1429,10 @@ class RIGNO(AbstractOperator):
     else:
       self.global_film_hidden = None
       self.global_film_output = None
-    if self._native_shape_scale_enabled():
+    if (
+      self._native_shape_scale_enabled()
+      and self.learned_scale_correction_mode == 'learned_residual'
+    ):
       self.global_scale_hidden = nn.Dense(
         self.scale_head_hidden_size,
         name='global_scale_hidden',
@@ -1660,6 +1667,13 @@ class RIGNO(AbstractOperator):
       raise ValueError("scale_head_hidden_size must be >= 1")
     if self.scale_head_init != 'identity':
       raise ValueError("scale_head_init must be 'identity'")
+    if self.learned_scale_correction_mode not in {
+      'learned_residual', 'physics_only'
+    }:
+      raise ValueError(
+        "learned_scale_correction_mode must be one of "
+        "{'learned_residual', 'physics_only'}"
+      )
     if self.scale_head_mode not in {'physics_only', 'physics_plus_pooled_latent'}:
       raise ValueError(
         "scale_head_mode must be one of {'physics_only', "
@@ -1728,6 +1742,27 @@ class RIGNO(AbstractOperator):
       raise ValueError(
         "native_shape_scale global_context_feature_names must match feature dimension"
       )
+    if self.learned_scale_correction_mode == 'physics_only':
+      if self.scale_head_mode != 'physics_only':
+        raise ValueError(
+          "physics_only learned_scale_correction_mode requires "
+          "scale_head_mode='physics_only'"
+        )
+      if self.scale_attention_mode != 'none':
+        raise ValueError(
+          "physics_only learned_scale_correction_mode requires "
+          "scale_attention_mode='none'"
+        )
+      if self.scale_deepsets_mode != 'none':
+        raise ValueError(
+          "physics_only learned_scale_correction_mode requires "
+          "scale_deepsets_mode='none'"
+        )
+      if self.scale_context_mode != 'none':
+        raise ValueError(
+          "physics_only learned_scale_correction_mode requires "
+          "scale_context_mode='none'"
+        )
     if self._decoder_bypass_enabled() and self.decoder_bypass_output_space != 'native_psi':
       raise ValueError(
         "native_shape_scale decoder bypass must use decoder_bypass_output_space='native_psi'"
@@ -1965,28 +2000,38 @@ class RIGNO(AbstractOperator):
     phi_hat = psi_free / jnp.maximum(psi_rms, self.shape_scale_epsilon)
     context = self._global_context_array(
       global_context, batch_size=psi.shape[0], dtype=psi.dtype)
-    if self.scale_head_mode == 'physics_plus_pooled_latent':
-      pooled_rnodes = self._pooled_scale_features(
-        processed_rnodes,
-        processed_rnodes_pre_film,
-        qk_region_features=qk_region_features,
-        global_context=global_context,
-        scale_region_source_weights=scale_region_source_weights,
-        scale_region_volume_weights=scale_region_volume_weights,
-      )
-      scale_context_array = self._scale_context_array(
-        scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
-      scale_features = jnp.concatenate(
-        [context, scale_context_array, pooled_rnodes], axis=-1)
-    else:
+    if self.learned_scale_correction_mode == 'physics_only':
+      # The ablation keeps the same physical scale handoff and the same
+      # normalized shape path, but has no learned scale-correction parameter
+      # path at all.  In particular, this is not the ordinary direct-output
+      # RIGNO architecture.
       pooled_rnodes = jnp.zeros((psi.shape[0], 0), dtype=psi.dtype)
       scale_context_array = self._scale_context_array(
         scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
-      scale_features = jnp.concatenate([context, scale_context_array], axis=-1)
-    scale_hidden = nn.gelu(self.global_scale_hidden(scale_features))
-    for layer in self.global_scale_extra_hidden:
-      scale_hidden = nn.gelu(layer(scale_hidden))
-    residual_scale = self.global_scale_output(scale_hidden)[:, :, None, None]
+      residual_scale = jnp.zeros((psi.shape[0], 1, 1, 1), dtype=psi.dtype)
+    else:
+      if self.scale_head_mode == 'physics_plus_pooled_latent':
+        pooled_rnodes = self._pooled_scale_features(
+          processed_rnodes,
+          processed_rnodes_pre_film,
+          qk_region_features=qk_region_features,
+          global_context=global_context,
+          scale_region_source_weights=scale_region_source_weights,
+          scale_region_volume_weights=scale_region_volume_weights,
+        )
+        scale_context_array = self._scale_context_array(
+          scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
+        scale_features = jnp.concatenate(
+          [context, scale_context_array, pooled_rnodes], axis=-1)
+      else:
+        pooled_rnodes = jnp.zeros((psi.shape[0], 0), dtype=psi.dtype)
+        scale_context_array = self._scale_context_array(
+          scale_context, batch_size=psi.shape[0], dtype=psi.dtype)
+        scale_features = jnp.concatenate([context, scale_context_array], axis=-1)
+      scale_hidden = nn.gelu(self.global_scale_hidden(scale_features))
+      for layer in self.global_scale_extra_hidden:
+        scale_hidden = nn.gelu(layer(scale_hidden))
+      residual_scale = self.global_scale_output(scale_hidden)[:, :, None, None]
     log_s_hat = self._sample_scalar(log_s_phys, psi, 'log_s_phys') + residual_scale
     s_hat = jnp.exp(log_s_hat)
     reconstruction_shape = (

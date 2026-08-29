@@ -171,12 +171,18 @@ def main() -> None:
         raise ValueError("capacity-matched Vanilla trigger drifted")
     if prereg.get("seed_set") != [0, 1, 2] or prereg.get("forbidden_roles") != ["test_iid", "sealed"]:
         raise ValueError("G1 statistical preregistration seed/split policy drifted")
+    if prereg.get("schema_version") != "heat3d_v7_g1_statistical_preregistration_v2":
+        raise ValueError("G1 statistical preregistration v2 is required")
+    if prereg.get("formal_matrix", {}).get("planned_formal_run_count") != 21:
+        raise ValueError("G1 preregistration run matrix drifted")
+    if prereg.get("paired_effect_analysis", {}).get("two_level_bootstrap", {}).get("enabled") is not True:
+        raise ValueError("paired two-level bootstrap is not frozen")
     if seed_bundle.get("seed_set") != [0, 1, 2]:
         raise ValueError("G1 synchronized seed bundle drifted")
     if seed_bundle.get("formal_execution_guard", {}).get("multi_seed_started") is not False:
         raise ValueError("formal G1 multi-seed execution must remain closed")
-    if seed_bundle.get("synchronization", {}).get("batch_build_seed", {}).get("value") != 0:
-        raise ValueError("fixed B24 batch-build seed drifted")
+    if "batch_build_seed" not in seed_bundle.get("synchronization", {}).get("run_seed_fields", []):
+        raise ValueError("batch-build seed is not synchronized with the registered run seed")
     if protocol_freeze.get("formal_matrix", {}).get("formal_execution_started") is not False:
         raise ValueError("formal G1 execution must remain closed in protocol freeze")
     if protocol_freeze.get("e200_optimization_contract", {}).get("cosine_horizon_epochs") != 200:
@@ -191,6 +197,12 @@ def main() -> None:
         raise ValueError("budget decision receipt opened formal G1")
     if support_freeze.get("training_support_is_frozen") is not True or support_freeze.get("temperature_or_model_error_used") is not False:
         raise ValueError("support artifact freeze guard drifted")
+    semantics = support_freeze.get("support_semantics", {})
+    if semantics.get("canonical_name") != "source-layout-aware block/interface/surface and CV-weighted geometry support":
+        raise ValueError("P1i support terminology drifted")
+    for key in ("numeric_q_values_used", "temperature_used", "labels_used", "model_error_used"):
+        if semantics.get(key) is not False:
+            raise ValueError(f"support semantic dependency is not false: {key}")
     for path in (CONTROL / "v7_metric_contract.json", CONTROL / "v7_experiment_registry.json", CONTROL / "v7_claim_evidence_mapping.json", CONTROL / "v7_frozen_artifact_denylist.json"):
         if any(token in path.read_text(encoding="utf-8").lower() for token in ("test_iid_labels", "sealed_labels")):
             raise ValueError(f"forbidden label marker in {path}")

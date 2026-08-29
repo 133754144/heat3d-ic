@@ -121,6 +121,10 @@ class V7TrainingStaticTests(unittest.TestCase):
         )
         self.assertTrue(fairness["observed"]["capacity_matched_triggered"])
         self.assertAlmostEqual(fairness["observed"]["relative_gap"], 0.07448564925580436)
+        candidate = fairness["observed"]["qualification_candidate"]
+        self.assertEqual(candidate["node_latent_size"], 100)
+        self.assertEqual(candidate["edge_latent_size"], 100)
+        self.assertLess(candidate["relative_gap_to_full"], 0.05)
 
     def test_all_registered_variants_resolve_in_dry_run_only(self) -> None:
         registry = json.loads(
@@ -162,8 +166,62 @@ class V7TrainingStaticTests(unittest.TestCase):
         self.assertEqual(bundle["seed_set"], [0, 1, 2])
         self.assertFalse(bundle["formal_execution_guard"]["multi_seed_started"])
         self.assertEqual(
-            bundle["synchronization"]["batch_build_seed"]["value"], 0
+            set(bundle["synchronization"]["run_seed_fields"]),
+            {
+                "model_initialization_seed",
+                "optimizer_seed",
+                "batch_build_seed",
+                "batch_order_seed",
+                "graph_seed",
+            },
         )
+
+    def test_support_semantics_are_source_layout_not_amplitude_aware(self) -> None:
+        support = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_support_artifact_freeze.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        semantics = support["support_semantics"]
+        self.assertEqual(
+            semantics["canonical_name"],
+            "source-layout-aware block/interface/surface and CV-weighted geometry support",
+        )
+        for key in (
+            "numeric_q_values_used",
+            "temperature_used",
+            "labels_used",
+            "model_error_used",
+        ):
+            self.assertFalse(semantics[key])
+
+    def test_no_scale_is_physics_scale_only(self) -> None:
+        from scripts.run_heat3d_v7_formal_p1i_training import _variant_model_config
+
+        parent = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_g1_full_p1i.json").read_text(
+                encoding="utf-8"
+            )
+        )["model"]
+        variant = _variant_model_config(parent, "no_scale")
+        self.assertEqual(variant["native_output_mode"], "native_shape_scale")
+        self.assertEqual(variant["learned_scale_correction_mode"], "physics_only")
+        self.assertEqual(variant["scale_head_mode"], "physics_only")
+        self.assertEqual(variant["scale_attention_mode"], "none")
+        self.assertEqual(variant["scale_deepsets_mode"], "none")
+
+    def test_capacity_matched_variant_is_an_explicit_width_delta(self) -> None:
+        from scripts.run_heat3d_v7_formal_p1i_training import _variant_model_config
+
+        parent = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_g1_full_p1i.json").read_text(
+                encoding="utf-8"
+            )
+        )["model"]
+        variant = _variant_model_config(parent, "vanilla_RIGNO_capacity_matched")
+        self.assertEqual(variant["node_latent_size"], 100)
+        self.assertEqual(variant["edge_latent_size"], 100)
+        self.assertEqual(variant["native_output_mode"], "legacy_normalized_deltaT")
 
     def test_e200_schedule_reaches_registered_minimum(self) -> None:
         config = json.loads(

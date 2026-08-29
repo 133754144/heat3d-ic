@@ -13,6 +13,7 @@ from .core import (
     TrainingDependencies,
     TrainingState,
     V7FormalTrainer,
+    block_until_ready,
     make_optimizer,
 )
 from .prepare import (
@@ -50,6 +51,7 @@ __all__ = [
     "TrainingDependencies",
     "TrainingState",
     "V7FormalTrainer",
+    "block_until_ready",
     "make_optimizer",
     "build_v1_training_batches",
     "build_v1_training_stats",

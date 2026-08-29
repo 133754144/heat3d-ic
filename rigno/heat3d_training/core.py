@@ -12,6 +12,22 @@ import jax.tree_util as tree
 import optax
 
 
+def block_until_ready(value: Any) -> Any:
+    """Synchronize all asynchronous JAX leaves and return ``value``.
+
+    JAX dispatch is asynchronous on accelerators.  This small explicit
+    helper is part of the timing boundary, not an optimization: callers use
+    it only when a wall-clock interval is required to include completed
+    device work.
+    """
+
+    for leaf in tree.tree_leaves(value):
+        ready = getattr(leaf, "block_until_ready", None)
+        if ready is not None:
+            ready()
+    return value
+
+
 @dataclass(frozen=True)
 class TrainingBatch:
     """A prepared batch with all model-visible arrays and no hidden loaders."""

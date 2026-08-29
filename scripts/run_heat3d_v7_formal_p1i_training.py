@@ -37,6 +37,7 @@ from rigno.heat3d_training import (
     TrainingDependencies,
     V7FormalTrainer,
     atomic_training_checkpoint,
+    block_until_ready,
     evaluate_level_a_validation,
     learning_rate_for_epoch,
     loss_fn_full,
@@ -59,6 +60,12 @@ REGISTRY_PATH = ROOT / "configs" / "heat3d_v7" / "v7_experiment_registry.json"
 FULL_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_full_p1i.json"
 BUDGET_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_budget_qualification.json"
 SUPPORTED_BUDGET_VARIANTS = {"Full", "vanilla_RIGNO"}
+SUPPORTED_VARIANT_QUALIFICATION_VARIANTS = {
+    "no_scale",
+    "vanilla_RIGNO_capacity_matched",
+}
+NATIVE_VARIANTS = {"Full", "no_scale"}
+VANILLA_VARIANTS = {"vanilla_RIGNO", "vanilla_RIGNO_capacity_matched"}
 FORMAL_VARIANT_BY_ID = {
     "V7-G1-Full-P1i": "Full",
     "V7-G1-Full-P1i:vanilla-RIGNO": "vanilla_RIGNO",
@@ -68,6 +75,14 @@ FORMAL_VARIANT_BY_ID = {
     "V7-G1-Full-P1i:no-scale": "no_scale",
     "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched": "vanilla_RIGNO_capacity_matched",
 }
+
+
+def _execution_role(variant: str, *, budget_only: bool, registered_role: str) -> str:
+    if budget_only:
+        return "budget_qualification"
+    if variant in SUPPORTED_VARIANT_QUALIFICATION_VARIANTS:
+        return "variant_qualification"
+    return registered_role
 
 
 def _sha256(path: Path) -> str:
@@ -145,15 +160,47 @@ def _variant_model_config(parent: Mapping[str, Any], variant: str) -> dict[str, 
             }
         )
         return config
+    if variant == "vanilla_RIGNO_capacity_matched":
+        # Width 100 is the pre-registered capacity-matched candidate.  This
+        # remains the ordinary RIGNO control; only latent width is changed.
+        config.update(
+            {
+                "node_latent_size": 100,
+                "edge_latent_size": 100,
+                "decoder_bypass_mode": "none",
+                "decoder_bypass_features": "none",
+                "decoder_bypass_local_feature_names": [],
+                "global_context_mode": "none",
+                "global_context_feature_dim": 0,
+                "global_context_feature_names": [],
+                "native_output_mode": "legacy_normalized_deltaT",
+                "decoder_bypass_output_space": "normalized_deltaT",
+            }
+        )
+        return config
+    if variant == "no_scale":
+        # Keep the native shape/physical-scale route and remove the learned
+        # residual correction; this is not a direct-output architecture.
+        config.update(
+            {
+                "learned_scale_correction_mode": "physics_only",
+                "scale_head_mode": "physics_only",
+                "scale_attention_mode": "none",
+                "scale_deepsets_mode": "none",
+                "scale_context_mode": "none",
+                "scale_context_feature_dim": 0,
+                "scale_context_feature_names": [],
+            }
+        )
+        return config
     if variant in {
         "generic_uniform_support",
         "volume_only_support",
         "no_context",
-        "no_scale",
     }:
         raise ValueError(
-            f"{variant} is registered as a future G1 delta but has no support "
-            "provider in the e200 qualification path; refusing an implicit variant"
+            f"{variant} is fail-closed: its support/context contract is not "
+            "uniquely supported by the frozen P1i provider"
         )
     raise ValueError(f"unregistered V7 training variant {variant!r}")
 
@@ -174,6 +221,7 @@ def _resolve_registration(
         args.experiment_id in FORMAL_VARIANT_BY_ID
         and args.experiment_id != "V7-G1-Full-P1i"
     ):
+        variant = FORMAL_VARIANT_BY_ID[args.experiment_id]
         config_path = (args.config or FULL_CONFIG_PATH).resolve()
         config = _load_json(config_path)
         if entry.get("status") not in {"registered_not_executed", "planned_not_executed"}:
@@ -181,11 +229,16 @@ def _resolve_registration(
         if config.get("experiment_id") != "V7-G1-Full-P1i":
             raise ValueError("formal G1 variants must resolve to the frozen Full parent config")
         if not args.dry_run:
+            if (
+                args.rehearsal
+                and variant in SUPPORTED_VARIANT_QUALIFICATION_VARIANTS
+            ):
+                return config, entry, variant, False
             raise ValueError(
-                "formal G1 execution is closed; use --dry-run for registry validation "
-                "until explicit scientific G1 authorization"
+                "formal G1 execution is closed; only explicitly supported "
+                "nonpublication variant qualification may use --rehearsal"
             )
-        return config, entry, FORMAL_VARIANT_BY_ID[args.experiment_id], False
+        return config, entry, variant, False
 
     if args.experiment_id == "V7-G1-Full-P1i":
         config_path = (args.config or FULL_CONFIG_PATH).resolve()
@@ -240,7 +293,13 @@ def _dry_run(
                 "experiment_id": args.experiment_id,
                 "variant": variant,
                 "experiment_role": (
-                    "budget_qualification_only" if budget_only else config["experiment_role"]
+                    "budget_qualification_only"
+                    if budget_only
+                    else _execution_role(
+                        variant,
+                        budget_only=False,
+                        registered_role=config["experiment_role"],
+                    )
                 ),
                 "dataset_id": dataset["dataset_id"],
                 "train_count": dataset["roles"]["train"],
@@ -277,7 +336,7 @@ def _build_dependencies(
     variant: str,
     dataset_config: Mapping[str, Any],
 ) -> TrainingDependencies:
-    if variant == "Full":
+    if variant in NATIVE_VARIANTS:
         apply_fn = lambda current_params, batch, rng: model_apply_full(
             model, current_params, batch, rng
         )
@@ -293,7 +352,7 @@ def _build_dependencies(
             model_config, parent_config["optimizer"]
         )
         feature_transform = "v6_dual_robin_relative_bc_features+native_shape_scale"
-    else:
+    elif variant in VANILLA_VARIANTS:
         apply_fn = lambda current_params, batch, rng: model_apply_vanilla(
             model, current_params, batch, rng
         )
@@ -307,6 +366,8 @@ def _build_dependencies(
 
         gradient_transform = None
         feature_transform = "v6_dual_robin_relative_bc_features"
+    else:
+        raise ValueError(f"unsupported V7 training variant {variant!r}")
 
     return TrainingDependencies(
         data_source={
@@ -370,7 +431,7 @@ def _run(
     if budget_only and epochs != 200:
         raise ValueError("e200 budget qualification requires exactly --epochs 200")
     if not budget_only and not 1 <= epochs <= 3:
-        raise ValueError("Full P1i preflight rehearsal is limited to 1-3 epochs")
+        raise ValueError("pre-G1 qualification rehearsal is limited to 1-3 epochs")
     seed = int(args.seed if args.seed is not None else 0)
     if budget_only and seed != 0:
         raise ValueError("budget qualification is registered for seed0 only")
@@ -401,8 +462,10 @@ def _run(
         loss_config=config["loss"],
         batch_size=int(config["batching"]["batch_size"]),
         validation_batch_size=int(config["batching"]["validation_batch_size"]),
-        batch_build_seed=int(config["batching"]["batch_build_seed"]),
-        graph_seed=0,
+        # V6-style synchronized seed contract: graph construction, population
+        # order, and model initialization all use the registered run seed.
+        batch_build_seed=seed,
+        graph_seed=seed,
         profile=preparation_profile,
     )
     feature_names = tuple(prepared.stats["feature_names"])
@@ -412,7 +475,7 @@ def _run(
     loss_config = dict(prepared.train_only_loss_references)
     model = RIGNO(**model_config)
     init_start = time.perf_counter()
-    if variant == "Full":
+    if variant in NATIVE_VARIANTS:
         params = model_init_full(
             model, jax.random.PRNGKey(seed), prepared.train_batches[0]
         )["params"]
@@ -446,7 +509,7 @@ def _run(
                 "v7_g1_budget_qual_e200_"
                 + ("full_seed0" if variant == "Full" else "vanilla_seed0")
                 if budget_only
-                else "v7_g1_p1i_rehearsal"
+                else "v7_g1_p1i_qualification_" + variant
             )
         )
     ).resolve()
@@ -463,7 +526,7 @@ def _run(
         order = np.arange(len(prepared.train_batches))
         if bool(config["batching"]["shuffle_train_batches"]):
             order = np.random.default_rng(
-                int(config["batching"]["batch_build_seed"]) + epoch
+                seed + epoch
             ).permutation(order)
         epoch_start = time.perf_counter()
         epoch_losses = []
@@ -477,6 +540,16 @@ def _run(
             step_key = jax.random.fold_in(step_key, batch_index)
             result = trainer.step(state, batch, rng=step_key)
             state = result.state
+            block_until_ready(
+                (
+                    state.params,
+                    state.optimizer_state,
+                    result.loss,
+                    result.gradients,
+                    result.updates,
+                    result.prediction,
+                )
+            )
             step_seconds = time.perf_counter() - step_start
             loss_value = float(result.loss)
             epoch_losses.append(loss_value)
@@ -520,8 +593,10 @@ def _run(
                 metadata={
                     "experiment_id": args.experiment_id,
                     "variant": variant,
-                    "execution_role": (
-                        "budget_qualification" if budget_only else "readiness_fixture"
+                    "execution_role": _execution_role(
+                        variant,
+                        budget_only=budget_only,
+                        registered_role=config["experiment_role"],
                     ),
                     "budget_qualification_only": budget_only,
                     "epoch": epoch,
@@ -569,7 +644,11 @@ def _run(
         metadata={
             "experiment_id": args.experiment_id,
             "variant": variant,
-            "execution_role": "budget_qualification" if budget_only else "readiness_fixture",
+            "execution_role": _execution_role(
+                variant,
+                budget_only=budget_only,
+                registered_role=config["experiment_role"],
+            ),
             "budget_qualification_only": budget_only,
             "epoch": epochs,
             "selection_metric": "sample_first_relative_rmse_pct",
@@ -611,10 +690,20 @@ def _run(
         "parent_experiment_id": "V7-G1-Full-P1i",
         "variant": variant,
         "experiment_role": (
-            "budget_qualification_only" if budget_only else config["experiment_role"]
+            "budget_qualification_only"
+            if budget_only
+            else _execution_role(
+                variant,
+                budget_only=False,
+                registered_role=config["experiment_role"],
+            )
         ),
         "registered_experiment_role": config["experiment_role"],
-        "execution_role": "budget_qualification" if budget_only else "readiness_fixture",
+        "execution_role": _execution_role(
+            variant,
+            budget_only=budget_only,
+            registered_role=config["experiment_role"],
+        ),
         "status": "COMPLETE",
         "budget_qualification_only": budget_only,
         "g1_formal": False,

@@ -1,48 +1,100 @@
 {
-  "schema_version": "heat3d_v7_g1_statistical_preregistration_v1",
+  "schema_version": "heat3d_v7_g1_statistical_preregistration_v2",
   "status": "pre_registered_frozen_not_executed",
-  "scope": "future formal G1 only; qualification pilots are excluded",
+  "scope": "future formal G1 only; all qualification and rehearsal runs are excluded",
+  "preregistration_sha256": "7c137eb4ba31964bc718a9fcb4573152aa247da174d14072be408ae9954c351d",
+  "preregistration_sha256_basis": "canonical UTF-8 JSON with preregistration_sha256 removed, sorted keys, and compact separators",
   "parent_experiment_id": "V7-G1-Full-P1i",
   "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
   "allowed_roles": {"train": 768, "valid_iid": 128},
   "forbidden_roles": ["test_iid", "sealed"],
   "seed_set": [0, 1, 2],
   "epoch_budget": 200,
-  "base_variant_count": 6,
-  "capacity_matched_vanilla_triggered": true,
-  "formal_variant_count": 7,
-  "planned_formal_run_count": 21,
-  "formal_execution_started": false,
+  "formal_matrix": {
+    "base_variant_count": 6,
+    "capacity_matched_vanilla_triggered": true,
+    "formal_variant_count": 7,
+    "planned_formal_run_count": 21,
+    "formal_execution_started": false,
+    "shared_optimization_contract": true
+  },
   "optimization_contract_ref": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
   "batch_contract_ref": "configs/heat3d_v7/v7_g1_full_p1i.json",
+  "seed_contract_ref": "configs/heat3d_v7/v7_g1_seed_bundle.json",
   "variant_matrix_ref": "configs/heat3d_v7/v7_g1_variant_execution_matrix.json",
   "checkpoint_selection": {
     "metric": "sample_first_relative_rmse_pct",
     "split": "valid_iid",
     "tie_break": "earliest_epoch",
     "selection_is_per_run": true,
-    "no_posthoc_budget_change": true
+    "selection_is_not_cross_variant": true,
+    "no_posthoc_budget_change": true,
+    "no_posthoc_seed_removal": true,
+    "no_posthoc_metric_switch": true
   },
-  "primary_level_a_metrics": [
-    "point_global_relative_rmse_pct",
-    "sample_first_relative_rmse_pct",
-    "raw_K_CV_RMSE_K",
-    "source_region_RMSE_K",
-    "peak_RMSE_K",
-    "interface_RMSE_K"
-  ],
+  "level_a_metrics": {
+    "definition_source": "configs/heat3d_v7/v7_metric_contract.json",
+    "names": [
+      "point_global_relative_rmse_pct",
+      "sample_first_relative_rmse_pct",
+      "raw_K_CV_RMSE_K",
+      "source_region_RMSE_K",
+      "peak_RMSE_K",
+      "interface_RMSE_K"
+    ],
+    "units": {
+      "point_global_relative_rmse_pct": "percent",
+      "sample_first_relative_rmse_pct": "percent",
+      "raw_K_CV_RMSE_K": "K",
+      "source_region_RMSE_K": "K",
+      "peak_RMSE_K": "K",
+      "interface_RMSE_K": "K"
+    },
+    "definitions_are_frozen": true,
+    "source_peak_interface_masks_are_frozen": true,
+    "metric_switching_after_results": false
+  },
   "reporting": {
-    "aggregate": "mean_and_sample_standard_deviation_over_registered_seeds",
-    "retain_per_seed": true,
+    "per_seed_results": true,
+    "aggregate": "mean_and_sample_standard_deviation_over_seed_level_results",
     "retain_sufficient_statistics": true,
-    "confidence_intervals": "not_primary; report only if pre-registered analysis later adds them",
-    "multiple_comparison_correction": "not_claimed_in_readiness_freeze"
+    "retain_per_sample_effects": true,
+    "distribution_summaries": ["median", "p90", "p95", "worst_n"],
+    "worst_n_definition": "pre-registered N from the Level-A metric contract; no posthoc N selection"
   },
-  "claim_boundary": {
+  "paired_effect_analysis": {
+    "unit": "same valid_iid sample under Full and each registered ablation and seed",
+    "effect_direction": "positive means ablation_error - Full_error; negative favors ablation",
+    "primary_summary": "paired per-sample effect mean and median with per-seed and pooled summaries",
+    "two_level_bootstrap": {
+      "enabled": true,
+      "resampling_levels": ["seed", "valid_iid_sample_within_seed"],
+      "replicates": 10000,
+      "interval": "percentile_95_percent_CI",
+      "seed_resampling_is_with_replacement": true,
+      "sample_resampling_is_with_replacement": true,
+      "random_seed": 20260829
+    },
+    "claim_rules": {
+      "superiority": "A directional claim requires the paired 95% CI for the pre-registered effect to exclude zero, the median paired effect to have the same direction, and the direction to be consistent in all three seeds",
+      "noninferiority": "A noninferiority claim requires a pre-registered margin in the applicable gate contract and the paired 95% CI to remain within that margin; no margin may be introduced after results",
+      "descriptive_only": "If an interval includes zero or seed directions disagree, report the effect descriptively and do not make a superiority claim",
+      "p_values": "n=3 seed p-values are not primary evidence and are not used as the acceptance rule"
+    }
+  },
+  "analysis_guards": {
+    "no_posthoc_seed_removal": true,
+    "no_posthoc_budget_change": true,
+    "no_posthoc_metric_switch": true,
+    "no_model_selection_across_variants": true,
+    "no_test_or_sealed_access": true,
     "qualification_evidence": false,
-    "publication_evidence_until_G1": false,
-    "test_or_sealed_access": false,
-    "model_selection_across_variants": false,
-    "budget_qualification_is_excluded": true
+    "publication_evidence_until_formal_g1": false,
+    "formal_g1_multi_seed_started": false
+  },
+  "future_evidence_roles": {
+    "historical_e600_reference": "context_only; not e200 convergence evidence",
+    "budget_qualification": "nonpublication qualification only; excluded from formal G1 statistics",
+    "formal_g1": "the only publication-eligible role after all gates are explicitly open"
   }
 }
