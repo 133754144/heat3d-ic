@@ -173,8 +173,8 @@ def main() -> None:
         raise ValueError("capacity-matched Vanilla trigger drifted")
     if prereg.get("seed_set") != [0, 1, 2] or prereg.get("forbidden_roles") != ["test_iid", "sealed"]:
         raise ValueError("G1 statistical preregistration seed/split policy drifted")
-    if prereg.get("schema_version") != "heat3d_v7_g1_statistical_preregistration_v2":
-        raise ValueError("G1 statistical preregistration v2 is required")
+    if prereg.get("schema_version") != "heat3d_v7_g1_statistical_preregistration_v3":
+        raise ValueError("G1 statistical preregistration v3 is required")
     prereg_hash = str(prereg.get("preregistration_sha256", ""))
     prereg_hash_body = dict(prereg)
     prereg_hash_body.pop("preregistration_sha256", None)

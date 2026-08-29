@@ -43,7 +43,7 @@ solver output or model error. Therefore H2 is limited to source-layout awareness
 not source-amplitude awareness. The audit is recorded in
 [v7_g1_support_semantics_audit.md](v7_g1_support_semantics_audit.md).
 
-The `no_scale` qualification is explicitly physics-scale-only: the physics scale
+The `physics_scale_only` qualification is explicitly physics-scale-only: the physics scale
 is retained and only the learned residual correction is disabled. It is not a
 direct-output architecture. The capacity-matched Vanilla uses width 100 for both
 node and edge latents, with a 0.3505% parameter gap to Full. Both are one-epoch
@@ -54,11 +54,12 @@ The only efficiency-boundary change in this freeze is an explicit
 `validation_outputs_fn`: validation prediction and validation loss share one
 model application, while the model, graph, support, normalization, loss and
 batch semantics stay unchanged. The registered support providers are now
-explicit and label-independent: `generic_uniform_v1` samples 1024 nodes
-uniformly from the fixed full-field domain, and `volume_only_v1` samples 1024
-interior-volume nodes with control-volume weighting. The no-context delta is a
-fixed zero 24-D context vector with FiLM disabled; the native shape-scale path
-is retained. All three providers/deltas completed bounded one-epoch CUDA
+explicit and label-independent: `layout_agnostic_stratified_v1` uses fixed
+interface/top/bottom/volume strata with quotas 128/64/64/768 and no layout
+masks, while `cv_only_v1` uses 1024 control-volume-weighted interior nodes.
+The No-FiLM delta changes only `global_context_mode: film -> none`; the
+standardized 24-D physical context and native shape-scale path are retained.
+All three new provider/model deltas completed bounded one-epoch CUDA
 qualification runs and remain observation-only, non-publication evidence.
 Cross-run feature/graph reuse, broader JIT cache reuse, high-N optimization and
 formal multi-seed execution remain deferred. The entrypoint fails closed for

@@ -46,7 +46,7 @@ def main() -> None:
     protocol = _load(ROOT / "docs" / "v7_g1_scientific_protocol_freeze.json")
 
     _require(
-        receipt.get("schema_version") == "heat3d_v7_g1_variant_qualification_receipt_v1",
+        receipt.get("schema_version") == "heat3d_v7_g1_variant_qualification_receipt_v2",
         "variant qualification receipt schema drifted",
     )
     _require(len(str(receipt.get("code_commit", ""))) == 40, "qualification code commit is not pinned")

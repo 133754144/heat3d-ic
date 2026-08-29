@@ -1,6 +1,6 @@
 {
-  "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v2",
-  "status": "scientific_protocol_frozen_pre_G1; all_variant_qualification_complete; semantic_anchor_pass; formal_execution_closed",
+  "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v3",
+  "status": "scientific_protocol_frozen_pre_G1; final_variant_qualification_complete; semantic_anchor_pass; formal_execution_closed",
   "scope": "G1 scientific protocol freeze; no formal multi-seed scientific experiment",
   "historical_evidence": {
     "direct_full_reference": "V6_06_V5best_P1i_seed0_reliable_B24",
@@ -34,8 +34,8 @@
     "source_amplitude_awareness_claim": false,
     "native_selector_uses_numeric_q": false,
     "native_selector_uses_temperature_labels_or_model_error": false,
-    "generic_and_volume_ablation_provider_status": "registered_and_qualified_nonpublication; generic_uniform_v1; volume_only_v1",
-    "no_context_definition_status": "registered_and_qualified_nonpublication; fixed_zero_24d_context_film_disabled; native_shape_scale_retained"
+    "support_ablation_provider_status": "registered_and_qualified_nonpublication; layout_agnostic_stratified_v1; cv_only_v1",
+    "no_film_definition_status": "registered_and_qualified_nonpublication; global_context_mode_film_to_none_only; standardized_24d_context_retained; native_shape_scale_retained"
   },
   "qualification": {
     "required_variants": ["Full", "vanilla_RIGNO"],
@@ -52,13 +52,13 @@
     "e300_required": false
   },
   "variant_qualification": {
-    "required_variants": ["generic_uniform_support", "volume_only_support", "no_context", "no_scale", "vanilla_RIGNO_capacity_matched"],
+    "required_variants": ["layout_agnostic_stratified_support", "cv_only_support", "no_film", "physics_scale_only", "vanilla_RIGNO_capacity_matched"],
     "execution_role": "variant_qualification",
     "publication_evidence": false,
     "g1_formal": false,
     "status": "completed_nonpublication_for_all_registered_variants",
     "receipt": "docs/v7_g1_variant_qualification_receipt.json",
-    "no_scale": {
+    "physics_scale_only": {
       "status": "qualified_nonpublication_1epoch",
       "scale_semantics": "physics_scale_only; learned_residual_disabled"
     },
@@ -67,29 +67,31 @@
       "node_latent_size": 100,
       "edge_latent_size": 100
     },
-    "generic_uniform_support": {
+    "layout_agnostic_stratified_support": {
       "status": "qualified_nonpublication_1epoch",
-      "provider_id": "generic_uniform_v1"
+      "provider_id": "layout_agnostic_stratified_v1",
+      "quotas": {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768}
     },
-    "volume_only_support": {
+    "cv_only_support": {
       "status": "qualified_nonpublication_1epoch",
-      "provider_id": "volume_only_v1"
+      "provider_id": "cv_only_v1",
+      "quotas": {"block": 0, "interface": 0, "top": 0, "bottom": 0, "volume": 1024}
     },
-    "no_context": {
+    "no_film": {
       "status": "qualified_nonpublication_1epoch",
-      "context_semantics": "fixed_zero_24d_context; film_disabled; native_shape_scale_retained"
+      "context_semantics": "standardized_24d_context_retained; film_disabled; native_shape_scale_retained"
     },
     "unresolved_variants": [],
     "formal_execution_started": false
   },
   "formal_matrix": {
-    "base_variants": [
+      "base_variants": [
       "Full",
       "vanilla_RIGNO",
-      "generic_uniform_support",
-      "volume_only_support",
-      "no_context",
-      "no_scale"
+      "layout_agnostic_stratified_support",
+      "cv_only_support",
+      "no_film",
+      "physics_scale_only"
     ],
     "seed_set": [0, 1, 2],
     "formal_execution_started": false,

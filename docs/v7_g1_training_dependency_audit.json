@@ -1,6 +1,6 @@
 {
-  "schema_version": "heat3d_v7_g1_training_dependency_audit_v2",
-  "status": "audited_pre_G1; e200_qualified; all_registered_variants_qualified; semantic_anchor_pass; synchronized_profiling_complete; formal_G1_not_started",
+  "schema_version": "heat3d_v7_g1_training_dependency_audit_v3",
+  "status": "audited_pre_G1; e200_qualified; final_variants_qualified; semantic_anchor_pass; synchronized_profiling_complete; formal_G1_not_started",
   "scope": "V7 publication-training path, variant qualification, and pre-G1 semantic audits",
   "production_dependency": [
     {
@@ -8,7 +8,7 @@
       "symbol": "main/_resolve_registration/_run",
       "calls": "rigno.heat3d_training.p1i + rigno.heat3d_training.evaluation + rigno.heat3d_training.core + rigno.models.rigno.RIGNO",
       "direction": "registered V7 entrypoint -> explicit library preparation/training/Level-A validation",
-      "variants": ["Full", "vanilla_RIGNO", "generic_uniform_support", "volume_only_support", "no_context", "no_scale", "vanilla_RIGNO_capacity_matched"],
+      "variants": ["Full", "vanilla_RIGNO", "vanilla_RIGNO_capacity_matched", "layout_agnostic_stratified_support", "cv_only_support", "no_film", "physics_scale_only"],
       "execution_guard": "Full formal and all variants remain unexecuted; completed e200 runs are budget_qualification_only",
       "budget_decision_receipt": "docs/v7_g1_budget_decision_receipt.json"
     },
@@ -128,16 +128,16 @@
     {
       "file": "scripts/run_heat3d_v7_formal_p1i_training.py",
       "symbol": "support variants",
-      "current_behavior": "generic_uniform_v1 and volume_only_v1 are explicit label-independent providers; no_context is a fixed zero-context/FiLM-off delta; all three completed bounded one-epoch nonpublication qualification",
-      "potential_cost": "provider-specific support distributions and no-context behavior will affect ablation variance and must remain registry-bound",
-      "candidate_direction": "formal G1 execution may use only the frozen providers through the common registry entrypoint",
+      "current_behavior": "layout_agnostic_stratified_v1, cv_only_v1 and no_film are explicit geometry/model deltas; all new deltas completed bounded one-epoch nonpublication qualification; physics_scale_only and capacity-matched Vanilla retain prior qualified lineage",
+      "potential_cost": "provider-specific support distributions and No-FiLM model delta affect ablation variance and must remain registry-bound",
+      "candidate_direction": "formal G1 execution may use only the frozen providers and one-field model deltas through the common registry entrypoint",
       "semantics_may_change": true,
       "this_round": "qualified implementation only; formal execution remains closed"
     },
     {
       "file": "configs/heat3d_v7/v7_support_artifact_freeze.json",
       "symbol": "future_variant_support",
-      "current_behavior": "source-layout-aware support is frozen for the Full parent; generic_uniform_v1 and volume_only_v1 are frozen provider contracts referenced by their variant deltas",
+      "current_behavior": "source-layout-aware support is frozen for the Full parent; layout_agnostic_stratified_v1 and cv_only_v1 are frozen provider contracts referenced by their variant deltas",
       "potential_cost": "different provider distributions can change ablation behavior, so provider IDs and input restrictions must not drift",
       "candidate_direction": "retain provider contracts and qualify any future implementation change against the current reference",
       "semantics_may_change": true,
@@ -182,10 +182,10 @@
     "supported_variants": {
       "Full": "COMPLETE_nonpublication_parent_qualification",
       "vanilla_RIGNO": "COMPLETE_nonpublication_parent_qualification",
-      "generic_uniform_support": "COMPLETE_nonpublication_1epoch; generic_uniform_v1",
-      "volume_only_support": "COMPLETE_nonpublication_1epoch; volume_only_v1",
-      "no_context": "COMPLETE_nonpublication_1epoch; fixed_zero_context_film_off",
-      "no_scale": "COMPLETE_nonpublication_1epoch; physics_scale_only",
+      "layout_agnostic_stratified_support": "COMPLETE_nonpublication_1epoch; layout_agnostic_stratified_v1",
+      "cv_only_support": "COMPLETE_nonpublication_1epoch; cv_only_v1",
+      "no_film": "COMPLETE_nonpublication_1epoch; standardized_24d_context_retained_film_off",
+      "physics_scale_only": "COMPLETE_nonpublication_1epoch; carried_forward_physics_scale_only",
       "vanilla_RIGNO_capacity_matched": "COMPLETE_nonpublication_1epoch; width_100"
     },
     "unresolved_variants": []
@@ -193,12 +193,14 @@
   "support_semantics": {
     "audit": "docs/v7_g1_support_semantics_audit.json",
     "canonical_name": "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
-    "provider_contract_sha256": "e3c650ed13f7cf6f44c27455564ce4c671d9696b91f9322d7535a1ffa9ca15f3",
+    "provider_contract_sha256": "15dfbc891274a3285391a85fdfaab47613ed1c783815ff03b726dac889507fd0",
     "local_regions_alias": "block quota",
     "numeric_q_values_used_by_native_selector": false,
     "temperature_labels_or_model_error_used": false,
     "source_amplitude_awareness_claim": false,
-    "generic_volume_providers_frozen": true
+    "support_attribution_providers_frozen": true,
+    "layout_agnostic_stratified_quotas": {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768},
+    "cv_only_quotas": {"block": 0, "interface": 0, "top": 0, "bottom": 0, "volume": 1024}
   },
   "seed_contract": {
     "source": "configs/heat3d_v7/v7_g1_seed_bundle.json",

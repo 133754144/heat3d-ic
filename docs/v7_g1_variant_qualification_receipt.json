@@ -1,8 +1,8 @@
 {
-  "schema_version": "heat3d_v7_g1_variant_qualification_receipt_v1",
+  "schema_version": "heat3d_v7_g1_variant_qualification_receipt_v2",
   "status": "completed_nonpublication_for_all_registered_variants; formal_G1_closed",
   "scope": "V7 G1 variant implementation qualification only; no formal multi-seed experiment",
-  "code_commit": "a4b9c3fb02c96881ebb7d0d0b455e9ea39f595a4",
+  "code_commit": "f20c434949805ea3df4b9da290828c78471243e2",
   "execution_host": "devbox",
   "backend": "cuda",
   "device": "cuda:0",
@@ -15,7 +15,9 @@
     "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
     "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
     "train_count": 768,
-    "valid_iid_count": 128
+    "valid_iid_count": 128,
+    "test_iid_labels_read": false,
+    "sealed_labels_read": false
   },
   "qualification_policy": {
     "epochs": 1,
@@ -23,139 +25,145 @@
     "role": "nonpublication_variant_qualification",
     "formal_g1_multi_seed_started": false,
     "new_scientific_result": false,
+    "model_selection": false,
     "solver": false,
     "new_data": false,
     "full_v6_evidence_modified": false
   },
+  "support_contract": {
+    "path": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+    "sha256": "15dfbc891274a3285391a85fdfaab47613ed1c783815ff03b726dac889507fd0",
+    "providers": {
+      "layout_agnostic_stratified_support": {
+        "provider_id": "layout_agnostic_stratified_v1",
+        "quotas": {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768},
+        "train_index_sha256_digest": "89224ecce0800218e298374c1fd788fc89c3d6d844695998ea610800a0254bd9",
+        "valid_iid_index_sha256_digest": "03ddb9a45be9d6669edfa682ec3e729175af179518af16a066c0e5889a9a2817",
+        "representative_train_sample": "v6p1if1_0000",
+        "representative_train_index_sha256": "c69efd27b9032c365ed142d2d97a66e482f12e5ffa1b88a9d74a7931006eb579",
+        "representative_valid_sample": "v6p1if1_0003",
+        "representative_valid_index_sha256": "ed310c42ae0dd03075e5c2c8b778066303428580a03f884c73e8c9c147761cfb",
+        "qualification_receipt_path": "/tmp/v7_g1_variant_qual_layout_f20c434/v7_g1_p1i_rehearsal_receipt.json",
+        "qualification_receipt_sha256": "303e464aec825f6a24644f78ce0afa8b884197273abf525d188150e4a2681030"
+      },
+      "cv_only_support": {
+        "provider_id": "cv_only_v1",
+        "quotas": {"block": 0, "interface": 0, "top": 0, "bottom": 0, "volume": 1024},
+        "train_index_sha256_digest": "210ff7faa56b9212e0b823ab0ed470778e3020bceea349b02edcdee34dcccd08",
+        "valid_iid_index_sha256_digest": "647b673e7fa3490859eb82a4e64947a6bbdacd97af2877896cdab81762de2b51",
+        "representative_train_sample": "v6p1if1_0000",
+        "representative_train_index_sha256": "c1ecfc03bd3eeaa0e0024d7ecc4d51efba762ccff12e9ba737462ac66650df70",
+        "representative_valid_sample": "v6p1if1_0003",
+        "representative_valid_index_sha256": "332c366e7f63e099b1b64d12724cac56347e03bcf2376829e945b707cb843e5d",
+        "qualification_receipt_path": "/tmp/v7_g1_variant_qual_cv_f20c434/v7_g1_p1i_rehearsal_receipt.json",
+        "qualification_receipt_sha256": "0aa95f7d2716467eb7ac9217006ac11bbc8513a9d38c424f92d2aecdeabd81ab"
+      }
+    },
+    "label_independent": true,
+    "q_numeric_values_used": false,
+    "temperature_used": false,
+    "labels_used": false,
+    "model_error_used": false
+  },
   "variants": {
-    "generic_uniform_support": {
-      "experiment_id": "V7-G1-Full-P1i:generic-uniform-support",
+    "layout_agnostic_stratified_support": {
+      "experiment_id": "V7-G1-Full-P1i:layout-agnostic-stratified-support",
       "status": "COMPLETE",
-      "receipt_path": "/tmp/v7_g1_variant_qual_generic_a4b9c3f/v7_g1_p1i_rehearsal_receipt.json",
-      "receipt_sha256": "0bc6f7af060131f1bfda84765e48eac07141620fb0f27dda72cec7e696a6ed8e",
-      "qualification_code_commit": "a4b9c3fb02c96881ebb7d0d0b455e9ea39f595a4",
-      "provider_id": "generic_uniform_v1",
-      "implementation": "uniform without-replacement 1024-node support over fixed full-field geometry; q/k/layout/temperature/labels/model-error independent",
+      "receipt_path": "/tmp/v7_g1_variant_qual_layout_f20c434/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "303e464aec825f6a24644f78ce0afa8b884197273abf525d188150e4a2681030",
+      "qualification_code_commit": "f20c434949805ea3df4b9da290828c78471243e2",
+      "provider_id": "layout_agnostic_stratified_v1",
+      "implementation": "layout-agnostic CV-weighted strata; block quota 0; interface 128, top 64, bottom 64, volume 768; no q/k layout masks, temperature, labels, solver, or model error",
       "parameter_count": 892776,
-      "compile_count": 32,
-      "train_batches": 32,
-      "epoch_wall_seconds": 559.8199028589879,
       "observed_metrics": {
-        "sample_first_relative_rmse_pct": 43.27722076741036,
-        "point_global_relative_rmse_pct": 37.31694231355989,
-        "raw_K_CV_RMSE_K": 32.967698369893455,
-        "source_region_RMSE_K": 34.115233282014906,
-        "peak_RMSE_K": 28.27181049316845,
-        "interface_RMSE_K": 29.91755905214827
+        "sample_first_relative_rmse_pct": 40.95795173749452,
+        "point_global_relative_rmse_pct": 36.695413484179554,
+        "raw_K_CV_RMSE_K": 31.336691091622754,
+        "source_region_RMSE_K": 30.393970305493994,
+        "peak_RMSE_K": 28.198897073426526,
+        "interface_RMSE_K": 26.886179253548104
       },
       "observation_only": true,
       "synchronized_step_boundary": true
     },
-    "volume_only_support": {
-      "experiment_id": "V7-G1-Full-P1i:volume-only-support",
+    "cv_only_support": {
+      "experiment_id": "V7-G1-Full-P1i:cv-only-support",
       "status": "COMPLETE",
-      "receipt_path": "/tmp/v7_g1_variant_qual_volume_6921e00/v7_g1_p1i_rehearsal_receipt.json",
-      "receipt_sha256": "675ee42551584e0ed7d54a0b5eeb251ba09cbf2ae7aaa4227627c0ed0691b201",
-      "qualification_code_commit": "6921e00efe59356d3714565979895b12bcb7efbc",
-      "provider_id": "volume_only_v1",
-      "implementation": "control-volume-weighted without-replacement 1024-node support restricted to interior volume; q/temperature/labels/model-error independent",
+      "receipt_path": "/tmp/v7_g1_variant_qual_cv_f20c434/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "0aa95f7d2716467eb7ac9217006ac11bbc8513a9d38c424f92d2aecdeabd81ab",
+      "qualification_code_commit": "f20c434949805ea3df4b9da290828c78471243e2",
+      "provider_id": "cv_only_v1",
+      "implementation": "CV-only control-volume-weighted interior-volume support; 1024 nodes; no block/interface/top/bottom quota and no q/k layout masks, temperature, labels, solver, or model error",
       "parameter_count": 892776,
-      "compile_count": 32,
-      "train_batches": 32,
-      "epoch_wall_seconds": 555.0768787809648,
       "observed_metrics": {
-        "sample_first_relative_rmse_pct": 38.86841603170194,
-        "point_global_relative_rmse_pct": 38.10869952015222,
-        "raw_K_CV_RMSE_K": 29.224260660599338,
-        "source_region_RMSE_K": 38.33639997056009,
-        "peak_RMSE_K": 25.339683245749,
-        "interface_RMSE_K": 22.125707728069226
+        "sample_first_relative_rmse_pct": 38.85641296726748,
+        "point_global_relative_rmse_pct": 38.04490849976061,
+        "raw_K_CV_RMSE_K": 29.24366995597077,
+        "source_region_RMSE_K": 38.009682873146026,
+        "peak_RMSE_K": 25.326706897114416,
+        "interface_RMSE_K": 22.12860383621036
       },
       "observation_only": true,
       "synchronized_step_boundary": true
     },
-    "no_context": {
-      "experiment_id": "V7-G1-Full-P1i:no-context",
+    "no_film": {
+      "experiment_id": "V7-G1-Full-P1i:no-film",
       "status": "COMPLETE",
-      "receipt_path": "/tmp/v7_g1_variant_qual_no_context_475a405/v7_g1_p1i_rehearsal_receipt.json",
-      "receipt_sha256": "e48e4a7325ea5b6f42fec6086b90436100db0ed49bf5b6df48e48737fed39b0a",
-      "qualification_code_commit": "475a4054ede50384ea9d8d89b47ce33c1c495fdf",
-      "implementation": "fixed_zero_vector 24-D global context; FiLM disabled; native shape-scale retained",
+      "receipt_path": "/tmp/v7_g1_variant_qual_no_film_f20c434/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "4de8e2d6f4090430815f88bca3e97200fdcbd509982c59ec4225770f2d353eed",
+      "qualification_code_commit": "f20c434949805ea3df4b9da290828c78471243e2",
+      "implementation": "global_context_mode=none only; standardized frozen 24-D physical context retained; native shape-scale and scale-context paths unchanged",
+      "global_context_feature_dim": 24,
       "parameter_count": 878696,
-      "compile_count": 32,
-      "train_batches": 32,
-      "epoch_wall_seconds": 518.3058829799993,
       "observed_metrics": {
-        "sample_first_relative_rmse_pct": 68.92967641556004,
-        "point_global_relative_rmse_pct": 59.33113325697706,
-        "raw_K_CV_RMSE_K": 51.71295846029502,
-        "source_region_RMSE_K": 46.85281474875855,
-        "peak_RMSE_K": 54.58937043092295,
-        "interface_RMSE_K": 42.15628730134986
+        "sample_first_relative_rmse_pct": 69.06138377207107,
+        "point_global_relative_rmse_pct": 59.24583111762066,
+        "raw_K_CV_RMSE_K": 51.641330519038796,
+        "source_region_RMSE_K": 46.85148734687876,
+        "peak_RMSE_K": 54.622107342748045,
+        "interface_RMSE_K": 42.26397244462605
       },
       "observation_only": true,
       "synchronized_step_boundary": true
     },
-    "no_scale": {
-      "experiment_id": "V7-G1-Full-P1i:no-scale",
+    "physics_scale_only": {
+      "experiment_id": "V7-G1-Full-P1i:physics-scale-only",
       "status": "COMPLETE",
+      "qualification_lineage": "carried_forward_from prior native_shape_scale/no-scale qualification; implementation delta unchanged, registry name corrected",
       "receipt_path": "/tmp/v7_g1_variant_qual_no_scale/v7_g1_p1i_rehearsal_receipt.json",
       "receipt_sha256": "ef66b4d37277bd1e200a371f75fc0863c7a42d14cd42fd6332240b2df5a2eb21",
-      "implementation": "native_shape_scale with physics scale retained and learned residual correction disabled",
-      "parameter_count": 845158,
-      "compile_count": 32,
-      "train_batches": 32,
-      "observed_metrics": {
-        "sample_first_relative_rmse_pct": 237.5963700095938,
-        "point_global_relative_rmse_pct": 174.51641831481513,
-        "raw_K_CV_RMSE_K": 173.68159983670785,
-        "source_region_RMSE_K": 43.34496252180832,
-        "peak_RMSE_K": 220.80844499601548,
-        "interface_RMSE_K": 60.07433033563008
-      },
+      "qualification_code_commit": "not_recorded_in_tracked_legacy_receipt",
+      "implementation": "native_shape_scale with physics scale retained and learned residual correction disabled; direct-output architecture not used",
       "observation_only": true,
       "synchronized_step_boundary": true
     },
     "vanilla_RIGNO_capacity_matched": {
       "experiment_id": "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
       "status": "COMPLETE",
+      "qualification_lineage": "carried_forward_from prior width-100 qualification; implementation delta unchanged",
       "receipt_path": "/tmp/v7_g1_variant_qual_capacity/v7_g1_p1i_rehearsal_receipt.json",
       "receipt_sha256": "97068c3fc4914deb76bc1d585d3bb2286dfa834c29e9c0696589d312c569d24a",
+      "qualification_code_commit": "not_recorded_in_tracked_legacy_receipt",
       "implementation": "ordinary RIGNO control with node_latent_size=100 and edge_latent_size=100",
       "node_latent_size": 100,
       "edge_latent_size": 100,
       "parameter_count": 895905,
       "relative_parameter_gap_to_full": 0.003504747948253468,
-      "compile_count": 32,
-      "train_batches": 32,
-      "observed_metrics": {
-        "sample_first_relative_rmse_pct": 48.43844551043859,
-        "point_global_relative_rmse_pct": 37.46684618864954,
-        "raw_K_CV_RMSE_K": 28.868150652440836,
-        "source_region_RMSE_K": 30.334820635453852,
-        "peak_RMSE_K": 34.60023486395627,
-        "interface_RMSE_K": 5.820421219904722
-      },
       "observation_only": true,
       "synchronized_step_boundary": true
     }
   },
-  "unresolved_variants": {},
-  "split_access": {
-    "train_labels_read": true,
-    "valid_iid_labels_read": true,
-    "test_iid_labels_read": false,
-    "sealed_labels_read": false,
-    "test_iid_sample_dirs_loaded": false,
-    "sealed_sample_dirs_loaded": false,
-    "test_iid_metadata_role_counted_by_manifest_validator": true,
-    "policy_observation": "manifest role-count validation only; no test_iid/sealed sample or label materialization"
+  "superseded_legacy_qualification_receipts": {
+    "generic_uniform_support": "0bc6f7af060131f1bfda84765e48eac07141620fb0f27dda72cec7e696a6ed8e",
+    "volume_only_support": "675ee42551584e0ed7d54a0b5eeb251ba09cbf2ae7aaa4227627c0ed0691b201",
+    "no_context": "e48e4a7325ea5b6f42fec6086b90436100db0ed49bf5b6df48e48737fed39b0a"
   },
+  "unresolved_variants": {},
   "readiness": {
     "supported_variant_qualification": true,
     "all_formal_variants_qualified": true,
     "g1_scientific_ready": true,
     "formal_execution_started": false,
-    "readiness_basis": "all seven registry variants have explicit provider/config deltas and bounded nonpublication qualification evidence"
+    "readiness_basis": "all seven planned variants have explicit registry deltas; new support/No-FiLM providers have bounded nonpublication CUDA qualification and carried-forward native/capacity controls"
   }
 }

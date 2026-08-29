@@ -584,7 +584,7 @@ def main() -> int:
     ]
 
     # The historical helper source is byte-identical to the recorded V6
-    # execution commit.  The model module has only the explicit no_scale
+    # execution commit.  The model module has only the explicit physics-only
     # branch added after that commit; Full uses the default learned-residual
     # branch, so this audit records the source delta instead of hiding it.
     current_runner_blob = _git("hash-object", HISTORICAL_RUNNER)
@@ -612,7 +612,7 @@ def main() -> int:
             "runner_source_reconciled": current_runner_blob == HISTORICAL_RUNNER_BLOB,
             "model_blob_at_execution_commit": HISTORICAL_MODEL_BLOB,
             "model_blob_current": current_model_blob,
-            "model_source_delta_scope": "explicit physics_only/no_scale branch only; Full default learned_residual behavior is the compared scope",
+            "model_source_delta_scope": "explicit physics-only branch only; Full default learned_residual behavior is the compared scope",
         },
         "v7": {
             "code_commit": _git("rev-parse", "HEAD"),

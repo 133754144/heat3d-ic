@@ -27,21 +27,20 @@ H2 is therefore frozen as “source-layout-aware sparse conditioning.” A claim
 about source-amplitude-aware conditioning is prohibited without new evidence.
 The registered support-attribution deltas are precise and label independent:
 
-* **Generic uniform support** samples 1024 nodes uniformly without replacement
-  from the fixed 240825-node full-field geometry. It does not receive q/k
-  layout masks or control-volume weights.
-* **Volume-only support** samples 1024 nodes without replacement from the
-  interior-volume stratum (excluding top, bottom, and internal interfaces),
-  weighted only by frozen control-volume values. It does not receive q/k
-  values or layout masks.
+* **Layout-agnostic stratified support** (`layout_agnostic_stratified_v1`)
+  uses the fixed quotas block=0, interface=128, top=64, bottom=64 and
+  CV-weighted interior volume=768. It deliberately does not receive q/k
+  layout masks.
+* **CV-only support** (`cv_only_v1`) samples 1024 CV-weighted interior-volume
+  nodes; block/interface/top/bottom quotas are all zero.
 
-Both providers are implemented in the V7 training support library, consume
-the frozen 240825-node shared geometry, and are registered in the V7 support
-provider contract. Generated support hashes are qualification artifacts, not
-historical V6 evidence. No-context replaces the train-standardized 24-D
-global-context values with a fixed zero vector, disables FiLM, and retains the
-native shape-scale path. Physics-scale-only retains the physics scale and
-disables only the learned residual correction.
+Both providers consume only the frozen 240825-node shared geometry, layer
+boundaries, control volumes, sample ID and registered run seed. Generated
+support hashes are qualification artifacts, not historical V6 evidence.
+No-FiLM changes only `global_context_mode: film -> none`; the standardized
+24-D physical context, native shape-scale path and scale-context path remain.
+Physics-scale-only retains the physics scale and disables only the learned
+residual correction; it is not a direct-output architecture.
 
 The exact machine-readable record is
 `docs/v7_g1_support_semantics_audit.json`. V6 implementation and evidence

@@ -2,7 +2,7 @@
   "schema_version": "heat3d_v7_g1_scientific_closeout_receipt_v2",
   "status": "PASS_pre_G1",
   "scope": "V7 G1 scientific protocol and variant qualification closeout; formal multi-seed execution not started",
-  "source_control_commit": "a4b9c3fb02c96881ebb7d0d0b455e9ea39f595a4",
+  "source_control_commit": "f20c434949805ea3df4b9da290828c78471243e2",
   "execution_role": "compatibility_audit",
   "dataset": {
     "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
@@ -20,7 +20,7 @@
     "seed_set": [0, 1, 2],
     "seed_contract": "model_initialization_seed=optimizer_seed=batch_build_seed=batch_order_seed=graph_seed=registered_run_seed",
     "checkpoint_selection": "valid_iid.sample_first_relative_rmse_pct; earliest tie",
-    "statistical_preregistration_sha256": "7c137eb4ba31964bc718a9fcb4573152aa247da174d14072be408ae9954c351d",
+    "statistical_preregistration_sha256": "312d1a3bdc93c1849705b1bdfc925e2ab0427c811fbe3fa1030b60580204803e",
     "formal_matrix": {
       "variants": 7,
       "planned_runs": 21,
@@ -34,8 +34,8 @@
       "status": "PASS",
       "canonical_name": "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
       "h2_claim": "source-layout-aware sparse conditioning; source-amplitude awareness is not established",
-      "providers": ["generic_uniform_v1", "volume_only_v1"],
-      "provider_contract_sha256": "e3c650ed13f7cf6f44c27455564ce4c671d9696b91f9322d7535a1ffa9ca15f3",
+      "providers": ["layout_agnostic_stratified_v1", "cv_only_v1"],
+      "provider_contract_sha256": "15dfbc891274a3285391a85fdfaab47613ed1c783815ff03b726dac889507fd0",
       "evidence": "docs/v7_g1_support_semantics_audit.json"
     },
     "seed_contract": {
@@ -61,10 +61,10 @@
       "variants": {
         "Full": "qualified_parent_control",
         "vanilla_RIGNO": "qualified_parent_control",
-        "generic_uniform_support": "qualified_nonpublication_1epoch; generic_uniform_v1",
-        "volume_only_support": "qualified_nonpublication_1epoch; volume_only_v1",
-        "no_context": "qualified_nonpublication_1epoch; fixed_zero_24d_context_film_off",
-        "no_scale": "qualified_nonpublication_1epoch; physics_scale_only",
+        "layout_agnostic_stratified_support": "qualified_nonpublication_1epoch; layout_agnostic_stratified_v1",
+        "cv_only_support": "qualified_nonpublication_1epoch; cv_only_v1",
+        "no_film": "qualified_nonpublication_1epoch; standardized_24d_context_retained_film_off",
+        "physics_scale_only": "qualified_nonpublication_1epoch; physics_scale_only",
         "vanilla_RIGNO_capacity_matched": "qualified_nonpublication_1epoch; width_100"
       },
       "evidence": "docs/v7_g1_variant_qualification_receipt.json"
@@ -85,7 +85,7 @@
       "publication_performance_evidence_modified": false,
       "evidence": "docs/v7_g1_synced_profiling_receipt.json"
     },
-    "statistical_preregistration_v2": {
+    "statistical_preregistration_v3": {
       "status": "PASS_frozen_not_executed",
       "sha256": "7c137eb4ba31964bc718a9fcb4573152aa247da174d14072be408ae9954c351d",
       "evidence": "configs/heat3d_v7/v7_g1_statistical_preregistration.json"
