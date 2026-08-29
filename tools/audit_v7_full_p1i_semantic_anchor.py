@@ -472,7 +472,7 @@ def main() -> int:
         [old_train_group],
         stats,
         loss_config,
-        key=jax.random.fold_in(jax.random.PRNGKey(args.seed), 0),
+        key=jax.random.PRNGKey(args.seed),
     )
     initial_new_components = _stable_components(
         initial_new_prediction,
@@ -487,7 +487,9 @@ def main() -> int:
             old_model,
             old_params,
             old_train_group,
-            key=step_key,
+            # The legacy native loss path folds the run key by group index;
+            # mirror that one-group boundary before comparing model outputs.
+            key=jax.random.fold_in(step_key, 0),
         )
         old_components_before_update = legacy._native_loss_components(
             old_model,
