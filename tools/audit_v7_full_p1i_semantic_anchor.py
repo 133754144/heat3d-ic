@@ -462,7 +462,9 @@ def main() -> int:
         new_model,
         new_params,
         stable_train_batch,
-        rng=jax.random.fold_in(jax.random.PRNGKey(args.seed), 0),
+        # model_apply_full folds the run key by group index; pass the same
+        # unfurled run key used by the legacy single-group call below.
+        rng=jax.random.PRNGKey(args.seed),
     )[0]
     initial_old_components = legacy._native_loss_components(
         old_model,
