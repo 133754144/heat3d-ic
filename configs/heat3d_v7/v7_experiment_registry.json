@@ -78,52 +78,52 @@
       "qualification_receipt": "docs/v7_g1_variant_qualification_receipt.json"
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:layout-agnostic-stratified-support",
+      "experiment_id": "V7-G1-Full-P1i:generic-uniform-support",
       "status": "planned_not_executed",
       "experiment_role": "publication_training",
-      "variant": "layout_agnostic_stratified_support",
+      "variant": "generic_uniform_support",
       "parent_experiment_id": "V7-G1-Full-P1i",
       "delta": {
-        "support_provider": "layout_agnostic_stratified_v1",
-        "support_semantics": "interface128_top64_bottom64_volume768_cv_weighted"
+        "support_provider": "generic_uniform_v1",
+        "support_semantics": "uniform_full_field_1024"
       },
       "shared_contract": "V7-G1-Full-P1i",
       "support_provider_contract": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
       "execution_started": false
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:cv-only-support",
+      "experiment_id": "V7-G1-Full-P1i:volume-only-support",
       "status": "planned_not_executed",
       "experiment_role": "publication_training",
-      "variant": "cv_only_support",
+      "variant": "volume_only_support",
       "parent_experiment_id": "V7-G1-Full-P1i",
       "delta": {
-        "support_provider": "cv_only_v1",
-        "support_semantics": "global_cv_weighted_1024"
+        "support_provider": "volume_only_v1",
+        "support_semantics": "interior_volume_cv_weighted_1024"
       },
       "shared_contract": "V7-G1-Full-P1i",
       "support_provider_contract": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
       "execution_started": false
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:no-film",
+      "experiment_id": "V7-G1-Full-P1i:no-context",
       "status": "planned_not_executed",
       "experiment_role": "publication_training",
-      "variant": "no_film",
+      "variant": "no_context",
       "parent_experiment_id": "V7-G1-Full-P1i",
       "delta": {
-        "global_context_mode": "film -> none",
-        "global_context_tensor": "preserved_24d",
-        "native_scale_context_path": "preserved"
+        "global_context": "standardized_24d_to_fixed_zero_vector",
+        "global_film": "disabled",
+        "native_scale_context_path": "preserved_with_zero_context_input"
       },
       "shared_contract": "V7-G1-Full-P1i",
       "execution_started": false
     },
     {
-      "experiment_id": "V7-G1-Full-P1i:physics-scale-only",
+      "experiment_id": "V7-G1-Full-P1i:no-scale",
       "status": "planned_not_executed",
       "experiment_role": "publication_training",
-      "variant": "physics_scale_only",
+      "variant": "no_scale",
       "parent_experiment_id": "V7-G1-Full-P1i",
       "delta": {
         "learned_scale_correction": "disabled",

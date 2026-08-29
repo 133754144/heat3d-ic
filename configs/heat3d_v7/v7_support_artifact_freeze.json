@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_support_artifact_freeze_v3",
+  "schema_version": "heat3d_v7_support_artifact_freeze_v4",
   "status": "frozen_reference_inputs",
   "role": "label_independent_support_and_padding_contract",
   "support_family": "sample_varying_source_layout_aware_geometry_1024_solver_nodes",
@@ -60,8 +60,8 @@
   ],
   "write_policy": "read_only; no regeneration or in-place update",
   "future_variant_support": {
-    "layout_agnostic_stratified_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
-    "cv_only_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+    "generic_uniform_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+    "volume_only_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
     "current_formal_training_default": "source-layout-aware frozen support only"
   }
 }

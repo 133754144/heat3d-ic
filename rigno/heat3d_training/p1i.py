@@ -375,27 +375,50 @@ def attach_input_contexts(
     """Attach train-only standardized 24-D context and return its provenance."""
 
     names = tuple(model_config.get("global_context_feature_names") or ())
-    validate_v6_global_context_schema(names)
     rows = {str(example.sample_id): _context_row(example) for example in [*train_examples, *required_examples]}
     train_ids = [str(example.sample_id) for example in train_examples]
-    standardizer = fit_train_only_v6_standardizer(
-        [rows[sample_id] for sample_id in train_ids], fit_sample_ids=train_ids
-    )
-    encoded = {
-        sample_id: standardize_v6_contexts([row], standardizer)[0]
-        for sample_id, row in rows.items()
-    }
+    context_dim = int(model_config.get("global_context_feature_dim", 24))
+    if context_dim == 24:
+        validate_v6_global_context_schema(names)
+        standardizer = fit_train_only_v6_standardizer(
+            [rows[sample_id] for sample_id in train_ids], fit_sample_ids=train_ids
+        )
+        if model_config.get("global_context_ablation") == "zero":
+            encoded = {
+                sample_id: np.zeros(24, dtype=np.float32)
+                for sample_id in rows
+            }
+            context_source = "fixed_zero_vector; frozen_24d_schema"
+        else:
+            encoded = {
+                sample_id: standardize_v6_contexts([row], standardizer)[0]
+                for sample_id, row in rows.items()
+            }
+            context_source = "train_only_standardized_v6_context"
+    elif context_dim == 0 and not names:
+        standardizer = {"mode": "not_used; no_context_ablation"}
+        encoded = {
+            sample_id: np.zeros(0, dtype=np.float32)
+            for sample_id in rows
+        }
+        context_source = "empty_context"
+    else:
+        raise ValueError(
+            "global context must use the frozen 24-D schema or an explicit empty schema"
+        )
     for batch in batches:
         context = np.stack([encoded[sample_id] for sample_id in batch.sample_ids])
-        if context.shape != (len(batch.sample_ids), 24):
+        if context.shape != (len(batch.sample_ids), context_dim):
             raise ValueError(f"{batch.batch_id}: invalid global context shape {context.shape}")
         batch.groups[0]["global_context"] = jnp.asarray(context, dtype=jnp.float32)
     return {
         "schema": "GLOBAL_CONTEXT_FEATURES_V6",
-        "feature_names": list(GLOBAL_CONTEXT_FEATURES_V6),
+        "feature_names": list(GLOBAL_CONTEXT_FEATURES_V6) if context_dim == 24 else [],
         "standardizer": standardizer,
         "raw_context_by_id": rows,
         "fit_role": "train_only",
+        "source": context_source,
+        "ablation": model_config.get("global_context_ablation"),
         "target_or_label_derived_inputs": False,
     }
 
@@ -628,9 +651,9 @@ def prediction_to_raw_delta(
         "Full",
         "no_scale",
         "physics_scale_only",
-        "no_film",
-        "layout_agnostic_stratified_support",
-        "cv_only_support",
+        "no_context",
+        "generic_uniform_support",
+        "volume_only_support",
     }:
         if not isinstance(prediction, Mapping) or "deltaT_hat" not in prediction:
             raise ValueError("native prediction must contain deltaT_hat")

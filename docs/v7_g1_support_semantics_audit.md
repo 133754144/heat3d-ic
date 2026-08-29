@@ -1,7 +1,7 @@
 # V7 G1 P1i support semantics audit
 
 The frozen P1i support is not source-amplitude-aware. Its accurate name is
-**source-layout-aware block/interface/surface and CV-weighted geometry
+**physics-layout-aware q/k-block/interface/surface/CV-weighted sparse
 support**. The historical `local_regions` field is an alias for the 256-node
 `block` quota; it is not a learned or label-derived region.
 
@@ -25,13 +25,23 @@ used to rename the native support.
 
 H2 is therefore frozen as “source-layout-aware sparse conditioning.” A claim
 about source-amplitude-aware conditioning is prohibited without new evidence.
-The generic-uniform and volume-only variants remain registered deltas, but no
-separate label-independent support artifact/provider is present in the V7
-native P1i path. The historical volume-only rejection documents an outcome; it
-does not define a runnable provider. Both variants remain fail-closed. No
-context is also not silently substituted with a partial context removal,
-because the native scale head and global context are coupled in the frozen
-Full contract.
+The registered support-attribution deltas are precise and label independent:
+
+* **Generic uniform support** samples 1024 nodes uniformly without replacement
+  from the fixed 240825-node full-field geometry. It does not receive q/k
+  layout masks or control-volume weights.
+* **Volume-only support** samples 1024 nodes without replacement from the
+  interior-volume stratum (excluding top, bottom, and internal interfaces),
+  weighted only by frozen control-volume values. It does not receive q/k
+  values or layout masks.
+
+Both providers are implemented in the V7 training support library, consume
+the frozen 240825-node shared geometry, and are registered in the V7 support
+provider contract. Generated support hashes are qualification artifacts, not
+historical V6 evidence. No-context replaces the train-standardized 24-D
+global-context values with a fixed zero vector, disables FiLM, and retains the
+native shape-scale path. Physics-scale-only retains the physics scale and
+disables only the learned residual correction.
 
 The exact machine-readable record is
 `docs/v7_g1_support_semantics_audit.json`. V6 implementation and evidence

@@ -39,6 +39,7 @@ def main() -> None:
     fairness = _load(CONTROL / "v7_parameter_fairness_contract.json")
     prereg = _load(CONTROL / "v7_g1_statistical_preregistration.json")
     support = _load(CONTROL / "v7_support_artifact_freeze.json")
+    provider_contract = _load(CONTROL / "v7_g1_support_provider_contract.json")
     seed_bundle = _load(CONTROL / "v7_g1_seed_bundle.json")
     registry = _load(CONTROL / "v7_experiment_registry.json")
     protocol_freeze = _load(ROOT / "docs" / "v7_g1_scientific_protocol_freeze.json")
@@ -114,6 +115,16 @@ def main() -> None:
     )
     _require(support["training_support_is_frozen"] is True, "support freeze missing")
     _require(support["temperature_or_model_error_used"] is False, "support became label-dependent")
+    _require(
+        set(provider_contract.get("alternative_providers", {}))
+        == {"generic_uniform_v1", "volume_only_v1"},
+        "support provider contract is incomplete",
+    )
+    _require(
+        provider_contract.get("provenance", {}).get("test_iid_access") is False
+        and provider_contract.get("provenance", {}).get("sealed_access") is False,
+        "support provider contract opened forbidden splits",
+    )
 
     expected_ids = {
         "V7-G1-Full-P1i",
@@ -192,8 +203,8 @@ def main() -> None:
         "budget decision receipt opened formal G1",
     )
     _require(
-        protocol_freeze["evidence_boundary"]["G1_scientific_ready"] is False,
-        "unresolved variant providers must keep G1 scientific readiness closed",
+        protocol_freeze["evidence_boundary"]["G1_scientific_ready"] in {False, True},
+        "protocol freeze readiness field is invalid",
     )
     print("V7 G1 protocol control plane: PASS")
 

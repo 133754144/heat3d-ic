@@ -61,9 +61,9 @@ FULL_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_full_p1i.json"
 BUDGET_CONFIG_PATH = ROOT / "configs" / "heat3d_v7" / "v7_g1_budget_qualification.json"
 SUPPORTED_BUDGET_VARIANTS = {"Full", "vanilla_RIGNO"}
 SUPPORTED_VARIANT_QUALIFICATION_VARIANTS = {
-    "layout_agnostic_stratified_support",
-    "cv_only_support",
-    "no_film",
+    "generic_uniform_support",
+    "volume_only_support",
+    "no_context",
     "physics_scale_only",
     "vanilla_RIGNO_capacity_matched",
 }
@@ -77,23 +77,23 @@ NATIVE_VARIANTS = {
     "Full",
     "no_scale",
     "physics_scale_only",
-    "no_film",
-    "layout_agnostic_stratified_support",
-    "cv_only_support",
+    "no_context",
+    "generic_uniform_support",
+    "volume_only_support",
 }
 VANILLA_VARIANTS = {"vanilla_RIGNO", "vanilla_RIGNO_capacity_matched"}
 FORMAL_VARIANT_BY_ID = {
     "V7-G1-Full-P1i": "Full",
     "V7-G1-Full-P1i:vanilla-RIGNO": "vanilla_RIGNO",
-    "V7-G1-Full-P1i:layout-agnostic-stratified-support": "layout_agnostic_stratified_support",
-    "V7-G1-Full-P1i:cv-only-support": "cv_only_support",
-    "V7-G1-Full-P1i:no-film": "no_film",
-    "V7-G1-Full-P1i:physics-scale-only": "physics_scale_only",
+    "V7-G1-Full-P1i:generic-uniform-support": "generic_uniform_support",
+    "V7-G1-Full-P1i:volume-only-support": "volume_only_support",
+    "V7-G1-Full-P1i:no-context": "no_context",
+    "V7-G1-Full-P1i:no-scale": "no_scale",
     "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched": "vanilla_RIGNO_capacity_matched",
 }
 SUPPORT_PROVIDER_BY_VARIANT = {
-    "layout_agnostic_stratified_support": "layout_agnostic_stratified_v1",
-    "cv_only_support": "cv_only_v1",
+    "generic_uniform_support": "generic_uniform_v1",
+    "volume_only_support": "volume_only_v1",
 }
 
 
@@ -213,12 +213,19 @@ def _variant_model_config(parent: Mapping[str, Any], variant: str) -> dict[str, 
             }
         )
         return config
-    if variant == "no_film":
-        # Preserve the frozen 24-D context tensor and native shape-scale
-        # context path; disable only global FiLM modulation.
-        config.update({"global_context_mode": "none"})
+    if variant == "no_context":
+        # Keep the native shape-scale route and its 24-D input schema, but
+        # replace the standardized global-context values with a fixed zero
+        # vector.  This disables global context as a conditioning signal
+        # without silently changing the output architecture or physics scale.
+        config.update(
+            {
+                "global_context_mode": "none",
+                "global_context_ablation": "zero",
+            }
+        )
         return config
-    if variant in {"layout_agnostic_stratified_support", "cv_only_support"}:
+    if variant in {"generic_uniform_support", "volume_only_support"}:
         return config
     raise ValueError(f"unregistered V7 training variant {variant!r}")
 
@@ -435,6 +442,12 @@ def _validation_pass(
         examples=prepared.valid_examples,
         stats=prepared.stats,
         variant=variant,
+        full_field_data=(
+            prepared.full_field_data
+            if prepared.support_provider_id
+            in {"generic_uniform_v1", "volume_only_v1"}
+            else None
+        ),
     )
     return float(np.mean(losses)) if losses else 0.0, evaluation
 

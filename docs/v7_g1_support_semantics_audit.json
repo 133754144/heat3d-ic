@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_support_semantics_audit_v1",
-  "status": "frozen_pre_G1; scientific_support_ablation_providers_incomplete",
+  "status": "frozen_pre_G1; providers_qualified_nonpublication",
   "scope": "P1i support construction semantics and G1 support-ablation boundary",
   "historical_sources": [
     {
@@ -21,7 +21,7 @@
   ],
   "support_contract": {
     "registered_name": "retry_deterministic_geometry_only_v1",
-    "accurate_scientific_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "accurate_scientific_name": "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
     "local_regions_is_alias_for": "block quota",
     "strata_counts": {
       "volume": 512,
@@ -67,19 +67,47 @@
   ],
   "g1_support_ablation_contract": {
     "generic_uniform_support": {
-      "intended_delta": "geometry-only uniform/CV support without q/k block quotas",
-      "provider_status": "unresolved_not_registered",
-      "execution": "fail_closed"
+      "intended_delta": "uniform 1024-node support over the fixed full-field geometry without q/k layout masks",
+      "provider_id": "generic_uniform_v1",
+      "provider_status": "registered; qualification_complete_nonpublication",
+      "selection_inputs": ["full_field_coords", "sample_id", "run_seed"],
+      "forbidden_inputs": ["q", "k", "control_volume", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
+      "execution": "same V7 registry entrypoint; nonpublication qualification only"
     },
     "volume_only_support": {
-      "intended_delta": "volume-only support as separately registered historical ablation",
-      "provider_status": "unresolved_not_registered; historical rejection is not a provider",
-      "execution": "fail_closed"
+      "intended_delta": "control-volume-weighted 1024-node support restricted to interior volume",
+      "provider_id": "volume_only_v1",
+      "provider_status": "registered; qualification_complete_nonpublication",
+      "selection_inputs": ["full_field_coords", "full_field_control_volume", "layer_boundaries", "sample_id", "run_seed"],
+      "forbidden_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
+      "execution": "same V7 registry entrypoint; nonpublication qualification only"
+    },
+    "no_context": {
+      "intended_delta": "replace train-standardized 24-D global-context values with a fixed zero vector and disable FiLM; retain native shape-scale path",
+      "provider_status": "registered; qualification_complete_nonpublication",
+      "execution": "same V7 registry entrypoint; nonpublication qualification only"
+    },
+    "physics_scale_only": {
+      "intended_delta": "disable learned scale residual correction while retaining the physics scale and native shape-scale architecture",
+      "provider_status": "qualified_nonpublication_one_epoch",
+      "execution": "same V7 registry entrypoint"
     },
     "source_layout_aware_full": {
       "provider_status": "frozen",
       "execution": "canonical Full parent"
     }
+  },
+  "common_domain": {
+    "domain_id": "heat3d_v6_p1i_full_field_240825",
+    "support_attribution_variants": [
+      "Full",
+      "generic_uniform_support",
+      "volume_only_support"
+    ],
+    "same_valid_iid_population": true,
+    "same_full_field_node_domain": true,
+    "reconstruction": "layer_interface_knn_inverse_distance_v1",
+    "latency_claim": false
   },
   "scientific_guards": {
     "support_algorithm_modified": false,

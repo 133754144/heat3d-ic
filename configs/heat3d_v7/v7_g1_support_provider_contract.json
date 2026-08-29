@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g1_support_provider_contract_v1",
+  "schema_version": "heat3d_v7_g1_support_provider_contract_v2",
   "status": "frozen_provider_definitions_pre_G1",
   "scope": "nonpublication qualification and future support-attribution variants",
   "historical_full_support": {
@@ -23,19 +23,19 @@
     "artifact_policy": "read_only_historical_v6_artifact"
   },
   "alternative_providers": {
-    "layout_agnostic_stratified_v1": {
-      "canonical_name": "layout-agnostic stratified support",
-      "implementation": "rigno.heat3d_training.support.select_layout_agnostic_stratified_support",
+    "generic_uniform_v1": {
+      "canonical_name": "generic uniform support",
+      "implementation": "rigno.heat3d_training.support.select_generic_uniform_support",
       "selection_inputs": [
         "full_field_coords",
-        "full_field_control_volume",
-        "layer_boundaries",
         "sample_id",
         "run_seed"
       ],
       "forbidden_inputs": [
         "q",
         "k",
+        "control_volume",
+        "layer_boundaries",
         "temperature",
         "labels",
         "solver",
@@ -43,24 +43,19 @@
         "q_block_layout_masks",
         "k_block_layout_masks"
       ],
-      "quotas": {
-        "interface": 128,
-        "top": 64,
-        "bottom": 64,
-        "volume": 768
-      },
-      "volume_definition": "nodes outside top/bottom/internal-interface strata",
-      "weighting": "control-volume weighted without replacement",
+      "quotas": {"uniform": 1024},
+      "weighting": "uniform without replacement over the fixed full-field node set",
       "label_independent": true,
       "support_hashes": "generated_per_sample_during_qualification",
       "qualification_role": "nonpublication_only_until_G1_open"
     },
-    "cv_only_v1": {
-      "canonical_name": "CV-only support",
-      "implementation": "rigno.heat3d_training.support.select_cv_only_support",
+    "volume_only_v1": {
+      "canonical_name": "volume-only support",
+      "implementation": "rigno.heat3d_training.support.select_volume_only_support",
       "selection_inputs": [
         "full_field_coords",
         "full_field_control_volume",
+        "layer_boundaries",
         "sample_id",
         "run_seed"
       ],
@@ -78,7 +73,8 @@
       "quotas": {
         "volume": 1024
       },
-      "weighting": "global control-volume weighted without replacement",
+      "volume_definition": "nodes outside top/bottom/internal-interface strata",
+      "weighting": "control-volume weighted without replacement within interior volume",
       "label_independent": true,
       "support_hashes": "generated_per_sample_during_qualification",
       "qualification_role": "nonpublication_only_until_G1_open"
@@ -89,14 +85,14 @@
     "coords_source": "frozen_full_field_shared_geometry",
     "truth_source": "frozen_valid_iid_full_field_archive_only",
     "query_and_reconstruction": "frozen_layer_interface_aware_reconstruction_v1",
-    "support_attribution_requires": "same_valid_iid_samples_and_same_240825_nodes_for_full/layout_agnostic/cv_only",
+    "support_attribution_requires": "same_valid_iid_samples_and_same_240825_nodes_for_full/generic_uniform/volume_only",
     "latency_claim": false
   },
   "architecture_variants": {
-    "no_film": {
-      "delta": "global_context_mode film -> none",
-      "context_tensor": "frozen_24d_preserved",
-      "native_shape_scale_context_path": "preserved",
+    "no_context": {
+      "delta": "standardized global-context values -> fixed zero vector; FiLM disabled",
+      "context_tensor": "frozen_24d_schema_with_zero_values",
+      "native_shape_scale_context_path": "preserved_with_zero_context_input",
       "direct_output_architecture": false
     },
     "physics_scale_only": {

@@ -17,12 +17,12 @@ from typing import Any
 import numpy as np
 
 
-SUPPORT_PROVIDER_SCHEMA_VERSION = "heat3d_v7_g1_support_provider_v1"
-LAYOUT_AGNOSTIC_PROVIDER = "layout_agnostic_stratified_v1"
-CV_ONLY_PROVIDER = "cv_only_v1"
+SUPPORT_PROVIDER_SCHEMA_VERSION = "heat3d_v7_g1_support_provider_v2"
+GENERIC_UNIFORM_PROVIDER = "generic_uniform_v1"
+VOLUME_ONLY_PROVIDER = "volume_only_v1"
 SUPPORTED_ALTERNATIVE_PROVIDERS = (
-    LAYOUT_AGNOSTIC_PROVIDER,
-    CV_ONLY_PROVIDER,
+    GENERIC_UNIFORM_PROVIDER,
+    VOLUME_ONLY_PROVIDER,
 )
 
 
@@ -138,7 +138,48 @@ class SupportSelection:
         }
 
 
-def select_layout_agnostic_stratified_support(
+def select_generic_uniform_support(
+    *,
+    coords: np.ndarray,
+    sample_id: str,
+    seed: int,
+) -> SupportSelection:
+    """Select a registered geometry-only uniform support.
+
+    This is the executable meaning of the G1 generic-support delta: 1024
+    nodes are sampled uniformly from the complete fixed full-field node set.
+    It does not inspect q/k layout masks, control-volume values, temperature,
+    labels, solver output, or model error.
+    """
+
+    points = np.asarray(coords, dtype=np.float64)
+    rng = np.random.default_rng(
+        _stable_seed(provider=GENERIC_UNIFORM_PROVIDER, sample_id=str(sample_id), seed=seed)
+    )
+    if points.ndim != 2 or points.shape[1] != 3 or not np.all(np.isfinite(points)):
+        raise ValueError("coords must be finite [N,3]")
+    if points.shape[0] < 1024:
+        raise ValueError("generic support requires at least 1024 nodes")
+    indices = np.asarray(
+        rng.choice(points.shape[0], size=1024, replace=False), dtype=np.int32
+    )
+    return SupportSelection(
+        provider_id=GENERIC_UNIFORM_PROVIDER,
+        sample_id=str(sample_id),
+        seed=int(seed),
+        indices=indices,
+        strata=np.full(1024, "uniform", dtype="U32"),
+        metadata={
+            "algorithm": "uniform_without_replacement_v1",
+            "selection_inputs": ["coords", "sample_id", "run_seed"],
+            "excluded_inputs": ["q", "k", "control_volume", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
+            "quotas": {"uniform": 1024},
+            "label_independent": True,
+        },
+    )
+
+
+def select_volume_only_support(
     *,
     coords: np.ndarray,
     control_volume: np.ndarray,
@@ -146,65 +187,12 @@ def select_layout_agnostic_stratified_support(
     sample_id: str,
     seed: int,
 ) -> SupportSelection:
-    """Select the registered layout-agnostic stratified 1024-node support.
+    """Select 1024 control-volume-weighted interior volume nodes.
 
-    Quotas are disjoint and fixed: 128 internal-interface nodes, 64 top
-    surface nodes, 64 bottom surface nodes, and 768 interior volume nodes.
-    Every draw is CV-weighted, and the seed is derived from the provider,
-    sample ID, and registered run seed.  No layout mask or numeric q/k field
-    is supplied to this provider.
+    Surface and internal-interface nodes are excluded by the explicit
+    volume-only mask.  This is a registered ablation definition, not a claim
+    that the historical rejected probe is recoverable from its outcome text.
     """
-
-    points = np.asarray(coords, dtype=np.float64)
-    weights = np.asarray(control_volume, dtype=np.float64).reshape(-1)
-    if weights.shape != (points.shape[0],) or np.any(weights <= 0.0):
-        raise ValueError("control_volume must be positive and aligned with coords")
-    interfaces, top, bottom, volume = _boundary_masks(points, boundaries)
-    rng = np.random.default_rng(
-        _stable_seed(provider=LAYOUT_AGNOSTIC_PROVIDER, sample_id=str(sample_id), seed=seed)
-    )
-    selections = (
-        ("interface", interfaces, 128),
-        ("top", top, 64),
-        ("bottom", bottom, 64),
-        ("volume", volume, 768),
-    )
-    selected: list[np.ndarray] = []
-    labels: list[np.ndarray] = []
-    used = np.zeros(points.shape[0], dtype=bool)
-    for label, mask, count in selections:
-        candidates = np.flatnonzero(mask & ~used)
-        picked = _weighted_choice(rng, candidates, count, weights[candidates])
-        used[picked] = True
-        selected.append(picked)
-        labels.append(np.full(count, label, dtype="U32"))
-    indices = np.concatenate(selected).astype(np.int32, copy=False)
-    strata = np.concatenate(labels)
-    return SupportSelection(
-        provider_id=LAYOUT_AGNOSTIC_PROVIDER,
-        sample_id=str(sample_id),
-        seed=int(seed),
-        indices=indices,
-        strata=strata,
-        metadata={
-            "algorithm": "disjoint_cv_weighted_strata_v1",
-            "selection_inputs": ["coords", "control_volume", "layer_boundaries"],
-            "excluded_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
-            "quotas": {"interface": 128, "top": 64, "bottom": 64, "volume": 768},
-            "volume_definition": "nodes outside top/bottom/internal-interface strata",
-            "label_independent": True,
-        },
-    )
-
-
-def select_cv_only_support(
-    *,
-    coords: np.ndarray,
-    control_volume: np.ndarray,
-    sample_id: str,
-    seed: int,
-) -> SupportSelection:
-    """Select the registered CV-only 1024-node support."""
 
     points = np.asarray(coords, dtype=np.float64)
     weights = np.asarray(control_volume, dtype=np.float64).reshape(-1)
@@ -212,26 +200,31 @@ def select_cv_only_support(
         raise ValueError("coords must be finite [N,3]")
     if weights.shape != (points.shape[0],) or np.any(weights <= 0.0):
         raise ValueError("control_volume must be positive and aligned with coords")
+    _interfaces, _top, _bottom, volume = _boundary_masks(points, boundaries)
+    candidates = np.flatnonzero(volume)
+    if candidates.size < 1024:
+        raise ValueError("volume-only support requires at least 1024 interior nodes")
     rng = np.random.default_rng(
-        _stable_seed(provider=CV_ONLY_PROVIDER, sample_id=str(sample_id), seed=seed)
+        _stable_seed(provider=VOLUME_ONLY_PROVIDER, sample_id=str(sample_id), seed=seed)
     )
     indices = _weighted_choice(
         rng,
-        np.arange(points.shape[0], dtype=np.int32),
+        candidates,
         1024,
-        weights,
+        weights[candidates],
     )
     return SupportSelection(
-        provider_id=CV_ONLY_PROVIDER,
+        provider_id=VOLUME_ONLY_PROVIDER,
         sample_id=str(sample_id),
         seed=int(seed),
         indices=indices,
         strata=np.full(1024, "volume", dtype="U32"),
         metadata={
-            "algorithm": "global_cv_weighted_choice_v1",
-            "selection_inputs": ["coords", "control_volume"],
-            "excluded_inputs": ["q", "k", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
+            "algorithm": "interior_volume_cv_weighted_choice_v1",
+            "selection_inputs": ["coords", "control_volume", "layer_boundaries", "sample_id", "run_seed"],
+            "excluded_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
             "quotas": {"volume": 1024},
+            "volume_definition": "nodes outside top/bottom/internal-interface strata",
             "label_independent": True,
         },
     )
@@ -248,20 +241,19 @@ def select_alternative_support(
 ) -> SupportSelection:
     """Resolve only explicitly registered alternative providers."""
 
-    if provider_id == LAYOUT_AGNOSTIC_PROVIDER:
-        if boundaries is None:
-            raise ValueError("layout-agnostic support requires layer boundaries")
-        return select_layout_agnostic_stratified_support(
+    if provider_id == GENERIC_UNIFORM_PROVIDER:
+        return select_generic_uniform_support(
             coords=coords,
-            control_volume=control_volume,
-            boundaries=boundaries,
             sample_id=sample_id,
             seed=seed,
         )
-    if provider_id == CV_ONLY_PROVIDER:
-        return select_cv_only_support(
+    if provider_id == VOLUME_ONLY_PROVIDER:
+        if boundaries is None:
+            raise ValueError("volume-only support requires layer boundaries")
+        return select_volume_only_support(
             coords=coords,
             control_volume=control_volume,
+            boundaries=boundaries,
             sample_id=sample_id,
             seed=seed,
         )
@@ -274,19 +266,19 @@ def support_provider_contract() -> dict[str, Any]:
     return {
         "schema_version": SUPPORT_PROVIDER_SCHEMA_VERSION,
         "providers": {
-            LAYOUT_AGNOSTIC_PROVIDER: {
-                "canonical_name": "layout-agnostic stratified support",
-                "semantic_delta": "remove q/k block-layout masks; retain fixed geometry strata",
-                "quotas": {"interface": 128, "top": 64, "bottom": 64, "volume": 768},
-                "input_features": ["coords", "control_volume", "layer_boundaries"],
-                "forbidden_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
+            GENERIC_UNIFORM_PROVIDER: {
+                "canonical_name": "generic uniform support",
+                "semantic_delta": "uniform 1024-node support over the fixed full-field geometry; no source-layout masks",
+                "quotas": {"uniform": 1024},
+                "input_features": ["coords", "sample_id", "run_seed"],
+                "forbidden_inputs": ["q", "k", "control_volume", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
             },
-            CV_ONLY_PROVIDER: {
-                "canonical_name": "CV-only support",
-                "semantic_delta": "global control-volume-weighted support without layout strata",
+            VOLUME_ONLY_PROVIDER: {
+                "canonical_name": "volume-only support",
+                "semantic_delta": "control-volume-weighted support restricted to interior volume nodes",
                 "quotas": {"volume": 1024},
-                "input_features": ["coords", "control_volume"],
-                "forbidden_inputs": ["q", "k", "layer_boundaries", "temperature", "labels", "solver", "model_error"],
+                "input_features": ["coords", "control_volume", "layer_boundaries", "sample_id", "run_seed"],
+                "forbidden_inputs": ["q", "k", "temperature", "labels", "solver", "model_error"],
             },
         },
         "determinism": "sha256(provider,sample_id,run_seed) -> numpy Generator; no replacement",
@@ -296,14 +288,14 @@ def support_provider_contract() -> dict[str, Any]:
 
 
 __all__ = [
-    "CV_ONLY_PROVIDER",
-    "LAYOUT_AGNOSTIC_PROVIDER",
+    "GENERIC_UNIFORM_PROVIDER",
+    "VOLUME_ONLY_PROVIDER",
     "SUPPORTED_ALTERNATIVE_PROVIDERS",
     "SUPPORT_PROVIDER_SCHEMA_VERSION",
     "SupportSelection",
     "array_sha256",
     "select_alternative_support",
-    "select_cv_only_support",
-    "select_layout_agnostic_stratified_support",
+    "select_generic_uniform_support",
+    "select_volume_only_support",
     "support_provider_contract",
 ]

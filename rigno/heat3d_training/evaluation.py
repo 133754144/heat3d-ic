@@ -14,6 +14,10 @@ from typing import Any
 import numpy as np
 
 from rigno.heat3d_runtime.evaluation import EvaluationCore, EvaluationSample
+from rigno.heat3d_v6_full_field import (
+    build_reconstruction_map,
+    prepare_reconstruction_domain_partition,
+)
 
 from .p1i import prediction_to_raw_delta
 
@@ -45,13 +49,27 @@ def evaluate_level_a_validation(
     examples: Sequence[Any],
     stats: Mapping[str, Any],
     variant: str,
+    full_field_data: Any | None = None,
 ) -> dict[str, Any]:
-    """Evaluate one valid_iid population at training/native resolution."""
+    """Evaluate one valid_iid population at native or frozen common resolution.
+
+    The common-domain branch is only for the registered support-attribution
+    variants. It reconstructs prediction-only support values onto the frozen
+    240825-node valid domain; truth remains owned by this evaluation adapter.
+    """
 
     by_id = {str(example.sample_id): example for example in examples}
     samples: list[EvaluationSample] = []
     if len(predictions) != len(batches):
         raise ValueError("prediction and validation-batch counts differ")
+    prepared_partition = None
+    if full_field_data is not None:
+        geometry = full_field_data.geometry
+        prepared_partition = prepare_reconstruction_domain_partition(
+            coords=geometry.coords,
+            layer_id=geometry.layer_id,
+            boundaries=geometry.layer_boundaries,
+        )
     for batch_predictions, batch in zip(predictions, batches, strict=True):
         if len(batch_predictions) != len(batch.groups):
             raise ValueError(f"{batch.batch_id}: prediction/group counts differ")
@@ -70,15 +88,42 @@ def evaluate_level_a_validation(
             for row, sample_id in enumerate(batch.sample_ids):
                 example = by_id[str(sample_id)]
                 relative = example.get_relative_bc_feature_view()
+                if full_field_data is not None:
+                    selection = full_field_data.support_selection_by_id[str(sample_id)]
+                    mapping, _map_meta = build_reconstruction_map(
+                        coords=geometry.coords,
+                        layer_id=geometry.layer_id,
+                        boundaries=geometry.layer_boundaries,
+                        support_indices=selection.indices,
+                        empty_domain_fallback="same_layer",
+                        prepared_partition=prepared_partition,
+                    )
+                    prediction_delta = mapping.reconstruct(raw_prediction[row])
+                    truth_delta = full_field_data.full_truth_delta_by_id[
+                        str(sample_id)
+                    ]
+                    metric_coords = geometry.coords
+                    metric_weights = geometry.control_volume
+                    metric_layer_id = geometry.layer_id
+                    metric_q = full_field_data.full_q_by_id[str(sample_id)]
+                else:
+                    prediction_delta = raw_prediction[row]
+                    truth_delta = target[row]
+                    metric_coords = np.asarray(example.condition.coords, dtype=np.float64)
+                    metric_weights = example.v6_operator_point_weights()
+                    metric_layer_id = _layer_ids(example)
+                    metric_q = np.asarray(
+                        relative.condition_features[:, 3], dtype=np.float64
+                    )
                 samples.append(
                     EvaluationSample(
                         sample_id=str(sample_id),
-                        prediction_deltaT_K=raw_prediction[row],
-                        truth_deltaT_K=target[row],
-                        control_volumes_m3=example.v6_operator_point_weights(),
-                        coords=np.asarray(example.condition.coords, dtype=np.float64),
-                        layer_id=_layer_ids(example),
-                        q_W_m3=np.asarray(relative.condition_features[:, 3], dtype=np.float64),
+                        prediction_deltaT_K=prediction_delta,
+                        truth_deltaT_K=truth_delta,
+                        control_volumes_m3=metric_weights,
+                        coords=metric_coords,
+                        layer_id=metric_layer_id,
+                        q_W_m3=metric_q,
                     )
                 )
     return EvaluationCore().evaluate(samples)

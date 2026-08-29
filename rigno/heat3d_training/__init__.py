@@ -51,14 +51,14 @@ from .full_field import (
     materialize_full_input_fields,
 )
 from .support import (
-    CV_ONLY_PROVIDER,
-    LAYOUT_AGNOSTIC_PROVIDER,
+    GENERIC_UNIFORM_PROVIDER,
     SUPPORTED_ALTERNATIVE_PROVIDERS,
     SUPPORT_PROVIDER_SCHEMA_VERSION,
     SupportSelection,
+    VOLUME_ONLY_PROVIDER,
     select_alternative_support,
-    select_cv_only_support,
-    select_layout_agnostic_stratified_support,
+    select_generic_uniform_support,
+    select_volume_only_support,
     support_provider_contract,
 )
 
@@ -99,13 +99,13 @@ __all__ = [
     "load_alternative_p1i_examples",
     "load_full_field_geometry",
     "materialize_full_input_fields",
-    "CV_ONLY_PROVIDER",
-    "LAYOUT_AGNOSTIC_PROVIDER",
+    "GENERIC_UNIFORM_PROVIDER",
     "SUPPORTED_ALTERNATIVE_PROVIDERS",
     "SUPPORT_PROVIDER_SCHEMA_VERSION",
     "SupportSelection",
+    "VOLUME_ONLY_PROVIDER",
     "select_alternative_support",
-    "select_cv_only_support",
-    "select_layout_agnostic_stratified_support",
+    "select_generic_uniform_support",
+    "select_volume_only_support",
     "support_provider_contract",
 ]

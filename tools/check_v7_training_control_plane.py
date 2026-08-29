@@ -38,6 +38,7 @@ def main() -> None:
     fairness = _load("v7_parameter_fairness_contract.json")
     prereg = _load("v7_g1_statistical_preregistration.json")
     support_freeze = _load("v7_support_artifact_freeze.json")
+    support_provider_contract = _load("v7_g1_support_provider_contract.json")
     seed_bundle = _load("v7_g1_seed_bundle.json")
     protocol_freeze = _load_path("docs/v7_g1_scientific_protocol_freeze.json")
     budget_decision = _load_path("docs/v7_g1_budget_decision_receipt.json")
@@ -198,11 +199,21 @@ def main() -> None:
     if support_freeze.get("training_support_is_frozen") is not True or support_freeze.get("temperature_or_model_error_used") is not False:
         raise ValueError("support artifact freeze guard drifted")
     semantics = support_freeze.get("support_semantics", {})
-    if semantics.get("canonical_name") != "source-layout-aware block/interface/surface and CV-weighted geometry support":
+    if semantics.get("canonical_name") != "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support":
         raise ValueError("P1i support terminology drifted")
     for key in ("numeric_q_values_used", "temperature_used", "labels_used", "model_error_used"):
         if semantics.get(key) is not False:
             raise ValueError(f"support semantic dependency is not false: {key}")
+    if set(support_provider_contract.get("alternative_providers", {})) != {
+        "generic_uniform_v1",
+        "volume_only_v1",
+    }:
+        raise ValueError("support provider contract is incomplete")
+    if (
+        support_provider_contract.get("provenance", {}).get("test_iid_access") is not False
+        or support_provider_contract.get("provenance", {}).get("sealed_access") is not False
+    ):
+        raise ValueError("support provider contract opened forbidden splits")
     for path in (CONTROL / "v7_metric_contract.json", CONTROL / "v7_experiment_registry.json", CONTROL / "v7_claim_evidence_mapping.json", CONTROL / "v7_frozen_artifact_denylist.json"):
         if any(token in path.read_text(encoding="utf-8").lower() for token in ("test_iid_labels", "sealed_labels")):
             raise ValueError(f"forbidden label marker in {path}")

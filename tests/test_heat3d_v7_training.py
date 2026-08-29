@@ -15,8 +15,8 @@ import jax.numpy as jnp
 import numpy as np
 
 from rigno.heat3d_training import (
-    CV_ONLY_PROVIDER,
-    LAYOUT_AGNOSTIC_PROVIDER,
+    GENERIC_UNIFORM_PROVIDER,
+    VOLUME_ONLY_PROVIDER,
     learning_rate_for_epoch,
     ManualGradientDescent,
     TrainingDependencies,
@@ -237,16 +237,15 @@ class V7TrainingStaticTests(unittest.TestCase):
             )
         )["model"]
         self.assertEqual(
-            _variant_model_config(parent, "no_film")["global_context_mode"],
+            _variant_model_config(parent, "no_context")["global_context_mode"],
             "none",
         )
         self.assertEqual(
-            _variant_model_config(parent, "no_film")["global_context_feature_dim"],
+            _variant_model_config(parent, "no_context")["global_context_feature_dim"],
             24,
         )
         self.assertEqual(
-            _variant_model_config(parent, "layout_agnostic_stratified_support"),
-            parent,
+            _variant_model_config(parent, "generic_uniform_support"), parent,
         )
 
     def test_unregistered_legacy_variant_names_fail_closed(self) -> None:
@@ -257,11 +256,7 @@ class V7TrainingStaticTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )["model"]
-        for variant_name in (
-            "generic_uniform_support",
-            "volume_only_support",
-            "no_context",
-        ):
+        for variant_name in ("unknown_support", "unknown_context"):
             with self.assertRaises(ValueError):
                 _variant_model_config(parent, variant_name)
 
@@ -279,38 +274,33 @@ class V7TrainingStaticTests(unittest.TestCase):
         )
         cv = np.ones(len(coords))
         boundaries = [float(value) for value in range(6)]
-        layout_left = select_alternative_support(
-            LAYOUT_AGNOSTIC_PROVIDER,
+        generic_left = select_alternative_support(
+            GENERIC_UNIFORM_PROVIDER,
             coords=coords,
             control_volume=cv,
             boundaries=boundaries,
             sample_id="fixture",
             seed=0,
         )
-        layout_right = select_alternative_support(
-            LAYOUT_AGNOSTIC_PROVIDER,
+        generic_right = select_alternative_support(
+            GENERIC_UNIFORM_PROVIDER,
             coords=coords,
             control_volume=cv,
             boundaries=boundaries,
             sample_id="fixture",
             seed=0,
         )
-        self.assertEqual(layout_left.index_sha256, layout_right.index_sha256)
-        self.assertEqual(layout_left.manifest()["strata_counts"], {
-            "bottom": 64,
-            "interface": 128,
-            "top": 64,
-            "volume": 768,
-        })
-        cv_only = select_alternative_support(
-            CV_ONLY_PROVIDER,
+        self.assertEqual(generic_left.index_sha256, generic_right.index_sha256)
+        self.assertEqual(generic_left.manifest()["strata_counts"], {"uniform": 1024})
+        volume_only = select_alternative_support(
+            VOLUME_ONLY_PROVIDER,
             coords=coords,
             control_volume=cv,
-            boundaries=None,
+            boundaries=boundaries,
             sample_id="fixture",
             seed=0,
         )
-        self.assertEqual(cv_only.manifest()["strata_counts"], {"volume": 1024})
+        self.assertEqual(volume_only.manifest()["strata_counts"], {"volume": 1024})
 
     def test_supported_variant_qualification_is_nonpublication(self) -> None:
         receipt = json.loads(
