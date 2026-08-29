@@ -1,0 +1,105 @@
+{
+  "schema_version": "heat3d_v7_g1_variant_qualification_receipt_v1",
+  "status": "completed_nonpublication_for_supported_variants; unresolved_variants_fail_closed",
+  "scope": "V7 G1 variant implementation qualification only; no formal multi-seed experiment",
+  "code_commit": "5cbbadacbb0ff46e3b1ea8039e8f0f25ddebf2b8",
+  "execution_host": "devbox",
+  "backend": "cuda",
+  "device": "cuda:0",
+  "execution_role": "variant_qualification",
+  "publication_evidence": false,
+  "g1_formal": false,
+  "scientific_evidence_eligible": false,
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "train_count": 768,
+    "valid_iid_count": 128
+  },
+  "qualification_policy": {
+    "epochs": 1,
+    "seed": 0,
+    "role": "nonpublication_variant_qualification",
+    "formal_g1_multi_seed_started": false,
+    "new_scientific_result": false,
+    "solver": false,
+    "new_data": false,
+    "full_v6_evidence_modified": false
+  },
+  "variants": {
+    "no_scale": {
+      "experiment_id": "V7-G1-Full-P1i:no-scale",
+      "status": "COMPLETE",
+      "receipt_path": "/tmp/v7_g1_variant_qual_no_scale/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "ef66b4d37277bd1e200a371f75fc0863c7a42d14cd42fd6332240b2df5a2eb21",
+      "implementation": "native_shape_scale with physics scale retained and learned residual correction disabled",
+      "parameter_count": 845158,
+      "compile_count": 32,
+      "train_batches": 32,
+      "observed_metrics": {
+        "sample_first_relative_rmse_pct": 237.5963700095938,
+        "point_global_relative_rmse_pct": 174.51641831481513,
+        "raw_K_CV_RMSE_K": 173.68159983670785,
+        "source_region_RMSE_K": 43.34496252180832,
+        "peak_RMSE_K": 220.80844499601548,
+        "interface_RMSE_K": 60.07433033563008
+      },
+      "observation_only": true,
+      "synchronized_step_boundary": true
+    },
+    "vanilla_RIGNO_capacity_matched": {
+      "experiment_id": "V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched",
+      "status": "COMPLETE",
+      "receipt_path": "/tmp/v7_g1_variant_qual_capacity/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "97068c3fc4914deb76bc1d585d3bb2286dfa834c29e9c0696589d312c569d24a",
+      "implementation": "ordinary RIGNO control with node_latent_size=100 and edge_latent_size=100",
+      "node_latent_size": 100,
+      "edge_latent_size": 100,
+      "parameter_count": 895905,
+      "relative_parameter_gap_to_full": 0.003504747948253468,
+      "compile_count": 32,
+      "train_batches": 32,
+      "observed_metrics": {
+        "sample_first_relative_rmse_pct": 48.43844551043859,
+        "point_global_relative_rmse_pct": 37.46684618864954,
+        "raw_K_CV_RMSE_K": 28.868150652440836,
+        "source_region_RMSE_K": 30.334820635453852,
+        "peak_RMSE_K": 34.60023486395627,
+        "interface_RMSE_K": 5.820421219904722
+      },
+      "observation_only": true,
+      "synchronized_step_boundary": true
+    }
+  },
+  "unresolved_variants": {
+    "generic_uniform_support": {
+      "status": "blocked",
+      "reason": "no separately frozen label-independent provider/artifact"
+    },
+    "volume_only_support": {
+      "status": "blocked",
+      "reason": "historical rejection is not an executable provider"
+    },
+    "no_context": {
+      "status": "blocked",
+      "reason": "native scale/context coupling has no uniquely frozen delta"
+    }
+  },
+  "split_access": {
+    "train_labels_read": true,
+    "valid_iid_labels_read": true,
+    "test_iid_labels_read": false,
+    "sealed_labels_read": false,
+    "test_iid_sample_dirs_loaded": false,
+    "sealed_sample_dirs_loaded": false,
+    "test_iid_metadata_role_counted_by_manifest_validator": true,
+    "policy_observation": "manifest role-count validation only; no test_iid/sealed sample or label materialization"
+  },
+  "readiness": {
+    "supported_variant_qualification": true,
+    "all_formal_variants_qualified": false,
+    "g1_scientific_ready": false,
+    "formal_execution_started": false
+  }
+}

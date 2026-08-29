@@ -73,6 +73,7 @@ class V7TrainingStaticTests(unittest.TestCase):
         self.assertEqual(batching["train_samples_per_epoch"] // batching["batch_size"], 32)
         self.assertTrue(batching["shuffle_train_batches"])
         self.assertFalse(batching["drop_last"])
+        self.assertEqual(batching["batch_build_seed"], "registered_run_seed")
         self.assertEqual(config["dataset"]["roles"]["train"], 768)
         self.assertEqual(config["dataset"]["roles"]["valid_iid"], 128)
         self.assertEqual(config["dataset"]["label_access"]["test_iid"], "forbidden")
@@ -222,6 +223,38 @@ class V7TrainingStaticTests(unittest.TestCase):
         self.assertEqual(variant["node_latent_size"], 100)
         self.assertEqual(variant["edge_latent_size"], 100)
         self.assertEqual(variant["native_output_mode"], "legacy_normalized_deltaT")
+
+    def test_unresolved_variants_fail_closed(self) -> None:
+        from scripts.run_heat3d_v7_formal_p1i_training import _variant_model_config
+
+        parent = json.loads(
+            (ROOT / "configs/heat3d_v7/v7_g1_full_p1i.json").read_text(
+                encoding="utf-8"
+            )
+        )["model"]
+        for variant_name in (
+            "generic_uniform_support",
+            "volume_only_support",
+            "no_context",
+        ):
+            with self.assertRaises(ValueError):
+                _variant_model_config(parent, variant_name)
+
+    def test_supported_variant_qualification_is_nonpublication(self) -> None:
+        receipt = json.loads(
+            (ROOT / "docs/v7_g1_variant_qualification_receipt.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(receipt["execution_role"], "variant_qualification")
+        self.assertFalse(receipt["publication_evidence"])
+        self.assertFalse(receipt["g1_formal"])
+        self.assertEqual(receipt["variants"]["no_scale"]["status"], "COMPLETE")
+        self.assertEqual(
+            receipt["variants"]["vanilla_RIGNO_capacity_matched"]["status"],
+            "COMPLETE",
+        )
+        self.assertFalse(receipt["readiness"]["all_formal_variants_qualified"])
 
     def test_e200_schedule_reaches_registered_minimum(self) -> None:
         config = json.loads(

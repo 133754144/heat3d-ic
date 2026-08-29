@@ -1,7 +1,8 @@
 # V7 G1 scientific protocol freeze
 
-当前状态是 `qualified_pre_G1`。e200 预算资格已经完成，但本文件仍然不代表
-正式 G1 多种子实验已经开始；正式执行保持关闭。
+当前状态是 `qualified_pre_G1`。e200 预算资格以及当前可实现变体的
+non-publication qualification 已完成，但本文件仍然不代表正式 G1 多种子实验
+已经开始；正式执行保持关闭。
 
 ## 历史证据边界
 
@@ -28,6 +29,22 @@ Full 的 sample-first 最佳为 e173，Vanilla 为 e164；两者均未在 e195--
 不需要默认回退 e600，也没有启动 e300。完整诊断和原始 receipt 见
 [v7_g1_budget_decision_receipt.json](v7_g1_budget_decision_receipt.json)。
 
+## Support semantics and variant qualification
+
+P1i 的 `retry_deterministic_geometry_only_v1` 实际产生的是
+“source-layout-aware block/interface/surface and CV-weighted geometry support”。
+其中历史字段 `local_regions` 是 block quota 的别名；native 1024 support 不读取
+数值 q、temperature、label、solver output 或 model error，因此不能表述为
+source-amplitude-aware support。完整审计见
+[v7_g1_support_semantics_audit.md](v7_g1_support_semantics_audit.md)。
+
+`no_scale` 已按 physics-scale-only 语义完成 1-epoch `variant_qualification`；
+physics scale 保留，仅关闭 learned residual correction，不是 direct-output
+architecture。capacity-matched Vanilla 使用 node/edge latent width 100，也已
+完成 1-epoch non-publication qualification。两项结果均不属于 scientific
+evidence，receipt 见
+[v7_g1_variant_qualification_receipt.json](v7_g1_variant_qualification_receipt.json)。
+
 ## Formal matrix boundary
 
 正式候选基线为六个 registry variants，共享同一 batching、优化和 200-epoch
@@ -37,9 +54,10 @@ budget；seed bundle 固定为 `{0,1,2}`。Full/Vanilla 参数量差异为 7.448
 seed0 结果事后调整。
 
 当前还不能报告 `G1 SCIENTIFIC READY`：generic-uniform 与 volume-only support
-的 label-independent support provider/artifact 尚未冻结，no-context/no-scale
-也尚未完成实现资格验证。它们被显式保留为 registry delta，并在 provider 缺失
-时 fail-closed，不使用隐式 fallback。
+的 label-independent support provider/artifact 尚未冻结，no-context 的科学 delta
+也尚未明确。它们被显式保留为 registry delta，并在 provider 或定义缺失时
+fail-closed，不使用隐式 fallback。epoch budget 与 supported variant
+implementations 已资格验证，但 `G1 SCIENTIFIC READY` 仍未授予。
 
 机器可读控制面见
 `configs/heat3d_v7/v7_g1_epoch_budget_contract.json`、

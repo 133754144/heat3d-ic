@@ -57,7 +57,7 @@
       "dataset_role": "train_768_plus_valid_iid_128_only",
       "seed": "0|1|2",
       "steps": "200_epochs_registered_only",
-      "batching_contract": "B24_micro24_valid32_pred32_sample_shuffle_seed0",
+      "batching_contract": "B24_micro24_valid32_pred32_sample_shuffle; all run seeds synchronized",
       "multi_seed": true,
       "publication_evidence": false,
       "g1_eligible": true,
@@ -73,7 +73,9 @@
       "parent_experiment_id": "V7-G1-Full-P1i",
       "delta": {"support": "vanilla_baseline_registered_later"},
       "shared_contract": "V7-G1-Full-P1i",
-      "execution_started": false
+      "execution_started": false,
+      "qualification_status": "qualified_nonpublication_1epoch",
+      "qualification_receipt": "docs/v7_g1_variant_qualification_receipt.json"
     },
     {
       "experiment_id": "V7-G1-Full-P1i:generic-uniform-support",
@@ -128,7 +130,9 @@
       "shared_contract": "V7-G1-Full-P1i",
       "parameter_fairness_contract": "configs/heat3d_v7/v7_parameter_fairness_contract.json",
       "execution_started": false,
-      "implementation_status": "registration_only; no run in this freeze"
+      "implementation_status": "qualified_nonpublication_1epoch; width_100",
+      "qualification_status": "qualified_nonpublication_1epoch",
+      "qualification_receipt": "docs/v7_g1_variant_qualification_receipt.json"
     },
     {
       "experiment_id": "V7-G1-BudgetQual-e200-Full-seed0",

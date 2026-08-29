@@ -100,7 +100,7 @@ def main() -> None:
         "prediction_batch_size": 32,
         "batch_plan": "sample_shuffle",
         "shuffle_train_batches": True,
-        "batch_build_seed": 0,
+        "batch_build_seed": "registered_run_seed",
         "sample_weight_policy": "none",
         "drop_last": False,
         "train_batches_per_epoch": 32,

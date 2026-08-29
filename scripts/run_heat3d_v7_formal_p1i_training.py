@@ -722,7 +722,12 @@ def _run(
             "valid_iid": len(prepared.valid_examples),
         },
         "test_and_sealed_access": "closed",
-        "batching_contract": config["batching"],
+        "batching_contract": {
+            **config["batching"],
+            "batch_build_seed": seed,
+            "graph_seed": seed,
+            "seed_binding": "V6_style_synchronized_run_seed",
+        },
         "optimization_contract": {
             "epochs": epochs,
             "warmup_epochs": int(config["optimizer"]["warmup_epochs"]),

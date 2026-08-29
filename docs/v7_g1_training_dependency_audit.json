@@ -1,14 +1,14 @@
 {
-  "schema_version": "heat3d_v7_g1_training_dependency_audit_v1",
-  "status": "audited_pre_G1; e200_qualified; formal_G1_not_started",
-  "scope": "V7 publication-training path and e200 budget qualification only",
+  "schema_version": "heat3d_v7_g1_training_dependency_audit_v2",
+  "status": "audited_pre_G1; e200_qualified; supported_variants_qualified; formal_G1_not_started",
+  "scope": "V7 publication-training path, variant qualification, and pre-G1 semantic audits",
   "production_dependency": [
     {
       "file": "scripts/run_heat3d_v7_formal_p1i_training.py",
       "symbol": "main/_resolve_registration/_run",
       "calls": "rigno.heat3d_training.p1i + rigno.heat3d_training.evaluation + rigno.heat3d_training.core + rigno.models.rigno.RIGNO",
       "direction": "registered V7 entrypoint -> explicit library preparation/training/Level-A validation",
-      "variants": ["Full", "vanilla_RIGNO"],
+      "variants": ["Full", "vanilla_RIGNO", "no_scale", "vanilla_RIGNO_capacity_matched"],
       "execution_guard": "Full formal and all variants remain unexecuted; completed e200 runs are budget_qualification_only",
       "budget_decision_receipt": "docs/v7_g1_budget_decision_receipt.json"
     },
@@ -17,7 +17,7 @@
       "symbol": "prepare_p1i_data",
       "calls": "Heat3DV6DualRobinDataset._load_sample, legacy_train_only_stats, Heat3DGraphBuilder, explicit V6 context/qk/native feature assembly",
       "direction": "registered train/valid loader -> fixed B24/B32 model-visible batches",
-      "split_boundary": "materializes only train and valid_iid; test_iid rows are counted but not loaded"
+      "split_boundary": "materializes only train and valid_iid; manifest role counts are checked without loading test_iid sample data"
     },
     {
       "file": "rigno/heat3d_training/core.py",
@@ -128,7 +128,7 @@
     {
       "file": "scripts/run_heat3d_v7_formal_p1i_training.py",
       "symbol": "support variants",
-      "current_behavior": "generic_uniform_support and volume_only_support remain registered deltas without an implicit support provider",
+      "current_behavior": "generic_uniform_support and volume_only_support remain registered deltas without an implicit support provider; no_scale and capacity-matched Vanilla have completed nonpublication implementation qualification",
       "potential_cost": "those scientific ablations cannot be executed safely before their support artifact is frozen",
       "candidate_direction": "register label-independent support artifacts and adapters before G1",
       "semantics_may_change": true,
@@ -150,7 +150,7 @@
       "potential_cost": "a vanilla comparison without matching would confound architecture and capacity",
       "candidate_direction": "register and later qualify a capacity-matched Vanilla using the same parent contract",
       "semantics_may_change": true,
-      "this_round": "registered only; no run"
+      "this_round": "capacity-matched Vanilla completed a 1-epoch nonpublication qualification; formal execution remains closed"
     }
   ],
   "efficiency_audit": {
@@ -177,7 +177,37 @@
     "G1_epoch_budget": 200,
     "formal_matrix_run_count": 21,
     "formal_g1_multi_seed_started": false,
-    "warm_cache_qualification": "observed from completed e200 receipts; compile_count=unique_batch_signatures=32 for both"
+    "warm_cache_qualification": "observed from completed e200 receipts; compile_count=unique_batch_signatures=32 for both",
+    "variant_qualification_receipt": "docs/v7_g1_variant_qualification_receipt.json",
+    "supported_variants": {
+      "no_scale": "COMPLETE_nonpublication_1epoch; physics_scale_only",
+      "vanilla_RIGNO_capacity_matched": "COMPLETE_nonpublication_1epoch; width_100"
+    },
+    "unresolved_variants": {
+      "generic_uniform_support": "provider_missing_fail_closed",
+      "volume_only_support": "provider_missing_fail_closed; historical_rejection_is_not_provider",
+      "no_context": "native_scale_context_coupling_unresolved_fail_closed"
+    }
+  },
+  "support_semantics": {
+    "audit": "docs/v7_g1_support_semantics_audit.json",
+    "canonical_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "local_regions_alias": "block quota",
+    "numeric_q_values_used_by_native_selector": false,
+    "temperature_labels_or_model_error_used": false,
+    "source_amplitude_awareness_claim": false,
+    "generic_volume_providers_frozen": false
+  },
+  "seed_contract": {
+    "source": "configs/heat3d_v7/v7_g1_seed_bundle.json",
+    "rule": "model_initialization_seed=optimizer_seed=batch_build_seed=batch_order_seed=graph_seed=registered_run_seed",
+    "seed_set": [0, 1, 2],
+    "batch_build_seed_fixed_zero": false
+  },
+  "timing_contract": {
+    "step_end": "after block_until_ready over params, optimizer_state, loss, gradients, updates, prediction",
+    "scientific_timing_claim": false,
+    "high_n_or_serving_optimization": false
   },
   "production_boundary": {
     "smoke_imports": 0,
@@ -210,6 +240,10 @@
     "e200_budget_qualified": true,
     "formal_matrix_frozen": true,
     "support_variant_providers_complete": false,
+    "supported_variant_qualification_complete": true,
+    "unresolved_variant_definitions": ["generic_uniform_support", "volume_only_support", "no_context"],
+    "test_iid_metadata_role_counted": true,
+    "test_iid_labels_or_sample_data_read": false,
     "g1_scientific_ready": false
   }
 }

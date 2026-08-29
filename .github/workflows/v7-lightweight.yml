@@ -40,6 +40,8 @@ jobs:
         run: python tools/check_v7_training_control_plane.py
       - name: Validate V7 G1 protocol control plane
         run: python tools/check_v7_g1_protocol.py
+      - name: Validate V7 variant qualification boundary
+        run: python tools/check_v7_variant_qualification.py
       - name: Formal trainer dry-run
         run: python -m scripts.run_heat3d_v7_formal_training --dry-run
       - name: Registered Full P1i adapter dry-run

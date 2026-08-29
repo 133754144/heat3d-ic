@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v2",
-  "status": "qualified_pre_G1; variant_qualification_in_progress; formal_execution_closed",
+  "status": "qualified_pre_G1; supported_variant_qualification_complete; formal_execution_closed",
   "scope": "G1 scientific protocol freeze; no formal multi-seed scientific experiment",
   "historical_evidence": {
     "direct_full_reference": "V6_06_V5best_P1i_seed0_reliable_B24",
@@ -38,18 +38,41 @@
     "no_context_definition_status": "unresolved_due_to_native_scale_context_coupling"
   },
   "qualification": {
-    "required_variants": ["Full", "vanilla_RIGNO", "no_scale", "vanilla_RIGNO_capacity_matched"],
+    "required_variants": ["Full", "vanilla_RIGNO"],
     "seed": 0,
     "role": "budget_qualification_only",
     "publication_evidence": false,
     "g1_formal": false,
-    "status": "completed_nonpublication_for_parent_controls; remaining_variant_qualification_in_progress",
+    "status": "completed_nonpublication_for_parent_controls",
     "decision": "PASS_e200",
     "receipt": "docs/v7_g1_budget_decision_receipt.json",
     "full_best_epoch": 173,
     "vanilla_best_epoch": 164,
     "full_and_vanilla_boundary_undertraining_signal": false,
     "e300_required": false
+  },
+  "variant_qualification": {
+    "required_variants": ["no_scale", "vanilla_RIGNO_capacity_matched"],
+    "execution_role": "variant_qualification",
+    "publication_evidence": false,
+    "g1_formal": false,
+    "status": "completed_nonpublication_for_supported_variants",
+    "receipt": "docs/v7_g1_variant_qualification_receipt.json",
+    "no_scale": {
+      "status": "qualified_nonpublication_1epoch",
+      "scale_semantics": "physics_scale_only; learned_residual_disabled"
+    },
+    "vanilla_RIGNO_capacity_matched": {
+      "status": "qualified_nonpublication_1epoch",
+      "node_latent_size": 100,
+      "edge_latent_size": 100
+    },
+    "unresolved_variants": [
+      "generic_uniform_support",
+      "volume_only_support",
+      "no_context"
+    ],
+    "formal_execution_started": false
   },
   "formal_matrix": {
     "base_variants": [
@@ -92,11 +115,11 @@
     "support_freeze": "configs/heat3d_v7/v7_support_artifact_freeze.json",
     "support_semantics_audit": "docs/v7_g1_support_semantics_audit.json",
     "variant_execution_matrix": "configs/heat3d_v7/v7_g1_variant_execution_matrix.json",
-    "budget_decision": "docs/v7_g1_budget_decision_receipt.json"
+    "budget_decision": "docs/v7_g1_budget_decision_receipt.json",
+    "variant_qualification": "docs/v7_g1_variant_qualification_receipt.json"
   },
   "readiness_blockers": [
     "generic_uniform_support and volume_only_support still require separately frozen label-independent support artifacts/providers",
-    "no_context and no_scale require config-delta implementation qualification before formal execution",
-    "capacity-matched Vanilla is registered but intentionally unexecuted in this freeze"
+    "no_context remains unresolved because native scale/context coupling has no uniquely frozen delta"
   ]
 }
