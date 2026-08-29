@@ -371,11 +371,23 @@ def attach_input_contexts(
     train_examples: Sequence[V6DualRobinExample],
     required_examples: Sequence[V6DualRobinExample],
     model_config: Mapping[str, Any],
+    *,
+    context_rows_by_id: Mapping[str, Mapping[str, float]] | None = None,
 ) -> dict[str, Any]:
     """Attach train-only standardized 24-D context and return its provenance."""
 
     names = tuple(model_config.get("global_context_feature_names") or ())
     rows = {str(example.sample_id): _context_row(example) for example in [*train_examples, *required_examples]}
+    if context_rows_by_id is not None:
+        missing = sorted(
+            set(rows) - {str(sample_id) for sample_id in context_rows_by_id}
+        )
+        if missing:
+            raise ValueError(f"full-field context rows missing samples: {missing[:3]}")
+        rows = {
+            sample_id: dict(context_rows_by_id[sample_id])
+            for sample_id in rows
+        }
     train_ids = [str(example.sample_id) for example in train_examples]
     context_dim = int(model_config.get("global_context_feature_dim", 24))
     if context_dim == 24:
@@ -842,7 +854,13 @@ def prepare_p1i_data(
     )
     all_examples = [*train_examples, *valid_examples]
     context = attach_input_contexts(
-        [*train_batches, *valid_batches], train_examples, all_examples, model_config
+        [*train_batches, *valid_batches],
+        train_examples,
+        all_examples,
+        model_config,
+        context_rows_by_id=(
+            full_field_data.context_by_id if full_field_data is not None else None
+        ),
     )
     by_id = {example.sample_id: example for example in all_examples}
     for batches in (train_batches, valid_batches):

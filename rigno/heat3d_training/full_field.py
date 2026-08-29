@@ -24,6 +24,7 @@ from rigno.heat3d_v6_dataset import (
     V6_DUAL_ROBIN_CONDITION_FEATURES,
     V6DualRobinExample,
 )
+from rigno.heat3d_v6_global_context import global_context_from_v6_inputs
 
 from .support import SupportSelection, select_alternative_support
 
@@ -65,6 +66,7 @@ class FullFieldP1IData:
     valid_examples: tuple[V6DualRobinExample, ...]
     full_truth_delta_by_id: dict[str, np.ndarray]
     full_q_by_id: dict[str, np.ndarray]
+    context_by_id: dict[str, dict[str, float]]
     support_selection_by_id: dict[str, SupportSelection]
     geometry: FullFieldGeometry
 
@@ -220,7 +222,7 @@ def _example_from_full_fields(
     k_field: np.ndarray,
     q_field: np.ndarray,
     flags: np.ndarray,
-) -> V6DualRobinExample:
+    ) -> V6DualRobinExample:
     physics = meta.get("physics") or {}
     bottom_tinf = float(physics["ambient_K"])
     top_h = float(meta["top_h_W_m2K"])
@@ -271,6 +273,56 @@ def _example_from_full_fields(
         ),
         meta=enriched_meta,
         operator_point_weights=geometry.control_volume[support],
+    )
+
+
+def _full_field_context(
+    *,
+    meta: Mapping[str, Any],
+    geometry: FullFieldGeometry,
+    k_field: np.ndarray,
+    q_field: np.ndarray,
+    flags: np.ndarray,
+) -> dict[str, float]:
+    """Build the frozen global context from the common full-field inputs.
+
+    Alternative support providers may intentionally contain no source nodes
+    (the volume-only provider).  The V6 global context is a global physical
+    input, so its source projection must use the shared 240825-node input
+    field rather than the selected support subset.  This does not read the
+    full-field target.
+    """
+
+    physics = meta.get("physics") or {}
+    ambient = float(physics["ambient_K"])
+    top_h = float(meta["top_h_W_m2K"])
+    bottom_h = float(meta["bottom_h_W_m2K"])
+    condition = np.column_stack(
+        (
+            k_field,
+            q_field[:, None],
+            flags,
+            np.full((len(k_field), 1), top_h),
+            np.full((len(k_field), 1), bottom_h),
+            np.zeros((len(k_field), 1), dtype=np.float64),
+        )
+    )
+    layers = physics.get("layers_bottom_to_top") or meta.get("layers_bottom_to_top")
+    footprint = physics.get("footprint_m") or [0.01, 0.01]
+    return global_context_from_v6_inputs(
+        coords=geometry.coords,
+        raw_condition=condition,
+        condition_feature_names=V6_DUAL_ROBIN_CONDITION_FEATURES,
+        reference_temperature_K=ambient,
+        top_T_inf_K=ambient,
+        bottom_T_inf_K=ambient,
+        operator_point_weights=geometry.control_volume,
+        package_total_power_W=float(meta["package_total_power_W"]),
+        package_extents_m=(
+            float(footprint[0]),
+            float(footprint[1]),
+            float(sum(float(row["thickness_m"]) for row in layers)),
+        ),
     )
 
 
@@ -331,6 +383,7 @@ def load_alternative_p1i_examples(
         valid_examples: list[V6DualRobinExample] = []
         full_truth: dict[str, np.ndarray] = {}
         full_q: dict[str, np.ndarray] = {}
+        context_by_id: dict[str, dict[str, float]] = {}
         selections: dict[str, SupportSelection] = {}
         for role, role_rows in selected_rows.items():
             destination = train_examples if role == "train" else valid_examples
@@ -361,6 +414,13 @@ def load_alternative_p1i_examples(
                 )
                 k_field, q_field, flags = materialize_full_input_fields(
                     meta=meta, geometry=geometry
+                )
+                context_by_id[sample_id] = _full_field_context(
+                    meta=meta,
+                    geometry=geometry,
+                    k_field=k_field,
+                    q_field=q_field,
+                    flags=flags,
                 )
                 delta = np.asarray(
                     full_delta_dataset[id_to_row[sample_id]], dtype=np.float64
@@ -394,6 +454,7 @@ def load_alternative_p1i_examples(
         valid_examples=tuple(valid_examples),
         full_truth_delta_by_id=full_truth,
         full_q_by_id=full_q,
+        context_by_id=context_by_id,
         support_selection_by_id=selections,
         geometry=geometry,
     )
