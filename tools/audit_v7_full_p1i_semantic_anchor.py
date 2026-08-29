@@ -321,10 +321,18 @@ def _group_comparison(old_group: Mapping[str, Any], new_group: Mapping[str, Any]
 
 def _all_exact(value: Any) -> bool:
     if isinstance(value, Mapping):
+        if "exact" in value:
+            return value["exact"] is True
         return all(_all_exact(child) for child in value.values())
     if isinstance(value, list):
         return all(_all_exact(child) for child in value)
-    return value is True or (isinstance(value, (int, float)) and value == 0)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 0
+    # Hashes and other receipt metadata are not comparison failures; their
+    # equality is represented by the sibling ``exact`` field.
+    return True
 
 
 def main() -> int:
