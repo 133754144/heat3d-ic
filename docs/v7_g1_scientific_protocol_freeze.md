@@ -1,8 +1,8 @@
 # V7 G1 scientific protocol freeze
 
-当前状态是 `qualified_pre_G1`。e200 预算资格以及当前可实现变体的
-non-publication qualification 已完成，但本文件仍然不代表正式 G1 多种子实验
-已经开始；正式执行保持关闭。
+当前状态是 `scientific_protocol_frozen_pre_G1`。e200 预算资格、全部注册变体的
+non-publication qualification 以及 Full V6↔V7 semantic anchor 已完成；本文件
+仍然不代表正式 G1 多种子实验已经开始，正式执行保持关闭。
 
 ## 历史证据边界
 
@@ -38,6 +38,14 @@ P1i 的 `retry_deterministic_geometry_only_v1` 实际产生的是
 source-amplitude-aware support。完整审计见
 [v7_g1_support_semantics_audit.md](v7_g1_support_semantics_audit.md)。
 
+`generic_uniform_support` 使用冻结的 `generic_uniform_v1`，从固定 full-field
+domain 均匀抽取 1024 个节点；`volume_only_support` 使用冻结的
+`volume_only_v1`，在 interior volume 内按 control-volume 权重抽取 1024 个
+节点。二者都不读取数值 q、temperature、label、solver 或 model error，且都
+完成了 1-epoch `variant_qualification`。`no_context` 使用固定零 24-D global
+context 并关闭 FiLM，同时保留 native shape-scale 路径，也完成了同样的资格
+验证。三者均为 non-publication observation-only 证据。
+
 `no_scale` 已按 physics-scale-only 语义完成 1-epoch `variant_qualification`；
 physics scale 保留，仅关闭 learned residual correction，不是 direct-output
 architecture。capacity-matched Vanilla 使用 node/edge latent width 100，也已
@@ -53,20 +61,22 @@ budget；seed bundle 固定为 `{0,1,2}`。Full/Vanilla 参数量差异为 7.448
 `7 × 3 × 200 = 21` 个正式 run；任何正式 run 仍未启动，且预算不得根据正式
 seed0 结果事后调整。
 
-当前还不能报告 `G1 SCIENTIFIC READY`：generic-uniform 与 volume-only support
-的 label-independent support provider/artifact 尚未冻结，no-context 的科学 delta
-也尚未明确。它们被显式保留为 registry delta，并在 provider 或定义缺失时
-fail-closed，不使用隐式 fallback。epoch budget 与 supported variant
-implementations 已资格验证，但 `G1 SCIENTIFIC READY` 仍未授予。
+上述七个 registry variant 的 provider/config delta 均已通过 bounded
+non-publication qualification；未知 provider 仍 fail-closed，且不存在隐式
+fallback。epoch budget、support semantics、variant implementations 和公平性
+边界均已冻结。因此控制面达到 `V7_G1_SCIENTIFIC_READY=PASS`，但这只表示
+正式科学协议可以打开；正式 G1 multi-seed execution 仍保持关闭，直到用户另行
+授权。
 
 ## Full V6↔V7 semantic anchor and synchronized profiling
 
 固定 CPU compatibility audit 对 prepared support/input、graph metadata/tensors、
 global/native/q-k features、初始参数与 prediction、三步 gradients/updates/
 optimizer state/parameter evolution、step loss scalar 和 validation prediction
-均达到 exact。由于第 2 步 legacy loss wrapper 与 V7 直接组件求和的
-`total_loss` 仍有 `1.9073486328125e-6` 的 float32 聚合差异，semantic anchor
-保持 `FAIL_CLOSED`；没有注册新 tolerance 来强行通过。结构化证据见
+均达到 exact。此前第 2 步观测到的 `1.9073486328125e-6` 来自比较器漏掉冻结
+batch sample-count aggregation boundary；按同一 boundary 重放后差异消失，
+没有注册新 tolerance，也没有改变 model/loss。semantic anchor 为 `PASS`；结构化
+证据见
 [v7_g1_full_p1i_semantic_anchor_receipt.json](v7_g1_full_p1i_semantic_anchor_receipt.json)。
 
 Full 与 canonical Vanilla 的一次 CUDA 彩排已使用实际 post-step

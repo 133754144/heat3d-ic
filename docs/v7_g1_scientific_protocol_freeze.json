@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_scientific_protocol_freeze_v2",
-  "status": "qualified_pre_G1; supported_variant_qualification_complete; semantic_anchor_fail_closed; formal_execution_closed",
+  "status": "scientific_protocol_frozen_pre_G1; all_variant_qualification_complete; semantic_anchor_pass; formal_execution_closed",
   "scope": "G1 scientific protocol freeze; no formal multi-seed scientific experiment",
   "historical_evidence": {
     "direct_full_reference": "V6_06_V5best_P1i_seed0_reliable_B24",
@@ -30,12 +30,12 @@
   },
   "support_semantics": {
     "contract": "docs/v7_g1_support_semantics_audit.json",
-    "canonical_full_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "canonical_full_name": "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
     "source_amplitude_awareness_claim": false,
     "native_selector_uses_numeric_q": false,
     "native_selector_uses_temperature_labels_or_model_error": false,
-    "generic_and_volume_ablation_provider_status": "unresolved_not_registered",
-    "no_context_definition_status": "unresolved_due_to_native_scale_context_coupling"
+    "generic_and_volume_ablation_provider_status": "registered_and_qualified_nonpublication; generic_uniform_v1; volume_only_v1",
+    "no_context_definition_status": "registered_and_qualified_nonpublication; fixed_zero_24d_context_film_disabled; native_shape_scale_retained"
   },
   "qualification": {
     "required_variants": ["Full", "vanilla_RIGNO"],
@@ -52,11 +52,11 @@
     "e300_required": false
   },
   "variant_qualification": {
-    "required_variants": ["no_scale", "vanilla_RIGNO_capacity_matched"],
+    "required_variants": ["generic_uniform_support", "volume_only_support", "no_context", "no_scale", "vanilla_RIGNO_capacity_matched"],
     "execution_role": "variant_qualification",
     "publication_evidence": false,
     "g1_formal": false,
-    "status": "completed_nonpublication_for_supported_variants",
+    "status": "completed_nonpublication_for_all_registered_variants",
     "receipt": "docs/v7_g1_variant_qualification_receipt.json",
     "no_scale": {
       "status": "qualified_nonpublication_1epoch",
@@ -67,11 +67,19 @@
       "node_latent_size": 100,
       "edge_latent_size": 100
     },
-    "unresolved_variants": [
-      "generic_uniform_support",
-      "volume_only_support",
-      "no_context"
-    ],
+    "generic_uniform_support": {
+      "status": "qualified_nonpublication_1epoch",
+      "provider_id": "generic_uniform_v1"
+    },
+    "volume_only_support": {
+      "status": "qualified_nonpublication_1epoch",
+      "provider_id": "volume_only_v1"
+    },
+    "no_context": {
+      "status": "qualified_nonpublication_1epoch",
+      "context_semantics": "fixed_zero_24d_context; film_disabled; native_shape_scale_retained"
+    },
+    "unresolved_variants": [],
     "formal_execution_started": false
   },
   "formal_matrix": {
@@ -102,8 +110,8 @@
     "sealed": false,
     "frozen_v6_evidence_modified": false,
     "G1_epoch_budget": 200,
-    "G1_scientific_ready": false,
-    "readiness_status": "blocked_by_unresolved_support_providers_and_no_context_definition"
+    "G1_scientific_ready": true,
+    "readiness_status": "qualified_pre_G1; formal_execution_closed"
   },
   "references": {
     "epoch_budget_contract": "configs/heat3d_v7/v7_g1_epoch_budget_contract.json",
@@ -121,9 +129,10 @@
   "pre_g1_audits": {
     "full_p1i_semantic_anchor": {
       "receipt": "docs/v7_g1_full_p1i_semantic_anchor_receipt.json",
-      "status": "FAIL_CLOSED",
+      "status": "PASS",
       "model_visible_arrays_gradients_updates_parameters": "exact",
-      "blocking_difference": "legacy_vs_v7 float32 loss-wrapper total aggregation at step 2; max_abs=1.9073486328125e-6",
+      "blocking_difference": null,
+      "prior_observation": "1.9073486328125e-6 comparison-path aggregation-boundary difference; resolved by reproducing frozen batch aggregation",
       "new_tolerance_registered": false
     },
     "synchronized_profiling": {
@@ -133,9 +142,5 @@
       "publication_performance_evidence_modified": false
     }
   },
-  "readiness_blockers": [
-    "generic_uniform_support and volume_only_support still require separately frozen label-independent support artifacts/providers",
-    "no_context remains unresolved because native scale/context coupling has no uniquely frozen delta",
-    "Full V6↔V7 semantic anchor remains fail-closed until the legacy/V7 float32 loss aggregation difference is resolved without an unregistered tolerance"
-  ]
+  "readiness_blockers": []
 }

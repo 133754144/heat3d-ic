@@ -60,8 +60,14 @@
   ],
   "write_policy": "read_only; no regeneration or in-place update",
   "future_variant_support": {
-    "generic_uniform_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
-    "volume_only_support": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+    "generic_uniform_support": {
+      "contract": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+      "contract_sha256": "e3c650ed13f7cf6f44c27455564ce4c671d9696b91f9322d7535a1ffa9ca15f3"
+    },
+    "volume_only_support": {
+      "contract": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+      "contract_sha256": "e3c650ed13f7cf6f44c27455564ce4c671d9696b91f9322d7535a1ffa9ca15f3"
+    },
     "current_formal_training_default": "source-layout-aware frozen support only"
   }
 }

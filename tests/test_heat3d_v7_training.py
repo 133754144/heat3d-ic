@@ -316,7 +316,16 @@ class V7TrainingStaticTests(unittest.TestCase):
             receipt["variants"]["vanilla_RIGNO_capacity_matched"]["status"],
             "COMPLETE",
         )
-        self.assertFalse(receipt["readiness"]["all_formal_variants_qualified"])
+        self.assertTrue(receipt["readiness"]["all_formal_variants_qualified"])
+        for variant in (
+            "generic_uniform_support",
+            "volume_only_support",
+            "no_context",
+            "no_scale",
+            "vanilla_RIGNO_capacity_matched",
+        ):
+            self.assertEqual(receipt["variants"][variant]["status"], "COMPLETE")
+        self.assertFalse(receipt["readiness"]["formal_execution_started"])
 
     def test_canonical_vanilla_rehearsal_is_explicitly_nonpublication(self) -> None:
         from argparse import Namespace

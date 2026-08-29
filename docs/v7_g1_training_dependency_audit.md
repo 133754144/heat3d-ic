@@ -36,11 +36,11 @@ Full/Vanilla parameter gap is 7.4486%, above the pre-registered 5% threshold, so
 the capacity-matched Vanilla is registered as the seventh variant. The frozen
 matrix is therefore `7 × 3 × 200 = 21` runs, all still unexecuted.
 
-P1i support semantics are now frozen as source-layout-aware block/interface/surface
-and CV-weighted geometry support. The historical `local_regions` field is a block
-quota alias; native support does not use numeric q, temperature, labels, solver
-output or model error. Therefore H2 is limited to source-layout awareness, not
-source-amplitude awareness. The audit is recorded in
+P1i support semantics are now frozen as physics-layout-aware q/k-block/interface/
+surface/CV-weighted sparse support. The historical `local_regions` field is a
+block-quota alias; native support does not use numeric q, temperature, labels,
+solver output or model error. Therefore H2 is limited to source-layout awareness,
+not source-amplitude awareness. The audit is recorded in
 [v7_g1_support_semantics_audit.md](v7_g1_support_semantics_audit.md).
 
 The `no_scale` qualification is explicitly physics-scale-only: the physics scale
@@ -50,25 +50,29 @@ node and edge latents, with a 0.3505% parameter gap to Full. Both are one-epoch
 non-publication qualifications, recorded in
 [v7_g1_variant_qualification_receipt.json](v7_g1_variant_qualification_receipt.json).
 
-The only small efficiency-boundary change in this freeze is an explicit
+The only efficiency-boundary change in this freeze is an explicit
 `validation_outputs_fn`: validation prediction and validation loss share one
 model application, while the model, graph, support, normalization, loss and
-batch semantics stay unchanged. Cross-run feature/graph reuse, broader JIT
-cache reuse, support-variant implementation, high-N optimization and formal
-multi-seed execution remain deferred. generic-uniform support and volume-only
-support still lack separately frozen label-independent providers; no-context has
-no uniquely frozen delta because native scale/context coupling is unresolved.
-The entrypoint fails closed for these unresolved definitions; they are not
-silently mapped to the source-aware Full route. Consequently, the epoch budget
-and supported variant implementations are qualified, but `G1 SCIENTIFIC READY`
-is not yet granted.
+batch semantics stay unchanged. The registered support providers are now
+explicit and label-independent: `generic_uniform_v1` samples 1024 nodes
+uniformly from the fixed full-field domain, and `volume_only_v1` samples 1024
+interior-volume nodes with control-volume weighting. The no-context delta is a
+fixed zero 24-D context vector with FiLM disabled; the native shape-scale path
+is retained. All three providers/deltas completed bounded one-epoch CUDA
+qualification runs and remain observation-only, non-publication evidence.
+Cross-run feature/graph reuse, broader JIT cache reuse, high-N optimization and
+formal multi-seed execution remain deferred. The entrypoint fails closed for
+unknown providers and does not silently map an ablation to the source-aware
+Full route.
 
 The fixed Full P1i semantic anchor is recorded in
 [v7_g1_full_p1i_semantic_anchor_receipt.json](v7_g1_full_p1i_semantic_anchor_receipt.json).
-Prepared/model-visible arrays, gradients, updates and parameter evolution are
-exact on CPU across three steps. The gate remains `FAIL_CLOSED` because one
-legacy-wrapper versus direct-component `total_loss` value differs by
-`1.9073486328125e-6` at step 2; no new tolerance is registered.
+Prepared/model-visible arrays, gradients, updates, parameter evolution,
+loss components and validation prediction are exact on CPU across three steps.
+The earlier `1.9073486328125e-6` observation is retained as a historical audit
+record: the first comparator omitted the frozen batch sample-count aggregation
+boundary. Replaying that boundary removes the difference without a new
+tolerance or a model/loss change; the semantic anchor is `PASS`.
 
 The synchronized one-epoch Full and canonical Vanilla CUDA instrumentation is
 recorded in

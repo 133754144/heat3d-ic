@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -174,6 +175,15 @@ def main() -> None:
         raise ValueError("G1 statistical preregistration seed/split policy drifted")
     if prereg.get("schema_version") != "heat3d_v7_g1_statistical_preregistration_v2":
         raise ValueError("G1 statistical preregistration v2 is required")
+    prereg_hash = str(prereg.get("preregistration_sha256", ""))
+    prereg_hash_body = dict(prereg)
+    prereg_hash_body.pop("preregistration_sha256", None)
+    prereg_hash_body.pop("preregistration_sha256_basis", None)
+    computed_prereg_hash = hashlib.sha256(
+        json.dumps(prereg_hash_body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    if prereg_hash != computed_prereg_hash:
+        raise ValueError("G1 statistical preregistration SHA does not match its declared canonical body")
     if prereg.get("formal_matrix", {}).get("planned_formal_run_count") != 21:
         raise ValueError("G1 preregistration run matrix drifted")
     if prereg.get("paired_effect_analysis", {}).get("two_level_bootstrap", {}).get("enabled") is not True:
@@ -190,8 +200,8 @@ def main() -> None:
         raise ValueError("protocol freeze e200 horizon drifted")
     if protocol_freeze.get("formal_matrix", {}).get("run_count") != 21:
         raise ValueError("protocol freeze matrix run count drifted")
-    if protocol_freeze.get("evidence_boundary", {}).get("G1_scientific_ready") is not False:
-        raise ValueError("G1 readiness must remain closed while variants are unresolved")
+    if protocol_freeze.get("evidence_boundary", {}).get("G1_scientific_ready") is not True:
+        raise ValueError("G1 readiness is not open after all registered qualification gates")
     if budget_decision.get("decision", {}).get("G1_epoch_budget") != 200:
         raise ValueError("budget decision receipt does not bind e200")
     if budget_decision.get("formal_matrix", {}).get("formal_execution_started") is not False:

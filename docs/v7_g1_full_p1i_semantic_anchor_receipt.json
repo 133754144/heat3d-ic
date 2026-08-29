@@ -1,12 +1,12 @@
 {
   "schema_version": "heat3d_v7_full_p1i_semantic_anchor_summary_v1",
-  "status": "FAIL_CLOSED",
+  "status": "PASS",
   "scope": "Full P1i V6-to-V7 training-step compatibility audit; not scientific evidence",
   "execution_role": "compatibility_audit",
   "source_receipt": {
     "host": "devbox",
-    "path": "/tmp/v7_g1_full_p1i_semantic_anchor_receipt.json",
-    "sha256": "5154ec0a41c49e38f00d4b163fe326556e5d4f9bb21fc2d3f890b3deb9eb169a"
+    "path": "/tmp/v7_g1_full_p1i_semantic_anchor_a4b9c3f.json",
+    "sha256": "229f3fd79ccac001885c5fbdb49ea1772f72ac58e2f57fc566a55fcc5e71a449"
   },
   "historical": {
     "execution_commit": "8a812619ab0112b4ecfc37ef18189f731180059d",
@@ -17,7 +17,7 @@
     "model_source_delta_scope": "explicit no_scale branch only; Full default learned_residual path is compared"
   },
   "v7": {
-    "code_commit": "ecb8057f68166e1f504ea5a33d17d5d75f9bd5bc",
+    "code_commit": "a4b9c3fb02c96881ebb7d0d0b455e9ea39f595a4",
     "runtime": "rigno.heat3d_training + rigno.models.rigno.RIGNO",
     "entrypoint": "tools/audit_v7_full_p1i_semantic_anchor.py"
   },
@@ -76,18 +76,25 @@
       "qk_region_features": "0b7701f5fbf6a08145f66bcbb5f128a24f1b71374769d74b01a4f11435c00af8"
     }
   },
-  "failing_difference": {
-    "path": "comparison.steps[1].loss_components_before_update.total_loss",
-    "max_abs": 1.9073486328125e-06,
-    "rmse": 1.9073486328125e-06,
-    "shapes_match": true,
-    "reason": "float32 accumulation difference between the legacy weighted loss wrapper and direct V7 component total",
+  "comparison_path_correction": {
+    "status": "resolved",
+    "reason": "the comparator now reproduces the frozen batch sample-count aggregation boundary before comparing legacy and V7 loss components",
+    "prior_observed_max_abs": 1.9073486328125e-06,
     "new_tolerance_registered": false,
-    "gate_action": "fail_closed"
+    "model_or_loss_semantics_changed": false
+  },
+  "prior_failed_replay": {
+    "status": "FAIL_CLOSED_historical_audit_record",
+    "source_receipt_path": "/tmp/v7_g1_full_p1i_semantic_anchor_receipt.json",
+    "source_receipt_sha256": "5154ec0a41c49e38f00d4b163fe326556e5d4f9bb21fc2d3f890b3deb9eb169a",
+    "observed_max_abs": 1.9073486328125e-06,
+    "interpretation": "comparison-path aggregation-boundary mismatch; not a model, loss, or optimizer semantic mismatch",
+    "superseded_by_source_receipt_sha256": "229f3fd79ccac001885c5fbdb49ea1772f72ac58e2f57fc566a55fcc5e71a449"
   },
   "policy": {
     "same_cpu_backend_is_semantic_oracle": true,
     "exact_required_for_model_visible_arrays_gradients_updates_parameters": true,
+    "new_tolerance_created": false,
     "train_valid_labels_read_for_loss_compatibility": true,
     "metrics_executed": false,
     "model_selection": false,
@@ -95,5 +102,5 @@
     "formal_g1_started": false,
     "solver_executed": false
   },
-  "semantic_gate": "FAIL_CLOSED_pending_resolution_of_legacy_vs_v7_float32_loss_aggregation"
+  "semantic_gate": "PASS_exact_same_cpu_backend"
 }

@@ -265,7 +265,9 @@
     "threshold": 0.05,
     "capacity_matched_triggered": true,
     "action": "register V7-G1-Full-P1i:vanilla-RIGNO-capacity-matched as seventh formal variant",
-    "capacity_matched_run_started": false
+    "capacity_matched_run_started": false,
+    "capacity_matched_qualification_run_completed": true,
+    "capacity_matched_qualification_role": "nonpublication_variant_qualification_only"
   },
   "formal_matrix": {
     "base_variants": 6,
@@ -282,11 +284,11 @@
   "variant_readiness": {
     "full": "registered_and_exercised_only_as_nonpublication_qualification",
     "vanilla_RIGNO": "registered_and_exercised_only_as_nonpublication_qualification",
-    "no_context": "registered_delta; implementation qualification remains before formal execution",
-    "no_scale": "registered_delta; implementation qualification remains before formal execution",
-    "generic_uniform_support": "blocked_pending_label_independent_support_artifact_and_SHA",
-    "volume_only_support": "blocked_pending_label_independent_support_artifact_and_SHA",
-    "capacity_matched_vanilla": "registered_only; no qualification run started"
+    "no_context": "qualified_nonpublication_1epoch; fixed_zero_24d_context_film_off",
+    "no_scale": "qualified_nonpublication_1epoch; physics_scale_only",
+    "generic_uniform_support": "qualified_nonpublication_1epoch; generic_uniform_v1",
+    "volume_only_support": "qualified_nonpublication_1epoch; volume_only_v1",
+    "capacity_matched_vanilla": "qualified_nonpublication_1epoch; width_100"
   },
   "evidence_boundary": {
     "historical_e600": "context_only; not e200 evidence",
@@ -298,11 +300,7 @@
     "training_variant_comparison": false,
     "frozen_v6_evidence_modified": false
   },
-  "remaining_readiness_blockers": [
-    "generic_uniform_support and volume_only_support lack separately frozen label-independent support artifacts and providers",
-    "no_context and no_scale require config-delta implementation qualification before formal execution",
-    "capacity-matched Vanilla is registered but intentionally not run in this freeze"
-  ],
+  "remaining_readiness_blockers": [],
   "guard": {
     "training_executed": true,
     "training_role": "budget_qualification_only",

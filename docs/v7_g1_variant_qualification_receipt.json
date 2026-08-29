@@ -1,8 +1,8 @@
 {
   "schema_version": "heat3d_v7_g1_variant_qualification_receipt_v1",
-  "status": "completed_nonpublication_for_supported_variants; unresolved_variants_fail_closed",
+  "status": "completed_nonpublication_for_all_registered_variants; formal_G1_closed",
   "scope": "V7 G1 variant implementation qualification only; no formal multi-seed experiment",
-  "code_commit": "5cbbadacbb0ff46e3b1ea8039e8f0f25ddebf2b8",
+  "code_commit": "a4b9c3fb02c96881ebb7d0d0b455e9ea39f595a4",
   "execution_host": "devbox",
   "backend": "cuda",
   "device": "cuda:0",
@@ -28,6 +28,74 @@
     "full_v6_evidence_modified": false
   },
   "variants": {
+    "generic_uniform_support": {
+      "experiment_id": "V7-G1-Full-P1i:generic-uniform-support",
+      "status": "COMPLETE",
+      "receipt_path": "/tmp/v7_g1_variant_qual_generic_a4b9c3f/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "0bc6f7af060131f1bfda84765e48eac07141620fb0f27dda72cec7e696a6ed8e",
+      "qualification_code_commit": "a4b9c3fb02c96881ebb7d0d0b455e9ea39f595a4",
+      "provider_id": "generic_uniform_v1",
+      "implementation": "uniform without-replacement 1024-node support over fixed full-field geometry; q/k/layout/temperature/labels/model-error independent",
+      "parameter_count": 892776,
+      "compile_count": 32,
+      "train_batches": 32,
+      "epoch_wall_seconds": 559.8199028589879,
+      "observed_metrics": {
+        "sample_first_relative_rmse_pct": 43.27722076741036,
+        "point_global_relative_rmse_pct": 37.31694231355989,
+        "raw_K_CV_RMSE_K": 32.967698369893455,
+        "source_region_RMSE_K": 34.115233282014906,
+        "peak_RMSE_K": 28.27181049316845,
+        "interface_RMSE_K": 29.91755905214827
+      },
+      "observation_only": true,
+      "synchronized_step_boundary": true
+    },
+    "volume_only_support": {
+      "experiment_id": "V7-G1-Full-P1i:volume-only-support",
+      "status": "COMPLETE",
+      "receipt_path": "/tmp/v7_g1_variant_qual_volume_6921e00/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "675ee42551584e0ed7d54a0b5eeb251ba09cbf2ae7aaa4227627c0ed0691b201",
+      "qualification_code_commit": "6921e00efe59356d3714565979895b12bcb7efbc",
+      "provider_id": "volume_only_v1",
+      "implementation": "control-volume-weighted without-replacement 1024-node support restricted to interior volume; q/temperature/labels/model-error independent",
+      "parameter_count": 892776,
+      "compile_count": 32,
+      "train_batches": 32,
+      "epoch_wall_seconds": 555.0768787809648,
+      "observed_metrics": {
+        "sample_first_relative_rmse_pct": 38.86841603170194,
+        "point_global_relative_rmse_pct": 38.10869952015222,
+        "raw_K_CV_RMSE_K": 29.224260660599338,
+        "source_region_RMSE_K": 38.33639997056009,
+        "peak_RMSE_K": 25.339683245749,
+        "interface_RMSE_K": 22.125707728069226
+      },
+      "observation_only": true,
+      "synchronized_step_boundary": true
+    },
+    "no_context": {
+      "experiment_id": "V7-G1-Full-P1i:no-context",
+      "status": "COMPLETE",
+      "receipt_path": "/tmp/v7_g1_variant_qual_no_context_475a405/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "e48e4a7325ea5b6f42fec6086b90436100db0ed49bf5b6df48e48737fed39b0a",
+      "qualification_code_commit": "475a4054ede50384ea9d8d89b47ce33c1c495fdf",
+      "implementation": "fixed_zero_vector 24-D global context; FiLM disabled; native shape-scale retained",
+      "parameter_count": 878696,
+      "compile_count": 32,
+      "train_batches": 32,
+      "epoch_wall_seconds": 518.3058829799993,
+      "observed_metrics": {
+        "sample_first_relative_rmse_pct": 68.92967641556004,
+        "point_global_relative_rmse_pct": 59.33113325697706,
+        "raw_K_CV_RMSE_K": 51.71295846029502,
+        "source_region_RMSE_K": 46.85281474875855,
+        "peak_RMSE_K": 54.58937043092295,
+        "interface_RMSE_K": 42.15628730134986
+      },
+      "observation_only": true,
+      "synchronized_step_boundary": true
+    },
     "no_scale": {
       "experiment_id": "V7-G1-Full-P1i:no-scale",
       "status": "COMPLETE",
@@ -72,20 +140,7 @@
       "synchronized_step_boundary": true
     }
   },
-  "unresolved_variants": {
-    "generic_uniform_support": {
-      "status": "blocked",
-      "reason": "no separately frozen label-independent provider/artifact"
-    },
-    "volume_only_support": {
-      "status": "blocked",
-      "reason": "historical rejection is not an executable provider"
-    },
-    "no_context": {
-      "status": "blocked",
-      "reason": "native scale/context coupling has no uniquely frozen delta"
-    }
-  },
+  "unresolved_variants": {},
   "split_access": {
     "train_labels_read": true,
     "valid_iid_labels_read": true,
@@ -98,8 +153,9 @@
   },
   "readiness": {
     "supported_variant_qualification": true,
-    "all_formal_variants_qualified": false,
-    "g1_scientific_ready": false,
-    "formal_execution_started": false
+    "all_formal_variants_qualified": true,
+    "g1_scientific_ready": true,
+    "formal_execution_started": false,
+    "readiness_basis": "all seven registry variants have explicit provider/config deltas and bounded nonpublication qualification evidence"
   }
 }

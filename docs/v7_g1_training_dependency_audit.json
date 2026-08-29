@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g1_training_dependency_audit_v2",
-  "status": "audited_pre_G1; e200_qualified; supported_variants_qualified; semantic_anchor_fail_closed; synchronized_profiling_complete; formal_G1_not_started",
+  "status": "audited_pre_G1; e200_qualified; all_registered_variants_qualified; semantic_anchor_pass; synchronized_profiling_complete; formal_G1_not_started",
   "scope": "V7 publication-training path, variant qualification, and pre-G1 semantic audits",
   "production_dependency": [
     {
@@ -8,7 +8,7 @@
       "symbol": "main/_resolve_registration/_run",
       "calls": "rigno.heat3d_training.p1i + rigno.heat3d_training.evaluation + rigno.heat3d_training.core + rigno.models.rigno.RIGNO",
       "direction": "registered V7 entrypoint -> explicit library preparation/training/Level-A validation",
-      "variants": ["Full", "vanilla_RIGNO", "no_scale", "vanilla_RIGNO_capacity_matched"],
+      "variants": ["Full", "vanilla_RIGNO", "generic_uniform_support", "volume_only_support", "no_context", "no_scale", "vanilla_RIGNO_capacity_matched"],
       "execution_guard": "Full formal and all variants remain unexecuted; completed e200 runs are budget_qualification_only",
       "budget_decision_receipt": "docs/v7_g1_budget_decision_receipt.json"
     },
@@ -128,20 +128,20 @@
     {
       "file": "scripts/run_heat3d_v7_formal_p1i_training.py",
       "symbol": "support variants",
-      "current_behavior": "generic_uniform_support and volume_only_support remain registered deltas without an implicit support provider; no_scale and capacity-matched Vanilla have completed nonpublication implementation qualification",
-      "potential_cost": "those scientific ablations cannot be executed safely before their support artifact is frozen",
-      "candidate_direction": "register label-independent support artifacts and adapters before G1",
+      "current_behavior": "generic_uniform_v1 and volume_only_v1 are explicit label-independent providers; no_context is a fixed zero-context/FiLM-off delta; all three completed bounded one-epoch nonpublication qualification",
+      "potential_cost": "provider-specific support distributions and no-context behavior will affect ablation variance and must remain registry-bound",
+      "candidate_direction": "formal G1 execution may use only the frozen providers through the common registry entrypoint",
       "semantics_may_change": true,
-      "this_round": "fail-closed; no hidden fallback"
+      "this_round": "qualified implementation only; formal execution remains closed"
     },
     {
       "file": "configs/heat3d_v7/v7_support_artifact_freeze.json",
       "symbol": "future_variant_support",
-      "current_behavior": "source-aware support is frozen for the Full parent; generic_uniform_support and volume_only_support have no separately registered provider",
-      "potential_cost": "the two support ablations cannot be executed without an auditable support artifact",
-      "candidate_direction": "freeze label-independent support artifacts and add one explicit provider per support delta",
+      "current_behavior": "source-layout-aware support is frozen for the Full parent; generic_uniform_v1 and volume_only_v1 are frozen provider contracts referenced by their variant deltas",
+      "potential_cost": "different provider distributions can change ablation behavior, so provider IDs and input restrictions must not drift",
+      "candidate_direction": "retain provider contracts and qualify any future implementation change against the current reference",
       "semantics_may_change": true,
-      "this_round": "not implemented; fail-closed"
+      "this_round": "implemented and qualified nonpublication; no formal result"
     },
     {
       "file": "configs/heat3d_v7/v7_parameter_fairness_contract.json",
@@ -180,23 +180,25 @@
     "warm_cache_qualification": "observed from completed e200 receipts; compile_count=unique_batch_signatures=32 for both",
     "variant_qualification_receipt": "docs/v7_g1_variant_qualification_receipt.json",
     "supported_variants": {
+      "Full": "COMPLETE_nonpublication_parent_qualification",
+      "vanilla_RIGNO": "COMPLETE_nonpublication_parent_qualification",
+      "generic_uniform_support": "COMPLETE_nonpublication_1epoch; generic_uniform_v1",
+      "volume_only_support": "COMPLETE_nonpublication_1epoch; volume_only_v1",
+      "no_context": "COMPLETE_nonpublication_1epoch; fixed_zero_context_film_off",
       "no_scale": "COMPLETE_nonpublication_1epoch; physics_scale_only",
       "vanilla_RIGNO_capacity_matched": "COMPLETE_nonpublication_1epoch; width_100"
     },
-    "unresolved_variants": {
-      "generic_uniform_support": "provider_missing_fail_closed",
-      "volume_only_support": "provider_missing_fail_closed; historical_rejection_is_not_provider",
-      "no_context": "native_scale_context_coupling_unresolved_fail_closed"
-    }
+    "unresolved_variants": []
   },
   "support_semantics": {
     "audit": "docs/v7_g1_support_semantics_audit.json",
-    "canonical_name": "source-layout-aware block/interface/surface and CV-weighted geometry support",
+    "canonical_name": "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
+    "provider_contract_sha256": "e3c650ed13f7cf6f44c27455564ce4c671d9696b91f9322d7535a1ffa9ca15f3",
     "local_regions_alias": "block quota",
     "numeric_q_values_used_by_native_selector": false,
     "temperature_labels_or_model_error_used": false,
     "source_amplitude_awareness_claim": false,
-    "generic_volume_providers_frozen": false
+    "generic_volume_providers_frozen": true
   },
   "seed_contract": {
     "source": "configs/heat3d_v7/v7_g1_seed_bundle.json",
@@ -211,13 +213,13 @@
   },
   "full_p1i_semantic_anchor": {
     "receipt": "docs/v7_g1_full_p1i_semantic_anchor_receipt.json",
-    "status": "FAIL_CLOSED",
+    "status": "PASS",
     "prepared_inputs_graph_features_exact": true,
     "initial_params_prediction_loss_exact": true,
     "three_step_gradients_updates_parameters_exact": true,
     "validation_prediction_exact": true,
-    "blocking_difference": "legacy versus V7 float32 loss-wrapper total aggregation at step 2",
-    "blocking_max_abs": 1.9073486328125e-06,
+    "blocking_difference": null,
+    "blocking_max_abs": 0.0,
     "new_tolerance_registered": false
   },
   "synchronized_profiling": {
@@ -258,11 +260,11 @@
     "budget_qualification_is_non_publication": true,
     "e200_budget_qualified": true,
     "formal_matrix_frozen": true,
-    "support_variant_providers_complete": false,
+    "support_variant_providers_complete": true,
     "supported_variant_qualification_complete": true,
-    "unresolved_variant_definitions": ["generic_uniform_support", "volume_only_support", "no_context"],
+    "unresolved_variant_definitions": [],
     "test_iid_metadata_role_counted": true,
     "test_iid_labels_or_sample_data_read": false,
-    "g1_scientific_ready": false
+    "g1_scientific_ready": true
   }
 }
