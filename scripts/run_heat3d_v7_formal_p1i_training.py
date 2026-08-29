@@ -141,6 +141,9 @@ def _resolve_model_config(
     model_config: dict[str, Any], feature_names: tuple[str, ...]
 ) -> dict[str, Any]:
     resolved = dict(model_config)
+    # Data-preparation marker for the explicit no-context delta; it must not
+    # leak into the Flax RIGNO constructor.
+    resolved.pop("global_context_ablation", None)
     resolved.pop("architecture", None)
     resolved["global_context_feature_names"] = tuple(
         resolved.get("global_context_feature_names") or ()
@@ -487,12 +490,13 @@ def _run(
     # deliberately consumes the same prepared graph/input batches, then calls
     # only the ordinary RIGNO method.
     parent_model_config = dict(config["model"])
+    preparation_model_config = _variant_model_config(parent_model_config, variant)
     preparation_profile: dict[str, Any] = {}
     prepared = prepare_p1i_data(
         subset,
         manifest,
         graph_config=config["graph"],
-        model_config=parent_model_config,
+        model_config=preparation_model_config,
         loss_config=config["loss"],
         batch_size=int(config["batching"]["batch_size"]),
         validation_batch_size=int(config["batching"]["validation_batch_size"]),
