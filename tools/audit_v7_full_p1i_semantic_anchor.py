@@ -262,8 +262,6 @@ def _component_diffs(old_components: Mapping[str, Any], new_components: Mapping[
         "relative_field_loss",
         "raw_absolute_field_loss",
         "total_loss",
-        "target_scale",
-        "target_shape",
     )
     result: dict[str, Any] = {}
     for name in names:

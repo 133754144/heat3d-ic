@@ -33,6 +33,7 @@ from rigno.heat3d_v1_normalization import (
     normalize_target_delta,
 )
 from rigno.heat3d_v1_training_semantics import (
+    COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC,
     COORD_POLICY_TRAIN_MINMAX_UNIT_BOX,
     build_legacy_zero_delta_bridge,
 )
@@ -221,7 +222,13 @@ def _pad_metadata(metadata_list: Sequence[Any]) -> tuple[Any, bool]:
 
 
 def _graph_coords(example: V6DualRobinExample, stats: Mapping[str, Any]) -> np.ndarray:
-    raw = np.asarray(example.condition.coords, dtype=np.float64).reshape(1, 1, -1, 3)
+    # Preserve the frozen V6 graph-coordinate contract.  With the global
+    # train-min/max policy, the legacy builder receives physical coordinates;
+    # only the explicitly sample-local policy normalizes coordinates before
+    # graph construction.  Operator Inputs remain normalized below.
+    if stats.get("coord_policy") != COORD_POLICY_SAMPLE_LOCAL_ISOTROPIC:
+        return np.asarray(example.condition.coords)
+    raw = np.asarray(example.condition.coords).reshape(1, 1, -1, 3)
     return np.asarray(normalize_coords(raw, dict(stats))).reshape(-1, 3)
 
 
