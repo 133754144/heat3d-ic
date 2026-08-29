@@ -256,6 +256,30 @@ class V7TrainingStaticTests(unittest.TestCase):
         )
         self.assertFalse(receipt["readiness"]["all_formal_variants_qualified"])
 
+    def test_canonical_vanilla_rehearsal_is_explicitly_nonpublication(self) -> None:
+        from argparse import Namespace
+        from scripts.run_heat3d_v7_formal_p1i_training import _resolve_registration
+
+        config, entry, variant, budget_only = _resolve_registration(
+            Namespace(
+                experiment_id="V7-G1-Full-P1i:vanilla-RIGNO",
+                config=None,
+                subset=None,
+                manifest=None,
+                output_dir=None,
+                epochs=1,
+                seed=0,
+                jit_cache=True,
+                profile=True,
+                rehearsal=True,
+                dry_run=False,
+            )
+        )
+        self.assertEqual(config["experiment_id"], "V7-G1-Full-P1i")
+        self.assertEqual(entry["experiment_id"], "V7-G1-Full-P1i:vanilla-RIGNO")
+        self.assertEqual(variant, "vanilla_RIGNO")
+        self.assertFalse(budget_only)
+
     def test_e200_schedule_reaches_registered_minimum(self) -> None:
         config = json.loads(
             (ROOT / "configs/heat3d_v7/v7_g1_full_p1i.json").read_text(

@@ -64,6 +64,12 @@ SUPPORTED_VARIANT_QUALIFICATION_VARIANTS = {
     "no_scale",
     "vanilla_RIGNO_capacity_matched",
 }
+# A one-to-three-epoch canonical Vanilla rehearsal is permitted only as a
+# nonpublication profiling/compatibility fixture.  It never opens formal G1.
+SUPPORTED_NONPUBLICATION_REHEARSAL_VARIANTS = {
+    "vanilla_RIGNO",
+    *SUPPORTED_VARIANT_QUALIFICATION_VARIANTS,
+}
 NATIVE_VARIANTS = {"Full", "no_scale"}
 VANILLA_VARIANTS = {"vanilla_RIGNO", "vanilla_RIGNO_capacity_matched"}
 FORMAL_VARIANT_BY_ID = {
@@ -231,7 +237,7 @@ def _resolve_registration(
         if not args.dry_run:
             if (
                 args.rehearsal
-                and variant in SUPPORTED_VARIANT_QUALIFICATION_VARIANTS
+                and variant in SUPPORTED_NONPUBLICATION_REHEARSAL_VARIANTS
             ):
                 return config, entry, variant, False
             raise ValueError(
