@@ -234,7 +234,7 @@ def _stable_components(
         "relative_field": float(loss_config["native_relative_field_weight"]),
         "raw_absolute": float(loss_config["native_raw_field_weight"]),
     }
-    return native_shape_scale_losses(
+    components = native_shape_scale_losses(
         prediction,
         target_deltaT=group["target_delta_raw"],
         control_volumes=physics["control_volumes"],
@@ -253,6 +253,20 @@ def _stable_components(
             float(loss_config["native_log_scale_weight_clip_max"]),
         ),
     )
+    # The legacy wrapper and ``loss_fn_full`` both aggregate a group by
+    # multiplying each component by its sample count and dividing by the
+    # batch count.  Reproduce that frozen boundary here instead of comparing
+    # the raw single-group total to the aggregated legacy scalar.  This is a
+    # comparison-path correction only; the loss definition is unchanged.
+    sample_count = int(group["target_delta_raw"].shape[0])
+    return {
+        **components,
+        "shape_cv_loss": components["shape_cv_loss"] * sample_count / max(sample_count, 1),
+        "log_scale_loss": components["log_scale_loss"] * sample_count / max(sample_count, 1),
+        "relative_field_loss": components["relative_field_loss"] * sample_count / max(sample_count, 1),
+        "raw_absolute_field_loss": components["raw_absolute_field_loss"] * sample_count / max(sample_count, 1),
+        "total_loss": components["total_loss"] * sample_count / max(sample_count, 1),
+    }
 
 
 def _component_diffs(old_components: Mapping[str, Any], new_components: Mapping[str, Any]) -> dict[str, Any]:
