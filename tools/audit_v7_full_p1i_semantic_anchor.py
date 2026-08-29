@@ -326,12 +326,9 @@ def _all_exact(value: Any) -> bool:
         return all(_all_exact(child) for child in value.values())
     if isinstance(value, list):
         return all(_all_exact(child) for child in value)
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, (int, float)):
-        return value == 0
-    # Hashes and other receipt metadata are not comparison failures; their
-    # equality is represented by the sibling ``exact`` field.
+    # Counts, hashes, paths and other receipt metadata are not comparison
+    # failures; comparison equality is represented by a sibling ``exact``
+    # field in the structured diff record.
     return True
 
 
