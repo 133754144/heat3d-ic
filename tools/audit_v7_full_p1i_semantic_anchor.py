@@ -537,7 +537,7 @@ def main() -> int:
             "optimizer_state": _tree_diff(old_optimizer_state, new_state.optimizer_state),
             "prediction_before_update": _tree_diff(
                 old_prediction_before_update,
-                new_result.prediction,
+                new_result.prediction[0],
             ),
             "loss_components_before_update": _component_diffs(
                 old_components_before_update,
@@ -558,7 +558,9 @@ def main() -> int:
         stable_valid_batch,
         rng=None,
     )
-    validation = [_tree_diff(left, right) for left, right in zip(final_old_valid_prediction, final_new_valid_prediction, strict=True)]
+    validation = [
+        _tree_diff(final_old_valid_prediction, final_new_valid_prediction[0])
+    ]
 
     # The historical helper source is byte-identical to the recorded V6
     # execution commit.  The model module has only the explicit no_scale
