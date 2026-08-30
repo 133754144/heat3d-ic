@@ -15,8 +15,8 @@
 
 | 方法 | 上游输入/机制 | 当前状态 |
 | --- | --- | --- |
-| GINO | 输入点云/函数，经 input GNO 映射到规则 latent query，再经 latent FNO 和 output GNO 查询输出点 | 官方 `neuralop.models.GINO` 32 点 CPU forward smoke PASS；P1i qualification 在 devbox 进行 |
-| Transolver | 点坐标与点特征，经 Physics-Attention 的 learned physical-state slices 建模 | 官方 irregular-mesh `Model` 32 点 CPU forward smoke PASS；P1i qualification 在 devbox 进行 |
+| GINO | 输入点云/函数，经 input GNO 映射到规则 latent query，再经 latent FNO 和 output GNO 查询输出点 | 官方 `neuralop.models.GINO` 32 点 CPU forward smoke PASS；冻结 P1i 1024 点 input-only forward PASS；valid-only Level-A 接口 smoke PASS |
+| Transolver | 点坐标与点特征，经 Physics-Attention 的 learned physical-state slices 建模 | 官方 irregular-mesh `Model` 32 点 CPU forward smoke PASS；冻结 P1i 1024 点 input-only forward PASS；valid-only Level-A 接口 smoke PASS |
 | Geo-FNO | 学习物理域到规则 latent 网格的 deformation，再执行 FNO | 上游已声明 deprecated；本轮只登记，不把它作为可运行 G2 baseline |
 | Therm-FM | Poseidon/scOT 的网格热场 foundation-model adaptation | 已审计输入/依赖；其网格张量和 checkpoint 语义不能直接当作 P1i point-cloud adapter |
 | DeepOHeat | 3D-IC 配置编码与 DeepONet/physics-aware path | 已冻结官方 MIT snapshot；数据/checkpoint convention 尚未与 P1i 对齐 |
@@ -47,7 +47,11 @@ GINO 的 upstream batching 要求共享 input/output geometry，因此当前资�
 - 本地环境初次导入 GINO 缺少 `tensorly`；在 `/tmp/v7_g2_env` 安装 pinned `tensorly==0.9.0`/`tensorly-torch==0.5.0` 后通过。该依赖环境不修改 V7 production environment。
 - Therm-FM、DeepOHeat 和 DeepOHeat-v2 不因未完成 adapter 而伪称 PASS；它们保持 `deferred` 或 `paper-only` 状态。
 
-下一步只允许在 devbox 上用一个显式 frozen P1i `train`/`valid_iid` sample 运行 adapter smoke，并在需要时补一个 few-step non-publication qualification。任何 external benchmark accuracy 或 multi-seed 训练都必须另行注册，不能从本 receipt 推出。
+本轮在 devbox 使用两个冻结 P1i 样本完成了非发表资格 smoke：`v6p1if1_0000`（train，仅输入）和 `v6p1if1_0003`（valid_iid，输入后由独立 EvaluationCore 读取 `deltaT` truth）。GINO 与 Transolver 均输出 `[1,1024,1]`。valid-only 运行还证明了 `rigno.heat3d_runtime.evaluation.EvaluationCore` 的接线；其数值只是未训练随机模型的接口诊断，不能解释为 accuracy 或 baseline 结果。
+
+P1i GINO 使用 `/tmp/v7_g2_pydeps` 中的临时 `opt-einsum==3.3.0` overlay；NeuralOperator 的 `tensorly==0.9.0`/`tensorly-torch==0.5.0` 也只存在于隔离的复线环境。它们没有修改 V7 production environment。
+
+当前 G2-A 只完成 adapter/input/evaluator interface qualification，不包含 few-step training、external benchmark accuracy 或 multi-seed 训练。任何正式训练或跨方法 accuracy 比较都必须另行注册，不能从本 receipt 推出。
 
 ## 5. 文件与执行边界
 

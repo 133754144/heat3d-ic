@@ -1,9 +1,10 @@
 {
-  "schema_version": "heat3d_v7_g2_a_baseline_reproduction_receipt_v1",
-  "status": "adapter_smoke_completed_p1i_qualification_pending",
+  "schema_version": "heat3d_v7_g2_a_baseline_reproduction_receipt_v2",
+  "status": "adapter_and_valid_only_level_a_smoke_pass_nonpublication",
   "execution_role": "compatibility_audit",
   "source_control": {
     "v7_base_commit": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7",
+    "adapter_commit": "4dd6521292ba64c76b8101ee35e35a70fe82c899",
     "branch": "research/v7-g2-baselines",
     "registry": "configs/heat3d_v7/g2_candidate_registry.json"
   },
@@ -27,7 +28,18 @@
       "native_smoke_point_count": 32,
       "native_smoke_output_shape": [1, 32, 1],
       "native_smoke_output_sha256": "c2e7d57e922d1ca90e7b14f6b336dd3959c2a0da7a2f314074f0f274e356e018",
-      "p1i_adapter": "PENDING_DEVBOX"
+      "p1i_adapter": {
+        "status": "PASS_nonpublication",
+        "train_sample": "v6p1if1_0000",
+        "train_output_shape": [1, 1024, 1],
+        "train_prediction_sha256": "39f6d1c510788166a9775ef16b83da7bb956293ce049a7f0965bdd63132164ba",
+        "valid_iid_sample": "v6p1if1_0003",
+        "valid_output_shape": [1, 1024, 1],
+        "valid_prediction_sha256": "29da62e3fa8851e81803e8153af1ff6cfec6bb66d479448813f09dbcd450a283",
+        "level_a_smoke": "PASS_interface_only",
+        "labels_read_by_adapter": false,
+        "training": false
+      }
     },
     "Transolver": {
       "paper_url": "https://arxiv.org/abs/2402.02366",
@@ -38,7 +50,18 @@
       "native_smoke_point_count": 32,
       "native_smoke_output_shape": [1, 32, 1],
       "native_smoke_output_sha256": "6809c0144d33187da89b4793194cc2cc7de6e47dcad7d24fef2fd23af5761999",
-      "p1i_adapter": "PENDING_DEVBOX"
+      "p1i_adapter": {
+        "status": "PASS_nonpublication",
+        "train_sample": "v6p1if1_0000",
+        "train_output_shape": [1, 1024, 1],
+        "train_prediction_sha256": "03cbb2bf4ca33fe879c0a69538170e0b8a57b89f87d3441453734f557edcedd3",
+        "valid_iid_sample": "v6p1if1_0003",
+        "valid_output_shape": [1, 1024, 1],
+        "valid_prediction_sha256": "2f4cbda723e954334497140a9bbfdebde7e66ac440747ba334e0fb7e33e07c6b",
+        "level_a_smoke": "PASS_interface_only",
+        "labels_read_by_adapter": false,
+        "training": false
+      }
     },
     "Geo-FNO": {
       "paper_url": "https://arxiv.org/abs/2207.05209",
@@ -76,9 +99,33 @@
     "normalization": "explicit responsibility of the adapter caller; no hidden conversion"
   },
   "qualification": {
-    "GINO": "PENDING_DEVBOX",
-    "Transolver": "PENDING_DEVBOX",
+    "GINO": "PASS_nonpublication_p1i_input_and_valid_only_level_a_smoke",
+    "Transolver": "PASS_nonpublication_p1i_input_and_valid_only_level_a_smoke",
+    "samples": [
+      {"sample_id": "v6p1if1_0000", "split": "train", "purpose": "input_only_forward"},
+      {"sample_id": "v6p1if1_0003", "split": "valid_iid", "purpose": "input_forward_plus_explicit_Level_A_interface_smoke"}
+    ],
+    "level_a_evaluator": {
+      "status": "PASS_interface_only_nonpublication",
+      "metric_schema_version": "heat3d_v7_evaluation_core_v1_v6_definitions",
+      "truth_loaded_only_for": "valid_iid",
+      "GINO_diagnostic_point_global_relative_rmse_pct": 2463190.4316356895,
+      "GINO_diagnostic_raw_K_CV_RMSE_K": 3661193.7802581787,
+      "Transolver_diagnostic_point_global_relative_rmse_pct": 100.06786425719925,
+      "Transolver_diagnostic_raw_K_CV_RMSE_K": 144.81073822371897,
+      "scientific_interpretation": "untrained random forward interface smoke; not accuracy evidence"
+    },
     "few_step_training": "NOT_STARTED",
     "formal_g2_multi_seed": "NOT_STARTED"
+  },
+  "execution_environment": {
+    "host": "devbox",
+    "worktree": "/tmp/heat3d_v7_g2",
+    "commit": "4dd6521",
+    "device": "cpu",
+    "dependency_overlay": "/tmp/v7_g2_pydeps",
+    "temporary_packages": ["opt-einsum==3.3.0"],
+    "production_environment_modified": false,
+    "test_iid_or_sealed_access": false
   }
 }

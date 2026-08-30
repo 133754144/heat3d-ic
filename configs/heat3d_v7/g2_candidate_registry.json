@@ -49,9 +49,11 @@
         "command": "PYTHONPATH=.:/tmp/v7_g2_upstream/neuraloperator /tmp/v7_g2_env/bin/python scripts/run_v7_g2_a_adapter_smoke.py --backend gino --transolver-root /tmp/v7_g2_upstream/Transolver --receipt /tmp/v7_g2_a_gino_native.json"
       },
       "p1i_adapter": {
-        "status": "qualification_pending",
+        "status": "PASS_nonpublication_p1i_input_and_level_a_smoke",
         "batching": "batch_size=1 for upstream shared-geometry restriction",
-        "labels_read": false
+        "labels_read": false,
+        "qualification_samples": ["v6p1if1_0000(train)", "v6p1if1_0003(valid_iid)"],
+        "level_a_evaluator_smoke": "PASS_interface_only_nonpublication"
       }
     },
     {
@@ -72,9 +74,11 @@
         "command": "PYTHONPATH=. python scripts/run_v7_g2_a_adapter_smoke.py --backend transolver --transolver-root /tmp/v7_g2_upstream/Transolver --receipt /tmp/v7_g2_a_transolver_native.json"
       },
       "p1i_adapter": {
-        "status": "qualification_pending",
+        "status": "PASS_nonpublication_p1i_input_and_level_a_smoke",
         "batching": "explicit point batch; no upstream graph/padding reuse assumed",
-        "labels_read": false
+        "labels_read": false,
+        "qualification_samples": ["v6p1if1_0000(train)", "v6p1if1_0003(valid_iid)"],
+        "level_a_evaluator_smoke": "PASS_interface_only_nonpublication"
       }
     },
     {
