@@ -54,13 +54,15 @@ The only efficiency-boundary change in this freeze is an explicit
 `validation_outputs_fn`: validation prediction and validation loss share one
 model application, while the model, graph, support, normalization, loss and
 batch semantics stay unchanged. The registered support providers are now
-explicit and label-independent: `layout_agnostic_stratified_v1` uses fixed
-interface/top/bottom/volume strata with quotas 128/64/64/768 and no layout
-masks, while `cv_only_v1` uses 1024 control-volume-weighted interior nodes.
+explicit and label-independent: `generic_stratified_v2` keeps the Full
+boundary/interface/surface/control-volume coverage with quotas
+block=0/interface/top/bottom/volume=128/64/64/768 and no q/k block-layout-aware
+quota, while `cv_only_v1` uses 1024 control-volume-weighted interior nodes.
 The No-FiLM delta changes only `global_context_mode: film -> none`; the
 standardized 24-D physical context and native shape-scale path are retained.
-All three new provider/model deltas completed bounded one-epoch CUDA
-qualification runs and remain observation-only, non-publication evidence.
+The generic provider and No-FiLM delta are re-qualified in bounded one-epoch
+CUDA runs; carried-forward provider/model controls remain observation-only,
+non-publication evidence.
 Cross-run feature/graph reuse, broader JIT cache reuse, high-N optimization and
 formal multi-seed execution remain deferred. The entrypoint fails closed for
 unknown providers and does not silently map an ablation to the source-aware

@@ -46,7 +46,7 @@ def main() -> None:
     protocol = _load(ROOT / "docs" / "v7_g1_scientific_protocol_freeze.json")
 
     _require(
-        receipt.get("schema_version") == "heat3d_v7_g1_variant_qualification_receipt_v2",
+        receipt.get("schema_version") == "heat3d_v7_g1_variant_qualification_receipt_v3",
         "variant qualification receipt schema drifted",
     )
     _require(len(str(receipt.get("code_commit", ""))) == 40, "qualification code commit is not pinned")
@@ -55,6 +55,25 @@ def main() -> None:
         _require(receipt.get(key) is False, f"qualification evidence guard drifted: {key}")
     policy = receipt.get("qualification_policy", {})
     _require(policy.get("epochs") == 1 and policy.get("seed") == 0, "qualification budget/seed drifted")
+    _require(
+        policy.get("role") == "nonpublication_variant_qualification",
+        "qualification role contract drifted",
+    )
+    _require(
+        policy.get("modified_variants") == ["layout_agnostic_stratified_support", "no_film"],
+        "modified qualification variant set drifted",
+    )
+    _require(
+        policy.get("not_requalified_variants")
+        == [
+            "Full",
+            "vanilla_RIGNO",
+            "vanilla_RIGNO_capacity_matched",
+            "cv_only_support",
+            "physics_scale_only",
+        ],
+        "carried-forward qualification set drifted",
+    )
     for key in ("formal_g1_multi_seed_started", "new_scientific_result", "solver", "new_data", "full_v6_evidence_modified"):
         _require(policy.get(key) is False, f"qualification prohibited-action guard drifted: {key}")
 
@@ -73,8 +92,20 @@ def main() -> None:
         _require(row.get("observation_only") is True, f"qualification must be observation-only: {name}")
         _require(len(str(row.get("receipt_sha256", ""))) == 64, f"missing source receipt SHA: {name}")
     _require(
-        variants["layout_agnostic_stratified_support"].get("provider_id") == "layout_agnostic_stratified_v1",
-        "layout-agnostic support provider binding drifted",
+        variants["layout_agnostic_stratified_support"].get("provider_id") == "generic_stratified_v2",
+        "generic support provider binding drifted",
+    )
+    generic = variants["layout_agnostic_stratified_support"]
+    _require(
+        generic.get("implementation", "").startswith("generic support"),
+        "generic support implementation binding drifted",
+    )
+    generic_determinism = generic.get("support_determinism", {})
+    for key in ("deterministic_reproduction", "label_independent", "sha256_bound"):
+        _require(generic_determinism.get(key) is True, f"generic support evidence missing: {key}")
+    _require(
+        int(generic_determinism.get("sample_count", 0)) > 0,
+        "generic support sample SHA evidence is missing",
     )
     _require(
         variants["cv_only_support"].get("provider_id") == "cv_only_v1",
@@ -83,6 +114,16 @@ def main() -> None:
     _require(
         variants["no_film"].get("implementation", "").startswith("global_context_mode=none"),
         "no_film does not use the one-field FiLM delta",
+    )
+    _require(
+        variants["no_film"].get("single_delta") == ["global_context_mode: film -> none"],
+        "no_film single-delta audit missing",
+    )
+    _require(
+        variants["no_film"].get("context_feature_dim") == 24
+        and variants["no_film"].get("context_feature_names_preserved") is True
+        and variants["no_film"].get("scale_semantics_preserved") is True,
+        "no_film retained context/scale semantics are not bound",
     )
     _require(
         variants["physics_scale_only"].get("implementation", "").startswith("native_shape_scale"),

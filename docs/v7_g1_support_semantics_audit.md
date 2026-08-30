@@ -27,10 +27,11 @@ H2 is therefore frozen as “source-layout-aware sparse conditioning.” A claim
 about source-amplitude-aware conditioning is prohibited without new evidence.
 The registered support-attribution deltas are precise and label independent:
 
-* **Layout-agnostic stratified support** (`layout_agnostic_stratified_v1`)
-  uses the fixed quotas block=0, interface=128, top=64, bottom=64 and
-  CV-weighted interior volume=768. It deliberately does not receive q/k
-  layout masks.
+* **Generic support** (`generic_stratified_v2`)
+  retains the Full route's boundary/interface/surface/CV coverage, with fixed
+  quotas block=0, interface=128, top=64, bottom=64 and CV-weighted interior
+  volume=768. It removes the q/k block-layout-aware quota and deliberately
+  does not receive q/k layout masks.
 * **CV-only support** (`cv_only_v1`) samples 1024 CV-weighted interior-volume
   nodes; block/interface/top/bottom quotas are all zero.
 

@@ -35,9 +35,10 @@ solver output 或 model error。H2 因此只允许 source-layout attribution cla
 正式 support attribution 的两个新 provider 已注册为 geometry-only、label-
 independent definitions：
 
-- `layout_agnostic_stratified_v1`：block quota `0`；interface `128`、top `64`、
-  bottom `64`、CV-weighted interior volume `768`，固定顺序为 interface/top/
-  bottom/volume；不读取 q/k layout masks。
+- `generic_stratified_v2`：保留 Full 的 boundary/interface/surface/CV coverage，
+  block quota `0`；interface `128`、top `64`、bottom `64`、CV-weighted interior
+  volume `768`，固定顺序为 interface/top/bottom/volume；移除 q/k
+  block-layout-aware quota，不读取 q/k layout masks。
 - `cv_only_v1`：CV-weighted interior volume `1024`；block/interface/top/bottom
   quota 全为 `0`。
 
@@ -84,7 +85,7 @@ driven entrypoint，variant 只表达相对 Full parent 的 delta。
 
 ## Qualification boundary
 
-layout/CV/No-FiLM 三个新 provider/delta 的 1-epoch receipts、旧 native
+generic/CV/No-FiLM 三个新 provider/delta 的 1-epoch receipts、旧 native
 physics-scale-only 与 width-100 capacity control 的可追溯 lineage 见
 [variant qualification receipt](v7_g1_variant_qualification_receipt.json)。这些
 运行的 `publication_evidence`、`scientific_evidence_eligible` 和 `g1_formal`

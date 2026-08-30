@@ -96,9 +96,10 @@ FORMAL_LAUNCH_MANIFEST_DEFAULT = (
     ROOT / "configs" / "heat3d_v7" / "v7_g1_formal_launch_manifest.json"
 )
 SUPPORT_PROVIDER_BY_VARIANT = {
-    "layout_agnostic_stratified_support": "layout_agnostic_stratified_v1",
+    "layout_agnostic_stratified_support": "generic_stratified_v2",
     "cv_only_support": "cv_only_v1",
 }
+ALTERNATIVE_SUPPORT_PROVIDERS = frozenset(SUPPORT_PROVIDER_BY_VARIANT.values())
 
 
 def _execution_role(variant: str, *, budget_only: bool, registered_role: str) -> str:
@@ -238,6 +239,29 @@ def _variant_model_config(parent: Mapping[str, Any], variant: str) -> dict[str, 
     }:
         return config
     raise ValueError(f"unregistered V7 training variant {variant!r}")
+
+
+def _validate_variant_semantics(
+    parent: Mapping[str, Any], resolved: Mapping[str, Any], variant: str
+) -> None:
+    """Fail closed if a registered single-factor delta drifts."""
+
+    if variant != "no_film":
+        return
+    changed = [
+        key for key in parent
+        if key != "global_context_mode" and resolved.get(key) != parent.get(key)
+    ]
+    if changed or resolved.get("global_context_mode") != "none":
+        raise ValueError(
+            "no_film must differ from Full only by global_context_mode=none"
+        )
+    if resolved.get("global_context_feature_dim") != 24:
+        raise ValueError("no_film must retain the frozen 24-D context schema")
+    if tuple(resolved.get("global_context_feature_names") or ()) != tuple(
+        parent.get("global_context_feature_names") or ()
+    ):
+        raise ValueError("no_film must retain the Full context feature names")
 
 
 def _git_stdout(*args: str) -> str:
@@ -604,8 +628,7 @@ def _validation_pass(
         variant=variant,
         full_field_data=(
             prepared.full_field_data
-            if prepared.support_provider_id
-            in {"layout_agnostic_stratified_v1", "cv_only_v1"}
+            if prepared.support_provider_id in ALTERNATIVE_SUPPORT_PROVIDERS
             else None
         ),
     )
@@ -668,6 +691,7 @@ def _run(
     # only the ordinary RIGNO method.
     parent_model_config = dict(config["model"])
     preparation_model_config = _variant_model_config(parent_model_config, variant)
+    _validate_variant_semantics(parent_model_config, preparation_model_config, variant)
     preparation_profile: dict[str, Any] = {}
     prepared = prepare_p1i_data(
         subset,

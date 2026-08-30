@@ -17,11 +17,18 @@ from typing import Any
 import numpy as np
 
 
-SUPPORT_PROVIDER_SCHEMA_VERSION = "heat3d_v7_g1_support_provider_v3"
-LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER = "layout_agnostic_stratified_v1"
+SUPPORT_PROVIDER_SCHEMA_VERSION = "heat3d_v7_g1_support_provider_v4"
+GENERIC_STRATIFIED_PROVIDER = "generic_stratified_v2"
+# Import compatibility for code that used the pre-correction Python symbol.
+# The formal registry binds only GENERIC_STRATIFIED_PROVIDER.
+LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER = GENERIC_STRATIFIED_PROVIDER
 CV_ONLY_PROVIDER = "cv_only_v1"
+# Preserve the already-qualified CV-only population while the corrected
+# generic provider receives the v4 namespace.  This is a seed namespace for
+# compatibility, not a change to the CV-only selection rule.
+CV_ONLY_SEED_SCHEMA_VERSION = "heat3d_v7_g1_support_provider_v3"
 SUPPORTED_ALTERNATIVE_PROVIDERS = (
-    LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+    GENERIC_STRATIFIED_PROVIDER,
     CV_ONLY_PROVIDER,
 )
 
@@ -38,8 +45,13 @@ def array_sha256(value: np.ndarray) -> str:
 
 
 def _stable_seed(*, provider: str, sample_id: str, seed: int) -> int:
+    seed_schema = (
+        CV_ONLY_SEED_SCHEMA_VERSION
+        if provider == CV_ONLY_PROVIDER
+        else SUPPORT_PROVIDER_SCHEMA_VERSION
+    )
     digest = hashlib.sha256(
-        f"{SUPPORT_PROVIDER_SCHEMA_VERSION}:{provider}:{sample_id}:{int(seed)}".encode(
+        f"{seed_schema}:{provider}:{sample_id}:{int(seed)}".encode(
             "utf-8"
         )
     ).hexdigest()
@@ -143,7 +155,7 @@ class SupportSelection:
         }
 
 
-def select_layout_agnostic_stratified_support(
+def select_generic_stratified_support(
     *,
     coords: np.ndarray,
     control_volume: np.ndarray,
@@ -151,12 +163,14 @@ def select_layout_agnostic_stratified_support(
     sample_id: str,
     seed: int,
 ) -> SupportSelection:
-    """Select the preregistered layout-agnostic stratified support.
+    """Select the corrected generic support for the G1 attribution arm.
 
-    The exact quotas are interface=128, top=64, bottom=64, and interior
-    volume=768.  The historical block quota is explicitly zero.  Every
-    positive quota is sampled by control-volume-weighted choice.  No q/k
-    layout mask or source amplitude is an input to this provider.
+    This keeps the Full route's boundary/interface/surface/control-volume
+    coverage while removing its q/k block-layout-aware quota.  The exact
+    quotas are interface=128, top=64, bottom=64, and interior volume=768;
+    the block quota is zero.  Every positive quota is sampled by
+    control-volume-weighted choice.  No q/k layout mask or source amplitude
+    is an input to this provider.
     """
 
     _points, weights, interfaces, top, bottom, volume = _validate_geometry(
@@ -171,7 +185,7 @@ def select_layout_agnostic_stratified_support(
     }
     rng = np.random.default_rng(
         _stable_seed(
-            provider=LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+            provider=GENERIC_STRATIFIED_PROVIDER,
             sample_id=str(sample_id),
             seed=seed,
         )
@@ -184,13 +198,13 @@ def select_layout_agnostic_stratified_support(
         selected.append(choice)
         selected_strata.append(np.full(quotas[name], name, dtype="U32"))
     return SupportSelection(
-        provider_id=LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+        provider_id=GENERIC_STRATIFIED_PROVIDER,
         sample_id=str(sample_id),
         seed=int(seed),
         indices=np.concatenate(selected),
         strata=np.concatenate(selected_strata),
         metadata={
-            "algorithm": "layout_agnostic_cv_weighted_stratified_choice_v1",
+            "algorithm": "generic_boundary_interface_surface_cv_stratified_choice_v2",
             "selection_inputs": [
                 "coords",
                 "control_volume",
@@ -211,9 +225,29 @@ def select_layout_agnostic_stratified_support(
             "quotas": quotas,
             "stratum_order": ["interface", "top", "bottom", "volume"],
             "volume_definition": "nodes outside top/bottom/internal-interface strata",
+            "generic_support": True,
             "layout_agnostic": True,
             "label_independent": True,
         },
+    )
+
+
+def select_layout_agnostic_stratified_support(
+    *,
+    coords: np.ndarray,
+    control_volume: np.ndarray,
+    boundaries: Sequence[float],
+    sample_id: str,
+    seed: int,
+) -> SupportSelection:
+    """Compatibility alias for the corrected generic provider."""
+
+    return select_generic_stratified_support(
+        coords=coords,
+        control_volume=control_volume,
+        boundaries=boundaries,
+        sample_id=sample_id,
+        seed=seed,
     )
 
 
@@ -287,8 +321,8 @@ def select_alternative_support(
 
     if boundaries is None:
         raise ValueError(f"{provider_id} requires layer boundaries")
-    if provider_id == LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER:
-        return select_layout_agnostic_stratified_support(
+    if provider_id == GENERIC_STRATIFIED_PROVIDER:
+        return select_generic_stratified_support(
             coords=coords,
             control_volume=control_volume,
             boundaries=boundaries,
@@ -312,9 +346,9 @@ def support_provider_contract() -> dict[str, Any]:
     return {
         "schema_version": SUPPORT_PROVIDER_SCHEMA_VERSION,
         "providers": {
-            LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER: {
-                "canonical_name": "layout-agnostic stratified support",
-                "semantic_delta": "fixed strata quotas with CV-weighted geometry-only selection and zero block quota",
+            GENERIC_STRATIFIED_PROVIDER: {
+                "canonical_name": "generic support (boundary/interface/surface/CV-stratified)",
+                "semantic_delta": "retain Full boundary/interface/surface/control-volume coverage; remove q/k block-layout-aware quota",
                 "quotas": {
                     "block": 0,
                     "interface": 128,
@@ -340,6 +374,8 @@ def support_provider_contract() -> dict[str, Any]:
                     "model_error",
                 ],
                 "label_independent": True,
+                "coverage": ["boundary", "interface", "surface", "control_volume"],
+                "generic_support": True,
             },
             CV_ONLY_PROVIDER: {
                 "canonical_name": "CV-only support",
@@ -371,7 +407,7 @@ def support_provider_contract() -> dict[str, Any]:
                 "label_independent": True,
             },
         },
-        "determinism": "sha256(schema_version,provider,sample_id,run_seed) -> numpy Generator; no replacement",
+        "determinism": "sha256(provider_seed_schema,provider,sample_id,run_seed) -> numpy Generator; generic uses v4 namespace and cv_only preserves v3 namespace; no replacement",
         "training_support_default": "historical_v6_stored_support",
         "publication_evidence": False,
     }
@@ -379,6 +415,7 @@ def support_provider_contract() -> dict[str, Any]:
 
 __all__ = [
     "CV_ONLY_PROVIDER",
+    "GENERIC_STRATIFIED_PROVIDER",
     "LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER",
     "SUPPORTED_ALTERNATIVE_PROVIDERS",
     "SUPPORT_PROVIDER_SCHEMA_VERSION",

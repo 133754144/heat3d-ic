@@ -117,8 +117,29 @@ def main() -> None:
     _require(support["temperature_or_model_error_used"] is False, "support became label-dependent")
     _require(
         set(provider_contract.get("alternative_providers", {}))
-        == {"layout_agnostic_stratified_v1", "cv_only_v1"},
+        == {"generic_stratified_v2", "cv_only_v1"},
         "support provider contract is incomplete",
+    )
+    generic = provider_contract["alternative_providers"]["generic_stratified_v2"]
+    _require(
+        generic.get("quotas")
+        == {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768},
+        "generic support quotas drifted",
+    )
+    _require(
+        generic.get("semantic_delta")
+        == "retain Full boundary/interface/surface/control-volume coverage; remove q/k block-layout-aware quota",
+        "generic support semantic delta drifted",
+    )
+    _require(
+        generic.get("canonical_name")
+        == "generic support (boundary/interface/surface/CV-stratified)",
+        "generic support canonical name drifted",
+    )
+    _require(
+        generic.get("coverage")
+        == ["boundary", "interface", "surface", "control_volume"],
+        "generic support coverage drifted",
     )
     _require(
         provider_contract.get("provenance", {}).get("test_iid_access") is False

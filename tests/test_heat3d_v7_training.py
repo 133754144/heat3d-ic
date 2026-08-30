@@ -16,6 +16,7 @@ import numpy as np
 
 from rigno.heat3d_training import (
     CV_ONLY_PROVIDER,
+    GENERIC_STRATIFIED_PROVIDER,
     LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
     learning_rate_for_epoch,
     ManualGradientDescent,
@@ -247,6 +248,11 @@ class V7TrainingStaticTests(unittest.TestCase):
         self.assertEqual(
             _variant_model_config(parent, "layout_agnostic_stratified_support"), parent,
         )
+        no_film = _variant_model_config(parent, "no_film")
+        self.assertEqual(
+            [key for key in parent if key != "global_context_mode" and no_film.get(key) != parent.get(key)],
+            [],
+        )
 
     def test_unregistered_legacy_variant_names_fail_closed(self) -> None:
         from scripts.run_heat3d_v7_formal_p1i_training import _variant_model_config
@@ -275,7 +281,7 @@ class V7TrainingStaticTests(unittest.TestCase):
         cv = np.ones(len(coords))
         boundaries = [float(value) for value in range(6)]
         layout_left = select_alternative_support(
-            LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+            GENERIC_STRATIFIED_PROVIDER,
             coords=coords,
             control_volume=cv,
             boundaries=boundaries,
@@ -283,7 +289,7 @@ class V7TrainingStaticTests(unittest.TestCase):
             seed=0,
         )
         layout_right = select_alternative_support(
-            LAYOUT_AGNOSTIC_STRATIFIED_PROVIDER,
+            GENERIC_STRATIFIED_PROVIDER,
             coords=coords,
             control_volume=cv,
             boundaries=boundaries,
@@ -291,6 +297,8 @@ class V7TrainingStaticTests(unittest.TestCase):
             seed=0,
         )
         self.assertEqual(layout_left.index_sha256, layout_right.index_sha256)
+        self.assertEqual(layout_left.provider_id, GENERIC_STRATIFIED_PROVIDER)
+        self.assertTrue(layout_left.manifest()["generic_support"])
         self.assertEqual(
             layout_left.manifest()["strata_counts"],
             {"bottom": 64, "interface": 128, "top": 64, "volume": 768},

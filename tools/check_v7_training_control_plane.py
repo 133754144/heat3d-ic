@@ -215,7 +215,7 @@ def main() -> None:
         if semantics.get(key) is not False:
             raise ValueError(f"support semantic dependency is not false: {key}")
     if set(support_provider_contract.get("alternative_providers", {})) != {
-        "layout_agnostic_stratified_v1",
+        "generic_stratified_v2",
         "cv_only_v1",
     }:
         raise ValueError("support provider contract is incomplete")

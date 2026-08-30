@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g1_support_provider_contract_v3",
+  "schema_version": "heat3d_v7_g1_support_provider_contract_v4",
   "status": "frozen_provider_definitions_pre_G1",
   "scope": "nonpublication qualification and future support-attribution variants",
   "historical_full_support": {
@@ -23,9 +23,9 @@
     "artifact_policy": "read_only_historical_v6_artifact"
   },
   "alternative_providers": {
-    "layout_agnostic_stratified_v1": {
-      "canonical_name": "layout-agnostic stratified support",
-      "implementation": "rigno.heat3d_training.support.select_layout_agnostic_stratified_support",
+    "generic_stratified_v2": {
+      "canonical_name": "generic support (boundary/interface/surface/CV-stratified)",
+      "implementation": "rigno.heat3d_training.support.select_generic_stratified_support",
       "selection_inputs": [
         "full_field_coords",
         "full_field_control_volume",
@@ -51,6 +51,8 @@
         "volume": 768
       },
       "stratum_order": ["interface", "top", "bottom", "volume"],
+      "coverage": ["boundary", "interface", "surface", "control_volume"],
+      "semantic_delta": "retain Full boundary/interface/surface/control-volume coverage; remove q/k block-layout-aware quota",
       "weighting": "control-volume weighted without replacement within each geometry stratum",
       "label_independent": true,
       "qualification_role": "nonpublication_only_until_G1_open"
@@ -103,13 +105,13 @@
       "direct_output_architecture": false
     }
   },
-  "determinism": "sha256(schema_version,provider,sample_id,run_seed) -> numpy Generator; no replacement; fixed stratum order",
+  "determinism": "sha256(provider_seed_schema,provider,sample_id,run_seed) -> numpy Generator; generic uses v4 namespace and unchanged cv_only uses v3 namespace; no replacement; fixed stratum order",
   "common_domain": {
     "domain_id": "heat3d_v6_p1i_full_field_240825",
     "coords_source": "frozen_full_field_shared_geometry",
     "truth_source": "frozen_valid_iid_full_field_archive_only",
     "query_and_reconstruction": "frozen_layer_interface_aware_reconstruction_v1",
-    "support_attribution_requires": "same valid_iid samples and same 240825-node domain for Full/layout_agnostic_stratified/cv_only",
+    "support_attribution_requires": "same valid_iid samples and same 240825-node domain for Full/generic_stratified/cv_only",
     "latency_claim": false
   },
   "provenance": {
