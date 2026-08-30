@@ -64,21 +64,27 @@ def load_input_only(subset: Path, manifest: Path, sample_id: str) -> tuple[P1IIn
     bc = np.asarray(np.load(sample_dir / "bc_features.npy"), dtype=np.float32)
     if coords.shape != (1024, 3) or k_field.shape != (1024, 3) or q_field.shape != (1024, 1):
         raise ValueError("frozen P1i input shape drifted")
-    if bc.shape != (1024, 4):
+    if bc.shape not in {(1024, 4), (1024, 7)}:
         raise ValueError("frozen P1i BC feature shape drifted")
     ambient = float(meta["physics"]["ambient_K"])
+    flags = bc[:, :4]
+    broadcast = (
+        bc[:, 4:7]
+        if bc.shape[1] == 7
+        else np.column_stack(
+            (
+                np.full(1024, float(meta["top_h_W_m2K"]), dtype=np.float32),
+                np.full(1024, float(meta["bottom_h_W_m2K"]), dtype=np.float32),
+                np.zeros(1024, dtype=np.float32),
+            )
+        )
+    )
     features = np.concatenate(
         (
             k_field,
             q_field,
-            bc,
-            np.column_stack(
-                (
-                    np.full(1024, float(meta["top_h_W_m2K"]), dtype=np.float32),
-                    np.full(1024, float(meta["bottom_h_W_m2K"]), dtype=np.float32),
-                    np.zeros(1024, dtype=np.float32),
-                )
-            ),
+            flags,
+            broadcast,
         ),
         axis=1,
     )
