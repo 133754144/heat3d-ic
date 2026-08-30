@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_upstream_manifest_v1",
-  "status": "frozen_for_g2_feasibility_2026-08-30",
+  "status": "frozen_for_g2_p2_2026-08-31",
   "source_control": {
     "g2_branch_base": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7",
     "g1_formal_code_sha_comparison_reference": "191a7a06a681556f575a1c04e2b61cb13363efe1",
@@ -9,7 +9,7 @@
   },
   "audit_policy": {
     "primary_sources": ["paper", "official_repository", "official_release_assets"],
-    "freeze_date": "2026-08-30",
+    "freeze_date": "2026-08-31",
     "third_party_source_committed": false,
     "large_data_or_checkpoint_committed": false,
     "test_iid_access": false,
@@ -41,6 +41,32 @@
       "pretrained_or_data_availability": "pretrained checkpoints, 10 power maps and Celsius comparison CSV files are included in the repository",
       "reported_metrics": ["whole-domain MAPE", "whole-domain PAPE", "top-surface MAPE", "top-surface PAPE", "inference speedup"],
       "assumptions": "axis-aligned stacked cuboids; configuration-specific physics; released showcase fixes geometry, homogeneous conductivity and most boundary conditions"
+    },
+    {
+      "priority": 1.5,
+      "id": "DeepOHeat-v1",
+      "paper": {
+        "title": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
+        "authors": ["Xinling Yu", "Ziyue Liu", "Hai Li", "Yixing Li", "Xin Ai", "Zhiyu Zeng", "Ian Young", "Zheng Zhang"],
+        "year": 2026,
+        "venue": "IEEE Transactions on Components, Packaging and Manufacturing Technology; online publication 2025",
+        "arxiv": "2504.03955",
+        "url": "https://arxiv.org/abs/2504.03955"
+      },
+      "official_repo": "https://github.com/xlyu0127/DeepOHeat-v1",
+      "upstream_commit": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+      "upstream_commit_date": "2026-04-15T10:24:43-07:00",
+      "license": "NO_LICENSE_FILE_NO_EXPLICIT_REUSE_GRANT",
+      "license_path": null,
+      "architecture": "separable physics-informed operator; MLP branch plus three independent order-3 Chebyshev KAN trunks and rank-128 outer-product reconstruction",
+      "input_representation": "441-value surface power map or 10201-value volumetric floorplan/power map plus separable x/y/z query axes",
+      "output_representation": "steady 3D temperature field; paper hybrid path additionally evaluates the discrete linear-system residual",
+      "training_objective": "full-mesh PDE/source/boundary residual loss; no supervised temperature labels",
+      "dataset_or_cases": "surface GRF power maps and random ten-component volumetric floorplans; README links an unmanifested Google Drive folder",
+      "pretrained_or_data_availability": "no data, checkpoint, normalization manifest, dependency lock or recorded evaluation artifacts are present in the Git repository",
+      "reported_metrics": ["relative L2", "normalized-u root mean squared error", "peak error", "physical-temperature MAPE/PAPE", "training time", "GPU memory", "hybrid GMRES design-loop wall time"],
+      "assumptions": "fixed axis-aligned semiconductor stacks; full separable physics mesh; known discrete A/b for confidence and GMRES refinement",
+      "feasibility": "D_resource_contract_incomplete; semiconductor_native_candidate_not_yet_formal"
     },
     {
       "priority": 2,

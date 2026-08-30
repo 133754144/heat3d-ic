@@ -131,26 +131,27 @@ def normalizers(data: dict[str, Any]) -> dict[str, torch.Tensor]:
     targets = torch.from_numpy(np.stack([row[2] for row in data["train"]]))
     coord_min = coords.amin(dim=(0, 1), keepdim=True)
     coord_max = coords.amax(dim=(0, 1), keepdim=True)
-    feature_min = features.amin(dim=(0, 1), keepdim=True)
-    feature_max = features.amax(dim=(0, 1), keepdim=True)
-    feature_span = feature_max - feature_min
-    feature_span = torch.where(feature_span > 0, feature_span, torch.ones_like(feature_span))
-    # GINO CarCFD range-normalizes its geometric latent function to [1e-6, 1].
-    gino_feature_scale = feature_span / (1.0 - 1e-6)
-    trans_feature_mean = features.mean(dim=(0, 1), keepdim=True)
-    trans_feature_std = features.std(dim=(0, 1), keepdim=True) + 1e-8
-    # CarCFD's UnitGaussianNormalizer reduces the point dimension and updates
-    # over samples, which is a per-query-point target normalizer here.
-    gino_y_mean = targets.mean(dim=0, keepdim=True)
-    gino_y_std = targets.std(dim=0, keepdim=True) + 1e-7
+    feature_mean = features.mean(dim=(0, 1), keepdim=True)
+    feature_std = features.std(dim=(0, 1), keepdim=True)
+    feature_std = torch.where(feature_std > 0, feature_std, torch.ones_like(feature_std))
+    # Formal GINO and Transolver use the same train-only, per-channel global
+    # statistics. This is invariant to point ordering and remains defined for
+    # variable point sets. In particular, no node-index target statistics are
+    # fitted even when a qualification subset happens to share node counts.
+    gino_feature_mean = feature_mean
+    gino_feature_std = feature_std
+    trans_feature_mean = feature_mean
+    trans_feature_std = feature_std
+    gino_y_mean = targets.mean(dim=(0, 1), keepdim=True)
+    gino_y_std = targets.std(dim=(0, 1), keepdim=True) + 1e-7
     # Transolver UnitTransformer reduces both sample and point dimensions.
     trans_y_mean = targets.mean(dim=(0, 1), keepdim=True)
     trans_y_std = targets.std(dim=(0, 1), keepdim=True) + 1e-8
     return {
         "coord_min": coord_min,
         "coord_span": torch.clamp(coord_max - coord_min, min=1e-12),
-        "feature_min": feature_min,
-        "gino_feature_scale": gino_feature_scale,
+        "gino_feature_mean": gino_feature_mean,
+        "gino_feature_std": gino_feature_std,
         "trans_feature_mean": trans_feature_mean,
         "trans_feature_std": trans_feature_std,
         "gino_y_mean": gino_y_mean,
@@ -226,7 +227,7 @@ def run_gino(data: dict[str, Any], stats: dict[str, torch.Tensor], output: Path)
     for row in data["train"]:
         coords, features, target = tensor_row(row)
         coords = unit_coords(coords, stats)
-        features = (features - stats["feature_min"]) / stats["gino_feature_scale"] + 1e-6
+        features = (features - stats["gino_feature_mean"]) / stats["gino_feature_std"]
         target_n = (target - stats["gino_y_mean"]) / stats["gino_y_std"]
         optimizer.zero_grad(set_to_none=True)
         pred_n = model(input_geom=coords, latent_queries=grid, output_queries=coords, x=features)
@@ -244,7 +245,7 @@ def run_gino(data: dict[str, Any], stats: dict[str, torch.Tensor], output: Path)
         for row in data["valid"]:
             coords, features, target = tensor_row(row)
             coords = unit_coords(coords, stats)
-            features = (features - stats["feature_min"]) / stats["gino_feature_scale"] + 1e-6
+            features = (features - stats["gino_feature_mean"]) / stats["gino_feature_std"]
             pred_n = model(input_geom=coords, latent_queries=grid, output_queries=coords, x=features)
             pred = pred_n * stats["gino_y_std"] + stats["gino_y_mean"]
             valid_total += float(relative_l2(pred, target))
@@ -260,7 +261,7 @@ def run_gino(data: dict[str, Any], stats: dict[str, torch.Tensor], output: Path)
     reloaded.eval()
     coords, features, _target = tensor_row(data["valid"][0])
     coords = unit_coords(coords, stats)
-    features = (features - stats["feature_min"]) / stats["gino_feature_scale"] + 1e-6
+    features = (features - stats["gino_feature_mean"]) / stats["gino_feature_std"]
     with torch.no_grad():
         pred_n = reloaded(input_geom=coords, latent_queries=grid, output_queries=coords, x=features)
         reloaded_prediction = pred_n * stats["gino_y_std"] + stats["gino_y_mean"]
@@ -409,7 +410,7 @@ def main() -> int:
             "features": ["kx", "ky", "kz", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"],
             "learned_adapter": False,
             "extra_physical_information": False,
-            "GINO_feature_normalization": "train-only per-channel range map to [1e-6,1], mirroring CarCFD distance range normalization",
+            "GINO_feature_normalization": "train-only global per-channel z-score over sample and point dimensions; point-order invariant",
             "Transolver_feature_normalization": "train-only UnitTransformer semantics over sample and point dimensions",
         },
         "models": {},

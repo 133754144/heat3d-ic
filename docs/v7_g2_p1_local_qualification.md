@@ -38,7 +38,7 @@
 - physics：homogeneous conductivity background 1，PDE/HTC coefficient `k=0.2`；四侧 adiabatic、bottom HTC、top surface-power Neumann 项。
 - sampling：每个参数 draw 2,000 PDE points、每个单独 BC 200 points；GRF `var=1`、length scale 0.3；每 epoch 50 power-map draws。
 - optimizer/schedule：Adam，lr `1e-3`；10,000 epochs；每 500 epoch 0.9 decay并重建 Adam；每 1,000 epoch checkpoint；每 50 epoch validation。
-- eval：官方 `model_epoch_10000.pth`，输出 `T_K=293.15+25u`。10 个 paper-showcase power maps 全部通过 pretrained inference。
+- eval：官方 `model_epoch_10000.pth`（payload epoch 9999），固定 `21×21×11=4,851` query points，输出 `T_K=293.15+25u`。10 个 paper-showcase power maps 全部通过 pretrained inference；此前 P1 receipt 中的 `51³` 记载已由 G2-P2 corrected receipt 更正。
 
 ### `single_htc_bc`
 
@@ -83,7 +83,7 @@ P1i 只把官方 data channels 从 0 调为 11、latent-feature SDF 路径关闭
 
 ## Transolver gate 与正式配置
 
-冻结官方 Elasticity shell recipe：8 layers、hidden 128、8 heads、64 slices、MLP ratio 1、dropout 0、unified position off、ref 8；AdamW lr `1e-3`/weight decay `1e-5`、gradient clip 0.1；CosineAnnealingLR `T_max=500`；500 epochs；batch 1；`TestLoss(size_average=false)` relative L2。P1i 仅把 `space_dim` 2→3、`fun_dim` 0→11，output 仍为 1。
+冻结官方 Elasticity shell recipe：8 layers、hidden 128、8 heads、64 slices、MLP ratio 1、dropout 0、unified position off、ref 8；AdamW lr `1e-3`/weight decay `1e-5`、gradient clip 0.1；CosineAnnealingLR `T_max=500`；500 epochs；batch 1；`TestLoss(size_average=false)` relative L2。P1i 仅把 `space_dim` 2→3、`fun_dim` 0→11，output 仍为 1。正式 normalization 与 checkpoint policy 已由 protocol v3 取代本页的 P1 provisional 约定。
 
 参数量 716,737。1 epoch 的 train、valid、checkpoint、new-model reload 全部通过，reload 前后首个 valid prediction bitwise equal。输入 point-token 只包含共同 1024-point information，无 learned adapter、dense field 或 external prior。
 

@@ -1,9 +1,15 @@
 {
   "schema_version": "heat3d_v7_g2_candidate_registry_v1",
-  "status": "G2-A_adapter_smoke_and_qualification_only",
+  "status": "HISTORICAL_G2_A_REGISTRY_SCOPE_SUPERSEDED_BY_PROTOCOL_V3",
+  "authoritative_formal_scope": "configs/heat3d_v7/g2_formal_preparation_protocol_v3.json",
   "base_v7_commit": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7",
   "scope": {
-    "priority": ["DeepOHeat", "Therm-FM", "DeepOHeat-v2", "GINO", "Transolver", "Geo-FNO"],
+    "formal_tracks": {
+      "p1i_common_task": ["GINO", "Transolver"],
+      "semiconductor_native": ["DeepOHeat", "DeepOHeat-v1"],
+      "transfer": ["Therm-FM"],
+      "excluded": ["Geo-FNO", "DeepOHeat-v2"]
+    },
     "allowed_work": [
       "upstream_source_audit",
       "native_forward_smoke",

@@ -1,0 +1,68 @@
+{
+  "schema_version": "heat3d_v7_g2_p2_deepoheat_corrected_receipt_v1",
+  "status": "CORRECTED",
+  "date": "2026-08-31",
+  "upstream": "Cadence-Celsius/DeepOHeat@46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+  "correction": {
+    "experiment": "2d_power_map",
+    "incorrect_value_withdrawn": "51x51x51=132651",
+    "frozen_query_resolution": [21, 21, 11],
+    "frozen_query_count": 4851,
+    "basis": "released prototype/checkpoint showcase path",
+    "not_to_be_generalized_from": "single_htc_bc and multi_htc_bc deterministic 51^3 evaluation meshes"
+  },
+  "experiments": {
+    "2d_power_map": {
+      "query_resolution": [21, 21, 11],
+      "query_count": 4851,
+      "checkpoint_filename": "model_epoch_10000.pth",
+      "checkpoint_sha256": "599b5d39a394140548a55738a263625614622d768a542d83c94d12e1c1c0f4c7",
+      "checkpoint_payload_epoch": 9999,
+      "parameters_total": 689346,
+      "parameters_trainable": 689154,
+      "official_metric_contract": {
+        "source": "released log/experiment_1/benchmark/error_table.txt",
+        "source_sha256": "fa9d813e7d582ff7a4f62459ca6b8e8cc0bf29a831a0264ec5d8a56e625f5890",
+        "case_count": 10,
+        "values_are_fractions_not_percent_units": true,
+        "mean_whole_domain_MAPE_fraction": 0.000755,
+        "mean_whole_domain_MAPE_percent": 0.0755,
+        "mean_whole_domain_PAPE_fraction": 0.00471,
+        "mean_whole_domain_PAPE_percent": 0.471,
+        "mean_top_surface_MAPE_fraction": 0.001448,
+        "mean_top_surface_MAPE_percent": 0.1448,
+        "mean_top_surface_PAPE_fraction": 0.00471,
+        "mean_top_surface_PAPE_percent": 0.471
+      },
+      "pretrained_inference": {
+        "status": "PASS_10_OF_10",
+        "output_shape_per_case": [4851, 1],
+        "evidence": "docs/v7_g2_external_reproduction_receipts.json"
+      }
+    },
+    "single_htc_bc": {
+      "query_resolution": [51, 51, 51],
+      "query_count": 132651,
+      "checkpoint_filename": "model_epoch_5000.pth",
+      "checkpoint_sha256": "4f7e9af1977532a544f43460450d1281d73faffd60e6d8f6314162d015817e56",
+      "checkpoint_payload_epoch": 4999,
+      "parameters_total": 75042,
+      "parameters_trainable": 74850,
+      "official_metric_contract": "released evaluation exposes low/middle/high native inference but no aggregate Celsius metric file",
+      "pretrained_inference": {"status": "PASS_LOW_MIDDLE_HIGH", "evidence": "docs/v7_g2_p1_local_qualification_receipt.json"}
+    },
+    "multi_htc_bc": {
+      "query_resolution": [51, 51, 51],
+      "query_count": 132651,
+      "checkpoint_filename": "model_epoch_5000.pth",
+      "checkpoint_sha256": "a892c94eadd092c5c8212918fb0ef3b5958f8c87a363bae658daf11fd8601c9d",
+      "checkpoint_payload_epoch": 4999,
+      "parameters_total": 77392,
+      "parameters_trainable": 77200,
+      "official_metric_contract": "released evaluation exposes low/middle/high native inference but no aggregate Celsius metric file",
+      "pretrained_inference": {"status": "PASS_LOW_MIDDLE_HIGH", "evidence": "docs/v7_g2_p1_local_qualification_receipt.json"}
+    }
+  },
+  "formal_training_started": false,
+  "test_iid_or_sealed_access": false
+}

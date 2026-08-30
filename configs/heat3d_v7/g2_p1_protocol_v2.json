@@ -1,6 +1,7 @@
 {
   "schema_version": "heat3d_v7_g2_p1_protocol_v2",
-  "status": "remote_training_proposal_ready_not_authorized",
+  "status": "SUPERSEDED_BY_G2_FORMAL_PREPARATION_PROTOCOL_V3",
+  "superseded_by": "configs/heat3d_v7/g2_formal_preparation_protocol_v3.json",
   "date": "2026-08-30",
   "comparison_reference": {
     "g1_formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
@@ -38,7 +39,7 @@
   "evaluation": {
     "common_metric_contract": "configs/heat3d_v7/v7_metric_contract.json",
     "predictions": "denormalized deltaT_K at the frozen 1024 points",
-    "checkpoint_semantics": "final upstream epoch; no posthoc valid-best selection unless an upstream recipe explicitly requires it",
+    "checkpoint_semantics": "superseded: protocol v3 freezes valid_iid sample_first_relative_rmse_pct as primary and upstream final epoch as sensitivity",
     "upstream_training_loss_reported_separately": true,
     "one_epoch_smoke_metrics_are_accuracy_claims": false,
     "no_generic_rmse_label": true
@@ -79,7 +80,7 @@
         "input_channels": 11,
         "output_channels": 1,
         "gno_coordinate_dimension": 3,
-        "input_and_output_radius": 0.033,
+        "input_and_output_radius": "superseded: 0.033 rejected by geometry audit; protocol v3 proposes 0.15 pending full-role coordinate/resource gate",
         "neighbor_reduction": {"input": "mean", "output": "sum"},
         "coordinate_embedding": {"type": "nerf", "channels": 16},
         "latent_grid": [32, 32, 32],
@@ -100,8 +101,8 @@
       ],
       "normalization": {
         "coordinates": "train-bounds affine map to unit cube",
-        "features": "train-only per-channel range map to [1e-6,1], following CarCFD distance range normalization",
-        "target": "upstream UnitGaussianNormalizer semantics fitted only on train"
+        "features": "superseded: train-only global per-channel z-score over sample and point dimensions",
+        "target": "superseded: single global channel-wise train-only mean/std; per-node-index target normalization forbidden"
       },
       "loss": "upstream LpLoss(d=2,p=2) relative L2",
       "optimizer": {"name": "AdamW", "learning_rate": 0.001, "weight_decay": 0.0001},

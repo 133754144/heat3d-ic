@@ -6,11 +6,18 @@
 
 - upstream：`Cadence-Celsius/DeepOHeat@46ccfe3fd43d99765e427480e7b6e0e16c3dbc70`。
 - 官方 `prototype.py` 把 device 固定为 `cuda:3`，旧 checkpoint 在 PyTorch 2.9 需要显式 `weights_only=False`。
-- Python 3.12 / NumPy 2.x 下，训练期 `gstools`/`pyDOE2` 依赖存在 `imp` 移除和二进制 ABI 问题。pretrained inference 实际只需要模型、power-map parser 和规则网格，因此临时 runner 直接复现 `grid_points_single_domain` 的官方 `51³` eval query mesh，绕过未用于推理结果的随机训练几何初始化。
+- Python 3.12 / NumPy 2.x 下，训练期 `gstools`/`pyDOE2` 依赖存在 `imp` 移除和二进制 ABI 问题。`2d_power_map` pretrained inference 实际只需要模型、power-map parser 和 released prototype 的 `21×21×11` 规则网格，因此临时 runner 绕过未用于推理结果的随机训练几何初始化。`51³` 是此前 receipt 的错误泛化，已在 G2-P2 更正。
 - 模型结构、checkpoint、441 点 power-map 编码、温度反归一化 `293.15 + 25*u` 均未改变。10 个官方 showcase case 均成功。
 - `single_htc_bc` 与 `multi_htc_bc` 的官方 eval import 会经过 `pyDOE2`（Python 3.12 已移除 `imp`）和旧 `gstools` binary（与 NumPy 2.x ABI 不兼容），即使 inference 本身并不使用随机训练采样。资格 runner 因此直接复现官方 `grid_points_single_domain` 的 `51³` deterministic mesh 与 low/middle/high beta，再加载原 checkpoint；两个实验各三例均成功，模型与数值语义未改。
 - 隔离依赖尝试保持作者版本：`ordered-set==4.1.0`、`smt==1.3.0`、`gstools==1.4.1`。Python 3.12 resolver 安装了 NumPy 2.5.2/Scipy 1.18.1 transitive versions，导致上述旧 binary ABI 问题；未把这些包写入 Heat3D 环境。
 - 未执行 full-semantics 1-epoch training：官方单 epoch 会拼接 20/50 个 parameter draws，并对完整 physics points 计算二阶导数；为控制本机运行且不改变 sampling，没有缩小该语义。
+
+## DeepOHeat-v1
+
+- upstream：`xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2`；源码保持未修改。
+- 临时 overlay 仅安装 `equinox==0.13.8`，用于构造 upstream default surface/volumetric models并按作者 `eqx.is_array` 逻辑计数；没有 forward、checkpoint load 或 training，未写 Heat3D 环境。
+- repo 没有 requirements/environment lock、data manifest、normalization manifest 或 `.eqx` checkpoint；因此没有做任意版本猜测式 inference，也没有缩小 full-mesh / 50-function physics sampling 来制造 1-epoch gate。
+- README Google Drive 链接没有可审计的文件清单/hash，本轮没有下载。仓库没有 license file，不能沿用 DeepOHeat 原版 MIT license。
 
 ## Therm-FM
 
@@ -29,6 +36,8 @@
 - Mac 无 Open3D/torch-scatter，切换到上游提供的 pure-PyTorch neighbor search/reduction fallback；radius 与 input-mean/output-sum semantics 不变。
 - PyTorch `weights_only=true` 拒绝 GINO state dict 携带的 `torch._C._nn.gelu` metadata。checkpoint 是 runner 在本地刚创建的，reload 改为显式 `weights_only=false`；不加载第三方不可信 checkpoint。
 - 当前 frozen commit 的 `GINO_Small3d` config 仍包含 constructor 不接受的 `fno_domain_padding` 和旧 coordinate field；protocol v2 记录这一 upstream config/API drift，并只传 current official constructor 接受的等价字段。
+- G2-P2 正式 normalization 改为 train-only global/channel-wise mean/std；target 统计跨 sample 和 point 两维，禁止 per-node-index。原因是 P1i formal contract 允许 variable point sets；不改变 GINO 网络，也不增加物理信息。
+- geometry-only audit 复现上游 `distance <= radius` closed-ball semantics。`r=0.033` 在 pinned P1i geometry 上使约 89% input-GNO latent queries 为空；按 nearest-source p99 预先提出 `r=0.15`。该变更仅依据坐标覆盖率，不使用 target/loss/accuracy，完整 768+128 coordinate audit 与 GPU graph-memory preflight 仍是 formal gate。
 
 ## Transolver
 

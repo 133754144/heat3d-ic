@@ -1,0 +1,47 @@
+{
+  "schema_version": "heat3d_v7_g2_p2_gino_radius_decision_v1",
+  "status": "PRE_ACCURACY_GEOMETRY_DECISION",
+  "date": "2026-08-31",
+  "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+  "method": {
+    "neighbor_semantics": "closed ball Euclidean distance <= radius, matching native_neighbor_search",
+    "latent_grid": [32, 32, 32],
+    "coordinates": "train-bound affine unit cube",
+    "audit_script": "scripts/audit_v7_g2_gino_radius.py",
+    "formal_accuracy_observed": false,
+    "targets_or_features_opened": false,
+    "test_iid_or_sealed_access": false
+  },
+  "data": {
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "scope": "pinned local geometry subset",
+    "train_ids": ["v6p1if1_0000", "v6p1if1_0002", "v6p1if1_0004", "v6p1if1_0005"],
+    "valid_iid_ids": ["v6p1if1_0003", "v6p1if1_0009"],
+    "full_role_coordinate_sync": "attempted_but_hugging_face_proxy_returned_503",
+    "role_counts_not_claimed_as_full_dataset": true
+  },
+  "upstream_candidate_radius_0_033": {
+    "train": {
+      "input_gno": {"zero_neighbor_fraction": 0.8928451538085938, "mean": 0.13597869873046875, "median": 0.0, "p5": 0.0, "p95": 1.0, "query_coverage": 0.10715484619140625, "source_coverage": 1.0},
+      "output_gno": {"zero_neighbor_fraction": 0.0, "mean": 4.351318359375, "median": 4.0, "p5": 3.0, "p95": 7.0, "query_coverage": 1.0, "source_coverage": 0.10715484619140625}
+    },
+    "valid_iid": {
+      "input_gno": {"zero_neighbor_fraction": 0.890289306640625, "mean": 0.137603759765625, "median": 0.0, "p5": 0.0, "p95": 1.0, "query_coverage": 0.109710693359375, "source_coverage": 1.0},
+      "output_gno": {"zero_neighbor_fraction": 0.0, "mean": 4.4033203125, "median": 4.0, "p5": 3.0, "p95": 7.0, "query_coverage": 1.0, "source_coverage": 0.109710693359375}
+    },
+    "decision": "REJECT_AS_FORMAL_P1I_RADIUS_DUE_TO_DEGENERATE_INPUT_GNO_COVERAGE"
+  },
+  "proposed_radius_0_15": {
+    "geometry_only_derivation": "rounded above train and valid input-GNO nearest-source p99 (0.1311 and 0.1287); no loss or validation error used",
+    "train": {
+      "input_gno": {"zero_neighbor_fraction": 0.0020599365234375, "mean": 11.37353515625, "median": 9.0, "p5": 3.0, "p95": 34.0, "query_coverage": 0.9979400634765625, "source_coverage": 1.0},
+      "output_gno": {"zero_neighbor_fraction": 0.0, "mean": 363.953125, "median": 413.0, "p5": 214.0, "p95": 425.0, "query_coverage": 1.0, "source_coverage": 0.9979400634765625}
+    },
+    "valid_iid": {
+      "input_gno": {"zero_neighbor_fraction": 0.0011444091796875, "mean": 11.395004272460938, "median": 9.0, "p5": 3.0, "p95": 33.0, "query_coverage": 0.9988555908203125, "source_coverage": 1.0},
+      "output_gno": {"zero_neighbor_fraction": 0.0, "mean": 364.64013671875, "median": 415.0, "p5": 217.0, "p95": 425.0, "query_coverage": 1.0, "source_coverage": 0.9988555908203125}
+    },
+    "decision": "PROVISIONAL_FORMAL_RADIUS_PENDING_FULL_768_TRAIN_128_VALID_COORDINATE_AUDIT_AND_GPU_GRAPH_RESOURCE_PREFLIGHT"
+  }
+}

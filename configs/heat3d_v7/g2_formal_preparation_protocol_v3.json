@@ -1,0 +1,173 @@
+{
+  "schema_version": "heat3d_v7_g2_formal_preparation_protocol_v3",
+  "status": "FROZEN_LOCAL_PREPARATION_NO_FORMAL_TRAINING",
+  "date": "2026-08-31",
+  "comparison_reference": {
+    "g1_formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "g2_base_sha": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7"
+  },
+  "hard_boundaries": {
+    "local_mac_only": true,
+    "ssh_or_devbox_used": false,
+    "g1_worktree_modified": false,
+    "formal_g2_training_started": false,
+    "long_training_started": false,
+    "therm_fm_24_10GB_archive_downloaded": false,
+    "test_iid_access": false,
+    "sealed_access": false
+  },
+  "model_scope": {
+    "p1i_common_task": ["GINO", "Transolver"],
+    "semiconductor_native": ["DeepOHeat", "DeepOHeat-v1"],
+    "transfer": ["Therm-FM"],
+    "excluded_from_formal_experiments": ["Geo-FNO", "DeepOHeat-v2"],
+    "excluded_models_retained_as": "related_work_and_capability_comparison_only"
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "allowed_roles": {"train": 768, "valid_iid": 128},
+    "forbidden_roles": ["test_iid", "sealed"],
+    "common_input": {
+      "coordinates": 3,
+      "physical_features": ["kx", "ky", "kz", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"],
+      "target": "deltaT_K_on_same_P1i_points",
+      "extra_prior_or_solver": false,
+      "learned_adapter": false
+    }
+  },
+  "normalization": {
+    "fit_population": "train_only",
+    "validation_or_test_used_for_fit": false,
+    "coordinates": "per-axis affine map using train global min/max to unit cube",
+    "GINO": {
+      "features": "global per-physical-channel z-score over all train samples and all train points; zero-variance channels use scale 1",
+      "target": "single global channel-wise mean/std over all train samples and points",
+      "forbidden": "per-node-index target normalization",
+      "variable_point_set_safe": true,
+      "upstream_difference": "CarCFD range-normalizes SDF and triangle area, and UnitGaussianNormalizer.from_dataset(dim=[1]) is tied to its released pressure-array layout; P1i instead has eleven heterogeneous physical channels and no guaranteed cross-sample node-index identity",
+      "reason": "point-order invariant, adds no information, and was selected before any formal accuracy"
+    },
+    "Transolver": {
+      "features": "global per-physical-channel train-only UnitTransformer z-score over samples and points",
+      "target": "single global train-only UnitTransformer z-score over samples and points; decode before metrics",
+      "input_channels": "coords plus exactly 11 physical features"
+    }
+  },
+  "GINO": {
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "architecture": {
+      "latent_grid": [32, 32, 32],
+      "fno_modes": [16, 16, 16],
+      "fno_layers": 4,
+      "fno_hidden_channels": 64,
+      "fno_norm": "instance_norm",
+      "factorization": "tucker",
+      "rank": 0.4,
+      "input_gno_reduction": "mean",
+      "output_gno_reduction": "sum",
+      "parameter_count": 13673988
+    },
+    "optimizer": {"name": "AdamW", "learning_rate": 0.001, "weight_decay": 0.0001},
+    "scheduler": {"name": "StepLR", "step_size_epochs": 50, "gamma": 0.5},
+    "epochs": 301,
+    "batch_size": 1,
+    "training_loss": "upstream LpLoss(d=2,p=2) relative L2",
+    "radius": {
+      "upstream_candidate": 0.033,
+      "upstream_candidate_decision": "rejected_for_P1i_formal_due_to_approximately_89_percent_empty_input_GNO_queries_on_pinned_geometries",
+      "provisional_formal": 0.15,
+      "derivation": "geometry-only rounded above train/valid input-GNO nearest-source p99; no labels, loss or accuracy",
+      "receipt": "docs/v7_g2_p2_gino_radius_receipt.json",
+      "freeze_gate": "repeat on all 768 train plus 128 valid_iid coords and run GPU graph-memory preflight before formal seed0"
+    },
+    "local_qualification": "PASS_1_EPOCH_TRAIN_VALID_CHECKPOINT_RELOAD_under_P1_provisional_normalization; formal_normalization_and_radius_require_resource_only_preflight_not_retraining_claim"
+  },
+  "Transolver": {
+    "upstream": "thuml/Transolver@75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+    "architecture": {
+      "space_dimension": 3,
+      "function_channels": 11,
+      "output_channels": 1,
+      "layers": 8,
+      "hidden_width": 128,
+      "heads": 8,
+      "slices": 64,
+      "mlp_ratio": 1,
+      "dropout": 0.0,
+      "embedding": "official preprocess MLP over coordinates plus pointwise functions",
+      "unified_position": false,
+      "ref": 8,
+      "parameter_count": 716737
+    },
+    "loss": "upstream TestLoss(size_average=false) relative L2 on decoded output",
+    "optimizer": {"name": "AdamW", "learning_rate": 0.001, "weight_decay": 0.00001, "gradient_clip_norm": 0.1},
+    "scheduler": {"name": "CosineAnnealingLR", "T_max_epochs": 500},
+    "epochs": 500,
+    "batch_size": 1,
+    "seed_contract": {
+      "formal_seeds": [0, 1, 2],
+      "binding": "python_random=numpy=torch=model_init=dataloader_generator=run_seed",
+      "no_cross_seed_selection": true
+    },
+    "metric_output": "decode deltaT_K then emit every Level-A sufficient statistic and named metric from configs/heat3d_v7/v7_metric_contract.json; upstream relative-L2 remains a separate diagnostic",
+    "checkpoint_reload": "save model optimizer scheduler epoch normalizers config upstream SHA and RNG metadata; reload must reproduce frozen valid prediction within deterministic device policy",
+    "local_qualification": "PASS_1_EPOCH_TRAIN_VALID_CHECKPOINT_BITWISE_EQUAL_RELOAD",
+    "information_contract": "coords plus 11 physical features only; no prior, solver, dense field or learned adapter",
+    "remote_resource_manifest": {
+      "first_action": "single-seed one-batch forward/backward graph-memory and epoch-walltime preflight",
+      "formal_action": "three independent seeds only after resource gate and explicit authorization",
+      "model_parameter_bytes_fp32": 2866948,
+      "optimizer_state_estimate_bytes_fp32": 5733896,
+      "formal_training_started": false
+    }
+  },
+  "checkpoint_selection_policy": {
+    "scope": ["Heat3D_G1_reference", "GINO", "Transolver"],
+    "primary": {
+      "split": "valid_iid",
+      "metric": "sample_first_relative_rmse_pct",
+      "tie_break": "earliest_epoch",
+      "selection": "per_run_within_model_and_seed",
+      "selection_frequency": "every_completed_epoch",
+      "no_cross_model_cross_seed_or_cross_variant_selection": true
+    },
+    "sensitivity": "also retain and evaluate the upstream final-epoch checkpoint",
+    "forbidden": ["test_or_sealed_selection", "posthoc_metric_switch", "posthoc_budget_change", "choosing_primary_after_formal_results"],
+    "g1_alignment": "matches configs/heat3d_v7/v7_metric_contract.json and v7_g1_statistical_preregistration.json"
+  },
+  "semiconductor_native": {
+    "DeepOHeat": {
+      "status": "PASS_original_pretrained_native_inference",
+      "p1i": "P1i_direct_comparison_not_identifiable_without_algorithm_change",
+      "corrected_receipt": "docs/v7_g2_p2_deepoheat_corrected_receipt.json"
+    },
+    "DeepOHeat-v1": {
+      "upstream": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+      "classification": "D_resource_contract_incomplete_formal_semiconductor_native_candidate",
+      "formal_semiconductor_native_baseline": false,
+      "blockers": ["no explicit repository license", "no checkpoint", "no data file manifest or hashes", "no dependency lock", "no official native inference receipt"],
+      "audit": "docs/v7_g2_p2_deepoheat_v1_audit.md"
+    }
+  },
+  "transfer": {
+    "Therm-FM": {
+      "status": "official_tiny_demo_reproduction_retained; real_model_T_not_downloaded",
+      "architecture": "Poseidon/scOT model_T approximately 21M parameters",
+      "input": "N,P,L,H,W to N,L_times_P,H,W layer-major flattened grid channels",
+      "output": "N,L_out,H,W temperature",
+      "normalization": "released normalization_constants.json per flattened input channel and output layer; model config and weights are inseparable contract",
+      "pretraining": "pretrained Poseidon prior plus Therm-FM fine-tuning",
+      "fairness": "pretrained prior != same from-scratch training budget",
+      "download_24_10GB_archive": false,
+      "track": "transfer_and_data_efficiency_only"
+    }
+  },
+  "remaining_remote_preconditions": [
+    "GINO full-role coordinate-only radius audit and GPU graph-memory preflight",
+    "materialize complete train-only normalization statistics without opening forbidden roles",
+    "write formal GINO and Transolver launch manifests with immutable data/config/upstream hashes",
+    "obtain explicit remote authorization after G1 finishes",
+    "resolve DeepOHeat-v1 license/data/checkpoint/dependency provenance before any native formal run"
+  ]
+}
