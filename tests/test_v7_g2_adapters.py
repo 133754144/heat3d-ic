@@ -7,6 +7,7 @@ import unittest
 import numpy as np
 
 from rigno.heat3d_g2.inputs import P1IInputBatch, P1I_FEATURE_NAMES, unit_cube_latent_queries
+from rigno.heat3d_g2.p1i import evaluate_valid_prediction
 
 
 class G2InputTests(unittest.TestCase):
@@ -49,6 +50,23 @@ class G2InputTests(unittest.TestCase):
 
         batch = P1IInputBatch.from_v6_examples([Example()])
         self.assertEqual(batch.sample_ids, ("train_without_target_attribute",))
+
+    def test_level_a_bridge_uses_explicit_prediction(self) -> None:
+        from rigno.heat3d_runtime.evaluation import EvaluationSample
+
+        truth = np.ones(8, dtype=np.float64)
+        sample = EvaluationSample(
+            sample_id="valid_bridge",
+            prediction_deltaT_K=np.zeros(8),
+            truth_deltaT_K=truth,
+            control_volumes_m3=np.ones(8),
+            coords=np.zeros((8, 3)),
+            layer_id=np.asarray([0, 0, 0, 0, 1, 1, 1, 1], dtype=np.int32),
+            q_W_m3=np.ones(8),
+        )
+        result = evaluate_valid_prediction(sample, np.ones((1, 8, 1)))
+        self.assertEqual(result["metric_schema_version"], "heat3d_v7_evaluation_core_v1_v6_definitions")
+        self.assertAlmostEqual(result["metrics"]["raw_K_CV_RMSE_K"], 0.0)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,11 @@ from .adapters import (
     build_transolver_model,
 )
 from .inputs import P1IInputBatch, P1I_FEATURE_NAMES, unit_cube_latent_queries
+from .p1i import (
+    evaluate_valid_prediction,
+    load_frozen_p1i_input_only,
+    load_frozen_valid_evaluation_sample,
+)
 
 __all__ = [
     "GINOAdapter",
@@ -23,4 +28,7 @@ __all__ = [
     "P1IInputBatch",
     "P1I_FEATURE_NAMES",
     "unit_cube_latent_queries",
+    "evaluate_valid_prediction",
+    "load_frozen_p1i_input_only",
+    "load_frozen_valid_evaluation_sample",
 ]

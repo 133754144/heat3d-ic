@@ -59,7 +59,14 @@ def main() -> None:
     for key in ("formal_g2_multi_seed", "publication_evidence", "scientific_evidence_eligible", "training_executed", "solver_executed", "test_iid_access", "sealed_access", "model_selection"):
         _require(policy[key] is False, f"receipt policy flag opened: {key}")
 
-    for relative in ("rigno/heat3d_g2/inputs.py", "rigno/heat3d_g2/adapters.py", "scripts/run_v7_g2_a_adapter_smoke.py", "scripts/run_v7_g2_a_p1i_smoke.py"):
+    for relative in (
+        "rigno/heat3d_g2/inputs.py",
+        "rigno/heat3d_g2/p1i.py",
+        "rigno/heat3d_g2/adapters.py",
+        "scripts/run_v7_g2_a_adapter_smoke.py",
+        "scripts/run_v7_g2_a_p1i_smoke.py",
+        "scripts/run_v7_g2_a_p1i_level_a_smoke.py",
+    ):
         path = ROOT / relative
         tree = ast.parse(path.read_text(encoding="utf-8"))
         source = path.read_text(encoding="utf-8")
@@ -76,6 +83,7 @@ def main() -> None:
         _require("np.load(sample_dir / \"test_iid" not in source, f"{relative}: forbidden split file access")
         _require("np.load(sample_dir / \"sealed" not in source, f"{relative}: forbidden sealed file access")
         _require("sys.path.insert" not in source, f"{relative}: sys.path mutation")
+        _require("sys.path.append" not in source, f"{relative}: sys.path mutation")
     print("V7 G2-A control plane: PASS (external adapters; no formal multi-seed work)")
 
 
