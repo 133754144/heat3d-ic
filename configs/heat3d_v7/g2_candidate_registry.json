@@ -3,7 +3,7 @@
   "status": "G2-A_adapter_smoke_and_qualification_only",
   "base_v7_commit": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7",
   "scope": {
-    "priority": ["GINO", "Transolver"],
+    "priority": ["DeepOHeat", "Therm-FM", "DeepOHeat-v2", "GINO", "Transolver", "Geo-FNO"],
     "allowed_work": [
       "upstream_source_audit",
       "native_forward_smoke",
@@ -91,6 +91,7 @@
       "license_path": "LICENSE",
       "license_sha256": "54299796d56845c744ea9c6f646debbcb1e48609b52994e116b3ed46b9bde055",
       "status": "inventory_only_deprecated_upstream; no_G2-A_adapter_yet",
+      "feasibility_classification": "E_comparison_not_yet_fairly_runnable",
       "notes": "The official repository snapshot announces deprecation; no claim is made about compatibility with the current V7 environment."
     },
     {
@@ -103,7 +104,19 @@
       "license_path": "LICENSE",
       "license_sha256": "77b18a1628c498407f3f25403f8958b5f7a700a3f6cc60e2e0b78a33060c3e9a",
       "status": "source_audited; P1i_adapter_deferred",
-      "notes": "The released loader/model expects grid-like thermal tensors and a Poseidon/scOT environment; it is not silently treated as a point-cloud drop-in."
+      "feasibility_classification": "B_original_demo_partial; P1i_adapter_incomplete",
+      "native_reproduction": {
+        "status": "partial_tiny_demo;_loader_and_3_epoch_training_pass; evaluation_abort",
+        "dataset_shape": {"input": [80, 4, 4, 32, 32], "output": [80, 4, 32, 32]},
+        "loader_check": "PASS",
+        "training": "3_epoch_tiny_demo_completed",
+        "evaluation": "ABORT_TRAP_6_after_test_inference",
+        "demo_input_sha256": "513c275c3dc8759c6fcf47aeef035c436bf7219d0633f550a963de5d57689515",
+        "demo_output_sha256": "5687154f0920f628171dc64dec804081b42a628be028b2992107d8298da795a1",
+        "environment_overlay": "/tmp/v7_g2_therm_deps",
+        "v7_p1i_adapter": "DEFERRED"
+      },
+      "notes": "The released loader/model expects grid-like thermal tensors and a Poseidon/scOT environment; the official tiny demo partially reproduces in an isolated /tmp environment, but it is not silently treated as a point-cloud drop-in."
     },
     {
       "id": "DeepOHeat",
@@ -115,7 +128,17 @@
       "license_path": "LICENSE",
       "license_sha256": "11995b577eacfe082a730271d45ec727a9f0ba4dd3361f8f19d4528e73456167",
       "status": "source_audited; P1i_adapter_deferred",
-      "notes": "The official release is a configuration/geometry/DeepONet-style path with its own data and checkpoint conventions; no unqualified P1i mapping is claimed."
+      "feasibility_classification": "B_native_model_forward; P1i_adapter_incomplete",
+      "native_reproduction": {
+        "status": "official_model_forward_smoke_pass",
+        "model": "src.modules.DeepONet",
+        "input_shapes": {"coords": [8, 3], "beta": [8, 441]},
+        "output_shape": [8, 1],
+        "output_sha256": "02adc76fddf81042b146e262009747968a217d9c53e6959549bebeacba976255",
+        "seed": 0,
+        "p1i_adapter": "DEFERRED"
+      },
+      "notes": "The official release is a configuration/geometry/DeepONet-style path with its own data and checkpoint conventions; the native model forward is runnable, but no unqualified P1i mapping is claimed."
     },
     {
       "id": "DeepOHeat-v2",
@@ -125,6 +148,7 @@
       "upstream_commit": null,
       "license": null,
       "status": "paper_only_at_audit_time; no_verified_official_code_snapshot",
+      "feasibility_classification": "D_no_verified_official_code",
       "notes": "The paper is registered as a future adapter candidate. Its discretized physics loss, preconditioned optimization and self-improving solver-gated loop are not imported into G2-A."
     }
   ]

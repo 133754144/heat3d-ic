@@ -68,26 +68,48 @@
       "repo": "https://github.com/neuraloperator/Geo-FNO",
       "commit": "d499bde15104f4ac34db6eaf57d3528a101e4ef6",
       "native_forward_smoke": "NOT_RUN_DEFERRED",
-      "reason": "deprecated upstream and not G2-A priority"
+      "feasibility_classification": "E_comparison_not_yet_fairly_runnable",
+      "reason": "deprecated upstream; adapter deferred pending a fair point-cloud-to-latent-grid contract"
     },
     "Therm-FM": {
       "paper_url": "https://arxiv.org/abs/2605.22663",
       "repo": "https://github.com/haiyangxin/Therm-FM",
       "commit": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
-      "native_forward_smoke": "NOT_RUN_DEFERRED",
-      "reason": "grid/Poseidon dependencies require a separate environment; no P1i mapping inferred"
+      "native_forward_smoke": "PARTIAL_TINY_DEMO",
+      "feasibility_classification": "B_original_demo_partial; P1i_adapter_incomplete",
+      "native_demo": {
+        "status": "loader_and_3_epoch_training_pass; evaluation_abort_trap_6",
+        "input_shape": [80, 4, 4, 32, 32],
+        "output_shape": [80, 4, 32, 32],
+        "input_sha256": "513c275c3dc8759c6fcf47aeef035c436bf7219d0633f550a963de5d57689515",
+        "output_sha256": "5687154f0920f628171dc64dec804081b42a628be028b2992107d8298da795a1",
+        "evaluation_failure": "Abort trap: 6 after test inference; likely environment multiprocessing/resource-tracker issue",
+        "p1i_adapter": "DEFERRED",
+        "scientific_evidence": false
+      },
+      "reason": "official grid/Poseidon path partially reproduced in an isolated /tmp environment; no P1i mapping inferred"
     },
     "DeepOHeat": {
       "paper_url": "https://arxiv.org/abs/2302.12949",
       "repo": "https://github.com/Cadence-Celsius/DeepOHeat",
       "commit": "46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
-      "native_forward_smoke": "NOT_RUN_DEFERRED",
-      "reason": "official path requires released data/checkpoint conventions not present in this audit"
+      "native_forward_smoke": "PASS_OFFICIAL_MODEL_FORWARD",
+      "feasibility_classification": "B_native_model_forward; P1i_adapter_incomplete",
+      "native_smoke": {
+        "model": "src.modules.DeepONet",
+        "input_shapes": {"coords": [8, 3], "beta": [8, 441]},
+        "output_shape": [8, 1],
+        "output_sha256": "02adc76fddf81042b146e262009747968a217d9c53e6959549bebeacba976255",
+        "seed": 0,
+        "p1i_adapter": "DEFERRED"
+      },
+      "reason": "official model forward is runnable; released data/checkpoint conventions still do not support an unqualified P1i mapping"
     },
     "DeepOHeat-v2": {
       "paper_url": "https://arxiv.org/abs/2608.16080",
       "repo": null,
-      "native_forward_smoke": "NOT_RUN_NO_VERIFIED_CODE"
+      "native_forward_smoke": "NOT_RUN_NO_VERIFIED_CODE",
+      "feasibility_classification": "D_no_verified_official_code"
     }
   },
   "p1i_adapter_contract": {
