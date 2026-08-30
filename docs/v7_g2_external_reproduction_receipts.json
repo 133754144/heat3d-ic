@@ -1,0 +1,139 @@
+{
+  "schema_version": "heat3d_v7_g2_external_reproduction_receipts_v1",
+  "status": "feasibility_evidence_only_nonpublication",
+  "date": "2026-08-30",
+  "policy": {
+    "formal_g2_run": false,
+    "publication_evidence": false,
+    "large_scale_tuning": false,
+    "p1i_test_iid_access": false,
+    "p1i_sealed_access": false,
+    "g1_worktree_touched": false,
+    "external_artifacts_committed": false
+  },
+  "environment": {
+    "host": "local_mac",
+    "os": "macOS 26.5.1 Darwin 25.5.0 arm64",
+    "python": "3.12.3",
+    "torch": "2.9.0",
+    "numpy": "2.1.3",
+    "scipy": "1.16.2",
+    "device": "cpu",
+    "external_cache": "/tmp/heat3d-g2-*",
+    "heat3d_environment_modified": false
+  },
+  "receipts": {
+    "DeepOHeat": {
+      "upstream_commit": "46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+      "reproduction": "PASS_official_pretrained_10_case_showcase_inference",
+      "checkpoint": "DeepOHeat/2d_power_map/log/experiment_1/checkpoints/model_epoch_10000.pth",
+      "checkpoint_payload_epoch": 9999,
+      "input": {
+        "case_count": 10,
+        "power_map_sensor_shape": [441],
+        "coordinate_shape": [4851, 3]
+      },
+      "output_shape_per_case": [4851, 1],
+      "output_temperature_K": {
+        "map_10_10.txt": {"min": 298.769287109375, "max": 309.0264892578125, "sha256": "92acf908e7745cea0e964ccc9943854a272663221fbccfbb82d72a789dc4c0d9"},
+        "map_20_20.txt": {"min": 302.95794677734375, "max": 315.9806213378906, "sha256": "841a503015d7621913bda37557c30f1ca0ce1650382444ebac6283d692bbf4a0"},
+        "map_5_5.txt": {"min": 298.2938537597656, "max": 304.4396057128906, "sha256": "3a17b2db9c4dfa5046586927206d386c5ef731ee6c903523eea24be3150b3e72"},
+        "map_c1.txt": {"min": 299.3008117675781, "max": 307.1879577636719, "sha256": "267f2995e7b137430e8802bd3caf9ea13b4863c118792df06ed02796f068fd59"},
+        "map_c2.txt": {"min": 299.4992980957031, "max": 308.44793701171875, "sha256": "956daa1bc08d8ef6e4ec571137fe38f67fdb75db00e8e7f451c9ae47e7b9c578"},
+        "map_c3.txt": {"min": 299.54730224609375, "max": 312.7334289550781, "sha256": "7acbefe08310ac292710eddc3acb792da91ca0f1e5b0d020d1ed866b066eb48c"},
+        "map_c4.txt": {"min": 301.63055419921875, "max": 318.7977294921875, "sha256": "865aa6445a78ec2ba6a06c84b5c44a37e4fd2c58555d2c1a761a72048127188e"},
+        "map_c5.txt": {"min": 301.3487548828125, "max": 318.9090576171875, "sha256": "b4391c273b93321cbe2687f96380b707dce9222f4aeb514d86d6fe009ceff491"},
+        "map_c6.txt": {"min": 301.0130615234375, "max": 318.1813049316406, "sha256": "92c0f789dcde82ea748f10aaf774f5b4a9587b35fe4a7cc86ce66543cf32516a"},
+        "map_c7.txt": {"min": 298.8681335449219, "max": 304.6302185058594, "sha256": "88c0ff583f4dc476c9e2e44fb42e932b7bba2fa615f53ae663d99707597bce6c"}
+      },
+      "compatibility": [
+        "hard-coded cuda:3 replaced by CPU",
+        "legacy checkpoint loaded with weights_only=false",
+        "unused stochastic geometry initialization bypassed by constructing the exact documented 21x21x11 deterministic query mesh"
+      ],
+      "scientific_interpretation": "This reproduces the released pretrained inference path, not a new training result or a P1i result."
+    },
+    "Therm-FM": {
+      "upstream_commit": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+      "reproduction": "PASS_official_quick_demo_training_and_separate_evaluation",
+      "demo_data": {
+        "input_shape": [80, 4, 4, 32, 32],
+        "output_shape": [80, 4, 32, 32],
+        "synthetic_physics_evidence": false
+      },
+      "demo_model_parameters": 83912,
+      "training": {"epochs": 3, "train_samples": 58, "valid_samples": 6, "test_samples": 16, "final_eval_loss": 0.5384460091590881},
+      "separate_official_evaluation": {
+        "status": "PASS",
+        "test_samples": 16,
+        "rmse_K": 3.4114509139501235,
+        "mean_absolute_error_K": 2.0904047302901745,
+        "mape_percent": 3.9455984276984903,
+        "pape_percent": 24.35466191964224,
+        "metrics_are_synthetic_demo_only": true
+      },
+      "released_resource_audit": {
+        "HS_SC_normalization_constants_sha256": "d7a726c5e4ffd5d68c6d01c7c67b82db18475a5d979bc658a7aeb66d20f09c4a",
+        "HS_SC_release_shape": {"input": [5000, 4, 2, 87, 87], "output": [5000, 2, 87, 87]},
+        "steady_dataset_archive_bytes": 4467245278,
+        "steady_checkpoint_archive_bytes": 24100784430,
+        "selective_model_T_download": "blocked_by_monolithic_archive_containing_T_B_L_and_all_benchmarks"
+      },
+      "compatibility": [
+        "isolated huggingface-hub 0.36.0 overlay for installed Transformers compatibility",
+        "dataloader_num_workers=0",
+        "OMP and VECLIB threads limited to one for evaluation",
+        "training and official evaluate.py run as separate processes after the training script post-test hit macOS Abort trap 6"
+      ],
+      "scientific_interpretation": "The official quick demo is executable. The released real model_T benchmark was not reproduced because the release does not offer a selective model_T download."
+    },
+    "DeepOHeat-v2": {
+      "paper": "2608.16080v1",
+      "reproduction": "NOT_RUN_official_code_not_found",
+      "search_date": "2026-08-30",
+      "searches": ["arXiv metadata and PDF code links", "GitHub repository search for DeepOHeat-v2", "author and Cadence repository names"],
+      "finding": "Search results contained only unrelated third-party experiments and the current Heat3D repository; neither is an official implementation.",
+      "independent_reimplementation_started": false
+    },
+    "GINO": {
+      "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "reproduction": "PASS_official_model_test_suite",
+      "command": "PYTHONPATH=<isolated_deps>:. python3 -m pytest -q neuralop/models/tests/test_gino.py",
+      "result": "49 passed",
+      "duration_seconds": 6.81,
+      "dependencies": ["tensorly==0.9.0", "tensorly-torch==0.5.0", "opt-einsum==3.3.0", "pytest==8.4.1"],
+      "p1i_evidence_reference": "docs/v7_g2_a_baseline_reproduction_receipt.json",
+      "p1i_status": "PASS_nonpublication_input_and_valid_iid_interface_smoke",
+      "scientific_interpretation": "Official implementation coverage and P1i wiring pass; no baseline accuracy training was run."
+    },
+    "Transolver": {
+      "upstream_commit": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "reproduction": "PASS_official_elasticity_small_subset_training",
+      "official_data": {
+        "Random_UnitCell_XY_10.npy_sha256": "29c615b7c8b0ef94252e4def4cd9999653b8759104619eb728b91a1cac5b665f",
+        "Random_UnitCell_sigma_10.npy_sha256": "eb8102b580001bab80ee99bfc33289f727491e1d8edab2a4a94abc37a348fa1a",
+        "full_shapes": {"coordinates": [2000, 972, 2], "target": [2000, 972]}
+      },
+      "smoke_config": {"train_samples": 16, "test_samples": 8, "epochs": 1, "batch_size": 2, "hidden": 32, "layers": 1, "heads": 4, "slices": 8, "parameters": 8077},
+      "result": {"epoch_0_train_relative_l2": 0.55230, "test_relative_l2": 0.5503408163785934},
+      "compatibility": ["hard-coded CUDA tensors moved to automatic CPU/CUDA device", "ntest exposed as a smoke-only argument"],
+      "p1i_evidence_reference": "docs/v7_g2_a_baseline_reproduction_receipt.json",
+      "p1i_status": "PASS_nonpublication_input_and_valid_iid_interface_smoke",
+      "scientific_interpretation": "The Physics-Attention training path is executable; one-epoch errors are smoke diagnostics only."
+    },
+    "Geo-FNO": {
+      "upstream_commit": "d499bde15104f4ac34db6eaf57d3528a101e4ef6",
+      "reproduction": "PASS_deprecated_official_elasticity_small_subset_training",
+      "official_data": {
+        "Random_UnitCell_XY_10.npy_sha256": "29c615b7c8b0ef94252e4def4cd9999653b8759104619eb728b91a1cac5b665f",
+        "Random_UnitCell_sigma_10.npy_sha256": "eb8102b580001bab80ee99bfc33289f727491e1d8edab2a4a94abc37a348fa1a",
+        "Random_UnitCell_rr_10.npy_sha256": "70dc9fae27e8f361c09b5f43d004d50b30bbdf9c8d62227fd001321c61573f78"
+      },
+      "smoke_config": {"train_samples": 16, "test_samples": 8, "epochs": 1, "batch_size": 2, "modes": 4, "width": 8, "deformation_parameters": 63746, "fno_parameters": 11881},
+      "result": {"epoch_0_train_relative_l2": 0.9398833140730858, "deformation_regularizer_diagnostic": 0.15426884405314922, "test_relative_l2": 0.8603280633687973},
+      "compatibility": ["hard-coded CUDA tensors moved to automatic CPU/CUDA device", "small-subset constants used", "PYTHONPATH set to repository root as required by original imports"],
+      "p1i_status": "NOT_RUN_adapter_incomplete",
+      "scientific_interpretation": "The original deprecated algorithm is runnable. This does not qualify a maintained modern implementation or a P1i baseline."
+    }
+  }
+}

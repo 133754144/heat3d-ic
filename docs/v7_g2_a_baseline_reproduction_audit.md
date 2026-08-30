@@ -1,6 +1,8 @@
 # V7 G2-A 外部神经算子基线审计
 
-本分支基于 G1 冻结提交 `78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7`，只做外部基线的上游复线、输入适配和非发表资格验证。正式 G1 的代码、配置和输出不属于本分支的写入范围。
+> 历史说明：本文件是早期 adapter/forward-smoke 快照。2026-08-30 补做的论文级审计、官方 pretrained/example reproduction、Geo-FNO 原版训练 smoke、最终 feasibility class 与 formal protocol proposal 见 [V7 G2 external baseline feasibility audit](v7_g2_external_baseline_feasibility.md)。若状态不同，以新审计和 [new reproduction receipts](v7_g2_external_reproduction_receipts.json) 为准。
+
+本分支基于 `research/v7` 提交 `78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7`，并以 `G1_FORMAL_CODE_SHA=191a7a06a681556f575a1c04e2b61cb13363efe1` 作为 Heat3D comparison reference；这里只做外部基线的上游复线、输入适配和非发表资格验证。正式 G1 的代码、配置和输出不属于本分支的写入范围。
 
 ## 1. 研究边界
 

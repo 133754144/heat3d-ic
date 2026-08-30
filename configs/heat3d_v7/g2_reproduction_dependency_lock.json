@@ -1,0 +1,74 @@
+{
+  "schema_version": "heat3d_v7_g2_reproduction_dependency_lock_v1",
+  "status": "executed_environment_snapshot_not_a_formal_training_environment",
+  "captured_at": "2026-08-30",
+  "host": {
+    "os": "macOS 26.5.1 Darwin 25.5.0 arm64",
+    "python": "3.12.3",
+    "device": "cpu",
+    "shared_runtime": {
+      "torch": "2.9.0",
+      "numpy": "2.1.3",
+      "scipy": "1.16.2",
+      "safetensors": "0.6.2",
+      "h5py": "3.15.1",
+      "einops": "0.8.1",
+      "tqdm": "4.67.1"
+    }
+  },
+  "isolation": {
+    "external_checkout_root": "/tmp/heat3d-g2-*",
+    "heat3d_environment_modified": false,
+    "third_party_environment_committed": false,
+    "large_data_or_checkpoint_committed": false
+  },
+  "baselines": {
+    "DeepOHeat": {
+      "upstream_commit": "46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+      "framework": "PyTorch 2.9.0",
+      "execution": "pretrained CPU inference",
+      "dependency_scope": "checkpoint, torch, numpy and the upstream model definitions; legacy training-only gstools/pyDOE2 imports were bypassed"
+    },
+    "Therm-FM": {
+      "upstream_commit": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+      "framework": "PyTorch 2.9.0 with upstream scOT/Poseidon code",
+      "execution": "official synthetic quick-demo training plus separate official evaluation",
+      "isolated_overlays": {
+        "huggingface-hub": "0.36.0"
+      },
+      "runtime_constraints": {
+        "dataloader_num_workers": 0,
+        "OMP_NUM_THREADS": 1,
+        "VECLIB_MAXIMUM_THREADS": 1
+      }
+    },
+    "DeepOHeat-v2": {
+      "upstream_commit": null,
+      "framework": null,
+      "execution": "not run; official code not found"
+    },
+    "GINO": {
+      "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "framework": "PyTorch 2.9.0 / NeuralOperator",
+      "execution": "official GINO model test suite",
+      "isolated_overlays": {
+        "tensorly": "0.9.0",
+        "tensorly-torch": "0.5.0",
+        "opt-einsum": "3.3.0",
+        "pytest": "8.4.1"
+      }
+    },
+    "Transolver": {
+      "upstream_commit": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "framework": "PyTorch 2.9.0",
+      "execution": "official Elasticity small-subset CPU training smoke",
+      "dependency_scope": "shared runtime plus upstream source at the frozen commit"
+    },
+    "Geo-FNO": {
+      "upstream_commit": "d499bde15104f4ac34db6eaf57d3528a101e4ef6",
+      "framework": "PyTorch 2.9.0",
+      "execution": "deprecated official Elasticity small-subset CPU training smoke",
+      "dependency_scope": "shared runtime plus upstream source at the frozen commit"
+    }
+  }
+}

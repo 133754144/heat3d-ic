@@ -1,0 +1,79 @@
+{
+  "schema_version": "heat3d_v7_g2_formal_protocol_proposal_v1",
+  "status": "proposal_ready_not_authorized_for_execution",
+  "comparison_reference": {
+    "g1_formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "g2_branch_base": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7"
+  },
+  "scope": {
+    "formal_multi_seed_started": false,
+    "large_scale_tuning": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "interim_g1_result_dependency": false
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "roles": {"train": 768, "valid_iid": 128, "test_iid": "closed", "sealed": "closed"},
+    "input_resolution": 1024,
+    "input_feature_names": ["k_x", "k_y", "k_z", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"],
+    "coordinates": true,
+    "target": "deltaT_K",
+    "normalization": "train_split_only; frozen before valid_iid evaluation"
+  },
+  "main_table": {
+    "models": ["GINO", "Transolver"],
+    "eligibility": "class_A_common_physics_case_and_common_information_budget",
+    "training_objective": "pointwise_mse_in_train_normalized_deltaT_space",
+    "optimizer": {"name": "adamw", "lr": 0.0005, "weight_decay": 0.0001, "gradient_clip_norm": 1.0},
+    "schedule": {"epochs": 200, "warmup_epochs": 10, "type": "warmup_cosine", "min_lr": 0.00005, "horizon_epochs": 200},
+    "seeds": [0, 1, 2],
+    "seed_rule": "model_initialization_seed=batch_order_seed=run_seed",
+    "checkpoint_selection": {"split": "valid_iid", "metric": "sample_first_relative_rmse_pct", "tie_break": "earliest_epoch"},
+    "reporting": {
+      "metric_contract": "configs/heat3d_v7/v7_metric_contract.json",
+      "per_seed": true,
+      "aggregate": "mean_and_sample_standard_deviation",
+      "no_generic_rmse_label": true,
+      "no_posthoc_seed_removal": true,
+      "no_posthoc_metric_switch": true
+    }
+  },
+  "model_contracts": {
+    "GINO": {
+      "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "input": "coords_plus_11_raw_features",
+      "output": "deltaT_at_same_1024_query_points",
+      "latent_grid_resolution": 8,
+      "latent_grid_points": 512,
+      "batch_size": 1,
+      "extra_physical_information": false,
+      "resource_gate": "shape_and_memory_only_before_any_valid_accuracy_review"
+    },
+    "Transolver": {
+      "upstream_commit": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "input": "1024_point_tokens_with_coords_plus_11_raw_features",
+      "output": "deltaT_at_same_1024_points",
+      "layers": 8,
+      "hidden": 128,
+      "heads": 8,
+      "slices": 64,
+      "extra_physical_information": false,
+      "resource_gate": "shape_and_memory_only_before_any_valid_accuracy_review"
+    }
+  },
+  "conditional_or_separate_tracks": {
+    "Geo-FNO": "conditional legacy sensitivity row after same-budget P1i adapter and one-epoch smoke",
+    "Therm-FM": "pretrained transfer and data-efficiency track; never labeled same training budget",
+    "DeepOHeat": "physics-aware data-free or design-loop track in native configuration representation",
+    "DeepOHeat-v2": "deferred until official code/data; solver-in-loop optimization track only"
+  },
+  "prerequisites_before_formal_launch": [
+    "create registered model configs and dependency locks",
+    "run one seed0 one-epoch train/valid_iid-only qualification per main-table model",
+    "freeze parameter counts, peak memory, wall-time budget and adapter information ledger",
+    "verify no test_iid or sealed file access",
+    "obtain explicit formal G2 launch authorization"
+  ]
+}
