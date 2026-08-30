@@ -1,8 +1,8 @@
 {
-  "schema_version": "heat3d_v7_g1_variant_qualification_receipt_v2",
+  "schema_version": "heat3d_v7_g1_variant_qualification_receipt_v3",
   "status": "completed_nonpublication_for_all_registered_variants; formal_G1_closed",
   "scope": "V7 G1 variant implementation qualification only; no formal multi-seed experiment",
-  "code_commit": "f20c434949805ea3df4b9da290828c78471243e2",
+  "code_commit": "5fbfdc44f0d83adf37062f5156b70ed405c488e0",
   "execution_host": "devbox",
   "backend": "cuda",
   "device": "cuda:0",
@@ -28,23 +28,46 @@
     "model_selection": false,
     "solver": false,
     "new_data": false,
-    "full_v6_evidence_modified": false
+    "full_v6_evidence_modified": false,
+    "modified_variants": [
+      "layout_agnostic_stratified_support",
+      "no_film"
+    ],
+    "not_requalified_variants": [
+      "Full",
+      "vanilla_RIGNO",
+      "vanilla_RIGNO_capacity_matched",
+      "cv_only_support",
+      "physics_scale_only"
+    ]
   },
   "support_contract": {
     "path": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
-    "sha256": "15dfbc891274a3285391a85fdfaab47613ed1c783815ff03b726dac889507fd0",
+    "sha256": "7a73e16e30dd8d30e050d11820325c2ff806ddf43bc786bcd83e66f380904788",
     "providers": {
       "layout_agnostic_stratified_support": {
-        "provider_id": "layout_agnostic_stratified_v1",
+        "provider_id": "generic_stratified_v2",
         "quotas": {"block": 0, "interface": 128, "top": 64, "bottom": 64, "volume": 768},
-        "train_index_sha256_digest": "89224ecce0800218e298374c1fd788fc89c3d6d844695998ea610800a0254bd9",
-        "valid_iid_index_sha256_digest": "03ddb9a45be9d6669edfa682ec3e729175af179518af16a066c0e5889a9a2817",
+        "coverage": ["boundary", "interface", "surface", "control_volume"],
+        "semantic_delta": "retain Full boundary/interface/surface/control-volume coverage; remove q/k block-layout-aware quota",
+        "train_index_sha256_digest": "3c8710859e7bad3d601f3d1d1116e57606dbb21733f541b9d29c9645e2e44bf0",
+        "valid_iid_index_sha256_digest": "729189346a93d5c430a5e18d123f487d57f795b8120fc740f9426bcf018db00a",
         "representative_train_sample": "v6p1if1_0000",
-        "representative_train_index_sha256": "c69efd27b9032c365ed142d2d97a66e482f12e5ffa1b88a9d74a7931006eb579",
+        "representative_train_index_sha256": "45a6c8540d65f79406d0a31b8bde3b6d6324c21ac86371bdb2f978b9a57d3a54",
+        "representative_train_strata_sha256": "cc5cff6014fd1de7cb3ccbda2e89601d64b22434107abc4ec5ef41bbdd9a6c94",
         "representative_valid_sample": "v6p1if1_0003",
-        "representative_valid_index_sha256": "ed310c42ae0dd03075e5c2c8b778066303428580a03f884c73e8c9c147761cfb",
-        "qualification_receipt_path": "/tmp/v7_g1_variant_qual_layout_f20c434/v7_g1_p1i_rehearsal_receipt.json",
-        "qualification_receipt_sha256": "303e464aec825f6a24644f78ce0afa8b884197273abf525d188150e4a2681030"
+        "representative_valid_index_sha256": "b62f3f9bf337c553e3ef415ede9dbcf97787f50c41d3ed1e7b611c72b30a5578",
+        "representative_valid_strata_sha256": "cc5cff6014fd1de7cb3ccbda2e89601d64b22434107abc4ec5ef41bbdd9a6c94",
+        "qualification_receipt_path": "/tmp/v7_g1_variant_qual_generic_5fbfdc4/v7_g1_p1i_rehearsal_receipt.json",
+        "qualification_receipt_sha256": "dc55e6e2231051ce17827b15a4cb3e04294b01d4df436d49a12f183443c505dc",
+        "support_determinism": {
+          "deterministic_reproduction": true,
+          "label_independent": true,
+          "sha256_bound": true,
+          "sample_count": 896,
+          "train_count": 768,
+          "valid_iid_count": 128
+        }
       },
       "cv_only_support": {
         "provider_id": "cv_only_v1",
@@ -69,11 +92,22 @@
     "layout_agnostic_stratified_support": {
       "experiment_id": "V7-G1-Full-P1i:layout-agnostic-stratified-support",
       "status": "COMPLETE",
-      "receipt_path": "/tmp/v7_g1_variant_qual_layout_f20c434/v7_g1_p1i_rehearsal_receipt.json",
-      "receipt_sha256": "303e464aec825f6a24644f78ce0afa8b884197273abf525d188150e4a2681030",
-      "qualification_code_commit": "f20c434949805ea3df4b9da290828c78471243e2",
-      "provider_id": "layout_agnostic_stratified_v1",
-      "implementation": "layout-agnostic CV-weighted strata; block quota 0; interface 128, top 64, bottom 64, volume 768; no q/k layout masks, temperature, labels, solver, or model error",
+      "receipt_path": "/tmp/v7_g1_variant_qual_generic_5fbfdc4/v7_g1_p1i_rehearsal_receipt.json",
+      "receipt_sha256": "dc55e6e2231051ce17827b15a4cb3e04294b01d4df436d49a12f183443c505dc",
+      "qualification_code_commit": "5fbfdc44f0d83adf37062f5156b70ed405c488e0",
+      "provider_id": "generic_stratified_v2",
+      "implementation": "generic support; Full boundary/interface/surface/control-volume coverage; block quota 0; interface 128, top 64, bottom 64, volume 768; q/k block-layout-aware quota removed; no q/k layout masks, temperature, labels, solver, or model error",
+      "single_delta": ["support_provider: historical_v6_stored_support -> generic_stratified_v2"],
+      "support_determinism": {
+        "deterministic_reproduction": true,
+        "label_independent": true,
+        "sha256_bound": true,
+        "sample_count": 896,
+        "train_count": 768,
+        "valid_iid_count": 128
+      },
+      "train_index_sha256_digest": "3c8710859e7bad3d601f3d1d1116e57606dbb21733f541b9d29c9645e2e44bf0",
+      "valid_iid_index_sha256_digest": "729189346a93d5c430a5e18d123f487d57f795b8120fc740f9426bcf018db00a",
       "parameter_count": 892776,
       "observed_metrics": {
         "sample_first_relative_rmse_pct": 40.95795173749452,
@@ -109,12 +143,16 @@
     "no_film": {
       "experiment_id": "V7-G1-Full-P1i:no-film",
       "status": "COMPLETE",
-      "receipt_path": "/tmp/v7_g1_variant_qual_no_film_f20c434/v7_g1_p1i_rehearsal_receipt.json",
-      "receipt_sha256": "4de8e2d6f4090430815f88bca3e97200fdcbd509982c59ec4225770f2d353eed",
-      "qualification_code_commit": "f20c434949805ea3df4b9da290828c78471243e2",
-      "implementation": "global_context_mode=none only; standardized frozen 24-D physical context retained; native shape-scale and scale-context paths unchanged",
-      "global_context_feature_dim": 24,
-      "parameter_count": 878696,
+        "receipt_path": "/tmp/v7_g1_variant_qual_no_film_5fbfdc4/v7_g1_p1i_rehearsal_receipt.json",
+        "receipt_sha256": "6745a954fdf30c57519e21d30641f25246b0660b395f32fe4675b38918324e57",
+        "qualification_code_commit": "5fbfdc44f0d83adf37062f5156b70ed405c488e0",
+        "implementation": "global_context_mode=none only; standardized frozen 24-D physical context retained; native shape-scale and scale-context paths unchanged",
+        "single_delta": ["global_context_mode: film -> none"],
+        "context_feature_dim": 24,
+        "global_context_feature_dim": 24,
+        "context_feature_names_preserved": true,
+        "scale_semantics_preserved": true,
+        "parameter_count": 878696,
       "observed_metrics": {
         "sample_first_relative_rmse_pct": 69.06138377207107,
         "point_global_relative_rmse_pct": 59.24583111762066,
@@ -164,6 +202,6 @@
     "all_formal_variants_qualified": true,
     "g1_scientific_ready": true,
     "formal_execution_started": false,
-    "readiness_basis": "all seven planned variants have explicit registry deltas; new support/No-FiLM providers have bounded nonpublication CUDA qualification and carried-forward native/capacity controls"
+    "readiness_basis": "all seven planned variants have explicit registry deltas; corrected generic support and No-FiLM have bounded nonpublication CUDA qualification; unchanged controls are carried forward without rerun"
   }
 }

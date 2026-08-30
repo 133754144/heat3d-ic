@@ -62,7 +62,7 @@ residual correction，不退化为 direct-output architecture。
 3. capacity-matched Vanilla RIGNO
 4. layout-agnostic stratified support
 5. CV-only support
-6. No-FiLM
+6. No-FiLM (single `global_context_mode` delta)
 7. physics-scale-only
 
 Full 与 Vanilla 原始参数差距 7.4486%，超过 5% trigger；capacity-matched
@@ -73,7 +73,7 @@ driven entrypoint，variant 只表达相对 Full parent 的 delta。
 
 - H1 Full vs canonical Vanilla 的 primary 为 `point_global_relative_rmse_pct`；
 - H1b Full vs capacity-matched Vanilla 的 primary 相同；
-- H2 Full vs layout/CV support 的 common-domain primary 为 `source_region_RMSE_K`；
+- H2 Full vs generic/CV support 的 common-domain primary 为 `source_region_RMSE_K`；
 - H3 Full vs No-FiLM 的 primary 为 `sample_first_relative_rmse_pct`；
 - H4 Full vs physics-scale-only 的 primary 为 `raw_K_CV_RMSE_K`；
 - 报告每 seed、mean ± sample std、paired sample effects、median/P90/P95，以及
@@ -85,7 +85,7 @@ driven entrypoint，variant 只表达相对 Full parent 的 delta。
 
 ## Qualification boundary
 
-generic/CV/No-FiLM 三个新 provider/delta 的 1-epoch receipts、旧 native
+generic/CV/No-FiLM 三个 provider/delta 的 1-epoch receipts、旧 native
 physics-scale-only 与 width-100 capacity control 的可追溯 lineage 见
 [variant qualification receipt](v7_g1_variant_qualification_receipt.json)。这些
 运行的 `publication_evidence`、`scientific_evidence_eligible` 和 `g1_formal`

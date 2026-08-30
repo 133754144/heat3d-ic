@@ -67,11 +67,11 @@
   ],
   "g1_support_ablation_contract": {
     "provider_contract": "configs/heat3d_v7/v7_g1_support_provider_contract.json",
-    "provider_contract_sha256": "15dfbc891274a3285391a85fdfaab47613ed1c783815ff03b726dac889507fd0",
+    "provider_contract_sha256": "7a73e16e30dd8d30e050d11820325c2ff806ddf43bc786bcd83e66f380904788",
     "layout_agnostic_stratified_support": {
-      "intended_delta": "fixed interface=128, top=64, bottom=64, CV-weighted interior volume=768 quotas with historical block quota=0",
-      "provider_id": "layout_agnostic_stratified_v1",
-      "provider_status": "qualified_nonpublication_one_epoch",
+      "intended_delta": "retain Full boundary/interface/surface/control-volume coverage; remove q/k block-layout-aware quota; block=0, interface=128, top=64, bottom=64, CV-weighted interior volume=768",
+      "provider_id": "generic_stratified_v2",
+      "provider_status": "qualified_nonpublication_one_epoch; corrected provider",
       "selection_inputs": ["full_field_coords", "full_field_control_volume", "layer_boundaries", "sample_id", "run_seed"],
       "forbidden_inputs": ["q", "k", "q_block_layout_masks", "k_block_layout_masks", "temperature", "labels", "solver", "model_error"],
       "stratum_order": ["interface", "top", "bottom", "volume"],
@@ -89,7 +89,7 @@
     },
     "no_film": {
       "intended_delta": "global_context_mode film -> none only; retain the train-standardized frozen 24-D physical context and native scale paths",
-      "provider_status": "qualified_nonpublication_one_epoch",
+      "provider_status": "requalified_nonpublication_one_epoch",
       "context_tensor": "frozen standardized 24-D context retained",
       "execution": "same V7 registry entrypoint; nonpublication qualification only"
     },

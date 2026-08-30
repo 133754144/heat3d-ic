@@ -128,7 +128,7 @@
     {
       "file": "scripts/run_heat3d_v7_formal_p1i_training.py",
       "symbol": "support variants",
-      "current_behavior": "generic_stratified_v2, cv_only_v1 and no_film are explicit geometry/model deltas; generic and no_film require the current bounded one-epoch requalification; physics_scale_only and capacity-matched Vanilla retain prior qualified lineage",
+      "current_behavior": "generic_stratified_v2 and no_film are the two corrected explicit deltas qualified by the current bounded one-epoch runs; cv_only_v1, physics_scale_only and capacity-matched Vanilla retain prior qualified lineage",
       "potential_cost": "provider-specific support distributions and No-FiLM model delta affect ablation variance and must remain registry-bound",
       "candidate_direction": "formal G1 execution may use only the frozen providers and one-field model deltas through the common registry entrypoint",
       "semantics_may_change": true,
@@ -182,9 +182,9 @@
     "supported_variants": {
       "Full": "COMPLETE_nonpublication_parent_qualification",
       "vanilla_RIGNO": "COMPLETE_nonpublication_parent_qualification",
-    "layout_agnostic_stratified_support": "PENDING_nonpublication_requalification; generic_stratified_v2",
+    "layout_agnostic_stratified_support": "COMPLETE_nonpublication_1epoch; generic_stratified_v2",
       "cv_only_support": "COMPLETE_nonpublication_1epoch; cv_only_v1",
-    "no_film": "PENDING_nonpublication_requalification; standardized_24d_context_retained_film_off",
+    "no_film": "COMPLETE_nonpublication_1epoch; standardized_24d_context_retained_film_off",
       "physics_scale_only": "COMPLETE_nonpublication_1epoch; carried_forward_physics_scale_only",
       "vanilla_RIGNO_capacity_matched": "COMPLETE_nonpublication_1epoch; width_100"
     },
@@ -193,7 +193,7 @@
   "support_semantics": {
     "audit": "docs/v7_g1_support_semantics_audit.json",
     "canonical_name": "physics-layout-aware q/k-block/interface/surface/CV-weighted sparse support",
-    "provider_contract_sha256": "pending_v4_contract_sha256",
+    "provider_contract_sha256": "7a73e16e30dd8d30e050d11820325c2ff806ddf43bc786bcd83e66f380904788",
     "local_regions_alias": "block quota",
     "numeric_q_values_used_by_native_selector": false,
     "temperature_labels_or_model_error_used": false,
