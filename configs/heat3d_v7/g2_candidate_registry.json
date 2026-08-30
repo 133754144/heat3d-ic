@@ -1,0 +1,127 @@
+{
+  "schema_version": "heat3d_v7_g2_candidate_registry_v1",
+  "status": "G2-A_adapter_smoke_and_qualification_only",
+  "base_v7_commit": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7",
+  "scope": {
+    "priority": ["GINO", "Transolver"],
+    "allowed_work": [
+      "upstream_source_audit",
+      "native_forward_smoke",
+      "P1i_input_adapter_smoke",
+      "few_step_nonpublication_qualification"
+    ],
+    "formal_multi_seed": false,
+    "publication_evidence": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "solver_execution": false
+  },
+  "p1i_binding": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "input_resolution": 1024,
+    "input_feature_schema": "v6_dual_robin_relative_bc_features",
+    "input_feature_names": [
+      "k_x", "k_y", "k_z", "q", "is_top", "is_bottom", "is_side",
+      "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"
+    ],
+    "allowed_input_roles": ["train", "valid_iid"],
+    "truth_owner": "rigno.heat3d_runtime.evaluation.EvaluationCore",
+    "normalization": "adapter receives raw frozen V6/P1i condition features; any baseline normalization must be explicit and separately qualified"
+  },
+  "candidates": [
+    {
+      "id": "GINO",
+      "paper": "Geometry-Informed Neural Operator for Large-Scale 3D PDEs",
+      "paper_url": "https://arxiv.org/abs/2309.00583",
+      "official_repo": "https://github.com/neuraloperator/neuraloperator",
+      "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "license": "MIT",
+      "license_path": "LICENSE",
+      "license_sha256": "5f335b0603acfb1d180bf3117492e2076562075cc9b6353a3b94d5d5bc03ef33",
+      "implementation": "neuralop.models.GINO",
+      "input_contract": "input geometry + point features + regular latent query grid + output query points",
+      "native_reproduction": {
+        "status": "forward_smoke_pass",
+        "point_count": 32,
+        "output_shape": [1, 32, 1],
+        "command": "PYTHONPATH=.:/tmp/v7_g2_upstream/neuraloperator /tmp/v7_g2_env/bin/python scripts/run_v7_g2_a_adapter_smoke.py --backend gino --transolver-root /tmp/v7_g2_upstream/Transolver --receipt /tmp/v7_g2_a_gino_native.json"
+      },
+      "p1i_adapter": {
+        "status": "qualification_pending",
+        "batching": "batch_size=1 for upstream shared-geometry restriction",
+        "labels_read": false
+      }
+    },
+    {
+      "id": "Transolver",
+      "paper": "Transolver: A Fast Transformer Solver for PDEs on General Geometries",
+      "paper_url": "https://arxiv.org/abs/2402.02366",
+      "official_repo": "https://github.com/thuml/Transolver",
+      "upstream_commit": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "license": "MIT",
+      "license_path": "LICENSE",
+      "license_sha256": "2c919cd03fa823bf7eefc00a957ff8324c865cd22aa5285e563dc4b558084f25",
+      "implementation": "PDE-Solving-StandardBenchmark/model/Transolver_Irregular_Mesh.py:Model",
+      "input_contract": "point coordinates + point features; Physics-Attention slices points into learned physical states",
+      "native_reproduction": {
+        "status": "forward_smoke_pass",
+        "point_count": 32,
+        "output_shape": [1, 32, 1],
+        "command": "PYTHONPATH=. python scripts/run_v7_g2_a_adapter_smoke.py --backend transolver --transolver-root /tmp/v7_g2_upstream/Transolver --receipt /tmp/v7_g2_a_transolver_native.json"
+      },
+      "p1i_adapter": {
+        "status": "qualification_pending",
+        "batching": "explicit point batch; no upstream graph/padding reuse assumed",
+        "labels_read": false
+      }
+    },
+    {
+      "id": "Geo-FNO",
+      "paper": "Fourier Neural Operator with Learned Deformations for PDEs on General Geometries",
+      "paper_url": "https://arxiv.org/abs/2207.05209",
+      "official_repo": "https://github.com/neuraloperator/Geo-FNO",
+      "upstream_commit": "d499bde15104f4ac34db6eaf57d3528a101e4ef6",
+      "license": "MIT",
+      "license_path": "LICENSE",
+      "license_sha256": "54299796d56845c744ea9c6f646debbcb1e48609b52994e116b3ed46b9bde055",
+      "status": "inventory_only_deprecated_upstream; no_G2-A_adapter_yet",
+      "notes": "The official repository snapshot announces deprecation; no claim is made about compatibility with the current V7 environment."
+    },
+    {
+      "id": "Therm-FM",
+      "paper": "Therm-FM: Foundation Model is ALL YOU NEED for 3D-ICs Thermal Simulation",
+      "paper_url": "https://arxiv.org/abs/2605.22663",
+      "official_repo": "https://github.com/haiyangxin/Therm-FM",
+      "upstream_commit": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+      "license": "Apache-2.0",
+      "license_path": "LICENSE",
+      "license_sha256": "77b18a1628c498407f3f25403f8958b5f7a700a3f6cc60e2e0b78a33060c3e9a",
+      "status": "source_audited; P1i_adapter_deferred",
+      "notes": "The released loader/model expects grid-like thermal tensors and a Poseidon/scOT environment; it is not silently treated as a point-cloud drop-in."
+    },
+    {
+      "id": "DeepOHeat",
+      "paper": "DeepOHeat: Operator Learning-based Ultra-fast Thermal Simulation in 3D-IC Design",
+      "paper_url": "https://arxiv.org/abs/2302.12949",
+      "official_repo": "https://github.com/Cadence-Celsius/DeepOHeat",
+      "upstream_commit": "46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+      "license": "MIT",
+      "license_path": "LICENSE",
+      "license_sha256": "11995b577eacfe082a730271d45ec727a9f0ba4dd3361f8f19d4528e73456167",
+      "status": "source_audited; P1i_adapter_deferred",
+      "notes": "The official release is a configuration/geometry/DeepONet-style path with its own data and checkpoint conventions; no unqualified P1i mapping is claimed."
+    },
+    {
+      "id": "DeepOHeat-v2",
+      "paper": "DeepOHeat-v2: Self-Improving Operator Learning for Fast and Trustworthy Thermal Optimization in 3D-IC Design",
+      "paper_url": "https://arxiv.org/abs/2608.16080",
+      "official_repo": null,
+      "upstream_commit": null,
+      "license": null,
+      "status": "paper_only_at_audit_time; no_verified_official_code_snapshot",
+      "notes": "The paper is registered as a future adapter candidate. Its discretized physics loss, preconditioned optimization and self-improving solver-gated loop are not imported into G2-A."
+    }
+  ]
+}

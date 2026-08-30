@@ -1,0 +1,84 @@
+{
+  "schema_version": "heat3d_v7_g2_a_baseline_reproduction_receipt_v1",
+  "status": "adapter_smoke_completed_p1i_qualification_pending",
+  "execution_role": "compatibility_audit",
+  "source_control": {
+    "v7_base_commit": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7",
+    "branch": "research/v7-g2-baselines",
+    "registry": "configs/heat3d_v7/g2_candidate_registry.json"
+  },
+  "policy": {
+    "formal_g2_multi_seed": false,
+    "publication_evidence": false,
+    "scientific_evidence_eligible": false,
+    "training_executed": false,
+    "solver_executed": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "model_selection": false
+  },
+  "literature_and_upstream": {
+    "GINO": {
+      "paper_url": "https://arxiv.org/abs/2309.00583",
+      "repo": "https://github.com/neuraloperator/neuraloperator",
+      "commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "license": "MIT",
+      "native_forward_smoke": "PASS",
+      "native_smoke_point_count": 32,
+      "native_smoke_output_shape": [1, 32, 1],
+      "native_smoke_output_sha256": "c2e7d57e922d1ca90e7b14f6b336dd3959c2a0da7a2f314074f0f274e356e018",
+      "p1i_adapter": "PENDING_DEVBOX"
+    },
+    "Transolver": {
+      "paper_url": "https://arxiv.org/abs/2402.02366",
+      "repo": "https://github.com/thuml/Transolver",
+      "commit": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "license": "MIT",
+      "native_forward_smoke": "PASS",
+      "native_smoke_point_count": 32,
+      "native_smoke_output_shape": [1, 32, 1],
+      "native_smoke_output_sha256": "6809c0144d33187da89b4793194cc2cc7de6e47dcad7d24fef2fd23af5761999",
+      "p1i_adapter": "PENDING_DEVBOX"
+    },
+    "Geo-FNO": {
+      "paper_url": "https://arxiv.org/abs/2207.05209",
+      "repo": "https://github.com/neuraloperator/Geo-FNO",
+      "commit": "d499bde15104f4ac34db6eaf57d3528a101e4ef6",
+      "native_forward_smoke": "NOT_RUN_DEFERRED",
+      "reason": "deprecated upstream and not G2-A priority"
+    },
+    "Therm-FM": {
+      "paper_url": "https://arxiv.org/abs/2605.22663",
+      "repo": "https://github.com/haiyangxin/Therm-FM",
+      "commit": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+      "native_forward_smoke": "NOT_RUN_DEFERRED",
+      "reason": "grid/Poseidon dependencies require a separate environment; no P1i mapping inferred"
+    },
+    "DeepOHeat": {
+      "paper_url": "https://arxiv.org/abs/2302.12949",
+      "repo": "https://github.com/Cadence-Celsius/DeepOHeat",
+      "commit": "46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+      "native_forward_smoke": "NOT_RUN_DEFERRED",
+      "reason": "official path requires released data/checkpoint conventions not present in this audit"
+    },
+    "DeepOHeat-v2": {
+      "paper_url": "https://arxiv.org/abs/2608.16080",
+      "repo": null,
+      "native_forward_smoke": "NOT_RUN_NO_VERIFIED_CODE"
+    }
+  },
+  "p1i_adapter_contract": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "sample_role_allowlist": ["train", "valid_iid"],
+    "feature_schema": "v6_dual_robin_relative_bc_features",
+    "truth_loading": "EvaluationCore only; adapter input path does not open temperature.npy",
+    "normalization": "explicit responsibility of the adapter caller; no hidden conversion"
+  },
+  "qualification": {
+    "GINO": "PENDING_DEVBOX",
+    "Transolver": "PENDING_DEVBOX",
+    "few_step_training": "NOT_STARTED",
+    "formal_g2_multi_seed": "NOT_STARTED"
+  }
+}
