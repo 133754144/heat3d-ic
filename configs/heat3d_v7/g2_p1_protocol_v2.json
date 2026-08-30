@@ -1,0 +1,205 @@
+{
+  "schema_version": "heat3d_v7_g2_p1_protocol_v2",
+  "status": "remote_training_proposal_ready_not_authorized",
+  "date": "2026-08-30",
+  "comparison_reference": {
+    "g1_formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "g2_upstream_base_sha": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7"
+  },
+  "hard_boundaries": {
+    "local_mac_only_for_this_qualification": true,
+    "ssh_or_devbox_used": false,
+    "formal_training_started": false,
+    "multi_seed_started": false,
+    "long_training_started": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g1_worktree_modified": false,
+    "interim_g1_result_dependency": false
+  },
+  "fairness": {
+    "preserve_by_model": [
+      "architecture",
+      "loss_and_objective",
+      "optimizer",
+      "learning_rate_and_schedule",
+      "sampling_and_training_semantics"
+    ],
+    "common_constraints": [
+      "physical_case",
+      "input_information_boundary",
+      "evaluation_metrics",
+      "train_and_valid_iid_only",
+      "no_new_learned_encoder_or_branch"
+    ],
+    "epochs_lr_and_loss_forced_common": false,
+    "common_information_budget_required_for_main_table": true
+  },
+  "evaluation": {
+    "common_metric_contract": "configs/heat3d_v7/v7_metric_contract.json",
+    "predictions": "denormalized deltaT_K at the frozen 1024 points",
+    "checkpoint_semantics": "final upstream epoch; no posthoc valid-best selection unless an upstream recipe explicitly requires it",
+    "upstream_training_loss_reported_separately": true,
+    "one_epoch_smoke_metrics_are_accuracy_claims": false,
+    "no_generic_rmse_label": true
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "hugging_face_repo": "133754144X/heat3d-thermal-simulation",
+    "hugging_face_revision": "7b3af69e2164ad06d1c079fbde4d6cbd50183c9a",
+    "local_qualification": {
+      "train_ids": ["v6p1if1_0000", "v6p1if1_0002", "v6p1if1_0004", "v6p1if1_0005"],
+      "valid_iid_ids": ["v6p1if1_0003", "v6p1if1_0009"],
+      "verified_files": 48,
+      "temperature_npy_downloaded": false,
+      "full_field_downloaded": false
+    },
+    "common_point_information": {
+      "coordinates": 3,
+      "features": ["kx", "ky", "kz", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"],
+      "target": "deltaT_K_at_the_same_1024_points"
+    }
+  },
+  "tracks": {
+    "common_task_candidates": ["GINO", "Transolver"],
+    "conditional_common_task": ["Geo-FNO"],
+    "semiconductor_native": ["DeepOHeat"],
+    "pretrained_transfer": ["Therm-FM"],
+    "design_loop": ["DeepOHeat-v2"]
+  },
+  "models": {
+    "GINO": {
+      "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "source_recipe": "config/gino_carcfd_config.py::GINO_Small3d",
+      "qualification": "PASS_1_EPOCH_TRAIN_VALID_CHECKPOINT_RELOAD",
+      "feasibility_class": "A_common_task_candidate",
+      "parameter_count": 13673988,
+      "architecture": {
+        "input_channels": 11,
+        "output_channels": 1,
+        "gno_coordinate_dimension": 3,
+        "input_and_output_radius": 0.033,
+        "neighbor_reduction": {"input": "mean", "output": "sum"},
+        "coordinate_embedding": {"type": "nerf", "channels": 16},
+        "latent_grid": [32, 32, 32],
+        "fno_modes": [16, 16, 16],
+        "fno_layers": 4,
+        "fno_hidden_channels": 64,
+        "fno_norm": "instance_norm",
+        "factorization": "tucker",
+        "rank": 0.4,
+        "channel_mlp": true,
+        "channel_mlp_expansion": 1.0,
+        "lifting_projection": "upstream GINO ChannelMLP blocks"
+      },
+      "allowed_interface_adjustments": [
+        "data_channels 0 to 11",
+        "latent_feature_channels 1 to null",
+        "fno_in_channels 3 to 11 as required by the upstream linear input integral"
+      ],
+      "normalization": {
+        "coordinates": "train-bounds affine map to unit cube",
+        "features": "train-only per-channel range map to [1e-6,1], following CarCFD distance range normalization",
+        "target": "upstream UnitGaussianNormalizer semantics fitted only on train"
+      },
+      "loss": "upstream LpLoss(d=2,p=2) relative L2",
+      "optimizer": {"name": "AdamW", "learning_rate": 0.001, "weight_decay": 0.0001},
+      "schedule": {"name": "StepLR", "step_size_epochs": 50, "gamma": 0.5},
+      "upstream_epochs": 301,
+      "batch_size": 1,
+      "formal_remote_plan": "one preregistered single-seed resource pilot, then separately authorized 3-seed run if memory and wall-time gates pass",
+      "common_information_budget": true
+    },
+    "Transolver": {
+      "upstream": "thuml/Transolver@75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "source_recipe": "PDE-Solving-StandardBenchmark/scripts/Transolver_Elas.sh",
+      "qualification": "PASS_1_EPOCH_TRAIN_VALID_CHECKPOINT_RELOAD",
+      "feasibility_class": "A_common_task_candidate",
+      "parameter_count": 716737,
+      "architecture": {
+        "space_dimension": 3,
+        "function_channels": 11,
+        "output_channels": 1,
+        "layers": 8,
+        "hidden_width": 128,
+        "heads": 8,
+        "slices": 64,
+        "mlp_ratio": 1,
+        "dropout": 0.0,
+        "embedding": "official preprocess MLP over coordinates plus pointwise functions",
+        "unified_position": false,
+        "ref": 8
+      },
+      "allowed_interface_adjustments": ["space_dim 2 to 3", "fun_dim 0 to 11", "out_dim remains 1"],
+      "normalization": {
+        "coordinates": "train-bounds affine map to unit cube",
+        "features": "train-only upstream UnitTransformer semantics",
+        "target": "upstream UnitTransformer fitted on train and decoded before relative-L2 loss"
+      },
+      "loss": "upstream TestLoss(size_average=false) relative L2",
+      "optimizer": {"name": "AdamW", "learning_rate": 0.001, "weight_decay": 0.00001, "gradient_clip_norm": 0.1},
+      "schedule": {"name": "CosineAnnealingLR", "T_max_epochs": 500},
+      "upstream_epochs": 500,
+      "batch_size": 1,
+      "formal_remote_plan": "one preregistered single-seed resource pilot, then separately authorized 3-seed run",
+      "common_information_budget": true
+    },
+    "Geo-FNO": {
+      "upstream": "neuraloperator/Geo-FNO@d499bde15104f4ac34db6eaf57d3528a101e4ef6",
+      "qualification": "NOT_RUN_scientific_incompatibility_without_algorithm_change",
+      "feasibility_class": "E_for_current_P1i_direct_quantitative_baseline",
+      "reason": "released learned deformation is 2D and its 42-D rr input is an Elasticity-specific global shape code; a 3D pointwise physical-function path is not released",
+      "forbidden_shortcuts": ["reuse Elasticity rr", "invent a learned P1i encoder", "replace 2D IPHI and FNO with an unreported 3D architecture"],
+      "formal_remote_plan": "none unless an upstream-faithful maintained 3D implementation is identified and separately audited",
+      "common_information_budget": "conditional_not_yet_identifiable"
+    },
+    "DeepOHeat": {
+      "upstream": "Cadence-Celsius/DeepOHeat@46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+      "qualification": "PASS_native_pretrained_inference_all_three_official_experiments",
+      "feasibility_class": "C_native_semiconductor_comparison; E_for_P1i_direct_table",
+      "p1i_representability": "P1i_direct_comparison_not_identifiable_without_algorithm_change",
+      "local_training_smoke": "NOT_RUN_full_upstream_one_epoch_requires_20_or_50_parameter_draws_and second_derivative physics loss; sampling was not reduced because that would change the requested semantics",
+      "comparison_track": "semiconductor_native_only",
+      "common_information_budget": false
+    },
+    "Therm-FM": {
+      "upstream": "haiyangxin/Therm-FM@1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+      "qualification": "PASS_official_tiny_demo; real_model_T_not_downloaded",
+      "feasibility_class": "C_pretrained_transfer; D_resource_packaging_qualifier",
+      "contract": {
+        "model": "Poseidon/scOT model_T",
+        "released_parameter_scale": "21M",
+        "steady_raw_input": "N,P,L,H,W where P is x,y,z_or_layer,power_density",
+        "model_input": "N,(L*P),H,W after layer-major flattening",
+        "model_output": "N,L_out,H,W temperature",
+        "HS_SC_released_shape": {"input": [5000, 4, 2, 87, 87], "output": [5000, 2, 87, 87]},
+        "normalization": "normalization_constants.json gives per flattened input channel and per output-layer mean/std; release evaluation auto-loads it from model_path",
+        "required_files": ["config.json", "pytorch_model.bin", "normalization_constants.json"]
+      },
+      "resource_plan": "after explicit remote authorization, download the 24.10 GB monolithic checkpoint archive and one 4.47 GB steady benchmark archive, extract only model_T and the selected benchmark",
+      "budget_statement": "pretrained prior != same from-scratch training budget",
+      "comparison_track": "pretrained_transfer_and_data_efficiency",
+      "common_information_budget": false
+    },
+    "DeepOHeat-v2": {
+      "paper": "arXiv:2608.16080v1",
+      "qualification": "official_code_not_found_as_of_2026-08-30",
+      "feasibility_class": "D_official_code_not_found; E_for_P1i_direct_table",
+      "independent_reimplementation": false,
+      "comparison_track": "paper_and_design_loop_only",
+      "formal_remote_plan": "none until official code and solver/data contracts are released",
+      "common_information_budget": false
+    }
+  },
+  "quantitative_comparison_policy": {
+    "same_main_table": ["GINO", "Transolver"],
+    "separate_tables": {
+      "DeepOHeat": "native semiconductor physics-trained showcase",
+      "Therm-FM": "pretrained transfer and data efficiency",
+      "DeepOHeat-v2": "solver-in-loop design optimization when code becomes available"
+    },
+    "excluded_until_resolved": {"Geo-FNO": "3D algorithmic representation incompatibility"}
+  },
+  "remote_execution_requires_new_authorization": true
+}

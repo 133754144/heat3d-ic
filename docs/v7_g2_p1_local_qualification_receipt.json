@@ -1,0 +1,111 @@
+{
+  "schema_version": "heat3d_v7_g2_p1_local_qualification_receipt_v1",
+  "status": "PASS_with_model_specific_qualifiers",
+  "date": "2026-08-30",
+  "environment": {
+    "host": "local_mac",
+    "device": "cpu",
+    "python": "3.12.3",
+    "torch": "2.9.0",
+    "formal_training": false,
+    "ssh_or_devbox": false
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "hugging_face_revision": "7b3af69e2164ad06d1c079fbde4d6cbd50183c9a",
+    "train_ids": ["v6p1if1_0000", "v6p1if1_0002", "v6p1if1_0004", "v6p1if1_0005"],
+    "valid_iid_ids": ["v6p1if1_0003", "v6p1if1_0009"],
+    "file_sha_verification": "PASS_48_of_48",
+    "temperature_npy_downloaded": false,
+    "full_field_downloaded": false,
+    "test_iid_access": false,
+    "sealed_access": false
+  },
+  "gates": {
+    "GINO": {
+      "status": "PASS_1_EPOCH_TRAIN_VALID_CHECKPOINT_RELOAD",
+      "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "parameter_count": 13673988,
+      "train_samples": 4,
+      "valid_iid_samples": 2,
+      "optimizer_parameter_step_min_max": [4, 4],
+      "valid_relative_l2_mean_smoke_only": 1.1655260473489761,
+      "first_valid_prediction_sha256": "366c37a9b9435c01616ddc24b8b98487f6d86962f2fd427f8e4c3655927524ca",
+      "checkpoint_sha256": "2054ece44401425b9f7ad921f7a3ee007ab05eea361a5c2f296388ba1995da4f",
+      "reload": "PASS_local_checkpoint_loaded_and_validation_forward_repeated",
+      "qualification_metric_is_accuracy_claim": false,
+      "compatibility_qualifier": "first run exposed fno_in_channels mismatch for 11-channel linear input; second run completed one epoch, validation and save, then the weights-only loader rejected GELU metadata; the locally-created checkpoint was reloaded with weights_only=false without another training epoch"
+    },
+    "Transolver": {
+      "status": "PASS_1_EPOCH_TRAIN_VALID_CHECKPOINT_RELOAD",
+      "upstream_commit": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "parameter_count": 716737,
+      "train_samples": 4,
+      "valid_iid_samples": 2,
+      "train_relative_l2_mean_smoke_only": 0.6655434966087341,
+      "valid_relative_l2_mean_smoke_only": 1.2657935321331024,
+      "first_valid_prediction_sha256": "0dfdf40cc2a3d99baede52aecb41b88374c99ae11f6c2d55899cb766e7fe3c6e",
+      "reload_prediction_sha256": "0dfdf40cc2a3d99baede52aecb41b88374c99ae11f6c2d55899cb766e7fe3c6e",
+      "reload_bitwise_equal": true,
+      "checkpoint_sha256": "9d87d4441ed01883bb9656982173465b529ebd14a2b166b651475f4bc5c93e19",
+      "qualification_metric_is_accuracy_claim": false
+    },
+    "Geo-FNO": {
+      "status": "NOT_RUN_scientific_incompatibility_without_algorithm_change",
+      "upstream_commit": "d499bde15104f4ac34db6eaf57d3528a101e4ef6"
+    }
+  },
+  "deepoheat_native_inference": {
+    "upstream_commit": "46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+    "2d_power_map": {
+      "status": "PASS_official_pretrained_10_case_showcase",
+      "parameter_count": 689346,
+      "checkpoint": "model_epoch_10000.pth",
+      "case_count": 10,
+      "query_shape": [132651, 1],
+      "evidence": "docs/v7_g2_external_reproduction_receipts.json"
+    },
+    "single_htc_bc": {
+      "status": "PASS_official_pretrained_low_middle_high_inference",
+      "parameter_count": 75042,
+      "checkpoint_payload_epoch": 4999,
+      "query_shape": [132651, 1],
+      "prediction_sha256": {
+        "low": "aa153590fd0bc2dd18755f19db6f743d8baa13f804f5482afaea6bcedea8635e",
+        "middle": "7f90201ae53e149fdf4a78f974cee0db6ee39cb61ebeefec27d0df8f09f7dfa1",
+        "high": "889e4773389e80c3b9047d3677c19e719781570f5368868cb3599a4f2893aba3"
+      }
+    },
+    "multi_htc_bc": {
+      "status": "PASS_official_pretrained_low_middle_high_inference",
+      "parameter_count": 77392,
+      "checkpoint_payload_epoch": 4999,
+      "query_shape": [132651, 1],
+      "prediction_sha256": {
+        "low": "04002147d5dd940bd152d3a8f8be504679fdfe06e3f4d133f82d2ec7426641c9",
+        "middle": "b2a6cd3fda7090acfb09dfe9987d4774cd303ac1b55af92e731a19e8a6b5a127",
+        "high": "58d268bb374e9340227434e597edd0dcc4557280a74763e663f5a6923c0aa49f"
+      }
+    },
+    "one_epoch_training": "NOT_RUN_to_avoid_reducing_upstream_20_or_50_parameter_sampling_and_second_derivative_physics_objective_on_CPU"
+  },
+  "p1i_representability": {
+    "input_definitions_sha256": "afea524f5002814a4ec2e8dbac0bc6d2c60f18de9e2cf16c80c1ffe63feac498",
+    "rows_audited": 1024,
+    "unique_counts": {
+      "top_h": 1024,
+      "bottom_h": 1024,
+      "package_total_power": 1024,
+      "q_proxy_mean": 1024,
+      "q_proxy_max": 1024,
+      "mean_local_k": 1024,
+      "local_k_log_std": 1024,
+      "each_background_kz_field": 1024,
+      "source_count": 8,
+      "k_region_count": 7
+    },
+    "conclusion": "P1i_direct_comparison_not_identifiable_without_algorithm_change"
+  },
+  "external_artifacts_committed": false
+}
