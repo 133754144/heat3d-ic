@@ -14,7 +14,8 @@
   "budget": {"epochs": 301, "batch_size": 1, "seeds": [0, 1, 2]},
   "checkpoint": {"primary": "minimum_valid_iid_sample_first_relative_rmse_pct_with_earliest_epoch_tie_break", "sensitivity": "upstream_final_epoch", "selection_frequency": "each_completed_epoch"},
   "metrics": {"decode_before_metrics": true, "contract": "configs/heat3d_v7/v7_metric_contract.json", "contract_sha256": "294761936a96b4b7cc1b50e48ab94306981f261ad2cf79149f38c3420c50fef5", "upstream_relative_L2": "separate_diagnostic"},
-  "provenance": {"radius_receipt": "docs/v7_g2_p3_gino_full_radius_receipt.json", "radius_decision": "frozen_before_accuracy", "qualification": "PASS_1_epoch_train_valid_checkpoint_reload", "qualification_runner_sha256": "41fae02d5c63a02c7c588c53c0ffa1e9202645b2c2b0b3607ca329be49184f4a"},
+  "provenance": {"radius_receipt": "docs/v7_g2_p3_gino_full_radius_receipt.json", "radius_decision": "frozen_before_accuracy", "qualification": "PASS_1_epoch_train_valid_checkpoint_reload", "qualification_runner_sha256": "41fae02d5c63a02c7c588c53c0ffa1e9202645b2c2b0b3607ca329be49184f4a", "p4_formal_contract_regression": "PASS_r_in_0.15_r_out_0.033_with_frozen_normalization"},
+  "runner": {"entrypoint": "scripts/run_v7_g2_p1i_external_formal.py", "sha256": "07e78582632b1cb078182e1c64e8d51565876072f00246827ed35ae92f2f7a9d", "preflight": "python scripts/run_v7_g2_p1i_external_formal.py --model GINO --mode preflight --seed 0 --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <NEURALOPERATOR_ROOT> --output-dir <IGNORED_PREFLIGHT_DIR>", "formal_output": "output/heat3d_v7_g2/gino/seed_<SEED>"},
   "remote_gate": "after_G1_completion_and_explicit_authorization_run_one_batch_GPU_graph_memory_and_epoch_walltime_preflight_then_three_seeds_without_config_changes",
   "formal_training_started": false
 }

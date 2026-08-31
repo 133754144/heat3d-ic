@@ -1,0 +1,100 @@
+{
+  "schema_version": "heat3d_v7_g2_formal_preparation_protocol_v5_p4_execution_qualification",
+  "status": "LOCAL_QUALIFICATION_COMPLETE_REMOTE_EXECUTION_NOT_AUTHORIZED",
+  "date": "2026-08-31",
+  "comparison_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "G2_base_SHA": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7"
+  },
+  "hard_boundaries": {
+    "Mac_local_only": true,
+    "ssh_or_devbox_used": false,
+    "GPU_used": false,
+    "G1_21_run_affected": false,
+    "formal_or_long_training_started": false,
+    "P1i_test_iid_or_sealed_access": false,
+    "Therm_FM_large_archive_downloaded": false
+  },
+  "provenance_corrections": {
+    "DeepOHeat_v1_paper_title": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
+    "data_SHA_changed": false,
+    "Transolver_formal_objective": "decode prediction and target to physical deltaT_K, then upstream TestLoss(size_average=False) relative L2"
+  },
+  "Transolver": {
+    "status": "UPSTREAM_FAITHFUL_OBJECTIVE_RESTORED_AND_REGRESSION_PASS",
+    "architecture": {"layers": 8, "hidden": 128, "heads": 8, "slices": 64, "parameter_count": 716737},
+    "optimizer": "AdamW lr=1e-3 wd=1e-5 clip=0.1",
+    "scheduler": "cosine T_max=500",
+    "seeds": [0, 1, 2],
+    "manifest": "configs/heat3d_v7/g2_transolver_formal_launch_manifest.json",
+    "manifest_sha256": "a2a5708ee369b9f58d5c85a75f2bb552c93c14d62ac489a2b0715cc5771aa2f9",
+    "p4_regression": "one physical-decoded optimizer step exactly equal to official TestLoss; no repeated one-epoch smoke"
+  },
+  "DeepOHeat_v1_solver_fidelity": {
+    "status": "PASS",
+    "receipt": "docs/v7_g2_p4_deepoheat_v1_solver_fidelity_receipt.json",
+    "receipt_sha256": "a543146c651bd24663c69760dbcb37b7c25b98abef563ee7226615aa27a07f13",
+    "official_cases": [0, 27, 99],
+    "max_field_RMSE_deltaT_K": 3.087483110554533e-11,
+    "max_relative_L2_u": 9.989069033984427e-13,
+    "max_peak_absolute_error_deltaT_K": 3.7492231541591536e-11,
+    "max_temperature_range_endpoint_error_K": 3.326761088828789e-11,
+    "spatial_pattern": "no localized boundary, interface or active-layer discrepancy",
+    "formal_train_labels_generated": false,
+    "fail_closed_rule": "any future solver/code/dependency/mesh/BC/q-map change requires the same gate before labels"
+  },
+  "DeepOHeat_v1_label_cost": {
+    "shared_setup_seconds": 0.9980927919968963,
+    "observed_solve_seconds_per_case": [1.8430209583602846, 2.2408074173144996],
+    "peak_process_memory_GB_decimal": 0.668123136,
+    "field_size_MB_decimal_float64": 4.570048,
+    "sequential_896_estimate_minutes_excluding_IO": [27.52, 33.46]
+  },
+  "DeepOHeat_v1_subset": {
+    "status": "IMMUTABLE_768_TRAIN_128_VALID_BEFORE_TEMPERATURE_ACCURACY",
+    "manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "train_index_sha256": "2ca5fb6efe152ddbba3da0f8dedcc65737c82e6f8df16f9eeb48092c2c74dd49",
+    "valid_index_sha256": "6c04f5188fd83d0ce9ca4689cce526ed36e08a4a21421ed2af93ac7a1b6f20d4",
+    "official_test_cases": "100 separate and untouched",
+    "labels_generated_for_formal_subset": 0
+  },
+  "local_smoke_gates": {
+    "Heat3D_on_DeepOHeat_v1_volumetric": "PASS 6 train + 2 valid, one epoch/optimizer step, validation, checkpoint/reload; nonformal 1024-point projection only",
+    "DeepOHeat_v1_original_training_path": "PASS one official function on full 101x101x56 physics mesh, one Adam step and checkpoint/reload without PDE/BC/mesh reduction",
+    "GINO": "PASS formal r_in=0.15/r_out=0.033 construction and frozen normalization input; no repeated optimizer step",
+    "Transolver": "PASS one corrected decoded-space optimizer step exact to official TestLoss",
+    "receipt": "docs/v7_g2_p4_local_execution_receipt.json",
+    "receipt_sha256": "0a88c646558473c51350a4d8acc1521bced6b3f65e9f25fd28ca5b88838d1312"
+  },
+  "P1i_common_task_remote_readiness": {
+    "runner": "scripts/run_v7_g2_p1i_external_formal.py",
+    "runner_sha256": "07e78582632b1cb078182e1c64e8d51565876072f00246827ed35ae92f2f7a9d",
+    "GINO_manifest_sha256": "5b4ee200a90eafebea446d710cd7a06af9282c93b0e6637eb5ebfd6aa254e49c",
+    "Transolver_manifest_sha256": "a2a5708ee369b9f58d5c85a75f2bb552c93c14d62ac489a2b0715cc5771aa2f9",
+    "status": "RUNNER_AND_CONTRACT_READY; REMOTE_GPU_PREFLIGHT_AND_AUTHORIZATION_PENDING",
+    "checkpoint_primary": "minimum valid_iid sample-first relative RMSE percent with earliest-epoch tie",
+    "checkpoint_sensitivity": "retain upstream final epoch",
+    "test_unlock": "only after all three seeds finish, valid checkpoints are immutable and configs are closed"
+  },
+  "semiconductor_remote_manifest": {
+    "path": "configs/heat3d_v7/g2_semiconductor_remote_launch_manifest.json",
+    "sha256": "e9410cfdb0e598ca21e81174b77f2756c0cdd1ceed7c67a1f8dd4c3089028a75"
+  },
+  "post_G1_jobs_in_order": [
+    "GINO seed0 one-batch GPU resource preflight, then seeds 0/1/2 if PASS",
+    "Transolver seed0 one-batch GPU resource preflight, then seeds 0/1/2 if PASS",
+    "DeepOHeat-v1 volumetric upstream-faithful seed42 full from-scratch run after full-50-function memory preflight",
+    "generate frozen 768/128 DeepOHeat-v1 labels with the fidelity-passed solver",
+    "freeze lossless formal Heat3D-on-v1 support, preflight it, then Heat3D seeds 0/1/2",
+    "independently cross-check multi-HTC reference solver, materialize frozen cases, preflight, then Heat3D seeds 0/1/2"
+  ],
+  "remaining_blockers": [
+    "G1 completion and explicit remote authorization",
+    "remote dependency locks and one-batch GPU memory/epoch-time preflight",
+    "DeepOHeat-v1 repository still has no explicit license grant or official dependency lock",
+    "Heat3D-on-v1 formal support must be lossless; the local 1024-point smoke projection is not eligible",
+    "multi-HTC reference solver lacks released field truth and remains fail-closed until independent cross-check",
+    "same-hardware runtime remeasurement before direct runtime comparison"
+  ]
+}

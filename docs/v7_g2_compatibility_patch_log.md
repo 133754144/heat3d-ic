@@ -65,3 +65,12 @@
 - P1i train-only statistics 从 768 个 train samples 的 coords、11 physical features 与 target 物化；valid/test/sealed 不参与拟合。constant channel 的 transform scale 约定为 1，网络与信息预算均未改变。
 - DeepOHeat-v1 官方 Google Drive 七个 `.npy` 已下载到 repository 外的 `/private/tmp/heat3d-g2-p3-v1-data/data` 并逐文件 SHA256/shape 验证；第三方源码和约 8.11 GiB 数据均未加入 Git。最大文件使用可校验 byte-range transfer 完成，最终 byte size、NumPy header 与 SHA 均通过。
 - `scripts/convert_v7_g2_semiconductor_case.py` 只做确定性物理重表达。surface Neumann flux 被保留为独立 sensor array，明确不写入 volumetric `q`；HTC 与 volumetric coefficient 映射保持 released PDE/discrete-residual semantics。所有 smoke 输出位于 `/private/tmp`，没有 solver call、forward、backward 或 training。
+
+## G2-P4 execution qualification addendum
+
+- DeepOHeat-v1 solver fidelity 使用官方 `hybrid_solver.ipynb` 离散矩阵的 CPU 等价端口：同一 `101×101×56` mesh、piecewise k、volumetric q、top/bottom Robin 与 side adiabatic。仅把 CuPy/CUDA AMG 路径换成 SciPy 1.18.1 + PyAMG 5.3.0 CPU；PDE、BC、matrix coefficients 与 temperature scaling 未改。official cases 0/27/99 均达到约 `1e-11 K` field agreement。
+- 当前 Equinox/Optax 组合无法让 upstream 多余的外层 `eqx.filter_jit(model)` wrapper 与 optimizer gradient pytree 对齐；loss 本身已经 filter-jitted，因此 smoke 去掉这一冗余 wrapper。同时 Optax state 只对 inexact/trainable arrays 初始化，排除 ChebyKAN 的 integer `arange` buffers。模型、full spatial mesh、physics loss、Adam 和 schedule 未改；一个 official input function 的真实 optimizer step 与 checkpoint reload 通过。
+- DeepOHeat-v1 converter 更正三项证据：底层 `z<0.1` conductivity 为 2、interface 为 harmonic value、上层为 0.1；四个 region flags 改成互斥 one-hot；Heat3D 以 Robin ambient `u=0.2` 为 reference，因此 target 是 `25*(u-0.2)`，Kelvin-form source 同步为 `25*q_u`。这些是 released residual/units 的修正，不是 learned adapter。
+- Transolver formal objective 已恢复 Elasticity 脚本的真实语义：prediction 与 normalized target 都先 decode 到 physical field，再调用 `TestLoss(size_average=False)`。本机仅做一个 optimizer-step regression，并逐值确认与 official TestLoss 完全相等；没有重复完整 1-epoch smoke。
+- GINO 本轮不重复训练，只验证 formal runner 确实构造 `r_in=0.15, r_out=0.033`、`32^3` latent grid，并接受 frozen train-only normalization 的 `coords + 11 features`。非对称半径实际 GPU graph-memory gate 保留到 G1 后的单 batch preflight。
+- 所有 solver labels、checkpoint 与完整临时 receipts 位于 `/private/tmp`；Git 只包含 runner、contracts、hashes 与 compact receipts。没有连接 devbox、调用 GPU、读取 P1i test/sealed 或启动 formal/long training。

@@ -180,7 +180,7 @@ def latent_queries(resolution: int = 32) -> torch.Tensor:
     return torch.stack(torch.meshgrid(axis, axis, axis, indexing="ij"), dim=-1)
 
 
-def build_gino() -> torch.nn.Module:
+def build_gino(in_radius: float = 0.033, out_radius: float = 0.033) -> torch.nn.Module:
     from neuralop.models import GINO
 
     return GINO(
@@ -188,8 +188,8 @@ def build_gino() -> torch.nn.Module:
         out_channels=1,
         latent_feature_channels=None,
         gno_coord_dim=3,
-        in_gno_radius=0.033,
-        out_gno_radius=0.033,
+        in_gno_radius=in_radius,
+        out_gno_radius=out_radius,
         in_gno_transform_type="linear",
         out_gno_transform_type="linear",
         in_gno_pos_embed_type="nerf",

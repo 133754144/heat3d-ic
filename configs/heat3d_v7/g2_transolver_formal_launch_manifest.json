@@ -8,13 +8,14 @@
   "information_budget": {"coordinates": 3, "physical_features": 11, "feature_names": ["kx", "ky", "kz", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"], "target": "deltaT_K_on_same_query_points", "extra_prior": false, "solver": false, "dense_temperature_field": false, "learned_adapter": false},
   "normalization": {"contract": "train_only_global_channelwise_population_ddof0", "statistics_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a", "decode_target_before_metrics": true},
   "architecture": {"space_dim": 3, "function_channels": 11, "output_channels": 1, "layers": 8, "hidden_width": 128, "heads": 8, "slices": 64, "mlp_ratio": 1, "dropout": 0.0, "embedding": "official_preprocess_MLP", "unified_position": false, "ref": 8, "parameter_count": 716737},
-  "objective": "upstream_TestLoss_size_average_false_relative_L2_on_normalized_target",
+  "objective": "decode_prediction_and_target_to_physical_deltaT_K_then_upstream_TestLoss_size_average_false_relative_L2",
   "optimizer": {"name": "AdamW", "lr": 0.001, "weight_decay": 0.00001, "gradient_clip_norm": 0.1},
   "scheduler": {"name": "CosineAnnealingLR", "T_max_epochs": 500},
   "budget": {"epochs": 500, "batch_size": 1, "seeds": [0, 1, 2], "seed_binding": "python_random_numpy_torch_model_init_dataloader_generator"},
   "checkpoint": {"primary": "minimum_valid_iid_sample_first_relative_rmse_pct_with_earliest_epoch_tie_break", "sensitivity": "upstream_final_epoch", "reload": "model_optimizer_scheduler_epoch_normalizers_config_upstream_SHA_RNG_metadata_and_deterministic_prediction_check"},
   "metrics": {"decode_before_metrics": true, "contract": "configs/heat3d_v7/v7_metric_contract.json", "contract_sha256": "294761936a96b4b7cc1b50e48ab94306981f261ad2cf79149f38c3420c50fef5", "upstream_relative_L2": "separate_diagnostic"},
-  "provenance": {"qualification": "PASS_1_epoch_train_valid_checkpoint_bitwise_equal_reload", "qualification_runner_sha256": "41fae02d5c63a02c7c588c53c0ffa1e9202645b2c2b0b3607ca329be49184f4a"},
+  "provenance": {"qualification": "PASS_1_epoch_train_valid_checkpoint_bitwise_equal_reload", "qualification_runner_sha256": "41fae02d5c63a02c7c588c53c0ffa1e9202645b2c2b0b3607ca329be49184f4a", "p4_decoded_loss_regression": "PASS_one_optimizer_step_exact_equal_to_official_TestLoss"},
+  "runner": {"entrypoint": "scripts/run_v7_g2_p1i_external_formal.py", "sha256": "07e78582632b1cb078182e1c64e8d51565876072f00246827ed35ae92f2f7a9d", "preflight": "python scripts/run_v7_g2_p1i_external_formal.py --model Transolver --mode preflight --seed 0 --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <TRANSOLVER_ROOT> --output-dir <IGNORED_PREFLIGHT_DIR>", "formal_output": "output/heat3d_v7_g2/transolver/seed_<SEED>"},
   "remote_gate": "after_G1_completion_and_explicit_authorization_run_one_batch_GPU_memory_and_epoch_walltime_preflight_then_three_seeds_without_config_changes",
   "formal_training_started": false
 }

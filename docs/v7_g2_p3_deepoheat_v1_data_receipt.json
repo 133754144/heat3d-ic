@@ -3,7 +3,7 @@
   "date": "2026-08-31",
   "status": "UPSTREAM_FAITHFUL_FROM_SCRATCH_SEMICONDUCTOR_BASELINE_CANDIDATE",
   "official_release": {
-    "paper": "DeepOHeat-v1: Deep Operator Network for Data-Free Thermal Analysis of ICs",
+    "paper": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
     "paper_url": "https://arxiv.org/abs/2504.03955",
     "repository": "https://github.com/xlyu0127/DeepOHeat-v1",
     "commit": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
@@ -99,7 +99,7 @@
     "surface_coordinates": "x,y in [0,1], z in [0,0.5]",
     "volumetric_coordinates": "x,y in [0,1], z in [0,0.55]",
     "dataset_fitted_standardization": false,
-    "reference_temperature": "T_K = 293.15 + 25*u; therefore deltaT_K = 25*u"
+    "temperature_contract": "official T_K=293.15+25*u; for Heat3D bottom-Robin-ambient reference use T_ref=298.15 K and deltaT_K=25*(u-0.2)"
   },
   "code_binding": {
     "surface_train_inputs": "fs_train_surface.npy",

@@ -1,0 +1,61 @@
+{
+  "schema_version": "heat3d_v7_g2_p4_deepoheat_v1_solver_fidelity_receipt_v1",
+  "status": "PASS_FAIL_CLOSED_GATE_OPEN_FOR_TRAIN_LABEL_GENERATION",
+  "upstream": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+  "official_files": {
+    "fs_test_volume_sha256": "4aa308609313d9faf861ad9eb18833e58d03cc727fd05a4433e78ba8b4137d9a",
+    "u_test_volume_sha256": "9f912419e8d00d87c1782a2642cc13717898c98eeff4452b03dc701ad251a07f"
+  },
+  "pre_accuracy_thresholds": {
+    "field_rmse_deltaT_K_max": 0.05,
+    "relative_l2_u_max": 0.005,
+    "peak_absolute_error_deltaT_K_max": 0.25,
+    "temperature_range_endpoint_error_K_max": 0.25,
+    "relative_linear_residual_max": 1e-08
+  },
+  "solver": {
+    "implementation": "exact CPU port of official hybrid_solver.ipynb matrix, PC-GMRES plus PyAMG smoothed aggregation",
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "pyamg": "5.3.0",
+    "device": "Mac CPU",
+    "mesh": [101, 101, 56],
+    "spacing": [0.01, 0.01, 0.01],
+    "matrix_shape": [571256, 571256],
+    "matrix_nnz": 3874966,
+    "rtol": 1e-10,
+    "atol": 0.0,
+    "restart": 200,
+    "maxiter": 200,
+    "matrix_build_seconds": 0.07711191708222032,
+    "amg_setup_seconds": 0.920980874914676,
+    "peak_process_rss_bytes": 668123136,
+    "output_values_per_case": 571256,
+    "output_bytes_per_case_float64": 4570048
+  },
+  "physics": {
+    "geometry": "[0,1]x[0,1]x[0,0.55]",
+    "piecewise_k": "k=2 below z=0.1; harmonic interface value at z=0.1; k=0.1 above",
+    "volumetric_q": "official z=0.1/0.15 half-weight and interior full-weight mapping",
+    "top_bottom": "official Robin conditions with ambient u=0.2",
+    "side": "official first-order adiabatic conditions",
+    "temperature": "T_K=293.15+25*u; Heat3D T_ref=298.15 K; deltaT_K=25*(u-0.2)"
+  },
+  "cases": [
+    {"index": 0, "field_rmse_deltaT_K": 1.3796040824986978e-12, "relative_l2_u": 4.4639492978766126e-14, "peak_absolute_error_deltaT_K": 1.8041124150158794e-12, "predicted_temperature_K_range": [320.32767736187907, 329.9348735546274], "reference_temperature_K_range": [320.3276773618803, 329.93487355462884], "temperature_range_endpoint_error_K": 1.4068746168049984e-12, "relative_linear_residual": 1.001571577901503e-11, "solve_seconds": 2.2408074173144996, "iterations": 44, "status": "PASS"},
+    {"index": 27, "field_rmse_deltaT_K": 3.087483110554533e-11, "relative_l2_u": 9.989069033984427e-13, "peak_absolute_error_deltaT_K": 3.7492231541591536e-11, "predicted_temperature_K_range": [320.1169034041934, 328.5006997276778], "reference_temperature_K_range": [320.1169034042221, 328.50069972771104], "temperature_range_endpoint_error_K": 3.326761088828789e-11, "relative_linear_residual": 9.845089994456075e-11, "solve_seconds": 1.8923219577409327, "iterations": 38, "status": "PASS"},
+    {"index": 99, "field_rmse_deltaT_K": 9.766041831928097e-12, "relative_l2_u": 3.146836866942055e-13, "peak_absolute_error_deltaT_K": 2.1721513476791188e-11, "predicted_temperature_K_range": [319.70230942431215, 330.93017856002166], "reference_temperature_K_range": [319.7023094243074, 330.93017856001234], "temperature_range_endpoint_error_K": 9.28679355638451e-12, "relative_linear_residual": 8.565983564622611e-11, "solve_seconds": 1.8430209583602846, "iterations": 38, "status": "PASS"}
+  ],
+  "spatial_error_pattern": "all layerwise RMSE values <=3.194e-11 K; no localized BC/interface discrepancy",
+  "label_cost": {
+    "shared_matrix_plus_amg_setup_seconds": 0.9980927919968963,
+    "observed_per_case_solve_seconds_range": [1.8430209583602846, 2.2408074173144996],
+    "sequential_896_case_estimate_minutes_excluding_IO": [27.52, 33.46],
+    "peak_process_memory_GB_decimal": 0.668123136,
+    "single_field_MB_decimal_float64": 4.570048
+  },
+  "formal_train_labels_generated": false,
+  "p1i_test_or_sealed_access": false,
+  "temporary_full_receipt": "/private/tmp/g2_p4_deepoheat_v1_solver_fidelity.json"
+}

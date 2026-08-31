@@ -1,6 +1,6 @@
 # Heat3D-on-semiconductor-native dataset contracts
 
-转换器为 `scripts/convert_v7_g2_semiconductor_case.py`。它只重表达官方 case，不求解 PDE、不训练模型。所有数值保持 upstream 的无量纲坐标/PDE 系数；需要 Kelvin 时沿用官方 `T_K=293.15+25u`，因此 `deltaT_K=25u`。
+转换器为 `scripts/convert_v7_g2_semiconductor_case.py`。它只重表达官方 case，不求解 PDE、不训练模型。官方绝对温度保持 `T_K=293.15+25u`。由于 released top/bottom Robin ambient 均为 `u=0.2`，Heat3D 使用 `T_ref=298.15 K` 与 `deltaT=25(u-0.2)`。为让 Heat3D 的 Kelvin-form PDE channels 量纲自洽，冻结精确的 canonical dimensionalization：一个 released length unit 记为 1 m、k 数值不变、`q_K=25q_u`、`h=k/Robin_length`。这是对同一 PDE 的固定单位变换，不增加 case 信息，也不表示 benchmark 的真实芯片尺寸。
 
 | benchmark | 原作者输入 | Heat3D 可构造输入 | representation | released split / output | metric alignment | direct numerical compare |
 |---|---|---|---|---|---|---|

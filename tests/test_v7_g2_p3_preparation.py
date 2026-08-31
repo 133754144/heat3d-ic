@@ -28,7 +28,8 @@ def test_htc_converter_preserves_released_pde_coefficients() -> None:
     assert np.all(features[:, :3] == np.float32(0.2))
     assert np.all(features[:, 8] == np.float32(2.0))
     assert np.all(features[:, 9] == np.float32(0.8))
-    assert set(np.unique(features[:, 3])) == {0.0, 1.0}
+    assert set(np.unique(features[:, 3])) == {0.0, 25.0}
+    assert np.allclose(features[:, 4:8].sum(axis=1), 1.0)
     assert metadata["representation"].startswith("lossless")
 
 
@@ -48,6 +49,21 @@ def test_large_npy_selection_is_sample_local(tmp_path: Path) -> None:
     selected = converter.select_array(path, (4, 5), 2)
     assert selected.dtype == np.float32
     assert np.array_equal(selected, values[2].astype(np.float32))
+
+
+def test_v1_volume_temperature_reference_is_robin_ambient() -> None:
+    converter = load_script("convert_v7_g2_semiconductor_case.py")
+    power = np.ones((101, 101), dtype=np.float32)
+    target_u = np.full((101, 101, 56), 0.2, dtype=np.float32)
+    arrays = converter.volume_v1_arrays(power, target_u)
+    assert np.allclose(arrays["temperature_K"], 298.15, atol=1e-5)
+    assert np.allclose(arrays["deltaT_from_robin_ambient_K"], 0.0, atol=1e-6)
+    assert np.allclose(arrays["features"][:, 4:8].sum(axis=1), 1.0)
+    z = arrays["coords"][:, 2]
+    k = arrays["features"][:, 0]
+    assert np.allclose(k[z < 0.10 - 1e-7], 2.0)
+    assert np.allclose(k[z > 0.10 + 1e-7], 0.1)
+    assert np.allclose(k[np.isclose(z, 0.10)], 2 * 0.1 * 2 / (0.1 + 2))
 
 
 def test_surface_converter_keeps_flux_outside_volumetric_q(tmp_path: Path) -> None:

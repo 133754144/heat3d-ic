@@ -1,0 +1,48 @@
+{
+  "schema_version": "heat3d_v7_g2_deepoheat_multi_htc_case_manifest_v1",
+  "status": "IMMUTABLE_CASES_PREPARED_NOT_LAUNCHED",
+  "upstream": "Cadence-Celsius/DeepOHeat@46ccfe3fd43d99765e427480e7b6e0e16c3dbc70",
+  "benchmark": "multi_htc_bc",
+  "case_table": {
+    "count": 1024,
+    "top_and_bottom_h_axis": "32 values round(0.1 + index * 0.2 / 31, 4), index=0..31",
+    "permutation": "for position p=0..1023, lattice_index=(405*p+97) mod 1024; top_index=lattice_index mod 32; bottom_index=floor(lattice_index/32)",
+    "roles": {
+      "train": "positions 0..767 (768 cases)",
+      "valid": "positions 768..895 (128 cases)",
+      "test": "positions 896..1023 (128 sealed-until-checkpoint cases)"
+    },
+    "canonical_rows": "JSON list, sort_keys=true, separators=(',',':'); each row has bottom_h, case_id=position, role, top_h",
+    "canonical_rows_sha256": "8b628acdaca2791c3dd661bea1f52e016db13d93abd219fa09eec04999de933a",
+    "accuracy_or_temperature_observed_during_selection": false
+  },
+  "physics": {
+    "domain": [1.0, 1.0, 0.55],
+    "conductivity": 0.2,
+    "volumetric_source": "dimensionless q=1 on 0.25<=z<=0.30 and zero elsewhere; canonical Heat3D dimensionalization q=25 K-equivalent source",
+    "top_and_bottom": "Robin with case top_h and bottom_h",
+    "side": "adiabatic",
+    "ambient": "u=0.2, equivalent T_ref=298.15 K under T=293.15+25u",
+    "target": "deltaT_K=25*(u-0.2)"
+  },
+  "output": {
+    "grid": [51, 51, 51],
+    "domain_same_as_upstream": true
+  },
+  "reference_solver": {
+    "required": "same physical PDE, fixed geometry/k/q, case-specific top/bottom Robin BC and side adiabatic BC",
+    "fidelity_gate": "must be validated against any released upstream field before formal label production; otherwise fail closed",
+    "formal_labels_generated": 0
+  },
+  "metrics": {
+    "physical_space": ["field_RMSE_K", "relative_L2", "peak_absolute_error_K"],
+    "runtime": "remeasure both methods on identical hardware before direct comparison"
+  },
+  "model_use": {
+    "DeepOHeat": "retain upstream physics training and per-epoch continuous random HTC sampling; evaluate on the frozen test cases",
+    "Heat3D": "supervised train/valid roles above, deterministic converter only, no added physics information"
+  },
+  "converter_loader_smoke": "covered_by_existing_multi_htc_converter_schema_tests; no duplicate training",
+  "formal_or_long_training_started": false,
+  "p1i_test_or_sealed_access": false
+}
