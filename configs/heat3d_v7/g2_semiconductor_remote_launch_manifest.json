@@ -1,7 +1,7 @@
 {
-  "schema_version": "heat3d_v7_g2_semiconductor_remote_launch_manifest_v2_p5",
-  "status": "FROZEN_LOCAL_CLOSURE_NOT_AUTHORIZED_NOT_LAUNCHED",
-  "global_gate": ["G1_21_run_complete", "explicit_remote_authorization", "idle_CUDA_GPU_resource_preflight", "no_test_driven_changes"],
+  "schema_version": "heat3d_v7_g2_semiconductor_remote_launch_manifest_v3_p6",
+  "status": "AUTHORIZED_PROTOCOL_FROZEN_REMOTE_GATES_PENDING",
+  "global_gate": ["idle_CUDA_GPU_resource_preflight", "no_test_driven_changes"],
   "DeepOHeat_v1_upstream_from_scratch_volumetric": {
     "status": "REMOTE_READY_AFTER_CUDA_ENVIRONMENT_PREFLIGHT",
     "repo": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
@@ -12,7 +12,9 @@
     "physics": "full 101x101x56 piecewise-k volumetric PDE plus top/bottom Robin and side adiabatic residuals",
     "optimizer_scheduler": "Optax Adam lr=1e-3; exponential decay 0.9 transition_steps=1000",
     "budget": {"iterations": 100000, "functions_per_iteration": 50, "seed": 42},
-    "checkpoint": "upstream final serialized leaves",
+    "checkpoint": "final serialized leaves only; no valid/test selection",
+    "training_data_isolation": {"accepted": ["fs_train_volume.npy"], "forbidden": ["fs_test_volume.npy", "u_test_volume.npy"], "official_100_test": "sealed_until_separate_evaluation_only_unlock"},
+    "runner": "scripts/run_v7_g2_p6_deepoheat_v1_formal.py",
     "metrics": ["physical_temperature_MAPE", "physical_temperature_PAPE", "relative_L2_u", "RMSE_u", "peak_absolute_difference_u"],
     "output_directory": "output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42",
     "resource_preflight": "CUDA/JAX environment plus one official 50-function full-mesh step; no PDE/BC/mesh reduction",
@@ -37,14 +39,14 @@
     "code_reference": "G1_FORMAL_CODE_SHA=191a7a06a681556f575a1c04e2b61cb13363efe1",
     "contract": "configs/heat3d_v7/g2_deepoheat_v1_cross_benchmark_contract.json",
     "input": "1024 physics-layout-aware coords+k+q+BC observations",
-    "outputs": ["native 1024", "frozen reconstruction to 10201 points on z=0.15 slice"],
+    "outputs": ["native 1024", "U source slice 10201 at z=0.15", "U full field 571256 primary high-resolution comparison"],
     "parameter_count": 892776,
     "optimizer_scheduler": "AdamW 5e-4 wd1e-4 clip1.0; warmup10 cosine to5e-5 at epoch200",
     "budget": {"epochs": 200, "batch_size": 24, "seeds": [0, 1, 2]},
     "checkpoint": "minimum valid sample-first relative RMSE percent, earliest tie; retain final epoch",
     "metrics": ["v7 physical-space metric contract", "same-domain DeepOHeat-v1 metrics"],
     "output_directory": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_<SEED>",
-    "resource_preflight": "one CUDA batch with frozen support/normalization and both native/U validation paths; record GPU name, peak memory and timing"
+    "resource_preflight": "one CUDA batch with frozen support/normalization and native/U-slice/U-full validation paths; record GPU name, peak memory and timing; U latency includes reconstruction"
   },
   "Heat3D_on_DeepOHeat_multi_HTC": {
     "status": "ANALYTICAL_SOLVER_GATE_PASS_FORMAL_LABELS_NOT_GENERATED",

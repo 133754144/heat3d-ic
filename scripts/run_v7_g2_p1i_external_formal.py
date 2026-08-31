@@ -178,8 +178,11 @@ def main() -> int:
     if None in (args.dataset_root, args.dataset_manifest, args.upstream_root, args.output_dir):
         parser.error("preflight/train require dataset-root, dataset-manifest, upstream-root, output-dir")
 
-    if args.model == "GINO" and not torch.cuda.is_available():
-        raise SystemExit("FAIL-CLOSED: GINO formal preflight/training requires CUDA")
+    if not torch.cuda.is_available():
+        raise SystemExit(
+            f"FAIL-CLOSED: {args.model} formal preflight/training requires CUDA; "
+            "CPU fallback is forbidden"
+        )
     if args.model == "GINO" and args.mode == "train":
         if args.backend_qualification_receipt is None:
             parser.error("GINO train requires --backend-qualification-receipt")
@@ -192,8 +195,8 @@ def main() -> int:
             raise ValueError("GINO backend receipt scientific config mismatch")
 
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
-    if torch.cuda.is_available(): torch.cuda.manual_seed_all(args.seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.cuda.manual_seed_all(args.seed)
+    device = torch.device("cuda")
     stats = load_stats(args.statistics)
     train = P1iRoleDataset(args.dataset_root, args.dataset_manifest, "train")
     valid = P1iRoleDataset(args.dataset_root, args.dataset_manifest, "valid_iid")

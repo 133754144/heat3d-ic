@@ -53,3 +53,27 @@ def test_multi_htc_converter_names_beta_and_derives_physical_h():
     assert contract["bottom_h"] == 0.8
     assert np.allclose(arrays["features"][:, 8], 2.0)
     assert np.allclose(arrays["features"][:, 9], 0.8)
+
+
+def test_p6_three_output_domains_and_test_isolation_are_frozen():
+    import json
+
+    contract = json.loads(
+        (ROOT / "configs/heat3d_v7/g2_deepoheat_v1_cross_benchmark_contract.json").read_text()
+    )
+    outputs = contract["Heat3D"]["outputs"]
+    assert outputs["native_sparse"]["query_count"] == 1024
+    assert outputs["U_source_slice"]["query_count"] == 10201
+    assert outputs["U_source_slice"]["domain"].endswith("z=0.15 source-layer top slice")
+    assert outputs["U_full_field"]["query_count"] == 571256
+    assert outputs["U_full_field"]["primary_high_resolution_comparison"] is True
+    assert "includes reconstruction cost" in contract["comparison_rules"]["runtime"]
+    isolation = contract["DeepOHeat_v1"]["training_data_isolation"]
+    assert isolation["accepted"] == "fs_train_volume.npy"
+    assert isolation["forbidden"] == ["fs_test_volume.npy", "u_test_volume.npy"]
+
+
+def test_p6_common_runner_requires_cuda_for_both_models():
+    source = (ROOT / "scripts/run_v7_g2_p1i_external_formal.py").read_text()
+    assert "CPU fallback is forbidden" in source
+    assert 'device = torch.device("cuda")' in source

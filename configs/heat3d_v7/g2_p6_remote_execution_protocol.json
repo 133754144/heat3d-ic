@@ -1,0 +1,36 @@
+{
+  "schema_version": "heat3d_v7_g2_p6_remote_execution_protocol_v1",
+  "status": "AUTHORIZED_PROTOCOL_FROZEN_PREFLIGHTS_PENDING",
+  "scope": "G2 only",
+  "test_unlock": {
+    "status": "forbidden_in_P6",
+    "roles": ["P1i test_iid", "P1i sealed", "DeepOHeat-v1 official 100 test", "multi-HTC sealed test"],
+    "next_step": "separate evaluation-only unlock after immutable configs, frozen checkpoints, complete seeds, and no mixed protocol"
+  },
+  "common_gate": {
+    "both_required_before_any_formal_common_task_training": ["GINO optimized CUDA preflight PASS", "Transolver CUDA preflight PASS"],
+    "checkpoint_primary": "minimum valid_iid sample_first_relative_rmse_pct; tie earliest epoch",
+    "checkpoint_sensitivity": "final epoch",
+    "test_access": false
+  },
+  "launch_order": [
+    "deploy and SHA-verify DeepOHeat-v1 768/128 label cache",
+    "GINO optimized CUDA preflight",
+    "Transolver CUDA preflight",
+    "GINO seeds 0/1/2 for 301 epochs",
+    "Transolver seeds 0/1/2 for 500 epochs",
+    "DeepOHeat-v1 batch-50 full-mesh CUDA preflight",
+    "DeepOHeat-v1 seed42 100000-iteration final-only training",
+    "Heat3D-on-DeepOHeat-v1 CUDA preflight then seeds 0/1/2 for 200 epochs",
+    "multi-HTC train/valid label generation and CUDA preflight then seeds 0/1/2"
+  ],
+  "fail_closed": "any scientific-contract, dataset SHA, environment, CUDA, or checkpoint mismatch stops only the affected downstream chain; no silent repair or mixed result",
+  "heat3d_v1_output_domains": {
+    "native_sparse": 1024,
+    "U_source_slice": {"count": 10201, "shape": [101, 101], "z": 0.15},
+    "U_full_primary": {"count": 571256, "shape": [101, 101, 56], "same_domain_as_DeepOHeat_v1_full_output": true},
+    "conditioning_count_all_modes": 1024,
+    "U_latency_includes_reconstruction": true
+  },
+  "scientific_contract_changes_allowed_after_launch": false
+}

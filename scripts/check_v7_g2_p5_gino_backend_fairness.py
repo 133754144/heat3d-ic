@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib.util
+import importlib.metadata
 import json
 import platform
 import sys
@@ -130,7 +131,12 @@ def main() -> int:
         "graph_semantics": graph,
         "output_semantics": {"allclose": bool(output_close), "atol": OUTPUT_ATOL, "rtol": OUTPUT_RTOL, "max_absolute_difference": output_max_abs},
         "resource": {"gpu_name": torch.cuda.get_device_name(), "peak_allocated_bytes": int(torch.cuda.max_memory_allocated()), "peak_reserved_bytes": int(torch.cuda.max_memory_reserved()), "train_step_wall_seconds": train_seconds, "valid_forward_wall_seconds": valid_seconds},
-        "environment": {"python": platform.python_version(), "torch": torch.__version__, "cuda_runtime": torch.version.cuda},
+        "environment": {
+            "python": platform.python_version(), "torch": torch.__version__,
+            "cuda_runtime": torch.version.cuda,
+            "open3d": importlib.metadata.version("open3d"),
+            "torch_scatter": importlib.metadata.version("torch-scatter"),
+        },
         "train_objective_finite": bool(torch.isfinite(loss)), "accuracy_used_to_change_config": False,
         "formal_or_long_training_started": False, "test_or_sealed_access": False,
     }

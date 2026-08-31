@@ -14,7 +14,7 @@
     "scientific_config_changes_between_backends": false,
     "equivalence_gate": "same fixed train sample, identical state_dict, exact per-query neighbor edge multisets, and output allclose(atol=1e-5,rtol=1e-5)",
     "preflight_runner": "scripts/check_v7_g2_p5_gino_backend_fairness.py",
-    "preflight_runner_sha256": "9de99e151665c7d9d34aaed0091add9084cb655452ce11b7aa853333c54de386",
+    "preflight_runner_sha256": "c8a7f0d19e45322d87421a6a7654b08743a4ce4b523e8ae235e40d7b41058334",
     "cuda_required": true,
     "no_cuda_action": "FAIL_CLOSED",
     "required_receipt_fields": ["GPU name", "peak allocated bytes", "peak reserved bytes", "train-step walltime", "valid-forward walltime"],
@@ -29,7 +29,7 @@
   "provenance": {"radius_receipt": "docs/v7_g2_p3_gino_full_radius_receipt.json", "radius_decision": "frozen_before_accuracy", "qualification": "PASS_1_epoch_train_valid_checkpoint_reload", "qualification_runner_sha256": "41fae02d5c63a02c7c588c53c0ffa1e9202645b2c2b0b3607ca329be49184f4a", "p4_formal_contract_regression": "PASS_r_in_0.15_r_out_0.033_with_frozen_normalization"},
   "runner": {
     "entrypoint": "scripts/run_v7_g2_p1i_external_formal.py",
-    "sha256": "1a1bb93ec56cfa43f29378ee8da4285e733da2f4e62f7e826326c8ac0dd06a1c",
+    "sha256": "0e17eea63e84fe56eed443ffc51ed5e617a54863efc3d654fcff393b434ad42b",
     "optimized_backend_preflight": "python scripts/check_v7_g2_p5_gino_backend_fairness.py --mode optimized-preflight --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <NEURALOPERATOR_ROOT> --output <IGNORED_PREFLIGHT_DIR>/gino_backend_receipt.json",
     "formal_train": "python scripts/run_v7_g2_p1i_external_formal.py --model GINO --mode train --seed <0|1|2> --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <NEURALOPERATOR_ROOT> --backend-qualification-receipt <IGNORED_PREFLIGHT_DIR>/gino_backend_receipt.json --output-dir output/heat3d_v7_g2/gino/seed_<SEED>",
     "formal_output": "output/heat3d_v7_g2/gino/seed_<SEED>"
