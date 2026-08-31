@@ -1,0 +1,139 @@
+{
+  "schema_version": "heat3d_v7_g2_formal_preparation_protocol_v4",
+  "status": "IMMUTABLE_LOCAL_PREPARATION_COMPLETE_NOT_AUTHORIZED_NOT_LAUNCHED",
+  "date": "2026-08-31",
+  "comparison_reference": {
+    "g1_formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "g2_base_sha": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7"
+  },
+  "hard_boundaries": {
+    "local_mac_only": true,
+    "ssh_or_devbox_used": false,
+    "gpu_used": false,
+    "g1_worktree_modified": false,
+    "formal_g2_training_started": false,
+    "long_training_started": false,
+    "therm_fm_24GB_checkpoint_downloaded": false,
+    "test_iid_access": false,
+    "sealed_access": false
+  },
+  "p1i_common_task": {
+    "formal_rows": ["Vanilla RIGNO", "GINO", "Transolver", "Heat3D"],
+    "dataset": {
+      "id": "heat3d_v6_p1i_continuous_physics1024_v1",
+      "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+      "roles": {"train": 768, "valid_iid": 128},
+      "forbidden_roles": ["test_iid", "sealed"]
+    },
+    "information_budget": {
+      "input": "coords_3_plus_exactly_11_physical_features",
+      "features": ["kx", "ky", "kz", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"],
+      "target": "deltaT_K_on_same_query_points",
+      "extra_prior": false,
+      "solver": false,
+      "dense_temperature_field": false,
+      "learned_adapter": false
+    },
+    "normalization": {
+      "fit_role": "train_only",
+      "contract": "global_channelwise_population_ddof0_over_all_train_samples_and_points",
+      "statistics_receipt": "docs/v7_g2_p3_p1i_train_statistics.json",
+      "statistics_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+      "valid_or_forbidden_role_used_for_fit": false,
+      "per_node_index_statistics": false,
+      "decode_target_before_metrics": true
+    },
+    "models": {
+      "Vanilla RIGNO": {
+        "parameter_count": 826277,
+        "source": "G1_frozen_formal_artifact",
+        "g2_retraining_authorized": false
+      },
+      "GINO": {
+        "parameter_count": 13673988,
+        "local_gate": "PASS_1_epoch_train_valid_checkpoint_reload",
+        "manifest": "configs/heat3d_v7/g2_gino_formal_launch_manifest.json",
+        "radii": {"input": 0.15, "output": 0.033},
+        "radius_receipt": "docs/v7_g2_p3_gino_full_radius_receipt.json"
+      },
+      "Transolver": {
+        "parameter_count": 716737,
+        "local_gate": "PASS_1_epoch_train_valid_checkpoint_bitwise_equal_reload",
+        "manifest": "configs/heat3d_v7/g2_transolver_formal_launch_manifest.json"
+      },
+      "Heat3D": {
+        "parameter_count": 892776,
+        "source": "G1_frozen_formal_artifact",
+        "g2_retraining_authorized": false
+      }
+    }
+  },
+  "checkpoint_selection_policy": {
+    "scope": ["Vanilla RIGNO", "GINO", "Transolver", "Heat3D"],
+    "primary": {
+      "split": "valid_iid",
+      "metric": "sample_first_relative_rmse_pct",
+      "selection": "per_model_per_seed_run",
+      "tie_break": "earliest_epoch",
+      "frequency": "every_completed_epoch"
+    },
+    "sensitivity": "retain_and_report_upstream_final_epoch",
+    "forbidden": ["test_or_sealed_selection", "cross_model_selection", "cross_seed_selection", "posthoc_metric_or_budget_change"]
+  },
+  "semiconductor_native": {
+    "DeepOHeat": {
+      "status": "original_pretrained_native_inference_PASS",
+      "track": "native_domain_only",
+      "p1i": "P1i_direct_comparison_not_identifiable_without_algorithm_change",
+      "benchmarks": ["2d_power_map", "single_htc_bc", "multi_htc_bc"]
+    },
+    "DeepOHeat-v1": {
+      "status": "upstream_faithful_from_scratch_semiconductor_baseline_candidate",
+      "track": "native_domain_only",
+      "data_receipt": "docs/v7_g2_p3_deepoheat_v1_data_receipt.json",
+      "benchmarks": ["surface", "volumetric"],
+      "checkpoint_absence_is_scientific_blocker": false,
+      "original_long_reproduction_completed": false
+    }
+  },
+  "cross_benchmark": {
+    "contracts": "docs/v7_g2_p3_cross_benchmark_contracts.md",
+    "protocol": "docs/v7_g2_p3_cross_benchmark_protocol.md",
+    "lossless_into_current_coords_k_q_BC_schema": ["DeepOHeat_single_htc_bc", "DeepOHeat_multi_htc_bc", "DeepOHeat-v1_volumetric"],
+    "not_lossless_in_current_11_channel_schema": ["DeepOHeat_2d_power_map", "DeepOHeat-v1_surface"],
+    "reason_surface_not_lossless": "top Neumann surface flux is not volumetric q and requires an explicit deterministic flux-BC contract",
+    "heat3d_train_temperature_labels_available": false,
+    "runtime_direct_comparison_rule": "remeasure_on_same_hardware_precision_batch_query_count_and_IO_boundary"
+  },
+  "paper_motivation": {
+    "why_heat3d": "docs/v7_g2_p3_why_heat3d_matrix.md",
+    "gap_statement": "sparse irregular physical observations + explicit heterogeneous k/q/BC + geometry-aware operator + resolution-decoupled inference",
+    "forbidden_claim": "existing methods do not support heterogeneous materials",
+    "why_rigno": "docs/v7_g2_p3_why_rigno_matrix.md",
+    "logic": {
+      "G1": "tests whether Heat3D mechanisms are effective",
+      "G2": "tests whether RIGNO is a reasonable backbone through measured comparison with GINO and Transolver",
+      "no_predeclared_winner": true
+    }
+  },
+  "other_tracks": {
+    "Therm-FM": {
+      "track": "transfer_and_data_efficiency",
+      "status": "official_tiny_demo_evidence_retained_real_model_T_not_downloaded",
+      "fairness": "pretrained prior != same from-scratch training budget"
+    },
+    "DeepOHeat-v2": "related_work_and_design_loop_capability_only",
+    "Geo-FNO": "related_work_only"
+  },
+  "remaining_gates_after_G1": [
+    "explicit authorization for remote G2",
+    "verify G1 completion and idle target GPU without altering G1 artifacts",
+    "lock remote Python/framework/dependency environments and launch runner SHA",
+    "GINO and Transolver one-batch GPU memory plus epoch-walltime resource preflight without accuracy-based changes",
+    "launch the preregistered three seeds only after the resource gate",
+    "for native Heat3D rows generate train reference temperatures with a frozen solver/version/mesh/case manifest",
+    "resolve DeepOHeat-v1 license and dependency-lock provenance before redistribution or formal claims",
+    "remeasure all directly compared runtimes on the same hardware"
+  ]
+}

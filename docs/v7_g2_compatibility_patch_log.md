@@ -58,3 +58,10 @@
 
 - 无 compatibility patch。论文、arXiv metadata、GitHub repository 搜索和作者/机构关联仓库均未发现可验证 official implementation。
 - 搜索到的第三方实验仓库不是作者仓库，未 clone、未引用为 original reproduction，也未启动 independent reimplementation。
+
+## G2-P3 preparation addendum
+
+- P1i 完整 coordinate-only radius audit 只读取本机 pinned upload cache 的 768 train 与 128 `valid_iid`；没有读取 target/accuracy，也没有连接 devbox。冻结 asymmetric `r_in=0.15, r_out=0.033`。正式 GPU resource preflight 仍待 G1 后另行授权。
+- P1i train-only statistics 从 768 个 train samples 的 coords、11 physical features 与 target 物化；valid/test/sealed 不参与拟合。constant channel 的 transform scale 约定为 1，网络与信息预算均未改变。
+- DeepOHeat-v1 官方 Google Drive 七个 `.npy` 已下载到 repository 外的 `/private/tmp/heat3d-g2-p3-v1-data/data` 并逐文件 SHA256/shape 验证；第三方源码和约 8.11 GiB 数据均未加入 Git。最大文件使用可校验 byte-range transfer 完成，最终 byte size、NumPy header 与 SHA 均通过。
+- `scripts/convert_v7_g2_semiconductor_case.py` 只做确定性物理重表达。surface Neumann flux 被保留为独立 sensor array，明确不写入 volumetric `q`；HTC 与 volumetric coefficient 映射保持 released PDE/discrete-residual semantics。所有 smoke 输出位于 `/private/tmp`，没有 solver call、forward、backward 或 training。

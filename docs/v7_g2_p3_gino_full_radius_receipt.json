@@ -1,0 +1,42 @@
+{
+  "schema_version": "heat3d_v7_g2_gino_full_radius_receipt_v1",
+  "date": "2026-08-31",
+  "dataset": {
+    "id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "coordinate_files_verified": {"train": 768, "valid_iid": 128},
+    "ordered_sample_id_role_coords_sha256_index_sha256": "ada0c3a017116c528da7b77fc92dc9e747ac42a8275f8a990738154424affa25"
+  },
+  "method": {
+    "opened_arrays": ["coords.npy"],
+    "target_feature_loss_or_accuracy_opened": false,
+    "coordinate_normalization": {"fit": "train_only_min_max", "min": [0.0, 0.0, 0.0], "max": [0.01, 0.01, 0.004175]},
+    "latent_grid": [32, 32, 32],
+    "neighbor_semantics": "scipy_cKDTree_closed_ball_distance_le_radius"
+  },
+  "asymmetric_contract": {
+    "input_radius": 0.15,
+    "output_radius": 0.033,
+    "train": {
+      "input_gno": {"zero_neighbor_fraction": 0.002385894457499186, "mean": 11.398845712343851, "median": 9.0, "p5": 3.0, "p95": 34.0, "query_coverage": 0.9976141055425009, "source_coverage": 1.0, "edge_count": 286861345},
+      "output_gno": {"zero_neighbor_fraction": 0.0, "mean": 4.378780364990234, "median": 4.0, "p5": 3.0, "p95": 7.0, "query_coverage": 1.0, "source_coverage": 0.10761749744415283, "edge_count": 3443613}
+    },
+    "valid_iid": {
+      "input_gno": {"zero_neighbor_fraction": 0.0023446083068847656, "mean": 11.395556211471558, "median": 9.0, "p5": 3.0, "p95": 34.0, "query_coverage": 0.9976553916931152, "source_coverage": 1.0, "edge_count": 47796427},
+      "output_gno": {"zero_neighbor_fraction": 0.0, "mean": 4.379585266113281, "median": 4.0, "p5": 3.0, "p95": 7.0, "query_coverage": 1.0, "source_coverage": 0.10784435272216797, "edge_count": 574041}
+    }
+  },
+  "symmetric_0_15_reference": {
+    "train_output_gno": {"mean": 364.76306279500324, "median": 414.0, "p5": 218.0, "p95": 425.0, "edge_count": 286861345},
+    "valid_iid_output_gno": {"mean": 364.65779876708984, "median": 413.0, "p5": 218.0, "p95": 425.0, "edge_count": 47796427},
+    "combined_total_edges": 669315544
+  },
+  "graph_size": {
+    "asymmetric_total_edges": 338675426,
+    "asymmetric_vs_symmetric_0_15_ratio": 0.5060026306515899
+  },
+  "decision": "FREEZE_r_in_0.15_r_out_0.033",
+  "decision_basis": "geometry_coverage_only_before_formal_accuracy",
+  "remaining_gate": "single_batch_GPU_graph_memory_and_walltime_preflight_only; radius_must_not_be_tuned_on_accuracy"
+}

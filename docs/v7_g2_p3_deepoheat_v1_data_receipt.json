@@ -1,0 +1,132 @@
+{
+  "schema_version": "heat3d_v7_g2_p3_deepoheat_v1_data_receipt_v1",
+  "date": "2026-08-31",
+  "status": "UPSTREAM_FAITHFUL_FROM_SCRATCH_SEMICONDUCTOR_BASELINE_CANDIDATE",
+  "official_release": {
+    "paper": "DeepOHeat-v1: Deep Operator Network for Data-Free Thermal Analysis of ICs",
+    "paper_url": "https://arxiv.org/abs/2504.03955",
+    "repository": "https://github.com/xlyu0127/DeepOHeat-v1",
+    "commit": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "google_drive_folder_id": "13g2dkNU1AU0OPGRPvkBAncguAK7Cb6Ek",
+    "repository_license": "NO_EXPLICIT_LICENSE_FOUND",
+    "checkpoint_in_repository_or_drive_folder": false
+  },
+  "retrieval": {
+    "method": "official Google Drive folder; gdown 5.2.0 metadata/download plus verified byte-range transfer for the largest file",
+    "local_cache": "/private/tmp/heat3d-g2-p3-v1-data/data",
+    "cache_is_git_ignored_or_outside_repository": true,
+    "total_files": 7,
+    "total_bytes": 8710901856,
+    "large_training_or_formal_run_started": false
+  },
+  "files": [
+    {
+      "name": "fs_test_surface.npy",
+      "bytes": 35408,
+      "shape": [10, 21, 21],
+      "dtype": "float64",
+      "sha256": "ea17c6274cfea38cd0136f63d3d44dcf8639ae10bc793abeb6a985eae149c108",
+      "role": "surface_test_input_power_functions"
+    },
+    {
+      "name": "fs_test_volume.npy",
+      "bytes": 8160928,
+      "shape": [100, 101, 101],
+      "dtype": "float64",
+      "sha256": "4aa308609313d9faf861ad9eb18833e58d03cc727fd05a4433e78ba8b4137d9a",
+      "role": "volumetric_test_input_power_functions"
+    },
+    {
+      "name": "fs_train_surface.npy",
+      "bytes": 35280128,
+      "shape": [10000, 21, 21],
+      "dtype": "float64",
+      "sha256": "7ad9e4dae1ec765195620fb9ffd55a98efc836449668e2e7ca1d53e98be90456",
+      "role": "surface_train_input_power_functions"
+    },
+    {
+      "name": "fs_train_volume.npy",
+      "bytes": 8160800128,
+      "shape": [100000, 101, 101],
+      "dtype": "float64",
+      "sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+      "role": "volumetric_train_input_power_functions"
+    },
+    {
+      "name": "power_maps_test_volume.npy",
+      "bytes": 8000128,
+      "shape": [100, 100, 100],
+      "dtype": "float64",
+      "sha256": "0b0b66afac8dd3431f88bed29e670e692f10d343e37e42c4b1099d7fb620906c",
+      "role": "volumetric_test_interval_power_maps"
+    },
+    {
+      "name": "u_test_surface.npy",
+      "bytes": 41620208,
+      "shape": [10, 101, 101, 51],
+      "dtype": "float64",
+      "sha256": "7708e70eb9afa44e9ca6d9e1df3b00121b5b7c2c433b8899bb46125ddb43213e",
+      "role": "surface_test_reference_temperature_u"
+    },
+    {
+      "name": "u_test_volume.npy",
+      "bytes": 457004928,
+      "shape": [100, 101, 101, 56],
+      "dtype": "float64",
+      "sha256": "9f912419e8d00d87c1782a2642cc13717898c98eeff4452b03dc701ad251a07f",
+      "role": "volumetric_test_reference_temperature_u"
+    }
+  ],
+  "official_split": {
+    "surface": {
+      "train_inputs": 10000,
+      "test_inputs": 10,
+      "test_reference_fields": 10,
+      "query_resolution": [101, 101, 51]
+    },
+    "volumetric": {
+      "train_inputs": 100000,
+      "test_inputs": 100,
+      "test_reference_fields": 100,
+      "query_resolution": [101, 101, 56]
+    },
+    "training_temperature_labels_released": false,
+    "training_temperature_labels_required_by_official_physics_informed_code": false
+  },
+  "representation_and_normalization": {
+    "surface_power": "21x21 top-surface Neumann-flux function",
+    "volumetric_power": "101x101 branch function used by the released volumetric residual; power_maps_test_volume.npy additionally stores 100x100 interval maps",
+    "surface_coordinates": "x,y in [0,1], z in [0,0.5]",
+    "volumetric_coordinates": "x,y in [0,1], z in [0,0.55]",
+    "dataset_fitted_standardization": false,
+    "reference_temperature": "T_K = 293.15 + 25*u; therefore deltaT_K = 25*u"
+  },
+  "code_binding": {
+    "surface_train_inputs": "fs_train_surface.npy",
+    "surface_test_inputs": "fs_test_surface.npy",
+    "surface_test_reference": "u_test_surface.npy",
+    "volumetric_train_inputs": "fs_train_volume.npy",
+    "volumetric_test_inputs": "fs_test_volume.npy",
+    "volumetric_test_reference": "u_test_volume.npy",
+    "checkpoint_evaluation_available": false,
+    "from_scratch_physics_informed_training_inputs_complete": true,
+    "reference_evaluation_inputs_complete": true
+  },
+  "classification": {
+    "value": "upstream_faithful_from_scratch_semiconductor_baseline_candidate",
+    "scientific_reason": "The complete official input-function train splits and test reference fields are available, and the upstream physics-informed objective does not require train temperature labels.",
+    "not_an_original_reproduction_pass_yet": true,
+    "not_done": [
+      "official long from-scratch training",
+      "checkpoint-native inference",
+      "same-hardware runtime measurement"
+    ]
+  },
+  "remaining_provenance_and_execution_qualifiers": [
+    "no explicit repository license",
+    "no official dependency lock",
+    "no official checkpoint",
+    "no separate generation metadata or physical-unit power-scaling manifest",
+    "formal or long training requires later remote authorization"
+  ]
+}
