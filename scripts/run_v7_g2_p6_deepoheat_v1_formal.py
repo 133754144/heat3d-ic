@@ -127,7 +127,7 @@ def main() -> int:
     # split and random.choice(replace=False) sampling; only the chosen 50
     # functions cross the host/device boundary.
     fs_train = np.load(args.fs_train, mmap_mode="r", allow_pickle=False)
-    if fs_train.shape != (100000, 101**2):
+    if fs_train.shape != (100000, 101, 101):
         raise ValueError(f"official training-pool shape mismatch: {fs_train.shape}")
     key = jax.random.PRNGKey(42)
     key, model_key = jax.random.split(key, 2)

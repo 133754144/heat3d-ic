@@ -14,7 +14,7 @@
     "budget": {"iterations": 100000, "functions_per_iteration": 50, "seed": 42},
     "checkpoint": "final serialized leaves only; no valid/test selection",
     "training_data_isolation": {"accepted": ["fs_train_volume.npy"], "forbidden": ["fs_test_volume.npy", "u_test_volume.npy"], "official_100_test": "sealed_until_separate_evaluation_only_unlock"},
-    "runner": {"path": "scripts/run_v7_g2_p6_deepoheat_v1_formal.py", "sha256": "b4a09b1e37a21a583c39ecff0c2440b33b93aa8d88c0b537f13bfb27c893aad4", "pool_storage_patch": "host mmap with exact upstream JAX key split/random.choice semantics; selected batch only transferred"},
+    "runner": {"path": "scripts/run_v7_g2_p6_deepoheat_v1_formal.py", "sha256": "7027cd5414f5964359f63be20e1a88bef5351730448f848f4234f40a7c1b22d0", "pool_storage_patch": "host mmap with exact upstream JAX key split/random.choice semantics; selected batch only transferred"},
     "metrics": ["physical_temperature_MAPE", "physical_temperature_PAPE", "relative_L2_u", "RMSE_u", "peak_absolute_difference_u"],
     "output_directory": "output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42",
     "resource_preflight": "CUDA/JAX environment plus one official 50-function full-mesh step; no PDE/BC/mesh reduction",
