@@ -51,6 +51,8 @@
     "optimizer_scheduler": "AdamW 5e-4 wd1e-4 clip1.0; warmup10 cosine to5e-5 at epoch200",
     "budget": {"epochs": 200, "batch_size": 24, "seeds": [0, 1, 2]},
     "checkpoint": "minimum valid sample-first relative RMSE percent, earliest tie; retain final epoch",
+    "formal_runner": {"path": "scripts/run_v7_g2_p6_heat3d_v1_formal.py", "sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3"},
+    "cuda_backend": {"required": true, "XLA_FLAGS": "--xla_gpu_deterministic_ops=true", "reason": "frozen preflight produced exact checkpoint-reload predictions only with deterministic GPU reductions"},
     "metrics": ["v7 physical-space metric contract", "same-domain DeepOHeat-v1 metrics"],
     "output_directory": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_<SEED>",
     "resource_preflight": "one CUDA batch with frozen support/normalization and native/U-slice/U-full validation paths; record GPU name, peak memory and timing; U latency includes reconstruction"
