@@ -1,0 +1,40 @@
+{
+  "schema_version": "heat3d_v7_g2_p6_remote_environment_freeze_v1",
+  "host": {
+    "hostname": "XYH-Desktop",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "driver": "591.86",
+    "compute_capability": "12.0"
+  },
+  "gino_transolver": {
+    "conda_environment": "g2-baselines",
+    "python": "3.12.12",
+    "pytorch": "2.9.0+cu130",
+    "pytorch_cuda": "13.0",
+    "open3d": "0.19.0",
+    "torch_scatter": "2.1.2+pt29cu130",
+    "timm": "1.0.29",
+    "numpy": "2.3.3",
+    "status": "TRANSOLVER_FROZEN_GINO_FAIL_CLOSED",
+    "gino_blocker": "Open3D 0.19.0 ML ops were built for PyTorch 2.2 and CUDA 12.1; importing open3d.ml.torch with PyTorch 2.9.0+cu130 fails binary linkage, while PyTorch 2.2 cannot support the RTX 5070 sm_120 target"
+  },
+  "deepoheat_v1": {
+    "conda_environment": "g2-deepoheat-v1",
+    "python": "3.12.12",
+    "jax": "0.11.1",
+    "equinox": "0.13.8",
+    "optax": "0.2.8",
+    "numpy": "2.5.2",
+    "status": "FROZEN_AFTER_PASS_CUDA_FULL_PHYSICS_PREFLIGHT"
+  },
+  "heat3d_on_deepoheat_v1": {
+    "conda_environment": "rigno",
+    "python": "3.14.3",
+    "jax": "0.9.1",
+    "optax": "0.2.6",
+    "numpy": "2.4.2",
+    "required_xla_flag": "--xla_gpu_deterministic_ops=true",
+    "status": "FROZEN_AFTER_EXACT_CHECKPOINT_RELOAD_PREFLIGHT"
+  },
+  "scientific_config_changed_to_fit_environment": false
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v7_g2_p6_formal_launch_status_receipt_v1",
+  "snapshot_at_utc": "2026-08-31T19:36:00Z",
+  "code_sha_at_launch": "10e1e8e6a8d57ffdc4ff82accbb5a20be89674e0",
+  "devbox_g2_worktree": "/home/xyh/myCodeGitOnly/heat3d-ic-g2",
+  "official_test_unlock_performed": false,
+  "P1i_common_task": {
+    "common_gate": "both GINO and Transolver CUDA preflights must PASS before either formal run",
+    "GINO": {"status": "NOT_LAUNCHED_FAIL_CLOSED_PREFLIGHT", "seeds_completed": []},
+    "Transolver": {"status": "NOT_LAUNCHED_COMMON_GATE_BLOCKED", "preflight": "PASS", "seeds_completed": []},
+    "P1i_test_or_sealed_access": false
+  },
+  "DeepOHeat_v1": {
+    "status": "RUNNING",
+    "tmux_session": "g2_deepoheat_v1_seed42",
+    "output_directory": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42",
+    "runner_sha256": "7027cd5414f5964359f63be20e1a88bef5351730448f848f4234f40a7c1b22d0",
+    "seed": 42,
+    "iterations_budget": 100000,
+    "last_observed_iteration": 11901,
+    "last_observed_physics_loss": 0.123261742,
+    "checkpoint_policy": "final_checkpoint_only",
+    "training_test_files_loaded": false,
+    "official_100_test_status": "sealed"
+  },
+  "Heat3D_on_DeepOHeat_v1": {
+    "status": "QUEUED_WAITING_FOR_DEEPOHEAT_GPU_RELEASE",
+    "tmux_session": "g2_heat3d_v1_queue",
+    "runner_sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3",
+    "seeds": [0, 1, 2],
+    "seeds_started": [],
+    "epochs": 200,
+    "normalization_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "deterministic_xla_required": true,
+    "test_access": false
+  },
+  "multi_HTC": {
+    "status": "BLOCKED_FAIL_CLOSED_CANONICAL_ROW_SERIALIZATION_UNRESOLVED",
+    "analytical_solver_gate": "PASS",
+    "frozen_parameter": "beta_or_k_Robin in [0.1,0.3] with h=0.2/beta",
+    "frozen_canonical_rows_sha256": "5ac5c716aac8d283eec23d9ea9157f7a2a0614af15670f3150a2d113301e4253",
+    "blocker": "the immutable manifest freezes the row hash but does not freeze the exact case_id serialization needed to reproduce that hash; generating differently serialized rows would silently change the scientific contract",
+    "labels_generated_in_P6": 0,
+    "formal_training_started": false,
+    "sealed_test_access": false
+  },
+  "completion_receipt": {
+    "status": "NOT_ELIGIBLE",
+    "reason": "formal jobs are incomplete and the P1i common gate failed",
+    "evaluation_only_test_unlock_allowed": false
+  }
+}

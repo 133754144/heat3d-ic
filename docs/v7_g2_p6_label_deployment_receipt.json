@@ -1,0 +1,24 @@
+{
+  "schema_version": "heat3d_v7_g2_p6_label_deployment_receipt_v1",
+  "status": "PASS_SHA_VERIFIED",
+  "source": "/private/tmp/g2_p5_deepoheat_v1_labels",
+  "destination": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_v1_volumetric_labels",
+  "verification": {
+    "expanded_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "rows": 896,
+    "train_rows": 768,
+    "valid_rows": 128,
+    "artifact_files": 3584,
+    "artifact_bytes": 2091740672,
+    "artifact_sha256_mismatches": 0
+  },
+  "remote_compact_loader": {
+    "entrypoint": "scripts/load_v7_g2_p6_deepoheat_v1_compact.py",
+    "sha256": "c41f2153d976b80f1f27e970116c63c68a6adbfb0bc29297a1bcf74a72a13a21",
+    "train": "1024 coordinates + 11 features + 1024 target",
+    "valid": "1024 coordinates + 11 features + 1024 target + 101x101x56 full reference + z=0.15 101x101 slice",
+    "official_test_exposed": false,
+    "audit_status": "PASS"
+  }
+}

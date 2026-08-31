@@ -1,0 +1,58 @@
+{
+  "schema_version": "heat3d_v7_g2_p6_remote_preflight_receipts_v1",
+  "captured_at_utc": "2026-08-31T19:33:51Z",
+  "GINO": {
+    "status": "FAIL_CLOSED_OPTIMIZED_BACKEND_ABI_MISMATCH",
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "scientific_contract": {"r_in": 0.15, "r_out": 0.033, "latent_grid": [32, 32, 32]},
+    "checker": "scripts/check_v7_g2_p5_gino_backend_fairness.py",
+    "checker_sha256": "c8a7f0d19e45322d87421a6a7654b08743a4ce4b523e8ae235e40d7b41058334",
+    "cuda_available": true,
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "observed": [
+      "neuraloperator reports open3d_built=false and would silently use the fallback backend",
+      "Open3D 0.19.0 requests PyTorch 2.2.*, but the sm_120-capable environment uses PyTorch 2.9.0+cu130",
+      "forcing the import for diagnosis fails with an undefined torch autograd symbol and CUDA 12.1 versus 13.0 warning"
+    ],
+    "optimized_graph_equivalence_executed": false,
+    "formal_training_allowed": false,
+    "radius_or_architecture_changed": false
+  },
+  "Transolver": {
+    "status": "PASS_RESOURCE_PREFLIGHT",
+    "receipt_sha256": "d496d444b884957a520b1b444f32246d78ea7291dc0716afd4acc8577dc7aeff",
+    "device": "cuda",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "objective": "decoded physical-space relative L2",
+    "peak_allocated_bytes": 103634432,
+    "peak_reserved_bytes": 113246208,
+    "first_train_step_wall_seconds": 0.5351899570086971,
+    "first_valid_forward_wall_seconds": 0.0038551120087504387,
+    "finite_optimizer_step": true,
+    "test_or_sealed_access": false
+  },
+  "DeepOHeat_v1": {
+    "status": "PASS_CUDA_FULL_PHYSICS_PREFLIGHT",
+    "receipt_sha256": "99ad3033e457cc5420ae77d2f89eeb1c62a8a8f5aed3c261fec1b99ab08bdef8",
+    "upstream": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "mesh": [101, 101, 56],
+    "batch_functions": 50,
+    "peak_bytes_in_use": 703939840,
+    "first_train_step_wall_seconds_including_jit": 48.893823979014996,
+    "physics_or_sampling_distribution_changed": false,
+    "training_test_files_loaded": false,
+    "official_100_test_status": "sealed"
+  },
+  "Heat3D_on_DeepOHeat_v1": {
+    "status": "PASS_CUDA_THREE_OUTPUT_PREFLIGHT",
+    "receipt_sha256": "167b6ff54ec93cef6ba01a933884ef2785de610984b2c21ae293e1b011fa4a5e",
+    "conditioning_count": 1024,
+    "native_output_count": 1024,
+    "U_source_slice": {"count": 10201, "shape": [101, 101], "z": 0.15},
+    "U_full_primary": {"count": 571256, "shape": [101, 101, 56], "same_domain_as_official_full_output": true},
+    "U_full_reconstruction_wall_seconds": [0.016274617984890938, 0.01651193801080808],
+    "checkpoint_reload_max_abs": 0.0,
+    "deterministic_cuda_required": true,
+    "test_or_sealed_access": false
+  }
+}
