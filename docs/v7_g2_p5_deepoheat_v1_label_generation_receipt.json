@@ -1,0 +1,24 @@
+{
+  "schema_version": "heat3d_v7_g2_p5_deepoheat_v1_label_generation_summary_v1",
+  "status": "PASS_COMPLETE_768_TRAIN_128_VALID",
+  "expanded_receipt": "/private/tmp/g2_p5_deepoheat_v1_labels/label_generation_receipt.json",
+  "expanded_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+  "generator": {"path": "scripts/generate_v7_g2_p5_deepoheat_v1_labels.py", "sha256": "1bd4b606f61e0384cfcde178d6b908373b399deb890b80da0ccd01d0902f3bfd"},
+  "solver_runner": {"path": "scripts/run_v7_g2_deepoheat_v1_solver_fidelity.py", "sha256": "b2e5b20c96d57de5ff3206669afa49fc34d9ffd36fd6bec2cc178b7ee9ab0d94"},
+  "ordered_row_receipt_hashes_sha256": "dc5554ed87d09084864a6d1215d9c11a55314f8f363c6bd68af8dccae52fd0fe",
+  "roles": {"train": 768, "valid": 128, "official_test": "100 untouched"},
+  "aggregate_hashes": {
+    "source_inputs": "8d93a18771fd07090f4eb05546057d5afd93fb907000edeba533ae21f3c661d9",
+    "full_reference_fields": "9164c48881817acc09cab081e7d21111e98f7f40b1720879fec8007b1df9a3f4",
+    "support_indices": "76ced0013de606eb09b9b85bd90c7a784b77312f1a46c22da28269b83029a21f",
+    "support_1024_targets": "62280b30b3ed042e1c2635114163806725c102fbad1251cce57de4a1dd8d67ca",
+    "z015_10201_truth": "6a2c0e11f405b3dfae54579513fee408d43c18163d62707d77af1a3c824e0a2f"
+  },
+  "solve_wall_seconds": {"min": 1.8648274578154087, "median": 1.9899029585067183, "mean": 2.0627473279252757, "p95": 2.2869940942618996, "max": 3.0168722080998123, "sum": 1848.221605821047},
+  "maximum_relative_linear_residual": 9.981357226266001e-11,
+  "solver_environment": {"python": "3.12.3", "numpy": "2.5.2", "scipy": "1.18.1", "pyamg": "5.3.0", "device": "Mac_CPU", "peak_process_rss_bytes": 686669824},
+  "stored_artifact_bytes": 2091740672,
+  "large_artifacts_committed_to_git": false,
+  "formal_or_long_training_started": false,
+  "official_test_fields_accessed": false
+}

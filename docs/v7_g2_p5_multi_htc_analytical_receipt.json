@@ -1,0 +1,26 @@
+{
+  "schema_version": "heat3d_v7_g2_p5_multi_htc_analytical_gate_v1",
+  "status": "PASS",
+  "runner_sha256": "c43170d7f41f1059300be7da2accdb4e5b46b3edfd2c3336715566cb54135f0f",
+  "expanded_receipt_sha256": "e4fe2dd7b9d080b3706ff9d9af0fcb5fe4943303ef85fcbc0d02170911c5511e",
+  "physics": {
+    "conductivity": 0.2,
+    "source_z": [0.25, 0.3],
+    "outside": "u''=0",
+    "source": "0.2*u''+1=0",
+    "bottom": "u-0.2-beta_bottom*u_z=0",
+    "top": "u-0.2+beta_top*u_z=0",
+    "side": "adiabatic",
+    "conversion": "h=0.2/beta"
+  },
+  "method": "independent six-coefficient piecewise closed form versus 51x51x51 sparse finite-volume/difference solve",
+  "cases": [
+    {"beta_top": 0.1, "beta_bottom": 0.1, "field_rmse_u": 7.0450232730481025e-06, "relative_l2_u": 3.069465007988434e-05, "peak_absolute_error_u": 2.2500000021574706e-05, "status": "PASS"},
+    {"beta_top": 0.2, "beta_bottom": 0.2, "field_rmse_u": 7.045023276514871e-06, "relative_l2_u": 2.9110676611790895e-05, "peak_absolute_error_u": 2.2500000039782364e-05, "status": "PASS"},
+    {"beta_top": 0.3, "beta_bottom": 0.1, "field_rmse_u": 7.0450232733502815e-06, "relative_l2_u": 2.9425760803877716e-05, "peak_absolute_error_u": 2.2500000044056723e-05, "status": "PASS"}
+  ],
+  "maximum_relative_linear_residual": 5.187754158255398e-11,
+  "maximum_xy_nonuniformity_peak_to_peak_u": 1.7918999617450027e-12,
+  "environment": {"python": "3.12.3", "numpy": "2.5.2", "scipy": "1.18.1", "pyamg": "5.3.0", "device": "Mac_CPU", "peak_rss_bytes": 289488896},
+  "formal_labels_generated": 0
+}

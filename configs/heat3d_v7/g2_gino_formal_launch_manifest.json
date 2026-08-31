@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_gino_formal_launch_manifest_v1",
-  "status": "IMMUTABLE_PREPARED_NOT_AUTHORIZED_NOT_LAUNCHED",
+  "status": "IMMUTABLE_PREPARED_OPTIMIZED_BACKEND_REMOTE_PREFLIGHT_PENDING_NOT_LAUNCHED",
   "track": "P1i_common_task",
   "model": "GINO",
   "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
@@ -8,6 +8,18 @@
   "information_budget": {"coordinates": 3, "physical_features": 11, "feature_names": ["kx", "ky", "kz", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"], "target": "deltaT_K_on_same_query_points", "extra_prior": false, "solver": false, "dense_temperature_field": false, "learned_adapter": false},
   "normalization": {"contract": "train_only_global_channelwise_population_ddof0", "statistics_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a", "per_node_index_statistics": false},
   "architecture": {"latent_grid": [32, 32, 32], "input_radius": 0.15, "output_radius": 0.033, "input_reduction": "mean", "output_reduction": "sum", "fno_modes": [16, 16, 16], "fno_layers": 4, "hidden_channels": 64, "norm": "instance_norm", "channel_mlp": true, "factorization": "tucker", "rank": 0.4, "lifting_projection": "upstream_GINO", "parameter_count": 13673988},
+  "backend_fairness": {
+    "mac_qualification": "pure_PyTorch native_neighbor_search plus native segment_csr",
+    "remote_formal": "upstream-supported Open3D FixedRadiusSearch plus torch-scatter segment_csr",
+    "scientific_config_changes_between_backends": false,
+    "equivalence_gate": "same fixed train sample, identical state_dict, exact per-query neighbor edge multisets, and output allclose(atol=1e-5,rtol=1e-5)",
+    "preflight_runner": "scripts/check_v7_g2_p5_gino_backend_fairness.py",
+    "preflight_runner_sha256": "9de99e151665c7d9d34aaed0091add9084cb655452ce11b7aa853333c54de386",
+    "cuda_required": true,
+    "no_cuda_action": "FAIL_CLOSED",
+    "required_receipt_fields": ["GPU name", "peak allocated bytes", "peak reserved bytes", "train-step walltime", "valid-forward walltime"],
+    "local_status": "FORMAL_OPTIMIZED_BACKEND_UNQUALIFIED_NO_CUDA"
+  },
   "objective": "upstream_LpLoss_d2_p2_relative_L2_on_normalized_target",
   "optimizer": {"name": "AdamW", "lr": 0.001, "weight_decay": 0.0001},
   "scheduler": {"name": "StepLR", "step_size_epochs": 50, "gamma": 0.5},
@@ -15,7 +27,13 @@
   "checkpoint": {"primary": "minimum_valid_iid_sample_first_relative_rmse_pct_with_earliest_epoch_tie_break", "sensitivity": "upstream_final_epoch", "selection_frequency": "each_completed_epoch"},
   "metrics": {"decode_before_metrics": true, "contract": "configs/heat3d_v7/v7_metric_contract.json", "contract_sha256": "294761936a96b4b7cc1b50e48ab94306981f261ad2cf79149f38c3420c50fef5", "upstream_relative_L2": "separate_diagnostic"},
   "provenance": {"radius_receipt": "docs/v7_g2_p3_gino_full_radius_receipt.json", "radius_decision": "frozen_before_accuracy", "qualification": "PASS_1_epoch_train_valid_checkpoint_reload", "qualification_runner_sha256": "41fae02d5c63a02c7c588c53c0ffa1e9202645b2c2b0b3607ca329be49184f4a", "p4_formal_contract_regression": "PASS_r_in_0.15_r_out_0.033_with_frozen_normalization"},
-  "runner": {"entrypoint": "scripts/run_v7_g2_p1i_external_formal.py", "sha256": "07e78582632b1cb078182e1c64e8d51565876072f00246827ed35ae92f2f7a9d", "preflight": "python scripts/run_v7_g2_p1i_external_formal.py --model GINO --mode preflight --seed 0 --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <NEURALOPERATOR_ROOT> --output-dir <IGNORED_PREFLIGHT_DIR>", "formal_output": "output/heat3d_v7_g2/gino/seed_<SEED>"},
-  "remote_gate": "after_G1_completion_and_explicit_authorization_run_one_batch_GPU_graph_memory_and_epoch_walltime_preflight_then_three_seeds_without_config_changes",
+  "runner": {
+    "entrypoint": "scripts/run_v7_g2_p1i_external_formal.py",
+    "sha256": "1a1bb93ec56cfa43f29378ee8da4285e733da2f4e62f7e826326c8ac0dd06a1c",
+    "optimized_backend_preflight": "python scripts/check_v7_g2_p5_gino_backend_fairness.py --mode optimized-preflight --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <NEURALOPERATOR_ROOT> --output <IGNORED_PREFLIGHT_DIR>/gino_backend_receipt.json",
+    "formal_train": "python scripts/run_v7_g2_p1i_external_formal.py --model GINO --mode train --seed <0|1|2> --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <NEURALOPERATOR_ROOT> --backend-qualification-receipt <IGNORED_PREFLIGHT_DIR>/gino_backend_receipt.json --output-dir output/heat3d_v7_g2/gino/seed_<SEED>",
+    "formal_output": "output/heat3d_v7_g2/gino/seed_<SEED>"
+  },
+  "remote_gate": "after_G1 completion and authorization: CUDA/Open3D/torch-scatter graph-output/resource preflight PASS, then freeze remote environment and run seeds 0/1/2 without config changes",
   "formal_training_started": false
 }

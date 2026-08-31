@@ -1,0 +1,34 @@
+{
+  "schema_version": "heat3d_v7_g2_deepoheat_v1_reconstructed_environment_v1",
+  "status": "LOCAL_FULL_PHYSICS_SMOKE_PASS_NOT_OFFICIAL_DEPENDENCY_ENVIRONMENT",
+  "name": "reconstructed reproduction environment",
+  "upstream": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+  "local_smoke_environment": {
+    "platform": "Mac_CPU",
+    "python": "3.12.3",
+    "jax": "0.11.1",
+    "equinox": "0.13.8",
+    "optax": "0.2.8",
+    "numpy": "2.5.2",
+    "jax_devices": ["CpuDevice(id=0)"]
+  },
+  "remote_gpu_contract": {
+    "cuda_required": true,
+    "jax_cuda_plugin": "freeze only after GPU preflight against the selected CUDA driver/runtime",
+    "version_rule": "preserve the proven Python/JAX/Equinox/Optax/NumPy tuple unless a documented CUDA compatibility patch is necessary"
+  },
+  "compatibility_patches": [
+    "omit redundant outer eqx.filter_jit wrapper around a step already containing JAX transformations",
+    "pass only inexact trainable arrays to Optax initialization/update"
+  ],
+  "semantic_invariants_preserved": [
+    "official architecture",
+    "full 101x101x56 physics mesh",
+    "piecewise conductivity",
+    "volumetric source residual",
+    "top/bottom Robin and side adiabatic residuals",
+    "Optax Adam and exponential-decay contract"
+  ],
+  "claim_boundary": "reconstructed reproduction environment; not author-published dependency lock",
+  "license_qualifier": "absence of an explicit upstream license limits redistribution but is not treated as a scientific reproduction blocker"
+}

@@ -16,6 +16,7 @@ import json
 import random
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -159,6 +160,7 @@ def main() -> int:
     parser.add_argument("--statistics", type=Path, default=REPO / "docs/v7_g2_p3_p1i_train_statistics.json")
     parser.add_argument("--upstream-root", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--backend-qualification-receipt", type=Path)
     args = parser.parse_args()
     launch_path = REPO / "configs/heat3d_v7" / f"g2_{args.model.lower()}_formal_launch_manifest.json"
     launch = json.loads(launch_path.read_text())
@@ -176,6 +178,19 @@ def main() -> int:
     if None in (args.dataset_root, args.dataset_manifest, args.upstream_root, args.output_dir):
         parser.error("preflight/train require dataset-root, dataset-manifest, upstream-root, output-dir")
 
+    if args.model == "GINO" and not torch.cuda.is_available():
+        raise SystemExit("FAIL-CLOSED: GINO formal preflight/training requires CUDA")
+    if args.model == "GINO" and args.mode == "train":
+        if args.backend_qualification_receipt is None:
+            parser.error("GINO train requires --backend-qualification-receipt")
+        backend_receipt = json.loads(args.backend_qualification_receipt.read_text(encoding="utf-8"))
+        if backend_receipt.get("status") != "PASS_OPTIMIZED_BACKEND_QUALIFIED":
+            raise ValueError("GINO optimized backend qualification did not PASS")
+        if backend_receipt.get("scientific_config_unchanged") != {
+            "r_in": 0.15, "r_out": 0.033, "latent_grid": [32, 32, 32]
+        }:
+            raise ValueError("GINO backend receipt scientific config mismatch")
+
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -184,7 +199,11 @@ def main() -> int:
     valid = P1iRoleDataset(args.dataset_root, args.dataset_manifest, "valid_iid")
     sys.path.insert(0, str(args.upstream_root.resolve()))
     if args.model == "GINO":
-        model = build_gino(0.15, 0.033).to(device)
+        model = build_gino(0.15, 0.033, use_open3d=True, use_torch_scatter=True).to(device)
+        if not model.gno_in.neighbor_search.use_open3d or not model.gno_out.neighbor_search.use_open3d:
+            raise RuntimeError("formal GINO silently fell back from Open3D")
+        if not model.gno_in.integral_transform.use_torch_scatter or not model.gno_out.integral_transform.use_torch_scatter:
+            raise RuntimeError("formal GINO silently fell back from torch-scatter")
         optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
         grid = latent_queries(32).to(device)
@@ -195,7 +214,11 @@ def main() -> int:
         grid = None
     args.output_dir.mkdir(parents=True, exist_ok=True)
     epochs = 1 if args.mode == "preflight" else expected_epochs
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats()
     best = float("inf"); history = []
+    first_train_step_seconds = None
+    first_valid_forward_seconds = None
     for epoch in range(epochs):
         order = torch.randperm(len(train), generator=torch.Generator().manual_seed(args.seed * 100000 + epoch)).tolist()
         if args.mode == "preflight": order = order[:1]
@@ -204,6 +227,8 @@ def main() -> int:
             row = train[index]
             coords, features, target, target_n, local = normalize(row, stats, device)
             optimizer.zero_grad(set_to_none=True)
+            if device.type == "cuda": torch.cuda.synchronize()
+            step_started = time.perf_counter()
             pred_n = predict(args.model, model, coords, features, grid)
             loss = relative_l2(pred_n, target_n) if args.model == "GINO" else relative_l2(
                 pred_n * local["target_std"] + local["target_mean"],
@@ -211,7 +236,10 @@ def main() -> int:
             )
             loss.backward()
             if args.model == "Transolver": torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
-            optimizer.step(); train_sum += float(loss.detach())
+            optimizer.step()
+            if device.type == "cuda": torch.cuda.synchronize()
+            if first_train_step_seconds is None: first_train_step_seconds = time.perf_counter() - step_started
+            train_sum += float(loss.detach())
         scheduler.step()
         model.eval(); samples = []; reload_probe_prediction = None
         valid_indices = range(1) if args.mode == "preflight" else range(len(valid))
@@ -219,7 +247,11 @@ def main() -> int:
             for index in valid_indices:
                 row = valid[index]
                 coords, features, target, _target_n, local = normalize(row, stats, device)
+                if device.type == "cuda": torch.cuda.synchronize()
+                valid_started = time.perf_counter()
                 pred_n = predict(args.model, model, coords, features, grid)
+                if device.type == "cuda": torch.cuda.synchronize()
+                if first_valid_forward_seconds is None: first_valid_forward_seconds = time.perf_counter() - valid_started
                 pred = (pred_n * local["target_std"] + local["target_mean"]).cpu().numpy().reshape(-1)
                 if reload_probe_prediction is None:
                     reload_probe_prediction = torch.from_numpy(pred.copy())
@@ -239,7 +271,12 @@ def main() -> int:
                  "torch_random_state": torch.get_rng_state(),
                  "cuda_random_states": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [],
                  "reload_probe_valid_sample_id": samples[0].sample_id,
-                 "reload_probe_prediction": reload_probe_prediction}
+                 "reload_probe_prediction": reload_probe_prediction,
+                 "backend_qualification_receipt_sha256": (
+                     sha256(args.backend_qualification_receipt)
+                     if args.model == "GINO" and args.backend_qualification_receipt is not None
+                     else None
+                 )}
         if args.mode == "train" and selection < best:
             best = selection; torch.save(state, args.output_dir / "best_valid_iid.pt")
         if args.mode == "train" and epoch + 1 == epochs:
@@ -267,6 +304,11 @@ def main() -> int:
             }
     receipt = {"status": "PASS_RESOURCE_PREFLIGHT" if args.mode == "preflight" else "COMPLETE_FORMAL_TRAIN",
                "model": args.model, "seed": args.seed, "mode": args.mode, "device": str(device),
+               "resource": {"gpu_name": torch.cuda.get_device_name() if device.type == "cuda" else None,
+                            "peak_allocated_bytes": int(torch.cuda.max_memory_allocated()) if device.type == "cuda" else None,
+                            "peak_reserved_bytes": int(torch.cuda.max_memory_reserved()) if device.type == "cuda" else None,
+                            "first_train_step_wall_seconds": first_train_step_seconds,
+                            "first_valid_forward_wall_seconds": first_valid_forward_seconds},
                "epochs": epochs, "history": history, "test_or_sealed_access": False,
                "checkpoint_reload_checks": reload_checks,
                "formal_accuracy_claim_allowed": args.mode == "train"}

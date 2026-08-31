@@ -64,8 +64,8 @@ def boundary_features(
 
 
 def htc_case(
-    top_robin_k: float,
-    bottom_robin_k: float,
+    top_beta: float,
+    bottom_beta: float,
     kind: str = "single_htc_bc",
 ) -> tuple[dict[str, np.ndarray], dict]:
     if kind not in {"single_htc_bc", "multi_htc_bc"}:
@@ -80,9 +80,10 @@ def htc_case(
     # metre and DeltaT=25*(u-u_ambient) K. Thus the source coefficient in the
     # Kelvin PDE is 25 times the coefficient in the released u equation.
     q[in_power, 0] = TEMPERATURE_SCALE_K
-    # DeepOHeat enforces u-0.2+(kappa/h)*du/dn=0, with its branch value named k.
-    top_h = conductivity / top_robin_k
-    bottom_h = conductivity / bottom_robin_k
+    # Upstream names this branch input ``k``, but the Robin residual shows it
+    # is beta=kappa/h, not physical heat-transfer coefficient h.
+    top_h = conductivity / top_beta
+    bottom_h = conductivity / bottom_beta
     bc = boundary_features(coords, top_h=top_h, bottom_h=bottom_h)
     arrays = {"coords": coords.astype(np.float32), "features": np.concatenate((k_field, q, bc), axis=1)}
     metadata = {
@@ -94,6 +95,15 @@ def htc_case(
         "target_available_in_upstream_release": False,
         "target_contract": "T_K=293.15+25*u; with Robin ambient u=0.2 use deltaT_K=25*(u-0.2)",
         "dimensionalization": "1 released length unit = 1 m; q_K=25*q_u; k unchanged; h=k/Robin_length",
+        "upstream_robin_parameter": {
+            "name": "beta_or_k_Robin",
+            "top_beta": top_beta,
+            "bottom_beta": bottom_beta,
+            "conductivity": conductivity,
+            "conversion": "physical_h=conductivity/beta",
+            "top_h": top_h,
+            "bottom_h": bottom_h,
+        },
         "no_solver_run": True,
     }
     return arrays, metadata
@@ -227,8 +237,8 @@ def main() -> int:
     sub = parser.add_subparsers(dest="case", required=True)
     htc = sub.add_parser("deepoheat-htc")
     htc.add_argument("--kind", choices=("single_htc_bc", "multi_htc_bc"), default="single_htc_bc")
-    htc.add_argument("--top-robin-k", type=float, required=True)
-    htc.add_argument("--bottom-robin-k", type=float, default=0.2)
+    htc.add_argument("--top-beta", type=float, required=True)
+    htc.add_argument("--bottom-beta", type=float, default=0.2)
     v1 = sub.add_parser("deepoheat-v1-volume")
     v1.add_argument("--power", type=Path, required=True)
     v1.add_argument("--target", type=Path)
@@ -243,7 +253,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.case == "deepoheat-htc":
-        arrays, metadata = htc_case(args.top_robin_k, args.bottom_robin_k, args.kind)
+        arrays, metadata = htc_case(args.top_beta, args.bottom_beta, args.kind)
     elif args.case == "deepoheat-v1-volume":
         arrays, metadata = volume_v1_case(args.power, args.target, args.index)
     else:

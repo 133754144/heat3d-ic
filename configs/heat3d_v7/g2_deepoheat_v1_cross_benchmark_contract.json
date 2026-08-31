@@ -1,0 +1,51 @@
+{
+  "schema_version": "heat3d_v7_g2_p5_deepoheat_v1_cross_benchmark_contract_v1",
+  "status": "FROZEN_NOT_LAUNCHED",
+  "classification": "method-native cross-benchmark; same physical benchmark but unequal training and information budgets",
+  "physical_benchmark": {
+    "source": "DeepOHeat-v1 volumetric",
+    "domain": [1.0, 1.0, 0.55],
+    "official_temperature_domain": {"shape": [101, 101, 56], "count": 571256},
+    "temperature_scaling": "T_K=293.15+25*u; deltaT_K=25*(u-0.2)",
+    "official_test_cases": 100,
+    "test_status_before_unlock": "untouched"
+  },
+  "DeepOHeat_v1": {
+    "method": "upstream-faithful physics-informed separable operator",
+    "input_functions": 100000,
+    "input_function_shape": [101, 101],
+    "temperature_label_count": 0,
+    "training_physics": "full 101x101x56 PDE/BC residual mesh",
+    "architecture_parameter_count": 3303680,
+    "optimizer": "Optax Adam lr=1e-3",
+    "scheduler": "exponential decay 0.9 per 1000 steps",
+    "budget": {"iterations": 100000, "functions_per_iteration": 50, "seed": 42},
+    "checkpoint": "upstream final serialized leaves"
+  },
+  "Heat3D": {
+    "method": "supervised Heat3D at G1_FORMAL_CODE_SHA 191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "subset_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "temperature_labels": {"train": 768, "valid": 128},
+    "conditioning": {"count_per_case": 1024, "support_manifest": "configs/heat3d_v7/g2_deepoheat_v1_1024_support_manifest.json", "features": "coords+k+q+BC"},
+    "architecture_parameter_count": 892776,
+    "optimizer": "AdamW lr=5e-4 weight_decay=1e-4 gradient_clip=1.0",
+    "scheduler": "10-epoch warmup then cosine to 5e-5 at epoch 200",
+    "budget": {"epochs": 200, "batch": 24, "seeds": [0, 1, 2]},
+    "checkpoint": "minimum valid sample-first relative RMSE percent, earliest epoch tie; retain final epoch",
+    "outputs": {
+      "native_sparse": {"conditioning_count": 1024, "query_count": 1024},
+      "U_reconstruction": {"conditioning_count": 1024, "query_count": 10201, "algorithm": "frozen label-independent layer/interface-aware inverse-distance reconstruction", "domain": "101x101 z=0.15 source-layer top slice"}
+    }
+  },
+  "comparison_rules": {
+    "same_training_budget_claim": false,
+    "same_information_budget_claim": false,
+    "aligned_accuracy": "report only where both predictions and references share the identical physical query domain",
+    "official_full_field_direct_comparison": "requires both methods on all 571256 official query points",
+    "U_10201_direct_comparison": "slice-only; both methods must be evaluated on z=0.15 before numerical comparison",
+    "required_accounting": ["conditioning point/function count", "temperature-label count", "solver calls", "training walltime", "parameter count", "peak memory", "inference latency", "accuracy"],
+    "runtime": "direct runtime comparison only after remeasurement on identical hardware"
+  },
+  "test_unlock": "only after G1 and all preregistered training/checkpoint/config freezes; evaluation-only with no retraining",
+  "formal_training_started": false
+}

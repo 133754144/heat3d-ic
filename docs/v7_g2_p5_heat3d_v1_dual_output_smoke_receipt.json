@@ -1,0 +1,26 @@
+{
+  "schema_version": "heat3d_v7_g2_p5_heat3d_v1_dual_output_smoke_v1",
+  "status": "PASS_1_EPOCH_DUAL_OUTPUT_NONFORMAL",
+  "expanded_receipt_sha256": "87c6a0add24b17967c0d54d9d4818fa7818defcd3854ffd5458a99111fcdcf4b",
+  "train_functions": 6,
+  "valid_functions": 2,
+  "epochs": 1,
+  "optimizer_steps": 1,
+  "support": {"input_count": 1024, "selector": "physics-layout-aware", "old_8x8x16_projection_used": false},
+  "native_output": {"count": 1024, "finite": true, "checkpoint_reload_exact": true},
+  "u_strategy_output": {
+    "count": 10201,
+    "conditioning_count_remains": 1024,
+    "domain": "z=0.15 source-layer top slice on 101x101 grid",
+    "official_full_comparison_domain": false,
+    "reconstruction": "layer_interface_knn_inverse_distance_v1",
+    "finite": true,
+    "checkpoint_reload_exact": true
+  },
+  "validation_finite": true,
+  "checkpoint_sha256": "fb56fd1f2235dbba17bcd8db8abc843f84812d752a0d2144f38dae713f5b78ec",
+  "recovery_note": "the single completed optimizer step checkpoint was postprocessed after correcting batched-group indexing; no second optimizer step was run",
+  "formal_accuracy_claim": false,
+  "formal_or_long_training_started": false,
+  "p1i_test_or_sealed_access": false
+}

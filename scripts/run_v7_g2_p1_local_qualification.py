@@ -180,7 +180,13 @@ def latent_queries(resolution: int = 32) -> torch.Tensor:
     return torch.stack(torch.meshgrid(axis, axis, axis, indexing="ij"), dim=-1)
 
 
-def build_gino(in_radius: float = 0.033, out_radius: float = 0.033) -> torch.nn.Module:
+def build_gino(
+    in_radius: float = 0.033,
+    out_radius: float = 0.033,
+    *,
+    use_open3d: bool = False,
+    use_torch_scatter: bool = False,
+) -> torch.nn.Module:
     from neuralop.models import GINO
 
     return GINO(
@@ -207,10 +213,10 @@ def build_gino(in_radius: float = 0.033, out_radius: float = 0.033) -> torch.nn.
         fno_rank=0.4,
         fno_channel_mlp_expansion=1.0,
         fno_resolution_scaling_factor=1,
-        # Optional acceleration packages are unavailable on this Mac.  The
-        # upstream pure-PyTorch paths retain radius-neighbor/mean-sum semantics.
-        gno_use_open3d=False,
-        gno_use_torch_scatter=False,
+        # Qualification defaults to the dependency-free Mac path.  Formal GPU
+        # runners must explicitly request both upstream acceleration backends.
+        gno_use_open3d=use_open3d,
+        gno_use_torch_scatter=use_torch_scatter,
     )
 
 

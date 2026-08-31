@@ -1,0 +1,35 @@
+{
+  "schema_version": "heat3d_v7_g2_p5_deepoheat_v1_support_manifest_v1",
+  "status": "FROZEN_METHOD_NATIVE_CROSS_BENCHMARK",
+  "benchmark": "DeepOHeat-v1_volumetric",
+  "support_count": 1024,
+  "selection": {
+    "algorithm": "G1_physics_layout_aware_quota_semantics_adapted_to_released_regular_mesh",
+    "seed": 20260831,
+    "selector": "scripts/prepare_v7_g2_p5_deepoheat_v1_support.py",
+    "selector_sha256": "29048d07c2a2abe16bea6bebeacdd16ad45bc71b49008ad2deb04703fdc14f96",
+    "quotas": {"source_layout": 256, "material_interface": 128, "top": 64, "bottom": 64, "remaining_volume": 512},
+    "inputs": ["boolean q/source occupancy and connected layout", "fixed k/material interface at z=0.1", "coordinates", "top/bottom boundary", "control-volume weights"],
+    "forbidden_inputs": ["source amplitude", "temperature", "prediction", "prediction error", "official test cases"],
+    "label_independent": true
+  },
+  "mesh": {"shape": [101, 101, 56], "node_count": 571256, "domain": [1.0, 1.0, 0.55]},
+  "operator_measure": "same-layer nearest-support partition of every full-grid trapezoidal control volume; total volume conserved and label independent",
+  "roles": {"train": 768, "valid": 128, "official_test": "100 untouched"},
+  "full_896_input_audit": {"source_component_count_min": 1, "source_component_count_median": 3.0, "source_component_count_max": 7, "unique_support_index_hashes": 896, "quota_failures": 0},
+  "per_case_support_receipt": {
+    "location": "/private/tmp/g2_p5_deepoheat_v1_support_rows.json",
+    "file_sha256": "c27988ec53aef8e94d81a5f3b8ad5d4c43825362188d987d1d3ed2efd74c09e6",
+    "ordered_row_hashes_sha256": "ec1fbed59a56b071877f88b02493ae11c88ba7e0bcaddd80de2a164d2d755e7b",
+    "contains": "role/source index plus per-case support index/coordinate/layout hashes; regenerable from selector and official inputs"
+  },
+  "information_budget_claim": {
+    "classification": "method-native cross-benchmark",
+    "same_physical_benchmark": true,
+    "same_input_information_budget_as_DeepOHeat_v1": false,
+    "reason": "Heat3D conditions on 1024 selected pointwise k/q/BC observations; DeepOHeat-v1 receives a complete 101x101 input function and physics-informed residual evaluations"
+  },
+  "old_smoke_projection": {"mode": "8x8x16", "formal_eligible": false, "superseded": true},
+  "formal_or_long_training_started": false,
+  "p1i_test_or_sealed_access": false
+}

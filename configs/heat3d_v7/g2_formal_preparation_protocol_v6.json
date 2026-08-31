@@ -1,0 +1,41 @@
+{
+  "schema_version": "heat3d_v7_g2_formal_preparation_protocol_v6_p5_final_local_closure",
+  "status": "LOCAL_FUNCTIONAL_DEVELOPMENT_CLOSED_REMOTE_FORMAL_NOT_AUTHORIZED",
+  "date": "2026-08-31",
+  "comparison_reference": {"G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1", "G2_base_SHA": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7"},
+  "hard_boundaries": {"Mac_local_only": true, "ssh_or_devbox_used": false, "GPU_used": false, "G1_affected": false, "formal_or_long_training_started": false, "P1i_test_or_sealed_access": false, "new_baseline_added": false},
+  "P1i_common_task": {
+    "models": ["Vanilla RIGNO", "GINO", "Transolver", "Heat3D"],
+    "information_budget": "coords + 11 physical features; no extra prior/solver/dense temperature/learned adapter",
+    "GINO": {"manifest_sha256": "9a648f278c9a3f0ae54d882997fe51af28d6308225c446caa870dd4257e06cf2", "scientific_config": {"r_in": 0.15, "r_out": 0.033, "latent_grid": [32,32,32]}, "Mac_backend": "pure PyTorch fallback", "formal_backend": "Open3D plus torch-scatter", "local_optimized_status": "UNQUALIFIED_NO_CUDA_FAIL_CLOSED", "CUDA_preflight": "same-sample exact graph plus allclose output; record GPU/memory/train-step/valid-forward"},
+    "Transolver": {"manifest_sha256": "55a642524d9d59174e65c062bc2b5b60b5593c466523aa9a80c269bda3270d13", "status": "LOCAL_DECODED_PHYSICAL_LOSS_GATE_PASS_REMOTE_GPU_PREFLIGHT_PENDING"},
+    "formal_runner_sha256": "1a1bb93ec56cfa43f29378ee8da4285e733da2f4e62f7e826326c8ac0dd06a1c",
+    "checkpoint_primary": "minimum valid_iid sample-first relative RMSE percent, earliest-epoch tie",
+    "checkpoint_sensitivity": "retain upstream final epoch"
+  },
+  "DeepOHeat_v1_volumetric": {
+    "solver_fidelity": "PASS against official cases 0/27/99",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "support_manifest_sha256": "bb1261f5007cb85e1759f4e4bf1316aeb8a04d56cc1152d5e715949c130a8017",
+    "support": "1024 physics-layout-aware points; method-native cross-benchmark; not same information budget",
+    "label_generation": {"status": "PASS_768_TRAIN_128_VALID", "summary_receipt_sha256": "9ac5718815e06684926c87be91573f96f9af52a0caade2a1f566ef306a485c72", "expanded_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd", "stored_bytes": 2091740672, "official_test": "100 untouched"},
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "dual_output_smoke": {"status": "PASS_ONE_STEP_NONFORMAL", "receipt_sha256": "3112653554aa17ef227fc3b360f62e6d77bcc38003bde44767d576676aa550cb", "native": 1024, "U": 10201},
+    "output_domain_correction": "10201 is the 101x101 z=0.15 source-layer top slice; official complete comparison domain is 101x101x56=571256, so 10201 is not a full-output equivalence claim",
+    "cross_benchmark_contract_sha256": "6c0dc06942e4b5ca70593052647a94c608645cf2512b2c29094c5eb40d736ee2",
+    "reconstructed_environment_sha256": "e36ae565f15f187048122fdeefc4617d42f1a13edc3b7a2cf753d280aec91619"
+  },
+  "DeepOHeat_multi_HTC": {
+    "correct_parameter": "beta_or_k_Robin in [0.1,0.3]",
+    "physical_conversion": "h=conductivity/beta with conductivity=0.2",
+    "case_manifest_sha256": "e1cc6fab99938a0c81c77455ab99e0f52a1e4e8560a1ed1485364a76b82cb1cf",
+    "old_h_named_manifest": "superseded and nonformal",
+    "analytical_vs_3D_gate": {"status": "PASS", "receipt_sha256": "05d5010c1eaa8dad24e50fc07bbc8b4eb546218e6ab8d5d7cf01788b8b8c2bb6"},
+    "formal_labels_generated": 0
+  },
+  "remote_order": ["GINO GPU preflight", "Transolver GPU preflight", "freeze both remote environments/configs after both PASS", "GINO seeds 0/1/2", "Transolver seeds 0/1/2", "DeepOHeat-v1 volumetric seed42 upstream-faithful reproduction", "Heat3D-on-DeepOHeat-v1 seeds 0/1/2", "multi-HTC after frozen-label and resource gates"],
+  "protocol_immutability": "do not modify the common protocol after one external baseline completes because another baseline encounters a problem",
+  "test_unlock": "only after G1, all GINO/Transolver seeds, valid-selected immutable checkpoints and complete config closure; one evaluation-only unlock with no retraining",
+  "semiconductor_remote_manifest_sha256": "d8516b2cc25b8bddab25df878ebf4039e11d49a4b62e40cfcc60cc4dadfc181b",
+  "remaining_blockers": ["G1 completion and explicit remote authorization", "GINO CUDA/Open3D/torch-scatter semantic/resource preflight", "Transolver CUDA resource preflight", "hash-verified transfer of 2.091740672 GB v1 label cache", "CUDA/JAX preflight for reconstructed DeepOHeat-v1 environment", "bind the frozen method-native v1 loader to the authorized remote V7 training lifecycle without changing science", "materialize multi-HTC labels after its now-passed analytical gate", "same-hardware runtime remeasurement", "future evaluation-only test unlock"]
+}
