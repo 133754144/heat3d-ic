@@ -10,6 +10,7 @@ import importlib.util
 import json
 import pickle
 import sys
+import time
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -71,7 +72,8 @@ def make_example(sample_id: str, role: str, source_index: int, arrays: dict[str,
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--fs-train", type=Path, required=True); parser.add_argument("--subset-manifest", type=Path, required=True); parser.add_argument("--labels-root", type=Path, required=True); parser.add_argument("--heat3d-config", type=Path, required=True); parser.add_argument("--output-dir", type=Path, required=True); parser.add_argument("--receipt", type=Path, required=True); parser.add_argument("--resume-postprocess", action="store_true"); args = parser.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__); parser.add_argument("--fs-train", type=Path, required=True); parser.add_argument("--subset-manifest", type=Path, required=True); parser.add_argument("--labels-root", type=Path, required=True); parser.add_argument("--heat3d-config", type=Path, required=True); parser.add_argument("--output-dir", type=Path, required=True); parser.add_argument("--receipt", type=Path, required=True); parser.add_argument("--normalization", type=Path); parser.add_argument("--require-cuda", action="store_true"); parser.add_argument("--resume-postprocess", action="store_true"); args = parser.parse_args()
+    if args.require_cuda and jax.default_backend() != "gpu": raise SystemExit("FAIL-CLOSED: Heat3D-v1 formal preflight requires JAX CUDA")
     if not str(args.output_dir.resolve()).startswith(("/tmp/", "/private/tmp/")): raise ValueError("smoke artifacts must remain under /tmp")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     subset = json.loads(args.subset_manifest.read_text()); indices = {"train": decode_first(subset, "train", 6), "valid": decode_first(subset, "valid", 2)}
@@ -89,7 +91,19 @@ def main() -> int:
             target = np.asarray(np.load(directory / "deltaT_support1024_K.npy"), dtype=np.float64)
             full_truth = np.asarray(np.load(directory / "deltaT_full_K.npy", mmap_mode="r"), dtype=np.float64)
             arrays = converter.volume_v1_arrays(power); examples[role].append(make_example(sample_id, role, source_index, arrays, target, support, weights)); support_by_id[sample_id] = support; full_truth_by_id[sample_id] = full_truth
-    config = json.loads(args.heat3d_config.read_text()); stats = legacy_train_only_stats(examples["train"]); builder = Heat3DGraphBuilder(**config["graph"])
+    config = json.loads(args.heat3d_config.read_text())
+    if args.normalization is None:
+        stats = legacy_train_only_stats(examples["train"])
+        normalization_sha = None
+    else:
+        frozen = json.loads(args.normalization.read_text()); claimed = frozen.pop("payload_sha256")
+        actual = hashlib.sha256(json.dumps(frozen, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        if claimed != actual or actual != "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db" or frozen["valid_or_test_used_to_fit"] is not False: raise ValueError("frozen 768-train normalization mismatch")
+        stats = dict(frozen["statistics"])
+        for key in ("coord_min", "coord_span", "condition_mean", "condition_std", "target_delta_mean", "target_delta_std"):
+            stats[key] = np.asarray(stats[key], dtype=np.float32)
+        normalization_sha = actual
+    builder = Heat3DGraphBuilder(**config["graph"])
     train_batches = build_p1i_batches(examples["train"], stats, builder, label="p5_train", batch_size=6, graph_seed=0); valid_batches = build_p1i_batches(examples["valid"], stats, builder, label="p5_valid", batch_size=2, graph_seed=0)
     all_examples = examples["train"] + examples["valid"]; context = attach_input_contexts(train_batches + valid_batches, examples["train"], all_examples, config["model"]); by_id = {row.sample_id: row for row in all_examples}
     for batches in (train_batches, valid_batches):
@@ -122,11 +136,13 @@ def main() -> int:
     for row_index, example in enumerate(examples["valid"]):
         reconstruction, audit = build_reconstruction_map(coords=full_coords, layer_id=layer_id, boundaries=np.asarray([0.0, 0.1, 0.55]), support_indices=support_by_id[example.sample_id], empty_domain_fallback="same_layer")
         native = native_rows[row_index]; native_reload = reload_rows[row_index]
-        high = reconstruction.reconstruct(native).reshape(101,101,56)[:,:,15].reshape(-1); high_reload = reconstruction.reconstruct(native_reload).reshape(101,101,56)[:,:,15].reshape(-1)
+        reconstruction_started = time.perf_counter(); full_high = reconstruction.reconstruct(native).reshape(101,101,56); reconstruction_seconds = time.perf_counter() - reconstruction_started
+        full_high_reload = reconstruction.reconstruct(native_reload).reshape(101,101,56)
+        high = full_high[:,:,15].reshape(-1); high_reload = full_high_reload[:,:,15].reshape(-1)
         truth = full_truth_by_id[example.sample_id][:,:,15].reshape(-1)
-        u_rows.append({"sample_id": example.sample_id, "output_count": int(len(high)), "finite": bool(np.all(np.isfinite(high)) and np.all(np.isfinite(truth))), "checkpoint_reload_bitwise_equal": bool(np.array_equal(high, high_reload)), "reconstruction_algorithm": audit["algorithm"]})
+        u_rows.append({"sample_id": example.sample_id, "slice_output_count": int(len(high)), "full_output_count": int(full_high.size), "finite": bool(np.all(np.isfinite(full_high)) and np.all(np.isfinite(truth))), "checkpoint_reload_bitwise_equal": bool(np.array_equal(full_high, full_high_reload)), "reconstruction_algorithm": audit["algorithm"], "U_full_reconstruction_wall_seconds": reconstruction_seconds})
     status = "PASS_1_EPOCH_DUAL_OUTPUT_NONFORMAL" if checkpoint["passed"] and native_exact and native_finite and np.isfinite(float(valid_loss)) and all(row["finite"] and row["checkpoint_reload_bitwise_equal"] for row in u_rows) else "FAIL"
-    receipt = {"schema_version": "heat3d_v7_g2_p5_heat3d_v1_dual_output_smoke_v1", "status": status, "scope": "one_optimizer_step_schema_normalization_native_and_reconstruction_query_checkpoint_only", "formal_accuracy_claim": False, "train_functions": 6, "valid_functions": 2, "epochs": 1, "optimizer_steps": 1, "support": {"input_count": 1024, "selector": "physics_layout_aware_source_interface_boundary_volume", "old_8x8x16_projection_used": False}, "native_output": {"count": 1024, "finite": native_finite, "reload_exact": native_exact}, "u_strategy_output": {"count": 10201, "domain": "z=0.15 source-layer top slice on 101x101 grid, not official full 571256-point comparison domain", "conditioning_count_remains": 1024, "rows": u_rows}, "validation_loss_finite": bool(np.isfinite(float(valid_loss))), "checkpoint": {**checkpoint, "sha256": sha256(checkpoint_path)}, "temporary_artifact_root": str(args.output_dir), "formal_or_long_training_started": False, "p1i_test_or_sealed_access": False}
+    receipt = {"schema_version": "heat3d_v7_g2_p6_heat3d_v1_three_output_preflight_v2", "status": status, "scope": "one_optimizer_step_schema_frozen_normalization_native_and_reconstruction_query_checkpoint_only", "formal_accuracy_claim": False, "device_backend": jax.default_backend(), "cuda_required": args.require_cuda, "train_functions": 6, "valid_functions": 2, "epochs": 1, "optimizer_steps": 1, "normalization_payload_sha256": normalization_sha, "support": {"input_count": 1024, "selector": "physics_layout_aware_source_interface_boundary_volume", "old_8x8x16_projection_used": False}, "native_output": {"count": 1024, "finite": native_finite, "reload_exact": native_exact}, "u_strategy_outputs": {"conditioning_count_remains": 1024, "source_slice": {"count": 10201, "shape": [101,101], "z": 0.15}, "full_primary": {"count": 571256, "shape": [101,101,56], "same_domain_as_official_full_output": True}, "latency_includes_reconstruction": True, "rows": u_rows}, "validation_loss_finite": bool(np.isfinite(float(valid_loss))), "checkpoint": {**checkpoint, "sha256": sha256(checkpoint_path)}, "temporary_artifact_root": str(args.output_dir), "formal_or_long_training_started": False, "p1i_test_or_sealed_access": False}
     args.receipt.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"); print(json.dumps(receipt, indent=2, sort_keys=True)); return 0 if status.startswith("PASS") else 2
 
 
