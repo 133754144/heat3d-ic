@@ -14,7 +14,7 @@
     "budget": {"iterations": 100000, "functions_per_iteration": 50, "seed": 42},
     "checkpoint": "final serialized leaves only; no valid/test selection",
     "training_data_isolation": {"accepted": ["fs_train_volume.npy"], "forbidden": ["fs_test_volume.npy", "u_test_volume.npy"], "official_100_test": "sealed_until_separate_evaluation_only_unlock"},
-    "runner": "scripts/run_v7_g2_p6_deepoheat_v1_formal.py",
+    "runner": {"path": "scripts/run_v7_g2_p6_deepoheat_v1_formal.py", "sha256": "b4a09b1e37a21a583c39ecff0c2440b33b93aa8d88c0b537f13bfb27c893aad4", "pool_storage_patch": "host mmap with exact upstream JAX key split/random.choice semantics; selected batch only transferred"},
     "metrics": ["physical_temperature_MAPE", "physical_temperature_PAPE", "relative_L2_u", "RMSE_u", "peak_absolute_difference_u"],
     "output_directory": "output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42",
     "resource_preflight": "CUDA/JAX environment plus one official 50-function full-mesh step; no PDE/BC/mesh reduction",
@@ -33,6 +33,13 @@
     "local_artifact_root": "/private/tmp/g2_p5_deepoheat_v1_labels",
     "remote_transfer_requires_hash_verification": true,
     "official_test": "100 untouched"
+  },
+  "DeepOHeat_v1_remote_compact_loader": {
+    "path": "scripts/load_v7_g2_p6_deepoheat_v1_compact.py",
+    "sha256": "c41f2153d976b80f1f27e970116c63c68a6adbfb0bc29297a1bcf74a72a13a21",
+    "train_view": "1024 support coords+11 features+1024 target only",
+    "valid_view": "same compact support plus frozen 571256 full truth and 10201 z=0.15 truth",
+    "test_or_sealed_access": false
   },
   "Heat3D_on_DeepOHeat_v1_volumetric": {
     "status": "LOCAL_DUAL_OUTPUT_GATE_PASS_REMOTE_GPU_PREFLIGHT_PENDING",

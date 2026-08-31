@@ -117,16 +117,16 @@ def main() -> int:
     install_test_file_guard()
     device_before = accelerator_receipt()
     sys.path.insert(0, str(upstream))
-    from heat_volumetric import (  # type: ignore
-        apply_model_deepoheat_st,
-        deepoheat_st_train_generator,
-    )
+    from heat_volumetric import apply_model_deepoheat_st  # type: ignore
     from models import DeepOHeat_v1  # type: ignore
     from train import update as upstream_update  # type: ignore
 
-    fs_train = jnp.asarray(
-        np.asarray(np.load(args.fs_train, mmap_mode="r", allow_pickle=False), dtype=np.float32)
-    ).reshape(-1, 101**2)
+    # Upstream loads all 100,000 functions onto the accelerator before drawing
+    # batches. That is semantically unnecessary and exhausts 12 GB GPUs. Keep
+    # the frozen pool host-mapped while preserving upstream's exact JAX key
+    # split and random.choice(replace=False) sampling; only the chosen 50
+    # functions cross the host/device boundary.
+    fs_train = np.load(args.fs_train, mmap_mode="r", allow_pickle=False)
     if fs_train.shape != (100000, 101**2):
         raise ValueError(f"official training-pool shape mismatch: {fs_train.shape}")
     key = jax.random.PRNGKey(42)
@@ -149,7 +149,20 @@ def main() -> int:
     last_loss = None
     for iteration in range(iterations):
         train_key, sample_key = jax.random.split(train_key)
-        inputs = deepoheat_st_train_generator(fs_train, 50, 101, sample_key)
+        choice_key, _unused = jax.random.split(sample_key)
+        selected = np.asarray(
+            jax.device_get(jax.random.choice(choice_key, fs_train.shape[0], (50,), replace=False)),
+            dtype=np.int64,
+        )
+        functions = jnp.asarray(
+            np.asarray(fs_train[selected], dtype=np.float32).reshape(50, 101**2)
+        )
+        inputs = (
+            jnp.linspace(0, 1, 101).reshape(-1, 1),
+            jnp.linspace(0, 1, 101).reshape(-1, 1),
+            jnp.linspace(0, 0.55, 56).reshape(-1, 1),
+            functions,
+        )
         step_started = time.perf_counter()
         loss, gradients = apply_model_deepoheat_st(model, *inputs)
         model, opt_state = upstream_update(gradients, optimizer, opt_state, model)
@@ -182,6 +195,11 @@ def main() -> int:
             "evaluation_imported_or_executed": False,
         },
         "physics": {"mesh": [101, 101, 56], "batch_functions": 50, "PDE_BC_or_mesh_changed": False},
+        "sampling_compatibility": {
+            "semantics": "upstream JAX key split then random.choice replace=False",
+            "pool_storage": "host_mmap_only_selected_batch_transferred",
+            "algorithm_or_distribution_changed": False
+        },
         "optimizer": {"name": "Optax Adam", "lr": 0.001, "schedule": "exponential_decay_0.9_per_1000"},
         "iterations": iterations,
         "seed": 42,
