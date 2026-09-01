@@ -4,7 +4,9 @@
 
 本文件记录 V7 G1 正式训练矩阵的工程结果、可复现 provenance 和有限范围内的结果解读。它不是新的实验协议，也不修改 V6 frozen evidence、模型、损失、数据划分或 checkpoint-selection 规则。
 
-结果来自 devbox 上的机器可读 receipt：`/tmp/v7_g1_formal_runs/matrix_status.json` 以及每个 run 目录下的 `v7_g1_formal_receipt.json`。本文中的汇总指标均为 `valid_iid` 上按预注册的 `sample_first_relative_rmse_pct` 选出的最佳 checkpoint，均值和 sample SD 由三个 seed（0/1/2）计算。
+原始 formal evidence 来自 devbox：`/tmp/v7_g1_formal_runs/`；持久化副本位于 Git-ignored 的 `research_artifacts/v7_g1_formal_archive/`，逐文件 manifest 见 [G1 formal archive manifest](v7_g1_formal_archive_manifest.json)。本文新增的主统计结果统一采用各 registered run 的 native 1024-point `valid_iid` evaluation；已存在的 240825-node 结果不删除，本次也不新增 240825-node 结果。
+
+本文中的 checkpoint 均为按预注册的 `valid_iid.sample_first_relative_rmse_pct` 选出的最佳 checkpoint；旧版 mean±SD 表原样保留，新增的 native 1024-point mean±SD 和 preregistered paired statistics 分开标注。
 
 ## 执行状态与 provenance
 
@@ -21,8 +23,11 @@
 | matrix finished at | `2026-08-31T17:34:34.478207+00:00` |
 | evidence flags | `publication_evidence=true`、`scientific_evidence_eligible=true`（21/21） |
 | safety flags | `test_iid=false`、`sealed=false`、`solver=false`、`new_data=false`（21/21） |
+| training state | `TRAINING_COMPLETE`；21/21 formal runs；失败 0 |
+| statistical state | `STATISTICAL_CLOSEOUT_COMPLETE`；native 1024-point primary |
+| archive manifest SHA256 | `5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0` |
 
-原始 checkpoint、prediction、log 和 receipt 未复制进 GitHub；它们仍以 devbox 路径为准。Git 中只保留控制面与本开发记录。
+原始 checkpoint、prediction、log 和 receipt 未复制进 GitHub；它们已同步到上述持久化 Git-ignored archive。Git 中只保留 manifest、receipt、统计文档和本开发记录；[G1 formal archive receipt](v7_g1_formal_archive_receipt.json) 与 [G1 formal completion receipt](v7_g1_formal_completion_receipt.json) 记录完整边界。
 
 ## 共同训练契约
 
@@ -49,7 +54,38 @@
 | `vanilla_RIGNO_capacity_matched` | 159–195; 182.667 | 25.162 ± 11.003 | 24.021 ± 5.459 | 17.993 ± 4.478 | 20.527 ± 3.842 | 23.275 ± 4.329 | 3.373 ± 0.965 |
 | `physics_scale_only` | 8–35; 22.667 | 235.066 ± 0.184 | 172.398 ± 1.144 | 172.770 ± 0.151 | 39.153 ± 2.634 | 217.466 ± 9.971 | 56.141 ± 1.946 |
 
-对应 run ID 是每个 variant 的 `_seed0`、`_seed1`、`_seed2`；完整映射以 [frozen launch manifest](../configs/heat3d_v7/v7_g1_formal_launch_manifest.json) 和 devbox receipt 为准。
+对应 run ID 是每个 variant 的 `_seed0`、`_seed1`、`_seed2`；完整映射以 [frozen launch manifest](../configs/heat3d_v7/v7_g1_formal_launch_manifest.json) 和归档的 formal receipt 为准。
+
+## Native 1024-point mean±SD（本次主口径）
+
+下面是从归档的 21 个 `evaluation_best.json` 重新计算的 native 1024-point 结果；均值和 sample SD 仍按三个 seed 的 selected-best aggregate metric 计算。它保留了上表的 mean±SD 信息，同时避免把 support variant 的既有 240825-node 汇总混入本次主口径。
+
+| Variant | sample-first relative RMSE (%) | point-global relative RMSE (%) | raw CV RMSE (K) | source-region RMSE (K) | peak RMSE (K) | interface RMSE (K) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **Full** | **1.692 ± 0.048** | **2.058 ± 0.081** | **1.329 ± 0.038** | **2.781 ± 0.087** | **3.714 ± 0.022** | **0.719 ± 0.034** |
+| `no_film` | 1.986 ± 0.025 | 2.265 ± 0.036 | 1.503 ± 0.039 | 2.979 ± 0.045 | 4.299 ± 0.206 | 0.872 ± 0.010 |
+| `layout_agnostic_stratified_support` | 2.177 ± 0.040 | 2.386 ± 0.027 | 1.677 ± 0.016 | 3.332 ± 0.214 | 5.146 ± 0.484 | 0.843 ± 0.067 |
+| `cv_only_support` | 2.207 ± 0.011 | 2.455 ± 0.019 | 1.693 ± 0.019 | 3.454 ± 0.091 | 4.696 ± 0.383 | 0.790 ± 0.055 |
+| `vanilla_RIGNO` | 22.389 ± 1.568 | 22.342 ± 3.236 | 16.814 ± 2.219 | 17.932 ± 2.435 | 19.537 ± 3.851 | 2.989 ± 0.180 |
+| `vanilla_RIGNO_capacity_matched` | 25.162 ± 11.003 | 24.021 ± 5.459 | 17.993 ± 4.478 | 20.527 ± 3.842 | 23.275 ± 4.329 | 3.373 ± 0.965 |
+| `physics_scale_only` | 235.066 ± 0.184 | 172.398 ± 1.144 | 172.770 ± 0.151 | 39.153 ± 2.634 | 217.466 ± 9.970 | 56.141 ± 1.946 |
+
+## 预注册 paired effect 与 bootstrap CI
+
+effect 定义为 `ablation_error - Full_error`，正值表示 Full 更低。H1/H1b 的 primary 始终是 `point_global_relative_rmse_pct`；不能用 `sample_first_relative_rmse_pct` 替换。每次 bootstrap 都先在 seed 层和 seed 内的 128 个 `valid_iid` sample 层有放回重采样，再重新计算 frozen aggregate functional；共 10,000 次，随机种子 `20260829`，报告 percentile 95% CI。
+
+| Hypothesis | Primary comparison | Full pooled | Ablation pooled | Effect | Paired median / p90 / p95 / worst-10 mean | Per-seed effects (0,1,2) | 95% CI | Claim status |
+| --- | --- | ---: | ---: | ---: | --- | --- | --- | --- |
+| H1 | Full vs `vanilla_RIGNO` | 2.05872 | 22.49781 | 20.43909 | 15.75036 / 38.99510 / 45.75685 / 80.51393 | 16.98945, 23.33246, 20.53158 | [17.12366, 23.60488] | **SUPERIORITY_SUPPORTED** |
+| H1b | Full vs `vanilla_RIGNO_capacity_matched` | 2.05872 | 24.43118 | 22.37245 | 16.38835 / 40.31416 / 66.56916 / 116.63157 | 28.07646, 17.40245, 20.41153 | [17.44747, 27.71174] | **SUPERIORITY_SUPPORTED** |
+| H2 / generic | Full vs `layout_agnostic_stratified_support` | 2.78170 K | 3.33289 K | 0.55119 K | 0.28551 / 2.71986 / 4.15901 / 7.87018 K | 0.31336, 0.59858, 0.74026 K | [0.13854, 0.97514] K | **FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024** |
+| H2 / volume-only | Full vs `cv_only_support` | 2.78170 K | 3.45463 K | 0.67293 K | 0.32133 / 2.89294 / 3.85150 / 7.84755 K | 0.57619, 0.63287, 0.80949 K | [0.37064, 0.99466] K | **FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024** |
+| H3 | Full vs `no_film` | 1.69191% | 1.98608% | 0.29417 pp | 0.30947 / 0.99768 / 1.14901 / 1.52882 pp | 0.29505, 0.23859, 0.34888 pp | [0.21456, 0.37041] pp | **SUPERIORITY_SUPPORTED** |
+| H4 | Full vs `physics_scale_only` | 1.32955 K | 172.76972 K | 171.44018 K | 147.16832 / 260.28847 / 279.70957 / 321.02895 K | 171.55671, 171.46143, 171.30333 K | [164.25621, 178.46001] K | **SUPERIORITY_SUPPORTED** |
+
+完整逐 sample effect、per-seed table 和 worst-case 行见 [per-sample effects](../research_artifacts/v7_g1_formal_archive/analysis_1024/per_sample_effects.json)、[per-seed effects](../research_artifacts/v7_g1_formal_archive/analysis_1024/per_seed_effects.md)、[hypothesis table](../research_artifacts/v7_g1_formal_archive/analysis_1024/hypothesis_effect_table.md) 和 [worst-case diagnostics](../research_artifacts/v7_g1_formal_archive/analysis_1024/worst_case_diagnostics.md)。
+
+Superiority 只按预注册三项规则声明：paired 95% CI 排除 0、paired median 同方向、三个 seed 的 aggregate effect 同方向。H1/H1b/H3/H4 满足；H2 的 native 1024 aggregate CI 虽为正，但 support arm 有部分 sample 没有 source node，`source_region_RMSE_K` 的 paired sample unit 不对全部 128 sample 可估计，因此 H2 只作 native-support descriptive attribution 并 fail-closed，不填零、不删行，也不新增 240825-node 结果。
 
 ## 最佳 checkpoint 与最终 epoch
 
@@ -69,11 +105,11 @@ checkpoint selection 是预注册行为，因此不能用最终 epoch 替代最�
 
 ## 结果解读
 
-1. **Full 是当前 P1i valid_iid 契约下的最强配置。** 相对于 Full 的 `1.692%` 主指标均值，`no_film` 增加 `0.294` 个百分点（约 `17.4%`），说明 24-D global-context FiLM 有稳定但不是唯一的贡献。
-2. **support ablation 显示 source/layout-aware 支撑的重要性。** `layout_agnostic_stratified_support` 和 `cv_only_support` 的主指标分别增加约 `122.5%` 和 `180.5%`。其中 layout-agnostic variant 的 interface RMSE 均值（`0.534 K`）低于 Full，但其全局、source-region 和 peak 误差更高，说明不能用单一局部指标替代整体评价。
-3. **Vanilla baseline 与 Full 存在大差距。** canonical Vanilla 的主指标为 `22.389%`，capacity-matched Vanilla 为 `25.162%`；参数量已从 Full 的 `892,776` 分别控制为 `826,277` 和 `895,905`，但容量匹配没有消除差距。capacity-matched 组的跨 seed SD 为 `11.003` 个百分点，明显高于 Full 的 `0.048`，因此其结论应同时报告高 seed variance。
-4. **learned scale correction 是当前冻结语义下的关键组件。** `physics_scale_only` 的主指标均值为 `235.066%`，且三个 seed 的最佳 epoch 仅为 8–35；这是一个明确的负向消融结果，但只支持当前 P1i/模型契约下的组件归因，不外推为所有数据域的结论。
-5. **收敛时点存在 variant 差异。** Full 的最佳 epoch 为 152–188；Vanilla 的一个 seed 在 epoch 200 才达到最佳，capacity-matched 的两个 seed 在 194–195 才达到最佳。这提示 Vanilla 可能对 e200 预算更敏感，但正式矩阵的 200 epoch 是冻结协议，不能在观察结果后改预算。
+1. **Full vs Vanilla 支持完整 Heat3D conditioning architecture 的组合收益。** H1 在 `point_global_relative_rmse_pct` 上的 paired effect 为 `20.43909` 个百分点，95% CI `[17.12366, 23.60488]`；capacity-matched H1b 的 effect 为 `22.37245` 个百分点，95% CI `[17.44747, 27.71174]`。两个比较均满足预注册 superiority gate，但结论只限于冻结 P1i `valid_iid` native 1024-point 口径。
+2. **support 只作 physics-layout-aware sparse support 的归因。** native 1024-point support arms 的 source-region aggregate effect 对 generic 和 volume-only 都为正，但部分 sample 没有 source node，paired primary unit 不完整，所以 H2 不声明 superiority；结果支持在当前采样口径下的 support attribution 方向，不外推为独立于 support/evaluation grid 的普遍结论。
+3. **FiLM 是 secondary contribution。** H3 的 primary `sample_first_relative_rmse_pct` effect 为 `0.29417` 个百分点，95% CI `[0.21456, 0.37041]`，三个 seed 同方向；这支持在保留其它 Full context/scale 路径时，关闭 FiLM 会变差，但 FiLM 不是 Full 与 Vanilla 全部差异的替代解释。
+4. **scale correction 在当前 P1i formulation 下是关键。** H4 的 primary `raw_K_CV_RMSE_K` effect 为 `171.44018 K`，95% CI `[164.25621, 178.46001]`，三个 seed 同方向。该结论仅是当前 frozen P1i formulation 下的组件归因，不外推为 test、OOD 或 external superiority。
+5. **capacity-matched Vanilla 的高 seed variance 必须保留。** 其 sample-first mean±SD 为 `25.162 ± 11.003%`，逐 seed 为 `37.727% / 17.251% / 20.507%`；该逐 seed 表不能被只报告均值的摘要替代。旧表中的最佳 epoch 差异也只作描述，不能据此修改冻结的 200-epoch budget。
 
 ## 参数量与 variant 语义
 
@@ -100,7 +136,8 @@ checkpoint selection 是预注册行为，因此不能用最终 epoch 替代最�
 - 这里的误差比较不包含 latency、speedup、Pareto 或 FVM 结论；这些问题属于后续独立评价范围。
 - `mean ± sample SD` 只描述三个 seed 的重复性；统计 preregistration 明确不以 n=3 seed 的 p-value 作为主要证据。
 - capacity-matched Vanilla 的 seed variance 很高，后续报告应保留逐 seed 结果，不能只给均值。
-- 最佳 checkpoint 的二进制和 predictions 仍在 devbox receipt 目录，不作为 GitHub artifact 提交；若 devbox 清理，需要先做受控归档并重新计算 SHA。
+- 最佳/最终 checkpoint、predictions、history/log 和 run provenance 已持久化到 `research_artifacts/v7_g1_formal_archive/`；该目录 Git-ignored，不作为 GitHub 大型 artifact 提交，逐文件 SHA 见 archive manifest。
+- 本次 G1 主 closeout 不新增 240825-node 结果；若后续需要复核既有 240825-node evidence，必须沿用其既有 receipt，不得与 native 1024 主口径混用。
 - 历史 V1–V6 runner、smoke/development wrapper 继续作为 read-only historical oracle；本结果不表示 legacy tree 已清理。
 
 ## 复核入口

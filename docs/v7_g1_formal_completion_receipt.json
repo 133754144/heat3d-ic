@@ -1,0 +1,229 @@
+{
+  "claim_status_by_hypothesis": {
+    "H1": "SUPERIORITY_SUPPORTED",
+    "H1b": "SUPERIORITY_SUPPORTED",
+    "H2": "DESCRIPTIVE_ONLY",
+    "H3": "SUPERIORITY_SUPPORTED",
+    "H4": "SUPERIORITY_SUPPORTED"
+  },
+  "evidence_archive": {
+    "archive_receipt": "docs/v7_g1_formal_archive_receipt.json",
+    "manifest_path": "docs/v7_g1_formal_archive_manifest.json",
+    "manifest_sha256": "5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0",
+    "path": "research_artifacts/v7_g1_formal_archive/"
+  },
+  "formal_training": {
+    "completed_runs": 21,
+    "epochs": 200,
+    "failed_runs": 0,
+    "formal_training_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "planned_runs": 21,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "source_matrix_status": "research_artifacts/v7_g1_formal_archive/raw/matrix_status.json",
+    "status": "TRAINING_COMPLETE",
+    "training_git_commit": "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7",
+    "variants": 7
+  },
+  "h1_h1b_metric_guard": {
+    "interpretation": "per-sample point-global single-sample effects are diagnostic; inferential CI recomputes sqrt(sum(point_sse)/sum(point_truth_energy)) after each two-level resample",
+    "paired_sample_bootstrap_recomputes_frozen_aggregate_functional": true,
+    "primary_metric": "point_global_relative_rmse_pct",
+    "sample_first_substitution_for_h1_h1b": false
+  },
+  "h2_native_qualification": {
+    "common_domain_text_in_frozen_preregistration_retained": true,
+    "new_240825_results_generated": false,
+    "reason": "native 1024 support arms contain valid_iid samples without source nodes, so source_region_RMSE_K is not defined for every paired sample; no zero fill or row deletion was used",
+    "status": "DESCRIPTIVE_ONLY_FAIL_CLOSED_FOR_PRIMARY_PAIRED_UNIT"
+  },
+  "hypothesis_effects": [
+    {
+      "ablation_pooled_aggregate": 22.497810800170694,
+      "ablation_variant": "vanilla_RIGNO",
+      "bootstrap_ci_high": 23.604884126317078,
+      "bootstrap_ci_low": 17.123663033842924,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison_id": "H1_Full_vs_vanilla_RIGNO",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 20.439088220092767,
+      "full_pooled_aggregate": 2.058722580077925,
+      "hypothesis": "H1",
+      "paired_median": 15.75035816307482,
+      "paired_p90": 38.99510213877942,
+      "paired_p95": 45.75684984190401,
+      "paired_sample_estimable": true,
+      "paired_worst_10_mean": 80.51393204367136,
+      "per_seed_effects": [
+        16.98944810841024,
+        23.33246141941862,
+        20.531576601687746
+      ],
+      "primary_metric": "point_global_relative_rmse_pct"
+    },
+    {
+      "ablation_pooled_aggregate": 24.4311758958326,
+      "ablation_variant": "vanilla_RIGNO_capacity_matched",
+      "bootstrap_ci_high": 27.711739812447387,
+      "bootstrap_ci_low": 17.447469848485472,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison_id": "H1b_Full_vs_vanilla_RIGNO_capacity_matched",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 22.372453315754672,
+      "full_pooled_aggregate": 2.058722580077925,
+      "hypothesis": "H1b",
+      "paired_median": 16.388351640623796,
+      "paired_p90": 40.314160754003616,
+      "paired_p95": 66.5691630920653,
+      "paired_sample_estimable": true,
+      "paired_worst_10_mean": 116.6315658083585,
+      "per_seed_effects": [
+        28.076463243038173,
+        17.402451515590982,
+        20.4115260411232
+      ],
+      "primary_metric": "point_global_relative_rmse_pct"
+    },
+    {
+      "ablation_pooled_aggregate": 3.3328934312870806,
+      "ablation_variant": "layout_agnostic_stratified_support",
+      "bootstrap_ci_high": 0.9751419461543762,
+      "bootstrap_ci_low": 0.13853642175764852,
+      "claim_status": "FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024",
+      "comparison_id": "H2_Full_vs_layout_agnostic_stratified_support",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 0.5511897623477866,
+      "full_pooled_aggregate": 2.781703668939294,
+      "h2_overall_claim_status": "DESCRIPTIVE_ONLY",
+      "hypothesis": "H2_generic",
+      "hypothesis_claim_group": "H2",
+      "paired_median": 0.2855059061169296,
+      "paired_p90": 2.7198625598716384,
+      "paired_p95": 4.159006895668605,
+      "paired_sample_estimable": false,
+      "paired_worst_10_mean": 7.8701828583259585,
+      "per_seed_effects": [
+        0.31335503819439037,
+        0.5985811118732287,
+        0.7402553981480136
+      ],
+      "primary_metric": "source_region_RMSE_K"
+    },
+    {
+      "ablation_pooled_aggregate": 3.454631036191831,
+      "ablation_variant": "cv_only_support",
+      "bootstrap_ci_high": 0.9946633197767012,
+      "bootstrap_ci_low": 0.3706409950651279,
+      "claim_status": "FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024",
+      "comparison_id": "H2_Full_vs_cv_only_support",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 0.6729273672525369,
+      "full_pooled_aggregate": 2.781703668939294,
+      "h2_overall_claim_status": "DESCRIPTIVE_ONLY",
+      "hypothesis": "H2_volume_only",
+      "hypothesis_claim_group": "H2",
+      "paired_median": 0.32133412863036837,
+      "paired_p90": 2.8929398139764793,
+      "paired_p95": 3.851498348771304,
+      "paired_sample_estimable": false,
+      "paired_worst_10_mean": 7.847553307418009,
+      "per_seed_effects": [
+        0.5761865703433053,
+        0.6328706086472451,
+        0.8094888509845481
+      ],
+      "primary_metric": "source_region_RMSE_K"
+    },
+    {
+      "ablation_pooled_aggregate": 1.9860798858012951,
+      "ablation_variant": "no_film",
+      "bootstrap_ci_high": 0.3704056091752124,
+      "bootstrap_ci_low": 0.21455944802097113,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison_id": "H3_Full_vs_no_film",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 0.2941714598138374,
+      "full_pooled_aggregate": 1.6919084259874577,
+      "hypothesis": "H3",
+      "paired_median": 0.30947413560895637,
+      "paired_p90": 0.9976769022203731,
+      "paired_p95": 1.1490094199000456,
+      "paired_sample_estimable": true,
+      "paired_worst_10_mean": 1.5288180659643347,
+      "per_seed_effects": [
+        0.29504716840410317,
+        0.23858974941238098,
+        0.34887746162502875
+      ],
+      "primary_metric": "sample_first_relative_rmse_pct"
+    },
+    {
+      "ablation_pooled_aggregate": 172.76972133512484,
+      "ablation_variant": "physics_scale_only",
+      "bootstrap_ci_high": 178.4600114208021,
+      "bootstrap_ci_low": 164.2562051543688,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison_id": "H4_Full_vs_physics_scale_only",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 171.4401758871765,
+      "full_pooled_aggregate": 1.3295454479483393,
+      "hypothesis": "H4",
+      "paired_median": 147.16832084156215,
+      "paired_p90": 260.2884749952924,
+      "paired_p95": 279.7095696647986,
+      "paired_sample_estimable": true,
+      "paired_worst_10_mean": 321.0289490887505,
+      "per_seed_effects": [
+        171.5567056618667,
+        171.46142502155885,
+        171.30332987010624
+      ],
+      "primary_metric": "raw_K_CV_RMSE_K"
+    }
+  ],
+  "remaining_blocker": "future evaluation-only test unlock",
+  "schema_version": "heat3d_v7_g1_formal_completion_receipt_v1",
+  "scope": "research/v7 G1 only; native 1024-point primary closeout",
+  "scope_boundary": "All claims are limited to frozen P1i valid_iid native 1024-point evidence; no test/OOD/external superiority claim is made.",
+  "state_separation": {
+    "g2_affected": false,
+    "sealed_access": false,
+    "sealed_status": "SEALED_NOT_EVALUATED",
+    "statistical_closeout_complete": true,
+    "test_iid_access": false,
+    "test_iid_status": "SEALED_NOT_EVALUATED",
+    "training_complete": true
+  },
+  "statistical_closeout": {
+    "analysis_implementation_path": "scripts/closeout_heat3d_v7_g1.py",
+    "analysis_implementation_sha256": "be5949f3e4c616327e06dd4de19f7470182df5013aa1364f03dcddce32063b51",
+    "analysis_receipt": "research_artifacts/v7_g1_formal_archive/analysis_1024/analysis_receipt.json",
+    "analysis_receipt_sha256": "28dc9bdb2c647c3970503e48f083324c047b0d42a30a05e4faff53ad25c28d13",
+    "bootstrap": {
+      "both_with_replacement": true,
+      "interval": "percentile_95_percent_CI",
+      "random_seed": 20260829,
+      "replicates": 10000,
+      "resampling_levels": [
+        "seed",
+        "valid_iid_sample_within_seed"
+      ]
+    },
+    "bootstrap_ci_receipt": "research_artifacts/v7_g1_formal_archive/analysis_1024/bootstrap_ci_receipt.json",
+    "checkpoint": "best; pre-registered valid_iid sample_first_relative_rmse_pct selection",
+    "domain": "registered_support_1024",
+    "hypothesis_effect_table": "research_artifacts/v7_g1_formal_archive/analysis_1024/hypothesis_effect_table.json",
+    "per_seed_table": "research_artifacts/v7_g1_formal_archive/analysis_1024/per_seed_effects.md",
+    "point_count_per_sample": 1024,
+    "preregistration_path": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
+    "preregistration_sha256": "03be1617b78f2e1f41431411e601a54136a59e363c8321457a19b717249ad31e",
+    "split": "valid_iid",
+    "status": "STATISTICAL_CLOSEOUT_COMPLETE",
+    "valid_iid_count_per_seed": 128,
+    "worst_case_diagnostics": "research_artifacts/v7_g1_formal_archive/analysis_1024/worst_case_diagnostics.json"
+  },
+  "status": "G1_FORMAL_CLOSEOUT_COMPLETE"
+}

@@ -1,0 +1,87 @@
+{
+  "domain_policy": {
+    "native_1024_results_are_primary_g1_closeout": true,
+    "new_240825_node_results_generated": false,
+    "prior_240825_node_results_retained_without_modification": true
+  },
+  "evidence_roles_present": [
+    "analysis_scope_receipt",
+    "best_checkpoint",
+    "best_evaluation_metrics_native_1024",
+    "best_predictions_native_1024",
+    "bootstrap_ci_receipt",
+    "final_checkpoint",
+    "final_evaluation_metrics_native_1024",
+    "final_predictions_native_1024",
+    "formal_matrix_status",
+    "formal_receipt",
+    "hypothesis_effect_table",
+    "hypothesis_effect_table_document",
+    "native_1024_export_log",
+    "paired_per_sample_effects",
+    "per_seed_effects",
+    "per_seed_effects_document",
+    "pooled_summaries",
+    "prediction_export_receipt",
+    "run_config_provenance",
+    "statistical_analysis_receipt",
+    "training_history_progress",
+    "training_stderr_log",
+    "training_stdout_log",
+    "variant_level_native_summary",
+    "worst_case_diagnostics",
+    "worst_case_diagnostics_document"
+  ],
+  "formal_training_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+  "formal_training_git_commits": [
+    "78e7651bab5ef41a8ca4e42c45f64b1b98f04ea7"
+  ],
+  "git_policy": {
+    "large_checkpoints_predictions_tracked": false,
+    "persistent_archive_git_ignored": true,
+    "tracked_control_plane_only": true,
+    "tracked_manifest_receipts_docs_only_for_evidence": true
+  },
+  "integrity": {
+    "analysis_implementation_sha256": "be5949f3e4c616327e06dd4de19f7470182df5013aa1364f03dcddce32063b51",
+    "archive_manifest_path": "research_artifacts/v7_g1_formal_archive/archive_manifest.json",
+    "archive_manifest_sha256": "5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0",
+    "best_checkpoint_count": 21,
+    "best_prediction_count": 21,
+    "derived_rsync_dry_run": "PASS_no_changes",
+    "final_checkpoint_count": 21,
+    "final_prediction_count": 21,
+    "formal_receipt_code_sha_validation": "PASS_21_of_21",
+    "formal_receipt_count": 21,
+    "manifest_file_count": 266,
+    "per_file_size_sha256_validation": "PASS",
+    "raw_rsync_dry_run": "PASS_no_changes",
+    "tracked_manifest_path": "docs/v7_g1_formal_archive_manifest.json",
+    "tracked_manifest_sha256": "5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0"
+  },
+  "matrix_status": {
+    "completed_runs": 21,
+    "failed_runs": 0,
+    "finished_at": "2026-08-31T17:34:34.478207+00:00",
+    "planned_runs": 21,
+    "source_schema": "heat3d_v7_g1_formal_matrix_status_v1",
+    "status": "COMPLETE"
+  },
+  "persistent_archive_absolute_path": "/Users/xuyihua/.codex/worktrees/cbb8/3D IC Heat/research_artifacts/v7_g1_formal_archive",
+  "persistent_archive_path": "research_artifacts/v7_g1_formal_archive/",
+  "point_count_per_sample": 1024,
+  "primary_analysis_domain": "registered_support_1024",
+  "safety": {
+    "g2_touched": false,
+    "optimizer_called_during_export": false,
+    "sealed_access": false,
+    "solver_called": false,
+    "test_iid_access": false,
+    "training_rerun_during_closeout": false
+  },
+  "schema_version": "heat3d_v7_g1_formal_archive_receipt_v1",
+  "scope": "V7 G1 formal evidence archival only; no G2 and no test/sealed access",
+  "source_remote": "devbox:/tmp/v7_g1_formal_runs/",
+  "source_remote_derived": "devbox:/tmp/v7_g1_formal_derived_native_1024_v2/",
+  "status": "COMPLETE"
+}
