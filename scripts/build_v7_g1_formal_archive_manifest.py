@@ -61,7 +61,7 @@ def _role(relative_path: Path) -> str:
         return "h2_evaluation_receipt"
     if name == "per_sample_metrics.json":
         return "h2_per_sample_metrics"
-    if name == "full_predictions_best.npz":
+    if name in {"full_predictions_best.npz", "predictions_best.npz"}:
         return "h2_full_field_predictions_best"
     if name == "query_predictions_best.npz":
         return "h2_query_predictions_best"
