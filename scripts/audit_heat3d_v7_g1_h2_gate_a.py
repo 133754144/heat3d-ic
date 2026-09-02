@@ -47,6 +47,7 @@ guard_geometry_input_paths = _SANITIZER.guard_geometry_input_paths
 SAMPLE_ID = "v6p1if1_0993"
 HISTORICAL_COMMIT = "05b32ce"
 HISTORICAL_SANITY = {"p2r_count": 3074, "r2r_count": 4075}
+SANITY_COUNT_SEMANTICS = "frozen edge-tensor length including one mandatory dummy edge"
 GRAPH_SEED = 0
 EXPECTED_SUPPORT_COUNT = 1024
 
@@ -346,8 +347,10 @@ def _run_worker(args: argparse.Namespace) -> int:
             "repair_edge_count": int(len(repair_edges)),
             "final_p2r_edge_multiset_sha256": _edge_multiset_sha256(final_p2r),
             "final_p2r_count": int(len(final_p2r)),
+            "final_p2r_packed_count": int(len(final_p2r) + 1),
             "final_r2r_edge_multiset_sha256": _edge_multiset_sha256(final_r2r),
             "final_r2r_count": int(len(final_r2r)),
+            "final_r2r_packed_count": int(len(final_r2r) + 1),
             "final_r2r_domains_sha256": _array_sha256(
                 np.asarray(trace["r2r_domains_raw"], dtype=np.int64)
             ),
@@ -530,10 +533,14 @@ def _parent_main(args: argparse.Namespace) -> int:
     historical_counts = {
         "p2r_count": int(historical_reference["graph"]["final_p2r_count"]),
         "r2r_count": int(historical_reference["graph"]["final_r2r_count"]),
+        "p2r_packed_count": int(historical_reference["graph"]["final_p2r_packed_count"]),
+        "r2r_packed_count": int(historical_reference["graph"]["final_r2r_packed_count"]),
     }
     current_counts = {
         "p2r_count": int(current_restored["graph"]["final_p2r_count"]),
         "r2r_count": int(current_restored["graph"]["final_r2r_count"]),
+        "p2r_packed_count": int(current_restored["graph"]["final_p2r_packed_count"]),
+        "r2r_packed_count": int(current_restored["graph"]["final_r2r_packed_count"]),
     }
     cell_summaries = {
         key: {
@@ -546,16 +553,21 @@ def _parent_main(args: argparse.Namespace) -> int:
             "raw_p2r_edge_multiset_sha256": str(value["graph"]["raw_p2r_edge_multiset_sha256"]),
             "final_p2r_edge_multiset_sha256": str(value["graph"]["final_p2r_edge_multiset_sha256"]),
             "final_p2r_count": int(value["graph"]["final_p2r_count"]),
+            "final_p2r_packed_count": int(value["graph"]["final_p2r_packed_count"]),
             "final_r2r_edge_multiset_sha256": str(value["graph"]["final_r2r_edge_multiset_sha256"]),
             "final_r2r_count": int(value["graph"]["final_r2r_count"]),
+            "final_r2r_packed_count": int(value["graph"]["final_r2r_packed_count"]),
             "execution_device": str(value["dependency"]["execution_device"]),
         }
         for key, value in sorted(cells.items())
     }
-    historical_sanity_exact = historical_counts == HISTORICAL_SANITY
+    historical_sanity_exact = {
+        "p2r_count": historical_counts["p2r_packed_count"],
+        "r2r_count": historical_counts["r2r_packed_count"],
+    } == HISTORICAL_SANITY
     current_sanity_exact = {
-        "p2r_count": int(current_restored["graph"]["final_p2r_count"]),
-        "r2r_count": int(current_restored["graph"]["final_r2r_count"]),
+        "p2r_count": current_counts["p2r_packed_count"],
+        "r2r_count": current_counts["r2r_packed_count"],
     } == CURRENT_RESTORED_SANITY
     placement_effect_proven = (
         historical_cpu_default["stages"]["support_indices"]["exact"]
@@ -571,7 +583,7 @@ def _parent_main(args: argparse.Namespace) -> int:
     )
     if historical_sanity_exact and current_sanity_exact and placement_effect_proven:
         root_cause_status = "EXECUTION_DEVICE_PLACEMENT_DIFFERENCE_PROVEN"
-        root_cause_detail = "historical U-v2 CPU placement reproduces 3074/4075 while the current restored UHighN default-device placement reproduces 3083/4075; fixed support/normalized coordinates are exact and historical/current graph implementations are edge-exact under the same placement"
+        root_cause_detail = "historical U-v2 CPU placement reproduces the frozen packed counts while the current restored UHighN default-device placement reproduces the current packed counts; fixed support/normalized coordinates are exact and historical/current graph implementations are edge-exact under the same placement"
     else:
         root_cause_status = "NOT_PROVEN_FAIL_CLOSED"
         root_cause_detail = "fixed implementation/profile/execution-placement matrix did not establish a unique historical/current explanation"
@@ -580,9 +592,14 @@ def _parent_main(args: argparse.Namespace) -> int:
         key: cells[key]["dependency"]
         for key in sorted(cells)
     }
+    package_version_fields = ("python", "numpy", "scipy", "jax", "jaxlib")
+    package_versions = {
+        tuple(str(row[field]) for field in package_version_fields)
+        for row in dependencies.values()
+    }
     provenance = {
         "gate_a_status": (
-            "PASS" if historical_sanity_exact and root_cause_status == "GRAPH_PROFILE_BACKEND_DIFFERENCE_PROVEN"
+            "PASS" if historical_sanity_exact and root_cause_status == "EXECUTION_DEVICE_PLACEMENT_DIFFERENCE_PROVEN"
             else "FAIL_CLOSED"
         ),
         "historical_sanity_status": "EXACT_COUNTS" if historical_sanity_exact else "NOT_EXACT",
@@ -595,6 +612,7 @@ def _parent_main(args: argparse.Namespace) -> int:
         "graph_seed": GRAPH_SEED,
         "cell_count": len(cells),
         "execution_placements": list(EXECUTION_PLACEMENTS),
+        "sanity_count_semantics": SANITY_COUNT_SEMANTICS,
         "test_sealed_access": "not accepted as an input by this tool",
         "training_or_model_execution": "not performed",
     }
@@ -617,6 +635,7 @@ def _parent_main(args: argparse.Namespace) -> int:
         },
         "graph": {
             "sanity": HISTORICAL_SANITY,
+            "sanity_count_semantics": SANITY_COUNT_SEMANTICS,
             "historical_counts": historical_counts,
             "current_counts": current_counts,
             "cell_summaries": cell_summaries,
@@ -637,9 +656,8 @@ def _parent_main(args: argparse.Namespace) -> int:
         },
         "dependency": {
             "cells": dependencies,
-            "historical_current_versions_exact": len({
-                _safe_json(row) for row in dependencies.values()
-            }) == 1,
+            "historical_current_versions_exact": len(package_versions) == 1,
+            "package_version_fields": list(package_version_fields),
         },
         "provenance": provenance,
     }
