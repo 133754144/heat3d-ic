@@ -1,0 +1,42 @@
+{
+  "schema_version": "heat3d_v7_g1_h2_gate_a_fail_closed_receipt_v1",
+  "status": "FAIL_CLOSED",
+  "gate_a_status": "INVALIDATED_BY_AUDIT_PROTOCOL_BREACH",
+  "gate_b_status": "NOT_RUN",
+  "gate_c_status": "NOT_RUN",
+  "scope": "research/v7 G1 H2 closeout only",
+  "historical_graph_replay": {
+    "status": "NOT_ACCEPTED_AS_EVIDENCE",
+    "required_baseline_commit": "05b32ce",
+    "required_sample": "v6p1if1_0993",
+    "required_target": {
+      "p2r_edge_indices": 3074,
+      "r2r_edge_indices": 4075
+    }
+  },
+  "protocol_breach": {
+    "type": "prohibited_accuracy_field_read_during_static_provenance_inspection",
+    "historical_path": "configs/heat3d_v6_p1i/v6_p1i_performance_final_correction_raw/v6_final_Uv2_16384_valid96.json",
+    "source": "git history at 05b32ce",
+    "field": "accuracy",
+    "used_in_any_calculation": false,
+    "used_for_route_or_checkpoint_selection": false,
+    "current_prediction_read": false,
+    "test_iid_read": false,
+    "sealed_read": false,
+    "model_forward": false,
+    "training_started": false,
+    "graph_replay_evidence_accepted": false
+  },
+  "preserved_contract": {
+    "training_results_modified": false,
+    "support_modified": false,
+    "graph_physics_modified": false,
+    "sample_population_modified": false,
+    "g2_affected": false,
+    "test_or_sealed_unlocked": false
+  },
+  "required_next_step": "Restart Gate A in an isolated audit invocation that reads only code, geometry, graph configuration, support inputs, and graph counts; do not reuse this receipt as equivalence evidence.",
+  "recorded_at": "2026-09-02T14:30:37+08:00",
+  "repository_head_when_recorded": "f611021976fd82c6897e1b5a33a0afb6b799ce0b"
+}
