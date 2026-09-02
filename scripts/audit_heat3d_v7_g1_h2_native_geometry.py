@@ -112,11 +112,27 @@ def _sha_array(value: Any) -> str:
     return digest.hexdigest()
 
 
-def _sha_edge_multiset(value: Any) -> str:
+def _is_sorted_by_columns(edges: np.ndarray, columns: tuple[int, int]) -> bool:
+    if len(edges) < 2:
+        return True
+    primary = edges[:, columns[0]]
+    secondary = edges[:, columns[1]]
+    return bool(
+        np.all(
+            (primary[1:] > primary[:-1])
+            | ((primary[1:] == primary[:-1]) & (secondary[1:] >= secondary[:-1]))
+        )
+    )
+
+
+def _sha_edge_multiset(value: Any, *, known_order: tuple[int, int] | None = None) -> str:
     edges = np.asarray(value)
     if edges.ndim != 2 or edges.shape[1] != 2:
         raise ValueError(f"edge array must have shape [N,2], got {edges.shape}")
-    if len(edges):
+    if len(edges) and not (
+        (known_order is not None and _is_sorted_by_columns(edges, known_order))
+        or (known_order is None and _is_sorted_by_columns(edges, (0, 1)))
+    ):
         order = np.lexsort((edges[:, 1], edges[:, 0]))
         edges = edges[order]
     return _sha_array(edges)
@@ -289,10 +305,17 @@ def _edge_descriptor(metadata: Any, field: str) -> dict[str, Any] | None:
     packed = _packed_edges(metadata, field)
     if real is None or packed is None:
         return None
+    # The graph builder emits p2r/r2r rows in (first, second) order.  U-v2
+    # flips the frozen raw query edge rows, so its r2p rows are already in
+    # (second, first) order.  Recognizing that order avoids a quadratic-scale
+    # repeated lexsort of the 240825-node query edge family while retaining a
+    # canonical multiset digest; repaired rows fall back to lexsort.
+    edge_order = (1, 0) if field == "r2p_edge_indices" else (0, 1)
+    real_multiset_sha = _sha_edge_multiset(real, known_order=edge_order)
     return {
         "real_count": int(len(real)),
         "packed_count": int(len(packed)),
-        "real_edge_multiset_sha256": _sha_edge_multiset(real),
+        "real_edge_multiset_sha256": real_multiset_sha,
         "packed_edge_array_sha256": _sha_array(packed),
     }
 
@@ -692,9 +715,6 @@ def main() -> int:
         "subsample_factor": 4,
     })
     query_builder = Heat3DGraphBuilder(**query_graph_config)
-    from scripts import benchmark_heat3d_v6_p1i_resolution as resolution_base
-
-    input_cache: dict[str, dict[str, Any]] = {}
     native_records: list[dict[str, Any]] = []
     route_records: dict[str, list[dict[str, Any]]] = {
         "U_v2_16384_reconstruction": [],
@@ -718,14 +738,7 @@ def main() -> int:
             subset, row, need_coords=True
         )
         mesh, full_q, boundaries, input_audit = _layer_mesh_and_input_q(meta, shared_geometry)
-        input_cache[sample_id] = {
-            "meta": meta,
-            "full_q": full_q,
-            "boundaries": boundaries,
-            "mesh": mesh,
-            "input_audit": input_audit,
-            "sample_dir": str(sample_dir),
-        }
+        del mesh, input_audit, sample_dir
         for variant in VARIANTS:
             for seed in SEEDS:
                 run_id = f"{variant}_seed{seed}"
