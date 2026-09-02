@@ -1,0 +1,154 @@
+{
+  "schema_version": "heat3d_v7_g1_h2_gate_a_recovery_receipt_v1",
+  "status": "FAIL_CLOSED",
+  "scope": "Gate A only; Gates B and C were not entered",
+  "policy": {
+    "path": "configs/heat3d_v7/v7_g1_h2_provenance_recovery_policy.json",
+    "sha256": "830634dda0dc9b56f63d3f08fa1d7eaf755959adb723df6019f99f6f319db112",
+    "frozen_before_formal_evaluation": true
+  },
+  "machine_guard": {
+    "sanitizer_path": "rigno/heat3d_v7_h2_geometry_sanitizer.py",
+    "sanitizer_sha256": "12f76e8f00f9a599149a471967a3f3ad45d12554945187faf00acf85b4139381",
+    "gate_a_tool_path": "scripts/audit_heat3d_v7_g1_h2_gate_a.py",
+    "gate_a_tool_sha256": "e089b088f32b6cf0915e384064ac746a848f8fb3bbddcd8ac873567bde02b812",
+    "synthetic_guard_tests": 5,
+    "synthetic_guard_tests_status": "PASS",
+    "geometry_output_schema_status": "PASS",
+    "direct_result_input_status": "REJECTED_BY_PATH_GUARD"
+  },
+  "input_contract": {
+    "sample_id": "v6p1if1_0993",
+    "support_count": 1024,
+    "graph_seed": 0,
+    "historical_commit": "05b32ce",
+    "accepted_input": "stored support coordinate array only",
+    "model_or_checkpoint_loaded": false,
+    "forward_executed": false,
+    "test_or_sealed_input": false
+  },
+  "formal_geometry_manifest": {
+    "path": "docs/v7_g1_h2_gate_a_geometry_recovery_manifest.json",
+    "sha256": "faa13945955c6dcec82bf990c05c190bda5697d8eda322a877bc9f3a3f8efe1e",
+    "cell_count": 12,
+    "implementations": [
+      "historical_05b32ce",
+      "current_restored_h2"
+    ],
+    "profiles": [
+      "historical_u2_frozen",
+      "current_restored_h2",
+      "current_source_run_config"
+    ],
+    "placements": [
+      "cpu",
+      "default"
+    ]
+  },
+  "stage_comparison": {
+    "support_indices": {
+      "exact": true,
+      "sha256": "69be1b66172131dc3589f55b880c6c4d6e105746a79cbea0906f32172d38b45f"
+    },
+    "support_coordinates": {
+      "exact": true,
+      "sha256": "01a7ace13d83841a661df31e566dba73f1bad0fa6f2ecc9a5664cf944deaeee7"
+    },
+    "normalized_coordinates": {
+      "exact": false,
+      "historical_sha256": "0c22f462554275fea8fec774335808d6a7949729a0a3000d6ad4e14d5a84165e",
+      "current_sha256": "9d364c45bbf7cbf3ed1b87b02e2aeda14b83a6c4faa5e4f09b601a3b9819c89e"
+    },
+    "rnodes": {
+      "exact": false,
+      "historical_sha256": "51afbb5d61f967751c7df09d0e6d55f736ce2469e35be9e010806985c6c0dd3a",
+      "current_sha256": "61ccd9a3367f001727f6fc38bc9ca8c8def13d00fd1687bedf6400eaca11e90b"
+    },
+    "radius_and_config": {
+      "config_sha256": "662e6f6aecb98599ebf68de02d5a8965202080fec7d20e7622be1f99e8ef085f",
+      "historical_radius_sha256": "d47ea7272250127612066c6cdd9bed6301b1f43b8a79919e21f840e9f8ee76f6",
+      "current_radius_sha256": "0357b9fb80a265c7d256c6564e297237e363dcc536907ade71d39d2e1b87668b"
+    },
+    "raw_p2r": {
+      "historical_count": 3076,
+      "current_count": 3082,
+      "historical_sha256": "817f52375d63f4e4c54b40e6c1a9c879734f5db278892a680c66d3a3615dcf38",
+      "current_sha256": "add705672d04eb170670405f67cc4cb9e3eaec347f2983b8ab3d36279f8686d7"
+    },
+    "coverage_repair": {
+      "historical_count": 0,
+      "current_count": 0,
+      "sha256": "1b213cbe6d558b6a735290520af3d5709b273c322d6d2bd92eaa58741904c2d7"
+    },
+    "final_p2r": {
+      "historical_count": 3076,
+      "current_count": 3082,
+      "historical_sha256": "817f52375d63f4e4c54b40e6c1a9c879734f5db278892a680c66d3a3615dcf38",
+      "current_sha256": "add705672d04eb170670405f67cc4cb9e3eaec347f2983b8ab3d36279f8686d7"
+    },
+    "final_r2r": {
+      "historical_count": 4074,
+      "current_count": 4074,
+      "sha256": "86898a3b4304197db9e2812a46c8b016560f74639c4158b1ee937d4f88cdab80",
+      "domain_sha256": "3c8af714cb97e930c40a9f64953c6cf8c5d16b4897a9e788472f306042cd2a0c"
+    },
+    "first_divergence_stage": "normalized_coordinates"
+  },
+  "count_semantics": {
+    "frozen_sanity_p2r": 3074,
+    "frozen_sanity_r2r": 4075,
+    "semantics": "edge-tensor length including one mandatory dummy edge",
+    "historical_replay_p2r": 3077,
+    "historical_replay_r2r": 4075,
+    "current_replay_p2r": 3083,
+    "current_replay_r2r": 4075,
+    "historical_sanity_match": false,
+    "current_sanity_match": true
+  },
+  "dependency_provenance": {
+    "package_versions_match_across_matrix": true,
+    "python": "3.14.3",
+    "numpy": "2.4.2",
+    "scipy": "1.17.1",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "jax_enable_x64": false,
+    "jax_threefry_partitionable": true,
+    "historical_environment_record_platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "current_replay_platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "historical_execution_device": "TFRT_CPU_0",
+    "current_execution_device": "cuda:0",
+    "backend_placement_difference_observed": true
+  },
+  "code_provenance": {
+    "historical_graph_sha256": "f564e3870c02f3674ebb13bf3ce7380773e100383b8d7ad2eaaa7f25ae92f41c",
+    "current_graph_sha256": "d5634bd2ae7395260850cc45bb945b04aa2384df22c958fe56ce3fa00cd5f65a",
+    "graph_wrapper_sha256": "4d40e0f851e5b04f30d30192e13c2c533735490cc9a120d91489b9d3702eadd5",
+    "historical_u2_runner_sha256": "2e59e2f23f022ed3e7af8b58db8feea9dacb7d383244db2f35cc0ae9824502c3",
+    "current_u2_runner_sha256": "ee7712855d53d448e1dbce99e0d8e3752c6fd9963ee4f565f473d4782b1912f4",
+    "anchor_query_sha256": "196a13e823b1af512e0192be72c2a8c4c8ee1bfd67f3e5b7a3f9dc5495e4d7f9"
+  },
+  "root_cause_assessment": {
+    "status": "NOT_PROVEN_FAIL_CLOSED",
+    "observed_mechanism": "CPU versus default-device placement changes normalized coordinates, rnodes, and p2r edge set while support coordinates and r2r edge set remain unchanged",
+    "historical_count_explanation": "not established",
+    "decision": "do not enter Gate B or Gate C"
+  },
+  "historical_audit_note": {
+    "geometry_audit_recorded_repair_count_for_0993": 35657,
+    "support_coordinate_hash_for_0993_not_present_in_historical_geometry_manifests": true,
+    "historical_mixed_content_attempts_receipt": {
+      "path": "docs/v7_g1_h2_gate_a_fail_closed_receipt.json",
+      "sha256": "65a960d354ae98dd55cef66eb32c176f2435abdb27d6edd3ff5f1de94a00da58",
+      "retained": true,
+      "evidence_role": "audit_only_not_evidence"
+    }
+  },
+  "gate_status": {
+    "gate_a": "FAIL_CLOSED",
+    "gate_b": "NOT_RUN",
+    "gate_c": "NOT_RUN",
+    "test_or_sealed_state": "untouched",
+    "g2_state": "untouched"
+  }
+}
