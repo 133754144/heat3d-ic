@@ -41,6 +41,8 @@ def _identity(relative_path: Path) -> tuple[str | None, str | None, int | None]:
 def _role(relative_path: Path) -> str:
     name = relative_path.name
     path = relative_path.as_posix().lower()
+    if "audit_failed" in path or "contaminated_attempt" in path:
+        return "contaminated_attempt_audit"
     if name == "matrix_status.json":
         return "formal_matrix_status"
     if name == "v7_g1_formal_receipt.json":

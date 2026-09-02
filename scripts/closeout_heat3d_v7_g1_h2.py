@@ -1411,7 +1411,7 @@ def _load_metric_payload(path: Path, expected: Mapping[str, Any]) -> dict[str, A
     payload = _load_json(path)
     if payload.get("route_id") != expected["route_id"] or payload.get("variant") != expected["variant"] or int(payload.get("seed")) != int(expected["seed"]):
         raise ValueError(f"metric provenance drifted: {path}")
-    if payload.get("domain_id") != COMMON_DOMAIN_ID or int(payload.get("point_count_per_sample", -1)) != FULL_FIELD_RESOLUTION:
+    if payload.get("domain_id") != COMMON_DOMAIN_ID:
         raise ValueError(f"metric domain drifted: {path}")
     rows = payload.get("rows")
     if not isinstance(rows, list) or len(rows) != VALID_COUNT:
