@@ -370,6 +370,7 @@ class UHighNRuntime:
     session: RuntimeSession
     geometry: FullFieldGeometry
     graph_config: dict[str, Any]
+    native_graph_config: dict[str, Any] | None = None
     graph_builder_fingerprint: str | None = None
 
     @classmethod
@@ -380,8 +381,13 @@ class UHighNRuntime:
         *,
         graph_builder_fingerprint: str | None = None,
     ) -> "UHighNRuntime":
-        graph_config = dict(session.graph_config)
-        graph_config.update(
+        # The formal G1 checkpoint was trained with the exact graph config in
+        # ``session.graph_config``.  Preserve it for the native conditioning
+        # graph.  V6 U-v2 changes only the output-side query graph policy; it
+        # must not silently replace the trained native backend/radii path.
+        native_graph_config = dict(session.graph_config)
+        query_graph_config = dict(native_graph_config)
+        query_graph_config.update(
             {
                 "discrete_graph_backend": "sparse_kdtree_v1",
                 "reuse_exact_p2r_for_r2p": True,
@@ -390,17 +396,18 @@ class UHighNRuntime:
         )
         configured_session = replace(
             session,
-            graph_config=graph_config,
+            graph_config=native_graph_config,
             group_builder=GroupBuilder(
                 feature_transform=session.feature_transform,
-                graph_config=graph_config,
+                graph_config=native_graph_config,
                 graph_seed=int(session.run_config["graph_seed"]),
             ),
         )
         return cls(
             session=configured_session,
             geometry=geometry,
-            graph_config=graph_config,
+            graph_config=query_graph_config,
+            native_graph_config=native_graph_config,
             graph_builder_fingerprint=graph_builder_fingerprint,
         )
 
@@ -423,14 +430,20 @@ class UHighNRuntime:
         resolution = int(resolution)
         if resolution <= 1024 or resolution != len(support.selected_indices):
             raise ValueError("U-v2 requires a high-resolution support/query fixture")
-        base = HighNRuntime.from_session(
-            self.session,
-            self.geometry,
+        native_graph_config = dict(self.native_graph_config or self.session.graph_config)
+        base = HighNRuntime(
+            session=self.session,
+            geometry=self.geometry,
+            graph_config=native_graph_config,
             graph_builder_fingerprint=self.graph_builder_fingerprint,
         )
         anchor_support = base.anchor_support(anchor)
-        anchor_hash = base.anchor_support(anchor).descriptor()["selected_indices_sha256"]
-        native_record = base.graph_metadata(anchor, support_hash=anchor_hash)
+        anchor_hash = anchor_support.descriptor()["selected_indices_sha256"]
+        native_record = base.graph_metadata(
+            anchor,
+            support_hash=anchor_hash,
+            graph_config=native_graph_config,
+        )
         query = base.query_example(anchor, support)
         builder = Heat3DGraphBuilder(**self.graph_config)
         anchor_graph_coords = self.session.feature_transform.transform(anchor).graph_coords
@@ -452,7 +465,16 @@ class UHighNRuntime:
             edge_targets=native_compatible,
             context_examples=[anchor],
         )
-        query_group = self.session.build_group_from_metadata(
+        query_session = replace(
+            self.session,
+            graph_config=dict(self.graph_config),
+            group_builder=GroupBuilder(
+                feature_transform=self.session.feature_transform,
+                graph_config=dict(self.graph_config),
+                graph_seed=int(self.session.run_config["graph_seed"]),
+            ),
+        )
+        query_group = query_session.build_group_from_metadata(
             [query],
             query_metadata,
             name=f"v7_u_v2_direct_query_valid_iid_{resolution}",
@@ -484,6 +506,9 @@ class UHighNRuntime:
                 "direct_query": True,
                 "native_edge_counts": self._edge_counts(native_record.metadata),
                 "query_edge_counts": self._edge_counts(query_metadata),
+                "native_graph_config": native_graph_config,
+                "query_graph_config": dict(self.graph_config),
+                "native_graph_config_exact_formal": native_graph_config == self.session.graph_config,
                 "anchor_support_hash": anchor_hash,
                 "query_support_hash": support.descriptor()["selected_indices_sha256"],
             }
