@@ -553,7 +553,7 @@ def _source_run_config(repo: Path, run_id: str) -> dict[str, Any]:
     variant_model = _variant_model_config(dict(config["model"]), variant)
     # Feature names are immutable in the parent contract; the resulting
     # decoder indices are finalized again after train-only stats are fitted.
-    feature_names = tuple(
+    feature_names = (
         "k_x", "k_y", "k_z", "q", "is_top", "is_bottom", "is_side", "is_interior",
         "top_h", "bottom_h", "top_T_inf_minus_T_ref", "bottom_T_fixed_minus_T_ref",
         "bottom_T_inf_minus_T_ref",
