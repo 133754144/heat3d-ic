@@ -154,6 +154,8 @@ ALLOWED_SECTION_KEYS = {
         "r2p_edge_indices",
         "r2r_edge_indices",
         "r2r_edge_domains",
+        "cell_summaries",
+        "execution_placement",
     }),
     "dependency": frozenset({
         "python",
@@ -168,6 +170,9 @@ ALLOWED_SECTION_KEYS = {
         "machine",
         "runtime",
         "version",
+        "execution_device",
+        "jax_enable_x64",
+        "jax_threefry_partitionable",
     }),
     "provenance": frozenset({
         "commit",
@@ -190,6 +195,8 @@ ALLOWED_SECTION_KEYS = {
         "cell_count",
         "test_sealed_access",
         "training_or_model_execution",
+        "current_restored_sanity_status",
+        "execution_placements",
     }),
 }
 

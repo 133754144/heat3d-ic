@@ -535,6 +535,23 @@ def _parent_main(args: argparse.Namespace) -> int:
         "p2r_count": int(current_restored["graph"]["final_p2r_count"]),
         "r2r_count": int(current_restored["graph"]["final_r2r_count"]),
     }
+    cell_summaries = {
+        key: {
+            "implementation": str(value["graph"]["implementation"]),
+            "profile": str(value["graph"]["profile"]),
+            "execution_placement": str(value["graph"]["execution_placement"]),
+            "config_sha256": str(value["graph"]["config_sha256"]),
+            "normalized_coordinates_sha256": str(value["geometry"]["normalized_coordinates_sha256"]),
+            "rnodes_sha256": str(value["geometry"]["rnodes_sha256"]),
+            "raw_p2r_edge_multiset_sha256": str(value["graph"]["raw_p2r_edge_multiset_sha256"]),
+            "final_p2r_edge_multiset_sha256": str(value["graph"]["final_p2r_edge_multiset_sha256"]),
+            "final_p2r_count": int(value["graph"]["final_p2r_count"]),
+            "final_r2r_edge_multiset_sha256": str(value["graph"]["final_r2r_edge_multiset_sha256"]),
+            "final_r2r_count": int(value["graph"]["final_r2r_count"]),
+            "execution_device": str(value["dependency"]["execution_device"]),
+        }
+        for key, value in sorted(cells.items())
+    }
     historical_sanity_exact = historical_counts == HISTORICAL_SANITY
     current_sanity_exact = {
         "p2r_count": int(current_restored["graph"]["final_p2r_count"]),
@@ -602,6 +619,7 @@ def _parent_main(args: argparse.Namespace) -> int:
             "sanity": HISTORICAL_SANITY,
             "historical_counts": historical_counts,
             "current_counts": current_counts,
+            "cell_summaries": cell_summaries,
             "historical": historical_reference["graph"],
             "current": current_restored["graph"],
             "comparison": {
