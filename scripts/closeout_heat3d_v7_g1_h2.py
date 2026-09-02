@@ -33,6 +33,9 @@ from scipy.spatial import cKDTree
 
 FORMAL_CODE_SHA = "191a7a06a681556f575a1c04e2b61cb13363efe1"
 PREREG_SHA = "03be1617b78f2e1f41431411e601a54136a59e363c8321457a19b717249ad31e"
+GOVERNANCE_AMENDMENT_SHA = "168966f6f9091f46ea831ad08a6c014de6d38541766f2419d5fcac3cab4cbd52"
+GOVERNANCE_AMENDMENT_SCHEMA = "heat3d_v7_g1_h2_native_closeout_governance_amendment_v1"
+NATIVE_CAPACITY_SCHEMA = "heat3d_v7_g1_native_geometry_capacity_manifest_v1"
 H2_PRIMARY_DECISION_SCHEMA = "heat3d_v7_g1_h2_route_primary_decision_v1"
 COMMON_DOMAIN_ID = "heat3d_v6_p1i_full_field_240825"
 FULL_FIELD_RESOLUTION = 240825
@@ -127,6 +130,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--launch-manifest", type=Path, default=None)
     parser.add_argument("--preregistration", type=Path, default=None)
     parser.add_argument("--eu-contract", type=Path, default=None)
+    parser.add_argument("--governance-amendment", type=Path, default=None)
+    parser.add_argument("--capacity-manifest", type=Path, default=None)
+    parser.add_argument("--native-anchor", type=Path, default=None)
     parser.add_argument("--primary-decision", type=Path, default=None)
     parser.add_argument("--run-id", default=None)
     parser.add_argument("--route-id", choices=H2_ROUTES, default=None)
@@ -154,6 +160,9 @@ def _resolve_execute_paths(args: argparse.Namespace) -> dict[str, Path]:
         "launch": launch,
         "prereg": (args.preregistration or repo / "configs/heat3d_v7/v7_g1_statistical_preregistration.json").resolve(),
         "eu_contract": (args.eu_contract or repo / "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json").resolve(),
+        "governance": (args.governance_amendment or repo / "configs/heat3d_v7/v7_g1_h2_native_closeout_governance_amendment.json").resolve(),
+        "capacity_manifest": (args.capacity_manifest or Path("/tmp/v7_g1_h2_native_closeout/g1_native_geometry_capacity_manifest.json")).resolve(),
+        "native_anchor": (args.native_anchor or Path("/tmp/v7_g1_h2_native_closeout/g1_native_anchor_Full_seed0_v6p1if1_0993.json")).resolve(),
         "v6_binding": (repo / "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json").resolve(),
         "decision": (args.primary_decision or repo / "configs/heat3d_v7/v7_g1_h2_route_primary_decision.json").resolve(),
         "subset": (args.subset or _repo_path(repo, str(dataset["subset_path"]))),
@@ -164,12 +173,103 @@ def _resolve_execute_paths(args: argparse.Namespace) -> dict[str, Path]:
     }
 
 
-def _verify_execute_contract(paths: Mapping[str, Path | dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+def _verify_governance_amendment(path: Path) -> tuple[dict[str, Any], str]:
+    if not path.is_file():
+        raise FileNotFoundError(f"missing frozen H2 governance amendment: {path}")
+    sha = _sha256(path)
+    if sha != GOVERNANCE_AMENDMENT_SHA:
+        raise ValueError(f"H2 governance amendment SHA drifted: {sha}")
+    amendment = _load_json(path)
+    if amendment.get("schema_version") != GOVERNANCE_AMENDMENT_SCHEMA:
+        raise ValueError("H2 governance amendment schema drifted")
+    if amendment.get("status") != "FROZEN_BEFORE_H2_ACCURACY":
+        raise ValueError("H2 governance amendment is not frozen before accuracy")
+    historical = amendment.get("historical_3074")
+    if not isinstance(historical, Mapping) or historical.get("status") != "HISTORICAL_REPRODUCIBILITY_DIAGNOSTIC_ONLY" or historical.get("is_h2_scientific_gate") is not False:
+        raise ValueError("V6 3074 role is not diagnostic-only")
+    gates = amendment.get("gates")
+    if not isinstance(gates, Mapping) or not isinstance(gates.get("gate_a"), Mapping) or not isinstance(gates.get("gate_b"), Mapping):
+        raise ValueError("Gate A/B governance sections are missing")
+    if any(
+        gates[name].get(field) is not False
+        for name in ("gate_a", "gate_b")
+        for field in ("checkpoint_load", "model_forward", "truth_access", "accuracy_or_metric_calculation", "target_or_loss_access")
+    ):
+        raise ValueError("Gate A/B governance boundary drifted")
+    if not isinstance(gates.get("gate_c"), Mapping) or gates["gate_c"].get("model_forward") is not True or gates["gate_c"].get("valid_iid_truth_access") is not True or gates["gate_c"].get("parameter_update") is not False:
+        raise ValueError("Gate C governance boundary drifted")
+    return amendment, sha
+
+
+def _verify_native_capacity_manifest(path: Path) -> tuple[dict[str, Any], str]:
+    if not path.is_file():
+        raise FileNotFoundError(f"missing geometry-only capacity manifest: {path}")
+    sha = _sha256(path)
+    payload = _load_json(path)
+    if payload.get("schema_version") != NATIVE_CAPACITY_SCHEMA:
+        raise ValueError("native geometry capacity manifest schema drifted")
+    provenance = payload.get("provenance")
+    if not isinstance(provenance, Mapping) or provenance.get("formal_code_sha") != FORMAL_CODE_SHA:
+        raise ValueError("native geometry formal code provenance drifted")
+    graph = payload.get("graph")
+    if not isinstance(graph, Mapping):
+        raise ValueError("native geometry graph section is missing")
+    if graph.get("adapter_native_exact_all_records") is not True:
+        raise ValueError("native/U adapter exactness gate is not PASS")
+    if graph.get("padding_invariance", {}).get("status") != "PASS":
+        raise ValueError("native geometry padding invariance gate is not PASS")
+    route_caps = graph.get("route_edge_capacities")
+    if not isinstance(route_caps, Mapping) or set(route_caps) != set(H2_ROUTES):
+        raise ValueError("native geometry route capacity population drifted")
+    for route_id in H2_ROUTES:
+        route = route_caps[route_id]
+        if not isinstance(route, Mapping) or not isinstance(route.get("native"), Mapping) or not isinstance(route.get("query"), Mapping):
+            raise ValueError(f"{route_id}: native/query capacity scopes are missing")
+        for scope in ("native", "query"):
+            for field in ("p2r_edge_indices", "r2p_edge_indices", "r2r_edge_indices", "r2r_edge_domains"):
+                value = route[scope].get(field)
+                if value is not None and (isinstance(value, bool) or int(value) < 1):
+                    raise ValueError(f"{route_id}/{scope}/{field}: invalid frozen capacity")
+    geometry = payload.get("geometry")
+    if not isinstance(geometry, Mapping) or geometry.get("formal_native_resolution") != NATIVE_RESOLUTION or geometry.get("u_query_resolutions") != {"U16384_query": U16384_RESOLUTION, "U240825_query": FULL_FIELD_RESOLUTION}:
+        raise ValueError("native geometry resolution contract drifted")
+    return payload, sha
+
+
+def _verify_native_anchor(path: Path, capacity_payload: Mapping[str, Any]) -> str:
+    if not path.is_file():
+        raise FileNotFoundError(f"missing native anchor receipt: {path}")
+    sha = _sha256(path)
+    payload = _load_json(path)
+    if payload.get("schema_version") != "heat3d_v7_g1_native_anchor_geometry_only_v1":
+        raise ValueError("native anchor schema drifted")
+    provenance = payload.get("provenance")
+    if not isinstance(provenance, Mapping) or provenance.get("formal_code_sha") != FORMAL_CODE_SHA or provenance.get("anchor_role") != "Full_seed0/v6p1if1_0993":
+        raise ValueError("native anchor identity drifted")
+    graph = payload.get("graph")
+    if not isinstance(graph, Mapping) or graph.get("real_edge_counts", {}).get("p2r") is None or graph.get("real_edge_counts", {}).get("r2r") is None:
+        raise ValueError("native anchor graph counts are missing")
+    records = capacity_payload.get("graph", {}).get("records", [])
+    if not any(
+        isinstance(row, Mapping)
+        and row.get("provenance", {}).get("run_id") == "Full_seed0"
+        and row.get("provenance", {}).get("sample_id") == "v6p1if1_0993"
+        and row.get("graph", {}).get("real_edge_counts") == graph.get("real_edge_counts")
+        for row in records
+    ):
+        raise ValueError("native anchor is not present in the capacity manifest")
+    return sha
+
+
+def _verify_execute_contract(paths: Mapping[str, Path | dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], str, str]:
     launch = paths["launch_payload"]
     assert isinstance(launch, dict)
     prereg = _load_json(Path(paths["prereg"]))
     contract = _load_json(Path(paths["eu_contract"]))
     decision = _load_json(Path(paths["decision"]))
+    amendment, amendment_sha = _verify_governance_amendment(Path(paths["governance"]))
+    capacity_manifest, capacity_sha = _verify_native_capacity_manifest(Path(paths["capacity_manifest"]))
+    anchor_sha = _verify_native_anchor(Path(paths["native_anchor"]), capacity_manifest)
     if launch.get("g1_formal_code_sha") != FORMAL_CODE_SHA:
         raise ValueError("formal launch code SHA drifted")
     if launch.get("test_iid_access") or launch.get("sealed_access"):
@@ -200,7 +300,7 @@ def _verify_execute_contract(paths: Mapping[str, Path | dict[str, Any]]) -> tupl
         raise FileNotFoundError(f"missing frozen subset: {paths['subset']}")
     if not Path(paths["manifest"]).is_file() or not Path(paths["full_fields"]).is_file():
         raise FileNotFoundError("missing frozen manifest/full-field archive")
-    return launch, prereg, contract, decision
+    return launch, prereg, contract, decision, capacity_manifest, amendment_sha, capacity_sha, anchor_sha
 
 
 def _registered_route(contract_path: Path, route_id: str) -> dict[str, Any]:
@@ -221,6 +321,20 @@ def _registered_route(contract_path: Path, route_id: str) -> dict[str, Any]:
     if query_resolution not in {U16384_RESOLUTION, FULL_FIELD_RESOLUTION}:
         raise ValueError(f"unsupported H2 route output resolution: {query_resolution}")
     return bound
+
+
+def _amend_route_capacity(
+    route: Mapping[str, Any],
+    capacity_manifest: Mapping[str, Any],
+    capacity_sha: str,
+) -> dict[str, Any]:
+    route_id = str(route["route_id"])
+    capacities = capacity_manifest["graph"]["route_edge_capacities"]
+    amended = deepcopy(dict(route))
+    amended["fixed_edge_targets"] = deepcopy(dict(capacities[route_id]))
+    amended["capacity_manifest_sha256"] = capacity_sha
+    amended["capacity_semantics"] = "complete 9x128 geometry-only observed maximum plus mandatory dummy"
+    return amended
 
 
 def _load_examples(
@@ -591,6 +705,9 @@ def _write_run_config(
     route: Mapping[str, Any],
     route_path: Path,
     decision_path: Path,
+    governance_path: Path,
+    capacity_manifest_path: Path,
+    native_anchor_path: Path,
 ) -> None:
     _write_json(
         path,
@@ -612,6 +729,12 @@ def _write_run_config(
             "support_provider_id": provider,
             "route": route,
             "route_config_sha256": _sha256(route_path),
+            "governance_amendment_path": str(governance_path),
+            "governance_amendment_sha256": _sha256(governance_path),
+            "capacity_manifest_path": str(capacity_manifest_path),
+            "capacity_manifest_sha256": _sha256(capacity_manifest_path),
+            "native_anchor_path": str(native_anchor_path),
+            "native_anchor_sha256": _sha256(native_anchor_path),
             "primary_decision_path": str(decision_path),
             "primary_decision_sha256": _sha256(decision_path),
             "training_performed_by_h2": False,
@@ -686,6 +809,12 @@ def _execute_one(
         context_rows_by_id=context_rows,
         route=route,
     )
+    capacity_manifest = paths["capacity_payload"]
+    if not isinstance(capacity_manifest, Mapping):
+        raise ValueError("native geometry capacity payload is missing")
+    expected_native_config_sha = capacity_manifest["graph"]["formal_native_config_sha256"]
+    if _canonical_sha(runtime_session.graph_config) != expected_native_config_sha:
+        raise ValueError(f"{run_id}: H2 native graph config is not the frozen formal graph config")
     graph_sha = _sha256(repo / "rigno/graphBuilder_Heat3D.py")
     query_sha = _sha256(repo / "rigno/heat3d_v6_p1i_anchor_query.py")
     reconstruction_sha = _sha256(repo / "rigno/heat3d_v6_full_field.py")
@@ -709,6 +838,9 @@ def _execute_one(
         route=route,
         route_path=Path(paths["eu_contract"]),
         decision_path=Path(paths["decision"]),
+        governance_path=Path(paths["governance"]),
+        capacity_manifest_path=Path(paths["capacity_manifest"]),
+        native_anchor_path=Path(paths["native_anchor"]),
     )
     _write_json(
         run_output / "implementation_provenance.json",
@@ -734,6 +866,9 @@ def _execute_one(
                 "evaluation_core": evaluation_sha,
             },
             "historical_binary_reconciliation_status": "historical high-resolution binary artifacts unavailable; executed frozen V7 semantic/runtime binding",
+            "native_graph_anchor_sha256": str(paths["native_anchor_sha"]),
+            "capacity_manifest_sha256": str(paths["capacity_sha"]),
+            "governance_amendment_sha256": str(paths["governance_sha"]),
             "training_executed": False,
             "test_iid_access": False,
             "sealed_access": False,
@@ -1001,6 +1136,9 @@ def _execute_one(
             "route_config_sha256": _sha256(Path(paths["eu_contract"])),
             "route_primary_decision_path": str(paths["decision"]),
             "route_primary_decision_sha256": _sha256(Path(paths["decision"])),
+            "governance_amendment_sha256": str(paths["governance_sha"]),
+            "capacity_manifest_sha256": str(paths["capacity_sha"]),
+            "native_anchor_sha256": str(paths["native_anchor_sha"]),
             "domain_id": COMMON_DOMAIN_ID,
             "point_count_per_sample": FULL_FIELD_RESOLUTION,
             "query_resolution": query_resolution,
@@ -1059,10 +1197,24 @@ def _execute_one(
 
 def _execute(args: argparse.Namespace) -> int:
     paths = _resolve_execute_paths(args)
-    launch, prereg, _contract_payload, decision = _verify_execute_contract(paths)
+    launch, prereg, _contract_payload, decision, capacity_payload, governance_sha, capacity_sha, anchor_sha = _verify_execute_contract(paths)
     del prereg
     route_ids = [args.route_id] if args.route_id else list(H2_ROUTES)
-    route_payloads = {route_id: _registered_route(Path(paths["eu_contract"]), route_id) for route_id in route_ids}
+    route_payloads = {
+        route_id: _amend_route_capacity(
+            _registered_route(Path(paths["eu_contract"]), route_id),
+            capacity_payload,
+            capacity_sha,
+        )
+        for route_id in route_ids
+    }
+    paths = {
+        **paths,
+        "capacity_payload": capacity_payload,
+        "governance_sha": governance_sha,
+        "capacity_sha": capacity_sha,
+        "native_anchor_sha": anchor_sha,
+    }
     runs = [
         row for row in launch["runs"]
         if str(row.get("variant")) in VARIANTS and int(row.get("seed")) in SEEDS
@@ -1080,6 +1232,9 @@ def _execute(args: argparse.Namespace) -> int:
             "status": "RUNNING",
             "formal_training_code_sha": FORMAL_CODE_SHA,
             "preregistration_sha256": PREREG_SHA,
+            "governance_amendment_sha256": governance_sha,
+            "capacity_manifest_sha256": capacity_sha,
+            "native_anchor_sha256": anchor_sha,
             "primary_route_id": decision["primary_route_id"],
             "robustness_route_id": decision["robustness_route_id"],
             "routes_requested": route_ids,
