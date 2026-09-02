@@ -481,14 +481,20 @@ def _build_session(
             "raw_checkpoint_execution_role": payload.get("execution_role"),
         },
     )
+    feature_transform = FeatureTransform(
+        stats,
+        context_rows_by_id={
+            str(sample_id): dict(row) for sample_id, row in context_rows_by_id.items()
+        },
+    )
     session = RuntimeSession(
         checkpoint=checkpoint,
         run_config=runtime_config,
         model_config=model_config,
         graph_config=dict(runtime_config["graph_config"]),
-        feature_transform=FeatureTransform(stats),
+        feature_transform=feature_transform,
         group_builder=GroupBuilder(
-            feature_transform=FeatureTransform(stats),
+            feature_transform=feature_transform,
             graph_config=dict(runtime_config["graph_config"]),
             graph_seed=seed,
         ),

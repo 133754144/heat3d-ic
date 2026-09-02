@@ -400,6 +400,46 @@ class StableRuntimeStaticTests(unittest.TestCase):
         expected_coords = 2.0 * np.asarray(expected.legacy_inputs.x_inp) - 1.0
         self.assertTrue(np.array_equal(expected_coords, np.asarray(observed.inputs.x_inp)))
 
+    def test_full_field_context_override_supports_source_free_selected_support(self) -> None:
+        from rigno.heat3d_v6_global_context import GLOBAL_CONTEXT_FEATURES_V6
+
+        coords = np.asarray([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]], dtype=np.float64)
+        condition = np.zeros((2, 11), dtype=np.float64)
+        condition[:, :3] = 1.0
+        condition[:, 7] = 1.0
+        example = V6DualRobinExample(
+            sample_id="source-free-selected-support",
+            condition=V1SteadyConditionInput(
+                coords=coords,
+                condition_features=condition,
+                condition_feature_names=(
+                    "k_x", "k_y", "k_z", "q", "is_top", "is_bottom",
+                    "is_side", "is_interior", "top_h", "bottom_h",
+                    "top_T_inf_minus_T_ref",
+                ),
+                k_encoding_mode="diag3",
+            ),
+            target=V1SteadyTarget(target_u=np.full(2, 300.0)),
+            meta={
+                "v6_adapter": {
+                    "reference_temperature_K": 300.0,
+                    "top_T_inf_K": 300.0,
+                    "bottom_T_inf_K": 300.0,
+                },
+                "package_total_power_W": 1.0,
+                "physics": {"footprint_m": (1.0, 1.0)},
+                "layers_bottom_to_top": [{"thickness_m": 1.0}],
+            },
+            operator_point_weights=np.ones(2),
+        )
+        frozen_row = {
+            name: float(index + 1) for index, name in enumerate(GLOBAL_CONTEXT_FEATURES_V6)
+        }
+        observed = FeatureTransform(
+            {}, context_rows_by_id={example.sample_id: frozen_row}
+        ).global_context_row(example)
+        self.assertEqual(observed, frozen_row)
+
     def test_graph_coordinate_normalization_preserves_frozen_float64_order(self) -> None:
         coords = np.asarray(
             [[0.123456789012345, 0.23456789012345, 0.3456789012345],

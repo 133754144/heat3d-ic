@@ -50,6 +50,12 @@ class FeatureTransform:
     """
 
     stats: Mapping[str, Any]
+    # Alternative P1i support providers intentionally need the frozen
+    # full-field context row used during formal training.  The selected
+    # 1024-node support may contain no source node even though the global
+    # physical input has positive q.  Keeping this override explicit avoids
+    # silently recomputing a different context from the support subset.
+    context_rows_by_id: Mapping[str, Mapping[str, float]] | None = None
 
     def transform(self, example: V6DualRobinExample) -> TransformedExample:
         relative = example.get_relative_bc_feature_view()
@@ -105,6 +111,10 @@ class FeatureTransform:
     def global_context_row(self, example: V6DualRobinExample) -> dict[str, float]:
         if not isinstance(example, V6DualRobinExample):
             raise TypeError("V7 runtime currently accepts V6DualRobinExample only")
+        if self.context_rows_by_id is not None:
+            row = self.context_rows_by_id.get(str(example.sample_id))
+            if row is not None:
+                return dict(row)
         return global_context_from_v6_inputs(**example.v6_global_context_inputs())
 
     def standardize_global_contexts(
@@ -134,10 +144,15 @@ class FeatureTransform:
             )
         return standardize_scale_contexts(rows, standardizer)
 
-    def native_physics(self, example: V6DualRobinExample) -> dict[str, Any]:
+    def native_physics(
+        self,
+        example: V6DualRobinExample,
+        *,
+        context_row: Mapping[str, float] | None = None,
+    ) -> dict[str, Any]:
         transformed = self.transform(example)
         n_points = transformed.inputs.x_inp.shape[2]
-        context = self.global_context_row(example)
+        context = dict(context_row) if context_row is not None else self.global_context_row(example)
         reference = transformed.reference_temperature
         return {
             "control_volumes": jnp.asarray(

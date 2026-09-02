@@ -198,9 +198,14 @@ class RuntimeSession:
         )
         context_payload = self.run_config["global_context"]
         standardizer = context_payload["standardizer"] if context_enabled else None
+        context_rows: list[dict[str, float]] | None = None
         if context_enabled:
             if not isinstance(standardizer, Mapping):
                 raise ValueError("native/global-context model requires a frozen standardizer")
+            context_rows = [
+                self.feature_transform.global_context_row(example)
+                for example in context_examples
+            ]
             context = self.feature_transform.standardize_global_contexts(
                 context_examples, standardizer
             )
@@ -213,7 +218,15 @@ class RuntimeSession:
             group["global_context"] = jnp.asarray(context, dtype=jnp.float32)
 
         if model_config["native_output_mode"] == "native_shape_scale":
-            physics = [self.feature_transform.native_physics(example) for example in examples]
+            if context_rows is None:
+                context_rows = [
+                    self.feature_transform.global_context_row(example)
+                    for example in context_examples
+                ]
+            physics = [
+                self.feature_transform.native_physics(example, context_row=context_row)
+                for example, context_row in zip(examples, context_rows, strict=True)
+            ]
             group["native_physics"] = {
                 key: jnp.stack([row[key] for row in physics], axis=0)
                 for key in physics[0]
