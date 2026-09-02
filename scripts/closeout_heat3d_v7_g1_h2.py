@@ -1420,6 +1420,12 @@ def _analyze(args: argparse.Namespace) -> int:
     output_root = args.output_root.resolve()
     prereg_path = (args.preregistration or repo / "configs/heat3d_v7/v7_g1_statistical_preregistration.json").resolve()
     decision_path = (args.primary_decision or repo / "configs/heat3d_v7/v7_g1_h2_route_primary_decision.json").resolve()
+    governance_path = (args.governance_amendment or repo / "configs/heat3d_v7/v7_g1_h2_native_closeout_governance_amendment.json").resolve()
+    capacity_path = (args.capacity_manifest or Path("/tmp/v7_g1_h2_native_closeout/g1_native_geometry_capacity_manifest.json")).resolve()
+    native_anchor_path = (args.native_anchor or Path("/tmp/v7_g1_h2_native_closeout/g1_native_anchor_Full_seed0_v6p1if1_0993.json")).resolve()
+    _amendment, governance_sha = _verify_governance_amendment(governance_path)
+    capacity_payload, capacity_sha = _verify_native_capacity_manifest(capacity_path)
+    native_anchor_sha = _verify_native_anchor(native_anchor_path, capacity_payload)
     prereg = _load_json(prereg_path)
     decision = _load_json(decision_path)
     if prereg.get("preregistration_sha256") != PREREG_SHA:
@@ -1427,10 +1433,14 @@ def _analyze(args: argparse.Namespace) -> int:
     if decision.get("status") != "RESOLVED_BEFORE_RESULT_CALCULATION":
         raise ValueError("H2 route decision is not pre-result resolved")
     launch = _load_json((args.launch_manifest or repo / "configs/heat3d_v7/v7_g1_formal_launch_manifest.json").resolve())
+    if launch.get("g1_formal_code_sha") != FORMAL_CODE_SHA or launch.get("test_iid_access") or launch.get("sealed_access"):
+        raise ValueError("formal H2 analysis launch boundary drifted")
     runs = [row for row in launch.get("runs", []) if str(row.get("variant")) in VARIANTS and int(row.get("seed")) in SEEDS]
     if len(runs) != 9:
         raise ValueError("H2 analysis run population is not 9")
     route_ids = [args.route_id] if args.route_id else list(H2_ROUTES)
+    if set(route_ids) != set(H2_ROUTES):
+        raise ValueError("formal H2 analysis requires both frozen U routes")
     payloads: dict[tuple[str, str, int], dict[str, Any]] = {}
     domain_hashes: set[str] = set()
     for route_id in route_ids:
@@ -1444,6 +1454,12 @@ def _analyze(args: argparse.Namespace) -> int:
                 raise ValueError(f"incomplete H2 evaluation: {receipt_path}")
             if receipt.get("training_performed") or receipt.get("optimizer_called") or receipt.get("solver_called") or receipt.get("test_iid_access") or receipt.get("sealed_access"):
                 raise ValueError(f"H2 safety flags drifted: {receipt_path}")
+            if (
+                receipt.get("governance_amendment_sha256") != governance_sha
+                or receipt.get("capacity_manifest_sha256") != capacity_sha
+                or receipt.get("native_anchor_sha256") != native_anchor_sha
+            ):
+                raise ValueError(f"H2 governance/native-capacity provenance drifted: {receipt_path}")
             metric_payload = _load_metric_payload(output_root / route_id / run_id / "per_sample_metrics.json", {"route_id": route_id, "variant": run["variant"], "seed": run["seed"]})
             contract = _load_json(output_root / route_id / run_id / "evaluation_contract.json")
             if not contract.get("all_source_region_estimable") or contract.get("zero_fill_detected") or contract.get("row_deletion_detected") or not contract.get("exact_same_coordinates_masks_truth_contract"):
@@ -1674,6 +1690,12 @@ def _analyze(args: argparse.Namespace) -> int:
             "preregistration_sha256": PREREG_SHA,
             "route_primary_decision_path": str(decision_path),
             "route_primary_decision_sha256": _sha256(decision_path),
+            "governance_amendment_path": str(governance_path),
+            "governance_amendment_sha256": governance_sha,
+            "native_capacity_manifest_path": str(capacity_path),
+            "native_capacity_manifest_sha256": capacity_sha,
+            "native_anchor_path": str(native_anchor_path),
+            "native_anchor_sha256": native_anchor_sha,
             "primary_route_id": decision["primary_route_id"],
             "robustness_route_id": decision["robustness_route_id"],
             "domain": COMMON_DOMAIN_ID,
