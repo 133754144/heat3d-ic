@@ -635,7 +635,8 @@ def _execute_one(
     allow_existing_complete: bool,
 ) -> dict[str, Any]:
     from rigno.heat3d_runtime.evaluation import EvaluationCore, EvaluationSample, _metrics_from_statistics, _sum_sufficient_statistics
-    from rigno.heat3d_runtime.high_n import FullFieldGeometry
+    from rigno.heat3d_runtime.high_n import FullFieldGeometry, _mapping_sha256
+    from rigno.heat3d_v6_full_field import build_reconstruction_map
     from rigno.heat3d_runtime.u_split import UHighNRuntime
     from rigno.heat3d_v6_p1i_anchor_query import HIGH_N_SELECTION_SEED
     from rigno.heat3d_training.p1i import legacy_train_only_stats
@@ -801,7 +802,21 @@ def _execute_one(
         else:
             if query_resolution != U16384_RESOLUTION:
                 raise ValueError("U16384 reconstruction route resolution drifted")
-            mapping, reconstruction_audit = u_runtime.reconstruction(case)
+            mapping, reconstruction_audit = build_reconstruction_map(
+                coords=geometry.coords,
+                layer_id=geometry.layer_id,
+                boundaries=fixture["layer_boundaries"],
+                support_indices=support_indices.astype(np.int32),
+                empty_domain_fallback="same_layer",
+            )
+            reconstruction_audit = dict(reconstruction_audit)
+            reconstruction_audit.update(
+                {
+                    "mapping_hash": _mapping_sha256(mapping),
+                    "support_hash": _array_sha256(support_indices.astype(np.int32)),
+                    "boundary_hash": _array_sha256(fixture["layer_boundaries"]),
+                }
+            )
             full_prediction = mapping.reconstruct(query_delta)
             if full_prediction.shape != (FULL_FIELD_RESOLUTION,):
                 raise ValueError("reconstructed full prediction shape drifted")
