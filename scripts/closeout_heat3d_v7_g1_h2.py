@@ -312,6 +312,11 @@ def _build_session(
         stats,
         strict_semantic_contract=True,
     )
+    # The frozen parent contract predates the explicit runtime field.  The
+    # RIGNO constructor's frozen default is ``none``; materialize that default
+    # only to satisfy the no-legacy-default runtime preflight, without changing
+    # the trained architecture.
+    model_config.setdefault("shape_attention_mode", "none")
     runtime_config = {
         "schema_version": "heat3d_v7_g1_h2_runtime_config_v1",
         "graph_config": dict(source_run_config["graph"]),
