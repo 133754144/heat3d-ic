@@ -154,6 +154,7 @@ def _resolve_execute_paths(args: argparse.Namespace) -> dict[str, Path]:
         "launch": launch,
         "prereg": (args.preregistration or repo / "configs/heat3d_v7/v7_g1_statistical_preregistration.json").resolve(),
         "eu_contract": (args.eu_contract or repo / "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json").resolve(),
+        "v6_binding": (repo / "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json").resolve(),
         "decision": (args.primary_decision or repo / "configs/heat3d_v7/v7_g1_h2_route_primary_decision.json").resolve(),
         "subset": (args.subset or _repo_path(repo, str(dataset["subset_path"]))),
         "manifest": (args.manifest or _repo_path(repo, str(dataset["manifest_path"]))),
@@ -691,7 +692,7 @@ def _execute_one(
     high_n_sha = _sha256(repo / "rigno/heat3d_runtime/high_n.py")
     evaluation_sha = _sha256(repo / "rigno/heat3d_runtime/evaluation.py")
     benchmark_sha = _sha256(repo / "scripts/benchmark_heat3d_v6_p1i_resolution.py")
-    selection_seed = int(_load_json(Path(paths["eu_contract"]))["nested_support"]["selection_seed"])
+    selection_seed = int(_load_json(Path(paths["v6_binding"]))["nested_support"]["selection_seed"])
     if selection_seed != int(HIGH_N_SELECTION_SEED):
         raise ValueError("nested support selection seed drifted")
     _write_run_config(
