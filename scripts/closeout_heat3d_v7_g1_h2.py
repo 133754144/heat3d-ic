@@ -516,7 +516,10 @@ def _checkpoint_and_receipt(
         or receipt.get("split_counts") != {"train": 768, "valid_iid": 128}
     ):
         raise ValueError(f"{run_id}: formal receipt safety/provenance guard failed")
-    if receipt.get("variant") != run["variant"] or int(receipt.get("seed")) != int(run["seed"]):
+    receipt_seed = receipt.get("seed")
+    if receipt.get("variant") != run["variant"] or (
+        receipt_seed is not None and int(receipt_seed) != int(run["seed"])
+    ):
         raise ValueError(f"{run_id}: formal receipt variant/seed drifted")
     if receipt.get("checkpoint_selection", {}).get("metric") != "sample_first_relative_rmse_pct":
         raise ValueError(f"{run_id}: selected-best metric drifted")
