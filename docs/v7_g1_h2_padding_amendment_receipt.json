@@ -1,0 +1,130 @@
+{
+  "schema_version": "heat3d_v7_g1_h2_padding_amendment_receipt_v1",
+  "status": "PADDING_ONLY_AMENDMENT_PASS",
+  "scope": "research/v7 G1 H2 Gate B; geometry-only execution-shape amendment",
+  "formal_training_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+  "governance_amendment_sha256": "168966f6f9091f46ea831ad08a6c014de6d38541766f2419d5fcac3cab4cbd52",
+  "geometry_manifest_sha256": "6c1d062463615de09eb1b347e3de517c57c0280ee85c7623ab45926bbc09a355",
+  "native_anchor_sha256": "08c3f83cd29b2b7f97ddff1ca50fa4016f7dc1bded1e63e84ef52edcaae28e8b",
+  "adapter_contract_sha256": "551bd7b741a239c3ed2cbad3df4ec37c4ebc665fd183bfc3e0ccfcd0d37f7146",
+  "population": {
+    "runs": 9,
+    "samples_per_run": 128,
+    "geometry_records": 1152,
+    "route_records": {
+      "U_v2_16384_reconstruction": 1152,
+      "U_v2_direct240825": 1152
+    }
+  },
+  "historical_3074_role": "HISTORICAL_REPRODUCIBILITY_DIAGNOSTIC_ONLY; not an H2 scientific gate or envelope source",
+  "amendment": {
+    "occurred": true,
+    "reason": "complete formal-population geometry-only audit observed capacities different from the historical V6 envelope",
+    "capacity_rule": "observed maximum real edge count over complete 9x128 geometry audit plus exactly one mandatory dummy",
+    "manual_margin_added": false,
+    "accuracy_informed": false,
+    "support_changed": false,
+    "radius_changed": false,
+    "real_edge_set_changed": false,
+    "sample_population_changed": false,
+    "checkpoint_changed": false,
+    "metric_changed": false,
+    "science_semantics_changed": false,
+    "execution_shape_only": true
+  },
+  "observed_max_real_edge_count": {
+    "native": {
+      "p2r": 3174,
+      "r2p": 3174,
+      "r2r": 4324,
+      "r2r_domains": 4324
+    },
+    "U16384_query": {
+      "p2r": 3174,
+      "r2p": 45100,
+      "r2r": 4324,
+      "r2r_domains": 4324
+    },
+    "U240825_query": {
+      "p2r": 3174,
+      "r2p": 564488,
+      "r2r": 4324,
+      "r2r_domains": 4324
+    }
+  },
+  "frozen_new_capacity": {
+    "native": {
+      "p2r": 3175,
+      "r2p": 3175,
+      "r2r": 4325,
+      "r2r_domains": 4325
+    },
+    "U16384_query": {
+      "p2r": 3175,
+      "r2p": 45101,
+      "r2r": 4325,
+      "r2r_domains": 4325
+    },
+    "U240825_query": {
+      "p2r": 3175,
+      "r2p": 564489,
+      "r2r": 4325,
+      "r2r_domains": 4325
+    }
+  },
+  "historical_route_capacity": {
+    "U_v2_16384_reconstruction": {
+      "native": {
+        "p2r_edge_indices": 3074,
+        "r2p_edge_indices": 2905,
+        "r2r_edge_domains": 4217,
+        "r2r_edge_indices": 4217
+      },
+      "query": {
+        "p2r_edge_indices": 107645,
+        "r2p_edge_indices": 107645,
+        "r2r_edge_domains": 4217,
+        "r2r_edge_indices": 4217
+      },
+      "combined_model_input": {
+        "p2r_edge_indices": 3074,
+        "r2p_edge_indices": 107645,
+        "r2r_edge_domains": 4217,
+        "r2r_edge_indices": 4217
+      }
+    },
+    "U_v2_direct240825": {
+      "native": {
+        "p2r_edge_indices": 3074,
+        "r2p_edge_indices": 2905,
+        "r2r_edge_domains": 4217,
+        "r2r_edge_indices": 4217
+      },
+      "query": {
+        "p2r_edge_indices": 2002581,
+        "r2p_edge_indices": 2002581,
+        "r2r_edge_domains": 4217,
+        "r2r_edge_indices": 4217
+      }
+    }
+  },
+  "padding_invariance": {
+    "status": "PASS",
+    "common_sample_family_count": 8604,
+    "real_edge_multisets_exact": true,
+    "valid_graph_tensor_prefix_exact": true,
+    "new_positions_are_mandatory_dummy": true,
+    "truth_free_checkpoint_forward": false,
+    "equivalent_graph_tensor_test": true,
+    "prediction_invariance_basis": "The native/query real graph multisets and valid tensor prefixes are exact; only mandatory dummy suffix positions change. Gate A/B governance forbids checkpoint forward, so no result value enters this proof."
+  },
+  "safety": {
+    "training_performed": false,
+    "checkpoint_loaded": false,
+    "model_forward": false,
+    "truth_access": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g2_touched": false
+  }
+}
