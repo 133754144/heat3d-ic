@@ -246,18 +246,22 @@ def _verify_native_anchor(path: Path, capacity_payload: Mapping[str, Any]) -> st
     provenance = payload.get("provenance")
     if not isinstance(provenance, Mapping) or provenance.get("formal_code_sha") != FORMAL_CODE_SHA or provenance.get("anchor_role") != "Full_seed0/v6p1if1_0993":
         raise ValueError("native anchor identity drifted")
+    geometry = payload.get("geometry")
+    support = payload.get("support")
     graph = payload.get("graph")
-    if not isinstance(graph, Mapping) or graph.get("real_edge_counts", {}).get("p2r") is None or graph.get("real_edge_counts", {}).get("r2r") is None:
+    if not isinstance(geometry, Mapping) or not isinstance(support, Mapping) or not isinstance(graph, Mapping) or graph.get("real_edge_counts", {}).get("p2r") is None or graph.get("real_edge_counts", {}).get("r2r") is None:
         raise ValueError("native anchor graph counts are missing")
     records = capacity_payload.get("graph", {}).get("records", [])
     if not any(
         isinstance(row, Mapping)
         and row.get("provenance", {}).get("run_id") == "Full_seed0"
         and row.get("provenance", {}).get("sample_id") == "v6p1if1_0993"
-        and row.get("graph", {}).get("real_edge_counts") == graph.get("real_edge_counts")
+        and row.get("geometry") == geometry
+        and row.get("support") == support
+        and row.get("graph") == graph
         for row in records
     ):
-        raise ValueError("native anchor is not present in the capacity manifest")
+        raise ValueError("native anchor does not exactly match the capacity manifest")
     return sha
 
 

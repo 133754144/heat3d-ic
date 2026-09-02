@@ -866,11 +866,14 @@ def main() -> int:
         {
             "schema_version": "heat3d_v7_g1_native_anchor_geometry_only_v1",
             "provenance": {
+                **anchor_record["provenance"],
                 "formal_code_sha": FORMAL_CODE_SHA,
                 "anchor_role": "Full_seed0/v6p1if1_0993",
                 "graph_semantics": "formal G1 native graph config and run seed",
             },
-            **anchor_record,
+            "geometry": anchor_record["geometry"],
+            "support": anchor_record["support"],
+            "graph": anchor_record["graph"],
             "dependency": _dependency_manifest(),
         },
     )
