@@ -28,6 +28,24 @@
     "training_started": false,
     "graph_replay_evidence_accepted": false
   },
+  "clean_recovery_attempt": {
+    "status": "INVALIDATED_BY_SECOND_AUDIT_PROTOCOL_BREACH",
+    "additional_breach": {
+      "type": "prohibited_metric_field_read_during_historical_provenance_inspection",
+      "historical_path": "configs/heat3d_v6_p1i/v6_p1i_inference_qualification_closeout.json",
+      "source": "git history at 05b32ce",
+      "field_class": "metric",
+      "used_in_any_calculation": false,
+      "used_for_route_or_checkpoint_selection": false,
+      "current_prediction_read": false,
+      "test_iid_read": false,
+      "sealed_read": false,
+      "model_forward": false,
+      "training_started": false,
+      "geometry_replay_started": false
+    },
+    "gate_a_clean_recovery_accepted": false
+  },
   "preserved_contract": {
     "training_results_modified": false,
     "support_modified": false,
@@ -38,5 +56,6 @@
   },
   "required_next_step": "Restart Gate A in an isolated audit invocation that reads only code, geometry, graph configuration, support inputs, and graph counts; do not reuse this receipt as equivalence evidence.",
   "recorded_at": "2026-09-02T14:30:37+08:00",
+  "updated_at": "2026-09-02",
   "repository_head_when_recorded": "f611021976fd82c6897e1b5a33a0afb6b799ce0b"
 }
