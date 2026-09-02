@@ -19,7 +19,7 @@ from typing import Any
 
 FORMAL_RUN_RE = re.compile(
     r"(?P<run_id>(?:Full|layout_agnostic_stratified_support|cv_only_support|"
-    r"no_film|physics_scale_only|vanilla_RIGNO_capacity_matched)_seed(?P<seed>[0-9]+))"
+    r"no_film|physics_scale_only|vanilla_RIGNO|vanilla_RIGNO_capacity_matched)_seed(?P<seed>[0-9]+))"
 )
 
 
@@ -43,6 +43,8 @@ def _role(relative_path: Path) -> str:
     path = relative_path.as_posix().lower()
     if "audit_failed" in path or "contaminated_attempt" in path:
         return "contaminated_attempt_audit"
+    if path.startswith("raw/"):
+        return "legacy_duplicate_formal_evidence"
     if name == "matrix_status.json":
         return "formal_matrix_status"
     if name == "v7_g1_formal_receipt.json":

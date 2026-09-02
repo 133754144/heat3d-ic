@@ -291,6 +291,9 @@ def main() -> int:
             "path": "research_artifacts/v7_g1_formal_archive/",
         }
     )
+    completion["formal_training"]["source_matrix_status"] = (
+        "research_artifacts/v7_g1_formal_archive/formal_21_runs/matrix_status.json"
+    )
     completion["h2_native_qualification"] = {
         "common_domain_text_in_frozen_preregistration_retained": True,
         "new_240825_results_generated": True,
@@ -401,7 +404,7 @@ def main() -> int:
         "sources": {
             "formal_runs": "devbox:/tmp/v7_g1_formal_runs/",
             "native_1024_derived": "devbox:/tmp/v7_g1_formal_derived_native_1024_v2/",
-            "h2_formal": "devbox:/tmp/v7_g1_h2_formal_native_closeout_20260903/",
+            "h2_formal": "devbox:/tmp/v7_g1_h2_formal_native_closeout_20260903_retry_context_v1/",
         },
         "safety": {
             "training_rerun_during_closeout": False,
