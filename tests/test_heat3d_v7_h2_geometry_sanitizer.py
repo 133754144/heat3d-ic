@@ -5,8 +5,10 @@ from pathlib import Path
 
 from rigno.heat3d_v7_h2_geometry_sanitizer import (
     assert_geometry_only_output,
+    assert_geometry_records_output,
     guard_geometry_input_paths,
     sanitize_json_file,
+    sanitize_geometry_records,
     sanitize_payload,
 )
 
@@ -59,6 +61,38 @@ class GeometryOnlySanitizerTests(unittest.TestCase):
         self.assertEqual(clean["graph"]["final_p2r_count"], 3074)
         self.assertNotIn("accuracy", json.dumps(clean).lower())
         self.assertNotIn("temperature", json.dumps(clean).lower())
+
+    def test_top_level_environment_fields_are_projected_to_dependency(self) -> None:
+        clean = sanitize_payload({
+            "python": "3.14.3",
+            "numpy": "2.4.2",
+            "platform": "Linux",
+            "accuracy": {"value": 123},
+        })
+        self.assertEqual(clean["dependency"]["numpy"], "2.4.2")
+        self.assertNotIn("accuracy", json.dumps(clean).lower())
+        assert_geometry_only_output(clean)
+
+    def test_nested_geometry_records_prune_banned_subtrees(self) -> None:
+        clean = sanitize_geometry_records({
+            "samples": [{
+                "sample_id": "v6p1if1_0993",
+                "graph": {
+                    "final_p2r_count": 3074,
+                    "final_r2r_count": 4075,
+                },
+                "accuracy": {
+                    "final_p2r_count": 9999,
+                    "rmse": 12.0,
+                },
+            }],
+        })
+        encoded = json.dumps(clean, sort_keys=True).lower()
+        for token in ("accuracy", "metric", "rmse", "temperature", "prediction", "target", "loss"):
+            self.assertNotIn(token, encoded)
+        self.assertTrue(any(row.get("sample_id") == "v6p1if1_0993" for row in clean["records"]))
+        self.assertTrue(any(row.get("final_p2r_count") == 3074 for row in clean["records"]))
+        assert_geometry_records_output(clean)
 
     def test_direct_geometry_path_guard_is_fail_closed(self) -> None:
         guard_geometry_input_paths(["/tmp/coords.npy", "/tmp/support.npz", "/tmp/graph_config.json"])

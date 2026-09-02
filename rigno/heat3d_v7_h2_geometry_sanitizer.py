@@ -33,6 +33,33 @@ ALLOWED_TOP_LEVEL_KEYS = frozenset({
     "provenance",
 })
 
+# Mixed historical receipts use several container names for the same safe
+# provenance section.  These aliases are accepted only as input names and are
+# projected to the canonical output section; they never become output keys.
+TOP_LEVEL_SECTION_ALIASES = {
+    "environment": "dependency",
+    "dependencies": "dependency",
+    "dependency_provenance": "dependency",
+    "graph_config": "graph",
+    "geometry_provenance": "geometry",
+    "support_provenance": "support",
+}
+
+TOP_LEVEL_DEPENDENCY_FIELDS = frozenset({
+    "python",
+    "numpy",
+    "scipy",
+    "jax",
+    "jaxlib",
+    "flax",
+    "jraph",
+    "backend",
+    "platform",
+    "machine",
+    "runtime",
+    "version",
+})
+
 ALLOWED_SECTION_KEYS = {
     "geometry": frozenset({
         "coordinate_sha256",
@@ -120,6 +147,13 @@ ALLOWED_SECTION_KEYS = {
         "historical_code_profile_effect",
         "current_code_profile_effect",
         "implementation_effect_under_current_profile",
+        "fixed_edge_jit_targets",
+        "native",
+        "query",
+        "p2r_edge_indices",
+        "r2p_edge_indices",
+        "r2r_edge_indices",
+        "r2r_edge_domains",
     }),
     "dependency": frozenset({
         "python",
@@ -157,6 +191,15 @@ ALLOWED_SECTION_KEYS = {
         "test_sealed_access",
         "training_or_model_execution",
     }),
+}
+
+RECORD_KEY_SECTIONS = {
+    "sample_id": "provenance",
+    **{key: "geometry" for key in ALLOWED_SECTION_KEYS["geometry"]},
+    **{key: "support" for key in ALLOWED_SECTION_KEYS["support"]},
+    **{key: "graph" for key in ALLOWED_SECTION_KEYS["graph"]},
+    **{key: "dependency" for key in ALLOWED_SECTION_KEYS["dependency"]},
+    **{key: "provenance" for key in ALLOWED_SECTION_KEYS["provenance"]},
 }
 
 _TOKEN_RE = re.compile(r"[^a-z0-9]+")
@@ -234,12 +277,23 @@ def sanitize_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
         key = _normalized_key(raw_key)
         if key in BANNED_TOKENS or any(token in key for token in BANNED_TOKENS):
             continue
-        if key not in ALLOWED_TOP_LEVEL_KEYS:
+        output_key = TOP_LEVEL_SECTION_ALIASES.get(key, key)
+        if key in TOP_LEVEL_DEPENDENCY_FIELDS:
+            output_key = "dependency"
+        if output_key not in ALLOWED_TOP_LEVEL_KEYS:
             continue
-        section = "provenance" if key in {"sample_id"} else key
-        sanitized = _sanitize_value(raw_value, section, top_level=(key == "sample_id"))
+        section = "provenance" if output_key == "sample_id" else output_key
+        if output_key == "dependency" and key in TOP_LEVEL_DEPENDENCY_FIELDS:
+            sanitized = _safe_scalar(raw_value)
+            if sanitized is not None:
+                sanitized = {key: sanitized}
+        else:
+            sanitized = _sanitize_value(raw_value, section, top_level=(output_key == "sample_id"))
         if sanitized is not None and sanitized != {} and sanitized != []:
-            result[key] = sanitized
+            if output_key in result and isinstance(result[output_key], dict) and isinstance(sanitized, dict):
+                result[output_key].update(sanitized)
+            else:
+                result[output_key] = sanitized
     _assert_safe_output(result)
     return result
 
@@ -250,6 +304,73 @@ def sanitize_json_file(path: str | Path) -> dict[str, Any]:
     source = Path(path)
     payload = json.loads(source.read_text(encoding="utf-8"))
     return sanitize_payload(payload)
+
+
+def sanitize_geometry_records(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Extract only safe geometry records from an arbitrarily nested receipt.
+
+    This is intentionally separate from :func:`sanitize_payload`: historical
+    receipts often wrap per-sample graph rows below ``rows`` or ``samples``.
+    Every banned-key mapping is pruned before traversal, and every emitted
+    field is selected from the section allowlist above.
+    """
+
+    if not isinstance(payload, Mapping):
+        raise ValueError("sanitizer input must be a JSON object")
+    records: list[dict[str, Any]] = []
+
+    def visit(value: Any) -> None:
+        if isinstance(value, Mapping):
+            record: dict[str, Any] = {}
+            for raw_key, raw_value in value.items():
+                key = _normalized_key(raw_key)
+                if key in BANNED_TOKENS or any(token in key for token in BANNED_TOKENS):
+                    continue
+                section = RECORD_KEY_SECTIONS.get(key)
+                if section is None:
+                    continue
+                clean = _sanitize_value(
+                    raw_value,
+                    section,
+                    top_level=(key == "sample_id"),
+                )
+                if clean is not None and clean != {} and clean != []:
+                    record[key] = clean
+            if record:
+                records.append(record)
+            for raw_key, child in value.items():
+                key = _normalized_key(raw_key)
+                if key in BANNED_TOKENS or any(token in key for token in BANNED_TOKENS):
+                    continue
+                if isinstance(child, (Mapping, list, tuple)):
+                    visit(child)
+        elif isinstance(value, (list, tuple)):
+            for child in value:
+                visit(child)
+
+    visit(payload)
+    result = {
+        "schema_version": "geometry_only_sanitized_records_v1",
+        "records": records,
+    }
+    _assert_safe_output(result)
+    return result
+
+
+def assert_geometry_records_output(payload: Mapping[str, Any]) -> None:
+    """Verify the output boundary of :func:`sanitize_geometry_records`."""
+
+    if not isinstance(payload, Mapping) or set(payload) != {"schema_version", "records"}:
+        raise ValueError("geometry-record output schema drifted")
+    if not isinstance(payload["records"], list):
+        raise ValueError("geometry-record output records must be a list")
+    for record in payload["records"]:
+        if not isinstance(record, Mapping):
+            raise ValueError("geometry-record output contains a non-object record")
+        unknown = set(record) - set(RECORD_KEY_SECTIONS)
+        if unknown:
+            raise ValueError("geometry-record output contains a non-allowlisted key")
+    _assert_safe_output(payload)
 
 
 def guard_geometry_input_paths(paths: Sequence[str | Path]) -> None:

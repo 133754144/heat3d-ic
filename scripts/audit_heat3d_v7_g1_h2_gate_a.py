@@ -4,8 +4,9 @@
 The only data input accepted by this tool is the 1024-point support
 ``coords.npy`` for ``v6p1if1_0993``.  It never opens manifests, sample metadata,
 full-field archives, receipts, checkpoints, labels, predictions, or metrics.
-The parent process runs a fixed four-cell implementation/profile matrix so a
-backend/profile explanation cannot be selected after observing counts.
+The parent process runs a fixed implementation/profile/execution-placement
+matrix so a backend/device explanation cannot be selected after observing
+counts.
 """
 
 from __future__ import annotations
@@ -74,11 +75,20 @@ PROFILES = {
     },
     "current_restored_h2": {
         **FROZEN_GRAPH_CONFIG,
+        "discrete_graph_backend": "sparse_kdtree_v1",
+        "reuse_exact_p2r_for_r2p": True,
+        "profile_basis": "current UHighNRuntime.from_session frozen override",
+    },
+    "current_source_run_config": {
+        **FROZEN_GRAPH_CONFIG,
         "discrete_graph_backend": "dense_reference",
         "reuse_exact_p2r_for_r2p": False,
-        "profile_basis": "current restored H2 runtime graph config",
+        "profile_basis": "current H2 source run_config control only",
     },
 }
+
+EXECUTION_PLACEMENTS = ("cpu", "default")
+CURRENT_RESTORED_SANITY = {"p2r_count": 3083, "r2r_count": 4075}
 
 STAGES = (
     "support_indices",
@@ -159,6 +169,7 @@ def _worker_args() -> argparse.ArgumentParser:
     parser.add_argument("--coords", type=Path, required=True)
     parser.add_argument("--implementation", required=True)
     parser.add_argument("--profile", required=True)
+    parser.add_argument("--execution-placement", choices=EXECUTION_PLACEMENTS, required=True)
     parser.add_argument("--graph-seed", type=int, default=GRAPH_SEED)
     return parser
 
@@ -169,6 +180,8 @@ def _run_worker(args: argparse.Namespace) -> int:
         raise RuntimeError("unsupported implementation label")
     if args.profile not in PROFILES:
         raise RuntimeError("unsupported frozen graph profile")
+    if args.execution_placement not in EXECUTION_PLACEMENTS:
+        raise RuntimeError("unsupported frozen graph execution placement")
     if args.graph_seed != GRAPH_SEED:
         raise RuntimeError("Gate A graph seed is not frozen")
 
@@ -251,7 +264,15 @@ def _run_worker(args: argparse.Namespace) -> int:
     inner._get_r2r_edges = traced_r2r
 
     cpu = jax.devices("cpu")[0]
-    with jax.default_device(cpu):
+    if args.execution_placement == "cpu":
+        execution_device = cpu
+        with jax.default_device(cpu):
+            metadata = builder.build_metadata(
+                coordinates,
+                key=jax.random.PRNGKey(int(args.graph_seed)),
+            )
+    else:
+        execution_device = jax.devices()[0]
         metadata = builder.build_metadata(
             coordinates,
             key=jax.random.PRNGKey(int(args.graph_seed)),
@@ -314,6 +335,7 @@ def _run_worker(args: argparse.Namespace) -> int:
         "graph": {
             "implementation": args.implementation,
             "profile": args.profile,
+            "execution_placement": args.execution_placement,
             "graph_config": graph_config,
             "config_sha256": graph_config_sha,
             "coverage_radius_sha256": _array_sha256(trace["coverage_radius"]),
@@ -337,7 +359,8 @@ def _run_worker(args: argparse.Namespace) -> int:
             "jax": jax.__version__,
             "jaxlib": jaxlib.__version__,
             "backend": jax.default_backend(),
-            "execution_device": str(cpu),
+            "execution_device": str(execution_device),
+            "jax_threefry_partitionable": bool(jax.config.jax_threefry_partitionable),
             "jax_enable_x64": bool(jax.config.jax_enable_x64),
             "platform": platform.platform(),
         },
@@ -373,6 +396,7 @@ def _run_cell(
     coords: Path,
     implementation: str,
     profile: str,
+    execution_placement: str,
 ) -> dict[str, Any]:
     command = [
         sys.executable,
@@ -386,6 +410,8 @@ def _run_cell(
         implementation,
         "--profile",
         profile,
+        "--execution-placement",
+        execution_placement,
         "--graph-seed",
         str(GRAPH_SEED),
     ]
@@ -462,27 +488,42 @@ def _parent_main(args: argparse.Namespace) -> int:
         ("current_restored_h2", current_repo),
     ):
         for profile in PROFILES:
-            cells[f"{implementation}__{profile}"] = _run_cell(
-                script=Path(__file__).resolve(),
-                implementation_root=root,
-                coords=coords,
-                implementation=implementation,
-                profile=profile,
-            )
+            for execution_placement in EXECUTION_PLACEMENTS:
+                key = f"{implementation}__{profile}__{execution_placement}"
+                cells[key] = _run_cell(
+                    script=Path(__file__).resolve(),
+                    implementation_root=root,
+                    coords=coords,
+                    implementation=implementation,
+                    profile=profile,
+                    execution_placement=execution_placement,
+                )
 
-    historical_reference = cells["historical_05b32ce__historical_u2_frozen"]
-    current_restored = cells["current_restored_h2__current_restored_h2"]
-    same_code_profile = _compare_stages(
-        cells["historical_05b32ce__historical_u2_frozen"],
-        cells["historical_05b32ce__current_restored_h2"],
+    historical_reference = cells["historical_05b32ce__historical_u2_frozen__cpu"]
+    current_restored = cells["current_restored_h2__current_restored_h2__default"]
+    historical_cpu_default = _compare_stages(
+        cells["historical_05b32ce__historical_u2_frozen__cpu"],
+        cells["historical_05b32ce__historical_u2_frozen__default"],
     )
-    current_code_profile = _compare_stages(
-        cells["current_restored_h2__historical_u2_frozen"],
-        cells["current_restored_h2__current_restored_h2"],
+    current_cpu_default = _compare_stages(
+        cells["current_restored_h2__current_restored_h2__cpu"],
+        cells["current_restored_h2__current_restored_h2__default"],
     )
-    implementation_same_profile = _compare_stages(
-        cells["historical_05b32ce__current_restored_h2"],
-        cells["current_restored_h2__current_restored_h2"],
+    implementation_default = _compare_stages(
+        cells["historical_05b32ce__current_restored_h2__default"],
+        cells["current_restored_h2__current_restored_h2__default"],
+    )
+    implementation_cpu = _compare_stages(
+        cells["historical_05b32ce__current_restored_h2__cpu"],
+        cells["current_restored_h2__current_restored_h2__cpu"],
+    )
+    historical_profile_cpu = _compare_stages(
+        cells["historical_05b32ce__historical_u2_frozen__cpu"],
+        cells["historical_05b32ce__current_restored_h2__cpu"],
+    )
+    current_profile_default = _compare_stages(
+        cells["current_restored_h2__historical_u2_frozen__default"],
+        cells["current_restored_h2__current_restored_h2__default"],
     )
     primary_pair = _compare_stages(historical_reference, current_restored)
 
@@ -495,28 +536,28 @@ def _parent_main(args: argparse.Namespace) -> int:
         "r2r_count": int(current_restored["graph"]["final_r2r_count"]),
     }
     historical_sanity_exact = historical_counts == HISTORICAL_SANITY
-
-    profile_effect_same_code = (
-        same_code_profile["stages"]["support_indices"]["exact"]
-        and same_code_profile["stages"]["support_coordinates"]["exact"]
-        and same_code_profile["stages"]["normalized_coordinates"]["exact"]
-        and same_code_profile["stages"]["rnodes"]["exact"]
-        and historical_counts == HISTORICAL_SANITY
-        and int(cells["historical_05b32ce__current_restored_h2"]["graph"]["final_p2r_count"]) == 3083
+    current_sanity_exact = {
+        "p2r_count": int(current_restored["graph"]["final_p2r_count"]),
+        "r2r_count": int(current_restored["graph"]["final_r2r_count"]),
+    } == CURRENT_RESTORED_SANITY
+    placement_effect_proven = (
+        historical_cpu_default["stages"]["support_indices"]["exact"]
+        and historical_cpu_default["stages"]["support_coordinates"]["exact"]
+        and historical_cpu_default["stages"]["normalized_coordinates"]["exact"]
+        and historical_cpu_default["stages"]["rnodes"]["exact"] is False
+        and historical_cpu_default["stages"]["final_p2r_edge_multiset"]["exact"] is False
+        and historical_cpu_default["stages"]["final_r2r_edge_multiset"]["exact"] is False
+        and current_cpu_default["stages"]["support_coordinates"]["exact"]
+        and current_cpu_default["stages"]["normalized_coordinates"]["exact"]
+        and implementation_default["stages"]["final_p2r_edge_multiset"]["exact"]
+        and implementation_default["stages"]["final_r2r_edge_multiset"]["exact"]
     )
-    code_effect_absent = (
-        implementation_same_profile["stages"]["normalized_coordinates"]["exact"]
-        and implementation_same_profile["stages"]["rnodes"]["exact"]
-        and implementation_same_profile["stages"]["raw_p2r_edge_multiset"]["exact"]
-        and implementation_same_profile["stages"]["final_p2r_edge_multiset"]["exact"]
-        and implementation_same_profile["stages"]["final_r2r_edge_multiset"]["exact"]
-    )
-    if profile_effect_same_code and code_effect_absent:
-        root_cause_status = "GRAPH_PROFILE_BACKEND_DIFFERENCE_PROVEN"
-        root_cause_detail = "historical sparse U-v2 profile yields 3074 while current dense H2 profile yields 3083; fixed support/coordinates/rnodes remain exact and implementation effect is absent"
+    if historical_sanity_exact and current_sanity_exact and placement_effect_proven:
+        root_cause_status = "EXECUTION_DEVICE_PLACEMENT_DIFFERENCE_PROVEN"
+        root_cause_detail = "historical U-v2 CPU placement reproduces 3074/4075 while the current restored UHighN default-device placement reproduces 3083/4075; fixed support/normalized coordinates are exact and historical/current graph implementations are edge-exact under the same placement"
     else:
         root_cause_status = "NOT_PROVEN_FAIL_CLOSED"
-        root_cause_detail = "fixed four-cell matrix did not establish a unique profile/backend explanation"
+        root_cause_detail = "fixed implementation/profile/execution-placement matrix did not establish a unique historical/current explanation"
 
     dependencies = {
         key: cells[key]["dependency"]
@@ -528,6 +569,7 @@ def _parent_main(args: argparse.Namespace) -> int:
             else "FAIL_CLOSED"
         ),
         "historical_sanity_status": "EXACT_COUNTS" if historical_sanity_exact else "NOT_EXACT",
+        "current_restored_sanity_status": "EXPECTED_COUNTS" if current_sanity_exact else "UNEXPECTED_COUNTS",
         "root_cause_status": root_cause_status,
         "root_cause_detail": root_cause_detail,
         "primary_first_divergence_stage": primary_pair["first_divergence_stage"],
@@ -535,6 +577,7 @@ def _parent_main(args: argparse.Namespace) -> int:
         "sample_id": SAMPLE_ID,
         "graph_seed": GRAPH_SEED,
         "cell_count": len(cells),
+        "execution_placements": list(EXECUTION_PLACEMENTS),
         "test_sealed_access": "not accepted as an input by this tool",
         "training_or_model_execution": "not performed",
     }
@@ -563,12 +606,15 @@ def _parent_main(args: argparse.Namespace) -> int:
             "current": current_restored["graph"],
             "comparison": {
                 "primary": primary_pair,
-                "historical_code_profile_effect": same_code_profile,
-                "current_code_profile_effect": current_code_profile,
-                "implementation_effect_under_current_profile": implementation_same_profile,
+                "historical_cpu_vs_default": historical_cpu_default,
+                "current_cpu_vs_default": current_cpu_default,
+                "implementation_effect_default": implementation_default,
+                "implementation_effect_cpu": implementation_cpu,
+                "historical_profile_effect_cpu": historical_profile_cpu,
+                "current_profile_effect_default": current_profile_default,
                 "historical_sanity_exact": historical_sanity_exact,
-                "profile_effect_same_code": profile_effect_same_code,
-                "code_effect_absent": code_effect_absent,
+                "current_restored_sanity_exact": current_sanity_exact,
+                "execution_placement_effect_proven": placement_effect_proven,
             },
         },
         "dependency": {
