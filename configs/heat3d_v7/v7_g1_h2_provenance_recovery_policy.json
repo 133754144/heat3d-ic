@@ -1,0 +1,57 @@
+{
+  "schema_version": "heat3d_v7_g1_h2_provenance_recovery_policy_v1",
+  "scope": "research/v7 G1 H2 Gate A to Gate C",
+  "effective_before_h2_accuracy": true,
+  "metric_informed_adaptation": "forbidden",
+  "frozen_contracts": {
+    "route": "pre-registered H2 primary and robustness routes",
+    "checkpoint": "selected-best checkpoints only",
+    "sample_population": "128 valid_iid samples",
+    "metrics": "existing preregistration only",
+    "support": "unchanged frozen support semantics",
+    "graph_physics": "unchanged frozen graph semantics"
+  },
+  "historical_mixed_content": {
+    "may_be_parsed": true,
+    "required_path": "machine_sanitizer_only",
+    "banned_values_may_enter_output_log_or_decision": false,
+    "prior_contaminated_attempts": "retain_as_audit_records_and_never_as_evidence"
+  },
+  "sanitizer": {
+    "implementation": "rigno.heat3d_v7_h2_geometry_sanitizer",
+    "allowlist_sections": [
+      "sample_id",
+      "geometry",
+      "support",
+      "graph",
+      "dependency",
+      "provenance"
+    ],
+    "banned_output_keys": [
+      "accuracy",
+      "metric",
+      "rmse",
+      "mae",
+      "temperature",
+      "prediction",
+      "target",
+      "loss"
+    ],
+    "output_rejection": "fail_closed_if_any_banned_key_or_string_survives",
+    "raw_input_values": "never_logged_or_used_for_decisions"
+  },
+  "gate_order": ["policy_freeze", "gate_a", "gate_b", "gate_c"],
+  "gate_c_requires": [
+    "gate_a_pass",
+    "gate_b_legal_resolution",
+    "policy_sha_frozen_before_accuracy"
+  ],
+  "test_sealed_contract": {
+    "test_iid_access": false,
+    "sealed_access": false,
+    "training": false,
+    "model_forward": false,
+    "checkpoint_load": false,
+    "g2_modified": false
+  }
+}
