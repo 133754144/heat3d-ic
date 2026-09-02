@@ -4,7 +4,7 @@
 
 本文件记录 V7 G1 正式训练矩阵的工程结果、可复现 provenance 和有限范围内的结果解读。它不是新的实验协议，也不修改 V6 frozen evidence、模型、损失、数据划分或 checkpoint-selection 规则。
 
-原始 formal evidence 来自 devbox：`/tmp/v7_g1_formal_runs/`；持久化副本位于 Git-ignored 的 `research_artifacts/v7_g1_formal_archive/`，逐文件 manifest 见 [G1 formal archive manifest](v7_g1_formal_archive_manifest.json)。本文新增的主统计结果统一采用各 registered run 的 native 1024-point `valid_iid` evaluation；已存在的 240825-node 结果不删除，本次也不新增 240825-node 结果。
+原始 formal evidence 来自 devbox：`/tmp/v7_g1_formal_runs/`；持久化副本位于 Git-ignored 的 `research_artifacts/v7_g1_formal_archive/`，逐文件 manifest 见 [G1 formal archive manifest](v7_g1_formal_archive_manifest.json)。H1/H1b/H3/H4 的已完成统计仍采用各 registered run 的 native 1024-point `valid_iid` evaluation；H2 的正式 primary 已切换到冻结的 240825 common domain，但在冻结 route envelope 冲突处 fail-closed，未产生正式 H2 metric/effect/CI。已存在的 240825-node 结果不删除，也未将不完整临时输出写入 archive。
 
 本文中的 checkpoint 均为按预注册的 `valid_iid.sample_first_relative_rmse_pct` 选出的最佳 checkpoint；旧版 mean±SD 表原样保留，新增的 native 1024-point mean±SD 和 preregistered paired statistics 分开标注。
 
@@ -13,7 +13,7 @@
 | 项目 | 冻结值/观测值 |
 | --- | --- |
 | 矩阵 | `7 variants × 3 seeds = 21 runs` |
-| 最终状态 | `COMPLETE`；21 个 receipt 均为 `COMPLETE`；失败 0 |
+| 最终状态 | training `COMPLETE`；21 个 receipt 均为 `COMPLETE`；H2 full-field `FAIL_CLOSED` |
 | 数据集 | `heat3d_v6_p1i_continuous_physics1024_v1` |
 | split | train 768；`valid_iid` 128；未读取 `test_iid` / sealed |
 | dataset manifest SHA256 | `f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514` |
@@ -24,8 +24,8 @@
 | evidence flags | `publication_evidence=true`、`scientific_evidence_eligible=true`（21/21） |
 | safety flags | `test_iid=false`、`sealed=false`、`solver=false`、`new_data=false`（21/21） |
 | training state | `TRAINING_COMPLETE`；21/21 formal runs；失败 0 |
-| statistical state | `STATISTICAL_CLOSEOUT_COMPLETE`；native 1024-point primary |
-| archive manifest SHA256 | `5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0` |
+| statistical state | H1/H1b/H3/H4 native `COMPLETE`；H2 240825 primary `FAIL_CLOSED` |
+| archive manifest SHA256 | `8c6ea7dca9cefddd676c8ce5d1f30855547ed273f70466549bfd8ae88f3305c7` |
 
 原始 checkpoint、prediction、log 和 receipt 未复制进 GitHub；它们已同步到上述持久化 Git-ignored archive。Git 中只保留 manifest、receipt、统计文档和本开发记录；[G1 formal archive receipt](v7_g1_formal_archive_receipt.json) 与 [G1 formal completion receipt](v7_g1_formal_completion_receipt.json) 记录完整边界。
 
@@ -40,7 +40,9 @@
 
 具体 launch、模型、统计和 support 契约见：[formal launch manifest](../configs/heat3d_v7/v7_g1_formal_launch_manifest.json)、[Full P1i parent](../configs/heat3d_v7/v7_g1_full_p1i.json)、[statistical preregistration](../configs/heat3d_v7/v7_g1_statistical_preregistration.json)、[support provider contract](../configs/heat3d_v7/v7_g1_support_provider_contract.json) 和 [scientific protocol freeze](v7_g1_scientific_protocol_freeze.md)。
 
-## 21-run 汇总
+## Historical mixed-domain summary — not for direct cross-variant comparison
+
+下表是历史保留的 21-run mixed-domain summary；它不是本次 H2 common-domain primary，不能用于跨 variant 的直接比较。当前可用于论文级归因的 native 1024 结果见下一节；H2 的 240825 formal primary 见后文的 fail-closed 记录。
 
 下表使用最佳 checkpoint。百分比指标越低越好；物理区域误差单位为 K。`best epoch` 同时给出三个 seed 的范围和均值。
 
@@ -87,6 +89,25 @@ effect 定义为 `ablation_error - Full_error`，正值表示 Full 更低。H1/H
 
 Superiority 只按预注册三项规则声明：paired 95% CI 排除 0、paired median 同方向、三个 seed 的 aggregate effect 同方向。H1/H1b/H3/H4 满足；H2 的 native 1024 aggregate CI 虽为正，但 support arm 有部分 sample 没有 source node，`source_region_RMSE_K` 的 paired sample unit 不对全部 128 sample 可估计，因此 H2 只作 native-support descriptive attribution 并 fail-closed，不填零、不删行，也不新增 240825-node 结果。
 
+## H2 full-field formal 240825 primary（FAIL_CLOSED）
+
+H2 primary 的 route 判定在读取本轮 accuracy 前已固定：`U_v2_16384_reconstruction`（`U16384→240825`）是历史 V6 canonical chain 的 primary，`U_v2_direct240825`（`U-direct-240825`）是 robustness/sensitivity route。判定依据、route config 和 SHA 见 [H2 route primary decision](../configs/heat3d_v7/v7_g1_h2_route_primary_decision.json) 与 [H2 fail-closed receipt](v7_g1_h2_fullfield_fail_closed_receipt.json)。
+
+正式执行要求 9 个 selected-best checkpoints × 2 routes × 128 个 `valid_iid`，并在相同的 240825 physical coordinates 上计算 `source_region_RMSE_K` 及五项 secondary metrics。执行在 primary route 的 `Full_seed0 / v6p1if1_0993` 处被冻结 native `p2r_edge_indices=3074` envelope 拒绝：observed `3083`，超出 9 条 edge。改变 target、support/graph、sample population 或删除样本均会改变 frozen contract，因此未采取。primary route 仅在内存中完成 122/128 个样本，未写出 complete evaluation receipt；robustness route 未启动正式 run；任何 partial output 均未进入 archive。
+
+| U route | Variant | Complete seeds | source-region RMSE (K), mean±SD | point-global relative RMSE (%), mean±SD | peak RMSE (K), mean±SD | paired effect `ablation−Full` | percentile 95% CI | Claim status |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| `U16384→240825` primary | Full | 0/3 | N/A | N/A | N/A | N/A | N/A | `NOT_EVALUABLE_FAIL_CLOSED` |
+| `U16384→240825` primary | generic support | 0/3 | N/A | N/A | N/A | N/A | N/A | `NOT_EVALUABLE_FAIL_CLOSED` |
+| `U16384→240825` primary | CV-only support | 0/3 | N/A | N/A | N/A | N/A | N/A | `NOT_EVALUABLE_FAIL_CLOSED` |
+| `U-direct-240825` robustness | Full | 0/3 | N/A | N/A | N/A | N/A | N/A | `NOT_EVALUABLE_FAIL_CLOSED` |
+| `U-direct-240825` robustness | generic support | 0/3 | N/A | N/A | N/A | N/A | N/A | `NOT_EVALUABLE_FAIL_CLOSED` |
+| `U-direct-240825` robustness | CV-only support | 0/3 | N/A | N/A | N/A | N/A | N/A | `NOT_EVALUABLE_FAIL_CLOSED` |
+
+因此 H2 没有合法的 paired per-sample effect、per-seed effect、pooled summary、median/p90/p95/worst-10 或 10,000-replicate bootstrap CI；不对 generic/CV-only 声明 superiority，也不从 route 差异推断 attribution robustness。该结论是执行性 FAIL-CLOSED，不是零效应或负效应。
+
+历史核验显示两份 V6 U envelope 都明确为 `sample_count=32` 资格化 capacity；历史 `05b32ce` U16384 receipt 扩展到 `remaining_valid96`，但 Git history / frozen receipts 中没有覆盖当前 128 个 `valid_iid` 的 route-specific envelope。历史记录中的 `v6p1if1_0993` 为 `p2r_edges=3074`，本次冻结 runtime 观察为 `3083`，所以历史结果不能替代当前 V7 9-checkpoint H2 evidence，binary route equivalence 也未被宣称。
+
 ## 最佳 checkpoint 与最终 epoch
 
 checkpoint selection 是预注册行为，因此不能用最终 epoch 替代最佳 checkpoint。各 variant 的 `sample_first_relative_rmse_pct` 均值如下：
@@ -106,7 +127,7 @@ checkpoint selection 是预注册行为，因此不能用最终 epoch 替代最�
 ## 结果解读
 
 1. **Full vs Vanilla 支持完整 Heat3D conditioning architecture 的组合收益。** H1 在 `point_global_relative_rmse_pct` 上的 paired effect 为 `20.43909` 个百分点，95% CI `[17.12366, 23.60488]`；capacity-matched H1b 的 effect 为 `22.37245` 个百分点，95% CI `[17.44747, 27.71174]`。两个比较均满足预注册 superiority gate，但结论只限于冻结 P1i `valid_iid` native 1024-point 口径。
-2. **support 只作 physics-layout-aware sparse support 的归因。** native 1024-point support arms 的 source-region aggregate effect 对 generic 和 volume-only 都为正，但部分 sample 没有 source node，paired primary unit 不完整，所以 H2 不声明 superiority；结果支持在当前采样口径下的 support attribution 方向，不外推为独立于 support/evaluation grid 的普遍结论。
+2. **support 只作 physics-layout-aware sparse support 的归因。** native 1024-point support arms 的 source-region aggregate effect 对 generic 和 volume-only 都为正，但部分 sample 没有 source node，paired primary unit 不完整，所以 native H2 仅作为 `native-support diagnostic / supplementary attribution`；240825 full-field H2 因 frozen envelope 冲突未可估计，不声明 superiority，也不外推为独立于 support/evaluation grid 的普遍结论。
 3. **FiLM 是 secondary contribution。** H3 的 primary `sample_first_relative_rmse_pct` effect 为 `0.29417` 个百分点，95% CI `[0.21456, 0.37041]`，三个 seed 同方向；这支持在保留其它 Full context/scale 路径时，关闭 FiLM 会变差，但 FiLM 不是 Full 与 Vanilla 全部差异的替代解释。
 4. **scale correction 在当前 P1i formulation 下是关键。** H4 的 primary `raw_K_CV_RMSE_K` effect 为 `171.44018 K`，95% CI `[164.25621, 178.46001]`，三个 seed 同方向。该结论仅是当前 frozen P1i formulation 下的组件归因，不外推为 test、OOD 或 external superiority。
 5. **capacity-matched Vanilla 的高 seed variance 必须保留。** 其 sample-first mean±SD 为 `25.162 ± 11.003%`，逐 seed 为 `37.727% / 17.251% / 20.507%`；该逐 seed 表不能被只报告均值的摘要替代。旧表中的最佳 epoch 差异也只作描述，不能据此修改冻结的 200-epoch budget。
@@ -137,7 +158,8 @@ checkpoint selection 是预注册行为，因此不能用最终 epoch 替代最�
 - `mean ± sample SD` 只描述三个 seed 的重复性；统计 preregistration 明确不以 n=3 seed 的 p-value 作为主要证据。
 - capacity-matched Vanilla 的 seed variance 很高，后续报告应保留逐 seed 结果，不能只给均值。
 - 最佳/最终 checkpoint、predictions、history/log 和 run provenance 已持久化到 `research_artifacts/v7_g1_formal_archive/`；该目录 Git-ignored，不作为 GitHub 大型 artifact 提交，逐文件 SHA 见 archive manifest。
-- 本次 G1 主 closeout 不新增 240825-node 结果；若后续需要复核既有 240825-node evidence，必须沿用其既有 receipt，不得与 native 1024 主口径混用。
+- H2 的正式 primary domain 是冻结的 common 240825 full field，但本轮在 envelope guard 处 fail-closed；未归档不完整的 240825 prediction/metric。既有 240825-node evidence 仍保留并必须沿用其既有 receipt，不得与 native 1024 supplementary 口径混用。
+- 当前 G1 completion receipt 是 `G1_FORMAL_CLOSEOUT_BLOCKED_H2_FAIL_CLOSED`；training complete 不等于 H2 statistical closeout complete。future evaluation-only test unlock 不是本轮 blocker，`test_iid`/sealed 仍保持未访问。
 - 历史 V1–V6 runner、smoke/development wrapper 继续作为 read-only historical oracle；本结果不表示 legacy tree 已清理。
 
 ## 复核入口

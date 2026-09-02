@@ -1,8 +1,11 @@
 {
   "domain_policy": {
-    "native_1024_results_are_primary_g1_closeout": true,
+    "native_1024_results_are_primary_for_completed_native_h1_h1b_h3_h4_and_supplementary_h2": true,
     "new_240825_node_results_generated": false,
-    "prior_240825_node_results_retained_without_modification": true
+    "prior_240825_node_results_retained_without_modification": true,
+    "h2_primary_domain": "heat3d_v6_p1i_full_field_240825",
+    "h2_fullfield_status": "FAIL_CLOSED_NO_FORMAL_EVIDENCE",
+    "h2_fail_closed_receipt": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825/H2_FORMAL_CLOSEOUT_FAIL_CLOSED.json"
   },
   "evidence_roles_present": [
     "analysis_scope_receipt",
@@ -45,7 +48,7 @@
   "integrity": {
     "analysis_implementation_sha256": "be5949f3e4c616327e06dd4de19f7470182df5013aa1364f03dcddce32063b51",
     "archive_manifest_path": "research_artifacts/v7_g1_formal_archive/archive_manifest.json",
-    "archive_manifest_sha256": "5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0",
+    "archive_manifest_sha256": "8c6ea7dca9cefddd676c8ce5d1f30855547ed273f70466549bfd8ae88f3305c7",
     "best_checkpoint_count": 21,
     "best_prediction_count": 21,
     "derived_rsync_dry_run": "PASS_no_changes",
@@ -53,11 +56,11 @@
     "final_prediction_count": 21,
     "formal_receipt_code_sha_validation": "PASS_21_of_21",
     "formal_receipt_count": 21,
-    "manifest_file_count": 266,
+    "manifest_file_count": 267,
     "per_file_size_sha256_validation": "PASS",
     "raw_rsync_dry_run": "PASS_no_changes",
     "tracked_manifest_path": "docs/v7_g1_formal_archive_manifest.json",
-    "tracked_manifest_sha256": "5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0"
+    "tracked_manifest_sha256": "8c6ea7dca9cefddd676c8ce5d1f30855547ed273f70466549bfd8ae88f3305c7"
   },
   "matrix_status": {
     "completed_runs": 21,
@@ -70,7 +73,8 @@
   "persistent_archive_absolute_path": "/Users/xuyihua/.codex/worktrees/cbb8/3D IC Heat/research_artifacts/v7_g1_formal_archive",
   "persistent_archive_path": "research_artifacts/v7_g1_formal_archive/",
   "point_count_per_sample": 1024,
-  "primary_analysis_domain": "registered_support_1024",
+  "primary_analysis_domain": "registered_support_1024_for_completed_native_statistics",
+  "h2_primary_analysis_domain": "heat3d_v6_p1i_full_field_240825_not_generated",
   "safety": {
     "g2_touched": false,
     "optimizer_called_during_export": false,
@@ -83,5 +87,7 @@
   "scope": "V7 G1 formal evidence archival only; no G2 and no test/sealed access",
   "source_remote": "devbox:/tmp/v7_g1_formal_runs/",
   "source_remote_derived": "devbox:/tmp/v7_g1_formal_derived_native_1024_v2/",
-  "status": "COMPLETE"
+  "h2_fullfield_status": "FAIL_CLOSED_NO_FORMAL_EVIDENCE",
+  "h2_formal_evidence_archived": false,
+  "status": "ARCHIVE_COMPLETE_H2_FAIL_CLOSED"
 }

@@ -1177,6 +1177,7 @@ def _manifest_role(relative: str) -> str:
     name = Path(relative).name
     if relative.startswith("h2_fullfield_240825/"):
         h2_roles = {
+            "H2_FORMAL_CLOSEOUT_FAIL_CLOSED.json": "h2_fail_closed_receipt",
             "run_config.json": "h2_run_config_provenance",
             "implementation_provenance.json": "h2_implementation_provenance",
             "evaluation_contract.json": "h2_common_domain_evaluation_contract",
@@ -1256,8 +1257,9 @@ def _manifest(args: argparse.Namespace) -> int:
         for row in launch.get("runs") or []
     }
     records = []
+    archive_manifest_path = (archive_root / "archive_manifest.json").resolve()
     for path in sorted(archive_root.rglob("*")):
-        if not path.is_file() or path.resolve() == output_path:
+        if not path.is_file() or path.resolve() in {output_path, archive_manifest_path}:
             continue
         relative = path.relative_to(archive_root).as_posix()
         parts = Path(relative).parts
@@ -1272,7 +1274,7 @@ def _manifest(args: argparse.Namespace) -> int:
             run_id = parts[2]
             variant = run_meta[run_id]["variant"]
             seed = run_meta[run_id]["seed"]
-        route = parts[1] if len(parts) >= 2 and parts[0] == "h2_fullfield_240825" else None
+        route = parts[1] if len(parts) >= 3 and parts[0] == "h2_fullfield_240825" else None
         records.append(
             {
                 "path": relative,
@@ -1289,22 +1291,36 @@ def _manifest(args: argparse.Namespace) -> int:
     checkpoint_records = [
         row for row in records if row["evidence_role"] in {"best_checkpoint", "final_checkpoint"}
     ]
+    h2_evaluation_receipt_count = sum(
+        row["evidence_role"] == "h2_evaluation_receipt" for row in records
+    )
+    h2_fail_closed_receipt_count = sum(
+        row["evidence_role"] == "h2_fail_closed_receipt" for row in records
+    )
+    if h2_fail_closed_receipt_count:
+        h2_fullfield_status = "FAIL_CLOSED_NO_FORMAL_EVIDENCE"
+    elif h2_evaluation_receipt_count == 18:
+        h2_fullfield_status = "COMPLETE"
+    else:
+        h2_fullfield_status = "NOT_PRESENT"
     manifest = {
         "schema_version": "heat3d_v7_g1_archive_manifest_v2",
         "archive_root": str(archive_root),
         "formal_training_code_sha": FORMAL_CODE_SHA,
         "source_formal_output_root": "/tmp/v7_g1_formal_runs",
-        "primary_analysis_domain": COMMON_DOMAIN_ID,
+        "primary_analysis_domain": COMMON_DOMAIN_ID if h2_evaluation_receipt_count == 18 else NATIVE_DOMAIN_ID,
+        "h2_primary_analysis_domain": COMMON_DOMAIN_ID,
         "new_240825_results_generated": any(
             row["evidence_role"] == "h2_evaluation_receipt" for row in records
         ),
         "prior_240825_results_retained": True,
+        "h2_fullfield_closeout_status": h2_fullfield_status,
+        "h2_formal_evidence_archived": h2_evaluation_receipt_count == 18,
         "file_count": len(records),
         "formal_receipt_count": len(formal_receipts),
         "checkpoint_file_count": len(checkpoint_records),
-        "h2_evaluation_receipt_count": sum(
-            row["evidence_role"] == "h2_evaluation_receipt" for row in records
-        ),
+        "h2_evaluation_receipt_count": h2_evaluation_receipt_count,
+        "h2_fail_closed_receipt_count": h2_fail_closed_receipt_count,
         "h2_route_evidence_count": sum(
             row["path"].startswith("h2_fullfield_240825/") for row in records
         ),

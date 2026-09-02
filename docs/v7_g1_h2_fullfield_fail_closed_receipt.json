@@ -1,0 +1,231 @@
+{
+  "schema_version": "heat3d_v7_g1_h2_fullfield_fail_closed_receipt_v1",
+  "status": "H2_FORMAL_CLOSEOUT_FAIL_CLOSED",
+  "scope": "research/v7 G1 H2 preregistered 240825 common-domain full-field closeout only",
+  "formal_training_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+  "preregistration": {
+    "path": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
+    "sha256": "03be1617b78f2e1f41431411e601a54136a59e363c8321457a19b717249ad31e",
+    "h2_primary_metric": "source_region_RMSE_K",
+    "effect_definition": "ablation_error - Full_error",
+    "bootstrap": {
+      "resampling_levels": [
+        "seed_with_replacement",
+        "valid_iid_sample_within_seed_with_replacement"
+      ],
+      "replicates": 10000,
+      "random_seed": 20260829,
+      "interval": "percentile_95_percent_CI"
+    }
+  },
+  "training_state": {
+    "status": "TRAINING_COMPLETE",
+    "planned_runs": 21,
+    "completed_runs": 21,
+    "failed_runs": 0,
+    "checkpoint_selection": "frozen selected-best checkpoints; no reselection",
+    "training_rerun": false
+  },
+  "route_provenance": {
+    "primary_decision_path": "configs/heat3d_v7/v7_g1_h2_route_primary_decision.json",
+    "primary_decision_sha256": "59f99b142eeb9c7c77c2853d5e65aa3f573bb23a24509967c9e0ffc3dffc2992",
+    "primary_route_id": "U_v2_16384_reconstruction",
+    "primary_route_label": "U16384→240825",
+    "robustness_route_id": "U_v2_direct240825",
+    "robustness_route_label": "U-direct-240825",
+    "decision_status": "RESOLVED_BEFORE_RESULT_CALCULATION",
+    "accuracy_was_read_before_decision": false,
+    "decision_basis": "Frozen V6 canonical chain is native 1024 conditioning → frozen 16384 query → frozen layer/interface-aware reconstruction → 240825; direct 240825 is parallel valid-only robustness characterization.",
+    "eu_contract": {
+      "path": "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json",
+      "sha256": "36627435f1386c043abc3fb4da07b275d310bab3257b5173bb85558bb056dc67"
+    },
+    "implementation_binding": {
+      "path": "configs/heat3d_v6_p1i/v6_p1i_high_n_implementation_binding.json",
+      "sha256": "80872389351eda59c15386bc205dd0ee1067ebf8c1c0be63b4085100360b8ede"
+    },
+    "routes": {
+      "U_v2_16384_reconstruction": {
+        "config_path": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U16384.json",
+        "config_sha256": "756a28ee3387b26b6cf3945e3b8a5c9ff2ccc6b07eb6d6745d1dd978eaaed507",
+        "conditioning": "1024 native anchor conditioning; encoder input 1024",
+        "query_generation": "deterministic nested label-independent support order; first 16384 entries after the frozen 1024 anchors",
+        "query_resolution": 16384,
+        "reconstruction": "frozen layer/interface-aware inverse-distance reconstruction with per-domain same-layer fallback to 240825",
+        "graph_backend": "sparse_kdtree_v1",
+        "fixed_edge_targets": {
+          "native": {
+            "p2r_edge_indices": 3074,
+            "r2p_edge_indices": 2905,
+            "r2r_edge_domains": 4217,
+            "r2r_edge_indices": 4217
+          },
+          "query": {
+            "p2r_edge_indices": 107645,
+            "r2p_edge_indices": 107645,
+            "r2r_edge_domains": 4217,
+            "r2r_edge_indices": 4217
+          }
+        },
+        "selection_seed": 20260808
+      },
+      "U_v2_direct240825": {
+        "config_path": "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U240825.json",
+        "config_sha256": "624cea8b86f0a2b6cfb68dae8db502ce6257fd971d8e83eb3ce44432550e88a2",
+        "conditioning": "1024 native anchor conditioning; encoder input 1024",
+        "query_generation": "deterministic nested label-independent support order; first 240825 entries after the frozen 1024 anchors",
+        "query_resolution": 240825,
+        "reconstruction": "none for the direct common-domain output; 240825 query is already the final physical coordinate field",
+        "graph_backend": "sparse_kdtree_v1",
+        "fixed_edge_targets": {
+          "native": {
+            "p2r_edge_indices": 3074,
+            "r2p_edge_indices": 2905,
+            "r2r_edge_domains": 4217,
+            "r2r_edge_indices": 4217
+          },
+          "query": {
+            "p2r_edge_indices": 2002581,
+            "r2p_edge_indices": 2002581,
+            "r2r_edge_domains": 4217,
+            "r2r_edge_indices": 4217
+          }
+        },
+        "selection_seed": 20260808
+      }
+    }
+  },
+  "checkpoint_population": {
+    "required_count": 9,
+    "required_run_ids": [
+      "Full_seed0",
+      "Full_seed1",
+      "Full_seed2",
+      "layout_agnostic_stratified_support_seed0",
+      "layout_agnostic_stratified_support_seed1",
+      "layout_agnostic_stratified_support_seed2",
+      "cv_only_support_seed0",
+      "cv_only_support_seed1",
+      "cv_only_support_seed2"
+    ],
+    "population_guard": "PASS_exactly_9_selected-best_checkpoint_receipts_verified_before_execution"
+  },
+  "formal_execution": {
+    "valid_iid_count_required_per_run": 128,
+    "common_domain": "heat3d_v6_p1i_full_field_240825",
+    "source_mask_contract": "frozen source masks; no zero-fill, row deletion, or sample deletion permitted",
+    "primary_route": {
+      "route_id": "U_v2_16384_reconstruction",
+      "attempted": true,
+      "run_entered": "Full_seed0",
+      "samples_completed_in_memory_before_failure": 122,
+      "failure_sample": "v6p1if1_0993",
+      "failure_sample_order_1_based": 123,
+      "evaluation_receipt_written": false,
+      "formal_metrics_generated": false
+    },
+    "robustness_route": {
+      "route_id": "U_v2_direct240825",
+      "attempted": false,
+      "reason": "primary route failed the frozen graph envelope before any complete formal route/run receipt existed"
+    },
+    "partial_output_policy": {
+      "temporary_output_root": "/tmp/v7_g1_h2_fullfield_240825_20260902",
+      "partial_output_is_formal_evidence": false,
+      "partial_output_archived": false,
+      "in_memory_partial_metrics_used": false
+    }
+  },
+  "failure_diagnostic": {
+    "error": "p2r_edge_indices: edge count exceeds fixed target",
+    "graph_config": {
+      "rmesh_levels": 3,
+      "subsample_factor": 4.0,
+      "overlap_factor_p2r": 1.5,
+      "overlap_factor_r2p": 2.0,
+      "node_coordinate_encoding": "raw",
+      "node_coordinate_freqs": 4,
+      "radius_policy": "discrete_physical_coverage",
+      "coverage_repair_policy": "none",
+      "repair_p2r": true,
+      "repair_r2p": true,
+      "min_physical_coverage": 1,
+      "discrete_graph_backend": "sparse_kdtree_v1",
+      "discrete_graph_chunk_size": 1024,
+      "discrete_coverage_multiplier": 1.0,
+      "reuse_exact_p2r_for_r2p": true
+    },
+    "observed_native_edge_counts": {
+      "p2r_edge_indices": 3083,
+      "r2p_edge_indices": null,
+      "r2r_edge_domains": 4075,
+      "r2r_edge_indices": 4075
+    },
+    "frozen_native_edge_targets": {
+      "p2r_edge_indices": 3074,
+      "r2p_edge_indices": 2905,
+      "r2r_edge_domains": 4217,
+      "r2r_edge_indices": 4217
+    },
+    "excess": {
+      "field": "p2r_edge_indices",
+      "observed_minus_target": 9
+    },
+    "interpretation": "The frozen V6 dummy-capacity envelope is not valid for the full 128-sample V7 H2 population under the restored runtime. Increasing capacity, changing graph/support parameters, using a per-sample target, or dropping the failing sample would change the frozen route contract and is prohibited."
+  },
+  "historical_envelope_audit": {
+    "route_envelope_sample_count": 32,
+    "route_envelope_paths": [
+      "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U16384.json",
+      "configs/heat3d_v6_p1i/v6_p1i_publication_padding_envelopes/v6_publication_padding_U240825.json"
+    ],
+    "historical_valid96_receipt": {
+      "git_commit": "05b32ce",
+      "path": "configs/heat3d_v6_p1i/v6_p1i_performance_final_correction_raw/v6_final_Uv2_16384_valid96.json",
+      "content_sha256": "b532c26b171cb115e9013b8137b5262742ee6a337eeedd6ec815e0f1833c553e",
+      "population_mode": "remaining_valid96",
+      "sample_count": 96,
+      "native_p2r_target": 3074,
+      "query_p2r_target": 107645,
+      "protocol_sha256": "1211952739745c2465a197ac2825e081b32ecc69d5549702851dd3289179361e"
+    },
+    "historical_code_provenance": {
+      "commit": "05b32ce",
+      "rigno_models_rigno_sha256": "f564e3870c02f3674ebb13bf3ce7380773e100383b8d7ad2eaaa7f25ae92f41c",
+      "u_v2_runner_sha256": "2e59e2f23f022ed3e7af8b58db8feea9dacb7d383244db2f35cc0ae9824502c3",
+      "anchor_query_sha256": "196a13e823b1af512e0192be72c2a8c4c8ee1bfd67f3e5b7a3f9dc5495e4d7f9"
+    },
+    "historical_sample_v6p1if1_0993": {
+      "historical_valid96_recorded_p2r_edges": 3074,
+      "current_frozen_runtime_observed_p2r_edges": 3083,
+      "binary_route_equivalence_proven": false
+    },
+    "pre_existing_128_sample_route_envelope_found": false,
+    "search_scope": "all Git history objects plus tracked V6 U route, padding, receipt, and G0 reconciliation paths; no route-specific frozen 128-sample envelope was found"
+  },
+  "statistics": {
+    "status": "NOT_EXECUTED_FAIL_CLOSED",
+    "paired_per_sample_effects": null,
+    "per_seed_effects": null,
+    "pooled_summaries": null,
+    "bootstrap_ci": null,
+    "h2_generic_claim_status": "NOT_EVALUABLE_FAIL_CLOSED",
+    "h2_cv_only_claim_status": "NOT_EVALUABLE_FAIL_CLOSED",
+    "superiority_claims": "NONE; no H2 effect or CI was computed"
+  },
+  "state_separation": {
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g2_touched": false,
+    "solver_called": false,
+    "training_called": false,
+    "test_status": "SEALED_NOT_EVALUATED"
+  },
+  "completion": {
+    "h2_preregistered_240825_primary_complete": false,
+    "g1_formal_closeout_complete": false,
+    "status_reason": "H2 cannot satisfy the all-128 common-domain frozen-route contract without an unapproved route-envelope change or sample deletion.",
+    "remaining_g1_blocker": "Recover an already-existing frozen 128-sample-compatible V6 U route envelope and exact binary route provenance; do not create or tune a new envelope in this closeout.",
+    "future_test_unlock_is_not_a_g1_blocker": true
+  }
+}

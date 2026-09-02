@@ -2,14 +2,14 @@
   "claim_status_by_hypothesis": {
     "H1": "SUPERIORITY_SUPPORTED",
     "H1b": "SUPERIORITY_SUPPORTED",
-    "H2": "DESCRIPTIVE_ONLY",
+    "H2": "NOT_EVALUABLE_FAIL_CLOSED_240825_PRIMARY",
     "H3": "SUPERIORITY_SUPPORTED",
     "H4": "SUPERIORITY_SUPPORTED"
   },
   "evidence_archive": {
     "archive_receipt": "docs/v7_g1_formal_archive_receipt.json",
     "manifest_path": "docs/v7_g1_formal_archive_manifest.json",
-    "manifest_sha256": "5f7934172ea3f7e80a6bcb9b3a323b7c1bd85e64b58d66325059b5058470edf0",
+    "manifest_sha256": "8c6ea7dca9cefddd676c8ce5d1f30855547ed273f70466549bfd8ae88f3305c7",
     "path": "research_artifacts/v7_g1_formal_archive/"
   },
   "formal_training": {
@@ -39,6 +39,19 @@
     "new_240825_results_generated": false,
     "reason": "native 1024 support arms contain valid_iid samples without source nodes, so source_region_RMSE_K is not defined for every paired sample; no zero fill or row deletion was used",
     "status": "DESCRIPTIVE_ONLY_FAIL_CLOSED_FOR_PRIMARY_PAIRED_UNIT"
+  },
+  "h2_fullfield_240825": {
+    "status": "FAIL_CLOSED_NO_FORMAL_EVIDENCE",
+    "primary_route_id": "U_v2_16384_reconstruction",
+    "robustness_route_id": "U_v2_direct240825",
+    "required_runs": 18,
+    "completed_runs": 0,
+    "required_samples_per_run": 128,
+    "formal_metrics_generated": false,
+    "effect_and_bootstrap_generated": false,
+    "fail_closed_receipt": "docs/v7_g1_h2_fullfield_fail_closed_receipt.json",
+    "fail_closed_receipt_sha256": "d26a4fdbb1a1e555bfbd260c38bb6515139b006db88dc48e8afd900c5ae4a252",
+    "reason": "Frozen native p2r target 3074 is exceeded by observed 3083 on Full_seed0 / v6p1if1_0993; changing the envelope or sample population is prohibited."
   },
   "hypothesis_effects": [
     {
@@ -184,7 +197,8 @@
       "primary_metric": "raw_K_CV_RMSE_K"
     }
   ],
-  "remaining_blocker": "future evaluation-only test unlock",
+  "remaining_blocker": "H2 frozen 240825 route envelope is not valid for all 128 valid_iid samples; recover an already-existing compatible frozen envelope and exact route provenance, without creating or tuning a new envelope.",
+  "future_evaluation_only_test_unlock_not_a_blocker": true,
   "schema_version": "heat3d_v7_g1_formal_completion_receipt_v1",
   "scope": "research/v7 G1 only; native 1024-point primary closeout",
   "scope_boundary": "All claims are limited to frozen P1i valid_iid native 1024-point evidence; no test/OOD/external superiority claim is made.",
@@ -192,7 +206,9 @@
     "g2_affected": false,
     "sealed_access": false,
     "sealed_status": "SEALED_NOT_EVALUATED",
-    "statistical_closeout_complete": true,
+    "statistical_closeout_complete": false,
+    "native_1024_statistical_closeout_complete": true,
+    "h2_fullfield_240825_statistical_closeout_complete": false,
     "test_iid_access": false,
     "test_iid_status": "SEALED_NOT_EVALUATED",
     "training_complete": true
@@ -221,9 +237,9 @@
     "preregistration_path": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
     "preregistration_sha256": "03be1617b78f2e1f41431411e601a54136a59e363c8321457a19b717249ad31e",
     "split": "valid_iid",
-    "status": "STATISTICAL_CLOSEOUT_COMPLETE",
+    "status": "PARTIAL_NATIVE_COMPLETE_H2_240825_FAIL_CLOSED",
     "valid_iid_count_per_seed": 128,
     "worst_case_diagnostics": "research_artifacts/v7_g1_formal_archive/analysis_1024/worst_case_diagnostics.json"
   },
-  "status": "G1_FORMAL_CLOSEOUT_COMPLETE"
+  "status": "G1_FORMAL_CLOSEOUT_BLOCKED_H2_FAIL_CLOSED"
 }
