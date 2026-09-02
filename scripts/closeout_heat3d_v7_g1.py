@@ -1175,6 +1175,35 @@ def _write_worst_markdown(path: Path, rows: Sequence[Mapping[str, Any]]) -> None
 
 def _manifest_role(relative: str) -> str:
     name = Path(relative).name
+    if relative.startswith("h2_fullfield_240825/"):
+        h2_roles = {
+            "run_config.json": "h2_run_config_provenance",
+            "implementation_provenance.json": "h2_implementation_provenance",
+            "evaluation_contract.json": "h2_common_domain_evaluation_contract",
+            "per_sample_metrics.json": "h2_per_sample_metrics",
+            "support_reconstruction_provenance.json": "h2_support_reconstruction_provenance",
+            "evaluation_receipt.json": "h2_evaluation_receipt",
+            "predictions_best.npz": "h2_best_predictions_240825",
+            "query_predictions_best.npz": "h2_query_predictions",
+            "query_support_indices_best.npz": "h2_query_support_indices",
+        }
+        return h2_roles.get(name, "h2_route_evidence")
+    h2_top_level_roles = {
+        "h2_execution_scope.json": "h2_execution_scope",
+        "h2_analysis_receipt.json": "h2_statistical_analysis_receipt",
+        "h2_per_sample_effects.json": "h2_paired_per_sample_effects",
+        "h2_per_seed_effects.json": "h2_per_seed_effects",
+        "h2_pooled_summaries.json": "h2_pooled_summaries",
+        "h2_bootstrap_ci_receipt.json": "h2_bootstrap_ci_receipt",
+        "h2_hypothesis_effect_table.json": "h2_hypothesis_effect_table",
+        "h2_hypothesis_effect_table.md": "h2_hypothesis_effect_table_document",
+        "h2_variant_route_summary.json": "h2_variant_route_summary",
+        "h2_route_comparison.json": "h2_route_comparison",
+        "h2_route_comparison.md": "h2_route_comparison_document",
+        "h2_worst_case_diagnostics.json": "h2_worst_case_diagnostics",
+    }
+    if name in h2_top_level_roles:
+        return h2_top_level_roles[name]
     roles = {
         "matrix_status.json": "formal_matrix_status",
         "formal_stderr.log": "training_stderr_log",
@@ -1239,6 +1268,11 @@ def _manifest(args: argparse.Namespace) -> int:
             run_id = parts[1]
             variant = run_meta[run_id]["variant"]
             seed = run_meta[run_id]["seed"]
+        elif len(parts) >= 3 and parts[0] == "h2_fullfield_240825" and parts[2] in run_meta:
+            run_id = parts[2]
+            variant = run_meta[run_id]["variant"]
+            seed = run_meta[run_id]["seed"]
+        route = parts[1] if len(parts) >= 2 and parts[0] == "h2_fullfield_240825" else None
         records.append(
             {
                 "path": relative,
@@ -1247,6 +1281,7 @@ def _manifest(args: argparse.Namespace) -> int:
                 "run_id": run_id,
                 "variant": variant,
                 "seed": seed,
+                "route": route,
                 "evidence_role": _manifest_role(relative),
             }
         )
@@ -1259,12 +1294,20 @@ def _manifest(args: argparse.Namespace) -> int:
         "archive_root": str(archive_root),
         "formal_training_code_sha": FORMAL_CODE_SHA,
         "source_formal_output_root": "/tmp/v7_g1_formal_runs",
-        "primary_analysis_domain": NATIVE_DOMAIN_ID,
-        "new_240825_results_generated": False,
+        "primary_analysis_domain": COMMON_DOMAIN_ID,
+        "new_240825_results_generated": any(
+            row["evidence_role"] == "h2_evaluation_receipt" for row in records
+        ),
         "prior_240825_results_retained": True,
         "file_count": len(records),
         "formal_receipt_count": len(formal_receipts),
         "checkpoint_file_count": len(checkpoint_records),
+        "h2_evaluation_receipt_count": sum(
+            row["evidence_role"] == "h2_evaluation_receipt" for row in records
+        ),
+        "h2_route_evidence_count": sum(
+            row["path"].startswith("h2_fullfield_240825/") for row in records
+        ),
         "run_count": len(run_meta),
         "runs_with_formal_receipts": sorted({row["run_id"] for row in formal_receipts}),
         "files": records,
