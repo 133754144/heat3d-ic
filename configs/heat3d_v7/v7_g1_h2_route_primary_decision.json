@@ -1,0 +1,38 @@
+{
+  "schema_version": "heat3d_v7_g1_h2_route_primary_decision_v1",
+  "status": "RESOLVED_BEFORE_RESULT_CALCULATION",
+  "scope": "G1 H2 preregistered 240825 common-domain full-field closeout",
+  "primary_route_id": "U_v2_16384_reconstruction",
+  "primary_route_label": "U16384→240825",
+  "robustness_route_id": "U_v2_direct240825",
+  "robustness_route_label": "U-direct-240825",
+  "accuracy_was_read_before_decision": false,
+  "decision_basis": {
+    "type": "inferred_from_frozen_V6_canonical_chain",
+    "canonical_deployment_chain": "native 1024 conditioning → frozen 16384 query → frozen layer/interface-aware reconstruction → 240825 solver field",
+    "direct_route_role": "parallel valid-only direct-output characterization/robustness route",
+    "sources": [
+      {
+        "path": "docs/v6_p1i_closeout.md",
+        "sha256": "5cf215464913535b5c9699385cccbd955e2c5ef63090f789da56f9135261a15d",
+        "basis": "V6 production/reference inference strategy is native 1024 → E policy 16384 → frozen reconstruction to 240825; U-v2 is parallel/direct characterization."
+      },
+      {
+        "path": "docs/v6_total_closeout.md",
+        "sha256": "5b421786ac99779f28cef69483747d9565b2fb65852403465ed026e775f19c83",
+        "basis": "V6 names the 16384-plus-reconstruction family as the reference operating chain and keeps both U-v2 routes parallel valid-only strategies."
+      },
+      {
+        "path": "configs/heat3d_v6_p1i/v6_p1i_p6a_claim_evidence_mapping.csv",
+        "sha256": "d505663812e31475df90cf513b59f93bed796fb5da8380428eab24649b917427",
+        "basis": "C1 identifies 16k plus reconstruction as the principal valid32 accuracy-latency Pareto family; C3 labels direct U-v2 as diagnostic direct-output evidence."
+      },
+      {
+        "path": "configs/heat3d_v6_p1i/v7_g0b2c_eu_contract_manifest.json",
+        "sha256": "36627435f1386c043abc3fb4da07b275d310bab3257b5173bb85558bb056dc67",
+        "basis": "Frozen route semantics distinguish U16384 reconstruction and U-direct-240825 without accuracy-dependent route selection."
+      }
+    ]
+  },
+  "fail_closed_note": "No route-specific H2 primary line exists in the V7 preregistration; this receipt records the role-continuity inference explicitly and fixes the choice before any H2 result is read."
+}
