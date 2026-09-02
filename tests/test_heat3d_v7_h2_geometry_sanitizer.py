@@ -11,6 +11,10 @@ from rigno.heat3d_v7_h2_geometry_sanitizer import (
     sanitize_geometry_records,
     sanitize_payload,
 )
+from rigno.heat3d_v7_h2_governance_guard import (
+    assert_gate_ab_input_paths,
+    assert_gate_ab_output,
+)
 
 
 class GeometryOnlySanitizerTests(unittest.TestCase):
@@ -100,6 +104,38 @@ class GeometryOnlySanitizerTests(unittest.TestCase):
             guard_geometry_input_paths(["/tmp/temperature.npy"])
         with self.assertRaises(ValueError):
             guard_geometry_input_paths(["/tmp/prediction_rows.json"])
+
+    def test_gate_ab_input_roles_reject_model_and_result_paths(self) -> None:
+        assert_gate_ab_input_paths({
+            "geometry": ["/tmp/full_field_geometry.h5"],
+            "support": ["/tmp/support_geometry.npz"],
+            "config": ["/tmp/native_graph_config.json"],
+        })
+        for role, path in (
+            ("geometry", "/tmp/truth_geometry.h5"),
+            ("geometry", "/tmp/model_forward.h5"),
+            ("support", "/tmp/checkpoint_support.pkl"),
+            ("config", "/tmp/metric_config.json"),
+        ):
+            with self.assertRaises(ValueError):
+                assert_gate_ab_input_paths({role: [path]})
+
+    def test_gate_ab_output_allowlist_cannot_carry_banned_values(self) -> None:
+        clean = sanitize_payload({
+            "sample_id": "v6p1if1_0993",
+            "geometry": {"node_count": 1024},
+            "graph": {"final_p2r_count": 3074},
+            "provenance": {"code_sha256": "abc"},
+            "prediction": {"value": "must disappear"},
+        })
+        assert_gate_ab_output(clean)
+        with self.assertRaises(ValueError):
+            assert_gate_ab_output({
+                "schema_version": "geometry_only_sanitized_v1",
+                "sample_id": "v6p1if1_0993",
+                "geometry": {"node_count": 1024},
+                "model_forward": False,
+            })
 
 
 if __name__ == "__main__":

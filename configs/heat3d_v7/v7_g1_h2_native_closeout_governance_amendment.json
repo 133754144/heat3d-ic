@@ -1,0 +1,123 @@
+{
+  "schema_version": "heat3d_v7_g1_h2_native_closeout_governance_amendment_v1",
+  "amendment_id": "V7-G1-H2-NATIVE-CLOSEOUT-20260903",
+  "status": "FROZEN_BEFORE_H2_ACCURACY",
+  "scope": "research/v7 G1 H2 formal closeout only",
+  "supersedes": {
+    "path": "configs/heat3d_v7/v7_g1_h2_provenance_recovery_policy.json",
+    "sha256": "830634dda0dc9b56f63d3f08fa1d7eaf755959adb723df6019f99f6f319db112"
+  },
+  "effective_before_h2_accuracy": true,
+  "scientific_contract": {
+    "graph_semantics": "G1 formal native 1024 graph semantics from the frozen formal training provenance",
+    "u_strategy": "frozen V6 U query/reconstruction strategy only",
+    "common_domain": "heat3d_v6_p1i_full_field_240825",
+    "valid_iid_sample_count": 128,
+    "selected_best_checkpoint_count": 9,
+    "selected_best_checkpoint_policy": "existing selected-best per formal run; no re-selection",
+    "sample_population": "frozen valid_iid from the formal P1i manifest",
+    "primary_route": "U16384 -> frozen reconstruction -> 240825",
+    "robustness_route": "direct frozen 240825 query",
+    "primary_metric": "source_region_RMSE_K",
+    "secondary_metrics": [
+      "point_global_relative_rmse_pct",
+      "sample_first_relative_rmse_pct",
+      "raw_K_CV_RMSE_K",
+      "peak_RMSE_K",
+      "interface_RMSE_K"
+    ],
+    "statistics": {
+      "preregistration": "configs/heat3d_v7/v7_g1_statistical_preregistration.json",
+      "bootstrap": "two-level seed and valid_iid sample resampling with replacement",
+      "replicates": 10000,
+      "random_seed": 20260829,
+      "interval": "percentile_95_percent_CI",
+      "effect": "ablation_error - Full_error"
+    }
+  },
+  "historical_3074": {
+    "status": "HISTORICAL_REPRODUCIBILITY_DIAGNOSTIC_ONLY",
+    "sanity_target": {
+      "p2r": 3074,
+      "r2r": 4075
+    },
+    "is_h2_scientific_gate": false,
+    "is_h2_envelope_source": false,
+    "prior_non_reproducibility_records_retained": true
+  },
+  "gates": {
+    "gate_a": {
+      "scope": "geometry-only native graph/provenance audit",
+      "checkpoint_load": false,
+      "model_forward": false,
+      "truth_access": false,
+      "accuracy_or_metric_calculation": false,
+      "target_or_loss_access": false,
+      "output_allowlist": ["sample_id", "geometry", "support", "graph", "dependency", "provenance"]
+    },
+    "gate_b": {
+      "scope": "geometry-only capacity and padding invariance audit",
+      "checkpoint_load": false,
+      "model_forward": false,
+      "truth_access": false,
+      "accuracy_or_metric_calculation": false,
+      "target_or_loss_access": false,
+      "capacity_rule": "observed maximum real edge count plus mandatory dummy only",
+      "manual_margin": false,
+      "sample_deletion": false,
+      "graph_or_support_modification": false
+    },
+    "gate_c": {
+      "scope": "formal frozen-checkpoint evaluation after Gate A/B evidence is frozen",
+      "checkpoint_load": "frozen selected-best checkpoints only",
+      "valid_iid_truth_access": true,
+      "model_forward": true,
+      "parameter_update": false,
+      "checkpoint_reselection": false,
+      "route_tuning": false,
+      "test_iid_access": false,
+      "sealed_access": false,
+      "g2_access_or_modification": false,
+      "partial_128_run_usable": false
+    }
+  },
+  "adapter_contract": {
+    "native_graph_source": "formal G1 training graph config, run seed, support provider, device/runtime semantics",
+    "native_graph_must_be_exact_formal_anchor": true,
+    "u_adapter_may_add": ["query graph", "query forward", "frozen reconstruction"],
+    "u_adapter_may_not_change": ["native graph", "native support", "native radius", "native repair semantics", "sample population", "checkpoint"],
+    "query_generation": "frozen V6 nested query order and selection seed",
+    "reconstruction": "frozen V6 layer/interface-aware reconstruction and KD-tree semantics"
+  },
+  "padding_amendment": {
+    "allowed": true,
+    "type": "execution_shape_only",
+    "new_capacity_rule": "per-route observed maximum real edge count over the complete 9x128 geometry audit plus mandatory dummy",
+    "accuracy_informed": false,
+    "manual_margin": false,
+    "requires_common_sample_graph_tensor_invariance": true,
+    "requires_truth_free_forward_or_equivalent_invariance_test": true
+  },
+  "audit_history": {
+    "contaminated_attempts": [
+      "docs/v7_g1_h2_gate_a_fail_closed_receipt.json",
+      "docs/v7_g1_h2_gate_a_incidental_scan_audit.json"
+    ],
+    "evidence_eligible": false,
+    "delete_or_overwrite": false
+  },
+  "global_prohibitions": {
+    "training": false,
+    "model_or_data_changes": false,
+    "support_changes": false,
+    "metric_changes": false,
+    "sample_population_changes": false,
+    "test_iid_or_sealed": false,
+    "g2_impact": false
+  },
+  "freeze_record": {
+    "policy_sha256_basis": "SHA256 of this canonical UTF-8 JSON file; no self-hash field",
+    "accuracy_outputs_require_policy_sha256": true,
+    "policy_sha256": null
+  }
+}
