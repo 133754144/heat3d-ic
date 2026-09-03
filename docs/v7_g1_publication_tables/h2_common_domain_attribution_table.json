@@ -1,0 +1,121 @@
+{
+  "bootstrap": {
+    "interval": "percentile_95_percent_CI",
+    "random_seed": 20260829,
+    "replicates": 10000,
+    "resampling": [
+      "seed_with_replacement",
+      "valid_iid_sample_within_seed_with_replacement"
+    ]
+  },
+  "copy_only_from_frozen_evidence": true,
+  "domain": "heat3d_v6_p1i_full_field_240825",
+  "hypothesis_structure": "H2 is one hypothesis group with two preregistered contrasts: H2a and H2b.",
+  "primary_metric": "source_region_RMSE_K",
+  "route_id": "U_v2_16384_reconstruction",
+  "route_role": "primary",
+  "rows": [
+    {
+      "ablation_pooled_aggregate": 5.55292977363103,
+      "ablation_seed_summary": {
+        "mean": 5.552615929422497,
+        "sample_sd": 0.07230571763192682,
+        "seed_values": [
+          5.632700308840902,
+          5.533018443970008,
+          5.492129035456578
+        ]
+      },
+      "ablation_variant": "layout_agnostic_stratified_support",
+      "bootstrap_ci_high": 2.042682469221784,
+      "bootstrap_ci_low": 1.481993273504068,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "contrast_id": "H2a",
+      "contrast_label": "Full vs generic support",
+      "domain": "heat3d_v6_p1i_full_field_240825",
+      "effect_ablation_minus_full": 1.7461462377029386,
+      "full_pooled_aggregate": 3.8067835359280915,
+      "full_seed_summary": {
+        "mean": 3.8048237335868733,
+        "sample_sd": 0.14958565646760308,
+        "seed_values": [
+          3.6678687963707226,
+          3.9644515038945807,
+          3.782150900495317
+        ]
+      },
+      "hypothesis_group": "H2",
+      "paired_median": 1.5616412080478785,
+      "paired_p90": 4.050322519036756,
+      "paired_p95": 4.849987941333143,
+      "paired_worst_10_mean": 8.489321899113824,
+      "per_seed_effects": [
+        1.9648315124701794,
+        1.568566940075427,
+        1.7099781349612613
+      ],
+      "primary_metric": "source_region_RMSE_K",
+      "route_id": "U_v2_16384_reconstruction",
+      "route_role": "primary"
+    },
+    {
+      "ablation_pooled_aggregate": 5.647351949566451,
+      "ablation_seed_summary": {
+        "mean": 5.64210903520659,
+        "sample_sd": 0.2979673063747529,
+        "seed_values": [
+          5.3283848537705785,
+          5.67662992617997,
+          5.921312325669221
+        ]
+      },
+      "ablation_variant": "cv_only_support",
+      "bootstrap_ci_high": 2.180139228144924,
+      "bootstrap_ci_low": 1.530699583122982,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "contrast_id": "H2b",
+      "contrast_label": "Full vs CV-only support",
+      "domain": "heat3d_v6_p1i_full_field_240825",
+      "effect_ablation_minus_full": 1.8405684136383593,
+      "full_pooled_aggregate": 3.8067835359280915,
+      "full_seed_summary": {
+        "mean": 3.8048237335868733,
+        "sample_sd": 0.14958565646760308,
+        "seed_values": [
+          3.6678687963707226,
+          3.9644515038945807,
+          3.782150900495317
+        ]
+      },
+      "hypothesis_group": "H2",
+      "paired_median": 1.74610205052587,
+      "paired_p90": 4.071549374842582,
+      "paired_p95": 5.162320531965869,
+      "paired_worst_10_mean": 8.66632838938614,
+      "per_seed_effects": [
+        1.6605160573998559,
+        1.7121784222853895,
+        2.1391614251739037
+      ],
+      "primary_metric": "source_region_RMSE_K",
+      "route_id": "U_v2_16384_reconstruction",
+      "route_role": "primary"
+    }
+  ],
+  "schema_version": "heat3d_v7_g1_publication_h2_common_domain_table_v1",
+  "source_artifacts": [
+    {
+      "path": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/h2_hypothesis_effect_table.json",
+      "sha256": "8456df52f896bc45c572e677eb5443e8de8c5a659e7136b7922dba2e89d46095"
+    },
+    {
+      "path": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/h2_variant_route_summary.json",
+      "sha256": "8a20f67bc9068b0f1d8a399259ea480d826abdd14d4ba2cb369c96df68cc9a84"
+    },
+    {
+      "path": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/h2_bootstrap_ci_receipt.json",
+      "sha256": "a18da4bd3917f1d4d2caac1dadbb4e80b11443a8160f431e57c47bddbac227e6"
+    }
+  ],
+  "table_id": "H2_common_domain_attribution"
+}

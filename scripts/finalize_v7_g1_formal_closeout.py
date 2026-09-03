@@ -23,6 +23,30 @@ ROUTES = ("U_v2_16384_reconstruction", "U_v2_direct240825")
 VARIANTS = ("Full", "layout_agnostic_stratified_support", "cv_only_support")
 
 
+def _h2_contrast_id(variant: str) -> str:
+    if variant == "layout_agnostic_stratified_support":
+        return "H2a"
+    if variant == "cv_only_support":
+        return "H2b"
+    raise ValueError(f"unsupported H2 ablation variant: {variant}")
+
+
+def _h2_contrast_label(variant: str) -> str:
+    if variant == "layout_agnostic_stratified_support":
+        return "Full vs generic support"
+    if variant == "cv_only_support":
+        return "Full vs CV-only support"
+    raise ValueError(f"unsupported H2 ablation variant: {variant}")
+
+
+def _h2_comparison_id(variant: str) -> str:
+    if variant == "layout_agnostic_stratified_support":
+        return "H2a_Full_vs_generic_support"
+    if variant == "cv_only_support":
+        return "H2b_Full_vs_cv_only_support"
+    raise ValueError(f"unsupported H2 ablation variant: {variant}")
+
+
 def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -80,6 +104,7 @@ def _h2_completion_rows(effect_rows: Sequence[Mapping[str, Any]]) -> list[dict[s
     for row in effect_rows:
         distribution = row["paired_sample_distribution"]
         bootstrap = row["bootstrap"]
+        contrast_id = _h2_contrast_id(row["ablation_variant"])
         result.append(
             {
                 "ablation_pooled_aggregate": row["ablation_pooled_aggregate"],
@@ -87,11 +112,13 @@ def _h2_completion_rows(effect_rows: Sequence[Mapping[str, Any]]) -> list[dict[s
                 "bootstrap_ci_high": bootstrap["ci_high"],
                 "bootstrap_ci_low": bootstrap["ci_low"],
                 "claim_status": row["claim_status"],
-                "comparison_id": row["comparison_id"],
+                "comparison_id": _h2_comparison_id(row["ablation_variant"]),
+                "contrast_id": contrast_id,
+                "contrast_label": _h2_contrast_label(row["ablation_variant"]),
                 "domain": FULL_FIELD_DOMAIN,
                 "effect_ablation_minus_full": row["effect_ablation_minus_full"],
                 "full_pooled_aggregate": row["full_pooled_aggregate"],
-                "hypothesis": row["hypothesis"],
+                "hypothesis": "H2",
                 "hypothesis_claim_group": "H2",
                 "paired_median": distribution["median"],
                 "paired_p90": distribution["p90"],
@@ -152,7 +179,7 @@ def _h2_table_markdown(
         dist = row["paired_sample_distribution"]
         ci = row["bootstrap"]
         lines.append(
-            f"| `{row['route_id']}` | {row['comparison_id']} | {_fmt(row['full_pooled_aggregate'])} | "
+            f"| `{row['route_id']}` | {_h2_contrast_id(row['ablation_variant'])}: {_h2_contrast_label(row['ablation_variant'])} | {_fmt(row['full_pooled_aggregate'])} | "
             f"{_fmt(row['ablation_pooled_aggregate'])} | {_fmt(row['effect_ablation_minus_full'])} | "
             f"{_fmt(dist['median'])} / {_fmt(dist['p90'])} / {_fmt(dist['p95'])} / {_fmt(dist['worst_10_mean'])} | "
             f"{', '.join(_fmt(value) for value in row['per_seed_effects'])} | "
@@ -277,13 +304,27 @@ def main() -> int:
     if amendment.get("status") != "PADDING_ONLY_AMENDMENT_PASS":
         raise ValueError("padding amendment receipt is not PASS")
     completion = _load(completion_path)
+    h2a_primary = _find_effect(effect_rows, ROUTES[0], "layout_agnostic_stratified_support")["claim_status"]
+    h2b_primary = _find_effect(effect_rows, ROUTES[0], "cv_only_support")["claim_status"]
     completion["claim_status_by_hypothesis"]["H2"] = (
         "SUPERIORITY_SUPPORTED"
         if all(row.get("claim_status") == "SUPERIORITY_SUPPORTED" for row in effect_rows if row.get("route_id") == ROUTES[0])
         else "DESCRIPTIVE_ONLY"
     )
-    completion["claim_status_by_hypothesis"]["H2_generic"] = _find_effect(effect_rows, ROUTES[0], "layout_agnostic_stratified_support")["claim_status"]
-    completion["claim_status_by_hypothesis"]["H2_cv_only"] = _find_effect(effect_rows, ROUTES[0], "cv_only_support")["claim_status"]
+    completion["claim_status_by_contrast"] = {
+        "H2a": h2a_primary,
+        "H2b": h2b_primary,
+    }
+    completion["hypothesis_structure"] = {
+        "H2": {
+            "type": "one_hypothesis_group_with_two_preregistered_contrasts",
+            "contrasts": {
+                "H2a": "Full vs generic support",
+                "H2b": "Full vs CV-only support",
+            },
+            "primary_claim_status": completion["claim_status_by_hypothesis"]["H2"],
+        }
+    }
     completion["evidence_archive"].update(
         {
             "manifest_path": "docs/v7_g1_formal_archive_manifest.json",
@@ -320,10 +361,14 @@ def main() -> int:
         "primary_metric": PRIMARY_METRIC,
         "domain": FULL_FIELD_DOMAIN,
         "claim_status": {
-            "generic_primary": _find_effect(effect_rows, ROUTES[0], "layout_agnostic_stratified_support")["claim_status"],
-            "cv_only_primary": _find_effect(effect_rows, ROUTES[0], "cv_only_support")["claim_status"],
-            "generic_robustness": _find_effect(effect_rows, ROUTES[1], "layout_agnostic_stratified_support")["claim_status"],
-            "cv_only_robustness": _find_effect(effect_rows, ROUTES[1], "cv_only_support")["claim_status"],
+            "H2a": {
+                "primary": _find_effect(effect_rows, ROUTES[0], "layout_agnostic_stratified_support")["claim_status"],
+                "robustness": _find_effect(effect_rows, ROUTES[1], "layout_agnostic_stratified_support")["claim_status"],
+            },
+            "H2b": {
+                "primary": _find_effect(effect_rows, ROUTES[0], "cv_only_support")["claim_status"],
+                "robustness": _find_effect(effect_rows, ROUTES[1], "cv_only_support")["claim_status"],
+            },
         },
         "all_runs_complete": True,
     }

@@ -1,0 +1,90 @@
+{
+  "schema_version": "heat3d_v7_g1_figure_manifest_v1",
+  "status": "PLAN_ONLY_FIGURE_READY_INDEX",
+  "scope": "G1 publication figures from frozen evidence; no new model inference",
+  "no_new_inference": true,
+  "no_manual_case_selection": true,
+  "selection_basis": {
+    "route_id": "U_v2_16384_reconstruction",
+    "route_role": "H2 primary",
+    "contrast_id": "H2a",
+    "metric": "source_region_RMSE_K",
+    "pooled_effect_row_count": 384,
+    "rule": "Use stored H2a primary paired effects; select the closest observed row to each stored percentile target, tie-breaking by sample_id then seed. Worst-10 is the top ten stored effects descending with the same tie-break.",
+    "selected_rows": {
+      "median": {
+        "target": 1.5616412080478785,
+        "sample_id": "v6p1if1_0533",
+        "seed": 1,
+        "observed_effect": 1.5606130745079287
+      },
+      "p90": {
+        "target": 4.050322519036756,
+        "sample_id": "v6p1if1_0203",
+        "seed": 1,
+        "observed_effect": 4.085553668620387
+      },
+      "p95": {
+        "target": 4.849987941333143,
+        "sample_id": "v6p1if1_0563",
+        "seed": 2,
+        "observed_effect": 4.8507510698887515
+      },
+      "worst_10": [
+        {"sample_id": "v6p1if1_0251", "seed": 0, "observed_effect": 13.094264511333048},
+        {"sample_id": "v6p1if1_0251", "seed": 2, "observed_effect": 10.936615603685397},
+        {"sample_id": "v6p1if1_0787", "seed": 0, "observed_effect": 8.725262828146349},
+        {"sample_id": "v6p1if1_0156", "seed": 2, "observed_effect": 8.127378975474432},
+        {"sample_id": "v6p1if1_0251", "seed": 1, "observed_effect": 8.102695743487693},
+        {"sample_id": "v6p1if1_0787", "seed": 1, "observed_effect": 7.782415457902772},
+        {"sample_id": "v6p1if1_0619", "seed": 0, "observed_effect": 7.356280014675095},
+        {"sample_id": "v6p1if1_0787", "seed": 2, "observed_effect": 7.21857139587676},
+        {"sample_id": "v6p1if1_0156", "seed": 0, "observed_effect": 7.047473181545087},
+        {"sample_id": "v6p1if1_0273", "seed": 0, "observed_effect": 6.502261279011599}
+      ]
+    }
+  },
+  "figure_specs": [
+    {
+      "figure_id": "support_visualization",
+      "status": "READY_FOR_RENDERING",
+      "sample_selection": "median",
+      "panels": ["Full", "generic support", "CV-only support"],
+      "visualization": "same physical sample geometry with frozen 1024-point support overlays",
+      "support_semantics": "physics-layout-aware sparse support; do not label source-amplitude-aware",
+      "source_artifacts": [
+        "configs/heat3d_v7/v7_g1_support_provider_contract.json",
+        "configs/heat3d_v7/v7_support_artifact_freeze.json",
+        "research_artifacts/v7_g1_formal_archive/derived_1024/{variant}_seed{seed}/run_config.json"
+      ]
+    },
+    {
+      "figure_id": "h2_thermal_error_maps",
+      "status": "READY_FOR_RENDERING",
+      "route_id": "U_v2_16384_reconstruction",
+      "sample_selections": ["median", "p90", "p95", "worst_10"],
+      "panels": ["ground truth", "Full", "generic support", "CV-only support", "prediction minus truth"],
+      "coordinates": "frozen heat3d_v6_p1i_full_field_240825 physical coordinates",
+      "masks": "frozen source/interface masks and shared control volumes",
+      "prediction_artifact_template": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/U_v2_16384_reconstruction/{variant}_seed{seed}/predictions_best.npz",
+      "truth_artifact": "frozen valid_iid rows in data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+      "no_case_selection_by_visual_appearance": true
+    },
+    {
+      "figure_id": "h2_paired_effect_distribution",
+      "status": "READY_FOR_RENDERING",
+      "source_artifact": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/h2_per_sample_effects.json",
+      "contrasts": ["H2a", "H2b"],
+      "route_id": "U_v2_16384_reconstruction",
+      "plot_existing_values_only": true,
+      "annotations": ["median", "p90", "p95", "worst-10 threshold"],
+      "no_new_metric_calculation": true
+    }
+  ],
+  "source_hashes": {
+    "archive_manifest_sha256": "396326724cb4f151e2e1f5f8b5c70ea1626c83fb5bebece3019e27d56590d80c",
+    "h2_per_sample_effects_sha256": "fc6ffca7d9591e7bcfec32e00c306c04e1a315c0dd90a3a2418cf0d7b8df6992",
+    "support_provider_contract_sha256": "7a73e16e30dd8d30e050d11820325c2ff806ddf43bc786bcd83e66f380904788",
+    "support_artifact_freeze_sha256": "2c9279f4c7f6e198178a0223e97ba676ef676fa8b249ac56b03fa03c38ff0a9f"
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "schema_version": "heat3d_v7_g1_final_science_seal_receipt_v1",
+  "status": "G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED",
+  "scope": "research/v7 G1 only; stop G1 science work after this seal; do not enter G2",
+  "sealed_at": "2026-09-03",
+  "source_archive": {
+    "worktree_archive_path": "research_artifacts/v7_g1_formal_archive/",
+    "off_worktree_backup_path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/",
+    "file_count": 719,
+    "total_bytes": 3872187477,
+    "archive_manifest_path": "docs/v7_g1_formal_archive_manifest.json",
+    "archive_manifest_sha256": "396326724cb4f151e2e1f5f8b5c70ea1626c83fb5bebece3019e27d56590d80c",
+    "archive_seal_receipt_path": "docs/v7_g1_off_worktree_archive_seal.json",
+    "archive_seal_receipt_sha256": "7f989624fa164b7c84b3822358673e4fc48725e505dcec32cf117ffa12f36b02",
+    "source_archive_git_commit": "4cfc1e55c43264f8ae195c13091a665579943190",
+    "backup_integrity": {
+      "file_list_exact": true,
+      "per_file_size_exact": true,
+      "per_file_sha256_exact": true,
+      "owner_only_read_scope_preserved": true,
+      "user_immutable_flag_verified": true,
+      "immutable_backup_verified": true,
+      "backup_is_outside_codex_worktrees": true
+    }
+  },
+  "formal_training": {
+    "planned_runs": 21,
+    "completed_runs": 21,
+    "status": "TRAINING_COMPLETE",
+    "formal_training_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "seeds": [0, 1, 2],
+    "epochs": 200,
+    "selected_best_checkpoint_policy_unchanged": true
+  },
+  "hypothesis_structure": {
+    "H1": {
+      "comparison": "Full vs Vanilla",
+      "primary_metric": "point_global_relative_rmse_pct",
+      "effect": 20.439088220092767,
+      "ci95": [17.123663033842924, 23.604884126317078],
+      "claim_status": "SUPERIORITY_SUPPORTED"
+    },
+    "H1b": {
+      "comparison": "Full vs capacity-matched Vanilla",
+      "primary_metric": "point_global_relative_rmse_pct",
+      "effect": 22.372453315754672,
+      "ci95": [17.447469848485472, 27.711739812447387],
+      "claim_status": "SUPERIORITY_SUPPORTED"
+    },
+    "H2": {
+      "type": "one_hypothesis_group_with_two_preregistered_contrasts",
+      "primary_route": "U16384->240825",
+      "robustness_route": "U-direct-240825",
+      "primary_metric": "source_region_RMSE_K",
+      "H2a": {
+        "comparison": "Full vs generic support",
+        "primary_effect": 1.7461462377029386,
+        "primary_ci95": [1.481993273504068, 2.042682469221784],
+        "primary_per_seed_effects": [1.9648315124701794, 1.568566940075427, 1.7099781349612613],
+        "robustness_effect": 1.7451140354587218,
+        "robustness_ci95": [1.4817572159241195, 2.0423363993884127],
+        "claim_status": "SUPERIORITY_SUPPORTED"
+      },
+      "H2b": {
+        "comparison": "Full vs CV-only support",
+        "primary_effect": 1.8405684136383593,
+        "primary_ci95": [1.530699583122982, 2.180139228144924],
+        "primary_per_seed_effects": [1.6605160573998559, 1.7121784222853895, 2.1391614251739037],
+        "robustness_effect": 1.8216956751009339,
+        "robustness_ci95": [1.5354811347803967, 2.136207305247616],
+        "claim_status": "SUPERIORITY_SUPPORTED"
+      },
+      "bootstrap": {
+        "replicates": 10000,
+        "random_seed": 20260829,
+        "resampling": ["seed_with_replacement", "valid_iid_sample_within_seed_with_replacement"],
+        "interval": "percentile_95_percent_CI"
+      }
+    },
+    "H3": {
+      "comparison": "Full vs no FiLM",
+      "primary_metric": "sample_first_relative_rmse_pct",
+      "effect": 0.2941714598138374,
+      "ci95": [0.21455944802097113, 0.3704056091752124],
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "interpretation": "secondary contribution"
+    },
+    "H4": {
+      "comparison": "Full vs scale-correction-off",
+      "primary_metric": "raw_K_CV_RMSE_K",
+      "effect": 171.4401758871765,
+      "ci95": [164.2562051543688, 178.4600114208021],
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "interpretation": "learned scale correction under frozen P1i formulation"
+    }
+  },
+  "h2_governance": {
+    "governance_amendment_sha256": "168966f6f9091f46ea831ad08a6c014de6d38541766f2419d5fcac3cab4cbd52",
+    "padding_amendment_sha256": "5c4a55173ce6675f6657f2b2e91b368d2e1c47fbd4d857410e9b05579a105068",
+    "padding_amendment_status": "PADDING_ONLY_AMENDMENT_PASS",
+    "v6_3074_status": "HISTORICAL_REPRODUCIBILITY_DIAGNOSTIC_ONLY",
+    "native_1024_h2_status": "SUPPLEMENTARY_ONLY",
+    "h2_primary_domain": "heat3d_v6_p1i_full_field_240825",
+    "primary_and_robustness_runs": "18/18 complete; 128/128 each"
+  },
+  "authoritative_documents": {
+    "completion_receipt": {
+      "path": "docs/v7_g1_formal_completion_receipt.json",
+      "sha256": "be50df7a9145453007aa4c80328a92b81f3d1d865dda910c8724a68d57023816"
+    },
+    "archive_receipt": {
+      "path": "docs/v7_g1_formal_archive_receipt.json",
+      "sha256": "c2cede76fc4d7cd5e38587c742229fdc3bc3bf38e1bc3ef8898669bf292072ac"
+    },
+    "native_closeout_receipt": {
+      "path": "docs/v7_g1_h2_native_closeout_receipt.json",
+      "sha256": "ec3cb732a94df4a6a81e3d30d1e5d811dfe7a66e2faff98ceb565aab257611a7"
+    },
+    "documentation_consistency_receipt": {
+      "path": "docs/v7_g1_documentation_consistency_receipt.json",
+      "sha256": "60734d52e9fc919b1f36011c3a938ca79fe08584787885565c8993cc87c15f64"
+    },
+    "publication_summary": "docs/v7_g1_publication_summary.md",
+    "publication_tables": "docs/v7_g1_publication_tables/",
+    "figure_manifest": "docs/v7_g1_figure_manifest.json"
+  },
+  "claim_boundary": {
+    "supported": "Heat3D internal mechanisms matter within frozen P1i valid_iid evidence",
+    "support_name": "physics-layout-aware sparse support",
+    "not_supported": [
+      "RIGNO superiority over GINO",
+      "RIGNO superiority over Transolver",
+      "test_iid superiority",
+      "OOD superiority",
+      "external superiority",
+      "SOTA or deployment claim",
+      "source-amplitude-aware support claim"
+    ]
+  },
+  "future_change_control": {
+    "remaining_scientific_blocker": "none",
+    "future_g1_science_requires": "explicit new protocol/version; no silent modification of sealed evidence",
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g2_touched": false,
+    "training_or_formal_matrix_rerun": false,
+    "formal_matrix_or_metric_changed": false
+  }
+}

@@ -80,18 +80,20 @@ effect 定义为 `ablation_error - Full_error`，正值表示 Full 更低。H1/H
 | --- | --- | ---: | ---: | ---: | --- | --- | --- | --- |
 | H1 | Full vs `vanilla_RIGNO` | 2.05872 | 22.49781 | 20.43909 | 15.75036 / 38.99510 / 45.75685 / 80.51393 | 16.98945, 23.33246, 20.53158 | [17.12366, 23.60488] | **SUPERIORITY_SUPPORTED** |
 | H1b | Full vs `vanilla_RIGNO_capacity_matched` | 2.05872 | 24.43118 | 22.37245 | 16.38835 / 40.31416 / 66.56916 / 116.63157 | 28.07646, 17.40245, 20.41153 | [17.44747, 27.71174] | **SUPERIORITY_SUPPORTED** |
-| H2 / generic | Full vs `layout_agnostic_stratified_support` | 2.78170 K | 3.33289 K | 0.55119 K | 0.28551 / 2.71986 / 4.15901 / 7.87018 K | 0.31336, 0.59858, 0.74026 K | [0.13854, 0.97514] K | **FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024** |
-| H2 / volume-only | Full vs `cv_only_support` | 2.78170 K | 3.45463 K | 0.67293 K | 0.32133 / 2.89294 / 3.85150 / 7.84755 K | 0.57619, 0.63287, 0.80949 K | [0.37064, 0.99466] K | **FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024** |
+| H2a (native-1024 supplementary) | Full vs `layout_agnostic_stratified_support` | 2.78170 K | 3.33289 K | 0.55119 K | 0.28551 / 2.71986 / 4.15901 / 7.87018 K | 0.31336, 0.59858, 0.74026 K | [0.13854, 0.97514] K | **FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024** |
+| H2b (native-1024 supplementary) | Full vs `cv_only_support` | 2.78170 K | 3.45463 K | 0.67293 K | 0.32133 / 2.89294 / 3.85150 / 7.84755 K | 0.57619, 0.63287, 0.80949 K | [0.37064, 0.99466] K | **FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024** |
 | H3 | Full vs `no_film` | 1.69191% | 1.98608% | 0.29417 pp | 0.30947 / 0.99768 / 1.14901 / 1.52882 pp | 0.29505, 0.23859, 0.34888 pp | [0.21456, 0.37041] pp | **SUPERIORITY_SUPPORTED** |
 | H4 | Full vs `physics_scale_only` | 1.32955 K | 172.76972 K | 171.44018 K | 147.16832 / 260.28847 / 279.70957 / 321.02895 K | 171.55671, 171.46143, 171.30333 K | [164.25621, 178.46001] K | **SUPERIORITY_SUPPORTED** |
 
 完整逐 sample effect、per-seed table 和 worst-case 行见 [per-sample effects](../research_artifacts/v7_g1_formal_archive/analysis_1024/per_sample_effects.json)、[per-seed effects](../research_artifacts/v7_g1_formal_archive/analysis_1024/per_seed_effects.md)、[hypothesis table](../research_artifacts/v7_g1_formal_archive/analysis_1024/hypothesis_effect_table.md) 和 [worst-case diagnostics](../research_artifacts/v7_g1_formal_archive/analysis_1024/worst_case_diagnostics.md)。
 
+上表中的 native-1024 H2a/H2b 行是保留的 historical/superseded supplementary diagnostic；其中 `FAIL_CLOSED_NOT_ESTIMABLE_NATIVE_1024` 只描述旧 native-support 口径的可估计性，不能被解读为当前 G1 状态。当前 authoritative H2 结论只来自下一节的 240825 common-domain primary。
+
 Superiority 只按预注册三项规则声明：paired 95% CI 排除 0、paired median 同方向、三个 seed 的 aggregate effect 同方向。H1/H1b/H3/H4 满足；native 1024 H2 保留为 supplementary diagnostic；正式 H2 已在共同 240825 domain 上对全部 128 `valid_iid` sample 完成 paired evaluation 与 bootstrap。
 
 ## H2 full-field formal 240825 primary and U-route robustness（COMPLETE）
 
-H2 governance amendment 已在任何 H2 accuracy 产生前冻结。V6 `p2r=3074` 仅保留为 historical reproducibility diagnostic，不再是 H2 scientific gate 或 envelope source。正式 H2 使用 G1-native 1024 graph semantics 与 frozen V6 U query/reconstruction strategy；primary 是 `U16384→240825`，`U-direct-240825` 仅作 route robustness。
+H2 governance amendment 已在任何 H2 accuracy 产生前冻结。H2 是一个 hypothesis group，包含两个预注册 contrast：H2a（Full vs generic support）与 H2b（Full vs CV-only support）。V6 `p2r=3074` 仅保留为 historical reproducibility diagnostic，不再是 H2 scientific gate 或 envelope source。正式 H2 使用 G1-native 1024 graph semantics 与 frozen V6 U query/reconstruction strategy；primary 是 `U16384→240825`，`U-direct-240825` 仅作 route robustness。
 
 Gate A/B 为 geometry-only。Full_seed0 / `v6p1if1_0993` 的 G1-native anchor real edge count 为 `p2r=3082`、`r2r=4074`，packed count 为 `3083/4075`；完整 geometry audit 覆盖 `9×128=1152` native records，两个 route 各 1152 records。native graph、support、radius、real edge set 均未被 U adapter 改变。
 
@@ -116,10 +118,10 @@ Effect is `ablation_error − Full_error`; positive favors Full. CI is the 10,00
 
 | Route | Comparison | Full pooled | Ablation pooled | Effect | Paired median / p90 / p95 / worst-10 | Per-seed effects (0,1,2) | 95% CI | Claim status |
 | --- | --- | ---: | ---: | ---: | --- | --- | --- | --- |
-| `U_v2_16384_reconstruction` | H2_Full_vs_layout_agnostic_stratified_support | 3.80678 | 5.55293 | 1.74615 | 1.56164 / 4.05032 / 4.84999 / 8.48932 | 1.96483, 1.56857, 1.70998 | [1.48199, 2.04268] | `SUPERIORITY_SUPPORTED` |
-| `U_v2_16384_reconstruction` | H2_Full_vs_cv_only_support | 3.80678 | 5.64735 | 1.84057 | 1.7461 / 4.07155 / 5.16232 / 8.66633 | 1.66052, 1.71218, 2.13916 | [1.5307, 2.18014] | `SUPERIORITY_SUPPORTED` |
-| `U_v2_direct240825` | H2_Full_vs_layout_agnostic_stratified_support | 3.86729 | 5.6124 | 1.74511 | 1.5709 / 4.08754 / 4.87274 / 8.48955 | 1.96409, 1.56616, 1.71016 | [1.48176, 2.04234] | `SUPERIORITY_SUPPORTED` |
-| `U_v2_direct240825` | H2_Full_vs_cv_only_support | 3.86729 | 5.68898 | 1.8217 | 1.77288 / 4.10023 / 5.0865 / 8.65195 | 1.71689, 1.6674, 2.07672 | [1.53548, 2.13621] | `SUPERIORITY_SUPPORTED` |
+| `U_v2_16384_reconstruction` | H2a: Full vs generic support | 3.80678 | 5.55293 | 1.74615 | 1.56164 / 4.05032 / 4.84999 / 8.48932 | 1.96483, 1.56857, 1.70998 | [1.48199, 2.04268] | `SUPERIORITY_SUPPORTED` |
+| `U_v2_16384_reconstruction` | H2b: Full vs CV-only support | 3.80678 | 5.64735 | 1.84057 | 1.7461 / 4.07155 / 5.16232 / 8.66633 | 1.66052, 1.71218, 2.13916 | [1.5307, 2.18014] | `SUPERIORITY_SUPPORTED` |
+| `U_v2_direct240825` | H2a: Full vs generic support | 3.86729 | 5.6124 | 1.74511 | 1.5709 / 4.08754 / 4.87274 / 8.48955 | 1.96409, 1.56616, 1.71016 | [1.48176, 2.04234] | `SUPERIORITY_SUPPORTED` |
+| `U_v2_direct240825` | H2b: Full vs CV-only support | 3.86729 | 5.68898 | 1.8217 | 1.77288 / 4.10023 / 5.0865 / 8.65195 | 1.71689, 1.6674, 2.07672 | [1.53548, 2.13621] | `SUPERIORITY_SUPPORTED` |
 
 ### U-route robustness
 
@@ -203,3 +205,6 @@ checkpoint selection 是预注册行为，因此不能用最终 epoch 替代最�
 - [G1 statistical preregistration](../configs/heat3d_v7/v7_g1_statistical_preregistration.json)
 - [G1 support artifact freeze](../configs/heat3d_v7/v7_support_artifact_freeze.json)
 - [G1 parameter fairness contract](../configs/heat3d_v7/v7_parameter_fairness_contract.json)
+- [G1 final science seal](v7_g1_final_science_seal_receipt.json)
+- [G1 publication summary](v7_g1_publication_summary.md)
+- [G1 documentation consistency receipt](v7_g1_documentation_consistency_receipt.json)

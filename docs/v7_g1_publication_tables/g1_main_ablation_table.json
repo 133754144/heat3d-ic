@@ -1,0 +1,183 @@
+{
+  "claim_boundary": "No test/OOD/external-superiority claim; H1/H1b primary remains point_global_relative_rmse_pct.",
+  "copy_only_from_frozen_evidence": true,
+  "rows": [
+    {
+      "ablation_pooled_aggregate": 22.497810800170694,
+      "ablation_seed_summary": {
+        "mean": 22.342165989459392,
+        "sample_sd": 3.2355315714085946,
+        "seed_values": [
+          19.018095221456015,
+          25.481218535365723,
+          22.52718421155645
+        ]
+      },
+      "ablation_variant": "vanilla_RIGNO",
+      "bootstrap_ci_high": 23.604884126317078,
+      "bootstrap_ci_low": 17.123663033842924,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison": "Full vs Vanilla",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 20.439088220092767,
+      "full_pooled_aggregate": 2.058722580077925,
+      "full_seed_summary": {
+        "mean": 2.0576706129538587,
+        "sample_sd": 0.08059445057322767,
+        "seed_values": [
+          2.028647113045776,
+          2.148757115947101,
+          1.9956076098686997
+        ]
+      },
+      "hypothesis": "H1",
+      "paired_median": 15.75035816307482,
+      "paired_p90": 38.99510213877942,
+      "paired_p95": 45.75684984190401,
+      "paired_worst_10_mean": 80.51393204367136,
+      "per_seed_effects": [
+        16.98944810841024,
+        23.33246141941862,
+        20.531576601687746
+      ],
+      "primary_metric": "point_global_relative_rmse_pct"
+    },
+    {
+      "ablation_pooled_aggregate": 24.4311758958326,
+      "ablation_seed_summary": {
+        "mean": 24.02115087953798,
+        "sample_sd": 5.458937544373972,
+        "seed_values": [
+          30.10511035608395,
+          19.551208631538085,
+          22.4071336509919
+        ]
+      },
+      "ablation_variant": "vanilla_RIGNO_capacity_matched",
+      "bootstrap_ci_high": 27.711739812447387,
+      "bootstrap_ci_low": 17.447469848485472,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison": "Full vs capacity-matched Vanilla",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 22.372453315754672,
+      "full_pooled_aggregate": 2.058722580077925,
+      "full_seed_summary": {
+        "mean": 2.0576706129538587,
+        "sample_sd": 0.08059445057322767,
+        "seed_values": [
+          2.028647113045776,
+          2.148757115947101,
+          1.9956076098686997
+        ]
+      },
+      "hypothesis": "H1b",
+      "paired_median": 16.388351640623796,
+      "paired_p90": 40.314160754003616,
+      "paired_p95": 66.5691630920653,
+      "paired_worst_10_mean": 116.6315658083585,
+      "per_seed_effects": [
+        28.076463243038173,
+        17.402451515590982,
+        20.4115260411232
+      ],
+      "primary_metric": "point_global_relative_rmse_pct"
+    },
+    {
+      "ablation_pooled_aggregate": 1.9860798858012951,
+      "ablation_seed_summary": {
+        "mean": 1.9860798858012954,
+        "sample_sd": 0.024845292421618956,
+        "seed_values": [
+          2.0111164232130694,
+          1.9614303598919118,
+          1.9856928742989048
+        ]
+      },
+      "ablation_variant": "no_film",
+      "bootstrap_ci_high": 0.3704056091752124,
+      "bootstrap_ci_low": 0.21455944802097113,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison": "Full vs no FiLM",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 0.2941714598138374,
+      "full_pooled_aggregate": 1.6919084259874577,
+      "full_seed_summary": {
+        "mean": 1.6919084259874575,
+        "sample_sd": 0.04783192345476153,
+        "seed_values": [
+          1.7160692548089658,
+          1.7228406104795306,
+          1.636815412673876
+        ]
+      },
+      "hypothesis": "H3",
+      "paired_median": 0.30947413560895637,
+      "paired_p90": 0.9976769022203731,
+      "paired_p95": 1.1490094199000456,
+      "paired_worst_10_mean": 1.5288180659643347,
+      "per_seed_effects": [
+        0.29504716840410317,
+        0.23858974941238098,
+        0.34887746162502875
+      ],
+      "primary_metric": "sample_first_relative_rmse_pct"
+    },
+    {
+      "ablation_pooled_aggregate": 172.76972133512484,
+      "ablation_seed_summary": {
+        "mean": 172.76967751485165,
+        "sample_sd": 0.1507064905514573,
+        "seed_values": [
+          172.88028573112396,
+          172.83072121788584,
+          172.59802559554515
+        ]
+      },
+      "ablation_variant": "physics_scale_only",
+      "bootstrap_ci_high": 178.4600114208021,
+      "bootstrap_ci_low": 164.2562051543688,
+      "claim_status": "SUPERIORITY_SUPPORTED",
+      "comparison": "Full vs scale-correction-off",
+      "domain": "registered_support_1024",
+      "effect_ablation_minus_full": 171.4401758871765,
+      "full_pooled_aggregate": 1.3295454479483393,
+      "full_seed_summary": {
+        "mean": 1.329190663674393,
+        "sample_sd": 0.03761537772594182,
+        "seed_values": [
+          1.3235800692572641,
+          1.3692961963269883,
+          1.2946957254389264
+        ]
+      },
+      "hypothesis": "H4",
+      "paired_median": 147.16832084156215,
+      "paired_p90": 260.2884749952924,
+      "paired_p95": 279.7095696647986,
+      "paired_worst_10_mean": 321.0289490887505,
+      "per_seed_effects": [
+        171.5567056618667,
+        171.46142502155885,
+        171.30332987010624
+      ],
+      "primary_metric": "raw_K_CV_RMSE_K"
+    }
+  ],
+  "schema_version": "heat3d_v7_g1_publication_main_ablation_table_v1",
+  "scope": "frozen P1i valid_iid native 1024-point training evidence",
+  "source_artifacts": [
+    {
+      "path": "docs/v7_g1_formal_completion_receipt.json",
+      "sha256": "be50df7a9145453007aa4c80328a92b81f3d1d865dda910c8724a68d57023816"
+    },
+    {
+      "path": "research_artifacts/v7_g1_formal_archive/analysis_1024/variant_level_native_summary.json",
+      "sha256": "6de0b81a91107c65df06978b5a1b35601ff5202cfe400cf67f274502d4f49f0b"
+    },
+    {
+      "path": "research_artifacts/v7_g1_formal_archive/analysis_1024/hypothesis_effect_table.json",
+      "sha256": "591a3727cdea0e80d6f1bd222f81dfaff42f02c0d841a423a9715c3fd98f4d82"
+    }
+  ],
+  "table_id": "G1_main_ablation"
+}

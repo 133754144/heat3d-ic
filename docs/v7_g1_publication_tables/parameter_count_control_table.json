@@ -1,0 +1,53 @@
+{
+  "control": {
+    "checkpoint_policy": "pre-registered valid_iid sample_first_relative_rmse_pct selected-best checkpoint",
+    "model_or_data_changed_during_closeout": false,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "train_samples": 768,
+    "training_epochs": 200,
+    "valid_iid_samples": 128
+  },
+  "copy_only_from_frozen_evidence": true,
+  "parameter_count_rows": [
+    {
+      "parameter_count": 892776,
+      "variant_group": "Full"
+    },
+    {
+      "parameter_count": 892776,
+      "variant_group": "layout_agnostic_stratified_support"
+    },
+    {
+      "parameter_count": 892776,
+      "variant_group": "cv_only_support"
+    },
+    {
+      "parameter_count": 878696,
+      "variant_group": "no_film"
+    },
+    {
+      "parameter_count": 845158,
+      "variant_group": "physics_scale_only"
+    },
+    {
+      "parameter_count": 826277,
+      "variant_group": "vanilla_RIGNO"
+    },
+    {
+      "parameter_count": 895905,
+      "variant_group": "vanilla_RIGNO_capacity_matched"
+    }
+  ],
+  "schema_version": "heat3d_v7_g1_publication_parameter_control_table_v1",
+  "source_artifacts": [
+    {
+      "path": "docs/v7_g1_training_results.md",
+      "sha256": "5b2124084a84363bd4a81dd0381a6b689dabce867241660fd699ffb0358b94f4"
+    }
+  ],
+  "table_id": "G1_parameter_count_and_control"
+}

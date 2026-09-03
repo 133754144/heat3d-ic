@@ -1,0 +1,84 @@
+{
+  "schema_version": "heat3d_v7_g1_documentation_consistency_receipt_v1",
+  "status": "PASS_AUTHORITATIVE_G1_SEAL_READY",
+  "scope": "V7 G1 final documentation and evidence-state audit; no G2 changes",
+  "authoritative_current_state": {
+    "completion_receipt": {
+      "path": "docs/v7_g1_formal_completion_receipt.json",
+      "status": "G1_FORMAL_CLOSEOUT_COMPLETE"
+    },
+    "science_seal": {
+      "path": "docs/v7_g1_final_science_seal_receipt.json",
+      "status": "G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED"
+    },
+    "formal_training": "21/21 complete",
+    "statistical_closeout": "H1/H1b/H2/H3/H4 complete",
+    "h2_structure": "one H2 hypothesis group with two preregistered contrasts: H2a and H2b",
+    "h2_primary": "U16384->240825",
+    "h2_robustness": "U-direct-240825",
+    "remaining_scientific_blocker": "none",
+    "future_test_unlock": "future final evaluation only; not a G1 blocker"
+  },
+  "h2_naming_audit": {
+    "hypothesis_group": "H2",
+    "contrasts": {
+      "H2a": "Full vs generic support",
+      "H2b": "Full vs CV-only support"
+    },
+    "independent_hypothesis_count": 1,
+    "contrast_count": 2,
+    "current_authoritative_receipt_uses_group_and_contrast_names": true,
+    "frozen_archive_internal_labels_modified": false,
+    "statistics_modified": false
+  },
+  "retained_historical_audit_records": [
+    {
+      "path": "docs/v7_g1_h2_gate_a_fail_closed_receipt.json",
+      "observed_status": "FAIL_CLOSED",
+      "classification": "SUPERSEDED_AUDIT_HISTORY; retained unchanged; not current G1 state"
+    },
+    {
+      "path": "docs/v7_g1_h2_gate_a_recovery_receipt.json",
+      "observed_status": "FAIL_CLOSED",
+      "classification": "SUPERSEDED_AUDIT_HISTORY; retained unchanged; not current G1 state"
+    },
+    {
+      "path": "docs/v7_g1_h2_gate_a_geometry_recovery_manifest.json",
+      "observed_status": "FAIL_CLOSED / NOT_PROVEN_FAIL_CLOSED",
+      "classification": "SUPERSEDED_AUDIT_HISTORY; retained unchanged; V6 historical diagnostic only"
+    },
+    {
+      "path": "docs/v7_g1_h2_fullfield_fail_closed_receipt.json",
+      "observed_status": "H2_FORMAL_CLOSEOUT_FAIL_CLOSED",
+      "classification": "SUPERSEDED_H2_EXECUTION_HISTORY; retained unchanged; replaced by native-graph formal H2 evidence"
+    },
+    {
+      "path": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825/H2_FORMAL_CLOSEOUT_FAIL_CLOSED.json",
+      "observed_status": "historical fail-closed artifact",
+      "classification": "ARCHIVED_AUDIT_ONLY; immutable archive content; not current H2 evidence"
+    },
+    {
+      "path": "docs/v7_g1_full_p1i_semantic_anchor_receipt.json",
+      "observed_status": "FAIL_CLOSED_historical_audit_record",
+      "classification": "PREVIOUS_AUDIT_RECORD; retained unchanged; not current formal completion status"
+    }
+  ],
+  "legacy_markers_classification": {
+    "FAIL_CLOSED": "allowed only in retained historical/audit records; current authoritative status is COMPLETE",
+    "BLOCKED": "no current authoritative G1 blocker",
+    "remaining blocker": "authoritative remaining_blocker is null; future test unlock is explicitly non-blocking",
+    "V6 3074": "historical reproducibility diagnostic only; not a scientific gate or envelope source",
+    "mixed-domain H2": "historical summary only; not for direct cross-variant comparison",
+    "native-1024 H2": "supplementary diagnostic only; not formal H2 primary"
+  },
+  "checks": {
+    "authoritative_status_consistent": true,
+    "historical_fail_closed_records_preserved": true,
+    "historical_facts_rewritten": false,
+    "h2_not_misrepresented_as_three_hypotheses": true,
+    "future_test_unlock_not_a_g1_blocker": true,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g2_touched": false
+  }
+}

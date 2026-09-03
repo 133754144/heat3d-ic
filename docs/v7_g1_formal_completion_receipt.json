@@ -3,10 +3,12 @@
     "H1": "SUPERIORITY_SUPPORTED",
     "H1b": "SUPERIORITY_SUPPORTED",
     "H2": "SUPERIORITY_SUPPORTED",
-    "H2_cv_only": "SUPERIORITY_SUPPORTED",
-    "H2_generic": "SUPERIORITY_SUPPORTED",
     "H3": "SUPERIORITY_SUPPORTED",
     "H4": "SUPERIORITY_SUPPORTED"
+  },
+  "claim_status_by_contrast": {
+    "H2a": "SUPERIORITY_SUPPORTED",
+    "H2b": "SUPERIORITY_SUPPORTED"
   },
   "evidence_archive": {
     "archive_receipt": "docs/v7_g1_formal_archive_receipt.json",
@@ -50,10 +52,14 @@
     "analysis_receipt": "research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/h2_analysis_receipt.json",
     "analysis_receipt_sha256": "b7d9bc209317b7ccfc15b5d10ed23bf580eeda711da8cf8042e51ede32d56753",
     "claim_status": {
-      "cv_only_primary": "SUPERIORITY_SUPPORTED",
-      "cv_only_robustness": "SUPERIORITY_SUPPORTED",
-      "generic_primary": "SUPERIORITY_SUPPORTED",
-      "generic_robustness": "SUPERIORITY_SUPPORTED"
+      "H2a": {
+        "primary": "SUPERIORITY_SUPPORTED",
+        "robustness": "SUPERIORITY_SUPPORTED"
+      },
+      "H2b": {
+        "primary": "SUPERIORITY_SUPPORTED",
+        "robustness": "SUPERIORITY_SUPPORTED"
+      }
     },
     "completed_runs": 18,
     "domain": "heat3d_v6_p1i_full_field_240825",
@@ -69,6 +75,16 @@
     "required_samples_per_run": 128,
     "robustness_route_id": "U_v2_direct240825",
     "status": "COMPLETE"
+  },
+  "hypothesis_structure": {
+    "H2": {
+      "type": "one_hypothesis_group_with_two_preregistered_contrasts",
+      "contrasts": {
+        "H2a": "Full vs generic support",
+        "H2b": "Full vs CV-only support"
+      },
+      "primary_claim_status": "SUPERIORITY_SUPPORTED"
+    }
   },
   "h2_native_qualification": {
     "common_domain_text_in_frozen_preregistration_retained": true,
@@ -176,11 +192,13 @@
       "bootstrap_ci_high": 2.042682469221784,
       "bootstrap_ci_low": 1.481993273504068,
       "claim_status": "SUPERIORITY_SUPPORTED",
-      "comparison_id": "H2_Full_vs_layout_agnostic_stratified_support",
+      "comparison_id": "H2a_Full_vs_generic_support",
+      "contrast_id": "H2a",
+      "contrast_label": "Full vs generic support",
       "domain": "heat3d_v6_p1i_full_field_240825",
       "effect_ablation_minus_full": 1.7461462377029386,
       "full_pooled_aggregate": 3.8067835359280915,
-      "hypothesis": "H2_generic",
+      "hypothesis": "H2",
       "hypothesis_claim_group": "H2",
       "paired_median": 1.5616412080478785,
       "paired_p90": 4.050322519036756,
@@ -200,11 +218,13 @@
       "bootstrap_ci_high": 2.180139228144924,
       "bootstrap_ci_low": 1.530699583122982,
       "claim_status": "SUPERIORITY_SUPPORTED",
-      "comparison_id": "H2_Full_vs_cv_only_support",
+      "comparison_id": "H2b_Full_vs_cv_only_support",
+      "contrast_id": "H2b",
+      "contrast_label": "Full vs CV-only support",
       "domain": "heat3d_v6_p1i_full_field_240825",
       "effect_ablation_minus_full": 1.8405684136383593,
       "full_pooled_aggregate": 3.8067835359280915,
-      "hypothesis": "H2_volume_only",
+      "hypothesis": "H2",
       "hypothesis_claim_group": "H2",
       "paired_median": 1.74610205052587,
       "paired_p90": 4.071549374842582,
@@ -224,11 +244,13 @@
       "bootstrap_ci_high": 2.0423363993884127,
       "bootstrap_ci_low": 1.4817572159241195,
       "claim_status": "SUPERIORITY_SUPPORTED",
-      "comparison_id": "H2_Full_vs_layout_agnostic_stratified_support",
+      "comparison_id": "H2a_Full_vs_generic_support",
+      "contrast_id": "H2a",
+      "contrast_label": "Full vs generic support",
       "domain": "heat3d_v6_p1i_full_field_240825",
       "effect_ablation_minus_full": 1.7451140354587218,
       "full_pooled_aggregate": 3.867286538988439,
-      "hypothesis": "H2_generic",
+      "hypothesis": "H2",
       "hypothesis_claim_group": "H2",
       "paired_median": 1.5708977936969886,
       "paired_p90": 4.087539301375441,
@@ -248,11 +270,13 @@
       "bootstrap_ci_high": 2.136207305247616,
       "bootstrap_ci_low": 1.5354811347803967,
       "claim_status": "SUPERIORITY_SUPPORTED",
-      "comparison_id": "H2_Full_vs_cv_only_support",
+      "comparison_id": "H2b_Full_vs_cv_only_support",
+      "contrast_id": "H2b",
+      "contrast_label": "Full vs CV-only support",
       "domain": "heat3d_v6_p1i_full_field_240825",
       "effect_ablation_minus_full": 1.8216956751009339,
       "full_pooled_aggregate": 3.867286538988439,
-      "hypothesis": "H2_volume_only",
+      "hypothesis": "H2",
       "hypothesis_claim_group": "H2",
       "paired_median": 1.7728794158041483,
       "paired_p90": 4.1002267930992655,
