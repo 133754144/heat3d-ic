@@ -18,7 +18,7 @@
 | H1 | Full vs Vanilla | `point_global_relative_rmse_pct` | 20.43909 pp | [17.12366, 23.60488] pp | `SUPERIORITY_SUPPORTED` |
 | H1b | Full vs capacity-matched Vanilla | `point_global_relative_rmse_pct` | 22.37245 pp | [17.44747, 27.71174] pp | `SUPERIORITY_SUPPORTED` |
 | H3 | Full vs no FiLM | `sample_first_relative_rmse_pct` | 0.29417 pp | [0.21456, 0.37041] pp | `SUPERIORITY_SUPPORTED` |
-| H4 | Full vs scale-correction-off | `raw_K_CV_RMSE_K` | 171.44018 K | [164.25621, 178.46001] K | `SUPERIORITY_SUPPORTED` |
+| H4 | Full vs `physics-scale-only (learned residual scale correction removed)` | `raw_K_CV_RMSE_K` | 171.44018 K | [164.25621, 178.46001] K | `SUPERIORITY_SUPPORTED` |
 
 H1/H1b 的结论仅说明完整 Heat3D conditioning architecture 相对 Vanilla 的组合收益；H1b 同时保留 capacity-matched Vanilla 的逐 seed 高方差。
 
@@ -46,4 +46,5 @@ G1 不证明 RIGNO 优于 GINO、Transolver 或其它外部模型；不作 `test
 - H2 route robustness table: [`h2_u_route_robustness_table.json`](v7_g1_publication_tables/h2_u_route_robustness_table.json)
 - Parameter/control table: [`parameter_count_control_table.json`](v7_g1_publication_tables/parameter_count_control_table.json)
 - Figure plan/index: [`v7_g1_figure_manifest.json`](v7_g1_figure_manifest.json)
+- Publication figures/provenance: [`v7_g1_figures/`](v7_g1_figures/)
 - Final science seal: [`v7_g1_final_science_seal_receipt.json`](v7_g1_final_science_seal_receipt.json)

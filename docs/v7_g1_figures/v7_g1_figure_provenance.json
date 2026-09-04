@@ -1,0 +1,342 @@
+{
+  "figures": [
+    {
+      "caption": "Full uses the frozen physics-layout-aware sparse support: q/k-block, interface, surface, and control-volume strata. Generic support keeps the geometry/interface/surface/CV coverage but removes q/k layout quotas. CV-only uses only interior control-volume-weighted points.",
+      "figure_id": "support_visualization",
+      "outputs": [
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-1_support_mechanism.pdf",
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-1_support_mechanism.svg",
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-1_support_mechanism_review.png"
+      ],
+      "sample_id": "v6p1if1_0533",
+      "seed": 1,
+      "selection_rule": "Use stored H2a primary paired effects; select the closest observed row to each stored percentile target, tie-breaking by sample_id then seed. Worst-10 is the top ten stored effects descending with the same tie-break.",
+      "support_coordinate_sha256": {
+        "Full": "081375d6423fb376752cb2254d2873a8d25bd7a0771a166f124fa8534a4b727c",
+        "cv_only_support": "5f431696cd2e589f2caaa7e0b4f65e3682194f0bb7b8596f1ce053561ec55253",
+        "generic_support": "5b60ee149c3510a78e749e701324d56c608a09500b57601d5a81679589724025"
+      },
+      "support_indices_sha256": {
+        "Full": null,
+        "cv_only_support": "06e8ee3fc423dca107e60d391de4beedacd2c3a9290db566541b146f763fcb0d",
+        "generic_support": "fda3aedddd8493cc49743d42e888eb37e0edb2658f9ea7fbd21704237fb288db"
+      }
+    },
+    {
+      "common_scales": {
+        "error_K_symmetric": [
+          -17.667579650878906,
+          17.667579650878906
+        ],
+        "temperature_deltaT_K": [
+          0.0,
+          96.82072448730469
+        ]
+      },
+      "figure_id": "h2_thermal_error_maps",
+      "outputs": [
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-2_h2_fullfield_comparison.pdf",
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-2_h2_fullfield_comparison.svg",
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-2_h2_fullfield_comparison_review.png"
+      ],
+      "prediction_sources": [
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/Full_seed1/predictions_best.npz",
+          "role": "H2 primary prediction Full; median",
+          "sha256": "be186a895a3bfa28603053bc713a06511030d72dd8c5fe9883e34a17e8f589cf"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/layout_agnostic_stratified_support_seed1/predictions_best.npz",
+          "role": "H2 primary prediction generic support; median",
+          "sha256": "1f611b68f794aab8f301d89b4703aaae2e27520c16cf2f67d95c0e21ba09ff5c"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/cv_only_support_seed1/predictions_best.npz",
+          "role": "H2 primary prediction CV-only support; median",
+          "sha256": "bcf0bec4c328f83f8e223672b88a18e1ceefc0d5de3d368e7d3c23df1d84cb91"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/Full_seed1/predictions_best.npz",
+          "role": "H2 primary prediction Full; p90",
+          "sha256": "be186a895a3bfa28603053bc713a06511030d72dd8c5fe9883e34a17e8f589cf"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/layout_agnostic_stratified_support_seed1/predictions_best.npz",
+          "role": "H2 primary prediction generic support; p90",
+          "sha256": "1f611b68f794aab8f301d89b4703aaae2e27520c16cf2f67d95c0e21ba09ff5c"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/cv_only_support_seed1/predictions_best.npz",
+          "role": "H2 primary prediction CV-only support; p90",
+          "sha256": "bcf0bec4c328f83f8e223672b88a18e1ceefc0d5de3d368e7d3c23df1d84cb91"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/Full_seed2/predictions_best.npz",
+          "role": "H2 primary prediction Full; p95",
+          "sha256": "53e6638ef12309d807aad523f7653d06090c7ac68547f2d23569baa6bc70d6b2"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/layout_agnostic_stratified_support_seed2/predictions_best.npz",
+          "role": "H2 primary prediction generic support; p95",
+          "sha256": "351c107d635bbe4cf7de15feafe49b252517c3ba08250fa4b0e133c6aa34f951"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/cv_only_support_seed2/predictions_best.npz",
+          "role": "H2 primary prediction CV-only support; p95",
+          "sha256": "e059046a1ec5703779f377c93bef9ce43cb660242ee1c2b4089590d53d736fba"
+        }
+      ],
+      "route_id": "U_v2_16384_reconstruction",
+      "route_role": "H2 primary",
+      "selected_cases": [
+        {
+          "name": "median",
+          "sample_id": "v6p1if1_0533",
+          "seed": 1,
+          "z_m": 0.0028125,
+          "z_slice_index": 26
+        },
+        {
+          "name": "p90",
+          "sample_id": "v6p1if1_0203",
+          "seed": 1,
+          "z_m": 0.0030312499999999997,
+          "z_slice_index": 39
+        },
+        {
+          "name": "p95",
+          "sample_id": "v6p1if1_0563",
+          "seed": 2,
+          "z_m": 0.0028312499999999996,
+          "z_slice_index": 27
+        }
+      ],
+      "selection_rule": "Use stored H2a primary paired effects; select the closest observed row to each stored percentile target, tie-breaking by sample_id then seed. Worst-10 is the top ten stored effects descending with the same tie-break.",
+      "truth_source": "/private/tmp/v7_g1_publication_truth_input_20260904.npz"
+    },
+    {
+      "contrast_rows": {
+        "H2a": {
+          "count": 384,
+          "max_effect_K_for_plot_extent": 13.094264511333048,
+          "min_effect_K_for_plot_extent": -2.6186068794546897,
+          "stored_markers_K": {
+            "median": 1.5616412080478785,
+            "p90": 4.050322519036756,
+            "p95": 4.849987941333143
+          }
+        },
+        "H2b": {
+          "count": 384,
+          "max_effect_K_for_plot_extent": 12.82756322515133,
+          "min_effect_K_for_plot_extent": -2.595853301980795,
+          "stored_markers_K": {
+            "median": 1.74610205052587,
+            "p90": 4.071549374842582,
+            "p95": 5.162320531965869
+          }
+        }
+      },
+      "figure_id": "h2_paired_effect_distribution",
+      "metric": "source_region_RMSE_K",
+      "outputs": [
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-3_h2_paired_effect_distribution.pdf",
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-3_h2_paired_effect_distribution.svg",
+        "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-3_h2_paired_effect_distribution_review.png"
+      ],
+      "route_id": "U_v2_16384_reconstruction",
+      "source_artifacts": [
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/h2_per_sample_effects.json",
+          "role": "frozen H2 per-sample effects",
+          "sha256": "fc6ffca7d9591e7bcfec32e00c306c04e1a315c0dd90a3a2418cf0d7b8df6992"
+        },
+        {
+          "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/h2_hypothesis_effect_table.json",
+          "role": "frozen H2 stored distribution summaries",
+          "sha256": "8456df52f896bc45c572e677eb5443e8de8c5a659e7136b7922dba2e89d46095"
+        }
+      ]
+    }
+  ],
+  "frozen_contract": {
+    "checkpoint_loaded": false,
+    "domain": "P1i valid_iid only",
+    "error_panels_shared_symmetric_scale": true,
+    "formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "g2_touched": false,
+    "h2_primary_metric": "source_region_RMSE_K",
+    "h2_primary_route": "U_v2_16384_reconstruction",
+    "model_forward": false,
+    "no_manual_case_selection": true,
+    "no_new_metric": true,
+    "sealed_access": false,
+    "temperature_panels_shared_scale": true,
+    "test_iid_access": false,
+    "training": false
+  },
+  "input_sources": [
+    {
+      "path": "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figure_manifest.json",
+      "role": "frozen figure manifest",
+      "sha256": "591a76313696331f386d632af3623d9987d8f4ed13a199ecc2cd50c43d2a6b81"
+    },
+    {
+      "path": "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_formal_archive_manifest.json",
+      "role": "frozen archive manifest",
+      "sha256": "396326724cb4f151e2e1f5f8b5c70ea1626c83fb5bebece3019e27d56590d80c"
+    },
+    {
+      "path": "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/configs/heat3d_v7/v7_g1_support_provider_contract.json",
+      "role": "frozen support provider contract",
+      "sha256": "7a73e16e30dd8d30e050d11820325c2ff806ddf43bc786bcd83e66f380904788"
+    },
+    {
+      "path": "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/configs/heat3d_v7/v7_support_artifact_freeze.json",
+      "role": "frozen support artifact semantics",
+      "sha256": "2c9279f4c7f6e198178a0223e97ba676ef676fa8b249ac56b03fa03c38ff0a9f"
+    },
+    {
+      "path": "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/rigno/heat3d_training/support.py",
+      "role": "frozen alternative support implementation",
+      "sha256": "61b02e5c2d1086aaab5ba8badf89198e618d3f46242ed5c15938e92cdf54d62f"
+    },
+    {
+      "path": "/private/tmp/v7_g1_publication_truth_input_20260904.npz",
+      "role": "valid_iid truth/shared-geometry fixture",
+      "sha256": "74415add51bd92b8129d8d30d4740ed695701c3a987956470b1b56e6707f60ad"
+    },
+    {
+      "path": "/private/tmp/v7_g1_publication_support_input_20260904.npz",
+      "role": "valid_iid native support fixture",
+      "sha256": "7c595f7e147cdcae678dbda4d961fc2ce23c131c7eb895083ec4d3cc6aa22944"
+    },
+    {
+      "path": "/private/tmp/v7_g1_publication_support_meta_20260904.json",
+      "role": "valid_iid support layout metadata fixture",
+      "sha256": "dce35ad47963c05337effde229338c4fa0d66c20ddc8892b98778620a7242453"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/h2_per_sample_effects.json",
+      "role": "frozen H2 per-sample effects",
+      "sha256": "fc6ffca7d9591e7bcfec32e00c306c04e1a315c0dd90a3a2418cf0d7b8df6992"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/h2_hypothesis_effect_table.json",
+      "role": "frozen H2 hypothesis effect table",
+      "sha256": "8456df52f896bc45c572e677eb5443e8de8c5a659e7136b7922dba2e89d46095"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/h2_variant_route_summary.json",
+      "role": "frozen H2 route summaries",
+      "sha256": "8a20f67bc9068b0f1d8a399259ea480d826abdd14d4ba2cb369c96df68cc9a84"
+    },
+    {
+      "path": "devbox:/home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+      "role": "frozen valid_iid full-field source archive",
+      "sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/Full_seed1/predictions_best.npz",
+      "role": "H2 primary prediction Full; median",
+      "sha256": "be186a895a3bfa28603053bc713a06511030d72dd8c5fe9883e34a17e8f589cf"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/layout_agnostic_stratified_support_seed1/predictions_best.npz",
+      "role": "H2 primary prediction generic support; median",
+      "sha256": "1f611b68f794aab8f301d89b4703aaae2e27520c16cf2f67d95c0e21ba09ff5c"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/cv_only_support_seed1/predictions_best.npz",
+      "role": "H2 primary prediction CV-only support; median",
+      "sha256": "bcf0bec4c328f83f8e223672b88a18e1ceefc0d5de3d368e7d3c23df1d84cb91"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/Full_seed1/predictions_best.npz",
+      "role": "H2 primary prediction Full; p90",
+      "sha256": "be186a895a3bfa28603053bc713a06511030d72dd8c5fe9883e34a17e8f589cf"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/layout_agnostic_stratified_support_seed1/predictions_best.npz",
+      "role": "H2 primary prediction generic support; p90",
+      "sha256": "1f611b68f794aab8f301d89b4703aaae2e27520c16cf2f67d95c0e21ba09ff5c"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/cv_only_support_seed1/predictions_best.npz",
+      "role": "H2 primary prediction CV-only support; p90",
+      "sha256": "bcf0bec4c328f83f8e223672b88a18e1ceefc0d5de3d368e7d3c23df1d84cb91"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/Full_seed2/predictions_best.npz",
+      "role": "H2 primary prediction Full; p95",
+      "sha256": "53e6638ef12309d807aad523f7653d06090c7ac68547f2d23569baa6bc70d6b2"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/layout_agnostic_stratified_support_seed2/predictions_best.npz",
+      "role": "H2 primary prediction generic support; p95",
+      "sha256": "351c107d635bbe4cf7de15feafe49b252517c3ba08250fa4b0e133c6aa34f951"
+    },
+    {
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/h2_fullfield_240825_native/U_v2_16384_reconstruction/cv_only_support_seed2/predictions_best.npz",
+      "role": "H2 primary prediction CV-only support; p95",
+      "sha256": "e059046a1ec5703779f377c93bef9ce43cb660242ee1c2b4089590d53d736fba"
+    }
+  ],
+  "outputs": [
+    {
+      "bytes": 42772,
+      "path": "docs/v7_g1_figures/G1-1_support_mechanism.pdf",
+      "sha256": "30b26c861e190c76f30d65bc41d985ba880037582ce8f6c5b3b44c0aa2112be9"
+    },
+    {
+      "bytes": 637302,
+      "path": "docs/v7_g1_figures/G1-1_support_mechanism.svg",
+      "sha256": "d6350e167020b6a56e40b91763fd6fdd7a408e60bd9e35520d781fa416d3bd1c"
+    },
+    {
+      "bytes": 587060,
+      "path": "docs/v7_g1_figures/G1-1_support_mechanism_review.png",
+      "sha256": "a4ae056c88e9426c6edb6c9410b994139e788a7eb5391c03ae539c9e879e6d10"
+    },
+    {
+      "bytes": 89173,
+      "path": "docs/v7_g1_figures/G1-2_h2_fullfield_comparison.pdf",
+      "sha256": "89e090787ce80fce2d50bff63fa98ffa4df8781b0b62bdd183f2a4b81b741365"
+    },
+    {
+      "bytes": 220303,
+      "path": "docs/v7_g1_figures/G1-2_h2_fullfield_comparison.svg",
+      "sha256": "bec726198c8bb673342f8b1d703db80740b667c662ff4b4d9dffb04b4ca036e4"
+    },
+    {
+      "bytes": 332811,
+      "path": "docs/v7_g1_figures/G1-2_h2_fullfield_comparison_review.png",
+      "sha256": "fd990cf6a2197bbaf410b3088a1774eeef5e2de2f55a780efb39974a38dda4fc"
+    },
+    {
+      "bytes": 21296,
+      "path": "docs/v7_g1_figures/G1-3_h2_paired_effect_distribution.pdf",
+      "sha256": "ca025ec9a1d946f54ee03c76d05f4a12d7390902869e55b9d057147351ab9fae"
+    },
+    {
+      "bytes": 86848,
+      "path": "docs/v7_g1_figures/G1-3_h2_paired_effect_distribution.svg",
+      "sha256": "ded8cd05b8c3d70ec4a238dca31c170e42e90e3c06878cd947b4ddd0711ca9af"
+    },
+    {
+      "bytes": 164247,
+      "path": "docs/v7_g1_figures/G1-3_h2_paired_effect_distribution_review.png",
+      "sha256": "feabca88bb08ec746fde6d2634f3f345d01494f61b47638e6bb0fee17b04b0ac"
+    }
+  ],
+  "renderer": {
+    "matplotlib": "3.9.2",
+    "numpy": "2.1.3",
+    "python": "3.12.3",
+    "script": "scripts/plot_v7_g1_publication_figures.py",
+    "script_sha256": "04cc2189d92f1955b43025f54a145dace782cdb9507941ad2906b448c8091edb"
+  },
+  "schema_version": "heat3d_v7_g1_publication_figure_provenance_v1",
+  "scope": "V7 G1 publication figures only; no new inference or metric",
+  "status": "RENDERED_FROM_FROZEN_EVIDENCE"
+}

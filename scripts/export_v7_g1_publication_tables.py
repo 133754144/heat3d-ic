@@ -106,7 +106,7 @@ def _export_main_table(
         ("H1", "Full vs Vanilla", "vanilla_RIGNO", "point_global_relative_rmse_pct"),
         ("H1b", "Full vs capacity-matched Vanilla", "vanilla_RIGNO_capacity_matched", "point_global_relative_rmse_pct"),
         ("H3", "Full vs no FiLM", "no_film", "sample_first_relative_rmse_pct"),
-        ("H4", "Full vs scale-correction-off", "physics_scale_only", "raw_K_CV_RMSE_K"),
+        ("H4", "Full vs physics-scale-only (learned residual scale correction removed)", "physics_scale_only", "raw_K_CV_RMSE_K"),
     )
     effect_rows = completion["hypothesis_effects"]
     rows = []
