@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_p7_execution_blocker_closure_receipt_v1",
-  "status": "P7_EVIDENCE_CLOSED_GINO_ENVIRONMENT_BLOCKED_COMMON_FORMAL_NOT_STARTED",
+  "status": "P7_EVIDENCE_CLOSED_GINO_OPTIMIZED_GATE_FAIL_CLOSED_COMMON_FORMAL_NOT_STARTED",
   "observed_at": "2026-09-07",
   "comparison_reference": {
     "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
@@ -134,18 +134,35 @@
   },
   "GINO": {
     "scientific_contract": "FROZEN",
-    "status": "ENVIRONMENT_BLOCKED_FAIL_CLOSED",
+    "status": "OPTIMIZED_BACKEND_BUILT_BUT_EQUIVALENCE_GATE_FAIL_CLOSED",
     "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
     "r_in": 0.15,
     "r_out": 0.033,
     "latent_grid": [32, 32, 32],
-    "build_blocker": "Open3D source build stops at NPPImage.cpp: npp.h missing; no optimized wheel produced",
-    "optimized_equivalence_gate": "NOT_RUN",
+    "build": {
+      "open3d_source_commit": "1e7b17438687a0b0c1e5a7187321ac7044afe275",
+      "wheel_sha256": "6c12d12dcad93a239a712577db5419caf25652d98c2f6fec8c7dfbd1ec5c54b9",
+      "nvidia_npp": "13.0.3.3",
+      "nvidia_npp_wheel_sha256": "f8e73e92c47927b7a94b566688546b0cf2438d429269ec0d5f2be5ff1b5591d6",
+      "cuda": "13.0.88",
+      "compiler": "GCC 13.3.0",
+      "environment": "g2-gino-open3d-src"
+    },
+    "optimized_equivalence_gate": {
+      "status": "FAIL_CLOSED_GRAPH_OUTPUT_EQUIVALENCE",
+      "receipt": "docs/v7_g2_p7_gino_optimized_backend_gate_receipt.json",
+      "receipt_sha256": "ea486eecfabbdb33cff3de21794d326f0f4926fe76cb5584f13d8c159b360e05",
+      "input_graph_edge_multiset_exact": false,
+      "output_graph_edge_multiset_exact": true,
+      "output_allclose_atol_rtol_1e-5": false,
+      "formal_training_allowed": false
+    },
     "formal_runs": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"}
   },
   "common_formal_gate": {
     "status": "BLOCKED_FAIL_CLOSED",
     "condition": "GINO optimized backend PASS plus existing Transolver CUDA PASS required before any P1i formal run",
+    "blocking_reason": "GINO optimized source wheel loads on CUDA but fails exact input neighbor multiset and output allclose gate",
     "P1i_test_or_sealed_access": false,
     "formal_runs_started": false
   }

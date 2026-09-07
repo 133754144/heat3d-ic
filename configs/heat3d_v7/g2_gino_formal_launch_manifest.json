@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_gino_formal_launch_manifest_v1",
-  "status": "IMMUTABLE_PREPARED_OPTIMIZED_BACKEND_REMOTE_PREFLIGHT_PENDING_NOT_LAUNCHED",
+  "status": "IMMUTABLE_PREPARED_OPTIMIZED_BACKEND_GATE_FAIL_CLOSED_NOT_LAUNCHED",
   "track": "P1i_common_task",
   "model": "GINO",
   "statistical_preregistration": {
@@ -18,11 +18,15 @@
     "scientific_config_changes_between_backends": false,
     "equivalence_gate": "same fixed train sample, identical state_dict, exact per-query neighbor edge multisets, and output allclose(atol=1e-5,rtol=1e-5)",
     "preflight_runner": "scripts/check_v7_g2_p5_gino_backend_fairness.py",
-    "preflight_runner_sha256": "c8a7f0d19e45322d87421a6a7654b08743a4ce4b523e8ae235e40d7b41058334",
+    "preflight_runner_sha256": "270cab841eb1424107466cc756c05bd0ee4b4bd48145fcd65668104beadb973d",
     "cuda_required": true,
     "no_cuda_action": "FAIL_CLOSED",
     "required_receipt_fields": ["GPU name", "peak allocated bytes", "peak reserved bytes", "train-step walltime", "valid-forward walltime"],
-    "local_status": "FORMAL_OPTIMIZED_BACKEND_UNQUALIFIED_NO_CUDA"
+    "local_status": "FORMAL_OPTIMIZED_BACKEND_FAIL_CLOSED_INPUT_GRAPH_AND_OUTPUT_EQUIVALENCE",
+    "optimized_gate_receipt": {
+      "path": "docs/v7_g2_p7_gino_optimized_backend_gate_receipt.json",
+      "sha256": "ea486eecfabbdb33cff3de21794d326f0f4926fe76cb5584f13d8c159b360e05"
+    }
   },
   "objective": "upstream_LpLoss_d2_p2_relative_L2_on_normalized_target",
   "optimizer": {"name": "AdamW", "lr": 0.001, "weight_decay": 0.0001},
@@ -38,6 +42,6 @@
     "formal_train": "python scripts/run_v7_g2_p1i_external_formal.py --model GINO --mode train --seed <0|1|2> --dataset-root <P1I_ROOT> --dataset-manifest <P1I_MANIFEST> --upstream-root <NEURALOPERATOR_ROOT> --backend-qualification-receipt <IGNORED_PREFLIGHT_DIR>/gino_backend_receipt.json --output-dir output/heat3d_v7_g2/gino/seed_<SEED>",
     "formal_output": "output/heat3d_v7_g2/gino/seed_<SEED>"
   },
-  "remote_gate": "after_G1 completion and authorization: CUDA/Open3D/torch-scatter graph-output/resource preflight PASS, then freeze remote environment and run seeds 0/1/2 without config changes",
+  "remote_gate": "BLOCKED_FAIL_CLOSED: optimized Open3D graph/output equivalence did not PASS; no formal GINO or Transolver run may start",
   "formal_training_started": false
 }

@@ -1,0 +1,126 @@
+{
+  "schema_version": "heat3d_v7_g2_p7_gino_optimized_backend_gate_receipt_v1",
+  "status": "FAIL_CLOSED_GRAPH_OUTPUT_EQUIVALENCE",
+  "observed_at": "2026-09-07",
+  "scientific_contract": {
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "open3d_source_commit": "1e7b17438687a0b0c1e5a7187321ac7044afe275",
+    "input_radius": 0.15,
+    "output_radius": 0.033,
+    "latent_grid": [32, 32, 32],
+    "normalization": "frozen train-only global channel-wise payload 554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+    "scientific_config_changed": false
+  },
+  "build": {
+    "source_archive": "/home/xyh/myCodeGitOnly/external/g2/downloads/open3d-1e7b174.tar.gz",
+    "source_archive_sha256": "0b03cbf9125bd761bdda0cc172ebc6bc916a148df50933d441b9024b56f83449",
+    "builder": "scripts/build_v7_g2_p7_open3d_source_wheel.sh",
+    "builder_sha256": "715f1e99b8b157464bd2e191cc73cf921eb154e326320d17154de0f77abaf45f",
+    "patch_sha256": {
+      "patches/open3d_v019_cuda13_cccl_stdgpu.patch": "ad8e08f6019c625a5bb012cebfb5e85b50929fc4b3613e0b6f6b9907f5c3d64f",
+      "patches/open3d_v019_cuda13_shared_cublas.patch": "d48e7306a974c4ad34e68f91153638c4215519ba92ac6a6d8bfe390034544c49",
+      "patches/open3d_v019_cuda_sm120_arch_translation.patch": "071fd284e14822f6dd82ba12bce649af9cffcff36c2f03251f50a14c738d2a4d",
+      "patches/open3d_v019_eigen_gitlab_api_archive.patch": "5bc6acf0f78044e0918f59ba9d973f1151be9ca97105d3a2ace9f1afa709dfe3",
+      "patches/open3d_v019_glfw_disable_wayland.patch": "e07028a381210af6e1858c2c1a2568f52d7b5783cac1d1121aa97ce36bfefb68",
+      "patches/open3d_v019_stdgpu_cuda13_patch_hook.patch": "16b078470d0a9b00e464581c1078b7c758adf24f6e218dc1bef42be961371468",
+      "patches/open3d_v019_uvatlas_archive_downloads.patch": "149ced7d6e1150cd908e1cf9338ce8c472b1e1dafadc1bb6c3810240ff648ed8",
+      "patches/stdgpu_2588168_cuda13_clock_rate.patch": "68f82dd56e57d585641a493408800eda72ef3d58601cce27cc76e80799f90ec9"
+    },
+    "environment": {
+      "conda_environment": "g2-gino-open3d-src",
+      "python": "3.12.12",
+      "pytorch": "2.9.0+cu130",
+      "cuda_toolkit": "13.0.88",
+      "cuda_architecture": "sm_120",
+      "gpu": "NVIDIA GeForce RTX 5070",
+      "gcc": "13.3.0",
+      "cmake": "3.31.10",
+      "ninja": "1.13.2",
+      "nvidia_npp": "13.0.3.3",
+      "nvidia_npp_wheel_sha256": "f8e73e92c47927b7a94b566688546b0cf2438d429269ec0d5f2be5ff1b5591d6",
+      "cccl_archive_sha256": "226d4794c5f0cbb6040d022a9bcf8be40cbc2fa147b633940d9b439529ce6a4b",
+      "yapf": "0.43.0",
+      "libgcc_ng": "14.3.0",
+      "libgomp": "14.3.0",
+      "libstdcxx_ng": "14.3.0"
+    },
+    "wheel": {
+      "path": "/home/xyh/myCodeGitOnly/external/g2/open3d-build-1e7b174-torch29-cu130-sm120-cudart-dev/lib/python_package/pip_package/open3d-0.19.0-cp312-cp312-manylinux_2_39_x86_64.whl",
+      "sha256": "6c12d12dcad93a239a712577db5419caf25652d98c2f6fec8c7dfbd1ec5c54b9",
+      "open3d_torch_ops_sha256": "bb0885920282706d2a08c6c7db759b78a01ea8fc180d7dc1a53e0d2f903bebb3",
+      "open3d_version": "0.19.0",
+      "pytorch_ops": true,
+      "cuda_module": true
+    }
+  },
+  "gate": {
+    "runner": "scripts/check_v7_g2_p5_gino_backend_fairness.py",
+    "runner_sha256": "270cab841eb1424107466cc756c05bd0ee4b4bd48145fcd65668104beadb973d",
+    "fixed_sample": {
+      "train": "v6p1if1_0000",
+      "valid_iid": "v6p1if1_0003"
+    },
+    "receipt_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_preflight/gino_backend/gino_backend_receipt_20260907_r2.json",
+    "receipt_sha256": "4c0e46cf2c9a51bbc927a1a226cd4f2eba94f582c46bd252397f023c9ff85ea9",
+    "cuda": {
+      "required": true,
+      "available": true,
+      "gpu": "NVIDIA GeForce RTX 5070"
+    },
+    "state_dict": {
+      "keys_exact": true,
+      "learned_tensors_bitwise_exact": true,
+      "backend_metadata_contract_exact": true,
+      "allowed_metadata_differences": ["gno_use_open3d", "gno_use_torch_scatter"]
+    },
+    "graph": {
+      "input": {
+        "radius": 0.15,
+        "fallback_edge_count": 370746,
+        "optimized_edge_count": 370746,
+        "query_neighbor_counts_exact": false,
+        "edge_multiset_exact": false,
+        "status": "FAIL"
+      },
+      "output": {
+        "radius": 0.033,
+        "fallback_edge_count": 4432,
+        "optimized_edge_count": 4432,
+        "query_neighbor_counts_exact": true,
+        "edge_multiset_exact": true,
+        "status": "PASS"
+      }
+    },
+    "output": {
+      "allclose": false,
+      "atol": 1e-05,
+      "rtol": 1e-05,
+      "max_absolute_difference": 0.00011366605758666992
+    },
+    "resource": {
+      "peak_allocated_bytes": 2114895360,
+      "peak_reserved_bytes": 2610954240,
+      "train_step_wall_seconds": 0.3443616027832031,
+      "valid_forward_wall_seconds": 0.018374271392822265,
+      "finite_optimizer_step": true
+    }
+  },
+  "diagnostic": {
+    "input_edge_set_symmetric_difference_each_side": 1,
+    "fallback_only_edge": [22825, 827],
+    "optimized_only_edge": [22934, 54],
+    "fallback_only_distance": 0.15000025928020477,
+    "optimized_only_distance": 0.149999737739563,
+    "interpretation": "one boundary-near neighbor decision differs at float32 radius comparison; output reduction also exceeds the frozen allclose tolerance",
+    "accuracy_used_to_change_config": false,
+    "radius_or_architecture_changed": false
+  },
+  "formal_gate": {
+    "status": "BLOCKED_FAIL_CLOSED",
+    "formal_training_allowed": false,
+    "gino_seeds": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"},
+    "transolver_seeds": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"},
+    "test_or_sealed_access": false,
+    "next_action": "do not alter radius, architecture, reduction, or scientific contract; require a separately reviewed upstream-compatible resolution before formal launch"
+  }
+}

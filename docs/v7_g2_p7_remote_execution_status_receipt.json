@@ -1,0 +1,63 @@
+{
+  "schema_version": "heat3d_v7_g2_p7_remote_execution_status_receipt_v1",
+  "observed_at": "2026-09-07",
+  "branch": "research/v7-g2-baselines",
+  "g1_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "closed_science_tag": "v7-g1-science-sealed-20260903",
+    "close_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "touched_or_reopened": false
+  },
+  "common_task_preregistration": {
+    "path": "docs/v7_g2_p7_common_task_statistical_preregistration.json",
+    "sha256": "8d20a018971f2c62b161af6a58f0d56f9509087698d22f1ab1a32238f11aca42",
+    "status": "FROZEN_PRE_FORMAL_RESULTS"
+  },
+  "GINO": {
+    "scientific_contract": "FROZEN",
+    "environment": "PASS_BUILD_AND_CUDA_IMPORT_FAIL_CLOSED_EQUIVALENCE",
+    "optimized_backend_gate": "FAIL_CLOSED_GRAPH_OUTPUT_EQUIVALENCE",
+    "gate_receipt": {
+      "path": "docs/v7_g2_p7_gino_optimized_backend_gate_receipt.json",
+      "sha256": "ea486eecfabbdb33cff3de21794d326f0f4926fe76cb5584f13d8c159b360e05"
+    },
+    "formal_seeds": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"},
+    "formal_allowed": false
+  },
+  "Transolver": {
+    "scientific_contract": "FROZEN",
+    "environment": "PASS_REMOTE_CUDA_PREFLIGHT",
+    "preflight_receipt_sha256": "d496d444b884957a520b1b444f32246d78ea7291dc0716afd4acc8577dc7aeff",
+    "formal_block": "GINO optimized equivalence gate failed; no formal seeds started",
+    "formal_seeds": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"}
+  },
+  "DeepOHeat_v1_seed42": {
+    "status": "COMPLETE_FORMAL_TRAIN_FINAL_CHECKPOINT_FROZEN",
+    "formal_receipt_sha256": "51145d4785657567a1019dafc8102f248d7e4cce343bd9ea44cba68a85e63b56",
+    "checkpoint_sha256": "e86ee37b5855b856d68753ae84f484b4d1adac322361df52d576c56d8c050173",
+    "log_sha256": "d40a86263c10a63b35a4698ad47718712baed49560eaaed0f66f44a20e319a81",
+    "test_or_sealed_access": false
+  },
+  "Heat3D_on_DeepOHeat_v1": {
+    "status": "NOT_STARTED",
+    "seeds": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"},
+    "existing_output_overwritten": false,
+    "test_or_sealed_access": false
+  },
+  "multi_HTC": {
+    "status": "PROVENANCE_PASS_LABELS_READY_TEST_SEALED",
+    "canonical_rows_sha256": "5ac5c716aac8d283eec23d9ea9157f7a2a0614af15670f3150a2d113301e4253",
+    "train_labels": 768,
+    "valid_labels": 128,
+    "test_labels": 0,
+    "label_manifest_sha256": "4b0154e15fae7d004e098783f376eb9d3258e63b01cfc9d5cbec8db9bbc4ca10",
+    "test_or_sealed_access": false
+  },
+  "global_formal_gate": {
+    "status": "BLOCKED_FAIL_CLOSED",
+    "condition": "GINO optimized backend PASS and existing Transolver CUDA PASS",
+    "formal_common_task_runs_started": false,
+    "P1i_test_or_sealed_access": false,
+    "DeepOHeat_official_test_access": false
+  }
+}
