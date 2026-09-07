@@ -40,15 +40,44 @@ def canonical_graph(neighbors: dict[str, torch.Tensor]) -> tuple[np.ndarray, np.
     return pairs[order], np.diff(splits)
 
 
-def state_dict_bitwise_equal(left: Any, right: Any) -> bool:
-    """Compare nested state-dict payloads without coercing mappings to tensors."""
+def state_tensor_payload_bitwise_equal(left: Any, right: Any) -> bool:
+    """Compare learned state-dict payloads without coercing mappings to tensors.
+
+    GINO stores backend-selection booleans in ``state_dict()['_metadata']``.
+    Those implementation flags must be audited separately; they are not
+    learned parameters and necessarily differ between fallback and optimized
+    constructions.
+    """
     if isinstance(left, dict) and isinstance(right, dict):
         if list(left) != list(right):
             return False
-        return all(state_dict_bitwise_equal(left[key], right[key]) for key in left)
+        return all(
+            state_tensor_payload_bitwise_equal(left[key], right[key])
+            for key in left if key != "_metadata"
+        )
     if isinstance(left, torch.Tensor) and isinstance(right, torch.Tensor):
         return torch.equal(left, right)
     return left == right
+
+
+def backend_metadata_contract(fallback_state: dict[str, Any], optimized_state: dict[str, Any]) -> bool:
+    """Require metadata to differ only in the two backend selector flags."""
+    fallback_meta = fallback_state.get("_metadata", {})
+    optimized_meta = optimized_state.get("_metadata", {})
+    if not isinstance(fallback_meta, dict) or not isinstance(optimized_meta, dict):
+        return False
+    differing = {
+        key for key in set(fallback_meta) | set(optimized_meta)
+        if fallback_meta.get(key) != optimized_meta.get(key)
+    }
+    if differing != {"gno_use_open3d", "gno_use_torch_scatter"}:
+        return False
+    return (
+        fallback_meta.get("gno_use_open3d") is False
+        and optimized_meta.get("gno_use_open3d") is True
+        and fallback_meta.get("gno_use_torch_scatter") is False
+        and optimized_meta.get("gno_use_torch_scatter") is True
+    )
 
 
 def compare_graph(fallback_search: Any, optimized_search: Any, data: torch.Tensor, queries: torch.Tensor, radius: float) -> dict[str, Any]:
@@ -106,9 +135,10 @@ def main() -> int:
     optimized.load_state_dict(fallback.state_dict())
     fallback_state = fallback.state_dict(); optimized_state = optimized.state_dict()
     state_keys_exact = list(fallback_state) == list(optimized_state)
-    state_tensors_exact = state_keys_exact and state_dict_bitwise_equal(fallback_state, optimized_state)
-    if not state_tensors_exact:
-        raise RuntimeError("fallback and optimized backends do not have an identical state_dict")
+    state_tensors_exact = state_keys_exact and state_tensor_payload_bitwise_equal(fallback_state, optimized_state)
+    metadata_contract_exact = backend_metadata_contract(fallback_state, optimized_state)
+    if not state_tensors_exact or not metadata_contract_exact:
+        raise RuntimeError("fallback and optimized learned state or backend metadata contract differs")
     if not optimized.gno_in.neighbor_search.use_open3d or not optimized.gno_out.neighbor_search.use_open3d:
         raise RuntimeError("Open3D was requested but upstream silently selected fallback")
     if not optimized.gno_in.integral_transform.use_torch_scatter or not optimized.gno_out.integral_transform.use_torch_scatter:
@@ -144,7 +174,12 @@ def main() -> int:
         "fixed_samples": {"train": train_row["sample_id"], "valid_iid": valid_row["sample_id"]},
         "scientific_config_unchanged": {"r_in": R_IN, "r_out": R_OUT, "latent_grid": [32, 32, 32]},
         "backends": {"qualification": "pure_PyTorch_native_neighbor_search_and_segment_csr", "formal": "Open3D_FixedRadiusSearch_plus_torch_scatter_segment_csr"},
-        "state_dict_semantics": {"keys_exact": state_keys_exact, "tensors_bitwise_exact": state_tensors_exact},
+        "state_dict_semantics": {
+            "keys_exact": state_keys_exact,
+            "learned_tensors_bitwise_exact": state_tensors_exact,
+            "backend_metadata_contract_exact": metadata_contract_exact,
+            "allowed_metadata_differences": ["gno_use_open3d", "gno_use_torch_scatter"],
+        },
         "graph_semantics": graph,
         "output_semantics": {"allclose": bool(output_close), "atol": OUTPUT_ATOL, "rtol": OUTPUT_RTOL, "max_absolute_difference": output_max_abs},
         "resource": {"gpu_name": torch.cuda.get_device_name(), "peak_allocated_bytes": int(torch.cuda.max_memory_allocated()), "peak_reserved_bytes": int(torch.cuda.max_memory_reserved()), "train_step_wall_seconds": train_seconds, "valid_forward_wall_seconds": valid_seconds},
