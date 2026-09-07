@@ -13,7 +13,9 @@ src=/home/xyh/myCodeGitOnly/external/g2/open3d-src-1e7b174
 build=/home/xyh/myCodeGitOnly/external/g2/open3d-build-1e7b174-torch29-cu130-sm120-cudart-dev
 cuda_root=/home/xyh/miniconda3/envs/g2-gino-open3d-src/lib/python3.12/site-packages/nvidia/cu13
 cccl_root=/home/xyh/myCodeGitOnly/external/g2/cccl-v2.8.5
+open3d_archive=/home/xyh/myCodeGitOnly/external/g2/downloads/open3d-1e7b174.tar.gz
 expected_open3d_commit=1e7b17438687a0b0c1e5a7187321ac7044afe275
+expected_open3d_archive_sha256=0b03cbf9125bd761bdda0cc172ebc6bc916a148df50933d441b9024b56f83449
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 npp_package_version=$(python -c 'import importlib.metadata; print(importlib.metadata.version("nvidia-npp"))' 2>/dev/null || true)
 [[ "$npp_package_version" == "13.0.3.3" ]] || {
@@ -21,10 +23,21 @@ npp_package_version=$(python -c 'import importlib.metadata; print(importlib.meta
   exit 2
 }
 
-[[ "$(git -C "$src" rev-parse HEAD)" == "$expected_open3d_commit" ]] || {
-  echo FAIL_OPEN3D_COMMIT
-  exit 2
-}
+if git -C "$src" rev-parse HEAD >/dev/null 2>&1; then
+  [[ "$(git -C "$src" rev-parse HEAD)" == "$expected_open3d_commit" ]] || {
+    echo FAIL_OPEN3D_COMMIT
+    exit 2
+  }
+else
+  [[ "$(sha256sum "$open3d_archive" | cut -d' ' -f1)" == "$expected_open3d_archive_sha256" ]] || {
+    echo FAIL_OPEN3D_ARCHIVE_SHA
+    exit 2
+  }
+  [[ "$(basename "$src")" == "open3d-src-1e7b174" ]] || {
+    echo FAIL_OPEN3D_SOURCE_DIRECTORY
+    exit 2
+  }
+fi
 [[ "$(sha256sum /home/xyh/myCodeGitOnly/external/g2/cccl-v2.8.5.tar.gz | cut -d' ' -f1)" == "226d4794c5f0cbb6040d022a9bcf8be40cbc2fa147b633940d9b439529ce6a4b" ]] || {
   echo FAIL_CCCL_ARCHIVE_SHA
   exit 2
