@@ -110,7 +110,7 @@ done
 
 nice -n 10 cmake -S "$src" -B "$build" -GNinja \
   -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CXX_FLAGS="-Wno-array-bounds" \
+  -DCMAKE_CXX_FLAGS="-Wno-array-bounds -Wno-stringop-overflow" \
   -DDEVELOPER_BUILD=OFF \
   -DBUILD_CUDA_MODULE=ON \
   -DBUILD_WITH_CUDA_STATIC=OFF \
