@@ -141,11 +141,12 @@ state. The latest publication-close branch HEAD is the current `research/v7`
 tip after the publication-only commit(s), and is intentionally distinct from
 the science commit; its exact SHA is reported by the final Git verification.
 
-## Final operational/publication close (2026-09-07)
+## Historical operational/publication close (superseded; 2026-09-07)
 
-This section records operational work only; it does not alter the frozen science
-claims, receipts, checkpoints, support definitions, U routes, statistics, or the
-719-file science archive.
+This section records the earlier operational execution state only; it does not
+alter the frozen science claims, receipts, checkpoints, support definitions, U
+routes, statistics, or the 719-file science archive. Its WSL2 status is
+superseded by the final status close below.
 
 - G1-2 was redrawn from the same frozen primary-route predictions using the
   `heat3d-temperature-field-figures` skill. The fixed ground-truth hotspot-plane
@@ -166,13 +167,47 @@ claims, receipts, checkpoints, support definitions, U routes, statistics, or the
   deferred engineering debt. The direct `research/v7` → `main` merge remains
   deferred to a future curated mainline integration.
 
-G1 scientific blockers: `none`. Operational work performed in this turn has no
-science blocker; the only remaining engineering debt is the unavailable WSL2
-mirror, with zero transfer and zero overwrite.
+G1 scientific blockers: `none`. At that time, operational work had no science
+blocker; the unavailable WSL2 mirror was recorded as deferred engineering debt,
+with zero transfer and zero overwrite.
+
+## Final status close (2026-09-07)
+
+This is the current authoritative status-governance update. It performs no
+science or data operation.
+
+The earlier operational receipt recorded WSL2 redundancy as deferred because
+the node was unavailable. The user has now confirmed that WSL2 is no longer
+reachable and is no longer an active research or storage node, and has formally
+waived the cross-server mirror requirement for G1. That former engineering
+debt is superseded and is not a current G1 blocker. The original redundancy
+receipt remains unchanged as a historical execution record; the devbox
+inventory remains available for future migration reference.
+
+Current authoritative layers:
+
+- Science: `G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED`
+- Publication: `COMPLETE`
+- Figure reproduction: `COMPLETE`
+- Evidence archive: `SEALED`
+- WSL2 redundancy: `WAIVED_INFRASTRUCTURE_RETIRED`
+- `research/v7 → main`: `DEFERRED_NOT_A_G1_BLOCKER` (not merged in this close)
+- Scientific blockers: `none`
+- Operational blockers: `none`
+
+The authoritative current status is `G1_FULLY_CLOSED`.
+
+`V7 G1 stage fully closed.`
+
+No further G1 science change is accepted unless an explicit new
+protocol/version is opened; sealed evidence remains immutable. Any future
+compute-node migration is a new task outside G1.
 
 ## Final state
 
-`G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED`
+`G1_FULLY_CLOSED`
+
+Science remains `G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED`.
 
 `G1 attribution stage complete; test_iid/sealed remain intentionally untouched for future final-model evaluation.`
 

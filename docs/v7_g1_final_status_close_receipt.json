@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v7_g1_final_status_close_receipt_v1",
+  "receipt_id": "V7-G1-final-status-close",
+  "status": "G1_FULLY_CLOSED",
+  "authoritative": true,
+  "scope": "G1 final status governance only; no science or data operation",
+  "supersedes": [
+    {
+      "path": "docs/v7_g1_final_operational_close_receipt.json",
+      "previous_status": "G1_PUBLICATION_CLOSE_COMPLETE_WSL2_REDUNDANCY_DEFERRED",
+      "sha256": "b0cf3d927546fba1188304cad7943aa292d345f2e92a9744ec810b45d05617fb"
+    },
+    {
+      "path": "docs/v7_g1_server_data_redundancy_receipt.json",
+      "previous_status": "DEVBOX_INVENTORY_ONLY_WSL2_UNAVAILABLE",
+      "sha256": "ae37a638e0c0b4f6f9474910bfb3d5ec886f47bf18e531137afa6090d26248af",
+      "historical_record_retained_unchanged": true
+    }
+  ],
+  "layers": {
+    "science": "G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED",
+    "publication": "COMPLETE",
+    "figure_reproduction": "COMPLETE",
+    "evidence_archive": "SEALED",
+    "wsl2_redundancy": "WAIVED_INFRASTRUCTURE_RETIRED",
+    "main_merge": "DEFERRED_NOT_A_G1_BLOCKER",
+    "scientific_blockers": "none",
+    "operational_blockers": "none"
+  },
+  "science_reference": {
+    "science_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "science_tag": "v7-g1-science-sealed-20260903",
+    "science_tag_target": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "final_science_seal_receipt": "docs/v7_g1_final_science_seal_receipt.json",
+    "final_science_seal_sha256": "7dcf8053d421cf44fc593d5366248fe2de4a478aedfb57cfbf88b8f14be344f6",
+    "archive_manifest": "docs/v7_g1_formal_archive_manifest.json",
+    "archive_manifest_sha256": "396326724cb4f151e2e1f5f8b5c70ea1626c83fb5bebece3019e27d56590d80c"
+  },
+  "retained_operational_evidence": {
+    "devbox_inventory": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_devbox_data_inventory_20260907.json",
+    "devbox_inventory_sha256": "e28747d4c4204e057be8446af9e55e0f7fb75e2afe0f09f3d8bbcd362c776a64",
+    "server_waiver_receipt": "docs/v7_g1_server_redundancy_waiver_receipt.json"
+  },
+  "policy": {
+    "no_new_science_or_evidence": true,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g2_modified": false,
+    "future_g1_science_changes": "Require explicit new protocol/version and must not modify sealed evidence."
+  },
+  "final_conclusion": "V7 G1 stage fully closed."
+}

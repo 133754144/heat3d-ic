@@ -1,0 +1,37 @@
+{
+  "schema_version": "heat3d_v7_g1_server_redundancy_waiver_receipt_v1",
+  "receipt_id": "V7-G1-server-redundancy-waiver",
+  "status": "FORMALLY_WAIVED_BY_USER",
+  "scope": "G1 status governance only; no science or data operation",
+  "previous_attempt": {
+    "receipt": "docs/v7_g1_server_data_redundancy_receipt.json",
+    "sha256": "ae37a638e0c0b4f6f9474910bfb3d5ec886f47bf18e531137afa6090d26248af",
+    "status": "DEVBOX_INVENTORY_ONLY_WSL2_UNAVAILABLE",
+    "facts_retained_unchanged": true
+  },
+  "wsl2": {
+    "current_status": "NO_LONGER_REACHABLE",
+    "active_research_node": false,
+    "inventory_or_sync_in_this_receipt": false,
+    "role": "RETIRED_INFRASTRUCTURE_FOR_CURRENT_G1"
+  },
+  "waiver": {
+    "cross_server_mirror_requirement": "FORMALLY_WAIVED_BY_USER",
+    "cross_server_redundancy_is_g1_blocker": false,
+    "waiver_scope": "Current G1 close only; any future compute node requires a new migration task outside G1."
+  },
+  "retained_evidence": {
+    "devbox_inventory": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_devbox_data_inventory_20260907.json",
+    "devbox_inventory_sha256": "e28747d4c4204e057be8446af9e55e0f7fb75e2afe0f09f3d8bbcd362c776a64",
+    "off_worktree_archive": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_formal_archive_sealed_20260903/",
+    "archive_manifest_sha256": "396326724cb4f151e2e1f5f8b5c70ea1626c83fb5bebece3019e27d56590d80c",
+    "archive_integrity": "719/719 exact and immutable backup verified"
+  },
+  "science": {
+    "new_science_or_evidence_generated": false,
+    "science_seal_unchanged": true,
+    "test_iid_or_sealed_access": false,
+    "g2_modified": false
+  },
+  "remaining_redundancy_blocker": "none"
+}
