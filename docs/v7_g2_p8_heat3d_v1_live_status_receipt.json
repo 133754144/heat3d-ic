@@ -1,0 +1,30 @@
+{
+  "schema_version": "heat3d_v7_g2_p8_heat3d_v1_live_status_receipt_v1",
+  "observed_at": "2026-09-07T17:30:16+08:00",
+  "remote_branch": "research/v7-g2-baselines",
+  "remote_head": "91072b7e201da697136a8ea95d51a2bcb15a10ac",
+  "runner_sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3",
+  "output_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1",
+  "seeds": {
+    "0": {"status": "RUNNING_INITIALIZATION", "pid": 3999358, "elapsed_observed": "00:12:17", "progress_json": false, "log_bytes": 0, "best_checkpoint": null, "final_checkpoint": null, "valid_selection": null},
+    "1": {"status": "RUNNING_INITIALIZATION", "pid": 3999401, "elapsed_observed": "00:12:17", "progress_json": false, "log_bytes": 0, "best_checkpoint": null, "final_checkpoint": null, "valid_selection": null},
+    "2": {"status": "RUNNING_INITIALIZATION", "pid": 3999465, "elapsed_observed": "00:12:17", "progress_json": false, "log_bytes": 0, "best_checkpoint": null, "final_checkpoint": null, "valid_selection": null}
+  },
+  "resource_observation": {
+    "host": "XYH-Desktop",
+    "environment": "rigno",
+    "gpu_memory_observation": "shared WSL CUDA context reported approximately 5632 MiB at an earlier poll; later NVML query was unavailable",
+    "host_memory_observation": "three processes remained alive; no OOM or kill evidence",
+    "allocator": "XLA_PYTHON_CLIENT_PREALLOCATE=false",
+    "scientific_configuration_changed": false
+  },
+  "guards": {
+    "all_seed_outputs_absent_at_launch": true,
+    "existing_output_or_checkpoint_overwritten": false,
+    "DeepOHeat_result_used_to_change_Heat3D": false,
+    "test_iid_or_sealed_access": false,
+    "DeepOHeat_official_100_test_access": false,
+    "GINO_or_Transolver_formal_started": false
+  },
+  "note": "This is a live status snapshot only; no completion, accuracy, or checkpoint claim is made before each runner writes its own receipt."
+}
