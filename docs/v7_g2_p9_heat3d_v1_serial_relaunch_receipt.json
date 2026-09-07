@@ -1,0 +1,49 @@
+{
+  "schema_version": "heat3d_v7_g2_p9_heat3d_v1_serial_relaunch_v1",
+  "status": "SERIAL_SEED0_RUNNING_PREPARATION",
+  "decision": "parallel_seed0_seed1_were_stopped_and_serial_restarted_after_user_directive",
+  "observed_at": "2026-09-07T20:54:51+08:00",
+  "serial_order": [0, 1, 2],
+  "tmux_session": "g2_heat3d_v1_serial",
+  "runner": {
+    "path": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+    "sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3"
+  },
+  "config_sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+  "subset_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+  "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+  "normalization_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+  "training_contract": {
+    "epochs": 200,
+    "selection": "native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "xla_deterministic_ops": true,
+    "xla_preallocate": false,
+    "official_test_access": false,
+    "p1i_test_or_sealed_access": false
+  },
+  "aborted_parallel_attempts": {
+    "archive_root": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/aborted_parallel_20260907",
+    "seed_0": {
+      "last_epoch": 2,
+      "best_metric": 5.172810515608839,
+      "best_checkpoint_sha256": "1ced1756b257105cf85f8a360b8cfb0fc12bb8ecb7f16d066ca74a6aba4cdc98"
+    },
+    "seed_1": {
+      "last_epoch": 2,
+      "best_metric": 7.115294535257935,
+      "best_checkpoint_sha256": "b823413f2b0de781ae36102c15d657623a570f41d01ca859bbda4915f6bdf5e8"
+    },
+    "seed_2": {
+      "status": "OOM_BEFORE_PROGRESS",
+      "directory": "seed_2_empty_oom"
+    },
+    "mixed_with_serial_results": false
+  },
+  "serial_outputs": {
+    "seed_0": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_0",
+    "seed_1": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_1",
+    "seed_2": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_2"
+  },
+  "no_overwrite": true,
+  "test_access": false
+}
