@@ -93,6 +93,13 @@ def main() -> int:
     fallback = build_gino(R_IN, R_OUT, use_open3d=False, use_torch_scatter=False).to(device)
     optimized = build_gino(R_IN, R_OUT, use_open3d=True, use_torch_scatter=True).to(device)
     optimized.load_state_dict(fallback.state_dict())
+    fallback_state = fallback.state_dict(); optimized_state = optimized.state_dict()
+    state_keys_exact = list(fallback_state) == list(optimized_state)
+    state_tensors_exact = state_keys_exact and all(
+        torch.equal(fallback_state[key], optimized_state[key]) for key in fallback_state
+    )
+    if not state_tensors_exact:
+        raise RuntimeError("fallback and optimized backends do not have an identical state_dict")
     if not optimized.gno_in.neighbor_search.use_open3d or not optimized.gno_out.neighbor_search.use_open3d:
         raise RuntimeError("Open3D was requested but upstream silently selected fallback")
     if not optimized.gno_in.integral_transform.use_torch_scatter or not optimized.gno_out.integral_transform.use_torch_scatter:
@@ -128,6 +135,7 @@ def main() -> int:
         "fixed_samples": {"train": train_row["sample_id"], "valid_iid": valid_row["sample_id"]},
         "scientific_config_unchanged": {"r_in": R_IN, "r_out": R_OUT, "latent_grid": [32, 32, 32]},
         "backends": {"qualification": "pure_PyTorch_native_neighbor_search_and_segment_csr", "formal": "Open3D_FixedRadiusSearch_plus_torch_scatter_segment_csr"},
+        "state_dict_semantics": {"keys_exact": state_keys_exact, "tensors_bitwise_exact": state_tensors_exact},
         "graph_semantics": graph,
         "output_semantics": {"allclose": bool(output_close), "atol": OUTPUT_ATOL, "rtol": OUTPUT_RTOL, "max_absolute_difference": output_max_abs},
         "resource": {"gpu_name": torch.cuda.get_device_name(), "peak_allocated_bytes": int(torch.cuda.max_memory_allocated()), "peak_reserved_bytes": int(torch.cuda.max_memory_reserved()), "train_step_wall_seconds": train_seconds, "valid_forward_wall_seconds": valid_seconds},

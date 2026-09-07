@@ -1,0 +1,12 @@
+diff --git a/3rdparty/stdgpu/stdgpu.cmake b/3rdparty/stdgpu/stdgpu.cmake
+--- a/3rdparty/stdgpu/stdgpu.cmake
++++ b/3rdparty/stdgpu/stdgpu.cmake
+@@ -10,6 +10,8 @@ ExternalProject_Add(
+     URL_HASH SHA256=86e50789bbe21c57f64358c6acbd4481d56c1e45ce9ba1fb5c5c8482c3973215
+     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/stdgpu"
+     UPDATE_COMMAND ""
++    PATCH_COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
++                  ${CMAKE_CURRENT_LIST_DIR}/stdgpu_2588168_cuda13_clock_rate.patch
+     CMAKE_ARGS
+         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+         -DCUDAToolkit_ROOT=${CUDAToolkit_LIBRARY_ROOT}

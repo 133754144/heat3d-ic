@@ -1,0 +1,19 @@
+diff --git a/3rdparty/cmake/FindPytorch.cmake b/3rdparty/cmake/FindPytorch.cmake
+--- a/3rdparty/cmake/FindPytorch.cmake
++++ b/3rdparty/cmake/FindPytorch.cmake
+@@ -17,11 +17,11 @@
+ # "80-real" to "8.0" and "80" to "8.0+PTX":
+ macro(translate_arch_string input output)
+-    if("${input}" MATCHES "[0-9]+-real")
+-        string(REGEX REPLACE "([1-9])([0-9])-real" "\\1.\\2" version "${input}")
+-    elseif("${input}" MATCHES "([0-9]+)")
+-        string(REGEX REPLACE "([1-9])([0-9])" "\\1.\\2+PTX" version "${input}")
++    if("${input}" MATCHES "^[0-9]+-real$")
++        string(REGEX REPLACE "^([0-9]+)([0-9])-real$" "\\1.\\2" version "${input}")
++    elseif("${input}" MATCHES "^[0-9]+$")
++        string(REGEX REPLACE "^([0-9]+)([0-9])$" "\\1.\\2+PTX" version "${input}")
+     elseif("${input}" STREQUAL "native")
+         set(version "Auto")
+     else()
+         message(FATAL_ERROR "Invalid architecture string: ${input}")
+     endif()
