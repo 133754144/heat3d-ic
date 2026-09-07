@@ -22,6 +22,17 @@ npp_package_version=$(python -c 'import importlib.metadata; print(importlib.meta
   echo "FAIL_NPP_VERSION expected=13.0.3.3 actual=${npp_package_version:-MISSING}"
   exit 2
 }
+python -c 'import yapf' >/dev/null 2>&1 || {
+  echo "FAIL_BUILD_DEPENDENCY missing=yapf"
+  exit 2
+}
+for runtime_pkg in libgcc-ng libgomp libstdcxx-ng; do
+  runtime_version=$(conda list --json "$runtime_pkg" | python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0]["version"] if rows else "")')
+  [[ "$runtime_version" == "14.3.0" ]] || {
+    echo "FAIL_RUNTIME_ABI_PACKAGE package=$runtime_pkg expected=14.3.0 actual=${runtime_version:-MISSING}"
+    exit 2
+  }
+done
 
 if git -C "$src" rev-parse HEAD >/dev/null 2>&1; then
   [[ "$(git -C "$src" rev-parse HEAD)" == "$expected_open3d_commit" ]] || {
