@@ -1,0 +1,101 @@
+{
+  "schema_version": "heat3d_v7_g2_p8_heat3d_v1_launch_manifest_v1",
+  "status": "FROZEN_PRELAUNCH_OUTPUT_ROOT_ABSENT",
+  "scope": "Heat3D-on-DeepOHeat-v1 only; independent of GINO common-task gate",
+  "comparison_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "G1_closed_science_tag": "v7-g1-science-sealed-20260903",
+    "G1_close_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "G1_worktree_touched": false,
+    "DeepOHeat_result_used_to_change_config": false
+  },
+  "upstream_and_code": {
+    "heat3d_runner": {
+      "path": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+      "sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3"
+    },
+    "heat3d_config": {
+      "path": "configs/heat3d_v7/v7_g1_full_p1i.json",
+      "sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5"
+    },
+    "support_manifest": {
+      "path": "configs/heat3d_v7/g2_deepoheat_v1_1024_support_manifest.json",
+      "sha256": "bb1261f5007cb85e1759f4e4bf1316aeb8a04d56cc1152d5e715949c130a8017"
+    },
+    "G1_reference_only": true
+  },
+  "data_contract": {
+    "source": {
+      "path": "fs_train_volume.npy",
+      "remote_path": "/home/xyh/myData/DeepOHeat-v1-main/data/fs_train_volume.npy",
+      "sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+      "shape": [100000, 101, 101],
+      "test_or_sealed_access": false
+    },
+    "subset": {
+      "path": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+      "sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+      "train": 768,
+      "valid_iid": 128,
+      "test_iid": 0,
+      "selection_accuracy_or_temperature_observed": false
+    },
+    "labels": {
+      "root": "data/g2/deepoheat_v1_volumetric_labels",
+      "remote_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_v1_volumetric_labels",
+      "label_generation_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+      "train": 768,
+      "valid_iid": 128,
+      "test": 0
+    },
+    "normalization": {
+      "path": "docs/v7_g2_p5_deepoheat_v1_train_normalization.json",
+      "file_sha256": "fe37d5e81228cafa625d1d7cff5adea7413e0717a350c3023a53c6f1f67fb38e",
+      "payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+      "fit_role": "train_only"
+    }
+  },
+  "training_contract": {
+    "epochs": 200,
+    "seeds": [0, 1, 2],
+    "optimizer_scheduler": "frozen v7_g1_full_p1i.json and v1 cross-benchmark contract",
+    "checkpoint_selection": "minimum native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "retain_final_epoch": true,
+    "valid_only_selection": true,
+    "U_outputs_used_for_selection": false,
+    "official_test_or_sealed_access": false,
+    "scientific_configuration_changed": false
+  },
+  "output_contract": {
+    "remote_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1",
+    "seed_directory_template": "seed_<SEED>",
+    "required_per_seed": [
+      "params_best_sample_first.pkl",
+      "params_final.pkl",
+      "formal_training_receipt.json",
+      "progress.json"
+    ],
+    "forbid_overwrite": true,
+    "no_test_access_receipt": true
+  },
+  "prelaunch_observation": {
+    "observed_at": "2026-09-07",
+    "remote_branch": "research/v7-g2-baselines",
+    "remote_head": "948d11ec2b5b8f797e6e08b0b3c8b2d8c19256a5",
+    "seed_status": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"},
+    "output_root_exists": false,
+    "seed_output_directories_present": false,
+    "active_matching_processes": false,
+    "deepoheat_v1_result_changed_heat3d_config": false,
+    "test_or_sealed_access": false
+  },
+  "launch_policy": {
+    "requested_parallel_track_start": true,
+    "execution": "three independent guarded tmux sessions; each seed checks absent output before runner",
+    "allocator_note": "XLA preallocation disabled only for concurrent resource isolation; no model, graph, loss, radius, or reduction change",
+    "required_XLA_FLAGS": "--xla_gpu_deterministic_ops=true",
+    "CUDA_required": true,
+    "GINO_common_gate_dependency": false,
+    "GINO_or_Transolver_formal_runs_started": false
+  }
+}
