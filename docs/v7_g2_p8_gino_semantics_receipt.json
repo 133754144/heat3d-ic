@@ -1,0 +1,96 @@
+{
+  "schema_version": "heat3d_v7_g2_p8_gino_semantics_receipt_v1",
+  "status": "SEMANTIC_EQUIVALENCE_AMENDMENT_CANDIDATE",
+  "observed_at": "2026-09-07",
+  "remote_receipt": {
+    "path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_preflight/gino_semantics/gino_p8_semantics_receipt.json",
+    "sha256": "833ab630a7aa4e7f690640d1db5de9fa3db8503728a93d8d9aae4c2605976af0"
+  },
+  "runner": {
+    "path": "scripts/check_v7_g2_p8_gino_semantics.py",
+    "sha256": "c944143451f93548e4d68ee79535cf6cb2ead7d26aef38eb326fc016539fe5b2",
+    "formal_training_started": false,
+    "target_or_truth_opened": false,
+    "valid_or_test_opened": false
+  },
+  "scientific_contract": {
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "open3d": "0.19.0 source commit 1e7b17438687a0b0c1e5a7187321ac7044afe275",
+    "torch": "2.9.0+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "state_dict_learned_tensor_sha256": "cb8f36914e002c06bb6356364e38dea104fe75f33e30da9133e4bbe35de38b06",
+    "configuration_changed": false
+  },
+  "fixed_input": {
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "sample_id": "v6p1if1_0000",
+    "role": "train",
+    "source_coordinates_file_sha256": "cf96a545832b8e6b24214664c104860ba59d9d7279b6e5305a32c0f1e94d587c",
+    "source_coordinates_raw_bytes_sha256": "f0bd4b4acd2aeff683aeadaf0c237cbbf2eb1df2fbc894cbcc7de5f20aad5350",
+    "source_coordinates_normalized_bytes_sha256": "c859ccc6cb74ea55481d18face9120e21645ed51c4f170b94a835e5179a9d89b",
+    "query_coordinates_bytes_sha256": "a99b15a3cdc38cc7c86063ae71ea9b865e8d9c4a645383924f2de4512462221a",
+    "physical_features_normalized_bytes_sha256": "8e97b036406b32bfdacb2f29d28b3a41d91487a2bb486e12fe255f43a1562e12",
+    "query_count": 32768,
+    "source_count": 1024
+  },
+  "B1_radius_boundary": {
+    "fallback_edge_count": 370746,
+    "optimized_edge_count": 370746,
+    "fallback_only": [[22825, 827]],
+    "optimized_only": [[22934, 54]],
+    "cpu_float64": {
+      "fallback_only_distance": 0.15000025999619007,
+      "fallback_only_signed_margin": 2.5999619007732733e-07,
+      "optimized_only_distance": 0.14999973893232948,
+      "optimized_only_signed_margin": -2.61067670509485e-07
+    },
+    "cpu_float32": {
+      "fallback_only_distance": 0.15000025928020477,
+      "optimized_only_distance": 0.149999737739563
+    },
+    "cuda_float32": {
+      "fallback_only_distance": 0.15000025928020477,
+      "optimized_only_distance": 0.149999737739563
+    },
+    "squared_distance_recorded": true,
+    "max_abs_cpu_float64_margin": 2.61067670509485e-07,
+    "non_boundary_count": 0,
+    "classification": "all disagreement is radius-boundary-near under the diagnostic margin; radius unchanged"
+  },
+  "B2_backend_decomposition": {
+    "all_variants_finite": true,
+    "input_graph": {
+      "fallback_neighbor_fallback_reduction": "exact baseline",
+      "fallback_neighbor_torch_scatter_reduction": "exact graph",
+      "open3d_neighbor_fallback_reduction": "one-edge symmetric difference",
+      "open3d_neighbor_torch_scatter_reduction": "one-edge symmetric difference"
+    },
+    "output_graph": "all four variants exact versus fallback (4432 edges)",
+    "output_vs_fallback": {
+      "open3d_neighbor_fallback_reduction": {"max_abs": 9.560585021972656e-05, "mean_abs": 8.247694495366886e-06, "p95_abs": 2.5317817926406843e-05, "allclose_1e-5": false},
+      "fallback_neighbor_torch_scatter_reduction": {"max_abs": 0.00010287761688232422, "mean_abs": 5.913250788580626e-06, "p95_abs": 1.9317865371704083e-05, "allclose_1e-5": false},
+      "open3d_neighbor_torch_scatter_reduction": {"max_abs": 9.357929229736328e-05, "mean_abs": 8.543695003027096e-06, "p95_abs": 2.613794058561324e-05, "allclose_1e-5": false}
+    },
+    "interpretation": "neighbor-search and reduction contributions are separately observable; no accuracy or truth was used"
+  },
+  "B3_fallback_performance": {
+    "objective": "synthetic prediction-square mean only; no target/truth/accuracy",
+    "finite_optimizer_step": true,
+    "train_step_wall_seconds": 10.818704375065863,
+    "valid_forward_wall_seconds": 5.984808168141171,
+    "peak_allocated_bytes": 2733110784,
+    "peak_reserved_bytes": 3292528640
+  },
+  "gate_decision": {
+    "input_graph_exact": false,
+    "optimized_output_allclose_atol_rtol_1e-5": false,
+    "output_graph_exact": true,
+    "formal_GINO_allowed": false,
+    "formal_Transolver_allowed": false,
+    "decision": "SEMANTIC_EQUIVALENCE_AMENDMENT_CANDIDATE; human audit required before any common formal run"
+  }
+}
