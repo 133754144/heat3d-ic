@@ -1,0 +1,59 @@
+{
+  "schema_version": "heat3d_v7_g2_p8_common_task_comparison_hierarchy_v1",
+  "status": "FROZEN_BEFORE_GINO_TRANSOLVER_FORMAL_RESULTS",
+  "amendment_to": {
+    "path": "docs/v7_g2_p7_common_task_statistical_preregistration.json",
+    "sha256": "8d20a018971f2c62b161af6a58f0d56f9509087698d22f1ab1a32238f11aca42"
+  },
+  "scope": "P1i common-task external baseline comparison; valid_iid only until a separate test-unlock protocol",
+  "comparison_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "G1_closed_science_tag": "v7-g1-science-sealed-20260903",
+    "G1_close_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "G1_worktree_touched": false
+  },
+  "hierarchy": {
+    "primary_external_contrasts": [
+      {"candidate": "Heat3D", "reference": "GINO", "question": "Does the frozen Heat3D mechanism improve the common task relative to GINO?"},
+      {"candidate": "Heat3D", "reference": "Transolver", "question": "Does the frozen Heat3D mechanism improve the common task relative to Transolver?"}
+    ],
+    "contextual_contrasts": [
+      {"candidate": "Vanilla RIGNO", "reference": "GINO", "question": "How does the shared RIGNO implementation compare with GINO?"},
+      {"candidate": "Vanilla RIGNO", "reference": "Transolver", "question": "How does the shared RIGNO implementation compare with Transolver?"}
+    ],
+    "descriptive_only_contrasts": [
+      {"candidate": "GINO", "reference": "Transolver", "question": "What descriptive difference is observed between the two external baselines?"}
+    ],
+    "not_allowed": [
+      "re-ranking the primary contrasts after results are observed",
+      "treating the descriptive GINO-versus-Transolver contrast as a primary claim",
+      "using the hierarchy to remove a seed, change a metric, change a checkpoint, or change a training budget"
+    ]
+  },
+  "frozen_statistics": {
+    "primary_publication_metric": "point_global_relative_rmse_pct",
+    "checkpoint_selection": "valid_iid sample_first_relative_rmse_pct; per-seed minimum, earliest epoch tie",
+    "secondary_metrics": "existing configs/heat3d_v7/v7_metric_contract.json contract after physical-space decode",
+    "seeds": [0, 1, 2],
+    "report": ["every seed", "mean", "sample standard deviation", "paired uncertainty"],
+    "paired_unit": "same valid_iid sample evaluated by paired models under each seed",
+    "bootstrap": {
+      "levels": ["seed", "valid_iid sample within seed"],
+      "replicates": 10000,
+      "with_replacement": true,
+      "interval": "percentile 95% CI",
+      "random_seed": 20260907
+    }
+  },
+  "analysis_guards": {
+    "no_posthoc_seed_removal": true,
+    "no_posthoc_metric_switch": true,
+    "no_posthoc_checkpoint_switch": true,
+    "no_posthoc_budget_switch": true,
+    "no_test_iid_or_sealed_access": true,
+    "no_accuracy_driven_GINO_config_change": true,
+    "formal_results_observed_when_frozen": false,
+    "common_formal_gate": "GINO optimized-backend gate must be ORIGINAL_GATE_PASS or receive a separately approved semantic-equivalence amendment; existing Transolver CUDA preflight remains PASS",
+    "fail_closed_on_contract_mismatch": true
+  }
+}
