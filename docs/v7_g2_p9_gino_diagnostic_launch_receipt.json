@@ -1,0 +1,27 @@
+{
+  "schema_version": "heat3d_v7_g2_p9_gino_diagnostic_launch_v1",
+  "status": "QUEUED_AFTER_SERIAL_HEAT3D",
+  "guard_session": "g2_gino_p9_diagnostics",
+  "guard_condition": "wait until tmux g2_heat3d_v1_serial exits",
+  "geometry_script": {
+    "path": "scripts/check_v7_g2_p9_gino_geometry_896.py",
+    "output": "output/_preflight/gino_p9_geometry_896/gino_p9_geometry_896_receipt.json",
+    "scope": "768 train + 128 valid_iid coords only; fallback vs Open3D; CPU f64/f32 and CUDA f32 oracle",
+    "truth_accuracy_test_sealed_opened": false
+  },
+  "repeatability_script": {
+    "path": "scripts/check_v7_g2_p9_gino_repeatability.py",
+    "output": "output/_preflight/gino_p9_repeatability/gino_p9_repeatability_receipt.json",
+    "scope": "fixed train/valid coords plus 11 physical features; Open3D + torch-scatter repeated graph/forward",
+    "truth_accuracy_test_sealed_opened": false
+  },
+  "scientific_contract": {
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "architecture_radius_reduction_budget_changed": false,
+    "formal_training_started": false
+  },
+  "overwrite_guard": true,
+  "p8_gate_history_preserved": true
+}
