@@ -1,0 +1,82 @@
+{
+  "schema_version": "heat3d_v7_g2_p9_heat3d_v1_reconciliation_v1",
+  "status": "SEED0_1_RUNNING_TRAINING_SEED2_FAILED_OOM_STAGGERED_RELAUNCH_ALLOWED",
+  "observed_at": "2026-09-07T20:44:24+08:00",
+  "contract": {
+    "runner": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+    "runner_sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3",
+    "heat3d_config": "configs/heat3d_v7/v7_g1_full_p1i.json",
+    "heat3d_config_sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+    "subset_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "epochs": 200,
+    "selection": "native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "test_or_sealed_access": false
+  },
+  "seeds": {
+    "0": {
+      "status": "RUNNING_TRAINING",
+      "pid": 3999358,
+      "tmux": "g2_heat3d_v1_seed0",
+      "epoch": 1,
+      "epoch_wall_seconds": 8168.600085031008,
+      "best_epoch": 1,
+      "best_valid_sample_first_relative_rmse_pct": 9.497842808881225,
+      "best_checkpoint": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_0/params_best_sample_first.pkl",
+      "best_checkpoint_sha256": "2f0d0fa266663f1d1b7a173584eb71c6f483f00eaa56863df2df808f55cc8f80",
+      "final_checkpoint": null,
+      "peak_memory": "pending until completion",
+      "test_access": false
+    },
+    "1": {
+      "status": "RUNNING_TRAINING",
+      "pid": 3999401,
+      "tmux": "g2_heat3d_v1_seed1",
+      "epoch": 1,
+      "epoch_wall_seconds": 8405.179144985043,
+      "best_epoch": 1,
+      "best_valid_sample_first_relative_rmse_pct": 13.892371665164093,
+      "best_checkpoint": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_1/params_best_sample_first.pkl",
+      "best_checkpoint_sha256": "ca37d0eca5875caf162f61640d00f821c4e52d5218bfd967ecfb5d38e455226c",
+      "final_checkpoint": null,
+      "peak_memory": "pending until completion",
+      "test_access": false
+    },
+    "2": {
+      "status": "FAILED",
+      "pid": null,
+      "tmux": null,
+      "epoch": null,
+      "best_checkpoint": null,
+      "final_checkpoint": null,
+      "stdout_stderr": "/tmp/g2_heat3d_v1_seed2.log (0 bytes)",
+      "output_directory": "absent",
+      "exit_evidence": {
+        "kernel": "global OOM recorded in the tmux-spawn scope while the three-seed parallel launch was active",
+        "journal_time": "2026-09-07T18:49:37+08:00",
+        "killed_pid": 4003655,
+        "killed_command_record": "python ... run_v7_g2_p6_heat3d_v1_formal.py --mode train --seed 2 ...",
+        "total_vm_bytes": 94340168,
+        "anon_rss_bytes": 7561744
+      },
+      "test_access": false
+    }
+  },
+  "contention": {
+    "parallel_seed_launch": true,
+    "gpu_observation_before_reconciliation": "11874 MiB / 12227 MiB; utilization 78%",
+    "host_observation_before_reconciliation": "21 GiB used / 23 GiB total; approximately 1.2 GiB available",
+    "classification": "parallel initialization/training caused unrecoverable resource failure for seed 2; seed 0/1 were not interrupted",
+    "scientific_config_changed": false
+  },
+  "relaunch_policy": {
+    "seed2_relaunch_allowed": true,
+    "mode": "guarded serial relaunch after seed0 and seed1 PIDs exit",
+    "serial_training_decision": "seed0_and_seed1_are_left_untouched; seed2_waits_until_both_exit",
+    "same_seed": 2,
+    "same_runner_config_data_sha": true,
+    "output_overwrite_allowed": false,
+    "no_test_or_sealed_access": true
+  }
+}
