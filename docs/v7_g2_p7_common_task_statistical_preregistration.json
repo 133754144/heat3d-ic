@@ -1,0 +1,82 @@
+{
+  "schema_version": "heat3d_v7_g2_p7_common_task_statistical_preregistration_v1",
+  "status": "FROZEN_PRE_FORMAL_RESULTS",
+  "scope": "G2 P1i common-task external baselines; frozen before any GINO or Transolver formal result",
+  "comparison_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "G1_closed_science_tag": "v7-g1-science-sealed-20260903",
+    "G1_close_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "G1_worktree_touched": false
+  },
+  "dataset": {
+    "id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "roles": {"train": 768, "valid_iid": 128},
+    "forbidden_roles": ["test_iid", "sealed"],
+    "information_budget": "coords + 11 physical features; no extra prior, solver, dense temperature field, or learned adapter"
+  },
+  "models": ["Vanilla RIGNO", "GINO", "Transolver", "Heat3D"],
+  "primary_publication_metric": {
+    "name": "point_global_relative_rmse_pct",
+    "split": "valid_iid for pre-test reporting; test remains locked until separate evaluation-only protocol",
+    "definition_source": "configs/heat3d_v7/v7_metric_contract.json",
+    "lower_is_better": true
+  },
+  "checkpoint_selection": {
+    "name": "sample_first_relative_rmse_pct",
+    "split": "valid_iid",
+    "selection_unit": "per seed and per run",
+    "tie_break": "earliest epoch",
+    "selection_frequency": "each completed epoch",
+    "primary_metric_is_not_used_for_selection": true,
+    "upstream_final_epoch_retained_as_sensitivity": true
+  },
+  "secondary_metrics": {
+    "contract": "configs/heat3d_v7/v7_metric_contract.json",
+    "names": [
+      "sample_first_relative_rmse_pct",
+      "raw_K_CV_RMSE_K",
+      "source_region_RMSE_K",
+      "peak_RMSE_K",
+      "interface_RMSE_K"
+    ],
+    "decode_to_physical_space_before_metrics": true,
+    "metric_definitions_frozen": true
+  },
+  "runs": {
+    "seeds": [0, 1, 2],
+    "report_per_seed": true,
+    "aggregate": "mean and sample standard deviation across the three seed-level results",
+    "retain_full_valid_metric_series": true,
+    "retain_best_and_final_checkpoints": true
+  },
+  "paired_uncertainty": {
+    "unit": "same valid_iid sample evaluated by each paired model under each seed",
+    "effect": "candidate_error - reference_error; negative favors candidate",
+    "summary": ["per-seed paired mean", "pooled paired mean", "paired median", "sample standard deviation"],
+    "bootstrap": {
+      "enabled": true,
+      "levels": ["seed", "valid_iid sample within seed"],
+      "replicates": 10000,
+      "interval": "percentile 95% CI",
+      "with_replacement": true,
+      "random_seed": 20260907
+    },
+    "claim_rule": "If the paired 95% CI includes zero or seed directions disagree, report descriptive uncertainty only; n=3 seed p-values are not an acceptance rule."
+  },
+  "analysis_guards": {
+    "no_posthoc_seed_removal": true,
+    "no_posthoc_metric_switch": true,
+    "no_posthoc_checkpoint_rule_change": true,
+    "no_posthoc_budget_change": true,
+    "no_test_iid_or_sealed_access": true,
+    "no_protocol_change_due_to_another_baseline_result": true,
+    "formal_results_observed_when_frozen": false,
+    "formal_training_started_when_frozen": false
+  },
+  "execution_gate": {
+    "GINO_optimized_backend_must_pass_before_any_common_formal_run": true,
+    "Transolver_existing_cuda_preflight_must_remain_pass": true,
+    "cuda_required_for_formal": true,
+    "fail_closed_on_any_scientific_contract_mismatch": true
+  }
+}

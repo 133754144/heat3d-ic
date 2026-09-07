@@ -1,9 +1,14 @@
 {
-  "schema_version": "heat3d_v7_g2_semiconductor_remote_launch_manifest_v3_p6",
-  "status": "AUTHORIZED_PROTOCOL_FROZEN_REMOTE_GATES_PENDING",
+  "schema_version": "heat3d_v7_g2_semiconductor_remote_launch_manifest_v4_p7",
+  "status": "DEEPOHEAT_V1_COMPLETE_HEAT3D_V1_QUEUED_MULTI_HTC_LABELS_READY",
+  "common_task_statistical_preregistration": {
+    "path": "docs/v7_g2_p7_common_task_statistical_preregistration.json",
+    "sha256": "8d20a018971f2c62b161af6a58f0d56f9509087698d22f1ab1a32238f11aca42",
+    "status": "FROZEN_BEFORE_GINO_TRANSOLVER_FORMAL_RESULTS"
+  },
   "global_gate": ["idle_CUDA_GPU_resource_preflight", "no_test_driven_changes"],
   "DeepOHeat_v1_upstream_from_scratch_volumetric": {
-    "status": "REMOTE_READY_AFTER_CUDA_ENVIRONMENT_PREFLIGHT",
+    "status": "COMPLETE_FORMAL_TRAIN_FINAL_CHECKPOINT_FROZEN_TEST_SEALED",
     "repo": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
     "data_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
     "environment": "configs/heat3d_v7/g2_deepoheat_v1_reconstructed_environment.json",
@@ -19,6 +24,17 @@
     "output_directory": "output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42",
     "resource_preflight": "CUDA/JAX environment plus one official 50-function full-mesh step; no PDE/BC/mesh reduction",
     "local_gate": "PASS one function, full physics mesh, optimizer and checkpoint reload"
+    ,
+    "formal_receipt": {
+      "remote_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42/formal_training_receipt.json",
+      "sha256": "51145d4785657567a1019dafc8102f248d7e4cce343bd9ea44cba68a85e63b56",
+      "iterations": 100000,
+      "last_physics_loss": 0.04250671714544296,
+      "checkpoint_sha256": "e86ee37b5855b856d68753ae84f484b4d1adac322361df52d576c56d8c050173",
+      "total_wall_seconds": 8918.312393677013,
+      "peak_bytes_in_use": 751386368,
+      "training_test_files_loaded": false
+    }
   },
   "DeepOHeat_v1_frozen_labels": {
     "status": "PASS_COMPLETE_LOCAL_768_128",
@@ -42,7 +58,7 @@
     "test_or_sealed_access": false
   },
   "Heat3D_on_DeepOHeat_v1_volumetric": {
-    "status": "LOCAL_DUAL_OUTPUT_GATE_PASS_REMOTE_GPU_PREFLIGHT_PENDING",
+    "status": "NOT_STARTED_NO_SEED_OUTPUT_P7_QUEUE_ATTEMPT_DID_NOT_START_RUN",
     "code_reference": "G1_FORMAL_CODE_SHA=191a7a06a681556f575a1c04e2b61cb13363efe1",
     "contract": "configs/heat3d_v7/g2_deepoheat_v1_cross_benchmark_contract.json",
     "input": "1024 physics-layout-aware coords+k+q+BC observations",
@@ -50,15 +66,22 @@
     "parameter_count": 892776,
     "optimizer_scheduler": "AdamW 5e-4 wd1e-4 clip1.0; warmup10 cosine to5e-5 at epoch200",
     "budget": {"epochs": 200, "batch_size": 24, "seeds": [0, 1, 2]},
+    "seed_status": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"},
     "checkpoint": "minimum valid sample-first relative RMSE percent, earliest tie; retain final epoch",
     "formal_runner": {"path": "scripts/run_v7_g2_p6_heat3d_v1_formal.py", "sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3"},
     "cuda_backend": {"required": true, "XLA_FLAGS": "--xla_gpu_deterministic_ops=true", "reason": "frozen preflight produced exact checkpoint-reload predictions only with deterministic GPU reductions"},
     "metrics": ["v7 physical-space metric contract", "same-domain DeepOHeat-v1 metrics"],
     "output_directory": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_<SEED>",
-    "resource_preflight": "one CUDA batch with frozen support/normalization and native/U-slice/U-full validation paths; record GPU name, peak memory and timing; U latency includes reconstruction"
+    "resource_preflight": "one CUDA batch with frozen support/normalization and native/U-slice/U-full validation paths; record GPU name, peak memory and timing; U latency includes reconstruction",
+    "queue_observation": {
+      "remote_output_directory_exists": false,
+      "seed_output_directories_present": false,
+      "existing_run_overwritten": false,
+      "test_access": false
+    }
   },
   "Heat3D_on_DeepOHeat_multi_HTC": {
-    "status": "ANALYTICAL_SOLVER_GATE_PASS_FORMAL_LABELS_NOT_GENERATED",
+    "status": "PROVENANCE_REPAIR_PASS_TRAIN768_VALID128_LABELS_GENERATED_TEST_SEALED",
     "case_manifest": "configs/heat3d_v7/g2_deepoheat_multi_htc_beta_case_manifest.json",
     "parameter": "beta_or_k_Robin in [0.1,0.3]; h=0.2/beta",
     "analytical_gate": "docs/v7_g2_p5_multi_htc_analytical_receipt.json",
@@ -67,7 +90,13 @@
     "checkpoint": "minimum valid sample-first relative RMSE percent, earliest tie; retain final epoch",
     "metrics": ["field_RMSE_K", "relative_L2", "peak_absolute_error_K"],
     "output_directory": "output/heat3d_v7_g2/heat3d_on_deepoheat_multi_htc/seed_<SEED>",
-    "remaining_gate": "materialize frozen train/valid labels and run one CUDA resource preflight only after G1"
+    "label_generation_receipt_sha256": "4b0154e15fae7d004e098783f376eb9d3258e63b01cfc9d5cbec8db9bbc4ca10",
+    "labels": {
+      "train": 768,
+      "valid": 128,
+      "test": 0
+    },
+    "remaining_gate": "run the frozen Heat3D CUDA resource preflight; sealed test remains unavailable"
   },
   "remote_order": [
     "GINO GPU preflight",
@@ -80,6 +109,7 @@
     "multi-HTC only after its independent solver gate and label/resource gates"
   ],
   "cross_baseline_protocol_immutability": "a problem in a later baseline cannot modify a common protocol after an earlier external baseline completes",
-  "formal_training_started": false,
-  "ssh_or_devbox_used": false
+  "formal_training_started": true,
+  "formal_training_scope": "DeepOHeat-v1 seed42 only; P1i and Heat3D formal jobs were not started in P7",
+  "ssh_or_devbox_used": true
 }

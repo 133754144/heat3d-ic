@@ -3,6 +3,10 @@
   "status": "IMMUTABLE_PREPARED_OPTIMIZED_BACKEND_REMOTE_PREFLIGHT_PENDING_NOT_LAUNCHED",
   "track": "P1i_common_task",
   "model": "GINO",
+  "statistical_preregistration": {
+    "path": "docs/v7_g2_p7_common_task_statistical_preregistration.json",
+    "sha256": "8d20a018971f2c62b161af6a58f0d56f9509087698d22f1ab1a32238f11aca42"
+  },
   "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
   "dataset": {"id": "heat3d_v6_p1i_continuous_physics1024_v1", "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514", "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f", "roles": {"train": 768, "valid_iid": 128}, "forbidden": ["test_iid", "sealed"]},
   "information_budget": {"coordinates": 3, "physical_features": 11, "feature_names": ["kx", "ky", "kz", "q", "is_top", "is_bottom", "is_side", "is_interior", "top_h", "bottom_h", "top_T_inf_minus_T_ref"], "target": "deltaT_K_on_same_query_points", "extra_prior": false, "solver": false, "dense_temperature_field": false, "learned_adapter": false},

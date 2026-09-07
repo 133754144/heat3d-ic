@@ -1,0 +1,62 @@
+{
+  "schema_version": "heat3d_v7_g2_p7_multi_htc_provenance_repair_receipt_v1",
+  "status": "PASS_EXACT_HISTORICAL_SHA_RESTORED_TRAIN_VALID_LABELS_GENERATED",
+  "scientific_contract_changed": false,
+  "historical_recovery": {
+    "allowed_sources": [
+      "Git history",
+      "historical deterministic case-generation logic"
+    ],
+    "source_used": "superseded v1 case manifest in Git history plus deterministic v2 beta correction",
+    "case_id_serialization": "integer table position p=0..1023",
+    "beta_axis": "32 values round(0.1 + index * 0.2 / 31, 4), index=0..31",
+    "permutation": "lattice_index=(405*p+97) mod 1024",
+    "roles": {
+      "train": "p=0..767",
+      "valid": "p=768..895",
+      "test": "p=896..1023"
+    },
+    "expected_canonical_rows_sha256": "5ac5c716aac8d283eec23d9ea9157f7a2a0614af15670f3150a2d113301e4253",
+    "recovered_canonical_rows_sha256": "5ac5c716aac8d283eec23d9ea9157f7a2a0614af15670f3150a2d113301e4253",
+    "exact_match": true,
+    "temperature_prediction_accuracy_or_test_used_for_recovery": false
+  },
+  "physics": {
+    "beta_range": [
+      0.1,
+      0.3
+    ],
+    "conductivity": 0.2,
+    "h_conversion": "h=0.2/beta",
+    "grid": [
+      51,
+      51,
+      51
+    ],
+    "independent_solver_gate": "PASS in docs/v7_g2_p5_multi_htc_analytical_receipt.json"
+  },
+  "materialization": {
+    "remote_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_multi_htc_labels",
+    "generator": "scripts/generate_v7_g2_p7_multi_htc_train_valid_labels.py",
+    "generator_sha256": "d9a730dd708f9db2714c9ad4a86814afe17b6c86fb3e683c65e41a31849d113f",
+    "label_generation_receipt_sha256": "4b0154e15fae7d004e098783f376eb9d3258e63b01cfc9d5cbec8db9bbc4ca10",
+    "expanded_train_valid_receipt_sha256": "23487770d40f42d5f7ab025ef0d0678a6d04cbf049e5f2950b1226b3965394c7",
+    "artifact_file_count": 10,
+    "artifact_total_size_human": "7.8 MiB",
+    "counts": {
+      "train": 768,
+      "valid": 128,
+      "test": 0
+    },
+    "target_storage": "lossless 51-point z profile broadcast over the uniform 51x51 xy plane",
+    "train_target_file_sha256": "80cb921599e6a3831c480c948c43e69f86ce26baf3ddc144d917fa75e3a01acd",
+    "valid_target_file_sha256": "e37f4fe2509134354ab69c32c633c989cfddce5a21f8c74cd6aa73dfc170c7b2"
+  },
+  "isolation": {
+    "test_case_rows_written": 0,
+    "test_labels_generated": 0,
+    "test_temperature_prediction_or_accuracy_read": false,
+    "test_status": "sealed"
+  },
+  "formal_training_started": false
+}

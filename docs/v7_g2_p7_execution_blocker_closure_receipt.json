@@ -1,0 +1,152 @@
+{
+  "schema_version": "heat3d_v7_g2_p7_execution_blocker_closure_receipt_v1",
+  "status": "P7_EVIDENCE_CLOSED_GINO_ENVIRONMENT_BLOCKED_COMMON_FORMAL_NOT_STARTED",
+  "observed_at": "2026-09-07",
+  "comparison_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "G1_closed_science_tag": "v7-g1-science-sealed-20260903",
+    "G1_close_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "G1_merge_or_reopen_performed": false,
+    "G1_worktree_touched": false
+  },
+  "statistical_preregistration": {
+    "path": "docs/v7_g2_p7_common_task_statistical_preregistration.json",
+    "status": "FROZEN_BEFORE_GINO_TRANSOLVER_FORMAL_RESULTS",
+    "primary_metric": "point_global_relative_rmse_pct",
+    "checkpoint_selection": "valid_iid sample_first_relative_rmse_pct, earliest epoch tie",
+    "seeds": [0, 1, 2]
+  },
+  "DeepOHeat_v1_seed42": {
+    "status": "COMPLETE_FORMAL_TRAIN_FINAL_CHECKPOINT_FROZEN",
+    "execution_commit": "10e1e8e6a8d57ffdc4ff82accbb5a20be89674e0",
+    "upstream": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "runner": {
+      "path": "scripts/run_v7_g2_p6_deepoheat_v1_formal.py",
+      "sha256": "7027cd5414f5964359f63be20e1a88bef5351730448f848f4234f40a7c1b22d0"
+    },
+    "environment": {
+      "python": "3.12.12",
+      "jax": "0.11.1",
+      "equinox": "0.13.8",
+      "optax": "0.2.8"
+    },
+    "contract": {
+      "iterations": 100000,
+      "functions_per_iteration": 50,
+      "seed": 42,
+      "mesh": [101, 101, 56],
+      "optimizer": "Optax Adam lr=1e-3",
+      "schedule": "exponential_decay_0.9_per_1000",
+      "parameter_count": 3303680,
+      "PDE_BC_mesh_changed": false
+    },
+    "artifacts": {
+      "formal_receipt": {
+        "remote_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42/formal_training_receipt.json",
+        "sha256": "51145d4785657567a1019dafc8102f248d7e4cce343bd9ea44cba68a85e63b56"
+      },
+      "final_checkpoint": {
+        "remote_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42/DeepOHeat_v1_final.eqx",
+        "sha256": "e86ee37b5855b856d68753ae84f484b4d1adac322361df52d576c56d8c050173"
+      },
+      "training_log": {
+        "remote_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42/train.log",
+        "sha256": "d40a86263c10a63b35a4698ad47718712baed49560eaaed0f66f44a20e319a81"
+      }
+    },
+    "result": {
+      "last_physics_loss": 0.04250671714544296,
+      "total_wall_seconds": 8918.312393677013,
+      "first_train_step_wall_seconds": 48.41025977296522,
+      "peak_device_bytes": 751386368
+    },
+    "no_restart_evidence": {
+      "log_starts_at": "iteration=1/100000",
+      "log_has_contiguous_progress_markers": true,
+      "resume_or_restart_markers_found": [],
+      "final_checkpoint_only": true,
+      "P7_restart_or_config_change": false
+    },
+    "test_isolation": {
+      "training_data": "fs_train_volume.npy only",
+      "forbidden_files": ["fs_test_volume.npy", "u_test_volume.npy"],
+      "training_test_files_loaded": false,
+      "official_100_test": "sealed",
+      "evaluation_imported_or_executed": false
+    }
+  },
+  "execution_order_deviation": {
+    "planned_common_gate_before_long_native_run": true,
+    "observed": "DeepOHeat-v1 seed42 completed before GINO optimized backend/common-task formal completion",
+    "protocol_changed_due_to_observation": false,
+    "GINO_or_Transolver_config_modified_due_to_DeepOHeat": false
+  },
+  "Heat3D_on_DeepOHeat_v1": {
+    "status": "NOT_STARTED",
+    "runner": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+    "runner_sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3",
+    "planned_seeds": [0, 1, 2],
+    "seed_status": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"},
+    "output_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1",
+    "queue_or_seed_outputs_present": false,
+    "existing_run_overwritten": false,
+    "test_access": false
+  },
+  "Transolver": {
+    "status": "REMOTE_CUDA_PREFLIGHT_PASS_FORMAL_BLOCKED_BY_GINO",
+    "receipt_sha256": "d496d444b884957a520b1b444f32246d78ea7291dc0716afd4acc8577dc7aeff",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "peak_allocated_bytes": 103634432,
+    "peak_reserved_bytes": 113246208,
+    "train_step_wall_seconds": 0.5351899570086971,
+    "valid_forward_wall_seconds": 0.0038551120087504387,
+    "protocol_changed": false
+  },
+  "multi_HTC": {
+    "status": "PROVENANCE_PASS_LABELS_READY_TEST_SEALED",
+    "canonical_rows_sha256": "5ac5c716aac8d283eec23d9ea9157f7a2a0614af15670f3150a2d113301e4253",
+    "case_manifest": "configs/heat3d_v7/g2_deepoheat_multi_htc_beta_case_manifest.json",
+    "case_manifest_sha256": "d39c502e54b290c0080883a929d8fa38536f9b01415ef3e995bbe25d69d6fc45",
+    "canonical_recovery": "exact historical serialization; case_id is integer table position",
+    "roles": {"train": 768, "valid": 128, "test": 128},
+    "parameter": "beta in [0.1,0.3]; h=0.2/beta",
+    "analytical_solver_gate": {
+      "status": "PASS",
+      "receipt_sha256": "05d5010c1eaa8dad24e50fc07bbc8b4eb546218e6ab8d5d7cf01788b8b8c2bb6",
+      "checker_sha256": "c43170d7f41f1059300be7da2accdb4e5b46b3edfd2c3336715566cb54135f0f"
+    },
+    "label_generation": {
+      "generator": "scripts/generate_v7_g2_p7_multi_htc_train_valid_labels.py",
+      "generator_sha256": "d9a730dd708f9db2714c9ad4a86814afe17b6c86fb3e683c65e41a31849d113f",
+      "label_receipt_sha256": "4b0154e15fae7d004e098783f376eb9d3258e63b01cfc9d5cbec8db9bbc4ca10",
+      "expanded_receipt_sha256": "23487770d40f42d5f7ab025ef0d0678a6d04cbf049e5f2950b1226b3965394c7",
+      "remote_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_multi_htc_labels",
+      "train_labels": 768,
+      "valid_labels": 128,
+      "test_labels": 0
+    },
+    "solver_code_and_labels": {
+      "independent_reference_solver": "scripts/check_v7_g2_p5_multi_htc_reference.py",
+      "physical_solver_contract": "51x51x51 deterministic solver; side adiabatic; top/bottom Robin; q=1 source layer",
+      "accuracy_or_temperature_used_for_row_recovery": false
+    },
+    "test_access": false
+  },
+  "GINO": {
+    "scientific_contract": "FROZEN",
+    "status": "ENVIRONMENT_BLOCKED_FAIL_CLOSED",
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "build_blocker": "Open3D source build stops at NPPImage.cpp: npp.h missing; no optimized wheel produced",
+    "optimized_equivalence_gate": "NOT_RUN",
+    "formal_runs": {"0": "NOT_STARTED", "1": "NOT_STARTED", "2": "NOT_STARTED"}
+  },
+  "common_formal_gate": {
+    "status": "BLOCKED_FAIL_CLOSED",
+    "condition": "GINO optimized backend PASS plus existing Transolver CUDA PASS required before any P1i formal run",
+    "P1i_test_or_sealed_access": false,
+    "formal_runs_started": false
+  }
+}
