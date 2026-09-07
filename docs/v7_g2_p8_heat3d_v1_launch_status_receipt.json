@@ -1,0 +1,46 @@
+{
+  "schema_version": "heat3d_v7_g2_p8_heat3d_v1_launch_status_receipt_v1",
+  "status": "RUNNING_THREE_SEEDS_INITIALIZATION",
+  "observed_at": "2026-09-07",
+  "launch_manifest": {
+    "path": "configs/heat3d_v7/g2_p8_heat3d_v1_launch_manifest.json",
+    "sha256": "aefff0aa6dd17fab89f7696cf577722e718b78a2418ca79dc25b3ec21fb94c5e"
+  },
+  "remote": {
+    "worktree": "/home/xyh/myCodeGitOnly/heat3d-ic-g2",
+    "branch": "research/v7-g2-baselines",
+    "head_at_launch": "e84d1af",
+    "host": "XYH-Desktop",
+    "environment": "rigno",
+    "required_XLA_FLAGS": "--xla_gpu_deterministic_ops=true",
+    "allocator_isolation": "XLA_PYTHON_CLIENT_PREALLOCATE=false; allocator only, no scientific configuration change"
+  },
+  "runner": {
+    "path": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+    "sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3",
+    "epochs": 200,
+    "checkpoint_selection": "native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "valid_only_selection": true,
+    "U_outputs_used_for_selection": false,
+    "test_or_sealed_access": false
+  },
+  "sessions": {
+    "0": {"tmux": "g2_heat3d_v1_seed0", "log": "/tmp/g2_heat3d_v1_seed0.log", "status": "RUNNING_INITIALIZATION", "output": "absent_at_launch_and_initial_poll", "best_checkpoint": null, "final_checkpoint": null, "valid_selection": null},
+    "1": {"tmux": "g2_heat3d_v1_seed1", "log": "/tmp/g2_heat3d_v1_seed1.log", "status": "RUNNING_INITIALIZATION", "output": "absent_at_launch_and_initial_poll", "best_checkpoint": null, "final_checkpoint": null, "valid_selection": null},
+    "2": {"tmux": "g2_heat3d_v1_seed2", "log": "/tmp/g2_heat3d_v1_seed2.log", "status": "RUNNING_INITIALIZATION", "output": "absent_at_launch_and_initial_poll", "best_checkpoint": null, "final_checkpoint": null, "valid_selection": null}
+  },
+  "prelaunch_guards": {
+    "all_seed_output_paths_absent": true,
+    "existing_run_overwritten": false,
+    "DeepOHeat_result_used_to_change_Heat3D_config": false,
+    "GINO_common_gate_required_for_this_track": false,
+    "P1i_test_iid_or_sealed_access": false,
+    "DeepOHeat_official_100_test_access": false
+  },
+  "formal_common_task": {
+    "GINO": "NOT_STARTED_GATE_BLOCKED",
+    "Transolver": "NOT_STARTED_GATE_BLOCKED",
+    "Heat3D_v1_track": "decoupled_and_started",
+    "no_common_task_accuracy_observed": true
+  }
+}
