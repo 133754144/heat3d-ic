@@ -40,6 +40,17 @@ def canonical_graph(neighbors: dict[str, torch.Tensor]) -> tuple[np.ndarray, np.
     return pairs[order], np.diff(splits)
 
 
+def state_dict_bitwise_equal(left: Any, right: Any) -> bool:
+    """Compare nested state-dict payloads without coercing mappings to tensors."""
+    if isinstance(left, dict) and isinstance(right, dict):
+        if list(left) != list(right):
+            return False
+        return all(state_dict_bitwise_equal(left[key], right[key]) for key in left)
+    if isinstance(left, torch.Tensor) and isinstance(right, torch.Tensor):
+        return torch.equal(left, right)
+    return left == right
+
+
 def compare_graph(fallback_search: Any, optimized_search: Any, data: torch.Tensor, queries: torch.Tensor, radius: float) -> dict[str, Any]:
     fallback_pairs, fallback_counts = canonical_graph(fallback_search(data, queries, radius))
     optimized_pairs, optimized_counts = canonical_graph(optimized_search(data, queries, radius))
@@ -95,9 +106,7 @@ def main() -> int:
     optimized.load_state_dict(fallback.state_dict())
     fallback_state = fallback.state_dict(); optimized_state = optimized.state_dict()
     state_keys_exact = list(fallback_state) == list(optimized_state)
-    state_tensors_exact = state_keys_exact and all(
-        torch.equal(fallback_state[key], optimized_state[key]) for key in fallback_state
-    )
+    state_tensors_exact = state_keys_exact and state_dict_bitwise_equal(fallback_state, optimized_state)
     if not state_tensors_exact:
         raise RuntimeError("fallback and optimized backends do not have an identical state_dict")
     if not optimized.gno_in.neighbor_search.use_open3d or not optimized.gno_out.neighbor_search.use_open3d:
