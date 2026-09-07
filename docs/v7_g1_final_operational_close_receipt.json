@@ -1,0 +1,78 @@
+{
+  "schema_version": "heat3d_v7_g1_final_operational_close_receipt_v1",
+  "receipt_id": "G1_FULLY_CLOSED_SCIENCE_PUBLICATION_AND_DATA_REDUNDANCY",
+  "status": "G1_PUBLICATION_CLOSE_COMPLETE_WSL2_REDUNDANCY_DEFERRED",
+  "authoritative_science_status": "G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED",
+  "scope": "G1 final operational/publication close only; no merge to main and no G2 work",
+  "science_seal": {
+    "science_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "science_tag": "v7-g1-science-sealed-20260903",
+    "science_tag_target": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "final_science_seal_receipt": "docs/v7_g1_final_science_seal_receipt.json",
+    "final_science_seal_sha256": "7dcf8053d421cf44fc593d5366248fe2de4a478aedfb57cfbf88b8f14be344f6",
+    "archive_manifest": "docs/v7_g1_formal_archive_manifest.json",
+    "archive_manifest_sha256": "396326724cb4f151e2e1f5f8b5c70ea1626c83fb5bebece3019e27d56590d80c",
+    "archive_file_count": 719,
+    "archive_total_bytes": 3872187477,
+    "archive_integrity": "719/719 exact against manifest",
+    "science_evidence_modified": false
+  },
+  "publication": {
+    "figure_skill": "heat3d-temperature-field-figures",
+    "figure_skill_path": "/Users/xuyihua/.codex/skills/heat3d-temperature-field-figures/SKILL.md",
+    "figure_skill_sha256": "18c4cec3eb53c99514b2a9500177aca7e43af106ed8a4138e246661bbb8bbef8",
+    "renderer": "scripts/plot_v7_g1_publication_figures.py",
+    "renderer_sha256": "0ce1e5c9ef61f43e176dad39fbbace70062ccc60fe54db0f94853b710e08e7eb",
+    "figure_manifest": "docs/v7_g1_figure_manifest.json",
+    "figure_manifest_sha256": "d625ca7a2841848a68e65dbefbdac382e3e840eaf0559ec4a9757db10f777296",
+    "figure_provenance": "docs/v7_g1_figures/v7_g1_figure_provenance.json",
+    "figure_provenance_sha256": "26e7708ee06d9b13c5e267891f1e5d7cb07f9062b85abb78882644b9d03db8f7",
+    "figure_outputs": 9,
+    "primary_route": "U16384→240825",
+    "deterministic_cases": ["median", "p90", "p95"],
+    "new_inference": false,
+    "new_metric": false
+  },
+  "fixture_reproduction": {
+    "status": "PASS_BYTE_VERIFIED",
+    "recipe": "scripts/reproduce_v7_g1_publication_inputs.py",
+    "recipe_sha256": "7deaa137944332a1634de3cc2e836d132ab50e6edb5f15f006f2e4c5dbcba1ad",
+    "persistent_bundle": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_publication_inputs_sealed_20260907/",
+    "bundle_file_count": 4,
+    "bundle_total_bytes": 3093114,
+    "files": {
+      "truth_fixture.npz": "74415add51bd92b8129d8d30d4740ed695701c3a987956470b1b56e6707f60ad",
+      "support_fixture.npz": "7c595f7e147cdcae678dbda4d961fc2ce23c131c7eb895083ec4d3cc6aa22944",
+      "support_metadata.json": "dce35ad47963c05337effde229338c4fa0d66c20ddc8892b98778620a7242453",
+      "reproduction_manifest.json": "6a564f33eb4bf749963053412ce67af4a82f6bfc74e2ac03114eec55ae15c651"
+    },
+    "truth_source": "devbox frozen full_fields.h5, three selected valid_iid rows only",
+    "support_source": "devbox frozen valid_iid v6p1if1_0533 six support arrays plus allowlisted metadata",
+    "test_iid_access": false,
+    "sealed_access": false
+  },
+  "server_data_redundancy": {
+    "receipt": "docs/v7_g1_server_data_redundancy_receipt.json",
+    "status": "DEVBOX_INVENTORY_ONLY_WSL2_UNAVAILABLE",
+    "devbox_inventory": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_devbox_data_inventory_20260907.json",
+    "devbox_inventory_sha256": "e28747d4c4204e057be8446af9e55e0f7fb75e2afe0f09f3d8bbcd362c776a64",
+    "transferred_file_count": 0,
+    "transferred_bytes": 0,
+    "hash_conflict_count": null,
+    "post_sync_sha_parity": "NOT_RUN_WSL2_UNAVAILABLE",
+    "wsl2_task": "SKIPPED_BY_USER"
+  },
+  "guards": {
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g2_modified": false,
+    "large_science_artifacts_tracked": false,
+    "science_receipts_rewritten": false,
+    "training": false,
+    "formal_inference": false
+  },
+  "remaining_scientific_blockers": [],
+  "remaining_engineering_debt": [
+    "WSL2 was unavailable, so the requested cross-server union mirror and parity audit remain deferred; no same-path file was overwritten."
+  ]
+}

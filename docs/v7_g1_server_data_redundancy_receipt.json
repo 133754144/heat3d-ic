@@ -1,0 +1,73 @@
+{
+  "schema_version": "heat3d_v7_g1_server_data_redundancy_receipt_v1",
+  "receipt_id": "V7-G1-server-data-redundancy",
+  "status": "DEVBOX_INVENTORY_ONLY_WSL2_UNAVAILABLE",
+  "scope": "G1 operational close only; byte-level data inventory and optional mirror, no science changes",
+  "servers": {
+    "devbox": {
+      "hostname": "devbox",
+      "repo_path": "/home/xyh/myCodeGitOnly/heat3d-ic",
+      "branch": "research/v7",
+      "head": "2de1bf9339a2f1b4fbb05804b7bd9c37a9abf676",
+      "working_tree_note": "pre-existing untracked configs/heat3d_v6_supplemental/; not modified"
+    },
+    "wsl2": {
+      "availability": "unavailable",
+      "repo_path": "~/myCodeGitOnly/heat3d-ic",
+      "inventory": "SKIPPED_BY_USER",
+      "sync": "SKIPPED_BY_USER"
+    }
+  },
+  "inventory": {
+    "devbox": {
+      "record_path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_devbox_data_inventory_20260907.json",
+      "record_sha256": "e28747d4c4204e057be8446af9e55e0f7fb75e2afe0f09f3d8bbcd362c776a64",
+      "file_count": 17487,
+      "total_bytes": 6581323999,
+      "roles": {
+        "dataset train": {"files": 6912, "bytes": 120815126},
+        "dataset valid_iid": {"files": 1152, "bytes": 20151220},
+        "frozen full-field archive; file-level provenance": {"files": 1, "bytes": 916402712},
+        "checkpoint/output asset": {"files": 9295, "bytes": 5055844894},
+        "temporary recovery asset": {"files": 127, "bytes": 468110047}
+      }
+    },
+    "wsl2": null
+  },
+  "classification": {
+    "identical": null,
+    "only_devbox": null,
+    "only_wsl2": null,
+    "hash_conflict": null,
+    "reason": "WSL2 was unavailable and was not probed; cross-server comparison is therefore not computed."
+  },
+  "transfer": {
+    "sync_performed": false,
+    "transferred_file_count": 0,
+    "transferred_bytes": 0,
+    "unexpected_overwrite_count": 0,
+    "hash_conflict_count": null,
+    "post_sync_sha_parity": "NOT_RUN_WSL2_UNAVAILABLE",
+    "sync_command": null,
+    "delete_used": false,
+    "same_path_different_sha_overwritten": false
+  },
+  "inventory_policy": {
+    "dataset_split_source": "frozen manifest; train and valid_iid only",
+    "hash_bytes_only": true,
+    "excluded_tokens": ["test_iid", "sealed"],
+    "excluded_caches": ["__pycache__", ".pytest_cache", ".cache", "cache", "xla_cache", "jax_cache", "conda", ".conda"],
+    "test_iid_access": false,
+    "sealed_access": false,
+    "g2_modified": false
+  },
+  "critical_data": [
+    "data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+    "train and valid_iid dataset sample files selected by the frozen split manifest",
+    "checkpoint/output/recovery assets found under the audited devbox roots"
+  ],
+  "single_point_status": "CROSS_SERVER_MIRROR_REMAINS_SINGLE_SIDED_BECAUSE_WSL2_IS_UNAVAILABLE",
+  "engineering_debt": [
+    "Repeat a union mirror and SHA-parity audit when WSL2 becomes reachable; do not overwrite same-path hash conflicts."
+  ]
+}

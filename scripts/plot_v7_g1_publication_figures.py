@@ -31,6 +31,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+FIGURE_SKILL_PATH = Path("/Users/xuyihua/.codex/skills/heat3d-temperature-field-figures/SKILL.md")
+
 from rigno.heat3d_training.support import (  # noqa: E402
     array_sha256,
     select_alternative_support,
@@ -178,6 +180,13 @@ def _save_figure(fig: plt.Figure, base: Path, title: str) -> list[Path]:
     fig.savefig(pdf, bbox_inches="tight", metadata=metadata)
     fig.savefig(svg, bbox_inches="tight", metadata=metadata)
     fig.savefig(review_png, dpi=260, bbox_inches="tight", metadata={"Software": metadata["Creator"]})
+    # Matplotlib's SVG backend can leave insignificant trailing spaces on
+    # path lines.  Normalize only serialization whitespace so the tracked
+    # publication artifact passes diff checks without changing its geometry.
+    svg_text = svg.read_text(encoding="utf-8")
+    normalized_svg = "\n".join(line.rstrip(" \t") for line in svg_text.splitlines()) + "\n"
+    if normalized_svg != svg_text:
+        svg.write_text(normalized_svg, encoding="utf-8")
     plt.close(fig)
     return [pdf, svg, review_png]
 
@@ -482,7 +491,7 @@ def render_h2_figure(
         ]
         for col, (values, cmap, limits) in enumerate(panels):
             ax = axes[row, col]
-            image = ax.imshow(values, origin="lower", extent=extent, aspect="equal", cmap=cmap, vmin=limits[0], vmax=limits[1], interpolation="nearest")
+            image = ax.imshow(values, origin="lower", extent=extent, aspect="equal", cmap=cmap, vmin=limits[0], vmax=limits[1], interpolation="bicubic")
             if col < 4:
                 temp_mappable = image
             else:
@@ -519,6 +528,8 @@ def render_h2_figure(
             "temperature_deltaT_K": [float(temp_vmin), float(temp_vmax)],
             "error_K_symmetric": [-error_vmax, error_vmax],
         },
+        "hotspot_plane_selection": "ground-truth maximum-DeltaT plane for each selected sample",
+        "field_interpolation": "bicubic for publication display only; source arrays unchanged",
         "prediction_sources": prediction_sources,
         "truth_source": str(truth_input),
         "outputs": [str(path) for path in outputs],
@@ -693,6 +704,9 @@ def main() -> int:
         "renderer": {
             "script": "scripts/plot_v7_g1_publication_figures.py",
             "script_sha256": sha256(Path(__file__).resolve()),
+            "skill": "heat3d-temperature-field-figures",
+            "skill_path": str(FIGURE_SKILL_PATH),
+            "skill_sha256": sha256(FIGURE_SKILL_PATH),
             "python": platform.python_version(),
             "numpy": np.__version__,
             "matplotlib": matplotlib.__version__,
@@ -704,6 +718,8 @@ def main() -> int:
             "h2_primary_metric": H2_METRIC,
             "temperature_panels_shared_scale": True,
             "error_panels_shared_symmetric_scale": True,
+            "hotspot_plane_selection": "ground-truth maximum-DeltaT plane for each selected sample",
+            "field_interpolation": "bicubic for publication display only; source arrays unchanged",
             "no_manual_case_selection": True,
             "no_new_metric": True,
             "checkpoint_loaded": False,
@@ -730,7 +746,9 @@ def main() -> int:
         "",
         f"- H2 primary route: `{PRIMARY_ROUTE}`",
         f"- H2 primary metric: `{H2_METRIC}`",
+        "- Renderer skill: `heat3d-temperature-field-figures`; skill instructions are recorded by SHA in the JSON provenance.",
         "- Selection: frozen manifest median/p90/p95 rule; no manual case selection.",
+        "- Each case uses its ground-truth maximum-DeltaT hotspot plane; plotting interpolation is bicubic display-only.",
         "- Temperature panels: common scale; error panels: common symmetric K scale.",
         "- Population: selected `valid_iid` rows only; test/sealed untouched; G2 untouched.",
         "",

@@ -33,7 +33,9 @@
           96.82072448730469
         ]
       },
+      "field_interpolation": "bicubic for publication display only; source arrays unchanged",
       "figure_id": "h2_thermal_error_maps",
+      "hotspot_plane_selection": "ground-truth maximum-DeltaT plane for each selected sample",
       "outputs": [
         "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-2_h2_fullfield_comparison.pdf",
         "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figures/G1-2_h2_fullfield_comparison.svg",
@@ -112,7 +114,7 @@
         }
       ],
       "selection_rule": "Use stored H2a primary paired effects; select the closest observed row to each stored percentile target, tie-breaking by sample_id then seed. Worst-10 is the top ten stored effects descending with the same tie-break.",
-      "truth_source": "/private/tmp/v7_g1_publication_truth_input_20260904.npz"
+      "truth_source": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_publication_inputs_sealed_20260907/truth_fixture.npz"
     },
     {
       "contrast_rows": {
@@ -163,10 +165,12 @@
     "checkpoint_loaded": false,
     "domain": "P1i valid_iid only",
     "error_panels_shared_symmetric_scale": true,
+    "field_interpolation": "bicubic for publication display only; source arrays unchanged",
     "formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
     "g2_touched": false,
     "h2_primary_metric": "source_region_RMSE_K",
     "h2_primary_route": "U_v2_16384_reconstruction",
+    "hotspot_plane_selection": "ground-truth maximum-DeltaT plane for each selected sample",
     "model_forward": false,
     "no_manual_case_selection": true,
     "no_new_metric": true,
@@ -179,7 +183,7 @@
     {
       "path": "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_figure_manifest.json",
       "role": "frozen figure manifest",
-      "sha256": "591a76313696331f386d632af3623d9987d8f4ed13a199ecc2cd50c43d2a6b81"
+      "sha256": "d625ca7a2841848a68e65dbefbdac382e3e840eaf0559ec4a9757db10f777296"
     },
     {
       "path": "/Users/xuyihua/.codex/worktrees/9ccd/3D IC Heat/docs/v7_g1_formal_archive_manifest.json",
@@ -202,17 +206,17 @@
       "sha256": "61b02e5c2d1086aaab5ba8badf89198e618d3f46242ed5c15938e92cdf54d62f"
     },
     {
-      "path": "/private/tmp/v7_g1_publication_truth_input_20260904.npz",
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_publication_inputs_sealed_20260907/truth_fixture.npz",
       "role": "valid_iid truth/shared-geometry fixture",
       "sha256": "74415add51bd92b8129d8d30d4740ed695701c3a987956470b1b56e6707f60ad"
     },
     {
-      "path": "/private/tmp/v7_g1_publication_support_input_20260904.npz",
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_publication_inputs_sealed_20260907/support_fixture.npz",
       "role": "valid_iid native support fixture",
       "sha256": "7c595f7e147cdcae678dbda4d961fc2ce23c131c7eb895083ec4d3cc6aa22944"
     },
     {
-      "path": "/private/tmp/v7_g1_publication_support_meta_20260904.json",
+      "path": "/Users/xuyihua/Documents/heat3d-ic/v7_g1_publication_inputs_sealed_20260907/support_metadata.json",
       "role": "valid_iid support layout metadata fixture",
       "sha256": "dce35ad47963c05337effde229338c4fa0d66c20ddc8892b98778620a7242453"
     },
@@ -299,19 +303,19 @@
       "sha256": "a4ae056c88e9426c6edb6c9410b994139e788a7eb5391c03ae539c9e879e6d10"
     },
     {
-      "bytes": 89173,
+      "bytes": 157277,
       "path": "docs/v7_g1_figures/G1-2_h2_fullfield_comparison.pdf",
-      "sha256": "89e090787ce80fce2d50bff63fa98ffa4df8781b0b62bdd183f2a4b81b741365"
+      "sha256": "75abf6112d631d23043081be1f591c11b96882d6a7d3d54ae8ed7f97884b3291"
     },
     {
-      "bytes": 220303,
+      "bytes": 375194,
       "path": "docs/v7_g1_figures/G1-2_h2_fullfield_comparison.svg",
-      "sha256": "bec726198c8bb673342f8b1d703db80740b667c662ff4b4d9dffb04b4ca036e4"
+      "sha256": "e1859b5ad99e8d2c7f830ac18bd8f7aaadc6eb79a3010357e4e35429476b2515"
     },
     {
-      "bytes": 332811,
+      "bytes": 1003756,
       "path": "docs/v7_g1_figures/G1-2_h2_fullfield_comparison_review.png",
-      "sha256": "fd990cf6a2197bbaf410b3088a1774eeef5e2de2f55a780efb39974a38dda4fc"
+      "sha256": "289bb1ce8085d85d01e5ad6aa691f99bc50afa706b695bb08b96b1534a430e4d"
     },
     {
       "bytes": 21296,
@@ -334,7 +338,13 @@
     "numpy": "2.1.3",
     "python": "3.12.3",
     "script": "scripts/plot_v7_g1_publication_figures.py",
-    "script_sha256": "04cc2189d92f1955b43025f54a145dace782cdb9507941ad2906b448c8091edb"
+    "script_sha256": "0ce1e5c9ef61f43e176dad39fbbace70062ccc60fe54db0f94853b710e08e7eb",
+    "skill": "heat3d-temperature-field-figures",
+    "skill_path": "/Users/xuyihua/.codex/skills/heat3d-temperature-field-figures/SKILL.md",
+    "skill_sha256": "18c4cec3eb53c99514b2a9500177aca7e43af106ed8a4138e246661bbb8bbef8",
+    "redrawn_figure_ids": ["h2_thermal_error_maps"],
+    "retained_without_redraw_figure_ids": ["support_visualization", "h2_paired_effect_distribution"],
+    "retained_outputs_reason": "G1-1 and G1-3 data, selection, and visual semantics were unchanged; their prior committed bytes are retained."
   },
   "schema_version": "heat3d_v7_g1_publication_figure_provenance_v1",
   "scope": "V7 G1 publication figures only; no new inference or metric",

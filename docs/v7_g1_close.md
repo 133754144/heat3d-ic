@@ -141,6 +141,35 @@ state. The latest publication-close branch HEAD is the current `research/v7`
 tip after the publication-only commit(s), and is intentionally distinct from
 the science commit; its exact SHA is reported by the final Git verification.
 
+## Final operational/publication close (2026-09-07)
+
+This section records operational work only; it does not alter the frozen science
+claims, receipts, checkpoints, support definitions, U routes, statistics, or the
+719-file science archive.
+
+- G1-2 was redrawn from the same frozen primary-route predictions using the
+  `heat3d-temperature-field-figures` skill. The fixed ground-truth hotspot-plane
+  rule, median/p90/p95 cases, common temperature scale, symmetric error scale,
+  and all input hashes are recorded in [`v7_g1_figures/v7_g1_figure_provenance.json`](v7_g1_figures/v7_g1_figure_provenance.json).
+- The fixture chain is reproducible: [`reproduce_v7_g1_publication_inputs.py`](../scripts/reproduce_v7_g1_publication_inputs.py)
+  regenerated truth/shared geometry, native support, and sanitized support
+  metadata from the devbox frozen H5/support inputs with exact SHA agreement.
+  The persistent bundle is
+  `/Users/xuyihua/Documents/heat3d-ic/v7_g1_publication_inputs_sealed_20260907/`.
+- A devbox-only, split-safe inventory is recorded in
+  `/Users/xuyihua/Documents/heat3d-ic/v7_g1_devbox_data_inventory_20260907.json`.
+  WSL2 was unavailable and was intentionally not probed; therefore no
+  cross-server transfer, conflict classification, or parity claim is made.
+  The detailed record is [`v7_g1_server_data_redundancy_receipt.json`](v7_g1_server_data_redundancy_receipt.json).
+- The operational receipt is [`v7_g1_final_operational_close_receipt.json`](v7_g1_final_operational_close_receipt.json).
+  Publication close is complete within the permitted scope; the WSL2 mirror is
+  deferred engineering debt. The direct `research/v7` → `main` merge remains
+  deferred to a future curated mainline integration.
+
+G1 scientific blockers: `none`. Operational work performed in this turn has no
+science blocker; the only remaining engineering debt is the unavailable WSL2
+mirror, with zero transfer and zero overwrite.
+
 ## Final state
 
 `G1_SCIENCE_FROZEN_AND_EVIDENCE_SEALED`
