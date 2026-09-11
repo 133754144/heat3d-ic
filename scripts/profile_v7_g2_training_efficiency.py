@@ -58,6 +58,14 @@ def quantiles(values: list[float]) -> dict[str, float | None]:
     if not values:
         return {name: None for name in ("p50", "p90", "p95", "p99", "max")}
     array = np.asarray(values, dtype=np.float64)
+    def _finite_leaf(leaf: Any) -> bool:
+        try:
+            return bool(np.all(np.isfinite(np.asarray(leaf))))
+        except (TypeError, ValueError):
+            # Empty/static pytree leaves (for example optax EmptyState) carry
+            # no numerical values to validate.
+            return True
+
     return {
         "p50": float(np.quantile(array, 0.50)),
         "p90": float(np.quantile(array, 0.90)),
@@ -265,10 +273,7 @@ def _optimizer_dispatch_components(trainer, state, batch, key, block) -> dict[st
         "optimizer_update_warm_seconds": update_warm_seconds,
         "parameter_apply_first_seconds": apply_first_seconds,
         "parameter_apply_warm_seconds": apply_warm_seconds,
-        "finite": all(
-            bool(np.all(np.isfinite(np.asarray(leaf))))
-            for leaf in tree.tree_leaves((update_warm, applied_warm))
-        ),
+        "finite": all(_finite_leaf(leaf) for leaf in tree.tree_leaves((update_warm, applied_warm))),
         "note": (
             "diagnostic executables on one frozen batch; optimizer/update and "
             "dispatch values are not additive with the fused JIT step"

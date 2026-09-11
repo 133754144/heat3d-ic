@@ -8,17 +8,18 @@
       "batch_size": 24,
       "epochs": 200,
       "seeds": [0, 1, 2],
+      "scheduling": "serial one-seed-at-a-time; never overlap seed processes",
       "slim_jit": "rejected_by_execution_equivalence_gate"
     },
     "gino": {
       "formal": false,
       "reason": "optimized backend gate remains blocked",
-      "data_cache": "verified RAM cache candidate only"
+      "data_cache": "verified RAM cache candidate; launch with --data-cache verified_ram after startup receipt"
     },
     "transolver": {
       "formal": false,
       "reason": "common gate remains blocked by GINO",
-      "data_cache": "verified RAM cache candidate only"
+      "data_cache": "verified RAM cache candidate; launch with --data-cache verified_ram after startup receipt"
     }
   },
   "projection_method": {
