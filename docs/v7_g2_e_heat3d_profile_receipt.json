@@ -1,5 +1,10 @@
 {
   "schema_version": "heat3d_v7_g2_e_profile_receipt_v1",
+  "raw_remote_receipt": {
+    "path": "/tmp/g2_e_heat3d_profile_v2.json",
+    "sha256": "374ed82d44e7e4c373c53b75f4b981b99a68300347ed559d25a4aab0a2594408",
+    "runner_repo_sha": "4b4c1de07f6ee567315da6f949aa9ce0157b01b3"
+  },
   "status": "PASS_PERFORMANCE_PROFILE_FINITE",
   "scope": {
     "train": 768,
@@ -22,25 +27,36 @@
     "seed2_started": false
   },
   "preparation": {
-    "wall_seconds": 353.42151621399535,
-    "graph_preparation_seconds": 301.85194239599514,
-    "feature_preprocessing_seconds": 2.2843043040047633,
+    "wall_seconds": 353.13576829199883,
+    "graph_preparation_seconds": 300.1089467509955,
+    "feature_preprocessing_seconds": 2.4477377549992525,
     "graph_metadata_build_calls": 896,
     "graph_build_calls": 36,
-    "batch_build_seconds": 304.35213821195794,
-    "total_batch_build_seconds": 30.954389676000574,
+    "batch_build_seconds": 302.77695812799357,
+    "total_batch_build_seconds": 30.972583279995888,
     "interpretation": "startup/preparation is material but occurs once per process; no per-step data rebuild was observed"
   },
   "step_decomposition": {
     "device": "cuda:0",
     "xla_flags": "--xla_gpu_deterministic_ops=true",
-    "isolated_forward_seconds": 56.52333581499988,
-    "isolated_loss_seconds": 0.48389232699992135,
-    "isolated_backward_seconds_including_model_replay": 103.09910166700138,
-    "legacy_jit_step_first_seconds": 81.02757686800032,
-    "legacy_jit_step_warm_seconds": 43.449954249001166,
-    "slim_jit_step_first_seconds": 71.34118793600646,
-    "slim_jit_step_warm_seconds": 43.44161886299844,
+    "isolated_forward_seconds": 56.17063178799435,
+    "isolated_loss_seconds": 0.4843935929966392,
+    "isolated_backward_seconds_including_model_replay": 103.93232236100448,
+    "legacy_jit_step_first_seconds": 80.55302553099318,
+    "legacy_jit_step_warm_seconds": 43.17329314399831,
+    "slim_jit_step_first_seconds": 71.54415610599972,
+    "slim_jit_step_warm_seconds": 43.392220344001544,
+    "optimizer_update_and_dispatch": {
+      "dispatch_without_block_seconds": 44.501237887998286,
+      "explicit_block_until_ready_seconds": 0.0019935309974243864,
+      "optimizer_update_first_seconds": 2.6235566590039525,
+      "optimizer_update_warm_seconds": 0.005037474002165254,
+      "parameter_apply_first_seconds": 0.16046692899544723,
+      "parameter_apply_warm_seconds": 0.0025010329991346225,
+      "finite": true,
+      "diagnostic_only": true,
+      "non_additive_with_fused_step": true
+    },
     "isolated_components_non_additive": true,
     "authoritative_boundary": "fused step with block_until_ready"
   },
@@ -71,20 +87,20 @@
     }
   },
   "validation_single_forward": {
-    "duplicate_forward_seconds": 159.40676682499907,
-    "single_forward_seconds": 73.72985010300181,
-    "speedup_ratio": 2.1620383956064635,
+    "duplicate_forward_seconds": 159.1252028480012,
+    "single_forward_seconds": 73.34246606200031,
+    "speedup_ratio": 2.169618931458947,
     "finite": true,
     "formal_semantics": "same apply_fn result supplies prediction and loss"
   },
   "checkpoint_io": {
-    "seconds": 0.7980140750005376,
+    "seconds": 0.779489647000446,
     "roundtrip_parameter_max_abs": 0.0,
     "roundtrip_optimizer_max_abs": 0.0,
     "atomic": true
   },
   "resource": {
-    "peak_bytes_in_use": 6504095744,
+    "peak_bytes_in_use": 6519943680,
     "largest_allocation_bytes": 3008333824,
     "pool_limit_bytes": 9615360000
   },
