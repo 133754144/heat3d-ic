@@ -28,6 +28,7 @@ import jax
 import jax.numpy as jnp
 import jax.tree_util as tree
 import numpy as np
+import optax
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -204,6 +205,77 @@ def _isolated_components(apply_fn, batch_loss, params, batch, key, block) -> dic
     return timings
 
 
+def _optimizer_dispatch_components(trainer, state, batch, key, block) -> dict[str, Any]:
+    """Measure optimizer/update and asynchronous dispatch boundaries.
+
+    JAX normally fuses model, loss, gradient, optimizer and parameter update
+    into the compiled training executable.  These timings therefore remain
+    engineering diagnostics: they are not additive with the fused step and
+    are never used to select an accuracy/configuration outcome.
+    """
+
+    compiled = trainer._compiled_for(batch)
+    # The executable is already compiled by the preceding warm call.  Measure
+    # dispatch without forcing a host/device wait, then measure the explicit
+    # completion boundary separately.
+    dispatch_started = time.perf_counter()
+    pending = compiled(state.params, state.optimizer_state, key)
+    dispatch_seconds = time.perf_counter() - dispatch_started
+    sync_started = time.perf_counter()
+    block(pending)
+    synchronization_seconds = time.perf_counter() - sync_started
+
+    # Isolate the optimizer update and optax parameter application on the
+    # exact gradient/state trees produced by the frozen update.  This is a
+    # separate diagnostic executable, not a formal training path.
+    _, _, _, gradients, _updates, _prediction = pending
+
+    def update_only(current_gradients, current_state, current_params):
+        return trainer.dependencies.optimizer.update(
+            current_gradients, current_state, current_params
+        )
+
+    update_compiled = jax.jit(update_only)
+    update_started = time.perf_counter()
+    update_first = update_compiled(gradients, state.optimizer_state, state.params)
+    block(update_first)
+    update_first_seconds = time.perf_counter() - update_started
+    update_started = time.perf_counter()
+    update_warm = update_compiled(gradients, state.optimizer_state, state.params)
+    block(update_warm)
+    update_warm_seconds = time.perf_counter() - update_started
+
+    def apply_only(current_params, current_updates):
+        return optax.apply_updates(current_params, current_updates)
+
+    apply_compiled = jax.jit(apply_only)
+    apply_started = time.perf_counter()
+    applied_first = apply_compiled(state.params, update_first[0])
+    block(applied_first)
+    apply_first_seconds = time.perf_counter() - apply_started
+    apply_started = time.perf_counter()
+    applied_warm = apply_compiled(state.params, update_warm[0])
+    block(applied_warm)
+    apply_warm_seconds = time.perf_counter() - apply_started
+
+    return {
+        "dispatch_without_block_seconds": dispatch_seconds,
+        "explicit_block_until_ready_seconds": synchronization_seconds,
+        "optimizer_update_first_seconds": update_first_seconds,
+        "optimizer_update_warm_seconds": update_warm_seconds,
+        "parameter_apply_first_seconds": apply_first_seconds,
+        "parameter_apply_warm_seconds": apply_warm_seconds,
+        "finite": all(
+            bool(np.all(np.isfinite(np.asarray(leaf))))
+            for leaf in tree.tree_leaves((update_warm, applied_warm))
+        ),
+        "note": (
+            "diagnostic executables on one frozen batch; optimizer/update and "
+            "dispatch values are not additive with the fused JIT step"
+        ),
+    }
+
+
 def run_remote(args: argparse.Namespace) -> dict[str, Any]:
     if args.fs_train.name != "fs_train_volume.npy":
         raise ValueError("only fs_train_volume.npy is accepted")
@@ -325,6 +397,9 @@ def run_remote(args: argparse.Namespace) -> dict[str, Any]:
     single_seconds = time.perf_counter() - single_started
 
     isolated = _isolated_components(apply_fn, batch_loss, params, batch, key, block_until_ready)
+    optimizer_dispatch = _optimizer_dispatch_components(
+        trainer, state, batch, key, block_until_ready
+    )
     with tempfile.TemporaryDirectory(prefix="g2_e_profile_") as temporary:
         checkpoint_started = time.perf_counter()
         checkpoint = atomic_training_checkpoint(Path(temporary) / "profile.pkl", state=slim_warm.state, metadata={"profile": True})
@@ -345,6 +420,7 @@ def run_remote(args: argparse.Namespace) -> dict[str, Any]:
         "graph_padding": _edge_padding(train_batches),
         "step_decomposition": {
             "isolated_components": isolated,
+            "optimizer_update_and_dispatch": optimizer_dispatch,
             "legacy_jit_step_first_seconds": legacy_first,
             "legacy_jit_step_warm_seconds": legacy_warm_seconds,
             "slim_jit_step_first_seconds": slim_first,

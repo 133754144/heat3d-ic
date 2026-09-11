@@ -25,6 +25,12 @@
     "fixed_shape_jit_dispatch",
     "preparation_reuse"
   ],
+  "candidate_decisions": {
+    "validation_single_forward": "eligible after code-level semantic identity and bounded timing receipt",
+    "slim_jit_return": "FAIL_CLOSED_execution_trajectory_not_bitwise_equal",
+    "fixed_shape_jit_dispatch": "not_qualified; requires a separate static-shape equivalence audit",
+    "preparation_reuse": "not qualified; current process-local preparation is retained"
+  },
   "equivalence_gate": {
     "required_status": "SCIENCE_NEUTRAL_EXECUTION_EQUIVALENCE_PASS",
     "comparison": [

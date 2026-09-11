@@ -1,0 +1,53 @@
+{
+  "schema_version": "v7_g2_e_remote_training_projection_v1",
+  "status": "PREPARED_NOT_LAUNCHED",
+  "recommended_execution": {
+    "heat3d_on_deepoheat_v1": {
+      "path": "legacy",
+      "validation": "single-forward callback",
+      "batch_size": 24,
+      "epochs": 200,
+      "seeds": [0, 1, 2],
+      "slim_jit": "rejected_by_execution_equivalence_gate"
+    },
+    "gino": {
+      "formal": false,
+      "reason": "optimized backend gate remains blocked",
+      "data_cache": "verified RAM cache candidate only"
+    },
+    "transolver": {
+      "formal": false,
+      "reason": "common gate remains blocked by GINO",
+      "data_cache": "verified RAM cache candidate only"
+    }
+  },
+  "projection_method": {
+    "heat3d_epoch_seconds": 1994.6207798210016,
+    "gino_step_seconds": 0.3443616027832031,
+    "transolver_step_seconds": 0.5351899570086971,
+    "steps_per_epoch": 768,
+    "includes_accuracy": false
+  },
+  "projected_wall_seconds": {
+    "heat3d_one_seed": 398924.1559642003,
+    "heat3d_three_seeds": 1196772.4678926008,
+    "gino_one_seed": 79605.38215265625,
+    "gino_three_seeds": 238816.14645796875,
+    "transolver_one_seed": 205513.90349134244,
+    "transolver_three_seeds": 616541.7104740273
+  },
+  "projected_wall_hours": {
+    "heat3d_one_seed": 110.8122655456112,
+    "heat3d_three_seeds": 332.43679663683355,
+    "gino_one_seed": 22.112606153515625,
+    "gino_three_seeds": 66.3378190161023,
+    "transolver_one_seed": 57.08719541426179,
+    "transolver_three_seeds": 171.26116540945203
+  },
+  "caveats": [
+    "Heat3D projection uses the stopped seed0 warm epoch and is not a convergence claim",
+    "GINO/Transolver projections use existing one-step CUDA preflight timings and are upper-bound engineering estimates",
+    "No formal run may start until the frozen common gate and G1 close conditions are satisfied"
+  ],
+  "test_or_sealed_access": false
+}

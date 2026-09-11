@@ -104,6 +104,11 @@ def main() -> int:
         type=Path,
         help="optional atomic latest-epoch checkpoint; resume only at a completed epoch",
     )
+    parser.add_argument(
+        "--execution-equivalence-receipt",
+        type=Path,
+        help="required PASS receipt before an experimental slim path can run",
+    )
     parser.add_argument("--fs-train", type=Path)
     parser.add_argument("--subset-manifest", type=Path)
     parser.add_argument("--labels-root", type=Path)
@@ -111,6 +116,12 @@ def main() -> int:
     parser.add_argument("--heat3d-config", type=Path)
     parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
+    if args.execution_path == "slim":
+        if args.execution_equivalence_receipt is None:
+            raise SystemExit("FAIL-CLOSED: slim execution requires an equivalence receipt")
+        receipt = json.loads(args.execution_equivalence_receipt.read_text(encoding="utf-8"))
+        if receipt.get("status") != "SCIENCE_NEUTRAL_EXECUTION_EQUIVALENCE_PASS":
+            raise SystemExit("FAIL-CLOSED: slim execution equivalence did not PASS")
     if args.mode == "contract-check":
         print(json.dumps({
             "status": "PASS_CONTRACT_CHECK_NO_DATA_NO_TRAINING", "seed": args.seed,

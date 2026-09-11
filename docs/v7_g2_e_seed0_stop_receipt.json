@@ -1,0 +1,37 @@
+{
+  "schema_version": "g2_e_heat3d_seed_stop_receipt_v1",
+  "status": "STOPPED_FOR_ENGINEERING_EFFICIENCY_REQUALIFICATION",
+  "scope": "Heat3D-on-DeepOHeat-v1 seed0 only; no seed1/seed2 launch",
+  "remote": {
+    "host": "devbox",
+    "repo": "/home/xyh/myCodeGitOnly/heat3d-ic-g2",
+    "repo_sha_at_attempt": "a59fde9c9a0edd2981b2a8be49f7e4036e533744",
+    "output_dir": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_0",
+    "archive_dir": "output/_engineering_archives/g2_e_seed0_epoch11_20260911",
+    "tmux": "g2_heat3d_v1_serial_20260911",
+    "parent_pid": 5089,
+    "worker_pid": 5142
+  },
+  "boundary": {
+    "configured_epochs": 200,
+    "last_completed_epoch": 11,
+    "best_epoch": 10,
+    "best_checkpoint_present": true,
+    "final_checkpoint_present": false,
+    "process_alive_after_stop": false,
+    "seed1_started": false,
+    "seed2_started": false,
+    "accuracy_driven_stop": false,
+    "test_iid_access": false,
+    "sealed_access": false,
+    "deepoheat_official_test_access": false
+  },
+  "archive": {
+    "path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_engineering_archives/g2_e_seed0_epoch11_20260911",
+    "total_bytes": 10737762,
+    "receipt_sha256": "985962b082eee0e8e8225e48c8d57a5c3bb24f5e18aa334254aff2fd6ef16200",
+    "best_checkpoint_sha256": "a48926bf94e301b72ac3b5f092e370267a8cf7e65f7cb94944643cd30b1baec0",
+    "log_sha256": "52da78bb3404288de628dcc3f11731ffd03e5703082c9e217b9126d7a2507735"
+  },
+  "reason": "Stop was issued at a completed epoch boundary solely for science-neutral execution-efficiency requalification; no accuracy or test result was consulted."
+}

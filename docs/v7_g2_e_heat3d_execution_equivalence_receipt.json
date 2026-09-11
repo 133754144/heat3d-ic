@@ -1,0 +1,33 @@
+{
+  "schema_version": "heat3d_v7_g2_e_execution_equivalence_receipt_v1",
+  "status": "SCIENCE_NEUTRAL_EXECUTION_EQUIVALENCE_FAIL_CLOSED",
+  "runner": "scripts/check_v7_g2_heat3d_execution_equivalence.py",
+  "fixture": {
+    "role": "train",
+    "count": 24,
+    "batch_size": 24,
+    "seed": 0,
+    "rng_key": 901,
+    "accuracy_used": false
+  },
+  "legacy_vs_slim": {
+    "loss_bitwise_equal": true,
+    "params_max_abs_difference": 0.0001326417550444603,
+    "optimizer_state_max_abs_difference": 7.681082934141159e-07,
+    "update_count_equal": true,
+    "legacy_compile_count": 1,
+    "slim_compile_count": 1,
+    "required_gate": "bitwise exact or separately audited roundoff",
+    "decision": "slim execution path is not eligible for formal training"
+  },
+  "scientific_contract": {
+    "batch_order_changed": false,
+    "rng_changed": false,
+    "architecture_changed": false,
+    "loss_changed": false,
+    "optimizer_changed": false,
+    "radius_changed": false
+  },
+  "test_or_sealed_access": false,
+  "recommended_formal_execution": "legacy path plus single-forward validation callback only"
+}

@@ -1,0 +1,100 @@
+{
+  "schema_version": "heat3d_v7_g2_e_profile_receipt_v1",
+  "status": "PASS_PERFORMANCE_PROFILE_FINITE",
+  "scope": {
+    "train": 768,
+    "valid": 128,
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "accuracy_used_for_execution_choice": false,
+    "test_or_sealed_access": false,
+    "formal_training_started": false
+  },
+  "seed0_stop": {
+    "status": "STOPPED_FOR_ENGINEERING_EFFICIENCY_REQUALIFICATION",
+    "last_completed_epoch": 11,
+    "archive_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_engineering_archives/g2_e_seed0_epoch11_20260911",
+    "archive_receipt_sha256": "985962b082eee0e8e8225e48c8d57a5c3bb24f5e18aa334254aff2fd6ef16200",
+    "best_checkpoint_sha256": "a48926bf94e301b72ac3b5f092e370267a8cf7e65f7cb94944643cd30b1baec0",
+    "log_sha256": "52da78bb3404288de628dcc3f11731ffd03e5703082c9e217b9126d7a2507735",
+    "accuracy_driven_stop": false,
+    "seed1_started": false,
+    "seed2_started": false
+  },
+  "preparation": {
+    "wall_seconds": 353.42151621399535,
+    "graph_preparation_seconds": 301.85194239599514,
+    "feature_preprocessing_seconds": 2.2843043040047633,
+    "graph_metadata_build_calls": 896,
+    "graph_build_calls": 36,
+    "batch_build_seconds": 304.35213821195794,
+    "total_batch_build_seconds": 30.954389676000574,
+    "interpretation": "startup/preparation is material but occurs once per process; no per-step data rebuild was observed"
+  },
+  "step_decomposition": {
+    "device": "cuda:0",
+    "xla_flags": "--xla_gpu_deterministic_ops=true",
+    "isolated_forward_seconds": 56.52333581499988,
+    "isolated_loss_seconds": 0.48389232699992135,
+    "isolated_backward_seconds_including_model_replay": 103.09910166700138,
+    "legacy_jit_step_first_seconds": 81.02757686800032,
+    "legacy_jit_step_warm_seconds": 43.449954249001166,
+    "slim_jit_step_first_seconds": 71.34118793600646,
+    "slim_jit_step_warm_seconds": 43.44161886299844,
+    "isolated_components_non_additive": true,
+    "authoritative_boundary": "fused step with block_until_ready"
+  },
+  "graph_padding": {
+    "p2r": {
+      "sample_count": 768,
+      "real_edges_total": 1825305,
+      "padded_edges_total": 264327,
+      "real_edges_p50_p90_p95_max": [2365.0, 2583.6, 2632.6, 2985.0],
+      "padded_edges_p50_p90_p95_max": [344.0, 588.0, 643.3, 917.0],
+      "padding_over_real_p50_p90_p95_max": [0.1458482932731091, 0.26242371403661724, 0.2944556663729909, 0.472680412371134]
+    },
+    "r2r": {
+      "sample_count": 768,
+      "real_edges_total": 3174352,
+      "padded_edges_total": 59600,
+      "real_edges_p50_p90_p95_max": [4132.0, 4186.0, 4199.3, 4242.0],
+      "padded_edges_p50_p90_p95_max": [77.0, 135.0, 149.0, 229.0],
+      "padding_over_real_p50_p90_p95_max": [0.018639564417592062, 0.03286750906242604, 0.0366436218002406, 0.0571072319201995]
+    },
+    "r2p": {
+      "sample_count": 768,
+      "real_edges_total": 1825305,
+      "padded_edges_total": 264327,
+      "real_edges_p50_p90_p95_max": [2365.0, 2583.6, 2632.6, 2985.0],
+      "padded_edges_p50_p90_p95_max": [344.0, 588.0, 643.3, 917.0],
+      "padding_over_real_p50_p90_p95_max": [0.1458482932731091, 0.26242371403661724, 0.2944556663729909, 0.472680412371134]
+    }
+  },
+  "validation_single_forward": {
+    "duplicate_forward_seconds": 159.40676682499907,
+    "single_forward_seconds": 73.72985010300181,
+    "speedup_ratio": 2.1620383956064635,
+    "finite": true,
+    "formal_semantics": "same apply_fn result supplies prediction and loss"
+  },
+  "checkpoint_io": {
+    "seconds": 0.7980140750005376,
+    "roundtrip_parameter_max_abs": 0.0,
+    "roundtrip_optimizer_max_abs": 0.0,
+    "atomic": true
+  },
+  "resource": {
+    "peak_bytes_in_use": 6504095744,
+    "largest_allocation_bytes": 3008333824,
+    "pool_limit_bytes": 9615360000
+  },
+  "matched_g1_baseline": {
+    "status": "DEFERRED_NOT_SAME_DATASET",
+    "historical_reference": "docs/v7_g1_p1i_rehearsal_receipt.json",
+    "reason": "current bounded profile did not execute a second model or compare accuracy"
+  },
+  "b32_nonpublication": {
+    "status": "NOT_RUN",
+    "reason": "B24 remains formal; B32 requires separate shape compilation and cannot select a formal config"
+  }
+}
