@@ -1,0 +1,23 @@
+{
+  "schema_version": "v7_g2_e_exact_resume_receipt_v1",
+  "status": "EXACT_RESUME_EQUIVALENCE_PASS",
+  "runner": "scripts/check_v7_g2_exact_resume.py",
+  "fixture": {
+    "continuous_steps": 8,
+    "restart_split": 3,
+    "continuous_update_count": 8,
+    "resumed_update_count": 8,
+    "loss_trajectory_bitwise_equal": true,
+    "params_max_abs_difference": 0.0,
+    "optimizer_state_max_abs_difference": 0.0,
+    "checkpoint_schema": "g2_exact_resume_checkpoint_v1",
+    "atomic_replace": true
+  },
+  "formal_runner_contract": {
+    "heat3d": "latest_epoch.pkl at completed epoch; params/optimizer/epoch/update/best/RNG/batch-order/config/data metadata",
+    "gino": "existing state payload contains model/optimizer/scheduler/epoch/RNG metadata; latest integration remains queued",
+    "transolver": "existing state payload contains model/optimizer/scheduler/epoch/RNG metadata; latest integration remains queued"
+  },
+  "test_or_sealed_access": false,
+  "publication_resume_claim_allowed": false
+}

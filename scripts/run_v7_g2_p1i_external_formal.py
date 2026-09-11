@@ -33,6 +33,10 @@ from scripts.run_v7_g2_p1_local_qualification import (  # noqa: E402
     latent_queries,
     relative_l2,
 )
+from rigno.heat3d_g2.resume import (  # noqa: E402
+    atomic_torch_latest_checkpoint,
+    load_torch_latest_checkpoint,
+)
 
 DATASET_SHA = "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514"
 STATS_PAYLOAD_SHA = "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a"
@@ -160,6 +164,11 @@ def main() -> int:
     parser.add_argument("--statistics", type=Path, default=REPO / "docs/v7_g2_p3_p1i_train_statistics.json")
     parser.add_argument("--upstream-root", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument(
+        "--resume-from",
+        type=Path,
+        help="optional completed-epoch atomic checkpoint; scientific config must match",
+    )
     parser.add_argument("--backend-qualification-receipt", type=Path)
     args = parser.parse_args()
     launch_path = REPO / "configs/heat3d_v7" / f"g2_{args.model.lower()}_formal_launch_manifest.json"
@@ -217,12 +226,39 @@ def main() -> int:
         grid = None
     args.output_dir.mkdir(parents=True, exist_ok=True)
     epochs = 1 if args.mode == "preflight" else expected_epochs
+    start_epoch = 0
+    global_update_count = 0
+    resumed_history = []
+    if args.resume_from is not None:
+        if args.mode != "train":
+            raise ValueError("resume is available only for train mode")
+        resumed = load_torch_latest_checkpoint(args.resume_from)
+        if int(resumed.get("seed", args.seed)) != args.seed:
+            raise ValueError("resume seed mismatch")
+        if resumed.get("model_name", args.model) != args.model:
+            raise ValueError("resume model mismatch")
+        model.load_state_dict(resumed["model"])
+        optimizer.load_state_dict(resumed["optimizer"])
+        scheduler.load_state_dict(resumed["scheduler"])
+        start_epoch = int(resumed["epoch"])
+        if start_epoch < 1 or start_epoch >= epochs:
+            raise ValueError("resume must point to a completed epoch before the budget end")
+        global_update_count = int(resumed["global_update_count"])
+        resumed_history = list(resumed.get("history", []))
+        random.setstate(resumed["python_random_state"])
+        np.random.set_state(resumed["numpy_random_state"])
+        torch.set_rng_state(resumed["torch_random_state"])
+        if torch.cuda.is_available() and resumed.get("cuda_random_states"):
+            torch.cuda.set_rng_state_all(resumed["cuda_random_states"])
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats()
-    best = float("inf"); history = []
+    best = float(resumed.get("best_metric", "inf")) if args.resume_from is not None else float("inf")
+    best_epoch = (int(resumed["best_epoch"]) if args.resume_from is not None and resumed.get("best_epoch") is not None else None)
+    history = resumed_history
     first_train_step_seconds = None
     first_valid_forward_seconds = None
-    for epoch in range(epochs):
+    for epoch_index in range(start_epoch, epochs):
+        epoch = epoch_index
         order = torch.randperm(len(train), generator=torch.Generator().manual_seed(args.seed * 100000 + epoch)).tolist()
         if args.mode == "preflight": order = order[:1]
         model.train(); train_sum = 0.0
@@ -264,8 +300,16 @@ def main() -> int:
         selection = evaluation["metrics"]["sample_first_relative_rmse_pct"]
         history.append({"epoch": epoch + 1, "train_objective_mean": train_sum / len(order),
                         "valid_metrics": evaluation["metrics"]})
+        global_update_count += len(order)
+        is_best = args.mode == "train" and selection < best
+        if is_best:
+            best = selection
+            best_epoch = epoch + 1
         state = {"model": model.state_dict(), "optimizer": optimizer.state_dict(),
                  "scheduler": scheduler.state_dict(), "epoch": epoch + 1, "seed": args.seed,
+                 "model_name": args.model, "global_update_count": global_update_count,
+                 "best_metric": best, "best_epoch": best_epoch,
+                 "history": history,
                  "repo_sha": git_sha(), "upstream": launch["upstream"],
                  "launch_manifest": launch, "launch_manifest_sha256": sha256(launch_path),
                  "normalization": {key: value.cpu() for key, value in stats.items()},
@@ -280,8 +324,22 @@ def main() -> int:
                      if args.model == "GINO" and args.backend_qualification_receipt is not None
                      else None
                  )}
-        if args.mode == "train" and selection < best:
-            best = selection; torch.save(state, args.output_dir / "best_valid_iid.pt")
+        if args.mode == "train":
+            atomic_torch_latest_checkpoint(
+                args.output_dir / "latest_epoch.pt",
+                state=state,
+                epoch=epoch + 1,
+                global_update_count=global_update_count,
+                best_metric=best,
+                best_epoch=state["best_epoch"],
+                runner_sha=git_sha(),
+                config_sha=sha256(launch_path),
+                data_sha=DATASET_SHA,
+                batch_order_state={"algorithm": "manual_seed(seed*100000+epoch)", "next_epoch": epoch + 2},
+                test_access=False,
+            )
+        if is_best:
+            torch.save(state, args.output_dir / "best_valid_iid.pt")
         if args.mode == "train" and epoch + 1 == epochs:
             torch.save(state, args.output_dir / "final_epoch.pt")
     reload_checks = {}
@@ -313,6 +371,9 @@ def main() -> int:
                             "first_train_step_wall_seconds": first_train_step_seconds,
                             "first_valid_forward_wall_seconds": first_valid_forward_seconds},
                "epochs": epochs, "history": history, "test_or_sealed_access": False,
+               "exact_resume": {"latest_checkpoint": "latest_epoch.pt" if args.mode == "train" else None,
+                                "resumed_from": str(args.resume_from) if args.resume_from else None,
+                                "latest_schema": "g2_external_torch_exact_resume_v1" if args.mode == "train" else None},
                "checkpoint_reload_checks": reload_checks,
                "formal_accuracy_claim_allowed": args.mode == "train"}
     (args.output_dir / "run_receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")

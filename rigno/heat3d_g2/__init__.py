@@ -19,6 +19,10 @@ from .p1i import (
     load_frozen_p1i_input_only,
     load_frozen_valid_evaluation_sample,
 )
+from .resume import (
+    atomic_torch_latest_checkpoint,
+    load_torch_latest_checkpoint,
+)
 
 __all__ = [
     "GINOAdapter",
@@ -31,4 +35,6 @@ __all__ = [
     "evaluate_valid_prediction",
     "load_frozen_p1i_input_only",
     "load_frozen_valid_evaluation_sample",
+    "atomic_torch_latest_checkpoint",
+    "load_torch_latest_checkpoint",
 ]
