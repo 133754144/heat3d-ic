@@ -230,24 +230,30 @@ def run_remote(args: argparse.Namespace) -> dict[str, Any]:
     train_examples = _build_examples(train_data, "train", mesh["coords"], mesh["control_volume"], mesh["layer_id"])
     valid_examples = _build_examples(valid_data, "valid", mesh["coords"], mesh["control_volume"], mesh["layer_id"])
     builder = __import__("rigno.graphBuilder_Heat3D", fromlist=["Heat3DGraphBuilder"]).Heat3DGraphBuilder(**config["graph"])
+    from rigno.heat3d_training import build_p1i_batches
     profile: dict[str, Any] = {}
-    train_batches = __import__("rigno.heat3d_training", fromlist=["build_p1i_batches"]).build_p1i_batches(
+    train_batches = build_p1i_batches(
         train_examples, stats, builder, label="g2_e_profile_train", batch_size=24, graph_seed=args.seed, profile=profile
     )
-    valid_batches = __import__("rigno.heat3d_training", fromlist=["build_p1i_batches"]).build_p1i_batches(
+    valid_batches = build_p1i_batches(
         valid_examples, stats, builder, label="g2_e_profile_valid", batch_size=32, graph_seed=args.seed, profile=profile
     )
     all_examples = train_examples + valid_examples
-    training_pkg = __import__("rigno.heat3d_training", fromlist=["attach_input_contexts"])
-    context = training_pkg.attach_input_contexts(train_batches + valid_batches, train_examples, all_examples, config["model"])
+    from rigno.heat3d_training.p1i import (
+        attach_input_contexts,
+        attach_native_physics,
+        attach_qk_features,
+        fit_native_loss_references,
+    )
+    context = attach_input_contexts(train_batches + valid_batches, train_examples, all_examples, config["model"])
     by_id = {row.sample_id: row for row in all_examples}
     for batches in (train_batches, valid_batches):
-        training_pkg.attach_native_physics(batches, by_id, context_by_id=context["raw_context_by_id"])
-        training_pkg.attach_qk_features(batches, by_id, feature_version=str(config["model"]["qk_region_feature_version"]))
+        attach_native_physics(batches, by_id, context_by_id=context["raw_context_by_id"])
+        attach_qk_features(batches, by_id, feature_version=str(config["model"]["qk_region_feature_version"]))
     prep_seconds = time.perf_counter() - preparation_started
 
     loss_config = dict(config["loss"])
-    loss_config.update(training_pkg.fit_native_loss_references(train_examples, config["loss"]))
+    loss_config.update(fit_native_loss_references(train_examples, config["loss"]))
     model_config = helper.resolve_model_config(config["model"], tuple(stats["feature_names"]))
     from rigno.models.rigno import RIGNO
     from rigno.heat3d_training import (
