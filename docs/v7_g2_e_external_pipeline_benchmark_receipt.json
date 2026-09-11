@@ -33,7 +33,21 @@
     "flag": "--data-cache verified_ram",
     "default": "per_sample",
     "semantics": "startup SHA verification followed by byte-identical CPU row reuse",
-    "formal_recommendation": "verified_ram after a startup receipt"
+    "formal_recommendation": "verified_ram after a startup receipt",
+    "smoke": {
+      "status": "PASS_TRAIN_VALID_CACHE_CONSTRUCTION_NO_MODEL",
+      "train_count": 768,
+      "valid_iid_count": 128,
+      "train_startup_seconds": 2.002284,
+      "valid_startup_seconds": 0.327725,
+      "first_row_shapes": {
+        "coords": [1024, 3],
+        "features": [1024, 11],
+        "target": [1024, 1]
+      },
+      "accuracy_read": false,
+      "test_or_sealed_access": false
+    }
   },
   "test_or_sealed_access": false,
   "interpretation": "RAM cache removes repeated hash/np.load overhead; these are data-pipeline measurements, not model throughput or accuracy claims."
