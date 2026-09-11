@@ -64,6 +64,8 @@
   "data_pipeline_candidate": {
     "startup_hash_once": true,
     "verified_ram_cache": true,
+    "runner_flag": "--data-cache verified_ram",
+    "formal_recommendation": "use verified_ram after startup byte-identity receipt; retain per_sample as audit fallback",
     "gpu_staging_optional": true,
     "byte_identical_required": true,
     "formal_gino_or_transolver_started": false

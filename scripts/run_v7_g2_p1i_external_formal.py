@@ -133,6 +133,42 @@ class P1iRoleDataset(torch.utils.data.Dataset):
         }
 
 
+class VerifiedRAMRoleDataset(torch.utils.data.Dataset):
+    """Startup-verified, in-RAM view of one frozen role.
+
+    Construction walks the existing role-restricted dataset once, so every
+    file is still SHA-verified exactly as in ``P1iRoleDataset``.  Subsequent
+    epochs return the same byte-identical CPU objects without repeating hash
+    or ``np.load`` work.  The wrapper changes only I/O timing; it does not
+    alter rows, order, features, targets, or model-visible information.
+    """
+
+    def __init__(self, source: P1iRoleDataset):
+        self.role = source.role
+        started = time.perf_counter()
+        self.rows = [source[index] for index in range(len(source))]
+        self.startup_seconds = time.perf_counter() - started
+        self.source_manifest_sha256 = DATASET_SHA
+
+    def __len__(self) -> int:
+        return len(self.rows)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        return self.rows[index]
+
+
+def _make_role_dataset(
+    root: Path, manifest: Path, role: str, cache_mode: str
+) -> tuple[torch.utils.data.Dataset, float]:
+    source = P1iRoleDataset(root, manifest, role)
+    if cache_mode == "verified_ram":
+        cached = VerifiedRAMRoleDataset(source)
+        return cached, cached.startup_seconds
+    if cache_mode == "per_sample":
+        return source, 0.0
+    raise ValueError(f"unsupported data cache mode: {cache_mode}")
+
+
 def normalize(row: dict[str, Any], stats: dict[str, torch.Tensor], device: torch.device):
     coords = row["coords"].unsqueeze(0).to(device)
     features = row["features"].unsqueeze(0).to(device)
@@ -164,6 +200,15 @@ def main() -> int:
     parser.add_argument("--statistics", type=Path, default=REPO / "docs/v7_g2_p3_p1i_train_statistics.json")
     parser.add_argument("--upstream-root", type=Path)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument(
+        "--data-cache",
+        choices=("per_sample", "verified_ram"),
+        default="per_sample",
+        help=(
+            "per_sample preserves the audit path; verified_ram performs one "
+            "startup SHA/np.load pass and reuses byte-identical CPU rows"
+        ),
+    )
     parser.add_argument(
         "--resume-from",
         type=Path,
@@ -207,8 +252,12 @@ def main() -> int:
     torch.cuda.manual_seed_all(args.seed)
     device = torch.device("cuda")
     stats = load_stats(args.statistics)
-    train = P1iRoleDataset(args.dataset_root, args.dataset_manifest, "train")
-    valid = P1iRoleDataset(args.dataset_root, args.dataset_manifest, "valid_iid")
+    train, train_cache_startup = _make_role_dataset(
+        args.dataset_root, args.dataset_manifest, "train", args.data_cache
+    )
+    valid, valid_cache_startup = _make_role_dataset(
+        args.dataset_root, args.dataset_manifest, "valid_iid", args.data_cache
+    )
     sys.path.insert(0, str(args.upstream_root.resolve()))
     if args.model == "GINO":
         model = build_gino(0.15, 0.033, use_open3d=True, use_torch_scatter=True).to(device)
@@ -365,6 +414,13 @@ def main() -> int:
             }
     receipt = {"status": "PASS_RESOURCE_PREFLIGHT" if args.mode == "preflight" else "COMPLETE_FORMAL_TRAIN",
                "model": args.model, "seed": args.seed, "mode": args.mode, "device": str(device),
+               "data_pipeline": {
+                   "cache_mode": args.data_cache,
+                   "train_startup_seconds": train_cache_startup,
+                   "valid_startup_seconds": valid_cache_startup,
+                   "manifest_sha256": DATASET_SHA,
+                   "byte_identical_verified": args.data_cache == "verified_ram",
+               },
                "resource": {"gpu_name": torch.cuda.get_device_name() if device.type == "cuda" else None,
                             "peak_allocated_bytes": int(torch.cuda.max_memory_allocated()) if device.type == "cuda" else None,
                             "peak_reserved_bytes": int(torch.cuda.max_memory_reserved()) if device.type == "cuda" else None,

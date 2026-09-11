@@ -29,6 +29,12 @@
     "accuracy_read": false
   },
   "formal_training_started": false,
+  "runner_integration": {
+    "flag": "--data-cache verified_ram",
+    "default": "per_sample",
+    "semantics": "startup SHA verification followed by byte-identical CPU row reuse",
+    "formal_recommendation": "verified_ram after a startup receipt"
+  },
   "test_or_sealed_access": false,
   "interpretation": "RAM cache removes repeated hash/np.load overhead; these are data-pipeline measurements, not model throughput or accuracy claims."
 }

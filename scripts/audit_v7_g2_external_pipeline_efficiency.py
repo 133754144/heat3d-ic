@@ -68,6 +68,8 @@ def static_audit() -> dict[str, Any]:
         "science_neutral_candidate": {
             "startup_hash_once": True,
             "verified_ram_cache": True,
+            "runner_flag": "--data-cache verified_ram",
+            "default_runner_mode": "per_sample",
             "gpu_staging_optional": True,
             "content_byte_identical_required": True,
             "formal_not_started": True,
