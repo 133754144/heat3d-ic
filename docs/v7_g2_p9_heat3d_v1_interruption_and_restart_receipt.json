@@ -1,0 +1,42 @@
+{
+  "schema_version": "heat3d_v7_g2_p9_heat3d_v1_interruption_restart_v1",
+  "observed_at": "2026-09-11T16:21:48+08:00",
+  "cause_assessment": {
+    "classification": "HOST_REBOOT_INTERRUPTION",
+    "evidence": [
+      "devbox WSL kernel boot at 2026-09-11 09:29 +0800",
+      "last reports tmux g2_heat3d_v1_serial crashed at the reboot",
+      "seed0 progress last updated 2026-09-09 23:55:14 +0800 at epoch 103",
+      "no retained current/previous-boot kernel OOM, CUDA-XID, or systemd memory-cgroup evidence"
+    ],
+    "exact_pre_reboot_exit_reason": "not_recoverable_from_retained_journal_or_tmp_logs",
+    "oom_confirmed": false,
+    "test_or_sealed_access": false
+  },
+  "aborted_attempt": {
+    "seed0_last_epoch": 103,
+    "seed0_best_epoch": 102,
+    "seed0_best_metric": 0.8708822379171116,
+    "seed0_best_checkpoint_sha256": "9f0a4b5554c5621b60a950371b0fef9ec79c2ba0fb1cd3e90417357ed7886343",
+    "archive_root": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/aborted_host_reboot_20260911",
+    "mixed_with_new_run": false
+  },
+  "restart": {
+    "status": "RUNNING_SERIAL_SEED0_PREPARATION",
+    "tmux_session": "g2_heat3d_v1_serial_20260911",
+    "order": [0, 1, 2],
+    "output_paths": {
+      "seed0": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_0",
+      "seed1": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_1",
+      "seed2": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/seed_2"
+    },
+    "existing_outputs_overwritten": false,
+    "same_runner_config_dataset_normalization": true,
+    "epochs": 200,
+    "selection": "native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "xla_deterministic_ops": true,
+    "xla_preallocate": false,
+    "test_or_sealed_access": false
+  },
+  "formal_gino_transolver_started": false
+}
