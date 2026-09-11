@@ -58,6 +58,21 @@ class StepResult:
 
 
 @dataclass(frozen=True)
+class SlimStepResult:
+    """Result of a training update with diagnostics intentionally omitted.
+
+    ``V7FormalTrainer.step`` remains the compatibility/reference path and
+    returns gradients, updates and prediction.  The slim path computes the
+    same objective and optimizer update but returns only values required by a
+    training loop.  This makes the host/device boundary explicit without
+    changing batch order, keys, or optimizer semantics.
+    """
+
+    state: TrainingState
+    loss: Any
+
+
+@dataclass(frozen=True)
 class TrainingDependencies:
     """All training dependencies are explicit constructor inputs.
 
@@ -169,6 +184,37 @@ class V7FormalTrainer:
         new_params = optax.apply_updates(params, updates)
         return new_params, new_optimizer_state, loss, gradients, updates, prediction
 
+    def _step_impl_slim(
+        self,
+        params: Any,
+        optimizer_state: Any,
+        batch: TrainingBatch,
+        rng: Any,
+    ) -> tuple[Any, ...]:
+        """Compute one update while exposing only params/state/loss.
+
+        The body deliberately mirrors ``_step_impl``.  In particular it keeps
+        the same model call, loss function, gradient transform, and Optax
+        update ordering.  The reduced return signature lets JAX avoid keeping
+        unused diagnostics at the dispatch boundary; it is not a new training
+        objective.
+        """
+
+        def loss_only(current_params: Any):
+            prediction = self.dependencies.model_apply(current_params, batch, rng)
+            return self.dependencies.loss_fn(prediction, batch)
+
+        loss, gradients = jax.value_and_grad(loss_only)(params)
+        if self.dependencies.gradient_transform is not None:
+            gradients = self.dependencies.gradient_transform(gradients)
+        updates, new_optimizer_state = self.dependencies.optimizer.update(
+            gradients,
+            optimizer_state,
+            params,
+        )
+        new_params = optax.apply_updates(params, updates)
+        return new_params, new_optimizer_state, loss
+
     def _compiled_for(self, batch: TrainingBatch) -> Callable[..., Any]:
         if batch.batch_id not in self._compiled_steps:
             def compiled(params: Any, optimizer_state: Any, rng: Any):
@@ -177,6 +223,19 @@ class V7FormalTrainer:
             self._compiled_steps[batch.batch_id] = jax.jit(compiled)
             self.compile_count += 1
         return self._compiled_steps[batch.batch_id]
+
+    def _compiled_slim_for(self, batch: TrainingBatch) -> Callable[..., Any]:
+        """Return one cached slim executable for a fixed prepared batch."""
+
+        cache = getattr(self, "_compiled_slim_steps", None)
+        if cache is None:
+            cache = self._compiled_slim_steps = {}
+        if batch.batch_id not in cache:
+            def compiled(params: Any, optimizer_state: Any, rng: Any):
+                return self._step_impl_slim(params, optimizer_state, batch, rng)
+
+            cache[batch.batch_id] = jax.jit(compiled)
+        return cache[batch.batch_id]
 
     def step(self, state: TrainingState, batch: TrainingBatch, rng: Any = None) -> StepResult:
         if rng is None:
@@ -201,6 +260,35 @@ class V7FormalTrainer:
             gradients=gradients,
             updates=updates,
             prediction=prediction,
+        )
+
+    def step_slim(
+        self, state: TrainingState, batch: TrainingBatch, rng: Any = None
+    ) -> SlimStepResult:
+        """Run the science-neutral slim update for a prepared batch.
+
+        This API is intentionally opt-in.  Existing callers continue to use
+        ``step`` and therefore retain the historical diagnostics contract.
+        """
+
+        if rng is None:
+            rng = jax.random.PRNGKey(0)
+        if self.jit_cache:
+            operation = self._compiled_slim_for(batch)
+        else:
+            operation = lambda params, optimizer_state, key: self._step_impl_slim(
+                params, optimizer_state, batch, key
+            )
+        params, optimizer_state, loss = operation(
+            state.params, state.optimizer_state, rng
+        )
+        return SlimStepResult(
+            state=TrainingState(
+                params=params,
+                optimizer_state=optimizer_state,
+                step=state.step + 1,
+            ),
+            loss=loss,
         )
 
     def validate(self, state: TrainingState, batch: TrainingBatch) -> Any:

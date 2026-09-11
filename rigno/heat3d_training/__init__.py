@@ -8,6 +8,7 @@ entrypoint assembles these pieces for a readiness fixture only.
 
 from .core import (
     ManualGradientDescent,
+    SlimStepResult,
     StepResult,
     TrainingBatch,
     TrainingDependencies,
@@ -43,6 +44,7 @@ from .p1i import (
     learning_rate_for_epoch,
 )
 from .evaluation import evaluate_level_a_validation
+from .resume import atomic_latest_checkpoint, load_latest_checkpoint
 from .full_field import (
     FullFieldGeometry,
     FullFieldP1IData,
@@ -65,6 +67,7 @@ from .support import (
 
 __all__ = [
     "ManualGradientDescent",
+    "SlimStepResult",
     "StepResult",
     "TrainingBatch",
     "TrainingDependencies",
@@ -95,6 +98,8 @@ __all__ = [
     "tree_l2_norm",
     "learning_rate_for_epoch",
     "evaluate_level_a_validation",
+    "atomic_latest_checkpoint",
+    "load_latest_checkpoint",
     "FullFieldGeometry",
     "FullFieldP1IData",
     "load_alternative_p1i_examples",

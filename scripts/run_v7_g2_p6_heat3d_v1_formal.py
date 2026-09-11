@@ -93,6 +93,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("contract-check", "train"), required=True)
     parser.add_argument("--seed", type=int, choices=(0, 1, 2), required=True)
+    parser.add_argument(
+        "--execution-path",
+        choices=("legacy", "slim"),
+        default="legacy",
+        help="bounded engineering choice; slim preserves the same update semantics",
+    )
+    parser.add_argument(
+        "--resume-from",
+        type=Path,
+        help="optional atomic latest-epoch checkpoint; resume only at a completed epoch",
+    )
     parser.add_argument("--fs-train", type=Path)
     parser.add_argument("--subset-manifest", type=Path)
     parser.add_argument("--labels-root", type=Path)
@@ -197,6 +208,13 @@ def main() -> int:
     optimizer = make_p1i_optimizer(config["optimizer"], epochs=200, updates_per_epoch=len(train_batches))
     apply_fn = lambda current, batch, rng: model_apply_full(model, current, batch, rng)
     batch_loss = lambda prediction, batch: loss_fn_full(prediction, batch, loss_config)
+    def validation_outputs(current: Any, batch: Any) -> tuple[Any, Any]:
+        # One model evaluation supplies both the prediction and selection loss.
+        # Keeping this callback single-forward is an execution optimization
+        # only; the objective and checkpoint rule remain unchanged.
+        prediction = apply_fn(current, batch, None)
+        return prediction, batch_loss(prediction, batch)
+
     deps = TrainingDependencies(
         data_source="frozen_768_128_deepoheat_v1_labels", feature_transform="physics_layout_aware_1024",
         normalization=stats, graph_builder=builder, model=model, model_apply=apply_fn,
@@ -205,7 +223,7 @@ def main() -> int:
         checkpoint_writer=lambda path, payload: None,
         metrics_fn=lambda current, batch: {"loss": float(batch_loss(apply_fn(current, batch, None), batch))},
         gradient_transform=make_gradient_transform(model_config, config["optimizer"]),
-        validation_outputs_fn=lambda current, batch: (apply_fn(current, batch, None), batch_loss(apply_fn(current, batch, None), batch)),
+        validation_outputs_fn=validation_outputs,
     )
     trainer = V7FormalTrainer(deps, jit_cache=True)
     state = trainer.initialize(params)
@@ -213,15 +231,38 @@ def main() -> int:
     output = args.output_dir.resolve(); output.mkdir(parents=True, exist_ok=True)
     best_metric, best_epoch = float("inf"), None
     history, update_count = [], 0
+    start_epoch = 1
+    if args.resume_from is not None:
+        # Resume is deliberately constrained to our atomic epoch payload.  A
+        # partial/foreign checkpoint cannot silently enter a formal run.
+        with args.resume_from.open("rb") as stream:
+            resume_payload = pickle.load(stream)
+        if resume_payload.get("schema_version") != "v7_p1i_training_state_checkpoint_v1":
+            raise ValueError("resume checkpoint schema mismatch")
+        if bool(resume_payload.get("test_access", True)):
+            raise ValueError("resume checkpoint carries test access")
+        if int(resume_payload.get("seed", args.seed)) != args.seed:
+            raise ValueError("resume seed mismatch")
+        state = checkpoint_state(args.resume_from)
+        completed_epoch = int(resume_payload.get("epoch", 0))
+        if completed_epoch < 1 or completed_epoch >= 200:
+            raise ValueError("resume must point to a completed epoch in [1,199]")
+        start_epoch = completed_epoch + 1
+        best_metric = float(resume_payload.get("best_metric", float("inf")))
+        best_epoch = resume_payload.get("best_epoch")
+        update_count = int(resume_payload.get("global_update_count", state.step))
     started = time.perf_counter()
-    for epoch in range(1, 201):
+    for epoch in range(start_epoch, 201):
         order = np.random.default_rng(args.seed + epoch).permutation(len(train_batches))
         losses = []
         epoch_started = time.perf_counter()
         for batch_number, raw_index in enumerate(order, start=1):
             step_key = jax.random.fold_in(jax.random.PRNGKey(args.seed), epoch)
             step_key = jax.random.fold_in(step_key, batch_number)
-            step = trainer.step(state, train_batches[int(raw_index)], step_key)
+            if args.execution_path == "slim":
+                step = trainer.step_slim(state, train_batches[int(raw_index)], step_key)
+            else:
+                step = trainer.step(state, train_batches[int(raw_index)], step_key)
             state = step.state; block_until_ready((state.params, state.optimizer_state, step.loss)); losses.append(float(step.loss)); update_count += 1
         predictions, valid_losses = [], []
         for batch in valid_batches:
@@ -241,9 +282,18 @@ def main() -> int:
             })
         row = {"epoch": epoch, "train_loss": float(np.mean(losses)), "valid_loss": float(np.mean(valid_losses)),
                "native_1024_valid_sample_first_relative_rmse_pct": metric, "best_epoch": best_epoch,
-               "epoch_wall_seconds": time.perf_counter() - epoch_started}
+               "epoch_wall_seconds": time.perf_counter() - epoch_started,
+               "execution_path": args.execution_path, "global_update_count": update_count}
         history.append(row)
-        (output / "progress.json").write_text(json.dumps({"status":"RUNNING","seed":args.seed,"epoch":epoch,"epochs":200,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False}, indent=2)+"\n")
+        latest_receipt = atomic_training_checkpoint(output / "latest_epoch.pkl", state=state, metadata={
+            "epoch": epoch, "seed": args.seed, "global_update_count": update_count,
+            "best_metric": best_metric, "best_epoch": best_epoch,
+            "selection_metric": "native_1024_valid_sample_first_relative_rmse_pct",
+            "execution_path": args.execution_path, "test_access": False,
+            "rng_state": {"jax_base_seed": args.seed, "next_epoch": epoch + 1},
+            "batch_order_state": {"algorithm": "default_rng(seed+epoch).permutation", "next_epoch": epoch + 1},
+        })
+        (output / "progress.json").write_text(json.dumps({"status":"RUNNING","seed":args.seed,"epoch":epoch,"epochs":200,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False,"execution_path":args.execution_path,"latest_checkpoint_sha256":sha256(output / "latest_epoch.pkl")}, indent=2)+"\n")
         print(json.dumps(row, sort_keys=True), flush=True)
     final_report = atomic_training_checkpoint(output / "params_final.pkl", state=state, metadata={
         "epoch": 200, "seed": args.seed, "best_epoch": best_epoch, "test_access": False,
@@ -260,11 +310,11 @@ def main() -> int:
         "status": "COMPLETE_FORMAL_TRAIN", "seed": args.seed, "epochs": 200,
         "optimizer_update_count": update_count, "parameter_count": tree_parameter_count(state.params),
         "selection": {"domain": "native_1024", "metric": "valid_sample_first_relative_rmse_pct", "tie": "earliest", "best_epoch": best_epoch, "best_value": best_metric, "U_used": False},
-        "checkpoints": {"best": {"path": "params_best_sample_first.pkl", "sha256": sha256(output / "params_best_sample_first.pkl")}, "final": {"path":"params_final.pkl", "sha256": sha256(output / "params_final.pkl"), "roundtrip": final_report}, "best_reload_prediction_max_abs": reload_max_abs},
+        "checkpoints": {"best": {"path": "params_best_sample_first.pkl", "sha256": sha256(output / "params_best_sample_first.pkl")}, "final": {"path":"params_final.pkl", "sha256": sha256(output / "params_final.pkl"), "roundtrip": final_report}, "latest": {"path": "latest_epoch.pkl", "sha256": sha256(output / "latest_epoch.pkl")}, "best_reload_prediction_max_abs": reload_max_abs},
         "resource": {"gpu": str(jax.devices()[0]), "peak_bytes_in_use": memory.get("peak_bytes_in_use"), "training_wall_seconds": time.perf_counter()-started, "preparation_wall_seconds": preparation_seconds},
         "environment": {"repo_sha": subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(), "jax": jax.__version__, "XLA_FLAGS": os.environ.get("XLA_FLAGS")},
         "dataset": {"train":768,"valid":128,"subset_sha256":SUBSET_SHA,"label_receipt_sha256":LABEL_RECEIPT_SHA,"normalization_sha256":NORMALIZATION_SHA},
-        "history": history, "test_or_sealed_access": False,
+        "history": history, "execution_path": args.execution_path, "resumed_from": str(args.resume_from) if args.resume_from else None, "test_or_sealed_access": False,
     }
     (output / "formal_training_receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True)+"\n")
     (output / "progress.json").write_text(json.dumps({"status":"COMPLETE","seed":args.seed,"epoch":200,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False},indent=2)+"\n")

@@ -1,0 +1,70 @@
+{
+  "schema_version": "v7_g2_e_training_efficiency_protocol_v1",
+  "status": "ENGINEERING_QUALIFICATION_ONLY",
+  "scope": {
+    "branch": "research/v7-g2-baselines",
+    "heat3d_contract": "frozen G2 Heat3D-on-DeepOHeat-v1",
+    "heat3d_batch_size": 24,
+    "heat3d_validation_batch_size": 32,
+    "heat3d_epochs": 200,
+    "external_formal_runs_started": false,
+    "multi_htc_started": false
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "accuracy_used_for_execution_choice": false,
+    "long_training_started_by_this_protocol": false,
+    "seed1_or_seed2_started_by_this_protocol": false
+  },
+  "candidate_order": [
+    "validation_single_forward",
+    "slim_jit_return",
+    "fixed_shape_jit_dispatch",
+    "preparation_reuse"
+  ],
+  "equivalence_gate": {
+    "required_status": "SCIENCE_NEUTRAL_EXECUTION_EQUIVALENCE_PASS",
+    "comparison": [
+      "loss trajectory",
+      "parameter tree",
+      "optimizer state",
+      "update count",
+      "checkpoint reload"
+    ],
+    "preferred_tolerance": "bitwise exact",
+    "floating_point_roundoff": "fail-closed pending separate audit"
+  },
+  "exact_resume_gate": {
+    "required_status": "EXACT_RESUME_EQUIVALENCE_PASS",
+    "checkpoint_frequency": "atomic latest checkpoint at completed epoch boundary",
+    "required_state": [
+      "params",
+      "optimizer_state",
+      "scheduler_state",
+      "epoch",
+      "global_update_count",
+      "best_metric",
+      "best_epoch",
+      "rng_state",
+      "batch_order_state",
+      "runner_sha",
+      "config_sha",
+      "data_sha"
+    ]
+  },
+  "data_pipeline_candidate": {
+    "startup_hash_once": true,
+    "verified_ram_cache": true,
+    "gpu_staging_optional": true,
+    "byte_identical_required": true,
+    "formal_gino_or_transolver_started": false
+  },
+  "b32": {
+    "status": "NONPUBLICATION_BENCHMARK_ONLY",
+    "formal_batch_size": 24,
+    "accuracy_selection_allowed": false
+  }
+}
