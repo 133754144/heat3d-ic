@@ -97,7 +97,13 @@ def _memory_stats() -> dict[str, int]:
 
 
 def _prepare(args: argparse.Namespace) -> dict[str, Any]:
-    """Build the frozen train/valid batches exactly as the P6 runner does."""
+    """Build frozen train/valid batches with an explicitly selected batch size.
+
+    The default remains the historical G2-E2 B24/valid32 contract.  The
+    optional attributes are used only by the bounded runtime batch-scaling
+    diagnostic; they change grouping/padding, not examples, features,
+    normalization, graph policy, objective, or optimizer semantics.
+    """
 
     if args.fs_train.name != "fs_train_volume.npy":
         raise ValueError("only the train input pool is accepted")
@@ -112,6 +118,12 @@ def _prepare(args: argparse.Namespace) -> dict[str, Any]:
         raise SystemExit(
             "FAIL-CLOSED: epoch instrumentation requires the frozen deterministic XLA flag"
         )
+    train_batch_size = int(getattr(args, "train_batch_size", 24))
+    valid_batch_size = int(getattr(args, "valid_batch_size", 32))
+    if train_batch_size <= 0 or 768 % train_batch_size != 0:
+        raise ValueError("train_batch_size must divide the frozen 768 train samples")
+    if valid_batch_size <= 0 or 128 % valid_batch_size != 0:
+        raise ValueError("valid_batch_size must divide the frozen 128 valid_iid samples")
 
     profile_module = load_script("profile_v7_g2_training_efficiency.py")
     helper = load_script("run_v7_g2_p5_heat3d_v1_dual_output_smoke.py")
@@ -154,8 +166,8 @@ def _prepare(args: argparse.Namespace) -> dict[str, Any]:
         train_examples,
         stats,
         builder,
-        label="g2_e2_epoch_train",
-        batch_size=24,
+        label=f"g2_e2_epoch_train_b{train_batch_size}",
+        batch_size=train_batch_size,
         graph_seed=args.seed,
         profile=batch_profile,
     )
@@ -163,8 +175,8 @@ def _prepare(args: argparse.Namespace) -> dict[str, Any]:
         valid_examples,
         stats,
         builder,
-        label="g2_e2_epoch_valid",
-        batch_size=32,
+        label=f"g2_e2_epoch_valid_b{valid_batch_size}",
+        batch_size=valid_batch_size,
         graph_seed=args.seed,
         profile=batch_profile,
     )
@@ -257,6 +269,8 @@ def _prepare(args: argparse.Namespace) -> dict[str, Any]:
         "batch_profile": batch_profile,
         "train_examples": train_examples,
         "valid_examples": valid_examples,
+        "train_batch_size": train_batch_size,
+        "valid_batch_size": valid_batch_size,
     }
 
 

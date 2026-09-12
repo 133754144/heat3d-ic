@@ -1,0 +1,53 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_runtime_path_audit_v1",
+  "status": "PASS_STATIC_AUDIT_CURRENT_STEP_IS_SINGLE_JIT",
+  "scope": "read-only source audit before three-epoch runtime diagnostic",
+  "current_runner": "scripts/run_heat3d_v7_formal_p1i_training.py",
+  "train_path": {
+    "loop_lines": "scripts/run_heat3d_v7_formal_p1i_training.py:831-865",
+    "step_call": "trainer.step(state, batch, rng=step_key)",
+    "explicit_block": "block_until_ready(params, optimizer_state, loss, gradients, updates, prediction)",
+    "host_scalar_and_norms": [
+      "float(result.loss)",
+      "tree_l2_norm(result.gradients)",
+      "tree_l2_norm(result.updates)",
+      "tree_l2_norm(state.params)"
+    ],
+    "per_step_sync_count": 1,
+    "per_step_host_scalar_extraction_events": 4,
+    "logging": "step rows are retained in memory; progress JSON is written at epoch boundary"
+  },
+  "compiled_numerical_body": {
+    "source": "rigno/heat3d_training/core.py:161-185",
+    "value_and_grad": "jax.value_and_grad(loss_with_aux, has_aux=True)",
+    "optimizer_update": "dependencies.optimizer.update followed by optax.apply_updates",
+    "jit_wrapper": "rigno/heat3d_training/core.py:218-225; jax.jit(_step_impl) cached by batch_id",
+    "single_compiled_train_step": true,
+    "compiled_executable_granularity": "one executable per prepared batch_id; 32 for B24, fewer for larger divisors"
+  },
+  "validation_path": {
+    "source": "scripts/run_heat3d_v7_formal_p1i_training.py:609-635",
+    "apply_calls_per_valid_batch": 1,
+    "host_conversion": "float(loss)",
+    "accuracy_metric": "not used by this diagnostic"
+  },
+  "host_device_conversion": {
+    "tree_l2_norm_source": "rigno/heat3d_training/p1i.py:917-921; np.asarray leaves and float reductions",
+    "timing_sync": "block_until_ready is an explicit measurement boundary, not removed in control",
+    "compiled_diagnostic": "same mathematical trainer.step; synchronizes only state/loss/device finite predicate and defers gradient/update/parameter host norms"
+  },
+  "existing_slim_candidate": {
+    "source": "rigno/heat3d_training/core.py:187-216, 265-290",
+    "historical_gate": "docs/v7_g2_e_heat3d_execution_equivalence_receipt.json",
+    "status": "SCIENCE_NEUTRAL_EXECUTION_EQUIVALENCE_FAIL_CLOSED",
+    "reason": "historical one-batch params_max_abs_difference=0.0001326417550444603; not eligible for formal use",
+    "policy": "not used as the compiled diagnostic path; no fallback or slim result may enter formal evidence"
+  },
+  "diagnostic_semantics": {
+    "mode_control": "current full-output block and per-step host diagnostics",
+    "mode_compiled": "same V7FormalTrainer.step JIT/update; reduced host diagnostic work only",
+    "accuracy_used": false,
+    "test_or_sealed_access": false,
+    "science_config_changed": false
+  }
+}
