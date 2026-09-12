@@ -19,11 +19,12 @@
     "transolver": "run_v7_g2_p1i_external_formal.py now writes latest_epoch.pt through g2_external_torch_exact_resume_v1; formal use remains gated"
   },
   "formal_model_resume_gate": {
-    "heat3d": "NOT_RUN_NO_FORMAL_TRAINING",
+    "heat3d": "BOUNDED_ACTUAL_MODEL_PASS; see follow-up receipt",
     "gino": "NOT_RUN_NO_FORMAL_TRAINING",
     "transolver": "NOT_RUN_NO_FORMAL_TRAINING",
-    "reason": "framework fixture passed; no publication run was started in G2-E"
+    "reason": "framework fixture passed; bounded actual Heat3D model follow-up passed; no publication run was started in G2-E"
   },
+  "actual_heat3d_followup": "docs/v7_g2_e2_heat3d_real_resume_receipt.json",
   "test_or_sealed_access": false,
   "publication_resume_claim_allowed": false
 }

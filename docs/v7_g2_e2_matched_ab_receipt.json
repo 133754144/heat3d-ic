@@ -1,0 +1,141 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_matched_ab_receipt_v1",
+  "status": "PASS_MATCHED_RUNTIME_FINITE",
+  "scope": "matched runtime-only A/B probe; no accuracy evidence",
+  "raw_remote_receipt": {
+    "path": "/tmp/g2_e2_matched_ab.json",
+    "sha256": "d8a360ce81f61c0ae70ea5826f9f1b822bbb9dca2613b11d71c5fb7b1f9b152a",
+    "remote_repo_sha": "a3db8cb4f615b34a5e23e43fbeefefb9649df414"
+  },
+  "scientific_invariants": {
+    "case_A": "frozen G1 P1i Heat3D workload",
+    "case_B": "frozen DeepOHeat-v1 Heat3D adaptation workload",
+    "train_samples": 768,
+    "batch_size": 24,
+    "validation_samples": 128,
+    "validation_batch_size": 32,
+    "accuracy_used": false,
+    "p1i_test_or_sealed_access": false,
+    "deepoheat_official_test_access": false,
+    "same_process_device_jax": true,
+    "xla_flags": "--xla_gpu_deterministic_ops=true"
+  },
+  "environment": {
+    "python": "3.14.3 | packaged by conda-forge | (main, Feb 9 2026, 21:56:02) [GCC 14.3.0]",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "backend": "gpu",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "gpu_memory_total_mib": 12227
+  },
+  "cases": {
+    "A": {
+      "variant": "Full",
+      "preparation_seconds": 338.44363342999713,
+      "graph_preparation_seconds": 327.8863948240032,
+      "feature_preprocessing_seconds": 2.352151122977375,
+      "batch_build_seconds": 330.46162869203545,
+      "graph_build_calls": 36,
+      "graph_metadata_build_calls": 896,
+      "train_batches": 32,
+      "valid_batches": 4,
+      "train_samples": 768,
+      "valid_samples": 128,
+      "batch_shapes": {
+        "p2r_edge_indices": [24, 2870, 2],
+        "r2p_edge_indices": [24, 2870, 2],
+        "r2r_edge_indices": [24, 4203, 2],
+        "x_pnodes_inp": [24, 1025, 3],
+        "x_pnodes_out": [24, 1025, 3],
+        "x_rnodes": [24, 257, 3]
+      },
+      "node_counts_per_sample": {"p_nodes_in": 1024, "p_nodes_out": 1024, "r_nodes": 256},
+      "compiled_shapes": "same as batch_shapes; one executable observed",
+      "graph_counts": {
+        "p2r": {"real": 1981841, "padded": 348727, "total_slots": 2330568, "padding_ratio": 0.17596113916303074},
+        "r2p": {"real": 1981841, "padded": 348727, "total_slots": 2330568, "padding_ratio": 0.17596113916303074},
+        "r2r": {"real": 3164326, "padded": 64106, "total_slots": 3228432, "padding_ratio": 0.02025897458100082}
+      },
+      "warm_train_step_seconds": 83.92695421499957,
+      "valid_forward_total_seconds": 160.67004715898656,
+      "valid_forward_mean_seconds": 40.16751178974664,
+      "compile_count": 1,
+      "xla_compile_occurrence": {"first_step_includes_compile": true, "unique_executables": 1},
+      "host_device_transfer": {"status": "implicit_in_warm_step", "explicit_h2d_d2h_timer": false, "reason": "separate transfer timing requires profiler; no accuracy/protocol decision"},
+      "finite": true,
+      "gpu_snapshots": {
+        "before": {"utilization_gpu_pct": 0, "memory_used_mib": 11104, "power_draw_w": 27.07},
+        "after_train": {"utilization_gpu_pct": 30, "memory_used_mib": 11122, "power_draw_w": 42.11},
+        "after_valid": {"utilization_gpu_pct": 0, "memory_used_mib": 11122, "power_draw_w": 33.23}
+      },
+      "jax_peak_bytes_in_use": 3483968256
+    },
+    "B": {
+      "variant": "DeepOHeat-v1",
+      "preparation_seconds": 316.17343468399486,
+      "graph_preparation_seconds": 261.9033692639787,
+      "feature_preprocessing_seconds": 1.9365465730661526,
+      "batch_build_seconds": 263.97407469613245,
+      "graph_build_calls": 36,
+      "graph_metadata_build_calls": 896,
+      "train_batches": 32,
+      "valid_batches": 4,
+      "train_samples": 768,
+      "valid_samples": 128,
+      "batch_shapes": {
+        "p2r_edge_indices": [24, 2631, 2],
+        "r2p_edge_indices": [24, 2631, 2],
+        "r2r_edge_indices": [24, 4227, 2],
+        "x_pnodes_inp": [24, 1025, 3],
+        "x_pnodes_out": [24, 1025, 3],
+        "x_rnodes": [24, 257, 3]
+      },
+      "node_counts_per_sample": {"p_nodes_in": 1024, "p_nodes_out": 1024, "r_nodes": 256},
+      "compiled_shapes": "same as batch_shapes; one executable observed",
+      "graph_counts": {
+        "p2r": {"real": 1825305, "padded": 264327, "total_slots": 2089632, "padding_ratio": 0.14481251078586865},
+        "r2p": {"real": 1825305, "padded": 264327, "total_slots": 2089632, "padding_ratio": 0.14481251078586865},
+        "r2r": {"real": 3174352, "padded": 59600, "total_slots": 3233952, "padding_ratio": 0.01877548551641406}
+      },
+      "warm_train_step_seconds": 76.38224706499022,
+      "valid_forward_total_seconds": 157.21656955499202,
+      "valid_forward_mean_seconds": 39.304142388748005,
+      "compile_count": 1,
+      "xla_compile_occurrence": {"first_step_includes_compile": true, "unique_executables": 1},
+      "host_device_transfer": {"status": "implicit_in_warm_step", "explicit_h2d_d2h_timer": false, "reason": "separate transfer timing requires profiler; no accuracy/protocol decision"},
+      "finite": true,
+      "gpu_snapshots": {
+        "before": {"utilization_gpu_pct": 1, "memory_used_mib": 11108, "power_draw_w": 27.27},
+        "after_train": {"utilization_gpu_pct": 30, "memory_used_mib": 11120, "power_draw_w": 42.13},
+        "after_valid": {"utilization_gpu_pct": 0, "memory_used_mib": 11120, "power_draw_w": 34.01}
+      },
+      "jax_peak_bytes_in_use": 3825095168
+    }
+  },
+  "attribution": {
+    "decision": "STACK_DOMINANT_HOT_PATH_WITH_CASE_SPECIFIC_PREPARATION_DIFFERENCE",
+    "basis": "A and B have the same order of warm-step and validation runtime; B is not slower despite different frozen graph counts. A preparation is longer, but the hot-step difference is not a DeepOHeat-v1-specific slowdown.",
+    "accuracy_or_truth_used": false,
+    "science_config_changed": false,
+    "formal_release_implication": "runtime evidence only; no formal training release"
+  },
+  "projection_fields": {
+    "samples_per_epoch": 768,
+    "batch_size": 24,
+    "optimizer_steps_per_epoch": 32,
+    "validation_samples": 128,
+    "validation_batch_size": 32,
+    "validation_batches": 4,
+    "measured_step_seconds": {"A": 83.92695421499957, "B": 76.38224706499022},
+    "measured_validation_seconds": {"A": 40.16751178974664, "B": 39.304142388748005},
+    "projection_basis": "one deterministic-XLA warm train step and four validation forwards; runtime-only; no accuracy"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "test_or_sealed_access": false,
+    "formal_training_started": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  }
+}

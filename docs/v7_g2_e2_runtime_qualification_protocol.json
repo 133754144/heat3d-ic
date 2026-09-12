@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_e2_runtime_qualification_protocol_v1",
-  "status": "FORMAL_TRAINING_BLOCKED_PENDING_RUNTIME_AND_RESUME_GATES",
+  "status": "FORMAL_TRAINING_BLOCKED_RUNTIME_TARGET_AND_REVIEW_GATES",
   "scope": "G2-E2 runtime/provenance qualification only",
   "hard_boundaries": {
     "g1_modified": false,
@@ -14,6 +14,8 @@
   },
   "heat3d": {
     "epoch_accounting": "one complete non-publication legacy B24 epoch with single-forward validation",
+    "matched_ab": "completed; A/B hot paths same order, stack-dominant attribution",
+    "production_exact_resume": "PASS for bounded actual Heat3D B24 two-update fixture",
     "release_requirements": [
       "accounting closed",
       "production exact-resume equivalence pass",
@@ -30,12 +32,12 @@
     "scientific_contract": {"r_in": 0.15, "r_out": 0.033, "latent_grid": [32, 32, 32]},
     "geometry_gate": "896 train+valid_iid coords-only audit",
     "repeatability_gate": "Open3D FixedRadiusSearch + torch-scatter fixed fixtures",
-    "release": "requires geometry PASS, repeatability PASS, reviewer-approved semantic amendment, and exact-resume PASS",
+    "release": "geometry and repeatability PASS; reviewer-approved semantic amendment and model-level exact-resume still required",
     "fallback": "diagnostic oracle only; never formal backend"
   },
   "transolver": {
     "cuda_preflight": "existing PASS_RESOURCE_PREFLIGHT retained",
-    "release": "requires hot-path qualification and exact-resume PASS; no duplicate preflight in E2"
+    "release": "requires hot-path qualification and model-level exact-resume PASS; no duplicate preflight in E2"
   },
   "projection_schema": {
     "required_fields": [
@@ -53,7 +55,7 @@
   },
   "profiler_gate": {
     "required_before_profiler": ["epoch accounting closed", "matched A/B complete", "native Linux unavailable or still too slow"],
-    "this_turn": "not_started until the three conditions are met"
+    "this_turn": "not_started; native Linux comparison unavailable and human target decision remains pending"
   },
-  "next_single_path": "finish receipts and human audit; only then decide whether to authorize a native Linux runtime target"
+  "next_single_path": "human audit, then provision a trusted native-Linux A6000/A100 target for the same deterministic B24 runtime/preflight; no science-config change"
 }

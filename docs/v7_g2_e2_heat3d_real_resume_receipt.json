@@ -1,0 +1,40 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_real_heat3d_resume_receipt_v1",
+  "status": "EXACT_RESUME_EQUIVALENCE_PASS",
+  "scope": "bounded actual Heat3D model resume gate; two optimizer updates; no publication run",
+  "raw_remote_receipt": {
+    "path": "/tmp/g2_e2_heat3d_real_resume.json",
+    "sha256": "2a0fbb46e04c419ff177fb20ff49a7392a597ac2af69b4f665871c6139b64604"
+  },
+  "model": "actual_Heat3D_RIGNO_frozen_contract",
+  "fixture": {
+    "train_batch_id": "g2_e2_epoch_train_batch_0001",
+    "batch_size": 24,
+    "optimizer_updates": 2,
+    "continuous_vs_split": true
+  },
+  "comparison": {
+    "parameters_max_abs_difference": 0.0,
+    "optimizer_state_max_abs_difference": 0.0,
+    "loss_trajectory_bitwise_equal": true,
+    "checkpoint_parameter_reload_max_abs_difference": 0.0,
+    "checkpoint_optimizer_reload_max_abs_difference": 0.0,
+    "provenance_mismatch_rejected": true,
+    "continuous_final_step": 2,
+    "resumed_final_step": 2
+  },
+  "checkpoint": {
+    "schema_version": "g2_exact_resume_checkpoint_v1",
+    "atomic_replace": true,
+    "epoch": 1,
+    "global_update_count": 1,
+    "sha256": "a9bc93458db97d53d935b3696783074f63110f5db56a16714ccc51a45d72dd34",
+    "runner_sha": "a3db8cb4f615b34a5e23e43fbeefefb9649df414",
+    "config_sha": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+    "data_sha": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "test_access": false
+  },
+  "interpretation": "Actual Heat3D continuous and split+resume paths are bitwise equivalent for this bounded B24 fixture, with strict runner/config/data provenance rejection. This qualifies the checkpoint mechanism, not long-run publication evidence.",
+  "publication_resume_claim_allowed": false,
+  "test_or_sealed_access": false
+}

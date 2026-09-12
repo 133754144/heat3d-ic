@@ -1,0 +1,105 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_runtime_qualification_receipt_v1",
+  "status": "FORMAL_TRAINING_BLOCKED",
+  "scope": "G2-E2 runtime/provenance qualification; no long-cycle formal training",
+  "epoch_accounting": {
+    "receipt": "docs/v7_g2_e2_heat3d_epoch_accounting_receipt.json",
+    "status": "PASS_EPOCH_ACCOUNTING_FINITE",
+    "train_samples": 768,
+    "train_batch_size": 24,
+    "optimizer_steps": 32,
+    "validation_samples": 128,
+    "validation_batch_size": 32,
+    "validation_batches": 4,
+    "train_total_seconds": 2442.2492872379953,
+    "validation_total_seconds": 318.85319743899163,
+    "checkpoint_seconds": 0.7666197079961421,
+    "logging_seconds": 0.00038174199289642274,
+    "misc_seconds": 0.08311459902324714,
+    "epoch_total_seconds": 2761.952600725999,
+    "accounted_sum_seconds": 2761.952600725999,
+    "closure_residual_seconds": 0.0,
+    "warmup_jit_occurred": true,
+    "projected_200e_single_seed_hours": 153.4418111514444,
+    "release": "BLOCKED_RUNTIME_OVER_TARGET"
+  },
+  "matched_ab": {
+    "receipt": "docs/v7_g2_e2_matched_ab_receipt.json",
+    "status": "PASS_MATCHED_RUNTIME_FINITE",
+    "case_A_warm_step_seconds": 83.92695421499957,
+    "case_B_warm_step_seconds": 76.38224706499022,
+    "case_A_valid_mean_seconds": 40.16751178974664,
+    "case_B_valid_mean_seconds": 39.304142388748005,
+    "attribution": "STACK_DOMINANT_HOT_PATH_WITH_CASE_SPECIFIC_PREPARATION_DIFFERENCE",
+    "accuracy_used": false
+  },
+  "native_linux": {
+    "receipt": "docs/v7_g2_e2_native_linux_receipt.json",
+    "status": "UNAVAILABLE_FAIL_CLOSED",
+    "benchmark": "NOT_RUN",
+    "runtime_penalty_conclusion": "undetermined"
+  },
+  "exact_resume": {
+    "heat3d_actual": {
+      "receipt": "docs/v7_g2_e2_heat3d_real_resume_receipt.json",
+      "status": "EXACT_RESUME_EQUIVALENCE_PASS",
+      "publication_claim": false
+    },
+    "framework_fixture": {
+      "receipt": "docs/v7_g2_e_exact_resume_receipt.json",
+      "status": "EXACT_RESUME_EQUIVALENCE_PASS",
+      "publication_claim": false
+    },
+    "gino": "NOT_RUN_NO_FORMAL_TRAINING",
+    "transolver": "NOT_RUN_NO_FORMAL_TRAINING",
+    "provenance_guards": "implemented for formal runners; model-level gate remains pending"
+  },
+  "gino": {
+    "geometry_896_receipt": "docs/v7_g2_e2_gino_geometry_896_receipt.json",
+    "geometry_status": "PASS_GEOMETRY_NON_BOUNDARY_ZERO",
+    "geometry_total_samples": 896,
+    "geometry_differing_samples": 0,
+    "geometry_total_input_edges_fallback": 334657562,
+    "geometry_total_input_edges_open3d": 334657562,
+    "geometry_total_output_edges_fallback": 4017546,
+    "geometry_total_output_edges_open3d": 4017546,
+    "geometry_total_differing_edges": 0,
+    "non_boundary_disagreement": 0,
+    "repeatability_receipt": "docs/v7_g2_e2_gino_repeatability_receipt.json",
+    "repeatability_status": "PASS_REPEATABLE",
+    "gate": "SEMANTIC_EQUIVALENCE_AMENDMENT_READY_FOR_REVIEW",
+    "formal_release": "BLOCKED_REVIEW_REQUIRED"
+  },
+  "hot_path": {
+    "receipt": "docs/v7_g2_e2_hot_path_receipt.json",
+    "status": "QUALIFICATION_BLOCKED_NO_OPTIMIZED_FORMAL_PATH",
+    "profiling_vs_formal_path_separated": false,
+    "no_sync_candidate_trajectory_gate": "NOT_RUN",
+    "data_cache": "verified RAM cache byte-identical benchmark only; not model throughput"
+  },
+  "projected_runtime_hours": {
+    "heat3d_on_v1_one_seed": 153.4418111514444,
+    "heat3d_on_v1_three_seeds": 460.3254334543332,
+    "gino_three_seeds": 66.3378190161023,
+    "transolver_three_seeds": 171.26116540945203,
+    "basis": "bounded runtime probes, not accuracy or convergence"
+  },
+  "formal_release_gates": {
+    "heat3d_on_v1": "BLOCKED_RUNTIME_OVER_TARGET",
+    "gino": "BLOCKED_SEMANTIC_REVIEW_AND_MODEL_RESUME",
+    "transolver": "BLOCKED_HOT_PATH_AND_MODEL_RESUME",
+    "formal_training_started": false,
+    "profiler_started": false
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "science_config_changed": false,
+    "accuracy_used_for_runtime_decision": false
+  },
+  "next_single_recommendation": "After human audit, provision a trusted native-Linux A6000/A100 target and repeat the bounded deterministic B24 runtime/preflight; keep all frozen scientific configurations unchanged."
+}

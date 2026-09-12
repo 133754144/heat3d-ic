@@ -1,0 +1,109 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_epoch_accounting_receipt_v1",
+  "status": "PASS_EPOCH_ACCOUNTING_FINITE",
+  "scope": "one complete non-publication epoch; legacy train path and single-forward validation",
+  "raw_remote_receipt": {
+    "path": "/tmp/g2_e2_heat3d_epoch_accounting_det.json",
+    "sha256": "978dd7835548113f2fc466b75c05dc4f34bae573392de297a0f3f2110c11b055",
+    "remote_repo_sha": "a3db8cb4f615b34a5e23e43fbeefefb9649df414"
+  },
+  "scientific_contract": {
+    "samples_per_epoch": 768,
+    "batch_size": 24,
+    "optimizer_steps_per_epoch": 32,
+    "validation_samples": 128,
+    "validation_batch_size": 32,
+    "validation_batches": 4,
+    "execution_path": "legacy",
+    "validation_semantics": "single model_apply supplies prediction and loss",
+    "accuracy_used": false,
+    "test_or_sealed_access": false
+  },
+  "timing_seconds": {
+    "preparation": 428.3487773569941,
+    "train_total": 2442.2492872379953,
+    "validation_total": 318.85319743899163,
+    "checkpoint_serialization": 0.7666197079961421,
+    "metric_aggregation": 0.00008381099905818701,
+    "logging": 0.00029793099383823574,
+    "logging_total": 0.00038174199289642274,
+    "misc": 0.08311459902324714,
+    "epoch_total": 2761.952600725999,
+    "accounted_sum": 2761.952600725999,
+    "closure_residual": 0.0,
+    "closure_relative_error": 0.0
+  },
+  "train_batch_wall_seconds": [
+    83.40798960901157, 75.75041479500942, 80.74310852801136, 76.75950585698592,
+    76.92923576600151, 75.53433511100593, 74.99342123699898, 73.37895957499859,
+    73.33532440698764, 78.55597353600024, 76.52501259499695, 77.96535167600086,
+    75.20925730599265, 74.40328093599237, 76.65744208999968, 72.54713646699383,
+    76.80600239201158, 76.74312674200337, 77.782752522995, 77.15544446599961,
+    77.09614545700606, 79.22857931999897, 76.08772434199636, 75.99163008599135,
+    77.16324074499425, 77.34355003401288, 75.72731360400212, 76.0463958879991,
+    72.81848422899202, 73.34257309799432, 74.58991577599954, 75.54768138700456
+  ],
+  "validation_batch_wall_seconds": [
+    85.38693208899349, 77.39734222300467, 77.8310955689958, 78.2341156850016
+  ],
+  "warmup_jit": {
+    "occurred": true,
+    "first_train_batch_seconds": 83.40798960901157,
+    "compile_count_end": 32,
+    "unique_train_batch_signatures": 32,
+    "batch_order_hash": "95be0a8931ac3f899fa45500fec5e73994358c397c05cd162244c83a9c7ff89f"
+  },
+  "preparation": {
+    "graph_preparation_seconds": 303.4248189150385,
+    "feature_preprocessing_seconds": 2.377329346985789,
+    "graph_metadata_build_calls": 896,
+    "graph_build_calls": 36,
+    "batch_build_seconds": 306.02295899996534
+  },
+  "resource": {
+    "device": "cuda:0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "gpu_memory_total_mib": 12227,
+    "gpu_memory_used_after_epoch_mib": 11552,
+    "gpu_utilization_snapshots_pct": {"before": 0, "after_train": 29, "after_valid": 30, "after_epoch": 0},
+    "jax_peak_bytes_in_use": 3523862528,
+    "jax_pool_bytes": 9615360000,
+    "xla_flags": "--xla_gpu_deterministic_ops=true"
+  },
+  "checkpoint": {
+    "schema": "g2_exact_resume_checkpoint_v1",
+    "path": "/tmp/g2_e2_heat3d_epoch_latest_det.pkl",
+    "sha256": "3f21738db803f8a61114409900ecc31ff913d6b99866c6193d3f9fa2e7c5ebb4",
+    "atomic_replace": true,
+    "global_update_count": 32,
+    "runner_sha256": "5055dc896eed7a867e407f86538b691cdce5de8fd93e2e1cb1abf55d60cdd54e",
+    "config_sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+    "data_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd"
+  },
+  "projection_schema": {
+    "samples_per_epoch": 768,
+    "batch_size": 24,
+    "optimizer_steps_per_epoch": 32,
+    "validation_samples": 128,
+    "validation_batch_size": 32,
+    "validation_batches": 4,
+    "measured_step_seconds": 76.08772434199636,
+    "measured_validation_seconds": 78.0326056269987,
+    "projection_basis": "deterministic-XLA one-epoch legacy measurement; 200e multiplication only; no accuracy"
+  },
+  "formal_release": {
+    "projected_200e_single_seed_hours": 153.4418111514444,
+    "required_hours_upper_bound": 30.0,
+    "status": "BLOCKED_RUNTIME_OVER_TARGET",
+    "reason": "Measured epoch is 2761.95 s; projected 200e exceeds the 24-30 h release gate"
+  },
+  "environment": {
+    "python": "3.14.3",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "platform": "WSL2 Linux 6.6.87.2",
+    "repo_sha": "a3db8cb4f615b34a5e23e43fbeefefb9649df414"
+  },
+  "formal_accuracy_claim_allowed": false,
+  "test_or_sealed_access": false
+}
