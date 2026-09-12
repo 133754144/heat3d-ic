@@ -58,8 +58,7 @@
         "r2r": {"real": 3164326, "padded": 64106, "total_slots": 3228432, "padding_ratio": 0.02025897458100082}
       },
       "warm_train_step_seconds": 83.92695421499957,
-      "valid_forward_total_seconds": 160.67004715898656,
-      "valid_forward_mean_seconds": 40.16751178974664,
+      "valid_forward_seconds": 160.67004715898656,
       "compile_count": 1,
       "xla_compile_occurrence": {"first_step_includes_compile": true, "unique_executables": 1},
       "host_device_transfer": {"status": "implicit_in_warm_step", "explicit_h2d_d2h_timer": false, "reason": "separate transfer timing requires profiler; no accuracy/protocol decision"},
@@ -99,8 +98,7 @@
         "r2r": {"real": 3174352, "padded": 59600, "total_slots": 3233952, "padding_ratio": 0.01877548551641406}
       },
       "warm_train_step_seconds": 76.38224706499022,
-      "valid_forward_total_seconds": 157.21656955499202,
-      "valid_forward_mean_seconds": 39.304142388748005,
+      "valid_forward_seconds": 157.21656955499202,
       "compile_count": 1,
       "xla_compile_occurrence": {"first_step_includes_compile": true, "unique_executables": 1},
       "host_device_transfer": {"status": "implicit_in_warm_step", "explicit_h2d_d2h_timer": false, "reason": "separate transfer timing requires profiler; no accuracy/protocol decision"},
@@ -128,8 +126,9 @@
     "validation_batch_size": 32,
     "validation_batches": 4,
     "measured_step_seconds": {"A": 83.92695421499957, "B": 76.38224706499022},
-    "measured_validation_seconds": {"A": 40.16751178974664, "B": 39.304142388748005},
-    "projection_basis": "one deterministic-XLA warm train step and four validation forwards; runtime-only; no accuracy"
+    "measured_validation_seconds": {"A": 160.67004715898656, "B": 157.21656955499202},
+    "measured_validation_scope": "one first valid batch; full four-batch validation is recorded only by the P0-1 epoch receipt",
+    "projection_basis": "one deterministic-XLA warm train step and one validation forward on the first valid batch; runtime-only; no accuracy"
   },
   "hard_boundaries": {
     "g1_modified": false,

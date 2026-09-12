@@ -8,10 +8,10 @@
 
 ## 运行时分解
 
-| workload | preparation (s) | graph prep (s) | warm train step (s) | valid total (s) | valid mean (s) | compile count | peak JAX bytes |
+| workload | preparation (s) | graph prep (s) | warm train step (s) | one valid forward (s) | compile count | peak JAX bytes |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| A: G1 P1i | 338.444 | 327.886 | 83.927 | 160.670 | 40.168 | 1 | 3,483,968,256 |
-| B: DeepOHeat-v1 | 316.173 | 261.903 | 76.382 | 157.217 | 39.304 | 1 | 3,825,095,168 |
+| A: G1 P1i | 338.444 | 327.886 | 83.927 | 160.670 | 1 | 3,483,968,256 |
+| B: DeepOHeat-v1 | 316.173 | 261.903 | 76.382 | 157.217 | 1 | 3,825,095,168 |
 
 ## 图与 padding
 
@@ -22,6 +22,6 @@
 
 ## 归因与边界
 
-A/B 的 warm step、validation forward 处于同一量级，B 并未因 DeepOHeat-v1 图而变慢；A 的 preparation/graph preparation 较长，属于 case-specific preparation 差异。当前归因冻结为 `STACK_DOMINANT_HOT_PATH_WITH_CASE_SPECIFIC_PREPARATION_DIFFERENCE`，不据此修改任何 science config，也不作 accuracy 或收敛结论。原始收据：`/tmp/g2_e2_matched_ab.json`，SHA256 `d8a360ce81f61c0ae70ea5826f9f1b822bbb9dca2613b11d71c5fb7b1f9b152a`。
+A/B 的 warm step、单个 valid forward 处于同一量级，B 并未因 DeepOHeat-v1 图而变慢；A 的 preparation/graph preparation 较长，属于 case-specific preparation 差异。当前归因冻结为 `STACK_DOMINANT_HOT_PATH_WITH_CASE_SPECIFIC_PREPARATION_DIFFERENCE`，不据此修改任何 science config，也不作 accuracy 或收敛结论。原始收据：`/tmp/g2_e2_matched_ab.json`，SHA256 `d8a360ce81f61c0ae70ea5826f9f1b822bbb9dca2613b11d71c5fb7b1f9b152a`。
 
 Formal training 仍保持 blocked；native Linux 比较尚未完成，且本 probe 不能替代 profiler gate 或 exact-resume gate。
