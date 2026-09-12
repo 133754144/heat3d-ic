@@ -1,0 +1,26 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_native_linux_receipt_v1",
+  "status": "UNAVAILABLE_FAIL_CLOSED",
+  "scope": "read-only availability check; no workload launched",
+  "hosts_checked": ["VLSI"],
+  "observed": {
+    "host": "10.129.245.233",
+    "result": "SSH host-key verification failed because the stored key changed",
+    "action": "No known_hosts modification and no retry; no native Linux GPU workload was run"
+  },
+  "native_linux_gpu": {
+    "a6000_or_a100_verified": false,
+    "benchmark": "NOT_RUN",
+    "reason": "No trusted, currently accessible native Linux node was available in this turn"
+  },
+  "comparison": {
+    "devbox": "WSL2 RTX 5070, JAX CUDA profile available",
+    "native_linux": "unavailable",
+    "runtime_penalty_conclusion": "undetermined; do not infer from the failed host-key check"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "test_or_sealed_access": false,
+    "formal_training_started": false
+  }
+}

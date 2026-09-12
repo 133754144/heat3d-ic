@@ -1,0 +1,59 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_runtime_qualification_protocol_v1",
+  "status": "FORMAL_TRAINING_BLOCKED_PENDING_RUNTIME_AND_RESUME_GATES",
+  "scope": "G2-E2 runtime/provenance qualification only",
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "formal_training_started": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "science_config_changed": false
+  },
+  "heat3d": {
+    "epoch_accounting": "one complete non-publication legacy B24 epoch with single-forward validation",
+    "release_requirements": [
+      "accounting closed",
+      "production exact-resume equivalence pass",
+      "projected single-seed 200e walltime <= 24-30 hours or an approved faster native target"
+    ],
+    "formal_execution_path": "legacy; single-forward validation; no slim path after fail-closed trajectory gate"
+  },
+  "matched_runtime": {
+    "case_A": "frozen G1 P1i Heat3D B24",
+    "case_B": "frozen DeepOHeat-v1 Heat3D adaptation B24",
+    "comparison": "preparation/graph/padding/compiled-shape/warm-step/validation/resource only; no accuracy"
+  },
+  "gino": {
+    "scientific_contract": {"r_in": 0.15, "r_out": 0.033, "latent_grid": [32, 32, 32]},
+    "geometry_gate": "896 train+valid_iid coords-only audit",
+    "repeatability_gate": "Open3D FixedRadiusSearch + torch-scatter fixed fixtures",
+    "release": "requires geometry PASS, repeatability PASS, reviewer-approved semantic amendment, and exact-resume PASS",
+    "fallback": "diagnostic oracle only; never formal backend"
+  },
+  "transolver": {
+    "cuda_preflight": "existing PASS_RESOURCE_PREFLIGHT retained",
+    "release": "requires hot-path qualification and exact-resume PASS; no duplicate preflight in E2"
+  },
+  "projection_schema": {
+    "required_fields": [
+      "samples_per_epoch",
+      "batch_size",
+      "optimizer_steps_per_epoch",
+      "validation_samples",
+      "validation_batch_size",
+      "validation_batches",
+      "measured_step_seconds",
+      "measured_validation_seconds",
+      "projection_basis"
+    ],
+    "accuracy_selection_allowed": false
+  },
+  "profiler_gate": {
+    "required_before_profiler": ["epoch accounting closed", "matched A/B complete", "native Linux unavailable or still too slow"],
+    "this_turn": "not_started until the three conditions are met"
+  },
+  "next_single_path": "finish receipts and human audit; only then decide whether to authorize a native Linux runtime target"
+}

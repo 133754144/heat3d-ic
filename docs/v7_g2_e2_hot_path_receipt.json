@@ -1,0 +1,36 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_hot_path_receipt_v1",
+  "status": "QUALIFICATION_BLOCKED_NO_OPTIMIZED_FORMAL_PATH",
+  "scope": "runtime-only source audit; no formal GINO/Transolver training",
+  "gino_transolver_runner": "scripts/run_v7_g2_p1i_external_formal.py",
+  "observed_legacy_path": {
+    "train_cuda_synchronize": true,
+    "valid_cuda_synchronize": true,
+    "per_step_host_scalar_extraction": true,
+    "source_lines": {
+      "train_sync": "scripts/run_v7_g2_p1i_external_formal.py:323,333",
+      "train_scalar": "scripts/run_v7_g2_p1i_external_formal.py:335",
+      "valid_sync": "scripts/run_v7_g2_p1i_external_formal.py:343,346"
+    },
+    "reason": "Current code synchronizes for timing and extracts a scalar each step; this is a candidate bottleneck, not a changed science result."
+  },
+  "optimization": {
+    "timing_path_separated": false,
+    "formal_hot_path_modified": false,
+    "trajectory_equivalence": "NOT_RUN",
+    "throughput_before_after": "NOT_RUN",
+    "reason_not_applied": "Removing synchronization/scalar extraction requires a bounded trajectory-equivalence gate before any formal runner change; GINO common gate and formal training remain blocked."
+  },
+  "data_pipeline": {
+    "verified_ram_cache": "available as --data-cache verified_ram",
+    "interpretation": "data-pipeline benchmark/optimization only; never described as a training speedup"
+  },
+  "hard_boundaries": {
+    "architecture_loss_optimizer_budget_changed": false,
+    "accuracy_used": false,
+    "formal_gino_started": false,
+    "formal_transolver_started": false,
+    "test_or_sealed_access": false
+  },
+  "decision": "Keep formal training blocked. A future no-sync candidate must first pass bitwise trajectory equivalence on fixed initial state/batches/keys, then receive an independent throughput receipt."
+}
