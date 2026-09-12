@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 import jax
+import jaxlib
 import numpy as np
 
 
@@ -476,7 +477,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "python": sys.version,
             "platform": platform.platform(),
             "jax": jax.__version__,
-            "jaxlib": getattr(jax, "__version__", None),
+            "jaxlib": jaxlib.__version__,
             "backend": jax.default_backend(),
             "repo_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         },
