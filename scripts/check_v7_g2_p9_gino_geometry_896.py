@@ -225,7 +225,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     optimized = build_gino(R_IN, R_OUT, use_open3d=True, use_torch_scatter=True).to(device).eval()
     optimized.load_state_dict(base_state)
     state_equal = all(torch.equal(base_state[key], optimized.state_dict()[key]) for key in base_state)
-    grid = latent_queries(LATENT_RESOLUTION).to(device)
+    # ``latent_queries`` constructs a dense [R, R, R, 3] lattice for model
+    # calls; the upstream NeighborSearch API consumes a flat [Q, 3] list.
+    # This reshape changes no coordinates or radius semantics.
+    grid = latent_queries(LATENT_RESOLUTION).reshape(-1, 3).to(device)
     grid_np = grid.detach().cpu().numpy().astype(np.float32)
     sample_receipts: list[dict[str, Any]] = []
     margin_values: list[float] = []
