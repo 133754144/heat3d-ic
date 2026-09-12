@@ -107,6 +107,10 @@ def _prepare(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("test/sealed labels path is forbidden")
     if jax.default_backend() != "gpu":
         raise SystemExit("FAIL-CLOSED: epoch instrumentation requires JAX CUDA")
+    if "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""):
+        raise SystemExit(
+            "FAIL-CLOSED: epoch instrumentation requires the frozen deterministic XLA flag"
+        )
 
     profile_module = load_script("profile_v7_g2_training_efficiency.py")
     helper = load_script("run_v7_g2_p5_heat3d_v1_dual_output_smoke.py")

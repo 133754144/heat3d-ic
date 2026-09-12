@@ -228,6 +228,8 @@ def main() -> int:
         raise ValueError("matched benchmark output must remain under /tmp")
     if jax.default_backend() != "gpu":
         raise SystemExit("FAIL-CLOSED: matched benchmark requires JAX CUDA")
+    if "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""):
+        raise SystemExit("FAIL-CLOSED: matched benchmark requires the frozen deterministic XLA flag")
     started = time.perf_counter()
     a = prepare_g1(args)
     a_receipt = time_case(a)
