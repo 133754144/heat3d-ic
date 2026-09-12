@@ -30,9 +30,11 @@ sys.path.insert(0, str(ROOT))
 from rigno.graphBuilder_Heat3D import Heat3DGraphBuilder
 from rigno.heat3d_training import (
     TrainingDependencies, V7FormalTrainer, atomic_training_checkpoint,
-    block_until_ready, build_p1i_batches, evaluate_level_a_validation,
+    atomic_latest_checkpoint, block_until_ready, build_p1i_batches,
+    evaluate_level_a_validation,
     loss_fn_full, make_gradient_transform, make_p1i_optimizer,
     model_apply_full, model_init_full, tree_parameter_count,
+    load_latest_checkpoint,
 )
 from rigno.heat3d_training.p1i import (
     attach_input_contexts, attach_native_physics, attach_qk_features,
@@ -87,6 +89,12 @@ def checkpoint_state(path: Path) -> Any:
         params=payload["params"], optimizer_state=payload["optimizer_state"],
         step=int(payload["step"]),
     )
+
+
+def repo_sha() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+    ).strip()
 
 
 def main() -> int:
@@ -244,17 +252,25 @@ def main() -> int:
     history, update_count = [], 0
     start_epoch = 1
     if args.resume_from is not None:
-        # Resume is deliberately constrained to our atomic epoch payload.  A
-        # partial/foreign checkpoint cannot silently enter a formal run.
-        with args.resume_from.open("rb") as stream:
-            resume_payload = pickle.load(stream)
-        if resume_payload.get("schema_version") != "v7_p1i_training_state_checkpoint_v1":
-            raise ValueError("resume checkpoint schema mismatch")
+        # Resume is constrained to the metadata-complete atomic epoch schema.
+        # A partial/foreign checkpoint or any code/config/data drift fails
+        # closed before a single optimizer update is issued.
+        resume_payload = load_latest_checkpoint(args.resume_from)
+        expected_runner = repo_sha()
+        expected_config = sha256(args.heat3d_config)
+        expected_data = sha256(args.labels_root / "label_generation_receipt.json")
+        for key, expected in (
+            ("runner_sha", expected_runner),
+            ("config_sha", expected_config),
+            ("data_sha", expected_data),
+        ):
+            if str(resume_payload.get(key)) != str(expected):
+                raise ValueError(f"resume {key} mismatch")
         if bool(resume_payload.get("test_access", True)):
             raise ValueError("resume checkpoint carries test access")
         if int(resume_payload.get("seed", args.seed)) != args.seed:
             raise ValueError("resume seed mismatch")
-        state = checkpoint_state(args.resume_from)
+        state = resume_payload["state_object"]
         completed_epoch = int(resume_payload.get("epoch", 0))
         if completed_epoch < 1 or completed_epoch >= 200:
             raise ValueError("resume must point to a completed epoch in [1,199]")
@@ -290,24 +306,40 @@ def main() -> int:
             atomic_training_checkpoint(output / "params_best_sample_first.pkl", state=state, metadata={
                 "epoch": epoch, "seed": args.seed, "selection_metric": "native_1024_valid_sample_first_relative_rmse_pct",
                 "selection_value": metric, "U_outputs_used_for_selection": False, "test_access": False,
+                "runner_sha": repo_sha(), "config_sha": sha256(args.heat3d_config),
+                "data_sha": sha256(args.labels_root / "label_generation_receipt.json"),
             })
         row = {"epoch": epoch, "train_loss": float(np.mean(losses)), "valid_loss": float(np.mean(valid_losses)),
                "native_1024_valid_sample_first_relative_rmse_pct": metric, "best_epoch": best_epoch,
                "epoch_wall_seconds": time.perf_counter() - epoch_started,
                "execution_path": args.execution_path, "global_update_count": update_count}
         history.append(row)
-        latest_receipt = atomic_training_checkpoint(output / "latest_epoch.pkl", state=state, metadata={
-            "epoch": epoch, "seed": args.seed, "global_update_count": update_count,
-            "best_metric": best_metric, "best_epoch": best_epoch,
-            "selection_metric": "native_1024_valid_sample_first_relative_rmse_pct",
-            "execution_path": args.execution_path, "test_access": False,
-            "rng_state": {"jax_base_seed": args.seed, "next_epoch": epoch + 1},
-            "batch_order_state": {"algorithm": "default_rng(seed+epoch).permutation", "next_epoch": epoch + 1},
-        })
+        latest_receipt = atomic_latest_checkpoint(
+            output / "latest_epoch.pkl",
+            state=state,
+            metadata={
+                "epoch": epoch, "seed": args.seed,
+                "global_update_count": update_count,
+                "best_metric": best_metric, "best_epoch": best_epoch,
+                "selection_metric": "native_1024_valid_sample_first_relative_rmse_pct",
+                "execution_path": args.execution_path, "test_access": False,
+                "runner_sha": repo_sha(),
+                "config_sha": sha256(args.heat3d_config),
+                "data_sha": sha256(args.labels_root / "label_generation_receipt.json"),
+            },
+            rng_state={"jax_base_seed": args.seed, "next_epoch": epoch + 1},
+            batch_state={
+                "algorithm": "default_rng(seed+epoch).permutation",
+                "next_epoch": epoch + 1,
+            },
+            scheduler_state={"schedule": "embedded_in_optax", "epoch": epoch},
+        )
         (output / "progress.json").write_text(json.dumps({"status":"RUNNING","seed":args.seed,"epoch":epoch,"epochs":200,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False,"execution_path":args.execution_path,"latest_checkpoint_sha256":sha256(output / "latest_epoch.pkl")}, indent=2)+"\n")
         print(json.dumps(row, sort_keys=True), flush=True)
     final_report = atomic_training_checkpoint(output / "params_final.pkl", state=state, metadata={
         "epoch": 200, "seed": args.seed, "best_epoch": best_epoch, "test_access": False,
+        "runner_sha": repo_sha(), "config_sha": sha256(args.heat3d_config),
+        "data_sha": sha256(args.labels_root / "label_generation_receipt.json"),
     })
     best_state = checkpoint_state(output / "params_best_sample_first.pkl")
     probe_before, _ = trainer.validate_with_outputs(best_state, valid_batches[0]); block_until_ready(probe_before)

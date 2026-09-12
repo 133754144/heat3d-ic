@@ -94,8 +94,19 @@ def atomic_latest_checkpoint(
     }
 
 
-def load_latest_checkpoint(path: str | Path) -> dict[str, Any]:
-    """Load and validate a checkpoint created by ``atomic_latest_checkpoint``."""
+def load_latest_checkpoint(
+    path: str | Path,
+    *,
+    expected_runner_sha: str | None = None,
+    expected_config_sha: str | None = None,
+    expected_data_sha: str | None = None,
+) -> dict[str, Any]:
+    """Load and validate an exact-resume checkpoint.
+
+    Formal callers should provide all three expected hashes.  A mismatch is a
+    hard failure before the state is handed to an optimizer, preventing a
+    changed runner/config/dataset from silently continuing a run.
+    """
 
     with Path(path).open("rb") as stream:
         payload = pickle.load(stream)
@@ -103,6 +114,14 @@ def load_latest_checkpoint(path: str | Path) -> dict[str, Any]:
         raise ValueError("unsupported exact-resume checkpoint schema")
     if any(key not in payload for key in ("state", "scheduler_state", "rng_state", "batch_state")):
         raise ValueError("incomplete exact-resume checkpoint")
+    expected = {
+        "runner_sha": expected_runner_sha,
+        "config_sha": expected_config_sha,
+        "data_sha": expected_data_sha,
+    }
+    for key, value in expected.items():
+        if value is not None and str(payload.get(key)) != str(value):
+            raise ValueError(f"exact-resume checkpoint {key} mismatch")
     state_payload = payload["state"]
     state = TrainingState(
         params=state_payload["params"],

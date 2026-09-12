@@ -1,0 +1,25 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_gino_gate_decision_v1",
+  "status": "SEMANTIC_EQUIVALENCE_AMENDMENT_READY_FOR_REVIEW",
+  "original_engineering_gate": "SUPERSEDED_FOR_REVIEW_ONLY; historical P8/P9 FAIL_CLOSED receipt retained",
+  "geometry_receipt": "docs/v7_g2_e2_gino_geometry_896_receipt.json",
+  "repeatability_receipt": "docs/v7_g2_e2_gino_repeatability_receipt.json",
+  "invariants": {
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "state_dict_changed": false,
+    "information_budget_changed": false,
+    "accuracy_used": false,
+    "test_or_sealed_access": false
+  },
+  "amendment_candidate": {
+    "authoritative_formal_backend": "Open3D_FixedRadiusSearch_plus_torch_scatter",
+    "fallback_role": "engineering_diagnostic_oracle_only",
+    "graph_condition": "all 896 geometry samples exact here; any future disagreement must be machine-precision radius-boundary only",
+    "hard_non_boundary_condition": "non_boundary_disagreement == 0",
+    "output_condition": "optimized graph/output repeatability deterministic; numerical reduction drift is recorded, not used to change science config",
+    "approval_state": "REVIEW_REQUIRED; no formal GINO/Transolver run released in this turn"
+  },
+  "decision_basis": "geometry-only 896-sample audit plus fixed-fixture optimized repeatability; no truth or accuracy was opened"
+}

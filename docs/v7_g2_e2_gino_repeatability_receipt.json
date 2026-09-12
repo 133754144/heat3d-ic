@@ -1,0 +1,64 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_gino_repeatability_receipt_v1",
+  "status": "PASS_REPEATABLE",
+  "backend": "Open3D_FixedRadiusSearch_plus_torch_scatter",
+  "scientific_contract": {
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "tolerance": {"atol": 1.0e-5, "rtol": 1.0e-5},
+    "accuracy_read": false,
+    "state_dict_sha256": "540749afb4b47daec361b6dad426a813bf53cb31f3090ec15c4f14d623d48d7a"
+  },
+  "fixtures": [
+    {
+      "sample_id": "v6p1if1_0000",
+      "role": "train",
+      "graph_repeatable": true,
+      "output_repeatable": true,
+      "graph_edge_counts": {"input": 370746, "output": 4432},
+      "output_run_to_run": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "p95_abs": 0.0,
+        "relative_output_norm_difference": 0.0,
+        "bitwise_equal": true,
+        "allclose_atol_rtol_1e-5": true
+      },
+      "output_wall_seconds": [0.4365725069947075, 0.023756904003676027, 0.02388165298907552],
+      "finite": true
+    },
+    {
+      "sample_id": "v6p1if1_0003",
+      "role": "valid_iid",
+      "graph_repeatable": true,
+      "output_repeatable": true,
+      "graph_edge_counts": {"input": 376961, "output": 4515},
+      "output_run_to_run": {
+        "max_abs": 0.0,
+        "mean_abs": 0.0,
+        "p95_abs": 0.0,
+        "relative_output_norm_difference": 0.0,
+        "bitwise_equal": true,
+        "allclose_atol_rtol_1e-5": true
+      },
+      "output_wall_seconds": [0.0313340930006234, 0.02388120599789545, 0.024254607007605955],
+      "finite": true
+    }
+  ],
+  "environment": {
+    "python": "3.12.12",
+    "torch": "2.9.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "open3d": "0.19.0",
+    "torch_scatter": "2.1.2+pt29cu130",
+    "upstream_head": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "runner_sha256": "c1f33977d85dd82f88513b503193815b68279da177c292ddb35dea9976a6322f"
+  },
+  "raw_remote_receipt": {
+    "path": "/tmp/g2_e_gino_repeatability.json",
+    "sha256": "46e850f5c758b9bbf3239029ee4643696918e9a71fbb8827a1b14c5e7b0a7650"
+  },
+  "test_or_sealed_access": false
+}

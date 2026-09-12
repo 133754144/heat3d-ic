@@ -65,8 +65,19 @@ def atomic_torch_latest_checkpoint(
     }
 
 
-def load_torch_latest_checkpoint(path: str | Path) -> dict[str, Any]:
-    """Load and fail closed on an incomplete external checkpoint."""
+def load_torch_latest_checkpoint(
+    path: str | Path,
+    *,
+    expected_runner_sha: str | None = None,
+    expected_config_sha: str | None = None,
+    expected_data_sha: str | None = None,
+) -> dict[str, Any]:
+    """Load and fail closed on incomplete or provenance-mismatched state.
+
+    Expected hashes are optional for backwards-compatible inspection, but a
+    formal runner must provide all three.  This prevents a checkpoint from a
+    different code/config/data contract entering a resumed publication run.
+    """
 
     import torch
 
@@ -88,6 +99,14 @@ def load_torch_latest_checkpoint(path: str | Path) -> dict[str, Any]:
     ):
         if key not in payload:
             raise ValueError(f"external checkpoint missing {key}")
+    expected = {
+        "runner_sha": expected_runner_sha,
+        "config_sha": expected_config_sha,
+        "data_sha": expected_data_sha,
+    }
+    for key, value in expected.items():
+        if value is not None and str(payload.get(key)) != str(value):
+            raise ValueError(f"external checkpoint {key} mismatch")
     return payload
 
 

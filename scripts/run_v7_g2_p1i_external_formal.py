@@ -281,7 +281,12 @@ def main() -> int:
     if args.resume_from is not None:
         if args.mode != "train":
             raise ValueError("resume is available only for train mode")
-        resumed = load_torch_latest_checkpoint(args.resume_from)
+        resumed = load_torch_latest_checkpoint(
+            args.resume_from,
+            expected_runner_sha=git_sha(),
+            expected_config_sha=sha256(launch_path),
+            expected_data_sha=DATASET_SHA,
+        )
         if int(resumed.get("seed", args.seed)) != args.seed:
             raise ValueError("resume seed mismatch")
         if resumed.get("model_name", args.model) != args.model:

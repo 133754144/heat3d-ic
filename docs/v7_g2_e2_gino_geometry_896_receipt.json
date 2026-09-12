@@ -1,0 +1,72 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_gino_geometry_896_receipt_v1",
+  "status": "PASS_GEOMETRY_NON_BOUNDARY_ZERO",
+  "scope": {
+    "roles": ["train", "valid_iid"],
+    "train_count": 768,
+    "valid_iid_count": 128,
+    "processed_count": 896,
+    "target_truth_accuracy_opened": false,
+    "test_iid_opened": false,
+    "sealed_opened": false
+  },
+  "scientific_contract": {
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "radius_changed": false,
+    "architecture_changed": false,
+    "fallback_backend": "pure_PyTorch",
+    "optimized_backend": "Open3D_FixedRadiusSearch"
+  },
+  "totals": {
+    "zero_difference_samples": 896,
+    "differing_samples": 0,
+    "total_edges": {
+      "input_fallback": 334657562,
+      "input_open3d": 334657562,
+      "output_fallback": 4017546,
+      "output_open3d": 4017546
+    },
+    "total_differing_edges": {
+      "input_fallback_only": 0,
+      "input_open3d_only": 0,
+      "output_fallback_only": 0,
+      "output_open3d_only": 0
+    },
+    "total_differing_edges_all_sides": 0,
+    "boundary_only_count": 0,
+    "non_boundary_disagreement": 0,
+    "radius_margin_abs_summary": {
+      "max": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "p95": 0.0,
+      "p99": 0.0
+    }
+  },
+  "oracle": {
+    "arithmetic": ["cpu_float64", "cpu_float32", "cuda_float32"],
+    "boundary_margin_threshold": 1.0e-5,
+    "note": "No disagreement edges existed; the independent distance oracle therefore had zero rows."
+  },
+  "backend_state": {
+    "identical_state_dict": true
+  },
+  "environment": {
+    "python": "3.12.12",
+    "torch": "2.9.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "open3d": "0.19.0",
+    "torch_scatter": "2.1.2+pt29cu130",
+    "upstream_head": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "runner_sha256": "f6b0e7d93a69df5170cb3c0cb22a14d536121f5bbbe614c5f866894f8ba642b4"
+  },
+  "raw_remote_receipt": {
+    "path": "/tmp/g2_e_gino_geometry_896.json",
+    "sha256": "bdac1d7621a423d5b3984ad973e8b9f33d371ffd82cece872507b7b7bcec0c08"
+  },
+  "decision": "All 896 graphs are exact between fallback and Open3D for the frozen radii; geometry gate passes. This is necessary evidence for a semantic-equivalence amendment, not an accuracy result."
+}
