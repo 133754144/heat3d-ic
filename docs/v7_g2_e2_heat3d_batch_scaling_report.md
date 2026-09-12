@@ -31,7 +31,7 @@
 ## 结论与边界
 
 - 本诊断确认：单一 JIT 已包含 loss/grad/optimizer update；control 的 host scalar/norm 诊断有可测 overhead，但不是总 runtime 的主导部分。
-- 推荐的**诊断/后续 bounded preflight**配置为 compiled B24；它是已完成档位中吞吐最高且显存余量明显优于 B48 的选择。该建议不改变 frozen science contract，也不释放 formal 长训练。
+- 推荐的**诊断/后续 bounded preflight**配置为 compiled B24；它是已完成档位中吞吐最高，且显存采样值略低于同样接近上限的 B48。该建议不改变 frozen science contract，也不释放 formal 长训练。
 - B96 因首个 batch 的 XLA 编译约 45 分钟仍无 steady-state 而停止；B128 不运行。
 - 未启动 profiler、GINO/Transolver formal 或任何长周期训练；未访问 P1i test/sealed、DeepOHeat official test，未修改 G1。
 
