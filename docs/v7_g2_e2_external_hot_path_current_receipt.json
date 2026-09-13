@@ -1,0 +1,57 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_external_hot_path_current_receipt_v1",
+  "status": "GINO_FAIL_TRANSOLVER_PASS_NO_FORMAL_TRAINING",
+  "scope": "bounded actual-model hot-path and exact-resume qualification; no accuracy",
+  "gino": {
+    "raw_receipt": "/tmp/g2_e2_hot_gino_v2.json",
+    "raw_sha256": "94990b8da4d1ea9e3f4a830040d4307e5f644469a0c9af93f911bb5cab0dc328",
+    "trajectory_equivalence": {
+      "status": "FAIL_CLOSED",
+      "loss_max_abs_difference": 6.258487701416016e-06,
+      "parameters_max_abs_difference": 0.0035813450813293457,
+      "optimizer_max_abs_difference": 3.937259316444397e-05,
+      "scheduler_max_abs_difference": 0.0,
+      "update_count": 2
+    },
+    "exact_resume": {
+      "status": "FAIL_MODEL_LEVEL_EXACT_RESUME",
+      "parameters_max_abs_difference": 0.003704577684402466,
+      "optimizer_max_abs_difference": 4.3373554944992065,
+      "scheduler_max_abs_difference": 0.0,
+      "provenance_mismatch_rejected": true
+    },
+    "formal_status": "FAIL_CLOSED"
+  },
+  "transolver": {
+    "raw_receipt": "/tmp/g2_e2_hot_transolver.json",
+    "raw_sha256": "f14a3dbec7cea52a24d2d6550880e15bee04b5ea8d0b298f70f3a12bcc3556e3",
+    "trajectory_equivalence": {
+      "status": "PASS",
+      "loss_max_abs_difference": 0.0,
+      "parameters_max_abs_difference": 0.0,
+      "optimizer_max_abs_difference": 0.0,
+      "scheduler_max_abs_difference": 0.0,
+      "update_count": 2
+    },
+    "exact_resume": {
+      "status": "PASS_MODEL_LEVEL_EXACT_RESUME",
+      "parameters_max_abs_difference": 0.0,
+      "optimizer_max_abs_difference": 0.0,
+      "scheduler_max_abs_difference": 0.0,
+      "provenance_mismatch_rejected": true
+    },
+    "formal_status": "BLOCKED_BY_GINO_COMMON_GATE"
+  },
+  "observed_timing_seconds": {
+    "gino_legacy_steps": [0.735463, 0.0452247],
+    "gino_no_sync_steps": [0.0380908, 0.0431888],
+    "transolver_legacy_steps": [0.5067343, 0.0148413],
+    "transolver_no_sync_steps": [0.0188649, 0.0140384]
+  },
+  "interpretation": "Timing-only synchronization is a candidate engineering overhead. Only Transolver passed the actual-model equivalence/resume gate; no formal runner was changed or started.",
+  "hard_boundaries": {
+    "test_or_sealed_access": false,
+    "formal_training_started": false,
+    "science_config_changed": false
+  }
+}

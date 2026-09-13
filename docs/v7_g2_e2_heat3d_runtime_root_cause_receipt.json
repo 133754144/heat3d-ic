@@ -1,0 +1,144 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_runtime_root_cause_receipt_v1",
+  "status": "BOUNDED_ROOT_CAUSE_IDENTIFIED_FORMAL_BLOCKED",
+  "scope": "devbox-only Heat3D runtime/JIT/profiler qualification; no long training",
+  "scientific_contract": {
+    "train_samples": 768,
+    "valid_iid_samples": 128,
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "architecture_loss_optimizer_radius_normalization_changed": false,
+    "test_or_sealed_access": false,
+    "g1_modified": false,
+    "formal_training_started": false,
+    "accuracy_used_for_runtime_decision": false
+  },
+  "jit_shape_audit": {
+    "receipt": "docs/v7_g2_e2_heat3d_epoch_accounting_receipt.json",
+    "shape_receipt": "docs/v7_g2_e2_heat3d_jit_shape_audit_receipt.json",
+    "raw_shape_receipt_sha256": "eb0815334db65544fe8cc249b35a8392783fc70773c4555504af42fb3e167c56",
+    "cache_key": "batch_id",
+    "closure_captures_batch": true,
+    "train_batches": 32,
+    "observed_executable_count": 32,
+    "observed_unique_batch_signatures": 32,
+    "exact_hlo_module_count": "not separately exported; one HLO/executable is inferred per distinct static closure",
+    "node_shapes": {
+      "train": {"p_in": [24, 1025, 3], "r": [24, 257, 3], "p_out": [24, 1025, 3]},
+      "valid_iid": {"p_in": [32, 1025, 3], "r": [32, 257, 3], "p_out": [32, 1025, 3]}
+    },
+    "edge_shape_variation": {
+      "train_unique_p2r_shapes": 31,
+      "train_unique_r2r_shapes": 22,
+      "train_unique_r2p_shapes": 31,
+      "valid_unique_p2r_shapes": 4,
+      "valid_unique_r2r_shapes": 4,
+      "valid_unique_r2p_shapes": 4
+    },
+    "padding_ratio_over_real": {
+      "train": {"p2r": 0.14481251078586865, "r2r": 0.01877548551641406, "r2p": 0.14481251078586865},
+      "valid_iid": {"p2r": 0.15816447837687897, "r2r": 0.02064379628230316, "r2p": 0.15816447837687897}
+    },
+    "dynamic_or_bucket_candidate_tested": false,
+    "three_epoch_compilation_phase_seconds": {"control_b24": 2459.728150333074, "compiled_b24": 2207.400477647956},
+    "three_epoch_compilation_phase_minutes": {"control_b24": 40.9954691722179, "compiled_b24": 36.79000796079927},
+    "conclusion": "Yes. The current runner creates many static executables: 32 B24 train batches produce 32 distinct signatures. This is a shape/JIT-bound contributor; no dynamic/bucket rewrite is admitted in this round."
+  },
+  "profiler": {
+    "receipt_raw_path": "/tmp/g2_e2_heat3d_trace_true.json",
+    "receipt_raw_sha256": "e622344d148b7b1c17a1f05b73bf19ed207710a25470be7f6df2d7ff70b057a3",
+    "xla_flags": "--xla_gpu_deterministic_ops=true",
+    "postwarmup_steps": 1,
+    "postwarmup_step_seconds": 56.16122755900142,
+    "compile_plus_first_step_seconds": 81.21564016799675,
+    "trace_files_not_committed": true,
+    "meaningful_events": [
+      {"event": "jit_compiled:XLA GPU module / GpuExecutable::ExecuteThunks", "wall_seconds": 50.357043624, "share_of_postwarm_step_approx": 0.8966},
+      {"event": "BUFFER_FLUSH", "wall_seconds": 2.058617561, "share_of_postwarm_step_approx": 0.0367},
+      {"event": "while.33 + while.35", "wall_seconds": 2.57554203, "share_of_postwarm_step_approx": 0.0459},
+      {"event": "MemcpyD2D", "wall_seconds": 0.7537101279993752, "share_of_postwarm_step_approx": 0.0134}
+    ],
+    "nested_event_caveat": "PjRt/XLA event rows are nested and therefore not additive; percentages are approximate diagnostic shares, not a kernel accounting identity.",
+    "edge_node_mlp_scatter": "fused inside the XLA GPU module; the bounded parser cannot separate their individual percentages without interpreting the XPlane protobuf",
+    "classification": "SPARSE_GRAPH_KERNEL_BOUND_MIXED_WITH_SHAPE_JIT_BOUND",
+    "host_dispatch_or_sync_primary": false,
+    "reason": "The synchronized compiled-B24 receipt attributes 4756.69 s to dispatch/device execution and only 0.305 s to explicit sync/host postprocess over three epochs."
+  },
+  "deterministic_xla_ab": {
+    "same_fixture": true,
+    "true": {
+      "raw_sha256": "f1a0e078772778f5b772f40f5cfb67e206906171385622e9de80c93768369ef7",
+      "compile_plus_first_step_seconds": 349.19065092899837,
+      "median_postwarm_step_seconds": 300.12712064001244,
+      "p95_postwarm_step_seconds": 305.9666244701046,
+      "samples_per_second": 0.07996611552071899,
+      "peak_jax_bytes_in_use": 3470788864,
+      "loss_finite": true,
+      "final_params_tree_sha256": "52f967534cca669c1558993d084cf0f220de39767c5eb926b249b511ec96027e",
+      "final_optimizer_state_tree_sha256": "ed9ea9213616a361d16bac92cf15c899eefc30f1f91876b390e51f05faaf39b5"
+    },
+    "false": {
+      "raw_sha256": "a0d053918403ce644ad1cfc412dfb6028ca242087c14db5baff36bada163daef",
+      "compile_plus_first_step_seconds": 23.740457428997615,
+      "median_postwarm_step_seconds": 0.038604803005000576,
+      "p95_postwarm_step_seconds": 0.03989921358006541,
+      "samples_per_second": 621.684301740672,
+      "peak_jax_bytes_in_use": 3435332096,
+      "loss_finite": true,
+      "final_params_tree_sha256": "c4582532e5cf5664af33df52c91bb60ba457c34e8c90c4e6afbb0b389335c5a6",
+      "final_optimizer_state_tree_sha256": "e8f79f36795561f38a96e3e24b3ef6e42521899aeea75c2ae348b4147f060ec0"
+    },
+    "ratios": {
+      "true_over_false_compile_plus_first_step": 14.708674084033523,
+      "true_over_false_median_step": 7774.3466428551965,
+      "false_over_true_samples_per_second": 7774.3466428551965
+    },
+    "trajectory": "Losses remain finite, but parameter/optimizer tree hashes differ; numeric tree max-abs difference was not captured by this probe. This is an amendment candidate only, not a formal setting change.",
+    "interpretation": "The deterministic flag has a very large fixture-level cost in this isolated A/B; this does not replace the three-epoch compiled-B24 projection and does not authorize changing the frozen deterministic setting."
+  },
+  "host_sync": {
+    "control_b24": {"explicit_sync_plus_host_seconds": 74.7349449278845, "train_sync_calls": 96, "train_host_scalar_extractions": 384},
+    "compiled_b24": {"explicit_sync_plus_host_seconds": 0.3050645606708713, "train_sync_calls": 96, "train_host_scalar_extractions": 192},
+    "throughput_change_percent": 8.420356679842001,
+    "interpretation": "Removing unused host diagnostics in the bounded compiled path reduced measured host postprocess, but device execution remains dominant; the historical slim trajectory gate failed and no unverified hot-path rewrite is formal."
+  },
+  "persistent_compilation_cache": {
+    "script": "scripts/benchmark_v7_g2_e2_heat3d_compile_cache.py",
+    "status": "PASS_COLD_WARM_CACHE_REUSE_BOUNDED",
+    "remote_cache_dir": "/tmp/g2_e2_compile_cache_runtime/cache",
+    "cold_output": "/tmp/g2_e2_compile_cache_runtime/cold.json",
+    "cold_raw_sha256": "d202d585702f9972f4c619fec0ed09d876c663f71ca3c5de28b8ac06cf28abd2",
+    "cold_compile_plus_first_step_seconds": 81.21189723801217,
+    "warm_output": "/tmp/g2_e2_compile_cache_runtime/warm.json",
+    "warm_raw_sha256": "a1cf0787a64c90d56f174f4e70bb1eaaf29bd8d2eb53ce36d5c9498622ce67c1",
+    "warm_compile_plus_first_step_seconds": 47.068489294004394,
+    "compile_plus_first_step_reduction_percent": 42.0423719987009,
+    "cache_inventory": {"file_count": 265, "total_bytes": 4985287, "cold_warm_identical": true},
+    "stale_executable_guard": "environment, JAX/XLA metadata, and runner receipt remain part of the audit; no cache result is used for steady-state projection",
+    "formal_effect": "cache can only reduce repeated cold compilation; it cannot alter the scientific contract"
+  },
+  "runtime_projection": {
+    "baseline": "compiled B24",
+    "basis_receipt": "docs/v7_g2_e2_heat3d_batch_scaling_receipt.json",
+    "measured_median_epoch_seconds": 1547.0881281080074,
+    "projected_200_epoch_single_seed_hours": 85.94934045044485,
+    "projected_200_epoch_three_seed_hours": 257.84802135133456,
+    "projection_is_runtime_only": true,
+    "formal_release": "BLOCKED; bounded projection remains above the 24-30 h target and no execution-semantic rewrite passed a formal gate"
+  },
+  "release_decision": {
+    "heat3d": "BLOCKED_RUNTIME_TARGET",
+    "gino": "FAIL_CLOSED",
+    "transolver": "BLOCKED_BY_COMMON_GATE",
+    "next_single_path": "保持 compiled B24 与 deterministic XLA 科学配置不变；先在同一 devbox 完成 GINO optimized reduction/repeatability 人工审计，再决定是否提交任何 formal release amendment。"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "formal_training_started": false
+  }
+}

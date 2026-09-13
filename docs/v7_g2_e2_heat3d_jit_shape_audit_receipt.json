@@ -1,0 +1,39 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_jit_shape_audit_summary_v1",
+  "status": "PASS_STATIC_SHAPE_AUDIT_MANY_EXECUTABLES",
+  "scope": "frozen 768 train / 128 valid_iid B24 geometry and static-JIT audit",
+  "raw_receipt_path": "/tmp/g2_e2_shapes.json",
+  "raw_receipt_sha256": "eb0815334db65544fe8cc249b35a8392783fc70773c4555504af42fb3e167c56",
+  "scientific_contract": {
+    "train_samples": 768,
+    "train_batch_size": 24,
+    "train_batches": 32,
+    "valid_iid_samples": 128,
+    "valid_batch_size": 32,
+    "valid_batches": 4,
+    "test_or_sealed_access": false,
+    "accuracy_used": false
+  },
+  "jit_policy": {
+    "source": "rigno/heat3d_training/core.py:218-225",
+    "closure_captures_batch": true,
+    "cache_key": "batch_id",
+    "observed_executables": 32,
+    "unique_train_signatures": 32,
+    "exact_hlo_module_count": "not separately exported",
+    "dynamic_or_bucket_candidate_tested": false
+  },
+  "node_shapes": {
+    "train": {"p_in": [24, 1025, 3], "r": [24, 257, 3], "p_out": [24, 1025, 3]},
+    "valid_iid": {"p_in": [32, 1025, 3], "r": [32, 257, 3], "p_out": [32, 1025, 3]}
+  },
+  "edge_shape_counts": {
+    "train": {"p2r": 31, "r2r": 22, "r2p": 31},
+    "valid_iid": {"p2r": 4, "r2r": 4, "r2p": 4}
+  },
+  "padding_ratio_over_real": {
+    "train": {"p2r": 0.14481251078586865, "r2r": 0.01877548551641406, "r2p": 0.14481251078586865},
+    "valid_iid": {"p2r": 0.15816447837687897, "r2r": 0.02064379628230316, "r2p": 0.15816447837687897}
+  },
+  "conclusion": "32 B24 batches do produce many independent static executables; the evidence supports a shape/JIT-bound component, but no dynamic/bucket execution rewrite is admitted by this receipt."
+}

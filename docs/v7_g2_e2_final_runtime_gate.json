@@ -1,0 +1,63 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_final_runtime_gate_v1",
+  "status": "FORMAL_TRAINING_BLOCKED",
+  "scope": "devbox-only bounded G2-E2 runtime qualification; no long-cycle formal training",
+  "current_decision_supersedes": [
+    "docs/v7_g2_e2_runtime_qualification_receipt.json (historical aggregate; current receipts below are authoritative)",
+    "docs/v7_g2_e2_gino_repeatability_receipt.json (historical repeatability evidence retained for provenance)"
+  ],
+  "branch_policy": {
+    "local_branch": "codex/v7-g2-baselines-finalize",
+    "remote_branch": "research/v7-g2-baselines",
+    "g1_modified": false
+  },
+  "heat3d": {
+    "runtime_receipt": "docs/v7_g2_e2_heat3d_runtime_root_cause_receipt.json",
+    "execution_baseline": "compiled B24",
+    "jit_executables": 32,
+    "projected_200_epoch_single_seed_hours": 85.94934045044485,
+    "projected_200_epoch_three_seed_hours": 257.84802135133456,
+    "exact_resume": "EXACT_RESUME_EQUIVALENCE_PASS on bounded actual B24 fixture; not long-run publication evidence",
+    "release_gate": "BLOCKED_RUNTIME_TARGET"
+  },
+  "gino": {
+    "geometry_receipt": "docs/v7_g2_e2_gino_p8_e2_reconciliation.json",
+    "geometry_status": "non_boundary_disagreement_zero; all current graph disagreements boundary-only",
+    "repeatability_raw_sha256": "c1f3706c763bead683d612df25867f91a3ddcac7e6698d911801d81ee17ad644",
+    "output_repeatability": "FAIL_CLOSED",
+    "hot_path": "FAIL_CLOSED",
+    "model_level_exact_resume": "FAIL_MODEL_LEVEL_EXACT_RESUME",
+    "semantic_amendment": "NOT_READY_FOR_APPROVAL",
+    "release_gate": "FAIL_CLOSED"
+  },
+  "transolver": {
+    "hot_path": "EXECUTION_EQUIVALENCE_PASS",
+    "model_level_exact_resume": "PASS_MODEL_LEVEL_EXACT_RESUME",
+    "formal_training": "NOT_STARTED",
+    "release_gate": "BLOCKED_BY_GINO_COMMON_GATE"
+  },
+  "persistent_cache": {
+    "status": "PASS_COLD_WARM_CACHE_REUSE_BOUNDED",
+    "cold_compile_plus_first_step_seconds": 81.21189723801217,
+    "warm_compile_plus_first_step_seconds": 47.068489294004394,
+    "compile_plus_first_step_reduction_percent": 42.0423719987009,
+    "inventory": {"file_count": 265, "total_bytes": 4985287, "cold_warm_identical": true},
+    "formal_effect": "cold-start mitigation only; no steady-state or scientific-config change"
+  },
+  "projection": {
+    "heat3d": {"basis": "three-epoch compiled-B24 runtime receipt", "one_seed_hours": 85.94934045044485, "three_seed_hours": 257.84802135133456},
+    "gino": {"basis": "prior bounded CUDA preflight only; formal blocked", "three_seed_hours": 66.3378190161023},
+    "transolver": {"basis": "prior bounded CUDA preflight only; formal blocked", "three_seed_hours": 171.26116540945202},
+    "accuracy_claim": false
+  },
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "formal_training_started": false,
+    "scientific_config_changed": false
+  },
+  "next_single_recommendation": "Keep formal training blocked. On the same devbox, human-audit the GINO optimized reduction/repeatability failure; do not alter radius, architecture, reduction, tolerance, budget, or use fallback as formal backend."
+}

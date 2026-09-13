@@ -1,0 +1,56 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_compile_cache_receipt_v1",
+  "status": "PASS_COLD_WARM_CACHE_REUSE_BOUNDED",
+  "scope": "one frozen B24 batch, one synchronized update per process; runtime-only",
+  "scientific_contract": {
+    "batch_size": 24,
+    "seed": 0,
+    "test_or_sealed_access": false,
+    "formal_training_started": false,
+    "accuracy_used": false
+  },
+  "environment": {
+    "host": "devbox WSL2",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "python": "3.14.3",
+    "jax": "0.9.1",
+    "jax_backend": "gpu",
+    "xla_flags": "--xla_gpu_deterministic_ops=true",
+    "repo_sha": "a147f24f475a292fa7955366070588666c77f557",
+    "runner_sha256": "82a616bf64750444a219f02255912f07bd628c3cbc256ef6debdc48a6fded8da"
+  },
+  "cache": {
+    "api": "jax.experimental.compilation_cache.compilation_cache.set_cache_dir",
+    "remote_directory": "/tmp/g2_e2_compile_cache_runtime/cache",
+    "cold_raw_path": "/tmp/g2_e2_compile_cache_runtime/cold.json",
+    "cold_raw_sha256": "d202d585702f9972f4c619fec0ed09d876c663f71ca3c5de28b8ac06cf28abd2",
+    "warm_raw_path": "/tmp/g2_e2_compile_cache_runtime/warm.json",
+    "warm_raw_sha256": "a1cf0787a64c90d56f174f4e70bb1eaaf29bd8d2eb53ce36d5c9498622ce67c1",
+    "cold_inventory": {"file_count": 265, "total_bytes": 4985287},
+    "warm_inventory": {"file_count": 265, "total_bytes": 4985287},
+    "inventory_identical": true
+  },
+  "measurements": {
+    "cold": {
+      "preparation_seconds": 429.2115535969788,
+      "compile_plus_first_step_seconds": 81.21189723801217,
+      "compile_count": 1,
+      "loss_finite": true
+    },
+    "warm": {
+      "preparation_seconds": 421.2530065040046,
+      "compile_plus_first_step_seconds": 47.068489294004394,
+      "compile_count": 1,
+      "loss_finite": true
+    },
+    "compile_plus_first_step_reduction_percent": 42.0423719987009,
+    "preparation_reduction_percent": 1.854224805058977
+  },
+  "interpretation": {
+    "cache_reuse_observed": true,
+    "steady_state_speedup_claim": false,
+    "effect": "reduces repeated cold compilation across compatible processes; does not alter the scientific contract or the three-epoch steady-state B24 projection",
+    "stale_executable_guard": "runner/JAX/XLA metadata are recorded and cache validity is not inferred across environments",
+    "formal_release": "no release; formal training remains blocked"
+  }
+}
