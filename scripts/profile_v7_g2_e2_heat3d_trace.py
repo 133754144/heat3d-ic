@@ -104,6 +104,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if path.exists():
             raise FileExistsError(f"refusing to overwrite {path}")
     module = load_script("profile_v7_g2_heat3d_epoch.py")
+    # Permit an explicitly non-deterministic trace only as an engineering
+    # profiler variant; the formal runner still requires deterministic XLA.
+    setattr(args, "allow_nondeterministic_xla", "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""))
     prepared = module._prepare(args)
     trainer = prepared["trainer"]
     state = prepared["state"]
