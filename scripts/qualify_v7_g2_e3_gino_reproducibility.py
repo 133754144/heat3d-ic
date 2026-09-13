@@ -196,8 +196,30 @@ def load_inputs(args: argparse.Namespace, external: Any, fixture_module: Any) ->
     feature_std = torch.as_tensor(stats["feature_std"], dtype=torch.float32, device="cuda")
     y_mean = torch.as_tensor(target_mean, dtype=torch.float32, device="cuda")
     y_std = torch.as_tensor(target_std, dtype=torch.float32, device="cuda")
+
+    def load_row(row: dict[str, Any], role: str) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
+        sample_id = str(row["sample_id"])
+        if str(row["split_role"]) != role or role not in {"train", "valid_iid"}:
+            raise ValueError(f"fixture role mismatch for {sample_id}")
+        directory = args.dataset_root / "samples" / sample_id
+        for name in external.REQUIRED_FILES:
+            path = directory / name
+            if not path.is_file() or sha256(path) != row["file_sha256"][name]:
+                raise ValueError(f"frozen file SHA mismatch: {sample_id}/{name}")
+        coords = np.asarray(np.load(directory / "coords.npy", allow_pickle=False), dtype=np.float32)
+        k_field = np.asarray(np.load(directory / "k_field.npy", allow_pickle=False), dtype=np.float32)
+        q_field = np.asarray(np.load(directory / "q_field.npy", allow_pickle=False), dtype=np.float32).reshape(-1, 1)
+        bc = np.asarray(np.load(directory / "bc_features.npy", allow_pickle=False), dtype=np.float32)
+        target = np.asarray(np.load(directory / "deltaT.npy", allow_pickle=False), dtype=np.float32).reshape(-1, 1)
+        metadata = json.loads((directory / "sample_meta.json").read_text(encoding="utf-8"))
+        if bc.shape == (1024, 4):
+            bc = np.column_stack((bc, np.full(1024, metadata["top_h_W_m2K"], dtype=np.float32), np.full(1024, metadata["bottom_h_W_m2K"], dtype=np.float32), np.zeros(1024, dtype=np.float32)))
+        if coords.shape != (1024, 3) or k_field.shape != (1024, 3) or q_field.shape != (1024, 1) or bc.shape != (1024, 7) or target.shape != (1024, 1):
+            raise ValueError(f"fixture shape mismatch: {sample_id}")
+        return coords, np.concatenate((k_field, q_field, bc), axis=-1), target, {"sample_id": sample_id, "role": role}
+
     for role, row in rows.items():
-        coords_np, features_np, target_np, metadata = external.load_sample(args.dataset_root, rows_by_id, str(row["sample_id"]), str(row["split_role"]))
+        coords_np, features_np, target_np, metadata = load_row(row, role)
         coords = torch.from_numpy(coords_np).unsqueeze(0).to("cuda")
         features = torch.from_numpy(features_np).unsqueeze(0).to("cuda")
         target = torch.from_numpy(target_np).unsqueeze(0).to("cuda")
