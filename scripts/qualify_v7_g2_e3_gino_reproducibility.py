@@ -197,7 +197,7 @@ def load_inputs(args: argparse.Namespace, external: Any, fixture_module: Any) ->
     y_mean = torch.as_tensor(target_mean, dtype=torch.float32, device="cuda")
     y_std = torch.as_tensor(target_std, dtype=torch.float32, device="cuda")
     for role, row in rows.items():
-        coords_np, features_np, target_np, metadata = external.load_sample(args.dataset_root, rows_by_id[str(row["sample_id"])], str(row["sample_id"]), str(row["split_role"]))
+        coords_np, features_np, target_np, metadata = external.load_sample(args.dataset_root, rows_by_id, str(row["sample_id"]), str(row["split_role"]))
         coords = torch.from_numpy(coords_np).unsqueeze(0).to("cuda")
         features = torch.from_numpy(features_np).unsqueeze(0).to("cuda")
         target = torch.from_numpy(target_np).unsqueeze(0).to("cuda")
