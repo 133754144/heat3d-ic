@@ -93,6 +93,39 @@ def tree_arrays(value: Any) -> Any:
     return copy.deepcopy(value)
 
 
+def tree_probe(value: Any, limit: int = 16384) -> dict[str, Any]:
+    """Keep a deterministic bounded numerical probe plus full-tree hashes.
+
+    GINO state trees are large enough that retaining every five-step tensor for
+    every fresh process would create multi-GB temporary traces.  The complete
+    tree hash remains in the child receipt; the fixed prefix probe supplies a
+    reproducible relative-difference envelope without changing computation.
+    """
+    leaves: list[np.ndarray] = []
+    remaining = int(limit)
+
+    def visit(item: Any) -> None:
+        nonlocal remaining
+        if remaining <= 0:
+            return
+        if isinstance(item, np.ndarray):
+            flat = np.asarray(item).reshape(-1)
+            take = min(len(flat), remaining)
+            leaves.append(np.asarray(flat[:take], dtype=np.float64).copy())
+            remaining -= take
+            return
+        if isinstance(item, dict):
+            for key in sorted(item):
+                visit(item[key])
+            return
+        if isinstance(item, (list, tuple)):
+            for child in item:
+                visit(child)
+
+    visit(value)
+    return {"leaf_values": leaves, "budget": int(limit), "used": int(limit - remaining)}
+
+
 def tree_sub(left: Any, right: Any) -> Any:
     """Subtract two CPU snapshots while retaining the pytree structure."""
     if isinstance(left, np.ndarray) and isinstance(right, np.ndarray):
@@ -304,8 +337,8 @@ def run_child(args: argparse.Namespace) -> dict[str, Any]:
             current_params = tree_arrays(model.state_dict())
             update_tree = tree_sub(current_params, previous_params)
             predictions.append(pred_n.detach().cpu().numpy().copy())
-            params_snapshots.append(current_params)
-            update_snapshots.append(update_tree)
+            params_snapshots.append(tree_probe(current_params))
+            update_snapshots.append(tree_probe(update_tree))
             loss_rows.append({"step": step + 1, "loss": value, "loss_finite": bool(np.isfinite(value)), "wall_seconds": wall, "params_hash": tensor_hash(current_params), "prediction_hash": tensor_hash(predictions[-1]), "update_l2": tree_norm(update_tree)})
             previous_params = current_params
         continuous_final = copy.deepcopy(model.state_dict())
@@ -343,7 +376,7 @@ def run_child(args: argparse.Namespace) -> dict[str, Any]:
             "sample_id": str(local["sample_id"]),
             "graph": {"input": graph_summary(in_pairs, in_counts), "output": graph_summary(out_pairs, out_counts)},
             "static_output": {"wall_seconds": static_wall, "finite": bool(torch.isfinite(static_pred).all().item()), "array": static_pred.detach().cpu().numpy().copy()},
-            "trajectory": {"steps": loss_rows, "predictions": predictions, "params": params_snapshots, "updates": update_snapshots, "continuous_final": tree_arrays(continuous_final), "checkpoint_resumed_final": resumed_final, "checkpoint_resumed_prediction": resumed_pred, "checkpoint_reload_state_equal": reload_equal, "checkpoint_resumed_losses": resumed_losses, "checkpoint_final_vs_continuous": tree_rel(resumed_final, tree_arrays(continuous_final)), "checkpoint_prediction_vs_continuous": output_stats(resumed_pred, continuous_pred) if resumed_pred is not None else {"relative_l2": float("inf"), "max_abs": float("inf"), "rms_normalized": float("inf")}},
+            "trajectory": {"steps": loss_rows, "predictions": predictions, "params": params_snapshots, "updates": update_snapshots, "continuous_final_probe": tree_probe(continuous_final), "checkpoint_resumed_final_probe": tree_probe(resumed_final), "checkpoint_resumed_prediction": resumed_pred, "checkpoint_reload_state_equal": reload_equal, "checkpoint_resumed_losses": resumed_losses, "checkpoint_final_vs_continuous": tree_rel(resumed_final, tree_arrays(continuous_final)), "checkpoint_prediction_vs_continuous": output_stats(resumed_pred, continuous_pred) if resumed_pred is not None else {"relative_l2": float("inf"), "max_abs": float("inf"), "rms_normalized": float("inf")}},
         })
         del coords, features, target, target_n, local
         torch.cuda.empty_cache()
@@ -369,7 +402,7 @@ def run_child(args: argparse.Namespace) -> dict[str, Any]:
     for row in payload["fixtures"]:
         row["static_output"].pop("array", None)
         row["trajectory"].pop("predictions", None); row["trajectory"].pop("params", None); row["trajectory"].pop("updates", None)
-        row["trajectory"].pop("continuous_final", None); row["trajectory"].pop("checkpoint_resumed_final", None); row["trajectory"].pop("checkpoint_resumed_prediction", None)
+        row["trajectory"].pop("continuous_final_probe", None); row["trajectory"].pop("checkpoint_resumed_final_probe", None); row["trajectory"].pop("checkpoint_resumed_prediction", None)
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return payload
 
@@ -388,6 +421,7 @@ def aggregate(args: argparse.Namespace) -> dict[str, Any]:
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite {args.output}")
     args.work_dir.mkdir(parents=True, exist_ok=True)
+    sys.path.insert(0, str(args.upstream_root.resolve()))
     child_specs: list[tuple[str, int]] = [("qualification", FIXTURE_SEED)] * 3 + [("inter_seed", seed) for seed in (0, 1, 2)]
     children: list[dict[str, Any]] = []
     traces: list[dict[str, Any]] = []
