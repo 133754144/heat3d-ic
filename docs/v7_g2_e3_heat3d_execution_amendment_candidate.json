@@ -1,0 +1,49 @@
+{
+  "schema_version": "heat3d_v7_g2_e3_heat3d_execution_amendment_candidate_v1",
+  "status": "READY_FOR_HUMAN_APPROVAL",
+  "amendment_id": "heat3d-xla-deterministic-flag-diagnostic-v1",
+  "proposed_change": {
+    "current_formal_requirement": "xla_gpu_deterministic_ops=true",
+    "proposed_formal_requirement": "not_required_as_a_performance_setting; retain as an explicit debugging/reproducibility diagnostic option",
+    "authoritative_model_semantics": "unchanged frozen Heat3D JAX/XLA model, loss, optimizer, data, normalization, batch, and epoch budget",
+    "selection_rule": "No accuracy-based selection; approval depends only on finite/stable execution, same-seed noise versus inter-seed variability, and reproducible synchronized runtime."
+  },
+  "evidence": {
+    "receipt": "docs/v7_g2_e3_heat3d_determinism_receipt.json",
+    "raw_aggregate_sha256": "e7a199b1f99ac1db6d2b95650329de6e9614a602b677577e6788ea69c87c7334",
+    "same_seed_noise_ratio_max": 0.00029771222764855517,
+    "same_seed_target": "< 0.10",
+    "all_runs_finite": true,
+    "false_over_true_postwarm_speedup": 1125.2942561104678,
+    "true_same_seed_relative_drift": 0.0,
+    "false_same_seed_relative_drift": {
+      "loss": 3.8056459609332515e-06,
+      "gradients": 5.544608633410018e-05,
+      "updates": 0.00016141632129374384,
+      "parameters": 3.6539012521409393e-06,
+      "optimizer": 1.8204601678360082e-06,
+      "prediction": 5.834699034249768e-05
+    }
+  },
+  "supersession": {
+    "historical_receipts_preserved": [
+      "docs/v7_g2_e2_heat3d_runtime_root_cause_receipt.json",
+      "docs/v7_g2_e2_heat3d_batch_scaling_receipt.json"
+    ],
+    "not_applied_to_formal_config": true,
+    "does_not_authorize_formal_training": true
+  },
+  "approval_conditions": [
+    "independent reviewer confirms upstream semantics and frozen data/provenance",
+    "formal launch manifest explicitly records the selected deterministic flag",
+    "exact-resume and production checkpoint gates remain satisfied",
+    "no test/sealed or DeepOHeat official test access"
+  ],
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "formal_training_started": false
+  }
+}

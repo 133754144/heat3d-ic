@@ -1,0 +1,47 @@
+{
+  "schema_version": "heat3d_v7_g2_e3_gate_decision_v1",
+  "status": "QUALIFICATION_COMPLETE_FORMAL_TRAINING_BLOCKED",
+  "policy": "docs/v7_g2_e3_reproducibility_policy.json",
+  "models": {
+    "GINO": {
+      "status": "GINO_AUTHOR_SEMANTICS_QUALIFIED",
+      "receipt": "docs/v7_g2_e3_gino_reproducibility_receipt.json",
+      "formal_backend": "Open3D FixedRadiusSearch plus torch-scatter",
+      "same_seed_noise_target_met": true,
+      "geometry_non_boundary_disagreement": 0,
+      "formal_training_started": false
+    },
+    "Heat3D": {
+      "status": "HEAT3D_NONDETERMINISTIC_GPU_AMENDMENT_READY_FOR_APPROVAL",
+      "receipt": "docs/v7_g2_e3_heat3d_determinism_receipt.json",
+      "execution_amendment": "docs/v7_g2_e3_heat3d_execution_amendment_candidate.json",
+      "formal_config_changed": false,
+      "formal_training_started": false
+    },
+    "Transolver": {
+      "status": "INDEPENDENT_EXECUTION_RESUME_QUALIFIED",
+      "prior_receipt": "docs/v7_g2_e2_external_hot_path_current_receipt.json",
+      "formal_training_started": false,
+      "common_gate_dependency": "decoupled from GINO qualification; human release remains pending"
+    }
+  },
+  "common_task": {
+    "statistical_hierarchy_unchanged": true,
+    "primary_metric": "point_global_relative_rmse_pct",
+    "test_or_sealed_unlock": false,
+    "formal_release": "BLOCKED_PENDING_REVIEW_OF_VERSIONED_AMENDMENTS"
+  },
+  "historical_evidence": {
+    "old_fail_closed_receipts_preserved": true,
+    "old_gino_gate": "docs/v7_g2_e2_gino_gate_resolution.json"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "formal_long_training_started": false
+  }
+}

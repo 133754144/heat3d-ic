@@ -1,0 +1,72 @@
+{
+  "schema_version": "heat3d_v7_g2_e3_gino_reproducibility_receipt_v1",
+  "status": "GINO_AUTHOR_SEMANTICS_QUALIFIED",
+  "scope": "six fresh child processes on devbox: three same-seed repeats plus seeds 0/1/2; two frozen train/valid_iid fixtures; five optimizer updates",
+  "raw_aggregate": {
+    "remote_path": "/tmp/g2_e3_gino_reproducibility_20260914.json",
+    "sha256": "d6303129ca9308d62be255a066fa3e8ce357eb6fccdf5db523edbcacc691f4db",
+    "environment": "g2-gino-open3d-src"
+  },
+  "authoritative_backend": "Open3D FixedRadiusSearch plus torch-scatter",
+  "fallback_role": "pure-PyTorch diagnostic oracle only",
+  "frozen_scientific_contract": {
+    "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "statistics_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+    "accuracy_used_for_decision": false,
+    "test_or_sealed_access": false
+  },
+  "geometry_gate": {
+    "source": "docs/v7_g2_e2_gino_p8_e2_reconciliation.json current 896 rerun",
+    "non_boundary_disagreement": 0,
+    "boundary_only_disagreement": 2057,
+    "status": "PASS_BOUNDARY_ONLY"
+  },
+  "same_seed_vs_inter_seed": {
+    "same_seed_median_relative": {
+      "loss": 0.000003164163776113143,
+      "parameters_probe": 0.0002040693244531517,
+      "prediction": 0.00016770038000021262,
+      "updates_probe": 0.011875712771500454
+    },
+    "inter_seed_median_relative": {
+      "loss": 0.03927965875605046,
+      "parameters_probe": 1.4151976292691786,
+      "prediction": 0.4683867551331552,
+      "updates_probe": 1.4166831180533475
+    },
+    "same_over_inter_ratio": {
+      "loss": 0.00008055476743737621,
+      "parameters_probe": 0.00014419846403963737,
+      "prediction": 0.00035803826253058324,
+      "updates_probe": 0.008382758727173069
+    },
+    "target_ratio_lt_0.1": true
+  },
+  "trajectory_and_checkpoint": {
+    "fixed_steps": 5,
+    "loss_prediction_parameter_update_finite": true,
+    "same_process_checkpoint_restore_tested": true,
+    "restore_state_exact_within_child": true,
+    "full_tree_hashes_retained_in_child_receipts": true,
+    "relative_difference_method": "fixed deterministic 16384-value prefix probes plus full-tree SHA; no bitwise fallback requirement"
+  },
+  "decision": {
+    "classification": "GINO_AUTHOR_SEMANTICS_QUALIFIED",
+    "non_boundary_graph_disagreement": 0,
+    "optimized_backend_repeatability": "graph repeatable; finite output/trajectory bounded and same-seed noise below 10% inter-seed variability",
+    "formal_training_started": false,
+    "formal_release": "qualification only; common formal launch still requires policy/amendment review"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  }
+}

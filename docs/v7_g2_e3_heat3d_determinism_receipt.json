@@ -1,0 +1,190 @@
+{
+  "schema_version": "heat3d_v7_g2_e3_heat3d_determinism_receipt_v1",
+  "status": "HEAT3D_NONDETERMINISTIC_GPU_AMENDMENT_READY_FOR_APPROVAL",
+  "scope": "Eight fresh devbox processes: deterministic=true x3 seed0, deterministic=false x3 seed0, deterministic=false seeds1/2; one frozen B24 train fixture, one compile/first update plus five post-warm synchronized updates.",
+  "raw_aggregate": {
+    "remote_path": "/tmp/g2_e3_heat3d_determinism_20260914.json",
+    "sha256": "e7a199b1f99ac1db6d2b95650329de6e9614a602b677577e6788ea69c87c7334",
+    "environment": "rigno",
+    "repo_sha": "b749bc12324e94ba5c56f4624749f26ff64cbb5b",
+    "runner_sha256": "82a616bf64750444a219f02255912f07bd628c3cbc256ef6debdc48a6fded8da"
+  },
+  "scientific_contract": {
+    "dataset_subset": "frozen_768_train_128_valid_iid",
+    "train_batch_size": 24,
+    "postwarm_steps": 5,
+    "model_loss_optimizer_normalization_changed": false,
+    "formal_config_amended": false,
+    "accuracy_used_for_decision": false,
+    "test_or_sealed_access": false,
+    "deepoheat_official_test_access": false
+  },
+  "strict_synchronization": {
+    "fresh_process_per_child": true,
+    "block_until_ready_payload": [
+      "params",
+      "optimizer_state",
+      "loss",
+      "gradients",
+      "updates",
+      "prediction"
+    ],
+    "postwarm_step_count": 5,
+    "compile_and_first_step_reported_separately": true,
+    "host_loss_conversion_after_sync": true
+  },
+  "runs": {
+    "deterministic_true_same_seed": {
+      "count": 3,
+      "seeds": [0, 0, 0],
+      "status": ["PASS_FINITE", "PASS_FINITE", "PASS_FINITE"],
+      "compile_plus_first_step_seconds": [
+        73.82209378498374,
+        43.26427835598588,
+        43.02156474100775
+      ],
+      "median_postwarm_step_seconds": [
+        39.74202287799562,
+        39.8455176250136,
+        39.66569449898088
+      ],
+      "p95_postwarm_step_seconds": [
+        39.8932283928094,
+        39.910642276384166,
+        39.98375563939335
+      ],
+      "samples_per_second": [
+        0.6038947759070494,
+        0.602326219623099,
+        0.6050568457995013
+      ],
+      "median_of_run_medians_seconds": 39.74202287799562,
+      "p95_of_run_medians_seconds": 39.8351681503118,
+      "peak_bytes_in_use": [3468143104, 3467764480, 3467711232],
+      "max_peak_bytes_in_use": 3468143104
+    },
+    "deterministic_false_same_seed": {
+      "count": 3,
+      "seeds": [0, 0, 0],
+      "status": ["PASS_FINITE", "PASS_FINITE", "PASS_FINITE"],
+      "compile_plus_first_step_seconds": [
+        22.43603605500539,
+        3.307671558985021,
+        3.3017348710272927
+      ],
+      "median_postwarm_step_seconds": [
+        0.035627725010272115,
+        0.03457054897444323,
+        0.034820411005057395
+      ],
+      "p95_postwarm_step_seconds": [
+        0.035763937811134384,
+        0.034846220404142515,
+        0.03507788879796862
+      ],
+      "samples_per_second": [
+        673.6326833408635,
+        694.2325393138057,
+        689.2509108095877
+      ],
+      "median_of_run_medians_seconds": 0.034820411005057395,
+      "p95_of_run_medians_seconds": 0.03556299300975064,
+      "peak_bytes_in_use": [3437404672, 3434759680, 3434517760],
+      "max_peak_bytes_in_use": 3437404672
+    },
+    "deterministic_false_inter_seed": {
+      "count": 2,
+      "seeds": [1, 2],
+      "status": ["PASS_FINITE", "PASS_FINITE"],
+      "compile_plus_first_step_seconds": [
+        16.367924744001357,
+        17.31588702602312
+      ],
+      "median_postwarm_step_seconds": [
+        0.036772557999938726,
+        0.03531700500752777
+      ],
+      "p95_postwarm_step_seconds": [
+        0.0385550269857049,
+        0.035683038196293634
+      ],
+      "samples_per_second": [
+        652.6606063151764,
+        679.5593226233208
+      ],
+      "peak_bytes_in_use": [3503307008, 3490875648],
+      "max_peak_bytes_in_use": 3503307008
+    }
+  },
+  "numerical_drift": {
+    "deterministic_true_same_seed_median_relative": {
+      "loss": 0.0,
+      "gradients": 0.0,
+      "updates": 0.0,
+      "parameters": 0.0,
+      "optimizer": 0.0,
+      "prediction": 0.0
+    },
+    "deterministic_false_same_seed_median_relative": {
+      "loss": 3.8056459609332515e-06,
+      "gradients": 5.544608633410018e-05,
+      "updates": 0.00016141632129374384,
+      "parameters": 3.6539012521409393e-06,
+      "optimizer": 1.8204601678360082e-06,
+      "prediction": 5.834699034249768e-05
+    },
+    "deterministic_false_inter_seed_median_relative": {
+      "loss": 0.3394797556136945,
+      "gradients": 1.070684522774008,
+      "updates": 1.5121796803560352,
+      "parameters": 1.2257376136948617,
+      "optimizer": 0.06674269319405259,
+      "prediction": 0.19598452775468608
+    },
+    "false_same_seed_over_inter_seed_ratio": {
+      "loss": 1.1210229470248073e-05,
+      "gradients": 5.1785642880543735e-05,
+      "updates": 0.00010674414118283824,
+      "parameters": 2.9809815831029485e-06,
+      "optimizer": 2.7275797255335042e-05,
+      "prediction": 0.00029771222764855517
+    },
+    "true_vs_false_same_initial_state_max_relative": {
+      "loss": 4.490963472394048e-06,
+      "gradients": 6.664584807311573e-05,
+      "updates": 0.0003294245756024798,
+      "parameters": 3.906659118096988e-06,
+      "optimizer": 3.015765419450341e-06,
+      "prediction": 7.590477726217953e-05
+    },
+    "all_runs_finite": true,
+    "no_systematic_same_seed_drift_observed": true
+  },
+  "decision": {
+    "same_seed_noise_target_ratio_lt_0.1": true,
+    "stable_performance_advantage_for_false": true,
+    "false_over_true_postwarm_speedup": 1125.2942561104678,
+    "classification": "HEAT3D_NONDETERMINISTIC_GPU_AMENDMENT_READY_FOR_APPROVAL",
+    "candidate_only": true,
+    "formal_config_changed": false,
+    "formal_training_started": false,
+    "approval_required": true
+  },
+  "environment": {
+    "backend": "gpu",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "python": "3.14.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "device": "cuda:0"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "formal_long_training_started": false
+  }
+}
