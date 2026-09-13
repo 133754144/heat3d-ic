@@ -166,6 +166,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if args.output.exists() or args.checkpoint.exists():
         raise FileExistsError("refusing to overwrite diagnostic artifacts")
     external = load_external_module()
+    sys.path.insert(0, str(args.upstream_root.resolve()))
     row, stats = load_fixture(external, args.dataset_root, args.dataset_manifest, args.statistics)
     inputs = normalized_inputs(external, row, stats)
     base_model, _optimizer, _scheduler, _grid = make_model_optimizer(args.model, external, args.upstream_root, args.seed)
