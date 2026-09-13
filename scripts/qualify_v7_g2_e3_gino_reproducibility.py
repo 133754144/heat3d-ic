@@ -176,13 +176,32 @@ def load_inputs(args: argparse.Namespace, external: Any, fixture_module: Any) ->
         raise ValueError("pinned upstream commit mismatch")
     if any(token in str(path).lower() for path in (args.dataset_root, args.dataset_manifest, args.statistics) for token in ("test", "sealed")):
         raise ValueError("test/sealed path is forbidden")
-    stats = external.load_stats(args.statistics)
-    train = external.P1iRoleDataset(args.dataset_root, args.dataset_manifest, "train")
-    valid = external.P1iRoleDataset(args.dataset_root, args.dataset_manifest, "valid_iid")
-    rows = {"train": train[0], "valid_iid": valid[0]}
+    manifest, rows_by_id = external.load_manifest(args.dataset_manifest)
+    del manifest
+    statistics_payload = json.loads(args.statistics.read_text(encoding="utf-8"))
+    claimed_stats_sha = statistics_payload.get("payload_sha256")
+    if claimed_stats_sha != STATS_SHA or statistics_payload.get("fit_role") != "train_only":
+        raise ValueError("frozen train-only statistics SHA/role mismatch")
+    stats = fixture_module.load_statistics(args.statistics)
+    target_mean = np.asarray(statistics_payload["statistics"]["target_mean"], dtype=np.float32)
+    target_std = np.maximum(np.asarray(statistics_payload["statistics"]["target_std"], dtype=np.float32), 1.0e-12)
+    rows = {
+        "train": next(row for row in rows_by_id.values() if row["split_role"] == "train"),
+        "valid_iid": next(row for row in rows_by_id.values() if row["split_role"] == "valid_iid"),
+    }
     inputs: dict[str, tuple[Any, ...]] = {}
+    coord_min = torch.as_tensor(stats["coordinate_min"], dtype=torch.float32, device="cuda")
+    coord_span = torch.clamp(torch.as_tensor(stats["coordinate_max"] - stats["coordinate_min"], dtype=torch.float32, device="cuda"), min=1.0e-12)
+    feature_mean = torch.as_tensor(stats["feature_mean"], dtype=torch.float32, device="cuda")
+    feature_std = torch.as_tensor(stats["feature_std"], dtype=torch.float32, device="cuda")
+    y_mean = torch.as_tensor(target_mean, dtype=torch.float32, device="cuda")
+    y_std = torch.as_tensor(target_std, dtype=torch.float32, device="cuda")
     for role, row in rows.items():
-        normalized = external.normalize(row, stats, torch.device("cuda"))
+        coords_np, features_np, target_np, metadata = external.load_sample(args.dataset_root, rows_by_id[str(row["sample_id"])], str(row["sample_id"]), str(row["split_role"]))
+        coords = torch.from_numpy(coords_np).unsqueeze(0).to("cuda")
+        features = torch.from_numpy(features_np).unsqueeze(0).to("cuda")
+        target = torch.from_numpy(target_np).unsqueeze(0).to("cuda")
+        normalized = ((coords - coord_min) / coord_span, (features - feature_mean) / feature_std, target, (target - y_mean) / y_std, {"sample_id": metadata["sample_id"], "role": metadata["role"]})
         inputs[role] = normalized
     return inputs, {"manifest_sha256": DATASET_SHA, "statistics_sha256": STATS_SHA}
 
@@ -299,7 +318,7 @@ def run_child(args: argparse.Namespace) -> dict[str, Any]:
         checkpoint_path.unlink(missing_ok=True)
         fixtures.append({
             "role": role,
-            "sample_id": str((external.P1iRoleDataset(args.dataset_root, args.dataset_manifest, role)[0])["sample_id"]),
+            "sample_id": str(local["sample_id"]),
             "graph": {"input": graph_summary(in_pairs, in_counts), "output": graph_summary(out_pairs, out_counts)},
             "static_output": {"wall_seconds": static_wall, "finite": bool(torch.isfinite(static_pred).all().item()), "array": static_pred.detach().cpu().numpy().copy()},
             "trajectory": {"steps": loss_rows, "predictions": predictions, "params": params_snapshots, "updates": update_snapshots, "continuous_final": tree_arrays(continuous_final), "checkpoint_resumed_final": resumed_final, "checkpoint_resumed_prediction": resumed_pred, "checkpoint_reload_state_equal": reload_equal, "checkpoint_resumed_losses": resumed_losses, "checkpoint_final_vs_continuous": tree_rel(resumed_final, tree_arrays(continuous_final)), "checkpoint_prediction_vs_continuous": output_stats(resumed_pred, continuous_pred) if resumed_pred is not None else {"relative_l2": float("inf"), "max_abs": float("inf"), "rms_normalized": float("inf")}},
