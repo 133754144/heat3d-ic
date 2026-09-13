@@ -1,0 +1,55 @@
+{
+  "schema_version": "heat3d_v7_g2_e3_reproducibility_policy_v1",
+  "status": "POLICY_FROZEN_UPSTREAM_SEMANTICS",
+  "scope": "bounded reproducibility and determinism qualification only; no formal or long training",
+  "authority": {
+    "scientific_semantics": "original author/upstream implementation at the frozen commit",
+    "gino_formal_backend": "Open3D FixedRadiusSearch plus torch-scatter",
+    "gino_fallback_role": "pure-PyTorch diagnostic oracle only",
+    "heat3d_formal_backend": "frozen JAX/XLA implementation; deterministic flag is a diagnostic dimension"
+  },
+  "frozen_invariants": {
+    "dataset_split_hash": true,
+    "architecture": true,
+    "physics_inputs": true,
+    "radius": true,
+    "normalization": true,
+    "loss": true,
+    "optimizer_lr_schedule_batch": true,
+    "seed_set": true,
+    "checkpoint_rule": true,
+    "upstream_backend_version": true,
+    "test_iid_or_sealed_access": false,
+    "deepoheat_official_test_access": false
+  },
+  "allowed_numerical_drift": {
+    "gpu_reduction_order": true,
+    "parameter_tree_hash_after_update_must_match": false,
+    "optimizer_tree_hash_after_update_must_match": false,
+    "fallback_backend_allclose_1e-5_required": false,
+    "checkpoint_load": "must restore the saved state exactly within the same process/backend contract",
+    "resume": "normal GPU numerical drift is allowed after a valid restore; systematic divergence is not"
+  },
+  "fail_conditions": [
+    "non-boundary graph disagreement",
+    "NaN or Inf in forward, loss, gradient, update, optimizer state, or prediction",
+    "systematic trajectory divergence not attributable to bounded floating-point reduction order",
+    "same-seed run-to-run noise that is not negligible relative to seed-to-seed variability",
+    "scientific contract, role, provenance, or backend mismatch"
+  ],
+  "qualification_rules": {
+    "gino_same_seed_noise_target": "same-seed variability / inter-seed variability < 0.10 on the predeclared bounded metrics",
+    "gino_geometry": "896 train/valid_iid coordinate audit must retain non_boundary_disagreement == 0",
+    "heat3d_deterministic_flag": "true/false are compared with explicit block_until_ready; false may become an amendment candidate only when finite, stable, non-systematic, and reproducibly faster",
+    "accuracy": "never used to select a backend, radius, tolerance, budget, or amendment"
+  },
+  "historical_receipts_preserved": [
+    "docs/v7_g2_e2_gino_gate_resolution.json",
+    "docs/v7_g2_e2_gino_p8_e2_reconciliation.json",
+    "docs/v7_g2_e2_gino_geometry_896_receipt.json",
+    "docs/v7_g2_e2_gino_repeatability_receipt.json",
+    "docs/v7_g2_e2_external_hot_path_current_receipt.json",
+    "docs/v7_g2_e2_heat3d_batch_scaling_receipt.json"
+  ],
+  "supersession_policy": "This policy changes the reproducibility decision rule only; it does not delete, rewrite, or retroactively upgrade any historical FAIL-CLOSED receipt. Formal configuration remains unchanged until a separately approved amendment."
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "heat3d_v7_g2_e3_scope_amendment_v1",
+  "status": "PRE_RESULT_SCOPE_AMENDMENT_FROZEN",
+  "scope": "independent model qualification before any common-task formal result",
+  "model_qualification": {
+    "Heat3D": "JAX/XLA deterministic true/false bounded reproducibility diagnostic; formal config unchanged",
+    "GINO": "upstream Open3D FixedRadiusSearch plus torch-scatter semantic qualification; fallback remains diagnostic-only",
+    "Transolver": "independent execution/resume qualification already passed; no GINO dependency for its own release decision"
+  },
+  "common_task_statistics_unchanged": {
+    "primary_external_contrasts": ["Heat3D vs GINO", "Heat3D vs Transolver"],
+    "contextual_contrasts": ["Vanilla RIGNO vs GINO", "Vanilla RIGNO vs Transolver"],
+    "descriptive_only": ["GINO vs Transolver"],
+    "primary_metric": "point_global_relative_rmse_pct",
+    "checkpoint_selection": "valid_iid sample_first_relative_rmse_pct",
+    "seeds": [0, 1, 2],
+    "bootstrap_replicates": 10000,
+    "no_posthoc_seed_metric_checkpoint_budget_change": true
+  },
+  "release_decoupling": {
+    "gino_does_not_block_transolver_qualification": true,
+    "transolver_formal_training_started": false,
+    "common_formal_training_started": false,
+    "test_or_sealed_unlock": false
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "formal_long_training_started": false
+  },
+  "approval_required": "A successful bounded diagnostic produces a reviewer-facing amendment candidate only. Formal configs and launch gates change only after human approval."
+}
