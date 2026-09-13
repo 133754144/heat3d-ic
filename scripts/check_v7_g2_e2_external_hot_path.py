@@ -55,8 +55,15 @@ def tensor_max_abs(left: Any, right: Any) -> float:
         if len(left) != len(right):
             return float("inf")
         return max((tensor_max_abs(a, b) for a, b in zip(left, right)), default=0.0)
-    if isinstance(left, (float, int, bool, str, type(None))) and isinstance(right, type(left)):
-        return 0.0 if left == right else float("inf")
+    if type(left) is type(right):
+        try:
+            return 0.0 if bool(left == right) else float("inf")
+        except Exception:
+            # State dictionaries can carry framework metadata (dtype,
+            # activation descriptors, or other static objects) that is not a
+            # tensor.  Equality of the static representation is sufficient;
+            # numerical tensor leaves were handled above.
+            return 0.0 if repr(left) == repr(right) else float("inf")
     return float("inf")
 
 
