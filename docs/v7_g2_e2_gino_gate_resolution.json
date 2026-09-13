@@ -1,0 +1,43 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_gino_gate_resolution_v2",
+  "status": "GINO_FORMAL_QUALIFICATION_FAIL_CLOSED",
+  "supersedes_for_current_decision": "docs/v7_g2_e2_gino_gate_decision.json",
+  "history_preserved": [
+    "docs/v7_g2_e2_gino_gate_decision.json",
+    "docs/v7_g2_e2_gino_geometry_896_receipt.json",
+    "docs/v7_g2_e2_gino_repeatability_receipt.json"
+  ],
+  "reconciliation": "docs/v7_g2_e2_gino_p8_e2_reconciliation.json",
+  "frozen_scientific_invariants": {
+    "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "state_dict_changed": false,
+    "information_budget_changed": false,
+    "accuracy_used": false,
+    "test_or_sealed_access": false
+  },
+  "geometry_gate": {
+    "scope": "896 train/valid_iid coordinates only",
+    "non_boundary_disagreement": 0,
+    "boundary_only_disagreement": 2057,
+    "status": "PASS_BOUNDARY_ONLY_CURRENT_RERUN"
+  },
+  "optimized_repeatability_gate": {
+    "graph_repeatability": true,
+    "output_repeatability_at_frozen_1e-5": false,
+    "finite": true,
+    "status": "FAIL_CLOSED_OPTIMIZED_NONREPEATABLE"
+  },
+  "decision": {
+    "original_engineering_gate": "NOT_PASS",
+    "semantic_equivalence_amendment": "NOT_READY_FOR_APPROVAL",
+    "formal_backend": "Open3D_FixedRadiusSearch_plus_torch_scatter",
+    "fallback_role": "engineering_diagnostic_oracle_only",
+    "formal_gino_training": "BLOCKED",
+    "common_task_formal_gate": "BLOCKED",
+    "reason": "Current optimized output is finite but not repeatable/allclose at the pre-registered 1e-5 envelope; historical zero-disagreement evidence is contradictory and retained, not silently accepted."
+  },
+  "required_follow_up": "Independent human audit of optimized reduction determinism/build provenance; do not alter radius, architecture, reduction, tolerance, or budget in response."
+}

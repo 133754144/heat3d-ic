@@ -1,0 +1,118 @@
+{
+  "schema_version": "heat3d_v7_g2_e2_gino_p8_e2_reconciliation_v1",
+  "status": "CONTRADICTION_RECORDED_CURRENT_RERUN_AUTHORITATIVE_FOR_GATE",
+  "scope": "read-only geometry/semantic reconciliation; no truth, accuracy, test_iid, or sealed access",
+  "fixed_fixture": {
+    "sample_id": "v6p1if1_0000",
+    "role": "train",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "source_coords_file_sha256": "cf96a545832b8e6b24214664c104860ba59d9d7279b6e5305a32c0f1e94d587c",
+    "source_coords_raw_bytes_sha256": "f0bd4b4acd2aeff683aeadaf0c237cbbf2eb1df2fbc894cbcc7de5f20aad5350",
+    "source_coords_normalized_bytes_sha256": "c859ccc6cb74ea55481d18face9120e21645ed51c4f170b94a835e5179a9d89b",
+    "query_grid_bytes_sha256": "a99b15a3cdc38cc7c86063ae71ea9b865e8d9c4a645383924f2de4512462221a",
+    "source_shape": [1024, 3],
+    "query_shape": [32768, 3],
+    "dtype": "float32"
+  },
+  "frozen_semantics": {
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "distance_oracle": ["cpu_float64", "cpu_float32", "cuda_float32"],
+    "oracle_boundary_threshold": 1.0e-5,
+    "comparison": "unordered (query_index, source_index) edge multisets plus per-query counts",
+    "radius_operator": "Open3D FixedRadiusSearch and existing pure-PyTorch fallback; radius unchanged",
+    "indexing": "query-major canonical pair IDs; source/query roles retained",
+    "formal_backend": "Open3D_FixedRadiusSearch_plus_torch_scatter"
+  },
+  "historical_receipts_preserved": {
+    "p8_fixed_fixture": {
+      "document": "docs/v7_g2_p8_gino_semantics_receipt.json",
+      "raw_remote_sha256": "833ab630a7aa4e7f690640d1db5de9fa3db8503728a93d8d9aae4c2605976af0",
+      "runner_sha256": "c944143451f93548e4d68ee79535cf6cb2ead7d26aef38eb326fc016539fe5b2",
+      "input_fallback_only": 1,
+      "input_open3d_only": 1,
+      "non_boundary_disagreement": 0,
+      "max_abs_cpu_float64_margin": 2.61067670509485e-7
+    },
+    "historical_e2_geometry_896": {
+      "document": "docs/v7_g2_e2_gino_geometry_896_receipt.json",
+      "raw_remote_sha256": "bdac1d7621a423d5b3984ad973e8b9f33d371ffd82cece872507b7b7bcec0c08",
+      "runner_sha256": "f6b0e7d93a69df5170cb3c0cb22a14d536121f5bbbe614c5f866894f8ba642b4",
+      "zero_difference_samples": 896,
+      "total_differing_edges": 0,
+      "non_boundary_disagreement": 0
+    },
+    "historical_e2_repeatability": {
+      "document": "docs/v7_g2_e2_gino_repeatability_receipt.json",
+      "raw_remote_sha256": "46e850f5c758b9bbf3239029ee4643696918e9a71bf8827a1b14c5e7b0a7650",
+      "status": "PASS_REPEATABLE"
+    }
+  },
+  "current_reruns": {
+    "p8_fixed_fixture": {
+      "raw_local_path": "/tmp/g2_current_p8_semantics_reconciliation.json",
+      "raw_sha256": "ec06f6b6d5bb76be34206297f162018d44abc3da001ba30bde9be30be63bc778",
+      "runner_sha256": "c944143451f93548e4d68ee79535cf6cb2ead7d26aef38eb326fc016539fe5b2",
+      "input_fallback_only": 1,
+      "input_open3d_only": 1,
+      "output_graph_exact": true,
+      "non_boundary_disagreement": 0,
+      "classification": "radius_boundary_only"
+    },
+    "p9_geometry_896": {
+      "raw_local_path": "/tmp/g2_current_p9_geometry_896.json",
+      "raw_sha256": "cb08e61d752cdfd079b3554e3b72754e1c07f5ece37b0f44a5bf29b8e3df5064",
+      "runner_sha256": "f6b0e7d93a69df5170cb3c0cb22a14d536121f5bbbe614c5f866894f8ba642b4",
+      "processed": 896,
+      "zero_difference_samples": 92,
+      "differing_samples": 804,
+      "total_differing_edges": 2057,
+      "total_differing_edges_by_side": {
+        "input_fallback_only": 789,
+        "input_open3d_only": 970,
+        "output_fallback_only": 104,
+        "output_open3d_only": 194
+      },
+      "boundary_only_count": 2057,
+      "non_boundary_disagreement": 0,
+      "radius_margin_abs": {
+        "max": 4.693302715040593e-6,
+        "p50": 1.0246354620324638e-7,
+        "p90": 6.430870078399931e-7,
+        "p95": 1.1008202431897485e-6,
+        "p99": 2.823674872608815e-6
+      },
+      "classification": "all_disagreement_edges_are_radius_boundary_near"
+    },
+    "p9_repeatability": {
+      "raw_local_path": "/tmp/g2_current_p9_repeatability.json",
+      "raw_sha256": "c1f3706c763bead683d612df25867f91a3ddcac7e6698d911801d81ee17ad644",
+      "runner_sha256": "c1f33977d85dd82f88513b503193815b68279da177c292ddb35dea9976a6322f",
+      "graph_repeatability": true,
+      "output_repeatability": false,
+      "output_allclose_atol_rtol_1e-5": false,
+      "output_drift": {
+        "train_max_abs": [0.0001156926155090332, 0.00004792213439941406],
+        "valid_max_abs": [0.00004842132329940796, 0.0000470578670501709],
+        "train_relative_norm": [0.00016790872905403376, 0.0001544260885566473],
+        "valid_relative_norm": [0.00015230341523420066, 0.00014263417688198388]
+      },
+      "finite": true
+    }
+  },
+  "root_cause_assessment": {
+    "confirmed": [
+      "P8 fixed-fixture disagreement is a radius-boundary classification: CPU float64 signed margins are approximately +/-2.6e-7.",
+      "P9 all 2057 current geometry disagreements are boundary-only under the independent CPU float64 oracle; non-boundary disagreement is zero.",
+      "Current Open3D graph identity is repeatable on declared fixtures, while Open3D+torch-scatter output is not allclose/repeatable at the frozen 1e-5 envelope."
+    ],
+    "unresolved": [
+      "The historical E2 zero-disagreement receipt cannot be reproduced from the same recorded script/version tuple; its exact binary/cache provenance is not captured sufficiently to explain the contradiction.",
+      "Output drift is consistent with reduction/runtime nondeterminism, but no tolerance or backend semantics is changed to force acceptance."
+    ],
+    "decision_rule": "Use current reruns for gate decisions; retain historical receipts as immutable evidence and do not overwrite them."
+  },
+  "test_or_sealed_access": false,
+  "formal_training_started": false,
+  "accuracy_used": false
+}
