@@ -75,6 +75,21 @@ def quantiles(values: list[float]) -> dict[str, float | None]:
     }
 
 
+def _finite_leaf(leaf: Any) -> bool:
+    """Return a host-side finite flag for numerical diagnostic leaves.
+
+    The profile's optimizer/update decomposition is diagnostic-only.  Keep
+    this helper local to the profile module so an Optax EmptyState or other
+    static pytree leaf does not make the bounded profile fail after all GPU
+    work has completed.
+    """
+
+    try:
+        return bool(np.all(np.isfinite(np.asarray(leaf))))
+    except (TypeError, ValueError):
+        return True
+
+
 def _edge_padding(batches: list[Any]) -> dict[str, Any]:
     """Count real and repeated dummy edges after frozen batch padding."""
 
