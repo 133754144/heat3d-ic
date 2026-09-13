@@ -411,8 +411,9 @@ def compare_trace(base: dict[str, Any], other: dict[str, Any]) -> dict[str, Any]
     rows = []
     for left, right in zip(base["fixtures"], other["fixtures"]):
         step_rows = []
-        for index, (lp, rp, lu, ru, ll, rl) in enumerate(zip(left["predictions"], right["predictions"], left["params"], right["params"], left["steps"], right["steps"]), start=1):
-            step_rows.append({"step": index, "loss_relative_difference": float(abs(ll["loss"] - rl["loss"]) / max(abs(ll["loss"]), 1.0e-12)), "prediction": output_stats(lp, rp), "parameters": tree_rel(lu, ru), "updates": tree_rel(left["updates"][index - 1], right["updates"][index - 1])})
+        left_traj, right_traj = left["trajectory"], right["trajectory"]
+        for index, (ls, rs, lp, rp, lparams, rparams, lupd, rupd) in enumerate(zip(left_traj["steps"], right_traj["steps"], left_traj["predictions"], right_traj["predictions"], left_traj["params"], right_traj["params"], left_traj["updates"], right_traj["updates"]), start=1):
+            step_rows.append({"step": index, "loss_relative_difference": float(abs(ls["loss"] - rs["loss"]) / max(abs(ls["loss"]), 1.0e-12)), "prediction": output_stats(lp, rp), "parameters": tree_rel(lparams, rparams), "updates": tree_rel(lupd, rupd)})
         rows.append({"role": left["role"], "steps": step_rows, "static_output": output_stats(left["static_output"]["array"], right["static_output"]["array"]), "graph_exact": left["graph"] == right["graph"]})
     return {"fixtures": rows}
 
