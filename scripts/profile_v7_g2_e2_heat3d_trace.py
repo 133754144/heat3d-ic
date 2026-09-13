@@ -124,7 +124,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         jax.profiler.start_trace(str(args.trace_dir), create_perfetto_link=False)
         traced_rows = []
         trace_state = warm.state
-        for index in (2, 3):
+        for index in range(2, 2 + args.postwarmup_steps):
             trace_started = time.perf_counter()
             result = trainer.step(trace_state, batch, key)
             trace_state = result.state
@@ -148,7 +148,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     payload = {
         "schema_version": "heat3d_v7_g2_e2_jax_trace_v1",
         "status": trace_status,
-        "scope": "one_static_B24_batch_two_postwarmup_steps",
+        "scope": f"one_static_B24_batch_{args.postwarmup_steps}_postwarmup_steps",
         "scientific_contract": {
             "batch_size": 24,
             "train_samples": 768,
@@ -202,6 +202,7 @@ def main() -> int:
     parser.add_argument("--heat3d-config", type=Path, required=True)
     parser.add_argument("--trace-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--postwarmup-steps", type=int, choices=(1, 2), default=2)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
     receipt = run(args)
