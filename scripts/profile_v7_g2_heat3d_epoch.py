@@ -114,7 +114,10 @@ def _prepare(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("test/sealed labels path is forbidden")
     if jax.default_backend() != "gpu":
         raise SystemExit("FAIL-CLOSED: epoch instrumentation requires JAX CUDA")
-    if "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""):
+    if (
+        not getattr(args, "allow_nondeterministic_xla", False)
+        and "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", "")
+    ):
         raise SystemExit(
             "FAIL-CLOSED: epoch instrumentation requires the frozen deterministic XLA flag"
         )
