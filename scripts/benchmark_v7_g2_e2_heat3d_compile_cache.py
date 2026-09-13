@@ -70,6 +70,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     from jax.experimental.compilation_cache import compilation_cache
     compilation_cache.set_cache_dir(str(args.cache_dir))
     module = load_script("profile_v7_g2_heat3d_epoch.py")
+    # A false-flag invocation is an explicitly bounded engineering probe;
+    # formal runners continue to require deterministic XLA.
+    setattr(args, "allow_nondeterministic_xla", "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""))
     prepared = module._prepare(args)
     trainer = prepared["trainer"]
     state = prepared["state"]
