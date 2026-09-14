@@ -1,0 +1,112 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_gino_e3_qualification_v1",
+  "status": "E3_PASS",
+  "verdict": "GINO_AUTHOR_SEMANTICS_QUALIFIED",
+  "scope": "bounded upstream-authoritative GINO qualification; no formal cohort and no forbidden split",
+  "authority": {
+    "paper": "Geometry-Informed Neural Operator for Large-Scale 3D PDEs",
+    "paper_arxiv": "2309.00583",
+    "official_repo": "neuraloperator/neuraloperator",
+    "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "upstream_tag": null,
+    "license": "MIT",
+    "contract_document": "docs/v7_g2_p13_gino_e3_upstream_repro_contract.md"
+  },
+  "official_claim_audit": {
+    "seed_method": "optional config.distributed.seed; torch.manual_seed and torch.cuda.manual_seed in upstream torch_setup",
+    "deterministic_algorithms_enabled": false,
+    "bitwise_reproducibility_claim": false,
+    "cross_process_exact_reproducibility_claim": false,
+    "exact_resume_claim": false,
+    "checkpoint_state": ["model state_dict", "optimizer state", "scheduler state", "regularizer state when present", "epoch manifest", "model init metadata"],
+    "official_multi_seed_variance_result": "not found in pinned repository",
+    "exact_resume_interpretation": "ENGINEERING_LIMITATION_NOT_E3_FAILURE"
+  },
+  "frozen_v7_contract": {
+    "backend": "Open3D FixedRadiusSearch + torch-scatter",
+    "fallback_role": "diagnostic oracle only",
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "input": "coords + 11 train-only-normalized physical features",
+    "output": "1024 query-point deltaT representation",
+    "optimizer": "AdamW lr=1e-3 weight_decay=1e-4 for bounded probe",
+    "scheduler": "StepLR(step_size=50, gamma=0.5)",
+    "loss": "upstream LpLoss(d=2,p=2) relative L2 on normalized target",
+    "batch_size": 1,
+    "qualification_updates": 5,
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "statistics_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+    "test_iid_or_sealed_access": false
+  },
+  "execution": {
+    "host": "devbox WSL2",
+    "environment": "g2-gino-open3d-src",
+    "python": "3.12.12",
+    "torch": "2.9.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "open3d": "0.19.0",
+    "torch_scatter": "2.1.2+pt29cu130",
+    "qualification_runner_sha256": "9b7a96ad0690b804f14288aa768991a41a3939a149d990c4cd2764dff0e49ca1",
+    "raw_aggregate_path": "/tmp/g2_p13_gino_e3_qualification_20260915.json",
+    "raw_aggregate_sha256": "e5393305822383b6e8cdaca230174ec36eff1a45c3d91bd91e7a6e3b5f947725",
+    "raw_log_path": "/tmp/g2_p13_gino_e3_qualification_20260915.log",
+    "peak_vram": "NOT_INSTRUMENTED_BY_FROZEN_BOUNDED_RUNNER",
+    "runtime_note": "Six fresh child process walltimes were captured in the raw aggregate; no long training was started"
+  },
+  "qualification": {
+    "fresh_processes": 6,
+    "same_seed_repeats": 3,
+    "inter_seed_references": [0, 1, 2],
+    "fixtures": ["train", "valid_iid"],
+    "updates_per_fixture": 5,
+    "all_forward_loss_gradient_update_finite": true,
+    "checkpoint_reload_state_equal_within_child": true,
+    "graph_repeatability": "true on authoritative backend",
+    "geometry_non_boundary_disagreement": 0,
+    "boundary_only_disagreement_inherited_from_E2": 2057,
+    "same_seed_median_relative": {
+      "loss": 0.000005295701395932704,
+      "prediction": 0.00025665521556087135,
+      "parameters": 0.0002144011835032956,
+      "updates": 0.011402714496609255
+    },
+    "inter_seed_median_relative": {
+      "loss": 0.039280643491713195,
+      "prediction": 0.4683171405934492,
+      "parameters": 1.4151969251781589,
+      "updates": 1.416679635834857
+    },
+    "same_over_inter_ratio": {
+      "loss": 0.0001348170733773724,
+      "prediction": 0.0005480372023873376,
+      "parameters": 0.00015149918692503142,
+      "updates": 0.008048901253450695
+    },
+    "raw_child_receipts": [
+      "853e2b8419df76817561c490d8e4b2a87a6604e935d27759ec5eec63aacd8ad9",
+      "13d624e042ff0302b15d652de91f15c1ba04b78730fbd279dd67b9e2bf4f4b1b",
+      "d8eaded56c6e99ac8b6ed30a546686cc77c8be1c3047b5c75842b0530690fb8f",
+      "2b7bbcc7d8d7bb5e9922b0af436fbc8aa1dc9ff1346039defb5951300d7f530d",
+      "d0617a9aa4dfd7bbf52e3452dfb3cf0d68a0d65949605c5e1e98074907aebe76",
+      "3d82d5af20eb566383ae3c6a31700121534a2ab58925e8e8503975a53a08ffe8"
+    ]
+  },
+  "decision": {
+    "formal_verdict": "E3_PASS",
+    "reason": "upstream operator/backend semantics preserved; finite; no non-boundary graph disagreement; bounded same-seed noise is small relative to inter-seed variability; no author claim violated",
+    "new_tolerance_introduced": false,
+    "accuracy_used_for_decision": false,
+    "formal_training_released": true,
+    "formal_training_started": false
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "p1i_sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  }
+}

@@ -34,7 +34,7 @@ from rigno.heat3d_training import (
     evaluate_level_a_validation,
     loss_fn_full, make_gradient_transform, make_p1i_optimizer,
     model_apply_full, model_init_full, tree_parameter_count,
-    load_latest_checkpoint,
+    load_latest_checkpoint, tree_max_abs_difference,
 )
 from rigno.heat3d_training.p1i import (
     attach_input_contexts, attach_native_physics, attach_qk_features,
@@ -89,6 +89,26 @@ def checkpoint_state(path: Path) -> Any:
         params=payload["params"], optimizer_state=payload["optimizer_state"],
         step=int(payload["step"]),
     )
+
+
+def tree_relative_l2_difference(left: Any, right: Any) -> float:
+    """Diagnostic relative L2 drift for repeated prediction, never a gate."""
+
+    left_leaves, left_def = jax.tree_util.tree_flatten(left)
+    right_leaves, right_def = jax.tree_util.tree_flatten(right)
+    if left_def != right_def or len(left_leaves) != len(right_leaves):
+        return float("inf")
+    numerator = 0.0
+    denominator = 0.0
+    for left_leaf, right_leaf in zip(left_leaves, right_leaves, strict=True):
+        left_array = np.asarray(left_leaf, dtype=np.float64)
+        right_array = np.asarray(right_leaf, dtype=np.float64)
+        if left_array.shape != right_array.shape:
+            return float("inf")
+        delta = left_array - right_array
+        numerator += float(np.sum(delta * delta))
+        denominator += float(np.sum(right_array * right_array))
+    return float(np.sqrt(numerator) / max(np.sqrt(denominator), 1.0e-12))
 
 
 def repo_sha() -> str:
@@ -350,15 +370,42 @@ def main() -> int:
     probe_before, _ = trainer.validate_with_outputs(best_state, valid_batches[0]); block_until_ready(probe_before)
     best_state_reload = checkpoint_state(output / "params_best_sample_first.pkl")
     probe_after, _ = trainer.validate_with_outputs(best_state_reload, valid_batches[0]); block_until_ready(probe_after)
+    checkpoint_state_param_reload_max_abs = tree_max_abs_difference(
+        best_state.params, best_state_reload.params
+    )
+    checkpoint_state_optimizer_reload_max_abs = tree_max_abs_difference(
+        best_state.optimizer_state, best_state_reload.optimizer_state
+    )
+    if (
+        checkpoint_state_param_reload_max_abs != 0.0
+        or checkpoint_state_optimizer_reload_max_abs != 0.0
+        or best_state.step != best_state_reload.step
+    ):
+        raise RuntimeError("checkpoint state reload integrity mismatch")
     reload_max_abs = helper.safe_tree_difference(probe_before, probe_after)
-    if reload_max_abs > 1e-5: raise RuntimeError("best checkpoint prediction reload drift")
+    reload_relative_l2 = tree_relative_l2_difference(probe_before, probe_after)
     memory = jax.devices()[0].memory_stats() or {}
     receipt = {
         "schema_version": "heat3d_v7_g2_p6_heat3d_v1_formal_training_v1",
         "status": "COMPLETE_FORMAL_TRAIN", "seed": args.seed, "epochs": 200,
         "optimizer_update_count": update_count, "parameter_count": tree_parameter_count(state.params),
         "selection": {"domain": "native_1024", "metric": "valid_sample_first_relative_rmse_pct", "tie": "earliest", "best_epoch": best_epoch, "best_value": best_metric, "U_used": False},
-        "checkpoints": {"best": {"path": "params_best_sample_first.pkl", "sha256": sha256(output / "params_best_sample_first.pkl")}, "final": {"path":"params_final.pkl", "sha256": sha256(output / "params_final.pkl"), "roundtrip": final_report}, "latest": {"path": "latest_epoch.pkl", "sha256": sha256(output / "latest_epoch.pkl")}, "best_reload_prediction_max_abs": reload_max_abs},
+        "checkpoints": {
+            "best": {"path": "params_best_sample_first.pkl", "sha256": sha256(output / "params_best_sample_first.pkl")},
+            "final": {"path":"params_final.pkl", "sha256": sha256(output / "params_final.pkl"), "roundtrip": final_report},
+            "latest": {"path": "latest_epoch.pkl", "sha256": sha256(output / "latest_epoch.pkl")},
+            "checkpoint_state_reload_integrity": {
+                "parameter_max_abs": checkpoint_state_param_reload_max_abs,
+                "optimizer_max_abs": checkpoint_state_optimizer_reload_max_abs,
+                "step_equal": bool(best_state.step == best_state_reload.step),
+                "passed": True,
+            },
+            "repeated_inference_diagnostic": {
+                "max_abs": reload_max_abs,
+                "relative_l2": reload_relative_l2,
+                "gate": "diagnostic_only_under_upstream_authoritative_nondeterministic_policy",
+            },
+        },
         "resource": {"gpu": str(jax.devices()[0]), "peak_bytes_in_use": memory.get("peak_bytes_in_use"), "training_wall_seconds": time.perf_counter()-started, "preparation_wall_seconds": preparation_seconds},
         "environment": {"repo_sha": subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(), "jax": jax.__version__, "XLA_FLAGS": os.environ.get("XLA_FLAGS")},
         "dataset": {"train":768,"valid":128,"subset_sha256":SUBSET_SHA,"label_receipt_sha256":LABEL_RECEIPT_SHA,"normalization_sha256":NORMALIZATION_SHA},
