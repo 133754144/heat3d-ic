@@ -1,0 +1,55 @@
+{
+  "schema_version": "heat3d_v7_g2_p12_heat3d_v1_seed_launch_receipt_v1",
+  "status": "FORMAL_RUNNING_PREPARATION_SEED0",
+  "started_at_local": "2026-09-15T00:23:36+08:00",
+  "execution_host": "devbox WSL2 RTX 5070",
+  "tmux_session": "g2_heat3d_v1_formal_false_seed0_20260915",
+  "model": "Heat3D-on-DeepOHeat-v1",
+  "seed": 0,
+  "epoch_budget": 200,
+  "execution_path": "legacy",
+  "xla_flags": "--xla_gpu_deterministic_ops=false",
+  "allocator_flag": "XLA_PYTHON_CLIENT_PREALLOCATE=false",
+  "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_falseflag_20260915/seed_0",
+  "repo_sha_at_launch": "08fec2ee227bb8b549a463698fcabd9aed434e3f",
+  "runner_sha256": "9f01a09979d216f6217f73f2fae47ee0f551de78bb082f4f1749a35ec704c4fb",
+  "launch_manifest_sha256": "cec7df520a85ad739ad1adb80421597bfa61d25ce3230d168172eda76dce9c83",
+  "comparison_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "G1_worktree_touched": false,
+    "DeepOHeat_result_used_to_change_config": false
+  },
+  "data_contract": {
+    "fs_train": "/home/xyh/myData/DeepOHeat-v1-main/data/fs_train_volume.npy",
+    "fs_train_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_generation_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_file_sha256": "fe37d5e81228cafa625d1d7cff5adea7413e0717a350c3023a53c6f1f67fb38e",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "train": 768,
+    "valid_iid": 128,
+    "test_iid": 0
+  },
+  "scientific_contract": {
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "checkpoint_selection": "minimum native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "U_outputs_used_for_selection": false,
+    "fresh_start": true,
+    "historical_epoch11_or_epoch103_resume": false,
+    "test_or_sealed_access": false
+  },
+  "prelaunch_guards": {
+    "new_seed0_output_absent": true,
+    "old_epoch11_output_preserved": true,
+    "old_epoch11_output_overwritten": false,
+    "other_formal_training_processes": false,
+    "contract_check": "PASS_CONTRACT_CHECK_NO_DATA_NO_TRAINING"
+  },
+  "monitor": {
+    "ssh": "ssh devbox",
+    "tmux": "tmux attach -t g2_heat3d_v1_formal_false_seed0_20260915",
+    "log": "tail -f /tmp/g2_heat3d_v1_formal_false_seed0_20260915.log"
+  },
+  "test_unlock": "not authorized"
+}
