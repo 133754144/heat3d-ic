@@ -93,6 +93,15 @@ def tree_probe(value: Any, limit: int = PROBE_LIMIT) -> dict[str, Any]:
     return {"leaf_values": leaves, "budget": int(limit), "used": int(limit - remaining)}
 
 
+def probe_finite(probe: dict[str, Any]) -> bool:
+    """Check each bounded probe leaf without coercing ragged arrays."""
+
+    return all(
+        bool(np.all(np.isfinite(np.asarray(leaf, dtype=np.float64))))
+        for leaf in probe.get("leaf_values", [])
+    )
+
+
 def tree_sub(left: Any, right: Any) -> Any:
     if isinstance(left, np.ndarray) and isinstance(right, np.ndarray):
         if left.shape != right.shape:
@@ -195,7 +204,8 @@ def run_updates(model: torch.nn.Module, optimizer: torch.optim.Optimizer, schedu
         with torch.no_grad():
             valid_prediction = model(input_geom=valid_coords, latent_queries=grid, output_queries=valid_coords, x=valid_features)
             valid_prediction = valid_prediction.detach().cpu().numpy().copy()
-        rows.append({"step": step_index + 1, "wall_seconds": wall, "loss": loss_value, "loss_finite": bool(np.isfinite(loss_value)), "prediction_probe": tree_probe(prediction.detach().cpu().numpy()), "valid_prediction_probe": tree_probe(valid_prediction), "parameter_probe": current_probe, "update_probe": update_probe, "parameter_hash": tensor_hash(current), "finite": bool(np.isfinite(loss_value) and all(np.all(np.isfinite(v["leaf_values"])) for v in (current_probe, update_probe, tree_probe(prediction.detach().cpu().numpy()))))})
+        prediction_probe = tree_probe(prediction.detach().cpu().numpy())
+        rows.append({"step": step_index + 1, "wall_seconds": wall, "loss": loss_value, "loss_finite": bool(np.isfinite(loss_value)), "prediction_probe": prediction_probe, "valid_prediction_probe": tree_probe(valid_prediction), "parameter_probe": current_probe, "update_probe": update_probe, "parameter_hash": tensor_hash(current), "finite": bool(np.isfinite(loss_value) and probe_finite(current_probe) and probe_finite(update_probe) and probe_finite(prediction_probe))})
         previous = current
     final = {"model": tree_arrays(model.state_dict()), "optimizer": tree_arrays(optimizer.state_dict()), "scheduler": tree_arrays(scheduler.state_dict()), "step": end_step}
     return rows, final
