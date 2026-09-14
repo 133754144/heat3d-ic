@@ -1,0 +1,55 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_thermfm_compatibility_receipt_v1",
+  "status": "NEEDS_AMENDMENT",
+  "track": "PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE",
+  "official": {
+    "paper": "Therm-FM: Foundation Model is ALL YOU NEED for 3D-ICs Thermal Simulation",
+    "paper_arxiv": "2605.22663",
+    "repo": "haiyangxin/Therm-FM",
+    "commit": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "license": "Apache-2.0"
+  },
+  "upstream_contract": {
+    "model": "Poseidon/scOT model_T",
+    "approximate_parameters": 21000000,
+    "input_representation": "grid tensor (N,P,L,H,W), flattened layer-major to (N,L*P,H,W)",
+    "input_semantics": "geometry/layer coordinates, material/source channels and power density fields",
+    "output_representation": "(N,L_out,H,W) temperature field",
+    "HS_SC_release_input_shape": [5000, 4, 2, 87, 87],
+    "HS_SC_release_output_shape": [5000, 2, 87, 87],
+    "required_artifacts": ["config.json", "pytorch_model.bin", "normalization_constants.json"],
+    "normalization": "per flattened input channel and output layer mean/std",
+    "native_metric": "official release/evaluate.py metric; retain separately from V7 common metric"
+  },
+  "v7_compatibility": {
+    "v7_input": "irregular coords + k + q + BC",
+    "direct_drop_in": false,
+    "required_conversion": ["deterministic point-to-grid rasterization", "layer/channel ordering", "grid-to-query extraction", "train-only normalization and unit conversion"],
+    "same_information_budget": false,
+    "same_from_scratch_budget": false,
+    "point_to_grid_adapter_implemented": false,
+    "test_or_sealed_access": false
+  },
+  "provenance_and_resources": {
+    "checkpoint_archive_bytes": 24100784430,
+    "steady_dataset_archive_bytes": 4467245278,
+    "large_archive_downloaded": false,
+    "selective_model_T_artifact_available": false,
+    "pretraining_overlap_audit": "not completed; required before any target result",
+    "resource_estimate": "cannot be claimed without model_T/config/normalization artifact"
+  },
+  "evaluation": {
+    "valid_only_pretrained_evaluation": "NOT_RUN",
+    "reason": "release offers only monolithic archive in current audit; downloading prohibited in this phase",
+    "official_demo_evidence": "prior tiny synthetic quick-demo PASS; not V7 physical evidence"
+  },
+  "minimum_next_step": "obtain explicit approval for a selective model_T artifact and one non-test benchmark, freeze deterministic point/grid conversion, audit pretraining overlap, then run isolated valid-only evaluation",
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  }
+}

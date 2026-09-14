@@ -1,0 +1,46 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_baseline_taxonomy_status_v1",
+  "observed_at": "2026-09-15T03:30:00+08:00",
+  "scope": "valid-only G2 baseline closure; test/sealed evaluation remains locked",
+  "taxonomy": {
+    "common_task_supervised": [
+      {"model": "Heat3D", "status": "FROZEN_G1_VALID_ONLY_REFERENCE", "formal_scope": "existing G1 result; G1 not reopened"},
+      {"model": "Transolver", "status": "COMPLETE_VALID_ONLY_3_SEEDS", "formal_scope": "P1i common task"},
+      {"model": "GINO", "status": "E3_PASS_FORMAL_NOT_STARTED", "formal_scope": "P1i common task; Open3D FixedRadiusSearch + torch-scatter"}
+    ],
+    "semiconductor_native": [
+      {"model": "DeepOHeat-v1", "status": "COMPLETE_UPSTREAM_SEED42_FROZEN", "formal_scope": "official dense physics-informed protocol"},
+      {"model": "Heat3D-on-DeepOHeat-v1", "status": "RUNNING_SEED0_SERIAL_COHORT", "formal_scope": "supervised method-native cross-benchmark"}
+    ],
+    "pretrained_foundation": [
+      {"model": "Therm-FM", "status": "NEEDS_AMENDMENT_NO_LARGE_ARTIFACT", "formal_scope": "pretrained transfer only"}
+    ],
+    "excluded": [
+      {"model": "multi-HTC", "status": "NOT_STARTED_BY_POLICY"},
+      {"model": "Geo-FNO", "status": "EXCLUDED_SCIENTIFIC_INCOMPATIBILITY"},
+      {"model": "DeepOHeat-v2", "status": "PAPER_DESIGN_TRACK_NO_OFFICIAL_CODE"}
+    ]
+  },
+  "gates": {
+    "GINO": "E3_PASS",
+    "Transolver": "INDEPENDENT_VALID_ONLY_COMPLETE",
+    "Heat3D_on_DeepOHeat_v1": "P13_COHORT_SEED0_RUNNING",
+    "Therm_FM": "NEEDS_AMENDMENT",
+    "test_unlock": "NOT_AUTHORIZED"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "concurrent_gpu_formal_tasks": false
+  },
+  "evidence": {
+    "gino_e3": "docs/v7_g2_p13_gino_e3_qualification.json",
+    "heat3d_seed0_launch": "docs/v7_g2_p13_heat3d_v1_seed0_launch_receipt.json",
+    "transolver": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json",
+    "thermfm": "docs/v7_g2_p13_thermfm_compatibility_receipt.json"
+  }
+}
