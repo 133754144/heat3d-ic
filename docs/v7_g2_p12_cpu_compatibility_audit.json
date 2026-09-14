@@ -1,0 +1,136 @@
+{
+  "schema_version": "heat3d_v7_g2_p12_cpu_compatibility_audit_v1",
+  "observed_at": "2026-09-15T00:30:00+08:00",
+  "scope": "CPU/document-only compatibility audit performed while Heat3D seed0 ran on devbox; no GPU, training, test, or sealed artifact used by this audit",
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_large_archive_downloaded": false,
+    "accuracy_used_for_compatibility_decision": false
+  },
+  "GINO": {
+    "status": "FAIL-CLOSED",
+    "authoritative_backend": "Open3D FixedRadiusSearch + torch-scatter",
+    "diagnostic_fallback": "pure-PyTorch only; forbidden as formal backend",
+    "frozen_scientific_contract": {
+      "upstream_commit": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "r_in": 0.15,
+      "r_out": 0.033,
+      "latent_grid": [32, 32, 32],
+      "input_information": "coords + 11 physical features",
+      "architecture_loss_optimizer_unchanged": true
+    },
+    "compatibility_finding": {
+      "p1i_representation": "direct point input is representable without a learned adapter; latent grid and GNO query path are native GINO operations",
+      "current_gate": "E2 resolution remains FAIL_CLOSED because optimized output repeatability at the prior 1e-5 engineering envelope was not accepted; E3 qualification text is retained but does not supersede the explicit fail-closed resolution without reviewer approval",
+      "non_boundary_geometry": 0,
+      "accuracy_used": false
+    },
+    "minimum_next_work": [
+      "reconcile E2 FAIL_CLOSED and E3 inherited qualification receipts under a reviewer-approved policy",
+      "if approval requests a rerun, execute only the frozen Open3D+torch-scatter geometry/repeatability probe",
+      "do not alter radius, latent grid, reduction, tolerance, architecture, or information budget"
+    ],
+    "formal_training": "not started; remains forbidden until gate is independently approved",
+    "evidence": [
+      "docs/v7_g2_e2_gino_gate_resolution.json",
+      "docs/v7_g2_e3_gino_reproducibility_receipt.json",
+      "configs/heat3d_v7/g2_gino_formal_launch_manifest.json"
+    ]
+  },
+  "DeepOHeat-v1": {
+    "status": "NEEDS_AMENDMENT",
+    "official_provenance": {
+      "paper": "DeepOHeat-v1: Efficient Operator Learning for Fast and Trustworthy Thermal Simulation and Optimization in 3D-IC Design",
+      "official_repo": "xlyu0127/DeepOHeat-v1",
+      "upstream_commit": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+      "official_test": "sealed and not opened"
+    },
+    "official_protocol": {
+      "input": "101x101 volumetric power function",
+      "physics_mesh": [101, 101, 56],
+      "training_semantics": "full piecewise-k PDE plus volumetric source, top/bottom Robin and side-adiabatic residuals",
+      "optimizer": "Adam lr=1e-3 with exponential decay 0.9 per 1000 steps",
+      "budget": "100000 iterations, 50 functions per iteration, seed42",
+      "normalization": "u output is converted with T_K=293.15+25u; no train-fitted standardization in released code"
+    },
+    "current_g2_mapping": {
+      "input": "1024 physics-layout-aware sparse coords+k+q+BC observations",
+      "output_domains": [1024, 10201, 571256],
+      "training": "supervised 768 train + 128 valid_iid labels, B24, 200 epochs, Heat3D AdamW contract",
+      "normalization": "train-only Heat3D global/channel statistics",
+      "representation": "volumetric q/k/Robin fields are losslessly represented for the released discrete benchmark; sparse conditioning is not the DeepOHeat-v1 dense input budget"
+    },
+    "compatibility_finding": {
+      "same_physical_cases": true,
+      "same_information_budget": false,
+      "same_training_budget": false,
+      "metric_alignment": "possible only on identical physical query domains; full 571256-field comparison is primary",
+      "direct_common_task": false,
+      "native_cross_benchmark": true
+    },
+    "minimum_next_work": [
+      "keep the current frozen method-native contract and separately report function/conditioning counts, solver calls, parameters, runtime and memory",
+      "perform future evaluation-only metric alignment on the same query domain without opening official100",
+      "do not claim same input or training budget and do not change the P1i common-task contract"
+    ],
+    "current_training_status": "DeepOHeat-v1 seed42 formal training complete with final checkpoint frozen; current Heat3D-on-v1 cohort is a separate supervised track",
+    "evidence": [
+      "docs/v7_g2_p2_deepoheat_v1_audit.md",
+      "configs/heat3d_v7/g2_deepoheat_v1_cross_benchmark_contract.json",
+      "configs/heat3d_v7/g2_semiconductor_remote_launch_manifest.json",
+      "docs/v7_g2_p10_heat3d_production_receipt.json"
+    ]
+  },
+  "Therm-FM": {
+    "status": "NEEDS_AMENDMENT",
+    "official_provenance": {
+      "paper": "Therm-FM: Foundation Model is ALL YOU NEED for 3D-ICs Thermal Simulation",
+      "official_repo": "haiyangxin/Therm-FM",
+      "upstream_commit": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+      "license": "Apache-2.0"
+    },
+    "official_contract": {
+      "model": "Poseidon/scOT model_T, approximately 21M parameters",
+      "input": "grid tensor (N,P,L,H,W), layer-major flattened to (N,L*P,H,W); channels encode x/y/z-or-layer/power density",
+      "output": "(N,L_out,H,W) temperature field",
+      "HS_SC_release_shapes": {"input": [5000, 4, 2, 87, 87], "output": [5000, 2, 87, 87]},
+      "required_files": ["config.json", "pytorch_model.bin", "normalization_constants.json"],
+      "normalization": "per flattened input channel and output layer mean/std"
+    },
+    "v7_compatibility": {
+      "v7_input": "irregular point coords + k + q + BC",
+      "direct_drop_in": false,
+      "deterministic_conversion_needed": "geometry/material/BC metadata plus point-to-grid rasterization and grid-to-point evaluation",
+      "common_information_budget": false,
+      "track": "pretrained transfer/data-efficiency only"
+    },
+    "resource_and_leakage": {
+      "checkpoint_archive_bytes": 24100784430,
+      "steady_dataset_archive_bytes": 4467245278,
+      "downloaded": false,
+      "from_scratch": "not meaningful as an upstream-faithful comparison because model_T is a pretrained Poseidon/scOT prior",
+      "pretraining_leakage_risk": "must audit Poseidon/Therm-FM pretraining overlap with any future target benchmark before using transfer results",
+      "runtime_plan": "requires dedicated GPU evaluation and the complete model_T contract; no resource claim is made without the artifacts"
+    },
+    "minimum_next_work": [
+      "obtain explicit approval for selective artifact acquisition; do not download the monolithic archive in this phase",
+      "freeze one benchmark, its grid/material/BC metadata and normalization constants, then run official model_T evaluation in an isolated environment",
+      "report pretrained prior, target samples and any point-grid conversion separately from common-task baselines"
+    ],
+    "evidence": [
+      "docs/v7_g2_external_reproduction_receipts.json",
+      "docs/v7_g2_p1_local_qualification.md",
+      "configs/heat3d_v7/g2_candidate_registry.json"
+    ]
+  },
+  "summary": {
+    "GINO": "FAIL-CLOSED",
+    "DeepOHeat-v1": "NEEDS_AMENDMENT",
+    "Therm-FM": "NEEDS_AMENDMENT",
+    "recommendation": "keep GINO blocked; finish Heat3D-on-v1 formal cohort under its frozen method-native contract; defer Therm-FM until an approved small artifact/data plan exists"
+  }
+}
