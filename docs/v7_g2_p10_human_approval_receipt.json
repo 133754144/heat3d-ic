@@ -1,0 +1,42 @@
+{
+  "schema_version": "heat3d_v7_g2_p10_human_approval_receipt_v1",
+  "status": "HUMAN_APPROVED_QUALIFICATION_AMENDMENTS_PENDING_PRODUCTION_GATES",
+  "approval_basis": "The user instruction for V7 G2 production qualification explicitly authorizes treating this audit as human approval.",
+  "approved_scope": [
+    "upstream-authoritative reproducibility policy",
+    "independent GINO and Transolver qualification scope",
+    "Heat3D xla_gpu_deterministic_ops=false execution amendment, conditional on production resume and three-epoch rehearsal PASS"
+  ],
+  "approval_constraints": {
+    "formal_config_not_changed_by_approval": true,
+    "old_fail_closed_receipts_preserved": true,
+    "test_iid_or_sealed_access": false,
+    "deepoheat_official_test_access": false,
+    "g1_reopened_or_modified": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  },
+  "provenance_corrections": {
+    "gino_e3_geometry_fields": {
+      "renamed_semantics": "inherited_from_E2_*",
+      "reason": "E3 reproducibility receipt inherited the E2/P8 geometry values; a fresh production 896 audit is required for current status."
+    },
+    "old_heat3d_deterministic_true_300_127_seconds": {
+      "status": "SUPERSEDED_NON_REPRESENTATIVE_OUTLIER",
+      "cause": "unknown; intentionally not inferred"
+    }
+  },
+  "execution_code_sha256": {
+    "heat3d_e3_determinism_runner": "d3f3d5182936474e0018b727c8e3e3d423d2f58bbd3458e00c751474e6941b3a",
+    "heat3d_e4_production_runner": "bfdc331842faafc80557ac16feb8bee824b06fceb3172b8734508780f149b41c",
+    "gino_e3_reproducibility_runner": "9b7a96ad0690b804f14288aa768991a41a3939a149d990c4cd2764dff0e49ca1",
+    "gino_e4_production_runner": "ba4d59aa19ffc060652ba9f1d01a85c749691fa7d9b58bec17ed438850f5031e",
+    "gino_896_geometry_runner": "f6b0e7d93a69df5170cb3c0cb22a14d536121f5bbbe614c5f866894f8ba642b4"
+  },
+  "documentation_sha256": {
+    "reproducibility_policy": "ac6a31e7e7303cdf68318dc6fad0281261cb580dce2bbea80528fe3645b8cffd",
+    "qualification_scope_amendment": "357488001cd1cd5373b0015840dc6452a65343f65617bf44a5d7c226de82e5c5",
+    "heat3d_execution_amendment_candidate": "a1d2b8e60ad052f9806d66ab6af188e09c82ac6aeac0091b0931874908df59a4"
+  },
+  "notes": "This receipt authorizes the qualification workflow only. Production gates still fail closed until their bounded measurements pass; approval does not authorize test unlock or automatic formal launch before those gates."
+}

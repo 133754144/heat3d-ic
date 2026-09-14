@@ -12,7 +12,7 @@ deterministic-XLA true 的一个静态 B24 fixture 完成了 1 个 post-warm ste
 
 ## Deterministic A/B 与 projection
 
-同一 fixture 的 deterministic=true/false bounded A/B 中，true 的 post-warm median 为 300.127 s，false 为 0.038605 s（约 7774×）；compile+first 为 349.191 s 对 23.740 s（约 14.7×）。两边 finite，但 tree hash 不同，因此只保留为性能/语义 amendment 候选，不能改变 frozen deterministic 配置。正式 runtime baseline 仍采用已经完成的 compiled B24 三 epoch receipt：median epoch 1547.088 s，200 epoch 单 seed 约 **85.95 h**，三 seed 约 **257.85 h**；这只是 runtime projection。
+同一 fixture 的 deterministic=true/false bounded A/B 中，历史 deterministic=true 的 post-warm median 为 300.127 s，false 为 0.038605 s（约 7774×）；compile+first 为 349.191 s 对 23.740 s（约 14.7×）。该 300.127 s 数值现标记为 **superseded/non-representative outlier**，仅保留作 provenance；原因未知且不作推测。两边 finite，但 tree hash 不同，因此当时只保留为性能/语义 amendment 候选，不能改变 frozen deterministic 配置。正式 runtime baseline 仍采用已经完成的 compiled B24 三 epoch receipt：median epoch 1547.088 s，200 epoch 单 seed 约 **85.95 h**，三 seed 约 **257.85 h**；这只是 runtime projection。
 
 ## Host sync 与 cache
 
