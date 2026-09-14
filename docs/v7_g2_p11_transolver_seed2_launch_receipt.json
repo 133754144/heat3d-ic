@@ -1,0 +1,47 @@
+{
+  "schema_version": "heat3d_v7_g2_p11_transolver_seed_launch_receipt_v1",
+  "status": "FORMAL_RUNNING_SEED2",
+  "started_at_local": "2026-09-14T19:56:56+08:00",
+  "execution_host": "devbox WSL2 RTX 5070",
+  "tmux_session": "g2_formal_transolver_seed2_20260914",
+  "model": "Transolver",
+  "seed": 2,
+  "epoch_budget": 500,
+  "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/transolver/seed_2",
+  "repo_sha_at_launch": "3f306cc49f1fca10787a3e9aa4fac0935eebbf52",
+  "runner_sha256": "235fed17156b75b1015e3c8547a24b78077e8f435a2be27de320ecc3ab653a55",
+  "launch_manifest_sha256": "af0a35abb6db0f908d46a783d67423fbdec1ae5f8a496e65e92f254f61737a91",
+  "upstream": "thuml/Transolver@75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+  "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+  "normalization_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+  "data_cache": "verified_ram",
+  "contract": {
+    "train": 768,
+    "valid_iid": 128,
+    "batch_size": 1,
+    "layers": 8,
+    "hidden_width": 128,
+    "heads": 8,
+    "slices": 64,
+    "optimizer": "AdamW lr=1e-3 wd=1e-5",
+    "gradient_clip": 0.1,
+    "scheduler": "CosineAnnealingLR T_max=500",
+    "loss": "decode prediction and target to physical-space relative L2",
+    "checkpoint_selection": "valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "test_or_sealed_access": false,
+    "g1_modified": false
+  },
+  "prelaunch_checks": {
+    "seed2_output_absent": true,
+    "seed1_complete_receipt_verified": true,
+    "contract_check": "PASS_CONTRACT_CHECK_NO_DATA_NO_TRAINING",
+    "gpu_free_after_seed1": true,
+    "same_execution_sha_as_seed0_and_seed1": true
+  },
+  "monitor": {
+    "ssh": "ssh devbox",
+    "log": "tail -f /home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/transolver/seed_2/run.log",
+    "tmux": "tmux attach -t g2_formal_transolver_seed2_20260914"
+  },
+  "test_unlock": "not authorized"
+}
