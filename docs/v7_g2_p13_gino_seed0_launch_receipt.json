@@ -1,0 +1,58 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_gino_seed_launch_receipt_v1",
+  "model": "GINO",
+  "seed": 0,
+  "status": "RUNNING_FORMAL_SEED0",
+  "launched_at": "2026-09-15T04:54:48+08:00",
+  "remote_host": "devbox WSL2",
+  "tmux_session": "g2_gino_p13_e3_seed0_20260915",
+  "pid_at_launch": 1889474,
+  "repo_sha": "53d8da5ec6691b4e168bdc68a333b31b2ac4221d",
+  "runner": {
+    "path": "scripts/run_v7_g2_p1i_external_formal.py",
+    "sha256": "7f93287b6381a977ca3de32b11977a275a9e63171b0587bf1c1d40d4b8ad52da"
+  },
+  "launch_manifest": {
+    "path": "configs/heat3d_v7/g2_p13_gino_formal_launch_manifest.json",
+    "sha256": "d5e14d4d258b82afe1fb3dc54839222f39861b90f830b3952a3501a91dfd20db"
+  },
+  "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+  "backend_qualification": {
+    "path": "docs/v7_g2_p13_gino_e3_qualification.json",
+    "sha256": "86e84d729e2b2e254acbc0ed5d8a35ded1bf6f91351583c7ece51701ba4f72b9",
+    "verdict": "E3_PASS / GINO_AUTHOR_SEMANTICS_QUALIFIED"
+  },
+  "scientific_contract": {
+    "dataset_root": "/home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "roles": {"train": 768, "valid_iid": 128},
+    "forbidden": ["test_iid", "sealed"],
+    "normalization_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+    "input": "coords + 11 physical features",
+    "radius": {"input": 0.15, "output": 0.033},
+    "latent_grid": [32, 32, 32],
+    "backend": "Open3D FixedRadiusSearch + torch-scatter",
+    "optimizer": "AdamW(lr=1e-3, weight_decay=1e-4)",
+    "scheduler": "StepLR(step_size=50, gamma=0.5)",
+    "loss": "upstream LpLoss(d=2,p=2) relative L2 on normalized target",
+    "budget": {"epochs": 301, "batch_size": 1},
+    "checkpoint_selection": "valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "fresh_start": true
+  },
+  "environment": {
+    "conda_environment": "g2-gino-open3d-src",
+    "python": "3.12.12",
+    "pytorch": "2.9.0+cu130",
+    "cuda": "13.0",
+    "open3d": "0.19.0",
+    "torch_scatter": "2.1.2+pt29cu130",
+    "gpu": "NVIDIA GeForce RTX 5070"
+  },
+  "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/gino_p13_e3/seed_0",
+  "log_path": "/tmp/g2_gino_p13_e3_seed0_20260915.log",
+  "data_cache": "verified_ram",
+  "test_or_sealed_access": false,
+  "formal_accuracy_claim_allowed": false,
+  "serial_gpu_only": true,
+  "seed1_seed2_started": false
+}
