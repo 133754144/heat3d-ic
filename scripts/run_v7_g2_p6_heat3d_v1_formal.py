@@ -142,8 +142,13 @@ def main() -> int:
         parser.error("train requires all data/config/output arguments")
     if jax.default_backend() != "gpu":
         raise SystemExit("FAIL-CLOSED: Heat3D-v1 formal training requires JAX CUDA")
-    if "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""):
-        raise SystemExit("FAIL-CLOSED: frozen Heat3D CUDA backend requires deterministic XLA ops")
+    xla_flags = os.environ.get("XLA_FLAGS", "")
+    # V7 G2-P10 human approval promoted the bounded nondeterministic execution
+    # amendment to the production candidate.  Keep this check fail-closed:
+    # the formal candidate must explicitly request false, and the superseded
+    # deterministic=true mode must never be silently mixed into this cohort.
+    if "--xla_gpu_deterministic_ops=true" in xla_flags or "--xla_gpu_deterministic_ops=false" not in xla_flags:
+        raise SystemExit("FAIL-CLOSED: Heat3D formal candidate requires XLA deterministic_ops=false")
     if sha256(args.subset_manifest) != SUBSET_SHA:
         raise ValueError("subset manifest SHA mismatch")
     if sha256(args.labels_root / "label_generation_receipt.json") != LABEL_RECEIPT_SHA:

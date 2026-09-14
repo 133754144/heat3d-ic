@@ -1,0 +1,68 @@
+{
+  "schema_version": "heat3d_v7_g2_p12_heat3d_v1_formal_launch_manifest_v1",
+  "status": "FROZEN_PRELAUNCH_SERIAL_3_SEED",
+  "scope": "Heat3D-on-DeepOHeat-v1 supervised cross-benchmark formal cohort",
+  "execution_amendment": {
+    "source": "docs/v7_g2_p10_human_approval_closeout_receipt.json",
+    "xla_gpu_deterministic_ops": false,
+    "required_XLA_FLAGS": "--xla_gpu_deterministic_ops=false",
+    "superseded_true_flag_not_used": true,
+    "science_semantics_changed": false
+  },
+  "comparison_reference": {
+    "G1_FORMAL_CODE_SHA": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "G1_closed_science_tag": "v7-g1-science-sealed-20260903",
+    "G1_close_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "G1_worktree_touched": false
+  },
+  "code": {
+    "runner": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+    "runner_sha256": "9f01a09979d216f6217f73f2fae47ee0f551de78bb082f4f1749a35ec704c4fb",
+    "execution_path": "legacy",
+    "reason": "P10 production qualification passed with false flag; slim path remains rejected by prior trajectory gate"
+  },
+  "data_contract": {
+    "source": "fs_train_volume.npy",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "subset_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "train": 768,
+    "valid_iid": 128,
+    "test_iid": 0,
+    "labels_root": "data/g2/deepoheat_v1_volumetric_labels",
+    "label_generation_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization": "docs/v7_g2_p5_deepoheat_v1_train_normalization.json",
+    "normalization_file_sha256": "fe37d5e81228cafa625d1d7cff5adea7413e0717a350c3023a53c6f1f67fb38e",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "test_or_sealed_access": false
+  },
+  "scientific_contract": {
+    "model": "Heat3D/RIGNO frozen G2 cross-benchmark model",
+    "input": "1024 physics-layout-aware coords+k+q+BC",
+    "native_output": 1024,
+    "u_source_slice_output": 10201,
+    "u_full_output": 571256,
+    "epochs": 200,
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "seeds": [0, 1, 2],
+    "optimizer_scheduler": "frozen v7_g1_full_p1i.json",
+    "checkpoint_selection": "minimum native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "valid_only_selection": true,
+    "U_outputs_used_for_selection": false,
+    "fresh_start_required": true,
+    "historical_epoch11_or_epoch103_resume": false
+  },
+  "output_contract": {
+    "remote_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_falseflag_20260915",
+    "seed_directory_template": "seed_<SEED>",
+    "forbid_overwrite": true,
+    "required_per_seed": ["params_best_sample_first.pkl", "params_final.pkl", "latest_epoch.pkl", "formal_training_receipt.json", "progress.json", "no_test_access_receipt"]
+  },
+  "serial_policy": {
+    "order": [0, 1, 2],
+    "max_concurrent_formal_training_processes": 1,
+    "start_next_only_after_previous_completion_receipt": true,
+    "oom_rule": "If a new cohort-wide batch amendment is required, invalidate this cohort and restart all seeds with one shared batch size; no post-hoc mixing."
+  }
+}
