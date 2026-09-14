@@ -299,7 +299,7 @@ def main() -> int:
             frozen_contract.get("r_in") != 0.15
             or frozen_contract.get("r_out") != 0.033
             or frozen_contract.get("latent_grid") != [32, 32, 32]
-            or backend_receipt.get("authoritative_backend") != "Open3D_FixedRadiusSearch_plus_torch_scatter"
+            or frozen_contract.get("backend") != "Open3D FixedRadiusSearch + torch-scatter"
         ):
             raise ValueError("GINO E3 backend receipt scientific contract mismatch")
 
